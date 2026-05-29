@@ -4,7 +4,6 @@
  */
 
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import type {ServerActionResult} from "@/lib/utils.server";
 
 // Mock Azure SDK response
 type MockUploadResponse = {
@@ -32,23 +31,14 @@ vi.mock("@/lib/actions/storage/fetchConfig", () => ({
   default: vi.fn(() => Promise.resolve("https://storage.test")),
 }));
 
-vi.mock("@/lib/utils.server", () => ({
-  createErrorResult: vi.fn(<T>(error: unknown, defaultMessage = "Something went wrong") =>
-    Promise.resolve({
-      success: false as const,
-      error: {
-        code: "NETWORK_ERROR" as const,
-        message: error instanceof Error ? error.message : defaultMessage,
-      },
-    } as ServerActionResult<T>),
-  ),
+vi.mock("@/lib/utils.server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/utils.server")>()),
   convertBase64ToBlob: vi.fn((base64Data: string) => {
     const cleanedBase64 = base64Data.replace(/^data:[^;]+;base64,/, "");
     const mockBlob = new Blob([cleanedBase64], {type: "image/jpeg"});
     Object.defineProperty(mockBlob, "size", {value: 1024, writable: false});
     return Promise.resolve(mockBlob);
   }),
-  DEFAULT_FETCH_TIMEOUT: 30_000,
 }));
 
 const {createInvoiceScan} = await import("./createInvoiceScan");

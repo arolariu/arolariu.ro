@@ -4,25 +4,11 @@
  */
 
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import type {ServerActionResult} from "@/lib/utils.server";
 import {fetchWithTimeout} from "@/lib/utils.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {buildInvoice, createJsonResponse, createTextResponse} from "../../../../../../tests/helpers/invoiceDomain";
 
 vi.mock("@/lib/actions/user/fetchUser");
-vi.mock("@/lib/utils.server", () => ({
-  createErrorResult: vi.fn(<T>(error: unknown, defaultMessage = "Something went wrong") =>
-    Promise.resolve({
-      success: false as const,
-      error: {
-        code: "NETWORK_ERROR" as const,
-        message: error instanceof Error ? error.message : defaultMessage,
-      },
-    } as ServerActionResult<T>),
-  ),
-  fetchWithTimeout: vi.fn(),
-  DEFAULT_FETCH_TIMEOUT: 30_000,
-}));
 const {fetchInvoices} = await import("./fetchInvoices");
 const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
 const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);

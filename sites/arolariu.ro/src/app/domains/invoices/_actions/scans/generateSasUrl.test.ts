@@ -60,13 +60,6 @@ describe("generateUploadSasUrl", () => {
       })),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
-    }));
-
     const {generateUploadSasUrl} = await import("./generateSasUrl");
 
     // Act
@@ -110,13 +103,6 @@ describe("generateUploadSasUrl", () => {
             url: "http://localhost:10000/devstoreaccount1/invoices/scans/user-dev/test.jpg",
           })),
         })),
-      })),
-    }));
-
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
       })),
     }));
 
@@ -164,13 +150,6 @@ describe("generateUploadSasUrl", () => {
       })),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
-    }));
-
     const {generateUploadSasUrl} = await import("./generateSasUrl");
 
     // Act
@@ -211,13 +190,6 @@ describe("generateUploadSasUrl", () => {
             url: `http://localhost:10000/invoices/${name}`,
           })),
         })),
-      })),
-    }));
-
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
       })),
     }));
 
@@ -264,13 +236,6 @@ describe("generateUploadSasUrl", () => {
       })),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
-    }));
-
     const {generateUploadSasUrl} = await import("./generateSasUrl");
 
     // Act
@@ -300,13 +265,6 @@ describe("generateUploadSasUrl", () => {
       fetchBFFUserFromAuthService: vi.fn(() => Promise.reject(authError)),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
-    }));
-
     const {generateUploadSasUrl} = await import("./generateSasUrl");
 
     // Act
@@ -315,7 +273,7 @@ describe("generateUploadSasUrl", () => {
     // Assert
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.userMessage).toBe("Unauthorized");
+      expect(result.error.message).toBe("Unauthorized");
     }
   });
 
@@ -350,13 +308,6 @@ describe("generateUploadSasUrl", () => {
       })),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
-    }));
-
     const {generateUploadSasUrl} = await import("./generateSasUrl");
 
     // Act
@@ -365,7 +316,7 @@ describe("generateUploadSasUrl", () => {
     // Assert
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.userMessage).toContain("Failed to get delegation key");
+      expect(result.error.message).toContain("Failed to get delegation key");
     }
   });
 
@@ -387,13 +338,6 @@ describe("generateUploadSasUrl", () => {
       default: vi.fn(() => {
         throw "String error";
       }),
-    }));
-
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
     }));
 
     const {generateUploadSasUrl} = await import("./generateSasUrl");

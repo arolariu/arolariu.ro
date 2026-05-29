@@ -4,7 +4,6 @@
  */
 
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import type {ServerActionResult} from "@/lib/utils.server";
 import {fetchWithTimeout} from "@/lib/utils.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {buildMerchant, createJsonResponse, createTextResponse} from "../../../../../../tests/helpers/invoiceDomain";
@@ -12,29 +11,6 @@ import type {Merchant} from "@/types/invoices";
 import {MerchantCategory} from "@/types/invoices";
 
 vi.mock("@/lib/actions/user/fetchUser");
-vi.mock("@/lib/utils.server", () => ({
-  createErrorResult: vi.fn(async <T>(error: unknown, defaultMessage?: string): ServerActionResult<T> => {
-    // Mirror production classification from utils.server.ts
-    if (error instanceof Error) {
-      const isTimeout = error.message.includes("timed out");
-      const code = isTimeout ? ("TIMEOUT_ERROR" as const) : ("NETWORK_ERROR" as const);
-      return {
-        success: false as const,
-        error: {code, message: error.message},
-      };
-    }
-    // Non-Error path
-    return {
-      success: false as const,
-      error: {
-        code: "UNKNOWN_ERROR" as const,
-        message: defaultMessage ?? (typeof error === "string" ? error : "An unknown error occurred"),
-      },
-    };
-  }),
-  fetchWithTimeout: vi.fn(),
-  DEFAULT_FETCH_TIMEOUT: 30_000,
-}));
 
 const {fetchMerchants} = await import("./fetchMerchants");
 const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);

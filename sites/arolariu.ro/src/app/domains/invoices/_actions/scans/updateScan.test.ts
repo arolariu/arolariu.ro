@@ -51,14 +51,11 @@ describe("updateScan", () => {
       rewriteAzuriteUrl: vi.fn((url) => url),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
+    vi.doMock("@/lib/utils.server", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("@/lib/utils.server")>()),
       convertBase64ToBlob: vi.fn(() =>
         Promise.resolve(new Blob(["updated"], {type: "image/jpeg"})),
       ),
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
     }));
 
     vi.doMock("next/cache", () => ({
@@ -125,14 +122,11 @@ describe("updateScan", () => {
       rewriteAzuriteUrl: vi.fn((url) => url),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
+    vi.doMock("@/lib/utils.server", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("@/lib/utils.server")>()),
       convertBase64ToBlob: vi.fn(() =>
         Promise.resolve(new Blob(["updated"], {type: "image/jpeg"})),
       ),
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
     }));
 
     vi.doMock("next/cache", () => ({
@@ -192,14 +186,11 @@ describe("updateScan", () => {
       rewriteAzuriteUrl: vi.fn((url) => url),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
+    vi.doMock("@/lib/utils.server", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("@/lib/utils.server")>()),
       convertBase64ToBlob: vi.fn(() =>
         Promise.resolve(new Blob(["updated"], {type: "image/jpeg"})),
       ),
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
     }));
 
     vi.doMock("next/cache", () => ({
@@ -236,13 +227,6 @@ describe("updateScan", () => {
       fetchBFFUserFromAuthService: vi.fn(() => Promise.reject(authError)),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
-    }));
-
     const {updateScan} = await import("./updateScan");
 
     // Act
@@ -255,7 +239,7 @@ describe("updateScan", () => {
     // Assert
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.userMessage).toBe("Unauthorized");
+      expect(result.error.message).toBe("Unauthorized");
     }
   });
 
@@ -291,14 +275,11 @@ describe("updateScan", () => {
       rewriteAzuriteUrl: vi.fn((url) => url),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
+    vi.doMock("@/lib/utils.server", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("@/lib/utils.server")>()),
       convertBase64ToBlob: vi.fn(() =>
         Promise.resolve(new Blob(["data"], {type: "image/jpeg"})),
       ),
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
     }));
 
     vi.doMock("next/cache", () => ({
@@ -317,7 +298,7 @@ describe("updateScan", () => {
     // Assert
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.userMessage).toContain("Failed to update scan");
+      expect(result.error.message).toContain("Failed to update scan");
     }
   });
 
@@ -351,12 +332,9 @@ describe("updateScan", () => {
       })),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
+    vi.doMock("@/lib/utils.server", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("@/lib/utils.server")>()),
       convertBase64ToBlob: vi.fn(() => Promise.reject(conversionError)),
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
     }));
 
     vi.doMock("next/cache", () => ({
@@ -375,7 +353,7 @@ describe("updateScan", () => {
     // Assert
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.userMessage).toBe("Invalid base64 data");
+      expect(result.error.message).toBe("Invalid base64 data");
     }
   });
 
@@ -411,14 +389,11 @@ describe("updateScan", () => {
       rewriteAzuriteUrl: vi.fn((url) => url),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
+    vi.doMock("@/lib/utils.server", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("@/lib/utils.server")>()),
       convertBase64ToBlob: vi.fn(() =>
         Promise.resolve(new Blob(["data"], {type: "image/jpeg"})),
       ),
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
     }));
 
     vi.doMock("next/cache", () => ({
@@ -456,13 +431,6 @@ describe("updateScan", () => {
       default: vi.fn(() => {
         throw "String error";
       }),
-    }));
-
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
     }));
 
     const {updateScan} = await import("./updateScan");
@@ -513,14 +481,11 @@ describe("updateScan", () => {
       rewriteAzuriteUrl: vi.fn((url) => url),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
+    vi.doMock("@/lib/utils.server", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("@/lib/utils.server")>()),
       convertBase64ToBlob: vi.fn(() =>
         Promise.resolve(new Blob(["data"], {type: "application/pdf"})),
       ),
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
     }));
 
     vi.doMock("next/cache", () => ({

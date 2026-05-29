@@ -41,13 +41,6 @@ describe("deleteScan", () => {
       })),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
-    }));
-
     const {deleteScan} = await import("./deleteScan");
 
     // Act
@@ -86,13 +79,6 @@ describe("deleteScan", () => {
       })),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
-    }));
-
     const {deleteScan} = await import("./deleteScan");
 
     // Act
@@ -101,7 +87,7 @@ describe("deleteScan", () => {
     // Assert
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.userMessage).toContain("not authorized");
+      expect(result.error.message).toContain("not authorized");
     }
   });
 
@@ -134,13 +120,6 @@ describe("deleteScan", () => {
       })),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
-    }));
-
     const {deleteScan} = await import("./deleteScan");
 
     // Act
@@ -149,7 +128,7 @@ describe("deleteScan", () => {
     // Assert
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.userMessage).toContain("not authorized");
+      expect(result.error.message).toContain("not authorized");
     }
   });
 
@@ -183,13 +162,6 @@ describe("deleteScan", () => {
       })),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
-    }));
-
     const {deleteScan} = await import("./deleteScan");
 
     // Act
@@ -198,7 +170,7 @@ describe("deleteScan", () => {
     // Assert
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.userMessage).toContain("Failed to delete");
+      expect(result.error.message).toContain("Failed to delete");
     }
   });
 
@@ -216,13 +188,6 @@ describe("deleteScan", () => {
       fetchBFFUserFromAuthService: vi.fn(() => Promise.reject(authError)),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
-    }));
-
     const {deleteScan} = await import("./deleteScan");
 
     // Act
@@ -233,7 +198,7 @@ describe("deleteScan", () => {
     // Assert
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.userMessage).toBe("Unauthorized");
+      expect(result.error.message).toBe("Unauthorized");
     }
   });
 
@@ -249,13 +214,6 @@ describe("deleteScan", () => {
 
     vi.doMock("@/lib/actions/user/fetchUser", () => ({
       fetchBFFUserFromAuthService: vi.fn(() => Promise.resolve(mockUser)),
-    }));
-
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
     }));
 
     const {deleteScan} = await import("./deleteScan");
@@ -295,13 +253,6 @@ describe("deleteScan", () => {
       })),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
-    }));
-
     const {deleteScan} = await import("./deleteScan");
 
     // Act
@@ -310,7 +261,7 @@ describe("deleteScan", () => {
     // Assert
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.userMessage).toBe("Invalid scan URL.");
+      expect(result.error.message).toBe("Invalid scan URL.");
     }
   });
 
@@ -338,13 +289,6 @@ describe("deleteScan", () => {
         getContainerClient: vi.fn(() => {
           throw "String error";
         }),
-      })),
-    }));
-
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
       })),
     }));
 
@@ -384,13 +328,6 @@ describe("deleteScan", () => {
             deleteIfExists: vi.fn(() => Promise.resolve(mockDeleteResponse)),
           })),
         })),
-      })),
-    }));
-
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
       })),
     }));
 

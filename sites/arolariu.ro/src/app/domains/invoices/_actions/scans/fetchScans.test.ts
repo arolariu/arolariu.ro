@@ -76,13 +76,6 @@ describe("fetchScans", () => {
       rewriteAzuriteUrl: vi.fn((url) => url),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
-    }));
-
     const {fetchScans} = await import("./fetchScans");
 
     // Act
@@ -160,13 +153,6 @@ describe("fetchScans", () => {
       rewriteAzuriteUrl: vi.fn((url) => url),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
-    }));
-
     const {fetchScans} = await import("./fetchScans");
 
     // Act
@@ -240,13 +226,6 @@ describe("fetchScans", () => {
         })),
       })),
       rewriteAzuriteUrl: vi.fn((url) => url),
-    }));
-
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
     }));
 
     const {fetchScans} = await import("./fetchScans");
@@ -324,13 +303,6 @@ describe("fetchScans", () => {
       rewriteAzuriteUrl: vi.fn((url) => url),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
-    }));
-
     const {fetchScans} = await import("./fetchScans");
 
     // Act
@@ -392,13 +364,6 @@ describe("fetchScans", () => {
       rewriteAzuriteUrl: vi.fn((url) => url),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
-    }));
-
     const {fetchScans} = await import("./fetchScans");
 
     // Act
@@ -427,13 +392,6 @@ describe("fetchScans", () => {
       fetchBFFUserFromAuthService: vi.fn(() => Promise.reject(authError)),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
-    }));
-
     const {fetchScans} = await import("./fetchScans");
 
     // Act
@@ -442,7 +400,7 @@ describe("fetchScans", () => {
     // Assert
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.userMessage).toContain("Failed to fetch scans");
+      expect(result.error.message).toBe("Unauthorized");
     }
   });
 
@@ -475,13 +433,6 @@ describe("fetchScans", () => {
       })),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
-    }));
-
     const {fetchScans} = await import("./fetchScans");
 
     // Act
@@ -490,7 +441,7 @@ describe("fetchScans", () => {
     // Assert
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.userMessage).toContain("Failed to fetch scans");
+      expect(result.error.message).toBe("Storage unavailable");
     }
   });
 
@@ -514,13 +465,6 @@ describe("fetchScans", () => {
       }),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
-    }));
-
     const {fetchScans} = await import("./fetchScans");
 
     // Act
@@ -529,7 +473,7 @@ describe("fetchScans", () => {
     // Assert
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.userMessage).toBe("Failed to fetch scans. Please try again.");
+      expect(result.error.message).toBe("An unexpected error occurred");
     }
   });
 
@@ -593,13 +537,6 @@ describe("fetchScans", () => {
       rewriteAzuriteUrl: vi.fn((url) => url),
     }));
 
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
-    }));
-
     const {fetchScans} = await import("./fetchScans");
 
     // Act
@@ -652,13 +589,6 @@ describe("fetchScans", () => {
         })),
       })),
       rewriteAzuriteUrl: vi.fn((url) => url),
-    }));
-
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
     }));
 
     const {fetchScans} = await import("./fetchScans");
@@ -731,13 +661,6 @@ describe("fetchScans", () => {
         })),
       })),
       rewriteAzuriteUrl: vi.fn((url) => url),
-    }));
-
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
     }));
 
     const {fetchScans} = await import("./fetchScans");
@@ -838,13 +761,6 @@ describe("fetchScans", () => {
         })),
       })),
       rewriteAzuriteUrl: vi.fn((url) => url),
-    }));
-
-    vi.doMock("@/lib/utils.server", () => ({
-      createErrorResult: vi.fn((error, userMsg) => ({
-        success: false,
-        userMessage: userMsg ?? error.message,
-      })),
     }));
 
     const {fetchScans} = await import("./fetchScans");
