@@ -5,8 +5,9 @@
 
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
+import {InvoiceAnalysisOptions} from "@/types/invoices";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {buildUserInformation} from "../../../../../../tests/helpers";
+import {buildInvoiceAnalysisOptions, buildUserInformation} from "../../../../../../tests/helpers";
 import {createTextResponse} from "../../../../../../tests/helpers/invoiceDomain";
 
 vi.mock("@/lib/actions/user/fetchUser");
@@ -16,7 +17,7 @@ const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
 
 describe("analyzeInvoice", () => {
   const invoiceId = "11111111-1111-4111-8111-111111111111";
-  const analysisOptions = {type: "detailed"} as const;
+  const analysisOptions = buildInvoiceAnalysisOptions(InvoiceAnalysisOptions.CompleteAnalysis);
 
   beforeEach(() => {
     vi.clearAllMocks();

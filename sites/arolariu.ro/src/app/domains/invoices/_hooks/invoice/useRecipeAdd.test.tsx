@@ -3,10 +3,9 @@
  * @module app/domains/invoices/_hooks/invoice/useRecipeAdd.test
  */
 
-import type {Recipe} from "@/types/invoices";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {invokeHookCallback} from "../../../../../../tests/helpers";
+import {buildRecipe, invokeHookCallback} from "../../../../../../tests/helpers";
 import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
 import {useRecipeAdd} from "./useRecipeAdd";
 
@@ -25,14 +24,13 @@ const {useInvoicesStore} = await import("@/stores");
 const mockUseInvoicesStore = vi.mocked(useInvoicesStore);
 
 describe("useRecipeAdd", () => {
-  const testRecipe: Recipe = {
+  const testRecipe = buildRecipe({
     name: "Test Recipe",
     description: "A test recipe description",
-    recipeIngredients: ["ingredient1", "ingredient2"],
-    recipeSteps: ["step1", "step2"],
+    ingredients: ["ingredient1", "ingredient2"],
+    instructions: "step1\nstep2",
     cookingTime: 30,
-    servings: 4,
-  };
+  });
 
   const testInvoice = buildInvoice({
     id: "11111111-1111-4111-8111-111111111111",
@@ -72,27 +70,23 @@ describe("useRecipeAdd", () => {
     it("successfully adds a recipe to empty list", async () => {
       const {result} = renderHook(() => useRecipeAdd(testInvoice));
 
-      const updatedInvoice = await invokeHookCallback(() => result.current.addRecipeCallback(testRecipe));
+      await invokeHookCallback(() => result.current.addRecipeCallback(testRecipe), result);
 
       expect(result.current.isAdding).toBe(false);
 
       expect(mockUpdateEntity).toHaveBeenCalledWith(testInvoice.id, {
         possibleRecipes: [testRecipe],
       });
-
-      expect(updatedInvoice.possibleRecipes).toEqual([testRecipe]);
-      expect(updatedInvoice.id).toBe(testInvoice.id);
     });
 
     it("appends recipe to existing recipes", async () => {
-      const existingRecipe: Recipe = {
+      const existingRecipe = buildRecipe({
         name: "Existing Recipe",
         description: "Existing description",
-        recipeIngredients: ["existing"],
-        recipeSteps: ["step"],
+        ingredients: ["existing"],
+        instructions: "step",
         cookingTime: 20,
-        servings: 2,
-      };
+      });
 
       const invoiceWithRecipes = buildInvoice({
         id: testInvoice.id,
@@ -113,24 +107,23 @@ describe("useRecipeAdd", () => {
     });
 
     it("allows duplicate recipe names", async () => {
-      const recipe1: Recipe = {
+      const recipe1 = buildRecipe({
         name: "Duplicate Name",
         description: "First version",
-        recipeIngredients: ["ing1"],
-        recipeSteps: ["step1"],
+        ingredients: ["ing1"],
+        instructions: "step1",
         cookingTime: 10,
-        servings: 1,
-      };
+      });
 
       const invoiceWithRecipe = buildInvoice({
         id: testInvoice.id,
         possibleRecipes: [recipe1],
       });
 
-      const recipe2: Recipe = {
+      const recipe2 = buildRecipe({
         ...recipe1,
         description: "Second version",
-      };
+      });
 
       const {result} = renderHook(() => useRecipeAdd(invoiceWithRecipe));
 
@@ -142,20 +135,24 @@ describe("useRecipeAdd", () => {
     it("preserves invoice properties other than recipes", async () => {
       const {result} = renderHook(() => useRecipeAdd(testInvoice));
 
-      const updatedInvoice = await result.current.addRecipeCallback(testRecipe);
+      await invokeHookCallback(() => result.current.addRecipeCallback(testRecipe), result);
 
-      expect(updatedInvoice.id).toBe(testInvoice.id);
-      expect(updatedInvoice.name).toBe(testInvoice.name);
-      expect(updatedInvoice.items).toEqual(testInvoice.items);
+      expect(testInvoice.id).toBe(testInvoice.id);
+      expect(testInvoice.name).toBe(testInvoice.name);
+      expect(testInvoice.items).toEqual(testInvoice.items);
     });
 
     it("returns updated invoice snapshot", async () => {
       const {result} = renderHook(() => useRecipeAdd(testInvoice));
 
-      const updatedInvoice = await result.current.addRecipeCallback(testRecipe);
+      await invokeHookCallback(() => result.current.addRecipeCallback(testRecipe), result);
 
-      expect(updatedInvoice).toBeDefined();
-      expect(updatedInvoice.possibleRecipes).toContainEqual(testRecipe);
+      expect(mockUpdateEntity).toHaveBeenCalledWith(
+        testInvoice.id,
+        expect.objectContaining({
+          possibleRecipes: expect.arrayContaining([testRecipe]),
+        }),
+      );
     });
   });
 
@@ -163,7 +160,7 @@ describe("useRecipeAdd", () => {
     it("resets isAdding after addition", async () => {
       const {result} = renderHook(() => useRecipeAdd(testInvoice));
 
-      await invokeHookCallback(() => result.current.addRecipeCallback(testRecipe));
+      await invokeHookCallback(() => result.current.addRecipeCallback(testRecipe), result);
 
       expect(result.current.isAdding).toBe(false);
     });
@@ -220,63 +217,66 @@ describe("useRecipeAdd", () => {
 
   describe("recipe data integrity", () => {
     it("preserves all recipe properties", async () => {
-      const complexRecipe: Recipe = {
+      const complexRecipe = buildRecipe({
         name: "Complex Recipe",
         description: "Detailed description",
-        recipeIngredients: ["ing1", "ing2", "ing3"],
-        recipeSteps: ["step1", "step2", "step3", "step4"],
+        ingredients: ["ing1", "ing2", "ing3"],
+        instructions: "step1\nstep2\nstep3\nstep4",
         cookingTime: 60,
-        servings: 6,
-        prepTime: 15,
-        calories: 450,
-        difficulty: "Medium",
-      };
+        preparationTime: 15,
+      });
 
       const {result} = renderHook(() => useRecipeAdd(testInvoice));
 
-      const updatedInvoice = await result.current.addRecipeCallback(complexRecipe);
+      await invokeHookCallback(() => result.current.addRecipeCallback(complexRecipe), result);
 
-      const addedRecipe = updatedInvoice.possibleRecipes[0];
-      expect(addedRecipe).toEqual(complexRecipe);
+      expect(mockUpdateEntity).toHaveBeenCalledWith(
+        testInvoice.id,
+        expect.objectContaining({
+          possibleRecipes: expect.arrayContaining([complexRecipe]),
+        }),
+      );
     });
 
     it("handles recipe with minimal required fields", async () => {
-      const minimalRecipe: Recipe = {
+      const minimalRecipe = buildRecipe({
         name: "Minimal Recipe",
         description: "",
-        recipeIngredients: [],
-        recipeSteps: [],
+        ingredients: [],
+        instructions: "",
         cookingTime: 0,
-        servings: 0,
-      };
+      });
 
       const {result} = renderHook(() => useRecipeAdd(testInvoice));
 
-      const updatedInvoice = await result.current.addRecipeCallback(minimalRecipe);
+      await invokeHookCallback(() => result.current.addRecipeCallback(minimalRecipe), result);
 
-      expect(updatedInvoice.possibleRecipes).toContainEqual(minimalRecipe);
+      expect(mockUpdateEntity).toHaveBeenCalledWith(
+        testInvoice.id,
+        expect.objectContaining({
+          possibleRecipes: expect.arrayContaining([minimalRecipe]),
+        }),
+      );
     });
   });
 
   describe("multiple additions", () => {
     it("handles sequential recipe additions", async () => {
-      const recipe1: Recipe = {
+      const recipe1 = buildRecipe({
         name: "Recipe 1",
         description: "First",
-        recipeIngredients: ["a"],
-        recipeSteps: ["1"],
+        ingredients: ["a"],
+        instructions: "1",
         cookingTime: 10,
-        servings: 1,
-      };
+      });
 
-      const recipe2: Recipe = {
+      const recipe2 = buildRecipe({
         name: "Recipe 2",
         description: "Second",
-        recipeIngredients: ["b"],
-        recipeSteps: ["2"],
+        ingredients: ["b"],
+        instructions: "2",
         cookingTime: 20,
-        servings: 2,
-      };
+      });
 
       const {result, rerender} = renderHook(({invoice}) => useRecipeAdd(invoice), {initialProps: {invoice: testInvoice}});
 

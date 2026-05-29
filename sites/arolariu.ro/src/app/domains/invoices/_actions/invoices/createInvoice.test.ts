@@ -6,7 +6,7 @@
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {buildUserInformation} from "../../../../../../tests/helpers";
+import {buildCreateInvoicePayload, buildInvoiceScan, buildUserInformation} from "../../../../../../tests/helpers";
 import {buildInvoice, createJsonResponse} from "../../../../../../tests/helpers/invoiceDomain";
 
 vi.mock("@/lib/actions/user/fetchUser");
@@ -22,14 +22,12 @@ describe("createInvoice", () => {
   });
 
   it("posts a creation payload with authenticated userIdentifier when missing", async () => {
-    const payload = {
-      initialScan: {
-        scanType: "JPEG" as const,
+    const payload = buildCreateInvoicePayload({
+      initialScan: buildInvoiceScan({
         location: "https://storage.test/scan.jpg",
-        metadata: {},
-      },
+      }),
       metadata: {isImportant: "false", requiresAnalysis: "true"},
-    };
+    });
 
     const result = await createInvoice(payload);
 
@@ -51,15 +49,13 @@ describe("createInvoice", () => {
   });
 
   it("preserves an explicit userIdentifier in the payload", async () => {
-    const payload = {
+    const payload = buildCreateInvoicePayload({
       userIdentifier: "custom-user-id",
-      initialScan: {
-        scanType: "JPEG" as const,
+      initialScan: buildInvoiceScan({
         location: "https://storage.test/scan.jpg",
-        metadata: {},
-      },
+      }),
       metadata: {isImportant: "false", requiresAnalysis: "true"},
-    };
+    });
 
     await createInvoice(payload);
 

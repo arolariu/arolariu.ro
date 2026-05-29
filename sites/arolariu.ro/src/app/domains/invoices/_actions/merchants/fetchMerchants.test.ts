@@ -20,8 +20,8 @@ const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
 describe("fetchMerchants", () => {
   const mockMerchants: Merchant[] = [
     buildMerchant({id: "merchant-1", name: "Supermarket A", category: MerchantCategory.SUPERMARKET}),
-    buildMerchant({id: "merchant-2", name: "Restaurant B", category: MerchantCategory.RESTAURANT}),
-    buildMerchant({id: "merchant-3", name: "Pharmacy C", category: MerchantCategory.PHARMACY}),
+    buildMerchant({id: "merchant-2", name: "Local Shop B", category: MerchantCategory.LOCAL_SHOP}),
+    buildMerchant({id: "merchant-3", name: "Online Store C", category: MerchantCategory.ONLINE_SHOP}),
   ];
 
   beforeEach(() => {
@@ -39,8 +39,8 @@ describe("fetchMerchants", () => {
     if (result.success) {
       expect(result.data).toHaveLength(3);
       expect(result.data[0]).toMatchObject({id: "merchant-1", name: "Supermarket A"});
-      expect(result.data[1]).toMatchObject({id: "merchant-2", name: "Restaurant B"});
-      expect(result.data[2]).toMatchObject({id: "merchant-3", name: "Pharmacy C"});
+      expect(result.data[1]).toMatchObject({id: "merchant-2", name: "Local Shop B"});
+      expect(result.data[2]).toMatchObject({id: "merchant-3", name: "Online Store C"});
     }
   });
 

@@ -6,7 +6,7 @@
 import type {Recipe} from "@/types/invoices";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {invokeHookCallback} from "../../../../../../tests/helpers";
+import {buildRecipe, invokeHookCallback} from "../../../../../../tests/helpers";
 import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
 import {useRecipeDelete} from "./useRecipeDelete";
 
@@ -26,30 +26,27 @@ const mockUseInvoicesStore = vi.mocked(useInvoicesStore);
 
 describe("useRecipeDelete", () => {
   const testRecipes: Recipe[] = [
-    {
+    buildRecipe({
       name: "Recipe 1",
       description: "First recipe",
-      recipeIngredients: ["ing1"],
-      recipeSteps: ["step1"],
+      ingredients: ["ing1"],
+      instructions: "step1",
       cookingTime: 10,
-      servings: 1,
-    },
-    {
+    }),
+    buildRecipe({
       name: "Recipe 2",
       description: "Second recipe",
-      recipeIngredients: ["ing2"],
-      recipeSteps: ["step2"],
+      ingredients: ["ing2"],
+      instructions: "step2",
       cookingTime: 20,
-      servings: 2,
-    },
-    {
+    }),
+    buildRecipe({
       name: "Recipe 3",
       description: "Third recipe",
-      recipeIngredients: ["ing3"],
-      recipeSteps: ["step3"],
+      ingredients: ["ing3"],
+      instructions: "step3",
       cookingTime: 30,
-      servings: 3,
-    },
+    }),
   ];
 
   const testInvoice = buildInvoice({
@@ -90,16 +87,13 @@ describe("useRecipeDelete", () => {
     it("successfully removes a recipe by name", async () => {
       const {result} = renderHook(() => useRecipeDelete(testInvoice));
 
-      const updatedInvoice = await invokeHookCallback(() => result.current.removeRecipeCallback("Recipe 2"));
+      await invokeHookCallback(() => result.current.removeRecipeCallback("Recipe 2"), result);
 
       expect(result.current.isDeleting).toBe(false);
 
       expect(mockUpdateEntity).toHaveBeenCalledWith(testInvoice.id, {
         possibleRecipes: [testRecipes[0], testRecipes[2]],
       });
-
-      expect(updatedInvoice.possibleRecipes).toHaveLength(2);
-      expect(updatedInvoice.possibleRecipes).not.toContainEqual(testRecipes[1]);
     });
 
     it("removes first recipe when matched", async () => {
@@ -185,7 +179,7 @@ describe("useRecipeDelete", () => {
     it("resets isDeleting after deletion", async () => {
       const {result} = renderHook(() => useRecipeDelete(testInvoice));
 
-      await invokeHookCallback(() => result.current.removeRecipeCallback("Recipe 1"));
+      await invokeHookCallback(() => result.current.removeRecipeCallback("Recipe 1"), result);
 
       expect(result.current.isDeleting).toBe(false);
     });
@@ -270,14 +264,13 @@ describe("useRecipeDelete", () => {
 
   describe("edge cases", () => {
     it("handles recipe with empty string name", async () => {
-      const emptyNameRecipe: Recipe = {
+      const emptyNameRecipe = buildRecipe({
         name: "",
         description: "Empty name recipe",
-        recipeIngredients: [],
-        recipeSteps: [],
+        ingredients: [],
+        instructions: "",
         cookingTime: 0,
-        servings: 0,
-      };
+      });
 
       const invoiceWithEmptyName = buildInvoice({
         id: testInvoice.id,
@@ -292,14 +285,13 @@ describe("useRecipeDelete", () => {
     });
 
     it("handles recipe names with special characters", async () => {
-      const specialRecipe: Recipe = {
+      const specialRecipe = buildRecipe({
         name: "Recipe w/ Special-Chars & Symbols!",
         description: "Special",
-        recipeIngredients: [],
-        recipeSteps: [],
+        ingredients: [],
+        instructions: "",
         cookingTime: 0,
-        servings: 0,
-      };
+      });
 
       const invoiceWithSpecial = buildInvoice({
         id: testInvoice.id,
@@ -315,14 +307,13 @@ describe("useRecipeDelete", () => {
 
     it("handles very long recipe names", async () => {
       const longName = "A".repeat(1000);
-      const longNameRecipe: Recipe = {
+      const longNameRecipe = buildRecipe({
         name: longName,
         description: "Long name",
-        recipeIngredients: [],
-        recipeSteps: [],
+        ingredients: [],
+        instructions: "",
         cookingTime: 0,
-        servings: 0,
-      };
+      });
 
       const invoiceWithLongName = buildInvoice({
         id: testInvoice.id,
