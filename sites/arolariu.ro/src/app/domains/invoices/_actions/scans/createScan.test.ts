@@ -8,8 +8,14 @@ import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
 import {ScanStatus, ScanType} from "@/types/scans";
+import type {BlockBlobClient} from "@azure/storage-blob";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {buildUserInformation} from "../../../../../../tests/helpers";
+import {
+  buildBlockBlobClientMock,
+  buildBlobServiceClientMock,
+  buildContainerClientMock,
+  buildUserInformation,
+} from "../../../../../../tests/helpers";
 import {createScan} from "./createScan";
 
 const mockFetchBFFUserFromAuthService = vi.mocked(fetchBFFUserFromAuthService);
@@ -42,34 +48,39 @@ function setupBlobClient({
   onUpload,
   throwOnContainer,
 }: BlobClientOptions = {}): void {
-  mockCreateBlobClient.mockResolvedValue({
-    getContainerClient: vi.fn(() => {
-      if (throwOnContainer !== undefined) {
-        throw throwOnContainer;
-      }
+  if (throwOnContainer !== undefined) {
+    mockCreateBlobClient.mockRejectedValue(throwOnContainer);
+    return;
+  }
 
-      return {
-        getBlockBlobClient: vi.fn((blobName: string) => {
-          onBlobName?.(blobName);
+  const blockBlobClient = buildBlockBlobClientMock({blobUrl, uploadStatus});
 
-          return {
-            url: blobUrl,
-            uploadData: vi.fn((_data: ArrayBuffer, options: UploadOptions) => {
-              onUpload?.(options);
-              return Promise.resolve({_response: {status: uploadStatus}});
-            }),
-          };
-        }),
-      };
-    }),
+  // Wrap uploadData to capture calls
+  if (onUpload) {
+    const originalUploadData = blockBlobClient.uploadData;
+    blockBlobClient.uploadData = vi.fn(async (data: Parameters<typeof originalUploadData>[0], options: UploadOptions) => {
+      onUpload(options);
+      return originalUploadData(data, options);
+    });
+  }
+
+  const containerClient = buildContainerClientMock({blobUrl, uploadStatus});
+  
+  // Wrap getBlockBlobClient to capture blob names
+  containerClient.getBlockBlobClient = vi.fn((blobName: string) => {
+    onBlobName?.(blobName);
+    return blockBlobClient as BlockBlobClient;
   });
+
+  const blobServiceClient = buildBlobServiceClientMock(containerClient);
+  mockCreateBlobClient.mockResolvedValue(blobServiceClient);
 }
 
 describe("createScan", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mockWithSpan.mockImplementation((_name, fn) => fn());
+    mockWithSpan.mockImplementation((_name, fn) => (fn as () => Promise<unknown>)());
     mockAddSpanEvent.mockImplementation(() => undefined);
     mockLogWithTrace.mockImplementation(() => undefined);
     mockFetchBFFUserFromAuthService.mockResolvedValue(buildUserInformation({userIdentifier: "user-123"}));
@@ -203,9 +214,9 @@ describe("createScan", () => {
     });
 
     expect(capturedMetadata).toHaveLength(1);
-    expect(capturedMetadata[0]?.originalFileName).toBe("my-original-receipt.jpg");
-    expect(capturedMetadata[0]?.status).toBe(ScanStatus.READY);
-    expect(capturedMetadata[0]?.userIdentifier).toBe("user-meta");
+    expect(capturedMetadata[0]?.["originalFileName"]).toBe("my-original-receipt.jpg");
+    expect(capturedMetadata[0]?.["status"]).toBe(ScanStatus.READY);
+    expect(capturedMetadata[0]?.["userIdentifier"]).toBe("user-meta");
   });
 
   it("should use bin extension for filenames without a usable extension", async () => {

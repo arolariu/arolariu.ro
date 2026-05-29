@@ -9,7 +9,12 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
 import {revalidatePath} from "next/cache";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {buildUserInformation} from "../../../../../../tests/helpers";
+import {
+  buildBlockBlobClientMock,
+  buildBlobServiceClientMock,
+  buildContainerClientMock,
+  buildUserInformation,
+} from "../../../../../../tests/helpers";
 import {updateScan} from "./updateScan";
 
 const mockFetchBFFUserFromAuthService = vi.mocked(fetchBFFUserFromAuthService);
@@ -41,25 +46,27 @@ function setupBlobClient({
   uploadStatus = 201,
   onUpload,
 }: BlobClientOptions = {}): void {
-  mockCreateBlobClient.mockResolvedValue({
-    getContainerClient: vi.fn(() => ({
-      getBlockBlobClient: vi.fn(() => ({
-        url: blobUrl,
-        getProperties: vi.fn(() => Promise.resolve({metadata: existingMetadata})),
-        uploadData: vi.fn((_data: ArrayBuffer, options: UploadOptions) => {
-          onUpload?.(options);
-          return Promise.resolve({_response: {status: uploadStatus}});
-        }),
-      })),
-    })),
-  });
+  const blockBlobClient = buildBlockBlobClientMock({blobUrl, metadata: existingMetadata, uploadStatus});
+
+  // Wrap uploadData to capture calls
+  if (onUpload) {
+    const originalUploadData = blockBlobClient.uploadData;
+    blockBlobClient.uploadData = vi.fn(async (data: Parameters<typeof originalUploadData>[0], options: UploadOptions) => {
+      onUpload(options);
+      return originalUploadData(data, options);
+    });
+  }
+
+  const containerClient = buildContainerClientMock({blobUrl, metadata: existingMetadata, uploadStatus});
+  const blobServiceClient = buildBlobServiceClientMock(containerClient);
+  mockCreateBlobClient.mockResolvedValue(blobServiceClient);
 }
 
 describe("updateScan", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mockWithSpan.mockImplementation((_name, fn) => fn());
+    mockWithSpan.mockImplementation((_name, fn) => (fn as () => Promise<unknown>)());
     mockAddSpanEvent.mockImplementation(() => undefined);
     mockLogWithTrace.mockImplementation(() => undefined);
     mockFetchBFFUserFromAuthService.mockResolvedValue(buildUserInformation({userIdentifier: "user-123"}));
@@ -113,11 +120,11 @@ describe("updateScan", () => {
     });
 
     expect(capturedMetadata).toHaveLength(1);
-    expect(capturedMetadata[0]?.scanId).toBe("scan_123");
-    expect(capturedMetadata[0]?.customField).toBe("preserved");
-    expect(capturedMetadata[0]?.rotated).toBe("90");
-    expect(capturedMetadata[0]?.lastModifiedAt).toBeTruthy();
-    expect(capturedMetadata[0]?.lastModifiedBy).toBe("user-123");
+    expect(capturedMetadata[0]?.["scanId"]).toBe("scan_123");
+    expect(capturedMetadata[0]?.["customField"]).toBe("preserved");
+    expect(capturedMetadata[0]?.["rotated"]).toBe("90");
+    expect(capturedMetadata[0]?.["lastModifiedAt"]).toBeTruthy();
+    expect(capturedMetadata[0]?.["lastModifiedBy"]).toBe("user-123");
   });
 
   it("should update blobs that do not have existing metadata", async () => {
@@ -136,8 +143,8 @@ describe("updateScan", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(capturedMetadata[0]?.rotated).toBe("90");
-    expect(capturedMetadata[0]?.lastModifiedBy).toBe("user-empty-metadata");
+    expect(capturedMetadata[0]?.["rotated"]).toBe("90");
+    expect(capturedMetadata[0]?.["lastModifiedBy"]).toBe("user-empty-metadata");
   });
 
   it("should handle authentication failures", async () => {
@@ -224,6 +231,6 @@ describe("updateScan", () => {
       mimeType: "application/pdf",
     });
 
-    expect(capturedHeaders[0]?.blobContentType).toBe("application/pdf");
+    expect(capturedHeaders[0]?.["blobContentType"]).toBe("application/pdf");
   });
 });

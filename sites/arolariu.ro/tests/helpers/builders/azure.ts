@@ -61,7 +61,7 @@ export type TestBlobServiceClient = Pick<
  * Creates a mock BlockBlobClient for testing.
  *
  * @param options - Configuration for the mock
- * @returns A test double with url, getProperties, and uploadData
+ * @returns A BlockBlobClient test double with url, getProperties, and uploadData
  *
  * @example
  * ```typescript
@@ -76,7 +76,7 @@ export type TestBlobServiceClient = Pick<
  */
 export function buildBlockBlobClientMock(
   options: AzureBlobMockOptions = {},
-): TestBlockBlobClient {
+): BlockBlobClient {
   return {
     url: options.blobUrl ?? "https://storage.test/blob.jpg",
     getProperties: vi.fn().mockResolvedValue({
@@ -87,14 +87,14 @@ export function buildBlockBlobClientMock(
         status: options.uploadStatus ?? 201,
       },
     }),
-  };
+  } as unknown as BlockBlobClient;
 }
 
 /**
  * Creates a mock ContainerClient for testing.
  *
  * @param options - Configuration for the underlying BlockBlobClient
- * @returns A test double with getBlockBlobClient method
+ * @returns A ContainerClient test double with getBlockBlobClient method
  *
  * @example
  * ```typescript
@@ -108,19 +108,19 @@ export function buildBlockBlobClientMock(
  */
 export function buildContainerClientMock(
   options: AzureBlobMockOptions = {},
-): TestContainerClient {
+): ContainerClient {
   const blockBlobClient = buildBlockBlobClientMock(options);
 
   return {
-    getBlockBlobClient: vi.fn(() => blockBlobClient as BlockBlobClient),
-  };
+    getBlockBlobClient: vi.fn(() => blockBlobClient),
+  } as unknown as ContainerClient;
 }
 
 /**
  * Creates a mock BlobServiceClient for testing.
  *
  * @param containerClient - Optional container client to return; defaults to a new mock
- * @returns A test double with getContainerClient method
+ * @returns A BlobServiceClient test double with getContainerClient method
  *
  * @example
  * ```typescript
@@ -132,9 +132,9 @@ export function buildContainerClientMock(
  * ```
  */
 export function buildBlobServiceClientMock(
-  containerClient: TestContainerClient = buildContainerClientMock(),
-): TestBlobServiceClient {
+  containerClient: ContainerClient = buildContainerClientMock(),
+): BlobServiceClient {
   return {
-    getContainerClient: vi.fn(() => containerClient as ContainerClient),
-  };
+    getContainerClient: vi.fn(() => containerClient),
+  } as unknown as BlobServiceClient;
 }

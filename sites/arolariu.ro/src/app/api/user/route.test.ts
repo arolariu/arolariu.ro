@@ -148,7 +148,7 @@ describe("GET /api/user", () => {
     expect(exp - iat).toBe(300);
   });
 
-  it("should handle null token from Clerk auth", async () => {
+  it("should handle empty token from JWT generation", async () => {
     const mockUser = {
       id: "user-456",
       firstName: "Jane",
@@ -356,13 +356,13 @@ describe("GET /api/user", () => {
     );
   });
 
-  it("should throw and fallback to guest when jwtSecret is null", async () => {
+  it("should throw and fallback to guest when jwtSecret is falsy", async () => {
     mockAuth.mockResolvedValue({
       isAuthenticated: false,
       userId: null,
     });
-    // fetchApiJwtSecret returns null → the guard at line 151 throws
-    mockFetchApiJwtSecret.mockResolvedValue(null);
+    // fetchApiJwtSecret returns empty string → the guard at line 151 throws
+    mockFetchApiJwtSecret.mockResolvedValue("");
 
     const response = await GET();
 

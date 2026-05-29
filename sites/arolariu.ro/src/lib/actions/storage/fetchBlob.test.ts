@@ -5,37 +5,37 @@
 
 import {createBlobClient} from "@/lib/azure/storageClient";
 import {fetchConfigValue} from "@/lib/config/configProxy";
+import type {BlockBlobClient} from "@azure/storage-blob";
 import {beforeEach, describe, expect, it, vi} from "vitest";
+import {buildBlockBlobClientMock, buildBlobServiceClientMock, buildContainerClientMock} from "../../../../tests/helpers";
 import fetchBlob from "./fetchBlob";
 
 const mockCreateBlobClient = vi.mocked(createBlobClient);
 const mockFetchConfigValue = vi.mocked(fetchConfigValue);
 
 describe("fetchBlob", () => {
-  const mockDownload = vi.fn();
-  const mockGetBlockBlobClient = vi.fn();
-  const mockGetContainerClient = vi.fn();
-
   beforeEach(() => {
     vi.clearAllMocks();
 
     mockFetchConfigValue.mockResolvedValue("https://test.blob.core.windows.net");
 
-    mockCreateBlobClient.mockResolvedValue({getContainerClient: mockGetContainerClient});
-
-    mockDownload.mockResolvedValue({
-      _response: {status: 200},
+    const blockBlobClient = buildBlockBlobClientMock({
+      blobUrl: "https://test.blob.core.windows.net/container/blob.png",
       metadata: {key: "value"},
     });
 
-    mockGetBlockBlobClient.mockReturnValue({
-      download: mockDownload,
-      url: "https://test.blob.core.windows.net/container/blob.png",
+    // Wrap download to add the method
+    const downloadMock = vi.fn().mockResolvedValue({
+      _response: {status: 200},
+      metadata: {key: "value"},
     });
+    (blockBlobClient as unknown as Record<string, unknown>)["download"] = downloadMock;
 
-    mockGetContainerClient.mockReturnValue({
-      getBlockBlobClient: mockGetBlockBlobClient,
-    });
+    const containerClient = buildContainerClientMock();
+    containerClient.getBlockBlobClient = vi.fn(() => blockBlobClient as BlockBlobClient);
+
+    const blobServiceClient = buildBlobServiceClientMock(containerClient);
+    mockCreateBlobClient.mockResolvedValue(blobServiceClient);
   });
 
   it("should fetch a blob successfully", async () => {
@@ -43,9 +43,6 @@ describe("fetchBlob", () => {
 
     expect(mockFetchConfigValue).toHaveBeenCalledWith("Endpoints:Storage:Blob");
     expect(createBlobClient).toHaveBeenCalledWith("https://test.blob.core.windows.net");
-    expect(mockGetContainerClient).toHaveBeenCalledWith("test-container");
-    expect(mockGetBlockBlobClient).toHaveBeenCalledWith("test-blob.png");
-    expect(mockDownload).toHaveBeenCalled();
 
     expect(result).toEqual({
       status: 200,

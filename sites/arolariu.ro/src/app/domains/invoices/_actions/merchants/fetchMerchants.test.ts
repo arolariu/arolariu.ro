@@ -8,8 +8,8 @@ import {fetchWithTimeout} from "@/lib/utils.server";
 import type {Merchant} from "@/types/invoices";
 import {MerchantCategory} from "@/types/invoices";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {buildUserInformation} from "../../../../../../tests/helpers";
-import {buildMerchant, createJsonResponse, createTextResponse} from "../../../../../../tests/helpers/invoiceDomain";
+import {buildUserInformation, jsonResponse, textResponse} from "../../../../../../tests/helpers";
+import {buildMerchant} from "../../../../../../tests/helpers/invoiceDomain";
 
 vi.mock("@/lib/actions/user/fetchUser");
 
@@ -27,9 +27,7 @@ describe("fetchMerchants", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetchUser.mockResolvedValue(buildUserInformation({userIdentifier: "user-1", userJwt: "jwt-1"}));
-    mockFetchWithTimeout.mockResolvedValue(
-      createJsonResponse(mockMerchants, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(jsonResponse(mockMerchants, {status: 200}));
   });
 
   it("fetches all merchants successfully", async () => {
@@ -75,7 +73,7 @@ describe("fetchMerchants", () => {
   });
 
   it("handles an empty merchant list gracefully", async () => {
-    mockFetchWithTimeout.mockResolvedValue(createJsonResponse([], {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+    mockFetchWithTimeout.mockResolvedValue(jsonResponse([], {status: 200}));
 
     const result = await fetchMerchants();
 
@@ -87,9 +85,7 @@ describe("fetchMerchants", () => {
   });
 
   it("returns 'No merchants found' for HTTP 404 responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Not found", {status: 404, statusText: "Not Found"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(textResponse("Not found", {status: 404, statusText: "Not Found"}));
 
     const result = await fetchMerchants();
 
@@ -102,11 +98,7 @@ describe("fetchMerchants", () => {
   });
 
   it("returns a server error message for HTTP 500 responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Internal server error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
-    );
+    mockFetchWithTimeout.mockResolvedValue(textResponse("Internal server error", {status: 500, statusText: "Internal Server Error"}));
 
     const result = await fetchMerchants();
 
@@ -119,9 +111,7 @@ describe("fetchMerchants", () => {
   });
 
   it("returns a server error message for HTTP 502 responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Bad gateway", {status: 502, statusText: "Bad Gateway"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(textResponse("Bad gateway", {status: 502, statusText: "Bad Gateway"}));
 
     const result = await fetchMerchants();
 
@@ -133,11 +123,7 @@ describe("fetchMerchants", () => {
   });
 
   it("returns a server error message for HTTP 503 responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Service unavailable", {status: 503, statusText: "Service Unavailable"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
-    );
+    mockFetchWithTimeout.mockResolvedValue(textResponse("Service unavailable", {status: 503, statusText: "Service Unavailable"}));
 
     const result = await fetchMerchants();
 
@@ -149,9 +135,7 @@ describe("fetchMerchants", () => {
   });
 
   it("returns a generic error message for HTTP 400 responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Bad request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(textResponse("Bad request", {status: 400, statusText: "Bad Request"}));
 
     const result = await fetchMerchants();
 
@@ -163,9 +147,7 @@ describe("fetchMerchants", () => {
   });
 
   it("returns a generic error message for HTTP 401 responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Unauthorized", {status: 401, statusText: "Unauthorized"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(textResponse("Unauthorized", {status: 401, statusText: "Unauthorized"}));
 
     const result = await fetchMerchants();
 
@@ -177,9 +159,7 @@ describe("fetchMerchants", () => {
   });
 
   it("returns a generic error message for HTTP 403 responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Forbidden", {status: 403, statusText: "Forbidden"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(textResponse("Forbidden", {status: 403, statusText: "Forbidden"}));
 
     const result = await fetchMerchants();
 
@@ -237,9 +217,7 @@ describe("fetchMerchants", () => {
         description: "A detailed merchant description",
       }),
     ];
-    mockFetchWithTimeout.mockResolvedValue(
-      createJsonResponse(detailedMerchants, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(jsonResponse(detailedMerchants, {status: 200}));
 
     const result = await fetchMerchants();
 
@@ -255,16 +233,12 @@ describe("fetchMerchants", () => {
   });
 
   it("handles response.json() parsing errors", async () => {
-    const malformedResponse = {
-      ok: true,
-      status: 200,
-      statusText: "OK",
-      json: async () => {
-        throw new Error("JSON parse error");
-      },
-      text: async () => "",
-    } as Response;
-    mockFetchWithTimeout.mockResolvedValue(malformedResponse as Awaited<ReturnType<typeof fetchWithTimeout>>);
+    const malformedResponse = new Response("", {status: 200, statusText: "OK"});
+    // Override json to throw
+    malformedResponse.json = async () => {
+      throw new Error("JSON parse error");
+    };
+    mockFetchWithTimeout.mockResolvedValue(malformedResponse);
 
     const result = await fetchMerchants();
 
@@ -276,16 +250,12 @@ describe("fetchMerchants", () => {
   });
 
   it("handles response.text() parsing errors for error responses", async () => {
-    const errorResponse = {
-      ok: false,
-      status: 400,
-      statusText: "Bad Request",
-      json: async () => ({}),
-      text: async () => {
-        throw new Error("Text parse error");
-      },
-    } as Response;
-    mockFetchWithTimeout.mockResolvedValue(errorResponse as Awaited<ReturnType<typeof fetchWithTimeout>>);
+    const errorResponse = new Response("", {status: 400, statusText: "Bad Request"});
+    // Override text to throw
+    errorResponse.text = async () => {
+      throw new Error("Text parse error");
+    };
+    mockFetchWithTimeout.mockResolvedValue(errorResponse);
 
     const result = await fetchMerchants();
 
@@ -304,9 +274,7 @@ describe("fetchMerchants", () => {
         lastUpdatedAt: new Date("2026-01-02T00:00:00.000Z"),
       }),
     ];
-    mockFetchWithTimeout.mockResolvedValue(
-      createJsonResponse(fullMerchants, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(jsonResponse(fullMerchants, {status: 200}));
 
     const result = await fetchMerchants();
 
@@ -327,9 +295,7 @@ describe("fetchMerchants", () => {
         name: `Merchant ${i}`,
       }),
     );
-    mockFetchWithTimeout.mockResolvedValue(
-      createJsonResponse(largeMerchantList, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(jsonResponse(largeMerchantList, {status: 200}));
 
     const result = await fetchMerchants();
 
