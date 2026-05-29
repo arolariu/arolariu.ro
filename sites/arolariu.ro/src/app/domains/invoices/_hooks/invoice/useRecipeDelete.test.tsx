@@ -87,7 +87,7 @@ describe("useRecipeDelete", () => {
     it("successfully removes a recipe by name", async () => {
       const {result} = renderHook(() => useRecipeDelete(testInvoice));
 
-      await invokeHookCallback(() => result.current.removeRecipeCallback("Recipe 2"), result);
+      await invokeHookCallback(result, (current) => current.removeRecipeCallback("Recipe 2"));
 
       expect(result.current.isDeleting).toBe(false);
 
@@ -179,7 +179,7 @@ describe("useRecipeDelete", () => {
     it("resets isDeleting after deletion", async () => {
       const {result} = renderHook(() => useRecipeDelete(testInvoice));
 
-      await invokeHookCallback(() => result.current.removeRecipeCallback("Recipe 1"), result);
+      await invokeHookCallback(result, (current) => current.removeRecipeCallback("Recipe 1"));
 
       expect(result.current.isDeleting).toBe(false);
     });

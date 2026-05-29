@@ -74,9 +74,10 @@ describe("useProductRemove", () => {
   });
 
   it("removes a product server-side and mirrors exact-name removal locally", async () => {
-    const {result} = renderHook(() => useProductRemove(invoice));
+    const hookResult = renderHook(() => useProductRemove(invoice));
+    const {result} = hookResult;
 
-    await invokeHookCallback(() => result.current.removeProductCallback(productToRemove.name));
+    await invokeHookCallback(hookResult, (current) => current.removeProductCallback(productToRemove.name));
 
     expect(mockDeleteInvoiceProduct).toHaveBeenCalledWith({
       invoiceId: invoice.id,

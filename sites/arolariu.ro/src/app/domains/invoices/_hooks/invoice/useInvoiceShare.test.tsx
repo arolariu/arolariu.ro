@@ -132,10 +132,11 @@ describe("useInvoiceShare", () => {
       const successResult = actionSuccess<Invoice>(updatedInvoice);
       mockPatchInvoice.mockReturnValue(successResult);
 
-      const {result} = renderHook(() => useInvoiceShare(mockOnComplete));
+      const hookResult = renderHook(() => useInvoiceShare(mockOnComplete));
+      const {result} = hookResult;
 
-      const updatedResult = await invokeHookCallback(() =>
-        result.current.shareInvoiceCallback(testInvoiceId, {
+      const updatedResult = await invokeHookCallback(hookResult, (current) =>
+        current.shareInvoiceCallback(testInvoiceId, {
           type: "togglePublic",
         }),
       );
@@ -271,7 +272,8 @@ describe("useInvoiceShare", () => {
       const emailResult = {success: true as const};
       mockSendEmail.mockResolvedValue(emailResult);
 
-      const {result} = renderHook(() => useInvoiceShare());
+      const hookResult = renderHook(() => useInvoiceShare());
+      const {result} = hookResult;
 
       const emailAction = {
         type: "sendEmail" as const,
@@ -281,7 +283,7 @@ describe("useInvoiceShare", () => {
         replyTo: "sender@example.com",
       };
 
-      const emailActionResult = await invokeHookCallback(() => result.current.shareInvoiceCallback(testInvoiceId, emailAction));
+      const emailActionResult = await invokeHookCallback(hookResult, (current) => current.shareInvoiceCallback(testInvoiceId, emailAction));
 
       expect(result.current.isSharing).toBe(false);
 
@@ -543,9 +545,10 @@ describe("useInvoiceShare", () => {
         throw new Error("Store error");
       });
 
-      const {result} = renderHook(() => useInvoiceShare());
+      const hookResult = renderHook(() => useInvoiceShare());
+      const {result} = hookResult;
 
-      const failureResult = await invokeHookCallback(() => result.current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"}));
+      const failureResult = await invokeHookCallback(hookResult, (current) => current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"}));
 
       expect(failureResult).toBeNull();
       expect(result.current.isSharing).toBe(false);

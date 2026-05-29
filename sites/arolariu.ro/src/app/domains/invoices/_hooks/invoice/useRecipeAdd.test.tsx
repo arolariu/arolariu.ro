@@ -70,7 +70,7 @@ describe("useRecipeAdd", () => {
     it("successfully adds a recipe to empty list", async () => {
       const {result} = renderHook(() => useRecipeAdd(testInvoice));
 
-      await invokeHookCallback(() => result.current.addRecipeCallback(testRecipe), result);
+      await invokeHookCallback(result, (current) => current.addRecipeCallback(testRecipe));
 
       expect(result.current.isAdding).toBe(false);
 
@@ -135,7 +135,7 @@ describe("useRecipeAdd", () => {
     it("preserves invoice properties other than recipes", async () => {
       const {result} = renderHook(() => useRecipeAdd(testInvoice));
 
-      await invokeHookCallback(() => result.current.addRecipeCallback(testRecipe), result);
+      await invokeHookCallback(result, (current) => current.addRecipeCallback(testRecipe));
 
       expect(testInvoice.id).toBe(testInvoice.id);
       expect(testInvoice.name).toBe(testInvoice.name);
@@ -145,7 +145,7 @@ describe("useRecipeAdd", () => {
     it("returns updated invoice snapshot", async () => {
       const {result} = renderHook(() => useRecipeAdd(testInvoice));
 
-      await invokeHookCallback(() => result.current.addRecipeCallback(testRecipe), result);
+      await invokeHookCallback(result, (current) => current.addRecipeCallback(testRecipe));
 
       expect(mockUpdateEntity).toHaveBeenCalledWith(
         testInvoice.id,
@@ -160,7 +160,7 @@ describe("useRecipeAdd", () => {
     it("resets isAdding after addition", async () => {
       const {result} = renderHook(() => useRecipeAdd(testInvoice));
 
-      await invokeHookCallback(() => result.current.addRecipeCallback(testRecipe), result);
+      await invokeHookCallback(result, (current) => current.addRecipeCallback(testRecipe));
 
       expect(result.current.isAdding).toBe(false);
     });
@@ -228,7 +228,7 @@ describe("useRecipeAdd", () => {
 
       const {result} = renderHook(() => useRecipeAdd(testInvoice));
 
-      await invokeHookCallback(() => result.current.addRecipeCallback(complexRecipe), result);
+      await invokeHookCallback(result, (current) => current.addRecipeCallback(complexRecipe));
 
       expect(mockUpdateEntity).toHaveBeenCalledWith(
         testInvoice.id,
@@ -249,7 +249,7 @@ describe("useRecipeAdd", () => {
 
       const {result} = renderHook(() => useRecipeAdd(testInvoice));
 
-      await invokeHookCallback(() => result.current.addRecipeCallback(minimalRecipe), result);
+      await invokeHookCallback(result, (current) => current.addRecipeCallback(minimalRecipe));
 
       expect(mockUpdateEntity).toHaveBeenCalledWith(
         testInvoice.id,

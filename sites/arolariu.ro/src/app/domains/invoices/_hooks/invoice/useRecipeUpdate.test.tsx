@@ -93,7 +93,7 @@ describe("useRecipeUpdate", () => {
 
       const {result} = renderHook(() => useRecipeUpdate(testInvoice));
 
-      await invokeHookCallback(() => result.current.updateRecipeCallback("Recipe 2", updatedRecipe), result);
+      await invokeHookCallback(result, (current) => current.updateRecipeCallback("Recipe 2", updatedRecipe));
 
       expect(result.current.isUpdating).toBe(false);
 
@@ -249,7 +249,7 @@ describe("useRecipeUpdate", () => {
 
       const {result} = renderHook(() => useRecipeUpdate(testInvoice));
 
-      await invokeHookCallback(() => result.current.updateRecipeCallback("Recipe 1", updatedRecipe), result);
+      await invokeHookCallback(result, (current) => current.updateRecipeCallback("Recipe 1", updatedRecipe));
 
       expect(result.current.isUpdating).toBe(false);
     });

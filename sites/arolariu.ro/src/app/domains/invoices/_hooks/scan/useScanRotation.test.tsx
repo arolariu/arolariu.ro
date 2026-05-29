@@ -212,9 +212,10 @@ describe("useScanRotation", () => {
   });
 
   it("rejects scans without blob URLs before starting rotation", async () => {
-    const {result} = renderHook(() => useScanRotation(buildCachedScan({blobUrl: ""})));
+    const hookResult = renderHook(() => useScanRotation(buildCachedScan({blobUrl: ""})));
+    const {result} = hookResult;
 
-    await invokeHookCallback(() => result.current.rotateScanCallback("cw"));
+    await invokeHookCallback(hookResult, (current) => current.rotateScanCallback("cw"));
 
     expect(mockToast.error).toHaveBeenCalledWith("Rotation unsupported");
     expect(mockFetch).not.toHaveBeenCalled();
@@ -226,9 +227,9 @@ describe("useScanRotation", () => {
       mimeType: "application/pdf",
       scanType: ScanType.PDF,
     });
-    const {result} = renderHook(() => useScanRotation(pdfScan));
+    const hookResult = renderHook(() => useScanRotation(pdfScan));
 
-    await invokeHookCallback(() => result.current.rotateScanCallback("ccw"));
+    await invokeHookCallback(hookResult, (current) => current.rotateScanCallback("ccw"));
 
     expect(mockToast.error).toHaveBeenCalledWith("Rotation unsupported");
     expect(mockFetch).not.toHaveBeenCalled();
@@ -236,9 +237,10 @@ describe("useScanRotation", () => {
 
   it("rotates clockwise, uploads the JPEG, and cache-busts the local scan URL", async () => {
     const harness = stubCanvas();
-    const {result} = renderHook(() => useScanRotation(testScan));
+    const hookResult = renderHook(() => useScanRotation(testScan));
+    const {result} = hookResult;
 
-    await invokeHookCallback(() => result.current.rotateScanCallback("cw"));
+    await invokeHookCallback(hookResult, (current) => current.rotateScanCallback("cw"));
 
     expect(mockFetch).toHaveBeenCalledWith(testScan.blobUrl);
     expect(mockCreateObjectURL).toHaveBeenCalled();
@@ -262,9 +264,9 @@ describe("useScanRotation", () => {
 
   it("rotates counterclockwise with a negative right-angle rotation", async () => {
     const harness = stubCanvas();
-    const {result} = renderHook(() => useScanRotation(testScan));
+    const hookResult = renderHook(() => useScanRotation(testScan));
 
-    await invokeHookCallback(() => result.current.rotateScanCallback("ccw"));
+    await invokeHookCallback(hookResult, (current) => current.rotateScanCallback("ccw"));
 
     expect(harness.context.rotate).toHaveBeenCalledWith(-Math.PI / 2);
     expect(mockUpdateScanBlobUrl).toHaveBeenCalledWith(testScan.id, `${rotatedUrl}?t=123456`);
@@ -303,9 +305,9 @@ describe("useScanRotation", () => {
       success: false,
       error: {message: "upload failed"},
     });
-    const {result} = renderHook(() => useScanRotation(testScan));
+    const hookResult = renderHook(() => useScanRotation(testScan));
 
-    await invokeHookCallback(() => result.current.rotateScanCallback("cw"));
+    await invokeHookCallback(hookResult, (current) => current.rotateScanCallback("cw"));
 
     expect(mockToast.error).toHaveBeenCalledWith("Scan rotation failed");
     expect(mockUpdateScanBlobUrl).not.toHaveBeenCalled();
@@ -315,9 +317,10 @@ describe("useScanRotation", () => {
   it("handles fetch failures", async () => {
     const fetchError = new Error("fetch failed");
     mockFetch.mockRejectedValue(fetchError);
-    const {result} = renderHook(() => useScanRotation(testScan));
+    const hookResult = renderHook(() => useScanRotation(testScan));
+    const {result} = hookResult;
 
-    await invokeHookCallback(() => result.current.rotateScanCallback("cw"));
+    await invokeHookCallback(hookResult, (current) => current.rotateScanCallback("cw"));
 
     expect(mockToast.error).toHaveBeenCalledWith("Scan rotation failed");
     expect(consoleErrorSpy).toHaveBeenCalledWith("Error rotating scan:", fetchError);
@@ -327,9 +330,9 @@ describe("useScanRotation", () => {
 
   it("handles image load failures", async () => {
     stubImageLoad("error");
-    const {result} = renderHook(() => useScanRotation(testScan));
+    const hookResult = renderHook(() => useScanRotation(testScan));
 
-    await invokeHookCallback(() => result.current.rotateScanCallback("cw"));
+    await invokeHookCallback(hookResult, (current) => current.rotateScanCallback("cw"));
 
     expect(mockToast.error).toHaveBeenCalledWith("Scan rotation failed");
     expect(consoleErrorSpy).toHaveBeenCalledWith("Error rotating scan:", expect.any(Error));
@@ -338,9 +341,9 @@ describe("useScanRotation", () => {
 
   it("handles missing canvas context", async () => {
     stubCanvas({hasContext: false});
-    const {result} = renderHook(() => useScanRotation(testScan));
+    const hookResult = renderHook(() => useScanRotation(testScan));
 
-    await invokeHookCallback(() => result.current.rotateScanCallback("cw"));
+    await invokeHookCallback(hookResult, (current) => current.rotateScanCallback("cw"));
 
     expect(mockToast.error).toHaveBeenCalledWith("Scan rotation failed");
     expect(mockUpdateScan).not.toHaveBeenCalled();
@@ -348,9 +351,9 @@ describe("useScanRotation", () => {
 
   it("handles canvas blob conversion failures", async () => {
     stubCanvas({emitsBlob: false});
-    const {result} = renderHook(() => useScanRotation(testScan));
+    const hookResult = renderHook(() => useScanRotation(testScan));
 
-    await invokeHookCallback(() => result.current.rotateScanCallback("cw"));
+    await invokeHookCallback(hookResult, (current) => current.rotateScanCallback("cw"));
 
     expect(mockToast.error).toHaveBeenCalledWith("Scan rotation failed");
     expect(mockUpdateScan).not.toHaveBeenCalled();
@@ -358,9 +361,9 @@ describe("useScanRotation", () => {
 
   it("handles FileReader failures while encoding the rotated blob", async () => {
     stubFileReader("error");
-    const {result} = renderHook(() => useScanRotation(testScan));
+    const hookResult = renderHook(() => useScanRotation(testScan));
 
-    await invokeHookCallback(() => result.current.rotateScanCallback("cw"));
+    await invokeHookCallback(hookResult, (current) => current.rotateScanCallback("cw"));
 
     expect(mockToast.error).toHaveBeenCalledWith("Scan rotation failed");
     expect(mockUpdateScan).not.toHaveBeenCalled();

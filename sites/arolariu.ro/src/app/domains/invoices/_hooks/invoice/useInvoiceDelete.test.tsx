@@ -101,9 +101,10 @@ describe("useInvoiceDelete", () => {
     it("successfully deletes an invoice", async () => {
       mockDeleteInvoice.mockReturnValueOnce(actionSuccess<void>(undefined));
 
-      const {result} = renderHook(() => useInvoiceDelete());
+      const hookResult = renderHook(() => useInvoiceDelete());
+      const {result} = hookResult;
 
-      await invokeHookCallback(() => result.current.deleteInvoiceCallback(testInvoiceId));
+      await invokeHookCallback(hookResult, (current) => current.deleteInvoiceCallback(testInvoiceId));
 
       expect(result.current.isDeleting).toBe(false);
 
@@ -118,9 +119,10 @@ describe("useInvoiceDelete", () => {
         actionFailure({code: "NOT_FOUND", message: "Not found"}),
       );
 
-      const {result} = renderHook(() => useInvoiceDelete());
+      const hookResult = renderHook(() => useInvoiceDelete());
+      const {result} = hookResult;
 
-      await invokeHookCallback(() => result.current.deleteInvoiceCallback(testInvoiceId));
+      await invokeHookCallback(hookResult, (current) => current.deleteInvoiceCallback(testInvoiceId));
 
       expect(result.current.isDeleting).toBe(false);
 
@@ -134,9 +136,10 @@ describe("useInvoiceDelete", () => {
       const testError = new Error("Network error");
       mockDeleteInvoice.mockRejectedValue(testError);
 
-      const {result} = renderHook(() => useInvoiceDelete());
+      const hookResult = renderHook(() => useInvoiceDelete());
+      const {result} = hookResult;
 
-      await invokeHookCallback(() => result.current.deleteInvoiceCallback(testInvoiceId));
+      await invokeHookCallback(hookResult, (current) => current.deleteInvoiceCallback(testInvoiceId));
 
       expect(result.current.isDeleting).toBe(false);
 
@@ -149,9 +152,10 @@ describe("useInvoiceDelete", () => {
     it("handles non-error thrown values during deletion", async () => {
       mockDeleteInvoice.mockRejectedValue("literal failure");
 
-      const {result} = renderHook(() => useInvoiceDelete());
+      const hookResult = renderHook(() => useInvoiceDelete());
+      const {result} = hookResult;
 
-      await invokeHookCallback(() => result.current.deleteInvoiceCallback(testInvoiceId));
+      await invokeHookCallback(hookResult, (current) => current.deleteInvoiceCallback(testInvoiceId));
 
       expect(result.current.isDeleting).toBe(false);
 
@@ -163,9 +167,10 @@ describe("useInvoiceDelete", () => {
     it("resets isDeleting flag even on error", async () => {
       mockDeleteInvoice.mockRejectedValue(new Error("Test error"));
 
-      const {result} = renderHook(() => useInvoiceDelete());
+      const hookResult = renderHook(() => useInvoiceDelete());
+      const {result} = hookResult;
 
-      await invokeHookCallback(() => result.current.deleteInvoiceCallback(testInvoiceId));
+      await invokeHookCallback(hookResult, (current) => current.deleteInvoiceCallback(testInvoiceId));
 
       expect(result.current.isDeleting).toBe(false);
     });
@@ -181,9 +186,10 @@ describe("useInvoiceDelete", () => {
     it("successfully deletes all invoices", async () => {
       mockDeleteInvoice.mockReturnValue(actionSuccess<void>(undefined));
 
-      const {result} = renderHook(() => useInvoiceDelete());
+      const hookResult = renderHook(() => useInvoiceDelete());
+      const {result} = hookResult;
 
-      const bulkResult = await invokeHookCallback(() => result.current.deleteInvoiceCallback(invoiceIds));
+      const bulkResult = await invokeHookCallback(hookResult, (current) => current.deleteInvoiceCallback(invoiceIds));
 
       expect(result.current.isDeleting).toBe(false);
 
@@ -203,9 +209,10 @@ describe("useInvoiceDelete", () => {
         .mockReturnValueOnce(actionFailure({code: "UNKNOWN_ERROR", message: "Error"}))
         .mockReturnValueOnce(actionSuccess<void>(undefined));
 
-      const {result} = renderHook(() => useInvoiceDelete());
+      const hookResult = renderHook(() => useInvoiceDelete());
+      const {result} = hookResult;
 
-      const bulkResult = await invokeHookCallback(() => result.current.deleteInvoiceCallback(invoiceIds));
+      const bulkResult = await invokeHookCallback(hookResult, (current) => current.deleteInvoiceCallback(invoiceIds));
 
       expect(result.current.isDeleting).toBe(false);
 
@@ -222,9 +229,10 @@ describe("useInvoiceDelete", () => {
         actionFailure({code: "UNKNOWN_ERROR", message: "Error"}),
       );
 
-      const {result} = renderHook(() => useInvoiceDelete());
+      const hookResult = renderHook(() => useInvoiceDelete());
+      const {result} = hookResult;
 
-      const bulkResult = await invokeHookCallback(() => result.current.deleteInvoiceCallback(invoiceIds));
+      const bulkResult = await invokeHookCallback(hookResult, (current) => current.deleteInvoiceCallback(invoiceIds));
 
       expect(result.current.isDeleting).toBe(false);
 

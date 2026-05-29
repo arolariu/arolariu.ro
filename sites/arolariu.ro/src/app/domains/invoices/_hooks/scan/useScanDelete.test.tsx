@@ -102,9 +102,10 @@ describe("useScanDelete", () => {
   });
 
   it("deletes the scan server-side before removing it locally", async () => {
-    const {result} = renderHook(() => useScanDelete(testScan));
+    const hookResult = renderHook(() => useScanDelete(testScan));
+    const {result} = hookResult;
 
-    await invokeHookCallback(() => result.current.deleteScanCallback());
+    await invokeHookCallback(hookResult, (current) => current.deleteScanCallback());
 
     expect(mockDeleteScan).toHaveBeenCalledWith({blobUrl: testScan.blobUrl});
     expect(mockRemoveScan).toHaveBeenCalledWith(testScan.id);
@@ -117,9 +118,10 @@ describe("useScanDelete", () => {
       success: false,
       error: {message: "forbidden"},
     });
-    const {result} = renderHook(() => useScanDelete(testScan));
+    const hookResult = renderHook(() => useScanDelete(testScan));
+    const {result} = hookResult;
 
-    await invokeHookCallback(() => result.current.deleteScanCallback());
+    await invokeHookCallback(hookResult, (current) => current.deleteScanCallback());
 
     expect(mockRemoveScan).not.toHaveBeenCalled();
     expect(mockToast.error).toHaveBeenCalledWith("Scan delete failed");
@@ -128,9 +130,10 @@ describe("useScanDelete", () => {
   it("swallows thrown server errors after notifying and logging", async () => {
     const thrownError = new Error("network down");
     mockDeleteScan.mockRejectedValue(thrownError);
-    const {result} = renderHook(() => useScanDelete(testScan));
+    const hookResult = renderHook(() => useScanDelete(testScan));
+    const {result} = hookResult;
 
-    await invokeHookCallback(() => result.current.deleteScanCallback());
+    await invokeHookCallback(hookResult, (current) => current.deleteScanCallback());
 
     expect(mockRemoveScan).not.toHaveBeenCalled();
     expect(mockToast.error).toHaveBeenCalledWith("Scan delete failed");
@@ -143,9 +146,10 @@ describe("useScanDelete", () => {
     mockRemoveScan.mockImplementation(() => {
       throw storeError;
     });
-    const {result} = renderHook(() => useScanDelete(testScan));
+    const hookResult = renderHook(() => useScanDelete(testScan));
+    const {result} = hookResult;
 
-    await invokeHookCallback(() => result.current.deleteScanCallback());
+    await invokeHookCallback(hookResult, (current) => current.deleteScanCallback());
 
     expect(mockToast.success).not.toHaveBeenCalled();
     expect(mockToast.error).toHaveBeenCalledWith("Scan delete failed");

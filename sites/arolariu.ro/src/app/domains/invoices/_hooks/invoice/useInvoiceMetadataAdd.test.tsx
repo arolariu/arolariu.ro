@@ -64,9 +64,10 @@ describe("useInvoiceMetadataAdd", () => {
     it("successfully adds a metadata field", async () => {
       mockAddInvoiceMetadata.mockReturnValueOnce(actionSuccess<void>(undefined));
 
-      const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
+      const hookResult = renderHook(() => useInvoiceMetadataAdd(testInvoice));
+      const {result} = hookResult;
 
-      await invokeHookCallback(() => result.current.addMetadataCallback("newKey", "newValue"));
+      await invokeHookCallback(hookResult, (current) => current.addMetadataCallback("newKey", "newValue"));
 
       expect(result.current.isAdding).toBe(false);
 
@@ -157,14 +158,17 @@ describe("useInvoiceMetadataAdd", () => {
     it("successfully adds multiple metadata fields", async () => {
       mockAddInvoiceMetadata.mockReturnValue(actionSuccess<void>(undefined));
 
-      const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
+      const hookResult = renderHook(() => useInvoiceMetadataAdd(testInvoice));
+      const {result} = hookResult;
 
-      const bulkResult = await invokeHookCallback(() =>
-        result.current.addMetadataCallback({
-          key1: "value1",
-          key2: "value2",
-          key3: "value3",
-        }),
+      const metadataToAdd = {
+        key1: "value1",
+        key2: "value2",
+        key3: "value3",
+      };
+
+      const bulkResult = await invokeHookCallback(hookResult, (current) =>
+        current.addMetadataCallback(metadataToAdd),
       );
 
       expect(result.current.isAdding).toBe(false);

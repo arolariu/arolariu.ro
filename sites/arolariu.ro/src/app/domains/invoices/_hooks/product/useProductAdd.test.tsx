@@ -74,9 +74,10 @@ describe("useProductAdd", () => {
   });
 
   it("adds a product server-side, mirrors it locally, and returns the created product", async () => {
-    const {result} = renderHook(() => useProductAdd({invoice}));
+    const hookResult = renderHook(() => useProductAdd({invoice}));
+    const {result} = hookResult;
 
-    const returnedProduct = await invokeHookCallback(() => result.current.addProductCallback(productToAdd));
+    const returnedProduct = await invokeHookCallback(hookResult, (current) => current.addProductCallback(productToAdd));
 
     expect(returnedProduct).toEqual(addedProduct);
     expect(mockAddInvoiceProduct).toHaveBeenCalledWith({

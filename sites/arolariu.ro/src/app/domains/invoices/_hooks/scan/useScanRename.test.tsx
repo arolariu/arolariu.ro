@@ -122,14 +122,15 @@ describe("useScanRename", () => {
   });
 
   it("commits a trimmed rename to the local store", async () => {
-    const {result} = renderHook(() => useScanRename(testScan));
+    const hookResult = renderHook(() => useScanRename(testScan));
+    const {result} = hookResult;
 
     act(() => {
       result.current.start();
       result.current.change("  renamed.png  ");
     });
 
-    await invokeHookCallback(() => result.current.commit());
+    await invokeHookCallback(hookResult, (current) => current.commit());
 
     expect(mockUpdateScanName).toHaveBeenCalledWith(testScan.id, "renamed.png");
     expect(mockToast.success).toHaveBeenCalledWith("Scan renamed");
@@ -144,13 +145,14 @@ describe("useScanRename", () => {
   });
 
   it("exits edit mode without updating when the value is empty", async () => {
-    const {result} = renderHook(() => useScanRename(testScan));
+    const hookResult = renderHook(() => useScanRename(testScan));
+    const {result} = hookResult;
 
     act(() => {
       result.current.start();
       result.current.change("   ");
     });
-    await invokeHookCallback(() => result.current.commit());
+    await invokeHookCallback(hookResult, (current) => current.commit());
 
     expect(mockUpdateScanName).not.toHaveBeenCalled();
     expect(mockToast.success).not.toHaveBeenCalled();
@@ -158,13 +160,14 @@ describe("useScanRename", () => {
   });
 
   it("exits edit mode without updating when the trimmed value is unchanged", async () => {
-    const {result} = renderHook(() => useScanRename(testScan));
+    const hookResult = renderHook(() => useScanRename(testScan));
+    const {result} = hookResult;
 
     act(() => {
       result.current.start();
       result.current.change(" receipt.jpg ");
     });
-    await invokeHookCallback(() => result.current.commit());
+    await invokeHookCallback(hookResult, (current) => current.commit());
 
     expect(mockUpdateScanName).not.toHaveBeenCalled();
     expect(mockToast.success).not.toHaveBeenCalled();
@@ -175,14 +178,15 @@ describe("useScanRename", () => {
     mockUpdateScanName.mockImplementation(() => {
       throw new Error("store failed");
     });
-    const {result} = renderHook(() => useScanRename(testScan));
+    const hookResult = renderHook(() => useScanRename(testScan));
+    const {result} = hookResult;
 
     act(() => {
       result.current.start();
       result.current.change("renamed.png");
     });
 
-    await expect(invokeHookCallback(() => result.current.commit())).rejects.toThrow("store failed");
+    await expect(invokeHookCallback(hookResult, (current) => current.commit())).rejects.toThrow("store failed");
 
     expect(mockToast.success).not.toHaveBeenCalled();
     expect(result.current.justRenamed).toBe(false);

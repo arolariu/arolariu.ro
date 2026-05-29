@@ -68,9 +68,10 @@ describe("useInvoiceMetadataRemove", () => {
     it("successfully removes a metadata field", async () => {
       mockDeleteInvoiceMetadata.mockReturnValueOnce(actionSuccess<void>(undefined));
 
-      const {result} = renderHook(() => useInvoiceMetadataRemove(testInvoice));
+      const hookResult = renderHook(() => useInvoiceMetadataRemove(testInvoice));
+      const {result} = hookResult;
 
-      await invokeHookCallback(() => result.current.removeMetadataCallback("key1"));
+      await invokeHookCallback(hookResult, (current) => current.removeMetadataCallback("key1"));
 
       expect(result.current.isRemoving).toBe(false);
 
@@ -160,9 +161,10 @@ describe("useInvoiceMetadataRemove", () => {
     it("successfully removes multiple metadata fields", async () => {
       mockDeleteInvoiceMetadata.mockReturnValue(actionSuccess<void>(undefined));
 
-      const {result} = renderHook(() => useInvoiceMetadataRemove(testInvoice));
+      const hookResult = renderHook(() => useInvoiceMetadataRemove(testInvoice));
+      const {result} = hookResult;
 
-      const bulkResult = await invokeHookCallback(() => result.current.removeMetadataCallback(["key1", "key2", "key3"]));
+      const bulkResult = await invokeHookCallback(hookResult, (current) => current.removeMetadataCallback(["key1", "key2", "key3"]));
 
       expect(result.current.isRemoving).toBe(false);
 
