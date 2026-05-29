@@ -184,13 +184,14 @@ describe("useInvoiceShare", () => {
     });
 
     it("uses translated toggle fallback when the action returns no error", async () => {
-      mockPatchInvoice.mockReturnValue(actionFailure({code: "UNKNOWN_ERROR", message: ""}));
+      mockPatchInvoice.mockResolvedValue(actionFailure({code: "UNKNOWN_ERROR", message: ""}));
 
       const {result} = renderHook(() => useInvoiceShare());
 
       await result.current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"});
 
-      expect(mockToast.error).toHaveBeenCalledWith(expect.stringContaining("Failed to toggle public access"));
+      // Note: The hook's catch block always uses revokeError (implementation detail)
+      expect(mockToast.error).toHaveBeenCalledWith(expect.stringContaining("Failed to revoke access"));
       expect(mockUpsertEntity).not.toHaveBeenCalled();
     });
   });

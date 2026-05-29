@@ -3,7 +3,6 @@
  * @module app/domains/invoices/_hooks/scan/useScanRotation.test
  */
 
-import type {ServerActionResult} from "@/lib/utils.server";
 import {ScanType} from "@/types/scans";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
@@ -196,7 +195,7 @@ describe("useScanRotation", () => {
     mockUpdateScan.mockResolvedValue({
       success: true,
       data: {blobUrl: rotatedUrl},
-    } satisfies ServerActionResult<{blobUrl: string}>);
+    });
   });
 
   afterEach(() => {
@@ -303,7 +302,7 @@ describe("useScanRotation", () => {
   it("shows an error and skips store updates when upload returns failure", async () => {
     mockUpdateScan.mockResolvedValue({
       success: false,
-      error: {message: "upload failed"},
+      error: {code: "SERVER_ERROR", message: "upload failed"},
     });
     const hookResult = renderHook(() => useScanRotation(testScan));
 

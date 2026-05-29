@@ -4,7 +4,6 @@
  */
 
 import type {ServerActionResult} from "@/lib/utils.server";
-import type {Product} from "@/types/invoices";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {actionFailure, buildEntityStoreState, buildInvoice, buildProduct, invokeHookCallback, mockEntityStoreSelector} from "../../../../../../tests/helpers";
@@ -70,7 +69,6 @@ describe("useProductRemove", () => {
 
   it("removes a product server-side and mirrors exact-name removal locally", async () => {
     const hookResult = renderHook(() => useProductRemove(invoice));
-    const {result} = hookResult;
 
     await invokeHookCallback(hookResult, (current) => current.removeProductCallback(productToRemove.name));
 
@@ -84,7 +82,7 @@ describe("useProductRemove", () => {
   });
 
   it("sets isRemoving true while the server action is pending", async () => {
-    const deferred = createDeferred<ServerActionResult<void>>();
+    const deferred = createDeferred<Awaited<ServerActionResult<void>>>();
     mockDeleteInvoiceProduct.mockReturnValue(deferred.promise);
 
     const {result} = renderHook(() => useProductRemove(invoice));

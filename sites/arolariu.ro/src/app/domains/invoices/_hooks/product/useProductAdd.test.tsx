@@ -84,7 +84,7 @@ describe("useProductAdd", () => {
   });
 
   it("sets isAdding true while the server action is pending", async () => {
-    const deferred = createDeferred<ServerActionResult<Product>>();
+    const deferred = createDeferred<Awaited<ServerActionResult<Product>>>();
     mockAddInvoiceProduct.mockReturnValue(deferred.promise);
 
     const {result} = renderHook(() => useProductAdd({invoice}));

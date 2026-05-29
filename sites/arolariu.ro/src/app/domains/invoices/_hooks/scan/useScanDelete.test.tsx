@@ -87,7 +87,7 @@ describe("useScanDelete", () => {
     mockDeleteScan.mockResolvedValue({
       success: true,
       data: undefined,
-    } satisfies ServerActionResult<void>);
+    });
   });
 
   afterEach(() => {
@@ -116,10 +116,9 @@ describe("useScanDelete", () => {
   it("does not remove the local scan when the server action fails", async () => {
     mockDeleteScan.mockResolvedValue({
       success: false,
-      error: {message: "forbidden"},
+      error: {code: "AUTH_ERROR", message: "forbidden"},
     });
     const hookResult = renderHook(() => useScanDelete(testScan));
-    const {result} = hookResult;
 
     await invokeHookCallback(hookResult, (current) => current.deleteScanCallback());
 
@@ -158,7 +157,7 @@ describe("useScanDelete", () => {
   });
 
   it("sets isDeleting true while the server deletion is pending", async () => {
-    let resolveDelete: ((value: ServerActionResult<void>) => void) | undefined;
+    let resolveDelete: ((value: Awaited<ServerActionResult<void>>) => void) | undefined;
     mockDeleteScan.mockReturnValue(
       new Promise((resolve) => {
         resolveDelete = resolve;
