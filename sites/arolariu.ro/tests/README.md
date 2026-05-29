@@ -9,7 +9,7 @@
 | Run all tests | `npm run test:website` |
 | Run one file | `npx vitest run src/lib/utils.generic.test.ts` |
 | Watch mode | `npx vitest --project=website` |
-| Coverage | `npm run test:unit` |
+| Website coverage | `npx vitest run sites\arolariu.ro\src sites\arolariu.ro\emails --config sites\arolariu.ro\vitest.config.ts --coverage.enabled=true --coverage.reporter=text-summary` |
 
 **Test files are colocated with source code** — place `foo.test.ts` next to `foo.ts`.
 Use `.test.ts(x)` suffix for Vitest. `.spec.ts(x)` is reserved for Playwright E2E.
@@ -117,6 +117,13 @@ beforeEach(() => {
 
 ## Tier 3: Per-Test Mocks
 
+Per-test mocks should isolate true boundaries only: network calls, Clerk/auth,
+Next runtime APIs, SDK clients, browser APIs, timers, and server-only modules
+that cannot load under happy-dom. Do not mock deterministic internal helpers
+such as `@/lib/utils.generic`; import them directly and assert their real
+outputs. If an internal server module imports runtime-only dependencies, prefer
+a shared stub in `tests/stubs/` over an inline test-specific fake.
+
 ### Pattern A: Simple auto-mock + vi.mocked()
 
 Use when you just need to control a module's return values:
@@ -159,6 +166,10 @@ expect(mockSendEmail).toHaveBeenCalledWith({to: "user@test.com", ...});
 ### Pattern C: Azure blob client chain
 
 ```typescript
+type MockContainerClient = {
+  readonly getContainerClient: typeof mockGetContainerClient;
+};
+
 const {mockDownload, mockGetBlockBlobClient, mockGetContainerClient} = vi.hoisted(() => {
   const getBlockBlobClient = vi.fn();
   const getContainerClient = vi.fn(() => ({getBlockBlobClient}));
@@ -172,9 +183,10 @@ const {mockDownload, mockGetBlockBlobClient, mockGetContainerClient} = vi.hoiste
 // Wire up in beforeEach (survives mockReset)
 beforeEach(() => {
   const {createBlobClient} = await import("@/lib/azure/storageClient");
-  vi.mocked(createBlobClient).mockResolvedValue({
+  const mockContainerClient: MockContainerClient = {
     getContainerClient: mockGetContainerClient,
-  } as any);
+  };
+  vi.mocked(createBlobClient).mockResolvedValue(mockContainerClient);
   mockGetBlockBlobClient.mockReturnValue({download: mockDownload});
 });
 ```

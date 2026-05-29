@@ -1,11 +1,7 @@
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {SITE_URL} from "@/lib/utils.generic";
 import {useUserInformation} from "./useUserInformation";
-
-// Mock the utils module
-vi.mock("@/lib/utils.generic", () => ({
-  SITE_URL: "https://test.example.com",
-}));
 
 describe("useUserInformation", () => {
   type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
@@ -63,7 +59,7 @@ describe("useUserInformation", () => {
     expect(result.current.userInformation).toEqual(mockUserData);
     expect(result.current.isError).toBe(false);
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://test.example.com/api/user",
+      `${SITE_URL}/api/user`,
       expect.objectContaining({
         signal: expect.any(AbortSignal),
       }),
