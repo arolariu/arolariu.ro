@@ -269,8 +269,8 @@ describe("fetchMerchant", () => {
     if (result.success) {
       expect(result.data.id).toBe(merchantId);
       expect(result.data.name).toBe("Full Merchant");
-      expect(result.data.createdAt).toEqual(new Date("2026-01-01T00:00:00.000Z"));
-      expect(result.data.lastUpdatedAt).toEqual(new Date("2026-01-02T00:00:00.000Z"));
+      expect(result.data.createdAt).toBe("2026-01-01T00:00:00.000Z");
+      expect(result.data.lastUpdatedAt).toBe("2026-01-02T00:00:00.000Z");
     }
   });
 });

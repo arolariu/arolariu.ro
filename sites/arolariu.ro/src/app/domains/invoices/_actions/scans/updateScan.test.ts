@@ -58,6 +58,7 @@ function setupBlobClient({
   }
 
   const containerClient = buildContainerClientMock({blobUrl, metadata: existingMetadata, uploadStatus});
+  vi.mocked(containerClient.getBlockBlobClient).mockReturnValue(blockBlobClient);
   const blobServiceClient = buildBlobServiceClientMock(containerClient);
   mockCreateBlobClient.mockResolvedValue(blobServiceClient);
 }

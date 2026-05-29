@@ -22,12 +22,12 @@ describe("createInvoice", () => {
   });
 
   it("posts a creation payload with authenticated userIdentifier when missing", async () => {
-    const payload = buildCreateInvoicePayload({
+    const payload = {
       initialScan: buildInvoiceScan({
         location: "https://storage.test/scan.jpg",
       }),
       metadata: {isImportant: "false", requiresAnalysis: "true"},
-    });
+    };
 
     const result = await createInvoice(payload);
 

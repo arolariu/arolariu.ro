@@ -283,8 +283,8 @@ describe("fetchMerchants", () => {
       expect(result.data).toHaveLength(1);
       expect(result.data[0]?.id).toBe("merchant-1");
       expect(result.data[0]?.name).toBe("Full Merchant");
-      expect(result.data[0]?.createdAt).toEqual(new Date("2026-01-01T00:00:00.000Z"));
-      expect(result.data[0]?.lastUpdatedAt).toEqual(new Date("2026-01-02T00:00:00.000Z"));
+      expect(result.data[0]?.createdAt).toBe("2026-01-01T00:00:00.000Z");
+      expect(result.data[0]?.lastUpdatedAt).toBe("2026-01-02T00:00:00.000Z");
     }
   });
 
