@@ -279,6 +279,15 @@ describe("renderSuiteChipRow", () => {
     const html = renderSuiteChipRow([suite("zgood"), suite("abad", 1)]);
     expect(html.indexOf("abad")).toBeLessThan(html.indexOf("zgood"));
   });
+  it("escapes HTML in suite names", () => {
+    const suites: SuiteResult[] = [
+      {name: "evil</span>", totalTests: 1, passed: 0, failed: 1, skipped: 0, findings: []},
+      {name: "good", totalTests: 1, passed: 1, failed: 0, skipped: 0, findings: []},
+    ];
+    const html = renderSuiteChipRow(suites);
+    expect(html).toContain("evil&lt;/span&gt;");
+    expect(html).not.toMatch(/evil<\/span>/);
+  });
 });
 
 describe("renderSuiteFailures", () => {
@@ -318,6 +327,35 @@ describe("renderSuiteFailures", () => {
   it("returns empty string for a passing suite", () => {
     const s: SuiteResult = {name: "p", totalTests: 10, passed: 10, failed: 0, skipped: 0, findings: []};
     expect(renderSuiteFailures(s)).toBe("");
+  });
+  it("handles error messages containing triple-backtick fences without breaking layout", () => {
+    const findings: Finding[] = [{
+      kind: "line",
+      severity: "error",
+      file: "t.ts",
+      line: 1,
+      column: 1,
+      message: "Expected:\n```ts\nconst x = 1;\n```\nReceived: undefined",
+      suite: "scripts",
+    }];
+    const suite: SuiteResult = {name: "scripts", totalTests: 1, passed: 0, failed: 1, skipped: 0, findings};
+    const md = renderSuiteFailures(suite);
+    expect(md).toMatch(/````+\s*\n.*Expected:.*\n.*```ts/s);
+  });
+  it("escapes HTML in test names to prevent tag injection", () => {
+    const findings: Finding[] = [{
+      kind: "line",
+      severity: "error",
+      file: "evil</details>.ts",
+      line: 1,
+      column: 1,
+      message: "boom",
+      suite: "scripts",
+    }];
+    const suite: SuiteResult = {name: "scripts", totalTests: 1, passed: 0, failed: 1, skipped: 0, findings};
+    const md = renderSuiteFailures(suite);
+    expect(md).toContain("&lt;/details&gt;");
+    expect(md).not.toMatch(/evil<\/details>\.ts/);
   });
 });
 
@@ -361,6 +399,19 @@ describe("renderStatsCallout", () => {
       findings: [comparison("shrunk", 2024, 1000)],
     });
     expect(renderStatsCallout(o)!).toMatch(/-1\.0 KB/);
+  });
+  it("escapes HTML in comparison names", () => {
+    const o = makeOutcome({
+      providerId: "stats",
+      findings: [{
+        kind: "comparison",
+        severity: "info",
+        name: "evil<script>name",
+        baseValue: 1, headValue: 2, diff: 1, unit: "B", message: "",
+      }],
+    });
+    const html = renderStatsCallout(o)!;
+    expect(html).toContain("evil&lt;script&gt;name");
   });
 });
 
@@ -437,6 +488,17 @@ describe("renderProviderCard", () => {
       findings: [lineFinding({ruleId: "a"})],
     });
     expect(renderProviderCard(o)).toMatch(/artifact/i);
+  });
+  it("escapes HTML in errored provider error messages via fence-safe block", () => {
+    const o = makeOutcome({
+      providerId: "lint",
+      providerName: "ESLint",
+      providerIcon: "🔍",
+      gateResult: "errored",
+      error: {message: "log contains ``` fenced ``` block"},
+    });
+    const md = renderProviderCard(o);
+    expect(md).toMatch(/````+\s*\nlog contains/);
   });
 });
 

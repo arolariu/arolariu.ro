@@ -46,6 +46,27 @@ const TOP_RULES_LIMIT = 5;
 const MAX_FAILING_TESTS_PER_SUITE = 10;
 const MAX_MESSAGE_LENGTH = 240;
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function fenceSafe(content: string): string {
+  let maxRun = 0;
+  const matches = content.match(/`+/g);
+  if (matches) {
+    for (const m of matches) {
+      if (m.length > maxRun) maxRun = m.length;
+    }
+  }
+  const fence = "`".repeat(Math.max(3, maxRun + 1));
+  return `${fence}\n${content}\n${fence}`;
+}
+
 function severityIcon(s: Severity): string {
   switch (s) {
     case "critical": return "🟥";
@@ -229,12 +250,12 @@ export function renderSuiteChipRow(suites: readonly SuiteResultLike[]): string {
   const chips: string[] = [];
   for (const s of failed) {
     chips.push(
-      `<span style="background:#ffebe9;border:1px solid #ffcecb;color:#cf222e;font-weight:600;padding:1px 7px;border-radius:10px;font-size:11px;">❌ ${s.name}</span>`,
+      `<span style="background:#ffebe9;border:1px solid #ffcecb;color:#cf222e;font-weight:600;padding:1px 7px;border-radius:10px;font-size:11px;">❌ ${escapeHtml(s.name)}</span>`,
     );
   }
   for (const s of passed) {
     chips.push(
-      `<span style="background:#f6f8fa;border:1px solid #d8dee4;color:#1a7f37;padding:1px 7px;border-radius:10px;font-size:11px;">✅ ${s.name}</span>`,
+      `<span style="background:#f6f8fa;border:1px solid #d8dee4;color:#1a7f37;padding:1px 7px;border-radius:10px;font-size:11px;">✅ ${escapeHtml(s.name)}</span>`,
     );
   }
   return `<div style="display:inline-flex;gap:4px;margin:4px 0 8px;flex-wrap:wrap;">${chips.join("")}</div>`;
@@ -259,14 +280,12 @@ export function renderSuiteFailures(suite: SuiteResultLike): string {
     } else if (f.kind === "file") {
       testName = normalizePath(f.file);
     }
-    const summary = `❌ \`${testName}\``;
+    const summary = `❌ \`${escapeHtml(testName)}\``;
     const errMsg = "message" in f ? cleanMessage(f.message) : "(no message)";
     lines.push(`<div>${summary}`);
     lines.push(`<details><summary>error</summary>`);
     lines.push("");
-    lines.push("```");
-    lines.push(errMsg);
-    lines.push("```");
+    lines.push(fenceSafe(errMsg));
     lines.push("</details></div>");
     lines.push("");
   }
@@ -290,7 +309,7 @@ export function renderStatsCallout(o: ProviderOutcome<unknown>): string | null {
     const diff = f.unit === "B" ? formatHumanBytes(f.diff) : `${f.diff >= 0 ? "+" : ""}${f.diff}${f.unit ?? ""}`;
     const signed = f.diff >= 0 && f.unit === "B" ? `+${diff}` : diff;
     const color = f.diff > 0 ? "#cf222e" : "#1a7f37";
-    return `<tr><td><code>${f.name}</code></td><td align="right">${before}</td><td align="right">${after}</td><td align="right" style="color:${color};">${signed}</td></tr>`;
+    return `<tr><td><code>${escapeHtml(f.name)}</code></td><td align="right">${before}</td><td align="right">${after}</td><td align="right" style="color:${color};">${signed}</td></tr>`;
   });
 
   return [
@@ -323,9 +342,7 @@ export function renderProviderCard(o: ProviderOutcome<unknown>): string {
   }
 
   if (o.gateResult === "errored") {
-    lines.push("```");
-    lines.push(cleanMessage(o.error?.message ?? "Unknown runner error"));
-    lines.push("```");
+    lines.push(fenceSafe(cleanMessage(o.error?.message ?? "Unknown runner error")));
     return lines.join("\n");
   }
 
@@ -356,7 +373,12 @@ export function renderProviderCard(o: ProviderOutcome<unknown>): string {
       lines.push("_No suite payload available._");
     }
   } else {
-    lines.push("_See bundle stats below._");
+    const hasComparisons = o.findings.some((f) => f.kind === "comparison");
+    if (hasComparisons) {
+      lines.push("_See bundle stats below._");
+    } else {
+      lines.push("_No bundle changes detected._");
+    }
   }
 
   return lines.join("\n");
