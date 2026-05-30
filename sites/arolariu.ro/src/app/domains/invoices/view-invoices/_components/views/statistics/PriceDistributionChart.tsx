@@ -52,7 +52,9 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
       <p className={styles["tooltipRange"]}>
         {data.range} {currency}
       </p>
-      <p className={styles["tooltipCount"]}>{t((m) => m.cards.invoices.statistics.priceDistribution.tooltip.itemCount, {count: String(data.count)})}</p>
+      <p className={styles["tooltipCount"]}>
+        {t((m) => m.cards.invoices.statistics.priceDistribution.tooltip.itemCount, {count: String(data.count)})}
+      </p>
     </div>
   );
 }
@@ -83,7 +85,9 @@ export function PriceDistributionChart({data, currency}: Props): React.JSX.Eleme
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
         <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.priceDistribution.title)}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.priceDistribution.description)}</CardDescription>
+        <CardDescription className={styles["cardDescription"]}>
+          {t((m) => m.cards.invoices.statistics.priceDistribution.description)}
+        </CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer

@@ -103,7 +103,9 @@ export function MerchantBreakdownChart({data, currency, currentMerchant}: Props)
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
         <CardTitle className={styles["cardTitle"]}>{t((m) => m.pages.invoices.viewInvoice.merchantBreakdownChart.title)}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t((m) => m.pages.invoices.viewInvoice.merchantBreakdownChart.description)}</CardDescription>
+        <CardDescription className={styles["cardDescription"]}>
+          {t((m) => m.pages.invoices.viewInvoice.merchantBreakdownChart.description)}
+        </CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer

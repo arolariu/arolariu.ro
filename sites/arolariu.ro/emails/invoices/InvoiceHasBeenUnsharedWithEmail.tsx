@@ -1,4 +1,3 @@
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Email template for notifying users that their access to a shared invoice was revoked.
  * @module emails/invoices/InvoiceHasBeenUnsharedWithEmail
@@ -8,6 +7,7 @@ import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
 import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
+import {selectorFromPath} from "../_lib/i18n";
 
 type Props = {
   /** The username of the person who revoked access. */
@@ -56,12 +56,24 @@ const InvoiceHasBeenUnsharedWithEmail = defineEmailTemplate<Props>({
           items={[
             {label: t(selectorFromPath("emails.invoiceUnshared.details.revokedBy")), value: safeFrom},
             {label: t(selectorFromPath("emails.invoiceUnshared.details.invoiceId")), value: identifier},
-            {label: t(selectorFromPath("emails.invoiceUnshared.details.revokedAt")), value: revokedAt ?? t(selectorFromPath("emails.invoiceUnshared.details.notProvided"))},
-            {label: t(selectorFromPath("emails.invoiceUnshared.details.yourAccess")), value: t(selectorFromPath("emails.invoiceUnshared.details.accessRevoked"))},
+            {
+              label: t(selectorFromPath("emails.invoiceUnshared.details.revokedAt")),
+              value: revokedAt ?? t(selectorFromPath("emails.invoiceUnshared.details.notProvided")),
+            },
+            {
+              label: t(selectorFromPath("emails.invoiceUnshared.details.yourAccess")),
+              value: t(selectorFromPath("emails.invoiceUnshared.details.accessRevoked")),
+            },
           ]}
         />
         <EmailCard title={t(selectorFromPath("emails.invoiceUnshared.whatThisMeansTitle"))}>
-          <BulletList items={[t(selectorFromPath("emails.invoiceUnshared.whatThisMeans.item0")), t(selectorFromPath("emails.invoiceUnshared.whatThisMeans.item1")), t(selectorFromPath("emails.invoiceUnshared.whatThisMeans.item2"))]} />
+          <BulletList
+            items={[
+              t(selectorFromPath("emails.invoiceUnshared.whatThisMeans.item0")),
+              t(selectorFromPath("emails.invoiceUnshared.whatThisMeans.item1")),
+              t(selectorFromPath("emails.invoiceUnshared.whatThisMeans.item2")),
+            ]}
+          />
         </EmailCard>
         <Text style={EmailParagraphStyles}>
           {t.rich(selectorFromPath("emails.invoiceUnshared.body"), {

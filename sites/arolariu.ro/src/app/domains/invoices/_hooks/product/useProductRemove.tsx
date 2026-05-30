@@ -1,19 +1,19 @@
 "use client";
 
 /**
-* @fileoverview Hook for removing products from an invoice.
-* @module app/domains/invoices/_hooks/product/useProductRemove
-*
-* @remarks
-* Wraps the delete-product server action and mirrors successful removals in the
-* invoices Zustand store. Local removal uses exact product-name equality, while
-* the backend action may use broader matching semantics.
+ * @fileoverview Hook for removing products from an invoice.
+ * @module app/domains/invoices/_hooks/product/useProductRemove
+ *
+ * @remarks
+ * Wraps the delete-product server action and mirrors successful removals in the
+ * invoices Zustand store. Local removal uses exact product-name equality, while
+ * the backend action may use broader matching semantics.
  */
 
 import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices/Invoice";
 import {useCallback, useState} from "react";
-import {deleteInvoiceProduct as removeProductServerSide} from "../../_actions/invoices/products/deleteInvoiceProduct";
+import {deleteInvoiceProduct as removeProductServerSide} from "../../_actions/invoices";
 
 /**
  * Hook output type for product removal.
@@ -57,7 +57,7 @@ export function useProductRemove(invoice: Invoice): Readonly<HookOutputType> {
         setIsRemoving(false);
       }
     },
-    [invoice.id, removeProductClientSide],
+    [invoice.id, invoice.items, removeProductClientSide],
   );
 
   return {isRemoving, removeProductCallback};

@@ -113,7 +113,9 @@ export function AllergenSummaryChart({data}: Props): React.JSX.Element {
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
           <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.title)}</CardTitle>
-          <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.description)}</CardDescription>
+          <CardDescription className={styles["cardDescription"]}>
+            {t((m) => m.cards.invoices.statistics.allergenSummary.description)}
+          </CardDescription>
         </CardHeader>
         <CardContent className={styles["cardContent"]}>
           <div className={styles["emptyState"]}>
@@ -129,7 +131,9 @@ export function AllergenSummaryChart({data}: Props): React.JSX.Element {
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
         <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.title)}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.description)}</CardDescription>
+        <CardDescription className={styles["cardDescription"]}>
+          {t((m) => m.cards.invoices.statistics.allergenSummary.description)}
+        </CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <div

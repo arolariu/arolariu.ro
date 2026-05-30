@@ -11,28 +11,56 @@ import {describe, expect, test, vi} from "vitest";
 // Mocks - Must be declared before imports that use them
 // ============================================================================
 
-// Mock next/dynamic so dynamic imports resolve synchronously in tests.
-// Each loader() is called eagerly at dynamic() call time (which happens during
-// module evaluation, before any test runs). Since all dialog modules below are
-// already mocked via vi.mock(), their import() Promises resolve in the next
-// microtask — i.e., before Vitest starts executing individual tests.
+// Mock next/dynamic so dialog routing is tested synchronously.
 vi.mock("next/dynamic", () => ({
   default: (
     loader: () => Promise<
       {default: React.ComponentType<Record<string, unknown>>} | {ExportDialog: React.ComponentType<Record<string, unknown>>}
     >,
   ) => {
-    let Comp: React.ComponentType<Record<string, unknown>> | null = null;
-    void loader().then(
-      (mod: {default: React.ComponentType<Record<string, unknown>>} | {ExportDialog: React.ComponentType<Record<string, unknown>>}) => {
-        Comp = "default" in mod ? mod.default : mod.ExportDialog;
-      },
-    );
-    function DynamicComponent(props: Record<string, unknown>): React.JSX.Element | null {
-      if (!Comp) return null;
-      // Use JSX (new transform) so React doesn't need to be in scope at runtime
-      return <Comp {...props} />;
+    void loader().catch(() => undefined);
+    const source = loader.toString();
+    const dialogStubs: ReadonlyArray<readonly [moduleName: string, testId: string, label: string]> = [
+      ["AddScanDialog", "add-scan-dialog", "AddScanDialog"],
+      ["AddRecipeDialog", "add-recipe-dialog", "AddRecipeDialog"],
+      ["AllergenDialog", "allergen-dialog", "AllergenDialog"],
+      ["AnalyzeDialog", "analyze-dialog", "AnalyzeDialog"],
+      ["BulkCategoryDialog", "bulk-category-dialog", "BulkCategoryDialog"],
+      ["CreateInvoiceDialog", "create-invoice-dialog", "CreateInvoiceDialog"],
+      ["DeleteInvoiceDialog", "delete-invoice-dialog", "DeleteInvoiceDialog"],
+      ["DeleteRecipeDialog", "delete-recipe-dialog", "DeleteRecipeDialog"],
+      ["DeleteScanDialog", "delete-scan-dialog", "DeleteScanDialog"],
+      ["FeedbackDialog", "feedback-dialog", "InvoiceFeedbackDialog"],
+      ["ImageDialog", "image-dialog", "InvoiceImageDialog"],
+      ["ItemsDialog", "items-dialog", "InvoiceItemsDialog"],
+      ["MerchantDialog", "merchant-dialog", "InvoiceMerchantDialog"],
+      ["MerchantReceiptsDialog", "merchant-receipts-dialog", "InvoiceMerchantReceiptsDialog"],
+      ["MetadataDialog", "metadata-dialog", "InvoiceMetadataDialog"],
+      ["ImportDialog", "import-dialog", "InvoicesImportDialog"],
+      ["PreviewRecipeDialog", "preview-recipe-dialog", "PreviewRecipeDialog"],
+      ["PreviewScanDialog", "preview-scan-dialog", "PreviewScanDialog"],
+      ["RemoveScanDialog", "remove-scan-dialog", "RemoveScanDialog"],
+      ["ShareAnalyticsDialog", "share-analytics-dialog", "ShareAnalyticsDialog"],
+      ["ShareInvoiceDialog", "share-invoice-dialog", "ShareInvoiceDialog"],
+      ["ShareRecipeDialog", "share-recipe-dialog", "ShareRecipeDialog"],
+      ["UpdateRecipeDialog", "update-recipe-dialog", "UpdateRecipeDialog"],
+    ];
+    const match = dialogStubs.find(([moduleName]) => source.includes(moduleName));
+
+    function DynamicComponent(): React.JSX.Element {
+      if (source.includes("view-invoice/[id]/_dialogs/ExportDialog")) {
+        return <div data-testid='view-invoice-export-dialog'>ViewInvoiceExportDialog</div>;
+      }
+      if (source.includes("view-invoices/_dialogs/ExportDialog")) {
+        return <div data-testid='export-dialog'>InvoicesExportDialog</div>;
+      }
+      if (match) {
+        return <div data-testid={match[1]}>{match[2]}</div>;
+      }
+
+      return <div data-testid='unknown-dialog'>UnknownDialog</div>;
     }
+
     return DynamicComponent;
   },
 }));
@@ -51,7 +79,7 @@ vi.mock("@/lib/utils.server", () => ({
 }));
 
 // Mock server actions
-vi.mock("@/app/domains/invoices/_actions/invoices/patchInvoice", () => ({
+vi.mock("@/lib/actions/invoices/patchInvoice", () => ({
   default: vi.fn(),
 }));
 
@@ -85,71 +113,95 @@ vi.mock("../_dialogs/ShareInvoiceDialog", () => ({
   default: () => <div data-testid='share-invoice-dialog'>ShareInvoiceDialog</div>,
 }));
 
-vi.mock("../edit-invoice/[id]/_components/dialogs/AnalyzeDialog", () => ({
+vi.mock("../_dialogs/DeleteScanDialog", () => ({
+  default: () => <div data-testid='delete-scan-dialog'>DeleteScanDialog</div>,
+}));
+
+vi.mock("../_dialogs/PreviewScanDialog", () => ({
+  default: () => <div data-testid='preview-scan-dialog'>PreviewScanDialog</div>,
+}));
+
+vi.mock("../edit-invoice/[id]/_dialogs/AnalyzeDialog", () => ({
   default: () => <div data-testid='analyze-dialog'>AnalyzeDialog</div>,
 }));
 
-vi.mock("../edit-invoice/[id]/_components/dialogs/FeedbackDialog", () => ({
+vi.mock("../edit-invoice/[id]/_dialogs/FeedbackDialog", () => ({
   default: () => <div data-testid='feedback-dialog'>InvoiceFeedbackDialog</div>,
 }));
 
-vi.mock("../edit-invoice/[id]/_components/dialogs/ImageDialog", () => ({
+vi.mock("../edit-invoice/[id]/_dialogs/ImageDialog", () => ({
   default: () => <div data-testid='image-dialog'>InvoiceImageDialog</div>,
 }));
 
-vi.mock("../edit-invoice/[id]/_components/dialogs/ItemsDialog", () => ({
+vi.mock("../edit-invoice/[id]/_dialogs/ItemsDialog", () => ({
   default: () => <div data-testid='items-dialog'>InvoiceItemsDialog</div>,
 }));
 
-vi.mock("../edit-invoice/[id]/_components/dialogs/MerchantDialog", () => ({
+vi.mock("../edit-invoice/[id]/_dialogs/MerchantDialog", () => ({
   default: () => <div data-testid='merchant-dialog'>InvoiceMerchantDialog</div>,
 }));
 
-vi.mock("../edit-invoice/[id]/_components/dialogs/MerchantReceiptsDialog", () => ({
+vi.mock("../edit-invoice/[id]/_dialogs/MerchantReceiptsDialog", () => ({
   default: () => <div data-testid='merchant-receipts-dialog'>InvoiceMerchantReceiptsDialog</div>,
 }));
 
-vi.mock("../edit-invoice/[id]/_components/dialogs/MetadataDialog", () => ({
+vi.mock("../edit-invoice/[id]/_dialogs/MetadataDialog", () => ({
   default: () => <div data-testid='metadata-dialog'>InvoiceMetadataDialog</div>,
 }));
 
-vi.mock("../edit-invoice/[id]/_components/dialogs/RecipeDialog", () => ({
-  default: () => <div data-testid='recipe-dialog'>InvoiceRecipeDialog</div>,
+vi.mock("../edit-invoice/[id]/_dialogs/AddRecipeDialog", () => ({
+  default: () => <div data-testid='add-recipe-dialog'>AddRecipeDialog</div>,
 }));
 
-vi.mock("../edit-invoice/[id]/_components/dialogs/AddScanDialog", () => ({
+vi.mock("../edit-invoice/[id]/_dialogs/UpdateRecipeDialog", () => ({
+  default: () => <div data-testid='update-recipe-dialog'>UpdateRecipeDialog</div>,
+}));
+
+vi.mock("../edit-invoice/[id]/_dialogs/DeleteRecipeDialog", () => ({
+  default: () => <div data-testid='delete-recipe-dialog'>DeleteRecipeDialog</div>,
+}));
+
+vi.mock("../edit-invoice/[id]/_dialogs/PreviewRecipeDialog", () => ({
+  default: () => <div data-testid='preview-recipe-dialog'>PreviewRecipeDialog</div>,
+}));
+
+vi.mock("../edit-invoice/[id]/_dialogs/ShareRecipeDialog", () => ({
+  default: () => <div data-testid='share-recipe-dialog'>ShareRecipeDialog</div>,
+}));
+
+vi.mock("../edit-invoice/[id]/_dialogs/AddScanDialog", () => ({
   default: () => <div data-testid='add-scan-dialog'>AddScanDialog</div>,
 }));
 
-vi.mock("../edit-invoice/[id]/_components/dialogs/RemoveScanDialog", () => ({
+vi.mock("../edit-invoice/[id]/_dialogs/RemoveScanDialog", () => ({
   default: () => <div data-testid='remove-scan-dialog'>RemoveScanDialog</div>,
 }));
 
-vi.mock("../edit-invoice/[id]/_components/dialogs/AllergenDialog", () => ({
+vi.mock("../edit-invoice/[id]/_dialogs/AllergenDialog", () => ({
   default: () => <div data-testid='allergen-dialog'>AllergenDialog</div>,
 }));
 
-vi.mock("../edit-invoice/[id]/_components/dialogs/BulkCategoryDialog", () => ({
+vi.mock("../edit-invoice/[id]/_dialogs/BulkCategoryDialog", () => ({
   default: () => <div data-testid='bulk-category-dialog'>BulkCategoryDialog</div>,
 }));
 
-vi.mock("../view-invoice/[id]/_components/dialogs/ShareAnalyticsDialog", () => ({
+vi.mock("../view-invoice/[id]/_dialogs/ShareAnalyticsDialog", () => ({
   default: () => <div data-testid='share-analytics-dialog'>ShareAnalyticsDialog</div>,
 }));
 
-vi.mock("../view-invoices/_components/dialogs/ExportDialog", () => ({
+vi.mock("../view-invoices/_dialogs/ExportDialog", () => ({
   default: () => <div data-testid='export-dialog'>InvoicesExportDialog</div>,
 }));
 
-vi.mock("../view-invoices/_components/dialogs/ImportDialog", () => ({
+vi.mock("../view-invoices/_dialogs/ImportDialog", () => ({
   default: () => <div data-testid='import-dialog'>InvoicesImportDialog</div>,
 }));
 
-vi.mock("../view-scans/_components/dialogs/CreateInvoiceDialog", () => ({
+vi.mock("../view-scans/_dialogs/CreateInvoiceDialog", () => ({
   default: () => <div data-testid='create-invoice-dialog'>CreateInvoiceDialog</div>,
 }));
 
-vi.mock("../view-invoice/[id]/_components/dialogs/ExportDialog", () => ({
+vi.mock("../view-invoice/[id]/_dialogs/ExportDialog", () => ({
   ExportDialog: () => <div data-testid='view-invoice-export-dialog'>ViewInvoiceExportDialog</div>,
 }));
 
@@ -249,13 +301,13 @@ describe("DialogContainer", () => {
       expect(screen.getByText("InvoiceImageDialog")).toBeInTheDocument();
     });
 
-    test("renders InvoiceRecipeDialog when type is EDIT_INVOICE__RECIPE", () => {
-      setupMockDialogType("EDIT_INVOICE__RECIPE");
+    test("renders AddRecipeDialog when type is EDIT_INVOICE__RECIPE_ADD", () => {
+      setupMockDialogType("EDIT_INVOICE__RECIPE_ADD", "add");
 
       render(<DialogContainer />);
 
-      expect(screen.getByTestId("recipe-dialog")).toBeInTheDocument();
-      expect(screen.getByText("InvoiceRecipeDialog")).toBeInTheDocument();
+      expect(screen.getByTestId("add-recipe-dialog")).toBeInTheDocument();
+      expect(screen.getByText("AddRecipeDialog")).toBeInTheDocument();
     });
 
     test("renders AllergenDialog when type is EDIT_INVOICE__ALLERGENS", () => {
@@ -357,11 +409,15 @@ describe("DialogContainer", () => {
       {type: "EDIT_INVOICE__MERCHANT_INVOICES", expectedTestId: "merchant-receipts-dialog"},
       {type: "EDIT_INVOICE__METADATA", expectedTestId: "metadata-dialog"},
       {type: "EDIT_INVOICE__IMAGE", expectedTestId: "image-dialog"},
-      {type: "EDIT_INVOICE__RECIPE", expectedTestId: "recipe-dialog"},
+      {type: "EDIT_INVOICE__RECIPE_ADD", mode: "add", expectedTestId: "add-recipe-dialog"},
+      {type: "EDIT_INVOICE__RECIPE_UPDATE", mode: "edit", expectedTestId: "update-recipe-dialog"},
+      {type: "EDIT_INVOICE__RECIPE_DELETE", mode: "delete", expectedTestId: "delete-recipe-dialog"},
+      {type: "EDIT_INVOICE__RECIPE_PREVIEW", mode: "view", expectedTestId: "preview-recipe-dialog"},
+      {type: "EDIT_INVOICE__RECIPE_SHARE", mode: "share", expectedTestId: "share-recipe-dialog"},
       {type: "EDIT_INVOICE__ALLERGENS", expectedTestId: "allergen-dialog"},
       {type: "EDIT_INVOICE__BULK_CATEGORY", expectedTestId: "bulk-category-dialog"},
-      {type: "EDIT_INVOICE__SCAN", mode: "add", expectedTestId: "add-scan-dialog"},
-      {type: "EDIT_INVOICE__SCAN", mode: "delete", expectedTestId: "remove-scan-dialog"},
+      {type: "EDIT_INVOICE__ADD_SCAN", mode: "add", expectedTestId: "add-scan-dialog"},
+      {type: "EDIT_INVOICE__REMOVE_SCAN", mode: "delete", expectedTestId: "remove-scan-dialog"},
       {type: "VIEW_INVOICE__SHARE_ANALYTICS", expectedTestId: "share-analytics-dialog"},
       {type: "VIEW_INVOICE__EXPORT", expectedTestId: "view-invoice-export-dialog"},
       {type: "VIEW_INVOICES__IMPORT", expectedTestId: "import-dialog"},
@@ -369,6 +425,8 @@ describe("DialogContainer", () => {
       {type: "VIEW_SCANS__CREATE_INVOICE", expectedTestId: "create-invoice-dialog"},
       {type: "SHARED__INVOICE_DELETE", expectedTestId: "delete-invoice-dialog"},
       {type: "SHARED__INVOICE_SHARE", expectedTestId: "share-invoice-dialog"},
+      {type: "SHARED__SCAN_DELETE", expectedTestId: "delete-scan-dialog"},
+      {type: "SHARED__SCAN_PREVIEW", expectedTestId: "preview-scan-dialog"},
     ];
 
     test.each(dialogTestCases)("renders correct dialog for type $type with mode $mode", ({type, mode, expectedTestId}) => {
@@ -386,13 +444,18 @@ describe("DialogContainer", () => {
         "EDIT_INVOICE__IMAGE",
         "EDIT_INVOICE__MERCHANT",
         "EDIT_INVOICE__MERCHANT_INVOICES",
-        "EDIT_INVOICE__RECIPE",
+        "EDIT_INVOICE__RECIPE_ADD",
+        "EDIT_INVOICE__RECIPE_UPDATE",
+        "EDIT_INVOICE__RECIPE_DELETE",
+        "EDIT_INVOICE__RECIPE_PREVIEW",
+        "EDIT_INVOICE__RECIPE_SHARE",
         "EDIT_INVOICE__METADATA",
         "EDIT_INVOICE__ITEMS",
         "EDIT_INVOICE__FEEDBACK",
         "EDIT_INVOICE__ALLERGENS",
         "EDIT_INVOICE__BULK_CATEGORY",
-        "EDIT_INVOICE__SCAN",
+        "EDIT_INVOICE__ADD_SCAN",
+        "EDIT_INVOICE__REMOVE_SCAN",
         "VIEW_INVOICE__SHARE_ANALYTICS",
         "VIEW_INVOICE__EXPORT",
         "VIEW_INVOICES__IMPORT",
@@ -400,6 +463,8 @@ describe("DialogContainer", () => {
         "VIEW_SCANS__CREATE_INVOICE",
         "SHARED__INVOICE_DELETE",
         "SHARED__INVOICE_SHARE",
+        "SHARED__SCAN_DELETE",
+        "SHARED__SCAN_PREVIEW",
         null,
       ];
 

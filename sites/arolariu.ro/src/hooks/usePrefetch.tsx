@@ -5,7 +5,6 @@
  * @module @/hooks/usePrefetch
  */
 
-
 import {useRouter} from "next/navigation";
 import {useCallback} from "react";
 

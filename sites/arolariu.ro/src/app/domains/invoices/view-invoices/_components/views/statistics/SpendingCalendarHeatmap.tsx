@@ -222,7 +222,9 @@ function DayCell({day, currency, locale}: Readonly<{day: DayCell; currency: stri
               <div className={styles["tooltipAmount"]}>
                 {t((m) => m.cards.invoices.statistics.calendarHeatmap.tooltip.amount)}: {formatAmount(day.amount)} {currency}
               </div>
-              <div className={styles["tooltipInvoices"]}>{t((m) => m.cards.invoices.statistics.calendarHeatmap.tooltip.invoices, {count: String(day.invoiceCount)})}</div>
+              <div className={styles["tooltipInvoices"]}>
+                {t((m) => m.cards.invoices.statistics.calendarHeatmap.tooltip.invoices, {count: String(day.invoiceCount)})}
+              </div>
             </>
           ) : (
             <div className={styles["tooltipNoSpending"]}>{t((m) => m.cards.invoices.statistics.calendarHeatmap.tooltip.noSpending)}</div>
@@ -262,7 +264,15 @@ export default function SpendingCalendarHeatmap({data, currency}: Props): React.
 
   const {weeks, monthLabel} = useMemo(() => generateCalendarGrid(data, monthOffset), [data, monthOffset]);
 
-  const dayLabels = [t((m) => m.cards.invoices.statistics.calendarHeatmap.days.sun), t((m) => m.cards.invoices.statistics.calendarHeatmap.days.mon), t((m) => m.cards.invoices.statistics.calendarHeatmap.days.tue), t((m) => m.cards.invoices.statistics.calendarHeatmap.days.wed), t((m) => m.cards.invoices.statistics.calendarHeatmap.days.thu), t((m) => m.cards.invoices.statistics.calendarHeatmap.days.fri), t((m) => m.cards.invoices.statistics.calendarHeatmap.days.sat)];
+  const dayLabels = [
+    t((m) => m.cards.invoices.statistics.calendarHeatmap.days.sun),
+    t((m) => m.cards.invoices.statistics.calendarHeatmap.days.mon),
+    t((m) => m.cards.invoices.statistics.calendarHeatmap.days.tue),
+    t((m) => m.cards.invoices.statistics.calendarHeatmap.days.wed),
+    t((m) => m.cards.invoices.statistics.calendarHeatmap.days.thu),
+    t((m) => m.cards.invoices.statistics.calendarHeatmap.days.fri),
+    t((m) => m.cards.invoices.statistics.calendarHeatmap.days.sat),
+  ];
 
   /** Navigates to the previous month in the heatmap. */
   const handlePreviousMonth = useCallback((): void => {
@@ -280,7 +290,9 @@ export default function SpendingCalendarHeatmap({data, currency}: Props): React.
         <div className={styles["headerRow"]}>
           <div>
             <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.calendarHeatmap.title)}</CardTitle>
-            <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.calendarHeatmap.description)}</CardDescription>
+            <CardDescription className={styles["cardDescription"]}>
+              {t((m) => m.cards.invoices.statistics.calendarHeatmap.description)}
+            </CardDescription>
           </div>
           <div className={styles["navigationButtons"]}>
             <button

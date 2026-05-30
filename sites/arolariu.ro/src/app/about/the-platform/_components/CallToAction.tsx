@@ -87,7 +87,8 @@ export default function CallToAction(): React.JSX.Element {
             animate={isInView ? {opacity: 1, y: 0} : {}}
             transition={{duration: 0.6}}>
             <h2 className={styles["title"]}>
-              {t((m) => m.sections.about.platform.callToAction.title)} <span className={styles["titleHighlight"]}>{t((m) => m.sections.about.platform.callToAction.titleHighlight)}?</span>
+              {t((m) => m.sections.about.platform.callToAction.title)}{" "}
+              <span className={styles["titleHighlight"]}>{t((m) => m.sections.about.platform.callToAction.titleHighlight)}?</span>
             </h2>
           </motion.div>
 
@@ -196,8 +197,12 @@ export default function CallToAction(): React.JSX.Element {
                 transition={{duration: 0.5, delay: 0.6 + index * 0.1}}
                 whileHover={{scale: 1.05, transition: {duration: 0.2}}}>
                 <div className={`${styles["trustAccent"]} ${styles[trustAccentClassMap[trustId]]}`} />
-                <h3 className={styles["trustTitle"]}>{t(selectorFromPath(`sections.about.platform.callToAction.${`trust.${trustId}.title`}`))}</h3>
-                <p className={styles["trustDescription"]}>{t(selectorFromPath(`sections.about.platform.callToAction.${`trust.${trustId}.description`}`))}</p>
+                <h3 className={styles["trustTitle"]}>
+                  {t(selectorFromPath(`sections.about.platform.callToAction.${`trust.${trustId}.title`}`))}
+                </h3>
+                <p className={styles["trustDescription"]}>
+                  {t(selectorFromPath(`sections.about.platform.callToAction.${`trust.${trustId}.description`}`))}
+                </p>
               </motion.div>
             ))}
           </motion.div>

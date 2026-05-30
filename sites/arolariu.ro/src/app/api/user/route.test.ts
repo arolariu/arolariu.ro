@@ -3,6 +3,10 @@
  * @module sites/arolariu.ro/src/app/api/user/route/tests
  */
 
+import {withSpan} from "@/instrumentation.server";
+import {fetchApiJwtSecret} from "@/lib/config/configProxy";
+import {EMPTY_GUID, generateGuid} from "@/lib/utils.generic";
+import {createJwtToken} from "@/lib/utils.server";
 import type {UserInformation} from "@/types";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {GET} from "./route";
@@ -11,55 +15,19 @@ import {GET} from "./route";
 // mockFetchApiJwtSecret is hoisted separately so we can re-apply its
 // implementation in beforeEach (mockReset: true in vitest.config.ts clears all
 // mock implementations between tests).
-const {mockAuth, mockCurrentUser, mockCreateJwtToken, mockWithSpan, mockGenerateGuid, mockFetchApiJwtSecret} = vi.hoisted(() => ({
+const {mockAuth, mockCurrentUser} = vi.hoisted(() => ({
   mockAuth: vi.fn(),
   mockCurrentUser: vi.fn(),
-  mockCreateJwtToken: vi.fn(),
-  mockWithSpan: vi.fn(),
-  mockGenerateGuid: vi.fn(),
-  mockFetchApiJwtSecret: vi.fn(),
 }));
+
+const mockCreateJwtToken = vi.mocked(createJwtToken);
+const mockFetchApiJwtSecret = vi.mocked(fetchApiJwtSecret);
+const mockWithSpan = vi.mocked(withSpan);
 
 // Mock Clerk functions
 vi.mock("@clerk/nextjs/server", () => ({
   auth: mockAuth,
   currentUser: mockCurrentUser,
-}));
-
-// Mock server utilities - auth secrets now resolve through configProxy.
-vi.mock("@/lib/utils.server", () => ({
-  createJwtToken: mockCreateJwtToken,
-}));
-
-// Mock the config proxy JWT secret helper — avoids network calls to exp
-vi.mock("@/lib/config/configProxy", () => ({
-  fetchApiJwtSecret: mockFetchApiJwtSecret,
-}));
-
-// Mock generateGuid
-vi.mock("@/lib/utils.generic", () => ({
-  generateGuid: mockGenerateGuid,
-  EMPTY_GUID: "00000000-0000-0000-0000-000000000000",
-}));
-
-// Mock telemetry functions
-vi.mock("@/instrumentation.server", () => ({
-  withSpan: mockWithSpan,
-  createCounter: vi.fn(() => ({
-    add: vi.fn(),
-  })),
-  createHistogram: vi.fn(() => ({
-    record: vi.fn(),
-  })),
-  addSpanEvent: vi.fn(),
-  setSpanAttributes: vi.fn(),
-  logWithTrace: vi.fn(),
-  recordSpanError: vi.fn(),
-  createAuthAttributes: vi.fn(() => ({})),
-  createHttpServerAttributes: vi.fn(() => ({})),
-  createNextJsAttributes: vi.fn(() => ({})),
-  getTraceparentHeader: vi.fn(() => ""),
-  injectTraceContextHeaders: vi.fn(() => ({})),
 }));
 
 describe("GET /api/user", () => {
@@ -68,12 +36,12 @@ describe("GET /api/user", () => {
     // mockReset: true clears all implementations; re-apply defaults here.
     mockFetchApiJwtSecret.mockResolvedValue("mock-api-jwt-secret");
     // Default withSpan implementation that provides span object and handles nested withSpan calls
-    mockWithSpan.mockImplementation(async (_spanName: string, fn: (span?: unknown) => Promise<unknown>) => {
+    mockWithSpan.mockImplementation(async (_spanName, fn) => {
       const mockSpan = {
         setAttributes: vi.fn(),
       };
       try {
-        return await fn(mockSpan);
+        return await fn(mockSpan as unknown as Parameters<typeof fn>[0]);
       } catch (error) {
         // Re-throw to allow outer withSpan to catch
         throw error;
@@ -94,7 +62,7 @@ describe("GET /api/user", () => {
     };
 
     const mockToken = "mock-generated-jwt-token";
-    const mockUserIdentifier = "generated-guid-123";
+    const expectedUserIdentifier = generateGuid("user-123");
 
     mockAuth.mockResolvedValue({
       isAuthenticated: true,
@@ -102,7 +70,6 @@ describe("GET /api/user", () => {
     });
 
     mockCurrentUser.mockResolvedValue(mockUser);
-    mockGenerateGuid.mockReturnValue(mockUserIdentifier);
     mockCreateJwtToken.mockResolvedValue(mockToken);
 
     const response = await GET();
@@ -112,13 +79,12 @@ describe("GET /api/user", () => {
 
     expect(data).toEqual({
       user: mockUser,
-      userIdentifier: mockUserIdentifier,
+      userIdentifier: expectedUserIdentifier,
       userJwt: mockToken,
     });
 
     expect(mockAuth).toHaveBeenCalled();
     expect(mockCurrentUser).toHaveBeenCalled();
-    expect(mockGenerateGuid).toHaveBeenCalledWith("user-123");
   });
 
   it("should return guest user information when not authenticated", async () => {
@@ -137,7 +103,7 @@ describe("GET /api/user", () => {
 
     expect(data).toEqual({
       user: null,
-      userIdentifier: "00000000-0000-0000-0000-000000000000",
+      userIdentifier: EMPTY_GUID,
       userJwt: mockGuestToken,
     });
 
@@ -149,7 +115,7 @@ describe("GET /api/user", () => {
         aud: "https://api.arolariu.ro",
         sub: "guest",
         role: "guest",
-        userIdentifier: "00000000-0000-0000-0000-000000000000",
+        userIdentifier: EMPTY_GUID,
       }),
       "mock-api-jwt-secret",
     );
@@ -182,7 +148,7 @@ describe("GET /api/user", () => {
     expect(exp - iat).toBe(300);
   });
 
-  it("should handle null token from Clerk auth", async () => {
+  it("should handle empty token from JWT generation", async () => {
     const mockUser = {
       id: "user-456",
       firstName: "Jane",
@@ -190,15 +156,13 @@ describe("GET /api/user", () => {
       emailAddresses: [{emailAddress: "jane@example.com"}],
     };
 
-    const mockUserIdentifier = "generated-guid-456";
+    const expectedUserIdentifier = generateGuid("user-456");
 
     mockAuth.mockResolvedValue({
       isAuthenticated: true,
       userId: "user-456",
     });
-
     mockCurrentUser.mockResolvedValue(mockUser);
-    mockGenerateGuid.mockReturnValue(mockUserIdentifier);
     // Return empty string to simulate token generation returning empty
     mockCreateJwtToken.mockResolvedValue("");
 
@@ -209,7 +173,7 @@ describe("GET /api/user", () => {
 
     expect(data).toEqual({
       user: mockUser,
-      userIdentifier: mockUserIdentifier,
+      userIdentifier: expectedUserIdentifier,
       userJwt: "",
     });
   });
@@ -224,7 +188,7 @@ describe("GET /api/user", () => {
 
     expect(data).toEqual({
       user: null,
-      userIdentifier: "00000000-0000-0000-0000-000000000000",
+      userIdentifier: EMPTY_GUID,
       userJwt: "",
     });
   });
@@ -240,7 +204,6 @@ describe("GET /api/user", () => {
     });
 
     mockCurrentUser.mockResolvedValue(mockUser);
-    mockGenerateGuid.mockReturnValue("generated-guid-telemetry");
     mockCreateJwtToken.mockResolvedValue("token");
 
     await GET();
@@ -284,7 +247,7 @@ describe("GET /api/user", () => {
 
     // Should treat as guest user
     expect(data.user).toBeNull();
-    expect(data.userIdentifier).toBe("00000000-0000-0000-0000-000000000000");
+    expect(data.userIdentifier).toBe(EMPTY_GUID);
   });
 
   it("should handle non-Error exception types and fallback to guest user", async () => {
@@ -297,7 +260,7 @@ describe("GET /api/user", () => {
 
     // Should fallback to guest user on non-Error exception
     expect(data.user).toBeNull();
-    expect(data.userIdentifier).toBe("00000000-0000-0000-0000-000000000000");
+    expect(data.userIdentifier).toBe(EMPTY_GUID);
   });
 
   it("should use primary phone number when no email addresses exist", async () => {
@@ -311,15 +274,13 @@ describe("GET /api/user", () => {
     };
 
     const mockToken = "mock-jwt-token";
-    const mockUserIdentifier = "phone-guid-123";
+    const expectedUserIdentifier = generateGuid("user-phone-only");
 
     mockAuth.mockResolvedValue({
       isAuthenticated: true,
       userId: "user-phone-only",
     });
-
     mockCurrentUser.mockResolvedValue(mockUser);
-    mockGenerateGuid.mockReturnValue(mockUserIdentifier);
     mockCreateJwtToken.mockResolvedValue(mockToken);
 
     await GET();
@@ -327,6 +288,7 @@ describe("GET /api/user", () => {
     expect(mockCreateJwtToken).toHaveBeenCalledWith(
       expect.objectContaining({
         sub: "+1-555-0123",
+        userIdentifier: expectedUserIdentifier,
       }),
       expect.any(String),
     );
@@ -343,15 +305,13 @@ describe("GET /api/user", () => {
     };
 
     const mockToken = "mock-jwt-token";
-    const mockUserIdentifier = "secondary-phone-guid";
+    const expectedUserIdentifier = generateGuid("user-secondary-phone");
 
     mockAuth.mockResolvedValue({
       isAuthenticated: true,
       userId: "user-secondary-phone",
     });
-
     mockCurrentUser.mockResolvedValue(mockUser);
-    mockGenerateGuid.mockReturnValue(mockUserIdentifier);
     mockCreateJwtToken.mockResolvedValue(mockToken);
 
     await GET();
@@ -359,6 +319,7 @@ describe("GET /api/user", () => {
     expect(mockCreateJwtToken).toHaveBeenCalledWith(
       expect.objectContaining({
         sub: "+1-555-0789",
+        userIdentifier: expectedUserIdentifier,
       }),
       expect.any(String),
     );
@@ -375,15 +336,13 @@ describe("GET /api/user", () => {
     };
 
     const mockToken = "mock-jwt-token";
-    const mockUserIdentifier = "id-only-guid";
+    const expectedUserIdentifier = generateGuid("user-id-only");
 
     mockAuth.mockResolvedValue({
       isAuthenticated: true,
       userId: "user-id-only",
     });
-
     mockCurrentUser.mockResolvedValue(mockUser);
-    mockGenerateGuid.mockReturnValue(mockUserIdentifier);
     mockCreateJwtToken.mockResolvedValue(mockToken);
 
     await GET();
@@ -391,18 +350,19 @@ describe("GET /api/user", () => {
     expect(mockCreateJwtToken).toHaveBeenCalledWith(
       expect.objectContaining({
         sub: "user-id-only",
+        userIdentifier: expectedUserIdentifier,
       }),
       expect.any(String),
     );
   });
 
-  it("should throw and fallback to guest when jwtSecret is null", async () => {
+  it("should throw and fallback to guest when jwtSecret is falsy", async () => {
     mockAuth.mockResolvedValue({
       isAuthenticated: false,
       userId: null,
     });
-    // fetchApiJwtSecret returns null → the guard at line 151 throws
-    mockFetchApiJwtSecret.mockResolvedValue(null);
+    // fetchApiJwtSecret returns empty string → the guard at line 151 throws
+    mockFetchApiJwtSecret.mockResolvedValue("");
 
     const response = await GET();
 
@@ -411,7 +371,7 @@ describe("GET /api/user", () => {
 
     // Error catch block returns fallback guest user
     expect(data.user).toBeNull();
-    expect(data.userIdentifier).toBe("00000000-0000-0000-0000-000000000000");
+    expect(data.userIdentifier).toBe(EMPTY_GUID);
     expect(data.userJwt).toBe("");
   });
 
@@ -429,7 +389,7 @@ describe("GET /api/user", () => {
     const data: UserInformation = await response.json();
 
     expect(data.user).toBeNull();
-    expect(data.userIdentifier).toBe("00000000-0000-0000-0000-000000000000");
+    expect(data.userIdentifier).toBe(EMPTY_GUID);
     expect(data.userJwt).toBe("");
   });
 
@@ -444,15 +404,13 @@ describe("GET /api/user", () => {
     };
 
     const mockToken = "mock-jwt-token";
-    const mockUserIdentifier = "anon-guid";
+    const expectedUserIdentifier = generateGuid("user-anon");
 
     mockAuth.mockResolvedValue({
       isAuthenticated: true,
       userId: "user-anon",
     });
-
     mockCurrentUser.mockResolvedValue(mockUser);
-    mockGenerateGuid.mockReturnValue(mockUserIdentifier);
     mockCreateJwtToken.mockResolvedValue(mockToken);
 
     await GET();
@@ -460,6 +418,7 @@ describe("GET /api/user", () => {
     expect(mockCreateJwtToken).toHaveBeenCalledWith(
       expect.objectContaining({
         sub: "N/A",
+        userIdentifier: expectedUserIdentifier,
       }),
       expect.any(String),
     );

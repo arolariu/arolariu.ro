@@ -132,11 +132,7 @@ function getDefaultInsight(translate: SeasonalTranslateFn): Insight {
   };
 }
 
-function detectSeasonalInsights(
-  invoice: Invoice,
-  allInvoices: ReadonlyArray<Invoice>,
-  translate: SeasonalTranslateFn,
-): Insight[] {
+function detectSeasonalInsights(invoice: Invoice, allInvoices: ReadonlyArray<Invoice>, translate: SeasonalTranslateFn): Insight[] {
   const insights: Insight[] = [];
   const date = toSafeDate(invoice.paymentInformation.transactionDate);
   const month = date.getMonth();
@@ -253,8 +249,12 @@ export function SeasonalInsightsCard(): React.JSX.Element {
                   <TbBulb className={styles["iconSm"]} />
                 </div>
                 <div className={styles["insightContent"]}>
-                  <p className={styles["insightTitle"]}>{t((m) => m.cards.invoices.seasonalInsightsCard.insights.insufficientData.title)}</p>
-                  <p className={styles["insightDescription"]}>{t((m) => m.cards.invoices.seasonalInsightsCard.insights.insufficientData.description)}</p>
+                  <p className={styles["insightTitle"]}>
+                    {t((m) => m.cards.invoices.seasonalInsightsCard.insights.insufficientData.title)}
+                  </p>
+                  <p className={styles["insightDescription"]}>
+                    {t((m) => m.cards.invoices.seasonalInsightsCard.insights.insufficientData.description)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -264,7 +264,9 @@ export function SeasonalInsightsCard(): React.JSX.Element {
             {/* Month comparison */}
             <div className={styles["monthSection"]}>
               <div className={styles["monthRow"]}>
-                <span className={styles["monthLabel"]}>{t((m) => m.cards.invoices.seasonalInsightsCard.month.spendingSoFar, {month: monthName})}</span>
+                <span className={styles["monthLabel"]}>
+                  {t((m) => m.cards.invoices.seasonalInsightsCard.month.spendingSoFar, {month: monthName})}
+                </span>
                 <span className={styles["monthValue"]}>
                   {formatCurrency(seasonalData.currentAmount, {currencyCode: currency.code, locale})}
                 </span>

@@ -5,7 +5,6 @@
  * @module @/app/domains/invoices/_components/LazyImage
  */
 
-
 import {Skeleton} from "@arolariu/components";
 import Image from "next/image";
 import {useCallback, useEffect, useRef, useState} from "react";

@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Public sharing components for the ShareInvoiceDialog.
  * @module domains/invoices/_dialogs/ShareInvoiceDialog.Public
@@ -151,7 +153,9 @@ export function AlreadyPublicMode({
         variant='destructive'
         className={styles["alertOrange"]}>
         <TbGlobe className={styles["globeAlertIcon"]} />
-        <AlertTitle className={styles["alertOrangeTitle"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.alreadyPublic.title)}</AlertTitle>
+        <AlertTitle className={styles["alertOrangeTitle"]}>
+          {t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.alreadyPublic.title)}
+        </AlertTitle>
         <AlertDescription className={styles["alertOrangeDesc"]}>
           {t.rich((m) => m.dialogs.invoices.shareInvoiceDialogPublic.alreadyPublic.description, {
             // eslint-disable-next-line react/no-unstable-nested-components -- single-call site
@@ -174,7 +178,9 @@ export function AlreadyPublicMode({
           disabled={isRevoking}
           className={styles["buttonFull"]}>
           <TbShieldOff className={styles["tabIcon"]} />
-          {isRevoking ? t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.alreadyPublic.revoking) : t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.alreadyPublic.revoke)}
+          {isRevoking
+            ? t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.alreadyPublic.revoking)
+            : t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.alreadyPublic.revoke)}
         </Button>
         <p className={styles["revokeHint"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.alreadyPublic.revokeHint)}</p>
       </div>
@@ -211,7 +217,9 @@ export function PublicMode({onBack, shareUrl, copied, onCopyLink, onCopyQRCode}:
         variant='destructive'
         className={styles["alertOrange"]}>
         <TbAlertTriangle className={styles["globeAlertIcon"]} />
-        <AlertTitle className={styles["alertOrangeTitle"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.warning.title)}</AlertTitle>
+        <AlertTitle className={styles["alertOrangeTitle"]}>
+          {t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.warning.title)}
+        </AlertTitle>
         <AlertDescription className={styles["alertOrangeDesc"]}>
           {t.rich((m) => m.dialogs.invoices.shareInvoiceDialogPublic.warning.description, {
             // eslint-disable-next-line react/no-unstable-nested-components -- single-call site

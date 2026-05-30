@@ -1,4 +1,3 @@
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Email template for confirming newsletter subscription.
  * @module emails/newsletter/Subscription
@@ -12,6 +11,7 @@ import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles} from "../_components";
 import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
+import {selectorFromPath} from "../_lib/i18n";
 
 /**
  * Properties for the UserHasBeenSubscribedEmail component.
@@ -57,7 +57,13 @@ const UserHasBeenSubscribedEmail = defineEmailTemplate<Props>({
           })}
         </Text>
         <EmailCard title={t(selectorFromPath("emails.newsletterSubscribed.whatToExpectTitle"))}>
-          <BulletList items={[t(selectorFromPath("emails.newsletterSubscribed.whatToExpect.item0")), t(selectorFromPath("emails.newsletterSubscribed.whatToExpect.item1")), t(selectorFromPath("emails.newsletterSubscribed.whatToExpect.item2"))]} />
+          <BulletList
+            items={[
+              t(selectorFromPath("emails.newsletterSubscribed.whatToExpect.item0")),
+              t(selectorFromPath("emails.newsletterSubscribed.whatToExpect.item1")),
+              t(selectorFromPath("emails.newsletterSubscribed.whatToExpect.item2")),
+            ]}
+          />
         </EmailCard>
         <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.newsletterSubscribed.body"))}</Text>
         <Text style={EmailParagraphStyles}>

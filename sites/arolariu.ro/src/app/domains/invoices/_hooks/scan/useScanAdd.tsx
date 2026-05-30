@@ -2,20 +2,19 @@
 
 /**
  * @fileoverview Hook for adding a scan to an existing invoice.
-* @module app/domains/invoices/_hooks/scan/useScanAdd
-*
-* @remarks
-* Converts a browser `Blob` to a data URL, uploads it with the invoice scan
-* server action, attaches the uploaded blob URL to an existing invoice, and
-* exposes loading state plus toast feedback for the calling component.
+ * @module app/domains/invoices/_hooks/scan/useScanAdd
+ *
+ * @remarks
+ * Converts a browser `Blob` to a data URL, uploads it with the invoice scan
+ * server action, attaches the uploaded blob URL to an existing invoice, and
+ * exposes loading state plus toast feedback for the calling component.
  */
 
 import type {InvoiceScanType} from "@/types/invoices";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
-import {attachInvoiceScan} from "../../_actions/invoices/scans/attachInvoiceScan";
-import {createInvoiceScan} from "../../_actions/invoices/scans/createInvoiceScan";
+import {attachInvoiceScan, createInvoiceScan} from "../../_actions/invoices";
 
 /**
  * Arguments required to upload and attach a scan.
@@ -89,7 +88,7 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
       setIsAdding(true);
       try {
         const base64Data = await readBlobAsDataUrl(args.file);
-        const ext = args.fileName.split(".").pop() || "jpg";
+        const ext = args.fileName.includes(".") ? args.fileName.split(".").pop() || "jpg" : "jpg";
         const blobName = `${args.userIdentifier}/${invoiceId}/${crypto.randomUUID()}.${ext}`;
         const {success, data, error} = await createInvoiceScan({
           base64Data,
@@ -101,7 +100,8 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
         });
 
         if (!success || !data) {
-          throw new Error(t((m) => m.toasts.invoices.useScanAdd.uploadFailed, {status: String(error?.status) || "unknown"}));
+          const status = error?.status == null ? "unknown" : String(error.status);
+          throw new Error(t((m) => m.toasts.invoices.useScanAdd.uploadFailed, {status}));
         }
 
         await attachInvoiceScan({
@@ -119,7 +119,10 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
         toast.success(t((m) => m.toasts.invoices.useScanAdd.addSuccess));
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        toast.error(t((m) => m.toasts.invoices.useScanAdd.addError), {description: message});
+        toast.error(
+          t((m) => m.toasts.invoices.useScanAdd.addError),
+          {description: message},
+        );
         throw error;
       } finally {
         setIsAdding(false);

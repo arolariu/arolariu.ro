@@ -351,7 +351,9 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                   onClick={handleCustomPresetClick}>
                   <TbBrush className={styles["iconMd"]} />
                   <span className={styles["presetName"]}>{t((m) => m.pages.profile.settings.appearance.presets.custom)}</span>
-                  <span className={styles["presetDescription"]}>{t((m) => m.pages.profile.settings.appearance.presets.customDescription)}</span>
+                  <span className={styles["presetDescription"]}>
+                    {t((m) => m.pages.profile.settings.appearance.presets.customDescription)}
+                  </span>
                 </button>
               </div>
             </CardContent>

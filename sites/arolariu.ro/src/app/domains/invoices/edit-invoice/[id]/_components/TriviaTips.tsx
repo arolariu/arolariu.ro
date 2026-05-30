@@ -296,7 +296,9 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
         {/* Completeness Progress Bar */}
         <div className={styles["completenessSection"]}>
           <div className={styles["completenessHeader"]}>
-            <p className={styles["completenessLabel"]}>{t((m) => m.pages.invoices.editInvoice.triviaTips.completeness, {percentage: String(percentage)})}</p>
+            <p className={styles["completenessLabel"]}>
+              {t((m) => m.pages.invoices.editInvoice.triviaTips.completeness, {percentage: String(percentage)})}
+            </p>
             <p className={styles["completenessScore"]}>
               {completenessScore} / {maxScore}
             </p>
@@ -363,7 +365,9 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
               {formatCurrency(totalPotentialSavings, {currencyCode: invoice.paymentInformation.currency.code, locale: "en"})}
             </p>
           </div>
-          <p className={styles["savingsHint"]}>{t((m) => m.pages.invoices.editInvoice.triviaTips.banner.hint, {merchantName: merchant?.name ?? ""})}</p>
+          <p className={styles["savingsHint"]}>
+            {t((m) => m.pages.invoices.editInvoice.triviaTips.banner.hint, {merchantName: merchant?.name ?? ""})}
+          </p>
         </motion.div>
 
         <Separator />
@@ -387,7 +391,9 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
                       <Badge
                         variant={tip.difficulty === "easy" ? "default" : "secondary"}
                         className={styles["difficultyBadge"]}>
-                        {tip.difficulty === "easy" ? t((m) => m.pages.invoices.editInvoice.triviaTips.difficulty.easy) : t((m) => m.pages.invoices.editInvoice.triviaTips.difficulty.medium)}
+                        {tip.difficulty === "easy"
+                          ? t((m) => m.pages.invoices.editInvoice.triviaTips.difficulty.easy)
+                          : t((m) => m.pages.invoices.editInvoice.triviaTips.difficulty.medium)}
                       </Badge>
                     </div>
                     <TooltipProvider>

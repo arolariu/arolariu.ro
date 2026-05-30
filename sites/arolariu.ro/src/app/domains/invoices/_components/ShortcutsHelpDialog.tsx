@@ -130,7 +130,9 @@ export default function ShortcutsHelpDialog({open, onClose}: Readonly<ShortcutsH
                   </Kbd>
                 ))}
               </KbdGroup>
-              <span className={styles["shortcutDescription"]}>{t(selectorFromPath(`shared.invoices.shortcuts.${shortcut.descriptionKey}`))}</span>
+              <span className={styles["shortcutDescription"]}>
+                {t(selectorFromPath(`shared.invoices.shortcuts.${shortcut.descriptionKey}`))}
+              </span>
             </div>
           ))}
         </div>

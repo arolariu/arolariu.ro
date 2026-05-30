@@ -3,17 +3,17 @@
 /**
  * @fileoverview Hook for removing metadata from an invoice.
  * @module app/domains/invoices/_hooks/invoice/useInvoiceMetadataRemove
-*
-* @remarks
-* Wraps the invoice metadata delete server action and mirrors removals in the
-* local invoice store. The callback supports a single key or an array of keys
-* processed sequentially.
+ *
+ * @remarks
+ * Wraps the invoice metadata delete server action and mirrors removals in the
+ * local invoice store. The callback supports a single key or an array of keys
+ * processed sequentially.
  */
 
 import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
 import {useCallback, useState} from "react";
-import {deleteInvoiceMetadata as deleteInvoiceMetadataServerSide} from "../../_actions/invoices/metadata/deleteInvoiceMetadata";
+import {deleteInvoiceMetadata as deleteInvoiceMetadataServerSide} from "../../_actions/invoices";
 
 /**
  * Result of a bulk metadata removal operation.
@@ -35,7 +35,10 @@ export type BulkRemoveResult = Readonly<{
  */
 type HookOutputType = Readonly<{
   isRemoving: boolean;
-  removeMetadataCallback: (keyOrKeys: string | readonly string[]) => Promise<void | BulkRemoveResult>;
+  removeMetadataCallback: {
+    (key: string): Promise<void>;
+    (keys: readonly string[]): Promise<BulkRemoveResult>;
+  };
 }>;
 
 /**
@@ -76,12 +79,14 @@ export function useInvoiceMetadataRemove(invoice: Invoice): Readonly<HookOutputT
       if (!result.success) {
         throw new Error(result.error.message);
       }
-      const remainingMetadata = Object.fromEntries(Object.entries(invoice.additionalMetadata).filter(([entryKey]) => entryKey !== key));
       deleteInvoiceMedataClientSide(invoice.id, {
-        additionalMetadata: remainingMetadata,
+        additionalMetadata: {
+          ...invoice.additionalMetadata,
+          [key]: undefined!,
+        },
       });
     },
-    [invoice.additionalMetadata, invoice.id, deleteInvoiceMedataClientSide],
+    [invoice.id, invoice.additionalMetadata, deleteInvoiceMedataClientSide],
   );
 
   /**
@@ -123,25 +128,24 @@ export function useInvoiceMetadataRemove(invoice: Invoice): Readonly<HookOutputT
     [performMutation],
   );
 
-  const removeMetadataCallback = useCallback(
-    async (keyOrKeys: string | readonly string[]): Promise<void | BulkRemoveResult> => {
-      setIsRemoving(true);
-      try {
-        if (typeof keyOrKeys === "string") {
-          await performMutation(keyOrKeys);
-        } else {
-          return await processBulkRecursive(keyOrKeys, 0, {
-            successCount: 0,
-            failureCount: 0,
-            failedKeys: [],
-          });
-        }
-      } finally {
-        setIsRemoving(false);
+  async function removeMetadataCallback(key: string): Promise<void>;
+  async function removeMetadataCallback(keys: readonly string[]): Promise<BulkRemoveResult>;
+  async function removeMetadataCallback(keyOrKeys: string | readonly string[]): Promise<void | BulkRemoveResult> {
+    setIsRemoving(true);
+    try {
+      if (typeof keyOrKeys === "string") {
+        await performMutation(keyOrKeys);
+      } else {
+        return await processBulkRecursive(keyOrKeys, 0, {
+          successCount: 0,
+          failureCount: 0,
+          failedKeys: [],
+        });
       }
-    },
-    [performMutation, processBulkRecursive],
-  );
+    } finally {
+      setIsRemoving(false);
+    }
+  }
 
   return {isRemoving, removeMetadataCallback};
 }

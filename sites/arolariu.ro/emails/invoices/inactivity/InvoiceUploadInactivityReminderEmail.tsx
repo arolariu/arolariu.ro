@@ -1,4 +1,3 @@
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Progressive engagement email for invoice upload inactivity.
  * @module emails/invoices/inactivity/InvoiceUploadInactivityReminderEmail
@@ -46,6 +45,7 @@ import {
   KeyValueTable,
 } from "../../_components";
 import {defineEmailTemplate} from "../../_lib/defineEmailTemplate";
+import {selectorFromPath} from "../../_lib/i18n";
 
 /**
  * Properties for the invoice upload inactivity reminder emails.
@@ -125,7 +125,13 @@ const InvoiceUploadInactivityReminderEmail = defineEmailTemplate<Props>({
         <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.invoiceInactivity.greeting"), {name})}</Text>
         <Text style={EmailParagraphStyles}>{t(selectorFromPath(`emails.invoiceInactivity.intro.${dayKey}`))}</Text>
         <EmailCard title={t(selectorFromPath("emails.invoiceInactivity.whyWorthIt.title"))}>
-          <BulletList items={[t(selectorFromPath("emails.invoiceInactivity.whyWorthIt.bullet1")), t(selectorFromPath("emails.invoiceInactivity.whyWorthIt.bullet2")), t(selectorFromPath("emails.invoiceInactivity.whyWorthIt.bullet3"))]} />
+          <BulletList
+            items={[
+              t(selectorFromPath("emails.invoiceInactivity.whyWorthIt.bullet1")),
+              t(selectorFromPath("emails.invoiceInactivity.whyWorthIt.bullet2")),
+              t(selectorFromPath("emails.invoiceInactivity.whyWorthIt.bullet3")),
+            ]}
+          />
         </EmailCard>
         <EmailCard title={t(selectorFromPath("emails.invoiceInactivity.status.title"))}>
           <KeyValueTable
@@ -138,7 +144,9 @@ const InvoiceUploadInactivityReminderEmail = defineEmailTemplate<Props>({
         </EmailCard>
         {daysWithoutUpload >= 14 ? (
           <EmailCard title={t(selectorFromPath("emails.invoiceInactivity.tip.title"))}>
-            <Text style={{...EmailParagraphStyles, fontSize: "14px", margin: "0"}}>{t(selectorFromPath("emails.invoiceInactivity.tip.message"))}</Text>
+            <Text style={{...EmailParagraphStyles, fontSize: "14px", margin: "0"}}>
+              {t(selectorFromPath("emails.invoiceInactivity.tip.message"))}
+            </Text>
           </EmailCard>
         ) : null}
         {daysWithoutUpload >= 30 ? (

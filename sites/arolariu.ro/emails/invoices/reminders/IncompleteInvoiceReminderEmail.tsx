@@ -1,4 +1,3 @@
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Reminder email for invoices with incomplete or partial AI analysis.
  * @module emails/invoices/reminders/IncompleteInvoiceReminderEmail
@@ -34,7 +33,7 @@ import {
   EmailParagraphStyles,
   KeyValueTable,
 } from "../../_components";
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_lib/i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages, selectorFromPath} from "../../_lib/i18n";
 
 /**
  * Describes what's missing from an incomplete invoice.
@@ -148,7 +147,14 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
         })}
       </EmailCard>
       <EmailCard title={t(selectorFromPath("emails.incompleteInvoice.tipsTitle"))}>
-        <BulletList items={[t(selectorFromPath("emails.incompleteInvoice.tips.item0")), t(selectorFromPath("emails.incompleteInvoice.tips.item1")), t(selectorFromPath("emails.incompleteInvoice.tips.item2")), t(selectorFromPath("emails.incompleteInvoice.tips.item3"))]} />
+        <BulletList
+          items={[
+            t(selectorFromPath("emails.incompleteInvoice.tips.item0")),
+            t(selectorFromPath("emails.incompleteInvoice.tips.item1")),
+            t(selectorFromPath("emails.incompleteInvoice.tips.item2")),
+            t(selectorFromPath("emails.incompleteInvoice.tips.item3")),
+          ]}
+        />
       </EmailCard>
       <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.incompleteInvoice.bodyText"))}</Text>
       <Text style={EmailParagraphStyles}>

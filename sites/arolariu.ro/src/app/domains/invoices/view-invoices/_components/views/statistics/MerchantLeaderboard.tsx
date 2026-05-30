@@ -59,7 +59,9 @@ function CustomTooltip({active, payload, currency, getMerchantName}: Readonly<Cu
       <p className={styles["tooltipAmount"]}>
         {formatAmount(data.totalSpend)} {currency}
       </p>
-      <p className={styles["tooltipCount"]}>{t((m) => m.cards.invoices.statistics.merchantLeaderboard.tooltip.invoiceCount, {count: String(data.invoiceCount)})}</p>
+      <p className={styles["tooltipCount"]}>
+        {t((m) => m.cards.invoices.statistics.merchantLeaderboard.tooltip.invoiceCount, {count: String(data.invoiceCount)})}
+      </p>
     </div>
   );
 }
@@ -114,7 +116,9 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
           <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.merchantLeaderboard.title)}</CardTitle>
-          <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.merchantLeaderboard.description)}</CardDescription>
+          <CardDescription className={styles["cardDescription"]}>
+            {t((m) => m.cards.invoices.statistics.merchantLeaderboard.description)}
+          </CardDescription>
         </CardHeader>
         <CardContent className={styles["emptyContent"]}>
           <TbChartBar className={styles["emptyIcon"]} />
@@ -137,7 +141,9 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
         <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.merchantLeaderboard.title)}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.merchantLeaderboard.description)}</CardDescription>
+        <CardDescription className={styles["cardDescription"]}>
+          {t((m) => m.cards.invoices.statistics.merchantLeaderboard.description)}
+        </CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer

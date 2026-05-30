@@ -6,10 +6,8 @@
 import type {ReactNode} from "react";
 import {Body, Container, Head, Hr, Html, Img, Link, Preview, Section, Text} from "react-email";
 
-import type {EmailLocale} from "../_lib/i18n";
-
+import {type EmailLocale, selectorFromPath} from "../_lib/i18n";
 import {BRAND, EMAIL_COLORS, EMAIL_TYPOGRAPHY} from "./brand";
-import {selectorFromPath} from "next-intl-selector";
 import {getLayoutTranslator} from "./layoutTranslator";
 
 type Cta = {
@@ -215,7 +213,9 @@ export default async function EmailLayout({
               </Text>
             ) : null}
 
-            <Text style={styles.footerFinePrint}>{tLayout(selectorFromPath("emails.layout.allRightsReserved"), {year: new Date().getFullYear(), brand: BRAND.name})}</Text>
+            <Text style={styles.footerFinePrint}>
+              {tLayout(selectorFromPath("emails.layout.allRightsReserved"), {year: new Date().getFullYear(), brand: BRAND.name})}
+            </Text>
           </Section>
         </Container>
       </Body>

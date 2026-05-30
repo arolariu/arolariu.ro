@@ -297,7 +297,9 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                     ))}
                   </SelectContent>
                 </Select>
-                <span className={styles["footerLabel"]}>{t((m) => m.pages.invoices.viewInvoices.tableView.pageOf, {current: String(currentPage), total: String(totalPages)})}</span>
+                <span className={styles["footerLabel"]}>
+                  {t((m) => m.pages.invoices.viewInvoices.tableView.pageOf, {current: String(currentPage), total: String(totalPages)})}
+                </span>
               </div>
             </TableCell>
             <TableCell

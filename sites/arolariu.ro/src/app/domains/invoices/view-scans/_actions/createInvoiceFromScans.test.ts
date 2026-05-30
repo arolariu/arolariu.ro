@@ -3,37 +3,21 @@
  * @module app/domains/invoices/view-scans/_actions/createInvoiceFromScans.test
  */
 
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {fetchWithTimeout} from "@/lib/utils.server";
 import {InvoiceScanType} from "@/types/invoices";
 import type {Scan} from "@/types/scans";
 import {ScanStatus, ScanType} from "@/types/scans";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
-// Mock server-side modules BEFORE importing them
-vi.mock("@/lib/actions/user/fetchUser", () => ({
-  fetchBFFUserFromAuthService: vi.fn(),
-}));
-
-vi.mock("@/lib/utils.server", () => ({
-  fetchWithTimeout: vi.fn(),
-}));
-
-vi.mock("@/app/domains/invoices/_actions/scans/markScansAsUsed", () => ({
+vi.mock("../../_actions/scans", () => ({
   markScansAsUsed: vi.fn(async () => {}),
 }));
 
 // analyzeInvoice is imported by the module under test — mock it as async (must return a Promise)
-vi.mock("@/app/domains/invoices/_actions/invoices/analyzeInvoice", () => ({default: vi.fn(async () => {})}));
-
-// Mock OpenTelemetry instrumentation
-vi.mock("@/instrumentation.server", () => ({
-  withSpan: vi.fn((_name, fn) => fn()),
-  addSpanEvent: vi.fn(),
-  logWithTrace: vi.fn(),
+vi.mock("../../_actions/invoices", () => ({
+  analyzeInvoice: vi.fn(async () => {}),
 }));
-
-// Now import the mocked modules
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
 
 // Stub references — use vi.mocked for type-safe access
 const mockFetch = vi.mocked(fetchWithTimeout);
@@ -467,7 +451,7 @@ describe("createInvoiceFromScans", () => {
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
       // Import the analyzeInvoice mock
-      const {default: analyzeInvoice} = await import("@/app/domains/invoices/_actions/invoices/analyzeInvoice");
+      const {analyzeInvoice} = await import("../../_actions/invoices");
       const mockAnalyze = vi.mocked(analyzeInvoice);
       mockAnalyze.mockRejectedValueOnce(new Error("Analysis service down"));
 
@@ -497,7 +481,7 @@ describe("createInvoiceFromScans", () => {
       const scans = [createTestScan("scan-1"), createTestScan("scan-2")];
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-      const {default: analyzeInvoice} = await import("@/app/domains/invoices/_actions/invoices/analyzeInvoice");
+      const {analyzeInvoice} = await import("../../_actions/invoices");
       const mockAnalyze = vi.mocked(analyzeInvoice);
       mockAnalyze.mockRejectedValueOnce(new Error("Analysis failed"));
 
@@ -530,7 +514,7 @@ describe("createInvoiceFromScans", () => {
       const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
       // Import and configure markScansAsUsed mock to reject
-      const {markScansAsUsed} = await import("@/app/domains/invoices/_actions/scans/markScansAsUsed");
+      const {markScansAsUsed} = await import("../../_actions/scans");
       const mockMarkScans = vi.mocked(markScansAsUsed);
       mockMarkScans.mockRejectedValueOnce(new Error("Mark scans failed"));
 
@@ -560,7 +544,7 @@ describe("createInvoiceFromScans", () => {
       const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
       // Import and configure markScansAsUsed mock to reject
-      const {markScansAsUsed} = await import("@/app/domains/invoices/_actions/scans/markScansAsUsed");
+      const {markScansAsUsed} = await import("../../_actions/scans");
       const mockMarkScans = vi.mocked(markScansAsUsed);
       mockMarkScans.mockRejectedValueOnce(new Error("Mark scans batch failed"));
 

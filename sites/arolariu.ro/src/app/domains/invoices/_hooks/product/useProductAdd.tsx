@@ -1,19 +1,19 @@
 "use client";
 
 /**
-* @fileoverview Hook for adding products to an invoice.
-* @module app/domains/invoices/_hooks/product/useProductAdd
-*
-* @remarks
-* Wraps the add-product server action and mirrors successful additions in the
-* invoices Zustand store. The hook owns only loading state; callers decide how
-* to show success and failure feedback.
+ * @fileoverview Hook for adding products to an invoice.
+ * @module app/domains/invoices/_hooks/product/useProductAdd
+ *
+ * @remarks
+ * Wraps the add-product server action and mirrors successful additions in the
+ * invoices Zustand store. The hook owns only loading state; callers decide how
+ * to show success and failure feedback.
  */
 
 import {useInvoicesStore} from "@/stores";
 import type {Invoice, Product} from "@/types/invoices";
 import {useCallback, useState} from "react";
-import {addInvoiceProduct as addProductServerSide} from "../../_actions/invoices/products/addInvoiceProduct";
+import {addInvoiceProduct as addProductServerSide} from "../../_actions/invoices";
 
 /**
  * Input parameters for the product add hook.
@@ -47,7 +47,7 @@ type HookOutputType = Readonly<{
  * console.log("Added:", addedProduct.name);
  * ```
  */
-export function useProductAdd({ invoice }: Readonly<HookInputType>): Readonly<HookOutputType> {
+export function useProductAdd({invoice}: Readonly<HookInputType>): Readonly<HookOutputType> {
   const [isAdding, setIsAdding] = useState<boolean>(false);
   const addProductClientSide = useInvoicesStore((state) => state.updateEntity);
 
@@ -67,7 +67,7 @@ export function useProductAdd({ invoice }: Readonly<HookInputType>): Readonly<Ho
         setIsAdding(false);
       }
     },
-    [invoice.id, addProductClientSide],
+    [invoice.id, invoice.items, addProductClientSide],
   );
 
   return {isAdding, addProductCallback};

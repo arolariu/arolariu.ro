@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Custom React hook for fetching all invoices for the current user.
-* @module app/domains/invoices/_hooks/invoice/useInvoices
+ * @module app/domains/invoices/_hooks/invoice/useInvoices
  *
  * @remarks
  * Client-side data hook that hydrates from persisted Zustand state and then
@@ -13,7 +13,7 @@ import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
 import {useEffect, useState} from "react";
 import {useShallow} from "zustand/react/shallow";
-import fetchInvoices from "../../_actions/invoices/fetchInvoices";
+import {fetchInvoices} from "../../_actions/invoices";
 
 /**
  * Input parameters for the useInvoices hook (currently unused).

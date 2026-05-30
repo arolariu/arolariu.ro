@@ -46,7 +46,11 @@ export function BudgetImpactCard(): React.JSX.Element {
             </div>
             <Progress value={Math.min(percentUsed, 100)} />
             <div className={styles["budgetMeta"]}>
-              <span>{t((m) => m.cards.invoices.budgetImpactCard.spent, {amount: formatCurrency(totalSpent, {currencyCode: currency.code, locale})})}</span>
+              <span>
+                {t((m) => m.cards.invoices.budgetImpactCard.spent, {
+                  amount: formatCurrency(totalSpent, {currencyCode: currency.code, locale}),
+                })}
+              </span>
               <span>{percentUsed.toFixed(0)}%</span>
             </div>
           </div>
@@ -80,7 +84,9 @@ export function BudgetImpactCard(): React.JSX.Element {
               <div className={styles["dailyAllowanceContent"]}>
                 <p className={styles["dailyAllowanceLabel"]}>{t((m) => m.cards.invoices.budgetImpactCard.dailyAllowance)}</p>
                 <p className={styles["dailyAllowanceValue"]}>
-                  {t((m) => m.cards.invoices.budgetImpactCard.dailyAllowanceValue, {amount: formatCurrency(dailyAllowance, {currencyCode: currency.code, locale})})}
+                  {t((m) => m.cards.invoices.budgetImpactCard.dailyAllowanceValue, {
+                    amount: formatCurrency(dailyAllowance, {currencyCode: currency.code, locale}),
+                  })}
                 </p>
               </div>
               {getDailyAllowanceIcon()}

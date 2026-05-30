@@ -28,12 +28,12 @@
  * @see {@link registerScan} for post-upload registration
  */
 
-import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
-import { fetchBFFUserFromAuthService } from "@/lib/actions/user/fetchUser";
-import { createBlobClient } from "@/lib/azure/storageClient";
-import { createErrorResult, ServerActionResult } from "@/lib/utils.server";
-import { BlobSASPermissions, generateBlobSASQueryParameters } from "@azure/storage-blob";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {createBlobClient} from "@/lib/azure/storageClient";
+import {createErrorResult, ServerActionResult} from "@/lib/utils.server";
+import {BlobSASPermissions, generateBlobSASQueryParameters} from "@azure/storage-blob";
 
 /**
  * Input parameters for generating a SAS URL.
@@ -52,16 +52,18 @@ type ServerActionInputType = Readonly<{
  * The returned `sasUrl` is the credentialed upload endpoint. The plain
  * `blobUrl` is safe to store with the registered scan after upload succeeds.
  */
-type ServerActionOutputType = ServerActionResult<Readonly<{
-  /** SAS URL for direct upload */
-  sasUrl: string;
-  /** Blob name in Azure Storage */
-  blobName: string;
-  /** Blob URL without SAS token */
-  blobUrl: string;
-  /** Scan ID for registration */
-  scanId: string;
-}>>;
+type ServerActionOutputType = ServerActionResult<
+  Readonly<{
+    /** SAS URL for direct upload */
+    sasUrl: string;
+    /** Blob name in Azure Storage */
+    blobName: string;
+    /** Blob URL without SAS token */
+    blobUrl: string;
+    /** Scan ID for registration */
+    scanId: string;
+  }>
+>;
 
 /**
  * Generates a UUIDv7-like scan identifier.
@@ -78,6 +80,16 @@ function generateScanId(): string {
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
   return `${timestamp.slice(0, 8)}-${timestamp.slice(8, 12)}-7${random.slice(0, 3)}-${random.slice(3, 7)}-${random.slice(7, 19)}`;
+}
+
+function getFileExtension(fileName: string): string {
+  const lastDotIndex = fileName.lastIndexOf(".");
+
+  if (lastDotIndex < 0 || lastDotIndex === fileName.length - 1) {
+    return "bin";
+  }
+
+  return fileName.slice(lastDotIndex + 1);
 }
 
 /**
@@ -136,14 +148,14 @@ export async function generateUploadSasUrl(input: ServerActionInputType): Server
       // Step 1. Fetch user from auth service
       addSpanEvent("bff.user.fetch.start");
       logWithTrace("info", "Fetching BFF user for authentication", {}, "server");
-      const { userIdentifier } = await fetchBFFUserFromAuthService();
+      const {userIdentifier} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.fetch.complete");
 
       // Step 2. Generate scan ID and blob name
       addSpanEvent("scan.id.generate");
       const scanId = generateScanId();
       const timestamp = Date.now();
-      const extension = input.fileName.split(".").pop() ?? "bin";
+      const extension = getFileExtension(input.fileName);
       const blobName = `scans/${userIdentifier}/${scanId}_${timestamp}.${extension}`;
 
       // Step 3. Prepare storage client
@@ -158,7 +170,7 @@ export async function generateUploadSasUrl(input: ServerActionInputType): Server
       // Azurite doesn't require SAS tokens for local development
       if (storageEndpoint.startsWith("http://")) {
         addSpanEvent("azurite.dev.mode");
-        logWithTrace("info", "Development mode: returning direct URL (no SAS)", { blobName }, "server");
+        logWithTrace("info", "Development mode: returning direct URL (no SAS)", {blobName}, "server");
         return {
           success: true,
           data: {
@@ -172,7 +184,7 @@ export async function generateUploadSasUrl(input: ServerActionInputType): Server
 
       // Step 5. For Azure (prod), generate a SAS token using User Delegation Key
       addSpanEvent("azure.sas.generation.start");
-      logWithTrace("info", "Generating SAS URL for production", { blobName }, "server");
+      logWithTrace("info", "Generating SAS URL for production", {blobName}, "server");
 
       const startDate = new Date();
       // 30 minutes balances security (short-lived token) with usability (allows
@@ -203,12 +215,12 @@ export async function generateUploadSasUrl(input: ServerActionInputType): Server
           blobName,
           blobUrl: blockBlobClient.url,
           scanId,
-        }
+        },
       } as const;
     } catch (error: unknown) {
       addSpanEvent("sas.generation.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Failed to generate SAS URL", { error }, "server");
+      logWithTrace("error", "Failed to generate SAS URL", {error}, "server");
       console.error("Failed to generate SAS URL:", error);
       return createErrorResult(new Error(errorMessage));
     }

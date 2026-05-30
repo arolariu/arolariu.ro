@@ -1,4 +1,3 @@
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Email template for confirming newsletter unsubscription.
  * @module emails/newsletter/Unsubscription
@@ -8,6 +7,7 @@ import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles} from "../_components";
 import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
+import {selectorFromPath} from "../_lib/i18n";
 
 type Props = {
   /** The username of the recipient */
@@ -50,7 +50,13 @@ const UserHasUnsubscribedEmail = defineEmailTemplate<Props>({
           })}
         </Text>
         <EmailCard title={t(selectorFromPath("emails.newsletterUnsubscribed.whatHappensNextTitle"))}>
-          <BulletList items={[t(selectorFromPath("emails.newsletterUnsubscribed.whatHappensNext.item0")), t(selectorFromPath("emails.newsletterUnsubscribed.whatHappensNext.item1")), t(selectorFromPath("emails.newsletterUnsubscribed.whatHappensNext.item2"))]} />
+          <BulletList
+            items={[
+              t(selectorFromPath("emails.newsletterUnsubscribed.whatHappensNext.item0")),
+              t(selectorFromPath("emails.newsletterUnsubscribed.whatHappensNext.item1")),
+              t(selectorFromPath("emails.newsletterUnsubscribed.whatHappensNext.item2")),
+            ]}
+          />
         </EmailCard>
         <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.newsletterUnsubscribed.body"))}</Text>
         <Text style={EmailParagraphStyles}>

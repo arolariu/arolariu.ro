@@ -65,9 +65,11 @@ export default function Values(): React.JSX.Element {
                     <div className={styles[colorClassMap[value.colorKey]]}>
                       <value.icon className={styles["icon"]} />
                     </div>
-                    <h3 className={styles["cardTitle"]}>{t(selectorFromPath(`About.Hub.values.items.${value.key}.title`))}</h3>
+                    <h3 className={styles["cardTitle"]}>{t(selectorFromPath(`pages.about.hub.values.items.${value.key}.title`))}</h3>
                   </div>
-                  <p className={styles["cardDescription"]}>{t(selectorFromPath(`About.Hub.values.items.${value.key}.description`))}</p>
+                  <p className={styles["cardDescription"]}>
+                    {t(selectorFromPath(`pages.about.hub.values.items.${value.key}.description`))}
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>

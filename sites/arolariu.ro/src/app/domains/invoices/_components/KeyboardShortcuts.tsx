@@ -99,27 +99,6 @@ export default function KeyboardShortcuts({onShowHelp}: Readonly<KeyboardShortcu
   }, [router]);
 
   /**
-   * Close any open dialogs by dispatching Escape key event.
-   *
-   * @remarks
-   * This is a fallback handler that simulates pressing Escape.
-   * Dialog components should already handle Escape natively via Base UI.
-   */
-  const closeDialogs = useCallback((): void => {
-    // Base UI Dialog components handle Escape automatically
-    // This is just a fallback to ensure consistent behavior
-    const escapeEvent = new KeyboardEvent("keydown", {
-      key: "Escape",
-      code: "Escape",
-      keyCode: 27,
-      which: 27,
-      bubbles: true,
-      cancelable: true,
-    });
-    document.dispatchEvent(escapeEvent);
-  }, []);
-
-  /**
    * Shortcut definitions with their handlers.
    */
   const shortcuts: ShortcutDef[] = [
@@ -140,12 +119,6 @@ export default function KeyboardShortcuts({onShowHelp}: Readonly<KeyboardShortcu
       ctrl: false,
       handler: onShowHelp,
       description: "Show keyboard shortcuts help",
-    },
-    {
-      key: "Escape",
-      ctrl: false,
-      handler: closeDialogs,
-      description: "Close dialog",
     },
   ];
 
@@ -182,7 +155,7 @@ export default function KeyboardShortcuts({onShowHelp}: Readonly<KeyboardShortcu
     return (): void => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [shortcuts, navigateToCreateInvoice, navigateToUploadScans, onShowHelp, closeDialogs]);
+  }, [shortcuts, navigateToCreateInvoice, navigateToUploadScans, onShowHelp]);
 
   // This component doesn't render anything visible
   return null;

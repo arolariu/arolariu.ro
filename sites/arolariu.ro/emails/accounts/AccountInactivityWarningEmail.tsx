@@ -1,4 +1,3 @@
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Account inactivity warning email component for user retention.
  * @module emails/accounts/AccountInactivityWarningEmail
@@ -32,7 +31,7 @@ import {
   EmailParagraphStyles,
   KeyValueTable,
 } from "../_components";
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_lib/i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages, selectorFromPath} from "../_lib/i18n";
 
 /**
  * Properties for the account inactivity warning email component.
@@ -169,15 +168,27 @@ const AccountInactivityWarningEmail = async (props: Readonly<Props>) => {
       </Text>
 
       <EmailCard title={t(selectorFromPath("emails.accountInactivity.whatThisMeans.title"))}>
-        <BulletList items={[t(selectorFromPath("emails.accountInactivity.whatThisMeans.bullet1")), t(selectorFromPath("emails.accountInactivity.whatThisMeans.bullet2"), {daysUntilClosure}), t(selectorFromPath("emails.accountInactivity.whatThisMeans.bullet3"))]} />
+        <BulletList
+          items={[
+            t(selectorFromPath("emails.accountInactivity.whatThisMeans.bullet1")),
+            t(selectorFromPath("emails.accountInactivity.whatThisMeans.bullet2"), {daysUntilClosure}),
+            t(selectorFromPath("emails.accountInactivity.whatThisMeans.bullet3")),
+          ]}
+        />
       </EmailCard>
 
       <EmailCard title={t(selectorFromPath("emails.accountInactivity.timeline.title"))}>
         <KeyValueTable
           title=''
           items={[
-            {label: t(selectorFromPath("emails.accountInactivity.timeline.inactiveFor")), value: t(selectorFromPath("emails.accountInactivity.timeline.daysValue"), {days: inactiveDays})},
-            {label: t(selectorFromPath("emails.accountInactivity.timeline.timeRemaining")), value: t(selectorFromPath("emails.accountInactivity.timeline.daysValue"), {days: daysUntilClosure})},
+            {
+              label: t(selectorFromPath("emails.accountInactivity.timeline.inactiveFor")),
+              value: t(selectorFromPath("emails.accountInactivity.timeline.daysValue"), {days: inactiveDays}),
+            },
+            {
+              label: t(selectorFromPath("emails.accountInactivity.timeline.timeRemaining")),
+              value: t(selectorFromPath("emails.accountInactivity.timeline.daysValue"), {days: daysUntilClosure}),
+            },
           ]}
         />
       </EmailCard>

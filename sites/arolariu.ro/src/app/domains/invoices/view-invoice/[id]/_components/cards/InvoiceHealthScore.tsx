@@ -39,7 +39,6 @@ import {selectorFromPath} from "next-intl-selector";
  * @see {@link ProductMetadata} for completeness flags
  */
 
-
 import {InvoiceCategory, ProductCategory} from "@/types/invoices";
 import {
   Button,
@@ -376,7 +375,9 @@ export function InvoiceHealthScore(): React.JSX.Element {
     <Card className={styles["card"]}>
       <CardHeader>
         <CardTitle className={styles["cardTitle"]}>{t((m) => m.pages.invoices.viewInvoice.healthScore.title)}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t((m) => m.pages.invoices.viewInvoice.healthScore.subtitle)}</CardDescription>
+        <CardDescription className={styles["cardDescription"]}>
+          {t((m) => m.pages.invoices.viewInvoice.healthScore.subtitle)}
+        </CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         {/* Circular Progress */}
@@ -418,7 +419,9 @@ export function InvoiceHealthScore(): React.JSX.Element {
         </div>
 
         {/* Status label */}
-        <div className={`${styles["statusLabel"]} ${styles[status.color]}`}>{t(selectorFromPath(`pages.invoices.viewInvoice.healthScore.status.${status.key}`))}</div>
+        <div className={`${styles["statusLabel"]} ${styles[status.color]}`}>
+          {t(selectorFromPath(`pages.invoices.viewInvoice.healthScore.status.${status.key}`))}
+        </div>
 
         {/* Score breakdown */}
         <div className={styles["scoreBreakdown"]}>
@@ -481,7 +484,9 @@ export function InvoiceHealthScore(): React.JSX.Element {
                 variant='ghost'
                 className={styles["toggleButton"]}>
                 {isExpanded ? <TbChevronUp className={styles["chevronIcon"]} /> : <TbChevronDown className={styles["chevronIcon"]} />}
-                {isExpanded ? t((m) => m.pages.invoices.viewInvoice.healthScore.hideDetails) : t((m) => m.pages.invoices.viewInvoice.healthScore.showDetails)}
+                {isExpanded
+                  ? t((m) => m.pages.invoices.viewInvoice.healthScore.hideDetails)
+                  : t((m) => m.pages.invoices.viewInvoice.healthScore.showDetails)}
               </Button>
             }
           />

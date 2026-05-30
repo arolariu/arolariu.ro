@@ -58,10 +58,10 @@ export default function Faq(): React.JSX.Element {
                   value={q}
                   className={styles["accordionItem"]}>
                   <AccordionTrigger className={styles["accordionTrigger"]}>
-                    <span className={styles["question"]}>{t(selectorFromPath(`About.Hub.faq.questions.${q}.question`))}</span>
+                    <span className={styles["question"]}>{t(selectorFromPath(`pages.about.hub.faq.questions.${q}.question`))}</span>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <p className={styles["answer"]}>{t(selectorFromPath(`About.Hub.faq.questions.${q}.answer`))}</p>
+                    <p className={styles["answer"]}>{t(selectorFromPath(`pages.about.hub.faq.questions.${q}.answer`))}</p>
                   </AccordionContent>
                 </AccordionItem>
               </motion.div>

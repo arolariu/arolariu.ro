@@ -141,7 +141,9 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                 </div>
 
                 <div className={styles["settingsField"]}>
-                  <span className={styles["settingsLabel"]}>{t((m) => m.pages.invoices.viewInvoices.generativeView.settings.dataAccessTitle)}</span>
+                  <span className={styles["settingsLabel"]}>
+                    {t((m) => m.pages.invoices.viewInvoices.generativeView.settings.dataAccessTitle)}
+                  </span>
                   <div className={styles["checkboxRow"]}>
                     <Checkbox
                       nativeButton
@@ -169,7 +171,9 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                 </div>
 
                 <div className={styles["settingsField"]}>
-                  <span className={styles["settingsLabel"]}>{t((m) => m.pages.invoices.viewInvoices.generativeView.settings.notificationPreferences)}</span>
+                  <span className={styles["settingsLabel"]}>
+                    {t((m) => m.pages.invoices.viewInvoices.generativeView.settings.notificationPreferences)}
+                  </span>
                   <div className={styles["checkboxRow"]}>
                     <Checkbox
                       nativeButton

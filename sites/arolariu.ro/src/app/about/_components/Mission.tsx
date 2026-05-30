@@ -66,8 +66,10 @@ export default function Mission(): React.JSX.Element {
                   <div className={`${styles["iconWrapper"]} ${styles[gradientClassMap[pillar.key]]}`}>
                     <pillar.icon className={styles["icon"]} />
                   </div>
-                  <h3 className={styles["cardTitle"]}>{t(selectorFromPath(`About.Hub.mission.pillars.${pillar.key}.title`))}</h3>
-                  <p className={styles["cardDescription"]}>{t(selectorFromPath(`About.Hub.mission.pillars.${pillar.key}.description`))}</p>
+                  <h3 className={styles["cardTitle"]}>{t(selectorFromPath(`pages.about.hub.mission.pillars.${pillar.key}.title`))}</h3>
+                  <p className={styles["cardDescription"]}>
+                    {t(selectorFromPath(`pages.about.hub.mission.pillars.${pillar.key}.description`))}
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>

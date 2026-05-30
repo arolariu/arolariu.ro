@@ -826,19 +826,12 @@
           "upload": "Upload scan",
           "uploading": "Uploading..."
         },
-        "console": {
-          "uploadError": "Error uploading scan:"
-        },
         "description": "Upload a new receipt image or document to attach to this invoice.",
         "dropzone": {
           "dragAndDrop": "Drag & drop a file here",
           "dropHere": "Drop the file here...",
           "formats": "JPEG, PNG, PDF (max 10MB)",
           "orClickBrowse": "or click to browse"
-        },
-        "errors": {
-          "unknown": "Unknown error occurred",
-          "uploadStorageFailed": "Failed to upload scan to storage"
         },
         "scanType": {
           "jpeg": "JPEG image",
@@ -851,10 +844,7 @@
         "title": "Add new scan",
         "toasts": {
           "fileTooLargeDescription": "Maximum file size is 10MB",
-          "fileTooLargeTitle": "File too large",
-          "scanAddedDescription": "The scan has been attached to the invoice",
-          "scanAddedTitle": "Scan added successfully",
-          "scanFailedTitle": "Failed to add scan"
+          "fileTooLargeTitle": "File too large"
         }
       },
       "allergenDialog": {

@@ -1,4 +1,3 @@
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Email template for notifying users that an invoice has been shared with them.
  * @module emails/invoices/SharedInvoice
@@ -12,6 +11,7 @@ import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
 import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
+import {selectorFromPath} from "../_lib/i18n";
 
 /**
  * Properties for the InvoiceHasBeenSharedWithEmail component.
@@ -70,7 +70,13 @@ const InvoiceHasBeenSharedWithEmail = defineEmailTemplate<Props>({
           ]}
         />
         <EmailCard title={t(selectorFromPath("emails.invoiceShared.whatYouCanDoTitle"))}>
-          <BulletList items={[t(selectorFromPath("emails.invoiceShared.whatYouCanDo.item0")), t(selectorFromPath("emails.invoiceShared.whatYouCanDo.item1")), t(selectorFromPath("emails.invoiceShared.whatYouCanDo.item2"))]} />
+          <BulletList
+            items={[
+              t(selectorFromPath("emails.invoiceShared.whatYouCanDo.item0")),
+              t(selectorFromPath("emails.invoiceShared.whatYouCanDo.item1")),
+              t(selectorFromPath("emails.invoiceShared.whatYouCanDo.item2")),
+            ]}
+          />
         </EmailCard>
         <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.invoiceShared.body"))}</Text>
         <Text style={EmailParagraphStyles}>

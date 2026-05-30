@@ -21,12 +21,12 @@
  * @see {@link generateUploadSasUrl} for SAS URL generation
  */
 
-import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
-import { fetchBFFUserFromAuthService } from "@/lib/actions/user/fetchUser";
-import { createBlobClient, rewriteAzuriteUrl } from "@/lib/azure/storageClient";
-import { type Scan, ScanStatus, ScanType } from "@/types/scans";
-import { revalidatePath } from "next/cache";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
+import {type Scan, ScanStatus, ScanType} from "@/types/scans";
+import {revalidatePath} from "next/cache";
 
 /**
  * Input parameters for registering a scan.
@@ -134,11 +134,11 @@ export async function registerScan(input: RegisterScanInput): Promise<RegisterSc
       // Step 1. Fetch user from auth service
       addSpanEvent("bff.user.fetch.start");
       logWithTrace("info", "Fetching BFF user for authentication", {}, "server");
-      const { userIdentifier } = await fetchBFFUserFromAuthService();
+      const {userIdentifier} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.fetch.complete");
 
       if (!userIdentifier) {
-        return { success: false, error: "Authentication required" };
+        return {success: false, error: "Authentication required"};
       }
 
       // Step 2. Validate that the blob URL belongs to this user
@@ -155,7 +155,7 @@ export async function registerScan(input: RegisterScanInput): Promise<RegisterSc
           },
           "server",
         );
-        return { success: false, error: "Invalid blob URL" };
+        return {success: false, error: "Invalid blob URL"};
       }
       addSpanEvent("scan.validation.complete");
 
@@ -183,10 +183,10 @@ export async function registerScan(input: RegisterScanInput): Promise<RegisterSc
 
         await blockBlobClient.setMetadata(blobMetadata);
         addSpanEvent("azure.blob.metadata.complete");
-        logWithTrace("info", "Set blob metadata after direct upload", { scanId: input.scanId }, "server");
+        logWithTrace("info", "Set blob metadata after direct upload", {scanId: input.scanId}, "server");
       } catch (metadataError) {
         // Non-fatal: scan is uploaded, metadata is just convenience
-        logWithTrace("warn", "Failed to set blob metadata (non-fatal)", { error: String(metadataError) }, "server");
+        logWithTrace("warn", "Failed to set blob metadata (non-fatal)", {error: String(metadataError)}, "server");
         addSpanEvent("azure.blob.metadata.failed");
       }
 
@@ -209,7 +209,7 @@ export async function registerScan(input: RegisterScanInput): Promise<RegisterSc
       };
 
       addSpanEvent("scan.registration.complete");
-      logWithTrace("info", "Successfully registered scan", { scanId: input.scanId }, "server");
+      logWithTrace("info", "Successfully registered scan", {scanId: input.scanId}, "server");
 
       revalidatePath("/domains/invoices/view-scans", "page");
       revalidatePath("/domains/invoices/upload-scans", "page");
@@ -220,9 +220,9 @@ export async function registerScan(input: RegisterScanInput): Promise<RegisterSc
       };
     } catch (error) {
       addSpanEvent("scan.registration.error");
-      logWithTrace("error", "Error registering scan", { error: String(error) }, "server");
+      logWithTrace("error", "Error registering scan", {error: String(error)}, "server");
       console.error("Error registering scan:", error);
-      return { success: false, error: "Failed to register scan" };
+      return {success: false, error: "Failed to register scan"};
     }
   });
 }

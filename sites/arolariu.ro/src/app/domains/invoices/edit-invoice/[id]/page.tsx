@@ -1,14 +1,14 @@
-import fetchInvoice from "@/app/domains/invoices/_actions/invoices/fetchInvoice";
-import fetchMerchant from "@/app/domains/invoices/_actions/merchants/fetchMerchant";
 import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {EMPTY_GUID} from "@/lib/utils.generic";
 import {createMetadata} from "@/metadata";
 import RenderForbiddenScreen from "@/presentation/ForbiddenScreen";
 import type {Metadata} from "next";
-import {getLocale} from "next-intl/server";
 import {getTranslations} from "next-intl-selector/server";
+import {getLocale} from "next-intl/server";
 import {notFound} from "next/navigation";
 import React from "react";
+import {fetchInvoice} from "../../_actions/invoices";
+import {fetchMerchant} from "../../_actions/merchants";
 import RenderEditInvoiceScreen from "./island";
 import styles from "./page.module.scss";
 

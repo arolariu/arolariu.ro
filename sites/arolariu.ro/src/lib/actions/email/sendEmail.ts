@@ -15,19 +15,13 @@
 import {auth} from "@clerk/nextjs/server";
 import type {ReactElement} from "react";
 
-import {emailTemplates, type EmailTemplateKey, type EmailTemplatePropsMap} from "@/../emails/_registry";
+import type {EmailTemplateKey, EmailTemplatePropsMap} from "@/../emails/_registry";
 import {DEFAULT_EMAIL_LOCALE, type EmailLocale} from "@/types/emails";
 
-// `emailService` is imported lazily inside the action body — NOT at the top
-// level — so its transitive dependency chain (react-email → prettier) does
-// not enter the static import graph of any client component that imports
-// this server action (e.g. ShareInvoiceDialog). Turbopack's production
-// externalization mishandles prettier by emitting a content-hashed
-// identifier (`prettier-<hash>/plugins/html`) into the surrounding SSR
-// chunk, which then fails ERR_MODULE_NOT_FOUND at request time and surfaces
-// as a masked 500 on unrelated routes (e.g. fetchScans on view-scans).
-// Keeping the chain out of the static graph removes prettier from those
-// chunks entirely.
+// The email template registry and service are imported lazily inside the
+// action body — NOT at the top level — so their transitive dependency chain
+// (react-email / email i18n / prettier) does not enter the static import graph
+// of routes that only reference this server action through client islands.
 
 /**
  * Caller-supplied input to {@link sendEmail}.
@@ -71,6 +65,7 @@ export async function sendEmail<K extends EmailTemplateKey>(input: SendEmailInpu
   const {userId} = await auth();
   if (!userId) return {success: false, error: "Unauthorized"};
 
+  const {emailTemplates} = await import("@/../emails/_registry");
   const entry = emailTemplates[input.templateKey];
   if (!entry) {
     return {success: false, error: `Unknown template: ${String(input.templateKey)}`};

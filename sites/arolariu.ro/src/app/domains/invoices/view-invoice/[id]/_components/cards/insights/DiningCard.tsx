@@ -78,23 +78,31 @@ export function DiningCard(): React.JSX.Element {
                 <TbFlame className={styles["iconOrange"]} />
                 <div>
                   <p className={styles["nutritionLabel"]}>{t((m) => m.cards.invoices.diningCard.estimatedNutrition.calories)}</p>
-                  <p className={styles["nutritionValue"]}>{t((m) => m.cards.invoices.diningCard.estimatedNutrition.caloriesValue, {value: String(estimatedCalories)})}</p>
+                  <p className={styles["nutritionValue"]}>
+                    {t((m) => m.cards.invoices.diningCard.estimatedNutrition.caloriesValue, {value: String(estimatedCalories)})}
+                  </p>
                 </div>
               </div>
               <div className={styles["nutritionItem"]}>
                 <TbMeat className={styles["iconRed"]} />
                 <div>
                   <p className={styles["nutritionLabel"]}>{t((m) => m.cards.invoices.diningCard.estimatedNutrition.protein)}</p>
-                  <p className={styles["nutritionValue"]}>{t((m) => m.cards.invoices.diningCard.estimatedNutrition.proteinValue, {value: String(estimatedProtein)})}</p>
+                  <p className={styles["nutritionValue"]}>
+                    {t((m) => m.cards.invoices.diningCard.estimatedNutrition.proteinValue, {value: String(estimatedProtein)})}
+                  </p>
                 </div>
               </div>
               <div className={styles["nutritionItem"]}>
-                <TbAlertTriangle className={sodiumLevel === t((m) => m.cards.invoices.diningCard.sodium.high) ? styles["iconRed"] : styles["iconAmber"]} />
+                <TbAlertTriangle
+                  className={sodiumLevel === t((m) => m.cards.invoices.diningCard.sodium.high) ? styles["iconRed"] : styles["iconAmber"]}
+                />
                 <div>
                   <p className={styles["nutritionLabel"]}>{t((m) => m.cards.invoices.diningCard.estimatedNutrition.sodium)}</p>
                   <p className={styles["nutritionValue"]}>
                     {sodiumLevel}
-                    {sodiumLevel === t((m) => m.cards.invoices.diningCard.sodium.high) && <span className={styles["sodiumWarning"]}>!</span>}
+                    {sodiumLevel === t((m) => m.cards.invoices.diningCard.sodium.high) && (
+                      <span className={styles["sodiumWarning"]}>!</span>
+                    )}
                   </p>
                 </div>
               </div>
@@ -102,7 +110,9 @@ export function DiningCard(): React.JSX.Element {
                 <TbCookie className={styles["iconAmber"]} />
                 <div>
                   <p className={styles["nutritionLabel"]}>{t((m) => m.cards.invoices.diningCard.estimatedNutrition.carbs)}</p>
-                  <p className={styles["nutritionValue"]}>{t((m) => m.cards.invoices.diningCard.estimatedNutrition.carbsValue, {value: String(estimatedCarbs)})}</p>
+                  <p className={styles["nutritionValue"]}>
+                    {t((m) => m.cards.invoices.diningCard.estimatedNutrition.carbsValue, {value: String(estimatedCarbs)})}
+                  </p>
                 </div>
               </div>
             </div>
@@ -115,7 +125,9 @@ export function DiningCard(): React.JSX.Element {
               <div className={styles["habitCard"]}>
                 <TbCalendar className={`${styles["habitIconWrapper"]} ${styles["iconBlue"]}`} />
                 <p className={styles["habitLabel"]}>{t((m) => m.cards.invoices.diningCard.habits.frequency)}</p>
-                <p className={styles["habitValue"]}>{t((m) => m.cards.invoices.diningCard.habits.frequencyValue, {count: String(fastFoodFrequency)})}</p>
+                <p className={styles["habitValue"]}>
+                  {t((m) => m.cards.invoices.diningCard.habits.frequencyValue, {count: String(fastFoodFrequency)})}
+                </p>
                 <p className={styles["habitSub"]}>{t((m) => m.cards.invoices.diningCard.habits.frequencyDiff)}</p>
               </div>
               <div className={styles["habitCard"]}>
@@ -149,10 +161,15 @@ export function DiningCard(): React.JSX.Element {
                   className={styles["swapItem"]}>
                   <span className={styles["swapBullet"]}>•</span>
                   <span>
-                    {s.swap}: <span className={styles["swapSaving"]}>{t((m) => m.cards.invoices.diningCard.swaps.caloriesSaved, {count: String(s.calSaved)})}</span>
+                    {s.swap}:{" "}
+                    <span className={styles["swapSaving"]}>
+                      {t((m) => m.cards.invoices.diningCard.swaps.caloriesSaved, {count: String(s.calSaved)})}
+                    </span>
                     {s.moneySaved ? (
                       <span className={styles["swapSaving"]}>
-                        {t((m) => m.cards.invoices.diningCard.swaps.moneySaved, {amount: formatCurrency(s.moneySaved, {currencyCode: currency.code, locale})})}
+                        {t((m) => m.cards.invoices.diningCard.swaps.moneySaved, {
+                          amount: formatCurrency(s.moneySaved, {currencyCode: currency.code, locale}),
+                        })}
                       </span>
                     ) : null}
                   </span>

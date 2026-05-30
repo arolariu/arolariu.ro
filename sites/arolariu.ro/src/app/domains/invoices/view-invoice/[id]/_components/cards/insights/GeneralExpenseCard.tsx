@@ -168,7 +168,8 @@ export function GeneralExpenseCard(): React.JSX.Element {
             {businessExpense ? (
               <p className={styles["vatText"]}>
                 <TbBriefcase className={styles["briefcaseIcon"]} />
-                {t((m) => m.cards.invoices.generalExpenseCard.vatReclaimable)}: {formatCurrency(vatReclaimable, {currencyCode: currency.code, locale})}
+                {t((m) => m.cards.invoices.generalExpenseCard.vatReclaimable)}:{" "}
+                {formatCurrency(vatReclaimable, {currencyCode: currency.code, locale})}
               </p>
             ) : null}
           </div>

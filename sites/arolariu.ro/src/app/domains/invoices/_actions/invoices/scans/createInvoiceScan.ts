@@ -38,10 +38,10 @@
  * @see {@link ServerActionResult} - Standard result wrapper type
  */
 
-import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
-import { createBlobClient } from "@/lib/azure/storageClient";
-import { convertBase64ToBlob, createErrorResult, type ServerActionResult } from "@/lib/utils.server";
+import {createBlobClient} from "@/lib/azure/storageClient";
+import {convertBase64ToBlob, createErrorResult, type ServerActionResult} from "@/lib/utils.server";
 
 /**
  * Input parameters for the createInvoiceScan server action.
@@ -56,7 +56,7 @@ type ServerActionInputType = Readonly<{
   /** The unique blob name including extension (e.g., "uuid-v4.jpg"). */
   readonly blobName: string;
   /** Optional key-value metadata stored with the blob (e.g., uploadedBy, source). */
-  readonly metadata?: { [propertyName: string]: string };
+  readonly metadata?: {[propertyName: string]: string};
 }>;
 
 /**
@@ -182,8 +182,8 @@ type ServerActionOutputType = ServerActionResult<
  * @see {@link convertBase64ToBlob} - Base64 to Blob conversion utility
  * @see {@link ServerActionResult} - Result type wrapper
  */
-export async function createInvoiceScan({ base64Data, metadata, blobName }: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{createInvoiceScan}}, with:", { blobName });
+export async function createInvoiceScan({base64Data, metadata, blobName}: ServerActionInputType): ServerActionOutputType {
+  console.info(">>> Executing server action {{createInvoiceScan}}, with:", {blobName});
 
   return withSpan("api.actions.invoices.createInvoiceScan", async () => {
     try {
@@ -212,19 +212,24 @@ export async function createInvoiceScan({ base64Data, metadata, blobName }: Serv
       });
 
       if (blobUploadResponse._response.status === 201) {
-        logWithTrace("info", "Successfully uploaded invoice scan to Azure Blob Storage", { blobName, blobUrl: blockBlobClient.url }, "server");
+        logWithTrace(
+          "info",
+          "Successfully uploaded invoice scan to Azure Blob Storage",
+          {blobName, blobUrl: blockBlobClient.url},
+          "server",
+        );
         return {
           success: true,
           data: {
             status: blobUploadResponse._response.status,
             blobUrl: blockBlobClient.url,
-          }
+          },
         } as const;
       }
 
       addSpanEvent("azure.blob.upload.error");
       const internalMessage = `Failed to upload invoice scan: ${blobUploadResponse._response.status}}`;
-      logWithTrace("warn", internalMessage, { blobName }, "server");
+      logWithTrace("warn", internalMessage, {blobName}, "server");
       const userMessage =
         blobUploadResponse._response.status >= 500
           ? "A server error occurred while uploading the scan. Please try again later."
@@ -233,7 +238,7 @@ export async function createInvoiceScan({ base64Data, metadata, blobName }: Serv
     } catch (error: unknown) {
       addSpanEvent("azure.blob.upload.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error uploading invoice scan...", { blobName, error }, "server");
+      logWithTrace("error", "Error uploading invoice scan...", {blobName, error}, "server");
       console.error("Error uploading invoice scan:", error);
       return createErrorResult(new Error(errorMessage));
     }

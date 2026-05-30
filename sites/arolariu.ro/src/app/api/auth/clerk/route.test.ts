@@ -3,15 +3,15 @@
  * @module sites/arolariu.ro/src/app/api/auth/clerk/route/tests
  */
 
+import {generateGuid} from "@/lib/utils.generic";
 import {NextRequest} from "next/server";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {POST} from "./route";
 
 // Create hoisted mocks
-const {mockVerifyWebhook, mockClerkClient, mockGenerateGuid} = vi.hoisted(() => ({
+const {mockVerifyWebhook, mockClerkClient} = vi.hoisted(() => ({
   mockVerifyWebhook: vi.fn(),
   mockClerkClient: vi.fn(),
-  mockGenerateGuid: vi.fn(),
 }));
 
 // Mock Clerk webhook verification
@@ -22,11 +22,6 @@ vi.mock("@clerk/nextjs/webhooks", () => ({
 // Mock Clerk client
 vi.mock("@clerk/nextjs/server", () => ({
   clerkClient: mockClerkClient,
-}));
-
-// Mock utility functions
-vi.mock("@/lib/utils.generic", () => ({
-  generateGuid: mockGenerateGuid,
 }));
 
 describe("POST /api/auth/clerk", () => {
@@ -53,7 +48,7 @@ describe("POST /api/auth/clerk", () => {
   it("should process user.created event successfully", async () => {
     const mockUserId = "user_123456";
     const mockEmail = "test@example.com";
-    const mockUuid = "550e8400-e29b-41d4-a716-446655440000";
+    const expectedUuid = generateGuid(`${mockUserId}${mockEmail}`);
 
     mockVerifyWebhook.mockResolvedValue({
       type: "user.created",
@@ -62,8 +57,6 @@ describe("POST /api/auth/clerk", () => {
         email_addresses: [{email_address: mockEmail}],
       },
     });
-
-    mockGenerateGuid.mockReturnValue(mockUuid);
 
     const request = new NextRequest("http://localhost/api/auth/clerk", {
       method: "POST",
@@ -77,15 +70,14 @@ describe("POST /api/auth/clerk", () => {
     expect(data).toEqual({received: true});
 
     expect(mockVerifyWebhook).toHaveBeenCalledWith(request);
-    expect(mockGenerateGuid).toHaveBeenCalled();
     expect(mockUpdateUserMetadata).toHaveBeenCalledWith(mockUserId, {
-      publicMetadata: {userIdentifier: mockUuid},
+      publicMetadata: {userIdentifier: expectedUuid},
     });
   });
 
   it("should use user ID when no email is provided", async () => {
     const mockUserId = "user_no_email";
-    const mockUuid = "650e8400-e29b-41d4-a716-446655440001";
+    const expectedUuid = generateGuid(mockUserId);
 
     mockVerifyWebhook.mockResolvedValue({
       type: "user.created",
@@ -95,19 +87,14 @@ describe("POST /api/auth/clerk", () => {
       },
     });
 
-    mockGenerateGuid.mockReturnValue(mockUuid);
-
     const request = new NextRequest("http://localhost/api/auth/clerk", {
       method: "POST",
       body: JSON.stringify({type: "user.created"}),
     });
-
     const response = await POST(request);
-
     expect(response.status).toBe(200);
-    expect(mockGenerateGuid).toHaveBeenCalled();
     expect(mockUpdateUserMetadata).toHaveBeenCalledWith(mockUserId, {
-      publicMetadata: {userIdentifier: mockUuid},
+      publicMetadata: {userIdentifier: expectedUuid},
     });
   });
 
@@ -130,8 +117,7 @@ describe("POST /api/auth/clerk", () => {
     const data = await response.json();
     expect(data).toEqual({received: true});
 
-    // Should not call generateGuid or updateUserMetadata for non-user.created events
-    expect(mockGenerateGuid).not.toHaveBeenCalled();
+    // Should not update metadata for non-user.created events.
     expect(mockUpdateUserMetadata).not.toHaveBeenCalled();
   });
 
@@ -166,8 +152,6 @@ describe("POST /api/auth/clerk", () => {
       },
     });
 
-    mockGenerateGuid.mockReturnValue("error-uuid");
-
     const clientError = new Error("Clerk API error");
     mockUpdateUserMetadata.mockRejectedValue(clientError);
 
@@ -186,8 +170,8 @@ describe("POST /api/auth/clerk", () => {
     const mockUserId = "user_uuid_test";
     const mockEmail1 = "test1@example.com";
     const mockEmail2 = "test2@example.com";
-    const mockUuid1 = "uuid-1";
-    const mockUuid2 = "uuid-2";
+    const expectedUuid1 = generateGuid(`${mockUserId}${mockEmail1}`);
+    const expectedUuid2 = generateGuid(`${mockUserId}${mockEmail2}`);
 
     // First request
     mockVerifyWebhook.mockResolvedValueOnce({
@@ -197,8 +181,6 @@ describe("POST /api/auth/clerk", () => {
         email_addresses: [{email_address: mockEmail1}],
       },
     });
-
-    mockGenerateGuid.mockReturnValueOnce(mockUuid1);
 
     const request1 = new NextRequest("http://localhost/api/auth/clerk", {
       method: "POST",
@@ -216,8 +198,6 @@ describe("POST /api/auth/clerk", () => {
       },
     });
 
-    mockGenerateGuid.mockReturnValueOnce(mockUuid2);
-
     const request2 = new NextRequest("http://localhost/api/auth/clerk", {
       method: "POST",
       body: JSON.stringify({type: "user.created"}),
@@ -225,18 +205,18 @@ describe("POST /api/auth/clerk", () => {
 
     await POST(request2);
 
-    expect(mockGenerateGuid).toHaveBeenCalledTimes(2);
+    expect(expectedUuid1).not.toBe(expectedUuid2);
     expect(mockUpdateUserMetadata).toHaveBeenNthCalledWith(1, mockUserId, {
-      publicMetadata: {userIdentifier: mockUuid1},
+      publicMetadata: {userIdentifier: expectedUuid1},
     });
     expect(mockUpdateUserMetadata).toHaveBeenNthCalledWith(2, mockUserId, {
-      publicMetadata: {userIdentifier: mockUuid2},
+      publicMetadata: {userIdentifier: expectedUuid2},
     });
   });
 
   it("should handle empty email_addresses array", async () => {
     const mockUserId = "user_no_emails";
-    const mockUuid = "uuid-no-email";
+    const expectedUuid = generateGuid(mockUserId);
 
     mockVerifyWebhook.mockResolvedValue({
       type: "user.created",
@@ -246,19 +226,14 @@ describe("POST /api/auth/clerk", () => {
       },
     });
 
-    mockGenerateGuid.mockReturnValue(mockUuid);
-
     const request = new NextRequest("http://localhost/api/auth/clerk", {
       method: "POST",
       body: JSON.stringify({type: "user.created"}),
     });
-
     const response = await POST(request);
-
     expect(response.status).toBe(200);
-    expect(mockGenerateGuid).toHaveBeenCalled();
     expect(mockUpdateUserMetadata).toHaveBeenCalledWith(mockUserId, {
-      publicMetadata: {userIdentifier: mockUuid},
+      publicMetadata: {userIdentifier: expectedUuid},
     });
   });
 
@@ -266,7 +241,7 @@ describe("POST /api/auth/clerk", () => {
     const mockUserId = "user_multiple_emails";
     const mockEmail1 = "primary@example.com";
     const mockEmail2 = "secondary@example.com";
-    const mockUuid = "uuid-multiple";
+    const expectedUuid = generateGuid(`${mockUserId}${mockEmail1}`);
 
     mockVerifyWebhook.mockResolvedValue({
       type: "user.created",
@@ -276,8 +251,6 @@ describe("POST /api/auth/clerk", () => {
       },
     });
 
-    mockGenerateGuid.mockReturnValue(mockUuid);
-
     const request = new NextRequest("http://localhost/api/auth/clerk", {
       method: "POST",
       body: JSON.stringify({type: "user.created"}),
@@ -286,7 +259,8 @@ describe("POST /api/auth/clerk", () => {
     const response = await POST(request);
 
     expect(response.status).toBe(200);
-    // Should use first email for UUID generation
-    expect(mockGenerateGuid).toHaveBeenCalled();
+    expect(mockUpdateUserMetadata).toHaveBeenCalledWith(mockUserId, {
+      publicMetadata: {userIdentifier: expectedUuid},
+    });
   });
 });

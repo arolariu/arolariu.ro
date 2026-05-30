@@ -9,7 +9,6 @@
  * browser-only behaviors such as in-page navigation and dynamic expansion.
  */
 
-
 import EnhancedLegalArticles from "../_components/EnhancedLegalArticles";
 
 /**

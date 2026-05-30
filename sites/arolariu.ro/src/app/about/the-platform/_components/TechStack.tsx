@@ -194,7 +194,8 @@ export default function TechStack(): React.JSX.Element {
             </Badge>
           </motion.div>
           <h2 className={styles["title"]}>
-            {t((m) => m.sections.about.platform.techStack.title)} <span className={styles["titleHighlight"]}>{t((m) => m.sections.about.platform.techStack.titleHighlight)}</span>
+            {t((m) => m.sections.about.platform.techStack.title)}{" "}
+            <span className={styles["titleHighlight"]}>{t((m) => m.sections.about.platform.techStack.titleHighlight)}</span>
           </h2>
           <p className={styles["description"]}>{t((m) => m.sections.about.platform.techStack.description)}</p>
         </motion.div>
@@ -218,7 +219,9 @@ export default function TechStack(): React.JSX.Element {
                   value={category.id}
                   className={activeTab === category.id ? styles["tabTriggerActive"] : styles["tabTrigger"]}>
                   <category.icon className={styles["tabIcon"]} />
-                  <span className={styles["tabLabel"]}>{t(selectorFromPath(`sections.about.platform.techStack.${`categories.${category.id}.name`}`))}</span>
+                  <span className={styles["tabLabel"]}>
+                    {t(selectorFromPath(`sections.about.platform.techStack.${`categories.${category.id}.name`}`))}
+                  </span>
                   {activeTab === category.id && (
                     <motion.span
                       className={`${styles["tabIndicator"]} ${styles[gradientClassMap[category.colorKey]]}`}
@@ -326,7 +329,8 @@ export default function TechStack(): React.JSX.Element {
             {tStats((m) => m.sections.about.platform.statistics.badge)}
           </Badge>
           <h3 className={styles["statsTitle"]}>
-            {tStats((m) => m.sections.about.platform.statistics.title)} <span className={styles["titleHighlight"]}>{tStats((m) => m.sections.about.platform.statistics.titleHighlight)}</span>
+            {tStats((m) => m.sections.about.platform.statistics.title)}{" "}
+            <span className={styles["titleHighlight"]}>{tStats((m) => m.sections.about.platform.statistics.titleHighlight)}</span>
           </h3>
           <p className={styles["statsDescription"]}>{tStats((m) => m.sections.about.platform.statistics.description)}</p>
         </motion.div>
@@ -371,8 +375,12 @@ export default function TechStack(): React.JSX.Element {
                   </div>
 
                   {/* Label */}
-                  <h3 className={styles["statLabel"]}>{tStats(selectorFromPath(`sections.about.platform.statistics.items.${stat.id}.label`))}</h3>
-                  <p className={styles["statDescription"]}>{tStats(selectorFromPath(`sections.about.platform.statistics.items.${stat.id}.description`))}</p>
+                  <h3 className={styles["statLabel"]}>
+                    {tStats(selectorFromPath(`sections.about.platform.statistics.items.${stat.id}.label`))}
+                  </h3>
+                  <p className={styles["statDescription"]}>
+                    {tStats(selectorFromPath(`sections.about.platform.statistics.items.${stat.id}.description`))}
+                  </p>
                 </CardContent>
 
                 {/* Animated border */}

@@ -1,4 +1,3 @@
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Weekly nudge email for active users to upload their receipts.
  * @module emails/invoices/reminders/WeeklyUploadReminderEmail
@@ -23,7 +22,7 @@ import {selectorFromPath} from "next-intl-selector";
 
 import {Link, Text} from "react-email";
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, MetricsGrid} from "../../_components";
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_lib/i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages, selectorFromPath} from "../../_lib/i18n";
 
 /**
  * Properties for the WeeklyUploadReminderEmail component.
@@ -115,7 +114,13 @@ const WeeklyUploadReminderEmail = async (props: Readonly<Props>): Promise<React.
         ]}
       />
       <EmailCard title={t(selectorFromPath("emails.weeklyUploadReminder.quickTipsTitle"))}>
-        <BulletList items={[t(selectorFromPath("emails.weeklyUploadReminder.quickTips.item0")), t(selectorFromPath("emails.weeklyUploadReminder.quickTips.item1")), t(selectorFromPath("emails.weeklyUploadReminder.quickTips.item2"))]} />
+        <BulletList
+          items={[
+            t(selectorFromPath("emails.weeklyUploadReminder.quickTips.item0")),
+            t(selectorFromPath("emails.weeklyUploadReminder.quickTips.item1")),
+            t(selectorFromPath("emails.weeklyUploadReminder.quickTips.item2")),
+          ]}
+        />
       </EmailCard>
       <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.weeklyUploadReminder.bodyText"))}</Text>
       <Text style={EmailParagraphStyles}>

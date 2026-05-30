@@ -42,7 +42,6 @@
  * @see {@link useInvoiceContext} for invoice data access
  */
 
-
 import {formatEnum} from "@/lib/utils.generic";
 import {ProductCategory} from "@/types/invoices";
 import {
@@ -440,10 +439,13 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p className={styles["confidenceTooltip"]}>
-                                      {t((m) => m.pages.invoices.viewInvoice.itemAnalytics.confidence.label)}: {(item.metadata.confidence * 100).toFixed(0)}%
+                                      {t((m) => m.pages.invoices.viewInvoice.itemAnalytics.confidence.label)}:{" "}
+                                      {(item.metadata.confidence * 100).toFixed(0)}%
                                     </p>
                                     {item.metadata.confidence < 0.7 && (
-                                      <p className={styles["confidenceWarning"]}>{t((m) => m.pages.invoices.viewInvoice.itemAnalytics.confidence.lowWarning)}</p>
+                                      <p className={styles["confidenceWarning"]}>
+                                        {t((m) => m.pages.invoices.viewInvoice.itemAnalytics.confidence.lowWarning)}
+                                      </p>
                                     )}
                                   </TooltipContent>
                                 </Tooltip>
@@ -509,20 +511,23 @@ export function ItemAnalyticsCard(): React.JSX.Element {
               <ul className={styles["summaryList"]}>
                 {summary.mostExpensive ? (
                   <li className={styles["summaryItem"]}>
-                    • {t((m) => m.pages.invoices.viewInvoice.itemAnalytics.summary.mostExpensive)}: <strong>{summary.mostExpensive.name}</strong> (
-                    {summary.mostExpensive.totalPrice.toFixed(2)})
+                    • {t((m) => m.pages.invoices.viewInvoice.itemAnalytics.summary.mostExpensive)}:{" "}
+                    <strong>{summary.mostExpensive.name}</strong> ({summary.mostExpensive.totalPrice.toFixed(2)})
                   </li>
                 ) : null}
                 {summary.cheapest ? (
                   <li className={styles["summaryItem"]}>
-                    • {t((m) => m.pages.invoices.viewInvoice.itemAnalytics.summary.cheapest)}: <strong>{summary.cheapest.name}</strong> ({summary.cheapest.totalPrice.toFixed(2)})
+                    • {t((m) => m.pages.invoices.viewInvoice.itemAnalytics.summary.cheapest)}: <strong>{summary.cheapest.name}</strong> (
+                    {summary.cheapest.totalPrice.toFixed(2)})
                   </li>
                 ) : null}
                 <li className={styles["summaryItem"]}>
-                  • {summary.categoryCount} {t((m) => m.pages.invoices.viewInvoice.itemAnalytics.summary.categories, {count: String(summary.categoryCount)})}
+                  • {summary.categoryCount}{" "}
+                  {t((m) => m.pages.invoices.viewInvoice.itemAnalytics.summary.categories, {count: String(summary.categoryCount)})}
                 </li>
                 <li className={styles["summaryItem"]}>
-                  • {summary.allergenCount} {t((m) => m.pages.invoices.viewInvoice.itemAnalytics.summary.allergens, {count: String(summary.allergenCount)})}
+                  • {summary.allergenCount}{" "}
+                  {t((m) => m.pages.invoices.viewInvoice.itemAnalytics.summary.allergens, {count: String(summary.allergenCount)})}
                 </li>
               </ul>
             </div>

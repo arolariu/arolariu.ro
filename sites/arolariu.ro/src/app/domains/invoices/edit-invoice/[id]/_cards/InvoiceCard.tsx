@@ -1,0 +1,360 @@
+"use client";
+
+import {formatCurrency, formatDate} from "@/lib/utils.generic";
+import {InvoiceCategory, PaymentType} from "@/types/invoices";
+import {
+  Badge,
+  Button,
+  Calendar,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Separator,
+  Textarea,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@arolariu/components";
+import {motion} from "motion/react";
+import {useLocale} from "next-intl";
+import {useTranslations} from "next-intl-selector";
+import {useCallback, useMemo} from "react";
+import {TbCalendar, TbCreditCard, TbHeart, TbTag} from "react-icons/tb";
+import ItemsTable from "../_components/tables/ItemsTable";
+import {useEditInvoiceContext} from "../_context/EditInvoiceContext";
+import styles from "./InvoiceCard.module.scss";
+
+/**
+ * Displays comprehensive invoice details with inline editing capabilities.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (`"use client"` directive).
+ *
+ * **Invoice Details Displayed**:
+ * - **Date**: Transaction date with ISO timestamp tooltip
+ * - **Category**: Invoice category badge (e.g., GROCERIES, DINING)
+ * - **Payment Method**: Editable dropdown select with all payment types
+ * - **Total Amount**: Formatted currency with locale-aware formatting
+ * - **Description**: Merchant description text
+ * - **Items Table**: Paginated list of invoice line items (via `ItemsTable`)
+ *
+ * **Editing Capabilities**:
+ * - **Payment Method**: Dropdown select to change payment type
+ * - **Mark as Important**: Toggle badge to favorite/unfavorite invoice
+ * - **Edit Items**: Via `ItemsTable` which opens `ItemsDialog` for modifications
+ *
+ * **Animation**: Uses Framer Motion for card entrance and hover scale effects
+ * on individual detail sections.
+ *
+ * **Domain Context**: Central component of the edit-invoice page, providing
+ * the primary invoice summary view with editing access points.
+ *
+ * @returns Client-rendered card with invoice details and edit controls
+ *
+ * @example
+ * ```tsx
+ * <InvoiceCard />
+ * // Displays: Invoice Details card with date, category, payment dropdown, total, items
+ * ```
+ *
+ * @see {@link ItemsTable} - Nested component for displaying/editing items
+ * @see {@link useEditInvoiceContext} - Context for tracking pending changes
+ */
+export default function InvoiceCard(): React.JSX.Element {
+  const locale = useLocale();
+  const t = useTranslations();
+  const {invoice, merchant, pendingChanges, setPaymentType, setIsImportant, setCategory, setDescription, setTransactionDate} =
+    useEditInvoiceContext();
+  const {paymentInformation, category, isImportant, description} = invoice;
+
+  // Get the current values (pending change or original)
+  const currentPaymentType = pendingChanges.paymentType ?? paymentInformation.paymentType;
+  const currentIsImportant = pendingChanges.isImportant ?? isImportant;
+  const currentCategory = pendingChanges.category ?? category;
+  const currentDescription = pendingChanges.description ?? description;
+  const currentTransactionDate = useMemo(
+    () => pendingChanges.transactionDate ?? new Date(paymentInformation.transactionDate),
+    [pendingChanges.transactionDate, paymentInformation.transactionDate],
+  );
+
+  /** Converts a TypeScript numeric enum to select options */
+  const enumToOptions = useCallback(<T extends Record<string, string | number>>(enumObj: T) => {
+    return Object.entries(enumObj)
+      .filter(([key]) => Number.isNaN(Number(key)))
+      .map(([key, value]) => ({label: key.replaceAll("_", " "), value: value as number}));
+  }, []);
+
+  const paymentTypeOptions = useMemo(() => enumToOptions(PaymentType), [enumToOptions]);
+  const categoryOptions = useMemo(() => enumToOptions(InvoiceCategory), [enumToOptions]);
+
+  // Get current label for display in Select
+  const currentPaymentTypeLabel = useMemo(
+    () => paymentTypeOptions.find((opt) => opt.value === currentPaymentType)?.label ?? "",
+    [paymentTypeOptions, currentPaymentType],
+  );
+  const currentCategoryLabel = useMemo(
+    () => categoryOptions.find((opt) => opt.value === currentCategory)?.label ?? "",
+    [categoryOptions, currentCategory],
+  );
+
+  /** Generic handler for enum select changes */
+  const createEnumHandler = useCallback(
+    <T extends number>(setter: (value: T) => void) =>
+      (value: string) =>
+        setter(Number(value) as T),
+    [],
+  );
+
+  const handlePaymentTypeChange = useMemo(() => createEnumHandler<PaymentType>(setPaymentType), [createEnumHandler, setPaymentType]);
+  const handleCategoryChange = useMemo(() => createEnumHandler<InvoiceCategory>(setCategory), [createEnumHandler, setCategory]);
+
+  const handleImportantToggle = useCallback(() => {
+    setIsImportant(!currentIsImportant);
+  }, [currentIsImportant, setIsImportant]);
+
+  const handleDescriptionChange = useCallback(
+    (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setDescription(event.target.value);
+    },
+    [setDescription],
+  );
+
+  const handleDateSelect = useCallback(
+    (date: Date | undefined) => {
+      if (date) {
+        // Preserve the current time when selecting a new date
+        const newDate = new Date(date);
+        newDate.setUTCHours(currentTransactionDate.getUTCHours());
+        newDate.setUTCMinutes(currentTransactionDate.getUTCMinutes());
+        setTransactionDate(newDate);
+      }
+    },
+    [setTransactionDate, currentTransactionDate],
+  );
+
+  const handleTimeChange = useCallback(
+    (type: "hours" | "minutes", value: string) => {
+      const numValue = Number.parseInt(value, 10);
+      if (Number.isNaN(numValue)) return;
+
+      const newDate = new Date(currentTransactionDate);
+      if (type === "hours" && numValue >= 0 && numValue <= 23) {
+        newDate.setUTCHours(numValue);
+      } else if (type === "minutes" && numValue >= 0 && numValue <= 59) {
+        newDate.setUTCMinutes(numValue);
+      }
+      setTransactionDate(newDate);
+    },
+    [setTransactionDate, currentTransactionDate],
+  );
+
+  const handleHoursChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => handleTimeChange("hours", e.target.value),
+    [handleTimeChange],
+  );
+
+  const handleMinutesChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => handleTimeChange("minutes", e.target.value),
+    [handleTimeChange],
+  );
+
+  return (
+    <motion.div
+      variants={{hidden: {opacity: 0}, visible: {opacity: 1}}}
+      data-section='invoice-items'>
+      <Card className={styles["card"]}>
+        <CardHeader className={styles["cardHeader"]}>
+          <div className={styles["headerRow"]}>
+            <CardTitle>{t((m) => m.cards.invoices.invoiceCard.title)}</CardTitle>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Badge
+                      variant={currentIsImportant === true ? "default" : "outline"}
+                      className={styles["importantBadge"]}
+                      onClick={handleImportantToggle}>
+                      <TbHeart className={currentIsImportant ? styles["heartIconFilled"] : styles["heartIcon"]} />
+                      {currentIsImportant
+                        ? t((m) => m.cards.invoices.invoiceCard.importantBadge)
+                        : t((m) => m.cards.invoices.invoiceCard.markImportant)}
+                    </Badge>
+                  }
+                />
+                <TooltipContent>
+                  <span>
+                    {currentIsImportant
+                      ? t((m) => m.cards.invoices.invoiceCard.tooltips.unmarkFavorite)
+                      : t((m) => m.cards.invoices.invoiceCard.tooltips.markFavorite)}
+                  </span>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <CardDescription>
+            {t((m) => m.cards.invoices.invoiceCard.fromMerchant, {merchant: merchant?.name ?? ""})}
+            <Separator className={styles["separatorSmall"]} />
+            <Textarea
+              value={currentDescription}
+              onChange={handleDescriptionChange}
+              placeholder={t((m) => m.cards.invoices.invoiceCard.descriptionPlaceholder)}
+              className={styles["descriptionTextarea"]}
+              rows={3}
+            />
+          </CardDescription>
+        </CardHeader>
+        <CardContent className={styles["cardContent"]}>
+          <div className={styles["detailsGrid"]}>
+            <motion.div
+              whileHover={{scale: 1.02}}
+              transition={{type: "spring", stiffness: 400, damping: 10}}>
+              <h3 className={styles["detailLabel"]}>{t((m) => m.cards.invoices.invoiceCard.labels.dateUtc)}</h3>
+              <div className={styles["dateRow"]}>
+                <TbCalendar className={styles["mutedIcon"]} />
+                <Popover>
+                  <PopoverTrigger
+                    render={
+                      <Button
+                        variant='outline'
+                        className={styles["dateButton"]}>
+                        {formatDate(currentTransactionDate, {dateStyle: "full", timeStyle: "short", timeZone: "UTC", locale})}
+                      </Button>
+                    }
+                  />
+                  <PopoverContent
+                    className={styles["popoverContent"]}
+                    align='start'>
+                    <Calendar
+                      mode='single'
+                      hideNavigation
+                      selected={currentTransactionDate}
+                      onSelect={handleDateSelect}
+                      captionLayout='dropdown'
+                      startMonth={new Date(2015, 0)}
+                      endMonth={new Date(new Date().getFullYear() + 1, 11)}
+                      className={styles["calendar"]}
+                    />
+                    <Separator className={styles["separatorMedium"]} />
+                    <div className={styles["timePicker"]}>
+                      <div className={styles["timeColumn"]}>
+                        <Label
+                          htmlFor='hours'
+                          className={styles["timeLabel"]}>
+                          {t((m) => m.cards.invoices.invoiceCard.labels.hours)}
+                        </Label>
+                        <Input
+                          id='hours'
+                          type='number'
+                          min={0}
+                          max={23}
+                          value={currentTransactionDate.getUTCHours()}
+                          onChange={handleHoursChange}
+                          className={styles["timeInput"]}
+                        />
+                      </div>
+                      <span className={styles["timeSeparator"]}>:</span>
+                      <div className={styles["timeColumn"]}>
+                        <Label
+                          htmlFor='minutes'
+                          className={styles["timeLabel"]}>
+                          {t((m) => m.cards.invoices.invoiceCard.labels.minutes)}
+                        </Label>
+                        <Input
+                          id='minutes'
+                          type='number'
+                          min={0}
+                          max={59}
+                          value={currentTransactionDate.getUTCMinutes()}
+                          onChange={handleMinutesChange}
+                          className={styles["timeInput"]}
+                        />
+                      </div>
+                      <span className={styles["timeUtc"]}>{t((m) => m.cards.invoices.invoiceCard.labels.utc)}</span>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </motion.div>
+            <motion.div
+              whileHover={{scale: 1.02}}
+              transition={{type: "spring", stiffness: 400, damping: 10}}>
+              <h3 className={styles["detailLabel"]}>{t((m) => m.cards.invoices.invoiceCard.labels.category)}</h3>
+              <div className={styles["categoryRow"]}>
+                <TbTag className={styles["mutedIcon"]} />
+                <Select
+                  value={String(currentCategory)}
+                  onValueChange={handleCategoryChange}>
+                  <SelectTrigger className={styles["categoryTrigger"]}>
+                    <SelectValue placeholder={t((m) => m.cards.invoices.invoiceCard.placeholders.selectCategory)}>
+                      {currentCategoryLabel}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categoryOptions.map((option) => (
+                      <SelectItem
+                        key={option.value}
+                        value={String(option.value)}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </motion.div>
+            <motion.div
+              whileHover={{scale: 1.02}}
+              transition={{type: "spring", stiffness: 400, damping: 10}}>
+              <h3 className={styles["detailLabel"]}>{t((m) => m.cards.invoices.invoiceCard.labels.paymentMethod)}</h3>
+              <div className={styles["paymentRow"]}>
+                <TbCreditCard className={styles["mutedIcon"]} />
+                <Select
+                  value={String(currentPaymentType)}
+                  onValueChange={handlePaymentTypeChange}>
+                  <SelectTrigger className={styles["paymentTrigger"]}>
+                    <SelectValue placeholder={t((m) => m.cards.invoices.invoiceCard.placeholders.selectPaymentType)}>
+                      {currentPaymentTypeLabel}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentTypeOptions.map((option) => (
+                      <SelectItem
+                        key={option.value}
+                        value={String(option.value)}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </motion.div>
+            <motion.div
+              whileHover={{scale: 1.02}}
+              transition={{type: "spring", stiffness: 400, damping: 10}}>
+              <h3 className={styles["detailLabel"]}>{t((m) => m.cards.invoices.invoiceCard.labels.totalAmount)}</h3>
+              <p className={styles["totalAmount"]}>
+                {formatCurrency(paymentInformation.totalCostAmount, {currencyCode: paymentInformation.currency.code, locale})}
+              </p>
+            </motion.div>
+          </div>
+
+          <Separator />
+
+          <ItemsTable invoice={invoice} />
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}

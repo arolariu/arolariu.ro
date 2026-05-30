@@ -1,8 +1,8 @@
-import {selectorFromPath} from "next-intl-selector";
 import {describe, expect, it, vi} from "vitest";
 
 import {defineEmailTemplate} from "./defineEmailTemplate";
 import * as i18n from "./i18n";
+import {selectorFromPath} from "./i18n";
 
 const FIXTURE_MESSAGES = {
   emails: {

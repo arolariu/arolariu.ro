@@ -19,11 +19,11 @@
  * @see {@link fetchInvoice} - Deleted invoices are excluded from fetch by default
  */
 
-import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
-import { fetchBFFUserFromAuthService } from "@/lib/actions/user/fetchUser";
-import { validateStringIsGuidType } from "@/lib/utils.generic";
-import { createErrorResult, fetchWithTimeout, type ServerActionResult } from "@/lib/utils.server";
-import { revalidatePath } from "next/cache";
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {validateStringIsGuidType} from "@/lib/utils.generic";
+import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
+import {revalidatePath} from "next/cache";
 
 /**
  * Input parameters for invoice deletion.
@@ -81,24 +81,24 @@ type ServerActionOutputType = ServerActionResult<void>;
  *
  * @see {@link fetchInvoices} - Deleted invoices won't appear in list
  */
-export async function deleteInvoice({ invoiceId }: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{deleteInvoice}}, with:", { invoiceId });
+export async function deleteInvoice({invoiceId}: ServerActionInputType): ServerActionOutputType {
+  console.info(">>> Executing server action {{deleteInvoice}}, with:", {invoiceId});
 
   return withSpan("api.actions.invoices.deleteInvoice", async () => {
     try {
       // Step 0. Validate invoice identifier is valid GUID
-      logWithTrace("info", "Validating identifier is valid...", { invoiceId }, "server");
+      logWithTrace("info", "Validating identifier is valid...", {invoiceId}, "server");
       validateStringIsGuidType(invoiceId, "invoiceId");
 
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
       logWithTrace("info", "Fetching BFF user JWT for authentication...", {}, "server");
-      const { userJwt: authToken } = await fetchBFFUserFromAuthService();
+      const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
       // Step 2. Make the API request to delete the invoice
       addSpanEvent("bff.request.delete-invoice.start");
-      logWithTrace("info", "Making API request to delete invoice...", { invoiceId }, "server");
+      logWithTrace("info", "Making API request to delete invoice...", {invoiceId}, "server");
       const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}`, {
         method: "DELETE",
         headers: {
@@ -109,15 +109,15 @@ export async function deleteInvoice({ invoiceId }: ServerActionInputType): Serve
       addSpanEvent("bff.request.delete-invoice.complete");
 
       if (response.ok) {
-        logWithTrace("info", "Successfully deleted invoice...", { invoiceId }, "server");
+        logWithTrace("info", "Successfully deleted invoice...", {invoiceId}, "server");
         revalidatePath(`/domains/invoices/edit-invoice/${invoiceId}`, "page");
         revalidatePath(`/domains/invoices/view-invoice/${invoiceId}`, "page");
-        return { success: true, data: undefined } as const;
+        return {success: true, data: undefined} as const;
       }
 
       const errorText = await response.text();
       const internalMessage = `Failed to delete invoice: ${response.status} ${response.statusText}`;
-      logWithTrace("warn", internalMessage, { invoiceId, errorText }, "server");
+      logWithTrace("warn", internalMessage, {invoiceId, errorText}, "server");
       const userMessage =
         response.status === 404
           ? "The invoice was not found. It may have already been deleted."
@@ -128,11 +128,9 @@ export async function deleteInvoice({ invoiceId }: ServerActionInputType): Serve
     } catch (error: unknown) {
       addSpanEvent("bff.request.delete-invoice.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error deleting the invoice from the server", { error, invoiceId }, "server");
+      logWithTrace("error", "Error deleting the invoice from the server", {error, invoiceId}, "server");
       console.error("Error deleting the invoice from the server:", error);
       return createErrorResult(new Error(errorMessage));
     }
   }) satisfies ServerActionOutputType;
 }
-
-export default deleteInvoice;

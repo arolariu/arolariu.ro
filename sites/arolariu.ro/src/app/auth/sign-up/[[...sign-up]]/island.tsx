@@ -82,8 +82,16 @@ export default function RenderAuthSignUpPage(): React.JSX.Element {
           subtitle={t((m) => m.pages.auth.signUp.hero.subtitle)}
           illustrationSrc='/images/auth/sign-up.svg'
           illustrationAlt={t((m) => m.pages.auth.signUp.illustrationAlt)}
-          bullets={[t((m) => m.pages.auth.signUp.bullets.first), t((m) => m.pages.auth.signUp.bullets.second), t((m) => m.pages.auth.signUp.bullets.third)]}
-          trustBadges={[trust((m) => m.pages.auth.island.trust.oauth), trust((m) => m.pages.auth.island.trust.session), trust((m) => m.pages.auth.island.trust.privacy)]}
+          bullets={[
+            t((m) => m.pages.auth.signUp.bullets.first),
+            t((m) => m.pages.auth.signUp.bullets.second),
+            t((m) => m.pages.auth.signUp.bullets.third),
+          ]}
+          trustBadges={[
+            trust((m) => m.pages.auth.island.trust.oauth),
+            trust((m) => m.pages.auth.island.trust.session),
+            trust((m) => m.pages.auth.island.trust.privacy),
+          ]}
         />
       </div>
 

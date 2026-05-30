@@ -58,6 +58,6 @@
  * @see {@link deleteInvoiceScan} - Remove scan references from invoices
  */
 
-export {createInvoiceScan} from "./createInvoiceScan";
 export {attachInvoiceScan} from "./attachInvoiceScan";
+export {createInvoiceScan} from "./createInvoiceScan";
 export {deleteInvoiceScan} from "./deleteInvoiceScan";

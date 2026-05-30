@@ -120,7 +120,13 @@ export default function ReviewStep(): React.JSX.Element {
               {t((m) => m.forms.invoices.createInvoice.reviewStep.sections.details.category)}
             </div>
             <div className={styles["detailValue"]}>
-              <Badge variant='outline'>{t(selectorFromPath(`forms.invoices.createInvoice.reviewStep.categories.${CATEGORY_KEYS[invoiceDetails.category] ?? "notDefined"}`))}</Badge>
+              <Badge variant='outline'>
+                {t(
+                  selectorFromPath(
+                    `forms.invoices.createInvoice.reviewStep.categories.${CATEGORY_KEYS[invoiceDetails.category] ?? "notDefined"}`,
+                  ),
+                )}
+              </Badge>
             </div>
           </div>
 
@@ -130,7 +136,13 @@ export default function ReviewStep(): React.JSX.Element {
               {t((m) => m.forms.invoices.createInvoice.reviewStep.sections.details.paymentType)}
             </div>
             <div className={styles["detailValue"]}>
-              <Badge variant='outline'>{t(selectorFromPath(`forms.invoices.createInvoice.reviewStep.paymentTypes.${PAYMENT_TYPE_KEYS[invoiceDetails.paymentType] ?? "unknown"}`))}</Badge>
+              <Badge variant='outline'>
+                {t(
+                  selectorFromPath(
+                    `forms.invoices.createInvoice.reviewStep.paymentTypes.${PAYMENT_TYPE_KEYS[invoiceDetails.paymentType] ?? "unknown"}`,
+                  ),
+                )}
+              </Badge>
             </div>
           </div>
 

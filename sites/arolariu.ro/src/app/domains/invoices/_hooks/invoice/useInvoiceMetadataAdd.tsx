@@ -1,19 +1,19 @@
 "use client";
 
 /**
-* @fileoverview Hook for adding metadata entries to an invoice.
+ * @fileoverview Hook for adding metadata entries to an invoice.
  * @module app/domains/invoices/_hooks/invoice/useInvoiceMetadataAdd
-*
-* @remarks
-* Wraps the invoice metadata server action and updates the local invoice store
-* after each successful call. The callback supports both a single key/value pair
-* and a record of metadata entries processed sequentially.
+ *
+ * @remarks
+ * Wraps the invoice metadata server action and updates the local invoice store
+ * after each successful call. The callback supports both a single key/value pair
+ * and a record of metadata entries processed sequentially.
  */
 
 import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
 import {useCallback, useState} from "react";
-import {addInvoiceMetadata as addInvoiceMetadataServerSide} from "../../_actions/invoices/metadata/addInvoiceMetadata";
+import {addInvoiceMetadata as addInvoiceMetadataServerSide} from "../../_actions/invoices";
 
 /**
  * Result of a bulk metadata addition operation.
@@ -35,7 +35,10 @@ type BulkAddResult = Readonly<{
  */
 type HookOutputType = Readonly<{
   isAdding: boolean;
-  addMetadataCallback: (keyOrRecord: string | Record<string, string>, maybeValue?: string) => Promise<void | BulkAddResult>;
+  addMetadataCallback: {
+    (key: string, value: string): Promise<void>;
+    (metadata: Record<string, string>): Promise<BulkAddResult>;
+  };
 }>;
 
 /**
@@ -92,72 +95,57 @@ export function useInvoiceMetadataAdd(invoice: Invoice): Readonly<HookOutputType
         additionalMetadata: {...invoice.additionalMetadata, [key]: value},
       };
     },
-    [invoice, addInvoiceMedataClientSide],
+    [invoice.id, invoice.additionalMetadata, addInvoiceMedataClientSide],
   );
 
   /**
    * Sequentially processes metadata entries and records per-entry failures.
    *
    * @param entries - Metadata entries to process.
-   * @param index - Current zero-based index in `entries`.
-   * @param acc - Aggregated success, failure, and failed entry state.
    * @returns Aggregate metadata add result after all entries have been attempted.
    */
-  const processBulkRecursive = useCallback(
-    async (
-      entries: readonly [string, string][],
-      index: number,
-      acc: {successCount: number; failureCount: number; failedItems: {key: string; value: string}[]},
-    ): Promise<BulkAddResult> => {
-      if (index >= entries.length) {
-        return acc;
+  const processBulkEntries = useCallback(
+    async (entries: readonly [string, string][]): Promise<BulkAddResult> => {
+      const acc: {successCount: number; failureCount: number; failedItems: {key: string; value: string}[]} = {
+        successCount: 0,
+        failureCount: 0,
+        failedItems: [],
+      };
+
+      for (const [key, value] of entries) {
+        try {
+          await performMutation(key, value);
+          acc.successCount += 1;
+        } catch (error) {
+          console.error(`Failed to add metadata field [${key}: ${value}]:`, error);
+          acc.failureCount += 1;
+          acc.failedItems.push({key, value});
+        }
       }
-      const entry = entries[index];
-      if (!entry) {
-        return acc;
-      }
-      const [key, value] = entry;
-      try {
-        await performMutation(key, value);
-        return await processBulkRecursive(entries, index + 1, {
-          ...acc,
-          successCount: acc.successCount + 1,
-        });
-      } catch (error) {
-        console.error(`Failed to add metadata field [${key}: ${value}]:`, error);
-        return await processBulkRecursive(entries, index + 1, {
-          ...acc,
-          failureCount: acc.failureCount + 1,
-          failedItems: [...acc.failedItems, {key, value}],
-        });
-      }
+
+      return acc;
     },
     [performMutation],
   );
 
-  const addMetadataCallback = useCallback(
-    async (keyOrRecord: string | Record<string, string>, maybeValue?: string): Promise<void | BulkAddResult> => {
-      setIsAdding(true);
-      try {
-        if (typeof keyOrRecord === "string") {
-          if (maybeValue === undefined) {
-            throw new Error("Value must be specified for single metadata addition");
-          }
-          await performMutation(keyOrRecord, maybeValue);
-        } else {
-          const entries = Object.entries(keyOrRecord);
-          return await processBulkRecursive(entries, 0, {
-            successCount: 0,
-            failureCount: 0,
-            failedItems: [],
-          });
+  async function addMetadataCallback(key: string, value: string): Promise<void>;
+  async function addMetadataCallback(metadata: Record<string, string>): Promise<BulkAddResult>;
+  async function addMetadataCallback(keyOrRecord: string | Record<string, string>, maybeValue?: string): Promise<void | BulkAddResult> {
+    setIsAdding(true);
+    try {
+      if (typeof keyOrRecord === "string") {
+        if (maybeValue === undefined) {
+          throw new Error("Value must be specified for single metadata addition");
         }
-      } finally {
-        setIsAdding(false);
+        await performMutation(keyOrRecord, maybeValue);
+      } else {
+        const entries = Object.entries(keyOrRecord);
+        return await processBulkEntries(entries);
       }
-    },
-    [performMutation, processBulkRecursive],
-  );
+    } finally {
+      setIsAdding(false);
+    }
+  }
 
   return {isAdding, addMetadataCallback};
 }

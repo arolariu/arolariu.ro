@@ -2,12 +2,12 @@
 
 /**
  * @fileoverview Hook for managing scan rotation with canvas pipeline.
-* @module app/domains/invoices/_hooks/scan/useScanRotation
-*
-* @remarks
-* Rotates image scans in the browser using Canvas, persists the new binary
-* content through the standalone scan update server action, and cache-busts the
-* scan URL in the scans Zustand store after a successful upload.
+ * @module app/domains/invoices/_hooks/scan/useScanRotation
+ *
+ * @remarks
+ * Rotates image scans in the browser using Canvas, persists the new binary
+ * content through the standalone scan update server action, and cache-busts the
+ * scan URL in the scans Zustand store after a successful upload.
  */
 
 import {useScansStore} from "@/stores";
@@ -15,7 +15,7 @@ import type {CachedScan} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
-import {updateScan} from "../../_actions/scans/updateScan";
+import {updateScan} from "../../_actions/scans";
 
 /**
  * Hook output type for scan rotation.
@@ -43,7 +43,7 @@ type HookOutputType = Readonly<{
  *   8. Updates Zustand store via `updateScanBlobUrl` with cache-busted URL
  *   9. Shows success toast
  *   10. Sets `isRotating→false` in `finally` block
- * - On error at any step: shows error toast, sets `isRotating→false`
+ * - On error at each step: shows error toast, sets `isRotating→false`
  * - PDF scans are rejected with error toast (rotation not supported)
  *
  * **Canvas Pipeline Details:**
@@ -102,9 +102,8 @@ export function useScanRotation(scan: CachedScan): Readonly<HookOutputType> {
 
         // 2. Create rotated canvas
         const canvas = document.createElement("canvas");
-        const isRightAngle = Math.abs(degrees) === 90 || Math.abs(degrees) === 270;
-        canvas.width = isRightAngle ? img.height : img.width;
-        canvas.height = isRightAngle ? img.width : img.height;
+        canvas.width = img.height;
+        canvas.height = img.width;
 
         const ctx = canvas.getContext("2d");
         if (!ctx) {

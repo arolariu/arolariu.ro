@@ -61,7 +61,11 @@ type AuthCard = Readonly<{
 export default function RenderAuthScreen(): React.JSX.Element {
   const t = useTranslations();
 
-  const trustBadges: Readonly<[string, string, string]> = [t((m) => m.pages.auth.island.trust.oauth), t((m) => m.pages.auth.island.trust.session), t((m) => m.pages.auth.island.trust.privacy)];
+  const trustBadges: Readonly<[string, string, string]> = [
+    t((m) => m.pages.auth.island.trust.oauth),
+    t((m) => m.pages.auth.island.trust.session),
+    t((m) => m.pages.auth.island.trust.privacy),
+  ];
 
   const cards: ReadonlyArray<AuthCard> = [
     {
@@ -71,7 +75,11 @@ export default function RenderAuthScreen(): React.JSX.Element {
       illustrationAlt: t((m) => m.pages.auth.island.signUp.illustrationAlt),
       title: t((m) => m.pages.auth.island.signUp.title),
       description: t((m) => m.pages.auth.island.signUp.description),
-      bullets: [t((m) => m.pages.auth.island.signUp.bullets.first), t((m) => m.pages.auth.island.signUp.bullets.second), t((m) => m.pages.auth.island.signUp.bullets.third)],
+      bullets: [
+        t((m) => m.pages.auth.island.signUp.bullets.first),
+        t((m) => m.pages.auth.island.signUp.bullets.second),
+        t((m) => m.pages.auth.island.signUp.bullets.third),
+      ],
       cta: t((m) => m.pages.auth.island.signUp.cta),
       secondaryPrompt: t((m) => m.pages.auth.island.signUp.secondaryPrompt),
       secondaryAction: t((m) => m.pages.auth.island.signUp.secondaryAction),
@@ -86,7 +94,11 @@ export default function RenderAuthScreen(): React.JSX.Element {
       illustrationAlt: t((m) => m.pages.auth.island.signIn.illustrationAlt),
       title: t((m) => m.pages.auth.island.signIn.title),
       description: t((m) => m.pages.auth.island.signIn.description),
-      bullets: [t((m) => m.pages.auth.island.signIn.bullets.first), t((m) => m.pages.auth.island.signIn.bullets.second), t((m) => m.pages.auth.island.signIn.bullets.third)],
+      bullets: [
+        t((m) => m.pages.auth.island.signIn.bullets.first),
+        t((m) => m.pages.auth.island.signIn.bullets.second),
+        t((m) => m.pages.auth.island.signIn.bullets.third),
+      ],
       cta: t((m) => m.pages.auth.island.signIn.cta),
       secondaryPrompt: t((m) => m.pages.auth.island.signIn.secondaryPrompt),
       secondaryAction: t((m) => m.pages.auth.island.signIn.secondaryAction),
@@ -142,7 +154,9 @@ export default function RenderAuthScreen(): React.JSX.Element {
                     <div className={styles["cardIconWrapper"]}>
                       <card.icon className={styles["cardIcon"]} />
                     </div>
-                    <div className={styles["cardStep"]}>{index === 0 ? t((m) => m.pages.auth.island.step1) : t((m) => m.pages.auth.island.step2)}</div>
+                    <div className={styles["cardStep"]}>
+                      {index === 0 ? t((m) => m.pages.auth.island.step1) : t((m) => m.pages.auth.island.step2)}
+                    </div>
                   </div>
 
                   {/* Illustration */}

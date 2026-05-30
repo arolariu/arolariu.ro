@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Private sharing components for the ShareInvoiceDialog.
  * @module domains/invoices/_dialogs/ShareInvoiceDialog.Private
@@ -9,22 +11,13 @@ import React from "react";
 import {TbArrowLeft, TbLock, TbMail} from "react-icons/tb";
 import styles from "./ShareInvoiceDialog.Private.module.scss";
 
-// ============================================================================
-// Types
-// ============================================================================
-
-/** Props for the private mode component */
-export interface PrivateModeProps {
-  readonly onBack: () => void;
-  readonly email: string;
-  readonly onEmailChange: (email: string) => void;
-  readonly onSendEmail: (e: React.FormEvent<HTMLFormElement>) => void;
-  readonly isSending?: boolean;
-}
-
-// ============================================================================
-// Sub-Components
-// ============================================================================
+type Props = {
+  onBack: () => void;
+  email: string;
+  onEmailChange: (email: string) => void;
+  onSendEmail: (e: React.SubmitEvent<HTMLFormElement>) => void;
+  isSending?: boolean;
+};
 
 /**
  * Renders the private sharing mode with email form.
@@ -42,7 +35,7 @@ export interface PrivateModeProps {
  * @param props - Component props
  * @returns The private sharing mode UI
  */
-export function PrivateMode({onBack, email, onEmailChange, onSendEmail, isSending = false}: PrivateModeProps): React.JSX.Element {
+export function PrivateMode({onBack, email, onEmailChange, onSendEmail, isSending = false}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations();
   return (
     <div className={styles["body"]}>
@@ -60,7 +53,9 @@ export function PrivateMode({onBack, email, onEmailChange, onSendEmail, isSendin
         className={styles["alertGreen"]}>
         <TbLock className={styles["lockIcon"]} />
         <AlertTitle className={styles["alertGreenTitle"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.title)}</AlertTitle>
-        <AlertDescription className={styles["alertGreenDesc"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.description)}</AlertDescription>
+        <AlertDescription className={styles["alertGreenDesc"]}>
+          {t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.description)}
+        </AlertDescription>
       </Alert>
 
       <form
@@ -85,7 +80,9 @@ export function PrivateMode({onBack, email, onEmailChange, onSendEmail, isSendin
           disabled={isSending || !email}
           className={styles["buttonFull"]}>
           <TbMail className={styles["mailIcon"]} />
-          {isSending ? t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.sending) : t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.sendInvitation)}
+          {isSending
+            ? t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.sending)
+            : t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.sendInvitation)}
         </Button>
       </form>
     </div>

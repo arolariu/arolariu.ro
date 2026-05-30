@@ -76,7 +76,8 @@ export default function Architecture(): React.JSX.Element {
             </Badge>
           </motion.div>
           <h2 className={styles["title"]}>
-            {t((m) => m.sections.about.platform.architecture.title)} <span className={styles["titleHighlight"]}>{t((m) => m.sections.about.platform.architecture.titleHighlight)}</span>
+            {t((m) => m.sections.about.platform.architecture.title)}{" "}
+            <span className={styles["titleHighlight"]}>{t((m) => m.sections.about.platform.architecture.titleHighlight)}</span>
           </h2>
           <p className={styles["description"]}>{t((m) => m.sections.about.platform.architecture.description)}</p>
         </motion.div>
@@ -116,8 +117,12 @@ export default function Architecture(): React.JSX.Element {
                         <layer.icon className={styles["layerIcon"]} />
                       </motion.div>
                       <div>
-                        <h3 className={styles["layerName"]}>{t(selectorFromPath(`sections.about.platform.architecture.${`layers.${layer.id}.name`}`))}</h3>
-                        <p className={styles["layerDescription"]}>{t(selectorFromPath(`sections.about.platform.architecture.${`layers.${layer.id}.description`}`))}</p>
+                        <h3 className={styles["layerName"]}>
+                          {t(selectorFromPath(`sections.about.platform.architecture.${`layers.${layer.id}.name`}`))}
+                        </h3>
+                        <p className={styles["layerDescription"]}>
+                          {t(selectorFromPath(`sections.about.platform.architecture.${`layers.${layer.id}.description`}`))}
+                        </p>
                       </div>
                     </div>
 

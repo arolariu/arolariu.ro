@@ -15,7 +15,6 @@
  * @see {@link useInvoiceContext} for consuming the context
  */
 
-
 import type {Invoice, Merchant} from "@/types/invoices";
 import {createContext, use, useMemo, useState} from "react";
 

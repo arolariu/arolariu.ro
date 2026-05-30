@@ -39,6 +39,7 @@ If rules conflict, resolve in this order:
 
 - Use `any` type in TypeScript (strict mode enforced)
 - Commit secrets, API keys, connection strings, or credentials
+- Commit `docs/superpowers/**` or `.superpowers/**` agent working artifacts; these paths are git-ignored for a reason
 - Put business logic in Brokers (they are thin wrappers only)
 - Make sideways calls (Foundation→Foundation) — use Orchestration
 - Exceed 2-3 dependencies per service (Florance Pattern)

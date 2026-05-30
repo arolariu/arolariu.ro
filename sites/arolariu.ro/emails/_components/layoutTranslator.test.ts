@@ -1,7 +1,7 @@
-import {selectorFromPath} from "next-intl-selector";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
 import * as i18n from "../_lib/i18n";
+import {selectorFromPath} from "../_lib/i18n";
 import {__resetLayoutTranslatorCache, getLayoutTranslator} from "./layoutTranslator";
 
 const FIXTURE = {emails: {layout: {tagline: "Tag", buttonFallback: "BF"}}};

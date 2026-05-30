@@ -20,11 +20,11 @@
  * @see {@link Invoice} for the returned data structure
  */
 
-import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
-import { fetchBFFUserFromAuthService } from "@/lib/actions/user/fetchUser";
-import { validateStringIsGuidType } from "@/lib/utils.generic";
-import { createErrorResult, fetchWithTimeout, type ServerActionResult } from "@/lib/utils.server";
-import type { Invoice } from "@/types/invoices";
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {validateStringIsGuidType} from "@/lib/utils.generic";
+import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
+import type {Invoice} from "@/types/invoices";
 
 /**
  * Input parameters for fetching a single invoice.
@@ -79,24 +79,24 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  * @see {@link Invoice} for the complete data structure
  * @see {@link fetchMerchant} for retrieving linked merchant details
  */
-export async function fetchInvoice({ invoiceId }: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{fetchInvoice}}, with identifier:", { invoiceId });
+export async function fetchInvoice({invoiceId}: ServerActionInputType): ServerActionOutputType {
+  console.info(">>> Executing server action {{fetchInvoice}}, with identifier:", {invoiceId});
 
   return withSpan("api.actions.invoices.fetchInvoice", async () => {
     try {
       // Step 0. Validate input is correct
-      logWithTrace("info", "Validating identifier is valid...", { invoiceId }, "server");
+      logWithTrace("info", "Validating identifier is valid...", {invoiceId}, "server");
       validateStringIsGuidType(invoiceId, "invoiceId");
 
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
       logWithTrace("info", "Fetching BFF user JWT for authentication...", {}, "server");
-      const { userJwt: authToken } = await fetchBFFUserFromAuthService();
+      const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
       // Step 2. Make the API request to fetch the invoice (with timeout)
       addSpanEvent("bff.request.fetch-invoice.start");
-      logWithTrace("info", "Making API request to fetch invoice...", { invoiceId }, "server");
+      logWithTrace("info", "Making API request to fetch invoice...", {invoiceId}, "server");
       const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
@@ -106,15 +106,15 @@ export async function fetchInvoice({ invoiceId }: ServerActionInputType): Server
       addSpanEvent("bff.request.fetch-invoice.complete");
 
       if (response.ok) {
-        logWithTrace("info", "Successfully fetched invoice...", { invoiceId }, "server");
+        logWithTrace("info", "Successfully fetched invoice...", {invoiceId}, "server");
         const data = (await response.json()) as Readonly<Invoice>;
-        return { success: true, data };
+        return {success: true, data};
       }
 
       addSpanEvent("bff.request.fetch-invoice.error");
       const errorText = await response.text();
       const internalMessage = `API error fetching invoice: ${response.status} ${response.statusText} - ${errorText}`;
-      logWithTrace("warn", internalMessage, { invoiceId, errorText }, "server");
+      logWithTrace("warn", internalMessage, {invoiceId, errorText}, "server");
       const userMessage =
         response.status === 404
           ? "Invoice not found or you don't have access to it."
@@ -125,11 +125,9 @@ export async function fetchInvoice({ invoiceId }: ServerActionInputType): Server
     } catch (error: unknown) {
       addSpanEvent("bff.request.fetch-invoice.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error fetching the invoice from the server...", { error, invoiceId }, "server");
+      logWithTrace("error", "Error fetching the invoice from the server...", {error, invoiceId}, "server");
       console.error("Error fetching the invoice from the server:", error);
       return createErrorResult(new Error(errorMessage));
     }
   }) satisfies ServerActionOutputType;
 }
-
-export default fetchInvoice;

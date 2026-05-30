@@ -1,4 +1,3 @@
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Celebration email sent after a user uploads their very first invoice.
  * @module emails/invoices/FirstInvoiceUploadedEmail
@@ -23,6 +22,7 @@ import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
 import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
+import {selectorFromPath} from "../_lib/i18n";
 
 /**
  * Properties for the FirstInvoiceUploadedEmail component.
@@ -95,16 +95,35 @@ const FirstInvoiceUploadedEmail = defineEmailTemplate<Props>({
         <KeyValueTable
           title={t(selectorFromPath("emails.firstInvoiceUploaded.invoiceSummaryTitle"))}
           items={[
-            {label: t(selectorFromPath("emails.firstInvoiceUploaded.invoiceSummary.invoiceName")), value: invoiceName || t(selectorFromPath("emails.firstInvoiceUploaded.untitledFallback"))},
+            {
+              label: t(selectorFromPath("emails.firstInvoiceUploaded.invoiceSummary.invoiceName")),
+              value: invoiceName || t(selectorFromPath("emails.firstInvoiceUploaded.untitledFallback")),
+            },
             {label: t(selectorFromPath("emails.firstInvoiceUploaded.invoiceSummary.uploaded")), value: uploadDate},
-            {label: t(selectorFromPath("emails.firstInvoiceUploaded.invoiceSummary.status")), value: t(selectorFromPath("emails.firstInvoiceUploaded.statusValue"))},
+            {
+              label: t(selectorFromPath("emails.firstInvoiceUploaded.invoiceSummary.status")),
+              value: t(selectorFromPath("emails.firstInvoiceUploaded.statusValue")),
+            },
           ]}
         />
         <EmailCard title={t(selectorFromPath("emails.firstInvoiceUploaded.whatHappensNextTitle"))}>
-          <BulletList items={[t(selectorFromPath("emails.firstInvoiceUploaded.whatHappensNext.item0")), t(selectorFromPath("emails.firstInvoiceUploaded.whatHappensNext.item1")), t(selectorFromPath("emails.firstInvoiceUploaded.whatHappensNext.item2"))]} />
+          <BulletList
+            items={[
+              t(selectorFromPath("emails.firstInvoiceUploaded.whatHappensNext.item0")),
+              t(selectorFromPath("emails.firstInvoiceUploaded.whatHappensNext.item1")),
+              t(selectorFromPath("emails.firstInvoiceUploaded.whatHappensNext.item2")),
+            ]}
+          />
         </EmailCard>
         <EmailCard title={t(selectorFromPath("emails.firstInvoiceUploaded.featuresToExploreTitle"))}>
-          <BulletList items={[t(selectorFromPath("emails.firstInvoiceUploaded.featuresToExplore.item0")), t(selectorFromPath("emails.firstInvoiceUploaded.featuresToExplore.item1")), t(selectorFromPath("emails.firstInvoiceUploaded.featuresToExplore.item2")), t(selectorFromPath("emails.firstInvoiceUploaded.featuresToExplore.item3"))]} />
+          <BulletList
+            items={[
+              t(selectorFromPath("emails.firstInvoiceUploaded.featuresToExplore.item0")),
+              t(selectorFromPath("emails.firstInvoiceUploaded.featuresToExplore.item1")),
+              t(selectorFromPath("emails.firstInvoiceUploaded.featuresToExplore.item2")),
+              t(selectorFromPath("emails.firstInvoiceUploaded.featuresToExplore.item3")),
+            ]}
+          />
         </EmailCard>
         <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.firstInvoiceUploaded.body"))}</Text>
         <Text style={EmailParagraphStyles}>

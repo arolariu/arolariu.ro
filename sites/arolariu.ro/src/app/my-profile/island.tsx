@@ -222,7 +222,7 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
               onClick={handleNavClick}
               aria-current={activeSection === id ? "page" : undefined}>
               <Icon aria-hidden='true' />
-              <span>{t(selectorFromPath(`Profile.sidebar.nav.${key}`))}</span>
+              <span>{t(selectorFromPath(`pages.profile.sidebar.nav.${key}`))}</span>
             </button>
           ))}
         </nav>
@@ -241,7 +241,7 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
                 <SelectItem
                   key={id}
                   value={id}>
-                  {t(selectorFromPath(`Profile.sidebar.nav.${key}`))}
+                  {t(selectorFromPath(`pages.profile.sidebar.nav.${key}`))}
                 </SelectItem>
               ))}
             </SelectContent>

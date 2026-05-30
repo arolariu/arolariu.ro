@@ -143,10 +143,14 @@ function SidebarContent(): React.JSX.Element {
                 <div>
                   <p className={styles["selectionTitle"]}>
                     {selectedScans.length}{" "}
-                    {selectedScans.length > 1 ? t((m) => m.pages.invoices.viewScans.sidebar.selectionStatus.plural) : t((m) => m.pages.invoices.viewScans.sidebar.selectionStatus.singular)}
+                    {selectedScans.length > 1
+                      ? t((m) => m.pages.invoices.viewScans.sidebar.selectionStatus.plural)
+                      : t((m) => m.pages.invoices.viewScans.sidebar.selectionStatus.singular)}
                   </p>
                   <p className={styles["selectionDescription"]}>
-                    {selectedScans.length > 1 ? t((m) => m.pages.invoices.viewScans.sidebar.selectionStatus.readyPlural) : t((m) => m.pages.invoices.viewScans.sidebar.selectionStatus.readySingular)}
+                    {selectedScans.length > 1
+                      ? t((m) => m.pages.invoices.viewScans.sidebar.selectionStatus.readyPlural)
+                      : t((m) => m.pages.invoices.viewScans.sidebar.selectionStatus.readySingular)}
                   </p>
                 </div>
               </div>

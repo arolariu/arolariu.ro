@@ -1,13 +1,13 @@
 "use client";
 
 /**
-* @fileoverview Hook for removing recipes from an invoice in local state.
-* @module app/domains/invoices/_hooks/invoice/useRecipeDelete
-*
-* @remarks
-* Removes matching entries from `invoice.possibleRecipes` through the invoices
-* Zustand store. This hook currently performs a client-side mutation only; it
-* does not call an invoice server action.
+ * @fileoverview Hook for removing recipes from an invoice in local state.
+ * @module app/domains/invoices/_hooks/invoice/useRecipeDelete
+ *
+ * @remarks
+ * Removes matching entries from `invoice.possibleRecipes` through the invoices
+ * Zustand store. This hook currently performs a client-side mutation only; it
+ * does not call an invoice server action.
  */
 
 import {useInvoicesStore} from "@/stores";

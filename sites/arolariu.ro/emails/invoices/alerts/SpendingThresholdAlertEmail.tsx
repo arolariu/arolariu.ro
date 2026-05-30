@@ -1,4 +1,3 @@
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Spending threshold alert email when spending crosses a budget limit.
  * @module emails/invoices/alerts/SpendingThresholdAlertEmail
@@ -35,6 +34,7 @@ import {
   MetricsGrid,
 } from "../../_components";
 import {defineEmailTemplate} from "../../_lib/defineEmailTemplate";
+import {selectorFromPath} from "../../_lib/i18n";
 
 /**
  * A spending category with its amount for the donut chart.
@@ -149,7 +149,9 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
         unsubscribeUrl={`${BRAND.url}/unsubscribe`}
         managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
         <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.spendingAlert.greeting"), {name})}</Text>
-        <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.spendingAlert.intro"), {state: budgetState, category, period, percent: thresholdPercent})}</Text>
+        <Text style={EmailParagraphStyles}>
+          {t(selectorFromPath("emails.spendingAlert.intro"), {state: budgetState, category, period, percent: thresholdPercent})}
+        </Text>
         {isOverBudget ? (
           <Text
             style={{
@@ -167,7 +169,10 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
           metrics={[
             {label: t(selectorFromPath("emails.spendingAlert.metricsLabels.budgetLimit")), value: budgetLimit},
             {label: t(selectorFromPath("emails.spendingAlert.metricsLabels.currentSpending")), value: currentSpending},
-            {label: t(selectorFromPath("emails.spendingAlert.metricsLabels.remaining")), value: isOverBudget ? t(selectorFromPath("emails.spendingAlert.overBudgetValue")) : remainingBudget},
+            {
+              label: t(selectorFromPath("emails.spendingAlert.metricsLabels.remaining")),
+              value: isOverBudget ? t(selectorFromPath("emails.spendingAlert.overBudgetValue")) : remainingBudget,
+            },
             {label: t(selectorFromPath("emails.spendingAlert.metricsLabels.threshold")), value: `${thresholdPercent}%`},
           ]}
         />
@@ -192,8 +197,16 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
           <BulletList
             items={
               isOverBudget
-                ? [t(selectorFromPath("emails.spendingAlert.tipsOverBudget.item0")), t(selectorFromPath("emails.spendingAlert.tipsOverBudget.item1")), t(selectorFromPath("emails.spendingAlert.tipsOverBudget.item2"))]
-                : [t(selectorFromPath("emails.spendingAlert.tipsOnTrack.item0")), t(selectorFromPath("emails.spendingAlert.tipsOnTrack.item1")), t(selectorFromPath("emails.spendingAlert.tipsOnTrack.item2"))]
+                ? [
+                    t(selectorFromPath("emails.spendingAlert.tipsOverBudget.item0")),
+                    t(selectorFromPath("emails.spendingAlert.tipsOverBudget.item1")),
+                    t(selectorFromPath("emails.spendingAlert.tipsOverBudget.item2")),
+                  ]
+                : [
+                    t(selectorFromPath("emails.spendingAlert.tipsOnTrack.item0")),
+                    t(selectorFromPath("emails.spendingAlert.tipsOnTrack.item1")),
+                    t(selectorFromPath("emails.spendingAlert.tipsOnTrack.item2")),
+                  ]
             }
           />
         </EmailCard>

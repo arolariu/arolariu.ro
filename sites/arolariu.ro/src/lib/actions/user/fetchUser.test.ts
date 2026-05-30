@@ -3,6 +3,7 @@
  * @module lib/actions/user/fetchUser.test
  */
 
+import {EMPTY_GUID, generateGuid} from "@/lib/utils.generic";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 // Use vi.hoisted so these mock refs are captured before any imports are
@@ -11,12 +12,6 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 // We re-apply the implementations in beforeEach below.
 const {mockFetchApiJwtSecret} = vi.hoisted(() => ({
   mockFetchApiJwtSecret: vi.fn(),
-}));
-
-// Mock utils.generic
-vi.mock("@/lib/utils.generic", () => ({
-  EMPTY_GUID: "00000000-0000-0000-0000-000000000000",
-  generateGuid: vi.fn((seed?: string) => (seed ? `guid-${seed}` : "generated-guid")),
 }));
 
 // Mock utils.server — only createJwtToken is still used directly
@@ -37,8 +32,6 @@ vi.mock("@clerk/nextjs/server", () => ({
   auth: () => mockAuth(),
 }));
 
-// Import after mocks
-import {EMPTY_GUID, generateGuid} from "@/lib/utils.generic";
 import {createJwtToken} from "@/lib/utils.server";
 import {fetchAaaSUserFromAuthService, fetchBFFUserFromAuthService} from "./fetchUser";
 
@@ -48,9 +41,6 @@ describe("fetchUser actions", () => {
     // mockReset: true clears all implementations; re-apply defaults here.
     mockFetchApiJwtSecret.mockResolvedValue("test-api-jwt-secret");
     vi.mocked(createJwtToken).mockResolvedValue("mock-jwt-token");
-    vi.mocked(generateGuid).mockImplementation((seed?: string | Uint8Array) =>
-      seed && typeof seed === "string" ? `guid-${seed}` : "generated-guid",
-    );
   });
 
   afterEach(() => {
@@ -109,13 +99,13 @@ describe("fetchUser actions", () => {
         const result = await fetchBFFUserFromAuthService();
 
         expect(result.user).toEqual(mockUser);
-        expect(result.userIdentifier).toBe("guid-john@example.com");
+        expect(result.userIdentifier).toBe(generateGuid("john@example.com"));
       });
 
       it("should generate userIdentifier from email", async () => {
-        await fetchBFFUserFromAuthService();
+        const result = await fetchBFFUserFromAuthService();
 
-        expect(generateGuid).toHaveBeenCalledWith("john@example.com");
+        expect(result.userIdentifier).toBe(generateGuid("john@example.com"));
       });
 
       it("should create JWT with correct payload", async () => {
@@ -126,7 +116,7 @@ describe("fetchUser actions", () => {
             iss: "https://auth.arolariu.ro",
             aud: "https://api.arolariu.ro",
             sub: "john@example.com",
-            userIdentifier: "guid-john@example.com",
+            userIdentifier: generateGuid("john@example.com"),
             role: "user",
           }),
           "test-api-jwt-secret",
@@ -217,9 +207,9 @@ describe("fetchUser actions", () => {
         };
         mockCurrentUser.mockResolvedValue(userWithNoEmail);
 
-        await fetchBFFUserFromAuthService();
+        const result = await fetchBFFUserFromAuthService();
 
-        expect(generateGuid).toHaveBeenCalledWith("user-123");
+        expect(result.userIdentifier).toBe(generateGuid("user-123"));
       });
     });
 
@@ -268,7 +258,7 @@ describe("fetchUser actions", () => {
         expect(createJwtToken).toHaveBeenCalledWith(
           expect.objectContaining({
             sub: "N/A",
-            userIdentifier: "guid-user-456",
+            userIdentifier: generateGuid("user-456"),
             role: "user",
           }),
           expect.any(String),

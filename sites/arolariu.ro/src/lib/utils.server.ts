@@ -85,19 +85,14 @@ export async function createJwtToken(payload: Readonly<JWTPayload>, secret: Read
 /**
  * JWT token verification result type.
  */
-export type JwtVerificationResult = {valid: true; payload: JWTPayload} | {valid: false; error: string};
+export type JwtVerificationResult = Readonly<{valid: true; payload: JWTPayload}> | Readonly<{valid: false; error: string}>;
 
 /**
  * Error codes for server action failures.
  */
-export type ServerActionErrorCode =
-  | "NETWORK_ERROR"
-  | "TIMEOUT_ERROR"
-  | "AUTH_ERROR"
-  | "NOT_FOUND"
-  | "VALIDATION_ERROR"
-  | "SERVER_ERROR"
-  | "UNKNOWN_ERROR";
+export type ServerActionErrorCode = Readonly<
+  "NETWORK_ERROR" | "TIMEOUT_ERROR" | "AUTH_ERROR" | "NOT_FOUND" | "VALIDATION_ERROR" | "SERVER_ERROR" | "UNKNOWN_ERROR"
+>;
 
 /**
  * Standardized result type for server actions.
@@ -279,10 +274,9 @@ export function parseBackendError(status: number, body: string): string {
 }
 
 /**
- * Creates a standardized error result from an error object.
- * @param error - The caught error
- * @param defaultMessage - Default message if error doesn't have one
- * @returns ServerActionResult with error details
+ * Extracts numeric HTTP status from an unknown error object if present.
+ * @param value - The value to check for a numeric status property
+ * @returns The status number if present and valid, undefined otherwise
  */
 function readHttpStatus(value: unknown): number | undefined {
   if (typeof value !== "object" || value === null || !("status" in value)) {
@@ -293,6 +287,12 @@ function readHttpStatus(value: unknown): number | undefined {
   return typeof status === "number" ? status : undefined;
 }
 
+/**
+ * Creates a standardized error result from an error object.
+ * @param error - The caught error
+ * @param defaultMessage - Default message if error doesn't have one
+ * @returns ServerActionResult with error details
+ */
 export async function createErrorResult<T>(error: unknown, defaultMessage?: string): ServerActionResult<T> {
   if (error instanceof Error) {
     const isTimeout = error.message.includes("timed out");
@@ -305,7 +305,7 @@ export async function createErrorResult<T>(error: unknown, defaultMessage?: stri
         message: error.message,
         ...(status === undefined ? {} : {status}),
       },
-    };
+    } as const;
   }
 
   const status = readHttpStatus(error);
@@ -317,7 +317,7 @@ export async function createErrorResult<T>(error: unknown, defaultMessage?: stri
       message: defaultMessage ?? (typeof error === "string" ? error : "An unknown error occurred"),
       ...(status === undefined ? {} : {status}),
     },
-  };
+  } as const;
 }
 
 /**
@@ -361,7 +361,7 @@ export async function verifyJwtToken(token: Readonly<string>, secret: Readonly<s
 
       logWithTrace("info", "JWT token verified successfully", {subject: payload["sub"], duration}, "server");
 
-      return {valid: true, payload};
+      return {valid: true, payload} as const;
     } catch (error) {
       addSpanEvent("jwt.verification.failed", {
         "jwt.valid": false,
@@ -378,7 +378,7 @@ export async function verifyJwtToken(token: Readonly<string>, secret: Readonly<s
       return {
         valid: false,
         error: error instanceof Error ? error.message : "Token verification failed",
-      };
+      } as const;
     }
   });
 }

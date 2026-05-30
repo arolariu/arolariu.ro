@@ -1,4 +1,3 @@
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Email template for notifying users that an invoice has been made public.
  * @module emails/invoices/InvoiceHasBeenMadePublicEmail
@@ -23,6 +22,7 @@ import {
   KeyValueTable,
 } from "../_components";
 import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
+import {selectorFromPath} from "../_lib/i18n";
 
 /**
  * Properties for the InvoiceHasBeenMadePublicEmail component.
@@ -89,7 +89,10 @@ const InvoiceHasBeenMadePublicEmail = defineEmailTemplate<Props>({
             {label: t(selectorFromPath("emails.invoiceMadePublic.details.merchant")), value: merchantName},
             {label: t(selectorFromPath("emails.invoiceMadePublic.details.total")), value: `${totalAmount} ${currency}`.trim()},
             {label: t(selectorFromPath("emails.invoiceMadePublic.details.created")), value: dateCreated},
-            {label: t(selectorFromPath("emails.invoiceMadePublic.details.access")), value: t(selectorFromPath("emails.invoiceMadePublic.accessValue"))},
+            {
+              label: t(selectorFromPath("emails.invoiceMadePublic.details.access")),
+              value: t(selectorFromPath("emails.invoiceMadePublic.accessValue")),
+            },
           ]}
         />
         <Section
@@ -101,7 +104,9 @@ const InvoiceHasBeenMadePublicEmail = defineEmailTemplate<Props>({
             margin: "18px 0",
             textAlign: "center",
           }}>
-          <Text style={{...EmailParagraphStyles, margin: "0 0 10px", fontSize: "14px", fontWeight: "700"}}>{t(selectorFromPath("emails.invoiceMadePublic.qrTitle"))}</Text>
+          <Text style={{...EmailParagraphStyles, margin: "0 0 10px", fontSize: "14px", fontWeight: "700"}}>
+            {t(selectorFromPath("emails.invoiceMadePublic.qrTitle"))}
+          </Text>
           <Img
             src={qrUrl}
             alt={t(selectorFromPath("emails.invoiceMadePublic.qrAlt"))}
@@ -114,10 +119,18 @@ const InvoiceHasBeenMadePublicEmail = defineEmailTemplate<Props>({
               border: `1px solid ${EMAIL_COLORS.border}`,
             }}
           />
-          <Text style={{...EmailParagraphStyles, margin: "10px 0 0", fontSize: "12px", color: EMAIL_COLORS.muted}}>{t(selectorFromPath("emails.invoiceMadePublic.qrSubText"))}</Text>
+          <Text style={{...EmailParagraphStyles, margin: "10px 0 0", fontSize: "12px", color: EMAIL_COLORS.muted}}>
+            {t(selectorFromPath("emails.invoiceMadePublic.qrSubText"))}
+          </Text>
         </Section>
         <EmailCard title={t(selectorFromPath("emails.invoiceMadePublic.howToShareTitle"))}>
-          <BulletList items={[t(selectorFromPath("emails.invoiceMadePublic.howToShare.item0")), t(selectorFromPath("emails.invoiceMadePublic.howToShare.item1")), t(selectorFromPath("emails.invoiceMadePublic.howToShare.item2"))]} />
+          <BulletList
+            items={[
+              t(selectorFromPath("emails.invoiceMadePublic.howToShare.item0")),
+              t(selectorFromPath("emails.invoiceMadePublic.howToShare.item1")),
+              t(selectorFromPath("emails.invoiceMadePublic.howToShare.item2")),
+            ]}
+          />
         </EmailCard>
         <Section
           style={{

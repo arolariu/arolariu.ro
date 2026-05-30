@@ -229,7 +229,9 @@ export function NutritionCard(): React.JSX.Element {
               className={styles["foodGroupCard"]}>
               <div className={styles["foodGroupIconRow"]}>{group.icon}</div>
               <p className={styles["foodGroupName"]}>{group.name}</p>
-              <p className={styles["foodGroupCount"]}>{t((m) => m.cards.invoices.nutritionCard.foodGroups.itemsCount, {count: String(group.items)})}</p>
+              <p className={styles["foodGroupCount"]}>
+                {t((m) => m.cards.invoices.nutritionCard.foodGroups.itemsCount, {count: String(group.items)})}
+              </p>
               <p className={styles["foodGroupAmount"]}>{formatCurrency(group.amount, {currencyCode: currency.code, locale})}</p>
             </div>
           ))}

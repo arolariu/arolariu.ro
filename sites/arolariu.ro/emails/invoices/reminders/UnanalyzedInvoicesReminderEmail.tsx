@@ -1,4 +1,3 @@
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Reminder email for invoices awaiting AI analysis.
  * @module emails/invoices/reminders/UnanalyzedInvoicesReminderEmail
@@ -23,7 +22,7 @@ import {selectorFromPath} from "next-intl-selector";
 
 import {Link, Text} from "react-email";
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../../_components";
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_lib/i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages, selectorFromPath} from "../../_lib/i18n";
 
 /**
  * Represents a single unanalyzed invoice for display in the emails.

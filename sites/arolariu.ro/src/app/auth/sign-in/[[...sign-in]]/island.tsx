@@ -79,8 +79,16 @@ export default function RenderAuthSignInPage(): React.JSX.Element {
           subtitle={t((m) => m.pages.auth.signIn.hero.subtitle)}
           illustrationSrc='/images/auth/sign-in.svg'
           illustrationAlt={t((m) => m.pages.auth.signIn.illustrationAlt)}
-          bullets={[t((m) => m.pages.auth.signIn.bullets.first), t((m) => m.pages.auth.signIn.bullets.second), t((m) => m.pages.auth.signIn.bullets.third)]}
-          trustBadges={[trust((m) => m.pages.auth.island.trust.oauth), trust((m) => m.pages.auth.island.trust.session), trust((m) => m.pages.auth.island.trust.privacy)]}
+          bullets={[
+            t((m) => m.pages.auth.signIn.bullets.first),
+            t((m) => m.pages.auth.signIn.bullets.second),
+            t((m) => m.pages.auth.signIn.bullets.third),
+          ]}
+          trustBadges={[
+            trust((m) => m.pages.auth.island.trust.oauth),
+            trust((m) => m.pages.auth.island.trust.session),
+            trust((m) => m.pages.auth.island.trust.privacy),
+          ]}
         />
       </div>
 

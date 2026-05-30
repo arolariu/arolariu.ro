@@ -1,6 +1,6 @@
 "use client";
 
-import analyzeInvoice from "@/app/domains/invoices/_actions/invoices/analyzeInvoice";
+import {analyzeInvoice} from "@/app/domains/invoices/_actions/invoices";
 import {formatDate} from "@/lib/utils.generic";
 import {InvoiceAnalysisOptions} from "@/types/invoices";
 import {
@@ -63,7 +63,7 @@ type AnalysisOption = Readonly<{
  * - Items Only: Line item categorization
  * - Merchant Only: Merchant identification
  *
- * **Server Actions**: Uses `analyzeInvoice` from `@/app/domains/invoices/_actions/invoices/analyzeInvoice`
+ * **Server Actions**: Uses `analyzeInvoice` from `@/app/domains/invoices/_actions/invoices`
  *
  * @returns The AnalysisPanel component.
  */
@@ -72,9 +72,6 @@ export function AnalysisPanel(): React.JSX.Element {
   const locale = useLocale();
   const {invoice} = useInvoiceContext();
   const router = useRouter();
-
-  // Hide the entire card when analysis is complete (items exist)
-  if (invoice.items.length > 0) return <></>;
 
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
@@ -125,7 +122,13 @@ export function AnalysisPanel(): React.JSX.Element {
           setTimeout(resolve, ms);
         });
 
-      const steps = [t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.preparing), t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.extracting), t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.analyzing), t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.processing), t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.finalizing)];
+      const steps = [
+        t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.preparing),
+        t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.extracting),
+        t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.analyzing),
+        t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.processing),
+        t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.finalizing),
+      ];
 
       try {
         // Start analysis
@@ -158,16 +161,19 @@ export function AnalysisPanel(): React.JSX.Element {
         const result = await analysisPromise;
 
         // Check if the analysis failed
-        if (result && !result.success) {
-          throw new Error(result.error.message || "Analysis failed");
+        if (!result.success) {
+          throw new Error(result.error.message);
         }
 
         setCurrentStep(t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.complete));
         setProgress(100);
 
-        toast(t((m) => m.pages.invoices.viewInvoice.analysisPanel.toasts.success.title), {
-          description: t((m) => m.pages.invoices.viewInvoice.analysisPanel.toasts.success.description),
-        });
+        toast(
+          t((m) => m.pages.invoices.viewInvoice.analysisPanel.toasts.success.title),
+          {
+            description: t((m) => m.pages.invoices.viewInvoice.analysisPanel.toasts.success.description),
+          },
+        );
 
         // Wait briefly before refresh to show completion state
         await delay(500);
@@ -176,9 +182,12 @@ export function AnalysisPanel(): React.JSX.Element {
         router.refresh();
       } catch (error) {
         console.error("Error analyzing invoice:", error);
-        toast(t((m) => m.pages.invoices.viewInvoice.analysisPanel.toasts.error.title), {
-          description: t((m) => m.pages.invoices.viewInvoice.analysisPanel.toasts.error.description),
-        });
+        toast(
+          t((m) => m.pages.invoices.viewInvoice.analysisPanel.toasts.error.title),
+          {
+            description: t((m) => m.pages.invoices.viewInvoice.analysisPanel.toasts.error.description),
+          },
+        );
       } finally {
         setIsAnalyzing(false);
         setProgress(0);
@@ -207,6 +216,9 @@ export function AnalysisPanel(): React.JSX.Element {
     [handleAnalyze],
   );
 
+  // Hide the entire card when analysis is complete (items exist)
+  if (invoice.items.length > 0) return <></>;
+
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["header"]}>
@@ -215,7 +227,9 @@ export function AnalysisPanel(): React.JSX.Element {
             <TbSparkles className={styles["sparklesIcon"]} />
             <CardTitle className={styles["title"]}>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.title)}</CardTitle>
           </div>
-          <CardDescription className={styles["description"]}>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.description)}</CardDescription>
+          <CardDescription className={styles["description"]}>
+            {t((m) => m.pages.invoices.viewInvoice.analysisPanel.description)}
+          </CardDescription>
         </div>
       </CardHeader>
 
@@ -240,7 +254,9 @@ export function AnalysisPanel(): React.JSX.Element {
                 value={progress}
                 className={styles["progress"]}
               />
-              <p className={styles["progressText"]}>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.analyzing.progress, {progress: String(Math.round(progress))})}</p>
+              <p className={styles["progressText"]}>
+                {t((m) => m.pages.invoices.viewInvoice.analysisPanel.analyzing.progress, {progress: String(Math.round(progress))})}
+              </p>
             </motion.div>
           ) : (
             <motion.div
@@ -265,7 +281,9 @@ export function AnalysisPanel(): React.JSX.Element {
                   </p>
                   {typeof invoice.numberOfUpdates === "number" && invoice.numberOfUpdates > 0 && (
                     <div className={styles["updatesBadge"]}>
-                      <Badge variant='outline'>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.labels.updates, {count: invoice.numberOfUpdates})}</Badge>
+                      <Badge variant='outline'>
+                        {t((m) => m.pages.invoices.viewInvoice.analysisPanel.labels.updates, {count: invoice.numberOfUpdates})}
+                      </Badge>
                     </div>
                   )}
                 </div>

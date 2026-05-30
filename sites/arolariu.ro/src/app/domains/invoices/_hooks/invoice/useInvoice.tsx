@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Custom React hook for fetching a single invoice by identifier.
-* @module app/domains/invoices/_hooks/invoice/useInvoice
+ * @module app/domains/invoices/_hooks/invoice/useInvoice
  *
  * @remarks
  * Client-side data hook that integrates with the invoices Zustand store.
@@ -14,7 +14,7 @@ import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
 import {useEffect, useState} from "react";
 import {useShallow} from "zustand/react/shallow";
-import fetchInvoice from "../../_actions/invoices/fetchInvoice";
+import {fetchInvoice} from "../../_actions/invoices";
 
 /**
  * Input parameters for the useInvoice hook.

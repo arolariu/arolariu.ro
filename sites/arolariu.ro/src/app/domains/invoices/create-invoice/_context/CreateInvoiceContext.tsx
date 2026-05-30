@@ -12,8 +12,6 @@
  * - Invoice creation orchestration
  */
 
-import analyzeInvoice from "@/app/domains/invoices/_actions/invoices/analyzeInvoice";
-import {createInvoice} from "@/app/domains/invoices/_actions/invoices/createInvoice";
 import {useScansStore} from "@/stores";
 import {InvoiceAnalysisOptions, InvoiceCategory, InvoiceScanType, PaymentType} from "@/types/invoices";
 import type {CachedScan} from "@/types/scans";
@@ -21,6 +19,7 @@ import {ScanStatus} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {useRouter} from "next/navigation";
 import {createContext, useCallback, useContext, useMemo, useState, type ReactNode} from "react";
+import {analyzeInvoice, createInvoice} from "../../_actions/invoices";
 
 /**
  * Wizard step type definition.
@@ -213,7 +212,11 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       // Create invoice with first scan and ALL invoice details in metadata
       // Note: All form fields (name, category, paymentType, transactionDate, description)
       // are included in metadata. Backend should extract these to populate top-level Invoice fields.
-      const createResult = await createInvoice({
+      const {
+        success,
+        data: invoice,
+        error,
+      } = await createInvoice({
         initialScan: {
           scanType,
           location: firstScan.blobUrl,
@@ -230,11 +233,9 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
         },
       });
 
-      if (!createResult.success) {
-        throw new Error(createResult.error.message);
+      if (!success || !invoice) {
+        throw new Error(error?.message ?? "Invoice creation failed");
       }
-
-      const invoice = createResult.data;
 
       // Mark scans as used
       const scanIds = selectedScans.map((s) => s.id);

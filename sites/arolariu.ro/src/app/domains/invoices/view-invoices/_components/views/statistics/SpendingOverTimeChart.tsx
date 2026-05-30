@@ -56,7 +56,9 @@ function CustomTooltip({active = false, payload = [], currency}: Readonly<Custom
       <p className={styles["tooltipAmount"]}>
         {formatAmount(data.amount)} {currency}
       </p>
-      <p className={styles["tooltipCount"]}>{t((m) => m.cards.invoices.statistics.spendingOverTime.tooltip.invoiceCount, {count: String(data.invoiceCount)})}</p>
+      <p className={styles["tooltipCount"]}>
+        {t((m) => m.cards.invoices.statistics.spendingOverTime.tooltip.invoiceCount, {count: String(data.invoiceCount)})}
+      </p>
       {data.invoices && data.invoices.length > 0 ? (
         <ul className={styles["tooltipInvoices"]}>
           {data.invoices.slice(0, 10).map((inv) => (
@@ -71,7 +73,9 @@ function CustomTooltip({active = false, payload = [], currency}: Readonly<Custom
             </li>
           ))}
           {data.invoices.length > 10 && (
-            <li className={styles["tooltipMore"]}>{t((m) => m.cards.invoices.statistics.spendingOverTime.tooltip.andMore, {count: String(data.invoices.length - 10)})}</li>
+            <li className={styles["tooltipMore"]}>
+              {t((m) => m.cards.invoices.statistics.spendingOverTime.tooltip.andMore, {count: String(data.invoices.length - 10)})}
+            </li>
           )}
         </ul>
       ) : null}
@@ -107,7 +111,9 @@ export function SpendingOverTimeChart({data, currency}: Props): React.JSX.Elemen
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
         <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.spendingOverTime.title)}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.spendingOverTime.description)}</CardDescription>
+        <CardDescription className={styles["cardDescription"]}>
+          {t((m) => m.cards.invoices.statistics.spendingOverTime.description)}
+        </CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer

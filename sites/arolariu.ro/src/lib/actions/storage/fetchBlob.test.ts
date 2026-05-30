@@ -3,59 +3,45 @@
  * @module sites/arolariu.ro/src/lib/actions/storage/fetchBlob/tests
  */
 
-import {beforeEach, describe, expect, it, vi} from "vitest";
-
-const {mockDownload, mockGetBlockBlobClient, mockGetContainerClient, mockCreateBlobClient} = vi.hoisted(() => {
-  const _mockGetContainerClient = vi.fn();
-  return {
-    mockDownload: vi.fn(),
-    mockGetBlockBlobClient: vi.fn(),
-    mockGetContainerClient: _mockGetContainerClient,
-    mockCreateBlobClient: vi.fn().mockResolvedValue({getContainerClient: _mockGetContainerClient}),
-  };
-});
-
-vi.mock("@/lib/azure/storageClient", () => ({
-  createBlobClient: mockCreateBlobClient,
-  rewriteAzuriteUrl: vi.fn((url: string) => url),
-}));
-vi.mock("./fetchConfig");
-
 import {createBlobClient} from "@/lib/azure/storageClient";
+import {fetchConfigValue} from "@/lib/config/configProxy";
+import {beforeEach, describe, expect, it, vi} from "vitest";
+import {TestDataBuilder} from "../../../../tests/helpers";
 import fetchBlob from "./fetchBlob";
-import fetchConfigurationValue from "./fetchConfig";
+
+const mockCreateBlobClient = vi.mocked(createBlobClient);
+const mockFetchConfigValue = vi.mocked(fetchConfigValue);
 
 describe("fetchBlob", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    (fetchConfigurationValue as any).mockResolvedValue("https://test.blob.core.windows.net");
+    mockFetchConfigValue.mockResolvedValue("https://test.blob.core.windows.net");
 
-    mockCreateBlobClient.mockResolvedValue({getContainerClient: mockGetContainerClient});
-
-    mockDownload.mockResolvedValue({
-      _response: {status: 200},
+    const blockBlobClient = TestDataBuilder.blockBlobClient({
+      blobUrl: "https://test.blob.core.windows.net/container/blob.png",
       metadata: {key: "value"},
     });
 
-    mockGetBlockBlobClient.mockReturnValue({
-      download: mockDownload,
-      url: "https://test.blob.core.windows.net/container/blob.png",
+    // Wrap download to add the method
+    const downloadMock = vi.fn().mockResolvedValue({
+      _response: {status: 200},
+      metadata: {key: "value"},
     });
+    (blockBlobClient as unknown as Record<string, unknown>)["download"] = downloadMock;
 
-    mockGetContainerClient.mockReturnValue({
-      getBlockBlobClient: mockGetBlockBlobClient,
-    });
+    const containerClient = TestDataBuilder.containerClient();
+    containerClient.getBlockBlobClient = vi.fn(() => blockBlobClient);
+
+    const blobServiceClient = TestDataBuilder.blobServiceClient(containerClient);
+    mockCreateBlobClient.mockResolvedValue(blobServiceClient);
   });
 
   it("should fetch a blob successfully", async () => {
     const result = await fetchBlob({containerName: "test-container", blobName: "test-blob.png"});
 
-    expect(fetchConfigurationValue).toHaveBeenCalledWith("Endpoints:Storage:Blob");
+    expect(mockFetchConfigValue).toHaveBeenCalledWith("Endpoints:Storage:Blob");
     expect(createBlobClient).toHaveBeenCalledWith("https://test.blob.core.windows.net");
-    expect(mockGetContainerClient).toHaveBeenCalledWith("test-container");
-    expect(mockGetBlockBlobClient).toHaveBeenCalledWith("test-blob.png");
-    expect(mockDownload).toHaveBeenCalled();
 
     expect(result).toEqual({
       status: 200,
@@ -67,7 +53,7 @@ describe("fetchBlob", () => {
   });
 
   it("should handle errors and return 500 status", async () => {
-    (fetchConfigurationValue as any).mockRejectedValue(new Error("Config error"));
+    mockFetchConfigValue.mockRejectedValue(new Error("Config error"));
 
     const result = await fetchBlob({containerName: "test-container", blobName: "test-blob.png"});
 

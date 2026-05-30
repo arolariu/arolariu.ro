@@ -1,22 +1,22 @@
 "use client";
 
 /**
-* @fileoverview Hook for deleting invoices individually or in sequential batches.
-* @module app/domains/invoices/_hooks/invoice/useInvoiceDelete
-*
-* @remarks
-* Wraps the invoice deletion server action with client-side loading state,
-* toast feedback, navigation after single deletes, and Zustand store updates.
-* Bulk deletion is intentionally sequential so a partial failure can be
-* reported without overwhelming the backend.
+ * @fileoverview Hook for deleting invoices individually or in sequential batches.
+ * @module app/domains/invoices/_hooks/invoice/useInvoiceDelete
+ *
+ * @remarks
+ * Wraps the invoice deletion server action with client-side loading state,
+ * toast feedback, navigation after single deletes, and Zustand store updates.
+ * Bulk deletion is intentionally sequential so a partial failure can be
+ * reported without overwhelming the backend.
  */
 
 import {useInvoicesStore} from "@/stores";
 import {toast} from "@arolariu/components";
-import {useRouter} from "next/navigation";
 import {useTranslations} from "next-intl-selector";
+import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
-import deleteInvoiceServerSide from "../../_actions/invoices/deleteInvoice";
+import {deleteInvoice as deleteInvoiceServerSide} from "../../_actions/invoices";
 
 /**
  * Result of a bulk delete operation.
@@ -46,7 +46,10 @@ type BulkDeleteResult = Readonly<{
  */
 type HookOutputType = Readonly<{
   isDeleting: boolean;
-  deleteInvoiceCallback: (invoiceIdOrIds: string | readonly string[]) => Promise<void | BulkDeleteResult>;
+  deleteInvoiceCallback: {
+    (invoiceId: string): Promise<void>;
+    (invoiceIds: readonly string[]): Promise<BulkDeleteResult>;
+  };
 }>;
 
 /**
@@ -121,8 +124,8 @@ export function useInvoiceDelete(): Readonly<HookOutputType> {
    * mutation fails, the invoice will be deleted on the server but remain in the UI until
    * page refresh. In practice, client mutations are synchronous and infallible.
    *
-   * **Error Propagation:** Exceptions thrown by the server action or store mutation
-   * propagate to the caller. Server action error results are not inspected here.
+   * **Error Propagation:** Failed server action results and exceptions thrown by
+   * the server action or store mutation propagate to the caller.
    *
    * @param id - Invoice UUID to delete. Must be a valid identifier in both server and client stores.
    * @returns A promise that resolves after the server action has completed and the local store has been updated.
@@ -233,44 +236,48 @@ export function useInvoiceDelete(): Readonly<HookOutputType> {
    *
    * @see {@link BulkDeleteResult} - Return type for bulk operations
    */
-  const deleteInvoiceCallback = useCallback(
-    async (invoiceIdOrIds: string | readonly string[]): Promise<void | BulkDeleteResult> => {
-      setIsDeleting(true);
-      try {
-        if (typeof invoiceIdOrIds === "string") {
-          await performMutation(invoiceIdOrIds);
-          toast.success(t((m) => m.toasts.invoices.useInvoiceDelete.deleteSuccess));
-          router.push("/domains/invoices/view-invoices");
+  async function deleteInvoiceCallback(invoiceId: string): Promise<void>;
+  async function deleteInvoiceCallback(invoiceIds: readonly string[]): Promise<BulkDeleteResult>;
+  async function deleteInvoiceCallback(invoiceIdOrIds: string | readonly string[]): Promise<void | BulkDeleteResult> {
+    setIsDeleting(true);
+    try {
+      if (typeof invoiceIdOrIds === "string") {
+        await performMutation(invoiceIdOrIds);
+        toast.success(t((m) => m.toasts.invoices.useInvoiceDelete.deleteSuccess));
+        router.push("/domains/invoices/view-invoices");
+      } else {
+        const result = await processBulkRecursive(invoiceIdOrIds, 0, {
+          successCount: 0,
+          failureCount: 0,
+          failedIds: [],
+        });
+
+        const hasFailure = result.failureCount > 0;
+        const hasSuccess = result.successCount > 0;
+
+        if (!hasFailure) {
+          toast.success(t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeleteSuccess, {count: String(result.successCount)}));
+        } else if (!hasSuccess) {
+          toast.error(t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeleteError, {count: String(result.failureCount)}));
         } else {
-          const result = await processBulkRecursive(invoiceIdOrIds, 0, {
-            successCount: 0,
-            failureCount: 0,
-            failedIds: [],
-          });
-
-          const hasFailure = result.failureCount > 0;
-          const hasSuccess = result.successCount > 0;
-
-          if (!hasFailure) {
-            toast.success(t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeleteSuccess, {count: String(result.successCount)}));
-          } else if (!hasSuccess) {
-            toast.error(t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeleteError, {count: String(result.failureCount)}));
-          } else {
-            toast.info(t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeletePartial, {successCount: String(result.successCount), failureCount: String(result.failureCount)}));
-          }
-
-          return result;
+          toast.info(
+            t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeletePartial, {
+              successCount: String(result.successCount),
+              failureCount: String(result.failureCount),
+            }),
+          );
         }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        toast.error(t((m) => m.toasts.invoices.useInvoiceDelete.deleteError, {error: message}));
-        console.error("Error deleting invoice:", error);
-      } finally {
-        setIsDeleting(false);
+
+        return result;
       }
-    },
-    [performMutation, processBulkRecursive, t],
-  );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(t((m) => m.toasts.invoices.useInvoiceDelete.deleteError, {error: message}));
+      console.error("Error deleting invoice:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  }
 
   return {isDeleting, deleteInvoiceCallback};
 }

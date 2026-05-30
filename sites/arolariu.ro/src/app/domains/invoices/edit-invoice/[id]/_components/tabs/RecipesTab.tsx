@@ -20,7 +20,7 @@ import {useTranslations} from "next-intl-selector";
 import {useCallback} from "react";
 import {TbConfetti, TbPlus} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
-import RecipeCard from "../cards/RecipeCard";
+import RecipeCard from "../../_cards/RecipeCard";
 import styles from "./RecipesTab.module.scss";
 
 type Props = {
@@ -39,7 +39,7 @@ type Props = {
  * - Empty state prompts user to create first recipe
  *
  * **Recipe Actions**:
- * - **Add Recipe**: Opens `RecipeDialog` in add mode for manual recipe creation
+ * - **Add Recipe**: Opens `AddRecipeDialog` for manual recipe creation
  * - **Generate**: Placeholder for AI-based recipe generation from invoice items
  * - Individual recipe CRUD via `RecipeCard` dropdown menus
  *
@@ -59,13 +59,13 @@ type Props = {
  * // Displays: Recipe grid with add/generate buttons and pagination
  * ```
  *
- * @see {@link RecipeCard} - Individual recipe display component
- * @see {@link RecipeDialog} - Dialog for recipe CRUD operations
+ * @see {@link AddRecipeDialog} - Dialog for creating recipes
+ * @see {@link RecipeCard} - Opens focused recipe action dialogs for existing recipes
  * @see {@link usePaginationWithSearch} - Pagination hook
  */
 export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations();
-  const {open: openAddDialog} = useDialog("EDIT_INVOICE__RECIPE", "add");
+  const {open: openAddDialog} = useDialog("EDIT_INVOICE__RECIPE_ADD", "add");
 
   const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePaginationWithSearch({items: recipes, initialPageSize: 4});
 
@@ -83,9 +83,12 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
 
   const handleGenerateRecipe = useCallback(() => {
     // TODO: Implement AI recipe generation
-    toast(t((m) => m.pages.invoices.editInvoice.recipesTab.toasts.aiGenerationComingSoon.title), {
-      description: t((m) => m.pages.invoices.editInvoice.recipesTab.toasts.aiGenerationComingSoon.description),
-    });
+    toast(
+      t((m) => m.pages.invoices.editInvoice.recipesTab.toasts.aiGenerationComingSoon.title),
+      {
+        description: t((m) => m.pages.invoices.editInvoice.recipesTab.toasts.aiGenerationComingSoon.description),
+      },
+    );
   }, [t]);
 
   const handleCreateFirstRecipe = useCallback(() => {
@@ -174,7 +177,10 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                 {t((m) => m.pages.invoices.editInvoice.recipesTab.pagination.previous)}
               </Button>
               <div className={styles["pageInfo"]}>
-                {t((m) => m.pages.invoices.editInvoice.recipesTab.pagination.pageOf, {currentPage: String(currentPage), totalPages: String(totalPages)})}
+                {t((m) => m.pages.invoices.editInvoice.recipesTab.pagination.pageOf, {
+                  currentPage: String(currentPage),
+                  totalPages: String(totalPages),
+                })}
               </div>
               <Button
                 variant='ghost'

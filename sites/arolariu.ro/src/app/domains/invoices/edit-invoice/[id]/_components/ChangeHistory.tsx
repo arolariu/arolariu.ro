@@ -220,7 +220,9 @@ export default function ChangeHistory(): React.JSX.Element {
             <div className={styles["timelineContent"]}>
               <div className={styles["changeHeader"]}>
                 <p className={styles["changeTitle"]}>{item.title}</p>
-                {item.type === "pending" && <span className={styles["pendingIndicator"]}>{t((m) => m.pages.invoices.editInvoice.changeHistory.pending)}</span>}
+                {item.type === "pending" && (
+                  <span className={styles["pendingIndicator"]}>{t((m) => m.pages.invoices.editInvoice.changeHistory.pending)}</span>
+                )}
               </div>
               {item.description ? <p className={styles["changeDescription"]}>{item.description}</p> : null}
               <p className={styles["changeTimestamp"]}>{formatRelativeTime(item.timestamp)}</p>

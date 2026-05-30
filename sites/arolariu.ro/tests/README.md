@@ -9,7 +9,7 @@
 | Run all tests | `npm run test:website` |
 | Run one file | `npx vitest run src/lib/utils.generic.test.ts` |
 | Watch mode | `npx vitest --project=website` |
-| Coverage | `npm run test:unit` |
+| Website coverage | `npx vitest run sites\arolariu.ro\src sites\arolariu.ro\emails --config sites\arolariu.ro\vitest.config.ts --coverage.enabled=true --coverage.reporter=text-summary` |
 
 **Test files are colocated with source code** — place `foo.test.ts` next to `foo.ts`.
 Use `.test.ts(x)` suffix for Vitest. `.spec.ts(x)` is reserved for Playwright E2E.
@@ -42,6 +42,7 @@ Use `.test.ts(x)` suffix for Vitest. `.spec.ts(x)` is reserved for Playwright E2
 3. **Per-test mocks** (test file): `vi.mock("resend", ...)` applied to that test only
 
 If a module has a stub, the stub IS the module — no `vi.mock()` needed in vitest.setup.ts.
+Tests should not inline-mock aliased stubs just to set return values; import the stubbed export and configure it with `vi.mocked(...)` instead.
 
 ---
 
@@ -81,6 +82,20 @@ export const fetchApiUrl = vi.fn();
 Use `vi.fn(impl)` for passthrough behavior (withSpan, rewriteAzuriteUrl).
 Use `vi.fn()` for functions whose return value tests must control.
 
+### Configuring stubbed exports
+
+```typescript
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+
+const mockFetchBFFUserFromAuthService = vi.mocked(fetchBFFUserFromAuthService);
+
+beforeEach(() => {
+  mockFetchBFFUserFromAuthService.mockResolvedValue({
+    userIdentifier: "test-user",
+  });
+});
+```
+
 ---
 
 ## Tier 2: Global Mocks
@@ -116,6 +131,13 @@ beforeEach(() => {
 ---
 
 ## Tier 3: Per-Test Mocks
+
+Per-test mocks should isolate true boundaries only: network calls, Clerk/auth,
+Next runtime APIs, SDK clients, browser APIs, timers, and server-only modules
+that cannot load under happy-dom. Do not mock deterministic internal helpers
+such as `@/lib/utils.generic`; import them directly and assert their real
+outputs. If an internal server module imports runtime-only dependencies, prefer
+a shared stub in `tests/stubs/` over an inline test-specific fake.
 
 ### Pattern A: Simple auto-mock + vi.mocked()
 
@@ -159,6 +181,10 @@ expect(mockSendEmail).toHaveBeenCalledWith({to: "user@test.com", ...});
 ### Pattern C: Azure blob client chain
 
 ```typescript
+type MockContainerClient = {
+  readonly getContainerClient: typeof mockGetContainerClient;
+};
+
 const {mockDownload, mockGetBlockBlobClient, mockGetContainerClient} = vi.hoisted(() => {
   const getBlockBlobClient = vi.fn();
   const getContainerClient = vi.fn(() => ({getBlockBlobClient}));
@@ -172,9 +198,10 @@ const {mockDownload, mockGetBlockBlobClient, mockGetContainerClient} = vi.hoiste
 // Wire up in beforeEach (survives mockReset)
 beforeEach(() => {
   const {createBlobClient} = await import("@/lib/azure/storageClient");
-  vi.mocked(createBlobClient).mockResolvedValue({
+  const mockContainerClient: MockContainerClient = {
     getContainerClient: mockGetContainerClient,
-  } as any);
+  };
+  vi.mocked(createBlobClient).mockResolvedValue(mockContainerClient);
   mockGetBlockBlobClient.mockReturnValue({download: mockDownload});
 });
 ```
@@ -197,6 +224,16 @@ it("renders title", () => {
   expect(screen.getByText("Hello")).toBeInTheDocument();
 });
 ```
+
+---
+
+## Speed and Flake Guardrails
+
+- Prefer awaiting public hook callbacks inside `act` and then asserting the settled state directly. Use `invokeHookCallback()` from the shared `tests/helpers` barrel for callback hooks that already return a promise.
+- Use `waitFor` when the code under test schedules work independently of the awaited action, such as `useEffect` fetches, debounced work, timers, or browser API callbacks.
+- Do not wrap an already-awaited hook callback with an extra `waitFor` just to assert that `isSaving`, `isDeleting`, or similar flags returned to `false`.
+- Keep `await import(...)` only when the test intentionally controls module evaluation order with `vi.doMock`, `vi.unmock`, `vi.resetModules`, or environment mutation before import.
+- Measure before optimizing. Runtime-only refactors should include before/after timing for the changed files or explain why a hotspot was intentionally left alone.
 
 ---
 

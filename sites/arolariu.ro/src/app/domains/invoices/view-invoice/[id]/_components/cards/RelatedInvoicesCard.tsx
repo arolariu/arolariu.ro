@@ -27,7 +27,6 @@ import {selectorFromPath} from "next-intl-selector";
  * - Hidden completely if user has only one invoice
  */
 
-
 import {formatAmount, formatDate, formatEnum} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
 import {InvoiceCategory, type Invoice} from "@/types/invoices";

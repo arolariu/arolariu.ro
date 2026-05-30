@@ -82,7 +82,10 @@ function GlobalErrorContent({error, reset}: Readonly<GlobalErrorProps>): React.J
         setIsCopied(false);
       }, 2000);
     } catch (clipboardError) {
-      console.error(t((m) => m.app.errors.globalError.copyErrorConsoleMessage), clipboardError);
+      console.error(
+        t((m) => m.app.errors.globalError.copyErrorConsoleMessage),
+        clipboardError,
+      );
     }
   }, [error.digest, t]);
 

@@ -69,7 +69,8 @@ export default function FeaturesSection({isAuthenticated}: Readonly<Props>): Rea
             {!isAuthenticated && (
               <div className={styles["signInPrompt"]}>
                 <p className={styles["signInPromptText"]}>
-                  <strong>{t((m) => m.pages.invoices.landing.features.signIn)}</strong> {t((m) => m.pages.invoices.landing.features.signInPrompt)}
+                  <strong>{t((m) => m.pages.invoices.landing.features.signIn)}</strong>{" "}
+                  {t((m) => m.pages.invoices.landing.features.signInPrompt)}
                 </p>
               </div>
             )}

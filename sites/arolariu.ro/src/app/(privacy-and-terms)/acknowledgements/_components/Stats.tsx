@@ -90,14 +90,20 @@ export default function Stats({packages}: Readonly<Props>): React.JSX.Element {
                     initial={{opacity: 0, scale: 0.5}}
                     animate={isInView ? {opacity: 1, scale: 1} : {}}
                     transition={{delay: 0.4 + index * 0.1, duration: 0.5, type: "spring"}}>
-                    {t(selectorFromPath(`Acknowledgements.stats.${stat.key}.value`), {count: String(getStatValue(stat.key))})}
+                    {t(selectorFromPath(`sections.legal.acknowledgements.stats.${stat.key}.value`), {
+                      count: String(getStatValue(stat.key)),
+                    })}
                   </motion.span>
 
                   {/* Label */}
-                  <span className={styles["statLabel"]}>{t(selectorFromPath(`Acknowledgements.stats.${stat.key}.label`))}</span>
+                  <span className={styles["statLabel"]}>
+                    {t(selectorFromPath(`sections.legal.acknowledgements.stats.${stat.key}.label`))}
+                  </span>
 
                   {/* Description */}
-                  <span className={styles["statDescription"]}>{t(selectorFromPath(`Acknowledgements.stats.${stat.key}.description`))}</span>
+                  <span className={styles["statDescription"]}>
+                    {t(selectorFromPath(`sections.legal.acknowledgements.stats.${stat.key}.description`))}
+                  </span>
                 </CardContent>
               </Card>
             </motion.div>

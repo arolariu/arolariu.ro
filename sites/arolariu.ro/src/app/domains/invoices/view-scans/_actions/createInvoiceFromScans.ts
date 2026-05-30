@@ -20,8 +20,6 @@
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
-import analyzeInvoice from "@/app/domains/invoices/_actions/invoices/analyzeInvoice";
-import {markScansAsUsed} from "@/app/domains/invoices/_actions/scans/markScansAsUsed";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
 import {
@@ -32,6 +30,8 @@ import {
   InvoiceScanType,
 } from "@/types/invoices";
 import {type Scan, ScanType} from "@/types/scans";
+import {analyzeInvoice} from "../../_actions/invoices";
+import {markScansAsUsed} from "../../_actions/scans";
 
 /**
  * Input parameters for creating invoices from scans.

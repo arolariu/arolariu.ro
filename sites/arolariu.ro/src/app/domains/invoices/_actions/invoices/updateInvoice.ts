@@ -25,11 +25,11 @@
  * @see {@link fetchInvoice} for retrieving invoice data before update
  */
 
-import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
-import { fetchBFFUserFromAuthService } from "@/lib/actions/user/fetchUser";
-import { validateStringIsGuidType } from "@/lib/utils.generic";
-import { createErrorResult, fetchWithTimeout, type ServerActionResult } from "@/lib/utils.server";
-import type { Invoice } from "@/types/invoices";
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {validateStringIsGuidType} from "@/lib/utils.generic";
+import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
+import type {Invoice} from "@/types/invoices";
 
 type ServerActionInputType = Readonly<{
   /** The identifier of the invoice to update. */
@@ -97,24 +97,24 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  * @see {@link patchInvoice} for partial updates (when only changing a few fields)
  * @see {@link fetchInvoice} for retrieving invoice data before update
  */
-export async function updateInvoice({ invoiceId, invoice }: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{updateInvoice}}, with:", { invoiceId, invoiceName: invoice?.name });
+export async function updateInvoice({invoiceId, invoice}: ServerActionInputType): ServerActionOutputType {
+  console.info(">>> Executing server action {{updateInvoice}}, with:", {invoiceId, invoiceName: invoice?.name});
 
   return withSpan("api.actions.invoices.updateInvoice", async () => {
     try {
       // Step 0. Validate invoice identifier is valid GUID
-      logWithTrace("info", "Validating invoice identifier is valid...", { invoiceId }, "server");
+      logWithTrace("info", "Validating invoice identifier is valid...", {invoiceId}, "server");
       validateStringIsGuidType(invoiceId, "invoiceId");
 
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
       logWithTrace("info", "Fetching BFF user JWT for authentication...", {}, "server");
-      const { userJwt: authToken } = await fetchBFFUserFromAuthService();
+      const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
       // Step 2. Make the API request to update the invoice
       addSpanEvent("bff.request.update-invoice.start");
-      logWithTrace("info", "Making API request to update invoice...", { invoiceId }, "server");
+      logWithTrace("info", "Making API request to update invoice...", {invoiceId}, "server");
       const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}`, {
         method: "POST",
         headers: {
@@ -126,14 +126,14 @@ export async function updateInvoice({ invoiceId, invoice }: ServerActionInputTyp
       addSpanEvent("bff.request.update-invoice.complete");
 
       if (response.ok) {
-        logWithTrace("info", "Successfully updated invoice", { invoiceId }, "server");
+        logWithTrace("info", "Successfully updated invoice", {invoiceId}, "server");
         const updatedInvoice = (await response.json()) as Invoice;
-        return { success: true, data: updatedInvoice } as const;
+        return {success: true, data: updatedInvoice} as const;
       }
 
       const errorText = await response.text();
       const internalMessage = `Failed to update invoice: ${response.status} ${response.statusText} - ${errorText}`;
-      logWithTrace("warn", internalMessage, { invoiceId, errorText }, "server");
+      logWithTrace("warn", internalMessage, {invoiceId, errorText}, "server");
       const userMessage =
         response.status >= 500
           ? "A server error occurred. Please try again later."
@@ -142,7 +142,7 @@ export async function updateInvoice({ invoiceId, invoice }: ServerActionInputTyp
     } catch (error: unknown) {
       addSpanEvent("bff.request.update-invoice.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error updating the invoice", { error, invoiceId }, "server");
+      logWithTrace("error", "Error updating the invoice", {error, invoiceId}, "server");
       console.error("Error updating the invoice:", error);
       return createErrorResult(new Error(errorMessage));
     }

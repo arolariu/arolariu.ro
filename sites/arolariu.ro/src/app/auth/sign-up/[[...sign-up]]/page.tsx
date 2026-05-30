@@ -5,8 +5,8 @@
 
 import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
-import {getLocale} from "next-intl/server";
 import {getTranslations} from "next-intl-selector/server";
+import {getLocale} from "next-intl/server";
 import RenderAuthSignUpPage from "./island";
 import styles from "./page.module.scss";
 

@@ -1,13 +1,13 @@
 "use client";
 
 /**
-* @fileoverview Hook for adding recipes to an invoice in local state.
-* @module app/domains/invoices/_hooks/invoice/useRecipeAdd
-*
-* @remarks
-* Updates the invoice's `possibleRecipes` collection through the invoices
-* Zustand store. This hook currently performs a client-side mutation only; it
-* does not call an invoice server action.
+ * @fileoverview Hook for adding recipes to an invoice in local state.
+ * @module app/domains/invoices/_hooks/invoice/useRecipeAdd
+ *
+ * @remarks
+ * Updates the invoice's `possibleRecipes` collection through the invoices
+ * Zustand store. This hook currently performs a client-side mutation only; it
+ * does not call an invoice server action.
  */
 
 import {useInvoicesStore} from "@/stores";

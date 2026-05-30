@@ -11,10 +11,10 @@ import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useEffect, useState} from "react";
 import {TbCamera, TbChevronLeft, TbChevronRight} from "react-icons/tb";
+import ScanCard from "../../_cards/ScanCard";
+import {CardShimmer} from "../../_cards/ScanCard.shimmers";
 import DeferredMount from "../../_components/DeferredMount";
 import EmptyState from "../../_components/EmptyState";
-import ScanCard from "../../_components/ScanCard";
-import {CardShimmer} from "../../_components/ScanCard.shimmers";
 import {useScans} from "../_hooks/useScans";
 import styles from "./ScansGrid.module.scss";
 
@@ -157,7 +157,11 @@ export default function ScansGrid(): React.JSX.Element {
             {t((m) => m.pages.invoices.viewScans.pagination.previous)}
           </Button>
           <span className={styles["pageInfo"]}>
-            {t((m) => m.pages.invoices.viewScans.pagination.pageInfo, {current: String(page + 1), total: String(totalPages), count: String(validScans.length)})}
+            {t((m) => m.pages.invoices.viewScans.pagination.pageInfo, {
+              current: String(page + 1),
+              total: String(totalPages),
+              count: String(validScans.length),
+            })}
           </span>
           <Button
             variant='outline'

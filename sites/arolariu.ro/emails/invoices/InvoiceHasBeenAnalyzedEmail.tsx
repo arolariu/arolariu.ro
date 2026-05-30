@@ -1,4 +1,3 @@
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Email template for notifying users that an invoice has been analyzed.
  * @module emails/invoices/AnalyzedInvoice
@@ -13,6 +12,7 @@ import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
 import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
+import {selectorFromPath} from "../_lib/i18n";
 
 /**
  * Properties for the InvoiceHasBeenAnalyzedEmail component.
@@ -63,14 +63,23 @@ const InvoiceHasBeenAnalyzedEmail = defineEmailTemplate<Props>({
           title={t(selectorFromPath("emails.invoiceAnalyzed.summaryTitle"))}
           items={[
             {label: t(selectorFromPath("emails.invoiceAnalyzed.summary.invoiceName")), value: invoice?.name ?? `#${invoice?.id ?? "—"}`},
-            {label: t(selectorFromPath("emails.invoiceAnalyzed.summary.merchantId")), value: invoice?.merchantReference ?? t(selectorFromPath("emails.invoiceAnalyzed.summary.notIdentified"))},
+            {
+              label: t(selectorFromPath("emails.invoiceAnalyzed.summary.merchantId")),
+              value: invoice?.merchantReference ?? t(selectorFromPath("emails.invoiceAnalyzed.summary.notIdentified")),
+            },
             {label: t(selectorFromPath("emails.invoiceAnalyzed.summary.itemsDetected")), value: String(itemCount)},
             {label: t(selectorFromPath("emails.invoiceAnalyzed.summary.totalAmount")), value: totalText},
           ]}
         />
         <EmailCard title={t(selectorFromPath("emails.invoiceAnalyzed.whatWasAnalyzedTitle"))}>
           <BulletList
-            items={[t(selectorFromPath("emails.invoiceAnalyzed.whatWasAnalyzed.item0")), t(selectorFromPath("emails.invoiceAnalyzed.whatWasAnalyzed.item1")), t(selectorFromPath("emails.invoiceAnalyzed.whatWasAnalyzed.item2")), t(selectorFromPath("emails.invoiceAnalyzed.whatWasAnalyzed.item3")), t(selectorFromPath("emails.invoiceAnalyzed.whatWasAnalyzed.item4"))]}
+            items={[
+              t(selectorFromPath("emails.invoiceAnalyzed.whatWasAnalyzed.item0")),
+              t(selectorFromPath("emails.invoiceAnalyzed.whatWasAnalyzed.item1")),
+              t(selectorFromPath("emails.invoiceAnalyzed.whatWasAnalyzed.item2")),
+              t(selectorFromPath("emails.invoiceAnalyzed.whatWasAnalyzed.item3")),
+              t(selectorFromPath("emails.invoiceAnalyzed.whatWasAnalyzed.item4")),
+            ]}
           />
         </EmailCard>
         <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.invoiceAnalyzed.body"))}</Text>

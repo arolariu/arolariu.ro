@@ -49,7 +49,9 @@ export default function ScansHeader(): React.JSX.Element {
     <div className={styles["header"]}>
       <div className={styles["headerLeft"]}>
         <div>
-          <h1 className={styles["headerTitle"]}>{t((m) => m.pages.invoices.viewScans.header.titleWithCount, {count: String(scans.length)})}</h1>
+          <h1 className={styles["headerTitle"]}>
+            {t((m) => m.pages.invoices.viewScans.header.titleWithCount, {count: String(scans.length)})}
+          </h1>
           {lastSyncTimestamp ? (
             <motion.p
               key={lastSyncTimestamp.getTime()}
@@ -134,7 +136,9 @@ export default function ScansHeader(): React.JSX.Element {
                   disabled={isSyncing}
                   className={styles["outlineButton"]}>
                   <TbRefresh className={`${styles["syncIcon"]} ${isSyncing ? styles["syncIconSpinning"] : ""}`} />
-                  <span className={styles["hiddenMobile"]}>{isSyncing ? t((m) => m.pages.invoices.viewScans.header.syncing) : t((m) => m.pages.invoices.viewScans.header.sync)}</span>
+                  <span className={styles["hiddenMobile"]}>
+                    {isSyncing ? t((m) => m.pages.invoices.viewScans.header.syncing) : t((m) => m.pages.invoices.viewScans.header.sync)}
+                  </span>
                 </Button>
               }
             />

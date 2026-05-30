@@ -49,7 +49,9 @@ function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element
   return (
     <div className={styles["tooltip"]}>
       <p className={styles["tooltipSegment"]}>{data.segment}</p>
-      <p className={styles["tooltipCount"]}>{t((m) => m.cards.invoices.statistics.timeOfDay.tooltip.invoiceCount, {count: String(data.invoiceCount)})}</p>
+      <p className={styles["tooltipCount"]}>
+        {t((m) => m.cards.invoices.statistics.timeOfDay.tooltip.invoiceCount, {count: String(data.invoiceCount)})}
+      </p>
     </div>
   );
 }
@@ -90,7 +92,9 @@ export function TimeOfDayChart({data}: Props): React.JSX.Element {
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
         <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.timeOfDay.title)}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.timeOfDay.description)}</CardDescription>
+        <CardDescription className={styles["cardDescription"]}>
+          {t((m) => m.cards.invoices.statistics.timeOfDay.description)}
+        </CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer

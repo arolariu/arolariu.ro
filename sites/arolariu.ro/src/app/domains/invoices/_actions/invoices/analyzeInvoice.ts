@@ -19,11 +19,11 @@
  * @see {@link InvoiceAnalysisOptions} for available analysis modes
  */
 
-import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
-import { fetchBFFUserFromAuthService } from "@/lib/actions/user/fetchUser";
-import { validateStringIsGuidType } from "@/lib/utils.generic";
-import { createErrorResult, fetchWithTimeout, type ServerActionResult } from "@/lib/utils.server";
-import type { InvoiceAnalysisOptions } from "@/types/invoices";
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {validateStringIsGuidType} from "@/lib/utils.generic";
+import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
+import type {InvoiceAnalysisOptions} from "@/types/invoices";
 
 /**
  * Input parameters for the invoice analysis server action.
@@ -80,19 +80,19 @@ type ServerActionOutputType = ServerActionResult<void>;
  *
  * @see {@link fetchInvoice} to retrieve the analyzed invoice
  */
-export async function analyzeInvoice({ invoiceIdentifier, analysisOptions }: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{analyzeInvoice}}, with:", { invoiceIdentifier, analysisOptions });
+export async function analyzeInvoice({invoiceIdentifier, analysisOptions}: ServerActionInputType): ServerActionOutputType {
+  console.info(">>> Executing server action {{analyzeInvoice}}, with:", {invoiceIdentifier, analysisOptions});
 
   return withSpan("api.actions.invoices.analyzeInvoice", async () => {
     try {
       // Step 0. Validate invoice identifier is valid GUID
-      logWithTrace("info", "Validating identifier is valid...", { invoiceIdentifier }, "server");
+      logWithTrace("info", "Validating identifier is valid...", {invoiceIdentifier}, "server");
       validateStringIsGuidType(invoiceIdentifier, "invoiceIdentifier");
 
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
       logWithTrace("info", "Fetching BFF user JWT for authentication...", {}, "server");
-      const { userIdentifier, userJwt: authToken } = await fetchBFFUserFromAuthService();
+      const {userIdentifier, userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
       // Step 2. Make the API request to analyze the invoice
@@ -117,13 +117,13 @@ export async function analyzeInvoice({ invoiceIdentifier, analysisOptions }: Ser
 
       if (response.ok) {
         logWithTrace("info", "Successfully analyzed invoice...", {}, "server");
-        return { success: true, data: undefined } as const;
+        return {success: true, data: undefined} as const;
       }
 
       addSpanEvent("bff.invoice.analyze.error");
       const errorText = await response.text();
       const internalMessage = `Failed to analyze invoice: ${response.status} ${response.statusText}`;
-      logWithTrace("warn", internalMessage, { invoiceIdentifier, errorText }, "server");
+      logWithTrace("warn", internalMessage, {invoiceIdentifier, errorText}, "server");
       const userMessage =
         response.status >= 500
           ? "A server error occurred during analysis. Please try again later."
@@ -132,11 +132,9 @@ export async function analyzeInvoice({ invoiceIdentifier, analysisOptions }: Ser
     } catch (error: unknown) {
       addSpanEvent("bff.invoice.analyze.error");
       const errorMessage = error instanceof Error ? error.message : "Unknown analysis error";
-      logWithTrace("error", "Error analyzing invoice...", { error: errorMessage, invoiceId: invoiceIdentifier }, "server");
+      logWithTrace("error", "Error analyzing invoice...", {error: errorMessage, invoiceId: invoiceIdentifier}, "server");
       console.error("analyzeInvoice failed:", errorMessage, error);
       return createErrorResult(new Error(errorMessage));
     }
   }) satisfies ServerActionOutputType;
 }
-
-export default analyzeInvoice;
