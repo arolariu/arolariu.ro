@@ -192,15 +192,11 @@ describe("renderKpiCards", () => {
     expect(html).toMatch(/Warnings/);
     expect(html).toMatch(/Wall time/);
   });
-  it("uses muted color for zero values", () => {
-    const html = renderKpiCards(makeReport());
-    expect(html).toMatch(/color:#57606a/);
-  });
-  it("uses danger color when there are errors", () => {
+  it("uses bold error count when there are errors", () => {
     const report = makeReport({
       outcomes: [makeOutcome({findings: [lineFinding({severity: "error"})]})],
     });
-    expect(renderKpiCards(report)).toMatch(/color:#cf222e/);
+    expect(renderKpiCards(report)).toMatch(/\*\*1\*\* ❌/);
   });
   it("sums wall time across all providers", () => {
     const report = makeReport({
@@ -392,7 +388,7 @@ describe("renderStatsCallout", () => {
     const o = makeOutcome({providerId: "stats", findings: []});
     expect(renderStatsCallout(o)).toBeNull();
   });
-  it("renders a callout with table when there are comparison findings", () => {
+  it("renders a callout with GFM table when there are comparison findings", () => {
     const o = makeOutcome({
       providerId: "stats",
       findings: [comparison("a", 1000, 2000)],
@@ -400,7 +396,7 @@ describe("renderStatsCallout", () => {
     const html = renderStatsCallout(o);
     expect(html).not.toBeNull();
     expect(html!).toMatch(/Bundle stats/);
-    expect(html!).toMatch(/<table>/);
+    expect(html!).toMatch(/\| File \| Before \| After \| Diff \|/);
   });
   it("uses positive sign for size increases", () => {
     const o = makeOutcome({

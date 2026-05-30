@@ -200,28 +200,14 @@ export function renderKpiCards(report: HygieneReport): string {
   }
   const {errors, warnings} = countBySeverity(allFindings);
 
-  const findingsColor = "#57606a";
-  const errorsColor = errors > 0 ? "#cf222e" : "#57606a";
-  const warningsColor = warnings > 0 ? "#9a6700" : "#57606a";
-  const timeColor = "#57606a";
-
-  function card(num: string, label: string, color: string): string {
-    return [
-      `<div style="flex:1;min-width:130px;padding:10px 12px;background:#f6f8fa;border:1px solid #d8dee4;border-radius:6px;text-align:center;">`,
-      `<div style="font-size:22px;font-weight:700;line-height:1;margin-bottom:3px;font-variant-numeric:tabular-nums;color:${color};">${num}</div>`,
-      `<div style="font-size:10.5px;color:#57606a;text-transform:uppercase;letter-spacing:0.4px;">${label}</div>`,
-      `</div>`,
-    ].join("");
-  }
+  const errorsCell = errors > 0 ? `**${errors}** ❌` : String(errors);
+  const warningsCell = warnings > 0 ? `**${warnings}** ⚠️` : String(warnings);
 
   return [
-    `<div style="display:flex;gap:10px;margin:10px 0 14px;flex-wrap:wrap;">`,
-    card(String(allFindings.length), "Findings", findingsColor),
-    card(String(errors), "Errors", errorsColor),
-    card(String(warnings), "Warnings", warningsColor),
-    card(formatDurationMs(totalDuration), "Wall time", timeColor),
-    `</div>`,
-  ].join("");
+    `| 🔍 Findings | Errors | Warnings | ⏱ Wall time |`,
+    `|:---:|:---:|:---:|:---:|`,
+    `| **${allFindings.length}** | ${errorsCell} | ${warningsCell} | ${formatDurationMs(totalDuration)} |`,
+  ].join("\n");
 }
 
 export function renderOverviewTable(report: HygieneReport): string {
@@ -257,16 +243,12 @@ export function renderSuiteChipRow(suites: readonly SuiteResultLike[]): string {
 
   const chips: string[] = [];
   for (const s of failed) {
-    chips.push(
-      `<span style="background:#ffebe9;border:1px solid #ffcecb;color:#cf222e;font-weight:600;padding:1px 7px;border-radius:10px;font-size:11px;">❌ ${escapeHtml(s.name)}</span>`,
-    );
+    chips.push(`❌ **${escapeHtml(s.name)}**`);
   }
   for (const s of passed) {
-    chips.push(
-      `<span style="background:#f6f8fa;border:1px solid #d8dee4;color:#1a7f37;padding:1px 7px;border-radius:10px;font-size:11px;">✅ ${escapeHtml(s.name)}</span>`,
-    );
+    chips.push(`✅ ${escapeHtml(s.name)}`);
   }
-  return `<div style="display:inline-flex;gap:4px;margin:4px 0 8px;flex-wrap:wrap;">${chips.join("")}</div>`;
+  return chips.join(" · ");
 }
 
 export function renderSuiteFailures(suite: SuiteResultLike): string {
@@ -290,11 +272,11 @@ export function renderSuiteFailures(suite: SuiteResultLike): string {
     }
     const summary = `❌ \`${escapeHtml(testName)}\``;
     const errMsg = "message" in f ? cleanMessage(f.message) : "(no message)";
-    lines.push(`<div>${summary}`);
+    lines.push(summary);
     lines.push(`<details><summary>error</summary>`);
     lines.push("");
     lines.push(fenceSafe(errMsg));
-    lines.push("</details></div>");
+    lines.push("</details>");
     lines.push("");
   }
 
@@ -314,21 +296,18 @@ export function renderStatsCallout(o: ProviderOutcome<unknown>): string | null {
     if (f.kind !== "comparison") return "";
     const before = f.unit === "B" ? formatHumanBytes(f.baseValue) : `${f.baseValue}${f.unit ?? ""}`;
     const after = f.unit === "B" ? formatHumanBytes(f.headValue) : `${f.headValue}${f.unit ?? ""}`;
-    const diff = f.unit === "B" ? formatHumanBytes(f.diff) : `${f.diff >= 0 ? "+" : ""}${f.diff}${f.unit ?? ""}`;
-    const signed = f.diff >= 0 && f.unit === "B" ? `+${diff}` : diff;
-    const color = f.diff > 0 ? "#cf222e" : "#1a7f37";
-    return `<tr><td><code>${escapeHtml(f.name)}</code></td><td align="right">${before}</td><td align="right">${after}</td><td align="right" style="color:${color};">${signed}</td></tr>`;
+    const absDiff = f.unit === "B" ? formatHumanBytes(Math.abs(f.diff)) : `${Math.abs(f.diff)}${f.unit ?? ""}`;
+    const diffCell = f.diff > 0 ? `▲ +${absDiff}` : f.diff < 0 ? `▼ -${absDiff}` : `= 0`;
+    return `| \`${escapeHtml(f.name)}\` | ${before} | ${after} | ${diffCell} |`;
   });
 
   return [
-    `<div style="background:#ddf4ff;border:1px solid #54aeff66;border-radius:6px;padding:10px 14px;margin:10px 0;">`,
-    `<strong style="color:#0550ae;">📊 Bundle stats</strong> — ${comparisons.length} file${comparisons.length === 1 ? "" : "s"} changed`,
-    `<table>`,
-    `<tr><th>File</th><th align="right">Before</th><th align="right">After</th><th align="right">Diff</th></tr>`,
+    `#### 📊 Bundle stats — ${comparisons.length} file${comparisons.length === 1 ? "" : "s"} changed`,
+    ``,
+    `| File | Before | After | Diff |`,
+    `|---|---:|---:|---:|`,
     ...rows,
-    `</table>`,
-    `</div>`,
-  ].join("");
+  ].join("\n");
 }
 
 export function renderProviderCard(o: ProviderOutcome<unknown>): string {
