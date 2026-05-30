@@ -38,8 +38,12 @@ export async function loadOutcomes(workspaceRoot: string): Promise<ProviderOutco
   const outcomes: ProviderOutcome<unknown>[] = [];
   for (const entry of entries) {
     if (!entry.startsWith("outcome-") || !entry.endsWith(".json")) continue;
-    const content = await fs.readFile(path.join(dir, entry), "utf-8");
-    outcomes.push(JSON.parse(content) as ProviderOutcome<unknown>);
+    try {
+      const content = await fs.readFile(path.join(dir, entry), "utf-8");
+      outcomes.push(JSON.parse(content) as ProviderOutcome<unknown>);
+    } catch (err) {
+      core.warning(`Failed to load outcome file '${entry}': ${(err as Error).message}`);
+    }
   }
   return outcomes;
 }
