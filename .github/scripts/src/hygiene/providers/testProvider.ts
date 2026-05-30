@@ -134,6 +134,57 @@ async function readCoverageSummary(workspaceRoot: string): Promise<CoverageSumma
   }
 }
 
+/**
+ * Extracts the last balanced JSON object from a stdout stream that contains a
+ * Vitest `--reporter=json` report. Robust against:
+ *   - Non-JSON preamble or trailer noise from npm / nx
+ *   - Multiple concatenated JSON reports (one per project under `nx run-many`),
+ *     in which case we want the LAST one
+ *   - Curly braces appearing inside JSON-encoded strings (those don't affect depth)
+ *
+ * Returns `null` when no valid JSON object containing `testResults` is found.
+ */
+export function extractLastVitestReport(stdout: string): VitestJsonReport | null {
+  const candidates: string[] = [];
+  let depth = 0;
+  let start = -1;
+  let inString = false;
+  let escape = false;
+  for (let i = 0; i < stdout.length; i++) {
+    const ch = stdout[i];
+    if (escape) { escape = false; continue; }
+    if (ch === "\\") { escape = true; continue; }
+    if (inString) {
+      if (ch === "\"") inString = false;
+      continue;
+    }
+    if (ch === "\"") { inString = true; continue; }
+    if (ch === "{") {
+      if (depth === 0) start = i;
+      depth++;
+    } else if (ch === "}") {
+      depth--;
+      if (depth === 0 && start !== -1) {
+        candidates.push(stdout.slice(start, i + 1));
+        start = -1;
+      }
+    }
+  }
+  for (let i = candidates.length - 1; i >= 0; i--) {
+    const blob = candidates[i];
+    if (!blob) continue;
+    try {
+      const parsed = JSON.parse(blob) as Partial<VitestJsonReport>;
+      if (Array.isArray(parsed.testResults)) {
+        return parsed as VitestJsonReport;
+      }
+    } catch {
+      // Skip non-Vitest JSON blobs.
+    }
+  }
+  return null;
+}
+
 export const testProvider: CheckProvider<TestPayload> = {
   id: "test",
   name: "Vitest",
@@ -150,10 +201,9 @@ export const testProvider: CheckProvider<TestPayload> = {
 
     let report: VitestJsonReport;
     try {
-      // Vitest may emit non-JSON noise before the JSON; extract the last JSON object.
-      const match = result.stdout.match(/\{[\s\S]*"testResults"[\s\S]*\}/);
-      if (!match) throw new Error("no JSON object with testResults found");
-      report = JSON.parse(match[0]) as VitestJsonReport;
+      const parsed = extractLastVitestReport(result.stdout);
+      if (!parsed) throw new Error("no JSON object with testResults found");
+      report = parsed;
     } catch (err) {
       throw new Error(
         `Failed to parse Vitest JSON report: ${(err as Error).message}. ` +

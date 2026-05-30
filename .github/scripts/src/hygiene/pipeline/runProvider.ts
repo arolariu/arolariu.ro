@@ -4,8 +4,16 @@
  *
  * @remarks
  * Loads a provider by id, runs it, captures timing/errors, evaluates the gate,
- * writes outcome-{id}.json. Always exits 0 -- the final gate (runProjections.ts)
- * is what fails the workflow based on aggregated results.
+ * writes outcome-{id}.json. Exit codes:
+ *   - 0 when gateResult is "passed" or "advisory"
+ *   - 1 when gateResult is "failed" or "errored"
+ *   - 1 when the provider id is unknown
+ *
+ * The workflow uses step-level `continue-on-error: true` on each provider step,
+ * so the non-zero exit surfaces a warning marker on that step in the UI while
+ * still allowing later providers and the final gate to run. The aggregate
+ * workflow pass/fail is decided by `runProjections.ts` (the single point that
+ * calls `core.setFailed`), not by individual provider exit codes.
  *
  * CLI usage:
  *   node --experimental-strip-types runProvider.ts <providerId>
@@ -27,7 +35,10 @@ export interface RunProviderDeps {
 
 /**
  * Core logic, testable without process.exit / argv.
- * @returns process exit code: 0 always when the provider was found, 1 only if id unknown.
+ * @returns process exit code:
+ *   - 1 if the provider id is unknown
+ *   - 1 if the gateResult is "failed" or "errored" (so step UI shows a warning under `continue-on-error: true`)
+ *   - 0 if the gateResult is "passed" or "advisory"
  */
 export async function runProviderCore(providerId: string, deps: RunProviderDeps): Promise<number> {
   const provider = deps.registry.find((p) => p.id === providerId);
@@ -96,7 +107,10 @@ export async function runProviderCore(providerId: string, deps: RunProviderDeps)
   const icon = gateResult === "passed" ? "✅" : gateResult === "advisory" ? "ℹ️" : gateResult === "errored" ? "💥" : "❌";
   core.notice(`${icon} ${provider.icon} ${provider.name}: ${gateResult} (${findings.length} finding(s), ${durationMs}ms)`);
 
-  return 0;
+  // Exit non-zero on failed/errored so the workflow step renders a warning marker
+  // under `continue-on-error: true`. The single source of truth for workflow
+  // pass/fail is still runProjections.ts, which calls core.setFailed().
+  return gateResult === "failed" || gateResult === "errored" ? 1 : 0;
 }
 
 /**

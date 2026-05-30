@@ -1,5 +1,67 @@
 import {describe, it, expect, vi, beforeEach} from "vitest";
-import {parseVitestJsonReport, type VitestJsonReport} from "./testProvider.ts";
+import {parseVitestJsonReport, extractLastVitestReport, type VitestJsonReport} from "./testProvider.ts";
+
+describe("extractLastVitestReport", () => {
+  const single: VitestJsonReport = {
+    numTotalTests: 1, numPassedTests: 1, numFailedTests: 0, numPendingTests: 0,
+    testResults: [{name: "/w/a.test.ts", status: "passed", assertionResults: []}],
+  };
+
+  it("returns null when no JSON object is present", () => {
+    expect(extractLastVitestReport("plain noise without any braces")).toBeNull();
+  });
+
+  it("returns null when JSON exists but has no testResults field", () => {
+    expect(extractLastVitestReport('{"foo": 1}')).toBeNull();
+  });
+
+  it("extracts a single Vitest JSON report from clean stdout", () => {
+    const out = JSON.stringify(single);
+    expect(extractLastVitestReport(out)).toEqual(single);
+  });
+
+  it("ignores leading noise from npm/nx before the JSON object", () => {
+    const noise = "> arolariu@1.0.0 test:unit\n> nx run-many --target=test --all\n\n";
+    const out = noise + JSON.stringify(single) + "\n";
+    expect(extractLastVitestReport(out)).toEqual(single);
+  });
+
+  it("returns the LAST Vitest report when nx run-many emits multiple", () => {
+    const first: VitestJsonReport = {
+      ...single,
+      testResults: [{name: "/w/first.test.ts", status: "passed", assertionResults: []}],
+    };
+    const last: VitestJsonReport = {
+      ...single,
+      testResults: [{name: "/w/last.test.ts", status: "passed", assertionResults: []}],
+    };
+    const out = JSON.stringify(first) + "\n--- project boundary ---\n" + JSON.stringify(last);
+    expect(extractLastVitestReport(out)).toEqual(last);
+  });
+
+  it("ignores curly braces appearing inside JSON-encoded strings", () => {
+    const tricky: VitestJsonReport = {
+      ...single,
+      testResults: [{
+        name: "/w/tricky.test.ts",
+        status: "failed",
+        assertionResults: [{
+          fullName: "regex with } and { in message",
+          status: "failed",
+          failureMessages: ["expected `{x: 1}` to equal `{y: 2}`"],
+        }],
+      }],
+    };
+    const out = JSON.stringify(tricky);
+    expect(extractLastVitestReport(out)).toEqual(tricky);
+  });
+
+  it("skips non-Vitest JSON blobs (e.g. nx telemetry) in favor of the report", () => {
+    const telemetry = '{"projectName": "scripts", "duration": 123}';
+    const out = telemetry + "\n" + JSON.stringify(single);
+    expect(extractLastVitestReport(out)).toEqual(single);
+  });
+});
 
 describe("parseVitestJsonReport", () => {
   it("extracts pass/fail counts from numTotalTests, numPassedTests, numFailedTests", () => {

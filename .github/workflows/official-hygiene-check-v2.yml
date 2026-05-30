@@ -3,19 +3,20 @@
 # Code Hygiene Check Workflow (v3)
 # =============================================================================
 # Architecture:
-#   Job 1 (detect): checkout + npm ci + decide if checks should run.
-#   Job 2 (hygiene): one step per provider (continue-on-error true on each step),
+#   Job 1 (detect): checkout + git diff to decide whether hygiene needs to run.
+#   Job 2 (hygiene): checkout + setup workspace + single 'npm ci' for scripts,
+#                    then one step per provider (continue-on-error true on each),
 #                    then a final 'gate' step (no continue-on-error) that loads
 #                    all outcome-*.json artifacts and runs projections.
 #
 # Honest pass/fail:
-#   - Each provider step uses step-level continue-on-error so step UI shows
-#     warning when the script exits non-zero, but later steps still run.
-#   - Provider scripts (runProvider.ts) ALWAYS exit 0 -- they write outcome JSON
-#     instead of throwing. So step-level continue-on-error is belt-and-braces.
-#   - The final gate step (runProjections.ts) calls core.setFailed() when the
-#     aggregated overallResult is 'failed' or 'errored'. This is the SINGLE
-#     point that turns the workflow red.
+#   - Each provider step uses step-level continue-on-error: true. runProvider.ts
+#     exits non-zero (1) when its gateResult is 'failed' or 'errored', so the
+#     step UI renders a warning marker (yellow triangle) on the failing step
+#     while subsequent steps still run.
+#   - The final gate step (runProjections.ts) is the SINGLE source of truth for
+#     workflow pass/fail: it calls core.setFailed() when the aggregated
+#     HygieneReport.overallResult is 'failed' or 'errored'.
 #
 # Migration note: keeping the file name 'official-hygiene-check-v2.yml' so
 # existing branch protection rules continue to match. The workflow's display
