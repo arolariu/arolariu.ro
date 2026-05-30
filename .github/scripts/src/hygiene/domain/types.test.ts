@@ -1,7 +1,6 @@
 import {describe, it, expect, expectTypeOf} from "vitest";
 import {
   type Finding,
-  type Severity,
   type Gate,
   type ProviderOutcome,
   isLineFinding,
