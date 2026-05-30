@@ -175,6 +175,13 @@ describe("renderHeader", () => {
     expect(out).toMatch(/1 errors?/);
     expect(out).toMatch(/1 warnings?/);
   });
+  it("excludes MetricFindings from the findings count", () => {
+    const metricFinding: Finding = {kind: "metric", severity: "info", name: "diff.churn", value: 42, unit: "lines", message: "42 lines changed"};
+    const report = makeReport({
+      outcomes: [makeOutcome({findings: [metricFinding]})],
+    });
+    expect(renderHeader(report)).toMatch(/0 findings/);
+  });
 });
 
 describe("renderKpiCards", () => {
@@ -229,6 +236,15 @@ describe("renderOverviewTable", () => {
       outcomes: [makeOutcome({findings: [lineFinding(), lineFinding()]})],
     });
     expect(renderOverviewTable(report)).toMatch(/\*\*2\*\*/);
+  });
+  it("renders '—' for rows with only MetricFindings", () => {
+    const metricFinding: Finding = {kind: "metric", severity: "info", name: "diff.churn", value: 10, unit: "lines", message: "10 lines"};
+    const report = makeReport({outcomes: [makeOutcome({findings: [metricFinding]})]});
+    expect(renderOverviewTable(report)).toMatch(/—/);
+  });
+  it("renders 💥 emoji for errored providers", () => {
+    const report = makeReport({outcomes: [makeOutcome({gateResult: "errored"})]});
+    expect(renderOverviewTable(report)).toMatch(/💥/);
   });
 });
 

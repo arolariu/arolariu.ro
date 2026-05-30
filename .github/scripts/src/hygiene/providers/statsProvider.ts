@@ -83,7 +83,7 @@ export function foldersToComparisons(folders: readonly FolderSize[]): Comparison
       baseValue: f.mainTotal,
       headValue: f.headTotal,
       diff: f.headTotal - f.mainTotal,
-      unit: "bytes",
+      unit: "B",
       message: `${f.folder}: ${f.mainTotal} -> ${f.headTotal} bytes (${f.headTotal - f.mainTotal >= 0 ? "+" : ""}${f.headTotal - f.mainTotal})`,
     }));
 }

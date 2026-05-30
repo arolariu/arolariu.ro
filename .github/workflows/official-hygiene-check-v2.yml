@@ -150,7 +150,6 @@ jobs:
 
       - name: 🚀 Run provider (${{ matrix.provider.id }})
         id: run-provider
-        continue-on-error: true
         working-directory: .github/scripts
         run: node --experimental-strip-types src/hygiene/pipeline/runProvider.ts ${{ matrix.provider.id }}
 

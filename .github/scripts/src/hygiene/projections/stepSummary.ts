@@ -103,8 +103,15 @@ function resultEmoji(r: GateResult): string {
     case "passed": return "✅";
     case "advisory": return "ℹ️";
     case "failed": return "❌";
-    case "errored": return "⚠️";
+    case "errored": return "💥";
   }
+}
+
+// MetricFindings are internal statistics (e.g. churn), not actionable code
+// quality issues. Exclude them from all user-facing findings counts so the
+// comment doesn't show phantom findings with no corresponding body section.
+function visibleFindings(findings: readonly Finding[]): readonly Finding[] {
+  return findings.filter((f) => f.kind !== "metric");
 }
 
 function formatDurationMs(ms: number): string {
@@ -169,7 +176,7 @@ export function renderHeader(report: HygieneReport): string {
   const total = report.outcomes.length;
 
   let allFindings: Finding[] = [];
-  for (const o of report.outcomes) allFindings = allFindings.concat(o.findings as Finding[]);
+  for (const o of report.outcomes) allFindings = allFindings.concat(visibleFindings(o.findings) as Finding[]);
   const {errors, warnings, infos} = countBySeverity(allFindings);
 
   const lines: string[] = [];
@@ -188,7 +195,7 @@ export function renderKpiCards(report: HygieneReport): string {
   let allFindings: Finding[] = [];
   let totalDuration = 0;
   for (const o of report.outcomes) {
-    allFindings = allFindings.concat(o.findings as Finding[]);
+    allFindings = allFindings.concat(visibleFindings(o.findings) as Finding[]);
     totalDuration += o.durationMs;
   }
   const {errors, warnings} = countBySeverity(allFindings);
@@ -220,7 +227,8 @@ export function renderKpiCards(report: HygieneReport): string {
 export function renderOverviewTable(report: HygieneReport): string {
   const header = `| Provider | Status | Findings | Time |\n|---|:---:|---:|---:|`;
   const rows = report.outcomes.map((o) => {
-    const findingsCell = o.findings.length === 0 ? "—" : `**${o.findings.length}**`;
+    const visible = visibleFindings(o.findings);
+    const findingsCell = visible.length === 0 ? "—" : `**${visible.length}**`;
     return `| ${o.providerIcon} ${o.providerName} | ${resultEmoji(o.gateResult)} | ${findingsCell} | ${formatDurationMs(o.durationMs)} |`;
   });
   return [header, ...rows].join("\n");

@@ -43,7 +43,7 @@ describe("foldersToComparisons", () => {
       baseValue: 1000,
       headValue: 1500,
       diff: 500,
-      unit: "bytes",
+      unit: "B",
     });
     expect(findings[1]?.diff).toBe(-100);
   });
