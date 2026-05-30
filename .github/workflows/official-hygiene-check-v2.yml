@@ -1,50 +1,37 @@
 ---
 # =============================================================================
-# Code Hygiene Check Workflow (v2)
+# Code Hygiene Check Workflow (v3)
 # =============================================================================
-# This workflow performs comprehensive code quality checks on pull requests.
-#
 # Architecture:
-#   - Phase 1: Setup & Change Detection
-#   - Phase 2: Parallel Quality Checks (each uploads JSON artifact)
-#     - Format Check → format-result.json
-#     - Lint Check → lint-result.json
-#     - Unit Tests → test-result.json
-#     - Stats → stats-result.json
-#   - Phase 3: Summary (downloads all artifacts, posts rich PR comment)
+#   Job 1 (detect): checkout + npm ci + decide if checks should run.
+#   Job 2 (hygiene): one step per provider (continue-on-error true on each step),
+#                    then a final 'gate' step (no continue-on-error) that loads
+#                    all outcome-*.json artifacts and runs projections.
 #
-# Data Flow:
-#   - Each check job produces a {check}-result.json artifact
-#   - Summary job downloads all artifacts in parallel
-#   - Comment builder consumes artifacts to generate rich PR comment
-#   - New comment created on each run (no update logic)
+# Honest pass/fail:
+#   - Each provider step uses step-level continue-on-error so step UI shows
+#     warning when the script exits non-zero, but later steps still run.
+#   - Provider scripts (runProvider.ts) ALWAYS exit 0 -- they write outcome JSON
+#     instead of throwing. So step-level continue-on-error is belt-and-braces.
+#   - The final gate step (runProjections.ts) calls core.setFailed() when the
+#     aggregated overallResult is 'failed' or 'errored'. This is the SINGLE
+#     point that turns the workflow red.
 #
-# Quality Gates:
-#   - Formatting: Must pass Prettier check
-#   - Linting: Must pass ESLint with strict TypeScript rules
-#   - Testing: All unit tests must pass
-#   - Bundle Size: Tracked for regression detection (vs main)
-#
-# Artifacts:
-#   - retention-days: 7 (for debugging past PR failures)
-#   - Pattern: artifacts/hygiene/{check}-result.json
-#
-# Local Resolution:
-#   - Format: npm run format
-#   - Lint: npm run lint
-#   - Tests: npm run test:unit
+# Migration note: keeping the file name 'official-hygiene-check-v2.yml' so
+# existing branch protection rules continue to match. The workflow's display
+# name updates to '(v3)'.
 # =============================================================================
 
-name: "Code Hygiene Check"
+name: "Code Hygiene Check (v3)"
 
 permissions:
   contents: read
   pull-requests: write
+  checks: write
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-
   workflow_dispatch:
 
 concurrency:
@@ -55,13 +42,11 @@ env:
   NODE_VERSION: "24"
   HEAD_REF: ${{ github.event.pull_request.head.sha || github.sha }}
   BASE_REF: ${{ github.event.pull_request.base.sha || 'origin/main' }}
+  PR_NUMBER: ${{ github.event.pull_request.number }}
 
 jobs:
-  # ============================================================================
-  # SETUP & CHANGE DETECTION
-  # ============================================================================
-  setup:
-    name: 🧩 Setup & Change Detection
+  detect:
+    name: 🧩 Detect changes
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -74,30 +59,33 @@ jobs:
           fetch-depth: 0
           ref: ${{ env.HEAD_REF }}
 
-      - name: 📝 Display workflow context
+      - name: 🔎 Detect changed files
+        id: detect
+        shell: bash
         run: |
-          echo "::group::🔍 Hygiene Check Context"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 🧹 CODE HYGIENE CHECK PIPELINE                             │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 📦 Job:           Setup & Change Detection                 │"
-          echo "│ 🔀 PR Number:     ${{ github.event.pull_request.number || 'N/A' }}"
-          echo "│ 🏷️ Head SHA:      ${{ env.HEAD_REF }}"
-          echo "│ 🏷️ Base SHA:      ${{ env.BASE_REF }}"
-          echo "│ 👤 Author:        ${{ github.event.pull_request.user.login || github.actor }}"
-          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "│ 🔗 Run ID:        ${{ github.run_id }}"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo "::endgroup::"
+          set -euo pipefail
+          git fetch origin main:refs/remotes/origin/main --depth=1 --no-tags --quiet || true
+          CHANGED=$(git diff --name-only "${{ env.BASE_REF }}...${{ env.HEAD_REF }}" | wc -l | tr -d ' ')
+          echo "Detected $CHANGED changed file(s)."
+          if [ "$CHANGED" -gt 0 ]; then
+            echo "has-changes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-changes=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "changed-files-count=$CHANGED" >> "$GITHUB_OUTPUT"
 
-          # Write initial summary
-          echo "## 🧹 Code Hygiene Check" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| PR | #${{ github.event.pull_request.number || 'N/A' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Author | @${{ github.event.pull_request.user.login || github.actor }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Head SHA | \`${{ env.HEAD_REF }}\` |" >> $GITHUB_STEP_SUMMARY
+  hygiene:
+    name: 🧹 Run hygiene checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: detect
+    if: needs.detect.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: 🛫 Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ env.HEAD_REF }}
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -106,343 +94,52 @@ jobs:
           cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
           install-node-dependencies: 'true'
 
-      - name: 🔎 Detect changes
-        id: detect
-        uses: actions/github-script@v8
-        env:
-          CHECK_MODE: "detect"
-        with:
-          script: |
-            const { execSync } = require('child_process');
-            execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
-            const { default: runHygieneCheck } = await import('${{ github.workspace }}/.github/scripts/src/runHygieneCheckV2.ts');
-            await runHygieneCheck();
-
-  # ============================================================================
-  # FORMAT CHECK
-  # ============================================================================
-  format:
-    name: 🎨 Format Check
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: setup
-    if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
-    continue-on-error: true
-    steps:
-      - name: 🛫 Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-          ref: ${{ env.HEAD_REF }}
-
-      - name: 📝 Display check context
-        run: |
-          echo "::group::🔍 Format Check Context"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 🎨 FORMAT CHECK                                            │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 🔧 Tool:          Prettier                                 │"
-          echo "│ 📁 Scope:         All supported files                      │"
-          echo "│ 🔀 Changed files: ${{ needs.setup.outputs.changed-files-count || 'calculating...' }}"
-          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo "::endgroup::"
-
-      - name: 📦 Setup workspace
-        uses: ./.github/actions/setup-workspace
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
-
-      - name: 🎨 Run format check
-        uses: actions/github-script@v8
-        env:
-          CHECK_MODE: "format"
-        with:
-          script: |
-            const { execSync } = require('child_process');
-            execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
-            const { default: runHygieneCheck } = await import('${{ github.workspace }}/.github/scripts/src/runHygieneCheckV2.ts');
-            await runHygieneCheck();
-
-      - name: 📤 Upload format result
-        uses: actions/upload-artifact@v7
-        with:
-          name: format-result
-          path: artifacts/hygiene/format-result.json
-          retention-days: 7
-
-  # ============================================================================
-  # LINT CHECK
-  # ============================================================================
-  lint:
-    name: 🔍 Lint Check
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: setup
-    if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
-    continue-on-error: true
-    steps:
-      - name: 🛫 Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-          ref: ${{ env.HEAD_REF }}
-
-      - name: 📝 Display check context
-        run: |
-          echo "::group::🔍 Lint Check Context"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 🔍 LINT CHECK                                              │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 🔧 Tool:          ESLint (20+ plugins)                     │"
-          echo "│ 📁 Scope:         TypeScript, JavaScript, React            │"
-          echo "│ ⚙️ Config:        Strict TypeScript mode                   │"
-          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo "::endgroup::"
-
-      - name: 📦 Setup workspace
-        uses: ./.github/actions/setup-workspace
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
-
-      - name: 🔍 Run lint check
-        uses: actions/github-script@v8
-        env:
-          CHECK_MODE: "lint"
-        with:
-          script: |
-            const { execSync } = require('child_process');
-            execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
-            const { default: runHygieneCheck } = await import('${{ github.workspace }}/.github/scripts/src/runHygieneCheckV2.ts');
-            await runHygieneCheck();
-
-      - name: 📤 Upload lint result
-        uses: actions/upload-artifact@v7
-        with:
-          name: lint-result
-          path: artifacts/hygiene/lint-result.json
-          retention-days: 7
-
-  # ============================================================================
-  # UNIT TESTS
-  # ============================================================================
-  test:
-    name: 🧪 Unit Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: setup
-    if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
-    continue-on-error: true
-    steps:
-      - name: 🛫 Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-          ref: ${{ env.HEAD_REF }}
-
-      - name: 📝 Display check context
-        run: |
-          echo "::group::🔍 Unit Tests Context"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 🧪 UNIT TESTS                                              │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 🔧 Framework:     Vitest                                   │"
-          echo "│ 📁 Scope:         All test files                           │"
-          echo "│ 📊 Coverage:      Enabled (target: 85%)                    │"
-          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo "::endgroup::"
-
-      - name: 📦 Setup workspace
-        uses: ./.github/actions/setup-workspace
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
+      - name: 📦 Install scripts deps (single npm ci)
+        working-directory: .github/scripts
+        run: npm ci
 
       - name: 🔨 Build components package
         run: npm run build:components
 
-      - name: 🧪 Run test check
-        uses: actions/github-script@v8
-        env:
-          CHECK_MODE: "test"
-        with:
-          script: |
-            const { execSync } = require('child_process');
-            execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
-            const { default: runHygieneCheck } = await import('${{ github.workspace }}/.github/scripts/src/runHygieneCheckV2.ts');
-            await runHygieneCheck();
+      # ----- Provider steps (step-level continue-on-error) -----
+      - name: 🎨 Provider · Prettier (format)
+        id: provider-format
+        continue-on-error: true
+        working-directory: .github/scripts
+        run: node --experimental-strip-types src/hygiene/pipeline/runProvider.ts format
 
-      - name: 📤 Upload test result
-        uses: actions/upload-artifact@v7
-        with:
-          name: test-result
-          path: artifacts/hygiene/test-result.json
-          retention-days: 7
+      - name: 🔍 Provider · ESLint (lint)
+        id: provider-lint
+        continue-on-error: true
+        working-directory: .github/scripts
+        run: node --experimental-strip-types src/hygiene/pipeline/runProvider.ts lint
 
-      - name: 📤 Upload test coverage & output
-        uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: test-coverage
-          path: |
-            artifacts/vitest-output.json
-            coverage/vitest/coverage-summary.json
-          retention-days: 7
+      - name: 🧪 Provider · Vitest (test)
+        id: provider-test
+        continue-on-error: true
+        working-directory: .github/scripts
+        run: node --experimental-strip-types src/hygiene/pipeline/runProvider.ts test
 
-  # ============================================================================
-  # CODE STATISTICS & BUNDLE ANALYSIS
-  # ============================================================================
-  stats:
-    name: 📊 Code Statistics
-    runs-on: ubuntu-latest
-    timeout-minutes: 12
-    needs: setup
-    if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
-    continue-on-error: true
-    steps:
-      - name: 🛫 Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          ref: ${{ env.HEAD_REF }}
+      - name: 📊 Provider · Statistics (stats)
+        id: provider-stats
+        continue-on-error: true
+        working-directory: .github/scripts
+        run: node --experimental-strip-types src/hygiene/pipeline/runProvider.ts stats
 
-      - name: 📝 Display check context
-        run: |
-          echo "::group::🔍 Statistics Context"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 📊 CODE STATISTICS                                         │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 📦 Bundle Size:   Analysis vs main branch                  │"
-          echo "│ 📁 Lines of Code: Tracked for regression                   │"
-          echo "│ 📈 Complexity:    Cyclomatic complexity metrics            │"
-          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo "::endgroup::"
-
-      - name: 📦 Setup workspace
-        uses: ./.github/actions/setup-workspace
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
-
-      - name: 📊 Compute statistics
-        uses: actions/github-script@v8
-        env:
-          CHECK_MODE: "stats"
-        with:
-          script: |
-            const { execSync } = require('child_process');
-            execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
-            const { default: runHygieneCheck } = await import('${{ github.workspace }}/.github/scripts/src/runHygieneCheckV2.ts');
-            await runHygieneCheck();
-
-      - name: 📤 Upload stats result
-        uses: actions/upload-artifact@v7
-        with:
-          name: stats-result
-          path: artifacts/hygiene/stats-result.json
-          retention-days: 7
-
-  # ============================================================================
-  # SUMMARY & PR COMMENT
-  # ============================================================================
-  summary:
-    name: 📋 Summary & PR Comment
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    needs: [setup, format, lint, test, stats]
-    if: always() && (needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch')
-    steps:
-      - name: 🛫 Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-
-      - name: 📝 Display summary context
-        run: |
-          echo "::group::🔍 Summary Context"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 📋 SUMMARY & PR COMMENT                                    │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 🎨 Format:        ${{ needs.format.result }}"
-          echo "│ 🔍 Lint:          ${{ needs.lint.result }}"
-          echo "│ 🧪 Tests:         ${{ needs.test.result }}"
-          echo "│ 📊 Stats:         ${{ needs.stats.result }}"
-          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo "::endgroup::"
-
-      - name: 📦 Setup workspace
-        uses: ./.github/actions/setup-workspace
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
-
-      - name: 📥 Download all artifacts
-        uses: actions/download-artifact@v8
-        with:
-          path: artifacts/hygiene
-          pattern: "*-result"
-          merge-multiple: true
-
-      - name: 📋 Generate summary and post comment
-        uses: actions/github-script@v8
+      # ----- Final gate (NO continue-on-error) -----
+      - name: 🎯 Run projections & gate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CHECK_MODE: "summary"
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+        working-directory: .github/scripts
+        run: node --experimental-strip-types src/hygiene/pipeline/runProjections.ts
+
+      # ----- Artifact upload (always, even on failure) -----
+      - name: 📤 Upload hygiene artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
         with:
-          script: |
-            const { execSync } = require('child_process');
-            execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
-            const { default: runHygieneCheck } = await import('${{ github.workspace }}/.github/scripts/src/runHygieneCheckV2.ts');
-            await runHygieneCheck();
-
-      - name: 🎯 Determine final status
-        id: final-status
-        run: |
-          # Check if any of the check jobs failed (not continue-on-error failures)
-          FORMAT_STATUS="${{ needs.format.result }}"
-          LINT_STATUS="${{ needs.lint.result }}"
-          TEST_STATUS="${{ needs.test.result }}"
-          STATS_STATUS="${{ needs.stats.result }}"
-
-          echo "Format: $FORMAT_STATUS"
-          echo "Lint: $LINT_STATUS"
-          echo "Test: $TEST_STATUS"
-          echo "Stats: $STATS_STATUS"
-
-          # Determine if any check failed
-          if [[ "$FORMAT_STATUS" == "failure" || "$LINT_STATUS" == "failure" || "$TEST_STATUS" == "failure" ]]; then
-            echo "has-failures=true" >> $GITHUB_OUTPUT
-          else
-            echo "has-failures=false" >> $GITHUB_OUTPUT
-          fi
-
-          # The actual pass/fail is determined by the artifacts
-          # This just logs the job-level results
-          echo "✅ Summary job completed. See PR comment for detailed results."
-
-      - name: 🏷️ Label Dependabot PR on failure
-        if: steps.final-status.outputs.has-failures == 'true' && github.actor == 'dependabot[bot]'
-        uses: actions/github-script@v8
-        with:
-          script: |
-            const prNumber = context.payload.pull_request?.number;
-            if (!prNumber) {
-              console.log('Not a PR context, skipping label');
-              return;
-            }
-
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.name,
-              issue_number: prNumber,
-              labels: ['breaking-change', 'needs-review']
-            });
-
-            console.log(`Added 'breaking-change' and 'needs-review' labels to PR #${prNumber}`);
+          name: hygiene-report
+          path: |
+            artifacts/hygiene/hygiene-report.json
+            artifacts/hygiene/outcome-*.json
+          retention-days: 7
