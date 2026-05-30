@@ -7,7 +7,7 @@ import type {ServerActionResult} from "@/lib/utils.server";
 import type {Product} from "@/types/invoices";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {actionFailure, buildEntityStoreState, buildInvoice, buildProduct, invokeHookCallback, mockEntityStoreSelector} from "../../../../../../tests/helpers";
+import {TestDataBuilder, invokeHookCallback} from "../../../../../../tests/helpers";
 import {useProductAdd} from "./useProductAdd";
 
 vi.mock("@/stores", () => ({
@@ -41,14 +41,14 @@ function createDeferred<T>(): Readonly<{
 }
 
 function mockInvoiceStore(updateEntity = vi.fn()): void {
-  mockEntityStoreSelector(mockUseInvoicesStore, buildEntityStoreState({updateEntity}));
+  TestDataBuilder.mockEntityStoreSelector(mockUseInvoicesStore, TestDataBuilder.entityStore({updateEntity}));
 }
 
 describe("useProductAdd", () => {
-  const existingProduct = buildProduct({name: "Coffee"});
-  const productToAdd = buildProduct({name: "Milk", price: 7, totalPrice: 7});
-  const addedProduct = buildProduct({name: "Milk", price: 7, totalPrice: 7, productCode: "server-id"});
-  const invoice = buildInvoice({items: [existingProduct]});
+  const existingProduct = TestDataBuilder.build("product", {name: "Coffee"});
+  const productToAdd = TestDataBuilder.build("product", {name: "Milk", price: 7, totalPrice: 7});
+  const addedProduct = TestDataBuilder.build("product", {name: "Milk", price: 7, totalPrice: 7, productCode: "server-id"});
+  const invoice = TestDataBuilder.build("invoice", {items: [existingProduct]});
   const mockUpdateEntity = vi.fn();
 
   beforeEach(() => {
@@ -108,7 +108,7 @@ describe("useProductAdd", () => {
 
   it("throws server action failures and skips the local update", async () => {
     mockAddInvoiceProduct.mockReturnValueOnce(
-      actionFailure({code: "UNKNOWN_ERROR", message: "Failed to add product"}),
+      TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Failed to add product"}),
     );
 
     const {result} = renderHook(() => useProductAdd({invoice}));

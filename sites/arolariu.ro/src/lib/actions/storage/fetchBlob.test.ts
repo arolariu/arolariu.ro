@@ -5,9 +5,8 @@
 
 import {createBlobClient} from "@/lib/azure/storageClient";
 import {fetchConfigValue} from "@/lib/config/configProxy";
-import type {BlockBlobClient} from "@azure/storage-blob";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {buildBlockBlobClientMock, buildBlobServiceClientMock, buildContainerClientMock} from "../../../../tests/helpers";
+import {TestDataBuilder} from "../../../../tests/helpers";
 import fetchBlob from "./fetchBlob";
 
 const mockCreateBlobClient = vi.mocked(createBlobClient);
@@ -19,7 +18,7 @@ describe("fetchBlob", () => {
 
     mockFetchConfigValue.mockResolvedValue("https://test.blob.core.windows.net");
 
-    const blockBlobClient = buildBlockBlobClientMock({
+    const blockBlobClient = TestDataBuilder.blockBlobClient({
       blobUrl: "https://test.blob.core.windows.net/container/blob.png",
       metadata: {key: "value"},
     });
@@ -31,10 +30,10 @@ describe("fetchBlob", () => {
     });
     (blockBlobClient as unknown as Record<string, unknown>)["download"] = downloadMock;
 
-    const containerClient = buildContainerClientMock();
-    containerClient.getBlockBlobClient = vi.fn(() => blockBlobClient as BlockBlobClient);
+    const containerClient = TestDataBuilder.containerClient();
+    containerClient.getBlockBlobClient = vi.fn(() => blockBlobClient);
 
-    const blobServiceClient = buildBlobServiceClientMock(containerClient);
+    const blobServiceClient = TestDataBuilder.blobServiceClient(containerClient);
     mockCreateBlobClient.mockResolvedValue(blobServiceClient);
   });
 

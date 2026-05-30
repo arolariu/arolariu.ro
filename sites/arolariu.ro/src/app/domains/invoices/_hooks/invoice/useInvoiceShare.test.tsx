@@ -6,8 +6,7 @@
 import type {Invoice} from "@/types/invoices";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {actionSuccess, invokeHookCallback} from "../../../../../../tests/helpers";
-import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder, invokeHookCallback} from "../../../../../../tests/helpers";
 import {useInvoiceShare} from "./useInvoiceShare";
 
 // Mock dependencies
@@ -79,11 +78,10 @@ const mockToast = vi.mocked(toast);
 
 describe("useInvoiceShare", () => {
   const testInvoiceId = "11111111-1111-4111-8111-111111111111";
-  const testInvoice = buildInvoice({
+  const testInvoice = TestDataBuilder.build("invoice", {
     id: testInvoiceId,
     sharedWith: [],
   });
-
   const mockUpsertEntity = vi.fn();
   const mockGetEntityById = vi.fn();
   const mockOnComplete = vi.fn();
@@ -129,7 +127,7 @@ describe("useInvoiceShare", () => {
   describe("togglePublic action", () => {
     it("adds public sentinel when not present", async () => {
       const updatedInvoice = {...testInvoice, sharedWith: [LAST_GUID]};
-      const successResult = actionSuccess<Invoice>(updatedInvoice);
+      const successResult = TestDataBuilder.actionSuccess<Invoice>(updatedInvoice);
       mockPatchInvoice.mockReturnValue(successResult);
 
       const hookResult = renderHook(() => useInvoiceShare(mockOnComplete));
@@ -157,7 +155,7 @@ describe("useInvoiceShare", () => {
       const publicInvoice = {...testInvoice, sharedWith: [LAST_GUID]};
       mockGetEntityById.mockReturnValue(publicInvoice);
 
-      const successResult = actionSuccess<Invoice>(publicInvoice);
+      const successResult = TestDataBuilder.actionSuccess<Invoice>(publicInvoice);
       mockPatchInvoice.mockReturnValue(successResult);
 
       const {result} = renderHook(() => useInvoiceShare());
@@ -207,7 +205,7 @@ describe("useInvoiceShare", () => {
       mockGetEntityById.mockReturnValue(publicInvoice);
 
       const updatedInvoice = {...publicInvoice, sharedWith: ["user-123"]};
-      const successResult = actionSuccess<Invoice>(updatedInvoice);
+      const successResult = TestDataBuilder.actionSuccess<Invoice>(updatedInvoice);
       mockPatchInvoice.mockReturnValue(successResult);
 
       const {result} = renderHook(() => useInvoiceShare(mockOnComplete));
@@ -231,7 +229,7 @@ describe("useInvoiceShare", () => {
       mockGetEntityById.mockReturnValue(sharedInvoice);
 
       const updatedInvoice = {...sharedInvoice, sharedWith: ["user-456"]};
-      const successResult = actionSuccess<Invoice>(updatedInvoice);
+      const successResult = TestDataBuilder.actionSuccess<Invoice>(updatedInvoice);
       mockPatchInvoice.mockReturnValue(successResult);
 
       const {result} = renderHook(() => useInvoiceShare());
@@ -441,8 +439,8 @@ describe("useInvoiceShare", () => {
     const invoiceIds = [testInvoiceId, "22222222-2222-4222-8222-222222222222"];
 
     it("successfully processes bulk toggle operations", async () => {
-      const invoice1 = buildInvoice({id: invoiceIds[0], sharedWith: []});
-      const invoice2 = buildInvoice({id: invoiceIds[1], sharedWith: []});
+      const invoice1 = TestDataBuilder.build("invoice", {id: invoiceIds[0], sharedWith: []});
+      const invoice2 = TestDataBuilder.build("invoice", {id: invoiceIds[1], sharedWith: []});
 
       mockGetEntityById.mockReturnValueOnce(invoice1).mockReturnValueOnce(invoice2);
 
@@ -468,8 +466,8 @@ describe("useInvoiceShare", () => {
     });
 
     it("handles partial bulk failure", async () => {
-      const invoice1 = buildInvoice({id: invoiceIds[0], sharedWith: []});
-      const invoice2 = buildInvoice({id: invoiceIds[1], sharedWith: []});
+      const invoice1 = TestDataBuilder.build("invoice", {id: invoiceIds[0], sharedWith: []});
+      const invoice2 = TestDataBuilder.build("invoice", {id: invoiceIds[1], sharedWith: []});
 
       mockGetEntityById.mockReturnValueOnce(invoice1).mockReturnValueOnce(invoice2);
 
@@ -633,8 +631,8 @@ describe("useInvoiceShare", () => {
 
   describe("loading state management", () => {
     it("sets isSharing true during operation", async () => {
-      let resolvePatch: ((value: Awaited<ReturnType<typeof actionSuccess<Invoice>>>) => void) | undefined;
-      const patchPromise = new Promise<Awaited<ReturnType<typeof actionSuccess<Invoice>>>>((resolve) => {
+      let resolvePatch: ((value: Awaited<ReturnType<typeof TestDataBuilder.actionSuccess<Invoice>>>) => void) | undefined;
+      const patchPromise = new Promise<Awaited<ReturnType<typeof TestDataBuilder.actionSuccess<Invoice>>>>((resolve) => {
         resolvePatch = resolve;
       });
 

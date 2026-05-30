@@ -7,8 +7,7 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
 import {revalidatePath} from "next/cache";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {buildUserInformation} from "../../../../../../tests/helpers";
-import {buildInvoice, createJsonResponse, createTextResponse} from "../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder} from "../../../../../../tests/helpers";
 
 vi.mock("@/lib/actions/user/fetchUser");
 vi.mock("next/cache");
@@ -22,9 +21,9 @@ describe("patchInvoice", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue(buildUserInformation({userIdentifier: "user-1", userJwt: "jwt-1"}));
+    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
     mockFetchWithTimeout.mockResolvedValue(
-      createJsonResponse(buildInvoice({id: invoiceId, name: "Updated Invoice"})) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+      TestDataBuilder.jsonResponse(TestDataBuilder.build("invoice", {id: invoiceId, name: "Updated Invoice"})) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
   });
 
@@ -66,7 +65,7 @@ describe("patchInvoice", () => {
 
   it("returns the server-error user message for 5xx responses", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Server error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
+      TestDataBuilder.textResponse("Server error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
         ReturnType<typeof fetchWithTimeout>
       >,
     );
@@ -82,7 +81,7 @@ describe("patchInvoice", () => {
 
   it("returns the fallback user message for non-5xx responses", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Bad request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+      TestDataBuilder.textResponse("Bad request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result = await patchInvoice({invoiceId, payload: {}});

@@ -5,8 +5,7 @@
 
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {buildRecipe, invokeHookCallback} from "../../../../../../tests/helpers";
-import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder, invokeHookCallback} from "../../../../../../tests/helpers";
 import {useRecipeAdd} from "./useRecipeAdd";
 
 // Mock dependencies
@@ -24,15 +23,14 @@ const {useInvoicesStore} = await import("@/stores");
 const mockUseInvoicesStore = vi.mocked(useInvoicesStore);
 
 describe("useRecipeAdd", () => {
-  const testRecipe = buildRecipe({
+  const testRecipe = TestDataBuilder.build("recipe", {
     name: "Test Recipe",
     description: "A test recipe description",
     ingredients: ["ingredient1", "ingredient2"],
     instructions: "step1\nstep2",
     cookingTime: 30,
   });
-
-  const testInvoice = buildInvoice({
+  const testInvoice = TestDataBuilder.build("invoice", {
     id: "11111111-1111-4111-8111-111111111111",
     possibleRecipes: [],
   });
@@ -80,7 +78,7 @@ describe("useRecipeAdd", () => {
     });
 
     it("appends recipe to existing recipes", async () => {
-      const existingRecipe = buildRecipe({
+      const existingRecipe = TestDataBuilder.build("recipe", {
         name: "Existing Recipe",
         description: "Existing description",
         ingredients: ["existing"],
@@ -88,7 +86,7 @@ describe("useRecipeAdd", () => {
         cookingTime: 20,
       });
 
-      const invoiceWithRecipes = buildInvoice({
+      const invoiceWithRecipes = TestDataBuilder.build("invoice", {
         id: testInvoice.id,
         possibleRecipes: [existingRecipe],
       });
@@ -107,7 +105,7 @@ describe("useRecipeAdd", () => {
     });
 
     it("allows duplicate recipe names", async () => {
-      const recipe1 = buildRecipe({
+      const recipe1 = TestDataBuilder.build("recipe", {
         name: "Duplicate Name",
         description: "First version",
         ingredients: ["ing1"],
@@ -115,12 +113,12 @@ describe("useRecipeAdd", () => {
         cookingTime: 10,
       });
 
-      const invoiceWithRecipe = buildInvoice({
+      const invoiceWithRecipe = TestDataBuilder.build("invoice", {
         id: testInvoice.id,
         possibleRecipes: [recipe1],
       });
 
-      const recipe2 = buildRecipe({
+      const recipe2 = TestDataBuilder.build("recipe", {
         ...recipe1,
         description: "Second version",
       });
@@ -217,7 +215,7 @@ describe("useRecipeAdd", () => {
 
   describe("recipe data integrity", () => {
     it("preserves all recipe properties", async () => {
-      const complexRecipe = buildRecipe({
+      const complexRecipe = TestDataBuilder.build("recipe", {
         name: "Complex Recipe",
         description: "Detailed description",
         ingredients: ["ing1", "ing2", "ing3"],
@@ -239,7 +237,7 @@ describe("useRecipeAdd", () => {
     });
 
     it("handles recipe with minimal required fields", async () => {
-      const minimalRecipe = buildRecipe({
+      const minimalRecipe = TestDataBuilder.build("recipe", {
         name: "Minimal Recipe",
         description: "",
         ingredients: [],
@@ -262,7 +260,7 @@ describe("useRecipeAdd", () => {
 
   describe("multiple additions", () => {
     it("handles sequential recipe additions", async () => {
-      const recipe1 = buildRecipe({
+      const recipe1 = TestDataBuilder.build("recipe", {
         name: "Recipe 1",
         description: "First",
         ingredients: ["a"],
@@ -270,7 +268,7 @@ describe("useRecipeAdd", () => {
         cookingTime: 10,
       });
 
-      const recipe2 = buildRecipe({
+      const recipe2 = TestDataBuilder.build("recipe", {
         name: "Recipe 2",
         description: "Second",
         ingredients: ["b"],

@@ -5,7 +5,7 @@
 
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {actionFailure, actionSuccess, invokeHookCallback} from "../../../../../../tests/helpers";
+import {TestDataBuilder, invokeHookCallback} from "../../../../../../tests/helpers";
 import {useInvoiceDelete} from "./useInvoiceDelete";
 
 // Mock dependencies
@@ -99,7 +99,7 @@ describe("useInvoiceDelete", () => {
 
   describe("single deletion", () => {
     it("successfully deletes an invoice", async () => {
-      mockDeleteInvoice.mockReturnValueOnce(actionSuccess<void>(undefined));
+      mockDeleteInvoice.mockReturnValueOnce(TestDataBuilder.actionSuccess<void>(undefined));
 
       const hookResult = renderHook(() => useInvoiceDelete());
       const {result} = hookResult;
@@ -116,7 +116,7 @@ describe("useInvoiceDelete", () => {
 
     it("handles deletion failure with error toast", async () => {
       mockDeleteInvoice.mockReturnValueOnce(
-        actionFailure({code: "NOT_FOUND", message: "Not found"}),
+        TestDataBuilder.actionFailure({code: "NOT_FOUND", message: "Not found"}),
       );
 
       const hookResult = renderHook(() => useInvoiceDelete());
@@ -184,7 +184,7 @@ describe("useInvoiceDelete", () => {
     ];
 
     it("successfully deletes all invoices", async () => {
-      mockDeleteInvoice.mockReturnValue(actionSuccess<void>(undefined));
+      mockDeleteInvoice.mockReturnValue(TestDataBuilder.actionSuccess<void>(undefined));
 
       const hookResult = renderHook(() => useInvoiceDelete());
       const {result} = hookResult;
@@ -205,9 +205,9 @@ describe("useInvoiceDelete", () => {
 
     it("handles partial failure in bulk deletion", async () => {
       mockDeleteInvoice
-        .mockReturnValueOnce(actionSuccess<void>(undefined))
-        .mockReturnValueOnce(actionFailure({code: "UNKNOWN_ERROR", message: "Error"}))
-        .mockReturnValueOnce(actionSuccess<void>(undefined));
+        .mockReturnValueOnce(TestDataBuilder.actionSuccess<void>(undefined))
+        .mockReturnValueOnce(TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"}))
+        .mockReturnValueOnce(TestDataBuilder.actionSuccess<void>(undefined));
 
       const hookResult = renderHook(() => useInvoiceDelete());
       const {result} = hookResult;
@@ -226,7 +226,7 @@ describe("useInvoiceDelete", () => {
 
     it("handles all failures in bulk deletion", async () => {
       mockDeleteInvoice.mockReturnValue(
-        actionFailure({code: "UNKNOWN_ERROR", message: "Error"}),
+        TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"}),
       );
 
       const hookResult = renderHook(() => useInvoiceDelete());
@@ -260,7 +260,7 @@ describe("useInvoiceDelete", () => {
     it("continues processing after individual failure", async () => {
       mockDeleteInvoice
         .mockRejectedValueOnce(new Error("Network error"))
-        .mockReturnValueOnce(actionSuccess<void>(undefined));
+        .mockReturnValueOnce(TestDataBuilder.actionSuccess<void>(undefined));
 
       const {result} = renderHook(() => useInvoiceDelete());
 
@@ -274,8 +274,8 @@ describe("useInvoiceDelete", () => {
 
   describe("loading state management", () => {
     it("sets isDeleting true during single deletion", async () => {
-      let resolveDelete: ((value: Awaited<ReturnType<typeof actionSuccess<void>>>) => void) | undefined;
-      const deletePromise = new Promise<Awaited<ReturnType<typeof actionSuccess<void>>>>((resolve) => {
+      let resolveDelete: ((value: Awaited<ReturnType<typeof TestDataBuilder.actionSuccess<void>>>) => void) | undefined;
+      const deletePromise = new Promise<Awaited<ReturnType<typeof TestDataBuilder.actionSuccess<void>>>>((resolve) => {
         resolveDelete = resolve;
       });
 
@@ -298,8 +298,8 @@ describe("useInvoiceDelete", () => {
     });
 
     it("sets isDeleting true during bulk deletion", async () => {
-      let resolveDelete: ((value: Awaited<ReturnType<typeof actionSuccess<void>>>) => void) | undefined;
-      const deletePromise = new Promise<Awaited<ReturnType<typeof actionSuccess<void>>>>((resolve) => {
+      let resolveDelete: ((value: Awaited<ReturnType<typeof TestDataBuilder.actionSuccess<void>>>) => void) | undefined;
+      const deletePromise = new Promise<Awaited<ReturnType<typeof TestDataBuilder.actionSuccess<void>>>>((resolve) => {
         resolveDelete = resolve;
       });
 
@@ -329,7 +329,7 @@ describe("useInvoiceDelete", () => {
 
   describe("store integration", () => {
     it("calls removeEntity for successful single deletion", async () => {
-      mockDeleteInvoice.mockReturnValueOnce(actionSuccess<void>(undefined));
+      mockDeleteInvoice.mockReturnValueOnce(TestDataBuilder.actionSuccess<void>(undefined));
 
       const {result} = renderHook(() => useInvoiceDelete());
 
@@ -341,7 +341,7 @@ describe("useInvoiceDelete", () => {
 
     it("does not call removeEntity on deletion failure", async () => {
       mockDeleteInvoice.mockReturnValueOnce(
-        actionFailure({code: "UNKNOWN_ERROR", message: "Error"}),
+        TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"}),
       );
 
       const {result} = renderHook(() => useInvoiceDelete());
@@ -352,7 +352,7 @@ describe("useInvoiceDelete", () => {
     });
 
     it("calls removeEntity for each successful bulk deletion", async () => {
-      mockDeleteInvoice.mockReturnValue(actionSuccess<void>(undefined));
+      mockDeleteInvoice.mockReturnValue(TestDataBuilder.actionSuccess<void>(undefined));
 
       const {result} = renderHook(() => useInvoiceDelete());
 

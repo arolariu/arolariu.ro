@@ -14,6 +14,7 @@ import type {
   Recipe,
 } from "../../../src/types/invoices";
 import type {Scan} from "../../../src/types/scans";
+import type {ContainerClient} from "@azure/storage-blob";
 import {
   buildAnonymousUserInformation,
   buildAuthenticatedUserInformation,
@@ -154,8 +155,12 @@ export class TestDataBuilder {
     return noContentResponse(init);
   }
 
-  public static blobServiceClient(options: AzureBlobMockOptions = {}) {
-    return buildBlobServiceClientMock(buildContainerClientMock(options));
+  public static blobServiceClient(optionsOrContainer: AzureBlobMockOptions | ContainerClient = {}) {
+    if ("getBlockBlobClient" in optionsOrContainer) {
+      return buildBlobServiceClientMock(optionsOrContainer);
+    }
+
+    return buildBlobServiceClientMock(buildContainerClientMock(optionsOrContainer));
   }
 
   public static containerClient(options: AzureBlobMockOptions = {}) {

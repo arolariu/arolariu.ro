@@ -6,8 +6,7 @@
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {buildUserInformation} from "../../../../../../tests/helpers";
-import {buildInvoice, createJsonResponse, createTextResponse} from "../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder} from "../../../../../../tests/helpers";
 
 vi.mock("@/lib/actions/user/fetchUser");
 const {fetchInvoices} = await import("./fetchInvoices");
@@ -17,9 +16,9 @@ const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
 describe("fetchInvoices", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue(buildUserInformation({userIdentifier: "user-1", userJwt: "jwt-1"}));
+    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
     mockFetchWithTimeout.mockResolvedValue(
-      createJsonResponse([buildInvoice(), buildInvoice({id: "22222222-2222-4222-8222-222222222222"})]) as Awaited<
+      TestDataBuilder.jsonResponse([TestDataBuilder.build("invoice"), TestDataBuilder.build("invoice", {id: "22222222-2222-4222-8222-222222222222"})]) as Awaited<
         ReturnType<typeof fetchWithTimeout>
       >,
     );
@@ -46,7 +45,7 @@ describe("fetchInvoices", () => {
 
   it("returns the server-error user message for 5xx responses", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Server error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
+      TestDataBuilder.textResponse("Server error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
         ReturnType<typeof fetchWithTimeout>
       >,
     );
@@ -62,7 +61,7 @@ describe("fetchInvoices", () => {
 
   it("returns the fallback user message for non-5xx responses", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Bad request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+      TestDataBuilder.textResponse("Bad request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result = await fetchInvoices();

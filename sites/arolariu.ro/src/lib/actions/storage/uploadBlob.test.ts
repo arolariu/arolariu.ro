@@ -5,9 +5,8 @@
 
 import {createBlobClient} from "@/lib/azure/storageClient";
 import {fetchConfigValue} from "@/lib/config/configProxy";
-import type {BlockBlobClient} from "@azure/storage-blob";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {buildBlockBlobClientMock, buildBlobServiceClientMock, buildContainerClientMock} from "../../../../tests/helpers";
+import {TestDataBuilder} from "../../../../tests/helpers";
 import uploadBlob from "./uploadBlob";
 
 const mockCreateBlobClient = vi.mocked(createBlobClient);
@@ -20,15 +19,15 @@ describe("uploadBlob", () => {
 
     mockFetchConfigValue.mockResolvedValue("https://test.blob.core.windows.net");
 
-    const blockBlobClient = buildBlockBlobClientMock({
+    const blockBlobClient = TestDataBuilder.blockBlobClient({
       blobUrl: "https://test.blob.core.windows.net/container/blob.png",
       uploadStatus: 201,
     });
 
-    const containerClient = buildContainerClientMock({uploadStatus: 201});
-    containerClient.getBlockBlobClient = vi.fn(() => blockBlobClient as BlockBlobClient);
+    const containerClient = TestDataBuilder.containerClient({uploadStatus: 201});
+    containerClient.getBlockBlobClient = vi.fn(() => blockBlobClient);
 
-    const blobServiceClient = buildBlobServiceClientMock(containerClient);
+    const blobServiceClient = TestDataBuilder.blobServiceClient(containerClient);
     mockCreateBlobClient.mockResolvedValue(blobServiceClient);
 
     // Mock crypto.randomUUID
@@ -55,10 +54,10 @@ describe("uploadBlob", () => {
   });
 
   it("should generate a blob name if not provided", async () => {
-    const containerClient = buildContainerClientMock();
+    const containerClient = TestDataBuilder.containerClient();
     const getBlockBlobClientSpy = vi.spyOn(containerClient, "getBlockBlobClient");
     
-    const blobServiceClient = buildBlobServiceClientMock(containerClient);
+    const blobServiceClient = TestDataBuilder.blobServiceClient(containerClient);
     mockCreateBlobClient.mockResolvedValue(blobServiceClient);
 
     await uploadBlob({containerName: "test-container", base64Data: base64Png});
@@ -69,15 +68,15 @@ describe("uploadBlob", () => {
   it("should log error if upload status is not 201", async () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-    const blockBlobClient = buildBlockBlobClientMock({
+    const blockBlobClient = TestDataBuilder.blockBlobClient({
       blobUrl: "https://test.blob.core.windows.net/container/blob.png",
       uploadStatus: 400,
     });
 
-    const containerClient = buildContainerClientMock({uploadStatus: 400});
-    containerClient.getBlockBlobClient = vi.fn(() => blockBlobClient as BlockBlobClient);
+    const containerClient = TestDataBuilder.containerClient({uploadStatus: 400});
+    containerClient.getBlockBlobClient = vi.fn(() => blockBlobClient);
 
-    const blobServiceClient = buildBlobServiceClientMock(containerClient);
+    const blobServiceClient = TestDataBuilder.blobServiceClient(containerClient);
     mockCreateBlobClient.mockResolvedValue(blobServiceClient);
 
     const result = await uploadBlob({containerName: "test-container", base64Data: base64Png});

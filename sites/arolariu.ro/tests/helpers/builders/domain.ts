@@ -26,7 +26,7 @@
  *
  * @example
  * ```typescript
- * import {buildInvoice, buildProduct, buildMerchant} from '@/tests/helpers/builders';
+ * import {TestDataBuilder} from '@/tests/helpers';
  *
  * describe('Invoice processing', () => {
  *   it('calculates total correctly', () => {

@@ -6,7 +6,7 @@
 import type {Merchant} from "@/types/invoices";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {buildEntityStoreState, buildMerchant, mockEntityStoreSelector, mockResolvedActionFailure} from "../../../../../../tests/helpers";
+import {TestDataBuilder} from "../../../../../../tests/helpers";
 import {useMerchants} from "./useMerchants";
 
 vi.mock("@/stores", () => ({
@@ -31,9 +31,9 @@ function createMockStoreState(
 ): Readonly<{setMerchants: ReturnType<typeof vi.fn>}> {
   const setMerchants = vi.fn();
 
-  mockEntityStoreSelector(
+  TestDataBuilder.mockEntityStoreSelector(
     mockUseMerchantsStore,
-    buildEntityStoreState<Merchant>({
+    TestDataBuilder.entityStore<Merchant>({
       entities: overrides.entities ?? [],
       setEntities: setMerchants,
       hasHydrated: overrides.hasHydrated ?? false,
@@ -44,8 +44,8 @@ function createMockStoreState(
 }
 
 describe("useMerchants", () => {
-  const merchant1 = buildMerchant({id: "22222222-2222-4222-8222-222222222222", name: "Merchant 1"});
-  const merchant2 = buildMerchant({id: "33333333-3333-4333-8333-333333333333", name: "Merchant 2"});
+  const merchant1 = TestDataBuilder.build("merchant", {id: "22222222-2222-4222-8222-222222222222", name: "Merchant 1"});
+  const merchant2 = TestDataBuilder.build("merchant", {id: "33333333-3333-4333-8333-333333333333", name: "Merchant 2"});
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -107,7 +107,7 @@ describe("useMerchants", () => {
   it("sets the error flag and logs when the server action returns failure", async () => {
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     createMockStoreState({hasHydrated: true});
-    mockResolvedActionFailure(mockFetchMerchants, {code: "SERVER_ERROR", message: "Server unavailable"});
+    TestDataBuilder.mockResolvedActionFailure(mockFetchMerchants, {code: "SERVER_ERROR", message: "Server unavailable"});
 
     const {result} = renderHook(() => useMerchants());
 

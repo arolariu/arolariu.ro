@@ -6,7 +6,7 @@
 import type {Invoice} from "@/types/invoices";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {buildEntityStoreState, buildInvoice, mockEntityStoreSelector, mockResolvedActionFailure} from "../../../../../../tests/helpers";
+import {TestDataBuilder} from "../../../../../../tests/helpers";
 import {useInvoice} from "./useInvoice";
 
 // Mock the Zustand store
@@ -27,7 +27,7 @@ const mockFetchInvoice = vi.mocked(fetchInvoice);
 
 describe("useInvoice", () => {
   const testInvoiceId = "11111111-1111-4111-8111-111111111111";
-  const testInvoice = buildInvoice({id: testInvoiceId, name: "Test Invoice"});
+  const testInvoice = TestDataBuilder.build("invoice", {id: testInvoiceId, name: "Test Invoice"});
 
   // Default mock store state
   const createMockStoreState = (overrides?: {cachedInvoice?: Invoice | null; hasHydrated?: boolean}) => {
@@ -39,9 +39,9 @@ describe("useInvoice", () => {
     };
 
     // Mock useShallow to return the state selector result directly
-    mockEntityStoreSelector(
+    TestDataBuilder.mockEntityStoreSelector(
       mockUseInvoicesStore,
-      buildEntityStoreState<Invoice>({
+      TestDataBuilder.entityStore<Invoice>({
         entities: state.cachedInvoice ? [state.cachedInvoice] : [],
         upsertEntity,
         hasHydrated: state.hasHydrated,
@@ -112,8 +112,8 @@ describe("useInvoice", () => {
     });
 
     it("shows stale data while fetching fresh data in background", async () => {
-      const staleInvoice = buildInvoice({id: testInvoiceId, name: "Stale Invoice"});
-      const freshInvoice = buildInvoice({id: testInvoiceId, name: "Fresh Invoice"});
+      const staleInvoice = TestDataBuilder.build("invoice", {id: testInvoiceId, name: "Stale Invoice"});
+      const freshInvoice = TestDataBuilder.build("invoice", {id: testInvoiceId, name: "Fresh Invoice"});
 
       createMockStoreState({hasHydrated: true, cachedInvoice: staleInvoice});
       mockFetchInvoice.mockResolvedValue({success: true, data: freshInvoice});
@@ -136,7 +136,7 @@ describe("useInvoice", () => {
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       createMockStoreState({hasHydrated: true});
 
-      mockResolvedActionFailure(mockFetchInvoice, {code: "NOT_FOUND", message: "Invoice not found"});
+      TestDataBuilder.mockResolvedActionFailure(mockFetchInvoice, {code: "NOT_FOUND", message: "Invoice not found"});
 
       const {result} = renderHook(() => useInvoice({invoiceIdentifier: testInvoiceId}));
 
@@ -192,8 +192,8 @@ describe("useInvoice", () => {
   describe("refetch behavior", () => {
     it("refetches when invoiceIdentifier changes", async () => {
       const {upsertEntity} = createMockStoreState({hasHydrated: true});
-      const invoice1 = buildInvoice({id: "11111111-1111-4111-8111-111111111111", name: "Invoice 1"});
-      const invoice2 = buildInvoice({id: "22222222-2222-4222-8222-222222222222", name: "Invoice 2"});
+      const invoice1 = TestDataBuilder.build("invoice", {id: "11111111-1111-4111-8111-111111111111", name: "Invoice 1"});
+      const invoice2 = TestDataBuilder.build("invoice", {id: "22222222-2222-4222-8222-222222222222", name: "Invoice 2"});
 
       mockFetchInvoice.mockResolvedValueOnce({success: true, data: invoice1}).mockResolvedValueOnce({success: true, data: invoice2});
 
@@ -234,7 +234,7 @@ describe("useInvoice", () => {
 
   describe("store integration", () => {
     it("finds cached invoice from store entities by id", () => {
-      const cachedInvoice = buildInvoice({id: testInvoiceId, name: "Cached Invoice"});
+      const cachedInvoice = TestDataBuilder.build("invoice", {id: testInvoiceId, name: "Cached Invoice"});
       createMockStoreState({hasHydrated: true, cachedInvoice});
       mockFetchInvoice.mockResolvedValue({success: true, data: cachedInvoice});
 

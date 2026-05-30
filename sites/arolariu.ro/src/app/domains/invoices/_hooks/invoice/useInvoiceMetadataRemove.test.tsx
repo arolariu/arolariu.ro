@@ -5,8 +5,7 @@
 
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {actionFailure, actionSuccess, invokeHookCallback} from "../../../../../../tests/helpers";
-import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder, invokeHookCallback} from "../../../../../../tests/helpers";
 import {useInvoiceMetadataRemove} from "./useInvoiceMetadataRemove";
 
 // Mock dependencies
@@ -26,7 +25,7 @@ const mockUseInvoicesStore = vi.mocked(useInvoicesStore);
 const mockDeleteInvoiceMetadata = vi.mocked(deleteInvoiceMetadata);
 
 describe("useInvoiceMetadataRemove", () => {
-  const testInvoice = buildInvoice({
+  const testInvoice = TestDataBuilder.build("invoice", {
     id: "11111111-1111-4111-8111-111111111111",
     additionalMetadata: {
       key1: "value1",
@@ -34,7 +33,6 @@ describe("useInvoiceMetadataRemove", () => {
       key3: "value3",
     },
   });
-
   const mockUpdateEntity = vi.fn();
 
   beforeEach(() => {
@@ -66,7 +64,7 @@ describe("useInvoiceMetadataRemove", () => {
 
   describe("single metadata removal", () => {
     it("successfully removes a metadata field", async () => {
-      mockDeleteInvoiceMetadata.mockReturnValueOnce(actionSuccess<void>(undefined));
+      mockDeleteInvoiceMetadata.mockReturnValueOnce(TestDataBuilder.actionSuccess<void>(undefined));
 
       const hookResult = renderHook(() => useInvoiceMetadataRemove(testInvoice));
       const {result} = hookResult;
@@ -90,7 +88,7 @@ describe("useInvoiceMetadataRemove", () => {
     });
 
     it("removes non-existent key without error", async () => {
-      mockDeleteInvoiceMetadata.mockReturnValueOnce(actionSuccess<void>(undefined));
+      mockDeleteInvoiceMetadata.mockReturnValueOnce(TestDataBuilder.actionSuccess<void>(undefined));
 
       const {result} = renderHook(() => useInvoiceMetadataRemove(testInvoice));
 
@@ -111,7 +109,7 @@ describe("useInvoiceMetadataRemove", () => {
 
     it("handles server action failure", async () => {
       mockDeleteInvoiceMetadata.mockReturnValueOnce(
-        actionFailure({code: "SERVER_ERROR", message: "Server error"}),
+        TestDataBuilder.actionFailure({code: "SERVER_ERROR", message: "Server error"}),
       );
 
       const {result} = renderHook(() => useInvoiceMetadataRemove(testInvoice));
@@ -142,7 +140,7 @@ describe("useInvoiceMetadataRemove", () => {
 
     it("resets isRemoving flag even on error", async () => {
       mockDeleteInvoiceMetadata.mockReturnValueOnce(
-        actionFailure({code: "UNKNOWN_ERROR", message: "Error"}),
+        TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"}),
       );
 
       const {result} = renderHook(() => useInvoiceMetadataRemove(testInvoice));
@@ -159,7 +157,7 @@ describe("useInvoiceMetadataRemove", () => {
 
   describe("bulk metadata removal", () => {
     it("successfully removes multiple metadata fields", async () => {
-      mockDeleteInvoiceMetadata.mockReturnValue(actionSuccess<void>(undefined));
+      mockDeleteInvoiceMetadata.mockReturnValue(TestDataBuilder.actionSuccess<void>(undefined));
 
       const hookResult = renderHook(() => useInvoiceMetadataRemove(testInvoice));
       const {result} = hookResult;
@@ -178,8 +176,8 @@ describe("useInvoiceMetadataRemove", () => {
     });
 
     it("handles partial failure in bulk removal", async () => {
-      const successResult = actionSuccess<void>(undefined);
-      const errorResult = actionFailure({code: "UNKNOWN_ERROR", message: "Error"});
+      const successResult = TestDataBuilder.actionSuccess<void>(undefined);
+      const errorResult = TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"});
 
       mockDeleteInvoiceMetadata
         .mockReturnValueOnce(successResult)
@@ -199,7 +197,7 @@ describe("useInvoiceMetadataRemove", () => {
 
     it("handles all failures in bulk removal", async () => {
       mockDeleteInvoiceMetadata.mockReturnValue(
-        actionFailure({code: "UNKNOWN_ERROR", message: "Error"}),
+        TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"}),
       );
 
       const {result} = renderHook(() => useInvoiceMetadataRemove(testInvoice));
@@ -243,7 +241,7 @@ describe("useInvoiceMetadataRemove", () => {
     it("continues processing after individual failure", async () => {
       mockDeleteInvoiceMetadata
         .mockRejectedValueOnce(new Error("Network error"))
-        .mockReturnValueOnce(actionSuccess<void>(undefined));
+        .mockReturnValueOnce(TestDataBuilder.actionSuccess<void>(undefined));
 
       const {result} = renderHook(() => useInvoiceMetadataRemove(testInvoice));
 
@@ -257,8 +255,8 @@ describe("useInvoiceMetadataRemove", () => {
 
   describe("loading state management", () => {
     it("sets isRemoving true during single removal", async () => {
-      let resolveRemove: ((value: Awaited<ReturnType<typeof actionSuccess<void>>>) => void) | undefined;
-      const removePromise = new Promise<Awaited<ReturnType<typeof actionSuccess<void>>>>((resolve) => {
+      let resolveRemove: ((value: Awaited<ReturnType<typeof TestDataBuilder.actionSuccess<void>>>) => void) | undefined;
+      const removePromise = new Promise<Awaited<ReturnType<typeof TestDataBuilder.actionSuccess<void>>>>((resolve) => {
         resolveRemove = resolve;
       });
 
@@ -283,8 +281,8 @@ describe("useInvoiceMetadataRemove", () => {
     });
 
     it("sets isRemoving true during bulk removal", async () => {
-      let resolveRemove: ((value: Awaited<ReturnType<typeof actionSuccess<void>>>) => void) | undefined;
-      const removePromise = new Promise<Awaited<ReturnType<typeof actionSuccess<void>>>>((resolve) => {
+      let resolveRemove: ((value: Awaited<ReturnType<typeof TestDataBuilder.actionSuccess<void>>>) => void) | undefined;
+      const removePromise = new Promise<Awaited<ReturnType<typeof TestDataBuilder.actionSuccess<void>>>>((resolve) => {
         resolveRemove = resolve;
       });
 
@@ -314,7 +312,7 @@ describe("useInvoiceMetadataRemove", () => {
 
   describe("store integration", () => {
     it("sets metadata field to undefined when removing", async () => {
-      mockDeleteInvoiceMetadata.mockReturnValueOnce(actionSuccess<void>(undefined));
+      mockDeleteInvoiceMetadata.mockReturnValueOnce(TestDataBuilder.actionSuccess<void>(undefined));
 
       const {result} = renderHook(() => useInvoiceMetadataRemove(testInvoice));
 
@@ -330,7 +328,7 @@ describe("useInvoiceMetadataRemove", () => {
     });
 
     it("updates client store for each successful bulk removal", async () => {
-      mockDeleteInvoiceMetadata.mockReturnValue(actionSuccess<void>(undefined));
+      mockDeleteInvoiceMetadata.mockReturnValue(TestDataBuilder.actionSuccess<void>(undefined));
 
       const {result} = renderHook(() => useInvoiceMetadataRemove(testInvoice));
 
@@ -340,7 +338,7 @@ describe("useInvoiceMetadataRemove", () => {
     });
 
     it("does not update store on failure", async () => {
-      const errorResult = actionFailure({code: "UNKNOWN_ERROR", message: "Error"});
+      const errorResult = TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"});
       mockDeleteInvoiceMetadata.mockReturnValue(errorResult);
 
       const {result} = renderHook(() => useInvoiceMetadataRemove(testInvoice));

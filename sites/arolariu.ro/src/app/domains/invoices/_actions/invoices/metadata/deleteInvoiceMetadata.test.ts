@@ -6,8 +6,7 @@
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {buildUserInformation} from "../../../../../../../tests/helpers";
-import {createJsonResponse, createTextResponse} from "../../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder} from "../../../../../../../tests/helpers";
 
 vi.mock("@/lib/actions/user/fetchUser");
 const {deleteInvoiceMetadata} = await import("./deleteInvoiceMetadata");
@@ -17,8 +16,8 @@ const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
 describe("deleteInvoiceMetadata", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue(buildUserInformation({userIdentifier: "user-1", userJwt: "jwt-1"}));
-    mockFetchWithTimeout.mockResolvedValue(createJsonResponse(undefined, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse(undefined, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
   });
 
   it("deletes one metadata key using the backend keys array DTO", async () => {
@@ -56,7 +55,7 @@ describe("deleteInvoiceMetadata", () => {
 
   it("maps 5xx and non-5xx failures", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Internal Server Error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
+      TestDataBuilder.textResponse("Internal Server Error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
         ReturnType<typeof fetchWithTimeout>
       >,
     );
@@ -73,7 +72,7 @@ describe("deleteInvoiceMetadata", () => {
     }
 
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+      TestDataBuilder.textResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result2 = await deleteInvoiceMetadata({invoiceId, key});

@@ -9,12 +9,7 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
 import {revalidatePath} from "next/cache";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {
-  buildBlockBlobClientMock,
-  buildBlobServiceClientMock,
-  buildContainerClientMock,
-  buildUserInformation,
-} from "../../../../../../tests/helpers";
+import {TestDataBuilder} from "../../../../../../tests/helpers";
 import {updateScan} from "./updateScan";
 
 const mockFetchBFFUserFromAuthService = vi.mocked(fetchBFFUserFromAuthService);
@@ -46,7 +41,7 @@ function setupBlobClient({
   uploadStatus = 201,
   onUpload,
 }: BlobClientOptions = {}): void {
-  const blockBlobClient = buildBlockBlobClientMock({blobUrl, metadata: existingMetadata, uploadStatus});
+  const blockBlobClient = TestDataBuilder.blockBlobClient({blobUrl, metadata: existingMetadata, uploadStatus});
 
   // Wrap uploadData to capture calls
   if (onUpload) {
@@ -57,9 +52,9 @@ function setupBlobClient({
     });
   }
 
-  const containerClient = buildContainerClientMock({blobUrl, metadata: existingMetadata, uploadStatus});
+  const containerClient = TestDataBuilder.containerClient({blobUrl, metadata: existingMetadata, uploadStatus});
   vi.mocked(containerClient.getBlockBlobClient).mockReturnValue(blockBlobClient);
-  const blobServiceClient = buildBlobServiceClientMock(containerClient);
+  const blobServiceClient = TestDataBuilder.blobServiceClient(containerClient);
   mockCreateBlobClient.mockResolvedValue(blobServiceClient);
 }
 
@@ -70,7 +65,7 @@ describe("updateScan", () => {
     mockWithSpan.mockImplementation((_name, fn) => (fn as () => Promise<unknown>)());
     mockAddSpanEvent.mockImplementation(() => undefined);
     mockLogWithTrace.mockImplementation(() => undefined);
-    mockFetchBFFUserFromAuthService.mockResolvedValue(buildUserInformation({userIdentifier: "user-123"}));
+    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-123"}));
     mockFetchConfigurationValue.mockResolvedValue("https://storage.test");
     mockRewriteAzuriteUrl.mockImplementation((url) => url);
     setupBlobClient();
@@ -129,7 +124,7 @@ describe("updateScan", () => {
   });
 
   it("should update blobs that do not have existing metadata", async () => {
-    mockFetchBFFUserFromAuthService.mockResolvedValue(buildUserInformation({userIdentifier: "user-empty-metadata"}));
+    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-empty-metadata"}));
     const capturedMetadata: Array<Record<string, string>> = [];
     setupBlobClient({
       blobUrl: "https://storage.test/invoices/scans/user-empty-metadata/scan.jpg",
@@ -164,7 +159,7 @@ describe("updateScan", () => {
   });
 
   it("should handle Azure upload failures with non-201 status", async () => {
-    mockFetchBFFUserFromAuthService.mockResolvedValue(buildUserInformation({userIdentifier: "user-fail"}));
+    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-fail"}));
     setupBlobClient({
       blobUrl: "https://storage.test/blob",
       uploadStatus: 500,
@@ -183,7 +178,7 @@ describe("updateScan", () => {
   });
 
   it("should handle base64 conversion errors", async () => {
-    mockFetchBFFUserFromAuthService.mockResolvedValue(buildUserInformation({userIdentifier: "user-error"}));
+    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-error"}));
 
     const result = await updateScan({
       base64Data: "invalid!!!",
@@ -205,7 +200,7 @@ describe("updateScan", () => {
   });
 
   it("should handle non-Error thrown exceptions", async () => {
-    mockFetchBFFUserFromAuthService.mockResolvedValue(buildUserInformation({userIdentifier: "user-weird"}));
+    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-weird"}));
     mockFetchConfigurationValue.mockImplementation(() => {
       throw "String error";
     });

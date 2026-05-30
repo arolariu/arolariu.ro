@@ -10,12 +10,7 @@ import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
 import {ScanStatus, ScanType} from "@/types/scans";
 import type {BlockBlobClient} from "@azure/storage-blob";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {
-  buildBlockBlobClientMock,
-  buildBlobServiceClientMock,
-  buildContainerClientMock,
-  buildUserInformation,
-} from "../../../../../../tests/helpers";
+import {TestDataBuilder} from "../../../../../../tests/helpers";
 import {createScan} from "./createScan";
 
 const mockFetchBFFUserFromAuthService = vi.mocked(fetchBFFUserFromAuthService);
@@ -53,7 +48,7 @@ function setupBlobClient({
     return;
   }
 
-  const blockBlobClient = buildBlockBlobClientMock({blobUrl, uploadStatus});
+  const blockBlobClient = TestDataBuilder.blockBlobClient({blobUrl, uploadStatus});
 
   // Wrap uploadData to capture calls
   if (onUpload) {
@@ -64,7 +59,7 @@ function setupBlobClient({
     });
   }
 
-  const containerClient = buildContainerClientMock({blobUrl, uploadStatus});
+  const containerClient = TestDataBuilder.containerClient({blobUrl, uploadStatus});
   
   // Wrap getBlockBlobClient to capture blob names
   containerClient.getBlockBlobClient = vi.fn((blobName: string) => {
@@ -72,7 +67,7 @@ function setupBlobClient({
     return blockBlobClient as BlockBlobClient;
   });
 
-  const blobServiceClient = buildBlobServiceClientMock(containerClient);
+  const blobServiceClient = TestDataBuilder.blobServiceClient(containerClient);
   mockCreateBlobClient.mockResolvedValue(blobServiceClient);
 }
 
@@ -83,7 +78,7 @@ describe("createScan", () => {
     mockWithSpan.mockImplementation((_name, fn) => (fn as () => Promise<unknown>)());
     mockAddSpanEvent.mockImplementation(() => undefined);
     mockLogWithTrace.mockImplementation(() => undefined);
-    mockFetchBFFUserFromAuthService.mockResolvedValue(buildUserInformation({userIdentifier: "user-123"}));
+    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-123"}));
     mockFetchConfigurationValue.mockResolvedValue("https://storage.test");
     mockRewriteAzuriteUrl.mockImplementation((url) => url);
     setupBlobClient();
@@ -111,7 +106,7 @@ describe("createScan", () => {
   });
 
   it("should handle PNG uploads correctly", async () => {
-    mockFetchBFFUserFromAuthService.mockResolvedValue(buildUserInformation({userIdentifier: "user-456"}));
+    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-456"}));
     setupBlobClient({blobUrl: "https://storage.test/invoices/scans/user-456/scan_456.png"});
 
     const result = await createScan({
@@ -128,7 +123,7 @@ describe("createScan", () => {
   });
 
   it("should handle PDF uploads correctly", async () => {
-    mockFetchBFFUserFromAuthService.mockResolvedValue(buildUserInformation({userIdentifier: "user-789"}));
+    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-789"}));
     setupBlobClient({blobUrl: "https://storage.test/invoices/scans/user-789/scan_789.pdf"});
 
     const result = await createScan({
@@ -159,7 +154,7 @@ describe("createScan", () => {
   });
 
   it("should handle Azure upload failures with non-201 status", async () => {
-    mockFetchBFFUserFromAuthService.mockResolvedValue(buildUserInformation({userIdentifier: "user-fail"}));
+    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-fail"}));
     setupBlobClient({blobUrl: "https://storage.test/blob", uploadStatus: 500});
 
     const result = await createScan({
@@ -175,7 +170,7 @@ describe("createScan", () => {
   });
 
   it("should handle base64 conversion errors", async () => {
-    mockFetchBFFUserFromAuthService.mockResolvedValue(buildUserInformation({userIdentifier: "user-error"}));
+    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-error"}));
 
     const result = await createScan({
       base64Data: "invalid!!!",
@@ -187,7 +182,7 @@ describe("createScan", () => {
   });
 
   it("should handle non-Error thrown exceptions", async () => {
-    mockFetchBFFUserFromAuthService.mockResolvedValue(buildUserInformation({userIdentifier: "user-weird"}));
+    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-weird"}));
     setupBlobClient({throwOnContainer: "String error"});
 
     const result = await createScan({
@@ -200,7 +195,7 @@ describe("createScan", () => {
   });
 
   it("should preserve original filename in metadata", async () => {
-    mockFetchBFFUserFromAuthService.mockResolvedValue(buildUserInformation({userIdentifier: "user-meta"}));
+    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-meta"}));
     const capturedMetadata: Array<Record<string, string>> = [];
     setupBlobClient({
       blobUrl: "https://storage.test/invoices/scans/user-meta/scan_meta.jpg",
@@ -220,7 +215,7 @@ describe("createScan", () => {
   });
 
   it("should use bin extension for filenames without a usable extension", async () => {
-    mockFetchBFFUserFromAuthService.mockResolvedValue(buildUserInformation({userIdentifier: "user-no-ext"}));
+    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-no-ext"}));
     const capturedBlobNames: string[] = [];
     setupBlobClient({
       onBlobName: (blobName) => capturedBlobNames.push(blobName),
@@ -234,7 +229,7 @@ describe("createScan", () => {
   });
 
   it("should handle unsupported MIME types as OTHER", async () => {
-    mockFetchBFFUserFromAuthService.mockResolvedValue(buildUserInformation({userIdentifier: "user-unsupported"}));
+    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-unsupported"}));
     setupBlobClient({blobUrl: "https://storage.test/invoices/scans/user-unsupported/scan_unsup.txt"});
 
     const result = await createScan({

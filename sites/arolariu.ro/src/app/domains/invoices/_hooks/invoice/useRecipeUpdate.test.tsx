@@ -6,8 +6,7 @@
 import type {Recipe} from "@/types/invoices";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {buildRecipe, invokeHookCallback} from "../../../../../../tests/helpers";
-import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder, invokeHookCallback} from "../../../../../../tests/helpers";
 import {useRecipeUpdate} from "./useRecipeUpdate";
 
 // Mock dependencies
@@ -26,21 +25,21 @@ const mockUseInvoicesStore = vi.mocked(useInvoicesStore);
 
 describe("useRecipeUpdate", () => {
   const testRecipes: Recipe[] = [
-    buildRecipe({
+    TestDataBuilder.build("recipe", {
       name: "Recipe 1",
       description: "First recipe",
       ingredients: ["ing1"],
       instructions: "step1",
       cookingTime: 10,
     }),
-    buildRecipe({
+    TestDataBuilder.build("recipe", {
       name: "Recipe 2",
       description: "Second recipe",
       ingredients: ["ing2"],
       instructions: "step2",
       cookingTime: 20,
     }),
-    buildRecipe({
+    TestDataBuilder.build("recipe", {
       name: "Recipe 3",
       description: "Third recipe",
       ingredients: ["ing3"],
@@ -49,11 +48,10 @@ describe("useRecipeUpdate", () => {
     }),
   ];
 
-  const testInvoice = buildInvoice({
+  const testInvoice = TestDataBuilder.build("invoice", {
     id: "11111111-1111-4111-8111-111111111111",
     possibleRecipes: testRecipes,
   });
-
   const mockUpdateEntity = vi.fn();
 
   beforeEach(() => {
@@ -85,7 +83,7 @@ describe("useRecipeUpdate", () => {
 
   describe("recipe update", () => {
     it("successfully updates a recipe by name", async () => {
-      const updatedRecipe = buildRecipe({
+      const updatedRecipe = TestDataBuilder.build("recipe", {
         ...testRecipes[1]!,
         description: "Updated description",
         cookingTime: 25,
@@ -103,7 +101,7 @@ describe("useRecipeUpdate", () => {
     });
 
     it("updates first recipe when matched", async () => {
-      const updatedRecipe = buildRecipe({
+      const updatedRecipe = TestDataBuilder.build("recipe", {
         ...testRecipes[0]!,
         description: "First recipe updated",
       });
@@ -117,7 +115,7 @@ describe("useRecipeUpdate", () => {
     });
 
     it("updates last recipe when matched", async () => {
-      const updatedRecipe = buildRecipe({
+      const updatedRecipe = TestDataBuilder.build("recipe", {
         ...testRecipes[2]!,
       });
 
@@ -136,12 +134,12 @@ describe("useRecipeUpdate", () => {
         {...testRecipes[2]!, name: "Unique"},
       ];
 
-      const invoiceWithDuplicates = buildInvoice({
+      const invoiceWithDuplicates = TestDataBuilder.build("invoice", {
         id: testInvoice.id,
         possibleRecipes: duplicateRecipes,
       });
 
-      const updatedRecipe = buildRecipe({
+      const updatedRecipe = TestDataBuilder.build("recipe", {
         name: "Duplicate",
         description: "All updated",
         ingredients: ["new"],
@@ -159,7 +157,7 @@ describe("useRecipeUpdate", () => {
     });
 
     it("returns invoice unchanged when recipe not found", async () => {
-      const updatedRecipe = buildRecipe({
+      const updatedRecipe = TestDataBuilder.build("recipe", {
         name: "Nonexistent",
         description: "New",
         ingredients: [],
@@ -178,12 +176,12 @@ describe("useRecipeUpdate", () => {
     });
 
     it("handles update on empty recipe list", async () => {
-      const emptyInvoice = buildInvoice({
+      const emptyInvoice = TestDataBuilder.build("invoice", {
         id: testInvoice.id,
         possibleRecipes: [],
       });
 
-      const updatedRecipe = buildRecipe({
+      const updatedRecipe = TestDataBuilder.build("recipe", {
         name: "Any",
         description: "Recipe",
         ingredients: [],
@@ -199,7 +197,7 @@ describe("useRecipeUpdate", () => {
     });
 
     it("can update recipe name", async () => {
-      const updatedRecipe = buildRecipe({
+      const updatedRecipe = TestDataBuilder.build("recipe", {
         ...testRecipes[1]!,
         name: "Renamed Recipe",
       });
@@ -212,7 +210,7 @@ describe("useRecipeUpdate", () => {
     });
 
     it("preserves invoice properties other than recipes", async () => {
-      const updatedRecipe = buildRecipe({
+      const updatedRecipe = TestDataBuilder.build("recipe", {
         ...testRecipes[0]!,
         description: "Updated",
       });
@@ -227,7 +225,7 @@ describe("useRecipeUpdate", () => {
     });
 
     it("is case-sensitive for recipe names", async () => {
-      const updatedRecipe = buildRecipe({
+      const updatedRecipe = TestDataBuilder.build("recipe", {
         ...testRecipes[0]!,
         description: "Updated",
       });
@@ -242,7 +240,7 @@ describe("useRecipeUpdate", () => {
 
   describe("loading state management", () => {
     it("resets isUpdating after update", async () => {
-      const updatedRecipe = buildRecipe({
+      const updatedRecipe = TestDataBuilder.build("recipe", {
         ...testRecipes[0]!,
         description: "Updated",
       });
@@ -259,7 +257,7 @@ describe("useRecipeUpdate", () => {
         throw new Error("Store error");
       });
 
-      const updatedRecipe = buildRecipe({
+      const updatedRecipe = TestDataBuilder.build("recipe", {
         ...testRecipes[0]!,
         description: "Updated",
       });
@@ -278,7 +276,7 @@ describe("useRecipeUpdate", () => {
 
   describe("store integration", () => {
     it("calls updateEntity with correct invoice id", async () => {
-      const updatedRecipe = buildRecipe({
+      const updatedRecipe = TestDataBuilder.build("recipe", {
         ...testRecipes[0]!,
         description: "Updated",
       });
@@ -296,7 +294,7 @@ describe("useRecipeUpdate", () => {
     });
 
     it("calls updateEntity exactly once per update operation", async () => {
-      const updatedRecipe = buildRecipe({
+      const updatedRecipe = TestDataBuilder.build("recipe", {
         ...testRecipes[0]!,
         description: "Updated",
       });
@@ -310,7 +308,7 @@ describe("useRecipeUpdate", () => {
 
     it("does not mutate original invoice", async () => {
       const originalRecipes = testInvoice.possibleRecipes;
-      const updatedRecipe = buildRecipe({
+      const updatedRecipe = TestDataBuilder.build("recipe", {
         ...testRecipes[0]!,
         description: "Updated",
       });
@@ -326,7 +324,7 @@ describe("useRecipeUpdate", () => {
 
   describe("recipe data integrity", () => {
     it("preserves all updated recipe properties", async () => {
-      const complexUpdate = buildRecipe({
+      const complexUpdate = TestDataBuilder.build("recipe", {
         name: "Recipe 1",
         description: "Completely new description",
         ingredients: ["new1", "new2", "new3"],
@@ -343,7 +341,7 @@ describe("useRecipeUpdate", () => {
     });
 
     it("handles partial recipe updates", async () => {
-      const partialUpdate = buildRecipe({
+      const partialUpdate = TestDataBuilder.build("recipe", {
         ...testRecipes[1]!,
         description: "Only description changed",
       });
@@ -375,7 +373,7 @@ describe("useRecipeUpdate", () => {
 
   describe("edge cases", () => {
     it("handles update to recipe with empty string name", async () => {
-      const emptyNameRecipe = buildRecipe({
+      const emptyNameRecipe = TestDataBuilder.build("recipe", {
         name: "",
         description: "Empty name recipe",
         ingredients: [],
@@ -383,12 +381,12 @@ describe("useRecipeUpdate", () => {
         cookingTime: 0,
       });
 
-      const invoiceWithEmptyName = buildInvoice({
+      const invoiceWithEmptyName = TestDataBuilder.build("invoice", {
         id: testInvoice.id,
         possibleRecipes: [emptyNameRecipe, ...testRecipes],
       });
 
-      const updatedRecipe = buildRecipe({
+      const updatedRecipe = TestDataBuilder.build("recipe", {
         ...emptyNameRecipe,
         description: "Updated empty name recipe",
       });
@@ -401,7 +399,7 @@ describe("useRecipeUpdate", () => {
     });
 
     it("handles recipe names with special characters", async () => {
-      const specialRecipe = buildRecipe({
+      const specialRecipe = TestDataBuilder.build("recipe", {
         name: "Recipe w/ Special-Chars & Symbols!",
         description: "Special",
         ingredients: [],
@@ -409,12 +407,12 @@ describe("useRecipeUpdate", () => {
         cookingTime: 0,
       });
 
-      const invoiceWithSpecial = buildInvoice({
+      const invoiceWithSpecial = TestDataBuilder.build("invoice", {
         id: testInvoice.id,
         possibleRecipes: [specialRecipe, ...testRecipes],
       });
 
-      const updatedRecipe = buildRecipe({
+      const updatedRecipe = TestDataBuilder.build("recipe", {
         ...specialRecipe,
         description: "Updated special",
       });

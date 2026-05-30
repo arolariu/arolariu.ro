@@ -6,8 +6,7 @@
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {buildUserInformation} from "../../../../../../../tests/helpers";
-import {createJsonResponse, createTextResponse} from "../../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder} from "../../../../../../../tests/helpers";
 
 vi.mock("@/lib/actions/user/fetchUser");
 vi.mock("next/cache", () => ({revalidatePath: vi.fn()}));
@@ -19,8 +18,8 @@ const mockRevalidatePath = vi.mocked((await import("next/cache")).revalidatePath
 describe("deleteInvoiceProduct", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue(buildUserInformation({userIdentifier: "user-1", userJwt: "jwt-1"}));
-    mockFetchWithTimeout.mockResolvedValue(createJsonResponse(undefined, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse(undefined, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
   });
 
   it("sends the productName delete body and revalidates invoice pages", async () => {
@@ -61,7 +60,7 @@ describe("deleteInvoiceProduct", () => {
 
   it("maps 5xx and non-5xx failures", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Internal Server Error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
+      TestDataBuilder.textResponse("Internal Server Error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
         ReturnType<typeof fetchWithTimeout>
       >,
     );
@@ -78,7 +77,7 @@ describe("deleteInvoiceProduct", () => {
     }
 
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Not Found", {status: 404, statusText: "Not Found"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+      TestDataBuilder.textResponse("Not Found", {status: 404, statusText: "Not Found"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result2 = await deleteInvoiceProduct({invoiceId, productName});

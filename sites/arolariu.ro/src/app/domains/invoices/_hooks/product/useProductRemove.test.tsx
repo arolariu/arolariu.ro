@@ -6,7 +6,7 @@
 import type {ServerActionResult} from "@/lib/utils.server";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {actionFailure, buildEntityStoreState, buildInvoice, buildProduct, invokeHookCallback, mockEntityStoreSelector} from "../../../../../../tests/helpers";
+import {TestDataBuilder, invokeHookCallback} from "../../../../../../tests/helpers";
 import {useProductRemove} from "./useProductRemove";
 
 vi.mock("@/stores", () => ({
@@ -40,14 +40,14 @@ function createDeferred<T>(): Readonly<{
 }
 
 function mockInvoiceStore(updateEntity = vi.fn()): void {
-  mockEntityStoreSelector(mockUseInvoicesStore, buildEntityStoreState({updateEntity}));
+  TestDataBuilder.mockEntityStoreSelector(mockUseInvoicesStore, TestDataBuilder.entityStore({updateEntity}));
 }
 
 describe("useProductRemove", () => {
-  const productToRemove = buildProduct({name: "Coffee"});
-  const matchingDuplicate = buildProduct({name: "Coffee", quantity: 2});
-  const retainedProduct = buildProduct({name: "Milk"});
-  const invoice = buildInvoice({items: [productToRemove, retainedProduct, matchingDuplicate]});
+  const productToRemove = TestDataBuilder.build("product", {name: "Coffee"});
+  const matchingDuplicate = TestDataBuilder.build("product", {name: "Coffee", quantity: 2});
+  const retainedProduct = TestDataBuilder.build("product", {name: "Milk"});
+  const invoice = TestDataBuilder.build("invoice", {items: [productToRemove, retainedProduct, matchingDuplicate]});
   const mockUpdateEntity = vi.fn();
 
   beforeEach(() => {
@@ -106,7 +106,7 @@ describe("useProductRemove", () => {
 
   it("throws server action failures and skips the local update", async () => {
     mockDeleteInvoiceProduct.mockReturnValueOnce(
-      actionFailure({code: "UNKNOWN_ERROR", message: "Failed to remove product"}),
+      TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Failed to remove product"}),
     );
 
     const {result} = renderHook(() => useProductRemove(invoice));

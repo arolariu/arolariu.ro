@@ -6,8 +6,7 @@
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {buildCreateInvoiceScanPayload, buildUserInformation} from "../../../../../../../tests/helpers";
-import {createJsonResponse, createTextResponse} from "../../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder} from "../../../../../../../tests/helpers";
 
 vi.mock("@/lib/actions/user/fetchUser");
 const {attachInvoiceScan} = await import("./attachInvoiceScan");
@@ -17,13 +16,13 @@ const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
 describe("attachInvoiceScan", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue(buildUserInformation({userIdentifier: "user-1", userJwt: "jwt-1"}));
-    mockFetchWithTimeout.mockResolvedValue(createJsonResponse(undefined, {status: 201}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse(undefined, {status: 201}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
   });
 
   it("posts an invoice scan attachment for a valid invoice id", async () => {
     const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const payload = buildCreateInvoiceScanPayload({
+    const payload = TestDataBuilder.build("createInvoiceScanPayload", {
       location: "https://storage.test/invoices/scan.jpg",
       additionalMetadata: {page: "1"},
     });
@@ -50,7 +49,7 @@ describe("attachInvoiceScan", () => {
 
   it("returns an error result for an invalid invoice id", async () => {
     const invalidId = "not-a-guid";
-    const payload = buildCreateInvoiceScanPayload({
+    const payload = TestDataBuilder.build("createInvoiceScanPayload", {
       location: "https://storage.test/scan.jpg",
     });
 
@@ -62,12 +61,12 @@ describe("attachInvoiceScan", () => {
 
   it("maps 400, 404, and fallback failures", async () => {
     const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const payload = buildCreateInvoiceScanPayload({
+    const payload = TestDataBuilder.build("createInvoiceScanPayload", {
       location: "https://storage.test/scan.jpg",
     });
 
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+      TestDataBuilder.textResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result400 = await attachInvoiceScan({invoiceId, payload});
@@ -79,7 +78,7 @@ describe("attachInvoiceScan", () => {
     }
 
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Not Found", {status: 404, statusText: "Not Found"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+      TestDataBuilder.textResponse("Not Found", {status: 404, statusText: "Not Found"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result404 = await attachInvoiceScan({invoiceId, payload});
@@ -91,7 +90,7 @@ describe("attachInvoiceScan", () => {
     }
 
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Internal Server Error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
+      TestDataBuilder.textResponse("Internal Server Error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
         ReturnType<typeof fetchWithTimeout>
       >,
     );
@@ -109,7 +108,7 @@ describe("attachInvoiceScan", () => {
     mockFetchUser.mockRejectedValue(new Error("Auth service unavailable"));
 
     const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const payload = buildCreateInvoiceScanPayload({
+    const payload = TestDataBuilder.build("createInvoiceScanPayload", {
       location: "https://storage.test/scan.jpg",
     });
 
@@ -123,7 +122,7 @@ describe("attachInvoiceScan", () => {
     mockFetchWithTimeout.mockRejectedValue("String error");
 
     const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const payload = buildCreateInvoiceScanPayload({
+    const payload = TestDataBuilder.build("createInvoiceScanPayload", {
       location: "https://storage.test/scan.jpg",
     });
 

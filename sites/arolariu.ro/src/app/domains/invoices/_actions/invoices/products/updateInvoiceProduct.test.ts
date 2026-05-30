@@ -7,8 +7,7 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
 import {ProductCategory} from "@/types/invoices";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {buildUserInformation} from "../../../../../../../tests/helpers";
-import {buildProduct, createJsonResponse, createTextResponse} from "../../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder} from "../../../../../../../tests/helpers";
 
 vi.mock("@/lib/actions/user/fetchUser");
 vi.mock("next/cache", () => ({revalidatePath: vi.fn()}));
@@ -20,9 +19,9 @@ const mockRevalidatePath = vi.mocked((await import("next/cache")).revalidatePath
 describe("updateInvoiceProduct", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue(buildUserInformation({userIdentifier: "user-1", userJwt: "jwt-1"}));
+    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
     mockFetchWithTimeout.mockResolvedValue(
-      createJsonResponse(buildProduct({name: "Updated Coffee"})) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+      TestDataBuilder.jsonResponse(TestDataBuilder.build("product", {name: "Updated Coffee"})) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
   });
 
@@ -30,7 +29,7 @@ describe("updateInvoiceProduct", () => {
     const invoiceId = "11111111-1111-4111-8111-111111111111";
     const payload = {
       originalProductName: "Coffee",
-      updatedProduct: buildProduct({
+      updatedProduct: TestDataBuilder.build("product", {
         name: "Premium Coffee",
         category: ProductCategory.GROCERIES,
         quantity: 2,
@@ -76,7 +75,7 @@ describe("updateInvoiceProduct", () => {
     const invalidId = "not-a-guid";
     const payload = {
       originalProductName: "Coffee",
-      updatedProduct: buildProduct(),
+      updatedProduct: TestDataBuilder.build("product"),
     };
 
     const result = await updateInvoiceProduct({invoiceId: invalidId, payload});
@@ -87,7 +86,7 @@ describe("updateInvoiceProduct", () => {
 
   it("maps 5xx and non-5xx failures", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Internal Server Error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
+      TestDataBuilder.textResponse("Internal Server Error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
         ReturnType<typeof fetchWithTimeout>
       >,
     );
@@ -95,7 +94,7 @@ describe("updateInvoiceProduct", () => {
     const invoiceId = "11111111-1111-4111-8111-111111111111";
     const payload = {
       originalProductName: "Coffee",
-      updatedProduct: buildProduct(),
+      updatedProduct: TestDataBuilder.build("product"),
     };
 
     const result = await updateInvoiceProduct({invoiceId, payload});
@@ -107,7 +106,7 @@ describe("updateInvoiceProduct", () => {
     }
 
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+      TestDataBuilder.textResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result2 = await updateInvoiceProduct({invoiceId, payload});
@@ -125,7 +124,7 @@ describe("updateInvoiceProduct", () => {
     const invoiceId = "11111111-1111-4111-8111-111111111111";
     const payload = {
       originalProductName: "Coffee",
-      updatedProduct: buildProduct(),
+      updatedProduct: TestDataBuilder.build("product"),
     };
 
     const result = await updateInvoiceProduct({invoiceId, payload});
@@ -140,7 +139,7 @@ describe("updateInvoiceProduct", () => {
     const invoiceId = "11111111-1111-4111-8111-111111111111";
     const payload = {
       originalProductName: "Coffee",
-      updatedProduct: buildProduct(),
+      updatedProduct: TestDataBuilder.build("product"),
     };
 
     const result = await updateInvoiceProduct({invoiceId, payload});

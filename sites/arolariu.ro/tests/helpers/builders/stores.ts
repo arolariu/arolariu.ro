@@ -24,8 +24,7 @@
  *
  * @example
  * ```typescript
- * import {buildEntityStoreState, mockEntityStoreSelector} from '@/tests/helpers/builders';
- * import {buildInvoice} from '@/tests/helpers/builders';
+ * import {TestDataBuilder} from '@/tests/helpers';
  * import {vi} from 'vitest';
  *
  * describe('useInvoices hook', () => {
