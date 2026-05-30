@@ -22,10 +22,8 @@ type TestUserResource = Readonly<{
  * Allows partial overrides of UserInformation properties for flexible test scenarios.
  * The `user` property can be fully customized or omitted to use the default builder.
  */
-export type UserInformationOverrides = Partial<
-  Omit<UserInformation, "user">
-> &
-  Readonly<{
+export type UserInformationOverrides = Partial<Omit<UserInformation, "user">>
+  & Readonly<{
     user?: UserInformation["user"];
   }>;
 
@@ -40,9 +38,7 @@ export type UserInformationOverrides = Partial<
  * full UserResource interface. This is intentional and isolated to the builder layer.
  * The cast is safe because tests only access the properties defined in TestUserResource.
  */
-function buildUserResource(
-  overrides: Partial<TestUserResource> = {},
-): UserInformation["user"] {
+function buildUserResource(overrides: Partial<TestUserResource> = {}): UserInformation["user"] {
   return {
     id: overrides.id ?? "user_test_123",
     firstName: overrides.firstName ?? "Test",
@@ -74,9 +70,7 @@ function buildUserResource(
  * @see {@link buildAuthenticatedUserInformation} - Alias for authenticated scenarios
  * @see {@link buildAnonymousUserInformation} - For unauthenticated scenarios
  */
-export function buildUserInformation(
-  overrides: UserInformationOverrides = {},
-): UserInformation {
+export function buildUserInformation(overrides: UserInformationOverrides = {}): UserInformation {
   const userIdentifier = overrides.userIdentifier ?? "user_test_123";
 
   return {
@@ -105,9 +99,7 @@ export function buildUserInformation(
  * @see {@link buildUserInformation} - Base builder function
  * @see {@link buildAnonymousUserInformation} - Counterpart for anonymous users
  */
-export function buildAuthenticatedUserInformation(
-  overrides: UserInformationOverrides = {},
-): UserInformation {
+export function buildAuthenticatedUserInformation(overrides: UserInformationOverrides = {}): UserInformation {
   return buildUserInformation(overrides);
 }
 

@@ -107,9 +107,7 @@ describe("useProductAdd", () => {
   });
 
   it("throws server action failures and skips the local update", async () => {
-    mockAddInvoiceProduct.mockReturnValueOnce(
-      TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Failed to add product"}),
-    );
+    mockAddInvoiceProduct.mockReturnValueOnce(TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Failed to add product"}));
 
     const {result} = renderHook(() => useProductAdd({invoice}));
 

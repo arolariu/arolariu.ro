@@ -60,7 +60,7 @@ function setupBlobClient({
   }
 
   const containerClient = TestDataBuilder.containerClient({blobUrl, uploadStatus});
-  
+
   // Wrap getBlockBlobClient to capture blob names
   containerClient.getBlockBlobClient = vi.fn((blobName: string) => {
     onBlobName?.(blobName);

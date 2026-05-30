@@ -19,9 +19,7 @@ describe("azure builders", () => {
         status: "uploaded",
       },
     });
-    await expect(
-      blockBlobClient.uploadData(new ArrayBuffer(0), {}),
-    ).resolves.toEqual({
+    await expect(blockBlobClient.uploadData(new ArrayBuffer(0), {})).resolves.toEqual({
       _response: {status: 201},
     });
   });

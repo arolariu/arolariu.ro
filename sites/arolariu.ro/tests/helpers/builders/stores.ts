@@ -83,9 +83,7 @@ import type {BaseEntity, EntityStore} from "../../../src/stores/createEntityStor
  * @see {@link EntityStore} - Source interface from createEntityStore.ts
  * @see {@link mockEntityStoreSelector} - Helper for mocking Zustand selectors
  */
-export function buildEntityStoreState<TEntity extends BaseEntity>(
-  overrides: Partial<EntityStore<TEntity>> = {},
-): EntityStore<TEntity> {
+export function buildEntityStoreState<TEntity extends BaseEntity>(overrides: Partial<EntityStore<TEntity>> = {}): EntityStore<TEntity> {
   return {
     // State
     entities: [],
@@ -148,11 +146,6 @@ export function buildEntityStoreState<TEntity extends BaseEntity>(
  *
  * @see {@link buildEntityStoreState} - Builds the state object to pass
  */
-export function mockEntityStoreSelector<TEntity extends BaseEntity>(
-  storeHook: Mock,
-  state: EntityStore<TEntity>,
-): Mock {
-  return storeHook.mockImplementation(
-    (selector: (storeState: EntityStore<TEntity>) => unknown) => selector(state),
-  );
+export function mockEntityStoreSelector<TEntity extends BaseEntity>(storeHook: Mock, state: EntityStore<TEntity>): Mock {
+  return storeHook.mockImplementation((selector: (storeState: EntityStore<TEntity>) => unknown) => selector(state));
 }

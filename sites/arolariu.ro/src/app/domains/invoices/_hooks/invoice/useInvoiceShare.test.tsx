@@ -45,23 +45,29 @@ vi.mock("@arolariu/components", () => ({
 }));
 
 vi.mock("next-intl-selector", () => ({
-  useTranslations: vi.fn(() => <T extends string>(fn: (m: {toasts: {invoices: {useInvoiceShare: Record<string, string>}}}) => T, vars?: Record<string, string>): string => {
-    const template = fn({
-      toasts: {
-        invoices: {
-          useInvoiceShare: {
-            toggleError: "Failed to toggle public access",
-            revokeError: "Failed to revoke access",
-            emailSending: "Sending email to {{email}}...",
-            emailSuccess: "Email sent to {{email}}",
-            emailError: "Failed to send email to {{email}}: {{error}}",
+  useTranslations: vi.fn(
+    () =>
+      <T extends string>(
+        fn: (m: {toasts: {invoices: {useInvoiceShare: Record<string, string>}}}) => T,
+        vars?: Record<string, string>,
+      ): string => {
+        const template = fn({
+          toasts: {
+            invoices: {
+              useInvoiceShare: {
+                toggleError: "Failed to toggle public access",
+                revokeError: "Failed to revoke access",
+                emailSending: "Sending email to {{email}}...",
+                emailSuccess: "Email sent to {{email}}",
+                emailError: "Failed to send email to {{email}}: {{error}}",
+              },
+            },
           },
-        },
+        });
+        if (!vars) return template;
+        return Object.entries(vars).reduce<string>((str, [key, value]) => str.replace(`{{${key}}}`, value), template);
       },
-    });
-    if (!vars) return template;
-    return Object.entries(vars).reduce<string>((str, [key, value]) => str.replace(`{{${key}}}`, value), template);
-  }),
+  ),
 }));
 
 // Import mocked modules
@@ -563,7 +569,9 @@ describe("useInvoiceShare", () => {
       const hookResult = renderHook(() => useInvoiceShare());
       const {result} = hookResult;
 
-      const failureResult = await invokeHookCallback(hookResult, (current) => current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"}));
+      const failureResult = await invokeHookCallback(hookResult, (current) =>
+        current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"}),
+      );
 
       expect(failureResult).toBeNull();
       expect(result.current.isSharing).toBe(false);

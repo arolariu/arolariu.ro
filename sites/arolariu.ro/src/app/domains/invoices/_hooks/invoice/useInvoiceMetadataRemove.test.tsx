@@ -108,9 +108,7 @@ describe("useInvoiceMetadataRemove", () => {
     });
 
     it("handles server action failure", async () => {
-      mockDeleteInvoiceMetadata.mockReturnValueOnce(
-        TestDataBuilder.actionFailure({code: "SERVER_ERROR", message: "Server error"}),
-      );
+      mockDeleteInvoiceMetadata.mockReturnValueOnce(TestDataBuilder.actionFailure({code: "SERVER_ERROR", message: "Server error"}));
 
       const {result} = renderHook(() => useInvoiceMetadataRemove(testInvoice));
 
@@ -139,9 +137,7 @@ describe("useInvoiceMetadataRemove", () => {
     });
 
     it("resets isRemoving flag even on error", async () => {
-      mockDeleteInvoiceMetadata.mockReturnValueOnce(
-        TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"}),
-      );
+      mockDeleteInvoiceMetadata.mockReturnValueOnce(TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"}));
 
       const {result} = renderHook(() => useInvoiceMetadataRemove(testInvoice));
 
@@ -179,10 +175,7 @@ describe("useInvoiceMetadataRemove", () => {
       const successResult = TestDataBuilder.actionSuccess<void>(undefined);
       const errorResult = TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"});
 
-      mockDeleteInvoiceMetadata
-        .mockReturnValueOnce(successResult)
-        .mockReturnValueOnce(errorResult)
-        .mockReturnValueOnce(successResult);
+      mockDeleteInvoiceMetadata.mockReturnValueOnce(successResult).mockReturnValueOnce(errorResult).mockReturnValueOnce(successResult);
 
       const {result} = renderHook(() => useInvoiceMetadataRemove(testInvoice));
 
@@ -196,9 +189,7 @@ describe("useInvoiceMetadataRemove", () => {
     });
 
     it("handles all failures in bulk removal", async () => {
-      mockDeleteInvoiceMetadata.mockReturnValue(
-        TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"}),
-      );
+      mockDeleteInvoiceMetadata.mockReturnValue(TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"}));
 
       const {result} = renderHook(() => useInvoiceMetadataRemove(testInvoice));
 

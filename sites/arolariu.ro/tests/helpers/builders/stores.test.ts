@@ -1,7 +1,7 @@
 import {describe, expect, it, vi} from "vitest";
 
-import type {Invoice} from "../../../src/types/invoices";
 import type {EntityStore} from "../../../src/stores/createEntityStore";
+import type {Invoice} from "../../../src/types/invoices";
 
 import {buildInvoice} from "./domain";
 import {buildEntityStoreState, mockEntityStoreSelector} from "./stores";

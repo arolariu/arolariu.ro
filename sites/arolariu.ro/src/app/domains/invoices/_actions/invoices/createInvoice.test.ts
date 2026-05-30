@@ -17,7 +17,9 @@ describe("createInvoice", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
-    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse(TestDataBuilder.build("invoice")) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+    mockFetchWithTimeout.mockResolvedValue(
+      TestDataBuilder.jsonResponse(TestDataBuilder.build("invoice")) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+    );
   });
 
   it("posts a creation payload with authenticated userIdentifier when missing", async () => {

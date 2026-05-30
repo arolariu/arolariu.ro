@@ -56,7 +56,7 @@ describe("uploadBlob", () => {
   it("should generate a blob name if not provided", async () => {
     const containerClient = TestDataBuilder.containerClient();
     const getBlockBlobClientSpy = vi.spyOn(containerClient, "getBlockBlobClient");
-    
+
     const blobServiceClient = TestDataBuilder.blobServiceClient(containerClient);
     mockCreateBlobClient.mockResolvedValue(blobServiceClient);
 

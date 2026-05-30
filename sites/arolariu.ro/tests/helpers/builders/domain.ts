@@ -401,9 +401,7 @@ export function buildInvoice(overrides: Partial<Invoice> = {}): Invoice {
  * expect(payload.type).toBe(InvoiceScanType.PDF);
  * ```
  */
-export function buildCreateInvoiceScanPayload(
-  overrides: Partial<CreateInvoiceScanDtoPayload> = {},
-): CreateInvoiceScanDtoPayload {
+export function buildCreateInvoiceScanPayload(overrides: Partial<CreateInvoiceScanDtoPayload> = {}): CreateInvoiceScanDtoPayload {
   return {
     type: InvoiceScanType.JPEG,
     location: "https://storage.test/invoice-scan.jpg",
@@ -438,9 +436,7 @@ export function buildCreateInvoiceScanPayload(
  * expect(payload.initialScan.location).toBe("https://storage.test/invoice-scan.jpg");
  * ```
  */
-export function buildCreateInvoicePayload(
-  overrides: Partial<CreateInvoiceDtoPayload> = {},
-): CreateInvoiceDtoPayload {
+export function buildCreateInvoicePayload(overrides: Partial<CreateInvoiceDtoPayload> = {}): CreateInvoiceDtoPayload {
   return {
     userIdentifier: "test-user",
     initialScan: buildInvoiceScan(),
@@ -475,9 +471,7 @@ export function buildCreateInvoicePayload(
  * expect(noAnalysis).toBe(0);
  * ```
  */
-export function buildInvoiceAnalysisOptions(
-  value?: InvoiceAnalysisOptions,
-): InvoiceAnalysisOptions {
+export function buildInvoiceAnalysisOptions(value?: InvoiceAnalysisOptions): InvoiceAnalysisOptions {
   return value ?? InvoiceAnalysisOptionsValue.CompleteAnalysis;
 }
 

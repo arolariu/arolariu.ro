@@ -26,23 +26,29 @@ vi.mock("@arolariu/components", () => ({
 }));
 
 vi.mock("next-intl-selector", () => ({
-  useTranslations: vi.fn(() => <T extends string>(fn: (m: {toasts: {invoices: {useInvoiceDelete: Record<string, string>}}}) => T, vars?: Record<string, string>): string => {
-    const template = fn({
-      toasts: {
-        invoices: {
-          useInvoiceDelete: {
-            deleteSuccess: "Invoice deleted successfully",
-            deleteError: "Failed to delete invoice: {{error}}",
-            bulkDeleteSuccess: "{{count}} invoices deleted successfully",
-            bulkDeleteError: "Failed to delete {{count}} invoices",
-            bulkDeletePartial: "{{successCount}} deleted, {{failureCount}} failed",
+  useTranslations: vi.fn(
+    () =>
+      <T extends string>(
+        fn: (m: {toasts: {invoices: {useInvoiceDelete: Record<string, string>}}}) => T,
+        vars?: Record<string, string>,
+      ): string => {
+        const template = fn({
+          toasts: {
+            invoices: {
+              useInvoiceDelete: {
+                deleteSuccess: "Invoice deleted successfully",
+                deleteError: "Failed to delete invoice: {{error}}",
+                bulkDeleteSuccess: "{{count}} invoices deleted successfully",
+                bulkDeleteError: "Failed to delete {{count}} invoices",
+                bulkDeletePartial: "{{successCount}} deleted, {{failureCount}} failed",
+              },
+            },
           },
-        },
+        });
+        if (!vars) return template;
+        return Object.entries(vars).reduce<string>((str, [key, value]) => str.replace(`{{${key}}}`, value), template);
       },
-    });
-    if (!vars) return template;
-    return Object.entries(vars).reduce<string>((str, [key, value]) => str.replace(`{{${key}}}`, value), template);
-  }),
+  ),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -115,9 +121,7 @@ describe("useInvoiceDelete", () => {
     });
 
     it("handles deletion failure with error toast", async () => {
-      mockDeleteInvoice.mockReturnValueOnce(
-        TestDataBuilder.actionFailure({code: "NOT_FOUND", message: "Not found"}),
-      );
+      mockDeleteInvoice.mockReturnValueOnce(TestDataBuilder.actionFailure({code: "NOT_FOUND", message: "Not found"}));
 
       const hookResult = renderHook(() => useInvoiceDelete());
       const {result} = hookResult;
@@ -225,9 +229,7 @@ describe("useInvoiceDelete", () => {
     });
 
     it("handles all failures in bulk deletion", async () => {
-      mockDeleteInvoice.mockReturnValue(
-        TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"}),
-      );
+      mockDeleteInvoice.mockReturnValue(TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"}));
 
       const hookResult = renderHook(() => useInvoiceDelete());
       const {result} = hookResult;
@@ -340,9 +342,7 @@ describe("useInvoiceDelete", () => {
     });
 
     it("does not call removeEntity on deletion failure", async () => {
-      mockDeleteInvoice.mockReturnValueOnce(
-        TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"}),
-      );
+      mockDeleteInvoice.mockReturnValueOnce(TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"}));
 
       const {result} = renderHook(() => useInvoiceDelete());
 

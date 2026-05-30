@@ -105,9 +105,7 @@ describe("useInvoiceMetadataAdd", () => {
     });
 
     it("handles server action failure", async () => {
-      mockAddInvoiceMetadata.mockReturnValueOnce(
-        TestDataBuilder.actionFailure({code: "SERVER_ERROR", message: "Server error"}),
-      );
+      mockAddInvoiceMetadata.mockReturnValueOnce(TestDataBuilder.actionFailure({code: "SERVER_ERROR", message: "Server error"}));
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
@@ -136,9 +134,7 @@ describe("useInvoiceMetadataAdd", () => {
     });
 
     it("resets isAdding flag even on error", async () => {
-      mockAddInvoiceMetadata.mockReturnValueOnce(
-        TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"}),
-      );
+      mockAddInvoiceMetadata.mockReturnValueOnce(TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"}));
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
@@ -165,9 +161,7 @@ describe("useInvoiceMetadataAdd", () => {
         key3: "value3",
       };
 
-      const bulkResult = await invokeHookCallback(hookResult, (current) =>
-        current.addMetadataCallback(metadataToAdd),
-      );
+      const bulkResult = await invokeHookCallback(hookResult, (current) => current.addMetadataCallback(metadataToAdd));
 
       expect(result.current.isAdding).toBe(false);
 
@@ -342,9 +336,7 @@ describe("useInvoiceMetadataAdd", () => {
     });
 
     it("does not update store on failure", async () => {
-      mockAddInvoiceMetadata.mockReturnValueOnce(
-        TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"}),
-      );
+      mockAddInvoiceMetadata.mockReturnValueOnce(TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"}));
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 

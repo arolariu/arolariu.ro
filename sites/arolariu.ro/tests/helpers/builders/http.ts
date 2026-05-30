@@ -16,10 +16,7 @@
  * await response.json(); // {id: "123", name: "Test"}
  * ```
  */
-export function jsonResponse(
-  body: unknown,
-  init: ResponseInit = {},
-): Response {
+export function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
   const headers = new Headers(init.headers);
   headers.set("content-type", "application/json");
 
@@ -42,10 +39,7 @@ export function jsonResponse(
  * await response.text(); // "Not Found"
  * ```
  */
-export function textResponse(
-  body: string,
-  init: ResponseInit = {},
-): Response {
+export function textResponse(body: string, init: ResponseInit = {}): Response {
   return new Response(body, init);
 }
 

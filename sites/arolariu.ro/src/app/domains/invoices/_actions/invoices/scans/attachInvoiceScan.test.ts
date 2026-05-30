@@ -17,7 +17,9 @@ describe("attachInvoiceScan", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
-    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse(undefined, {status: 201}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+    mockFetchWithTimeout.mockResolvedValue(
+      TestDataBuilder.jsonResponse(undefined, {status: 201}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+    );
   });
 
   it("posts an invoice scan attachment for a valid invoice id", async () => {

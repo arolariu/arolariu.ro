@@ -357,7 +357,9 @@ describe("useInvoices", () => {
 
     it("handles large number of invoices", async () => {
       const {setEntities} = createMockStoreState({hasHydrated: true});
-      const manyInvoices = Array.from({length: 1000}, (_, i) => TestDataBuilder.build("invoice", {id: `${i}`.padStart(36, "0"), name: `Invoice ${i}`}));
+      const manyInvoices = Array.from({length: 1000}, (_, i) =>
+        TestDataBuilder.build("invoice", {id: `${i}`.padStart(36, "0"), name: `Invoice ${i}`}),
+      );
 
       mockFetchInvoices.mockResolvedValue({success: true, data: manyInvoices});
 

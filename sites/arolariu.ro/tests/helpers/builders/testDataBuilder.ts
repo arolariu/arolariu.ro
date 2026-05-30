@@ -1,5 +1,6 @@
 import type {Mock} from "vitest";
 
+import type {ContainerClient} from "@azure/storage-blob";
 import type {ServerActionResult} from "../../../src/lib/utils.server";
 import type {BaseEntity, EntityStore} from "../../../src/stores/createEntityStore";
 import type {UserInformation} from "../../../src/types";
@@ -14,19 +15,13 @@ import type {
   Recipe,
 } from "../../../src/types/invoices";
 import type {Scan} from "../../../src/types/scans";
-import type {ContainerClient} from "@azure/storage-blob";
 import {
   buildAnonymousUserInformation,
   buildAuthenticatedUserInformation,
   buildUserInformation,
   type UserInformationOverrides,
 } from "./auth";
-import {
-  buildBlobServiceClientMock,
-  buildBlockBlobClientMock,
-  buildContainerClientMock,
-  type AzureBlobMockOptions,
-} from "./azure";
+import {buildBlobServiceClientMock, buildBlockBlobClientMock, buildContainerClientMock, type AzureBlobMockOptions} from "./azure";
 import {
   buildCreateInvoicePayload,
   buildCreateInvoiceScanPayload,
@@ -70,10 +65,7 @@ export class TestDataBuilder {
   public static build(kind: "recipe", overrides?: Partial<Recipe>): Recipe;
   public static build(kind: "invoiceScan", overrides?: Partial<InvoiceScan>): InvoiceScan;
   public static build(kind: "createInvoicePayload", overrides?: Partial<CreateInvoiceDtoPayload>): CreateInvoiceDtoPayload;
-  public static build(
-    kind: "createInvoiceScanPayload",
-    overrides?: Partial<CreateInvoiceScanDtoPayload>,
-  ): CreateInvoiceScanDtoPayload;
+  public static build(kind: "createInvoiceScanPayload", overrides?: Partial<CreateInvoiceScanDtoPayload>): CreateInvoiceScanDtoPayload;
   public static build(kind: "scan", overrides?: Partial<Scan>): Scan;
   public static build(kind: "invoiceAnalysisOptions", value?: InvoiceAnalysisOptions): InvoiceAnalysisOptions;
   public static build(kind: "userInformation", overrides?: UserInformationOverrides): UserInformation;
@@ -130,16 +122,11 @@ export class TestDataBuilder {
     return mockRejectedServerAction(mock, error);
   }
 
-  public static entityStore<TEntity extends BaseEntity>(
-    overrides: Partial<EntityStore<TEntity>> = {},
-  ): EntityStore<TEntity> {
+  public static entityStore<TEntity extends BaseEntity>(overrides: Partial<EntityStore<TEntity>> = {}): EntityStore<TEntity> {
     return buildEntityStoreState<TEntity>(overrides);
   }
 
-  public static mockEntityStoreSelector<TEntity extends BaseEntity>(
-    storeHook: Mock,
-    state: EntityStore<TEntity>,
-  ): Mock {
+  public static mockEntityStoreSelector<TEntity extends BaseEntity>(storeHook: Mock, state: EntityStore<TEntity>): Mock {
     return mockEntityStoreSelector(storeHook, state);
   }
 

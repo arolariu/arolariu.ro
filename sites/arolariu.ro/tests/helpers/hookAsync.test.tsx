@@ -1,6 +1,6 @@
 import {renderHook} from "@testing-library/react";
-import {describe, expect, it} from "vitest";
 import {useState} from "react";
+import {describe, expect, it} from "vitest";
 
 import {invokeHookCallback} from "./hookAsync";
 
@@ -66,9 +66,7 @@ describe("hook async helpers", () => {
   it("propagates errors from callbacks", async () => {
     const hook = renderHook(() => useErrorCallback());
 
-    await expect(
-      invokeHookCallback(hook, (current) => current()),
-    ).rejects.toThrow("Test error");
+    await expect(invokeHookCallback(hook, (current) => current())).rejects.toThrow("Test error");
   });
 
   it("returns void callback results without throwing", async () => {

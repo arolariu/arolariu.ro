@@ -50,12 +50,8 @@ describe("domain builders", () => {
     const createScanPayload = buildCreateInvoiceScanPayload();
     const options = buildInvoiceAnalysisOptions();
 
-    expect(createInvoicePayload.initialScan.location).toBe(
-      "https://storage.test/invoice-scan.jpg",
-    );
-    expect(createScanPayload.location).toBe(
-      "https://storage.test/invoice-scan.jpg",
-    );
+    expect(createInvoicePayload.initialScan.location).toBe("https://storage.test/invoice-scan.jpg");
+    expect(createScanPayload.location).toBe("https://storage.test/invoice-scan.jpg");
     expect(options).toBe(InvoiceAnalysisOptions.CompleteAnalysis);
   });
 

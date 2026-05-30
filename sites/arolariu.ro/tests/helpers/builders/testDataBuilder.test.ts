@@ -1,7 +1,7 @@
+import {describe, expect, it, vi} from "vitest";
 import type {ServerActionResult} from "../../../src/lib/utils.server";
 import {InvoiceAnalysisOptions, InvoiceScanType, ProductCategory} from "../../../src/types/invoices";
 import {ScanStatus} from "../../../src/types/scans";
-import {describe, expect, it, vi} from "vitest";
 import {TestDataBuilder} from "./testDataBuilder";
 
 describe("TestDataBuilder", () => {
@@ -39,10 +39,7 @@ describe("TestDataBuilder", () => {
       id: "scan-test-1",
       status: ScanStatus.READY,
     });
-    const options = TestDataBuilder.build(
-      "invoiceAnalysisOptions",
-      InvoiceAnalysisOptions.CompleteAnalysis,
-    );
+    const options = TestDataBuilder.build("invoiceAnalysisOptions", InvoiceAnalysisOptions.CompleteAnalysis);
 
     expect(createScanPayload.location).toBe("https://storage.test/scan.png");
     expect(createInvoicePayload.initialScan.location).toBe("https://storage.test/initial.jpg");
@@ -75,9 +72,7 @@ describe("TestDataBuilder", () => {
     expect(failure.success).toBe(false);
     expect(store.entities).toEqual([invoice]);
     await expect(response.json()).resolves.toEqual({ok: true});
-    expect(blobServiceClient.getContainerClient("invoices").getBlockBlobClient("blob.jpg").url).toBe(
-      "https://storage.test/blob.jpg",
-    );
+    expect(blobServiceClient.getContainerClient("invoices").getBlockBlobClient("blob.jpg").url).toBe("https://storage.test/blob.jpg");
   });
 
   it("configures typed server-action mocks through facade helpers", async () => {

@@ -18,9 +18,10 @@ describe("fetchInvoices", () => {
     vi.clearAllMocks();
     mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
     mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse([TestDataBuilder.build("invoice"), TestDataBuilder.build("invoice", {id: "22222222-2222-4222-8222-222222222222"})]) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+      TestDataBuilder.jsonResponse([
+        TestDataBuilder.build("invoice"),
+        TestDataBuilder.build("invoice", {id: "22222222-2222-4222-8222-222222222222"}),
+      ]) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
   });
 

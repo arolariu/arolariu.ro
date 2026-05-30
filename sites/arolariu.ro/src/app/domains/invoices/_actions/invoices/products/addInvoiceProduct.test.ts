@@ -19,7 +19,9 @@ describe("addInvoiceProduct", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
-    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse(TestDataBuilder.build("product")) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+    mockFetchWithTimeout.mockResolvedValue(
+      TestDataBuilder.jsonResponse(TestDataBuilder.build("product")) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+    );
   });
 
   it("posts a product payload and revalidates invoice pages", async () => {

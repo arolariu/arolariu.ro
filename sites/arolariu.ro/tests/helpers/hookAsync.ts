@@ -5,13 +5,9 @@
 
 import {act, type RenderHookResult} from "@testing-library/react";
 
-type HookCallbackResult<TResult> =
-  | Readonly<{status: "pending"}>
-  | Readonly<{status: "resolved"; value: TResult}>;
+type HookCallbackResult<TResult> = Readonly<{status: "pending"}> | Readonly<{status: "resolved"; value: TResult}>;
 
-function readHookCallbackResult<TResult>(
-  callbackResult: HookCallbackResult<TResult>,
-): TResult {
+function readHookCallbackResult<TResult>(callbackResult: HookCallbackResult<TResult>): TResult {
   if (callbackResult.status !== "resolved") {
     throw new Error("Hook callback did not run inside act.");
   }

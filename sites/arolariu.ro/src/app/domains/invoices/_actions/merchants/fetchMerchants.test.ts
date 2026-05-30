@@ -97,7 +97,9 @@ describe("fetchMerchants", () => {
   });
 
   it("returns a server error message for HTTP 500 responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.textResponse("Internal server error", {status: 500, statusText: "Internal Server Error"}));
+    mockFetchWithTimeout.mockResolvedValue(
+      TestDataBuilder.textResponse("Internal server error", {status: 500, statusText: "Internal Server Error"}),
+    );
 
     const result = await fetchMerchants();
 
@@ -122,7 +124,9 @@ describe("fetchMerchants", () => {
   });
 
   it("returns a server error message for HTTP 503 responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.textResponse("Service unavailable", {status: 503, statusText: "Service Unavailable"}));
+    mockFetchWithTimeout.mockResolvedValue(
+      TestDataBuilder.textResponse("Service unavailable", {status: 503, statusText: "Service Unavailable"}),
+    );
 
     const result = await fetchMerchants();
 

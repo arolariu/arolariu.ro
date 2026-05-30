@@ -21,7 +21,9 @@ describe("updateInvoiceProduct", () => {
     vi.clearAllMocks();
     mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
     mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse(TestDataBuilder.build("product", {name: "Updated Coffee"})) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+      TestDataBuilder.jsonResponse(TestDataBuilder.build("product", {name: "Updated Coffee"})) as Awaited<
+        ReturnType<typeof fetchWithTimeout>
+      >,
     );
   });
 

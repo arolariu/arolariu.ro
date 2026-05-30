@@ -93,7 +93,10 @@ function stubFileReader(mode: "load" | "error", result = "data:image/png;base64,
 describe("useScanAdd", () => {
   const invoiceId = "11111111-1111-4111-8111-111111111111";
   const scanBlobUrl = "https://storage.test/invoices/scans/user-1/scan.png";
-  const uploadSuccess: Awaited<ServerActionResult<{status: number; blobUrl: string}>> = {success: true, data: {status: 201, blobUrl: scanBlobUrl}};
+  const uploadSuccess: Awaited<ServerActionResult<{status: number; blobUrl: string}>> = {
+    success: true,
+    data: {status: 201, blobUrl: scanBlobUrl},
+  };
   const attachSuccess: Awaited<ServerActionResult<void>> = {success: true, data: undefined};
   const addArgs = {
     file: new Blob(["scan"], {type: "image/png"}),
@@ -225,7 +228,9 @@ describe("useScanAdd", () => {
       });
       const hookResult = renderHook(() => useScanAdd(invoiceId));
 
-      await expect(invokeHookCallback(hookResult, (current) => current.addScanCallback(addArgs))).rejects.toThrow("Upload failed with status 500");
+      await expect(invokeHookCallback(hookResult, (current) => current.addScanCallback(addArgs))).rejects.toThrow(
+        "Upload failed with status 500",
+      );
 
       expect(mockAttachInvoiceScan).not.toHaveBeenCalled();
       expect(mockToast.error).toHaveBeenCalledWith("Failed to add scan", {
@@ -241,7 +246,9 @@ describe("useScanAdd", () => {
       });
       const hookResult = renderHook(() => useScanAdd(invoiceId));
 
-      await expect(invokeHookCallback(hookResult, (current) => current.addScanCallback(addArgs))).rejects.toThrow("Upload failed with status unknown");
+      await expect(invokeHookCallback(hookResult, (current) => current.addScanCallback(addArgs))).rejects.toThrow(
+        "Upload failed with status unknown",
+      );
 
       expect(mockAttachInvoiceScan).not.toHaveBeenCalled();
     });
@@ -253,7 +260,9 @@ describe("useScanAdd", () => {
       });
       const hookResult = renderHook(() => useScanAdd(invoiceId));
 
-      await expect(invokeHookCallback(hookResult, (current) => current.addScanCallback(addArgs))).rejects.toThrow("Upload failed with status unknown");
+      await expect(invokeHookCallback(hookResult, (current) => current.addScanCallback(addArgs))).rejects.toThrow(
+        "Upload failed with status unknown",
+      );
 
       expect(mockAttachInvoiceScan).not.toHaveBeenCalled();
     });

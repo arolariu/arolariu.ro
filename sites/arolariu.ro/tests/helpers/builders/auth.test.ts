@@ -1,10 +1,6 @@
 import {describe, expect, it} from "vitest";
 
-import {
-  buildAnonymousUserInformation,
-  buildAuthenticatedUserInformation,
-  buildUserInformation,
-} from "./auth";
+import {buildAnonymousUserInformation, buildAuthenticatedUserInformation, buildUserInformation} from "./auth";
 
 describe("auth builders", () => {
   it("builds authenticated user information with the complete contract", () => {

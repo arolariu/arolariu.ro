@@ -15,29 +15,21 @@ export function actionSuccess<TData>(data: TData): ServerActionResult<TData> {
   });
 }
 
-export function actionFailure<TData = never>(
-  error: TestServerActionError,
-): ServerActionResult<TData> {
+export function actionFailure<TData = never>(error: TestServerActionError): ServerActionResult<TData> {
   return Promise.resolve({
     success: false,
     error,
   });
 }
 
-export function mockResolvedActionSuccess<TData>(
-  mock: Mock,
-  data: TData,
-): Mock {
+export function mockResolvedActionSuccess<TData>(mock: Mock, data: TData): Mock {
   return mock.mockResolvedValueOnce({
     success: true,
     data,
   });
 }
 
-export function mockResolvedActionFailure(
-  mock: Mock,
-  error: TestServerActionError,
-): Mock {
+export function mockResolvedActionFailure(mock: Mock, error: TestServerActionError): Mock {
   return mock.mockResolvedValueOnce({
     success: false,
     error,

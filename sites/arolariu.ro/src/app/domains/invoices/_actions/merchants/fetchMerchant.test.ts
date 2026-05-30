@@ -126,7 +126,9 @@ describe("fetchMerchant", () => {
   });
 
   it("returns a generic error message for HTTP 500 responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.textResponse("Internal server error", {status: 500, statusText: "Internal Server Error"}));
+    mockFetchWithTimeout.mockResolvedValue(
+      TestDataBuilder.textResponse("Internal server error", {status: 500, statusText: "Internal Server Error"}),
+    );
 
     const result = await fetchMerchant({merchantId});
 
