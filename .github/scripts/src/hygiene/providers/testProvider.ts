@@ -193,10 +193,23 @@ export const testProvider: CheckProvider<TestPayload> = {
   payloadSchema: schema,
   applicableTo: () => true,
   async run(input: ProviderRunInput): Promise<ProviderRunOutput<TestPayload>> {
+    // v3.0 scope: run the .github/scripts Vitest suite only.
+    //
+    // The repo's root `npm run test:unit` invokes `nx run-many --target=test
+    // --configuration=unit --all`, which includes the @arolariu/api (.NET) and
+    // @arolariu/exp (Python) projects. Those don't run via Vitest and their nx
+    // targets fail in the hygiene job (no .NET / Python toolchain installed),
+    // which means no Vitest JSON report ever reaches stdout. Scoping to
+    // .github/scripts gives us a reliable, fast Vitest run that validates the
+    // hygiene system's own tests.
+    //
+    // v3.1 will expand to aggregate website / components / cv / status Vitest
+    // outputs via per-project runs and a multi-report extractor.
+    const scriptsDir = path.join(input.workspaceRoot, ".github", "scripts");
     const result = await exec.getExecOutput(
-      "npm",
-      ["run", "test:unit", "--", "--reporter=json"],
-      {cwd: input.workspaceRoot, ignoreReturnCode: true, silent: true},
+      "npx",
+      ["vitest", "run", "--reporter=json"],
+      {cwd: scriptsDir, ignoreReturnCode: true, silent: true},
     );
 
     let report: VitestJsonReport;
@@ -212,7 +225,7 @@ export const testProvider: CheckProvider<TestPayload> = {
     }
 
     const {totalTests, passed, failed, skipped, findings: testFindings} = parseVitestJsonReport(report);
-    const coverage = await readCoverageSummary(input.workspaceRoot);
+    const coverage = await readCoverageSummary(scriptsDir);
     const coverageFindings: Finding[] = coverage
       ? [
           coverageMetricFinding("lines", coverage.lines),
