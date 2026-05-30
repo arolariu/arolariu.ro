@@ -1,10 +1,10 @@
 /**
- * @fileoverview Test provider for the @arolariu/exp Python / pytest tests.
- * @module github/scripts/src/hygiene/providers/testExpProvider
+ * @fileoverview Python unit tests provider (@arolariu/exp pytest suite).
+ * @module github/scripts/src/hygiene/providers/testPythonProvider
  *
  * @remarks
  * Runs `python -m pytest --junitxml=...` in sites/exp.arolariu.ro and parses
- * the produced JUnit XML report into a TestSuitesPayload.
+ * the produced JUnit XML report into a TestSuitesPayload with one suite.
  */
 
 import * as exec from "@actions/exec";
@@ -24,10 +24,10 @@ import {
 const EXP_DIR = path.join("sites", "exp.arolariu.ro");
 const JUNIT_REL = path.join(EXP_DIR, ".pytest-cache", "hygiene-junit.xml");
 
-export const testExpProvider: CheckProvider<TestSuitesPayload> = {
-  id: "test-exp",
-  name: "Tests · Exp (Python)",
-  icon: "🧪",
+export const testPythonProvider: CheckProvider<TestSuitesPayload> = {
+  id: "test-python",
+  name: "Python Unit Tests",
+  icon: "🐍",
   defaultGate: {kind: "blocking", blockOn: "error"},
   payloadSchema: testSuitesPayloadSchema,
   applicableTo: () => true,
@@ -51,7 +51,7 @@ export const testExpProvider: CheckProvider<TestSuitesPayload> = {
       xml = await fs.readFile(junitAbs, "utf-8");
     } catch {
       const suite: SuiteResult = {
-        name: "exp",
+        name: "python",
         totalTests: 1,
         passed: 0,
         failed: 1,
@@ -63,8 +63,8 @@ export const testExpProvider: CheckProvider<TestSuitesPayload> = {
           line: 1,
           column: 1,
           message: "pytest produced no JUnit XML report (check setup-python / pip install steps in the workflow).",
-          ruleId: "exp/runner-failed",
-          suite: "exp",
+          ruleId: "python/runner-failed",
+          suite: "python",
         }],
       };
       return {payload: aggregateSuites([suite]), findings: flattenSuiteFindings([suite])};
@@ -73,17 +73,16 @@ export const testExpProvider: CheckProvider<TestSuitesPayload> = {
     const junitSuites = parseJUnitXml(xml);
     if (junitSuites.length === 0) {
       const empty: SuiteResult = {
-        name: "exp",
+        name: "python",
         totalTests: 0, passed: 0, failed: 0, skipped: 0,
         findings: [],
       };
       return {payload: aggregateSuites([empty]), findings: []};
     }
 
-    // pytest typically emits a single <testsuite>; if there are multiple, keep them separate.
     const suiteResults: SuiteResult[] = junitSuites.length === 1
-      ? [jUnitSuitesToResult("exp", junitSuites)]
-      : junitSuites.map((s) => jUnitSuitesToResult(s.name || "exp", [s]));
+      ? [jUnitSuitesToResult("python", junitSuites)]
+      : junitSuites.map((s) => jUnitSuitesToResult(s.name || "python", [s]));
 
     return {
       payload: aggregateSuites(suiteResults),

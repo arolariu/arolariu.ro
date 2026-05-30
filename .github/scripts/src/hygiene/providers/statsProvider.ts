@@ -73,16 +73,19 @@ export function computeTopDirectories(files: readonly string[], topN: number): D
 }
 
 export function foldersToComparisons(folders: readonly FolderSize[]): ComparisonFinding[] {
-  return folders.map<ComparisonFinding>((f) => ({
-    kind: "comparison",
-    severity: "info",
-    name: `bundle.${f.folder}`,
-    baseValue: f.mainTotal,
-    headValue: f.headTotal,
-    diff: f.headTotal - f.mainTotal,
-    unit: "bytes",
-    message: `${f.folder}: ${f.mainTotal} -> ${f.headTotal} bytes (${f.headTotal - f.mainTotal >= 0 ? "+" : ""}${f.headTotal - f.mainTotal})`,
-  }));
+  // Suppress entries where bundle size is unchanged (diff === 0) — they're noise.
+  return folders
+    .filter((f) => f.headTotal !== f.mainTotal)
+    .map<ComparisonFinding>((f) => ({
+      kind: "comparison",
+      severity: "info",
+      name: `bundle.${f.folder}`,
+      baseValue: f.mainTotal,
+      headValue: f.headTotal,
+      diff: f.headTotal - f.mainTotal,
+      unit: "bytes",
+      message: `${f.folder}: ${f.mainTotal} -> ${f.headTotal} bytes (${f.headTotal - f.mainTotal >= 0 ? "+" : ""}${f.headTotal - f.mainTotal})`,
+    }));
 }
 
 async function getDiffNumstat(cwd: string, base: string, head: string): Promise<{

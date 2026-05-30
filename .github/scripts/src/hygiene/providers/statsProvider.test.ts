@@ -32,7 +32,7 @@ describe("foldersToComparisons", () => {
   it("creates a ComparisonFinding per folder with non-zero diff", () => {
     const folders: FolderSize[] = [
       {folder: "sites/arolariu.ro", mainTotal: 1000, headTotal: 1500},
-      {folder: "sites/api.arolariu.ro", mainTotal: 500, headTotal: 500},
+      {folder: "sites/docs.arolariu.ro", mainTotal: 200, headTotal: 100},
     ];
     const findings = foldersToComparisons(folders);
     expect(findings).toHaveLength(2);
@@ -45,7 +45,26 @@ describe("foldersToComparisons", () => {
       diff: 500,
       unit: "bytes",
     });
-    expect(findings[1]?.diff).toBe(0);
+    expect(findings[1]?.diff).toBe(-100);
+  });
+
+  it("suppresses folders where the bundle size did not change (diff = 0)", () => {
+    const folders: FolderSize[] = [
+      {folder: "sites/arolariu.ro", mainTotal: 1000, headTotal: 1500},
+      {folder: "sites/api.arolariu.ro", mainTotal: 500, headTotal: 500},   // unchanged → suppressed
+      {folder: "sites/docs.arolariu.ro", mainTotal: 200, headTotal: 200},  // unchanged → suppressed
+    ];
+    const findings = foldersToComparisons(folders);
+    expect(findings).toHaveLength(1);
+    expect(findings[0]?.name).toBe("bundle.sites/arolariu.ro");
+  });
+
+  it("returns [] when every folder has zero diff", () => {
+    const folders: FolderSize[] = [
+      {folder: "a", mainTotal: 100, headTotal: 100},
+      {folder: "b", mainTotal: 200, headTotal: 200},
+    ];
+    expect(foldersToComparisons(folders)).toEqual([]);
   });
 });
 

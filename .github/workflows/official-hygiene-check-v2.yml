@@ -2,25 +2,26 @@
 # =============================================================================
 # Code Hygiene Check Workflow (v3)
 # =============================================================================
-# Architecture:
-#   Job 1 (detect): checkout + git diff to decide whether hygiene needs to run.
-#   Job 2 (hygiene): checkout + setup workspace + single 'npm ci' for scripts,
-#                    then one step per provider (continue-on-error true on each),
-#                    then a final 'gate' step (no continue-on-error) that loads
-#                    all outcome-*.json artifacts and runs projections.
+# Architecture (parallel):
+#   Job 1 (detect): checkout + git diff. Decides whether hygiene runs at all.
+#   Job 2 (providers, matrix): one parallel job per check provider. Each
+#     provisions only the toolchain it needs (Node always; .NET only for
+#     test-dotnet; Python only for test-python). Each writes its outcome JSON
+#     and uploads it as an artifact named outcome-<provider>.
+#   Job 3 (gate): downloads every outcome-* artifact, runs runProjections.ts
+#     to build the aggregate HygieneReport, post the PR comment, write step
+#     summary, create per-provider check-runs. The gate step (no
+#     continue-on-error) is the SINGLE source of truth for workflow pass/fail.
 #
 # Honest pass/fail:
-#   - Each provider step uses step-level continue-on-error: true. runProvider.ts
-#     exits non-zero (1) when its gateResult is 'failed' or 'errored', so the
-#     step UI renders a warning marker (yellow triangle) on the failing step
-#     while subsequent steps still run.
-#   - The final gate step (runProjections.ts) is the SINGLE source of truth for
-#     workflow pass/fail: it calls core.setFailed() when the aggregated
-#     HygieneReport.overallResult is 'failed' or 'errored'.
+#   - runProvider.ts exits 1 on failed/errored gateResult, 0 otherwise. With
+#     step-level continue-on-error: true, the failing matrix job is marked
+#     failed but other provider jobs (and the gate job) still run.
+#   - Final gate calls core.setFailed() when aggregated overallResult is
+#     'failed' or 'errored'.
 #
 # Migration note: keeping the file name 'official-hygiene-check-v2.yml' so
-# existing branch protection rules continue to match. The workflow's display
-# name updates to '(v3)'.
+# existing branch protection rules continue to match.
 # =============================================================================
 
 name: "Code Hygiene Check (v3)"
@@ -66,9 +67,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # Fetch the PR base branch (may differ from main when targeting preview etc.)
           git fetch origin "$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH" --depth=1 --no-tags --quiet || true
-          # Also fetch the exact base SHA in case the branch has moved since PR creation.
           git fetch origin "${{ env.BASE_REF }}" --depth=1 --no-tags --quiet || true
           if ! CHANGED=$(git diff --name-only "${{ env.BASE_REF }}...${{ env.HEAD_REF }}" 2>/dev/null | wc -l | tr -d ' '); then
             echo "::warning::Could not compute diff against base $BASE_REF; defaulting to has-changes=true so hygiene still runs."
@@ -82,12 +81,26 @@ jobs:
           fi
           echo "changed-files-count=$CHANGED" >> "$GITHUB_OUTPUT"
 
-  hygiene:
-    name: 🧹 Run hygiene checks
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
+  # =============================================================================
+  # Provider matrix: one parallel job per provider. Each provisions only the
+  # toolchain it needs and uploads its outcome JSON as an artifact.
+  # =============================================================================
+  providers:
+    name: "🔧 ${{ matrix.provider.label }}"
     needs: detect
     if: needs.detect.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        provider:
+          - {id: format,          label: "Prettier",                needs-dotnet: false, needs-python: false}
+          - {id: lint,            label: "ESLint",                  needs-dotnet: false, needs-python: false}
+          - {id: test-typescript, label: "TypeScript Unit Tests",   needs-dotnet: false, needs-python: false}
+          - {id: test-dotnet,     label: "DotNet Unit Tests",       needs-dotnet: true,  needs-python: false}
+          - {id: test-python,     label: "Python Unit Tests",       needs-dotnet: false, needs-python: true}
+          - {id: stats,           label: "Statistics",              needs-dotnet: false, needs-python: false}
     steps:
       - name: 🛫 Checkout repository
         uses: actions/checkout@v6
@@ -99,28 +112,30 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
+          cache-key-prefix: 'hygiene-${{ matrix.provider.id }}-${{ github.event.pull_request.number || github.run_id }}'
           install-node-dependencies: 'true'
 
-      - name: 📦 Install scripts deps (single npm ci)
+      - name: 📦 Install scripts deps
         working-directory: .github/scripts
         run: npm ci
 
       - name: 🔨 Build components package
+        if: matrix.provider.id == 'lint' || matrix.provider.id == 'test-typescript'
         run: npm run build:components
 
-      # ----- .NET toolchain (for test-api provider) -----
       - name: 📦 Setup .NET
+        if: matrix.provider.needs-dotnet
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
 
       - name: 📦 Restore .NET projects
+        if: matrix.provider.needs-dotnet
         run: dotnet restore arolariu.slnx
         continue-on-error: true
 
-      # ----- Python toolchain (for test-exp provider) -----
       - name: 📦 Setup Python
+        if: matrix.provider.needs-python
         uses: actions/setup-python@v6
         with:
           python-version: '3.x'
@@ -128,62 +143,71 @@ jobs:
           cache-dependency-path: sites/exp.arolariu.ro/requirements-dev.txt
 
       - name: 📦 Install Python dev deps
+        if: matrix.provider.needs-python
         working-directory: sites/exp.arolariu.ro
         run: python -m pip install -q -r requirements-dev.txt
         continue-on-error: true
 
-      # ----- Provider steps (step-level continue-on-error) -----
-      - name: 🎨 Provider · Prettier (format)
-        id: provider-format
+      - name: 🚀 Run provider (${{ matrix.provider.id }})
+        id: run-provider
         continue-on-error: true
         working-directory: .github/scripts
-        run: node --experimental-strip-types src/hygiene/pipeline/runProvider.ts format
+        run: node --experimental-strip-types src/hygiene/pipeline/runProvider.ts ${{ matrix.provider.id }}
 
-      - name: 🔍 Provider · ESLint (lint)
-        id: provider-lint
-        continue-on-error: true
+      - name: 📤 Upload outcome artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: outcome-${{ matrix.provider.id }}
+          path: artifacts/hygiene/outcome-${{ matrix.provider.id }}.json
+          if-no-files-found: warn
+          retention-days: 7
+
+  # =============================================================================
+  # Final gate: download every outcome artifact, aggregate, post comment / step
+  # summary / status checks, decide overall workflow pass/fail.
+  # =============================================================================
+  gate:
+    name: 🎯 Aggregate & gate
+    needs: providers
+    if: always() && (needs.detect.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 🛫 Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          ref: ${{ env.HEAD_REF }}
+
+      - name: 📦 Setup workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache-key-prefix: 'hygiene-gate-${{ github.event.pull_request.number || github.run_id }}'
+          install-node-dependencies: 'false'
+
+      - name: 📦 Install scripts deps
         working-directory: .github/scripts
-        run: node --experimental-strip-types src/hygiene/pipeline/runProvider.ts lint
+        run: npm ci
 
-      - name: 🧪 Provider · Tests · Scripts (vitest in .github/scripts)
-        id: provider-test-scripts
-        continue-on-error: true
-        working-directory: .github/scripts
-        run: node --experimental-strip-types src/hygiene/pipeline/runProvider.ts test-scripts
+      - name: 📥 Download all outcome artifacts
+        uses: actions/download-artifact@v6
+        with:
+          pattern: outcome-*
+          path: artifacts/hygiene
+          merge-multiple: true
 
-      - name: 🧪 Provider · Tests · Frontend (vitest for website/components/cv/status)
-        id: provider-test-frontend
-        continue-on-error: true
-        working-directory: .github/scripts
-        run: node --experimental-strip-types src/hygiene/pipeline/runProvider.ts test-frontend
+      - name: 📋 List downloaded outcomes
+        run: ls -la artifacts/hygiene/ || echo "(empty)"
 
-      - name: 🧪 Provider · Tests · API (dotnet xUnit)
-        id: provider-test-api
-        continue-on-error: true
-        working-directory: .github/scripts
-        run: node --experimental-strip-types src/hygiene/pipeline/runProvider.ts test-api
-
-      - name: 🧪 Provider · Tests · Exp (pytest)
-        id: provider-test-exp
-        continue-on-error: true
-        working-directory: .github/scripts
-        run: node --experimental-strip-types src/hygiene/pipeline/runProvider.ts test-exp
-
-      - name: 📊 Provider · Statistics (stats)
-        id: provider-stats
-        continue-on-error: true
-        working-directory: .github/scripts
-        run: node --experimental-strip-types src/hygiene/pipeline/runProvider.ts stats
-
-      # ----- Final gate (NO continue-on-error) -----
       - name: 🎯 Run projections & gate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         working-directory: .github/scripts
         run: node --experimental-strip-types src/hygiene/pipeline/runProjections.ts
 
-      # ----- Artifact upload (always, even on failure) -----
-      - name: 📤 Upload hygiene artifacts
+      - name: 📤 Upload aggregated hygiene report
         if: always()
         uses: actions/upload-artifact@v7
         with:

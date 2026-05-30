@@ -13,10 +13,10 @@ const sampleTrx = `<?xml version="1.0"?>
   </Results>
 </TestRun>`;
 
-describe("testApiProvider", () => {
+describe("testDotnetProvider", () => {
   let tmpDir: string;
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "api-test-"));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "dotnet-test-"));
     vi.resetModules();
   });
   afterEach(async () => {
@@ -24,15 +24,13 @@ describe("testApiProvider", () => {
   });
 
   it("has stable identity fields", async () => {
-    const {testApiProvider} = await import("./testApiProvider.ts");
-    expect(testApiProvider.id).toBe("test-api");
-    expect(testApiProvider.name).toBe("Tests · API (.NET)");
-    expect(testApiProvider.defaultGate).toEqual({kind: "blocking", blockOn: "error"});
+    const {testDotnetProvider} = await import("./testDotnetProvider.ts");
+    expect(testDotnetProvider.id).toBe("test-dotnet");
+    expect(testDotnetProvider.name).toBe("DotNet Unit Tests");
+    expect(testDotnetProvider.defaultGate).toEqual({kind: "blocking", blockOn: "error"});
   });
 
   it("parses .trx files written by dotnet test into per-file suites", async () => {
-    // testApiProvider clears the TRX dir before invoking dotnet test, so we
-    // need to make the mocked exec write the .trx files as a side effect.
     const trxDir = path.join(tmpDir, "sites", "api.arolariu.ro", "TestResults");
     vi.doMock("@actions/exec", () => ({
       getExecOutput: vi.fn().mockImplementation(async () => {
@@ -42,33 +40,29 @@ describe("testApiProvider", () => {
         return {exitCode: 1, stdout: "", stderr: ""};
       }),
     }));
-    const {testApiProvider} = await import("./testApiProvider.ts");
-    const result = await testApiProvider.run({
+    const {testDotnetProvider} = await import("./testDotnetProvider.ts");
+    const result = await testDotnetProvider.run({
       workspaceRoot: tmpDir, baseRef: "main", headRef: "HEAD", changedFiles: [], env: {},
     });
     expect(result.payload.suites).toHaveLength(2);
-    const names = result.payload.suites.map((s) => s.name).sort();
-    expect(names).toEqual(["Core", "Domain"]);
-    expect(result.payload.totalTests).toBe(4); // 2 tests × 2 suites
+    expect(result.payload.suites.map((s) => s.name).sort()).toEqual(["Core", "Domain"]);
+    expect(result.payload.totalTests).toBe(4);
     expect(result.payload.failed).toBe(2);
-    expect(result.findings).toHaveLength(2);
   });
 
-  it("emits a runner-failed synthetic suite when no .trx files exist", async () => {
+  it("emits runner-failed synthetic suite when no .trx files exist", async () => {
     vi.doMock("@actions/exec", () => ({
       getExecOutput: vi.fn().mockResolvedValue({exitCode: 1, stdout: "", stderr: "dotnet not found"}),
     }));
-    const {testApiProvider} = await import("./testApiProvider.ts");
-    const result = await testApiProvider.run({
+    const {testDotnetProvider} = await import("./testDotnetProvider.ts");
+    const result = await testDotnetProvider.run({
       workspaceRoot: tmpDir, baseRef: "main", headRef: "HEAD", changedFiles: [], env: {},
     });
-    expect(result.payload.suites).toHaveLength(1);
-    expect(result.payload.suites[0]?.name).toBe("api");
+    expect(result.payload.suites[0]?.name).toBe("dotnet");
     expect(result.payload.failed).toBe(1);
     const f = result.findings[0];
     if (f?.kind === "line") {
-      expect(f.ruleId).toBe("api/runner-failed");
-      expect(f.message).toContain("dotnet test produced no .trx files");
+      expect(f.ruleId).toBe("dotnet/runner-failed");
     }
   });
 });

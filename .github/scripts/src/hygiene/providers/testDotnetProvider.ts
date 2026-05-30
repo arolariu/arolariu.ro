@@ -1,11 +1,11 @@
 /**
- * @fileoverview Test provider for the @arolariu/api .NET / xUnit tests.
- * @module github/scripts/src/hygiene/providers/testApiProvider
+ * @fileoverview .NET unit tests provider (@arolariu/api xUnit suite via TRX).
+ * @module github/scripts/src/hygiene/providers/testDotnetProvider
  *
  * @remarks
- * Runs `dotnet test arolariu.slnx --configuration Release --logger trx` and
- * parses the produced .trx file(s) into per-suite results. One suite per
- * .trx file found under `TestResults/`.
+ * Runs `dotnet test arolariu.slnx --configuration Release --logger trx` at the
+ * repo root and parses the produced .trx file(s) into per-test-project suite
+ * results. One suite per .trx file produced.
  */
 
 import * as exec from "@actions/exec";
@@ -24,10 +24,6 @@ import {
 const API_DIR = path.join("sites", "api.arolariu.ro");
 const TEST_RESULTS_REL = path.join(API_DIR, "TestResults");
 
-/**
- * Recursively finds files matching the predicate under root. Returns absolute paths.
- * Tolerates missing root directory (returns []).
- */
 async function findFiles(root: string, matcher: (name: string) => boolean): Promise<string[]> {
   let entries: import("node:fs").Dirent[];
   try {
@@ -47,16 +43,15 @@ async function findFiles(root: string, matcher: (name: string) => boolean): Prom
   return results;
 }
 
-export const testApiProvider: CheckProvider<TestSuitesPayload> = {
-  id: "test-api",
-  name: "Tests · API (.NET)",
-  icon: "🧪",
+export const testDotnetProvider: CheckProvider<TestSuitesPayload> = {
+  id: "test-dotnet",
+  name: "DotNet Unit Tests",
+  icon: "🟪",
   defaultGate: {kind: "blocking", blockOn: "error"},
   payloadSchema: testSuitesPayloadSchema,
   applicableTo: () => true,
   async run(input: ProviderRunInput): Promise<ProviderRunOutput<TestSuitesPayload>> {
     const trxDirAbs = path.join(input.workspaceRoot, TEST_RESULTS_REL);
-    // Clean prior TRX so we only see this run's output.
     await fs.rm(trxDirAbs, {recursive: true, force: true}).catch(() => {});
 
     await exec.getExecOutput(
@@ -65,7 +60,7 @@ export const testApiProvider: CheckProvider<TestSuitesPayload> = {
         "test",
         "arolariu.slnx",
         "--configuration", "Release",
-        "--logger", `trx;LogFilePrefix=hygiene`,
+        "--logger", "trx;LogFilePrefix=hygiene",
         "--results-directory", TEST_RESULTS_REL,
         "--nologo",
         "--verbosity", "quiet",
@@ -75,10 +70,8 @@ export const testApiProvider: CheckProvider<TestSuitesPayload> = {
 
     const trxFiles = await findFiles(trxDirAbs, (n) => n.endsWith(".trx"));
     if (trxFiles.length === 0) {
-      // Surface a synthetic "runner-failed" suite so the PR comment shows
-      // something actionable instead of silently passing with 0 tests.
       const suite: SuiteResult = {
-        name: "api",
+        name: "dotnet",
         totalTests: 1,
         passed: 0,
         failed: 1,
@@ -90,19 +83,18 @@ export const testApiProvider: CheckProvider<TestSuitesPayload> = {
           line: 1,
           column: 1,
           message: "dotnet test produced no .trx files (check setup-dotnet / restore steps in the workflow).",
-          ruleId: "api/runner-failed",
-          suite: "api",
+          ruleId: "dotnet/runner-failed",
+          suite: "dotnet",
         }],
       };
       return {payload: aggregateSuites([suite]), findings: flattenSuiteFindings([suite])};
     }
 
-    // One TRX file per test project. Use the file stem as the suite name.
     const suites: SuiteResult[] = [];
     for (const trxFile of trxFiles) {
       const xml = await fs.readFile(trxFile, "utf-8");
       const suiteName = path.basename(trxFile, ".trx").replace(/^hygiene[._-]/, "");
-      suites.push(parseTrxToSuiteResult(suiteName || "api", xml));
+      suites.push(parseTrxToSuiteResult(suiteName || "dotnet", xml));
     }
     return {payload: aggregateSuites(suites), findings: flattenSuiteFindings(suites)};
   },

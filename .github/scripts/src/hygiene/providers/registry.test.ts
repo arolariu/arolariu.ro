@@ -3,16 +3,15 @@ import {REGISTRY, getProviderById, providerIds} from "./registry.ts";
 
 describe("REGISTRY", () => {
   it("contains all v3 providers in expected order", () => {
-    expect(providerIds()).toEqual(["format", "lint", "test-scripts", "test-frontend", "test-api", "test-exp", "stats"]);
+    expect(providerIds()).toEqual(["format", "lint", "test-typescript", "test-dotnet", "test-python", "stats"]);
   });
 
   it("getProviderById returns the right provider", () => {
     expect(getProviderById("format")?.name).toBe("Prettier");
     expect(getProviderById("lint")?.name).toBe("ESLint");
-    expect(getProviderById("test-scripts")?.name).toBe("Tests · Scripts");
-    expect(getProviderById("test-frontend")?.name).toBe("Tests · Frontend");
-    expect(getProviderById("test-api")?.name).toBe("Tests · API (.NET)");
-    expect(getProviderById("test-exp")?.name).toBe("Tests · Exp (Python)");
+    expect(getProviderById("test-typescript")?.name).toBe("TypeScript Unit Tests");
+    expect(getProviderById("test-dotnet")?.name).toBe("DotNet Unit Tests");
+    expect(getProviderById("test-python")?.name).toBe("Python Unit Tests");
     expect(getProviderById("stats")?.name).toBe("Statistics");
   });
 

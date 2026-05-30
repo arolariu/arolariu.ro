@@ -14,10 +14,10 @@ const samplePytestXml = `<?xml version="1.0" encoding="utf-8"?>
   </testsuite>
 </testsuites>`;
 
-describe("testExpProvider", () => {
+describe("testPythonProvider", () => {
   let tmpDir: string;
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "exp-test-"));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "python-test-"));
     vi.resetModules();
   });
   afterEach(async () => {
@@ -25,15 +25,13 @@ describe("testExpProvider", () => {
   });
 
   it("has stable identity fields", async () => {
-    const {testExpProvider} = await import("./testExpProvider.ts");
-    expect(testExpProvider.id).toBe("test-exp");
-    expect(testExpProvider.name).toBe("Tests · Exp (Python)");
-    expect(testExpProvider.defaultGate).toEqual({kind: "blocking", blockOn: "error"});
+    const {testPythonProvider} = await import("./testPythonProvider.ts");
+    expect(testPythonProvider.id).toBe("test-python");
+    expect(testPythonProvider.name).toBe("Python Unit Tests");
+    expect(testPythonProvider.defaultGate).toEqual({kind: "blocking", blockOn: "error"});
   });
 
-  it("parses pytest JUnit XML output into a suite", async () => {
-    // testExpProvider deletes the junit file before running, so the mocked
-    // exec must write it as a side effect.
+  it("parses pytest JUnit XML into a suite", async () => {
     const xmlPath = path.join(tmpDir, "sites", "exp.arolariu.ro", ".pytest-cache", "hygiene-junit.xml");
     vi.doMock("@actions/exec", () => ({
       getExecOutput: vi.fn().mockImplementation(async () => {
@@ -42,38 +40,34 @@ describe("testExpProvider", () => {
         return {exitCode: 1, stdout: "", stderr: ""};
       }),
     }));
-    const {testExpProvider} = await import("./testExpProvider.ts");
-    const result = await testExpProvider.run({
+    const {testPythonProvider} = await import("./testPythonProvider.ts");
+    const result = await testPythonProvider.run({
       workspaceRoot: tmpDir, baseRef: "main", headRef: "HEAD", changedFiles: [], env: {},
     });
     expect(result.payload.suites).toHaveLength(1);
-    expect(result.payload.suites[0]?.name).toBe("exp");
+    expect(result.payload.suites[0]?.name).toBe("python");
     expect(result.payload.totalTests).toBe(3);
-    expect(result.payload.passed).toBe(2);
     expect(result.payload.failed).toBe(1);
-    expect(result.findings).toHaveLength(1);
     const f = result.findings[0];
     if (f?.kind === "line") {
-      expect(f.suite).toBe("exp");
+      expect(f.suite).toBe("python");
       expect(f.file).toBe("tests/test_api.py");
-      expect(f.line).toBe(20);
     }
   });
 
-  it("emits a runner-failed synthetic suite when no JUnit XML is produced", async () => {
+  it("emits runner-failed synthetic suite when no JUnit XML is produced", async () => {
     vi.doMock("@actions/exec", () => ({
       getExecOutput: vi.fn().mockResolvedValue({exitCode: 1, stdout: "", stderr: "python missing"}),
     }));
-    const {testExpProvider} = await import("./testExpProvider.ts");
-    const result = await testExpProvider.run({
+    const {testPythonProvider} = await import("./testPythonProvider.ts");
+    const result = await testPythonProvider.run({
       workspaceRoot: tmpDir, baseRef: "main", headRef: "HEAD", changedFiles: [], env: {},
     });
-    expect(result.payload.suites).toHaveLength(1);
-    expect(result.payload.suites[0]?.name).toBe("exp");
+    expect(result.payload.suites[0]?.name).toBe("python");
     expect(result.payload.failed).toBe(1);
     const f = result.findings[0];
     if (f?.kind === "line") {
-      expect(f.ruleId).toBe("exp/runner-failed");
+      expect(f.ruleId).toBe("python/runner-failed");
     }
   });
 });

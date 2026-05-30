@@ -10,18 +10,16 @@ import type {CheckProvider} from "../domain/provider.ts";
 import {formatProvider} from "./formatProvider.ts";
 import {lintProvider} from "./lintProvider.ts";
 import {statsProvider} from "./statsProvider.ts";
-import {testApiProvider} from "./testApiProvider.ts";
-import {testExpProvider} from "./testExpProvider.ts";
-import {testFrontendProvider} from "./testFrontendProvider.ts";
-import {testScriptsProvider} from "./testScriptsProvider.ts";
+import {testDotnetProvider} from "./testDotnetProvider.ts";
+import {testPythonProvider} from "./testPythonProvider.ts";
+import {testTypescriptProvider} from "./testTypescriptProvider.ts";
 
 export const REGISTRY: readonly CheckProvider<unknown>[] = [
   formatProvider as CheckProvider<unknown>,
   lintProvider as CheckProvider<unknown>,
-  testScriptsProvider as CheckProvider<unknown>,
-  testFrontendProvider as CheckProvider<unknown>,
-  testApiProvider as CheckProvider<unknown>,
-  testExpProvider as CheckProvider<unknown>,
+  testTypescriptProvider as CheckProvider<unknown>,
+  testDotnetProvider as CheckProvider<unknown>,
+  testPythonProvider as CheckProvider<unknown>,
   statsProvider as CheckProvider<unknown>,
 ];
 
