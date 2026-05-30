@@ -1,6 +1,6 @@
 import {describe, it, expect, vi, beforeEach} from "vitest";
 import {formatProvider, parsePrettierCheckOutput} from "./formatProvider.ts";
-import type {Finding, FileFinding} from "../domain/types.ts";
+import type {FileFinding} from "../domain/types.ts";
 
 describe("parsePrettierCheckOutput", () => {
   it("returns [] when output has no warnings", () => {

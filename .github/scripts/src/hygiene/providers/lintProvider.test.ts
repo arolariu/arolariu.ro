@@ -49,7 +49,11 @@ describe("parseEslintJson", () => {
       filePath: "/x.ts", errorCount: 1, warningCount: 0,
       messages: [{line: 1, column: 1, severity: 2, message: "Parsing error", ruleId: null}],
     }];
-    expect(result(out).findings[0]?.ruleId).toBeUndefined();
+    const first = result(out).findings[0];
+    expect(first?.kind).toBe("line");
+    if (first?.kind === "line") {
+      expect(first.ruleId).toBeUndefined();
+    }
     function result(o: EslintFileResult[]) { return parseEslintJson(o); }
   });
 });

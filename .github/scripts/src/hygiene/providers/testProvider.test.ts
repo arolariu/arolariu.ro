@@ -46,8 +46,12 @@ describe("parseVitestJsonReport", () => {
       }],
     };
     const r = parseVitestJsonReport(report);
-    expect(r.findings[0]?.line).toBe(1);
-    expect(r.findings[0]?.column).toBe(1);
+    const first = r.findings[0];
+    expect(first?.kind).toBe("line");
+    if (first?.kind === "line") {
+      expect(first.line).toBe(1);
+      expect(first.column).toBe(1);
+    }
   });
 });
 
