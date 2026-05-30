@@ -123,6 +123,12 @@ jobs:
         if: matrix.provider.id == 'lint' || matrix.provider.id == 'test-typescript'
         run: npm run build:components
 
+      - name: 🔧 SvelteKit sync (generates .svelte-kit/tsconfig.json required by eslint-plugin-n)
+        if: matrix.provider.id == 'lint'
+        working-directory: sites/cv.arolariu.ro
+        run: npx svelte-kit sync
+        continue-on-error: true
+
       - name: 📦 Setup .NET
         if: matrix.provider.needs-dotnet
         uses: actions/setup-dotnet@v5
