@@ -4,8 +4,7 @@ import {
   normalizePath,
   cleanMessage,
   renderHeader,
-  renderKpiCards,
-  renderOverviewTable,
+  renderScorecard,
   renderProviderCard,
   renderRulesTable,
   renderSuiteChipRow,
@@ -147,7 +146,7 @@ describe("renderHeader", () => {
   it("includes the short commit sha", () => {
     expect(renderHeader(makeReport({commitSha: "abcdef1234567890"}))).toMatch(/abcdef1/);
   });
-  it("renders provider counts (X of Y providers passed · K failed)", () => {
+  it("renders compact provider pass counts with total duration", () => {
     const report = makeReport({
       outcomes: [
         makeOutcome({gateResult: "passed"}),
@@ -155,8 +154,8 @@ describe("renderHeader", () => {
         makeOutcome({gateResult: "failed"}),
       ],
     });
-    expect(renderHeader(report)).toMatch(/2 of 3 providers passed/);
-    expect(renderHeader(report)).toMatch(/1 failed/);
+    expect(renderHeader(report)).toMatch(/2\/3 providers passed/);
+    expect(renderHeader(report)).toMatch(/300ms/);
   });
   it("renders total findings counts broken down", () => {
     const report = makeReport({
@@ -184,63 +183,109 @@ describe("renderHeader", () => {
   });
 });
 
-describe("renderKpiCards", () => {
-  it("renders four KPI cards", () => {
-    const html = renderKpiCards(makeReport());
-    expect(html).toMatch(/Findings/);
-    expect(html).toMatch(/Errors/);
-    expect(html).toMatch(/Warnings/);
-    expect(html).toMatch(/Wall time/);
-  });
-  it("uses bold error count when there are errors", () => {
-    const report = makeReport({
-      outcomes: [makeOutcome({findings: [lineFinding({severity: "error"})]})],
-    });
-    expect(renderKpiCards(report)).toMatch(/\*\*1\*\* ❌/);
-  });
-  it("sums wall time across all providers", () => {
-    const report = makeReport({
-      outcomes: [
-        makeOutcome({durationMs: 30_000}),
-        makeOutcome({durationMs: 60_000}),
-      ],
-    });
-    expect(renderKpiCards(report)).toMatch(/1m30s/);
-  });
-});
+describe("renderScorecard", () => {
+  it("renders the GitHub-safe scorecard columns", () => {
+    const md = renderScorecard(makeReport());
 
-describe("renderOverviewTable", () => {
-  it("renders one row per outcome in registry order", () => {
+    expect(md).toMatch(/\| Check \| Result \| Signal \| Time \|/);
+    expect(md).toMatch(/\|---\|:---:\|---\|---:\|/);
+  });
+
+  it("renders one row per provider in registry order", () => {
     const report = makeReport({
       outcomes: [
+        makeOutcome({
+          providerId: "lint",
+          providerName: "ESLint",
+          providerIcon: "🔍",
+          gateResult: "failed",
+          findings: [lineFinding({ruleId: "no-unused"})],
+        }),
         makeOutcome({providerId: "format", providerName: "Prettier", providerIcon: "🎨"}),
-        makeOutcome({providerId: "lint", providerName: "ESLint", providerIcon: "🔍", gateResult: "failed",
-          findings: [lineFinding()]}),
       ],
     });
-    const md = renderOverviewTable(report);
+    const md = renderScorecard(report);
+
     expect(md).toMatch(/Prettier/);
     expect(md).toMatch(/ESLint/);
+    const providerRows = md
+      .split("\n")
+      .filter((line: string) => /^\| (?!Check \|)[^|-]/.test(line));
+    expect(providerRows).toHaveLength(2);
     expect(md.indexOf("Prettier")).toBeLessThan(md.indexOf("ESLint"));
   });
-  it("renders '—' for zero-finding rows", () => {
-    const report = makeReport({outcomes: [makeOutcome({findings: []})]});
-    expect(renderOverviewTable(report)).toMatch(/—/);
-  });
-  it("renders bold finding count for non-zero rows", () => {
+
+  it("uses clean as the signal for passing providers with no findings", () => {
     const report = makeReport({
-      outcomes: [makeOutcome({findings: [lineFinding(), lineFinding()]})],
+      outcomes: [makeOutcome({providerName: "Prettier", findings: []})],
     });
-    expect(renderOverviewTable(report)).toMatch(/\*\*2\*\*/);
+
+    expect(renderScorecard(report)).toMatch(/\| 🟦 Prettier \| ✅ PASS \| clean \|/);
   });
-  it("renders '—' for rows with only MetricFindings", () => {
-    const metricFinding: Finding = {kind: "metric", severity: "info", name: "diff.churn", value: 10, unit: "lines", message: "10 lines"};
-    const report = makeReport({outcomes: [makeOutcome({findings: [metricFinding]})]});
-    expect(renderOverviewTable(report)).toMatch(/—/);
+
+  it("summarizes failed lint providers with finding count and top rule", () => {
+    const report = makeReport({
+      outcomes: [
+        makeOutcome({
+          providerId: "lint",
+          providerName: "ESLint",
+          providerIcon: "🔍",
+          gateResult: "failed",
+          findings: [
+            lineFinding({ruleId: "react-hooks/exhaustive-deps"}),
+            lineFinding({ruleId: "react-hooks/exhaustive-deps"}),
+            lineFinding({ruleId: "@typescript-eslint/no-unused-vars"}),
+          ],
+        }),
+      ],
+    });
+    const md = renderScorecard(report);
+
+    expect(md).toMatch(/\*\*3 findings\*\*/);
+    expect(md).toMatch(/top: `react-hooks\/exhaustive-deps`/);
   });
-  it("renders 💥 emoji for errored providers", () => {
-    const report = makeReport({outcomes: [makeOutcome({gateResult: "errored"})]});
-    expect(renderOverviewTable(report)).toMatch(/💥/);
+
+  it("summarizes errored providers as runner errors", () => {
+    const report = makeReport({
+      outcomes: [makeOutcome({providerName: "ESLint", gateResult: "errored"})],
+    });
+
+    expect(renderScorecard(report)).toMatch(/\| 🟦 ESLint \| 💥 ERROR \| runner error \|/);
+  });
+
+  it("excludes MetricFindings from scorecard finding counts", () => {
+    const metricFinding: Finding = {
+      kind: "metric",
+      severity: "info",
+      name: "diff.churn",
+      value: 10,
+      unit: "lines",
+      message: "10 lines",
+    };
+    const report = makeReport({
+      outcomes: [makeOutcome({findings: [metricFinding]})],
+    });
+
+    expect(renderScorecard(report)).not.toMatch(/findings/);
+    expect(renderScorecard(report)).toMatch(/clean/);
+  });
+
+  it("summarizes stats providers with changed-file count and largest diff", () => {
+    const report = makeReport({
+      outcomes: [
+        makeOutcome({
+          providerId: "stats",
+          providerName: "Bundle stats",
+          providerIcon: "📦",
+          findings: [
+            {kind: "comparison", severity: "info", name: "small", baseValue: 1000, headValue: 2024, diff: 1024, unit: "B", message: ""},
+            {kind: "comparison", severity: "info", name: "large", baseValue: 1000, headValue: 5096, diff: 4096, unit: "B", message: ""},
+          ],
+        }),
+      ],
+    });
+
+    expect(renderScorecard(report)).toMatch(/2 files changed · ▲ \+4\.0 KB/);
   });
 });
 
@@ -524,11 +569,10 @@ describe("renderFooter", () => {
 });
 
 describe("buildStepSummary", () => {
-  it("includes header, KPI cards, overview table, and footer", () => {
+  it("includes header, scorecard, and footer", () => {
     const md = buildStepSummary(makeReport());
     expect(md).toMatch(/Hygiene Check/);
-    expect(md).toMatch(/Findings/);
-    expect(md).toMatch(/\| Provider \|/);
+    expect(md).toMatch(/\| Check \| Result \| Signal \| Time \|/);
     expect(md).toMatch(/Hygiene v3/);
   });
   it("does not render a card for passing providers", () => {

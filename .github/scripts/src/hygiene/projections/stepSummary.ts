@@ -3,12 +3,10 @@
  * @module github/scripts/src/hygiene/projections/stepSummary
  *
  * @remarks
- * Failure-focused redesign (2026-05-30). The comment is composed top-to-bottom
- * by render helpers; each is a pure function returning a markdown string.
- *
- * Reading order: header → KPI cards → overview table → per-provider failure
- * cards (in registry order; passing providers omitted) → stats info-callout
- * (only when non-zero changes) → footer.
+ * Minimal scorecard redesign (2026-05-31). The comment is composed from
+ * GitHub-safe markdown only: verdict header, one provider scorecard, collapsed
+ * provider details for failures/errors, optional collapsed stats details, and a
+ * compact footer.
  */
 
 import * as core from "@actions/core";
@@ -45,6 +43,7 @@ interface TestSuitesPayloadLike {
 const TOP_RULES_LIMIT = 5;
 const MAX_FAILING_TESTS_PER_SUITE = 10;
 const MAX_MESSAGE_LENGTH = 240;
+const PROVIDER_ORDER: readonly string[] = ["format", "lint", "test-typescript", "test-dotnet", "test-python", "stats"];
 
 function escapeHtml(s: string): string {
   return s
@@ -140,6 +139,43 @@ function countBySeverity(findings: readonly Finding[]): {errors: number; warning
   return {errors, warnings, infos};
 }
 
+interface ReportTotals {
+  readonly visibleFindings: readonly Finding[];
+  readonly passed: number;
+  readonly failed: number;
+  readonly errored: number;
+  readonly durationMs: number;
+}
+
+function collectReportTotals(report: HygieneReport): ReportTotals {
+  let visible: Finding[] = [];
+  let passed = 0;
+  let failed = 0;
+  let errored = 0;
+  let durationMs = 0;
+
+  for (const outcome of report.outcomes) {
+    visible = visible.concat(visibleFindings(outcome.findings));
+    durationMs += outcome.durationMs;
+    if (outcome.gateResult === "passed") passed++;
+    else if (outcome.gateResult === "failed") failed++;
+    else if (outcome.gateResult === "errored") errored++;
+  }
+
+  return {visibleFindings: visible, passed, failed, errored, durationMs};
+}
+
+function topRule(findings: readonly Finding[]): string | null {
+  const counts = new Map<string, number>();
+  for (const finding of findings) {
+    const ruleId = finding.kind === "line" || finding.kind === "file" ? finding.ruleId : undefined;
+    if (ruleId) counts.set(ruleId, (counts.get(ruleId) ?? 0) + 1);
+  }
+
+  const first = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+  return first?.[0] ?? null;
+}
+
 export function normalizePath(file: string): string {
   const runnerMatch = file.match(/^\/home\/runner\/work\/[^/]+\/[^/]+\/(.*)$/);
   if (runnerMatch?.[1]) return runnerMatch[1];
@@ -170,53 +206,84 @@ export function classifyProvider(id: string): ProviderCategory {
 }
 
 export function renderHeader(report: HygieneReport): string {
-  const passed = report.outcomes.filter((o) => o.gateResult === "passed").length;
-  const failed = report.outcomes.filter((o) => o.gateResult === "failed").length;
-  const errored = report.outcomes.filter((o) => o.gateResult === "errored").length;
+  const totals = collectReportTotals(report);
+  const {errors, warnings, infos} = countBySeverity(totals.visibleFindings);
   const total = report.outcomes.length;
 
-  let allFindings: Finding[] = [];
-  for (const o of report.outcomes) allFindings = allFindings.concat(visibleFindings(o.findings) as Finding[]);
-  const {errors, warnings, infos} = countBySeverity(allFindings);
-
   const lines: string[] = [];
-  lines.push(`## 🩺 Hygiene Check`);
+  lines.push(`## 🩺 Hygiene Check — ${resultVerdict(report.overallResult)}`);
   lines.push("");
-  const verdictParts: string[] = [`**${resultVerdict(report.overallResult)}**`, `${passed} of ${total} providers passed`];
-  if (failed > 0) verdictParts.push(`${failed} failed`);
-  if (errored > 0) verdictParts.push(`${errored} errored`);
-  lines.push(`> ${verdictParts.join(" · ")}`);
-  lines.push(`> ${allFindings.length} findings — ${errors} errors · ${warnings} warnings · ${infos} info`);
+  lines.push(
+    `> **${totals.passed}/${total} providers passed** · **${totals.visibleFindings.length} findings** · ` +
+      `${errors} errors · ${warnings} warnings · ${infos} info · ${formatDurationMs(totals.durationMs)}`,
+  );
   lines.push(`> Commit \`${report.commitSha.substring(0, 7)}\` · [view run](${report.workflowRunUrl})`);
   return lines.join("\n");
 }
 
-export function renderKpiCards(report: HygieneReport): string {
-  let allFindings: Finding[] = [];
-  let totalDuration = 0;
-  for (const o of report.outcomes) {
-    allFindings = allFindings.concat(visibleFindings(o.findings) as Finding[]);
-    totalDuration += o.durationMs;
-  }
-  const {errors, warnings} = countBySeverity(allFindings);
+function comparisonDiffLabel(finding: Finding): string {
+  if (finding.kind !== "comparison") return "= 0";
 
-  const errorsCell = errors > 0 ? `**${errors}** ❌` : String(errors);
-  const warningsCell = warnings > 0 ? `**${warnings}** ⚠️` : String(warnings);
+  const absDiff = finding.unit === "B"
+    ? formatHumanBytes(Math.abs(finding.diff))
+    : `${Math.abs(finding.diff)}${finding.unit ?? ""}`;
 
-  return [
-    `| 🔍 Findings | Errors | Warnings | ⏱ Wall time |`,
-    `|:---:|:---:|:---:|:---:|`,
-    `| **${allFindings.length}** | ${errorsCell} | ${warningsCell} | ${formatDurationMs(totalDuration)} |`,
-  ].join("\n");
+  if (finding.diff > 0) return `▲ +${absDiff}`;
+  if (finding.diff < 0) return `▼ -${absDiff}`;
+  return "= 0";
 }
 
-export function renderOverviewTable(report: HygieneReport): string {
-  const header = `| Provider | Status | Findings | Time |\n|---|:---:|---:|---:|`;
-  const rows = report.outcomes.map((o) => {
-    const visible = visibleFindings(o.findings);
-    const findingsCell = visible.length === 0 ? "—" : `**${visible.length}**`;
-    return `| ${o.providerIcon} ${o.providerName} | ${resultEmoji(o.gateResult)} | ${findingsCell} | ${formatDurationMs(o.durationMs)} |`;
-  });
+function statsSignal(outcome: ProviderOutcome<unknown>): string {
+  const comparisons = outcome.findings.filter((finding) => finding.kind === "comparison");
+  if (comparisons.length === 0) return "no bundle changes";
+
+  const largest = comparisons
+    .slice()
+    .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))[0];
+  const changed = `${comparisons.length} file${comparisons.length === 1 ? "" : "s"} changed`;
+  return largest ? `${changed} · ${comparisonDiffLabel(largest)}` : changed;
+}
+
+function testSignal(outcome: ProviderOutcome<unknown>): string | null {
+  const payload = outcome.payload as TestSuitesPayloadLike | null;
+  if (!payload) return null;
+
+  if (payload.failed > 0) return `**${payload.failed} failed** of ${payload.totalTests}`;
+  return `${payload.passed} passed`;
+}
+
+function providerSignal(outcome: ProviderOutcome<unknown>): string {
+  if (outcome.gateResult === "errored") return "runner error";
+
+  const category = classifyProvider(outcome.providerId);
+  if (category === "stats") return statsSignal(outcome);
+
+  if (category === "test") {
+    const signal = testSignal(outcome);
+    if (signal) return signal;
+  }
+
+  const visible = visibleFindings(outcome.findings);
+  if (visible.length === 0) return "clean";
+
+  const rule = topRule(visible);
+  const count = `**${visible.length} finding${visible.length === 1 ? "" : "s"}**`;
+  return rule ? `${count} · top: \`${escapeHtml(rule)}\`` : count;
+}
+
+function providerSortIndex(providerId: string): number {
+  const index = PROVIDER_ORDER.indexOf(providerId);
+  return index === -1 ? PROVIDER_ORDER.length : index;
+}
+
+export function renderScorecard(report: HygieneReport): string {
+  const header = `| Check | Result | Signal | Time |\n|---|:---:|---|---:|`;
+  const rows = report.outcomes
+    .slice()
+    .sort((a, b) => providerSortIndex(a.providerId) - providerSortIndex(b.providerId))
+    .map((outcome) => {
+      return `| ${outcome.providerIcon} ${outcome.providerName} | ${resultEmoji(outcome.gateResult)} ${resultPill(outcome.gateResult)} | ${providerSignal(outcome)} | ${formatDurationMs(outcome.durationMs)} |`;
+    });
   return [header, ...rows].join("\n");
 }
 
@@ -380,10 +447,7 @@ export function buildStepSummary(report: HygieneReport): string {
 
   cb.addRaw(renderHeader(report));
   cb.addRaw("\n\n");
-  cb.addRaw(renderKpiCards(report));
-  cb.addRaw("\n\n");
-  cb.addHeading("Provider Overview", 3);
-  cb.addRaw(renderOverviewTable(report));
+  cb.addRaw(renderScorecard(report));
   cb.addRaw("\n\n");
 
   for (const o of report.outcomes) {
