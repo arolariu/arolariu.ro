@@ -42,6 +42,7 @@ env:
   NODE_VERSION: "24"
   HEAD_REF: ${{ github.event.pull_request.head.sha || github.sha }}
   BASE_REF: ${{ github.event.pull_request.base.sha || 'origin/main' }}
+  BASE_BRANCH: ${{ github.event.pull_request.base.ref || 'main' }}
   PR_NUMBER: ${{ github.event.pull_request.number }}
 
 jobs:
@@ -64,8 +65,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git fetch origin main:refs/remotes/origin/main --depth=1 --no-tags --quiet || true
-          CHANGED=$(git diff --name-only "${{ env.BASE_REF }}...${{ env.HEAD_REF }}" | wc -l | tr -d ' ')
+          # Fetch the PR base branch (may differ from main when targeting preview etc.)
+          git fetch origin "$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH" --depth=1 --no-tags --quiet || true
+          # Also fetch the exact base SHA in case the branch has moved since PR creation.
+          git fetch origin "${{ env.BASE_REF }}" --depth=1 --no-tags --quiet || true
+          if ! CHANGED=$(git diff --name-only "${{ env.BASE_REF }}...${{ env.HEAD_REF }}" 2>/dev/null | wc -l | tr -d ' '); then
+            echo "::warning::Could not compute diff against base $BASE_REF; defaulting to has-changes=true so hygiene still runs."
+            CHANGED=1
+          fi
           echo "Detected $CHANGED changed file(s)."
           if [ "$CHANGED" -gt 0 ]; then
             echo "has-changes=true" >> "$GITHUB_OUTPUT"
