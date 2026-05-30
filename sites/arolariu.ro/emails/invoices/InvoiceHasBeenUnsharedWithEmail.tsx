@@ -1,4 +1,3 @@
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Email template for notifying users that their access to a shared invoice was revoked.
  * @module emails/invoices/InvoiceHasBeenUnsharedWithEmail
@@ -8,6 +7,7 @@ import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
 import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
+import {selectorFromPath} from "../_lib/i18n";
 
 type Props = {
   /** The username of the person who revoked access. */

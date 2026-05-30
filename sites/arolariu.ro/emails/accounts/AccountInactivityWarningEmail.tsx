@@ -1,4 +1,3 @@
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Account inactivity warning email component for user retention.
  * @module emails/accounts/AccountInactivityWarningEmail
@@ -32,7 +31,7 @@ import {
   EmailParagraphStyles,
   KeyValueTable,
 } from "../_components";
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_lib/i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages, selectorFromPath} from "../_lib/i18n";
 
 /**
  * Properties for the account inactivity warning email component.

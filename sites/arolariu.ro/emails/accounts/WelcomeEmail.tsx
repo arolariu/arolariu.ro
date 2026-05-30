@@ -1,4 +1,3 @@
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Welcome email sent to new users upon first sign-up.
  * @module emails/accounts/WelcomeEmail
@@ -8,6 +7,7 @@ import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles} from "../_components";
 import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
+import {selectorFromPath} from "../_lib/i18n";
 
 type Props = {
   readonly username: string;

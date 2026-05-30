@@ -1,4 +1,3 @@
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Celebration email sent after a user uploads their very first invoice.
  * @module emails/invoices/FirstInvoiceUploadedEmail
@@ -23,6 +22,7 @@ import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
 import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
+import {selectorFromPath} from "../_lib/i18n";
 
 /**
  * Properties for the FirstInvoiceUploadedEmail component.

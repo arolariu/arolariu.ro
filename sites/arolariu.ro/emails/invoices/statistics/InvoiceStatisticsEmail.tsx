@@ -1,4 +1,3 @@
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Base email template for invoice statistics summaries.
  * @module emails/invoices/statistics/InvoiceStatisticsEmail
@@ -18,6 +17,7 @@ import {
   MetricsGrid,
 } from "../../_components";
 import {defineEmailTemplate} from "../../_lib/defineEmailTemplate";
+import {selectorFromPath} from "../../_lib/i18n";
 
 type Frequency = "daily" | "weekly" | "monthly" | "yearly";
 

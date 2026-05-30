@@ -1,4 +1,3 @@
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Email template for notifying users that an invoice has been made public.
  * @module emails/invoices/InvoiceHasBeenMadePublicEmail
@@ -23,6 +22,7 @@ import {
   KeyValueTable,
 } from "../_components";
 import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
+import {selectorFromPath} from "../_lib/i18n";
 
 /**
  * Properties for the InvoiceHasBeenMadePublicEmail component.

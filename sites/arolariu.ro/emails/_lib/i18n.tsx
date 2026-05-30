@@ -7,6 +7,7 @@
  * - Locale types and constants (EmailLocale, DEFAULT_LOCALE, SUPPORTED_LOCALES)
  * - Message bundle loading via {@link loadMessages}
  * - Translator factory {@link createEmailTranslator} (thin wrapper around next-intl)
+ * - Path helper {@link selectorFromPath} for email-only key references
  *
  * **Why one file?**
  * - Single import for all email i18n needs — templates import once from `"../_lib/i18n"`
@@ -21,20 +22,19 @@
  * has no observable effect. Templates inline their own `t.rich()`
  * renderers with a scoped `// eslint-disable-next-line react/no-unstable-nested-components`.
  *
- * **Type safety without `any`:**
- * The deep-key inference from next-intl is sidestepped by supplying explicit
- * `<AbstractIntlMessages, string>` type arguments to `createTranslator`, not by
- * casting through `any`. The `as unknown as EmailTranslator` widening at the
- * end is the deliberate cast — necessary because next-intl's return type still
- * ties back to the (now-erased) key tree generic.
+ * **Email-only Next Intl usage:**
+ * React Email templates render outside an interactive React tree. This module
+ * therefore uses Next Intl's non-hook `createTranslator` API and exports a
+ * local `selectorFromPath` compatibility helper, avoiding selector packages
+ * that import React context at module evaluation time.
  *
  * **loadMessages path:**
  * This file lives in `emails/_lib/`, so the dynamic imports reach
  * `../../messages/*.json` (two levels up from `_lib/`).
  */
 
-import {type AbstractIntlMessages} from "next-intl";
-import {createTranslator, type SelectorTranslator} from "next-intl-selector";
+import {createTranslator, type AbstractIntlMessages} from "next-intl";
+import type {ReactNode} from "react";
 
 // ============================================================================
 // LOCALE DATA & CONSTANTS
@@ -49,13 +49,37 @@ export const DEFAULT_LOCALE: EmailLocale = "en";
 /** Loaded message tree used by selector translators. */
 export type EmailMessages = Record<string, unknown>;
 
+/** Values supported by ICU interpolation in email messages. */
+export type EmailTranslationValues = Readonly<Record<string, string | number | Date>>;
+
+/** Values supported by rich-text interpolation in email messages. */
+export type EmailRichTranslationValues = Readonly<Record<string, string | number | Date | ((chunks: ReactNode) => ReactNode)>>;
+
 /**
- * Selector translator returned by {@link createEmailTranslator}.
+ * Translator returned by {@link createEmailTranslator}.
  *
  * @remarks
- * Email templates use full selector paths, matching the website runtime.
+ * Email templates use full message paths, e.g. `"emails.welcome.greeting"`.
  */
-export type EmailTranslator = SelectorTranslator;
+export type EmailTranslator = {
+  (key: string, values?: EmailTranslationValues): string;
+  readonly rich: (key: string, values?: EmailRichTranslationValues) => ReactNode;
+  readonly markup: (key: string, values?: Readonly<Record<string, string | number | Date | ((chunks: string) => string)>>) => string;
+  readonly raw: (key: string) => unknown;
+  readonly has: (key: string) => boolean;
+};
+
+/**
+ * Email-local compatibility helper for previous selector-style call sites.
+ *
+ * @remarks
+ * This intentionally returns the path unchanged so email templates can keep
+ * using `t(selectorFromPath("emails.example.key"))` without importing
+ * `next-intl-selector`'s React-bound runtime entrypoint.
+ */
+export function selectorFromPath(path: string): string {
+  return path;
+}
 
 // ============================================================================
 // MESSAGE LOADING
@@ -91,17 +115,17 @@ export async function loadMessages(locale: EmailLocale = DEFAULT_LOCALE): Promis
 // ============================================================================
 
 /**
- * Creates a selector translator for email messages.
+ * Creates a translator for email messages.
  *
  * @remarks
  * The `namespace` option is accepted for existing template configuration
- * compatibility, but selectors always encode the full message path.
+ * compatibility, but email templates pass full message paths.
  *
  * @example
  * ```ts
  * const messages = await loadMessages("ro");
  * const t = createEmailTranslator({locale: "ro", messages, namespace: "emails.welcome"});
- * t(selectorFromPath("emails.welcome.greeting"), {name: "Alex"}); // → "Salut, Alex"
+ * t(selectorFromPath("emails.welcome.greeting"), {name: "Alex"}); // -> "Salut, Alex"
  * ```
  */
 export function createEmailTranslator(opts: {
@@ -112,5 +136,5 @@ export function createEmailTranslator(opts: {
   return createTranslator({
     locale: opts.locale,
     messages: opts.messages as AbstractIntlMessages,
-  });
+  }) as unknown as EmailTranslator;
 }

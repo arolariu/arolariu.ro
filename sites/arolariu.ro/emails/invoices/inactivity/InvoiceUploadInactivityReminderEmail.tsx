@@ -1,4 +1,3 @@
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Progressive engagement email for invoice upload inactivity.
  * @module emails/invoices/inactivity/InvoiceUploadInactivityReminderEmail
@@ -46,6 +45,7 @@ import {
   KeyValueTable,
 } from "../../_components";
 import {defineEmailTemplate} from "../../_lib/defineEmailTemplate";
+import {selectorFromPath} from "../../_lib/i18n";
 
 /**
  * Properties for the invoice upload inactivity reminder emails.

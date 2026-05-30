@@ -1,4 +1,3 @@
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Spending threshold alert email when spending crosses a budget limit.
  * @module emails/invoices/alerts/SpendingThresholdAlertEmail
@@ -35,6 +34,7 @@ import {
   MetricsGrid,
 } from "../../_components";
 import {defineEmailTemplate} from "../../_lib/defineEmailTemplate";
+import {selectorFromPath} from "../../_lib/i18n";
 
 /**
  * A spending category with its amount for the donut chart.
