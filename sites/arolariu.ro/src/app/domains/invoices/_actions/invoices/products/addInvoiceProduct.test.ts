@@ -6,7 +6,7 @@
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {buildProduct, createJsonResponse, createTextResponse} from "../../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder} from "../../../../../../../tests/helpers";
 
 vi.mock("@/lib/actions/user/fetchUser");
 vi.mock("next/cache", () => ({revalidatePath: vi.fn()}));
@@ -18,13 +18,15 @@ const mockRevalidatePath = vi.mocked((await import("next/cache")).revalidatePath
 describe("addInvoiceProduct", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue({userIdentifier: "user-1", userJwt: "jwt-1"});
-    mockFetchWithTimeout.mockResolvedValue(createJsonResponse(buildProduct()) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
+    mockFetchWithTimeout.mockResolvedValue(
+      TestDataBuilder.jsonResponse(TestDataBuilder.build("product")) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+    );
   });
 
   it("posts a product payload and revalidates invoice pages", async () => {
     const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const product = buildProduct({name: "Milk", price: 5.99});
+    const product = TestDataBuilder.build("product", {name: "Milk", price: 5.99});
 
     const result = await addInvoiceProduct({invoiceId, product});
 
@@ -51,7 +53,7 @@ describe("addInvoiceProduct", () => {
 
   it("returns an error result for an invalid invoice id", async () => {
     const invalidId = "not-a-guid";
-    const product = buildProduct();
+    const product = TestDataBuilder.build("product");
 
     const result = await addInvoiceProduct({invoiceId: invalidId, product});
 
@@ -61,13 +63,13 @@ describe("addInvoiceProduct", () => {
 
   it("maps 5xx responses to a server-error user message", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Internal Server Error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
+      TestDataBuilder.textResponse("Internal Server Error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
         ReturnType<typeof fetchWithTimeout>
       >,
     );
 
     const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const product = buildProduct();
+    const product = TestDataBuilder.build("product");
 
     const result = await addInvoiceProduct({invoiceId, product});
 
@@ -80,11 +82,11 @@ describe("addInvoiceProduct", () => {
 
   it("maps non-5xx responses to the fallback user message", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+      TestDataBuilder.textResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const product = buildProduct();
+    const product = TestDataBuilder.build("product");
 
     const result = await addInvoiceProduct({invoiceId, product});
 
@@ -99,7 +101,7 @@ describe("addInvoiceProduct", () => {
     mockFetchUser.mockRejectedValue(new Error("Auth service unavailable"));
 
     const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const product = buildProduct();
+    const product = TestDataBuilder.build("product");
 
     const result = await addInvoiceProduct({invoiceId, product});
 
@@ -111,7 +113,7 @@ describe("addInvoiceProduct", () => {
     mockFetchWithTimeout.mockRejectedValue(new Error("Network timeout"));
 
     const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const product = buildProduct();
+    const product = TestDataBuilder.build("product");
 
     const result = await addInvoiceProduct({invoiceId, product});
 
@@ -125,7 +127,7 @@ describe("addInvoiceProduct", () => {
     mockFetchWithTimeout.mockRejectedValue("String error");
 
     const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const product = buildProduct();
+    const product = TestDataBuilder.build("product");
 
     const result = await addInvoiceProduct({invoiceId, product});
 

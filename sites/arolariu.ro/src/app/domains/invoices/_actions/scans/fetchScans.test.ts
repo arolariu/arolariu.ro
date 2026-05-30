@@ -49,7 +49,7 @@ describe("fetchScans", () => {
     ];
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -126,7 +126,7 @@ describe("fetchScans", () => {
     ];
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -201,7 +201,7 @@ describe("fetchScans", () => {
     ];
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -276,7 +276,7 @@ describe("fetchScans", () => {
     ];
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -337,7 +337,7 @@ describe("fetchScans", () => {
     ];
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -383,7 +383,7 @@ describe("fetchScans", () => {
     const authError = new Error("Unauthorized");
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -410,7 +410,7 @@ describe("fetchScans", () => {
     const azureError = new Error("Storage unavailable");
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -450,7 +450,7 @@ describe("fetchScans", () => {
     const mockUser = {userIdentifier: "user-123"};
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -510,7 +510,7 @@ describe("fetchScans", () => {
     ];
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -564,7 +564,7 @@ describe("fetchScans", () => {
     ];
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -636,7 +636,7 @@ describe("fetchScans", () => {
     ];
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -736,7 +736,7 @@ describe("fetchScans", () => {
     ];
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));

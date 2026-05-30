@@ -6,7 +6,7 @@
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {buildInvoice, createJsonResponse, createTextResponse} from "../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder} from "../../../../../../tests/helpers";
 
 vi.mock("@/lib/actions/user/fetchUser");
 const {updateInvoice} = await import("./updateInvoice");
@@ -18,14 +18,14 @@ describe("updateInvoice", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue({userIdentifier: "user-1", userJwt: "jwt-1"});
+    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
     mockFetchWithTimeout.mockResolvedValue(
-      createJsonResponse(buildInvoice({id: invoiceId})) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+      TestDataBuilder.jsonResponse(TestDataBuilder.build("invoice", {id: invoiceId})) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
   });
 
   it("posts the full invoice payload and returns the updated invoice", async () => {
-    const invoice = buildInvoice({id: invoiceId, name: "Full Update Invoice"});
+    const invoice = TestDataBuilder.build("invoice", {id: invoiceId, name: "Full Update Invoice"});
 
     const result = await updateInvoice({invoiceId, invoice});
 
@@ -48,7 +48,7 @@ describe("updateInvoice", () => {
   });
 
   it("returns an error result for an invalid invoice id", async () => {
-    const invoice = buildInvoice();
+    const invoice = TestDataBuilder.build("invoice");
     const result = await updateInvoice({invoiceId: "not-a-guid", invoice});
 
     expect(result.success).toBe(false);
@@ -59,12 +59,12 @@ describe("updateInvoice", () => {
 
   it("returns the server-error user message for 5xx responses", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Server error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
+      TestDataBuilder.textResponse("Server error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
         ReturnType<typeof fetchWithTimeout>
       >,
     );
 
-    const invoice = buildInvoice({id: invoiceId});
+    const invoice = TestDataBuilder.build("invoice", {id: invoiceId});
     const result = await updateInvoice({invoiceId, invoice});
 
     expect(result.success).toBe(false);
@@ -76,10 +76,10 @@ describe("updateInvoice", () => {
 
   it("returns the fallback user message for non-5xx responses", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Bad request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+      TestDataBuilder.textResponse("Bad request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
-    const invoice = buildInvoice({id: invoiceId});
+    const invoice = TestDataBuilder.build("invoice", {id: invoiceId});
     const result = await updateInvoice({invoiceId, invoice});
 
     expect(result.success).toBe(false);
@@ -91,7 +91,7 @@ describe("updateInvoice", () => {
   it("returns an error result when auth throws", async () => {
     mockFetchUser.mockRejectedValue(new Error("Auth failed"));
 
-    const invoice = buildInvoice({id: invoiceId});
+    const invoice = TestDataBuilder.build("invoice", {id: invoiceId});
     const result = await updateInvoice({invoiceId, invoice});
 
     expect(result.success).toBe(false);
@@ -103,7 +103,7 @@ describe("updateInvoice", () => {
   it("returns an error result when fetch throws", async () => {
     mockFetchWithTimeout.mockRejectedValue(new Error("Network error"));
 
-    const invoice = buildInvoice({id: invoiceId});
+    const invoice = TestDataBuilder.build("invoice", {id: invoiceId});
     const result = await updateInvoice({invoiceId, invoice});
 
     expect(result.success).toBe(false);
@@ -115,7 +115,7 @@ describe("updateInvoice", () => {
   it("returns a fallback error message when auth throws a non-Error", async () => {
     mockFetchUser.mockRejectedValue(42);
 
-    const invoice = buildInvoice({id: invoiceId});
+    const invoice = TestDataBuilder.build("invoice", {id: invoiceId});
     const result = await updateInvoice({invoiceId, invoice});
 
     expect(result.success).toBe(false);

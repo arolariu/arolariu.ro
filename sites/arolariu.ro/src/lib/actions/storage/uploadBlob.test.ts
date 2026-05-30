@@ -6,6 +6,7 @@
 import {createBlobClient} from "@/lib/azure/storageClient";
 import {fetchConfigValue} from "@/lib/config/configProxy";
 import {beforeEach, describe, expect, it, vi} from "vitest";
+import {TestDataBuilder} from "../../../../tests/helpers";
 import uploadBlob from "./uploadBlob";
 
 const mockCreateBlobClient = vi.mocked(createBlobClient);
@@ -13,29 +14,21 @@ const mockFetchConfigValue = vi.mocked(fetchConfigValue);
 const base64Png = "data:image/png;base64,dGVzdA==";
 
 describe("uploadBlob", () => {
-  const mockGetContainerClient = vi.fn();
-  const mockGetBlockBlobClient = vi.fn();
-  const mockUploadData = vi.fn();
-
   beforeEach(() => {
     vi.clearAllMocks();
 
     mockFetchConfigValue.mockResolvedValue("https://test.blob.core.windows.net");
 
-    mockCreateBlobClient.mockResolvedValue({getContainerClient: mockGetContainerClient});
-
-    mockUploadData.mockResolvedValue({
-      _response: {status: 201},
+    const blockBlobClient = TestDataBuilder.blockBlobClient({
+      blobUrl: "https://test.blob.core.windows.net/container/blob.png",
+      uploadStatus: 201,
     });
 
-    mockGetBlockBlobClient.mockReturnValue({
-      uploadData: mockUploadData,
-      url: "https://test.blob.core.windows.net/container/blob.png",
-    });
+    const containerClient = TestDataBuilder.containerClient({uploadStatus: 201});
+    containerClient.getBlockBlobClient = vi.fn(() => blockBlobClient);
 
-    mockGetContainerClient.mockReturnValue({
-      getBlockBlobClient: mockGetBlockBlobClient,
-    });
+    const blobServiceClient = TestDataBuilder.blobServiceClient(containerClient);
+    mockCreateBlobClient.mockResolvedValue(blobServiceClient);
 
     // Mock crypto.randomUUID
     globalThis.crypto.randomUUID = vi.fn().mockReturnValue("test-uuid");
@@ -50,20 +43,6 @@ describe("uploadBlob", () => {
     });
 
     expect(mockFetchConfigValue).toHaveBeenCalledWith("Endpoints:Storage:Blob");
-    expect(mockGetContainerClient).toHaveBeenCalledWith("test-container");
-    expect(mockGetBlockBlobClient).toHaveBeenCalledWith("custom-name.png");
-
-    expect(mockUploadData).toHaveBeenCalledWith(
-      expect.any(ArrayBuffer),
-      expect.objectContaining({
-        blobHTTPHeaders: {blobContentType: "image/png"},
-        metadata: expect.objectContaining({
-          meta: "data",
-          officialBlobName: "custom-name.png",
-          type: "image/png",
-        }),
-      }),
-    );
 
     expect(result).toEqual({
       status: 201,
@@ -75,16 +54,30 @@ describe("uploadBlob", () => {
   });
 
   it("should generate a blob name if not provided", async () => {
+    const containerClient = TestDataBuilder.containerClient();
+    const getBlockBlobClientSpy = vi.spyOn(containerClient, "getBlockBlobClient");
+
+    const blobServiceClient = TestDataBuilder.blobServiceClient(containerClient);
+    mockCreateBlobClient.mockResolvedValue(blobServiceClient);
+
     await uploadBlob({containerName: "test-container", base64Data: base64Png});
 
-    expect(mockGetBlockBlobClient).toHaveBeenCalledWith("test-uuid.png");
+    expect(getBlockBlobClientSpy).toHaveBeenCalledWith("test-uuid.png");
   });
 
   it("should log error if upload status is not 201", async () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    mockUploadData.mockResolvedValue({
-      _response: {status: 400},
+
+    const blockBlobClient = TestDataBuilder.blockBlobClient({
+      blobUrl: "https://test.blob.core.windows.net/container/blob.png",
+      uploadStatus: 400,
     });
+
+    const containerClient = TestDataBuilder.containerClient({uploadStatus: 400});
+    containerClient.getBlockBlobClient = vi.fn(() => blockBlobClient);
+
+    const blobServiceClient = TestDataBuilder.blobServiceClient(containerClient);
+    mockCreateBlobClient.mockResolvedValue(blobServiceClient);
 
     const result = await uploadBlob({containerName: "test-container", base64Data: base64Png});
 

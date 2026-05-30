@@ -3,11 +3,10 @@
  * @module app/domains/invoices/_hooks/merchant/useMerchants.test
  */
 
-import type {ServerActionResult} from "@/lib/utils.server";
 import type {Merchant} from "@/types/invoices";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {buildMerchant} from "../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder} from "../../../../../../tests/helpers";
 import {useMerchants} from "./useMerchants";
 
 vi.mock("@/stores", () => ({
@@ -24,12 +23,6 @@ const {fetchMerchants} = await import("../../_actions/merchants");
 const mockUseMerchantsStore = vi.mocked(useMerchantsStore);
 const mockFetchMerchants = vi.mocked(fetchMerchants);
 
-type MerchantsStoreSelectorState = Readonly<{
-  entities: ReadonlyArray<Merchant>;
-  setEntities: (merchants: ReadonlyArray<Merchant>) => void;
-  hasHydrated: boolean;
-}>;
-
 function createMockStoreState(
   overrides: Readonly<{
     entities?: ReadonlyArray<Merchant>;
@@ -37,20 +30,22 @@ function createMockStoreState(
   }> = {},
 ): Readonly<{setMerchants: ReturnType<typeof vi.fn>}> {
   const setMerchants = vi.fn();
-  const state: MerchantsStoreSelectorState = {
-    entities: overrides.entities ?? [],
-    setEntities: setMerchants,
-    hasHydrated: overrides.hasHydrated ?? false,
-  };
 
-  mockUseMerchantsStore.mockImplementation((selector: (state: MerchantsStoreSelectorState) => unknown) => selector(state));
+  TestDataBuilder.mockEntityStoreSelector(
+    mockUseMerchantsStore,
+    TestDataBuilder.entityStore<Merchant>({
+      entities: overrides.entities ?? [],
+      setEntities: setMerchants,
+      hasHydrated: overrides.hasHydrated ?? false,
+    }),
+  );
 
   return {setMerchants};
 }
 
 describe("useMerchants", () => {
-  const merchant1 = buildMerchant({id: "22222222-2222-4222-8222-222222222222", name: "Merchant 1"});
-  const merchant2 = buildMerchant({id: "33333333-3333-4333-8333-333333333333", name: "Merchant 2"});
+  const merchant1 = TestDataBuilder.build("merchant", {id: "22222222-2222-4222-8222-222222222222", name: "Merchant 1"});
+  const merchant2 = TestDataBuilder.build("merchant", {id: "33333333-3333-4333-8333-333333333333", name: "Merchant 2"});
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -111,12 +106,8 @@ describe("useMerchants", () => {
 
   it("sets the error flag and logs when the server action returns failure", async () => {
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    const errorResult: ServerActionResult<ReadonlyArray<Merchant>> = {
-      success: false,
-      error: {code: "SERVER_ERROR", message: "Server unavailable"},
-    };
     createMockStoreState({hasHydrated: true});
-    mockFetchMerchants.mockResolvedValue(errorResult);
+    TestDataBuilder.mockResolvedActionFailure(mockFetchMerchants, {code: "SERVER_ERROR", message: "Server unavailable"});
 
     const {result} = renderHook(() => useMerchants());
 

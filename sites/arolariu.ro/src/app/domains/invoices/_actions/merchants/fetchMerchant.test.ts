@@ -7,7 +7,7 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
 import type {Merchant} from "@/types/invoices";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {buildMerchant, createJsonResponse, createTextResponse} from "../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder} from "../../../../../../tests/helpers";
 
 vi.mock("@/lib/actions/user/fetchUser");
 
@@ -17,12 +17,12 @@ const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
 
 describe("fetchMerchant", () => {
   const merchantId = "22222222-2222-4222-8222-222222222222";
-  const mockMerchant = buildMerchant({id: merchantId, name: "Test Supermarket"});
+  const mockMerchant = TestDataBuilder.build("merchant", {id: merchantId, name: "Test Supermarket"});
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue({userIdentifier: "user-1", userJwt: "jwt-1"});
-    mockFetchWithTimeout.mockResolvedValue(createJsonResponse(mockMerchant, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse(mockMerchant, {status: 200}));
   });
 
   it("fetches a merchant successfully with valid GUID", async () => {
@@ -82,10 +82,8 @@ describe("fetchMerchant", () => {
 
   it("accepts EMPTY_GUID sentinel and attempts fetch", async () => {
     const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
-    const mockMerchantEmpty = buildMerchant({id: EMPTY_GUID, name: "Empty Merchant"});
-    mockFetchWithTimeout.mockResolvedValue(
-      createJsonResponse(mockMerchantEmpty, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    const mockMerchantEmpty = TestDataBuilder.build("merchant", {id: EMPTY_GUID, name: "Empty Merchant"});
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse(mockMerchantEmpty, {status: 200}));
 
     const result = await fetchMerchant({merchantId: EMPTY_GUID});
 
@@ -100,10 +98,8 @@ describe("fetchMerchant", () => {
 
   it("accepts LAST_GUID sentinel and attempts fetch", async () => {
     const LAST_GUID = "99999999-9999-9999-9999-999999999999";
-    const mockMerchantLast = buildMerchant({id: LAST_GUID, name: "Last Merchant"});
-    mockFetchWithTimeout.mockResolvedValue(
-      createJsonResponse(mockMerchantLast, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    const mockMerchantLast = TestDataBuilder.build("merchant", {id: LAST_GUID, name: "Last Merchant"});
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse(mockMerchantLast, {status: 200}));
 
     const result = await fetchMerchant({merchantId: LAST_GUID});
 
@@ -117,9 +113,7 @@ describe("fetchMerchant", () => {
   });
 
   it("returns 'Merchant not found' for HTTP 404 responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Not found", {status: 404, statusText: "Not Found"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.textResponse("Not found", {status: 404, statusText: "Not Found"}));
 
     const result = await fetchMerchant({merchantId});
 
@@ -133,9 +127,7 @@ describe("fetchMerchant", () => {
 
   it("returns a generic error message for HTTP 500 responses", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Internal server error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+      TestDataBuilder.textResponse("Internal server error", {status: 500, statusText: "Internal Server Error"}),
     );
 
     const result = await fetchMerchant({merchantId});
@@ -148,9 +140,7 @@ describe("fetchMerchant", () => {
   });
 
   it("returns a generic error message for HTTP 403 responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Forbidden", {status: 403, statusText: "Forbidden"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.textResponse("Forbidden", {status: 403, statusText: "Forbidden"}));
 
     const result = await fetchMerchant({merchantId});
 
@@ -162,9 +152,7 @@ describe("fetchMerchant", () => {
   });
 
   it("returns a generic error message for HTTP 401 responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Unauthorized", {status: 401, statusText: "Unauthorized"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.textResponse("Unauthorized", {status: 401, statusText: "Unauthorized"}));
 
     const result = await fetchMerchant({merchantId});
 
@@ -215,14 +203,12 @@ describe("fetchMerchant", () => {
   });
 
   it("parses the merchant response correctly", async () => {
-    const detailedMerchant = buildMerchant({
+    const detailedMerchant = TestDataBuilder.build("merchant", {
       id: merchantId,
       name: "Detailed Supermarket",
       description: "A detailed merchant description",
     });
-    mockFetchWithTimeout.mockResolvedValue(
-      createJsonResponse(detailedMerchant, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse(detailedMerchant, {status: 200}));
 
     const result = await fetchMerchant({merchantId});
 
@@ -237,16 +223,12 @@ describe("fetchMerchant", () => {
   });
 
   it("handles response.json() parsing errors", async () => {
-    const malformedResponse = {
-      ok: true,
-      status: 200,
-      statusText: "OK",
-      json: async () => {
-        throw new Error("JSON parse error");
-      },
-      text: async () => "",
-    } as Response;
-    mockFetchWithTimeout.mockResolvedValue(malformedResponse as Awaited<ReturnType<typeof fetchWithTimeout>>);
+    const malformedResponse = new Response("", {status: 200, statusText: "OK"});
+    // Override json to throw
+    malformedResponse.json = async () => {
+      throw new Error("JSON parse error");
+    };
+    mockFetchWithTimeout.mockResolvedValue(malformedResponse);
 
     const result = await fetchMerchant({merchantId});
 
@@ -258,16 +240,12 @@ describe("fetchMerchant", () => {
   });
 
   it("handles response.text() parsing errors for error responses", async () => {
-    const errorResponse = {
-      ok: false,
-      status: 400,
-      statusText: "Bad Request",
-      json: async () => ({}),
-      text: async () => {
-        throw new Error("Text parse error");
-      },
-    } as Response;
-    mockFetchWithTimeout.mockResolvedValue(errorResponse as Awaited<ReturnType<typeof fetchWithTimeout>>);
+    const errorResponse = new Response("", {status: 400, statusText: "Bad Request"});
+    // Override text to throw
+    errorResponse.text = async () => {
+      throw new Error("Text parse error");
+    };
+    mockFetchWithTimeout.mockResolvedValue(errorResponse);
 
     const result = await fetchMerchant({merchantId});
 
@@ -278,13 +256,13 @@ describe("fetchMerchant", () => {
   });
 
   it("preserves all merchant fields in the response", async () => {
-    const fullMerchant: Merchant = buildMerchant({
+    const fullMerchant: Merchant = TestDataBuilder.build("merchant", {
       id: merchantId,
       name: "Full Merchant",
       createdAt: new Date("2026-01-01T00:00:00.000Z"),
       lastUpdatedAt: new Date("2026-01-02T00:00:00.000Z"),
     });
-    mockFetchWithTimeout.mockResolvedValue(createJsonResponse(fullMerchant, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse(fullMerchant, {status: 200}));
 
     const result = await fetchMerchant({merchantId});
 
@@ -292,8 +270,8 @@ describe("fetchMerchant", () => {
     if (result.success) {
       expect(result.data.id).toBe(merchantId);
       expect(result.data.name).toBe("Full Merchant");
-      expect(result.data.createdAt).toEqual(new Date("2026-01-01T00:00:00.000Z"));
-      expect(result.data.lastUpdatedAt).toEqual(new Date("2026-01-02T00:00:00.000Z"));
+      expect(result.data.createdAt).toBe("2026-01-01T00:00:00.000Z");
+      expect(result.data.lastUpdatedAt).toBe("2026-01-02T00:00:00.000Z");
     }
   });
 });

@@ -18,7 +18,7 @@ describe("deleteScan", () => {
     const mockDeleteResponse = {succeeded: true, errorCode: undefined};
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -56,7 +56,7 @@ describe("deleteScan", () => {
     const otherUserBlobUrl = "https://storage.test/invoices/scans/user-456/scan_456.jpg";
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -97,7 +97,7 @@ describe("deleteScan", () => {
     const wrongPrefixUrl = "https://storage.test/invoices/user-123/scan_123.jpg";
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -139,7 +139,7 @@ describe("deleteScan", () => {
     const mockDeleteResponse = {succeeded: false, errorCode: "BlobNotFound"};
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -179,7 +179,7 @@ describe("deleteScan", () => {
     const authError = new Error("Unauthorized");
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -207,7 +207,7 @@ describe("deleteScan", () => {
     const mockUser = {userIdentifier: "user-123"};
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -230,7 +230,7 @@ describe("deleteScan", () => {
     const mockUser = {userIdentifier: "user-123"};
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -271,7 +271,7 @@ describe("deleteScan", () => {
     const mockBlobUrl = "https://storage.test/invoices/scans/user-123/scan.jpg";
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -308,7 +308,7 @@ describe("deleteScan", () => {
     const mockDeleteResponse = {succeeded: true, errorCode: undefined};
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));

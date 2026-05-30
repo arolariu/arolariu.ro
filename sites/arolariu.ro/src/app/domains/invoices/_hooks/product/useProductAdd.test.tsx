@@ -7,8 +7,7 @@ import type {ServerActionResult} from "@/lib/utils.server";
 import type {Product} from "@/types/invoices";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {invokeHookCallback} from "../../../../../../tests/helpers";
-import {buildInvoice, buildProduct} from "../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder, invokeHookCallback} from "../../../../../../tests/helpers";
 import {useProductAdd} from "./useProductAdd";
 
 vi.mock("@/stores", () => ({
@@ -24,10 +23,6 @@ const {addInvoiceProduct} = await import("../../_actions/invoices");
 
 const mockUseInvoicesStore = vi.mocked(useInvoicesStore);
 const mockAddInvoiceProduct = vi.mocked(addInvoiceProduct);
-
-type InvoiceStoreSelectorState = Readonly<{
-  updateEntity: (invoiceId: string, updates: Readonly<{items: ReadonlyArray<Product>}>) => void;
-}>;
 
 function createDeferred<T>(): Readonly<{
   promise: Promise<T>;
@@ -46,14 +41,14 @@ function createDeferred<T>(): Readonly<{
 }
 
 function mockInvoiceStore(updateEntity = vi.fn()): void {
-  mockUseInvoicesStore.mockImplementation((selector: (state: InvoiceStoreSelectorState) => unknown) => selector({updateEntity}));
+  TestDataBuilder.mockEntityStoreSelector(mockUseInvoicesStore, TestDataBuilder.entityStore({updateEntity}));
 }
 
 describe("useProductAdd", () => {
-  const existingProduct = buildProduct({name: "Coffee"});
-  const productToAdd = buildProduct({name: "Milk", price: 7, totalPrice: 7});
-  const addedProduct = buildProduct({name: "Milk", price: 7, totalPrice: 7, productCode: "server-id"});
-  const invoice = buildInvoice({items: [existingProduct]});
+  const existingProduct = TestDataBuilder.build("product", {name: "Coffee"});
+  const productToAdd = TestDataBuilder.build("product", {name: "Milk", price: 7, totalPrice: 7});
+  const addedProduct = TestDataBuilder.build("product", {name: "Milk", price: 7, totalPrice: 7, productCode: "server-id"});
+  const invoice = TestDataBuilder.build("invoice", {items: [existingProduct]});
   const mockUpdateEntity = vi.fn();
 
   beforeEach(() => {
@@ -74,9 +69,9 @@ describe("useProductAdd", () => {
   });
 
   it("adds a product server-side, mirrors it locally, and returns the created product", async () => {
-    const {result} = renderHook(() => useProductAdd({invoice}));
+    const hookResult = renderHook(() => useProductAdd({invoice}));
 
-    const returnedProduct = await invokeHookCallback(() => result.current.addProductCallback(productToAdd));
+    const returnedProduct = await invokeHookCallback(hookResult, (current) => current.addProductCallback(productToAdd));
 
     expect(returnedProduct).toEqual(addedProduct);
     expect(mockAddInvoiceProduct).toHaveBeenCalledWith({
@@ -89,7 +84,7 @@ describe("useProductAdd", () => {
   });
 
   it("sets isAdding true while the server action is pending", async () => {
-    const deferred = createDeferred<ServerActionResult<Product>>();
+    const deferred = createDeferred<Awaited<ServerActionResult<Product>>>();
     mockAddInvoiceProduct.mockReturnValue(deferred.promise);
 
     const {result} = renderHook(() => useProductAdd({invoice}));
@@ -112,10 +107,7 @@ describe("useProductAdd", () => {
   });
 
   it("throws server action failures and skips the local update", async () => {
-    mockAddInvoiceProduct.mockResolvedValue({
-      success: false,
-      error: {message: "Failed to add product", userMessage: "Try again"},
-    });
+    mockAddInvoiceProduct.mockReturnValueOnce(TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Failed to add product"}));
 
     const {result} = renderHook(() => useProductAdd({invoice}));
 

@@ -18,7 +18,7 @@ describe("registerScan", () => {
     const validBlobUrl = "https://storage.test/invoices/scans/user-123/scan_123.jpg";
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -60,6 +60,7 @@ describe("registerScan", () => {
     // Assert
     expect(result.success).toBe(true);
     if (result.success) {
+      expect(result.scan).toBeDefined();
       expect(result.scan?.id).toBe("scan_123");
       expect(result.scan?.userIdentifier).toBe("user-123");
       expect(result.scan?.name).toBe("receipt.jpg");
@@ -75,7 +76,7 @@ describe("registerScan", () => {
     const otherUserBlobUrl = "https://storage.test/invoices/scans/user-456/scan_456.jpg";
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -112,7 +113,7 @@ describe("registerScan", () => {
     const wrongPathUrl = "https://storage.test/invoices/user-123/scan_123.jpg";
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -148,7 +149,7 @@ describe("registerScan", () => {
     const authError = new Error("Unauthorized");
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -180,7 +181,7 @@ describe("registerScan", () => {
     const mockUser = {userIdentifier: ""};
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -213,7 +214,7 @@ describe("registerScan", () => {
     const validBlobUrl = "https://storage.test/invoices/scans/user-123/scan_123.jpg";
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -255,6 +256,7 @@ describe("registerScan", () => {
     // Assert - Should still succeed even if metadata write fails
     expect(result.success).toBe(true);
     if (result.success) {
+      expect(result.scan).toBeDefined();
       expect(result.scan?.id).toBe("scan_123");
     }
   });
@@ -266,7 +268,7 @@ describe("registerScan", () => {
     const revalidateSpy = vi.fn();
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -316,7 +318,7 @@ describe("registerScan", () => {
     const azuriteBlobUrl = "http://localhost:10000/devstoreaccount1/invoices/scans/user-123/scan_123.jpg";
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -364,7 +366,7 @@ describe("registerScan", () => {
     const mockUser = {userIdentifier: "user-123"};
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -404,7 +406,7 @@ describe("registerScan", () => {
     let capturedMetadata: Record<string, string> = {};
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -447,11 +449,11 @@ describe("registerScan", () => {
     });
 
     // Assert
-    expect(capturedMetadata.userIdentifier).toBe("user-meta");
-    expect(capturedMetadata.scanId).toBe("scan_meta");
-    expect(capturedMetadata.originalFileName).toBe("test-receipt.jpg");
-    expect(capturedMetadata.status).toBe(ScanStatus.READY);
-    expect(capturedMetadata.uploadedAt).toBeTruthy();
+    expect(capturedMetadata["userIdentifier"]).toBe("user-meta");
+    expect(capturedMetadata["scanId"]).toBe("scan_meta");
+    expect(capturedMetadata["originalFileName"]).toBe("test-receipt.jpg");
+    expect(capturedMetadata["status"]).toBe(ScanStatus.READY);
+    expect(capturedMetadata["uploadedAt"]).toBeTruthy();
   });
 
   it("should handle unsupported MIME types as OTHER scanType", async () => {
@@ -460,7 +462,7 @@ describe("registerScan", () => {
     const validBlobUrl = "https://storage.test/invoices/scans/user-unsupported/scan_txt.txt";
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -502,6 +504,7 @@ describe("registerScan", () => {
     // Assert
     expect(result.success).toBe(true);
     if (result.success) {
+      expect(result.scan).toBeDefined();
       expect(result.scan?.scanType).toBe(ScanType.OTHER);
       expect(result.scan?.mimeType).toBe("text/plain");
     }
@@ -512,7 +515,7 @@ describe("registerScan", () => {
     const mockUser = {userIdentifier: "user-mime"};
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -570,9 +573,12 @@ describe("registerScan", () => {
     expect(pngResult.success).toBe(true);
     expect(pdfResult.success).toBe(true);
     if (jpgResult.success && pngResult.success && pdfResult.success) {
-      expect(jpgResult.scan.scanType).toBe(ScanType.JPEG);
-      expect(pngResult.scan.scanType).toBe(ScanType.PNG);
-      expect(pdfResult.scan.scanType).toBe(ScanType.PDF);
+      expect(jpgResult.scan).toBeDefined();
+      expect(pngResult.scan).toBeDefined();
+      expect(pdfResult.scan).toBeDefined();
+      expect(jpgResult.scan?.scanType).toBe(ScanType.JPEG);
+      expect(pngResult.scan?.scanType).toBe(ScanType.PNG);
+      expect(pdfResult.scan?.scanType).toBe(ScanType.PDF);
     }
   });
 
@@ -582,7 +588,7 @@ describe("registerScan", () => {
     let capturedBlobName = "";
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));

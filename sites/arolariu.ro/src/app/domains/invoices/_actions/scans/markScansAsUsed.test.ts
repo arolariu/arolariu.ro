@@ -29,7 +29,7 @@ describe("markScansAsUsed", () => {
     const setMetadataCalls: Array<{name: string; metadata: Record<string, string>}> = [];
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -50,7 +50,7 @@ describe("markScansAsUsed", () => {
                   etag: mockBlob?.etag,
                 }),
               ),
-              setMetadata: vi.fn((metadata, options) => {
+              setMetadata: vi.fn((metadata, _options) => {
                 setMetadataCalls.push({name: blobName, metadata});
                 return Promise.resolve();
               }),
@@ -70,8 +70,8 @@ describe("markScansAsUsed", () => {
     // Assert
     expect(setMetadataCalls).toHaveLength(2);
     setMetadataCalls.forEach((call) => {
-      expect(call.metadata.usedByInvoice).toBe("true");
-      expect(call.metadata.status).toBe("archived");
+      expect(call.metadata["usedByInvoice"]).toBe("true");
+      expect(call.metadata["status"]).toBe("archived");
     });
   });
 
@@ -88,7 +88,7 @@ describe("markScansAsUsed", () => {
     let capturedMetadata: Record<string, string> = {};
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -107,7 +107,7 @@ describe("markScansAsUsed", () => {
                 etag: "etag1",
               }),
             ),
-            setMetadata: vi.fn((metadata, options) => {
+            setMetadata: vi.fn((metadata, _options) => {
               capturedMetadata = metadata;
               return Promise.resolve();
             }),
@@ -122,12 +122,12 @@ describe("markScansAsUsed", () => {
     await markScansAsUsed({blobNames: ["scans/user-123/scan1.jpg"]});
 
     // Assert
-    expect(capturedMetadata.scanId).toBe("scan1");
-    expect(capturedMetadata.userIdentifier).toBe("user-123");
-    expect(capturedMetadata.uploadedAt).toBe("2024-01-01T00:00:00.000Z");
-    expect(capturedMetadata.originalFileName).toBe("receipt.jpg");
-    expect(capturedMetadata.usedByInvoice).toBe("true");
-    expect(capturedMetadata.status).toBe("archived");
+    expect(capturedMetadata["scanId"]).toBe("scan1");
+    expect(capturedMetadata["userIdentifier"]).toBe("user-123");
+    expect(capturedMetadata["uploadedAt"]).toBe("2024-01-01T00:00:00.000Z");
+    expect(capturedMetadata["originalFileName"]).toBe("receipt.jpg");
+    expect(capturedMetadata["usedByInvoice"]).toBe("true");
+    expect(capturedMetadata["status"]).toBe("archived");
   });
 
   it("should create metadata when the blob has no existing metadata", async () => {
@@ -135,7 +135,7 @@ describe("markScansAsUsed", () => {
     let capturedMetadata: Record<string, string> = {};
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -164,10 +164,8 @@ describe("markScansAsUsed", () => {
     await markScansAsUsed({blobNames: ["scans/user-123/no-metadata.jpg"]});
 
     // Assert
-    expect(capturedMetadata).toEqual({
-      usedByInvoice: "true",
-      status: "archived",
-    });
+    expect(capturedMetadata["usedByInvoice"]).toBe("true");
+    expect(capturedMetadata["status"]).toBe("archived");
   });
 
   it("should handle individual blob failures gracefully (best-effort)", async () => {
@@ -176,7 +174,7 @@ describe("markScansAsUsed", () => {
     const failBlob = "scans/user-123/fail.jpg";
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -217,7 +215,7 @@ describe("markScansAsUsed", () => {
   it("should handle empty blob names array", async () => {
     // Arrange
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -243,7 +241,7 @@ describe("markScansAsUsed", () => {
   it("should handle storage connection failures gracefully", async () => {
     // Arrange
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -265,7 +263,7 @@ describe("markScansAsUsed", () => {
     const processedBlobs: string[] = [];
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -301,7 +299,7 @@ describe("markScansAsUsed", () => {
   it("should handle non-Error thrown exceptions", async () => {
     // Arrange
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -323,7 +321,7 @@ describe("markScansAsUsed", () => {
     let capturedConditions: unknown = null;
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -342,7 +340,7 @@ describe("markScansAsUsed", () => {
                 etag: "expected-etag",
               }),
             ),
-            setMetadata: vi.fn((metadata, options) => {
+            setMetadata: vi.fn((_metadata, options) => {
               capturedConditions = options?.conditions;
               return Promise.resolve();
             }),

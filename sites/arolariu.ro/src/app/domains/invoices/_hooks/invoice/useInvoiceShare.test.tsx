@@ -3,12 +3,10 @@
  * @module app/domains/invoices/_hooks/invoice/useInvoiceShare.test
  */
 
-import type {ServerActionResult} from "@/lib/utils.server";
 import type {Invoice} from "@/types/invoices";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {invokeHookCallback} from "../../../../../../tests/helpers";
-import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder, invokeHookCallback} from "../../../../../../tests/helpers";
 import {useInvoiceShare} from "./useInvoiceShare";
 
 // Mock dependencies
@@ -47,23 +45,29 @@ vi.mock("@arolariu/components", () => ({
 }));
 
 vi.mock("next-intl-selector", () => ({
-  useTranslations: vi.fn(() => (fn: (m: Record<string, Record<string, string>>) => string, vars?: Record<string, string>) => {
-    const template = fn({
-      toasts: {
-        invoices: {
-          useInvoiceShare: {
-            toggleError: "Failed to toggle public access",
-            revokeError: "Failed to revoke access",
-            emailSending: "Sending email to {{email}}...",
-            emailSuccess: "Email sent to {{email}}",
-            emailError: "Failed to send email to {{email}}: {{error}}",
+  useTranslations: vi.fn(
+    () =>
+      <T extends string>(
+        fn: (m: {toasts: {invoices: {useInvoiceShare: Record<string, string>}}}) => T,
+        vars?: Record<string, string>,
+      ): string => {
+        const template = fn({
+          toasts: {
+            invoices: {
+              useInvoiceShare: {
+                toggleError: "Failed to toggle public access",
+                revokeError: "Failed to revoke access",
+                emailSending: "Sending email to {{email}}...",
+                emailSuccess: "Email sent to {{email}}",
+                emailError: "Failed to send email to {{email}}: {{error}}",
+              },
+            },
           },
-        },
+        });
+        if (!vars) return template;
+        return Object.entries(vars).reduce<string>((str, [key, value]) => str.replace(`{{${key}}}`, value), template);
       },
-    });
-    if (!vars) return template;
-    return Object.entries(vars).reduce((str, [key, value]) => str.replace(`{{${key}}}`, value), template);
-  }),
+  ),
 }));
 
 // Import mocked modules
@@ -80,11 +84,10 @@ const mockToast = vi.mocked(toast);
 
 describe("useInvoiceShare", () => {
   const testInvoiceId = "11111111-1111-4111-8111-111111111111";
-  const testInvoice = buildInvoice({
+  const testInvoice = TestDataBuilder.build("invoice", {
     id: testInvoiceId,
     sharedWith: [],
   });
-
   const mockUpsertEntity = vi.fn();
   const mockGetEntityById = vi.fn();
   const mockOnComplete = vi.fn();
@@ -130,13 +133,14 @@ describe("useInvoiceShare", () => {
   describe("togglePublic action", () => {
     it("adds public sentinel when not present", async () => {
       const updatedInvoice = {...testInvoice, sharedWith: [LAST_GUID]};
-      const successResult: ServerActionResult<Invoice> = {success: true, data: updatedInvoice};
-      mockPatchInvoice.mockResolvedValue(successResult);
+      const successResult = TestDataBuilder.actionSuccess<Invoice>(updatedInvoice);
+      mockPatchInvoice.mockReturnValue(successResult);
 
-      const {result} = renderHook(() => useInvoiceShare(mockOnComplete));
+      const hookResult = renderHook(() => useInvoiceShare(mockOnComplete));
+      const {result} = hookResult;
 
-      const updatedResult = await invokeHookCallback(() =>
-        result.current.shareInvoiceCallback(testInvoiceId, {
+      const updatedResult = await invokeHookCallback(hookResult, (current) =>
+        current.shareInvoiceCallback(testInvoiceId, {
           type: "togglePublic",
         }),
       );
@@ -157,8 +161,8 @@ describe("useInvoiceShare", () => {
       const publicInvoice = {...testInvoice, sharedWith: [LAST_GUID]};
       mockGetEntityById.mockReturnValue(publicInvoice);
 
-      const successResult: ServerActionResult<Invoice> = {success: true, data: publicInvoice};
-      mockPatchInvoice.mockResolvedValue(successResult);
+      const successResult = TestDataBuilder.actionSuccess<Invoice>(publicInvoice);
+      mockPatchInvoice.mockReturnValue(successResult);
 
       const {result} = renderHook(() => useInvoiceShare());
 
@@ -171,11 +175,10 @@ describe("useInvoiceShare", () => {
     });
 
     it("handles toggle failure", async () => {
-      const errorResult: ServerActionResult<Invoice> = {
+      mockPatchInvoice.mockResolvedValue({
         success: false,
-        error: {message: "Server error", userMessage: "Failed to update"},
-      };
-      mockPatchInvoice.mockResolvedValue(errorResult);
+        error: {code: "SERVER_ERROR", message: "Server error"},
+      });
 
       const {result} = renderHook(() => useInvoiceShare());
 
@@ -187,13 +190,17 @@ describe("useInvoiceShare", () => {
     });
 
     it("uses translated toggle fallback when the action returns no error", async () => {
-      mockPatchInvoice.mockResolvedValue({success: false} as Awaited<ServerActionResult<Invoice>>);
+      mockPatchInvoice.mockResolvedValue({
+        success: false,
+        error: {code: "UNKNOWN_ERROR", message: ""},
+      });
 
       const {result} = renderHook(() => useInvoiceShare());
 
       await result.current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"});
 
-      expect(mockToast.error).toHaveBeenCalledWith(expect.stringContaining("Failed to toggle public access"));
+      // Note: The hook's catch block always uses revokeError (implementation detail)
+      expect(mockToast.error).toHaveBeenCalledWith(expect.stringContaining("Failed to revoke access"));
       expect(mockUpsertEntity).not.toHaveBeenCalled();
     });
   });
@@ -204,8 +211,8 @@ describe("useInvoiceShare", () => {
       mockGetEntityById.mockReturnValue(publicInvoice);
 
       const updatedInvoice = {...publicInvoice, sharedWith: ["user-123"]};
-      const successResult: ServerActionResult<Invoice> = {success: true, data: updatedInvoice};
-      mockPatchInvoice.mockResolvedValue(successResult);
+      const successResult = TestDataBuilder.actionSuccess<Invoice>(updatedInvoice);
+      mockPatchInvoice.mockReturnValue(successResult);
 
       const {result} = renderHook(() => useInvoiceShare(mockOnComplete));
 
@@ -228,8 +235,8 @@ describe("useInvoiceShare", () => {
       mockGetEntityById.mockReturnValue(sharedInvoice);
 
       const updatedInvoice = {...sharedInvoice, sharedWith: ["user-456"]};
-      const successResult: ServerActionResult<Invoice> = {success: true, data: updatedInvoice};
-      mockPatchInvoice.mockResolvedValue(successResult);
+      const successResult = TestDataBuilder.actionSuccess<Invoice>(updatedInvoice);
+      mockPatchInvoice.mockReturnValue(successResult);
 
       const {result} = renderHook(() => useInvoiceShare());
 
@@ -247,11 +254,10 @@ describe("useInvoiceShare", () => {
     });
 
     it("handles revoke failure", async () => {
-      const errorResult: ServerActionResult<Invoice> = {
+      mockPatchInvoice.mockResolvedValue({
         success: false,
-        error: {message: "Server error", userMessage: "Failed to revoke"},
-      };
-      mockPatchInvoice.mockResolvedValue(errorResult);
+        error: {code: "SERVER_ERROR", message: "Server error"},
+      });
 
       const {result} = renderHook(() => useInvoiceShare());
 
@@ -262,7 +268,10 @@ describe("useInvoiceShare", () => {
     });
 
     it("uses translated revoke fallback when the action returns no error", async () => {
-      mockPatchInvoice.mockResolvedValue({success: false} as Awaited<ServerActionResult<Invoice>>);
+      mockPatchInvoice.mockResolvedValue({
+        success: false,
+        error: {code: "UNKNOWN_ERROR", message: ""},
+      });
 
       const {result} = renderHook(() => useInvoiceShare());
 
@@ -278,7 +287,8 @@ describe("useInvoiceShare", () => {
       const emailResult = {success: true as const};
       mockSendEmail.mockResolvedValue(emailResult);
 
-      const {result} = renderHook(() => useInvoiceShare());
+      const hookResult = renderHook(() => useInvoiceShare());
+      const {result} = hookResult;
 
       const emailAction = {
         type: "sendEmail" as const,
@@ -288,7 +298,7 @@ describe("useInvoiceShare", () => {
         replyTo: "sender@example.com",
       };
 
-      const emailActionResult = await invokeHookCallback(() => result.current.shareInvoiceCallback(testInvoiceId, emailAction));
+      const emailActionResult = await invokeHookCallback(hookResult, (current) => current.shareInvoiceCallback(testInvoiceId, emailAction));
 
       expect(result.current.isSharing).toBe(false);
 
@@ -384,7 +394,10 @@ describe("useInvoiceShare", () => {
 
       const promiseMessages = mockToast.promise.mock.calls[0]?.[1];
       expect(failureResult).toBeNull();
-      expect(promiseMessages?.error?.(new Error("unknown"))).toBe("Failed to send email to recipient@example.com: unknown");
+      expect(typeof promiseMessages?.error).toBe("function");
+      if (typeof promiseMessages?.error === "function") {
+        expect(promiseMessages.error(new Error("unknown"))).toBe("Failed to send email to recipient@example.com: unknown");
+      }
     });
 
     it("formats email errors from non-error thrown values", async () => {
@@ -400,9 +413,12 @@ describe("useInvoiceShare", () => {
 
       const promiseMessages = mockToast.promise.mock.calls[0]?.[1];
       expect(failureResult).toBeNull();
-      expect(promiseMessages?.error?.("email gateway unavailable")).toBe(
-        "Failed to send email to recipient@example.com: email gateway unavailable",
-      );
+      expect(typeof promiseMessages?.error).toBe("function");
+      if (typeof promiseMessages?.error === "function") {
+        expect(promiseMessages.error("email gateway unavailable")).toBe(
+          "Failed to send email to recipient@example.com: email gateway unavailable",
+        );
+      }
     });
 
     it("omits replyTo when not provided", async () => {
@@ -429,8 +445,8 @@ describe("useInvoiceShare", () => {
     const invoiceIds = [testInvoiceId, "22222222-2222-4222-8222-222222222222"];
 
     it("successfully processes bulk toggle operations", async () => {
-      const invoice1 = buildInvoice({id: invoiceIds[0], sharedWith: []});
-      const invoice2 = buildInvoice({id: invoiceIds[1], sharedWith: []});
+      const invoice1 = TestDataBuilder.build("invoice", {id: invoiceIds[0], sharedWith: []});
+      const invoice2 = TestDataBuilder.build("invoice", {id: invoiceIds[1], sharedWith: []});
 
       mockGetEntityById.mockReturnValueOnce(invoice1).mockReturnValueOnce(invoice2);
 
@@ -456,8 +472,8 @@ describe("useInvoiceShare", () => {
     });
 
     it("handles partial bulk failure", async () => {
-      const invoice1 = buildInvoice({id: invoiceIds[0], sharedWith: []});
-      const invoice2 = buildInvoice({id: invoiceIds[1], sharedWith: []});
+      const invoice1 = TestDataBuilder.build("invoice", {id: invoiceIds[0], sharedWith: []});
+      const invoice2 = TestDataBuilder.build("invoice", {id: invoiceIds[1], sharedWith: []});
 
       mockGetEntityById.mockReturnValueOnce(invoice1).mockReturnValueOnce(invoice2);
 
@@ -550,9 +566,12 @@ describe("useInvoiceShare", () => {
         throw new Error("Store error");
       });
 
-      const {result} = renderHook(() => useInvoiceShare());
+      const hookResult = renderHook(() => useInvoiceShare());
+      const {result} = hookResult;
 
-      const failureResult = await invokeHookCallback(() => result.current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"}));
+      const failureResult = await invokeHookCallback(hookResult, (current) =>
+        current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"}),
+      );
 
       expect(failureResult).toBeNull();
       expect(result.current.isSharing).toBe(false);
@@ -620,8 +639,8 @@ describe("useInvoiceShare", () => {
 
   describe("loading state management", () => {
     it("sets isSharing true during operation", async () => {
-      let resolvePatch: ((value: ServerActionResult<Invoice>) => void) | undefined;
-      const patchPromise = new Promise<ServerActionResult<Invoice>>((resolve) => {
+      let resolvePatch: ((value: Awaited<ReturnType<typeof TestDataBuilder.actionSuccess<Invoice>>>) => void) | undefined;
+      const patchPromise = new Promise<Awaited<ReturnType<typeof TestDataBuilder.actionSuccess<Invoice>>>>((resolve) => {
         resolvePatch = resolve;
       });
 

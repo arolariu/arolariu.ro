@@ -6,7 +6,7 @@
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {buildInvoice, createJsonResponse} from "../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder} from "../../../../../../tests/helpers";
 
 vi.mock("@/lib/actions/user/fetchUser");
 const {createInvoice} = await import("./createInvoice");
@@ -16,17 +16,17 @@ const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
 describe("createInvoice", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue({userIdentifier: "user-1", userJwt: "jwt-1"});
-    mockFetchWithTimeout.mockResolvedValue(createJsonResponse(buildInvoice()) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
+    mockFetchWithTimeout.mockResolvedValue(
+      TestDataBuilder.jsonResponse(TestDataBuilder.build("invoice")) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+    );
   });
 
   it("posts a creation payload with authenticated userIdentifier when missing", async () => {
     const payload = {
-      initialScan: {
-        scanType: "JPEG" as const,
+      initialScan: TestDataBuilder.build("invoiceScan", {
         location: "https://storage.test/scan.jpg",
-        metadata: {},
-      },
+      }),
       metadata: {isImportant: "false", requiresAnalysis: "true"},
     };
 
@@ -50,15 +50,13 @@ describe("createInvoice", () => {
   });
 
   it("preserves an explicit userIdentifier in the payload", async () => {
-    const payload = {
+    const payload = TestDataBuilder.build("createInvoicePayload", {
       userIdentifier: "custom-user-id",
-      initialScan: {
-        scanType: "JPEG" as const,
+      initialScan: TestDataBuilder.build("invoiceScan", {
         location: "https://storage.test/scan.jpg",
-        metadata: {},
-      },
+      }),
       metadata: {isImportant: "false", requiresAnalysis: "true"},
-    };
+    });
 
     await createInvoice(payload);
 

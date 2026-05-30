@@ -6,7 +6,7 @@
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {buildInvoice, createJsonResponse, createTextResponse} from "../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder} from "../../../../../../tests/helpers";
 
 vi.mock("@/lib/actions/user/fetchUser");
 const {fetchInvoice} = await import("./fetchInvoice");
@@ -18,9 +18,9 @@ describe("fetchInvoice", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue({userIdentifier: "user-1", userJwt: "jwt-1"});
+    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
     mockFetchWithTimeout.mockResolvedValue(
-      createJsonResponse(buildInvoice({id: invoiceId})) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+      TestDataBuilder.jsonResponse(TestDataBuilder.build("invoice", {id: invoiceId})) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
   });
 
@@ -54,7 +54,7 @@ describe("fetchInvoice", () => {
 
   it("maps 404 to the not-found user message", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Not found", {status: 404, statusText: "Not Found"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+      TestDataBuilder.textResponse("Not found", {status: 404, statusText: "Not Found"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result = await fetchInvoice({invoiceId});
@@ -68,7 +68,7 @@ describe("fetchInvoice", () => {
 
   it("maps 403 to the forbidden user message", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Forbidden", {status: 403, statusText: "Forbidden"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+      TestDataBuilder.textResponse("Forbidden", {status: 403, statusText: "Forbidden"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result = await fetchInvoice({invoiceId});
@@ -82,7 +82,7 @@ describe("fetchInvoice", () => {
 
   it("maps other non-OK responses to the fallback user message", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Bad request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+      TestDataBuilder.textResponse("Bad request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result = await fetchInvoice({invoiceId});

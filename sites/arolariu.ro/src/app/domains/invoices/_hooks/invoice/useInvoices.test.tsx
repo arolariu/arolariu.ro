@@ -3,11 +3,10 @@
  * @module app/domains/invoices/_hooks/invoice/useInvoices.test
  */
 
-import type {ServerActionResult} from "@/lib/utils.server";
 import type {Invoice} from "@/types/invoices";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder} from "../../../../../../tests/helpers";
 import {useInvoices} from "./useInvoices";
 
 // Mock the Zustand store
@@ -27,9 +26,9 @@ const mockUseInvoicesStore = vi.mocked(useInvoicesStore);
 const mockFetchInvoices = vi.mocked(fetchInvoices);
 
 describe("useInvoices", () => {
-  const testInvoice1 = buildInvoice({id: "11111111-1111-4111-8111-111111111111", name: "Invoice 1"});
-  const testInvoice2 = buildInvoice({id: "22222222-2222-4222-8222-222222222222", name: "Invoice 2"});
-  const testInvoice3 = buildInvoice({id: "33333333-3333-4333-8333-333333333333", name: "Invoice 3"});
+  const testInvoice1 = TestDataBuilder.build("invoice", {id: "11111111-1111-4111-8111-111111111111", name: "Invoice 1"});
+  const testInvoice2 = TestDataBuilder.build("invoice", {id: "22222222-2222-4222-8222-222222222222", name: "Invoice 2"});
+  const testInvoice3 = TestDataBuilder.build("invoice", {id: "33333333-3333-4333-8333-333333333333", name: "Invoice 3"});
 
   // Default mock store state
   const createMockStoreState = (overrides?: {entities?: ReadonlyArray<Invoice>; hasHydrated?: boolean}) => {
@@ -41,20 +40,13 @@ describe("useInvoices", () => {
     };
 
     // Mock useShallow to return the state selector result directly
-    mockUseInvoicesStore.mockImplementation(
-      (
-        selector: (state: {
-          entities: ReadonlyArray<Invoice>;
-          setEntities: (entities: ReadonlyArray<Invoice>) => void;
-          hasHydrated: boolean;
-        }) => typeof state,
-      ) => {
-        return selector({
-          entities: state.entities,
-          setEntities,
-          hasHydrated: state.hasHydrated,
-        });
-      },
+    TestDataBuilder.mockEntityStoreSelector(
+      mockUseInvoicesStore,
+      TestDataBuilder.entityStore<Invoice>({
+        entities: state.entities,
+        setEntities,
+        hasHydrated: state.hasHydrated,
+      }),
     );
 
     return {setEntities};
@@ -162,11 +154,7 @@ describe("useInvoices", () => {
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       createMockStoreState({hasHydrated: true});
 
-      const errorResult: ServerActionResult<ReadonlyArray<Invoice>> = {
-        success: false,
-        error: {code: "SERVER_ERROR", message: "Internal server error"},
-      };
-      mockFetchInvoices.mockResolvedValue(errorResult);
+      TestDataBuilder.mockResolvedActionFailure(mockFetchInvoices, {code: "SERVER_ERROR", message: "Internal server error"});
 
       const {result} = renderHook(() => useInvoices());
 
@@ -352,7 +340,7 @@ describe("useInvoices", () => {
   describe("edge cases", () => {
     it("handles invoices with duplicate ids gracefully", async () => {
       const {setEntities} = createMockStoreState({hasHydrated: true});
-      const duplicateInvoice = buildInvoice({id: testInvoice1.id, name: "Duplicate"});
+      const duplicateInvoice = TestDataBuilder.build("invoice", {id: testInvoice1.id, name: "Duplicate"});
       const invoicesWithDuplicates = [testInvoice1, duplicateInvoice];
 
       mockFetchInvoices.mockResolvedValue({success: true, data: invoicesWithDuplicates});
@@ -369,7 +357,9 @@ describe("useInvoices", () => {
 
     it("handles large number of invoices", async () => {
       const {setEntities} = createMockStoreState({hasHydrated: true});
-      const manyInvoices = Array.from({length: 1000}, (_, i) => buildInvoice({id: `${i}`.padStart(36, "0"), name: `Invoice ${i}`}));
+      const manyInvoices = Array.from({length: 1000}, (_, i) =>
+        TestDataBuilder.build("invoice", {id: `${i}`.padStart(36, "0"), name: `Invoice ${i}`}),
+      );
 
       mockFetchInvoices.mockResolvedValue({success: true, data: manyInvoices});
 
@@ -384,7 +374,7 @@ describe("useInvoices", () => {
 
     it("handles invoices with missing optional fields", async () => {
       createMockStoreState({hasHydrated: true});
-      const minimalInvoice = buildInvoice({
+      const minimalInvoice = TestDataBuilder.build("invoice", {
         id: testInvoice1.id,
         name: "Minimal",
         items: [],

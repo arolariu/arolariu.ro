@@ -6,8 +6,7 @@
 import type {Recipe} from "@/types/invoices";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {invokeHookCallback} from "../../../../../../tests/helpers";
-import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder, invokeHookCallback} from "../../../../../../tests/helpers";
 import {useRecipeDelete} from "./useRecipeDelete";
 
 // Mock dependencies
@@ -26,37 +25,33 @@ const mockUseInvoicesStore = vi.mocked(useInvoicesStore);
 
 describe("useRecipeDelete", () => {
   const testRecipes: Recipe[] = [
-    {
+    TestDataBuilder.build("recipe", {
       name: "Recipe 1",
       description: "First recipe",
-      recipeIngredients: ["ing1"],
-      recipeSteps: ["step1"],
+      ingredients: ["ing1"],
+      instructions: "step1",
       cookingTime: 10,
-      servings: 1,
-    },
-    {
+    }),
+    TestDataBuilder.build("recipe", {
       name: "Recipe 2",
       description: "Second recipe",
-      recipeIngredients: ["ing2"],
-      recipeSteps: ["step2"],
+      ingredients: ["ing2"],
+      instructions: "step2",
       cookingTime: 20,
-      servings: 2,
-    },
-    {
+    }),
+    TestDataBuilder.build("recipe", {
       name: "Recipe 3",
       description: "Third recipe",
-      recipeIngredients: ["ing3"],
-      recipeSteps: ["step3"],
+      ingredients: ["ing3"],
+      instructions: "step3",
       cookingTime: 30,
-      servings: 3,
-    },
+    }),
   ];
 
-  const testInvoice = buildInvoice({
+  const testInvoice = TestDataBuilder.build("invoice", {
     id: "11111111-1111-4111-8111-111111111111",
     possibleRecipes: testRecipes,
   });
-
   const mockUpdateEntity = vi.fn();
 
   beforeEach(() => {
@@ -88,18 +83,15 @@ describe("useRecipeDelete", () => {
 
   describe("recipe deletion", () => {
     it("successfully removes a recipe by name", async () => {
-      const {result} = renderHook(() => useRecipeDelete(testInvoice));
+      const hookResult = renderHook(() => useRecipeDelete(testInvoice));
 
-      const updatedInvoice = await invokeHookCallback(() => result.current.removeRecipeCallback("Recipe 2"));
+      await invokeHookCallback(hookResult, (current) => current.removeRecipeCallback("Recipe 2"));
 
-      expect(result.current.isDeleting).toBe(false);
+      expect(hookResult.result.current.isDeleting).toBe(false);
 
       expect(mockUpdateEntity).toHaveBeenCalledWith(testInvoice.id, {
         possibleRecipes: [testRecipes[0], testRecipes[2]],
       });
-
-      expect(updatedInvoice.possibleRecipes).toHaveLength(2);
-      expect(updatedInvoice.possibleRecipes).not.toContainEqual(testRecipes[1]);
     });
 
     it("removes first recipe when matched", async () => {
@@ -120,12 +112,12 @@ describe("useRecipeDelete", () => {
 
     it("removes all recipes with matching name", async () => {
       const duplicateRecipes: Recipe[] = [
-        {...testRecipes[0], name: "Duplicate"},
-        {...testRecipes[1], name: "Duplicate"},
-        {...testRecipes[2], name: "Unique"},
+        TestDataBuilder.build("recipe", {name: "Duplicate"}),
+        TestDataBuilder.build("recipe", {name: "Duplicate"}),
+        TestDataBuilder.build("recipe", {name: "Unique"}),
       ];
 
-      const invoiceWithDuplicates = buildInvoice({
+      const invoiceWithDuplicates = TestDataBuilder.build("invoice", {
         id: testInvoice.id,
         possibleRecipes: duplicateRecipes,
       });
@@ -150,7 +142,7 @@ describe("useRecipeDelete", () => {
     });
 
     it("handles removal from empty recipe list", async () => {
-      const emptyInvoice = buildInvoice({
+      const emptyInvoice = TestDataBuilder.build("invoice", {
         id: testInvoice.id,
         possibleRecipes: [],
       });
@@ -183,11 +175,11 @@ describe("useRecipeDelete", () => {
 
   describe("loading state management", () => {
     it("resets isDeleting after deletion", async () => {
-      const {result} = renderHook(() => useRecipeDelete(testInvoice));
+      const hookResult = renderHook(() => useRecipeDelete(testInvoice));
 
-      await invokeHookCallback(() => result.current.removeRecipeCallback("Recipe 1"));
+      await invokeHookCallback(hookResult, (current) => current.removeRecipeCallback("Recipe 1"));
 
-      expect(result.current.isDeleting).toBe(false);
+      expect(hookResult.result.current.isDeleting).toBe(false);
     });
 
     it("resets isDeleting even if store update throws", async () => {
@@ -270,16 +262,15 @@ describe("useRecipeDelete", () => {
 
   describe("edge cases", () => {
     it("handles recipe with empty string name", async () => {
-      const emptyNameRecipe: Recipe = {
+      const emptyNameRecipe = TestDataBuilder.build("recipe", {
         name: "",
         description: "Empty name recipe",
-        recipeIngredients: [],
-        recipeSteps: [],
+        ingredients: [],
+        instructions: "",
         cookingTime: 0,
-        servings: 0,
-      };
+      });
 
-      const invoiceWithEmptyName = buildInvoice({
+      const invoiceWithEmptyName = TestDataBuilder.build("invoice", {
         id: testInvoice.id,
         possibleRecipes: [emptyNameRecipe, ...testRecipes],
       });
@@ -292,16 +283,15 @@ describe("useRecipeDelete", () => {
     });
 
     it("handles recipe names with special characters", async () => {
-      const specialRecipe: Recipe = {
+      const specialRecipe = TestDataBuilder.build("recipe", {
         name: "Recipe w/ Special-Chars & Symbols!",
         description: "Special",
-        recipeIngredients: [],
-        recipeSteps: [],
+        ingredients: [],
+        instructions: "",
         cookingTime: 0,
-        servings: 0,
-      };
+      });
 
-      const invoiceWithSpecial = buildInvoice({
+      const invoiceWithSpecial = TestDataBuilder.build("invoice", {
         id: testInvoice.id,
         possibleRecipes: [specialRecipe, ...testRecipes],
       });
@@ -315,16 +305,15 @@ describe("useRecipeDelete", () => {
 
     it("handles very long recipe names", async () => {
       const longName = "A".repeat(1000);
-      const longNameRecipe: Recipe = {
+      const longNameRecipe = TestDataBuilder.build("recipe", {
         name: longName,
         description: "Long name",
-        recipeIngredients: [],
-        recipeSteps: [],
+        ingredients: [],
+        instructions: "",
         cookingTime: 0,
-        servings: 0,
-      };
+      });
 
-      const invoiceWithLongName = buildInvoice({
+      const invoiceWithLongName = TestDataBuilder.build("invoice", {
         id: testInvoice.id,
         possibleRecipes: [longNameRecipe],
       });

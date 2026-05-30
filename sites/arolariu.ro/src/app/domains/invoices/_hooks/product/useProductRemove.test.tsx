@@ -4,11 +4,9 @@
  */
 
 import type {ServerActionResult} from "@/lib/utils.server";
-import type {Product} from "@/types/invoices";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {invokeHookCallback} from "../../../../../../tests/helpers";
-import {buildInvoice, buildProduct} from "../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder, invokeHookCallback} from "../../../../../../tests/helpers";
 import {useProductRemove} from "./useProductRemove";
 
 vi.mock("@/stores", () => ({
@@ -24,10 +22,6 @@ const {deleteInvoiceProduct} = await import("../../_actions/invoices");
 
 const mockUseInvoicesStore = vi.mocked(useInvoicesStore);
 const mockDeleteInvoiceProduct = vi.mocked(deleteInvoiceProduct);
-
-type InvoiceStoreSelectorState = Readonly<{
-  updateEntity: (invoiceId: string, updates: Readonly<{items: ReadonlyArray<Product>}>) => void;
-}>;
 
 function createDeferred<T>(): Readonly<{
   promise: Promise<T>;
@@ -46,14 +40,14 @@ function createDeferred<T>(): Readonly<{
 }
 
 function mockInvoiceStore(updateEntity = vi.fn()): void {
-  mockUseInvoicesStore.mockImplementation((selector: (state: InvoiceStoreSelectorState) => unknown) => selector({updateEntity}));
+  TestDataBuilder.mockEntityStoreSelector(mockUseInvoicesStore, TestDataBuilder.entityStore({updateEntity}));
 }
 
 describe("useProductRemove", () => {
-  const productToRemove = buildProduct({name: "Coffee"});
-  const matchingDuplicate = buildProduct({name: "Coffee", quantity: 2});
-  const retainedProduct = buildProduct({name: "Milk"});
-  const invoice = buildInvoice({items: [productToRemove, retainedProduct, matchingDuplicate]});
+  const productToRemove = TestDataBuilder.build("product", {name: "Coffee"});
+  const matchingDuplicate = TestDataBuilder.build("product", {name: "Coffee", quantity: 2});
+  const retainedProduct = TestDataBuilder.build("product", {name: "Milk"});
+  const invoice = TestDataBuilder.build("invoice", {items: [productToRemove, retainedProduct, matchingDuplicate]});
   const mockUpdateEntity = vi.fn();
 
   beforeEach(() => {
@@ -74,9 +68,9 @@ describe("useProductRemove", () => {
   });
 
   it("removes a product server-side and mirrors exact-name removal locally", async () => {
-    const {result} = renderHook(() => useProductRemove(invoice));
+    const hookResult = renderHook(() => useProductRemove(invoice));
 
-    await invokeHookCallback(() => result.current.removeProductCallback(productToRemove.name));
+    await invokeHookCallback(hookResult, (current) => current.removeProductCallback(productToRemove.name));
 
     expect(mockDeleteInvoiceProduct).toHaveBeenCalledWith({
       invoiceId: invoice.id,
@@ -88,7 +82,7 @@ describe("useProductRemove", () => {
   });
 
   it("sets isRemoving true while the server action is pending", async () => {
-    const deferred = createDeferred<ServerActionResult<void>>();
+    const deferred = createDeferred<Awaited<ServerActionResult<void>>>();
     mockDeleteInvoiceProduct.mockReturnValue(deferred.promise);
 
     const {result} = renderHook(() => useProductRemove(invoice));
@@ -111,10 +105,9 @@ describe("useProductRemove", () => {
   });
 
   it("throws server action failures and skips the local update", async () => {
-    mockDeleteInvoiceProduct.mockResolvedValue({
-      success: false,
-      error: {message: "Failed to remove product", userMessage: "Try again"},
-    });
+    mockDeleteInvoiceProduct.mockReturnValueOnce(
+      TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Failed to remove product"}),
+    );
 
     const {result} = renderHook(() => useProductRemove(invoice));
 

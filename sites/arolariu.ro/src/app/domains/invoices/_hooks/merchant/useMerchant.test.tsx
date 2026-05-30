@@ -3,11 +3,10 @@
  * @module app/domains/invoices/_hooks/merchant/useMerchant.test
  */
 
-import type {ServerActionResult} from "@/lib/utils.server";
 import type {Merchant} from "@/types/invoices";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {buildMerchant} from "../../../../../../tests/helpers/invoiceDomain";
+import {TestDataBuilder} from "../../../../../../tests/helpers";
 import {useMerchant} from "./useMerchant";
 
 vi.mock("@/stores", () => ({
@@ -24,12 +23,6 @@ const {fetchMerchant} = await import("../../_actions/merchants");
 const mockUseMerchantsStore = vi.mocked(useMerchantsStore);
 const mockFetchMerchant = vi.mocked(fetchMerchant);
 
-type MerchantsStoreSelectorState = Readonly<{
-  entities: ReadonlyArray<Merchant>;
-  upsertEntity: (merchant: Merchant) => void;
-  hasHydrated: boolean;
-}>;
-
 function createMockStoreState(
   overrides: Readonly<{
     entities?: ReadonlyArray<Merchant>;
@@ -37,20 +30,22 @@ function createMockStoreState(
   }> = {},
 ): Readonly<{upsertMerchant: ReturnType<typeof vi.fn>}> {
   const upsertMerchant = vi.fn();
-  const state: MerchantsStoreSelectorState = {
-    entities: overrides.entities ?? [],
-    upsertEntity: upsertMerchant,
-    hasHydrated: overrides.hasHydrated ?? false,
-  };
 
-  mockUseMerchantsStore.mockImplementation((selector: (state: MerchantsStoreSelectorState) => unknown) => selector(state));
+  TestDataBuilder.mockEntityStoreSelector(
+    mockUseMerchantsStore,
+    TestDataBuilder.entityStore<Merchant>({
+      entities: overrides.entities ?? [],
+      upsertEntity: upsertMerchant,
+      hasHydrated: overrides.hasHydrated ?? false,
+    }),
+  );
 
   return {upsertMerchant};
 }
 
 describe("useMerchant", () => {
   const merchantId = "22222222-2222-4222-8222-222222222222";
-  const merchant = buildMerchant({id: merchantId, name: "Test Merchant"});
+  const merchant = TestDataBuilder.build("merchant", {id: merchantId, name: "Test Merchant"});
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -76,7 +71,7 @@ describe("useMerchant", () => {
 
   it("returns null when the requested merchant is not cached after hydration", () => {
     createMockStoreState({
-      entities: [buildMerchant({id: "33333333-3333-4333-8333-333333333333"})],
+      entities: [TestDataBuilder.build("merchant", {id: "33333333-3333-4333-8333-333333333333"})],
       hasHydrated: true,
     });
 
@@ -101,12 +96,8 @@ describe("useMerchant", () => {
 
   it("sets the error flag and logs when the server action returns failure", async () => {
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    const errorResult: ServerActionResult<Readonly<Merchant>> = {
-      success: false,
-      error: {code: "NOT_FOUND", message: "Merchant not found"},
-    };
     createMockStoreState({hasHydrated: true});
-    mockFetchMerchant.mockResolvedValue(errorResult);
+    TestDataBuilder.mockResolvedActionFailure(mockFetchMerchant, {code: "NOT_FOUND", message: "Merchant not found"});
 
     const {result} = renderHook(() => useMerchant({merchantIdentifier: merchantId}));
 
@@ -150,8 +141,8 @@ describe("useMerchant", () => {
   });
 
   it("refetches when the merchant identifier changes", async () => {
-    const firstMerchant = buildMerchant({id: merchantId, name: "First Merchant"});
-    const secondMerchant = buildMerchant({id: "33333333-3333-4333-8333-333333333333", name: "Second Merchant"});
+    const firstMerchant = TestDataBuilder.build("merchant", {id: merchantId, name: "First Merchant"});
+    const secondMerchant = TestDataBuilder.build("merchant", {id: "33333333-3333-4333-8333-333333333333", name: "Second Merchant"});
     const {upsertMerchant} = createMockStoreState({hasHydrated: true});
     mockFetchMerchant
       .mockResolvedValueOnce({success: true, data: firstMerchant})
