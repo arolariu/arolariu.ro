@@ -23,6 +23,7 @@
     "@actions/http-client": "4.0.1",
     "@actions/io": "3.0.2",
     "@actions/tool-cache": "4.0.0",
+    "fast-xml-parser": "5.8.0",
     "pretty-bytes": "7.1.0"
   },
   "devDependencies": {

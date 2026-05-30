@@ -109,6 +109,29 @@ jobs:
       - name: 🔨 Build components package
         run: npm run build:components
 
+      # ----- .NET toolchain (for test-api provider) -----
+      - name: 📦 Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: 📦 Restore .NET projects
+        run: dotnet restore arolariu.slnx
+        continue-on-error: true
+
+      # ----- Python toolchain (for test-exp provider) -----
+      - name: 📦 Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+          cache: 'pip'
+          cache-dependency-path: sites/exp.arolariu.ro/requirements-dev.txt
+
+      - name: 📦 Install Python dev deps
+        working-directory: sites/exp.arolariu.ro
+        run: python -m pip install -q -r requirements-dev.txt
+        continue-on-error: true
+
       # ----- Provider steps (step-level continue-on-error) -----
       - name: 🎨 Provider · Prettier (format)
         id: provider-format
@@ -122,11 +145,29 @@ jobs:
         working-directory: .github/scripts
         run: node --experimental-strip-types src/hygiene/pipeline/runProvider.ts lint
 
-      - name: 🧪 Provider · Vitest (test)
-        id: provider-test
+      - name: 🧪 Provider · Tests · Scripts (vitest in .github/scripts)
+        id: provider-test-scripts
         continue-on-error: true
         working-directory: .github/scripts
-        run: node --experimental-strip-types src/hygiene/pipeline/runProvider.ts test
+        run: node --experimental-strip-types src/hygiene/pipeline/runProvider.ts test-scripts
+
+      - name: 🧪 Provider · Tests · Frontend (vitest for website/components/cv/status)
+        id: provider-test-frontend
+        continue-on-error: true
+        working-directory: .github/scripts
+        run: node --experimental-strip-types src/hygiene/pipeline/runProvider.ts test-frontend
+
+      - name: 🧪 Provider · Tests · API (dotnet xUnit)
+        id: provider-test-api
+        continue-on-error: true
+        working-directory: .github/scripts
+        run: node --experimental-strip-types src/hygiene/pipeline/runProvider.ts test-api
+
+      - name: 🧪 Provider · Tests · Exp (pytest)
+        id: provider-test-exp
+        continue-on-error: true
+        working-directory: .github/scripts
+        run: node --experimental-strip-types src/hygiene/pipeline/runProvider.ts test-exp
 
       - name: 📊 Provider · Statistics (stats)
         id: provider-stats

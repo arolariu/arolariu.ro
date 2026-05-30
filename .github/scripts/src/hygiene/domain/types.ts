@@ -44,6 +44,13 @@ export interface LineFinding {
   readonly endColumn?: number;
   readonly message: string;
   readonly ruleId?: string;
+  /**
+   * Optional logical grouping for multi-suite providers (e.g. test-frontend
+   * runs Vitest across `website`, `components`, `cv`, `status` projects and
+   * tags each finding with the project name). When set, the stepSummary
+   * projection groups findings by this value within the provider's section.
+   */
+  readonly suite?: string;
 }
 
 /** File-level finding (whole-file issue, no specific line). */

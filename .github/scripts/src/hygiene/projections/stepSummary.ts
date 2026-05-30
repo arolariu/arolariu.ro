@@ -104,20 +104,46 @@ function sortFindings(findings: readonly Finding[]): Finding[] {
 /**
  * Builds the markdown block describing the findings for a single provider.
  * Includes a summary line and a bulleted list capped at MAX_FINDINGS_PER_PROVIDER.
+ * When findings carry a `suite` tag (multi-suite test providers), groups them
+ * by suite with a small per-suite header.
  */
 export function findingsBlock(o: ProviderOutcome<unknown>): string {
   if (o.findings.length === 0) return "_No findings._";
   const sorted = sortFindings(o.findings);
   const shown = sorted.slice(0, MAX_FINDINGS_PER_PROVIDER);
+  const totalShown = shown.length;
   const lines: string[] = [];
-  for (const f of shown) {
-    lines.push(`- ${formatFinding(f)}`);
+
+  // Group by `suite` when at least one finding has one set; otherwise render flat.
+  const hasSuite = shown.some((f) => f.kind === "line" && typeof f.suite === "string");
+  if (hasSuite) {
+    const groups = new Map<string, Finding[]>();
+    for (const f of shown) {
+      const key = f.kind === "line" && f.suite ? f.suite : "(other)";
+      const arr = groups.get(key);
+      if (arr) arr.push(f); else groups.set(key, [f]);
+    }
+    for (const [suiteName, group] of groups) {
+      const errs = group.filter((f) => f.severity === "error" || f.severity === "critical").length;
+      const warns = group.filter((f) => f.severity === "warning").length;
+      lines.push(`**${suiteName}** — ${group.length} finding(s) (${errs} err / ${warns} warn)`);
+      lines.push("");
+      for (const f of group) {
+        lines.push(`- ${formatFinding(f)}`);
+      }
+      lines.push("");
+    }
+  } else {
+    for (const f of shown) {
+      lines.push(`- ${formatFinding(f)}`);
+    }
   }
-  if (sorted.length > shown.length) {
+
+  if (sorted.length > totalShown) {
     lines.push("");
-    lines.push(`> Showing top ${shown.length} of ${sorted.length} findings (sorted by severity). Full list in the \`hygiene-report\` artifact.`);
+    lines.push(`> Showing top ${totalShown} of ${sorted.length} findings (sorted by severity). Full list in the \`hygiene-report\` artifact.`);
   }
-  return lines.join("\n");
+  return lines.join("\n").trim();
 }
 
 export function buildStepSummary(report: HygieneReport): string {
