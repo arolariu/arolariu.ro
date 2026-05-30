@@ -11,6 +11,7 @@
 
 import * as core from "@actions/core";
 import {CommentBuilder} from "../../../helpers/comments/index.ts";
+import {isComparisonFinding} from "../domain/types.ts";
 import {
   type Finding,
   type GateResult,
@@ -43,6 +44,7 @@ interface TestSuitesPayloadLike {
 const TOP_RULES_LIMIT = 5;
 const MAX_FAILING_TESTS_PER_SUITE = 10;
 const MAX_MESSAGE_LENGTH = 240;
+// Mirrors providers/registry.ts order without importing providers into projections.
 const PROVIDER_ORDER: readonly string[] = ["format", "lint", "test-typescript", "test-dotnet", "test-python", "stats"];
 
 function escapeHtml(s: string): string {
@@ -234,7 +236,7 @@ function comparisonDiffLabel(finding: Finding): string {
 }
 
 function statsSignal(outcome: ProviderOutcome<unknown>): string {
-  const comparisons = outcome.findings.filter((finding) => finding.kind === "comparison");
+  const comparisons = outcome.findings.filter(isComparisonFinding);
   if (comparisons.length === 0) return "no bundle changes";
 
   const largest = comparisons
