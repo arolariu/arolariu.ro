@@ -223,6 +223,25 @@ describe("renderScorecard", () => {
     expect(renderScorecard(report)).toMatch(/\| 🟦 Prettier \| ✅ PASS \| clean \|/);
   });
 
+  it("escapes provider labels in scorecard rows", () => {
+    const report = makeReport({
+      outcomes: [
+        makeOutcome({
+          providerIcon: "<svg>",
+          providerName: "Provider <script>alert('x')</script> & Co",
+        }),
+      ],
+    });
+
+    const md = renderScorecard(report);
+
+    expect(md).toContain(
+      "| &lt;svg&gt; Provider &lt;script&gt;alert(&#39;x&#39;)&lt;/script&gt; &amp; Co | ✅ PASS | clean |",
+    );
+    expect(md).not.toContain("<script>");
+    expect(md).not.toContain("<svg>");
+  });
+
   it("summarizes failed lint providers with finding count and top rule", () => {
     const report = makeReport({
       outcomes: [

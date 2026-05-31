@@ -56,6 +56,10 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
+function providerLabel(outcome: ProviderOutcome<unknown>): string {
+  return `${escapeHtml(outcome.providerIcon)} ${escapeHtml(outcome.providerName)}`;
+}
+
 function fenceSafe(content: string): string {
   let maxRun = 0;
   const matches = content.match(/`+/g);
@@ -284,7 +288,7 @@ export function renderScorecard(report: HygieneReport): string {
     .slice()
     .sort((a, b) => providerSortIndex(a.providerId) - providerSortIndex(b.providerId))
     .map((outcome) => {
-      return `| ${outcome.providerIcon} ${outcome.providerName} | ${resultEmoji(outcome.gateResult)} ${resultPill(outcome.gateResult)} | ${providerSignal(outcome)} | ${formatDurationMs(outcome.durationMs)} |`;
+      return `| ${providerLabel(outcome)} | ${resultEmoji(outcome.gateResult)} ${resultPill(outcome.gateResult)} | ${providerSignal(outcome)} | ${formatDurationMs(outcome.durationMs)} |`;
     });
   return [header, ...rows].join("\n");
 }
@@ -380,12 +384,12 @@ export function renderStatsDetails(o: ProviderOutcome<unknown>): string | null {
 
 function providerDetailsSummary(o: ProviderOutcome<unknown>): string {
   if (o.gateResult === "errored") {
-    return `${o.providerIcon} ${o.providerName} · ${resultPill(o.gateResult)} · runner error`;
+    return `${providerLabel(o)} · ${resultPill(o.gateResult)} · runner error`;
   }
 
   const visible = visibleFindings(o.findings);
   const findingLabel = `${visible.length} finding${visible.length === 1 ? "" : "s"}`;
-  return `${o.providerIcon} ${o.providerName} · ${resultPill(o.gateResult)} · ${findingLabel}`;
+  return `${providerLabel(o)} · ${resultPill(o.gateResult)} · ${findingLabel}`;
 }
 
 export function renderProviderCard(o: ProviderOutcome<unknown>): string {
@@ -395,7 +399,7 @@ export function renderProviderCard(o: ProviderOutcome<unknown>): string {
   const lines: string[] = [];
 
   lines.push(`<details>`);
-  lines.push(`<summary>${escapeHtml(providerDetailsSummary(o))}</summary>`);
+  lines.push(`<summary>${providerDetailsSummary(o)}</summary>`);
   lines.push("");
 
   if (o.gateResult === "failed" && o.findings.length > 0) {
