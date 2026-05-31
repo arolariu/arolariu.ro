@@ -13,6 +13,13 @@ export interface ChangeSet {
   readonly files: readonly string[];
 }
 
+interface ProviderChangeInput {
+  readonly changeScope: ChangeScope;
+  readonly changedFiles: readonly string[];
+}
+
+type ChangeInput = ChangeSet | ProviderChangeInput;
+
 export interface ChangeClassification {
   readonly files: readonly string[];
   readonly buckets: readonly ProjectBucket[];
@@ -85,6 +92,14 @@ function addBucket(buckets: ProjectBucket[], bucket: ProjectBucket): void {
   if (!buckets.includes(bucket)) buckets.push(bucket);
 }
 
+function scopeOf(changeInput: ChangeInput): ChangeScope {
+  return "scope" in changeInput ? changeInput.scope : changeInput.changeScope;
+}
+
+function filesOf(changeInput: ChangeInput): readonly string[] {
+  return "files" in changeInput ? changeInput.files : changeInput.changedFiles;
+}
+
 export function classifyChangedFiles(files: readonly string[]): ChangeClassification {
   const normalized = files.map(normalizeChangedFile).filter(Boolean);
   const buckets: ProjectBucket[] = [];
@@ -115,38 +130,38 @@ export function classifyChangedFiles(files: readonly string[]): ChangeClassifica
   return {files: normalized, buckets, hasRootSharedChange, hasJavaScriptSharedChange, hasBackendSharedChange, hasPythonSharedChange};
 }
 
-export function shouldRunBroadly(changeSet: ChangeSet): boolean {
-  if (changeSet.scope === "unknown") return true;
-  return classifyChangedFiles(changeSet.files).hasRootSharedChange;
+export function shouldRunBroadly(changeInput: ChangeInput): boolean {
+  if (scopeOf(changeInput) === "unknown") return true;
+  return classifyChangedFiles(filesOf(changeInput)).hasRootSharedChange;
 }
 
-export function filesForPrettier(changeSet: ChangeSet): readonly string[] | null {
-  if (shouldRunBroadly(changeSet)) return null;
-  return classifyChangedFiles(changeSet.files).files.filter((file) => PRETTIER_EXTENSIONS.has(extensionOf(file)));
+export function filesForPrettier(changeInput: ChangeInput): readonly string[] | null {
+  if (shouldRunBroadly(changeInput)) return null;
+  return classifyChangedFiles(filesOf(changeInput)).files.filter((file) => PRETTIER_EXTENSIONS.has(extensionOf(file)));
 }
 
-export function filesForEslint(changeSet: ChangeSet): readonly string[] | null {
-  if (changeSet.scope === "unknown") return null;
-  const classification = classifyChangedFiles(changeSet.files);
+export function filesForEslint(changeInput: ChangeInput): readonly string[] | null {
+  if (scopeOf(changeInput) === "unknown") return null;
+  const classification = classifyChangedFiles(filesOf(changeInput));
   if (classification.hasJavaScriptSharedChange) return null;
   return classification.files.filter((file) => ESLINT_EXTENSIONS.has(extensionOf(file)));
 }
 
-export function touchesBackend(changeSet: ChangeSet): boolean {
-  if (changeSet.scope === "unknown") return true;
-  const classification = classifyChangedFiles(changeSet.files);
+export function touchesBackend(changeInput: ChangeInput): boolean {
+  if (scopeOf(changeInput) === "unknown") return true;
+  const classification = classifyChangedFiles(filesOf(changeInput));
   return classification.hasRootSharedChange || classification.hasBackendSharedChange || classification.buckets.includes("api");
 }
 
-export function touchesPython(changeSet: ChangeSet): boolean {
-  if (changeSet.scope === "unknown") return true;
-  const classification = classifyChangedFiles(changeSet.files);
+export function touchesPython(changeInput: ChangeInput): boolean {
+  if (scopeOf(changeInput) === "unknown") return true;
+  const classification = classifyChangedFiles(filesOf(changeInput));
   return classification.hasRootSharedChange || classification.hasPythonSharedChange || classification.buckets.includes("exp");
 }
 
-export function suitesForTypeScriptChanges(changeSet: ChangeSet): readonly TypeScriptSuiteName[] | null {
-  if (changeSet.scope === "unknown") return null;
-  const classification = classifyChangedFiles(changeSet.files);
+export function suitesForTypeScriptChanges(changeInput: ChangeInput): readonly TypeScriptSuiteName[] | null {
+  if (scopeOf(changeInput) === "unknown") return null;
+  const classification = classifyChangedFiles(filesOf(changeInput));
   if (classification.hasRootSharedChange || classification.hasJavaScriptSharedChange) return null;
 
   const suites: TypeScriptSuiteName[] = [];
@@ -158,8 +173,8 @@ export function suitesForTypeScriptChanges(changeSet: ChangeSet): readonly TypeS
   return TYPE_SCRIPT_SUITE_ORDER.filter((suite) => suites.includes(suite));
 }
 
-export function touchedBundleFolders(changeSet: ChangeSet, bundleFolders: readonly string[]): readonly string[] | null {
-  if (shouldRunBroadly(changeSet)) return null;
-  const files = classifyChangedFiles(changeSet.files).files;
+export function touchedBundleFolders(changeInput: ChangeInput, bundleFolders: readonly string[]): readonly string[] | null {
+  if (shouldRunBroadly(changeInput)) return null;
+  const files = classifyChangedFiles(filesOf(changeInput)).files;
   return bundleFolders.filter((folder) => files.some((file) => file === folder || file.startsWith(`${folder}/`)));
 }

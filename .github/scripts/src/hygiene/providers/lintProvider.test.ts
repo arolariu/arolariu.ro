@@ -75,6 +75,42 @@ describe("lintProvider metadata", () => {
     expect(lintProvider.icon).toBe("🔍");
     expect(lintProvider.defaultGate).toEqual({kind: "blocking", blockOn: "error"});
   });
+
+  it("is not applicable when known changes contain no lintable files", () => {
+    expect(
+      lintProvider.applicableTo({
+        workspaceRoot: "/w",
+        baseRef: "main",
+        headRef: "HEAD",
+        changeScope: "known",
+        changedFiles: ["README.md"],
+        env: {},
+      }),
+    ).toBe(false);
+  });
+
+  it("is applicable for unknown scope and lintable files", () => {
+    expect(
+      lintProvider.applicableTo({
+        workspaceRoot: "/w",
+        baseRef: "main",
+        headRef: "HEAD",
+        changeScope: "unknown",
+        changedFiles: [],
+        env: {},
+      }),
+    ).toBe(true);
+    expect(
+      lintProvider.applicableTo({
+        workspaceRoot: "/w",
+        baseRef: "main",
+        headRef: "HEAD",
+        changeScope: "known",
+        changedFiles: ["src/a.ts"],
+        env: {},
+      }),
+    ).toBe(true);
+  });
 });
 
 describe("lintProvider.run", () => {
@@ -97,7 +133,7 @@ describe("lintProvider.run", () => {
       workspaceRoot: "/w",
       baseRef: "main",
       headRef: "HEAD",
-      changeScope: "known",
+      changeScope: "unknown",
       changedFiles: [],
       env: {},
     });
@@ -118,11 +154,32 @@ describe("lintProvider.run", () => {
       workspaceRoot: "/w",
       baseRef: "main",
       headRef: "HEAD",
-      changeScope: "known",
+      changeScope: "unknown",
       changedFiles: [],
       env: {},
     });
     expect(result.findings).toEqual([]);
     expect(result.payload.errorCount).toBe(0);
+  });
+
+  it("runs ESLint only on changed lintable files for known scoped changes", async () => {
+    const getExecOutput = vi.fn().mockResolvedValue({exitCode: 0, stdout: "[]", stderr: ""});
+    vi.doMock("@actions/exec", () => ({getExecOutput}));
+    const {lintProvider: provider} = await import("./lintProvider.ts");
+
+    await provider.run({
+      workspaceRoot: "/w",
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: ["sites/arolariu.ro/src/app/page.tsx", "README.md"],
+      env: {},
+    });
+
+    expect(getExecOutput).toHaveBeenCalledWith("npx", ["eslint", "sites/arolariu.ro/src/app/page.tsx", "--format", "json"], {
+      cwd: "/w",
+      ignoreReturnCode: true,
+      silent: true,
+    });
   });
 });

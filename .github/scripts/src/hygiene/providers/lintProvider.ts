@@ -9,6 +9,7 @@
  */
 
 import * as exec from "@actions/exec";
+import {filesForEslint} from "../domain/changedFiles.ts";
 import type {CheckProvider, ProviderRunInput, ProviderRunOutput, Schema} from "../domain/provider.ts";
 import type {Finding, LineFinding, Severity} from "../domain/types.ts";
 
@@ -87,13 +88,14 @@ export const lintProvider: CheckProvider<LintPayload> = {
   icon: "🔍",
   defaultGate: {kind: "blocking", blockOn: "error"},
   payloadSchema: schema,
-  applicableTo: () => true,
+  applicableTo: (input) => {
+    const files = filesForEslint(input);
+    return files === null || files.length > 0;
+  },
   async run(input: ProviderRunInput): Promise<ProviderRunOutput<LintPayload>> {
-    const result = await exec.getExecOutput(
-      "npx",
-      ["eslint", ".", "--format", "json"],
-      {cwd: input.workspaceRoot, ignoreReturnCode: true, silent: true},
-    );
+    const scopedFiles = filesForEslint(input);
+    const args = scopedFiles === null ? ["eslint", ".", "--format", "json"] : ["eslint", ...scopedFiles, "--format", "json"];
+    const result = await exec.getExecOutput("npx", args, {cwd: input.workspaceRoot, ignoreReturnCode: true, silent: true});
 
     // ESLint JSON output goes to stdout. If parsing fails, treat as zero findings
     // but still surface the raw stderr to the runner via a thrown error so the
@@ -102,10 +104,7 @@ export const lintProvider: CheckProvider<LintPayload> = {
     try {
       parsed = JSON.parse(result.stdout) as readonly EslintFileResult[];
     } catch (err) {
-      throw new Error(
-        `Failed to parse ESLint JSON output: ${(err as Error).message}. ` +
-        `stderr: ${result.stderr.substring(0, 500)}`,
-      );
+      throw new Error(`Failed to parse ESLint JSON output: ${(err as Error).message}. ` + `stderr: ${result.stderr.substring(0, 500)}`);
     }
 
     const {findings, errorCount, warningCount} = parseEslintJson(parsed);

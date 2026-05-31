@@ -8,6 +8,7 @@
  */
 
 import * as exec from "@actions/exec";
+import {filesForPrettier} from "../domain/changedFiles.ts";
 import type {CheckProvider, ProviderRunInput, ProviderRunOutput, Schema} from "../domain/provider.ts";
 import type {FileFinding, Finding} from "../domain/types.ts";
 
@@ -55,13 +56,14 @@ export const formatProvider: CheckProvider<FormatPayload> = {
   icon: "🎨",
   defaultGate: {kind: "blocking", blockOn: "warning"},
   payloadSchema: schema,
-  applicableTo: () => true,
+  applicableTo: (input) => {
+    const files = filesForPrettier(input);
+    return files === null || files.length > 0;
+  },
   async run(input: ProviderRunInput): Promise<ProviderRunOutput<FormatPayload>> {
-    const result = await exec.getExecOutput(
-      "npx",
-      ["prettier", "--check", "."],
-      {cwd: input.workspaceRoot, ignoreReturnCode: true, silent: true},
-    );
+    const scopedFiles = filesForPrettier(input);
+    const args = scopedFiles === null ? ["prettier", "--check", "."] : ["prettier", "--check", ...scopedFiles];
+    const result = await exec.getExecOutput("npx", args, {cwd: input.workspaceRoot, ignoreReturnCode: true, silent: true});
 
     const combined = result.stdout + "\n" + result.stderr;
     const files = parsePrettierCheckOutput(combined);

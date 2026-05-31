@@ -33,14 +33,37 @@ describe("formatProvider metadata", () => {
     expect(formatProvider.defaultGate).toEqual({kind: "blocking", blockOn: "warning"});
   });
 
-  it("is applicable to any input", () => {
+  it("is not applicable when known changes contain no Prettier-supported files", () => {
     expect(
       formatProvider.applicableTo({
         workspaceRoot: "/",
         baseRef: "main",
         headRef: "h",
         changeScope: "known",
+        changedFiles: ["image.png"],
+        env: {},
+      }),
+    ).toBe(false);
+  });
+
+  it("is applicable for unknown scope and Prettier-supported files", () => {
+    expect(
+      formatProvider.applicableTo({
+        workspaceRoot: "/",
+        baseRef: "main",
+        headRef: "h",
+        changeScope: "unknown",
         changedFiles: [],
+        env: {},
+      }),
+    ).toBe(true);
+    expect(
+      formatProvider.applicableTo({
+        workspaceRoot: "/",
+        baseRef: "main",
+        headRef: "h",
+        changeScope: "known",
+        changedFiles: ["src/a.ts"],
         env: {},
       }),
     ).toBe(true);
@@ -71,7 +94,7 @@ describe("formatProvider.run", () => {
       workspaceRoot: "/tmp",
       baseRef: "main",
       headRef: "HEAD",
-      changeScope: "known",
+      changeScope: "unknown",
       changedFiles: [],
       env: {},
     });
@@ -92,7 +115,7 @@ describe("formatProvider.run", () => {
       workspaceRoot: "/tmp",
       baseRef: "main",
       headRef: "HEAD",
-      changeScope: "known",
+      changeScope: "unknown",
       changedFiles: [],
       env: {},
     });
@@ -103,5 +126,30 @@ describe("formatProvider.run", () => {
     expect(first.severity).toBe("warning");
     expect(result.payload.unformattedCount).toBe(2);
     expect(result.payload.unformattedFiles).toEqual(["src/a.ts", "src/b.ts"]);
+  });
+
+  it("runs Prettier only on changed supported files for known scoped changes", async () => {
+    const getExecOutput = vi.fn().mockResolvedValue({
+      exitCode: 0,
+      stdout: "All matched files use Prettier code style!\n",
+      stderr: "",
+    });
+    vi.doMock("@actions/exec", () => ({getExecOutput}));
+    const {formatProvider: provider} = await import("./formatProvider.ts");
+
+    await provider.run({
+      workspaceRoot: "/tmp",
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: ["sites/arolariu.ro/src/app/page.tsx", "image.png"],
+      env: {},
+    });
+
+    expect(getExecOutput).toHaveBeenCalledWith("npx", ["prettier", "--check", "sites/arolariu.ro/src/app/page.tsx"], {
+      cwd: "/tmp",
+      ignoreReturnCode: true,
+      silent: true,
+    });
   });
 });
