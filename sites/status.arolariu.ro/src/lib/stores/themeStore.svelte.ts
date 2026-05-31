@@ -16,15 +16,15 @@ export type Theme = "light" | "dark" | "auto";
 /** Concrete rendered theme after resolving `"auto"` against the OS. */
 export type ResolvedTheme = "light" | "dark";
 
-/** localStorage key for the persisted theme selection. */
+/** LocalStorage key for the persisted theme selection. */
 const STORAGE_KEY = "status-theme";
 
-/** Allowed theme values — used by the runtime guard. */
-const VALID: readonly Theme[] = ["light", "dark", "auto"];
+/** Allowed theme values - used by the runtime guard. */
+const VALID_THEMES: readonly Theme[] = ["light", "dark", "auto"];
 
-/** True when `v` is one of the three valid theme literals. */
-function isValidTheme(v: unknown): v is Theme {
-  return typeof v === "string" && (VALID as readonly string[]).includes(v);
+/** True when `value` is one of the three valid theme literals. */
+function isValidTheme(value: unknown): value is Theme {
+  return typeof value === "string" && (VALID_THEMES as readonly string[]).includes(value);
 }
 
 /**
@@ -32,19 +32,10 @@ function isValidTheme(v: unknown): v is Theme {
  * SSR-safe — returns `"auto"` when `localStorage` is unavailable.
  */
 export function getTheme(): Theme {
-  if (typeof localStorage === "undefined") return "auto";
-  const stored = localStorage.getItem(STORAGE_KEY);
+  const storage = globalThis.localStorage as Storage | undefined;
+  if (storage === undefined) return "auto";
+  const stored = storage.getItem(STORAGE_KEY);
   return isValidTheme(stored) ? stored : "auto";
-}
-
-/**
- * Persist the theme selection and immediately apply it to the document.
- * No-op under SSR.
- */
-export function setTheme(theme: Theme): void {
-  if (typeof localStorage === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, theme);
-  applyTheme(theme);
 }
 
 /**
@@ -54,8 +45,9 @@ export function setTheme(theme: Theme): void {
  */
 export function resolveTheme(theme: Theme): ResolvedTheme {
   if (theme !== "auto") return theme;
-  if (typeof window === "undefined") return "dark";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  const browserWindow = globalThis.window as Window | undefined;
+  if (browserWindow === undefined) return "dark";
+  return browserWindow.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 /**
@@ -63,6 +55,18 @@ export function resolveTheme(theme: Theme): ResolvedTheme {
  * No-op under SSR. CSS selectors keyed on `[data-theme="dark"]` etc. re-evaluate.
  */
 export function applyTheme(theme: Theme): void {
-  if (typeof document === "undefined") return;
-  document.documentElement.setAttribute("data-theme", resolveTheme(theme));
+  const pageDocument = globalThis.document as Document | undefined;
+  if (pageDocument === undefined) return;
+  pageDocument.documentElement.dataset.theme = resolveTheme(theme);
+}
+
+/**
+ * Persist the theme selection and immediately apply it to the document.
+ * No-op under SSR.
+ */
+export function setTheme(theme: Theme): void {
+  const storage = globalThis.localStorage as Storage | undefined;
+  if (storage === undefined) return;
+  storage.setItem(STORAGE_KEY, theme);
+  applyTheme(theme);
 }
