@@ -17,7 +17,6 @@ import {
   type GateResult,
   type HygieneReport,
   type ProviderOutcome,
-  type Severity,
 } from "../domain/types.ts";
 
 // Structural redeclaration of SuiteResult / TestSuitesPayload (the real types
@@ -71,19 +70,6 @@ function fenceSafe(content: string): string {
   const fence = "`".repeat(Math.max(3, maxRun + 1));
   return `${fence}\n${content}\n${fence}`;
 }
-
-function severityIcon(s: Severity): string {
-  switch (s) {
-    case "critical": return "🟥";
-    case "error": return "🔴";
-    case "warning": return "🟡";
-    case "notice": return "🔵";
-    case "info": return "⚪";
-  }
-}
-// Suppress unused-locals; this helper is retained for future use by the
-// per-finding rendering path and the test suite does not exercise it.
-void severityIcon;
 
 function resultVerdict(r: GateResult): string {
   switch (r) {
@@ -308,20 +294,20 @@ export function renderRulesTable(findings: readonly Finding[], limit: number): s
   return [header, ...rows].join("\n");
 }
 
-export function renderSuiteChipRow(suites: readonly SuiteResultLike[]): string {
+export function renderSuiteStatusRow(suites: readonly SuiteResultLike[]): string {
   if (suites.length < 2) return "";
 
   const failed = suites.filter((s) => s.failed > 0).slice().sort((a, b) => a.name.localeCompare(b.name));
   const passed = suites.filter((s) => s.failed === 0).slice().sort((a, b) => a.name.localeCompare(b.name));
 
-  const chips: string[] = [];
+  const statusTokens: string[] = [];
   for (const s of failed) {
-    chips.push(`❌ **${escapeHtml(s.name)}**`);
+    statusTokens.push(`❌ **${escapeHtml(s.name)}**`);
   }
   for (const s of passed) {
-    chips.push(`✅ ${escapeHtml(s.name)}`);
+    statusTokens.push(`✅ ${escapeHtml(s.name)}`);
   }
-  return chips.join(" · ");
+  return statusTokens.join(" · ");
 }
 
 export function renderSuiteFailures(suite: SuiteResultLike): string {
@@ -430,9 +416,9 @@ export function renderProviderCard(o: ProviderOutcome<unknown>): string {
   } else if (category === "test") {
     const payload = o.payload as TestSuitesPayloadLike | null;
     if (payload?.suites && payload.suites.length > 0) {
-      const chips = renderSuiteChipRow(payload.suites);
-      if (chips.length > 0) {
-        lines.push(chips);
+      const statusRow = renderSuiteStatusRow(payload.suites);
+      if (statusRow.length > 0) {
+        lines.push(statusRow);
         lines.push("");
       }
       for (const suite of payload.suites) {

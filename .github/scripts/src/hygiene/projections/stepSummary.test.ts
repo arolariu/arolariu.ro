@@ -7,7 +7,7 @@ import {
   renderScorecard,
   renderProviderCard,
   renderRulesTable,
-  renderSuiteChipRow,
+  renderSuiteStatusRow,
   renderSuiteFailures,
   renderStatsDetails,
   renderFooter,
@@ -333,26 +333,26 @@ describe("renderRulesTable", () => {
   });
 });
 
-describe("renderSuiteChipRow", () => {
+describe("renderSuiteStatusRow", () => {
   function suite(name: string, failed = 0): SuiteResult {
     return {name, totalTests: 1, passed: failed === 0 ? 1 : 0, failed, skipped: 0, findings: []};
   }
   it("returns empty string for single-suite providers", () => {
-    expect(renderSuiteChipRow([suite("only")])).toBe("");
+    expect(renderSuiteStatusRow([suite("only")])).toBe("");
   });
   it("renders a status token for every suite when 2+", () => {
-    const html = renderSuiteChipRow([suite("a", 1), suite("b"), suite("c")]);
+    const html = renderSuiteStatusRow([suite("a", 1), suite("b"), suite("c")]);
     expect(html).toMatch(/a/);
     expect(html).toMatch(/b/);
     expect(html).toMatch(/c/);
   });
-  it("colors failing suites red and passing suites green", () => {
-    const html = renderSuiteChipRow([suite("bad", 2), suite("good")]);
+  it("marks failing suites red and passing suites green", () => {
+    const html = renderSuiteStatusRow([suite("bad", 2), suite("good")]);
     expect(html).toMatch(/❌.*bad/);
     expect(html).toMatch(/✅.*good/);
   });
   it("orders failed suites before passed suites", () => {
-    const html = renderSuiteChipRow([suite("zgood"), suite("abad", 1)]);
+    const html = renderSuiteStatusRow([suite("zgood"), suite("abad", 1)]);
     expect(html.indexOf("abad")).toBeLessThan(html.indexOf("zgood"));
   });
   it("escapes HTML in suite names", () => {
@@ -360,7 +360,7 @@ describe("renderSuiteChipRow", () => {
       {name: "evil</span>", totalTests: 1, passed: 0, failed: 1, skipped: 0, findings: []},
       {name: "good", totalTests: 1, passed: 1, failed: 0, skipped: 0, findings: []},
     ];
-    const html = renderSuiteChipRow(suites);
+    const html = renderSuiteStatusRow(suites);
     expect(html).toContain("evil&lt;/span&gt;");
     expect(html).not.toMatch(/evil<\/span>/);
   });
