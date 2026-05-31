@@ -41,5 +41,5 @@ export const navigating = {
 
 export const updated = {
   current: false,
-  check: async (): Promise<boolean> => false,
+  check: (): Promise<boolean> => Promise.resolve(false),
 };

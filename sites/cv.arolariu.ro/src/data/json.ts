@@ -47,17 +47,17 @@ export const jsonCVData = Object.freeze({
 
   /** Derived from `experiencesAsArray`. */
   work: Object.freeze(
-    experiencesAsArray.map((e) => ({
-      name: e.company,
-      position: e.title,
-      url: e.url,
-      startDate: e.startDate,
-      endDate: e.endDate,
-      summary: e.summary ?? e.description,
-      highlights: parseList(e.responsibilities),
-      location: e.location,
-      keywords: parseList(e.techAndSkills),
-      achievements: parseList(e.achievements),
+    experiencesAsArray.map((experience) => ({
+      name: experience.company,
+      position: experience.title,
+      url: experience.url,
+      startDate: experience.startDate,
+      endDate: experience.endDate,
+      summary: experience.summary ?? experience.description,
+      highlights: parseList(experience.responsibilities),
+      location: experience.location,
+      keywords: parseList(experience.techAndSkills),
+      achievements: parseList(experience.achievements),
     })),
   ),
 
@@ -85,14 +85,14 @@ export const jsonCVData = Object.freeze({
   /** Derived from `certificationsAsArray`. Microsoft certs gain the canonical
    *  "Microsoft Certified:" prefix to match how they appear on the badge. */
   certificates: Object.freeze(
-    certificationsAsArray.map((c) => ({
-      name: c.issuer === "Microsoft" ? `Microsoft Certified: ${c.name}` : c.name,
-      date: c.issueDate,
-      issuer: c.issuer,
-      url: c.issuerUrl,
-      code: c.code,
-      validUntil: c.expirationDate ?? "No expiration",
-      verificationUrl: c.issuerUrl,
+    certificationsAsArray.map((certification) => ({
+      name: certification.issuer === "Microsoft" ? `Microsoft Certified: ${certification.name}` : certification.name,
+      date: certification.issueDate,
+      issuer: certification.issuer,
+      url: certification.issuerUrl,
+      code: certification.code,
+      validUntil: certification.expirationDate ?? "No expiration",
+      verificationUrl: certification.issuerUrl,
     })),
   ),
 
@@ -102,11 +102,11 @@ export const jsonCVData = Object.freeze({
 
   /** Derived from `testimonials`. */
   references: Object.freeze(
-    Object.values(testimonials).map((t) => ({
-      name: t.author,
-      reference: t.quote,
-      position: t.position,
-      company: t.company,
+    Object.values(testimonials).map((testimonial) => ({
+      name: testimonial.author,
+      reference: testimonial.quote,
+      position: testimonial.position,
+      company: testimonial.company,
     })),
   ),
 

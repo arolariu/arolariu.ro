@@ -49,7 +49,7 @@ export interface PdfDevicePreference {
 export function detectPdfDevice(signals: Readonly<PdfDeviceSignals>): PdfDevicePreference {
   const hasTouch = signals.maxTouchPoints > 0;
   const isSmallScreen = signals.innerWidth < 768;
-  const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(signals.userAgent);
+  const isMobileUserAgent = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/iu.test(signals.userAgent);
 
   return {
     isMobile: (hasTouch && isSmallScreen) || isMobileUserAgent,
@@ -66,14 +66,22 @@ export function detectPdfDevice(signals: Readonly<PdfDeviceSignals>): PdfDeviceP
  */
 export function getNextPdfSurfaceStatus(currentStatus: PdfSurfaceStatus, event: PdfSurfaceEvent): PdfSurfaceStatus {
   switch (event) {
-    case "load":
+    case "load": {
       return "ready";
-    case "timeout":
+    }
+    case "timeout": {
       return currentStatus === "loading" ? "needs-assistance" : currentStatus;
-    case "error":
+    }
+    case "error": {
       return "failed";
-    case "retry":
+    }
+    case "retry": {
       return "loading";
+    }
+    default: {
+      const exhaustiveEvent: never = event;
+      return exhaustiveEvent;
+    }
   }
 }
 
