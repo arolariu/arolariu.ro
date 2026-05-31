@@ -96,8 +96,8 @@ export const TIMING_THRESHOLDS = {
 export const GITHUB_CONSTANTS = {
   /** Maximum comment length for PR comments */
   MAX_COMMENT_LENGTH: 65536,
-  /** Identifier prefix for hygiene comments */
-  HYGIENE_COMMENT_ID: "<!-- arolariu-hygiene-check -->",
+  /** Identifier for hygiene v3 check comments */
+  HYGIENE_COMMENT_ID: "<!-- arolariu-hygiene-check-v3 -->",
   /** Identifier prefix for E2E test comments */
   E2E_COMMENT_ID: "<!-- arolariu-e2e-test -->",
 } as const;

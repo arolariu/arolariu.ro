@@ -214,6 +214,13 @@ describe("EnvironmentHelper", () => {
     });
 
     it("should use 'unknown' for missing GitHub vars", () => {
+      // Explicitly delete any GitHub-runner-provided env vars before asserting
+      // the helper falls back to 'unknown'. Without this, the test passes
+      // locally (no GITHUB_* in env) but fails in GitHub Actions, where the
+      // runner pre-populates GITHUB_SHA / GITHUB_REF / GITHUB_ACTOR / etc.
+      for (const key of ["GITHUB_SHA", "GITHUB_REF", "GITHUB_ACTOR", "GITHUB_REPOSITORY"]) {
+        delete process.env[key];
+      }
       const env = createEnvironmentHelper();
 
       const context = env.getGitHubContext();

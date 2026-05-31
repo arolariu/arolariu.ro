@@ -179,6 +179,9 @@ const websiteEslintConfig: Config = defineConfig({
     node: {
       version: "24",
     },
+    next: {
+      rootDir: "sites/arolariu.ro",
+    },
   },
   linterOptions: {
     reportUnusedDisableDirectives: false,
