@@ -20,16 +20,19 @@
  */
 
 import * as core from "@actions/core";
+import * as exec from "@actions/exec";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import {evaluateGate, type ProviderOutcome} from "../domain/types.ts";
+import {normalizeChangedFile, type ChangeScope} from "../domain/changedFiles.ts";
 import type {CheckProvider} from "../domain/provider.ts";
+import {evaluateGate, type ProviderOutcome} from "../domain/types.ts";
 import {REGISTRY} from "../providers/registry.ts";
 import {buildContextFromEnv, type PipelineContext} from "./context.ts";
 
 export interface RunProviderDeps {
   readonly registry: readonly CheckProvider<unknown>[];
   readonly context: PipelineContext;
+  readonly changeScope: ChangeScope;
   readonly changedFiles: readonly string[];
 }
 
@@ -54,6 +57,7 @@ export async function runProviderCore(providerId: string, deps: RunProviderDeps)
     workspaceRoot: deps.context.workspaceRoot,
     baseRef: deps.context.baseRef,
     headRef: deps.context.headRef,
+    changeScope: deps.changeScope,
     changedFiles: deps.changedFiles,
     env: deps.context.env,
   };
@@ -114,6 +118,43 @@ export async function runProviderCore(providerId: string, deps: RunProviderDeps)
 }
 
 /**
+ * Collects changed files for the current provider run.
+ *
+ * @param workspaceRoot - Repository root where git commands should run.
+ * @param baseRef - Base ref for the PR diff.
+ * @param headRef - Head ref for the PR diff.
+ * @returns Known changed files when git diff succeeds, otherwise unknown scope.
+ */
+export async function collectChangedFiles(
+  workspaceRoot: string,
+  baseRef: string,
+  headRef: string,
+): Promise<{
+  readonly scope: ChangeScope;
+  readonly files: readonly string[];
+}> {
+  try {
+    const result = await exec.getExecOutput("git", ["diff", "--name-only", `${baseRef}...${headRef}`], {
+      cwd: workspaceRoot,
+      ignoreReturnCode: true,
+      silent: true,
+    });
+    if (result.exitCode !== 0) {
+      core.warning(`Could not compute changed files for ${baseRef}...${headRef}; running providers broadly.`);
+      return {scope: "unknown", files: []};
+    }
+    const files = result.stdout
+      .split("\n")
+      .map((line) => normalizeChangedFile(line.trim()))
+      .filter((line) => line.length > 0);
+    return {scope: "known", files};
+  } catch (error) {
+    core.warning(`Could not compute changed files: ${error instanceof Error ? error.message : String(error)}; running providers broadly.`);
+    return {scope: "unknown", files: []};
+  }
+}
+
+/**
  * CLI entrypoint. Reads providerId from argv, exits with the core return code.
  */
 export async function main(argv: readonly string[]): Promise<void> {
@@ -123,9 +164,13 @@ export async function main(argv: readonly string[]): Promise<void> {
     process.exit(1);
   }
   const context = buildContextFromEnv(process.env as Record<string, string | undefined>);
-  // Lightweight changedFiles fetch using git directly (avoid pulling helpers/git here).
-  const changedFiles: string[] = [];
-  const exitCode = await runProviderCore(providerId, {registry: REGISTRY, context, changedFiles});
+  const changed = await collectChangedFiles(context.workspaceRoot, context.baseRef, context.headRef);
+  const exitCode = await runProviderCore(providerId, {
+    registry: REGISTRY,
+    context,
+    changeScope: changed.scope,
+    changedFiles: changed.files,
+  });
   process.exit(exitCode);
 }
 

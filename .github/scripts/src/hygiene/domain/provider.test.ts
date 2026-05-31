@@ -1,4 +1,4 @@
-import {describe, it, expect, expectTypeOf} from "vitest";
+import {describe, expect, expectTypeOf, it} from "vitest";
 import type {CheckProvider, ProviderRunInput, Schema} from "./provider.ts";
 import type {ProviderOutcome} from "./types.ts";
 
@@ -48,6 +48,7 @@ describe("CheckProvider contract", () => {
       workspaceRoot: "/tmp",
       baseRef: "main",
       headRef: "HEAD",
+      changeScope: "known",
       changedFiles: [],
       env: process.env,
     });

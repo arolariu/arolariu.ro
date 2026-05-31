@@ -1,9 +1,12 @@
-import {describe, it, expect, beforeEach, afterEach} from "vitest";
+import {execFile} from "node:child_process";
 import * as fs from "node:fs/promises";
-import * as path from "node:path";
 import * as os from "node:os";
-import {runProviderCore, type RunProviderDeps} from "./runProvider.ts";
+import * as path from "node:path";
+import {promisify} from "node:util";
+import {afterEach, beforeEach, describe, expect, it} from "vitest";
+import type {ChangeScope} from "../domain/changedFiles.ts";
 import type {CheckProvider} from "../domain/provider.ts";
+import {collectChangedFiles, runProviderCore, type RunProviderDeps} from "./runProvider.ts";
 
 const stubProvider: CheckProvider<{ok: boolean}> = {
   id: "stub",
@@ -46,11 +49,19 @@ const baseDeps = (registry: CheckProvider<unknown>[]): RunProviderDeps => ({
     prNumber: null,
     workflowRunId: "1",
     workflowRunUrl: "https://example/run/1",
-    repoOwner: "o", repoName: "r",
+    repoOwner: "o",
+    repoName: "r",
     env: {},
   },
+  changeScope: "known",
   changedFiles: [],
 });
+
+const execFileAsync = promisify(execFile);
+
+async function git(args: readonly string[]): Promise<void> {
+  await execFileAsync("git", [...args], {cwd: tmpDir});
+}
 
 describe("runProviderCore", () => {
   it("writes outcome-{id}.json on success", async () => {
@@ -125,5 +136,83 @@ describe("runProviderCore", () => {
     const file = path.join(tmpDir, "artifacts/hygiene/outcome-stats-stub.json");
     const content = JSON.parse(await fs.readFile(file, "utf-8"));
     expect(content.gateResult).toBe("advisory");
+  });
+
+  it("passes changed files and scope to applicableTo and run", async () => {
+    const seen: Array<{readonly scope: ChangeScope; readonly files: readonly string[]}> = [];
+    const provider: CheckProvider<null> = {
+      id: "scope",
+      name: "Scope",
+      icon: "🔬",
+      defaultGate: {kind: "blocking", blockOn: "error"},
+      payloadSchema: {parse: () => null},
+      applicableTo(input) {
+        seen.push({scope: input.changeScope, files: input.changedFiles});
+        return true;
+      },
+      async run(input) {
+        seen.push({scope: input.changeScope, files: input.changedFiles});
+        return {payload: null, findings: []};
+      },
+    };
+
+    const deps: RunProviderDeps = {
+      ...baseDeps([provider as CheckProvider<unknown>]),
+      changeScope: "known",
+      changedFiles: ["sites/arolariu.ro/src/app/page.tsx"],
+    };
+    const exitCode = await runProviderCore("scope", deps);
+
+    expect(exitCode).toBe(0);
+    expect(seen).toEqual([
+      {scope: "known", files: ["sites/arolariu.ro/src/app/page.tsx"]},
+      {scope: "known", files: ["sites/arolariu.ro/src/app/page.tsx"]},
+    ]);
+  });
+
+  it("writes a passed zero-finding outcome when provider is not applicable", async () => {
+    const provider: CheckProvider<null> = {
+      id: "skip",
+      name: "Skip",
+      icon: "⏭️",
+      defaultGate: {kind: "blocking", blockOn: "error"},
+      payloadSchema: {parse: () => null},
+      applicableTo: () => false,
+      async run() {
+        throw new Error("run should not be called");
+      },
+    };
+
+    const exitCode = await runProviderCore("skip", baseDeps([provider as CheckProvider<unknown>]));
+    const content = JSON.parse(await fs.readFile(path.join(tmpDir, "artifacts/hygiene/outcome-skip.json"), "utf-8"));
+
+    expect(exitCode).toBe(0);
+    expect(content.gateResult).toBe("passed");
+    expect(content.findings).toEqual([]);
+  });
+});
+
+describe("collectChangedFiles", () => {
+  it("returns normalized changed files for a successful git diff", async () => {
+    await git(["init", "-b", "main"]);
+    await fs.mkdir(path.join(tmpDir, "src"), {recursive: true});
+    await fs.writeFile(path.join(tmpDir, "src", "a.ts"), "const a = 1;\n");
+    await git(["add", "."]);
+    await git(["-c", "user.email=test@example.com", "-c", "user.name=Test", "commit", "-m", "base"]);
+    await fs.writeFile(path.join(tmpDir, "src", "a.ts"), "const a = 2;\n");
+    await git(["add", "."]);
+    await git(["-c", "user.email=test@example.com", "-c", "user.name=Test", "commit", "-m", "head"]);
+
+    await expect(collectChangedFiles(tmpDir, "HEAD~1", "HEAD")).resolves.toEqual({
+      scope: "known",
+      files: ["src/a.ts"],
+    });
+  });
+
+  it("returns unknown scope when git diff fails", async () => {
+    await expect(collectChangedFiles(tmpDir, "missing-base", "missing-head")).resolves.toEqual({
+      scope: "unknown",
+      files: [],
+    });
   });
 });

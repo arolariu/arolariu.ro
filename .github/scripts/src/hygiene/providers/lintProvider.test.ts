@@ -1,6 +1,6 @@
-import {describe, it, expect, vi, beforeEach} from "vitest";
-import {lintProvider, parseEslintJson, type EslintFileResult} from "./lintProvider.ts";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import type {LineFinding} from "../domain/types.ts";
+import {lintProvider, parseEslintJson, type EslintFileResult} from "./lintProvider.ts";
 
 describe("parseEslintJson", () => {
   it("returns [] for empty results", () => {
@@ -36,25 +36,35 @@ describe("parseEslintJson", () => {
   });
 
   it("maps severity 0 (off) to info", () => {
-    const out: EslintFileResult[] = [{
-      filePath: "/x.ts", errorCount: 0, warningCount: 0,
-      messages: [{line: 1, column: 1, severity: 0, message: "msg", ruleId: null}],
-    }];
+    const out: EslintFileResult[] = [
+      {
+        filePath: "/x.ts",
+        errorCount: 0,
+        warningCount: 0,
+        messages: [{line: 1, column: 1, severity: 0, message: "msg", ruleId: null}],
+      },
+    ];
     const result = parseEslintJson(out);
     expect(result.findings[0]?.severity).toBe("info");
   });
 
   it("handles missing ruleId", () => {
-    const out: EslintFileResult[] = [{
-      filePath: "/x.ts", errorCount: 1, warningCount: 0,
-      messages: [{line: 1, column: 1, severity: 2, message: "Parsing error", ruleId: null}],
-    }];
+    const out: EslintFileResult[] = [
+      {
+        filePath: "/x.ts",
+        errorCount: 1,
+        warningCount: 0,
+        messages: [{line: 1, column: 1, severity: 2, message: "Parsing error", ruleId: null}],
+      },
+    ];
     const first = result(out).findings[0];
     expect(first?.kind).toBe("line");
     if (first?.kind === "line") {
       expect(first.ruleId).toBeUndefined();
     }
-    function result(o: EslintFileResult[]) { return parseEslintJson(o); }
+    function result(o: EslintFileResult[]) {
+      return parseEslintJson(o);
+    }
   });
 });
 
@@ -74,7 +84,8 @@ describe("lintProvider.run", () => {
     const eslintJson = JSON.stringify([
       {
         filePath: "/w/src/a.ts",
-        errorCount: 1, warningCount: 0,
+        errorCount: 1,
+        warningCount: 0,
         messages: [{line: 5, column: 3, severity: 2, message: "Bad", ruleId: "x/y"}],
       },
     ]);
@@ -83,7 +94,12 @@ describe("lintProvider.run", () => {
     }));
     const {lintProvider: provider} = await import("./lintProvider.ts");
     const result = await provider.run({
-      workspaceRoot: "/w", baseRef: "main", headRef: "HEAD", changedFiles: [], env: {},
+      workspaceRoot: "/w",
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: [],
+      env: {},
     });
     expect(result.findings).toHaveLength(1);
     const f = result.findings[0] as LineFinding;
@@ -99,7 +115,12 @@ describe("lintProvider.run", () => {
     }));
     const {lintProvider: provider} = await import("./lintProvider.ts");
     const result = await provider.run({
-      workspaceRoot: "/w", baseRef: "main", headRef: "HEAD", changedFiles: [], env: {},
+      workspaceRoot: "/w",
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: [],
+      env: {},
     });
     expect(result.findings).toEqual([]);
     expect(result.payload.errorCount).toBe(0);

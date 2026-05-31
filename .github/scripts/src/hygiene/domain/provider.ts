@@ -12,6 +12,7 @@
  * The provider is pure data + a single async run() function.
  */
 
+import type {ChangeScope} from "./changedFiles.ts";
 import type {Finding, Gate, ProviderOutcome} from "./types.ts";
 
 /**
@@ -21,6 +22,7 @@ export interface ProviderRunInput {
   readonly workspaceRoot: string;
   readonly baseRef: string;
   readonly headRef: string;
+  readonly changeScope: ChangeScope;
   readonly changedFiles: readonly string[];
   readonly env: NodeJS.ProcessEnv;
 }

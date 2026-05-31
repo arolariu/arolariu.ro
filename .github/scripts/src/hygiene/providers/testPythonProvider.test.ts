@@ -1,7 +1,7 @@
-import {describe, it, expect, vi, beforeEach, afterEach} from "vitest";
 import * as fs from "node:fs/promises";
-import * as path from "node:path";
 import * as os from "node:os";
+import * as path from "node:path";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 const samplePytestXml = `<?xml version="1.0" encoding="utf-8"?>
 <testsuites>
@@ -42,7 +42,12 @@ describe("testPythonProvider", () => {
     }));
     const {testPythonProvider} = await import("./testPythonProvider.ts");
     const result = await testPythonProvider.run({
-      workspaceRoot: tmpDir, baseRef: "main", headRef: "HEAD", changedFiles: [], env: {},
+      workspaceRoot: tmpDir,
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: [],
+      env: {},
     });
     expect(result.payload.suites).toHaveLength(1);
     expect(result.payload.suites[0]?.name).toBe("python");
@@ -61,7 +66,12 @@ describe("testPythonProvider", () => {
     }));
     const {testPythonProvider} = await import("./testPythonProvider.ts");
     const result = await testPythonProvider.run({
-      workspaceRoot: tmpDir, baseRef: "main", headRef: "HEAD", changedFiles: [], env: {},
+      workspaceRoot: tmpDir,
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: [],
+      env: {},
     });
     expect(result.payload.suites[0]?.name).toBe("python");
     expect(result.payload.failed).toBe(1);

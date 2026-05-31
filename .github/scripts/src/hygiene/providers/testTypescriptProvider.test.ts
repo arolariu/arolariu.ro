@@ -1,20 +1,29 @@
-import {describe, it, expect, vi, beforeEach} from "vitest";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import type {VitestJsonReport} from "./_testHelpers.ts";
 
 const passing: VitestJsonReport = {
-  numTotalTests: 5, numPassedTests: 5, numFailedTests: 0, numPendingTests: 0,
+  numTotalTests: 5,
+  numPassedTests: 5,
+  numFailedTests: 0,
+  numPendingTests: 0,
   testResults: [{name: "x.test.ts", status: "passed", assertionResults: []}],
 };
 
 const failing: VitestJsonReport = {
-  numTotalTests: 2, numPassedTests: 1, numFailedTests: 1, numPendingTests: 0,
-  testResults: [{
-    name: "x.test.ts", status: "failed",
-    assertionResults: [
-      {fullName: "ok", status: "passed", failureMessages: []},
-      {fullName: "boom", status: "failed", failureMessages: ["fail"], location: {line: 1, column: 1}},
-    ],
-  }],
+  numTotalTests: 2,
+  numPassedTests: 1,
+  numFailedTests: 1,
+  numPendingTests: 0,
+  testResults: [
+    {
+      name: "x.test.ts",
+      status: "failed",
+      assertionResults: [
+        {fullName: "ok", status: "passed", failureMessages: []},
+        {fullName: "boom", status: "failed", failureMessages: ["fail"], location: {line: 1, column: 1}},
+      ],
+    },
+  ],
 };
 
 describe("testTypescriptProvider", () => {
@@ -44,7 +53,12 @@ describe("testTypescriptProvider", () => {
     vi.doMock("@actions/exec", () => ({getExecOutput}));
     const {testTypescriptProvider} = await import("./testTypescriptProvider.ts");
     const result = await testTypescriptProvider.run({
-      workspaceRoot: "/w", baseRef: "main", headRef: "HEAD", changedFiles: [], env: {},
+      workspaceRoot: "/w",
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: [],
+      env: {},
     });
     expect(result.payload.suites).toHaveLength(5);
     expect(result.payload.suites.map((s) => s.name).sort()).toEqual(["components", "cv", "scripts", "status", "website"]);
@@ -68,7 +82,12 @@ describe("testTypescriptProvider", () => {
     vi.doMock("@actions/exec", () => ({getExecOutput}));
     const {testTypescriptProvider} = await import("./testTypescriptProvider.ts");
     const result = await testTypescriptProvider.run({
-      workspaceRoot: "/w", baseRef: "main", headRef: "HEAD", changedFiles: [], env: {},
+      workspaceRoot: "/w",
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: [],
+      env: {},
     });
     const cv = result.payload.suites.find((s) => s.name === "cv");
     expect(cv).toBeDefined();

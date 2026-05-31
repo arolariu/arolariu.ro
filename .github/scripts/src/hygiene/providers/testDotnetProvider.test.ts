@@ -1,7 +1,7 @@
-import {describe, it, expect, vi, beforeEach, afterEach} from "vitest";
 import * as fs from "node:fs/promises";
-import * as path from "node:path";
 import * as os from "node:os";
+import * as path from "node:path";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 const sampleTrx = `<?xml version="1.0"?>
 <TestRun>
@@ -42,7 +42,12 @@ describe("testDotnetProvider", () => {
     }));
     const {testDotnetProvider} = await import("./testDotnetProvider.ts");
     const result = await testDotnetProvider.run({
-      workspaceRoot: tmpDir, baseRef: "main", headRef: "HEAD", changedFiles: [], env: {},
+      workspaceRoot: tmpDir,
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: [],
+      env: {},
     });
     expect(result.payload.suites).toHaveLength(2);
     expect(result.payload.suites.map((s) => s.name).sort()).toEqual(["Core", "Domain"]);
@@ -56,7 +61,12 @@ describe("testDotnetProvider", () => {
     }));
     const {testDotnetProvider} = await import("./testDotnetProvider.ts");
     const result = await testDotnetProvider.run({
-      workspaceRoot: tmpDir, baseRef: "main", headRef: "HEAD", changedFiles: [], env: {},
+      workspaceRoot: tmpDir,
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: [],
+      env: {},
     });
     expect(result.payload.suites[0]?.name).toBe("dotnet");
     expect(result.payload.failed).toBe(1);

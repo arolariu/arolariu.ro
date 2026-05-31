@@ -1,6 +1,6 @@
-import {describe, it, expect, vi, beforeEach} from "vitest";
-import {formatProvider, parsePrettierCheckOutput} from "./formatProvider.ts";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import type {FileFinding} from "../domain/types.ts";
+import {formatProvider, parsePrettierCheckOutput} from "./formatProvider.ts";
 
 describe("parsePrettierCheckOutput", () => {
   it("returns [] when output has no warnings", () => {
@@ -34,14 +34,23 @@ describe("formatProvider metadata", () => {
   });
 
   it("is applicable to any input", () => {
-    expect(formatProvider.applicableTo({
-      workspaceRoot: "/", baseRef: "main", headRef: "h", changedFiles: [], env: {},
-    })).toBe(true);
+    expect(
+      formatProvider.applicableTo({
+        workspaceRoot: "/",
+        baseRef: "main",
+        headRef: "h",
+        changeScope: "known",
+        changedFiles: [],
+        env: {},
+      }),
+    ).toBe(true);
   });
 
   it("payloadSchema accepts {unformattedCount, unformattedFiles}", () => {
-    expect(formatProvider.payloadSchema.parse({unformattedCount: 0, unformattedFiles: []}))
-      .toEqual({unformattedCount: 0, unformattedFiles: []});
+    expect(formatProvider.payloadSchema.parse({unformattedCount: 0, unformattedFiles: []})).toEqual({
+      unformattedCount: 0,
+      unformattedFiles: [],
+    });
     expect(() => formatProvider.payloadSchema.parse({unformattedCount: "x"})).toThrow();
   });
 });
@@ -59,7 +68,12 @@ describe("formatProvider.run", () => {
     }));
     const {formatProvider: provider} = await import("./formatProvider.ts");
     const result = await provider.run({
-      workspaceRoot: "/tmp", baseRef: "main", headRef: "HEAD", changedFiles: [], env: {},
+      workspaceRoot: "/tmp",
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: [],
+      env: {},
     });
     expect(result.findings).toEqual([]);
     expect(result.payload).toEqual({unformattedCount: 0, unformattedFiles: []});
@@ -75,7 +89,12 @@ describe("formatProvider.run", () => {
     }));
     const {formatProvider: provider} = await import("./formatProvider.ts");
     const result = await provider.run({
-      workspaceRoot: "/tmp", baseRef: "main", headRef: "HEAD", changedFiles: [], env: {},
+      workspaceRoot: "/tmp",
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: [],
+      env: {},
     });
     expect(result.findings).toHaveLength(2);
     expect(result.findings[0]?.kind).toBe("file");
