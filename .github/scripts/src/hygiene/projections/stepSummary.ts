@@ -43,9 +43,12 @@ interface TestSuitesPayloadLike {
 const TOP_RULES_LIMIT = 5;
 const MAX_FAILING_TESTS_PER_SUITE = 10;
 const MAX_MESSAGE_LENGTH = 240;
-// Mirrors providers/registry.ts order without importing providers into projections.
+// Keep this list aligned with providers/registry.ts. The projection duplicates
+// the order intentionally so rendering stays independent from provider modules.
 const PROVIDER_ORDER: readonly string[] = ["format", "lint", "test-typescript", "test-dotnet", "test-python", "stats"];
 
+// GitHub strips unsupported HTML but still renders supported tags. Escape every
+// dynamic value before interpolating it into markdown tables or details blocks.
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -55,10 +58,14 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
+// Provider metadata is registry-owned today, but this helper defines the output
+// boundary so future dynamic provider labels remain safe by default.
 function providerLabel(outcome: ProviderOutcome<unknown>): string {
   return `${escapeHtml(outcome.providerIcon)} ${escapeHtml(outcome.providerName)}`;
 }
 
+// Error messages may contain triple-backtick snippets. Use a longer fence so
+// the message cannot break out of the details block.
 function fenceSafe(content: string): string {
   let maxRun = 0;
   const matches = content.match(/`+/g);
@@ -98,9 +105,8 @@ function resultEmoji(r: GateResult): string {
   }
 }
 
-// MetricFindings are internal statistics (e.g. churn), not actionable code
-// quality issues. Exclude them from all user-facing findings counts so the
-// comment doesn't show phantom findings with no corresponding body section.
+// MetricFindings are internal measurements, not actionable hygiene issues.
+// Keep them out of user-facing counts so every displayed count has a body path.
 function visibleFindings(findings: readonly Finding[]): readonly Finding[] {
   return findings.filter((f) => f.kind !== "metric");
 }
