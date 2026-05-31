@@ -32,6 +32,16 @@ describe("PDF viewer state", () => {
     expect(device).toEqual({isMobile: true, prefersNativePdf: true});
   });
 
+  it("detects mobile user agents case-insensitively", () => {
+    const device = detectPdfDevice({
+      innerWidth: 1440,
+      maxTouchPoints: 0,
+      userAgent: "Mozilla/5.0 (Linux; Android 15; Pixel 9)",
+    });
+
+    expect(device).toEqual({isMobile: true, prefersNativePdf: true});
+  });
+
   it("keeps desktop devices native-first without classifying them as mobile", () => {
     const device = detectPdfDevice({
       innerWidth: 1440,
