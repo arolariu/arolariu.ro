@@ -9,6 +9,7 @@
 
 import * as exec from "@actions/exec";
 import * as path from "node:path";
+import {touchedBundleFolders} from "../domain/changedFiles.ts";
 import type {CheckProvider, ProviderRunInput, ProviderRunOutput, Schema} from "../domain/provider.ts";
 import type {ComparisonFinding, Finding, MetricFinding} from "../domain/types.ts";
 
@@ -88,14 +89,19 @@ export function foldersToComparisons(folders: readonly FolderSize[]): Comparison
     }));
 }
 
-async function getDiffNumstat(cwd: string, base: string, head: string): Promise<{
+async function getDiffNumstat(
+  cwd: string,
+  base: string,
+  head: string,
+): Promise<{
   filesChanged: number;
   linesAdded: number;
   linesDeleted: number;
 }> {
-  const r = await exec.getExecOutput("git", ["diff", "--numstat", `${base}...${head}`],
-    {cwd, ignoreReturnCode: true, silent: true});
-  let filesChanged = 0, linesAdded = 0, linesDeleted = 0;
+  const r = await exec.getExecOutput("git", ["diff", "--numstat", `${base}...${head}`], {cwd, ignoreReturnCode: true, silent: true});
+  let filesChanged = 0,
+    linesAdded = 0,
+    linesDeleted = 0;
   for (const line of r.stdout.trim().split("\n").filter(Boolean)) {
     const [added, deleted] = line.split("\t");
     if (added !== undefined && deleted !== undefined && added !== "-") {
@@ -108,8 +114,7 @@ async function getDiffNumstat(cwd: string, base: string, head: string): Promise<
 }
 
 async function getFolderSize(cwd: string, ref: string, folder: string): Promise<number> {
-  const r = await exec.getExecOutput("git", ["ls-tree", "-r", "-l", ref, folder],
-    {cwd, ignoreReturnCode: true, silent: true});
+  const r = await exec.getExecOutput("git", ["ls-tree", "-r", "-l", ref, folder], {cwd, ignoreReturnCode: true, silent: true});
   if (r.exitCode !== 0) return 0;
   let total = 0;
   for (const line of r.stdout.split("\n")) {
@@ -120,8 +125,7 @@ async function getFolderSize(cwd: string, ref: string, folder: string): Promise<
 }
 
 async function getChangedFileList(cwd: string, base: string, head: string): Promise<string[]> {
-  const r = await exec.getExecOutput("git", ["diff", "--name-only", `${base}...${head}`],
-    {cwd, ignoreReturnCode: true, silent: true});
+  const r = await exec.getExecOutput("git", ["diff", "--name-only", `${base}...${head}`], {cwd, ignoreReturnCode: true, silent: true});
   return r.stdout.trim().split("\n").filter(Boolean);
 }
 
@@ -134,14 +138,20 @@ export const statsProvider: CheckProvider<StatsPayload> = {
   applicableTo: () => true,
   async run(input: ProviderRunInput): Promise<ProviderRunOutput<StatsPayload>> {
     // Fetch base branch (best effort)
-    await exec.getExecOutput("git", ["fetch", "origin", "main:refs/remotes/origin/main", "--depth=1", "--no-tags", "--quiet"],
-      {cwd: input.workspaceRoot, ignoreReturnCode: true, silent: true});
+    await exec.getExecOutput("git", ["fetch", "origin", "main:refs/remotes/origin/main", "--depth=1", "--no-tags", "--quiet"], {
+      cwd: input.workspaceRoot,
+      ignoreReturnCode: true,
+      silent: true,
+    });
 
     const diff = await getDiffNumstat(input.workspaceRoot, input.baseRef, input.headRef);
-    const changed = await getChangedFileList(input.workspaceRoot, input.baseRef, input.headRef);
+    const changed =
+      input.changeScope === "known" ? [...input.changedFiles] : await getChangedFileList(input.workspaceRoot, input.baseRef, input.headRef);
+    const filesChanged = input.changeScope === "known" ? changed.length : diff.filesChanged;
 
     const bundleSizes: FolderSize[] = [];
-    for (const folder of BUNDLE_FOLDERS) {
+    const scopedBundleFolders = touchedBundleFolders(input, BUNDLE_FOLDERS) ?? BUNDLE_FOLDERS;
+    for (const folder of scopedBundleFolders) {
       const [mainTotal, headTotal] = await Promise.all([
         getFolderSize(input.workspaceRoot, "refs/remotes/origin/main", folder),
         getFolderSize(input.workspaceRoot, input.headRef, folder),
@@ -156,14 +166,14 @@ export const statsProvider: CheckProvider<StatsPayload> = {
       name: "diff.churn",
       value: diff.linesAdded + diff.linesDeleted,
       unit: "lines",
-      message: `${diff.filesChanged} files changed, +${diff.linesAdded} -${diff.linesDeleted}`,
+      message: `${filesChanged} files changed, +${diff.linesAdded} -${diff.linesDeleted}`,
     };
     findings.push(churn);
     findings.push(...foldersToComparisons(bundleSizes));
 
     return {
       payload: {
-        filesChanged: diff.filesChanged,
+        filesChanged,
         linesAdded: diff.linesAdded,
         linesDeleted: diff.linesDeleted,
         topExtensions: computeTopExtensions(changed, TOP_N),

@@ -1,5 +1,5 @@
-import {describe, it, expect, vi, beforeEach} from "vitest";
-import {computeTopExtensions, computeTopDirectories, type FolderSize, foldersToComparisons} from "./statsProvider.ts";
+import {beforeEach, describe, expect, it, vi} from "vitest";
+import {computeTopDirectories, computeTopExtensions, type FolderSize, foldersToComparisons} from "./statsProvider.ts";
 
 describe("computeTopExtensions", () => {
   it("returns extensions sorted by count desc, top 5", () => {
@@ -51,8 +51,8 @@ describe("foldersToComparisons", () => {
   it("suppresses folders where the bundle size did not change (diff = 0)", () => {
     const folders: FolderSize[] = [
       {folder: "sites/arolariu.ro", mainTotal: 1000, headTotal: 1500},
-      {folder: "sites/api.arolariu.ro", mainTotal: 500, headTotal: 500},   // unchanged → suppressed
-      {folder: "sites/docs.arolariu.ro", mainTotal: 200, headTotal: 200},  // unchanged → suppressed
+      {folder: "sites/api.arolariu.ro", mainTotal: 500, headTotal: 500}, // unchanged → suppressed
+      {folder: "sites/docs.arolariu.ro", mainTotal: 200, headTotal: 200}, // unchanged → suppressed
     ];
     const findings = foldersToComparisons(folders);
     expect(findings).toHaveLength(1);
@@ -74,5 +74,84 @@ describe("statsProvider metadata", () => {
     const {statsProvider} = await import("./statsProvider.ts");
     expect(statsProvider.id).toBe("stats");
     expect(statsProvider.defaultGate).toEqual({kind: "informational"});
+  });
+});
+
+describe("statsProvider.run", () => {
+  beforeEach(() => vi.resetModules());
+
+  function mockExec(): {readonly getExecOutput: ReturnType<typeof vi.fn>} {
+    const getExecOutput = vi.fn(async (_command: string, args: readonly string[]) => {
+      if (args[0] === "fetch") return {exitCode: 0, stdout: "", stderr: ""};
+      if (args[0] === "diff" && args[1] === "--numstat") {
+        return {exitCode: 0, stdout: "10\t2\tsites/arolariu.ro/src/page.tsx\n1\t0\tREADME.md\n", stderr: ""};
+      }
+      if (args[0] === "diff" && args[1] === "--name-only") {
+        return {exitCode: 0, stdout: "sites/arolariu.ro/src/page.tsx\nREADME.md\n", stderr: ""};
+      }
+      if (args[0] === "ls-tree") {
+        const folder = args[4] ?? "";
+        const size = folder === "sites/arolariu.ro" ? 1000 : 500;
+        return {exitCode: 0, stdout: `100644 blob abc ${size}\t${folder}/file.js\n`, stderr: ""};
+      }
+      return {exitCode: 0, stdout: "", stderr: ""};
+    });
+    vi.doMock("@actions/exec", () => ({getExecOutput}));
+    return {getExecOutput};
+  }
+
+  it("uses input changedFiles for top extension and directory stats when scope is known", async () => {
+    const {getExecOutput} = mockExec();
+    const {statsProvider} = await import("./statsProvider.ts");
+
+    const result = await statsProvider.run({
+      workspaceRoot: "/w",
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: ["sites/arolariu.ro/src/page.tsx", "README.md"],
+      env: {},
+    });
+
+    expect(result.payload.filesChanged).toBe(2);
+    expect(result.payload.topExtensions.map((x) => x.extension)).toContain("tsx");
+    expect(result.payload.topDirectories[0]).toEqual({directory: "sites", count: 1});
+    expect(getExecOutput).not.toHaveBeenCalledWith("git", ["diff", "--name-only", "main...HEAD"], expect.anything());
+  });
+
+  it("compares only touched bundle folders for known scoped changes", async () => {
+    mockExec();
+    const {statsProvider} = await import("./statsProvider.ts");
+
+    const result = await statsProvider.run({
+      workspaceRoot: "/w",
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: ["sites/arolariu.ro/src/page.tsx"],
+      env: {},
+    });
+
+    expect(result.payload.bundleSizes.map((x) => x.folder)).toEqual(["sites/arolariu.ro"]);
+  });
+
+  it("compares every configured bundle folder for unknown scope", async () => {
+    mockExec();
+    const {statsProvider} = await import("./statsProvider.ts");
+
+    const result = await statsProvider.run({
+      workspaceRoot: "/w",
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "unknown",
+      changedFiles: [],
+      env: {},
+    });
+
+    expect(result.payload.bundleSizes.map((x) => x.folder)).toEqual([
+      "sites/arolariu.ro",
+      "sites/api.arolariu.ro",
+      "sites/docs.arolariu.ro",
+    ]);
   });
 });
