@@ -113,6 +113,12 @@ function formatDurationMs(ms: number): string {
   return `${m}m${s.toString().padStart(2, "0")}s`;
 }
 
+/**
+ * Formats a byte count for compact display in GitHub markdown tables.
+ *
+ * @param bytes - The signed byte count to format.
+ * @returns A human-readable byte, kilobyte, or megabyte string preserving sign.
+ */
 export function formatHumanBytes(bytes: number): string {
   const sign = bytes < 0 ? "-" : "";
   const abs = Math.abs(bytes);
@@ -168,6 +174,12 @@ function topRule(findings: readonly Finding[]): string | null {
   return first?.[0] ?? null;
 }
 
+/**
+ * Converts runner-local or Windows workspace paths to repository-relative paths.
+ *
+ * @param file - A raw file path emitted by a provider or test runner.
+ * @returns A normalized path suitable for PR comments and details blocks.
+ */
 export function normalizePath(file: string): string {
   const runnerMatch = file.match(/^\/home\/runner\/work\/[^/]+\/[^/]+\/(.*)$/);
   if (runnerMatch?.[1]) return runnerMatch[1];
@@ -176,6 +188,12 @@ export function normalizePath(file: string): string {
   return file;
 }
 
+/**
+ * Removes noisy terminal formatting and stack frames from provider messages.
+ *
+ * @param msg - The raw provider, linter, or test-runner message.
+ * @returns A trimmed message capped to the renderer's maximum summary length.
+ */
 export function cleanMessage(msg: string): string {
   let cleaned = msg.replace(/\u001b\[[0-9;]*m/g, "");
   cleaned = cleaned
@@ -191,12 +209,24 @@ export function cleanMessage(msg: string): string {
 
 export type ProviderCategory = "lint" | "test" | "stats";
 
+/**
+ * Classifies a provider id into the renderer category that controls detail output.
+ *
+ * @param id - The provider id from a hygiene outcome.
+ * @returns The renderer category used for lint, test, or stats presentation.
+ */
 export function classifyProvider(id: string): ProviderCategory {
   if (id === "stats") return "stats";
   if (id.startsWith("test-")) return "test";
   return "lint";
 }
 
+/**
+ * Renders the compact verdict header for the hygiene comment.
+ *
+ * @param report - The aggregate hygiene report.
+ * @returns GitHub-flavored markdown containing verdict, counts, duration, commit, and run link.
+ */
 export function renderHeader(report: HygieneReport): string {
   const totals = collectReportTotals(report);
   const {errors, warnings, infos} = countBySeverity(totals.visibleFindings);
@@ -268,6 +298,16 @@ function providerSortIndex(providerId: string): number {
   return index === -1 ? PROVIDER_ORDER.length : index;
 }
 
+/**
+ * Renders the provider scorecard table in canonical provider order.
+ *
+ * @param report - The aggregate hygiene report whose outcomes should be displayed.
+ * @returns A GitHub-flavored markdown table with check, result, signal, and duration columns.
+ *
+ * @remarks
+ * Provider order is intentionally normalized here because outcome artifacts may
+ * be read from the filesystem in a non-registry order.
+ */
 export function renderScorecard(report: HygieneReport): string {
   const header = `| Check | Result | Signal | Time |\n|---|:---:|---|---:|`;
   const rows = report.outcomes
@@ -279,6 +319,13 @@ export function renderScorecard(report: HygieneReport): string {
   return [header, ...rows].join("\n");
 }
 
+/**
+ * Renders the most frequent lint rule ids for a provider.
+ *
+ * @param findings - Provider findings to group by rule id.
+ * @param limit - Maximum number of rule rows to include.
+ * @returns A markdown table, or an empty string when no rule ids are present.
+ */
 export function renderRulesTable(findings: readonly Finding[], limit: number): string {
   const counts = new Map<string, number>();
   for (const f of findings) {
@@ -294,6 +341,12 @@ export function renderRulesTable(findings: readonly Finding[], limit: number): s
   return [header, ...rows].join("\n");
 }
 
+/**
+ * Renders a compact status-token row for multi-suite test providers.
+ *
+ * @param suites - Test suites from a provider payload.
+ * @returns Inline markdown tokens ordered with failing suites first, or an empty string for single-suite providers.
+ */
 export function renderSuiteStatusRow(suites: readonly SuiteResultLike[]): string {
   if (suites.length < 2) return "";
 
@@ -310,6 +363,12 @@ export function renderSuiteStatusRow(suites: readonly SuiteResultLike[]): string
   return statusTokens.join(" · ");
 }
 
+/**
+ * Renders collapsed failure details for one failing test suite.
+ *
+ * @param suite - The suite whose failing findings should be displayed.
+ * @returns Markdown containing capped failure entries, or an empty string when the suite passed.
+ */
 export function renderSuiteFailures(suite: SuiteResultLike): string {
   if (suite.failed === 0) return "";
 
@@ -347,6 +406,12 @@ export function renderSuiteFailures(suite: SuiteResultLike): string {
   return lines.join("\n");
 }
 
+/**
+ * Renders collapsed bundle comparison details for the stats provider.
+ *
+ * @param o - The stats provider outcome.
+ * @returns Collapsed GitHub markdown details, or null when there are no comparison findings.
+ */
 export function renderStatsDetails(o: ProviderOutcome<unknown>): string | null {
   const comparisons = o.findings.filter(isComparisonFinding);
   if (comparisons.length === 0) return null;
@@ -378,6 +443,12 @@ function providerDetailsSummary(o: ProviderOutcome<unknown>): string {
   return `${providerLabel(o)} · ${resultPill(o.gateResult)} · ${findingLabel}`;
 }
 
+/**
+ * Renders collapsed details for a failed or errored provider.
+ *
+ * @param o - The provider outcome to render.
+ * @returns Collapsed details markdown, or an empty string for passing/advisory providers.
+ */
 export function renderProviderCard(o: ProviderOutcome<unknown>): string {
   if (o.gateResult === "passed" || o.gateResult === "advisory") return "";
 
@@ -436,10 +507,22 @@ export function renderProviderCard(o: ProviderOutcome<unknown>): string {
   return lines.join("\n");
 }
 
+/**
+ * Renders the hygiene automation footer.
+ *
+ * @param report - The aggregate hygiene report containing the workflow run URL.
+ * @returns A compact markdown attribution line.
+ */
 export function renderFooter(report: HygieneReport): string {
   return `_🤖 Hygiene v3 · [workflow run](${report.workflowRunUrl})_`;
 }
 
+/**
+ * Builds the full hygiene PR comment/step summary markdown.
+ *
+ * @param report - The aggregate hygiene report to project into markdown.
+ * @returns The complete GitHub-safe hygiene summary.
+ */
 export function buildStepSummary(report: HygieneReport): string {
   const cb = new CommentBuilder();
 
@@ -469,6 +552,12 @@ export function buildStepSummary(report: HygieneReport): string {
   return cb.build();
 }
 
+/**
+ * Writes the hygiene summary to the GitHub Actions step summary.
+ *
+ * @param report - The aggregate hygiene report to render and write.
+ * @returns A promise that resolves when the summary has been written.
+ */
 export async function writeStepSummary(report: HygieneReport): Promise<void> {
   const md = buildStepSummary(report);
   await core.summary.addRaw(md).write();
