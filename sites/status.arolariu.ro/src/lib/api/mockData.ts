@@ -125,6 +125,39 @@ interface ServiceStoryline {
   readonly subChecks?: Readonly<Record<string, SubCheckStoryline>>;
 }
 
+interface BucketInput {
+  readonly timestamp: string;
+  readonly status: HealthStatus;
+  readonly p50: number;
+  readonly healthyPerCron: number;
+  readonly cronsPerBucket: number;
+}
+
+interface BucketGenerationInput {
+  readonly baselineP50: number;
+  readonly blips: readonly Blip[];
+  readonly cyclicHiccup: SubCheckStoryline["cyclicHiccup"] | undefined;
+  // eslint-disable-next-line no-unused-vars -- Function type names the callback argument for readability.
+  readonly driftForMainP50: ((bucketTimestamp: number) => number) | null;
+  readonly config: GranularityConfig;
+  readonly now: number;
+}
+
+interface BucketOverlapInput {
+  readonly bucketTimestamp: number;
+  readonly bucketMs: number;
+  readonly start: number;
+  readonly end: number;
+}
+
+interface IncidentInput {
+  readonly story: ServiceStoryline;
+  readonly blip: Blip;
+  readonly subCheck: string | undefined;
+  readonly index: number;
+  readonly now: number;
+}
+
 /**
  * One storyline per service. Adding / tweaking a dev scenario is a one-
  * dict edit — no bucket-math changes needed; `generateBuckets` folds the
@@ -160,7 +193,7 @@ const STORYLINES: readonly ServiceStoryline[] = [
         durationHours: 1,
         status: "Degraded",
         reason: "connection pool exhausted (mock)",
-        latencyFactor: 4.0,
+        latencyFactor: 4,
         probeCount: 2,
       },
       {
@@ -211,7 +244,7 @@ const STORYLINES: readonly ServiceStoryline[] = [
         durationHours: 3,
         status: "Degraded",
         reason: "elevated latency on upstream dependency (mock)",
-        latencyFactor: 3.0,
+        latencyFactor: 3,
         probeCount: 6,
         open: true,
       },
@@ -220,7 +253,7 @@ const STORYLINES: readonly ServiceStoryline[] = [
         durationHours: 3,
         status: "Unhealthy",
         reason: "upstream ML model service unreachable (mock)",
-        latencyFactor: 8.0,
+        latencyFactor: 8,
         probeCount: 6,
       },
     ],
@@ -246,12 +279,12 @@ const STORYLINES: readonly ServiceStoryline[] = [
  * Ratios picked to roughly track production observations:
  *   p75 ≈ 1.35× p50, p95 ≈ 1.80× p50, p99 ≈ 2.10× p50.
  */
-function percentileFan(p50: number): {p50: number; p75: number; p95: number; p99: number} {
+function percentileFan(p50Latency: number): {p50: number; p75: number; p95: number; p99: number} {
   return {
-    p50,
-    p75: Math.round(p50 * 1.35),
-    p95: Math.round(p50 * 1.8),
-    p99: Math.round(p50 * 2.1),
+    p50: p50Latency,
+    p75: Math.round(p50Latency * 1.35),
+    p95: Math.round(p50Latency * 1.8),
+    p99: Math.round(p50Latency * 2.1),
   };
 }
 
@@ -261,9 +294,10 @@ function percentileFan(p50: number): {p50: number; p75: number; p95: number; p99
  * `healthyPerCron * cronsPerBucket`. `httpStatus` is set to 503 for
  * `Unhealthy` and 200 otherwise (we don't model 5xx variety in mocks).
  */
-function mkBucket(t: string, status: HealthStatus, p50: number, healthyPerCron: number, cronsPerBucket: number): Bucket {
+function makeBucket({timestamp, status, p50, healthyPerCron, cronsPerBucket}: Readonly<BucketInput>): Bucket {
   return {
-    t,
+    // eslint-disable-next-line id-length -- Bucket schema uses `t` for timestamp.
+    t: timestamp,
     status,
     probes: {
       healthy: healthyPerCron * cronsPerBucket,
@@ -279,8 +313,8 @@ function mkBucket(t: string, status: HealthStatus, p50: number, healthyPerCron: 
  * Blips anchored by wall-clock (not bucket index) appear consistently across
  * all three granularities.
  */
-function bucketOverlaps(bucketT: number, bucketMs: number, start: number, end: number): boolean {
-  return bucketT + bucketMs > start && bucketT < end;
+function bucketOverlaps({bucketTimestamp, bucketMs, start, end}: Readonly<BucketOverlapInput>): boolean {
+  return bucketTimestamp + bucketMs > start && bucketTimestamp < end;
 }
 
 /** Start/end wall-clock range (ms) of a blip, computed from `now` and `ageHours`. */
@@ -296,13 +330,14 @@ function blipWindow(blip: Blip, now: number): {start: number; end: number} {
  * when no drift is configured) returns `story.baselineP50`; inside the
  * window ramps linearly from `baseline - 30` to `latencyDrift.endP50`.
  */
-function computeP50AtTime(story: ServiceStoryline, bucketT: number, now: number): number {
+function computeP50AtTime(story: ServiceStoryline, bucketTimestamp: number, now: number): number {
+  // eslint-disable-next-line capitalized-comments -- v8 ignore directive is case-sensitive.
   /* v8 ignore next */
   if (!story.latencyDrift) return story.baselineP50;
   const creepStart = now - story.latencyDrift.startAgoHours * MS_PER_HOUR;
   const creepEnd = now - story.latencyDrift.endAgoHours * MS_PER_HOUR;
-  if (bucketT < creepStart || bucketT > creepEnd) return story.baselineP50;
-  const progress = (bucketT - creepStart) / (creepEnd - creepStart);
+  if (bucketTimestamp < creepStart || bucketTimestamp > creepEnd) return story.baselineP50;
+  const progress = (bucketTimestamp - creepStart) / (creepEnd - creepStart);
   return Math.round(story.baselineP50 - 30 + progress * (story.latencyDrift.endP50 - (story.baselineP50 - 30)));
 }
 
@@ -315,43 +350,70 @@ function computeP50AtTime(story: ServiceStoryline, bucketT: number, now: number)
  *  2. Is this a cyclic-hiccup bucket? → emit a small Degraded spike.
  *  3. Otherwise → emit a Healthy bucket at baseline/drifted p50.
  */
-function generateBucketsFor(
-  baselineP50: number,
-  blips: readonly Blip[],
-  cyclicHiccup: SubCheckStoryline["cyclicHiccup"] | undefined,
-  driftForMainP50: ((bucketT: number) => number) | null,
-  config: GranularityConfig,
-  now: number,
-): Bucket[] {
+function generateBucketsFor({
+  baselineP50,
+  blips,
+  cyclicHiccup,
+  driftForMainP50,
+  config,
+  now,
+}: Readonly<BucketGenerationInput>): Bucket[] {
   const total = config.bucketCount;
   // Ongoing blips (`open: true`) drive the incident log but do NOT rewrite
-  // history into the bucket series — they're near-now events whose health
-  // state hasn't settled yet. Pre-rewrite behavior preserved exactly.
-  const bucketBlips = blips.filter((b) => !b.open);
+  // History into the bucket series - they're near-now events whose health
+  // State hasn't settled yet. Pre-rewrite behavior preserved exactly.
+  const bucketBlips = blips.filter((blip) => !blip.open);
   const windows = bucketBlips.map((blip) => ({blip, ...blipWindow(blip, now)}));
 
-  return Array.from({length: total}, (_, fromEnd) => {
-    const bucketT = now - fromEnd * config.bucketMs;
-    const t = new Date(bucketT).toISOString();
+  const buckets: Bucket[] = [];
+  for (let fromEnd = 0; fromEnd < total; fromEnd += 1) {
+    const bucketTimestamp = now - fromEnd * config.bucketMs;
+    const timestamp = new Date(bucketTimestamp).toISOString();
 
-    const activeBlip = windows.find((w) => bucketOverlaps(bucketT, config.bucketMs, w.start, w.end));
+    const activeBlip = windows.find((windowEntry) =>
+      bucketOverlaps({bucketTimestamp, bucketMs: config.bucketMs, start: windowEntry.start, end: windowEntry.end}),
+    );
 
-    const p50 = driftForMainP50 ? driftForMainP50(bucketT) : baselineP50;
+    const p50 = driftForMainP50 ? driftForMainP50(bucketTimestamp) : baselineP50;
 
     if (activeBlip) {
+      // eslint-disable-next-line capitalized-comments -- v8 ignore directive is case-sensitive.
       /* v8 ignore next */
-      const factor = activeBlip.blip.latencyFactor ?? (activeBlip.blip.status === "Unhealthy" ? 8.0 : 3.2);
+      const factor = activeBlip.blip.latencyFactor ?? (activeBlip.blip.status === "Unhealthy" ? 8 : 3.2);
       const healthyPerCron = activeBlip.blip.status === "Unhealthy" ? 0 : 2;
-      return mkBucket(t, activeBlip.blip.status, Math.round(p50 * factor), healthyPerCron, config.cronsPerBucket);
+      buckets.push(makeBucket({
+        timestamp,
+        status: activeBlip.blip.status,
+        p50: Math.round(p50 * factor),
+        healthyPerCron,
+        cronsPerBucket: config.cronsPerBucket,
+      }));
+      continue;
     }
 
+    // eslint-disable-next-line capitalized-comments -- v8 ignore directive is case-sensitive.
     /* v8 ignore next */
     if (cyclicHiccup && fromEnd % cyclicHiccup.everyNBuckets === cyclicHiccup.atOffset) {
-      return mkBucket(t, "Degraded", cyclicHiccup.p50, cyclicHiccup.healthyPerCron, config.cronsPerBucket);
+      buckets.push(makeBucket({
+        timestamp,
+        status: "Degraded",
+        p50: cyclicHiccup.p50,
+        healthyPerCron: cyclicHiccup.healthyPerCron,
+        cronsPerBucket: config.cronsPerBucket,
+      }));
+      continue;
     }
 
-    return mkBucket(t, "Healthy", p50, SAMPLES_PER_CRON, config.cronsPerBucket);
-  });
+    buckets.push(makeBucket({
+      timestamp,
+      status: "Healthy",
+      p50,
+      healthyPerCron: SAMPLES_PER_CRON,
+      cronsPerBucket: config.cronsPerBucket,
+    }));
+  }
+
+  return buckets;
 }
 
 /**
@@ -359,27 +421,34 @@ function generateBucketsFor(
  * sub-series map) at the requested granularity.
  */
 function generateServiceSeries(story: ServiceStoryline, config: GranularityConfig, now: number): ServiceSeries {
-  const mainBuckets = generateBucketsFor(
-    story.baselineP50,
-    story.blips,
-    undefined,
-    story.latencyDrift ? (bucketT) => computeP50AtTime(story, bucketT, now) : null,
+  const mainBuckets = generateBucketsFor({
+    baselineP50: story.baselineP50,
+    blips: story.blips,
+    cyclicHiccup: undefined,
+    driftForMainP50: story.latencyDrift ? (bucketTimestamp) => computeP50AtTime(story, bucketTimestamp, now) : null,
     config,
     now,
-  );
+  });
 
-  let subSeriesObj: Record<string, readonly Bucket[]> | null = null;
+  let subSeriesObject: Record<string, readonly Bucket[]> | null = null;
   if (story.subChecks) {
-    subSeriesObj = {};
-    for (const [name, sub] of Object.entries(story.subChecks)) {
-      subSeriesObj[name] = generateBucketsFor(sub.baselineP50, sub.blips, sub.cyclicHiccup, null, config, now);
-    }
+    subSeriesObject = Object.fromEntries(Object.entries(story.subChecks).map(([name, sub]) => [
+      name,
+      generateBucketsFor({
+        baselineP50: sub.baselineP50,
+        blips: sub.blips,
+        cyclicHiccup: sub.cyclicHiccup,
+        driftForMainP50: null,
+        config,
+        now,
+      }),
+    ]));
   }
 
   const series: ServiceSeries = {
     service: story.service,
     buckets: mainBuckets,
-    ...(subSeriesObj ? {subSeries: subSeriesObj} : {}),
+    ...(subSeriesObject ? {subSeries: subSeriesObject} : {}),
   };
 
   return series;
@@ -396,15 +465,22 @@ export function generateMockAggregate(granularity: Granularity): AggregateFile {
   const services: ServiceSeries[] = STORYLINES.map((story) => generateServiceSeries(story, config, now));
 
   // Intentionally construct via explicit discriminated-union literal so TS
-  // verifies the (bucketSize, windowDays) pair is valid.
+  // Verifies the (bucketSize, windowDays) pair is valid.
   const generatedAt = new Date(now).toISOString();
   switch (granularity) {
-    case "fine":
+    case "fine": {
       return {generatedAt, bucketSize: "30m", windowDays: 14, services};
-    case "hourly":
+    }
+    case "hourly": {
       return {generatedAt, bucketSize: "1h", windowDays: 90, services};
-    case "daily":
+    }
+    case "daily": {
       return {generatedAt, bucketSize: "1d", windowDays: 365, services};
+    }
+    default: {
+      const exhaustiveGranularity: never = granularity;
+      return exhaustiveGranularity;
+    }
   }
 }
 
@@ -414,7 +490,7 @@ export function generateMockAggregate(granularity: Granularity): AggregateFile {
  * become `{status: "resolved"}` incidents with those fields computed from
  * the blip duration.
  */
-function blipToIncident(story: ServiceStoryline, blip: Blip, subCheck: string | undefined, index: number, now: number): Incident {
+function blipToIncident({story, blip, subCheck, index, now}: Readonly<IncidentInput>): Incident {
   const startedAt = new Date(now - blip.ageHours * MS_PER_HOUR).toISOString();
   const severity = blip.status;
   const common = {
@@ -424,7 +500,7 @@ function blipToIncident(story: ServiceStoryline, blip: Blip, subCheck: string | 
     startedAt,
     reason: blip.reason,
     probeCount: blip.probeCount,
-    ...(subCheck !== undefined ? {subCheck} : {}),
+    ...(typeof subCheck === "string" ? {subCheck} : {}),
   };
   if (blip.open) {
     return {...common, status: "open"};
@@ -448,7 +524,7 @@ export function generateMockIncidents(): IncidentsFile {
   const now = Date.now();
 
   // Order: open blips first (most recent + still-ongoing), then resolved
-  // newest-first. Matches the pre-rewrite shipped narrative closely.
+  // Newest-first. Matches the pre-rewrite shipped narrative closely.
   const entries: Array<{story: ServiceStoryline; blip: Blip; subCheck?: string; age: number}> = [];
   for (const story of STORYLINES) {
     for (const blip of story.blips) {
@@ -464,9 +540,11 @@ export function generateMockIncidents(): IncidentsFile {
   }
 
   // Newest first (lowest ageHours first).
-  entries.sort((a, b) => a.age - b.age);
+  entries.sort((left, right) => left.age - right.age);
 
-  const incidents: Incident[] = entries.map((e, i) => blipToIncident(e.story, e.blip, e.subCheck, i + 1, now));
+  const incidents: Incident[] = entries.map((entry, index) =>
+    blipToIncident({story: entry.story, blip: entry.blip, subCheck: entry.subCheck, index: index + 1, now}),
+  );
 
   return {
     generatedAt: new Date(now).toISOString(),
@@ -484,8 +562,9 @@ export function generateMockIncidents(): IncidentsFile {
  * path (otherwise this shortcut would swallow every fetch).
  */
 export function isLocalHost(): boolean {
-  if (typeof window === "undefined") return false;
-  if (window.location.search.includes("mocks=off")) return false;
-  const h = window.location.hostname;
-  return h === "localhost" || h === "127.0.0.1" || h === "::1";
+  const browserWindow = globalThis.window as Window | undefined;
+  if (browserWindow === undefined) return false;
+  const {hostname, search} = browserWindow.location;
+  if (search.includes("mocks=off")) return false;
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
 }
