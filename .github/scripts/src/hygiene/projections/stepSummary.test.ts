@@ -340,7 +340,7 @@ describe("renderSuiteChipRow", () => {
   it("returns empty string for single-suite providers", () => {
     expect(renderSuiteChipRow([suite("only")])).toBe("");
   });
-  it("renders a chip for every suite when 2+", () => {
+  it("renders a status token for every suite when 2+", () => {
     const html = renderSuiteChipRow([suite("a", 1), suite("b"), suite("c")]);
     expect(html).toMatch(/a/);
     expect(html).toMatch(/b/);
@@ -540,7 +540,7 @@ describe("renderProviderCard", () => {
     expect(md).toMatch(/Top rules/);
     expect(md).toMatch(/`a`/);
   });
-  it("includes suite chip row + suite failures for test providers with 2+ suites", () => {
+  it("includes suite status row + suite failures for test providers with 2+ suites", () => {
     const payload: TestSuitesPayload = {
       totalTests: 200, passed: 198, failed: 2, skipped: 0,
       suites: [
