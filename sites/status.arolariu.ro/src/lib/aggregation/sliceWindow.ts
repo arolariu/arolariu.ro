@@ -24,6 +24,7 @@ function filterBuckets(buckets: readonly Bucket[], cutoffMs: number, nowMs: numb
  */
 export function sliceWindow(file: AggregateFile, window: FilterWindow): AggregateFile {
   const nowMs = Date.now();
+  // eslint-disable-next-line security/detect-object-injection -- window is constrained to the FilterWindow union.
   const cutoffMs = nowMs - WINDOW_CONFIGS[window].days * MS_PER_DAY;
   return {
     ...file,

@@ -8,6 +8,7 @@ function getIsoWeekdayIndex(timestamp: string): number {
 }
 
 function incrementAt(values: number[], index: number, amount: number): void {
+  // eslint-disable-next-line security/detect-object-injection -- index is always produced by getIsoWeekdayIndex in [0..6].
   values[index] = (values[index] ?? 0) + amount;
 }
 
@@ -30,6 +31,7 @@ export function computeWeekdayUptime(services: readonly ServiceSeries[]): readon
     }
   }
   return healthy.map((healthyCount, weekdayIndex) => {
+    // eslint-disable-next-line security/detect-object-injection -- weekdayIndex is produced by Array.map over the fixed weekday array.
     const totalCount = total[weekdayIndex] ?? 0;
     return totalCount === 0 ? 100 : Math.round((healthyCount / totalCount) * 1000) / 10;
   });

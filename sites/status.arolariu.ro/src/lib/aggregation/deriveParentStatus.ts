@@ -28,6 +28,7 @@ export function deriveOverallStatus(services: readonly ServiceSeries[]): HealthS
   let worst: HealthStatus = "Healthy";
   for (const serviceSeries of services) {
     const latest = deriveLatestStatus(serviceSeries);
+    // eslint-disable-next-line security/detect-object-injection -- Both keys are HealthStatus union members.
     if (ORDER[latest] > ORDER[worst]) worst = latest;
   }
   return worst;

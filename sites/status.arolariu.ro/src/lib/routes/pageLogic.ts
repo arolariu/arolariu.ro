@@ -41,6 +41,7 @@ export function orderedServices(file: AggregateFile | null): readonly ServiceSer
  */
 export function bucketDurationMsFor(bucketSize: BucketSize | undefined): number {
   if (bucketSize === undefined) return BUCKET_SIZE_TO_MS["30m"];
+  // eslint-disable-next-line security/detect-object-injection -- bucketSize is constrained to the BucketSize union.
   return BUCKET_SIZE_TO_MS[bucketSize];
 }
 
@@ -50,5 +51,6 @@ export function bucketDurationMsFor(bucketSize: BucketSize | undefined): number 
  * windows where the 7-day breakdown would just be two samples per bar.
  */
 export function showWeekdayChart(windowFilter: FilterWindow): boolean {
+  // eslint-disable-next-line security/detect-object-injection -- windowFilter is constrained to the FilterWindow union.
   return WINDOW_CONFIGS[windowFilter].showWeekday;
 }

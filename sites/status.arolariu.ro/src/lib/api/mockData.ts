@@ -52,6 +52,24 @@ const CONFIGS: Record<Granularity, GranularityConfig> = {
   daily: {bucketSize: "1d", windowDays: 365, bucketMs: MS_PER_DAY, bucketCount: 365, cronsPerBucket: 48},
 };
 
+function configForGranularity(granularity: Granularity): GranularityConfig {
+  switch (granularity) {
+    case "fine": {
+      return CONFIGS.fine;
+    }
+    case "hourly": {
+      return CONFIGS.hourly;
+    }
+    case "daily": {
+      return CONFIGS.daily;
+    }
+    default: {
+      const exhaustiveGranularity: never = granularity;
+      return exhaustiveGranularity;
+    }
+  }
+}
+
 /**
  * Samples per cron run. Must match `DEFAULT_SAMPLE_DELAYS_MS.length` in
  * `scripts/probe.ts` — the real probe takes 10 measurements over 180s per
@@ -461,7 +479,7 @@ function generateServiceSeries(story: ServiceStoryline, config: GranularityConfi
  */
 export function generateMockAggregate(granularity: Granularity): AggregateFile {
   const now = Date.now();
-  const config = CONFIGS[granularity];
+  const config = configForGranularity(granularity);
   const services: ServiceSeries[] = STORYLINES.map((story) => generateServiceSeries(story, config, now));
 
   // Intentionally construct via explicit discriminated-union literal so TS

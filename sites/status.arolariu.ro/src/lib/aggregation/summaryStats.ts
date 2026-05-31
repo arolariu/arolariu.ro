@@ -63,6 +63,7 @@ export interface IncidentCounts {
  */
 export function computeIncidentCount(incidents: IncidentsFile | null, windowFilter: FilterWindow): IncidentCounts {
   if (!incidents) return {total: 0, open: 0, resolved: 0};
+  // eslint-disable-next-line security/detect-object-injection -- windowFilter is constrained to the FilterWindow union.
   const cutoffMs = Date.now() - WINDOW_CONFIGS[windowFilter].days * MS_PER_DAY;
   const scoped = incidents.incidents.filter((incident) => Date.parse(incident.startedAt) >= cutoffMs);
   const open = scoped.filter((incident) => incident.status === "open").length;
@@ -77,6 +78,7 @@ export function computeIncidentCount(incidents: IncidentsFile | null, windowFilt
  */
 export function computeMttr(incidents: IncidentsFile | null, windowFilter: FilterWindow): number | undefined {
   if (!incidents) return undefined;
+  // eslint-disable-next-line security/detect-object-injection -- windowFilter is constrained to the FilterWindow union.
   const cutoffMs = Date.now() - WINDOW_CONFIGS[windowFilter].days * MS_PER_DAY;
   const resolved = incidents.incidents.filter(
     (incident): incident is ResolvedIncident =>

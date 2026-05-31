@@ -29,7 +29,6 @@ type SubCheckCandidate = Partial<Record<keyof SubCheck, unknown>>;
 type ProbeResultCandidate = Partial<Record<keyof ProbeResult, unknown>>;
 type BucketCandidate = Partial<Record<keyof Bucket, unknown>>;
 type ServiceSeriesCandidate = Partial<Record<keyof ServiceSeries, unknown>>;
-type IncidentCandidate = Partial<Record<keyof Incident, unknown>>;
 type IncidentsFileCandidate = Partial<Record<keyof IncidentsFile, unknown>>;
 type AggregateFileCandidate = Partial<Record<keyof AggregateFile, unknown>>;
 
@@ -49,6 +48,19 @@ interface WorstSubCheckCandidate {
   readonly name?: unknown;
   readonly status?: unknown;
   readonly description?: unknown;
+}
+
+interface IncidentCandidate {
+  readonly id?: unknown;
+  readonly service?: unknown;
+  readonly subCheck?: unknown;
+  readonly status?: unknown;
+  readonly startedAt?: unknown;
+  readonly severity?: unknown;
+  readonly reason?: unknown;
+  readonly probeCount?: unknown;
+  readonly resolvedAt?: unknown;
+  readonly durationMs?: unknown;
 }
 
 /** True when `value` is a plain object (not an array, not `null`). */

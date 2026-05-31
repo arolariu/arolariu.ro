@@ -57,7 +57,8 @@ export function resolveTheme(theme: Theme): ResolvedTheme {
 export function applyTheme(theme: Theme): void {
   const pageDocument = globalThis.document as Document | undefined;
   if (pageDocument === undefined) return;
-  pageDocument.documentElement.dataset.theme = resolveTheme(theme);
+  // eslint-disable-next-line dot-notation -- Svelte's TS config requires index-signature access for DOMStringMap.
+  pageDocument.documentElement.dataset["theme"] = resolveTheme(theme);
 }
 
 /**
