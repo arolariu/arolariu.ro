@@ -20,8 +20,7 @@ This directory contains TypeScript modules used by GitHub Actions workflows for 
 │   └── vitest/        # Vitest coverage parser
 ├── hygiene/           # (Legacy) Shell scripts directory
 ├── src/               # Main script entry points
-│   ├── hygiene/       # Hygiene check modules
-│   ├── runHygieneCheckV2.ts
+│   ├── hygiene/       # Hygiene check modules (v3: domain, providers, projections, pipeline)
 │   ├── runLiveTestAction.ts
 │   └── runUnitTestAction.ts
 └── types/             # Shared TypeScript types
@@ -29,30 +28,25 @@ This directory contains TypeScript modules used by GitHub Actions workflows for 
 
 ## Scripts
 
-### runHygieneCheckV2.ts
+### Hygiene check (v3)
 
-Unified code hygiene check orchestrator for PR quality gates.
+The hygiene check pipeline is split into per-provider entry points and a final
+projection gate. Both are invoked from the workflow `official-hygiene-check-v2.yml`:
 
-**Modes:**
+- `src/hygiene/pipeline/runProvider.ts <providerId>` -- runs one provider
+  (`format`, `lint`, `test`, `stats`), writes `artifacts/hygiene/outcome-<id>.json`.
+  Exit code is 1 when the provider's gateResult is `failed` or `errored` and 0
+  otherwise; the workflow uses step-level `continue-on-error: true` on each
+  provider step so a non-zero exit shows a warning marker in the step UI without
+  aborting subsequent providers. Workflow pass/fail is decided by `runProjections.ts`.
+- `src/hygiene/pipeline/runProjections.ts` -- loads all outcome JSON files,
+  builds the aggregate `HygieneReport`, fans out to projections (`jsonArtifact`,
+  `stepSummary`, `prComment`, `statusChecks`) via `Promise.allSettled`, and
+  calls `core.setFailed()` if `overallResult` is `failed` or `errored`. This is
+  the single point that turns the workflow red.
 
-- `detect` - Detect file changes between Git refs
-- `format` - Run Prettier format check
-- `lint` - Run ESLint lint check
-- `test` - Run Vitest unit tests
-- `stats` - Compute code statistics and bundle sizes
-- `summary` - Aggregate results and post PR comment
-
-**Usage in workflow:**
-
-```yaml
-- uses: actions/github-script@v8
-  env:
-    CHECK_MODE: "format"
-  with:
-    script: |
-      const { default: runHygieneCheck } = await import('./runHygieneCheckV2.ts');
-      await runHygieneCheck();
-```
+Adding a new check: create `src/hygiene/providers/myProvider.ts` exporting a
+`CheckProvider<P>` value, then register it in `src/hygiene/providers/registry.ts`.
 
 ### runLiveTestAction.ts
 
