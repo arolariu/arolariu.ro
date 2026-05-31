@@ -6,6 +6,7 @@ import {
   normalizeChangedFile,
   shouldRunBroadly,
   suitesForTypeScriptChanges,
+  touchedBundleFolders,
   touchesBackend,
   touchesPython,
   type ChangeSet,
@@ -112,5 +113,18 @@ describe("suitesForTypeScriptChanges", () => {
   it("returns null for broad TypeScript scope", () => {
     expect(suitesForTypeScriptChanges(unknown())).toBeNull();
     expect(suitesForTypeScriptChanges(known(["tsconfig.json"]))).toBeNull();
+  });
+});
+
+describe("touchedBundleFolders", () => {
+  const bundleFolders = ["sites/arolariu.ro", "sites/api.arolariu.ro", "sites/docs.arolariu.ro"];
+
+  it("returns only bundle folders touched by known changes", () => {
+    expect(touchedBundleFolders(known(["sites/arolariu.ro/src/app/page.tsx", "README.md"]), bundleFolders)).toEqual(["sites/arolariu.ro"]);
+  });
+
+  it("returns null for unknown or broad scope", () => {
+    expect(touchedBundleFolders(unknown(), bundleFolders)).toBeNull();
+    expect(touchedBundleFolders(known(["package.json"]), bundleFolders)).toBeNull();
   });
 });
