@@ -8,8 +8,7 @@
  * shape it naturally holds.
  */
 
-import type {FilterWindow, Incident, IncidentsFile, ServiceSeries} from "../types/status";
-import {WINDOW_CONFIGS} from "../types/status";
+import {WINDOW_CONFIGS, type FilterWindow, type Incident, type IncidentsFile, type ServiceSeries} from "../types/status";
 import {weightedUptime} from "./weightedUptime";
 
 /** Narrow alias for incidents that carry `resolvedAt` + `durationMs`. */
@@ -28,7 +27,7 @@ const MS_PER_DAY = 86_400_000;
  * Worst-service sub-line formats at 1 decimal at the render site.
  */
 export function computeOverallUptime(services: readonly ServiceSeries[]): number {
-  const allBuckets = services.flatMap((s) => [...s.buckets]);
+  const allBuckets = services.flatMap((serviceSeries) => [...serviceSeries.buckets]);
   return weightedUptime(allBuckets);
 }
 
@@ -42,10 +41,10 @@ export function computeOverallUptime(services: readonly ServiceSeries[]): number
 export function computeAvgLatency(services: readonly ServiceSeries[]): number {
   let sum = 0;
   let count = 0;
-  for (const s of services) {
-    for (const b of s.buckets) {
-      sum += b.latency.p50;
-      count++;
+  for (const serviceSeries of services) {
+    for (const bucket of serviceSeries.buckets) {
+      sum += bucket.latency.p50;
+      count += 1;
     }
   }
   if (count === 0) return 0;
@@ -65,9 +64,9 @@ export interface IncidentCounts {
 export function computeIncidentCount(incidents: IncidentsFile | null, windowFilter: FilterWindow): IncidentCounts {
   if (!incidents) return {total: 0, open: 0, resolved: 0};
   const cutoffMs = Date.now() - WINDOW_CONFIGS[windowFilter].days * MS_PER_DAY;
-  const scoped = incidents.incidents.filter((inc) => Date.parse(inc.startedAt) >= cutoffMs);
-  const open = scoped.filter((i) => i.status === "open").length;
-  const resolved = scoped.filter((i) => i.status === "resolved").length;
+  const scoped = incidents.incidents.filter((incident) => Date.parse(incident.startedAt) >= cutoffMs);
+  const open = scoped.filter((incident) => incident.status === "open").length;
+  const resolved = scoped.filter((incident) => incident.status === "resolved").length;
   return {total: scoped.length, open, resolved};
 }
 
@@ -80,10 +79,10 @@ export function computeMttr(incidents: IncidentsFile | null, windowFilter: Filte
   if (!incidents) return undefined;
   const cutoffMs = Date.now() - WINDOW_CONFIGS[windowFilter].days * MS_PER_DAY;
   const resolved = incidents.incidents.filter(
-    (inc): inc is ResolvedIncident =>
-      inc.status === "resolved" && Date.parse(inc.startedAt) >= cutoffMs && typeof inc.durationMs === "number",
+    (incident): incident is ResolvedIncident =>
+      incident.status === "resolved" && Date.parse(incident.startedAt) >= cutoffMs && typeof incident.durationMs === "number",
   );
   if (resolved.length === 0) return undefined;
-  const sum = resolved.reduce((s, inc) => s + inc.durationMs, 0);
+  const sum = resolved.reduce((accumulator, incident) => accumulator + incident.durationMs, 0);
   return Math.round(sum / resolved.length);
 }

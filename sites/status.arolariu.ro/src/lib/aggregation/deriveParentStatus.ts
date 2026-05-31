@@ -15,8 +15,8 @@ const ORDER: Record<HealthStatus, number> = {Healthy: 0, Degraded: 1, Unhealthy:
  * "no proven failure" convention used elsewhere).
  */
 export function deriveLatestStatus(series: ServiceSeries): HealthStatus {
-  const last = series.buckets[series.buckets.length - 1];
-  return last?.status ?? "Healthy";
+  const lastBucket = series.buckets.at(-1);
+  return lastBucket?.status ?? "Healthy";
 }
 
 /**
@@ -26,8 +26,8 @@ export function deriveLatestStatus(series: ServiceSeries): HealthStatus {
  */
 export function deriveOverallStatus(services: readonly ServiceSeries[]): HealthStatus {
   let worst: HealthStatus = "Healthy";
-  for (const s of services) {
-    const latest = deriveLatestStatus(s);
+  for (const serviceSeries of services) {
+    const latest = deriveLatestStatus(serviceSeries);
     if (ORDER[latest] > ORDER[worst]) worst = latest;
   }
   return worst;

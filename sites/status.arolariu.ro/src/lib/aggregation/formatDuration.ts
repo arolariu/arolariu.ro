@@ -9,11 +9,11 @@
  *   formatDuration(60 * 60_000) === "1 h"
  *   formatDuration(90 * 60_000) === "1 h 30 min"
  */
-export function formatDuration(ms: number | undefined): string {
-  if (ms == null || !Number.isFinite(ms)) return "—";
-  const min = Math.round(ms / 60_000);
-  if (min < 60) return `${min} min`;
-  const hr = Math.floor(min / 60);
-  const rem = min % 60;
-  return rem === 0 ? `${hr} h` : `${hr} h ${rem} min`;
+export function formatDuration(milliseconds: number | null | undefined): string {
+  if (milliseconds === null || milliseconds === undefined || !Number.isFinite(milliseconds)) return "—";
+  const minutes = Math.round(milliseconds / 60_000);
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return remainingMinutes === 0 ? `${hours} h` : `${hours} h ${remainingMinutes} min`;
 }
