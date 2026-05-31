@@ -357,26 +357,35 @@ export function renderSuiteFailures(suite: SuiteResultLike): string {
   return lines.join("\n");
 }
 
-export function renderStatsCallout(o: ProviderOutcome<unknown>): string | null {
-  const comparisons = o.findings.filter((f) => f.kind === "comparison");
+export function renderStatsDetails(o: ProviderOutcome<unknown>): string | null {
+  const comparisons = o.findings.filter(isComparisonFinding);
   if (comparisons.length === 0) return null;
 
   const rows = comparisons.map((f) => {
-    if (f.kind !== "comparison") return "";
     const before = f.unit === "B" ? formatHumanBytes(f.baseValue) : `${f.baseValue}${f.unit ?? ""}`;
     const after = f.unit === "B" ? formatHumanBytes(f.headValue) : `${f.headValue}${f.unit ?? ""}`;
-    const absDiff = f.unit === "B" ? formatHumanBytes(Math.abs(f.diff)) : `${Math.abs(f.diff)}${f.unit ?? ""}`;
-    const diffCell = f.diff > 0 ? `▲ +${absDiff}` : f.diff < 0 ? `▼ -${absDiff}` : `= 0`;
-    return `| \`${escapeHtml(f.name)}\` | ${before} | ${after} | ${diffCell} |`;
+    return `| \`${escapeHtml(f.name)}\` | ${before} | ${after} | ${comparisonDiffLabel(f)} |`;
   });
 
   return [
-    `#### 📊 Bundle stats — ${comparisons.length} file${comparisons.length === 1 ? "" : "s"} changed`,
+    `<details>`,
+    `<summary>📦 Bundle stats · ${comparisons.length} file${comparisons.length === 1 ? "" : "s"} changed</summary>`,
     ``,
     `| File | Before | After | Diff |`,
     `|---|---:|---:|---:|`,
     ...rows,
+    `</details>`,
   ].join("\n");
+}
+
+function providerDetailsSummary(o: ProviderOutcome<unknown>): string {
+  if (o.gateResult === "errored") {
+    return `${o.providerIcon} ${o.providerName} · ${resultPill(o.gateResult)} · runner error`;
+  }
+
+  const visible = visibleFindings(o.findings);
+  const findingLabel = `${visible.length} finding${visible.length === 1 ? "" : "s"}`;
+  return `${o.providerIcon} ${o.providerName} · ${resultPill(o.gateResult)} · ${findingLabel}`;
 }
 
 export function renderProviderCard(o: ProviderOutcome<unknown>): string {
@@ -385,12 +394,14 @@ export function renderProviderCard(o: ProviderOutcome<unknown>): string {
   const category = classifyProvider(o.providerId);
   const lines: string[] = [];
 
-  lines.push(`## ${o.providerIcon} ${o.providerName} \`${resultPill(o.gateResult)}\``);
+  lines.push(`<details>`);
+  lines.push(`<summary>${escapeHtml(providerDetailsSummary(o))}</summary>`);
   lines.push("");
 
   if (o.gateResult === "failed" && o.findings.length > 0) {
-    const {errors, warnings} = countBySeverity(o.findings);
-    const pills: string[] = [`\`${o.findings.length} findings\``];
+    const visible = visibleFindings(o.findings);
+    const {errors, warnings} = countBySeverity(visible);
+    const pills: string[] = [`\`${visible.length} findings\``];
     if (errors > 0) pills.push(`\`${errors} 🔴\``);
     if (warnings > 0) pills.push(`\`${warnings} 🟡\``);
     lines.push(pills.join(" "));
@@ -399,6 +410,7 @@ export function renderProviderCard(o: ProviderOutcome<unknown>): string {
 
   if (o.gateResult === "errored") {
     lines.push(fenceSafe(cleanMessage(o.error?.message ?? "Unknown runner error")));
+    lines.push("</details>");
     return lines.join("\n");
   }
 
@@ -410,7 +422,7 @@ export function renderProviderCard(o: ProviderOutcome<unknown>): string {
       lines.push(rules);
       lines.push("");
     }
-    lines.push("_Full findings list in the [workflow artifact](#)._");
+    lines.push("_Full findings list in the workflow artifact._");
   } else if (category === "test") {
     const payload = o.payload as TestSuitesPayloadLike | null;
     if (payload?.suites && payload.suites.length > 0) {
@@ -428,15 +440,9 @@ export function renderProviderCard(o: ProviderOutcome<unknown>): string {
     } else {
       lines.push("_No suite payload available._");
     }
-  } else {
-    const hasComparisons = o.findings.some((f) => f.kind === "comparison");
-    if (hasComparisons) {
-      lines.push("_See bundle stats below._");
-    } else {
-      lines.push("_No bundle changes detected._");
-    }
   }
 
+  lines.push("</details>");
   return lines.join("\n");
 }
 
@@ -462,9 +468,9 @@ export function buildStepSummary(report: HygieneReport): string {
 
   const stats = report.outcomes.find((o) => o.providerId === "stats");
   if (stats) {
-    const callout = renderStatsCallout(stats);
-    if (callout !== null) {
-      cb.addRaw(callout);
+    const details = renderStatsDetails(stats);
+    if (details !== null) {
+      cb.addRaw(details);
       cb.addRaw("\n\n");
     }
   }

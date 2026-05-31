@@ -9,7 +9,7 @@ import {
   renderRulesTable,
   renderSuiteChipRow,
   renderSuiteFailures,
-  renderStatsCallout,
+  renderStatsDetails,
   renderFooter,
   classifyProvider,
   formatHumanBytes,
@@ -416,7 +416,7 @@ describe("renderSuiteFailures", () => {
   });
 });
 
-describe("renderStatsCallout", () => {
+describe("renderStatsDetails", () => {
   function comparison(name: string, baseValue: number, headValue: number): Finding {
     return {
       kind: "comparison",
@@ -431,31 +431,34 @@ describe("renderStatsCallout", () => {
   }
   it("returns null when there are no comparison findings", () => {
     const o = makeOutcome({providerId: "stats", findings: []});
-    expect(renderStatsCallout(o)).toBeNull();
+    expect(renderStatsDetails(o)).toBeNull();
   });
-  it("renders a callout with GFM table when there are comparison findings", () => {
+  it("renders collapsed details with a GFM table when there are comparison findings", () => {
     const o = makeOutcome({
       providerId: "stats",
       findings: [comparison("a", 1000, 2000)],
     });
-    const html = renderStatsCallout(o);
-    expect(html).not.toBeNull();
-    expect(html!).toMatch(/Bundle stats/);
-    expect(html!).toMatch(/\| File \| Before \| After \| Diff \|/);
+    const md = renderStatsDetails(o);
+
+    expect(md).not.toBeNull();
+    expect(md!).toMatch(/<details>/);
+    expect(md!).not.toMatch(/<details open>/);
+    expect(md!).toMatch(/<summary>📦 Bundle stats · 1 file changed<\/summary>/);
+    expect(md!).toMatch(/\| File \| Before \| After \| Diff \|/);
   });
   it("uses positive sign for size increases", () => {
     const o = makeOutcome({
       providerId: "stats",
       findings: [comparison("grew", 1000, 2024)],
     });
-    expect(renderStatsCallout(o)!).toMatch(/\+1\.0 KB/);
+    expect(renderStatsDetails(o)!).toMatch(/▲ \+1\.0 KB/);
   });
   it("uses negative sign for size decreases", () => {
     const o = makeOutcome({
       providerId: "stats",
       findings: [comparison("shrunk", 2024, 1000)],
     });
-    expect(renderStatsCallout(o)!).toMatch(/-1\.0 KB/);
+    expect(renderStatsDetails(o)!).toMatch(/▼ -1\.0 KB/);
   });
   it("escapes HTML in comparison names", () => {
     const o = makeOutcome({
@@ -467,8 +470,8 @@ describe("renderStatsCallout", () => {
         baseValue: 1, headValue: 2, diff: 1, unit: "B", message: "",
       }],
     });
-    const html = renderStatsCallout(o)!;
-    expect(html).toContain("evil&lt;script&gt;name");
+    const md = renderStatsDetails(o)!;
+    expect(md).toContain("evil&lt;script&gt;name");
   });
 });
 
@@ -477,7 +480,7 @@ describe("renderProviderCard", () => {
     const o = makeOutcome({gateResult: "passed", providerName: "Prettier"});
     expect(renderProviderCard(o)).toBe("");
   });
-  it("renders an H2 with the FAIL pill for failed providers", () => {
+  it("renders collapsed details for failed providers", () => {
     const o = makeOutcome({
       providerId: "lint",
       providerName: "ESLint",
@@ -486,10 +489,12 @@ describe("renderProviderCard", () => {
       findings: [lineFinding({ruleId: "no-unused"})],
     });
     const md = renderProviderCard(o);
-    expect(md).toMatch(/## 🔍 ESLint/);
-    expect(md).toMatch(/FAIL/);
+
+    expect(md).toMatch(/<details>/);
+    expect(md).not.toMatch(/<details open>/);
+    expect(md).toMatch(/<summary>🔍 ESLint · FAIL · 1 finding<\/summary>/);
   });
-  it("renders ERROR pill for errored providers", () => {
+  it("renders collapsed details for errored providers", () => {
     const o = makeOutcome({
       providerId: "lint",
       providerName: "ESLint",
@@ -497,7 +502,12 @@ describe("renderProviderCard", () => {
       gateResult: "errored",
       error: {message: "runner blew up"},
     });
-    expect(renderProviderCard(o)).toMatch(/ERROR/);
+    const md = renderProviderCard(o);
+
+    expect(md).toMatch(/<details>/);
+    expect(md).not.toMatch(/<details open>/);
+    expect(md).toMatch(/<summary>🔍 ESLint · ERROR · runner error<\/summary>/);
+    expect(md).toMatch(/runner blew up/);
   });
   it("includes the top rules table for lint providers with rules", () => {
     const o = makeOutcome({
@@ -571,33 +581,53 @@ describe("renderFooter", () => {
 describe("buildStepSummary", () => {
   it("includes header, scorecard, and footer", () => {
     const md = buildStepSummary(makeReport());
+
     expect(md).toMatch(/Hygiene Check/);
     expect(md).toMatch(/\| Check \| Result \| Signal \| Time \|/);
     expect(md).toMatch(/Hygiene v3/);
   });
-  it("does not render a card for passing providers", () => {
+
+  it("does not render details for passing providers", () => {
     const report = makeReport({
       outcomes: [makeOutcome({providerName: "Prettier", gateResult: "passed"})],
     });
     const md = buildStepSummary(report);
-    expect(md).not.toMatch(/## .*Prettier/);
+
+    expect(md).not.toMatch(/<details>/);
   });
-  it("renders failed providers in registry order before stats callout", () => {
+
+  it("renders provider details before stats details", () => {
     const report = makeReport({
       outcomes: [
-        makeOutcome({providerId: "lint", providerName: "ESLint", providerIcon: "🔍", gateResult: "failed",
-          findings: [lineFinding({ruleId: "x"})]}),
-        makeOutcome({providerId: "stats", providerName: "Statistics", providerIcon: "📊",
-          findings: [{kind: "comparison", severity: "info", name: "bundle", baseValue: 1, headValue: 2, diff: 1, unit: "B", message: ""}]}),
+        makeOutcome({
+          providerId: "lint",
+          providerName: "ESLint",
+          providerIcon: "🔍",
+          gateResult: "failed",
+          findings: [lineFinding({ruleId: "x"})],
+        }),
+        makeOutcome({
+          providerId: "stats",
+          providerName: "Statistics",
+          providerIcon: "📊",
+          findings: [{kind: "comparison", severity: "info", name: "bundle", baseValue: 1, headValue: 2, diff: 1, unit: "B", message: ""}],
+        }),
       ],
     });
     const md = buildStepSummary(report);
-    expect(md.indexOf("ESLint")).toBeLessThan(md.indexOf("Bundle stats"));
+    const providerIndex = md.indexOf("ESLint · FAIL");
+    const statsIndex = md.indexOf("Bundle stats");
+
+    expect(providerIndex).toBeGreaterThanOrEqual(0);
+    expect(statsIndex).toBeGreaterThanOrEqual(0);
+    expect(providerIndex).toBeLessThan(statsIndex);
   });
-  it("suppresses stats callout when no comparison findings", () => {
+
+  it("suppresses stats details when no comparison findings exist", () => {
     const report = makeReport({
       outcomes: [makeOutcome({providerId: "stats", findings: []})],
     });
+
     expect(buildStepSummary(report)).not.toMatch(/Bundle stats/);
   });
 });
