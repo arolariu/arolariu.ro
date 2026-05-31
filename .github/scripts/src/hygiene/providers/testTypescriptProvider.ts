@@ -17,6 +17,7 @@
 
 import * as exec from "@actions/exec";
 import * as path from "node:path";
+import {suitesForTypeScriptChanges, type TypeScriptSuiteName} from "../domain/changedFiles.ts";
 import type {CheckProvider, ProviderRunInput, ProviderRunOutput} from "../domain/provider.ts";
 import {
   aggregateSuites,
@@ -32,7 +33,7 @@ import {
  * TypeScript / Vitest suites included by this provider. Add new Vitest
  * projects here as `[suiteName, projectDirRelativeToWorkspaceRoot]`.
  */
-export const TYPESCRIPT_SUITES: ReadonlyArray<readonly [string, string]> = [
+export const TYPESCRIPT_SUITES: ReadonlyArray<readonly [TypeScriptSuiteName, string]> = [
   ["scripts", path.join(".github", "scripts")],
   ["website", path.join("sites", "arolariu.ro")],
   ["cv", path.join("sites", "cv.arolariu.ro")],
@@ -42,11 +43,7 @@ export const TYPESCRIPT_SUITES: ReadonlyArray<readonly [string, string]> = [
 
 async function runSuite(name: string, projectDirRel: string, workspaceRoot: string): Promise<SuiteResult> {
   const cwd = path.join(workspaceRoot, projectDirRel);
-  const result = await exec.getExecOutput(
-    "npx",
-    ["vitest", "run", "--reporter=json"],
-    {cwd, ignoreReturnCode: true, silent: true},
-  );
+  const result = await exec.getExecOutput("npx", ["vitest", "run", "--reporter=json"], {cwd, ignoreReturnCode: true, silent: true});
 
   const report = extractLastVitestReport(result.stdout);
   if (!report) {
@@ -56,16 +53,18 @@ async function runSuite(name: string, projectDirRel: string, workspaceRoot: stri
       passed: 0,
       failed: 1,
       skipped: 0,
-      findings: [{
-        kind: "line",
-        severity: "error",
-        file: `<vitest in ${projectDirRel}>`,
-        line: 1,
-        column: 1,
-        message: `vitest produced no JSON report. exit ${result.exitCode}. stderr: ${result.stderr.substring(0, 300)}`,
-        ruleId: `${name}/runner-failed`,
-        suite: name,
-      }],
+      findings: [
+        {
+          kind: "line",
+          severity: "error",
+          file: `<vitest in ${projectDirRel}>`,
+          line: 1,
+          column: 1,
+          message: `vitest produced no JSON report. exit ${result.exitCode}. stderr: ${result.stderr.substring(0, 300)}`,
+          ruleId: `${name}/runner-failed`,
+          suite: name,
+        },
+      ],
     };
   }
   return vitestReportToSuiteResult(name, report);
@@ -77,13 +76,16 @@ export const testTypescriptProvider: CheckProvider<TestSuitesPayload> = {
   icon: "🟦",
   defaultGate: {kind: "blocking", blockOn: "error"},
   payloadSchema: testSuitesPayloadSchema,
-  applicableTo: () => true,
+  applicableTo: (input) => {
+    const suites = suitesForTypeScriptChanges(input);
+    return suites === null || suites.length > 0;
+  },
   async run(input: ProviderRunInput): Promise<ProviderRunOutput<TestSuitesPayload>> {
     // Run all TypeScript suites in parallel. One slow / failing suite does not
     // gate the others; each contributes its own SuiteResult to the payload.
-    const suiteResults = await Promise.all(
-      TYPESCRIPT_SUITES.map(([name, dir]) => runSuite(name, dir, input.workspaceRoot)),
-    );
+    const selectedSuites = suitesForTypeScriptChanges(input);
+    const suitesToRun = selectedSuites === null ? TYPESCRIPT_SUITES : TYPESCRIPT_SUITES.filter(([name]) => selectedSuites.includes(name));
+    const suiteResults = await Promise.all(suitesToRun.map(([name, dir]) => runSuite(name, dir, input.workspaceRoot)));
     return {
       payload: aggregateSuites(suiteResults),
       findings: flattenSuiteFindings(suiteResults),

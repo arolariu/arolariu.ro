@@ -42,6 +42,46 @@ describe("testTypescriptProvider", () => {
     expect(names).toEqual(["components", "cv", "scripts", "status", "website"]);
   });
 
+  it("is not applicable when known changes do not affect TypeScript suites", async () => {
+    const {testTypescriptProvider} = await import("./testTypescriptProvider.ts");
+
+    expect(
+      testTypescriptProvider.applicableTo({
+        workspaceRoot: "/w",
+        baseRef: "main",
+        headRef: "HEAD",
+        changeScope: "known",
+        changedFiles: ["sites/api.arolariu.ro/src/Core/Program.cs"],
+        env: {},
+      }),
+    ).toBe(false);
+  });
+
+  it("is applicable for website suite changes and unknown scope", async () => {
+    const {testTypescriptProvider} = await import("./testTypescriptProvider.ts");
+
+    expect(
+      testTypescriptProvider.applicableTo({
+        workspaceRoot: "/w",
+        baseRef: "main",
+        headRef: "HEAD",
+        changeScope: "known",
+        changedFiles: ["sites/arolariu.ro/src/app/page.tsx"],
+        env: {},
+      }),
+    ).toBe(true);
+    expect(
+      testTypescriptProvider.applicableTo({
+        workspaceRoot: "/w",
+        baseRef: "main",
+        headRef: "HEAD",
+        changeScope: "unknown",
+        changedFiles: [],
+        env: {},
+      }),
+    ).toBe(true);
+  });
+
   it("runs each suite in parallel and emits one SuiteResult per project", async () => {
     // Mock exec.getExecOutput to return a failing report only when cwd ends with sites/arolariu.ro (website).
     const getExecOutput = vi.fn().mockImplementation((_cmd: string, _args: string[], opts?: {cwd?: string}) => {
@@ -56,7 +96,7 @@ describe("testTypescriptProvider", () => {
       workspaceRoot: "/w",
       baseRef: "main",
       headRef: "HEAD",
-      changeScope: "known",
+      changeScope: "unknown",
       changedFiles: [],
       env: {},
     });
@@ -85,7 +125,7 @@ describe("testTypescriptProvider", () => {
       workspaceRoot: "/w",
       baseRef: "main",
       headRef: "HEAD",
-      changeScope: "known",
+      changeScope: "unknown",
       changedFiles: [],
       env: {},
     });
@@ -97,5 +137,24 @@ describe("testTypescriptProvider", () => {
       expect(f.ruleId).toBe("cv/runner-failed");
       expect(f.message).toContain("vitest produced no JSON report");
     }
+  });
+
+  it("runs only the website suite for website-only changes", async () => {
+    const getExecOutput = vi.fn().mockResolvedValue({exitCode: 0, stdout: JSON.stringify(passing), stderr: ""});
+    vi.doMock("@actions/exec", () => ({getExecOutput}));
+    const {testTypescriptProvider} = await import("./testTypescriptProvider.ts");
+
+    const result = await testTypescriptProvider.run({
+      workspaceRoot: "/w",
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: ["sites/arolariu.ro/src/app/page.tsx"],
+      env: {},
+    });
+
+    expect(getExecOutput).toHaveBeenCalledTimes(1);
+    expect((getExecOutput.mock.calls[0]?.[2] as {cwd?: string} | undefined)?.cwd?.replace(/\\/g, "/")).toBe("/w/sites/arolariu.ro");
+    expect(result.payload.suites.map((s) => s.name)).toEqual(["website"]);
   });
 });
