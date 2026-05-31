@@ -160,7 +160,7 @@
     "clsx": "2.1.1",
     "comlink": "4.4.2",
     "cross-env": "10.1.0",
-    "cssnano": "7.1.7",
+    "cssnano": "8.0.1",
     "dexie": "4.4.3",
     "embla-carousel-react": "8.6.0",
     "eslint-plugin-jsx-a11y": "6.10.2",
