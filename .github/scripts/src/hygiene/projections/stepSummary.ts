@@ -213,6 +213,9 @@ export function cleanMessage(msg: string): string {
   return cleaned;
 }
 
+/**
+ * Renderer category for provider detail presentation.
+ */
 export type ProviderCategory = "lint" | "test" | "stats";
 
 /**
