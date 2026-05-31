@@ -4,8 +4,8 @@ import {
   filesForEslint,
   filesForPrettier,
   normalizeChangedFile,
-  suitesForTypeScriptChanges,
   shouldRunBroadly,
+  suitesForTypeScriptChanges,
   touchesBackend,
   touchesPython,
   type ChangeSet,
@@ -76,13 +76,19 @@ describe("scope helpers", () => {
 
 describe("file filters", () => {
   it("filters Prettier-supported changed files", () => {
-    expect(filesForPrettier(known(["src/a.ts", "image.png", "README.md", "sites/cv.arolariu.ro/src/+page.svelte"])))
-      .toEqual(["src/a.ts", "README.md", "sites/cv.arolariu.ro/src/+page.svelte"]);
+    expect(filesForPrettier(known(["src/a.ts", "image.png", "README.md", "sites/cv.arolariu.ro/src/+page.svelte"]))).toEqual([
+      "src/a.ts",
+      "README.md",
+      "sites/cv.arolariu.ro/src/+page.svelte",
+    ]);
   });
 
   it("filters ESLint-supported changed files", () => {
-    expect(filesForEslint(known(["src/a.ts", "src/b.tsx", "README.md", "sites/cv.arolariu.ro/src/+page.svelte"])))
-      .toEqual(["src/a.ts", "src/b.tsx", "sites/cv.arolariu.ro/src/+page.svelte"]);
+    expect(filesForEslint(known(["src/a.ts", "src/b.tsx", "README.md", "sites/cv.arolariu.ro/src/+page.svelte"]))).toEqual([
+      "src/a.ts",
+      "src/b.tsx",
+      "sites/cv.arolariu.ro/src/+page.svelte",
+    ]);
   });
 
   it("returns null filters for unknown or broad scope", () => {

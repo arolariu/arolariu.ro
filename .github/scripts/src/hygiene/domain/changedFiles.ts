@@ -4,15 +4,7 @@
  */
 
 export type ChangeScope = "known" | "unknown";
-export type ProjectBucket =
-  | "website"
-  | "components"
-  | "cv"
-  | "status"
-  | "api"
-  | "exp"
-  | "docs"
-  | "hygieneScripts";
+export type ProjectBucket = "website" | "components" | "cv" | "status" | "api" | "exp" | "docs" | "hygieneScripts";
 
 export type TypeScriptSuiteName = "scripts" | "website" | "cv" | "status" | "components";
 
@@ -53,8 +45,23 @@ const JS_SHARED_FILES = new Set([
 const BACKEND_SHARED_EXTENSIONS = new Set([".slnx", ".props", ".targets"]);
 const PYTHON_SHARED_FILENAMES = new Set(["requirements.txt", "requirements-dev.txt", "pyproject.toml", "ruff.toml"]);
 const PRETTIER_EXTENSIONS = new Set([
-  ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".json", ".jsonc", ".md", ".mdx",
-  ".css", ".scss", ".sass", ".html", ".yml", ".yaml", ".svelte",
+  ".ts",
+  ".tsx",
+  ".js",
+  ".jsx",
+  ".mjs",
+  ".cjs",
+  ".json",
+  ".jsonc",
+  ".md",
+  ".mdx",
+  ".css",
+  ".scss",
+  ".sass",
+  ".html",
+  ".yml",
+  ".yaml",
+  ".svelte",
 ]);
 const ESLINT_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".svelte"]);
 const TYPE_SCRIPT_SUITE_ORDER: readonly TypeScriptSuiteName[] = ["scripts", "website", "cv", "status", "components"];
@@ -94,7 +101,8 @@ export function classifyChangedFiles(files: readonly string[]): ChangeClassifica
     else if (file.startsWith("sites/api.arolariu.ro/")) addBucket(buckets, "api");
     else if (file.startsWith("sites/exp.arolariu.ro/")) addBucket(buckets, "exp");
     else if (file.startsWith("sites/docs.arolariu.ro/") || file.startsWith("docs/")) addBucket(buckets, "docs");
-    else if (file.startsWith(".github/scripts/") || file === ".github/workflows/official-hygiene-check-v2.yml") addBucket(buckets, "hygieneScripts");
+    else if (file.startsWith(".github/scripts/") || file === ".github/workflows/official-hygiene-check-v2.yml")
+      addBucket(buckets, "hygieneScripts");
 
     const base = basenameOf(file);
     const ext = extensionOf(file);
