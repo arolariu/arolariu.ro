@@ -31,6 +31,41 @@ describe("testPythonProvider", () => {
     expect(testPythonProvider.defaultGate).toEqual({kind: "blocking", blockOn: "error"});
   });
 
+  it("is applicable only for exp/Python or broad changes", async () => {
+    const {testPythonProvider} = await import("./testPythonProvider.ts");
+
+    expect(
+      testPythonProvider.applicableTo({
+        workspaceRoot: tmpDir,
+        baseRef: "main",
+        headRef: "HEAD",
+        changeScope: "known",
+        changedFiles: ["sites/exp.arolariu.ro/main.py"],
+        env: {},
+      }),
+    ).toBe(true);
+    expect(
+      testPythonProvider.applicableTo({
+        workspaceRoot: tmpDir,
+        baseRef: "main",
+        headRef: "HEAD",
+        changeScope: "known",
+        changedFiles: ["sites/api.arolariu.ro/src/Core/Program.cs"],
+        env: {},
+      }),
+    ).toBe(false);
+    expect(
+      testPythonProvider.applicableTo({
+        workspaceRoot: tmpDir,
+        baseRef: "main",
+        headRef: "HEAD",
+        changeScope: "unknown",
+        changedFiles: [],
+        env: {},
+      }),
+    ).toBe(true);
+  });
+
   it("parses pytest JUnit XML into a suite", async () => {
     const xmlPath = path.join(tmpDir, "sites", "exp.arolariu.ro", ".pytest-cache", "hygiene-junit.xml");
     vi.doMock("@actions/exec", () => ({
@@ -45,7 +80,7 @@ describe("testPythonProvider", () => {
       workspaceRoot: tmpDir,
       baseRef: "main",
       headRef: "HEAD",
-      changeScope: "known",
+      changeScope: "unknown",
       changedFiles: [],
       env: {},
     });
@@ -69,7 +104,7 @@ describe("testPythonProvider", () => {
       workspaceRoot: tmpDir,
       baseRef: "main",
       headRef: "HEAD",
-      changeScope: "known",
+      changeScope: "unknown",
       changedFiles: [],
       env: {},
     });

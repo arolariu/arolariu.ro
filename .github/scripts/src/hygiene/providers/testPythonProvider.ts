@@ -10,6 +10,7 @@
 import * as exec from "@actions/exec";
 import fs from "node:fs/promises";
 import * as path from "node:path";
+import {touchesPython} from "../domain/changedFiles.ts";
 import type {CheckProvider, ProviderRunInput, ProviderRunOutput} from "../domain/provider.ts";
 import {
   aggregateSuites,
@@ -30,7 +31,7 @@ export const testPythonProvider: CheckProvider<TestSuitesPayload> = {
   icon: "🐍",
   defaultGate: {kind: "blocking", blockOn: "error"},
   payloadSchema: testSuitesPayloadSchema,
-  applicableTo: () => true,
+  applicableTo: touchesPython,
   async run(input: ProviderRunInput): Promise<ProviderRunOutput<TestSuitesPayload>> {
     const junitAbs = path.join(input.workspaceRoot, JUNIT_REL);
     await fs.rm(junitAbs, {force: true}).catch(() => {});
@@ -38,11 +39,7 @@ export const testPythonProvider: CheckProvider<TestSuitesPayload> = {
 
     await exec.getExecOutput(
       "python",
-      [
-        "-m", "pytest",
-        "-q",
-        `--junitxml=${path.relative(path.join(input.workspaceRoot, EXP_DIR), junitAbs)}`,
-      ],
+      ["-m", "pytest", "-q", `--junitxml=${path.relative(path.join(input.workspaceRoot, EXP_DIR), junitAbs)}`],
       {cwd: path.join(input.workspaceRoot, EXP_DIR), ignoreReturnCode: true, silent: true},
     );
 
@@ -56,16 +53,18 @@ export const testPythonProvider: CheckProvider<TestSuitesPayload> = {
         passed: 0,
         failed: 1,
         skipped: 0,
-        findings: [{
-          kind: "line",
-          severity: "error",
-          file: "<pytest>",
-          line: 1,
-          column: 1,
-          message: "pytest produced no JUnit XML report (check setup-python / pip install steps in the workflow).",
-          ruleId: "python/runner-failed",
-          suite: "python",
-        }],
+        findings: [
+          {
+            kind: "line",
+            severity: "error",
+            file: "<pytest>",
+            line: 1,
+            column: 1,
+            message: "pytest produced no JUnit XML report (check setup-python / pip install steps in the workflow).",
+            ruleId: "python/runner-failed",
+            suite: "python",
+          },
+        ],
       };
       return {payload: aggregateSuites([suite]), findings: flattenSuiteFindings([suite])};
     }
@@ -74,15 +73,19 @@ export const testPythonProvider: CheckProvider<TestSuitesPayload> = {
     if (junitSuites.length === 0) {
       const empty: SuiteResult = {
         name: "python",
-        totalTests: 0, passed: 0, failed: 0, skipped: 0,
+        totalTests: 0,
+        passed: 0,
+        failed: 0,
+        skipped: 0,
         findings: [],
       };
       return {payload: aggregateSuites([empty]), findings: []};
     }
 
-    const suiteResults: SuiteResult[] = junitSuites.length === 1
-      ? [jUnitSuitesToResult("python", junitSuites)]
-      : junitSuites.map((s) => jUnitSuitesToResult(s.name || "python", [s]));
+    const suiteResults: SuiteResult[] =
+      junitSuites.length === 1
+        ? [jUnitSuitesToResult("python", junitSuites)]
+        : junitSuites.map((s) => jUnitSuitesToResult(s.name || "python", [s]));
 
     return {
       payload: aggregateSuites(suiteResults),

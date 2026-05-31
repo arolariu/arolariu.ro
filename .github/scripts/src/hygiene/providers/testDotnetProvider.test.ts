@@ -30,6 +30,41 @@ describe("testDotnetProvider", () => {
     expect(testDotnetProvider.defaultGate).toEqual({kind: "blocking", blockOn: "error"});
   });
 
+  it("is applicable only for backend or broad changes", async () => {
+    const {testDotnetProvider} = await import("./testDotnetProvider.ts");
+
+    expect(
+      testDotnetProvider.applicableTo({
+        workspaceRoot: tmpDir,
+        baseRef: "main",
+        headRef: "HEAD",
+        changeScope: "known",
+        changedFiles: ["sites/api.arolariu.ro/src/Core/Program.cs"],
+        env: {},
+      }),
+    ).toBe(true);
+    expect(
+      testDotnetProvider.applicableTo({
+        workspaceRoot: tmpDir,
+        baseRef: "main",
+        headRef: "HEAD",
+        changeScope: "known",
+        changedFiles: ["sites/arolariu.ro/src/app/page.tsx"],
+        env: {},
+      }),
+    ).toBe(false);
+    expect(
+      testDotnetProvider.applicableTo({
+        workspaceRoot: tmpDir,
+        baseRef: "main",
+        headRef: "HEAD",
+        changeScope: "unknown",
+        changedFiles: [],
+        env: {},
+      }),
+    ).toBe(true);
+  });
+
   it("parses .trx files written by dotnet test into per-file suites", async () => {
     const trxDir = path.join(tmpDir, "sites", "api.arolariu.ro", "TestResults");
     vi.doMock("@actions/exec", () => ({
@@ -45,7 +80,7 @@ describe("testDotnetProvider", () => {
       workspaceRoot: tmpDir,
       baseRef: "main",
       headRef: "HEAD",
-      changeScope: "known",
+      changeScope: "unknown",
       changedFiles: [],
       env: {},
     });
@@ -64,7 +99,7 @@ describe("testDotnetProvider", () => {
       workspaceRoot: tmpDir,
       baseRef: "main",
       headRef: "HEAD",
-      changeScope: "known",
+      changeScope: "unknown",
       changedFiles: [],
       env: {},
     });
