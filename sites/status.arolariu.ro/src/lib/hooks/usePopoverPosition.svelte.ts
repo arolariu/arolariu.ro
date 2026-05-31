@@ -37,6 +37,13 @@ export interface ViewportGeometry {
   readonly innerWidth: number;
 }
 
+export interface UsePopoverPositionOptions {
+  readonly anchor: () => HTMLElement | null;
+  readonly tooltipElement: () => HTMLElement | null;
+  readonly active: () => boolean;
+  readonly fallbackWidth?: number;
+}
+
 /**
  * Pure positioning math. Given:
  *  - `anchorRect` — the anchor element's DOMRect
@@ -83,40 +90,41 @@ export function computePopoverPosition(
  * while active; listeners are torn down automatically on scope teardown or
  * when `active()` flips to false (effect re-runs).
  */
-export function usePopoverPosition(
-  anchor: () => HTMLElement | null,
-  tooltipEl: () => HTMLElement | null,
-  active: () => boolean,
+export function usePopoverPosition({
+  anchor,
+  tooltipElement,
+  active,
   fallbackWidth = 280,
-): () => PopoverPosition {
+}: Readonly<UsePopoverPositionOptions>): () => PopoverPosition {
   let position = $state<PopoverPosition>({top: 0, left: 0, flipHoriz: false});
 
-  function recompute() {
-    const el = anchor();
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const tipWidth = tooltipEl()?.offsetWidth ?? fallbackWidth;
-    position = computePopoverPosition(rect, tipWidth, {
-      scrollX: window.scrollX,
-      scrollY: window.scrollY,
-      innerWidth: window.innerWidth,
+  function recompute(): void {
+    const element = anchor();
+    if (!element) return;
+    const rect = element.getBoundingClientRect();
+    const tooltipWidth = tooltipElement()?.offsetWidth ?? fallbackWidth;
+    position = computePopoverPosition(rect, tooltipWidth, {
+      scrollX: globalThis.window.scrollX,
+      scrollY: globalThis.window.scrollY,
+      innerWidth: globalThis.window.innerWidth,
     });
   }
 
   $effect(() => {
     if (!active()) return;
     // Ensure the reactive deps track both the anchor and tooltipEl getter;
-    // re-running when they change (element switched or re-bound) is part of
-    // the hook's contract.
+    // Re-running when they change (element switched or re-bound) is part of
+    // The hook's contract.
     anchor();
-    tooltipEl();
+    tooltipElement();
     recompute();
-    const opts: AddEventListenerOptions = {passive: true};
-    window.addEventListener("scroll", recompute, opts);
-    window.addEventListener("resize", recompute);
+    const options: AddEventListenerOptions = {passive: true};
+    globalThis.window.addEventListener("scroll", recompute, options);
+    globalThis.window.addEventListener("resize", recompute);
+    // eslint-disable-next-line consistent-return -- Svelte effects return cleanup only while active.
     return () => {
-      window.removeEventListener("scroll", recompute);
-      window.removeEventListener("resize", recompute);
+      globalThis.window.removeEventListener("scroll", recompute);
+      globalThis.window.removeEventListener("resize", recompute);
     };
   });
 

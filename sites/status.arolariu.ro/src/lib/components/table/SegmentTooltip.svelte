@@ -40,11 +40,11 @@
 
   // Positioning math + scroll/resize plumbing lives in the shared hook so
   // the viewport-flip behavior is unit-testable (see usePopoverPosition.test).
-  const position = usePopoverPosition(
-    () => anchor,
-    () => tooltipEl,
-    () => anchor !== null && bucket !== null,
-  );
+  const position = usePopoverPosition({
+    anchor: () => anchor,
+    tooltipElement: () => tooltipEl,
+    active: () => anchor !== null && bucket !== null,
+  });
 
   const endISO = $derived.by(() => {
     if (!bucket) return "";
