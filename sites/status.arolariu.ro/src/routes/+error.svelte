@@ -13,7 +13,7 @@
   import styles from "./ErrorPage.module.scss";
 </script>
 
-<main class={styles.shell}>
-  <h1 class={styles.title}>Error {page.status}</h1>
-  <p class={styles.message}>{page.error?.message ?? "Something went wrong."}</p>
+<main class={styles["shell"]}>
+  <h1 class={styles["title"]}>Error {page.status}</h1>
+  <p class={styles["message"]}>{page.error?.message ?? "Something went wrong."}</p>
 </main>
