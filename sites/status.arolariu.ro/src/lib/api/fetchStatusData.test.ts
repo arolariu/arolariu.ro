@@ -221,4 +221,23 @@ describe("isHardReload branches (module-load side effect)", () => {
     expect(localStorage.getItem("status.arolariu.ro/cache:fine")).not.toBeNull();
     vi.unstubAllGlobals();
   });
+
+  it("does not throw during module-load cache clearing when localStorage access throws", async () => {
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+    const reloadEntry = {type: "reload", transferSize: 1024};
+    vi.stubGlobal("performance", {
+      getEntriesByType: (type: string) => (type === "navigation" ? [reloadEntry] : []),
+    });
+    Object.defineProperty(globalThis, "localStorage", {
+      configurable: true,
+      get() {
+        throw new DOMException("Blocked", "SecurityError");
+      },
+    });
+
+    await expect(import("./fetchStatusData")).resolves.toBeDefined();
+
+    if (descriptor) Object.defineProperty(globalThis, "localStorage", descriptor);
+    vi.unstubAllGlobals();
+  });
 });

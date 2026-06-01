@@ -61,11 +61,36 @@ describe("themeStore", () => {
       vi.unstubAllGlobals();
     });
 
+    it("getTheme returns 'auto' when localStorage access throws", () => {
+      const descriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+      Object.defineProperty(globalThis, "localStorage", {
+        configurable: true,
+        get() {
+          throw new DOMException("Blocked", "SecurityError");
+        },
+      });
+
+      expect(getTheme()).toBe("auto");
+
+      if (descriptor) Object.defineProperty(globalThis, "localStorage", descriptor);
+    });
+
     it("setTheme is a no-op when localStorage is undefined (SSR)", () => {
       vi.stubGlobal("localStorage", undefined);
       // Should not throw; localStorage.setItem is never called
       expect(() => setTheme("dark")).not.toThrow();
       vi.unstubAllGlobals();
+    });
+
+    it("setTheme still applies theme when localStorage persistence throws", () => {
+      const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+        throw new DOMException("Blocked", "SecurityError");
+      });
+
+      setTheme("dark");
+
+      expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+      setItem.mockRestore();
     });
 
     it("resolveTheme returns 'dark' when window is undefined (SSR)", () => {

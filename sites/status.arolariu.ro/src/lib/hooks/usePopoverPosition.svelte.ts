@@ -112,7 +112,7 @@ export function usePopoverPosition({
 
   $effect(() => {
     if (!active()) return;
-    // Ensure the reactive deps track both the anchor and tooltipEl getter;
+    // Ensure the reactive deps track both the anchor and tooltipElement getter;
     // Re-running when they change (element switched or re-bound) is part of
     // The hook's contract.
     anchor();

@@ -27,15 +27,27 @@ function isValidTheme(value: unknown): value is Theme {
   return typeof value === "string" && (VALID_THEMES as readonly string[]).includes(value);
 }
 
+function getStorage(): Storage | null {
+  try {
+    return globalThis.localStorage ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Current persisted theme, or `"auto"` when nothing is stored.
  * SSR-safe — returns `"auto"` when `localStorage` is unavailable.
  */
 export function getTheme(): Theme {
-  const storage = globalThis.localStorage as Storage | undefined;
-  if (storage === undefined) return "auto";
-  const stored = storage.getItem(STORAGE_KEY);
-  return isValidTheme(stored) ? stored : "auto";
+  const storage = getStorage();
+  if (storage === null) return "auto";
+  try {
+    const stored = storage.getItem(STORAGE_KEY);
+    return isValidTheme(stored) ? stored : "auto";
+  } catch {
+    return "auto";
+  }
 }
 
 /**
@@ -66,8 +78,13 @@ export function applyTheme(theme: Theme): void {
  * No-op under SSR.
  */
 export function setTheme(theme: Theme): void {
-  const storage = globalThis.localStorage as Storage | undefined;
-  if (storage === undefined) return;
-  storage.setItem(STORAGE_KEY, theme);
+  const storage = getStorage();
+  if (storage !== null) {
+    try {
+      storage.setItem(STORAGE_KEY, theme);
+    } catch {
+      /* Persistence unavailable */
+    }
+  }
   applyTheme(theme);
 }

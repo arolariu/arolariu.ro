@@ -85,12 +85,16 @@ function isHardReload(): boolean {
 // Forcing the next fetch to go to the network. Skipped on SSR.
 const browserWindow = globalThis.window as Window | undefined;
 if (browserWindow !== undefined && isHardReload()) {
-  const keysToRemove: string[] = [];
-  for (let index = 0; index < globalThis.localStorage.length; index += 1) {
-    const key = globalThis.localStorage.key(index);
-    if (key?.startsWith(CACHE_PREFIX)) keysToRemove.push(key);
+  try {
+    const keysToRemove: string[] = [];
+    for (let index = 0; index < globalThis.localStorage.length; index += 1) {
+      const key = globalThis.localStorage.key(index);
+      if (key?.startsWith(CACHE_PREFIX)) keysToRemove.push(key);
+    }
+    for (const key of keysToRemove) globalThis.localStorage.removeItem(key);
+  } catch {
+    /* LocalStorage unavailable */
   }
-  for (const key of keysToRemove) globalThis.localStorage.removeItem(key);
 }
 
 /**
