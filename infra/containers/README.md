@@ -29,62 +29,50 @@ All Dockerfiles include:
 
 ```bash
 # Correct: from repository root
-docker build -f infra/containers/Dockerfile.frontend -t arolariu-frontend .
+npm run containers:build -- --engine rancher --target frontend
 
 # Wrong: from infra/containers
-cd infra/containers && docker build -f Dockerfile.frontend .  # ❌
+cd infra/containers && npm run containers:build -- --engine rancher --target frontend  # ❌
 ```
+
+## Local engine-aware builds
+
+Docker Desktop is deprecated for this repository. Use Rancher Desktop or Podman Desktop:
+
+```powershell
+npm run containers:build -- --engine rancher --target frontend
+npm run containers:build -- --engine podman --target backend
+npm run containers:run -- --engine rancher --target frontend
+npm run containers:run -- --engine podman --target backend
+```
+
+The helper builds from the repository root and routes build/run commands through the selected runtime adapter.
 
 ## Build Commands
 
 ### Frontend (arolariu.ro)
 
 ```bash
-# From repository root
-docker build -f infra/containers/Dockerfile.frontend -t arolariu-frontend \
-  --build-arg COMMIT_SHA=$(git rev-parse HEAD) \
-  --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
-  --build-arg VERSION=1.0.0 \
-  .
-
-# Run
-docker run -p 3000:3000 \
-  -e SITE_ENV=production \
-  arolariu-frontend
+npm run containers:build -- --engine rancher --target frontend
+npm run containers:run -- --engine rancher --target frontend
 ```
 
 ### Backend (api.arolariu.ro)
 
 ```bash
-# From repository root
-docker build -f infra/containers/Dockerfile.backend -t arolariu-backend \
-  --build-arg API_NAME=api.arolariu.ro \
-  --build-arg API_URL=https://api.arolariu.ro \
-  --build-arg COMMIT_SHA=$(git rev-parse HEAD) \
-  --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
-  --build-arg VERSION=1.0.0 \
-  .
-
-# Run
-docker run -p 8080:8080 arolariu-backend
+npm run containers:build -- --engine podman --target backend
+npm run containers:run -- --engine podman --target backend
 
 # Build specific stages
-docker build -f infra/containers/Dockerfile.backend --target=test -t arolariu-backend-test .
-docker build -f infra/containers/Dockerfile.backend --target=security-scan -t arolariu-backend-scan .
+podman build -f infra/containers/Dockerfile.backend --target=test -t arolariu-backend-test .
+podman build -f infra/containers/Dockerfile.backend --target=security-scan -t arolariu-backend-scan .
 ```
 
 ### CV Site (cv.arolariu.ro)
 
 ```bash
-# From repository root
-docker build -f infra/containers/Dockerfile.cv -t arolariu-cv \
-  --build-arg COMMIT_SHA=$(git rev-parse HEAD) \
-  --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
-  --build-arg VERSION=1.0.0 \
-  .
-
-# Run
-docker run -p 3000:3000 arolariu-cv
+npm run containers:build -- --engine rancher --target cv
+npm run containers:run -- --engine rancher --target cv
 ```
 
 ## Build Arguments
@@ -151,21 +139,8 @@ Most backend configuration is embedded at build time via build arguments.
 
 For building multi-architecture images (amd64/arm64):
 
-```bash
-# Create/use buildx builder
-docker buildx create --use --name multiarch
-
-# Build and push multi-arch image
-docker buildx build --platform linux/amd64,linux/arm64 \
-  -f infra/containers/Dockerfile.frontend \
-  -t ghcr.io/arolariu/arolariu-frontend:latest \
-  --push .
-
-docker buildx build --platform linux/amd64,linux/arm64 \
-  -f infra/containers/Dockerfile.backend \
-  -t ghcr.io/arolariu/arolariu-backend:latest \
-  --push .
-```
+Use the engine-native multi-architecture build workflow for the selected runtime.
+For local development, prefer the `npm run containers:build -- --engine <rancher|podman>` wrapper; publishing multi-architecture images remains a release pipeline concern.
 
 ## Health Checks
 
@@ -208,10 +183,10 @@ grype arolariu-frontend:latest
 grype arolariu-backend:latest
 
 # Build security scan stage (backend only)
-docker build -f infra/containers/Dockerfile.backend --target=security-scan -t scan .
+podman build -f infra/containers/Dockerfile.backend --target=security-scan -t scan .
 ```
 
-## Docker Compose Example
+## Compose Example
 
 ```yaml
 version: '3.8'
@@ -266,13 +241,13 @@ Ensure you're building from the repository root, not from a subdirectory.
 
 ### Health Check Fails
 
-1. Check container logs: `docker logs <container-id>`
+1. Check container logs with the selected engine: `npm run dev:selfhost:logs -- --engine rancher` or `npm run dev:selfhost:logs -- --engine podman`
 2. Verify the application started correctly
 3. Check the health endpoint manually: `curl http://localhost:<port>/health`
 
 ### Large Image Size
 
-1. Use `docker image inspect` to check layer sizes
+1. Use `docker image inspect` with Rancher or `podman image inspect` with Podman to check layer sizes
 2. Ensure multi-stage build is being used
 3. Check for unnecessary files in build context (add to `.dockerignore`)
 

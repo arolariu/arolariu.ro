@@ -16,7 +16,7 @@
 # - Distroless-style minimal attack surface
 #
 # Build context: Repository root (not sites/arolariu.ro)
-# Usage: docker build -f infra/containers/Dockerfile.frontend -t arolariu-frontend .
+# Usage: npm run containers:build -- --engine rancher --target frontend
 ###############################################################################
 
 # ========================================

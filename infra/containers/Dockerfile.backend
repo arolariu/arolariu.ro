@@ -17,7 +17,7 @@
 # - Vulnerability scanning hooks
 #
 # Build context: Repository root (not sites/api.arolariu.ro)
-# Usage: docker build -f infra/containers/Dockerfile.backend -t arolariu-backend .
+# Usage: npm run containers:build -- --engine podman --target backend
 #
 # See more:
 # 1. https://aka.ms/dotnet-container-images
@@ -156,7 +156,7 @@ RUN find /app/publish -name "*.pdb" -type f -delete || true
 FROM publish AS security-scan
 
 # This stage can be used with tools like Trivy, Grype, or Snyk
-# Run: docker build --target=security-scan -t scan .
+# Run: podman build --target=security-scan -t scan .
 # Then: trivy image scan:latest
 
 # ========================================

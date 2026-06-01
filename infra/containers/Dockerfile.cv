@@ -22,7 +22,7 @@
 # For Azure SWA deployment, use the native adapter instead.
 #
 # Build context: Repository root (not sites/cv.arolariu.ro)
-# Usage: docker build -f infra/containers/Dockerfile.cv -t arolariu-cv .
+# Usage: npm run containers:build -- --engine rancher --target cv
 ###############################################################################
 
 # ========================================

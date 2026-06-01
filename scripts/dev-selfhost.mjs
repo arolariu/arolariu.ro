@@ -1,22 +1,19 @@
-// Cross-platform dispatcher for selfhost docker-compose flow.
-// On Windows runs the .bat script; on Unix runs the .sh via bash.
-// Action argument is "start" or "stop".
+// Compatibility shim for npm scripts. All container runtime logic lives in
+// scripts/container-runtime/selfhost.ts so Rancher and Podman do not drift.
 
-import { spawnSync } from "node:child_process";
-import { resolve } from "node:path";
+import {spawnSync} from "node:child_process";
 
 const action = process.argv[2];
-if (action !== "start" && action !== "stop") {
-  console.error(`usage: node scripts/dev-selfhost.mjs <start|stop> (got '${action}')`);
+const passthrough = process.argv.slice(3);
+
+if (action !== "start" && action !== "stop" && action !== "logs") {
+  console.error(`usage: node scripts/dev-selfhost.mjs <start|stop|logs> --engine <rancher|podman>`);
   process.exit(2);
 }
 
-const isWindows = process.platform === "win32";
-const ext = isWindows ? "bat" : "sh";
-const script = resolve(`infra/Local/selfhost-${action}.${ext}`);
-
-const result = isWindows
-  ? spawnSync(script, [], { stdio: "inherit", shell: true })
-  : spawnSync("bash", [script], { stdio: "inherit" });
+const result = spawnSync(process.execPath, ["scripts/container-runtime/selfhost.ts", action, ...passthrough], {
+  stdio: "inherit",
+  shell: false,
+});
 
 process.exit(result.status ?? 1);

@@ -10,10 +10,7 @@
     "name": "Alexandru-Razvan Olariu",
     "url": "https://arolariu.ro"
   },
-  "workspaces": [
-    "packages/*",
-    "sites/*"
-  ],
+  "workspaces": ["packages/*", "sites/*"],
   "engines": {
     "node": ">=24",
     "npm": ">=11"
@@ -35,14 +32,17 @@
     "docs:typedoc": "npm run docs:typedoc:components && npm run docs:typedoc:website",
     "docs:typedoc:components": "npx typedoc --options typedoc.components.json",
     "docs:typedoc:website": "npx typedoc --options typedoc.website.json",
-    "dev": "dotnet run --project tooling/AppHost",
+    "dev": "node scripts/container-runtime/aspire.ts",
     "dev:api": "nx run api:dev",
-    "dev:aspire": "dotnet run --project tooling/AppHost",
+    "dev:aspire": "node scripts/container-runtime/aspire.ts",
+    "dev:aspire:podman": "node scripts/container-runtime/aspire.ts --engine podman",
+    "dev:aspire:rancher": "node scripts/container-runtime/aspire.ts --engine rancher",
     "dev:components": "nx run components:dev",
     "dev:cv": "nx run cv:dev",
     "dev:docs": "nx run docs:dev",
     "dev:exp": "nx run exp:dev",
     "dev:selfhost": "node scripts/dev-selfhost.mjs start",
+    "dev:selfhost:logs": "node scripts/dev-selfhost.mjs logs",
     "dev:selfhost:stop": "node scripts/dev-selfhost.mjs stop",
     "dev:status": "nx run status:dev",
     "dev:website": "nx run website:dev",
@@ -59,6 +59,9 @@
     "__runner__based__commands__finish__": "✅ The above section contains commands based on NX runner.",
     "___________________________________": "",
     "__script__based__commands__start__": "⚠️ The below section contains commands based on node runner.",
+    "containers:build": "node scripts/container-runtime/image.ts build",
+    "containers:compose": "node scripts/container-runtime/compose.ts",
+    "containers:run": "node scripts/container-runtime/image.ts run",
     "setup": "node scripts/setup.ts",
     "doctor": "node scripts/doctor.ts",
     "status": "node scripts/status.ts",

@@ -95,11 +95,17 @@ export default defineConfig({
         "**/instrumentation.ts",
         "**/proxy.ts",
 
-        // Piscina worker files and their shared helpers used by the monorepo's CLI
-        // scripts (format, lint) — run in separate threads, use child_process I/O;
+        // CLI orchestration files and worker helpers used by monorepo scripts —
+        // run in separate processes/threads, use child_process I/O or local
+        // container runtimes, and are covered by focused command-builder tests;
         // async execution paths can't be covered by unit tests. Scoped to scripts/**
         // so user-facing worker files elsewhere (e.g. sites/arolariu.ro/.../playground.worker.ts)
         // remain subject to normal coverage rules.
+        "scripts/container-runtime/aspire.ts",
+        "scripts/container-runtime/compose.ts",
+        "scripts/container-runtime/image.ts",
+        "scripts/container-runtime/process.ts",
+        "scripts/container-runtime/selfhost.ts",
         "scripts/**/*.worker.ts",
         "scripts/workers/shell.ts",
       ],

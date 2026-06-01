@@ -312,11 +312,15 @@ npx nx show project website      # 🔍 Show project details
 
 ### Aspire Mode (Default)
 
-`npm run dev` (or pressing **F5** in VS Code / Visual Studio 2026) starts the **.NET Aspire 13.x AppHost** at `tooling/AppHost/`. The AppHost orchestrates the entire dev stack:
+`npm run dev -- --engine rancher` or `npm run dev -- --engine podman` starts the **.NET Aspire 13.x AppHost** at `tooling/AppHost/`. The AppHost orchestrates the entire dev stack:
 
 - **Apps run native** — .NET via `dotnet run`, Next.js / SvelteKit / Docusaurus / status via their `dev` scripts, Python `exp` via `uvicorn`. Hot reload is preserved on every runtime.
-- **Infrastructure runs in containers** — SQL Server, Cosmos DB vNext emulator, Azurite (Blob/Queue/Table), and Redis are spawned as native Aspire integrations (no Docker Compose required).
+- **Infrastructure runs in containers** — SQL Server, Cosmos DB vNext emulator, Azurite (Blob/Queue/Table), and Redis are spawned as native Aspire integrations through the selected Rancher Desktop or Podman Desktop engine (no Docker Compose required).
 - **Aspire dashboard** auto-opens at `https://localhost:17080` with live OpenTelemetry traces, metrics, logs, clickable URLs, and per-resource health badges.
+
+VS Code F5 includes `🚀 [Podman] Full stack (Aspire)` and `🚀 [Rancher] Full stack (Aspire)` profiles. These keep the Aspire debugger integration and set the AppHost runtime to `podman` or Docker-compatible Rancher/Moby (`DOTNET_ASPIRE_CONTAINER_RUNTIME=docker`). The selected runtime must already be available to the VS Code process through the host environment; the launch profiles do not hardcode platform-specific PATH or socket values.
+
+Rancher Desktop is selected through its Moby/Docker-compatible backend; Aspire/DCP sees this as `docker`, not as a separate `rancher-desktop` runtime.
 
 | Resource | URL | Notes |
 |----------|-----|-------|
@@ -334,13 +338,32 @@ npx nx show project website      # 🔍 Show project details
 
 ### Selfhost Mode (Containerized)
 
-`npm run dev:selfhost` brings up the **full Docker Compose stack** including the apps themselves. Use this when you need to:
+Docker Desktop is deprecated for local development in this repository. Use one supported engine per run:
+
+```powershell
+npm run dev -- --engine rancher
+npm run dev -- --engine podman
+npm run dev:selfhost -- --engine rancher
+npm run dev:selfhost -- --engine podman
+```
+
+Do not run Docker Desktop as a fallback. The runtime wrappers fail when Docker Desktop is detected.
+
+Selfhost SQL requires a local password supplied by environment variable:
+
+```powershell
+$env:MSSQL_SA_PASSWORD = "<local strong password>"
+```
+
+Keep `MSSQL_SA_PASSWORD` in your shell/session environment only. Do not commit it to `.env` files, VS Code launch profiles, or source control.
+
+`npm run dev:selfhost -- --engine rancher` or `npm run dev:selfhost -- --engine podman` brings up the **full Compose stack** including the apps themselves. Use this when you need to:
 
 - Audit container behavior or validate CI parity
 - Test a deploy-mock-of-prod configuration
 - Reproduce a bug that only manifests in containerized form
 
-The Compose definitions live under `infra/Local/{Storage,Management,Backend,Frontend}/docker-compose.yml`. Stop the stack with `npm run dev:selfhost:stop`.
+The Compose definitions live under `infra/Local/{Storage,Management,Backend,Frontend}/docker-compose.yml`. Stop the stack with `npm run dev:selfhost:stop -- --engine rancher` or `npm run dev:selfhost:stop -- --engine podman`.
 
 ### Troubleshooting
 
@@ -417,16 +440,17 @@ mkcert -key-file local-key.pem -cert-file local-cert.pem "localhost" "*.localhos
 </details>
 
 <details>
-<summary><b>🐳 Containers won't start / Docker not available</b></summary>
+<summary><b>🐳 Containers won't start / selected engine not available</b></summary>
 
-Aspire spawns containers via the OCI runtime detected on your machine (Docker Desktop, Podman, or Rancher Desktop). Verify:
+Aspire spawns containers via the selected Rancher Desktop or Podman Desktop runtime. Verify the engine you selected:
 
 ```bash
-docker info        # should print server info
-docker ps          # should list running containers after `npm run dev`
+docker version            # Rancher Desktop in Moby/dockerd mode
+podman --version          # Podman Desktop
+podman compose version    # Podman Compose provider
 ```
 
-If Docker isn't running, start Docker Desktop before `npm run dev`. On Windows, ensure WSL2 integration is enabled. As a last resort, `npm run dev:selfhost` exercises the same containers via Compose if Aspire's container manager misbehaves.
+If the selected engine is not running, start Rancher Desktop or Podman Desktop before `npm run dev -- --engine <rancher|podman>`. Do not start Docker Desktop as a fallback.
 
 </details>
 
