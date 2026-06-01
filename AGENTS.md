@@ -43,14 +43,18 @@ instruction/agent files unless they still drift after this change.
 # First-time setup
 npm install && npm run setup
 
-# Aspire mode (default — runs API+Website+exp+CV+docs+status natively,
-# infra via Aspire-managed containers; dashboard auto-opens at https://localhost:17080)
-npm run dev              # = dotnet run --project tooling/AppHost; F5 in VS Code/VS 2026 does the same
-npm run dev:aspire       # Explicit alias for npm run dev
+# Aspire mode with explicit local container engine (Docker Desktop is deprecated)
+npm run dev -- --engine rancher
+npm run dev -- --engine podman
+npm run dev:aspire -- --engine rancher
+npm run dev:aspire -- --engine podman
 
-# Selfhost mode (everything containerized — for auditing / CI parity / deploy-mock-of-prod)
-npm run dev:selfhost     # Brings up the full Docker Compose stack including containerized apps
-npm run dev:selfhost:stop
+# Selfhost mode with explicit local container engine
+# Set MSSQL_SA_PASSWORD in your shell before selfhost start
+npm run dev:selfhost -- --engine rancher
+npm run dev:selfhost -- --engine podman
+npm run dev:selfhost:stop -- --engine rancher
+npm run dev:selfhost:stop -- --engine podman
 
 # Standalone single-service dev (no AppHost coordination — fallback only)
 npm run dev:website      # Next.js only
@@ -89,13 +93,13 @@ dotnet test sites/api.arolariu.ro/tests --collect:"XPlat Code Coverage"
 
 Two coexisting dev modes:
 
-**`aspire` mode (default)** — `npm run dev` (or F5 in VS Code/VS 2026)
+**`aspire` mode (default)** — `npm run dev -- --engine rancher` or `npm run dev -- --engine podman` (or F5 in VS Code/VS 2026 with the same environment)
 - Apps run **native** (.NET via dotnet, Next.js/Svelte/Docusaurus/status via npm dev scripts, exp via uvicorn) and are reachable at `http://localhost:<port>` (api: 5000, website: 3000, exp: 5002, cv: 4173, docs: 3100, status: 3002). Hot reload preserved.
-- Infrastructure (SQL Server, Cosmos vNext emulator, Azurite, Redis) runs as containers spawned by Aspire 13.x's AppHost (`tooling/AppHost/Program.cs`) — native Aspire integrations, not Docker Compose.
+- Infrastructure (SQL Server, Cosmos vNext emulator, Azurite, Redis) runs as containers spawned by Aspire 13.x's AppHost (`tooling/AppHost/Program.cs`) through the selected Rancher Desktop or Podman Desktop engine — native Aspire integrations, not Docker Compose.
 - Aspire dashboard at `https://localhost:17080` (auto-opens on AppHost start) with live OTel traces / metrics / logs and clickable URLs / health badges per resource.
 
-**`selfhost` mode (advanced)** — `npm run dev:selfhost`
-- Everything containerized including apps. Existing Compose flow (`infra/Local/{Storage,Management,Backend,Frontend}/docker-compose.yml`), unchanged.
+**`selfhost` mode (advanced)** — `npm run dev:selfhost -- --engine rancher` or `npm run dev:selfhost -- --engine podman`
+- Everything containerized including apps. Existing Compose flow (`infra/Local/{Storage,Management,Backend,Frontend}/docker-compose.yml`) runs through the selected engine adapter.
 - Use when auditing container behavior, validating CI parity, or testing a deploy-mock-of-prod configuration.
 
 **Single-service standalone** — `npm run dev:website`, `npm run dev:api`, etc.

@@ -42,6 +42,18 @@
       "problemMatcher": []
     },
     {
+      "label": "Aspire: run [Podman]",
+      "type": "shell",
+      "command": "npm run dev:aspire:podman",
+      "problemMatcher": []
+    },
+    {
+      "label": "Aspire: run [Rancher]",
+      "type": "shell",
+      "command": "npm run dev:aspire:rancher",
+      "problemMatcher": []
+    },
+    {
         "label": "build",
         "command": "dotnet",
         "type": "process",
