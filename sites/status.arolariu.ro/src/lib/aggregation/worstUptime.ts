@@ -15,12 +15,13 @@ export interface WorstUptime {
 export function computeWorstUptime(services: readonly ServiceSeries[]): WorstUptime {
   if (services.length === 0) return {service: "", uptime: 100};
   let worst: WorstUptime = {service: "", uptime: Infinity};
-  for (const s of services) {
-    const uptime = weightedUptime(s.buckets);
-    if (uptime < worst.uptime || (uptime === worst.uptime && s.service < worst.service)) {
-      worst = {service: s.service, uptime};
+  for (const serviceSeries of services) {
+    const uptime = weightedUptime(serviceSeries.buckets);
+    if (uptime < worst.uptime || (uptime === worst.uptime && serviceSeries.service < worst.service)) {
+      worst = {service: serviceSeries.service, uptime};
     }
   }
+  // eslint-disable-next-line capitalized-comments -- v8 ignore directive is case-sensitive.
   /* v8 ignore next */
   return worst.uptime === Infinity ? {service: "", uptime: 100} : worst;
 }

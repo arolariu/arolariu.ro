@@ -7,9 +7,9 @@ const MS_PER_DAY = 86_400_000;
  * window. Buckets with unparseable timestamps are dropped (finite check).
  */
 function filterBuckets(buckets: readonly Bucket[], cutoffMs: number, nowMs: number): Bucket[] {
-  return buckets.filter((b) => {
-    const t = Date.parse(b.t);
-    return Number.isFinite(t) && t >= cutoffMs && t <= nowMs;
+  return buckets.filter((bucket) => {
+    const timestamp = Date.parse(bucket.t);
+    return Number.isFinite(timestamp) && timestamp >= cutoffMs && timestamp <= nowMs;
   });
 }
 
@@ -24,15 +24,23 @@ function filterBuckets(buckets: readonly Bucket[], cutoffMs: number, nowMs: numb
  */
 export function sliceWindow(file: AggregateFile, window: FilterWindow): AggregateFile {
   const nowMs = Date.now();
+  // eslint-disable-next-line security/detect-object-injection -- window is constrained to the FilterWindow union.
   const cutoffMs = nowMs - WINDOW_CONFIGS[window].days * MS_PER_DAY;
   return {
     ...file,
-    services: file.services.map((s) => {
-      const slicedBuckets = filterBuckets(s.buckets, cutoffMs, nowMs);
-      const subSeries = s.subSeries
-        ? Object.fromEntries(Object.entries(s.subSeries).map(([k, v]) => [k, filterBuckets(v, cutoffMs, nowMs)]))
+    services: file.services.map((serviceSeries) => {
+      const slicedBuckets = filterBuckets(serviceSeries.buckets, cutoffMs, nowMs);
+      const subSeries = serviceSeries.subSeries
+        ? Object.fromEntries(
+            Object.entries(serviceSeries.subSeries).map(([name, buckets]) => [
+              name,
+              filterBuckets(buckets, cutoffMs, nowMs),
+            ]),
+          )
         : undefined;
-      return subSeries !== undefined ? {...s, buckets: slicedBuckets, subSeries} : {...s, buckets: slicedBuckets};
+      return subSeries === undefined
+        ? {...serviceSeries, buckets: slicedBuckets}
+        : {...serviceSeries, buckets: slicedBuckets, subSeries};
     }),
   };
 }

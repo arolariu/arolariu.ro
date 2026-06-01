@@ -20,9 +20,9 @@ import type {Bucket} from "../types/status";
 export function weightedUptime(buckets: readonly Bucket[]): number {
   let healthy = 0;
   let total = 0;
-  for (const b of buckets) {
-    healthy += b.probes.healthy;
-    total += b.probes.total;
+  for (const bucket of buckets) {
+    healthy += bucket.probes.healthy;
+    total += bucket.probes.total;
   }
   if (total === 0) return 100;
   return Math.round((healthy / total) * 100_000) / 1000;

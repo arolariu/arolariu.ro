@@ -131,6 +131,7 @@
       onclick={onClose}
       role="presentation"></div>
   {/if}
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex (modal dialog receives programmatic focus for focus-trap setup) -->
   <div
     bind:this={surfaceEl}
     id={surfaceId}

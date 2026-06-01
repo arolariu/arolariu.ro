@@ -6,12 +6,12 @@ import type {Bucket} from "../types/status";
  * `SubServiceRow`).
  *
  * Note: the overview summary uses a parallel, services-level
- * `computeAvgLatency(services)` in `summaryStats.ts` — same math, different
- * shape — kept separate so each call site reads the type it naturally holds
+ * `computeAvgLatency(services)` in `summaryStats.ts` - same math, different
+ * shape - kept separate so each call site reads the type it naturally holds
  * (a bucket array vs. a service-series list).
  */
 export function computeAvgLatency(buckets: readonly Bucket[]): number {
   if (buckets.length === 0) return 0;
-  const sum = buckets.reduce((acc, b) => acc + b.latency.p50, 0);
+  const sum = buckets.reduce((accumulator, bucket) => accumulator + bucket.latency.p50, 0);
   return Math.round(sum / buckets.length);
 }

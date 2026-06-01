@@ -20,6 +20,11 @@ import {
 /** Display order for service rows on the status page. Drives `orderedServices`. */
 export const SERVICE_DISPLAY_ORDER: readonly ServiceId[] = ["arolariu.ro", "api.arolariu.ro", "exp.arolariu.ro", "cv.arolariu.ro"];
 
+function orderIndex(serviceId: ServiceId): number {
+  const index = SERVICE_DISPLAY_ORDER.indexOf(serviceId);
+  return index === -1 ? SERVICE_DISPLAY_ORDER.length : index;
+}
+
 /**
  * Returns services sorted by the canonical display order. Unknown service
  * ids sort to the end (indexOf returns -1, which `-b.idx` handles naturally —
@@ -27,11 +32,7 @@ export const SERVICE_DISPLAY_ORDER: readonly ServiceId[] = ["arolariu.ro", "api.
  */
 export function orderedServices(file: AggregateFile | null): readonly ServiceSeries[] {
   if (!file) return [];
-  const orderIndex = (id: string): number => {
-    const idx = SERVICE_DISPLAY_ORDER.indexOf(id as ServiceId);
-    return idx === -1 ? SERVICE_DISPLAY_ORDER.length : idx;
-  };
-  return [...file.services].sort((a, b) => orderIndex(a.service) - orderIndex(b.service));
+  return file.services.toSorted((left, right) => orderIndex(left.service) - orderIndex(right.service));
 }
 
 /**
@@ -40,6 +41,7 @@ export function orderedServices(file: AggregateFile | null): readonly ServiceSer
  */
 export function bucketDurationMsFor(bucketSize: BucketSize | undefined): number {
   if (bucketSize === undefined) return BUCKET_SIZE_TO_MS["30m"];
+  // eslint-disable-next-line security/detect-object-injection -- bucketSize is constrained to the BucketSize union.
   return BUCKET_SIZE_TO_MS[bucketSize];
 }
 
@@ -49,5 +51,6 @@ export function bucketDurationMsFor(bucketSize: BucketSize | undefined): number 
  * windows where the 7-day breakdown would just be two samples per bar.
  */
 export function showWeekdayChart(windowFilter: FilterWindow): boolean {
+  // eslint-disable-next-line security/detect-object-injection -- windowFilter is constrained to the FilterWindow union.
   return WINDOW_CONFIGS[windowFilter].showWeekday;
 }

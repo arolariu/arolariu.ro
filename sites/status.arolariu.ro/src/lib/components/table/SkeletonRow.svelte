@@ -17,7 +17,7 @@
     indent?: boolean;
   }
   let {segmentCount = 48, indent = false}: Props = $props();
-  const segments = Array.from({length: segmentCount}, (_, i) => i);
+  const segments = $derived(Array.from({length: segmentCount}, (_, index) => index));
 </script>
 
 <div

@@ -27,7 +27,7 @@ const DATA_BASE = "https://raw.githubusercontent.com/arolariu/arolariu.ro/status
 /** Cache TTL — 30 minutes, matching the upstream aggregator's cron cadence. */
 const CACHE_TTL_MS = 30 * 60 * 1000;
 
-/** localStorage key prefix. Keys are `{prefix}{granularity}`. */
+/** LocalStorage key prefix. Keys are `{prefix}{granularity}`. */
 const CACHE_PREFIX = "status.arolariu.ro/cache:";
 
 /** Which aggregate file to fetch (`fine` / `hourly` / `daily`). */
@@ -44,6 +44,11 @@ const memory = new Map<Granularity, CachedAggregate>();
 
 /** In-memory incidents cache (single file, no keying). */
 let incidentsMemory: {data: IncidentsFile; fetchedAt: number} | null = null;
+
+function cacheIncidents(data: IncidentsFile, fetchedAt: number): IncidentsFile {
+  incidentsMemory = {data, fetchedAt};
+  return data;
+}
 
 /**
  * Error class thrown by fetch helpers on non-2xx responses or schema failures.
@@ -63,10 +68,13 @@ export class StatusDataError extends Error {
  * Safe to call during SSR — returns false when `window` is absent.
  */
 function isHardReload(): boolean {
+  const browserWindow = globalThis.window as Window | undefined;
+  // eslint-disable-next-line capitalized-comments -- v8 ignore directive is case-sensitive.
   /* v8 ignore next 2 */
-  if (typeof window === "undefined") return false;
-  const entries = performance.getEntriesByType?.("navigation") ?? [];
+  if (browserWindow === undefined) return false;
+  const entries = globalThis.performance.getEntriesByType?.("navigation") ?? [];
   const entry = entries[0] as PerformanceNavigationTiming | undefined;
+  // eslint-disable-next-line capitalized-comments -- v8 ignore directive is case-sensitive.
   /* v8 ignore next 2 */
   if (!entry || entry.type !== "reload") return false;
   const fromCache = (entry as PerformanceNavigationTiming & {deliveryType?: string}).deliveryType === "cache" || entry.transferSize === 0;
@@ -74,14 +82,19 @@ function isHardReload(): boolean {
 }
 
 // Module-load-time side effect: a hard reload clears the localStorage cache,
-// forcing the next fetch to go to the network. Skipped on SSR.
-if (typeof window !== "undefined" && isHardReload()) {
-  const keysToRemove: string[] = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (k?.startsWith(CACHE_PREFIX)) keysToRemove.push(k);
+// Forcing the next fetch to go to the network. Skipped on SSR.
+const browserWindow = globalThis.window as Window | undefined;
+if (browserWindow !== undefined && isHardReload()) {
+  try {
+    const keysToRemove: string[] = [];
+    for (let index = 0; index < globalThis.localStorage.length; index += 1) {
+      const key = globalThis.localStorage.key(index);
+      if (key?.startsWith(CACHE_PREFIX)) keysToRemove.push(key);
+    }
+    for (const key of keysToRemove) globalThis.localStorage.removeItem(key);
+  } catch {
+    /* LocalStorage unavailable */
   }
-  for (const k of keysToRemove) localStorage.removeItem(k);
 }
 
 /**
@@ -97,8 +110,9 @@ if (typeof window !== "undefined" && isHardReload()) {
  */
 export async function fetchAggregate(granularity: Granularity): Promise<AggregateFile> {
   // Local dev / preview shortcut: synthesize data relative to Date.now() so
-  // the UI always shows "recent" timestamps without hitting the network.
+  // The UI always shows "recent" timestamps without hitting the network.
   // The production Azure SWA hostname never matches isLocalHost().
+  // eslint-disable-next-line capitalized-comments -- v8 ignore directive is case-sensitive.
   /* v8 ignore next */
   if (isLocalHost()) return generateMockAggregate(granularity);
 
@@ -107,7 +121,7 @@ export async function fetchAggregate(granularity: Granularity): Promise<Aggregat
 
   const storageKey = `${CACHE_PREFIX}${granularity}`;
   try {
-    const stored = localStorage.getItem(storageKey);
+    const stored = globalThis.localStorage.getItem(storageKey);
     if (stored) {
       const parsed = JSON.parse(stored) as {fetchedAt?: number; data?: unknown};
       if (typeof parsed.fetchedAt === "number" && Date.now() - parsed.fetchedAt < CACHE_TTL_MS && isAggregateFile(parsed.data)) {
@@ -116,7 +130,7 @@ export async function fetchAggregate(granularity: Granularity): Promise<Aggregat
       }
     }
   } catch {
-    /* localStorage unavailable */
+    /* LocalStorage unavailable */
   }
 
   const response = await fetch(`${DATA_BASE}/${granularity}.json`, {cache: "no-store"});
@@ -127,9 +141,9 @@ export async function fetchAggregate(granularity: Granularity): Promise<Aggregat
   const fetchedAt = Date.now();
   memory.set(granularity, {data: json, fetchedAt});
   try {
-    localStorage.setItem(storageKey, JSON.stringify({fetchedAt, data: json}));
+    globalThis.localStorage.setItem(storageKey, JSON.stringify({fetchedAt, data: json}));
   } catch {
-    /* quota exceeded */
+    /* Quota exceeded */
   }
 
   return json;
@@ -145,6 +159,7 @@ export async function fetchAggregate(granularity: Granularity): Promise<Aggregat
  * HTTP failure or schema mismatch.
  */
 export async function fetchIncidents(): Promise<IncidentsFile> {
+  // eslint-disable-next-line capitalized-comments -- v8 ignore directive is case-sensitive.
   /* v8 ignore next */
   if (isLocalHost()) return generateMockIncidents();
 
@@ -153,10 +168,10 @@ export async function fetchIncidents(): Promise<IncidentsFile> {
   }
   const response = await fetch(`${DATA_BASE}/incidents.json`, {cache: "no-store"});
   if (!response.ok) throw new StatusDataError(`HTTP ${response.status}`);
+  const fetchedAt = Date.now();
   const json: unknown = await response.json();
   if (!isIncidentsFile(json)) throw new StatusDataError("schema mismatch");
-  incidentsMemory = {data: json, fetchedAt: Date.now()};
-  return json;
+  return cacheIncidents(json, fetchedAt);
 }
 
 /**
@@ -169,12 +184,12 @@ export function invalidateAllCaches(): void {
   incidentsMemory = null;
   try {
     const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k?.startsWith(CACHE_PREFIX)) keysToRemove.push(k);
+    for (let index = 0; index < globalThis.localStorage.length; index += 1) {
+      const key = globalThis.localStorage.key(index);
+      if (key?.startsWith(CACHE_PREFIX)) keysToRemove.push(key);
     }
-    for (const k of keysToRemove) localStorage.removeItem(k);
+    for (const key of keysToRemove) globalThis.localStorage.removeItem(key);
   } catch {
-    /* localStorage unavailable */
+    /* LocalStorage unavailable */
   }
 }

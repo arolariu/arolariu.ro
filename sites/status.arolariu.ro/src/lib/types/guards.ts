@@ -25,39 +25,112 @@ import {
   type SubCheck,
 } from "./status";
 
-/** True when `v` is a plain object (not an array, not `null`). */
-function isObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === "object" && v !== null && !Array.isArray(v);
+type SubCheckCandidate = Partial<Record<keyof SubCheck, unknown>>;
+type ProbeResultCandidate = Partial<Record<keyof ProbeResult, unknown>>;
+type BucketCandidate = Partial<Record<keyof Bucket, unknown>>;
+type ServiceSeriesCandidate = Partial<Record<keyof ServiceSeries, unknown>>;
+type IncidentsFileCandidate = Partial<Record<keyof IncidentsFile, unknown>>;
+type AggregateFileCandidate = Partial<Record<keyof AggregateFile, unknown>>;
+
+interface ProbeCountsCandidate {
+  readonly healthy?: unknown;
+  readonly total?: unknown;
 }
 
-/** True when `v` is a finite, non-negative number. */
-function isNonNegativeNumber(v: unknown): v is number {
-  return typeof v === "number" && Number.isFinite(v) && v >= 0;
+interface LatencyCandidate {
+  readonly p50?: unknown;
+  readonly p75?: unknown;
+  readonly p95?: unknown;
+  readonly p99?: unknown;
+}
+
+interface WorstSubCheckCandidate {
+  readonly name?: unknown;
+  readonly status?: unknown;
+  readonly description?: unknown;
+}
+
+interface IncidentCandidate {
+  readonly id?: unknown;
+  readonly service?: unknown;
+  readonly subCheck?: unknown;
+  readonly status?: unknown;
+  readonly startedAt?: unknown;
+  readonly severity?: unknown;
+  readonly reason?: unknown;
+  readonly probeCount?: unknown;
+  readonly resolvedAt?: unknown;
+  readonly durationMs?: unknown;
+}
+
+/** True when `value` is a plain object (not an array, not `null`). */
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** True when `value` is a finite, non-negative number. */
+function isNonNegativeNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
+function isOptionalString(value: unknown): boolean {
+  return value === undefined || typeof value === "string";
+}
+
+function isOptionalNumberArray(value: unknown): boolean {
+  return value === undefined || (Array.isArray(value) && value.every(isNonNegativeNumber));
+}
+
+function hasValidProbeCounts(value: unknown): value is ProbeCountsCandidate {
+  if (!isObject(value)) return false;
+  const candidate = value as ProbeCountsCandidate;
+  return (
+    isNonNegativeNumber(candidate.healthy) &&
+    isNonNegativeNumber(candidate.total) &&
+    candidate.healthy <= candidate.total
+  );
+}
+
+function hasValidLatency(value: unknown): value is LatencyCandidate {
+  if (!isObject(value)) return false;
+  const candidate = value as LatencyCandidate;
+  return (
+    isNonNegativeNumber(candidate.p50) &&
+    isNonNegativeNumber(candidate.p99) &&
+    candidate.p50 <= candidate.p99 &&
+    (candidate.p75 === undefined || isNonNegativeNumber(candidate.p75)) &&
+    (candidate.p95 === undefined || isNonNegativeNumber(candidate.p95))
+  );
 }
 
 /** Guard for the `HealthStatus` union. */
-export function isHealthStatus(v: unknown): v is HealthStatus {
-  return v === "Healthy" || v === "Degraded" || v === "Unhealthy";
+export function isHealthStatus(value: unknown): value is HealthStatus {
+  return value === "Healthy" || value === "Degraded" || value === "Unhealthy";
+}
+
+function isWorstSubCheck(value: unknown): value is WorstSubCheckCandidate {
+  if (!isObject(value)) return false;
+  const candidate = value as WorstSubCheckCandidate;
+  return typeof candidate.name === "string" && isHealthStatus(candidate.status) && isOptionalString(candidate.description);
 }
 
 /** Guard for a known `ServiceId`. Strings outside the union are rejected. */
-export function isServiceId(v: unknown): v is ServiceId {
-  return typeof v === "string" && (SERVICE_IDS as readonly string[]).includes(v);
+export function isServiceId(value: unknown): value is ServiceId {
+  return typeof value === "string" && (SERVICE_IDS as readonly string[]).includes(value);
 }
 
 /** Validates a sub-check shape: required name/status/durationMs, optional description/sampleDurationsMs. */
-export function isSubCheck(v: unknown): v is SubCheck {
-  if (!isObject(v)) return false;
-  if (typeof v["name"] !== "string") return false;
-  if (!isHealthStatus(v["status"])) return false;
-  if (!isNonNegativeNumber(v["durationMs"])) return false;
-  if (v["description"] !== undefined && typeof v["description"] !== "string") return false;
-  const sampleDurations = v["sampleDurationsMs"];
-  if (sampleDurations !== undefined) {
-    if (!Array.isArray(sampleDurations)) return false;
-    if (!sampleDurations.every(isNonNegativeNumber)) return false;
-  }
-  return true;
+export function isSubCheck(value: unknown): value is SubCheck {
+  if (!isObject(value)) return false;
+  const candidate = value as SubCheckCandidate;
+  const {name, status, durationMs, description, sampleDurationsMs} = candidate;
+  return (
+    typeof name === "string" &&
+    isHealthStatus(status) &&
+    isNonNegativeNumber(durationMs) &&
+    isOptionalString(description) &&
+    isOptionalNumberArray(sampleDurationsMs)
+  );
 }
 
 /**
@@ -65,28 +138,22 @@ export function isSubCheck(v: unknown): v is SubCheck {
  * current multi-sample shape (`sampleCount >= 1`). `subChecks`, when present,
  * must be an array of valid sub-checks — one bad entry rejects the whole probe.
  */
-export function isProbeResult(v: unknown): v is ProbeResult {
-  if (!isObject(v)) return false;
-  if (!isServiceId(v["service"])) return false;
-  if (typeof v["timestamp"] !== "string") return false;
-  if (!isNonNegativeNumber(v["latencyMs"])) return false;
-  if (!isNonNegativeNumber(v["httpStatus"])) return false;
-  if (!isHealthStatus(v["overall"])) return false;
-  if (v["error"] !== undefined && typeof v["error"] !== "string") return false;
-  const subs = v["subChecks"];
-  if (subs !== undefined) {
-    if (!Array.isArray(subs)) return false;
-    if (!subs.every(isSubCheck)) return false;
-  }
-  if (v["sampleCount"] !== undefined) {
-    if (typeof v["sampleCount"] !== "number" || !Number.isFinite(v["sampleCount"]) || v["sampleCount"] < 1) return false;
-  }
-  const sampleLatencies = v["sampleLatenciesMs"];
-  if (sampleLatencies !== undefined) {
-    if (!Array.isArray(sampleLatencies)) return false;
-    if (!sampleLatencies.every(isNonNegativeNumber)) return false;
-  }
-  return true;
+export function isProbeResult(value: unknown): value is ProbeResult {
+  if (!isObject(value)) return false;
+  const candidate = value as ProbeResultCandidate;
+  const {service, timestamp, latencyMs, httpStatus, overall, error, subChecks, sampleCount, sampleLatenciesMs} = candidate;
+
+  return (
+    isServiceId(service) &&
+    typeof timestamp === "string" &&
+    isNonNegativeNumber(latencyMs) &&
+    isNonNegativeNumber(httpStatus) &&
+    isHealthStatus(overall) &&
+    isOptionalString(error) &&
+    (subChecks === undefined || (Array.isArray(subChecks) && subChecks.every(isSubCheck))) &&
+    (sampleCount === undefined || (typeof sampleCount === "number" && Number.isFinite(sampleCount) && sampleCount >= 1)) &&
+    isOptionalNumberArray(sampleLatenciesMs)
+  );
 }
 
 /**
@@ -97,46 +164,34 @@ export function isProbeResult(v: unknown): v is ProbeResult {
  *    validated as finite non-negative numbers when present.
  *  - Optional `worstSubCheck` shape matches `SubCheckSummary` when carried.
  */
-export function isBucket(v: unknown): v is Bucket {
-  if (!isObject(v)) return false;
-  if (typeof v["t"] !== "string") return false;
-  if (!isHealthStatus(v["status"])) return false;
-  const probes = v["probes"];
-  if (!isObject(probes)) return false;
-  if (!isNonNegativeNumber(probes["healthy"]) || !isNonNegativeNumber(probes["total"])) return false;
-  if (probes["healthy"] > probes["total"]) return false; // invariant
-  const latency = v["latency"];
-  if (!isObject(latency)) return false;
-  if (!isNonNegativeNumber(latency["p50"]) || !isNonNegativeNumber(latency["p99"])) return false;
-  if (latency["p50"] > latency["p99"]) return false; // invariant
-  // p75 / p95 are additive: accept when absent (legacy buckets),
-  // validate as finite non-negative numbers when present.
-  if (latency["p75"] !== undefined && !isNonNegativeNumber(latency["p75"])) return false;
-  if (latency["p95"] !== undefined && !isNonNegativeNumber(latency["p95"])) return false;
-  if (v["httpStatus"] !== undefined && !isNonNegativeNumber(v["httpStatus"])) return false;
-  const worst = v["worstSubCheck"];
-  if (worst !== undefined) {
-    if (!isObject(worst)) return false;
-    if (typeof worst["name"] !== "string") return false;
-    if (!isHealthStatus(worst["status"])) return false;
-    if (worst["description"] !== undefined && typeof worst["description"] !== "string") return false;
-  }
-  return true;
+export function isBucket(value: unknown): value is Bucket {
+  if (!isObject(value)) return false;
+  const candidate = value as BucketCandidate;
+  const {t: timestamp, status, probes, latency, httpStatus, worstSubCheck} = candidate;
+
+  return (
+    typeof timestamp === "string" &&
+    isHealthStatus(status) &&
+    hasValidProbeCounts(probes) &&
+    hasValidLatency(latency) &&
+    (httpStatus === undefined || isNonNegativeNumber(httpStatus)) &&
+    (worstSubCheck === undefined || isWorstSubCheck(worstSubCheck))
+  );
 }
 
 /** Validates a single service's series, including optional sub-series map. */
-export function isServiceSeries(v: unknown): v is ServiceSeries {
-  if (!isObject(v)) return false;
-  if (!isServiceId(v["service"])) return false;
-  if (!Array.isArray(v["buckets"])) return false;
-  if (!v["buckets"].every(isBucket)) return false;
-  const sub = v["subSeries"];
-  if (sub !== undefined) {
-    if (!isObject(sub)) return false;
-    for (const key of Object.keys(sub)) {
-      const series = sub[key];
-      if (!Array.isArray(series) || !series.every(isBucket)) return false;
-    }
+export function isServiceSeries(value: unknown): value is ServiceSeries {
+  if (!isObject(value)) return false;
+  const candidate = value as ServiceSeriesCandidate;
+  const {service, buckets, subSeries} = candidate;
+
+  if (!isServiceId(service)) return false;
+  if (!Array.isArray(buckets) || !buckets.every(isBucket)) return false;
+  if (subSeries === undefined) return true;
+  if (!isObject(subSeries)) return false;
+
+  for (const series of Object.values(subSeries)) {
+    if (!Array.isArray(series) || !series.every(isBucket)) return false;
   }
   return true;
 }
@@ -157,17 +212,18 @@ const VALID_AGGREGATE_PAIRS: ReadonlyMap<string, 14 | 90 | 365> = new Map([
  * is one of the three canonical combinations (reject mismatched pairs) and
  * that every service's series passes `isServiceSeries`.
  */
-export function isAggregateFile(v: unknown): v is AggregateFile {
-  if (!isObject(v)) return false;
-  if (typeof v["generatedAt"] !== "string") return false;
-  const bucketSize = v["bucketSize"];
+export function isAggregateFile(value: unknown): value is AggregateFile {
+  if (!isObject(value)) return false;
+  const candidate = value as AggregateFileCandidate;
+  const {generatedAt, bucketSize, windowDays, services} = candidate;
+  if (typeof generatedAt !== "string") return false;
   if (typeof bucketSize !== "string") return false;
   const expectedWindowDays = VALID_AGGREGATE_PAIRS.get(bucketSize);
-  if (expectedWindowDays === undefined) return false; // unknown bucketSize
-  if (v["windowDays"] !== expectedWindowDays) return false; // mismatched pair
-  if (!Array.isArray(v["services"])) return false;
-  if (!v["services"].every(isServiceSeries)) return false;
-  return true;
+  // Unknown bucketSize.
+  if (expectedWindowDays === undefined) return false;
+  // Mismatched pair.
+  if (windowDays !== expectedWindowDays) return false;
+  return Array.isArray(services) && services.every(isServiceSeries);
 }
 
 /**
@@ -177,36 +233,35 @@ export function isAggregateFile(v: unknown): v is AggregateFile {
  *    `durationMs` as non-negative number).
  *  - Any other `status` value is rejected.
  */
-export function isIncident(v: unknown): v is Incident {
-  if (!isObject(v)) return false;
-  if (typeof v["id"] !== "string") return false;
-  if (!isServiceId(v["service"])) return false;
-  if (v["subCheck"] !== undefined && typeof v["subCheck"] !== "string") return false;
-  if (typeof v["startedAt"] !== "string") return false;
-  if (v["severity"] !== "Degraded" && v["severity"] !== "Unhealthy") return false;
-  if (typeof v["reason"] !== "string") return false;
-  if (!isNonNegativeNumber(v["probeCount"])) return false;
+export function isIncident(value: unknown): value is Incident {
+  if (!isObject(value)) return false;
+  const candidate = value as IncidentCandidate;
+  const {id, service, subCheck, startedAt, severity, reason, probeCount, status, resolvedAt, durationMs} = candidate;
+
+  if (typeof id !== "string") return false;
+  if (!isServiceId(service)) return false;
+  if (subCheck !== undefined && typeof subCheck !== "string") return false;
+  if (typeof startedAt !== "string") return false;
+  if (severity !== "Degraded" && severity !== "Unhealthy") return false;
+  if (typeof reason !== "string") return false;
+  if (!isNonNegativeNumber(probeCount)) return false;
 
   // Discriminated on status: open incidents must NOT carry resolvedAt/durationMs;
-  // resolved incidents MUST carry both.
-  if (v["status"] === "open") {
-    if (v["resolvedAt"] !== undefined) return false;
-    if (v["durationMs"] !== undefined) return false;
-    return true;
+  // Resolved incidents MUST carry both.
+  if (status === "open") {
+    return resolvedAt === undefined && durationMs === undefined;
   }
-  if (v["status"] === "resolved") {
-    if (typeof v["resolvedAt"] !== "string") return false;
-    if (!isNonNegativeNumber(v["durationMs"])) return false;
-    return true;
+
+  if (status === "resolved") {
+    return typeof resolvedAt === "string" && isNonNegativeNumber(durationMs);
   }
+
   return false;
 }
 
 /** Validates the top-level incidents file (generatedAt + array of incidents). */
-export function isIncidentsFile(v: unknown): v is IncidentsFile {
-  if (!isObject(v)) return false;
-  if (typeof v["generatedAt"] !== "string") return false;
-  if (!Array.isArray(v["incidents"])) return false;
-  if (!v["incidents"].every(isIncident)) return false;
-  return true;
+export function isIncidentsFile(value: unknown): value is IncidentsFile {
+  if (!isObject(value)) return false;
+  const candidate = value as IncidentsFileCandidate;
+  return typeof candidate.generatedAt === "string" && Array.isArray(candidate.incidents) && candidate.incidents.every(isIncident);
 }

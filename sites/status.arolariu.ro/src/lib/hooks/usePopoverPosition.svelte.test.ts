@@ -73,11 +73,11 @@ describe("usePopoverPosition (reactive hook)", () => {
     });
 
     const root = $effect.root(() => {
-      const getPos = usePopoverPosition(
-        () => null, // anchor is null
-        () => null,
-        () => true, // active = true
-      );
+      const getPos = usePopoverPosition({
+        anchor: () => null,
+        tooltipElement: () => null,
+        active: () => true,
+      });
       flushSync();
       // Recompute runs but exits early at `if (!el) return`
       expect(getPos()).toEqual({top: 0, left: 0, flipHoriz: false});
@@ -90,7 +90,7 @@ describe("usePopoverPosition (reactive hook)", () => {
       const anchor = () => null;
       const tooltipEl = () => null;
       const active = () => false;
-      const getPos = usePopoverPosition(anchor, tooltipEl, active);
+      const getPos = usePopoverPosition({anchor, tooltipElement: tooltipEl, active});
       flushSync();
       const pos = getPos();
       expect(pos).toEqual({top: 0, left: 0, flipHoriz: false});
@@ -120,12 +120,12 @@ describe("usePopoverPosition (reactive hook)", () => {
       let isActive = $state(false);
       let currentAnchor = $state<HTMLElement | null>(null);
 
-      const getPos = usePopoverPosition(
-        () => currentAnchor,
-        () => tooltipEl,
-        () => isActive,
-        200,
-      );
+      const getPos = usePopoverPosition({
+        anchor: () => currentAnchor,
+        tooltipElement: () => tooltipEl,
+        active: () => isActive,
+        fallbackWidth: 200,
+      });
 
       flushSync();
       expect(getPos()).toEqual({top: 0, left: 0, flipHoriz: false});
@@ -161,12 +161,12 @@ describe("usePopoverPosition (reactive hook)", () => {
       let isActive = $state(true);
       void isActive;
 
-      const getPos = usePopoverPosition(
-        () => anchorEl,
-        () => null,
-        () => true,
-        280, // fallback width
-      );
+      const getPos = usePopoverPosition({
+        anchor: () => anchorEl,
+        tooltipElement: () => null,
+        active: () => true,
+        fallbackWidth: 280,
+      });
 
       flushSync();
       const pos = getPos();
@@ -194,11 +194,11 @@ describe("usePopoverPosition (reactive hook)", () => {
     const root = $effect.root(() => {
       let isActive = $state(true);
 
-      usePopoverPosition(
-        () => anchorEl,
-        () => null,
-        () => isActive,
-      );
+      usePopoverPosition({
+        anchor: () => anchorEl,
+        tooltipElement: () => null,
+        active: () => isActive,
+      });
 
       flushSync();
       // Deactivate — should trigger cleanup

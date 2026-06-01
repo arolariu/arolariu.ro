@@ -56,6 +56,9 @@ describe("isSubCheck", () => {
   it("rejects negative values inside sampleDurationsMs", () => {
     expect(isSubCheck({name: "mssql", status: "Healthy", durationMs: 12, sampleDurationsMs: [10, -1, 12]})).toBe(false);
   });
+  it("rejects malformed optional sub-check descriptions", () => {
+    expect(isSubCheck({name: "mssql", status: "Healthy", durationMs: 12, description: 42})).toBe(false);
+  });
 });
 
 describe("isProbeResult", () => {
@@ -134,6 +137,9 @@ describe("isServiceSeries", () => {
   it("accepts with subSeries", () => {
     expect(isServiceSeries({service: "api.arolariu.ro", buckets, subSeries: {mssql: buckets}})).toBe(true);
   });
+  it("rejects subSeries entries that are not bucket arrays", () => {
+    expect(isServiceSeries({service: "api.arolariu.ro", buckets, subSeries: {mssql: {not: "an array"}}})).toBe(false);
+  });
 });
 
 describe("isAggregateFile", () => {
@@ -190,6 +196,9 @@ describe("isIncident", () => {
   });
   it("rejects negative probeCount", () => {
     expect(isIncident({...validOpen, probeCount: -1})).toBe(false);
+  });
+  it("rejects incidents with an unsupported status", () => {
+    expect(isIncident({...validOpen, status: "paused"})).toBe(false);
   });
 });
 
