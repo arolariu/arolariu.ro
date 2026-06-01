@@ -49,7 +49,7 @@ export async function runAspire(runner: CommandRunner = defaultRunner): Promise<
   const result = await runner.run(command, {env: command.env, stdio: "inherit"});
 
   if (result.code !== 0) {
-    throw new Error(result.output);
+    throw new Error(`Aspire AppHost exited with code ${result.code} for engine '${adapter.engine}'.`);
   }
 }
 
