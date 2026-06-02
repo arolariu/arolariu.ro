@@ -22,12 +22,6 @@ declare module "*.module.scss" {
   export default classes;
 }
 
-// SVG imports (Next.js treats SVGs as static assets)
-declare module "*.svg" {
-  const content: string;
-  export default content;
-}
-
 // Raw-text imports (e.g., `import csv from "./file.csv?raw"`).
 // Supported by Turbopack (Next.js) and Vite (Vitest) out of the box;
 // the `?raw` query suffix tells the bundler to embed the file's text
