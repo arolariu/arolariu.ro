@@ -19,7 +19,7 @@ services:
     image: "mcr.microsoft.com/mssql/server:2022-latest"
     container_name: "mssql"
     environment:
-      MSSQL_SA_PASSWORD: "qazWSXedcRFV1234!"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:-}"
       ACCEPT_EULA: "Y"
     healthcheck:
       test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -P \"$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" -No"]

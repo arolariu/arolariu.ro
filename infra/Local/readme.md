@@ -4,32 +4,32 @@
 
 Two coexisting modes for local development.
 
-### Mode 1: Aspire (default — `npm run dev`)
+### Mode 1: Aspire (default — `npm run dev -- --engine <rancher|podman>`)
 
 Recommended for ~95% of dev work. The .NET Aspire 13.x AppHost (under `tooling/AppHost`)
 declares and orchestrates everything natively:
 
-- **Infrastructure**: SQL Server, Cosmos vNext emulator, Azurite, Redis — all spawned by Aspire's native integrations (`AddSqlServer`, `AddAzureCosmosDB().RunAsEmulator()`, etc.) using the same ports/credentials as the Selfhost-mode Compose files so `exp`'s `config.docker.json` keeps working.
+- **Infrastructure**: SQL Server, Cosmos vNext emulator, Azurite, Redis — all spawned by Aspire's native integrations (`AddSqlServer`, `AddAzureCosmosDB().RunAsEmulator()`, etc.) through the selected Rancher Desktop or Podman Desktop engine, using the same ports/credentials as the Selfhost-mode Compose files so `exp`'s `config.docker.json` keeps working.
 - **Apps as native processes**: exp (Python uvicorn via `AddUvicornApp`), API (.NET via `AddProject`), Website (Next.js via `AddNextJsApp`), CV/status (SvelteKit via `AddViteApp`), docs (Docusaurus via `AddJavaScriptApp`). Hot reload preserved.
 - **Direct service URLs**: api → `http://localhost:5000`, website → `https://localhost:3000`, exp → `http://localhost:5002`, cv → `http://localhost:4173`, docs → `http://localhost:3100`, status → `http://localhost:3002`.
 - **Aspire dashboard**: live OTel traces / metrics / logs at `https://localhost:17080`.
 
 In Aspire mode, the `infra/Local/{Storage,Backend,Frontend}/docker-compose.yml` files are NOT used — Aspire spawns its own containers directly.
 
-### Mode 2: Selfhost (advanced — `npm run dev:selfhost`)
+### Mode 2: Selfhost (advanced — `npm run dev:selfhost -- --engine <rancher|podman>`)
 
-Everything containerized via Docker Compose, including apps. Used for:
+Everything containerized via the selected Rancher Desktop or Podman Desktop Compose provider, including apps. Used for:
 - Auditing container behavior
 - CI parity validation
 - Testing deploy-mock-of-prod configurations
 
-The Selfhost flow is the rest of this README. It starts the Management + Storage + Backend + Frontend Compose stacks (with `--profile selfhost` to include containerized exp + apps).
+The Selfhost flow is the rest of this README. It starts the Management + Storage + Backend + Frontend Compose stacks (with `--profile selfhost` to include containerized exp + apps). Docker Desktop is deprecated and is not a supported local runtime for this repository.
 
 ---
 
 ## Selfhost mode — full setup
 
-This repository contains a complete containerized development environment for the arolariu.ro project. The setup uses Docker Compose to orchestrate multiple containers organized in logical groups (Management, Storage, Backend, Frontend), allowing developers to run the entire stack locally.
+This repository contains a complete containerized development environment for the arolariu.ro project. The setup uses an engine-aware Compose wrapper to orchestrate multiple containers organized in logical groups (Management, Storage, Backend, Frontend), allowing developers to run the entire stack locally with Rancher Desktop or Podman Desktop.
 
 ## Architecture
 
@@ -62,9 +62,11 @@ the application containers.
 
 ## Prerequisites
 
-- **Docker** (20.10.0 or higher) with Docker Compose v2
+- **Rancher Desktop** in Moby/dockerd mode, or **Podman Desktop** with `podman compose`
+- Docker Desktop is deprecated and is not a supported local runtime for this repository
 - **Node.js** ≥ 24 and **npm** ≥ 11 (for Azurite blob container init)
 - **Git** (to clone the repository)
+- `MSSQL_SA_PASSWORD` environment variable for the local SQL Server container. Keep it in your shell/session environment only; do not commit it to `.env` files, launch profiles, or source control.
 - 4GB+ RAM available for containers
 - 10GB+ of free disk space
 - _(Optional)_ **mkcert** — auto-installed by startup scripts for local HTTPS; install manually if auto-install fails ([guide](https://github.com/FiloSottile/mkcert#installation))
@@ -113,9 +115,15 @@ Both files are gitignored — they will never be committed.
 ### 4. Start the environment
 
 ```bash
-cd infra/Local
-./selfhost-start.sh    # Linux/macOS
-selfhost-start.bat     # Windows
+npm run dev:selfhost -- --engine rancher
+npm run dev:selfhost -- --engine podman
+```
+
+PowerShell example:
+
+```powershell
+$env:MSSQL_SA_PASSWORD = "<local strong password>"
+npm run dev:selfhost -- --engine rancher
 ```
 
 The startup process:
@@ -157,12 +165,101 @@ Open http://localhost:5002/admin to view and edit config values. Changes are
 ephemeral (reset on container restart). Feature flag toggles take effect on
 the next browser page load.
 
+## Container runtime engines
+
+### Rancher Desktop engine
+
+Rancher Desktop is a supported Docker Desktop replacement for local development.
+
+Required setup:
+
+1. Install Rancher Desktop.
+2. Select the Moby/dockerd container engine for the first supported migration path.
+3. Ensure Docker Desktop is stopped.
+4. Verify Rancher owns the Docker-compatible CLI:
+
+```powershell
+docker version
+```
+
+The output must identify Rancher Desktop or a Rancher-managed backend, not Docker Desktop.
+
+Run selfhost:
+
+```powershell
+npm run dev:selfhost -- --engine rancher
+npm run dev:selfhost:stop -- --engine rancher
+```
+
+Run Aspire:
+
+```powershell
+npm run dev:aspire -- --engine rancher
+```
+
+Rancher Desktop runs Aspire through its Moby/Docker-compatible backend, so the effective Aspire runtime value is `docker`.
+Rancher Desktop is selected through its Moby/Docker-compatible backend; Aspire/DCP sees this as `docker`, not as a separate `rancher-desktop` runtime.
+Ensure your editor process can find the selected runtime on PATH before using VS Code F5 profiles; the repository launch profiles do not hardcode OS-specific install paths.
+
+Docker Desktop is not a supported runtime for this repository.
+
+### Podman Desktop engine
+
+Podman Desktop is a supported Docker Desktop replacement for local development.
+
+Required setup:
+
+1. Install Podman Desktop.
+2. Create and start a Podman machine.
+3. Enable or install a Compose provider so `podman compose version` succeeds.
+4. Ensure Docker Desktop is stopped.
+
+Verify:
+
+```powershell
+podman --version
+podman compose version
+```
+
+If `podman compose version` reports a provider under `C:\Program Files\Docker\...`, install `podman-compose`
+and point Podman at it:
+
+```powershell
+python -m pip install --user podman-compose
+$env:PODMAN_COMPOSE_PROVIDER = "<path-to-podman-compose.exe>"
+```
+
+Run selfhost:
+
+```powershell
+npm run dev:selfhost -- --engine podman
+npm run dev:selfhost:stop -- --engine podman
+```
+
+Run Aspire:
+
+```powershell
+npm run dev:aspire -- --engine podman
+```
+
+All Podman selfhost commands go through `podman`; they must not call Docker Desktop.
+
+### Ad hoc Compose spin-ups
+
+Use the runtime wrapper instead of calling Docker Desktop:
+
+```powershell
+npm run containers:compose -- --engine rancher --file infra/Local/Storage/docker-compose.yml -- up -d
+npm run containers:compose -- --engine podman --file infra/Local/Storage/docker-compose.yml -- up -d
+```
+
+Every command uses the selected engine adapter. The helper does not support `--engine docker`.
+
 ## Stopping the Environment
 
 ```bash
-cd infra/Local
-./selfhost-stop.sh    # Linux/macOS
-selfhost-stop.bat     # Windows
+npm run dev:selfhost:stop -- --engine rancher
+npm run dev:selfhost:stop -- --engine podman
 ```
 
 ## HTTPS via Traefik + mkcert
@@ -225,7 +322,8 @@ Certs in `Management/certs/` don't expire for 2+ years. To regenerate:
 ```bash
 cd infra/Local/Management/certs
 mkcert -key-file local-key.pem -cert-file local-cert.pem "localhost" "*.localhost"
-docker restart traefik
+npm run dev:selfhost:stop -- --engine rancher
+npm run dev:selfhost -- --engine rancher
 ```
 
 ## Troubleshooting
@@ -237,15 +335,14 @@ docker restart traefik
 | Clerk auth errors | Verify Clerk keys in `Frontend/.env` match your Clerk dashboard |
 | Scan images not loading | Ensure Azurite has CORS enabled (done by `selfhost-start.sh`) |
 | Invoice creation fails | Check CosmosDB containers exist with correct partition keys |
-| API health unhealthy | Run `docker logs api-arolariu-ro` to see which dependency failed |
-| Container build stale | Use `docker compose ... up -d --build --force-recreate` |
+| API health unhealthy | Run `npm run dev:selfhost:logs -- --engine rancher` or `npm run dev:selfhost:logs -- --engine podman` to see dependency failures |
+| Container build stale | Use `npm run containers:compose -- --engine rancher --file infra/Local/Backend/docker-compose.yml -- up -d --build --force-recreate` |
 
 ### Viewing logs
 
 ```bash
-docker logs -f exp-arolariu-ro       # exp config service
-docker logs -f api-arolariu-ro       # backend API
-docker logs -f website-arolariu-ro   # frontend website
+npm run dev:selfhost:logs -- --engine rancher
+npm run dev:selfhost:logs -- --engine podman
 ```
 
 ## Contributing
