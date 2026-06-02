@@ -150,7 +150,7 @@ export function assertNonEmpty(dir: string, label: string): void {
     for (const name of readdirSync(d)) {
       const full = join(d, name);
       if (statSync(full).isDirectory()) walk(full);
-      else if (/\.mdx?$|\.json$/i.test(name)) count++;
+      else if (isDocumentationOutputFile(name)) count++;
     }
   };
   walk(dir);
@@ -171,6 +171,56 @@ const TS_REFERENCE_DIR = join(GENERATED_ROOT, 'ts-reference');
 const PYTHON_DIR = join(GENERATED_ROOT, 'experimental');
 const DOTNET_INTERNALS_DIR = join(GENERATED_ROOT, 'dotnet-internals');
 const API_ROOT = join(REPO_ROOT, 'sites', 'api.arolariu.ro');
+
+/**
+ * Required generated documentation tiers mounted by Docusaurus.
+ *
+ * @remarks
+ * Each path is relative to `_generated/` and must contain at least one
+ * extractor-produced file before normalization, landing-page generation, and
+ * prose sync. Root landing files (`index.md` / `README.md`) are ignored so
+ * synthetic Docusaurus pages cannot satisfy the deployment gate.
+ */
+export const REQUIRED_DOCUMENTATION_TIERS = [
+  {relativePath: join('ts-reference', 'components'), label: 'typedoc components'},
+  {relativePath: join('ts-reference', 'website'), label: 'typedoc website'},
+  {relativePath: 'experimental', label: 'pydoc-markdown'},
+  {relativePath: 'dotnet-internals', label: 'defaultdocumentation'},
+] as const;
+
+const ROOT_LANDING_FILE_NAMES = new Set(['index.md', 'index.mdx', 'readme.md', 'readme.mdx']);
+
+function isDocumentationOutputFile(fileName: string): boolean {
+  return /\.mdx?$|\.json$/i.test(fileName);
+}
+
+function countExtractorOutputFiles(dir: string, isRoot: boolean = true): number {
+  let count = 0;
+  for (const name of readdirSync(dir)) {
+    const full = join(dir, name);
+    if (statSync(full).isDirectory()) {
+      count += countExtractorOutputFiles(full, false);
+    } else if (isDocumentationOutputFile(name) && !(isRoot && ROOT_LANDING_FILE_NAMES.has(name.toLowerCase()))) {
+      count++;
+    }
+  }
+  return count;
+}
+
+/**
+ * Verify that every documentation tier mounted by Docusaurus contains extractor output.
+ *
+ * @param generatedRoot - Root `_generated` directory to validate.
+ */
+export function assertExpectedDocumentationTiers(generatedRoot: string = GENERATED_ROOT): void {
+  for (const tier of REQUIRED_DOCUMENTATION_TIERS) {
+    const tierRoot = join(generatedRoot, tier.relativePath);
+    if (!existsSync(tierRoot)) throw new Error(`${tier.label}: expected directory not found at ${tierRoot}`);
+    if (countExtractorOutputFiles(tierRoot) === 0) {
+      throw new Error(`${tier.label}: extracted 0 non-landing files into ${tierRoot}`);
+    }
+  }
+}
 
 /**
  * One .NET project whose XML docs are exposed on the docs site.
@@ -255,6 +305,38 @@ export function findDotnetBuildRoots(projects: readonly DotnetProject[]): readon
 }
 
 /**
+ * Build the DefaultDocumentation CLI arguments for one compiled assembly.
+ *
+ * @remarks
+ * The multi-value `--GeneratedAccessModifiers Public Protected Internal Private`
+ * form follows the DefaultDocumentation.Console 1.2.4 option shape verified via
+ * `defaultdocumentation --help` and parser behavior.
+ *
+ * @param dll - Absolute path to the compiled assembly.
+ * @param outDir - Absolute output directory for generated markdown.
+ * @returns CLI arguments passed to `defaultdocumentation`.
+ */
+export function getDefaultDocumentationArgs(dll: string, outDir: string): readonly string[] {
+  return [
+    '--AssemblyFilePath',
+    dll,
+    '--OutputDirectoryPath',
+    outDir,
+    '--FileNameFactory',
+    'Name',
+    '--GeneratedPages',
+    'Namespaces',
+    '--IncludeUndocumentedItems',
+    'true',
+    '--GeneratedAccessModifiers',
+    'Public',
+    'Protected',
+    'Internal',
+    'Private',
+  ];
+}
+
+/**
  * Discover every `.csproj` under `api.arolariu.ro/src/`, build the
  * minimum set of graph roots with one `dotnet build` call each (so
  * MSBuild covers the whole graph via ProjectReference transitivity),
@@ -283,10 +365,7 @@ async function runDotnetInternals(): Promise<string> {
     // silently works locally and only breaks on Linux CI.
     log += await runCommand(
       'defaultdocumentation',
-      ['--AssemblyFilePath', dll,
-       '--OutputDirectoryPath', outDir,
-       '--FileNameFactory', 'Name',
-       '--GeneratedPages', 'Namespaces'],
+      getDefaultDocumentationArgs(dll, outDir),
       API_ROOT,
       {buffered: true},
     );
@@ -405,6 +484,9 @@ async function main(): Promise<void> {
   flushExtractorLog('TypeScript (TypeDoc)', tsOut);
   flushExtractorLog('Python (pydoc-markdown)', pyOut);
   flushExtractorLog('.NET internals (DefaultDocumentation)', dotnetOut);
+  // Validate extractor output before normalization and synthetic landing pages
+  // can obscure missing-tier failures.
+  assertExpectedDocumentationTiers();
   await normalizeDirectory(TS_REFERENCE_DIR);
   await normalizeDirectory(PYTHON_DIR);
   await normalizeDirectory(DOTNET_INTERNALS_DIR);

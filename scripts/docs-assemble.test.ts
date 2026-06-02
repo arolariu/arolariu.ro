@@ -1,13 +1,15 @@
 import {describe, it, expect, beforeEach, afterEach} from 'vitest';
 import {mkdtempSync, rmSync, writeFileSync, mkdirSync, existsSync, readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
-import {join} from 'node:path';
+import {dirname, join} from 'node:path';
 import {
   syncProse,
   assertNonEmpty,
   runCommand,
   discoverDotnetProjects,
   findDotnetBuildRoots,
+  assertExpectedDocumentationTiers,
+  getDefaultDocumentationArgs,
 } from './docs-assemble';
 
 describe('syncProse', () => {
@@ -81,7 +83,7 @@ describe('discoverDotnetProjects', () => {
 
   function writeCsproj(rel: string, xml: string): void {
     const full = join(apiRoot, rel);
-    mkdirSync(full.replace(/[\/\\][^\/\\]+$/, ''), {recursive: true});
+    mkdirSync(dirname(full), {recursive: true});
     writeFileSync(full, xml);
   }
 
@@ -168,5 +170,89 @@ describe('runCommand (buffered mode)', () => {
     await expect(
       runCommand(process.execPath, ['-e', "process.stderr.write('boom'); process.exit(7)"], process.cwd(), {buffered: true}),
     ).rejects.toThrow(/exited with 7[\s\S]*boom/);
+  });
+});
+
+describe('docs assemble validation', () => {
+  const tempRoots: string[] = [];
+
+  function createTempRoot(): string {
+    const root = join(tmpdir(), `docs-assemble-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+    mkdirSync(root, {recursive: true});
+    tempRoots.push(root);
+    return root;
+  }
+
+  function writeTierFile(root: string, relativePath: string): void {
+    const full = join(root, relativePath);
+    mkdirSync(join(full, '..'), {recursive: true});
+    writeFileSync(full, '# Generated\n');
+  }
+
+  afterEach(() => {
+    for (const root of tempRoots.splice(0)) {
+      rmSync(root, {recursive: true, force: true});
+    }
+  });
+
+  it('accepts generated output only when every required documentation tier has content', () => {
+    const root = createTempRoot();
+    writeTierFile(root, 'ts-reference/components/classes/Button.md');
+    writeTierFile(root, 'ts-reference/website/functions/getMetadata.md');
+    writeTierFile(root, 'experimental/modules/settings.md');
+    writeTierFile(root, 'dotnet-internals/arolariu.Backend.Core/services/InvoiceService.md');
+
+    expect(() => assertExpectedDocumentationTiers(root)).not.toThrow();
+  });
+
+  it('rejects tiers containing only synthetic landing files', () => {
+    const root = createTempRoot();
+    writeTierFile(root, 'ts-reference/components/index.md');
+    writeTierFile(root, 'ts-reference/components/README.md');
+    writeTierFile(root, 'ts-reference/website/index.md');
+    writeTierFile(root, 'ts-reference/website/README.md');
+    writeTierFile(root, 'experimental/index.md');
+    writeTierFile(root, 'experimental/README.md');
+    writeTierFile(root, 'dotnet-internals/index.md');
+    writeTierFile(root, 'dotnet-internals/README.md');
+
+    expect(() => assertExpectedDocumentationTiers(root)).toThrow(
+      'typedoc components: extracted 0 non-landing files',
+    );
+  });
+
+  it('fails with a tier-specific error when generated output is missing', () => {
+    const root = createTempRoot();
+    writeTierFile(root, 'ts-reference/components/classes/Button.md');
+    writeTierFile(root, 'experimental/modules/settings.md');
+    writeTierFile(root, 'dotnet-internals/arolariu.Backend.Core/services/InvoiceService.md');
+
+    expect(() => assertExpectedDocumentationTiers(root)).toThrow(
+      'typedoc website: expected directory not found',
+    );
+  });
+});
+
+describe('DefaultDocumentation arguments', () => {
+  it('requests undocumented items and all supported access modifiers', () => {
+    const args = getDefaultDocumentationArgs('api.dll', 'out');
+
+    expect(args).toEqual([
+      '--AssemblyFilePath',
+      'api.dll',
+      '--OutputDirectoryPath',
+      'out',
+      '--FileNameFactory',
+      'Name',
+      '--GeneratedPages',
+      'Namespaces',
+      '--IncludeUndocumentedItems',
+      'true',
+      '--GeneratedAccessModifiers',
+      'Public',
+      'Protected',
+      'Internal',
+      'Private',
+    ]);
   });
 });
