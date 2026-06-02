@@ -2,9 +2,11 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "noEmit": true,
-    "noPropertyAccessFromIndexSignature": false
+    "noEmit": true
   },
+  "files": [
+    "src/types/globals.d.ts"
+  ],
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx"
@@ -20,8 +22,11 @@
     "src/__generated__/**",
     "src/generated/**",
     "src/app/**",
+    "src/components/Buttons/ThemeButton.tsx",
+    "src/components/Commander.tsx",
     "src/components/Footer.tsx",
     "src/components/Header.tsx",
-    "src/lib/currency/**"
+    "src/components/Navigation.tsx",
+    "src/presentation/ForbiddenScreen.tsx"
   ]
 }

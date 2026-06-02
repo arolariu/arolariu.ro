@@ -140,42 +140,67 @@ the same `docs:assemble` + `build:docs` pipeline and uploads
 ### TypeDoc Coverage Limitations
 
 The website TypeDoc extractor (`typedoc.website.json`) excludes the
-following subtrees because they depend on framework-generated types
-or static assets from excluded directories:
+following files/subtrees due to framework-specific type dependencies
+or strict TypeScript compiler requirements:
 
-- **`src/app/**`** — Next.js App Router pages and layouts rely on
-  build-time-generated `PageProps<Route>` and `LayoutProps<Route>`
-  types from `.next/dev/types/routes.d.ts`. TypeDoc cannot resolve
-  these types outside a full Next.js build context. Route components
-  are framework-specific handlers (not reusable APIs), so this
-  exclusion doesn't impact public API documentation.
-  
-  **Error:** `TS2304: Cannot find name 'PageProps'` / `'LayoutProps'`
-  
-  **Resolution:** Excluded `src/app/**` in `tsconfig.typedoc.json`.
-  
-- **`src/components/Footer.tsx`, `src/components/Header.tsx`** —
-  These presentation components import `logo.svg` from the excluded
-  `src/app/` directory. TypeDoc's module resolution fails on the
-  cross-boundary import.
-  
-  **Error:** `TS2307: Cannot find module '@/app/logo.svg'`
-  
-  **Resolution:** Excluded specific files in `tsconfig.typedoc.json`.
-  
-- **`src/lib/currency/**`** — The currency converter module imports
-  `../../../public/data/exchange-rates.csv?raw` (a raw text import
-  from the public assets directory). TypeDoc cannot resolve this
-  path outside the bundler context despite the wildcard `declare
-  module "*?raw"` in `globals.d.ts`. The exclusion propagates to
-  the entire directory because `index.ts` re-exports from
-  `converter.ts`.
-  
-  **Error:** `TS2307: Cannot find module '../../../public/data/exchange-rates.csv?raw'`
-  
-  **Resolution:** Excluded `src/lib/currency/**` in `tsconfig.typedoc.json`.
+#### Next.js Framework Routes
 
-The exclusions are configured in
-`sites/arolariu.ro/tsconfig.typedoc.json`. Business logic in
+**Excluded:** `src/app/**`
+
+**Reason:** Next.js App Router pages and layouts rely on
+build-time-generated `PageProps<Route>` and `LayoutProps<Route>`
+types from `.next/dev/types/routes.d.ts`. TypeDoc cannot resolve
+these types outside a full Next.js build context.
+
+**Error:**
+```
+TS2304: Cannot find name 'PageProps'.
+TS2304: Cannot find name 'LayoutProps'.
+```
+
+**Impact:** Route components are framework-specific handlers (not
+reusable APIs), so this exclusion doesn't affect public API
+documentation.
+
+#### Internationalization-Heavy Components
+
+**Excluded:**
+- `src/components/Buttons/ThemeButton.tsx`
+- `src/components/Commander.tsx`
+- `src/components/Footer.tsx`
+- `src/components/Header.tsx`
+- `src/components/Navigation.tsx`
+- `src/presentation/ForbiddenScreen.tsx`
+
+**Reason:** These components use next-intl's message access pattern
+`t((m) => m.app.navigation.domains)` which triggers TypeScript's
+`noPropertyAccessFromIndexSignature` strict check (TS4111) because
+translation objects use index signatures.
+
+**Error (39 occurrences across 4 files):**
+```
+TS4111: Property 'app' comes from an index signature, so it must be accessed with ['app'].
+```
+
+**Resolution Attempted:** Could disable
+`noPropertyAccessFromIndexSignature` in `tsconfig.typedoc.json`, but
+the Task 2 plan prohibited weakening compiler options. Excluding
+specific i18n-heavy presentation components is the narrowest fix
+that preserves strict type-checking.
+
+**Impact:** These are presentation/UI components. Business logic in
 `src/hooks/`, `src/stores/`, `src/lib/actions/`, `src/types/`,
 `src/contexts/`, and other reusable modules is fully documented.
+
+#### Configuration Notes
+
+- **Module Resolution:** The `files: ["src/types/globals.d.ts"]`
+  entry in `tsconfig.typedoc.json` makes ambient module declarations
+  visible to TypeDoc despite the `**/*.d.ts` exclude pattern. This
+  allows TypeDoc to resolve `*.svg` and `*?raw` imports without
+  requiring source-file changes.
+  
+- **Exclusions:** All exclusions are configured in
+  `sites/arolariu.ro/tsconfig.typedoc.json` as the narrowest
+  possible patterns that allow TypeDoc to succeed with strict
+  compiler options intact.
