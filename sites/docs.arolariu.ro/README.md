@@ -80,8 +80,9 @@ so MSBuild compiles the full assembly set in one pass.
 # Node 24+ and .NET 10 (see repo root README)
 # Python 3.12+ for pydoc-markdown
 npm install                                                        # from repo root
+dotnet restore sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj
 python -m pip install -r sites/exp.arolariu.ro/requirements-dev.txt
-dotnet tool install --global DefaultDocumentation.Console --version 1.2.4
+dotnet tool update --global DefaultDocumentation.Console --version 1.2.4
 ```
 
 After the global install, verify `defaultdocumentation` (lowercase —
@@ -119,6 +120,19 @@ the same `docs:assemble` + `build:docs` pipeline and uploads
   `<ProjectReference>` entries, and builds only the graph roots so
   adding a new bounded context doesn't require a hardcoded list
   update. See `discoverDotnetProjects` + `findDotnetBuildRoots`.
+- **CI restores the API graph root only**. Do not restore `arolariu.slnx`
+  in the docs workflow: the solution includes Visual Studio `.esproj`
+  projects that require `Microsoft.VisualStudio.JavaScript.Sdk` on Linux
+  runners, while generated .NET docs only need the API project graph rooted
+  at `sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj`.
+- **Generated docs validation is a deployment gate**. `docs:assemble`
+  fails if any Docusaurus-mounted generated tier is missing or empty:
+  TypeDoc components, TypeDoc website, pydoc-markdown experimental docs,
+  or DefaultDocumentation .NET internals.
+- **Broad extractor coverage is intentional**. TypeDoc includes project-owned
+  source trees and excludes tests, stories, generated output, build output,
+  and dependency internals. DefaultDocumentation requests undocumented items
+  plus public/protected/internal/private member output where the CLI accepts it.
 - **Parallel extractor output is buffered** so TypeDoc /
   pydoc-markdown / DefaultDocumentation logs don't interleave at
   the terminal; each block is replayed in a fixed order after
