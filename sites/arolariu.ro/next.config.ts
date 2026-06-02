@@ -205,7 +205,7 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: isDebugBuild,
   reactProductionProfiling: isDebugBuild,
 
-  serverExternalPackages: ["prettier"]
+  serverExternalPackages: ["@react-email/render", "prettier"]
 };
 
 const withTranslation = createNextIntlPlugin({
