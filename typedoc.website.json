@@ -19,11 +19,7 @@
     "**/.next/**",
     "**/storybook-static/**",
     "**/__generated__/**",
-    "**/generated/**",
-    "**/app/**",
-    "**/components/Footer.tsx",
-    "**/components/Header.tsx",
-    "**/lib/currency/converter.ts"
+    "**/generated/**"
   ],
   "excludeExternals": true,
   "excludeInternal": false,

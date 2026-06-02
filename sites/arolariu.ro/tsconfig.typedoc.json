@@ -3,13 +3,11 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
-    "noPropertyAccessFromIndexSignature": false,
-    "types": ["@types/node", "@types/react", "@types/react-dom"]
+    "noPropertyAccessFromIndexSignature": false
   },
   "include": [
     "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/types/globals.d.ts"
+    "src/**/*.tsx"
   ],
   "exclude": [
     "**/*.d.ts",
@@ -24,7 +22,6 @@
     "src/app/**",
     "src/components/Footer.tsx",
     "src/components/Header.tsx",
-    "src/lib/currency/**",
-    "!src/types/globals.d.ts"
+    "src/lib/currency/**"
   ]
 }

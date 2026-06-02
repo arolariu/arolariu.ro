@@ -136,3 +136,46 @@ the same `docs:assemble` + `build:docs` pipeline and uploads
   Azure Static Web Apps (and any neutral static server) serves
   them correctly. Don't use `docusaurus serve` for smoke-testing
   the .NET internals tier locally.
+
+### TypeDoc Coverage Limitations
+
+The website TypeDoc extractor (`typedoc.website.json`) excludes the
+following subtrees because they depend on framework-generated types
+or static assets from excluded directories:
+
+- **`src/app/**`** — Next.js App Router pages and layouts rely on
+  build-time-generated `PageProps<Route>` and `LayoutProps<Route>`
+  types from `.next/dev/types/routes.d.ts`. TypeDoc cannot resolve
+  these types outside a full Next.js build context. Route components
+  are framework-specific handlers (not reusable APIs), so this
+  exclusion doesn't impact public API documentation.
+  
+  **Error:** `TS2304: Cannot find name 'PageProps'` / `'LayoutProps'`
+  
+  **Resolution:** Excluded `src/app/**` in `tsconfig.typedoc.json`.
+  
+- **`src/components/Footer.tsx`, `src/components/Header.tsx`** —
+  These presentation components import `logo.svg` from the excluded
+  `src/app/` directory. TypeDoc's module resolution fails on the
+  cross-boundary import.
+  
+  **Error:** `TS2307: Cannot find module '@/app/logo.svg'`
+  
+  **Resolution:** Excluded specific files in `tsconfig.typedoc.json`.
+  
+- **`src/lib/currency/**`** — The currency converter module imports
+  `../../../public/data/exchange-rates.csv?raw` (a raw text import
+  from the public assets directory). TypeDoc cannot resolve this
+  path outside the bundler context despite the wildcard `declare
+  module "*?raw"` in `globals.d.ts`. The exclusion propagates to
+  the entire directory because `index.ts` re-exports from
+  `converter.ts`.
+  
+  **Error:** `TS2307: Cannot find module '../../../public/data/exchange-rates.csv?raw'`
+  
+  **Resolution:** Excluded `src/lib/currency/**` in `tsconfig.typedoc.json`.
+
+The exclusions are configured in
+`sites/arolariu.ro/tsconfig.typedoc.json`. Business logic in
+`src/hooks/`, `src/stores/`, `src/lib/actions/`, `src/types/`,
+`src/contexts/`, and other reusable modules is fully documented.
