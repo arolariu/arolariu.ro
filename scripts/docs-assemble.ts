@@ -172,7 +172,11 @@ const PYTHON_DIR = join(GENERATED_ROOT, 'experimental');
 const DOTNET_INTERNALS_DIR = join(GENERATED_ROOT, 'dotnet-internals');
 const API_ROOT = join(REPO_ROOT, 'sites', 'api.arolariu.ro');
 
-const REQUIRED_DOCUMENTATION_TIERS = [
+/**
+ * Required generated documentation tiers mounted by Docusaurus and validated
+ * before prose sync/deploy.
+ */
+export const REQUIRED_DOCUMENTATION_TIERS = [
   {relativePath: join('ts-reference', 'components'), label: 'typedoc components'},
   {relativePath: join('ts-reference', 'website'), label: 'typedoc website'},
   {relativePath: 'experimental', label: 'pydoc-markdown'},
