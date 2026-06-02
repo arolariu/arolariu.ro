@@ -84,22 +84,18 @@ function isOptionalNumberArray(value: unknown): boolean {
 function hasValidProbeCounts(value: unknown): value is ProbeCountsCandidate {
   if (!isObject(value)) return false;
   const candidate = value as ProbeCountsCandidate;
-  return (
-    isNonNegativeNumber(candidate.healthy) &&
-    isNonNegativeNumber(candidate.total) &&
-    candidate.healthy <= candidate.total
-  );
+  return isNonNegativeNumber(candidate.healthy) && isNonNegativeNumber(candidate.total) && candidate.healthy <= candidate.total;
 }
 
 function hasValidLatency(value: unknown): value is LatencyCandidate {
   if (!isObject(value)) return false;
   const candidate = value as LatencyCandidate;
   return (
-    isNonNegativeNumber(candidate.p50) &&
-    isNonNegativeNumber(candidate.p99) &&
-    candidate.p50 <= candidate.p99 &&
-    (candidate.p75 === undefined || isNonNegativeNumber(candidate.p75)) &&
-    (candidate.p95 === undefined || isNonNegativeNumber(candidate.p95))
+    isNonNegativeNumber(candidate.p50)
+    && isNonNegativeNumber(candidate.p99)
+    && candidate.p50 <= candidate.p99
+    && (candidate.p75 === undefined || isNonNegativeNumber(candidate.p75))
+    && (candidate.p95 === undefined || isNonNegativeNumber(candidate.p95))
   );
 }
 
@@ -125,11 +121,11 @@ export function isSubCheck(value: unknown): value is SubCheck {
   const candidate = value as SubCheckCandidate;
   const {name, status, durationMs, description, sampleDurationsMs} = candidate;
   return (
-    typeof name === "string" &&
-    isHealthStatus(status) &&
-    isNonNegativeNumber(durationMs) &&
-    isOptionalString(description) &&
-    isOptionalNumberArray(sampleDurationsMs)
+    typeof name === "string"
+    && isHealthStatus(status)
+    && isNonNegativeNumber(durationMs)
+    && isOptionalString(description)
+    && isOptionalNumberArray(sampleDurationsMs)
   );
 }
 
@@ -144,15 +140,15 @@ export function isProbeResult(value: unknown): value is ProbeResult {
   const {service, timestamp, latencyMs, httpStatus, overall, error, subChecks, sampleCount, sampleLatenciesMs} = candidate;
 
   return (
-    isServiceId(service) &&
-    typeof timestamp === "string" &&
-    isNonNegativeNumber(latencyMs) &&
-    isNonNegativeNumber(httpStatus) &&
-    isHealthStatus(overall) &&
-    isOptionalString(error) &&
-    (subChecks === undefined || (Array.isArray(subChecks) && subChecks.every(isSubCheck))) &&
-    (sampleCount === undefined || (typeof sampleCount === "number" && Number.isFinite(sampleCount) && sampleCount >= 1)) &&
-    isOptionalNumberArray(sampleLatenciesMs)
+    isServiceId(service)
+    && typeof timestamp === "string"
+    && isNonNegativeNumber(latencyMs)
+    && isNonNegativeNumber(httpStatus)
+    && isHealthStatus(overall)
+    && isOptionalString(error)
+    && (subChecks === undefined || (Array.isArray(subChecks) && subChecks.every(isSubCheck)))
+    && (sampleCount === undefined || (typeof sampleCount === "number" && Number.isFinite(sampleCount) && sampleCount >= 1))
+    && isOptionalNumberArray(sampleLatenciesMs)
   );
 }
 
@@ -170,12 +166,12 @@ export function isBucket(value: unknown): value is Bucket {
   const {t: timestamp, status, probes, latency, httpStatus, worstSubCheck} = candidate;
 
   return (
-    typeof timestamp === "string" &&
-    isHealthStatus(status) &&
-    hasValidProbeCounts(probes) &&
-    hasValidLatency(latency) &&
-    (httpStatus === undefined || isNonNegativeNumber(httpStatus)) &&
-    (worstSubCheck === undefined || isWorstSubCheck(worstSubCheck))
+    typeof timestamp === "string"
+    && isHealthStatus(status)
+    && hasValidProbeCounts(probes)
+    && hasValidLatency(latency)
+    && (httpStatus === undefined || isNonNegativeNumber(httpStatus))
+    && (worstSubCheck === undefined || isWorstSubCheck(worstSubCheck))
   );
 }
 

@@ -32,15 +32,10 @@ export function sliceWindow(file: AggregateFile, window: FilterWindow): Aggregat
       const slicedBuckets = filterBuckets(serviceSeries.buckets, cutoffMs, nowMs);
       const subSeries = serviceSeries.subSeries
         ? Object.fromEntries(
-            Object.entries(serviceSeries.subSeries).map(([name, buckets]) => [
-              name,
-              filterBuckets(buckets, cutoffMs, nowMs),
-            ]),
+            Object.entries(serviceSeries.subSeries).map(([name, buckets]) => [name, filterBuckets(buckets, cutoffMs, nowMs)]),
           )
         : undefined;
-      return subSeries === undefined
-        ? {...serviceSeries, buckets: slicedBuckets}
-        : {...serviceSeries, buckets: slicedBuckets, subSeries};
+      return subSeries === undefined ? {...serviceSeries, buckets: slicedBuckets} : {...serviceSeries, buckets: slicedBuckets, subSeries};
     }),
   };
 }
