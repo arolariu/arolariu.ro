@@ -122,7 +122,7 @@ async function runSingleAttempt(
   callbacks.onProgress({uploadId: upload.id, status, progress: 30, attempts: attempt});
 
   if (sasResult.success) {
-    const uploadResponse = await dependencies.fetchImpl(sasResult.data.sasUrl, {
+    const uploadResponse = await globalThis.fetch(sasResult.data.sasUrl, {
       method: "PUT",
       body: upload.file,
       headers: {

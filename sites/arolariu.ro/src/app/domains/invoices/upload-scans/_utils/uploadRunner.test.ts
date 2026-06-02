@@ -72,7 +72,6 @@ function createDependencies(overrides: Partial<UploadRunnerDependencies> = {}): 
     }),
     registerScan: vi.fn().mockResolvedValue({success: true, scan}),
     uploadScan: vi.fn().mockResolvedValue({success: true, data: {status: 201, scan}}),
-    fetchImpl: vi.fn().mockResolvedValue({ok: true}),
     readFileAsBase64: vi.fn().mockResolvedValue("data:image/jpeg;base64,AAAA"),
     ...overrides,
   };
@@ -80,31 +79,73 @@ function createDependencies(overrides: Partial<UploadRunnerDependencies> = {}): 
 
 describe("uploadPendingScan", () => {
   it("uploads directly with SAS and registers the scan", async () => {
+    const originalFetch = globalThis.fetch;
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, {status: 201}));
     const dependencies = createDependencies();
     const progressEvents: UploadProgressEvent[] = [];
 
-    const result = await uploadPendingScan(createUpload(), dependencies, {
-      onProgress: (event) => progressEvents.push(event),
-    });
+    vi.stubGlobal("fetch", fetchMock);
 
-    expect(result).toMatchObject({
-      success: true,
-      uploadId: "upload-1",
-      attempts: 1,
-      blobUrl: "https://storage/scans/scan-1.jpg",
-    });
-    expect(dependencies.fetchImpl).toHaveBeenCalledWith(
-      "https://storage/upload?sas=1",
-      expect.objectContaining({
-        method: "PUT",
-        headers: {
-          "x-ms-blob-type": "BlockBlob",
-          "Content-Type": "image/jpeg",
-        },
-      }),
-    );
-    expect(dependencies.uploadScan).not.toHaveBeenCalled();
-    expect(progressEvents.map((event) => event.progress)).toEqual([0, 30, 70, 90]);
+    try {
+      const result = await uploadPendingScan(createUpload(), dependencies, {
+        onProgress: (event) => progressEvents.push(event),
+      });
+
+      expect(result).toMatchObject({
+        success: true,
+        uploadId: "upload-1",
+        attempts: 1,
+        blobUrl: "https://storage/scans/scan-1.jpg",
+      });
+      expect(fetchMock).toHaveBeenCalledWith(
+        "https://storage/upload?sas=1",
+        expect.objectContaining({
+          method: "PUT",
+          headers: {
+            "x-ms-blob-type": "BlockBlob",
+            "Content-Type": "image/jpeg",
+          },
+        }),
+      );
+      expect(dependencies.uploadScan).not.toHaveBeenCalled();
+      expect(progressEvents.map((event) => event.progress)).toEqual([0, 30, 70, 90]);
+    } finally {
+      vi.stubGlobal("fetch", originalFetch);
+    }
+  });
+
+  it("uses global fetch with the browser receiver for direct uploads", async () => {
+    const originalFetch = globalThis.fetch;
+    const fetchCalls: Array<Readonly<{input: RequestInfo | URL; init?: RequestInit}>> = [];
+
+    function browserBoundFetch(this: typeof globalThis, input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+      if (this !== globalThis) {
+        throw new TypeError("Illegal invocation");
+      }
+
+      fetchCalls.push({input, init});
+      return Promise.resolve(new Response(null, {status: 201}));
+    }
+
+    vi.stubGlobal("fetch", browserBoundFetch);
+
+    try {
+      const result = await uploadPendingScan(
+        createUpload(),
+        createDependencies(),
+        {onProgress: vi.fn()},
+      );
+
+      expect(result).toMatchObject({success: true, attempts: 1});
+      expect(fetchCalls).toHaveLength(1);
+      const [fetchCall] = fetchCalls;
+      expect(fetchCall).toMatchObject({
+        input: "https://storage/upload?sas=1",
+        init: expect.objectContaining({method: "PUT"}),
+      });
+    } finally {
+      vi.stubGlobal("fetch", originalFetch);
+    }
   });
 
   it("uses server upload fallback when SAS generation fails", async () => {
@@ -129,37 +170,48 @@ describe("uploadPendingScan", () => {
   });
 
   it("uses server upload fallback when direct Azure upload fails", async () => {
+    const originalFetch = globalThis.fetch;
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, {status: 500})));
     const scan = createScan({id: "fallback-after-put"});
     const dependencies = createDependencies({
-      fetchImpl: vi.fn().mockResolvedValue({ok: false}),
       uploadScan: vi.fn().mockResolvedValue({success: true, data: {status: 201, scan}}),
     });
 
-    const result = await uploadPendingScan(createUpload(), dependencies, {onProgress: vi.fn()});
+    try {
+      const result = await uploadPendingScan(createUpload(), dependencies, {onProgress: vi.fn()});
 
-    expect(result).toMatchObject({
-      success: true,
-      attempts: 1,
-      blobUrl: scan.blobUrl,
-    });
-    expect(dependencies.uploadScan).toHaveBeenCalledOnce();
+      expect(result).toMatchObject({
+        success: true,
+        attempts: 1,
+        blobUrl: scan.blobUrl,
+      });
+      expect(dependencies.uploadScan).toHaveBeenCalledOnce();
+    } finally {
+      vi.stubGlobal("fetch", originalFetch);
+    }
   });
 
   it("uses server upload fallback when scan registration fails", async () => {
+    const originalFetch = globalThis.fetch;
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, {status: 201})));
     const scan = createScan({id: "fallback-after-register"});
     const dependencies = createDependencies({
       registerScan: vi.fn().mockResolvedValue({success: false, error: "Registration failed"}),
       uploadScan: vi.fn().mockResolvedValue({success: true, data: {status: 201, scan}}),
     });
 
-    const result = await uploadPendingScan(createUpload(), dependencies, {onProgress: vi.fn()});
+    try {
+      const result = await uploadPendingScan(createUpload(), dependencies, {onProgress: vi.fn()});
 
-    expect(result).toMatchObject({
-      success: true,
-      attempts: 1,
-      blobUrl: scan.blobUrl,
-    });
-    expect(dependencies.uploadScan).toHaveBeenCalledOnce();
+      expect(result).toMatchObject({
+        success: true,
+        attempts: 1,
+        blobUrl: scan.blobUrl,
+      });
+      expect(dependencies.uploadScan).toHaveBeenCalledOnce();
+    } finally {
+      vi.stubGlobal("fetch", originalFetch);
+    }
   });
 
   it("retries up to three attempts before failing", async () => {

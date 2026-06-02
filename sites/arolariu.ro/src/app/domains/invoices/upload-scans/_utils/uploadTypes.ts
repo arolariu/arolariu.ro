@@ -142,7 +142,6 @@ export type UploadRunnerDependencies = Readonly<{
     }>,
   ) => Promise<RegisterScanResult>;
   uploadScan: (input: Readonly<{base64Data: string; fileName: string; mimeType: string}>) => Promise<ServerUploadScanResult>;
-  fetchImpl: typeof fetch;
   readFileAsBase64: (file: File) => Promise<string>;
 }>;
 

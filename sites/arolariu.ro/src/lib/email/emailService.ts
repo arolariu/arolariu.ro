@@ -82,7 +82,7 @@ async function sendEmail(options: SendEmailOptions): Promise<void> {
     // @react-email/render or @react-email/components". Doing the render
     // here makes the dependency explicit and bypasses the dynamic-require
     // path entirely.
-    const html = await render(options.react);
+    const html = await render(options.react, {pretty: false});
 
     const result = await resend.emails.send(
       {

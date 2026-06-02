@@ -202,7 +202,6 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
       generateUploadSasUrl,
       registerScan,
       uploadScan,
-      fetchImpl: fetch,
       readFileAsBase64,
     };
 
