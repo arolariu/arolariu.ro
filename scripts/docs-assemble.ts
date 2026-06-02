@@ -150,7 +150,7 @@ export function assertNonEmpty(dir: string, label: string): void {
     for (const name of readdirSync(d)) {
       const full = join(d, name);
       if (statSync(full).isDirectory()) walk(full);
-      else if (/\.mdx?$|\.json$/i.test(name)) count++;
+      else if (isDocumentationOutputFile(name)) count++;
     }
   };
   walk(dir);
@@ -173,8 +173,11 @@ const DOTNET_INTERNALS_DIR = join(GENERATED_ROOT, 'dotnet-internals');
 const API_ROOT = join(REPO_ROOT, 'sites', 'api.arolariu.ro');
 
 /**
- * Required generated documentation tiers mounted by Docusaurus and validated
- * before prose sync/deploy.
+ * Required generated documentation tiers mounted by Docusaurus.
+ *
+ * @remarks
+ * Validation treats each path as extractor output and ignores synthetic root
+ * landing files (`index.md`/`README.md`) before prose sync/deploy.
  */
 export const REQUIRED_DOCUMENTATION_TIERS = [
   {relativePath: join('ts-reference', 'components'), label: 'typedoc components'},
@@ -183,6 +186,25 @@ export const REQUIRED_DOCUMENTATION_TIERS = [
   {relativePath: 'dotnet-internals', label: 'defaultdocumentation'},
 ] as const;
 
+const ROOT_LANDING_FILE_NAMES = new Set(['index.md', 'index.mdx', 'readme.md', 'readme.mdx']);
+
+function isDocumentationOutputFile(fileName: string): boolean {
+  return /\.mdx?$|\.json$/i.test(fileName);
+}
+
+function countExtractorOutputFiles(dir: string, isRoot: boolean = true): number {
+  let count = 0;
+  for (const name of readdirSync(dir)) {
+    const full = join(dir, name);
+    if (statSync(full).isDirectory()) {
+      count += countExtractorOutputFiles(full, false);
+    } else if (isDocumentationOutputFile(name) && !(isRoot && ROOT_LANDING_FILE_NAMES.has(name.toLowerCase()))) {
+      count++;
+    }
+  }
+  return count;
+}
+
 /**
  * Verify that every documentation tier mounted by Docusaurus contains extractor output.
  *
@@ -190,7 +212,11 @@ export const REQUIRED_DOCUMENTATION_TIERS = [
  */
 export function assertExpectedDocumentationTiers(generatedRoot: string = GENERATED_ROOT): void {
   for (const tier of REQUIRED_DOCUMENTATION_TIERS) {
-    assertNonEmpty(join(generatedRoot, tier.relativePath), tier.label);
+    const tierRoot = join(generatedRoot, tier.relativePath);
+    if (!existsSync(tierRoot)) throw new Error(`${tier.label}: expected directory not found at ${tierRoot}`);
+    if (countExtractorOutputFiles(tierRoot) === 0) {
+      throw new Error(`${tier.label}: extracted 0 non-landing files into ${tierRoot}`);
+    }
   }
 }
 
@@ -278,6 +304,11 @@ export function findDotnetBuildRoots(projects: readonly DotnetProject[]): readon
 
 /**
  * Build the DefaultDocumentation CLI arguments for one compiled assembly.
+ *
+ * @remarks
+ * The multi-value `--GeneratedAccessModifiers Public Protected Internal Private`
+ * form follows the DefaultDocumentation.Console 1.2.4 option shape verified via
+ * `defaultdocumentation --help` and parser behavior.
  *
  * @param dll - Absolute path to the compiled assembly.
  * @param outDir - Absolute output directory for generated markdown.
@@ -451,6 +482,7 @@ async function main(): Promise<void> {
   flushExtractorLog('TypeScript (TypeDoc)', tsOut);
   flushExtractorLog('Python (pydoc-markdown)', pyOut);
   flushExtractorLog('.NET internals (DefaultDocumentation)', dotnetOut);
+  assertExpectedDocumentationTiers();
   await normalizeDirectory(TS_REFERENCE_DIR);
   await normalizeDirectory(PYTHON_DIR);
   await normalizeDirectory(DOTNET_INTERNALS_DIR);
@@ -475,7 +507,6 @@ async function main(): Promise<void> {
     summary: 'Reference documentation for internal types, services, and brokers of `api.arolariu.ro`. Generated from XML doc comments via `DefaultDocumentation`.',
     routeBase: '/internals/dotnet',
   });
-  assertExpectedDocumentationTiers();
   await syncProse(PROSE_SRC, PROSE_DEST);
 }
 

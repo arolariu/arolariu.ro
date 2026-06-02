@@ -197,19 +197,35 @@ describe('docs assemble validation', () => {
 
   it('accepts generated output only when every required documentation tier has content', () => {
     const root = createTempRoot();
-    writeTierFile(root, 'ts-reference/components/index.md');
-    writeTierFile(root, 'ts-reference/website/index.md');
-    writeTierFile(root, 'experimental/index.md');
-    writeTierFile(root, 'dotnet-internals/arolariu.Backend.Core/index.md');
+    writeTierFile(root, 'ts-reference/components/classes/Button.md');
+    writeTierFile(root, 'ts-reference/website/functions/getMetadata.md');
+    writeTierFile(root, 'experimental/modules/settings.md');
+    writeTierFile(root, 'dotnet-internals/arolariu.Backend.Core/services/InvoiceService.md');
 
     expect(() => assertExpectedDocumentationTiers(root)).not.toThrow();
   });
 
-  it('fails with a tier-specific error when generated output is missing', () => {
+  it('rejects tiers containing only synthetic landing files', () => {
     const root = createTempRoot();
     writeTierFile(root, 'ts-reference/components/index.md');
+    writeTierFile(root, 'ts-reference/components/README.md');
+    writeTierFile(root, 'ts-reference/website/index.md');
+    writeTierFile(root, 'ts-reference/website/README.md');
     writeTierFile(root, 'experimental/index.md');
-    writeTierFile(root, 'dotnet-internals/arolariu.Backend.Core/index.md');
+    writeTierFile(root, 'experimental/README.md');
+    writeTierFile(root, 'dotnet-internals/index.md');
+    writeTierFile(root, 'dotnet-internals/README.md');
+
+    expect(() => assertExpectedDocumentationTiers(root)).toThrow(
+      'typedoc components: extracted 0 non-landing files',
+    );
+  });
+
+  it('fails with a tier-specific error when generated output is missing', () => {
+    const root = createTempRoot();
+    writeTierFile(root, 'ts-reference/components/classes/Button.md');
+    writeTierFile(root, 'experimental/modules/settings.md');
+    writeTierFile(root, 'dotnet-internals/arolariu.Backend.Core/services/InvoiceService.md');
 
     expect(() => assertExpectedDocumentationTiers(root)).toThrow(
       'typedoc website: expected directory not found',
