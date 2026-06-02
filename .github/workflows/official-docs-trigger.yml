@@ -2,13 +2,13 @@
 # Documentation Website Build and Deployment Workflow
 # =============================================================================
 # This workflow generates and deploys the documentation website
-# (docs.arolariu.ro) using Docusaurus 3.10 as the shell, with four
+# (docs.arolariu.ro) using Docusaurus 3.10 as the shell, with three
 # extractors feeding into it (TypeDoc for the TS reference,
 # DefaultDocumentation for .NET internals, pydoc-markdown for the
-# Python experimental service, plus a build-time OpenAPI spec copy).
+# Python experimental service).
 #
 # Architecture:
-#   - docs:assemble: Runs all four extractors + normalizer + landing pages
+#   - docs:assemble: Runs all three extractors + validator + normalizer + landing pages
 #   - npm run build:docs: Docusaurus build (fires the postbuild hook
 #     that copies staticwebapp.config.json and emits llms.txt)
 #   - Azure Static Web Apps: Hosts the generated documentation
@@ -133,7 +133,7 @@ jobs:
       - name: "[DOCS::2/4] 🧾 Assembling extractor output (TypeDoc + pydoc-markdown + DefaultDocumentation)..."
         run: |
           echo "::group::📝 Docs assemble"
-          echo "Running the four extractors and the frontmatter normalizer..."
+          echo "Running the three extractors, validation gate, and frontmatter normalizer..."
           START_TIME=$(date +%s)
           npm run docs:assemble
           END_TIME=$(date +%s)

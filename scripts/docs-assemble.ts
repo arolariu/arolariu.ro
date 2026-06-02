@@ -176,8 +176,10 @@ const API_ROOT = join(REPO_ROOT, 'sites', 'api.arolariu.ro');
  * Required generated documentation tiers mounted by Docusaurus.
  *
  * @remarks
- * Validation treats each path as extractor output and ignores synthetic root
- * landing files (`index.md`/`README.md`) before prose sync/deploy.
+ * Each path is relative to `_generated/` and must contain at least one
+ * extractor-produced file before normalization, landing-page generation, and
+ * prose sync. Root landing files (`index.md` / `README.md`) are ignored so
+ * synthetic Docusaurus pages cannot satisfy the deployment gate.
  */
 export const REQUIRED_DOCUMENTATION_TIERS = [
   {relativePath: join('ts-reference', 'components'), label: 'typedoc components'},
@@ -482,6 +484,8 @@ async function main(): Promise<void> {
   flushExtractorLog('TypeScript (TypeDoc)', tsOut);
   flushExtractorLog('Python (pydoc-markdown)', pyOut);
   flushExtractorLog('.NET internals (DefaultDocumentation)', dotnetOut);
+  // Validate extractor output before normalization and synthetic landing pages
+  // can obscure missing-tier failures.
   assertExpectedDocumentationTiers();
   await normalizeDirectory(TS_REFERENCE_DIR);
   await normalizeDirectory(PYTHON_DIR);

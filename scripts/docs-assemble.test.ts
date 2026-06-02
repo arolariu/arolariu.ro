@@ -1,7 +1,7 @@
 import {describe, it, expect, beforeEach, afterEach} from 'vitest';
 import {mkdtempSync, rmSync, writeFileSync, mkdirSync, existsSync, readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
-import {join} from 'node:path';
+import {dirname, join} from 'node:path';
 import {
   syncProse,
   assertNonEmpty,
@@ -83,7 +83,7 @@ describe('discoverDotnetProjects', () => {
 
   function writeCsproj(rel: string, xml: string): void {
     const full = join(apiRoot, rel);
-    mkdirSync(full.replace(/[\/\\][^\/\\]+$/, ''), {recursive: true});
+    mkdirSync(dirname(full), {recursive: true});
     writeFileSync(full, xml);
   }
 
