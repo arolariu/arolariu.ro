@@ -8,6 +8,8 @@ import {
   runCommand,
   discoverDotnetProjects,
   findDotnetBuildRoots,
+  assertExpectedDocumentationTiers,
+  getDefaultDocumentationArgs,
 } from './docs-assemble';
 
 describe('syncProse', () => {
@@ -168,5 +170,73 @@ describe('runCommand (buffered mode)', () => {
     await expect(
       runCommand(process.execPath, ['-e', "process.stderr.write('boom'); process.exit(7)"], process.cwd(), {buffered: true}),
     ).rejects.toThrow(/exited with 7[\s\S]*boom/);
+  });
+});
+
+describe('docs assemble validation', () => {
+  const tempRoots: string[] = [];
+
+  function createTempRoot(): string {
+    const root = join(tmpdir(), `docs-assemble-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+    mkdirSync(root, {recursive: true});
+    tempRoots.push(root);
+    return root;
+  }
+
+  function writeTierFile(root: string, relativePath: string): void {
+    const full = join(root, relativePath);
+    mkdirSync(join(full, '..'), {recursive: true});
+    writeFileSync(full, '# Generated\n');
+  }
+
+  afterEach(() => {
+    for (const root of tempRoots.splice(0)) {
+      rmSync(root, {recursive: true, force: true});
+    }
+  });
+
+  it('accepts generated output only when every required documentation tier has content', () => {
+    const root = createTempRoot();
+    writeTierFile(root, 'ts-reference/components/index.md');
+    writeTierFile(root, 'ts-reference/website/index.md');
+    writeTierFile(root, 'experimental/index.md');
+    writeTierFile(root, 'dotnet-internals/arolariu.Backend.Core/index.md');
+
+    expect(() => assertExpectedDocumentationTiers(root)).not.toThrow();
+  });
+
+  it('fails with a tier-specific error when generated output is missing', () => {
+    const root = createTempRoot();
+    writeTierFile(root, 'ts-reference/components/index.md');
+    writeTierFile(root, 'experimental/index.md');
+    writeTierFile(root, 'dotnet-internals/arolariu.Backend.Core/index.md');
+
+    expect(() => assertExpectedDocumentationTiers(root)).toThrow(
+      'typedoc website: expected directory not found',
+    );
+  });
+});
+
+describe('DefaultDocumentation arguments', () => {
+  it('requests undocumented items and all supported access modifiers', () => {
+    const args = getDefaultDocumentationArgs('api.dll', 'out');
+
+    expect(args).toEqual([
+      '--AssemblyFilePath',
+      'api.dll',
+      '--OutputDirectoryPath',
+      'out',
+      '--FileNameFactory',
+      'Name',
+      '--GeneratedPages',
+      'Namespaces',
+      '--IncludeUndocumentedItems',
+      'true',
+      '--GeneratedAccessModifiers',
+      'Public',
+      'Protected',
+      'Internal',
+      'Private',
+    ]);
   });
 });

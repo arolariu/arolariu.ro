@@ -172,6 +172,24 @@ const PYTHON_DIR = join(GENERATED_ROOT, 'experimental');
 const DOTNET_INTERNALS_DIR = join(GENERATED_ROOT, 'dotnet-internals');
 const API_ROOT = join(REPO_ROOT, 'sites', 'api.arolariu.ro');
 
+const REQUIRED_DOCUMENTATION_TIERS = [
+  {relativePath: join('ts-reference', 'components'), label: 'typedoc components'},
+  {relativePath: join('ts-reference', 'website'), label: 'typedoc website'},
+  {relativePath: 'experimental', label: 'pydoc-markdown'},
+  {relativePath: 'dotnet-internals', label: 'defaultdocumentation'},
+] as const;
+
+/**
+ * Verify that every documentation tier mounted by Docusaurus contains extractor output.
+ *
+ * @param generatedRoot - Root `_generated` directory to validate.
+ */
+export function assertExpectedDocumentationTiers(generatedRoot: string = GENERATED_ROOT): void {
+  for (const tier of REQUIRED_DOCUMENTATION_TIERS) {
+    assertNonEmpty(join(generatedRoot, tier.relativePath), tier.label);
+  }
+}
+
 /**
  * One .NET project whose XML docs are exposed on the docs site.
  * {@link runDotnetInternals} builds the graph roots once (so every
@@ -255,6 +273,33 @@ export function findDotnetBuildRoots(projects: readonly DotnetProject[]): readon
 }
 
 /**
+ * Build the DefaultDocumentation CLI arguments for one compiled assembly.
+ *
+ * @param dll - Absolute path to the compiled assembly.
+ * @param outDir - Absolute output directory for generated markdown.
+ * @returns CLI arguments passed to `defaultdocumentation`.
+ */
+export function getDefaultDocumentationArgs(dll: string, outDir: string): readonly string[] {
+  return [
+    '--AssemblyFilePath',
+    dll,
+    '--OutputDirectoryPath',
+    outDir,
+    '--FileNameFactory',
+    'Name',
+    '--GeneratedPages',
+    'Namespaces',
+    '--IncludeUndocumentedItems',
+    'true',
+    '--GeneratedAccessModifiers',
+    'Public',
+    'Protected',
+    'Internal',
+    'Private',
+  ];
+}
+
+/**
  * Discover every `.csproj` under `api.arolariu.ro/src/`, build the
  * minimum set of graph roots with one `dotnet build` call each (so
  * MSBuild covers the whole graph via ProjectReference transitivity),
@@ -283,10 +328,7 @@ async function runDotnetInternals(): Promise<string> {
     // silently works locally and only breaks on Linux CI.
     log += await runCommand(
       'defaultdocumentation',
-      ['--AssemblyFilePath', dll,
-       '--OutputDirectoryPath', outDir,
-       '--FileNameFactory', 'Name',
-       '--GeneratedPages', 'Namespaces'],
+      getDefaultDocumentationArgs(dll, outDir),
       API_ROOT,
       {buffered: true},
     );
@@ -429,6 +471,7 @@ async function main(): Promise<void> {
     summary: 'Reference documentation for internal types, services, and brokers of `api.arolariu.ro`. Generated from XML doc comments via `DefaultDocumentation`.',
     routeBase: '/internals/dotnet',
   });
+  assertExpectedDocumentationTiers();
   await syncProse(PROSE_SRC, PROSE_DEST);
 }
 
