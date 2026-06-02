@@ -120,19 +120,20 @@ the same `docs:assemble` + `build:docs` pipeline and uploads
   `<ProjectReference>` entries, and builds only the graph roots so
   adding a new bounded context doesn't require a hardcoded list
   update. See `discoverDotnetProjects` + `findDotnetBuildRoots`.
-- **CI restores the API graph root only**. Do not restore `arolariu.slnx`
-  in the docs workflow: the solution includes Visual Studio `.esproj`
-  projects that require `Microsoft.VisualStudio.JavaScript.Sdk` on Linux
-  runners, while generated .NET docs only need the API project graph rooted
-  at `sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj`.
+- **CI restores the API graph root only**. Restoring `arolariu.slnx` breaks
+  Linux runners because the solution includes Visual Studio `.esproj`
+  projects that require `Microsoft.VisualStudio.JavaScript.Sdk`. Generated
+  .NET docs only need the API project graph rooted at
+  `sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj`.
 - **Generated docs validation is a deployment gate**. `docs:assemble`
-  fails if any Docusaurus-mounted generated tier is missing or empty:
-  TypeDoc components, TypeDoc website, pydoc-markdown experimental docs,
-  or DefaultDocumentation .NET internals.
+  fails if any Docusaurus-mounted generated tier is missing or empty.
+  Validation counts extractor output only; orchestrator-generated landing
+  pages such as `index.md` / `README.md` do not satisfy the gate.
 - **Broad extractor coverage is intentional**. TypeDoc includes project-owned
   source trees and excludes tests, stories, generated output, build output,
   and dependency internals. DefaultDocumentation requests undocumented items
-  plus public/protected/internal/private member output where the CLI accepts it.
+  plus public/protected/internal/private member output so maintainers can
+  inspect internal architecture from the generated reference.
 - **Parallel extractor output is buffered** so TypeDoc /
   pydoc-markdown / DefaultDocumentation logs don't interleave at
   the terminal; each block is replayed in a fixed order after
