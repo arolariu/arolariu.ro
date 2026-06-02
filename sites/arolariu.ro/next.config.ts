@@ -7,9 +7,9 @@
  * and plugin configuration (e.g., next-intl).
  */
 
-import type {NextConfig} from "next";
+import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
-import type {RemotePattern} from "next/dist/shared/lib/image-config";
+import type { RemotePattern } from "next/dist/shared/lib/image-config";
 
 const trustedDomains = "*.arolariu.ro arolariu.ro *.clerk.com clerk.com *.accounts.dev accounts.dev";
 const isProduction = process.env["SITE_ENV"] === "PRODUCTION";
@@ -57,7 +57,7 @@ const nextConfig: NextConfig = {
   },
 
   compiler: {
-    removeConsole: isDebugBuild ? false : {exclude: ["error", "warn"]},
+    removeConsole: isDebugBuild ? false : { exclude: ["error", "warn"] },
     reactRemoveProperties: {
       properties: ["^data-testid$"],
     },
@@ -66,28 +66,28 @@ const nextConfig: NextConfig = {
   images: {
     qualities: [50, 75, 100],
     remotePatterns: [
-      {protocol: "https", hostname: "**.blob.core.windows.net"}, // Azure Blob Storage (any account).
-      {protocol: "https", hostname: "**.arolariu.ro"}, // Platform subdomains (including CDN).
-      {protocol: "https", hostname: "**.clerk.com"}, // Clerk - auth-as-a-service assets.
-      {protocol: "https", hostname: "**.accounts.dev"}, // Clerk - auth-as-a-service assets.
-      {protocol: "https", hostname: "**.googleusercontent.com"}, // External assets.
-      {protocol: "https", hostname: "**.githubusercontent.com"}, // External assets.
-      {protocol: "http", hostname: "localhost", port: "10000"}, // Azurite blob storage (local Docker).
+      { protocol: "https", hostname: "**.blob.core.windows.net" }, // Azure Blob Storage (any account).
+      { protocol: "https", hostname: "**.arolariu.ro" }, // Platform subdomains (including CDN).
+      { protocol: "https", hostname: "**.clerk.com" }, // Clerk - auth-as-a-service assets.
+      { protocol: "https", hostname: "**.accounts.dev" }, // Clerk - auth-as-a-service assets.
+      { protocol: "https", hostname: "**.googleusercontent.com" }, // External assets.
+      { protocol: "https", hostname: "**.githubusercontent.com" }, // External assets.
+      { protocol: "http", hostname: "localhost", port: "10000" }, // Azurite blob storage (local Docker).
       ...(isDebugBuild
         ? ([
-            {
-              protocol: "https",
-              hostname: "loremflickr.com",
-            },
-            {
-              protocol: "https",
-              hostname: "picsum.photos",
-            },
-            {
-              protocol: "https",
-              hostname: "dummyimage.com",
-            },
-          ] satisfies RemotePattern[])
+          {
+            protocol: "https",
+            hostname: "loremflickr.com",
+          },
+          {
+            protocol: "https",
+            hostname: "picsum.photos",
+          },
+          {
+            protocol: "https",
+            hostname: "dummyimage.com",
+          },
+        ] satisfies RemotePattern[])
         : []),
     ],
   },
@@ -107,13 +107,13 @@ const nextConfig: NextConfig = {
           },
           isDebugBuild
             ? {
-                key: "Content-Security-Policy-Report-Only",
-                value: cspHeader.replace(/\n/gu, "").trim(),
-              }
+              key: "Content-Security-Policy-Report-Only",
+              value: cspHeader.replace(/\n/gu, "").trim(),
+            }
             : {
-                key: "Content-Security-Policy",
-                value: cspHeader.replace(/\n/gu, "").trim(),
-              },
+              key: "Content-Security-Policy",
+              value: cspHeader.replace(/\n/gu, "").trim(),
+            },
           {
             key: "X-Content-Type-Options",
             value: "nosniff",
@@ -204,6 +204,8 @@ const nextConfig: NextConfig = {
   enablePrerenderSourceMaps: isDebugBuild,
   productionBrowserSourceMaps: isDebugBuild,
   reactProductionProfiling: isDebugBuild,
+
+  serverExternalPackages: ["react-email"]
 };
 
 const withTranslation = createNextIntlPlugin({
