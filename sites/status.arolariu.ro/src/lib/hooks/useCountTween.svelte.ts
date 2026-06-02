@@ -44,9 +44,7 @@ export function useCountTween(target: () => number, options?: UseCountTweenOptio
   const animationFrame = {id: null as number | null};
   const browserWindow = globalThis.window as Window | undefined;
 
-  const prefersReducedMotion =
-    browserWindow !== undefined &&
-    browserWindow.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  const prefersReducedMotion = browserWindow !== undefined && browserWindow.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
   function cleanupAnimationFrame(): void {
     if (animationFrame.id !== null) globalThis.cancelAnimationFrame(animationFrame.id);

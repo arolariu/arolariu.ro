@@ -368,14 +368,7 @@ function computeP50AtTime(story: ServiceStoryline, bucketTimestamp: number, now:
  *  2. Is this a cyclic-hiccup bucket? → emit a small Degraded spike.
  *  3. Otherwise → emit a Healthy bucket at baseline/drifted p50.
  */
-function generateBucketsFor({
-  baselineP50,
-  blips,
-  cyclicHiccup,
-  driftForMainP50,
-  config,
-  now,
-}: Readonly<BucketGenerationInput>): Bucket[] {
+function generateBucketsFor({baselineP50, blips, cyclicHiccup, driftForMainP50, config, now}: Readonly<BucketGenerationInput>): Bucket[] {
   const total = config.bucketCount;
   // Ongoing blips (`open: true`) drive the incident log but do NOT rewrite
   // History into the bucket series - they're near-now events whose health
@@ -399,36 +392,42 @@ function generateBucketsFor({
       /* v8 ignore next */
       const factor = activeBlip.blip.latencyFactor ?? (activeBlip.blip.status === "Unhealthy" ? 8 : 3.2);
       const healthyPerCron = activeBlip.blip.status === "Unhealthy" ? 0 : 2;
-      buckets.push(makeBucket({
-        timestamp,
-        status: activeBlip.blip.status,
-        p50: Math.round(p50 * factor),
-        healthyPerCron,
-        cronsPerBucket: config.cronsPerBucket,
-      }));
+      buckets.push(
+        makeBucket({
+          timestamp,
+          status: activeBlip.blip.status,
+          p50: Math.round(p50 * factor),
+          healthyPerCron,
+          cronsPerBucket: config.cronsPerBucket,
+        }),
+      );
       continue;
     }
 
     // eslint-disable-next-line capitalized-comments -- v8 ignore directive is case-sensitive.
     /* v8 ignore next */
     if (cyclicHiccup && fromEnd % cyclicHiccup.everyNBuckets === cyclicHiccup.atOffset) {
-      buckets.push(makeBucket({
-        timestamp,
-        status: "Degraded",
-        p50: cyclicHiccup.p50,
-        healthyPerCron: cyclicHiccup.healthyPerCron,
-        cronsPerBucket: config.cronsPerBucket,
-      }));
+      buckets.push(
+        makeBucket({
+          timestamp,
+          status: "Degraded",
+          p50: cyclicHiccup.p50,
+          healthyPerCron: cyclicHiccup.healthyPerCron,
+          cronsPerBucket: config.cronsPerBucket,
+        }),
+      );
       continue;
     }
 
-    buckets.push(makeBucket({
-      timestamp,
-      status: "Healthy",
-      p50,
-      healthyPerCron: SAMPLES_PER_CRON,
-      cronsPerBucket: config.cronsPerBucket,
-    }));
+    buckets.push(
+      makeBucket({
+        timestamp,
+        status: "Healthy",
+        p50,
+        healthyPerCron: SAMPLES_PER_CRON,
+        cronsPerBucket: config.cronsPerBucket,
+      }),
+    );
   }
 
   return buckets;
@@ -450,17 +449,19 @@ function generateServiceSeries(story: ServiceStoryline, config: GranularityConfi
 
   let subSeriesObject: Record<string, readonly Bucket[]> | null = null;
   if (story.subChecks) {
-    subSeriesObject = Object.fromEntries(Object.entries(story.subChecks).map(([name, sub]) => [
-      name,
-      generateBucketsFor({
-        baselineP50: sub.baselineP50,
-        blips: sub.blips,
-        cyclicHiccup: sub.cyclicHiccup,
-        driftForMainP50: null,
-        config,
-        now,
-      }),
-    ]));
+    subSeriesObject = Object.fromEntries(
+      Object.entries(story.subChecks).map(([name, sub]) => [
+        name,
+        generateBucketsFor({
+          baselineP50: sub.baselineP50,
+          blips: sub.blips,
+          cyclicHiccup: sub.cyclicHiccup,
+          driftForMainP50: null,
+          config,
+          now,
+        }),
+      ]),
+    );
   }
 
   const series: ServiceSeries = {

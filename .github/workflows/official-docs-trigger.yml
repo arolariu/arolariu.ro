@@ -2,13 +2,13 @@
 # Documentation Website Build and Deployment Workflow
 # =============================================================================
 # This workflow generates and deploys the documentation website
-# (docs.arolariu.ro) using Docusaurus 3.10 as the shell, with four
+# (docs.arolariu.ro) using Docusaurus 3.10 as the shell, with three
 # extractors feeding into it (TypeDoc for the TS reference,
 # DefaultDocumentation for .NET internals, pydoc-markdown for the
-# Python experimental service, plus a build-time OpenAPI spec copy).
+# Python experimental service).
 #
 # Architecture:
-#   - docs:assemble: Runs all four extractors + normalizer + landing pages
+#   - docs:assemble: Runs all three extractors + validator + normalizer + landing pages
 #   - npm run build:docs: Docusaurus build (fires the postbuild hook
 #     that copies staticwebapp.config.json and emits llms.txt)
 #   - Azure Static Web Apps: Hosts the generated documentation
@@ -104,9 +104,9 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          dotnet-version: '10'
+          dotnet-version: '10.0.x'
           install-node-dependencies: 'true'
-          install-dotnet-dependencies: 'true'
+          install-dotnet-dependencies: 'false'
           cache-key-prefix: 'docs'
 
       - name: 🐍 Setting up Python 3.12 for pydoc-markdown...
@@ -115,25 +115,25 @@ jobs:
           python-version: '3.12'
           cache: 'pip'
 
-      - name: "[DOCS::1/4] 🏗️ Installing the .NET dependencies..."
+      - name: "[DOCS::1/4] 🏗️ Installing documentation extractor dependencies..."
         run: |
-          echo "::group::📦 .NET Dependencies"
-          echo "Installing .NET workloads, restoring packages, and installing DefaultDocumentation.Console..."
+          echo "::group::📦 Documentation Extractor Dependencies"
+          echo "Restoring the API graph root and installing DefaultDocumentation.Console + pydoc-markdown..."
           START_TIME=$(date +%s)
-          dotnet workload restore
-          dotnet restore ./arolariu.slnx
-          dotnet tool install --global DefaultDocumentation.Console --version 1.2.4
+          dotnet restore sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj
+          dotnet tool install --global DefaultDocumentation.Console --version 1.2.4 || dotnet tool update --global DefaultDocumentation.Console --version 1.2.4
           echo "${HOME}/.dotnet/tools" >> $GITHUB_PATH
+          python -m pip install --upgrade pip
           python -m pip install -r sites/exp.arolariu.ro/requirements-dev.txt
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
-          echo "::notice::✅ Dependencies installed in ${DURATION}s"
+          echo "::notice::✅ Documentation extractor dependencies installed in ${DURATION}s"
           echo "::endgroup::"
 
       - name: "[DOCS::2/4] 🧾 Assembling extractor output (TypeDoc + pydoc-markdown + DefaultDocumentation)..."
         run: |
           echo "::group::📝 Docs assemble"
-          echo "Running the four extractors and the frontmatter normalizer..."
+          echo "Running the three extractors, validation gate, and frontmatter normalizer..."
           START_TIME=$(date +%s)
           npm run docs:assemble
           END_TIME=$(date +%s)

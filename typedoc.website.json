@@ -1,8 +1,7 @@
 {
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": [
-    "sites/arolariu.ro/src/types/index.ts",
-    "sites/arolariu.ro/src/lib"
+    "sites/arolariu.ro/src"
   ],
   "entryPointStrategy": "expand",
   "tsconfig": "sites/arolariu.ro/tsconfig.typedoc.json",
@@ -17,11 +16,17 @@
     "**/*.test.*",
     "**/*.stories.*",
     "**/node_modules/**",
-    "**/.next/**"
+    "**/.next/**",
+    "**/storybook-static/**",
+    "**/__generated__/**",
+    "**/generated/**"
   ],
   "excludeExternals": true,
-  "excludePrivate": true,
-  "excludeProtected": true,
+  "excludeInternal": false,
+  "excludePrivate": false,
+  "excludePrivateClassFields": false,
+  "excludeProtected": false,
+  "excludeNotDocumented": false,
   "sort": [
     "source-order"
   ]

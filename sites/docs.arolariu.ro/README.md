@@ -80,8 +80,9 @@ so MSBuild compiles the full assembly set in one pass.
 # Node 24+ and .NET 10 (see repo root README)
 # Python 3.12+ for pydoc-markdown
 npm install                                                        # from repo root
+dotnet restore sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj
 python -m pip install -r sites/exp.arolariu.ro/requirements-dev.txt
-dotnet tool install --global DefaultDocumentation.Console --version 1.2.4
+dotnet tool update --global DefaultDocumentation.Console --version 1.2.4
 ```
 
 After the global install, verify `defaultdocumentation` (lowercase —
@@ -119,6 +120,20 @@ the same `docs:assemble` + `build:docs` pipeline and uploads
   `<ProjectReference>` entries, and builds only the graph roots so
   adding a new bounded context doesn't require a hardcoded list
   update. See `discoverDotnetProjects` + `findDotnetBuildRoots`.
+- **CI restores the API graph root only**. Restoring `arolariu.slnx` breaks
+  Linux runners because the solution includes Visual Studio `.esproj`
+  projects that require `Microsoft.VisualStudio.JavaScript.Sdk`. Generated
+  .NET docs only need the API project graph rooted at
+  `sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj`.
+- **Generated docs validation is a deployment gate**. `docs:assemble`
+  fails if any Docusaurus-mounted generated tier is missing or empty.
+  Validation counts extractor output only; orchestrator-generated landing
+  pages such as `index.md` / `README.md` do not satisfy the gate.
+- **Broad extractor coverage is intentional**. TypeDoc includes project-owned
+  source trees and excludes tests, stories, generated output, build output,
+  and dependency internals. DefaultDocumentation requests undocumented items
+  plus public/protected/internal/private member output so maintainers can
+  inspect internal architecture from the generated reference.
 - **Parallel extractor output is buffered** so TypeDoc /
   pydoc-markdown / DefaultDocumentation logs don't interleave at
   the terminal; each block is replayed in a fixed order after
@@ -136,3 +151,71 @@ the same `docs:assemble` + `build:docs` pipeline and uploads
   Azure Static Web Apps (and any neutral static server) serves
   them correctly. Don't use `docusaurus serve` for smoke-testing
   the .NET internals tier locally.
+
+### TypeDoc Coverage Limitations
+
+The website TypeDoc extractor (`typedoc.website.json`) excludes the
+following files/subtrees due to framework-specific type dependencies
+or strict TypeScript compiler requirements:
+
+#### Next.js Framework Routes
+
+**Excluded:** `src/app/**`
+
+**Reason:** Next.js App Router pages and layouts rely on
+build-time-generated `PageProps<Route>` and `LayoutProps<Route>`
+types from `.next/dev/types/routes.d.ts`. TypeDoc cannot resolve
+these types outside a full Next.js build context.
+
+**Error:**
+```
+TS2304: Cannot find name 'PageProps'.
+TS2304: Cannot find name 'LayoutProps'.
+```
+
+**Impact:** Route components are framework-specific handlers (not
+reusable APIs), so this exclusion doesn't affect public API
+documentation.
+
+#### Internationalization-Heavy Components
+
+**Excluded:**
+- `src/components/Buttons/ThemeButton.tsx`
+- `src/components/Commander.tsx`
+- `src/components/Footer.tsx`
+- `src/components/Header.tsx`
+- `src/components/Navigation.tsx`
+- `src/presentation/ForbiddenScreen.tsx`
+
+**Reason:** These components use next-intl's message access pattern
+`t((m) => m.app.navigation.domains)` which triggers TypeScript's
+`noPropertyAccessFromIndexSignature` strict check (TS4111) because
+translation objects use index signatures.
+
+**Error (39 occurrences across 4 files):**
+```
+TS4111: Property 'app' comes from an index signature, so it must be accessed with ['app'].
+```
+
+**Resolution Attempted:** Could disable
+`noPropertyAccessFromIndexSignature` in `tsconfig.typedoc.json`, but
+the Task 2 plan prohibited weakening compiler options. Excluding
+specific i18n-heavy presentation components is the narrowest fix
+that preserves strict type-checking.
+
+**Impact:** These are presentation/UI components. Business logic in
+`src/hooks/`, `src/stores/`, `src/lib/actions/`, `src/types/`,
+`src/contexts/`, and other reusable modules is fully documented.
+
+#### Configuration Notes
+
+- **Module Resolution:** The `files: ["src/types/globals.d.ts"]`
+  entry in `tsconfig.typedoc.json` makes ambient module declarations
+  visible to TypeDoc despite the `**/*.d.ts` exclude pattern. This
+  allows TypeDoc to resolve `*.svg` and `*?raw` imports without
+  requiring source-file changes.
+  
+- **Exclusions:** All exclusions are configured in
+  `sites/arolariu.ro/tsconfig.typedoc.json` as the narrowest
+  possible patterns that allow TypeDoc to succeed with strict
+  compiler options intact.
