@@ -104,9 +104,9 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          dotnet-version: '10'
+          dotnet-version: '10.0.x'
           install-node-dependencies: 'true'
-          install-dotnet-dependencies: 'true'
+          install-dotnet-dependencies: 'false'
           cache-key-prefix: 'docs'
 
       - name: 🐍 Setting up Python 3.12 for pydoc-markdown...
@@ -115,19 +115,19 @@ jobs:
           python-version: '3.12'
           cache: 'pip'
 
-      - name: "[DOCS::1/4] 🏗️ Installing the .NET dependencies..."
+      - name: "[DOCS::1/4] 🏗️ Installing documentation extractor dependencies..."
         run: |
-          echo "::group::📦 .NET Dependencies"
-          echo "Installing .NET workloads, restoring packages, and installing DefaultDocumentation.Console..."
+          echo "::group::📦 Documentation Extractor Dependencies"
+          echo "Restoring the API graph root and installing DefaultDocumentation.Console + pydoc-markdown..."
           START_TIME=$(date +%s)
-          dotnet workload restore
-          dotnet restore ./arolariu.slnx
-          dotnet tool install --global DefaultDocumentation.Console --version 1.2.4
+          dotnet restore sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj
+          dotnet tool update --global DefaultDocumentation.Console --version 1.2.4
           echo "${HOME}/.dotnet/tools" >> $GITHUB_PATH
+          python -m pip install --upgrade pip
           python -m pip install -r sites/exp.arolariu.ro/requirements-dev.txt
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
-          echo "::notice::✅ Dependencies installed in ${DURATION}s"
+          echo "::notice::✅ Documentation extractor dependencies installed in ${DURATION}s"
           echo "::endgroup::"
 
       - name: "[DOCS::2/4] 🧾 Assembling extractor output (TypeDoc + pydoc-markdown + DefaultDocumentation)..."
