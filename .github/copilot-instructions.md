@@ -68,6 +68,10 @@ If rules conflict, resolve in this order:
 - **Memory.** Copilot Memory (server-side) and the file-based `memory` MCP at `.github/memory/memory.json` (mirrored to Copilot CLI via `.copilot/mcp-config.json`) coexist as separate persistent stores.
 - **Cloud agent.** When running on a PR, `.github/instructions/**` files matching `applyTo` globs are loaded; this file (`copilot-instructions.md`) is always loaded. AGENTS.md may or may not be loaded depending on surface.
 
+## Worktree Bootstrap
+
+- When working in `.worktrees/**` or any fresh checkout and touching `sites/arolariu.ro` tests, typechecks, or builds that import `@arolariu/components`, run setup in that same worktree first: `npm install`, then `npm run build:components`.
+
 ---
 
 For Setup, Code Style, Architecture, Testing, Git Workflow, Tools, RFCs, Troubleshooting, Environment Setup → see [`AGENTS.md`](../AGENTS.md).
