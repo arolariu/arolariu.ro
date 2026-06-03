@@ -142,7 +142,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   output: "standalone",
 
-  transpilePackages: ["import-in-the-middle", "require-in-the-middle"],
+  transpilePackages: ["import-in-the-middle", "require-in-the-middle", "prettier"],
 
   experimental: {
     // Enable server source maps in development for debugging
@@ -204,8 +204,6 @@ const nextConfig: NextConfig = {
   enablePrerenderSourceMaps: isDebugBuild,
   productionBrowserSourceMaps: isDebugBuild,
   reactProductionProfiling: isDebugBuild,
-
-  serverExternalPackages: ["@react-email/render", "prettier"]
 };
 
 const withTranslation = createNextIntlPlugin({
