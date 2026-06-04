@@ -20,6 +20,7 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
+import {readBlobMetadata} from "@/lib/utils.generic";
 import {createErrorResult, type ServerActionResult} from "@/lib/utils.server";
 import {type Scan, ScanStatus, ScanType} from "@/types/scans";
 
@@ -126,53 +127,38 @@ export async function fetchScans({includeArchived = false}: ServerActionInputTyp
         prefix,
         includeMetadata: true,
       })) {
-        const metadata = blob.metadata ?? {};
+        let scanMetadata;
+        try {
+          scanMetadata = readBlobMetadata(blob.metadata ?? {});
+        } catch (metadataError) {
+          logWithTrace("warn", "Skipping scan with invalid blob metadata", {blobName: blob.name, error: String(metadataError)}, "server");
+          continue;
+        }
 
-        // Support both camelCase and lowercase keys for backward compatibility
-        // Older scans might have lowercase keys from buggy registerScan
-        const scanId = metadata["scanId"] ?? metadata["scanid"];
+        const shouldInclude = includeArchived
+          ? scanMetadata.status !== ScanStatus.ATTACHED
+          : scanMetadata.status === ScanStatus.READY || scanMetadata.status === ScanStatus.DETACHED;
 
-        // Skip scans that have been used by invoices
-        if (metadata["usedByInvoice"] !== "true" && scanId) {
-          // Parse status from metadata (case-insensitive)
-          const statusString = metadata["status"] ?? ScanStatus.READY;
-          const status = Object.values(ScanStatus).includes(statusString as ScanStatus) ? (statusString as ScanStatus) : ScanStatus.READY;
+        if (shouldInclude) {
+          const blobUrl = rewriteAzuriteUrl(containerClient.getBlockBlobClient(blob.name).url);
+          const mimeType = blob.properties.contentType ?? "application/octet-stream";
+          const blobFileName = blob.name.split("/").pop();
+          const displayName = scanMetadata.displayName ?? blobFileName ?? "Unknown";
 
-          // Only include non-archived scans (or all scans if includeArchived is true)
-          if (includeArchived || status !== ScanStatus.ARCHIVED) {
-            // Construct blob URL
-            const blobUrl = rewriteAzuriteUrl(containerClient.getBlockBlobClient(blob.name).url);
+          const scan: Scan = {
+            id: scanMetadata.scanId,
+            userIdentifier: scanMetadata.ownerId,
+            name: displayName,
+            blobUrl,
+            mimeType,
+            sizeInBytes: blob.properties.contentLength ?? 0,
+            scanType: mimeTypeToScanType(mimeType),
+            uploadedAt: scanMetadata.uploadedAt,
+            status: scanMetadata.status,
+            metadata: scanMetadata,
+          };
 
-            // Parse upload timestamp (support both camelCase and lowercase)
-            const uploadedAtString = metadata["uploadedAt"] ?? metadata["uploadedat"];
-            const uploadedAt = uploadedAtString ? new Date(uploadedAtString) : (blob.properties.createdOn ?? new Date());
-
-            // Determine MIME type
-            const mimeType = blob.properties.contentType ?? "application/octet-stream";
-
-            // Get original filename (support both camelCase and lowercase)
-            const originalFileName = metadata["originalFileName"] ?? metadata["originalfilename"];
-            const blobFileName = blob.name.split("/").pop();
-            const displayName = originalFileName ?? (blobFileName ? blobFileName : "Unknown");
-
-            const scan: Scan = {
-              id: scanId,
-              userIdentifier: metadata["userIdentifier"] ?? metadata["useridentifier"] ?? userIdentifier,
-              name: displayName,
-              blobUrl,
-              mimeType,
-              sizeInBytes: blob.properties.contentLength ?? 0,
-              scanType: mimeTypeToScanType(mimeType),
-              uploadedAt,
-              status,
-              metadata: {
-                originalFileName: originalFileName ?? "",
-                ...metadata,
-              },
-            };
-
-            scans.push(scan);
-          }
+          scans.push(scan);
         }
       }
       addSpanEvent("azure.blob.list.complete");

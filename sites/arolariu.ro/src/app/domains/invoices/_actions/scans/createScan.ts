@@ -65,8 +65,9 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
+import {writeBlobMetadata} from "@/lib/utils.generic";
 import {convertBase64ToBlob, createErrorResult, type ServerActionResult} from "@/lib/utils.server";
-import {type Scan, ScanStatus, ScanType} from "@/types/scans";
+import {type Scan, ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, ScanStatus, ScanType} from "@/types/scans";
 
 /**
  * Input parameters for uploading a standalone scan.
@@ -251,14 +252,18 @@ export async function createScan({base64Data, fileName, mimeType}: ServerActionI
       const originalFile = await convertBase64ToBlob(base64Data);
       const arrayBuffer = await originalFile.arrayBuffer();
 
-      const uploadedAt = new Date().toISOString();
-      const blobMetadata = {
-        userIdentifier,
+      const uploadedAt = new Date();
+      const scanMetadata = {
         scanId,
+        ownerId: userIdentifier,
+        displayName: fileName,
+        documentKind: ScanDocumentKind.RECEIPT,
+        documentRole: ScanDocumentRole.PRIMARY,
+        status: ScanMetadataStatus.READY,
         uploadedAt,
-        originalFileName: fileName,
-        status: ScanStatus.READY,
-      };
+        uploadedBy: userIdentifier,
+      } as const;
+      const blobMetadata = writeBlobMetadata(scanMetadata);
 
       const blobUploadResponse = await blockBlobClient.uploadData(arrayBuffer, {
         blobHTTPHeaders: {
@@ -284,11 +289,9 @@ export async function createScan({base64Data, fileName, mimeType}: ServerActionI
         mimeType,
         sizeInBytes: originalFile.size,
         scanType: mimeTypeToScanType(mimeType),
-        uploadedAt: new Date(uploadedAt),
+        uploadedAt,
         status: ScanStatus.READY,
-        metadata: {
-          originalFileName: fileName,
-        },
+        metadata: scanMetadata,
       };
 
       return {

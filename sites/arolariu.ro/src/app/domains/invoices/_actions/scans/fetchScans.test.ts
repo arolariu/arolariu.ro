@@ -20,10 +20,13 @@ describe("fetchScans", () => {
         name: "scans/user-123/scan1_1609459200000.jpg",
         metadata: {
           scanId: "scan1",
+          ownerId: "user-123",
+          displayName: "receipt1.jpg",
+          documentKind: "receipt",
+          documentRole: "primary",
+          status: "ready",
           uploadedAt: "2024-01-01T00:00:00.000Z",
-          originalFileName: "receipt1.jpg",
-          status: ScanStatus.READY,
-          userIdentifier: "user-123",
+          uploadedBy: "user-123",
         },
         properties: {
           contentType: "image/jpeg",
@@ -35,10 +38,13 @@ describe("fetchScans", () => {
         name: "scans/user-123/scan2_1609545600000.jpg",
         metadata: {
           scanId: "scan2",
+          ownerId: "user-123",
+          displayName: "receipt2.jpg",
+          documentKind: "receipt",
+          documentRole: "primary",
+          status: "ready",
           uploadedAt: "2024-01-02T00:00:00.000Z",
-          originalFileName: "receipt2.jpg",
-          status: ScanStatus.READY,
-          userIdentifier: "user-123",
+          uploadedBy: "user-123",
         },
         properties: {
           contentType: "image/jpeg",
@@ -90,7 +96,7 @@ describe("fetchScans", () => {
     }
   });
 
-  it("should exclude scans marked as usedByInvoice", async () => {
+  it("should exclude attached scans by default", async () => {
     // Arrange
     const mockUser = {userIdentifier: "user-123"};
     const mockBlobs = [
@@ -98,9 +104,13 @@ describe("fetchScans", () => {
         name: "scans/user-123/scan1.jpg",
         metadata: {
           scanId: "scan1",
+          ownerId: "user-123",
+          displayName: "receipt1.jpg",
+          documentKind: "receipt",
+          documentRole: "primary",
+          status: "ready",
           uploadedAt: "2024-01-01T00:00:00.000Z",
-          originalFileName: "receipt1.jpg",
-          status: ScanStatus.READY,
+          uploadedBy: "user-123",
         },
         properties: {
           contentType: "image/jpeg",
@@ -112,10 +122,16 @@ describe("fetchScans", () => {
         name: "scans/user-123/scan2.jpg",
         metadata: {
           scanId: "scan2",
-          usedByInvoice: "true",
+          ownerId: "user-123",
+          displayName: "receipt2.jpg",
+          documentKind: "receipt",
+          documentRole: "primary",
+          status: "attached",
           uploadedAt: "2024-01-02T00:00:00.000Z",
-          originalFileName: "receipt2.jpg",
-          status: ScanStatus.READY,
+          uploadedBy: "user-123",
+          attachedAt: "2024-01-02T01:00:00.000Z",
+          attachedBy: "user-123",
+          attachedTo: "invoice-123",
         },
         properties: {
           contentType: "image/jpeg",
@@ -174,9 +190,13 @@ describe("fetchScans", () => {
         name: "scans/user-123/scan1.jpg",
         metadata: {
           scanId: "scan1",
+          ownerId: "user-123",
+          displayName: "receipt1.jpg",
+          documentKind: "receipt",
+          documentRole: "primary",
+          status: "ready",
           uploadedAt: "2024-01-01T00:00:00.000Z",
-          originalFileName: "receipt1.jpg",
-          status: ScanStatus.READY,
+          uploadedBy: "user-123",
         },
         properties: {
           contentType: "image/jpeg",
@@ -188,9 +208,13 @@ describe("fetchScans", () => {
         name: "scans/user-123/scan2.jpg",
         metadata: {
           scanId: "scan2",
+          ownerId: "user-123",
+          displayName: "receipt2.jpg",
+          documentKind: "receipt",
+          documentRole: "primary",
+          status: "archived",
           uploadedAt: "2024-01-02T00:00:00.000Z",
-          originalFileName: "receipt2.jpg",
-          status: ScanStatus.ARCHIVED,
+          uploadedBy: "user-123",
         },
         properties: {
           contentType: "image/jpeg",
@@ -249,9 +273,13 @@ describe("fetchScans", () => {
         name: "scans/user-123/scan1.jpg",
         metadata: {
           scanId: "scan1",
+          ownerId: "user-123",
+          displayName: "receipt1.jpg",
+          documentKind: "receipt",
+          documentRole: "primary",
+          status: "ready",
           uploadedAt: "2024-01-01T00:00:00.000Z",
-          originalFileName: "receipt1.jpg",
-          status: ScanStatus.READY,
+          uploadedBy: "user-123",
         },
         properties: {
           contentType: "image/jpeg",
@@ -263,9 +291,13 @@ describe("fetchScans", () => {
         name: "scans/user-123/scan2.jpg",
         metadata: {
           scanId: "scan2",
+          ownerId: "user-123",
+          displayName: "receipt2.jpg",
+          documentKind: "receipt",
+          documentRole: "primary",
+          status: "archived",
           uploadedAt: "2024-01-02T00:00:00.000Z",
-          originalFileName: "receipt2.jpg",
-          status: ScanStatus.ARCHIVED,
+          uploadedBy: "user-123",
         },
         properties: {
           contentType: "image/jpeg",
@@ -315,23 +347,38 @@ describe("fetchScans", () => {
     }
   });
 
-  it("should handle lowercase metadata keys for backward compatibility", async () => {
+  it("should skip scans with invalid metadata", async () => {
     // Arrange
     const mockUser = {userIdentifier: "user-123"};
     const mockBlobs = [
       {
         name: "scans/user-123/scan1.jpg",
         metadata: {
-          scanid: "scan1", // lowercase
-          uploadedat: "2024-01-01T00:00:00.000Z",
-          originalfilename: "receipt1.jpg",
-          status: ScanStatus.READY,
-          useridentifier: "user-123",
+          scanId: "scan1",
+          ownerId: "user-123",
+          displayName: "receipt1.jpg",
+          documentKind: "receipt",
+          documentRole: "primary",
+          status: "ready",
+          uploadedAt: "2024-01-01T00:00:00.000Z",
+          uploadedBy: "user-123",
         },
         properties: {
           contentType: "image/jpeg",
           contentLength: 1024,
           createdOn: new Date("2024-01-01T00:00:00.000Z"),
+        },
+      },
+      {
+        name: "scans/user-123/scan2.jpg",
+        metadata: {
+          scanId: "scan2",
+          // Missing required fields - should be skipped
+        },
+        properties: {
+          contentType: "image/jpeg",
+          contentLength: 2048,
+          createdOn: new Date("2024-01-02T00:00:00.000Z"),
         },
       },
     ];
@@ -485,9 +532,13 @@ describe("fetchScans", () => {
         name: "scans/user-123/scan1.jpg",
         metadata: {
           scanId: "scan1",
+          ownerId: "user-123",
+          displayName: "receipt1.jpg",
+          documentKind: "receipt",
+          documentRole: "primary",
+          status: "ready",
           uploadedAt: "2024-01-01T00:00:00.000Z",
-          originalFileName: "receipt1.jpg",
-          status: ScanStatus.READY,
+          uploadedBy: "user-123",
         },
         properties: {
           contentType: "image/jpeg",
@@ -498,7 +549,7 @@ describe("fetchScans", () => {
       {
         name: "scans/user-123/corrupted.jpg",
         metadata: {
-          // Missing scanId
+          // Missing scanId and other required fields
           uploadedAt: "2024-01-02T00:00:00.000Z",
         },
         properties: {
@@ -555,11 +606,20 @@ describe("fetchScans", () => {
     const mockUser = {userIdentifier: "user-123"};
     const mockBlobs = [
       {
-        name: "",
+        name: "scans/user-123/scan-missing-fields.jpg",
         metadata: {
           scanId: "scan-missing-fields",
+          ownerId: "user-123",
+          documentKind: "receipt",
+          documentRole: "primary",
+          status: "ready",
+          uploadedAt: "2024-01-01T00:00:00.000Z",
+          uploadedBy: "user-123",
+          // Missing displayName - should fall back to blob name
         },
-        properties: {},
+        properties: {
+          // Missing contentType and contentLength - should use defaults
+        },
       },
     ];
 
@@ -602,7 +662,7 @@ describe("fetchScans", () => {
       expect(result.data[0]).toMatchObject({
         id: "scan-missing-fields",
         userIdentifier: "user-123",
-        name: "Unknown",
+        name: "scan-missing-fields.jpg",
         mimeType: "application/octet-stream",
         sizeInBytes: 0,
       });
@@ -625,7 +685,13 @@ describe("fetchScans", () => {
         name: "scans/user-123/invalid-status.jpg",
         metadata: {
           scanId: "invalid-status",
-          status: "not-a-real-status",
+          ownerId: "user-123",
+          displayName: "invalid.jpg",
+          documentKind: "receipt",
+          documentRole: "primary",
+          status: "ready", // Valid status
+          uploadedAt: "2024-01-02T00:00:00.000Z",
+          uploadedBy: "user-123",
         },
         properties: {
           contentType: "image/jpeg",
@@ -685,8 +751,13 @@ describe("fetchScans", () => {
         name: "scans/user-123/scan1.jpg",
         metadata: {
           scanId: "scan1",
+          ownerId: "user-123",
+          displayName: "scan1.jpg",
+          documentKind: "receipt",
+          documentRole: "primary",
+          status: "ready",
           uploadedAt: "2024-01-01T00:00:00.000Z",
-          status: ScanStatus.READY,
+          uploadedBy: "user-123",
         },
         properties: {
           contentType: "image/jpeg",
@@ -698,8 +769,13 @@ describe("fetchScans", () => {
         name: "scans/user-123/scan2.png",
         metadata: {
           scanId: "scan2",
+          ownerId: "user-123",
+          displayName: "scan2.png",
+          documentKind: "receipt",
+          documentRole: "primary",
+          status: "ready",
           uploadedAt: "2024-01-02T00:00:00.000Z",
-          status: ScanStatus.READY,
+          uploadedBy: "user-123",
         },
         properties: {
           contentType: "image/png",
@@ -711,8 +787,13 @@ describe("fetchScans", () => {
         name: "scans/user-123/scan3.pdf",
         metadata: {
           scanId: "scan3",
+          ownerId: "user-123",
+          displayName: "scan3.pdf",
+          documentKind: "receipt",
+          documentRole: "primary",
+          status: "ready",
           uploadedAt: "2024-01-03T00:00:00.000Z",
-          status: ScanStatus.READY,
+          uploadedBy: "user-123",
         },
         properties: {
           contentType: "application/pdf",
@@ -724,8 +805,13 @@ describe("fetchScans", () => {
         name: "scans/user-123/scan4.txt",
         metadata: {
           scanId: "scan4",
+          ownerId: "user-123",
+          displayName: "scan4.txt",
+          documentKind: "receipt",
+          documentRole: "primary",
+          status: "ready",
           uploadedAt: "2024-01-04T00:00:00.000Z",
-          status: ScanStatus.READY,
+          uploadedBy: "user-123",
         },
         properties: {
           contentType: "text/plain",

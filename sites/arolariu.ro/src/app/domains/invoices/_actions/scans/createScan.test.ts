@@ -194,7 +194,7 @@ describe("createScan", () => {
     expect(result.success).toBe(false);
   });
 
-  it("should preserve original filename in metadata", async () => {
+  it("should write canonical scan metadata", async () => {
     mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-meta"}));
     const capturedMetadata: Array<Record<string, string>> = [];
     setupBlobClient({
@@ -202,16 +202,26 @@ describe("createScan", () => {
       onUpload: (options) => capturedMetadata.push(options.metadata ?? {}),
     });
 
-    await createScan({
+    const result = await createScan({
       base64Data: VALID_BASE64,
       fileName: "my-original-receipt.jpg",
       mimeType: "image/jpeg",
     });
 
+    expect(result.success).toBe(true);
     expect(capturedMetadata).toHaveLength(1);
-    expect(capturedMetadata[0]?.["originalFileName"]).toBe("my-original-receipt.jpg");
-    expect(capturedMetadata[0]?.["status"]).toBe(ScanStatus.READY);
-    expect(capturedMetadata[0]?.["userIdentifier"]).toBe("user-meta");
+    expect(capturedMetadata[0]).toMatchObject({
+      ownerId: "user-meta",
+      displayName: "my-original-receipt.jpg",
+      documentKind: "receipt",
+      documentRole: "primary",
+      status: "ready",
+      uploadedBy: "user-meta",
+    });
+    expect(capturedMetadata[0]?.["scanId"]).toBeDefined();
+    expect(capturedMetadata[0]?.["uploadedAt"]).toBeDefined();
+    expect(capturedMetadata[0]?.["originalFileName"]).toBeUndefined();
+    expect(capturedMetadata[0]?.["userIdentifier"]).toBeUndefined();
   });
 
   it("should use bin extension for filenames without a usable extension", async () => {

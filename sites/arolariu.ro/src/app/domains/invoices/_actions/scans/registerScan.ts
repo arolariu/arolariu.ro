@@ -25,7 +25,8 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
-import {type Scan, ScanStatus, ScanType} from "@/types/scans";
+import {writeBlobMetadata} from "@/lib/utils.generic";
+import {type Scan, ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, ScanStatus, ScanType} from "@/types/scans";
 import {revalidatePath} from "next/cache";
 
 /**
@@ -162,13 +163,17 @@ export async function registerScan(input: RegisterScanInput): Promise<RegisterSc
       // Step 3. Set blob metadata in Azure (direct upload doesn't set metadata)
       addSpanEvent("azure.blob.metadata.start");
       const uploadedAt = new Date();
-      const blobMetadata = {
-        userIdentifier,
+      const scanMetadata = {
         scanId: input.scanId,
-        uploadedAt: uploadedAt.toISOString(),
-        originalFileName: input.fileName,
-        status: ScanStatus.READY,
-      };
+        ownerId: userIdentifier,
+        displayName: input.fileName,
+        documentKind: ScanDocumentKind.RECEIPT,
+        documentRole: ScanDocumentRole.PRIMARY,
+        status: ScanMetadataStatus.READY,
+        uploadedAt,
+        uploadedBy: userIdentifier,
+      } as const;
+      const blobMetadata = writeBlobMetadata(scanMetadata);
 
       try {
         const containerName = "invoices";
@@ -202,10 +207,7 @@ export async function registerScan(input: RegisterScanInput): Promise<RegisterSc
         scanType: mimeTypeToScanType(input.mimeType),
         uploadedAt,
         status: ScanStatus.READY,
-        metadata: {
-          originalFileName: input.fileName,
-          registeredAt: uploadedAt.toISOString(),
-        },
+        metadata: scanMetadata,
       };
 
       addSpanEvent("scan.registration.complete");

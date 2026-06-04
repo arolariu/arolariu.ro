@@ -441,19 +441,24 @@ describe("registerScan", () => {
 
     // Act
     await registerScan({
-      scanId: "scan_meta",
+      scanId: "scan-123",
       blobUrl: validBlobUrl,
-      fileName: "test-receipt.jpg",
+      fileName: "receipt.jpg",
       mimeType: "image/jpeg",
       sizeInBytes: 2048,
     });
 
     // Assert
-    expect(capturedMetadata["userIdentifier"]).toBe("user-meta");
-    expect(capturedMetadata["scanId"]).toBe("scan_meta");
-    expect(capturedMetadata["originalFileName"]).toBe("test-receipt.jpg");
-    expect(capturedMetadata["status"]).toBe(ScanStatus.READY);
-    expect(capturedMetadata["uploadedAt"]).toBeTruthy();
+    expect(capturedMetadata).toMatchObject({
+      scanId: "scan-123",
+      ownerId: "user-meta",
+      displayName: "receipt.jpg",
+      documentKind: "receipt",
+      documentRole: "primary",
+      status: "ready",
+      uploadedBy: "user-meta",
+    });
+    expect(capturedMetadata["uploadedAt"]).toBeDefined();
   });
 
   it("should handle unsupported MIME types as OTHER scanType", async () => {
