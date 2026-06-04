@@ -69,16 +69,25 @@ function createUpload(overrides: Partial<PendingUpload> = {}): PendingUpload {
 function createDependencies(overrides: Partial<UploadRunnerDependencies> = {}): UploadRunnerDependencies {
   const scan = createScan();
   return {
-    generateUploadSasUrl: vi.fn().mockResolvedValue({
+    createUploadTarget: vi.fn().mockResolvedValue({
       success: true,
       data: {
         sasUrl: "https://storage/upload?sas=1",
         blobName: "scans/user-1/scan-1.jpg",
         blobUrl: scan.blobUrl,
         scanId: scan.id,
+        requiredHeaders: {
+          "x-ms-blob-type": "BlockBlob",
+          "Content-Type": "image/jpeg",
+          "x-ms-meta-scanId": scan.id,
+          "x-ms-meta-ownerId": "user-1",
+          "x-ms-meta-documentKind": "receipt",
+          "x-ms-meta-documentRole": "primary",
+          "x-ms-meta-status": "ready",
+          "x-ms-meta-uploadedBy": "user-1",
+        },
       },
     }),
-    registerScan: vi.fn().mockResolvedValue({success: true, scan}),
     uploadScan: vi.fn().mockResolvedValue({success: true, data: {status: 201, scan}}),
     readFileAsBase64: vi.fn().mockResolvedValue("data:image/jpeg;base64,AAAA"),
     ...overrides,
@@ -86,7 +95,7 @@ function createDependencies(overrides: Partial<UploadRunnerDependencies> = {}): 
 }
 
 describe("uploadPendingScan", () => {
-  it("uploads directly with SAS and registers the scan", async () => {
+  it("uploads directly with SAS using required headers from upload target", async () => {
     const originalFetch = globalThis.fetch;
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, {status: 201}));
     const dependencies = createDependencies();
@@ -109,14 +118,16 @@ describe("uploadPendingScan", () => {
         "https://storage/upload?sas=1",
         expect.objectContaining({
           method: "PUT",
-          headers: {
+          headers: expect.objectContaining({
             "x-ms-blob-type": "BlockBlob",
             "Content-Type": "image/jpeg",
-          },
+            "x-ms-meta-scanId": "scan-1",
+            "x-ms-meta-ownerId": "user-1",
+          }),
         }),
       );
       expect(dependencies.uploadScan).not.toHaveBeenCalled();
-      expect(progressEvents.map((event) => event.progress)).toEqual([0, 30, 70, 90]);
+      expect(progressEvents.map((event) => event.progress)).toEqual([0, 30, 70]);
     } finally {
       vi.stubGlobal("fetch", originalFetch);
     }
@@ -156,10 +167,10 @@ describe("uploadPendingScan", () => {
     }
   });
 
-  it("uses server upload fallback when SAS generation fails", async () => {
+  it("uses server upload fallback when upload target creation fails", async () => {
     const scan = createScan({id: "fallback-scan"});
     const dependencies = createDependencies({
-      generateUploadSasUrl: vi.fn().mockResolvedValue({success: false, error: {message: "SAS unavailable"}}),
+      createUploadTarget: vi.fn().mockResolvedValue({success: false, error: {message: "Target unavailable"}}),
       uploadScan: vi.fn().mockResolvedValue({success: true, data: {status: 201, scan}}),
     });
 
@@ -199,24 +210,23 @@ describe("uploadPendingScan", () => {
     }
   });
 
-  it("uses server upload fallback when scan registration fails", async () => {
+  it("returns scan built from upload target on direct PUT success", async () => {
     const originalFetch = globalThis.fetch;
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, {status: 201})));
-    const scan = createScan({id: "fallback-after-register"});
-    const dependencies = createDependencies({
-      registerScan: vi.fn().mockResolvedValue({success: false, error: "Registration failed"}),
-      uploadScan: vi.fn().mockResolvedValue({success: true, data: {status: 201, scan}}),
-    });
+    const dependencies = createDependencies();
 
     try {
       const result = await uploadPendingScan(createUpload(), dependencies, {onProgress: vi.fn()});
 
-      expect(result).toMatchObject({
-        success: true,
-        attempts: 1,
-        blobUrl: scan.blobUrl,
-      });
-      expect(dependencies.uploadScan).toHaveBeenCalledOnce();
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.scan).toMatchObject({
+          id: "scan-1",
+          userIdentifier: "user-1",
+          name: "receipt.jpg",
+          blobUrl: "https://storage/scans/scan-1.jpg",
+        });
+      }
     } finally {
       vi.stubGlobal("fetch", originalFetch);
     }
@@ -224,7 +234,7 @@ describe("uploadPendingScan", () => {
 
   it("retries up to three attempts before failing", async () => {
     const dependencies = createDependencies({
-      generateUploadSasUrl: vi.fn().mockResolvedValue({success: false, error: {message: "SAS unavailable"}}),
+      createUploadTarget: vi.fn().mockResolvedValue({success: false, error: {message: "Target unavailable"}}),
       uploadScan: vi.fn().mockResolvedValue({success: false, error: {message: "Fallback failed"}}),
     });
     const progressEvents: UploadProgressEvent[] = [];
@@ -259,7 +269,7 @@ describe("uploadPendingScan", () => {
 
   it("returns an unexpected-error result when every attempt throws", async () => {
     const dependencies = createDependencies({
-      generateUploadSasUrl: vi.fn().mockRejectedValue(new Error("SAS service down")),
+      createUploadTarget: vi.fn().mockRejectedValue(new Error("Target service down")),
     });
 
     const result = await uploadPendingScan(createUpload(), dependencies, {onProgress: vi.fn()});
@@ -269,13 +279,13 @@ describe("uploadPendingScan", () => {
       uploadId: "upload-1",
       attempts: 3,
       reason: "unexpected-error",
-      error: "SAS service down",
+      error: "Target service down",
     });
   });
 
   it("normalizes non-Error exceptions from upload dependencies", async () => {
     const dependencies = createDependencies({
-      generateUploadSasUrl: vi.fn().mockRejectedValue("SAS service down"),
+      createUploadTarget: vi.fn().mockRejectedValue("Target service down"),
     });
 
     const result = await uploadPendingScan(createUpload(), dependencies, {onProgress: vi.fn()});

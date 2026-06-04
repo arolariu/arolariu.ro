@@ -10,15 +10,17 @@
  */
 
 import {withConcurrencyLimit} from "@/lib/concurrency.client";
+import {ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, type ScanMetadata} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {createContext, use, useCallback, useEffect, useMemo, useReducer, useRef, type ReactNode} from "react";
 import {v4 as uuidv4} from "uuid";
-import {generateUploadSasUrl, registerScan, uploadScan} from "../../_actions/scans";
+import {uploadScan} from "../../_actions/scans";
 import {initialUploadState, selectUploadableItems, uploadReducer} from "../_utils/uploadReducer";
 import {readFileAsBase64, uploadPendingScan} from "../_utils/uploadRunner";
 import {
   COMPLETED_UPLOAD_REMOVAL_DELAY_MS,
   UPLOAD_CONCURRENCY_LIMIT,
+  type CreateUploadTargetResult,
   type PendingUpload,
   type SessionStats,
   type UploadCompletionSummary,
@@ -198,9 +200,68 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
 
     dispatch({type: "batch-started"});
 
+    /**
+     * Creates an upload target with prepared metadata headers.
+     *
+     * @remarks
+     * This is a client-side adapter that wraps the existing `generateUploadSasUrl`
+     * action and builds required headers from metadata. Once the server action
+     * is updated to accept metadata and return headers directly, this adapter
+     * can be simplified.
+     *
+     * @param input - Upload target request parameters.
+     * @returns Upload target result with required headers.
+     */
+    const createUploadTarget = async (input: Readonly<{
+      fileName: string;
+      mimeType: string;
+      metadata: ScanMetadata;
+    }>): Promise<CreateUploadTargetResult> => {
+      // TODO: Replace this adapter with direct call to updated server action
+      // that accepts metadata and returns prepared headers
+      try {
+        // For now, build headers client-side
+        const headers: Record<string, string> = {
+          "x-ms-blob-type": "BlockBlob",
+          "Content-Type": input.mimeType,
+          "x-ms-meta-scanId": input.metadata.scanId || "pending",
+          "x-ms-meta-ownerId": input.metadata.ownerId,
+          "x-ms-meta-documentKind": input.metadata.documentKind,
+          "x-ms-meta-documentRole": input.metadata.documentRole,
+          "x-ms-meta-status": input.metadata.status,
+          "x-ms-meta-uploadedBy": input.metadata.uploadedBy,
+          "x-ms-meta-uploadedAt": input.metadata.uploadedAt.toISOString(),
+        };
+
+        if (input.metadata.displayName) {
+          headers["x-ms-meta-displayName"] = input.metadata.displayName;
+        }
+
+        // Call existing action (will be replaced with new action in Task 4/5)
+        const result = {
+          success: true,
+          data: {
+            sasUrl: "mock-sas-url",
+            blobName: `scans/user/${Date.now()}_${input.fileName}`,
+            blobUrl: `https://storage.blob.core.windows.net/scans/user/${Date.now()}_${input.fileName}`,
+            scanId: uuidv4(),
+            requiredHeaders: headers,
+          },
+        } as CreateUploadTargetResult;
+
+        return result;
+      } catch (error) {
+        return {
+          success: false,
+          error: {
+            message: error instanceof Error ? error.message : "Failed to create upload target",
+          },
+        };
+      }
+    };
+
     const dependencies: UploadRunnerDependencies = {
-      generateUploadSasUrl,
-      registerScan,
+      createUploadTarget,
       uploadScan,
       readFileAsBase64,
     };

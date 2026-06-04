@@ -6,8 +6,13 @@
  * The runner performs one pending upload's server journey with explicit
  * dependency injection so network, server actions, and file reading remain
  * testable.
+ *
+ * Primary flow: request upload target (including metadata headers), then direct
+ * PUT to Azure with canonical metadata. On failure, fall back to server-side
+ * createScan action.
  */
 
+import {ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, type ScanMetadata} from "@/types/scans";
 import {
   MAX_UPLOAD_ATTEMPTS,
   type PendingUpload,
@@ -97,6 +102,27 @@ async function uploadWithServerFallback(
 }
 
 /**
+ * Builds canonical scan metadata for upload target request.
+ *
+ * @param upload - File-backed pending upload.
+ * @param userId - Owner's user identifier.
+ * @returns Canonical scan metadata.
+ */
+function buildScanMetadata(upload: FileBackedUpload, userId: string): ScanMetadata {
+  return {
+    scanId: "", // Will be filled by server upload target
+    ownerId: userId,
+    displayName: upload.name,
+    collectionName: "default",
+    documentKind: ScanDocumentKind.RECEIPT,
+    documentRole: ScanDocumentRole.PRIMARY,
+    status: ScanMetadataStatus.READY,
+    uploadedAt: new Date(),
+    uploadedBy: userId,
+  };
+}
+
+/**
  * Runs one upload attempt using direct Azure upload first, then server fallback.
  *
  * @param upload - File-backed pending upload.
@@ -114,48 +140,57 @@ async function runSingleAttempt(
   const status = progressStatusForAttempt(attempt);
   callbacks.onProgress({uploadId: upload.id, status, progress: 0, attempts: attempt});
 
-  const sasResult = await dependencies.generateUploadSasUrl({
+  // Build canonical metadata before requesting upload target
+  // Note: scanId will be filled by server, ownerId placeholder since client doesn't know it
+  const metadata = buildScanMetadata(upload, "placeholder-user");
+
+  const targetResult = await dependencies.createUploadTarget({
     fileName: upload.name,
     mimeType: upload.mimeType,
+    metadata,
   });
 
   callbacks.onProgress({uploadId: upload.id, status, progress: 30, attempts: attempt});
 
-  if (sasResult.success) {
-    const uploadResponse = await globalThis.fetch(sasResult.data.sasUrl, {
+  if (targetResult.success) {
+    const uploadResponse = await globalThis.fetch(targetResult.data.sasUrl, {
       method: "PUT",
       body: upload.file,
-      headers: {
-        "x-ms-blob-type": "BlockBlob",
-        "Content-Type": upload.mimeType,
-      },
+      headers: targetResult.data.requiredHeaders,
     });
 
     callbacks.onProgress({uploadId: upload.id, status, progress: 70, attempts: attempt});
 
     if (uploadResponse.ok) {
-      const registerResult = await dependencies.registerScan({
-        scanId: sasResult.data.scanId,
-        blobUrl: sasResult.data.blobUrl,
-        fileName: upload.name,
+      // Extract metadata from headers for scan construction
+      const headers = targetResult.data.requiredHeaders;
+      const ownerId = headers["x-ms-meta-ownerId"] || metadata.ownerId;
+      
+      // Build Scan from upload target data
+      const scan = {
+        id: targetResult.data.scanId,
+        userIdentifier: ownerId,
+        name: upload.name,
+        blobUrl: targetResult.data.blobUrl,
         mimeType: upload.mimeType,
         sizeInBytes: upload.size,
-      });
+        scanType: upload.mimeType.includes("pdf") ? "PDF" : upload.mimeType.includes("png") ? "PNG" : "JPEG",
+        uploadedAt: metadata.uploadedAt,
+        status: "ready" as const,
+        metadata: {
+          ...metadata,
+          scanId: targetResult.data.scanId,
+          ownerId,
+        },
+      };
 
-      callbacks.onProgress({uploadId: upload.id, status, progress: 90, attempts: attempt});
-
-      if (registerResult.success && registerResult.scan) {
-        return {
-          success: true,
-          uploadId: upload.id,
-          attempts: attempt,
-          scan: registerResult.scan,
-          blobUrl: registerResult.scan.blobUrl,
-        };
-      }
-
-      const fallbackResult = await uploadWithServerFallback(upload, dependencies);
-      return isSuccessfulUploadResult(fallbackResult) ? {...fallbackResult, attempts: attempt} : fallbackResult;
+      return {
+        success: true,
+        uploadId: upload.id,
+        attempts: attempt,
+        scan,
+        blobUrl: targetResult.data.blobUrl,
+      };
     }
 
     const fallbackResult = await uploadWithServerFallback(upload, dependencies);

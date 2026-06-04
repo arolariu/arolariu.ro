@@ -108,21 +108,26 @@ export type UploadBatchValidationResult = Readonly<{
   invalidFiles: Array<Extract<UploadValidationResult, {isValid: false}>>;
 }>;
 
-/** Result returned by the SAS-generation server action. */
-export type GenerateUploadSasUrlResult =
+import type {ScanMetadata} from "@/types/scans";
+
+/** Result returned by the upload target creation action. */
+export type CreateUploadTargetResult =
   | Readonly<{
       success: true;
       data: Readonly<{
+        /** SAS URL for direct blob upload */
         sasUrl: string;
+        /** Azure blob name */
         blobName: string;
+        /** Public blob URL without SAS token */
         blobUrl: string;
+        /** Generated scan identifier */
         scanId: string;
+        /** HTTP headers required for direct PUT request */
+        requiredHeaders: Readonly<Record<string, string>>;
       }>;
     }>
   | Readonly<{success: false; error: Readonly<{message: string}>}>;
-
-/** Result returned by the post-direct-upload scan registration action. */
-export type RegisterScanResult = Readonly<{success: boolean; scan?: Scan; error?: string}>;
 
 /** Result returned by the server-side fallback upload action. */
 export type ServerUploadScanResult =
@@ -131,16 +136,13 @@ export type ServerUploadScanResult =
 
 /** Dependencies injected into the upload runner for testable side effects. */
 export type UploadRunnerDependencies = Readonly<{
-  generateUploadSasUrl: (input: Readonly<{fileName: string; mimeType: string}>) => Promise<GenerateUploadSasUrlResult>;
-  registerScan: (
+  createUploadTarget: (
     input: Readonly<{
-      scanId: string;
-      blobUrl: string;
       fileName: string;
       mimeType: string;
-      sizeInBytes: number;
+      metadata: ScanMetadata;
     }>,
-  ) => Promise<RegisterScanResult>;
+  ) => Promise<CreateUploadTargetResult>;
   uploadScan: (input: Readonly<{base64Data: string; fileName: string; mimeType: string}>) => Promise<ServerUploadScanResult>;
   readFileAsBase64: (file: File) => Promise<string>;
 }>;
@@ -163,9 +165,8 @@ export type UploadRunnerCallbacks = Readonly<{
 /** Failure categories returned by the upload runner. */
 export type UploadFailureReason =
   | "missing-file"
-  | "sas-generation-failed"
+  | "upload-target-failed"
   | "direct-upload-failed"
-  | "registration-failed"
   | "server-upload-failed"
   | "unexpected-error";
 
