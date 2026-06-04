@@ -52,6 +52,13 @@ type Props = {
 export default function RenderInvoicesView({invoices}: Readonly<Props>): React.JSX.Element {
   const {isMobile} = useWindowSize();
   const {filters, setFilters, activeFilterCount} = useInvoiceFilters();
+  const filteredInvoices = useFilteredInvoices(invoices, filters);
+
+  const {paginatedItems, currentPage, totalPages, setCurrentPage, setPageSize, pageSize} = usePaginationWithSearch<Invoice>({
+    items: filteredInvoices,
+    initialPageSize: 20,
+    searchQuery: "", // Search is handled by URL filters
+  });
 
   // Set initial view mode based on device type (only on first render if not in URL)
   useEffect(() => {
@@ -60,16 +67,6 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only once on mount
-
-  // Apply filters and sorting
-  const filteredInvoices = useFilteredInvoices(invoices, filters);
-
-  // Pagination for filtered results
-  const {paginatedItems, currentPage, totalPages, setCurrentPage, setPageSize, pageSize} = usePaginationWithSearch<Invoice>({
-    items: filteredInvoices,
-    initialPageSize: 20,
-    searchQuery: "", // Search is handled by URL filters
-  });
 
   /**
    * Handle filter changes from FilterBar.
@@ -147,7 +144,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
   /**
    * Render view content based on view mode from URL.
    */
-  const viewContent =
+  const viewContent: React.JSX.Element =
     filters.view === "table" ? (
       <TableView
         invoices={paginatedItems}
