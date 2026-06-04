@@ -12,7 +12,7 @@ import {useScanAdd} from "./useScanAdd";
 
 vi.mock("../../_actions/invoices", () => ({
   createInvoiceScan: vi.fn(),
-  attachInvoiceScan: vi.fn(),
+  attachScanToInvoice: vi.fn(),
 }));
 
 vi.mock("@arolariu/components", () => ({
@@ -55,11 +55,11 @@ vi.mock("next-intl-selector", () => ({
   ),
 }));
 
-const {createInvoiceScan, attachInvoiceScan} = await import("../../_actions/invoices");
+const {createInvoiceScan, attachScanToInvoice} = await import("../../_actions/invoices");
 const {toast} = await import("@arolariu/components");
 
 const mockCreateInvoiceScan = vi.mocked(createInvoiceScan);
-const mockAttachInvoiceScan = vi.mocked(attachInvoiceScan);
+const mockAttachScanToInvoice = vi.mocked(attachScanToInvoice);
 const mockToast = vi.mocked(toast);
 
 function dispatchStoredListener(listener: EventListenerOrEventListenerObject | undefined, event: Event): void {
@@ -112,7 +112,7 @@ describe("useScanAdd", () => {
       randomUUID: vi.fn(() => "99999999-9999-4999-8999-999999999999"),
     });
     mockCreateInvoiceScan.mockResolvedValue(uploadSuccess);
-    mockAttachInvoiceScan.mockResolvedValue(attachSuccess);
+    mockAttachScanToInvoice.mockResolvedValue(attachSuccess);
   });
 
   afterEach(() => {
@@ -156,7 +156,7 @@ describe("useScanAdd", () => {
       expect(metadata?.["uploadedAt"]).toBeDefined();
       expect(metadata?.["attachedAt"]).toBeDefined();
 
-      const attachCall = mockAttachInvoiceScan.mock.calls[0]?.[0];
+      const attachCall = mockAttachScanToInvoice.mock.calls[0]?.[0];
       expect(attachCall).toMatchObject({
         invoiceId,
         payload: {
@@ -251,7 +251,7 @@ describe("useScanAdd", () => {
         "Upload failed with status 500",
       );
 
-      expect(mockAttachInvoiceScan).not.toHaveBeenCalled();
+      expect(mockAttachScanToInvoice).not.toHaveBeenCalled();
       expect(mockToast.error).toHaveBeenCalledWith("Failed to add scan", {
         description: "Upload failed with status 500",
       });
@@ -269,7 +269,7 @@ describe("useScanAdd", () => {
         "Upload failed with status unknown",
       );
 
-      expect(mockAttachInvoiceScan).not.toHaveBeenCalled();
+      expect(mockAttachScanToInvoice).not.toHaveBeenCalled();
     });
 
     it("uses unknown upload status when the error result has no status", async () => {
@@ -283,7 +283,7 @@ describe("useScanAdd", () => {
         "Upload failed with status unknown",
       );
 
-      expect(mockAttachInvoiceScan).not.toHaveBeenCalled();
+      expect(mockAttachScanToInvoice).not.toHaveBeenCalled();
     });
 
     it("surfaces FileReader errors and resets loading state", async () => {
@@ -300,7 +300,7 @@ describe("useScanAdd", () => {
     });
 
     it("surfaces non-Error failures from attachment", async () => {
-      mockAttachInvoiceScan.mockRejectedValue("attach failed");
+      mockAttachScanToInvoice.mockRejectedValue("attach failed");
       const hookResult = renderHook(() => useScanAdd(invoiceId));
       const {result} = hookResult;
 
