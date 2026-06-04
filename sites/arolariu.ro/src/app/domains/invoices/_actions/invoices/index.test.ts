@@ -12,7 +12,6 @@ const expectedExports = [
   "analyzeInvoice",
   "attachScanToInvoice",
   "createInvoice",
-  "createInvoiceScan",
   "deleteInvoice",
   "deleteInvoiceMetadata",
   "deleteInvoiceProduct",

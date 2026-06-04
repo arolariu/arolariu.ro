@@ -5,18 +5,18 @@
  * @module app/domains/invoices/_hooks/scan/useScanAdd
  *
  * @remarks
- * Converts a browser `Blob` to a data URL, uploads it with the invoice scan
+ * Converts a browser `Blob` to a data URL, uploads it with the general scan
  * server action, attaches the uploaded blob URL to an existing invoice, and
  * exposes loading state plus toast feedback for the calling component.
  */
 
-import {writeBlobMetadata} from "@/lib/utils.generic";
-import {ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus} from "@/types/scans";
 import type {InvoiceScanType} from "@/types/invoices";
+import {ScanDocumentKind, ScanDocumentRole} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
-import {attachScanToInvoice, createInvoiceScan} from "../../_actions/invoices";
+import {attachScanToInvoice} from "../../_actions/invoices";
+import {createScan} from "../../_actions/scans";
 
 /**
  * Arguments required to upload and attach a scan.
@@ -46,7 +46,7 @@ type HookOutputType = Readonly<{
  * Reads a browser blob as a data URL.
  *
  * @param file - Blob to read with `FileReader`.
- * @returns A data URL string suitable for the `createInvoiceScan` server action.
+ * @returns A data URL string suitable for the `createScan` server action.
  */
 function readBlobAsDataUrl(file: Blob): Promise<string> {
   return new Promise<string>((resolve, reject) => {
@@ -90,29 +90,13 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
       setIsAdding(true);
       try {
         const base64Data = await readBlobAsDataUrl(args.file);
-        const ext = args.fileName.includes(".") ? args.fileName.split(".").pop() || "jpg" : "jpg";
-        const blobName = `${args.userIdentifier}/${invoiceId}/${crypto.randomUUID()}.${ext}`;
-        
-        const scanId = crypto.randomUUID();
-        const uploadedAt = new Date();
+        const mimeType = args.file.type || "application/octet-stream";
         const attachedAt = new Date();
 
-        const {success, data, error} = await createInvoiceScan({
+        const {success, data, error} = await createScan({
           base64Data,
-          blobName,
-          metadata: writeBlobMetadata({
-            scanId,
-            ownerId: args.userIdentifier,
-            displayName: args.fileName,
-            documentKind: ScanDocumentKind.RECEIPT,
-            documentRole: ScanDocumentRole.SUPPLEMENT,
-            status: ScanMetadataStatus.ATTACHED,
-            uploadedAt,
-            uploadedBy: args.userIdentifier,
-            attachedAt,
-            attachedBy: args.userIdentifier,
-            attachedTo: invoiceId,
-          }),
+          fileName: args.fileName,
+          mimeType,
         });
 
         if (!success || !data) {
@@ -124,10 +108,10 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
           invoiceId,
           payload: {
             type: args.type,
-            location: data.blobUrl,
+            location: data.scan.blobUrl,
             additionalMetadata: {
-              sourceScanId: scanId,
-              sourceOwnerId: args.userIdentifier,
+              sourceScanId: data.scan.id,
+              sourceOwnerId: data.scan.userIdentifier,
               displayName: args.fileName,
               documentKind: ScanDocumentKind.RECEIPT,
               documentRole: ScanDocumentRole.SUPPLEMENT,

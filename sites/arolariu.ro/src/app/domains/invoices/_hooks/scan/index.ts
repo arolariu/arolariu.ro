@@ -134,9 +134,9 @@
  * @see {@link useScanDelete} - Delete scans
  * @see {@link useScanRename} - Rename scans
  * @see {@link useScanRotation} - Rotate scan images
- * @see {@link createInvoiceScan} - Server action for uploading invoice-attached scans.
- * @see {@link deleteScan} - Server action for deleting standalone scans.
- * @see {@link updateScan} - Server action for updating standalone scan blobs.
+ * @see {@link createScan} - Server action for uploading standalone scans (from `@/app/domains/invoices/_actions/scans`)
+ * @see {@link deleteScan} - Server action for deleting standalone scans
+ * @see {@link updateScan} - Server action for updating standalone scan blobs
  */
 
 export {useScanAdd} from "./useScanAdd";

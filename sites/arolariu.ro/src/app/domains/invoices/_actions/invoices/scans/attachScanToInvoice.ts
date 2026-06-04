@@ -12,10 +12,10 @@
  * - Supporting documentation
  *
  * **Workflow**:
- * 1. Upload scan to Azure Blob via {@link createInvoiceScan}
+ * 1. Upload scan to Azure Blob via {@link createScan} from `@/app/domains/invoices/_actions/scans`
  * 2. Attach the uploaded scan URL to the invoice via this action
  *
- * @see {@link createInvoiceScan} for uploading new scans
+ * @see {@link createScan} for uploading new scans
  * @see {@link CreateInvoiceScanDtoPayload} for scan payload structure
  */
 
