@@ -8,7 +8,7 @@
  * and presentation components.
  */
 
-import type {Scan} from "@/types/scans";
+import type {Scan, ScanMetadata} from "@/types/scans";
 
 /** Maximum number of scan uploads that may run in parallel. */
 export const UPLOAD_CONCURRENCY_LIMIT = 5;
@@ -108,8 +108,6 @@ export type UploadBatchValidationResult = Readonly<{
   invalidFiles: Array<Extract<UploadValidationResult, {isValid: false}>>;
 }>;
 
-import type {ScanMetadata} from "@/types/scans";
-
 /** Result returned by the upload target creation action. */
 export type CreateUploadTargetResult =
   | Readonly<{
@@ -125,6 +123,8 @@ export type CreateUploadTargetResult =
         scanId: string;
         /** HTTP headers required for direct PUT request */
         requiredHeaders: Readonly<Record<string, string>>;
+        /** Canonical scan metadata for building Scan object */
+        metadata: ScanMetadata;
       }>;
     }>
   | Readonly<{success: false; error: Readonly<{message: string}>}>;
@@ -140,7 +140,7 @@ export type UploadRunnerDependencies = Readonly<{
     input: Readonly<{
       fileName: string;
       mimeType: string;
-      metadata: ScanMetadata;
+      sizeInBytes: number;
     }>,
   ) => Promise<CreateUploadTargetResult>;
   uploadScan: (input: Readonly<{base64Data: string; fileName: string; mimeType: string}>) => Promise<ServerUploadScanResult>;

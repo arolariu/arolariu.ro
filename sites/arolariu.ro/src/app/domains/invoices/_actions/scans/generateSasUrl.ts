@@ -1,18 +1,21 @@
 "use server";
 
 /**
- * @fileoverview Server action for generating SAS URLs for direct client-to-Azure uploads.
+ * @fileoverview Server action for creating blob upload targets with prepared metadata.
  * @module app/domains/invoices/_actions/scans/generateSasUrl
  *
  * @remarks
- * This action generates short-lived Shared Access Signature (SAS) URLs that allow
- * clients to upload files directly to Azure Blob Storage, bypassing the server.
+ * This action creates a blob upload target with pre-populated metadata headers
+ * for direct client-to-Azure uploads. The server prepares all canonical metadata
+ * (scanId, ownerId, uploadedBy, etc.) so the client can perform a single PUT
+ * request with complete metadata headers.
  *
  * **Benefits:**
  * - No base64 encoding overhead (33% payload size increase eliminated)
  * - Server is not a bottleneck (client uploads directly to Azure)
  * - Parallel uploads (5 concurrent connections)
  * - Lower server CPU/memory usage
+ * - No post-upload registration call needed
  *
  * **Security:**
  * - SAS tokens expire in 30 minutes
@@ -21,36 +24,38 @@
  * - Blob path includes user identifier for isolation
  *
  * **Workflow:**
- * 1. Client calls this action to get SAS URL for each file
- * 2. Client uploads file directly to Azure using PUT request
- * 3. Client calls registration action to add scan metadata
- *
- * @see {@link registerScan} for post-upload registration
+ * 1. Client calls this action to get upload target with metadata headers
+ * 2. Client uploads file directly to Azure using PUT request with returned headers
+ * 3. Metadata is written atomically with blob content (no separate registration)
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {createBlobClient} from "@/lib/azure/storageClient";
+import {createBlobUploadTarget} from "@/lib/azure/storageClient";
 import {createErrorResult, ServerActionResult} from "@/lib/utils.server";
-import {BlobSASPermissions, generateBlobSASQueryParameters} from "@azure/storage-blob";
+import {ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, type ScanMetadata} from "@/types/scans";
 
 /**
- * Input parameters for generating a SAS URL.
+ * Input parameters for creating an upload target.
  */
 type ServerActionInputType = Readonly<{
   /** Original filename from the upload */
   readonly fileName: string;
   /** MIME type of the file (e.g., "image/jpeg", "application/pdf") */
   readonly mimeType: string;
+  /** File size in bytes */
+  readonly sizeInBytes: number;
 }>;
 
 /**
- * Response from the SAS URL generation operation.
+ * Response from the upload target creation operation.
  *
  * @remarks
- * The returned `sasUrl` is the credentialed upload endpoint. The plain
- * `blobUrl` is safe to store with the registered scan after upload succeeds.
+ * Contains everything the client needs to perform direct upload:
+ * - SAS URL with create+write permissions
+ * - Required HTTP headers (including all blob metadata)
+ * - Canonical metadata for building the local Scan object
  */
 type ServerActionOutputType = ServerActionResult<
   Readonly<{
@@ -60,8 +65,12 @@ type ServerActionOutputType = ServerActionResult<
     blobName: string;
     /** Blob URL without SAS token */
     blobUrl: string;
-    /** Scan ID for registration */
+    /** Generated scan identifier */
     scanId: string;
+    /** Required HTTP headers for PUT request (includes metadata) */
+    requiredHeaders: Readonly<Record<string, string>>;
+    /** Canonical scan metadata for building Scan object */
+    metadata: ScanMetadata;
   }>
 >;
 
@@ -93,7 +102,37 @@ function getFileExtension(fileName: string): string {
 }
 
 /**
- * Generates a SAS URL for direct client-to-Azure upload.
+ * Converts ScanMetadata to blob metadata (all string values).
+ *
+ * @param metadata - Canonical scan metadata
+ * @returns String-keyed metadata for blob storage
+ */
+function writeBlobMetadata(metadata: ScanMetadata): Record<string, string> {
+  return {
+    scanId: metadata.scanId,
+    ownerId: metadata.ownerId,
+    displayName: metadata.displayName ?? "",
+    collectionName: metadata.collectionName ?? "",
+    documentKind: metadata.documentKind,
+    documentRole: metadata.documentRole,
+    status: metadata.status,
+    uploadedAt: metadata.uploadedAt.toISOString(),
+    uploadedBy: metadata.uploadedBy,
+    lastModifiedAt: metadata.lastModifiedAt?.toISOString() ?? "",
+    lastModifiedBy: metadata.lastModifiedBy ?? "",
+    attachedAt: metadata.attachedAt?.toISOString() ?? "",
+    attachedBy: metadata.attachedBy ?? "",
+    attachedTo: metadata.attachedTo ?? "",
+    detachedAt: metadata.detachedAt?.toISOString() ?? "",
+    detachedBy: metadata.detachedBy ?? "",
+    detachedFrom: metadata.detachedFrom ?? "",
+    archivedAt: metadata.archivedAt?.toISOString() ?? "",
+    archivedBy: metadata.archivedBy ?? "",
+  };
+}
+
+/**
+ * Creates a blob upload target with prepared metadata for direct client uploads.
  *
  * @remarks
  * **Execution Context:** Server-side only (Next.js server action).
@@ -102,41 +141,43 @@ function getFileExtension(fileName: string): string {
  *
  * **Blob Naming:** `scans/{userIdentifier}/{scanId}_{timestamp}.{extension}`
  *
+ * **Metadata Preparation:**
+ * Server builds canonical scan metadata with real ownerId, scanId, uploadedBy, etc.
+ * Metadata is converted to blob storage headers (`x-ms-meta-*`) and returned to client.
+ *
  * **SAS Token Permissions:**
  * - Create: Allow creating new blobs
  * - Write: Allow writing blob content
  * - Expiry: 30 minutes from generation
  *
  * **Development Mode (Azurite):**
- * For local development with Azurite over HTTP, SAS tokens are not needed.
- * Returns the direct blob URL instead.
+ * Returns direct URL (no SAS needed for HTTP endpoints).
  *
  * **Production Mode (Azure):**
  * Uses User Delegation Key with Managed Identity for SAS token generation.
- * This is more secure than account key-based SAS.
  *
- * @param input - SAS URL generation parameters.
- * @param input.fileName - Original filename used to preserve the upload extension in the blob name.
- * @param input.mimeType - MIME type recorded by callers during direct upload registration.
- * @returns A result object containing the upload URL, blob name, plain blob URL, and scan ID, or an error result.
+ * @param input - Upload target creation parameters.
+ * @param input.fileName - Original filename for blob extension.
+ * @param input.mimeType - MIME type for Content-Type header.
+ * @param input.sizeInBytes - File size in bytes.
+ * @returns Upload target with SAS URL, required headers, and canonical metadata.
  *
  * @example
  * ```typescript
  * const result = await generateUploadSasUrl({
  *   fileName: "receipt.jpg",
- *   mimeType: "image/jpeg"
+ *   mimeType: "image/jpeg",
+ *   sizeInBytes: 1048576
  * });
  *
  * if (result.success) {
- *   // Upload file directly to Azure
+ *   // Upload file directly to Azure with returned headers
  *   await fetch(result.data.sasUrl, {
  *     method: 'PUT',
  *     body: file,
- *     headers: {
- *       'x-ms-blob-type': 'BlockBlob',
- *       'Content-Type': "image/jpeg"
- *     }
+ *     headers: result.data.requiredHeaders
  *   });
+ *   // Build Scan from result.data.metadata
  * }
  * ```
  */
@@ -145,7 +186,7 @@ export async function generateUploadSasUrl(input: ServerActionInputType): Server
 
   return withSpan("api.actions.scans.generateSasUrl", async () => {
     try {
-      // Step 1. Fetch user from auth service
+      // Step 1. Fetch authenticated user
       addSpanEvent("bff.user.fetch.start");
       logWithTrace("info", "Fetching BFF user for authentication", {}, "server");
       const {userIdentifier} = await fetchBFFUserFromAuthService();
@@ -158,70 +199,55 @@ export async function generateUploadSasUrl(input: ServerActionInputType): Server
       const extension = getFileExtension(input.fileName);
       const blobName = `scans/${userIdentifier}/${scanId}_${timestamp}.${extension}`;
 
-      // Step 3. Prepare storage client
+      // Step 3. Build canonical scan metadata
+      const now = new Date();
+      const scanMetadata: ScanMetadata = {
+        scanId,
+        ownerId: userIdentifier,
+        displayName: input.fileName,
+        collectionName: "default",
+        documentKind: ScanDocumentKind.RECEIPT,
+        documentRole: ScanDocumentRole.PRIMARY,
+        status: ScanMetadataStatus.READY,
+        uploadedAt: now,
+        uploadedBy: userIdentifier,
+      };
+
+      // Step 4. Fetch storage configuration
       const containerName = "invoices";
       const storageEndpoint = await fetchConfigurationValue("Endpoints:Storage:Blob");
 
-      const storageClient = await createBlobClient(storageEndpoint);
-      const containerClient = storageClient.getContainerClient(containerName);
-      const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+      // Step 5. Create blob upload target with metadata
+      addSpanEvent("blob.upload.target.create");
+      logWithTrace("info", "Creating blob upload target with metadata", {blobName, scanId}, "server");
 
-      // Step 4. For Azurite (dev), return the direct URL
-      // Azurite doesn't require SAS tokens for local development
-      if (storageEndpoint.startsWith("http://")) {
-        addSpanEvent("azurite.dev.mode");
-        logWithTrace("info", "Development mode: returning direct URL (no SAS)", {blobName}, "server");
-        return {
-          success: true,
-          data: {
-            sasUrl: blockBlobClient.url,
-            blobName,
-            blobUrl: blockBlobClient.url,
-            scanId,
-          },
-        };
-      }
+      const uploadTarget = await createBlobUploadTarget({
+        storageEndpoint,
+        containerName,
+        blobName,
+        contentType: input.mimeType,
+        metadata: writeBlobMetadata(scanMetadata),
+        expiresInMinutes: 30,
+      });
 
-      // Step 5. For Azure (prod), generate a SAS token using User Delegation Key
-      addSpanEvent("azure.sas.generation.start");
-      logWithTrace("info", "Generating SAS URL for production", {blobName}, "server");
-
-      const startDate = new Date();
-      // 30 minutes balances security (short-lived token) with usability (allows
-      // slow mobile uploads over cellular connections). SAS is scoped to
-      // create+write only — no read or delete permissions granted.
-      const expiryDate = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
-
-      const userDelegationKey = await storageClient.getUserDelegationKey(startDate, expiryDate);
-
-      const sasToken = generateBlobSASQueryParameters(
-        {
-          containerName,
-          blobName,
-          permissions: BlobSASPermissions.parse("cw"), // create + write only
-          startsOn: startDate,
-          expiresOn: expiryDate,
-        },
-        userDelegationKey,
-        storageClient.accountName,
-      ).toString();
-
-      addSpanEvent("azure.sas.generation.complete");
+      addSpanEvent("blob.upload.target.created");
 
       return {
         success: true,
         data: {
-          sasUrl: `${blockBlobClient.url}?${sasToken}`,
-          blobName,
-          blobUrl: blockBlobClient.url,
+          sasUrl: uploadTarget.sasUrl,
+          blobName: uploadTarget.blobName,
+          blobUrl: uploadTarget.blobUrl,
           scanId,
+          requiredHeaders: uploadTarget.requiredHeaders,
+          metadata: scanMetadata,
         },
       } as const;
     } catch (error: unknown) {
-      addSpanEvent("sas.generation.error");
+      addSpanEvent("upload.target.creation.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Failed to generate SAS URL", {error}, "server");
-      console.error("Failed to generate SAS URL:", error);
+      logWithTrace("error", "Failed to create upload target", {error}, "server");
+      console.error("Failed to create upload target:", error);
       return createErrorResult(new Error(errorMessage));
     }
   }) satisfies ServerActionOutputType;

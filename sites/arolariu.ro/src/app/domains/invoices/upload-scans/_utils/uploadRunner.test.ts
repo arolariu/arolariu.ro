@@ -86,6 +86,7 @@ function createDependencies(overrides: Partial<UploadRunnerDependencies> = {}): 
           "x-ms-meta-status": "ready",
           "x-ms-meta-uploadedBy": "user-1",
         },
+        metadata: scan.metadata,
       },
     }),
     uploadScan: vi.fn().mockResolvedValue({success: true, data: {status: 201, scan}}),

@@ -7,12 +7,11 @@
  * dependency injection so network, server actions, and file reading remain
  * testable.
  *
- * Primary flow: request upload target (including metadata headers), then direct
- * PUT to Azure with canonical metadata. On failure, fall back to server-side
+ * Primary flow: request upload target (server prepares all metadata), then direct
+ * PUT to Azure with canonical metadata headers. On failure, fall back to server-side
  * createScan action.
  */
 
-import {ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, type ScanMetadata} from "@/types/scans";
 import {
   MAX_UPLOAD_ATTEMPTS,
   type PendingUpload,
@@ -102,27 +101,6 @@ async function uploadWithServerFallback(
 }
 
 /**
- * Builds canonical scan metadata for upload target request.
- *
- * @param upload - File-backed pending upload.
- * @param userId - Owner's user identifier.
- * @returns Canonical scan metadata.
- */
-function buildScanMetadata(upload: FileBackedUpload, userId: string): ScanMetadata {
-  return {
-    scanId: "", // Will be filled by server upload target
-    ownerId: userId,
-    displayName: upload.name,
-    collectionName: "default",
-    documentKind: ScanDocumentKind.RECEIPT,
-    documentRole: ScanDocumentRole.PRIMARY,
-    status: ScanMetadataStatus.READY,
-    uploadedAt: new Date(),
-    uploadedBy: userId,
-  };
-}
-
-/**
  * Runs one upload attempt using direct Azure upload first, then server fallback.
  *
  * @param upload - File-backed pending upload.
@@ -140,14 +118,11 @@ async function runSingleAttempt(
   const status = progressStatusForAttempt(attempt);
   callbacks.onProgress({uploadId: upload.id, status, progress: 0, attempts: attempt});
 
-  // Build canonical metadata before requesting upload target
-  // Note: scanId will be filled by server, ownerId placeholder since client doesn't know it
-  const metadata = buildScanMetadata(upload, "placeholder-user");
-
+  // Request upload target from server (server prepares all metadata)
   const targetResult = await dependencies.createUploadTarget({
     fileName: upload.name,
     mimeType: upload.mimeType,
-    metadata,
+    sizeInBytes: upload.size,
   });
 
   callbacks.onProgress({uploadId: upload.id, status, progress: 30, attempts: attempt});
@@ -162,26 +137,19 @@ async function runSingleAttempt(
     callbacks.onProgress({uploadId: upload.id, status, progress: 70, attempts: attempt});
 
     if (uploadResponse.ok) {
-      // Extract metadata from headers for scan construction
-      const headers = targetResult.data.requiredHeaders;
-      const ownerId = headers["x-ms-meta-ownerId"] || metadata.ownerId;
-      
-      // Build Scan from upload target data
+      // Build Scan from server-prepared metadata
+      const {metadata} = targetResult.data;
       const scan = {
-        id: targetResult.data.scanId,
-        userIdentifier: ownerId,
+        id: metadata.scanId,
+        userIdentifier: metadata.ownerId,
         name: upload.name,
         blobUrl: targetResult.data.blobUrl,
         mimeType: upload.mimeType,
         sizeInBytes: upload.size,
-        scanType: upload.mimeType.includes("pdf") ? "PDF" : upload.mimeType.includes("png") ? "PNG" : "JPEG",
+        scanType: upload.mimeType.includes("pdf") ? ("PDF" as const) : upload.mimeType.includes("png") ? ("PNG" as const) : ("JPEG" as const),
         uploadedAt: metadata.uploadedAt,
         status: "ready" as const,
-        metadata: {
-          ...metadata,
-          scanId: targetResult.data.scanId,
-          ownerId,
-        },
+        metadata,
       };
 
       return {
