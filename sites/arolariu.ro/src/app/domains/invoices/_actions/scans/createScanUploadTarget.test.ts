@@ -1,11 +1,11 @@
 /**
- * @fileoverview Unit tests for generateUploadSasUrl server action.
- * @module app/domains/invoices/_actions/scans/generateSasUrl.test
+ * @fileoverview Unit tests for createScanUploadTarget server action.
+ * @module app/domains/invoices/_actions/scans/createScanUploadTarget.test
  */
 
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
-describe("generateUploadSasUrl", () => {
+describe("createScanUploadTarget", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -46,10 +46,10 @@ describe("generateUploadSasUrl", () => {
       ),
     }));
 
-    const {generateUploadSasUrl} = await import("./generateSasUrl");
+    const {createScanUploadTarget} = await import("./createScanUploadTarget");
 
     // Act
-    const result = await generateUploadSasUrl({
+    const result = await createScanUploadTarget({
       fileName: "test.jpg",
       mimeType: "image/jpeg",
       sizeInBytes: 1024,
@@ -102,10 +102,10 @@ describe("generateUploadSasUrl", () => {
       ),
     }));
 
-    const {generateUploadSasUrl} = await import("./generateSasUrl");
+    const {createScanUploadTarget} = await import("./createScanUploadTarget");
 
     // Act
-    const result = await generateUploadSasUrl({
+    const result = await createScanUploadTarget({
       fileName: "test.jpg",
       mimeType: "image/jpeg",
       sizeInBytes: 1024,

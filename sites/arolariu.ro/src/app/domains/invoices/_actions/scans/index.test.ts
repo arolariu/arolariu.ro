@@ -6,21 +6,29 @@
 import {describe, expect, it} from "vitest";
 import * as scanActions from "./index";
 
-const expectedExports = [
-  "deleteScan",
-  "fetchScans",
-  "generateUploadSasUrl",
-  "markScansAsUsed",
-  "registerScan",
-  "updateScan",
-  "uploadScan",
-] as const;
-
 describe("scans barrel export", () => {
-  it("exports the expected scan action surface", () => {
-    expect(Object.keys(scanActions).sort()).toEqual([...expectedExports].sort());
-    for (const exportName of expectedExports) {
-      expect(typeof scanActions[exportName]).toBe("function");
-    }
+  it("exports only approved CRUD actions and upload preparation helper", () => {
+    // CRUD actions
+    expect(scanActions).toHaveProperty("createScan");
+    expect(scanActions).toHaveProperty("fetchScans");
+    expect(scanActions).toHaveProperty("updateScan");
+    expect(scanActions).toHaveProperty("deleteScan");
+
+    // Upload preparation helper (non-CRUD)
+    expect(scanActions).toHaveProperty("createScanUploadTarget");
+
+    // All exports are functions
+    expect(typeof scanActions.createScan).toBe("function");
+    expect(typeof scanActions.fetchScans).toBe("function");
+    expect(typeof scanActions.updateScan).toBe("function");
+    expect(typeof scanActions.deleteScan).toBe("function");
+    expect(typeof scanActions.createScanUploadTarget).toBe("function");
+  });
+
+  it("does not export obsolete workflow actions", () => {
+    expect(scanActions).not.toHaveProperty("registerScan");
+    expect(scanActions).not.toHaveProperty("markScansAsUsed");
+    expect(scanActions).not.toHaveProperty("uploadScan");
+    expect(scanActions).not.toHaveProperty("generateUploadSasUrl");
   });
 });

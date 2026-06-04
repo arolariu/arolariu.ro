@@ -13,7 +13,7 @@ import {withConcurrencyLimit} from "@/lib/concurrency.client";
 import {toast} from "@arolariu/components";
 import {createContext, use, useCallback, useEffect, useMemo, useReducer, useRef, type ReactNode} from "react";
 import {v4 as uuidv4} from "uuid";
-import {generateUploadSasUrl, uploadScan} from "../../_actions/scans";
+import {createScan, createScanUploadTarget} from "../../_actions/scans";
 import {initialUploadState, selectUploadableItems, uploadReducer} from "../_utils/uploadReducer";
 import {readFileAsBase64, uploadPendingScan} from "../_utils/uploadRunner";
 import {
@@ -210,7 +210,7 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
       mimeType: string;
       sizeInBytes: number;
     }>): Promise<CreateUploadTargetResult> => {
-      return generateUploadSasUrl({
+      return createScanUploadTarget({
         fileName: input.fileName,
         mimeType: input.mimeType,
         sizeInBytes: input.sizeInBytes,
@@ -219,7 +219,7 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
 
     const dependencies: UploadRunnerDependencies = {
       createUploadTarget,
-      uploadScan,
+      uploadScan: createScan,
       readFileAsBase64,
     };
 

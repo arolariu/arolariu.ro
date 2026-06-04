@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Server action for creating blob upload targets with prepared metadata.
- * @module app/domains/invoices/_actions/scans/generateSasUrl
+ * @module app/domains/invoices/_actions/scans/createScanUploadTarget
  *
  * @remarks
  * This action creates a blob upload target with pre-populated metadata headers
@@ -135,7 +135,7 @@ function getFileExtension(fileName: string): string {
  *
  * @example
  * ```typescript
- * const result = await generateUploadSasUrl({
+ * const result = await createScanUploadTarget({
  *   fileName: "receipt.jpg",
  *   mimeType: "image/jpeg",
  *   sizeInBytes: 1048576
@@ -152,10 +152,10 @@ function getFileExtension(fileName: string): string {
  * }
  * ```
  */
-export async function generateUploadSasUrl(input: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{generateUploadSasUrl}}");
+export async function createScanUploadTarget(input: ServerActionInputType): ServerActionOutputType {
+  console.info(">>> Executing server action {{createScanUploadTarget}}");
 
-  return withSpan("api.actions.scans.generateSasUrl", async () => {
+  return withSpan("api.actions.scans.createScanUploadTarget", async () => {
     try {
       // Step 1. Fetch authenticated user
       addSpanEvent("bff.user.fetch.start");
