@@ -9,7 +9,7 @@
  *
  * **Exported Actions:**
  * - `createInvoiceScan` - Uploads invoice scans to Azure Blob Storage
- * - `attachInvoiceScan` - Adds scan references to existing invoices
+ * - `attachScanToInvoice` - Adds scan references to existing invoices
  * - `deleteInvoiceScan` - Removes scan references from invoices and lets backend cleanup handle the blob lifecycle
  *
  * **Usage Pattern:**
@@ -20,7 +20,7 @@
  *
  * Import from the barrel:
  * ```typescript
- * import { createInvoiceScan, attachInvoiceScan, deleteInvoiceScan } from "@/app/domains/invoices/_actions/invoices/scans";
+ * import { createInvoiceScan, attachScanToInvoice, deleteInvoiceScan } from "@/app/domains/invoices/_actions/invoices/scans";
  * ```
  *
  * **Architecture Patterns:**
@@ -32,7 +32,7 @@
  * - Direct upload to Azure (no backend API)
  * - No cache revalidation (storage operation)
  *
- * **REST API (attachInvoiceScan, deleteInvoiceScan):**
+ * **REST API (attachScanToInvoice, deleteInvoiceScan):**
  * - Server-side execution with JWT authentication
  * - GUID validation for invoice identifiers
  * - OpenTelemetry instrumentation
@@ -41,7 +41,7 @@
  *
  * **Typical Workflow:**
  * 1. **Upload**: `createInvoiceScan` uploads file to Azure Blob Storage → returns blob URL
- * 2. **Attach**: `attachInvoiceScan` adds blob URL reference to invoice entity
+ * 2. **Attach**: `attachScanToInvoice` adds blob URL reference to invoice entity
  * 3. **Delete**: `deleteInvoiceScan` removes reference (blob marked for async cleanup)
  *
  * **Business Constraints:**
@@ -54,10 +54,10 @@
  * - Documents: PDF
  *
  * @see {@link createInvoiceScan} - Upload invoice scans to Azure Blob Storage
- * @see {@link attachInvoiceScan} - Add scan references to existing invoices
+ * @see {@link attachScanToInvoice} - Add scan references to existing invoices
  * @see {@link deleteInvoiceScan} - Remove scan references from invoices
  */
 
-export {attachInvoiceScan} from "./attachInvoiceScan";
+export {attachScanToInvoice} from "./attachScanToInvoice";
 export {createInvoiceScan} from "./createInvoiceScan";
 export {deleteInvoiceScan} from "./deleteInvoiceScan";
