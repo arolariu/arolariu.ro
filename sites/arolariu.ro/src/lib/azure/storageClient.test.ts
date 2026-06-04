@@ -339,7 +339,7 @@ describe("storageClient", () => {
         expect(result.url).toBe("http://localhost:10000/devstoreaccount1/test-container/test-blob.jpg");
         expect(result.contentType).toBe("image/jpeg");
         expect(result.contentLength).toBe(1024);
-        expect(result.metadata.scanId).toBe("scan-123");
+        expect(result.metadata["scanId"]).toBe("scan-123");
       } finally {
         if (original !== undefined) process.env["AZURE_CLIENT_ID"] = original;
       }
@@ -423,7 +423,7 @@ describe("storageClient", () => {
           {status: "processed"},
           {conditions: {ifMatch: '"etag-123"'}},
         );
-        expect(result.metadata.status).toBe("processed");
+        expect(result.metadata["status"]).toBe("processed");
       } finally {
         if (original !== undefined) process.env["AZURE_CLIENT_ID"] = original;
       }
@@ -500,12 +500,12 @@ describe("storageClient", () => {
           storageEndpoint: "http://azurite:10000/devstoreaccount1",
           containerName: "test-container",
           prefix: "prefix/",
-          predicate: (blob) => blob.metadata.status === "processed",
+          predicate: (blob) => blob.metadata["status"] === "processed",
         });
 
         expect(result).not.toBeNull();
         expect(result?.name).toBe("blob2.jpg");
-        expect(result?.metadata.status).toBe("processed");
+        expect(result?.metadata["status"]).toBe("processed");
       } finally {
         if (original !== undefined) process.env["AZURE_CLIENT_ID"] = original;
       }
@@ -542,7 +542,7 @@ describe("storageClient", () => {
           storageEndpoint: "http://azurite:10000/devstoreaccount1",
           containerName: "test-container",
           prefix: "prefix/",
-          predicate: (blob) => blob.metadata.status === "processed",
+          predicate: (blob) => blob.metadata["status"] === "processed",
         });
 
         expect(result).toBeNull();

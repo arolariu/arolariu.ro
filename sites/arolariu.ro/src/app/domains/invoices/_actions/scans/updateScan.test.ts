@@ -367,7 +367,7 @@ describe("updateScan", () => {
     });
 
     const updateCall = mockUpdateBlobObject.mock.calls[0]?.[0];
-    expect(updateCall?.metadata?.lastModifiedBy).toBe("user-123");
-    expect(updateCall?.metadata?.lastModifiedAt).toBeDefined();
+    expect(updateCall?.metadata?.["lastModifiedBy"]).toBe("user-123");
+    expect(updateCall?.metadata?.["lastModifiedAt"]).toBeDefined();
   });
 });

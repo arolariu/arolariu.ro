@@ -134,7 +134,7 @@ export async function updateScan({
       }
 
       // Step 5. Apply metadata patch
-      const patchedMetadata: ScanMetadata = {...currentMetadata};
+      const patchedMetadata: Partial<ScanMetadata> = {...currentMetadata};
 
       // Remove specified keys
       for (const key of metadataRemove) {
@@ -142,7 +142,6 @@ export async function updateScan({
           // Skip immutable fields
           continue;
         }
-        // @ts-expect-error - Dynamic key deletion
         delete patchedMetadata[key];
       }
 
@@ -151,11 +150,22 @@ export async function updateScan({
         Object.assign(patchedMetadata, metadataAdd);
       }
 
-      // Set lifecycle metadata
-      patchedMetadata.lastModifiedAt = new Date();
-      patchedMetadata.lastModifiedBy = userIdentifier;
+      // Construct final metadata with lifecycle tracking
+      // Ensure all required fields are present
+      const finalMetadata: ScanMetadata = {
+        scanId: currentMetadata.scanId,
+        ownerId: currentMetadata.ownerId,
+        uploadedAt: currentMetadata.uploadedAt,
+        uploadedBy: currentMetadata.uploadedBy,
+        documentKind: patchedMetadata.documentKind ?? currentMetadata.documentKind,
+        documentRole: patchedMetadata.documentRole ?? currentMetadata.documentRole,
+        status: patchedMetadata.status ?? currentMetadata.status,
+        ...patchedMetadata,
+        lastModifiedAt: new Date(),
+        lastModifiedBy: userIdentifier,
+      };
 
-      const updatedBlobMetadata = writeBlobMetadata(patchedMetadata);
+      const updatedBlobMetadata = writeBlobMetadata(finalMetadata);
 
       // Step 6. Update blob content and/or metadata
       addSpanEvent("azure.blob.update.start");
@@ -187,16 +197,16 @@ export async function updateScan({
 
       // Step 7. Construct and return updated Scan entity
       const scan: Scan = {
-        id: patchedMetadata.scanId,
-        userIdentifier: patchedMetadata.ownerId,
-        name: patchedMetadata.displayName ?? blobObject.name.split("/").pop() ?? "Unknown",
+        id: finalMetadata.scanId,
+        userIdentifier: finalMetadata.ownerId,
+        name: finalMetadata.displayName ?? blobObject.name.split("/").pop() ?? "Unknown",
         blobUrl: updatedBlob.url,
         mimeType: updatedBlob.contentType,
         sizeInBytes: updatedBlob.contentLength,
         scanType: mimeTypeToScanType(updatedBlob.contentType),
-        uploadedAt: patchedMetadata.uploadedAt,
-        status: patchedMetadata.status as ScanStatus,
-        metadata: patchedMetadata,
+        uploadedAt: finalMetadata.uploadedAt,
+        status: finalMetadata.status as ScanStatus,
+        metadata: finalMetadata,
       };
 
       return {

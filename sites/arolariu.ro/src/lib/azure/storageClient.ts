@@ -13,7 +13,6 @@ import {
   BlobSASPermissions,
   BlobServiceClient,
   type BlockBlobClient,
-  type ContainerClient,
   generateBlobSASQueryParameters,
 } from "@azure/storage-blob";
 

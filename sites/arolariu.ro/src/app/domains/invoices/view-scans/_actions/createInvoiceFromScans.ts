@@ -78,18 +78,6 @@ function scanTypeToInvoiceScanType(scanType: ScanType): InvoiceScanType {
 }
 
 /**
- * Extracts blob name from scan's blob URL.
- * E.g., "https://...blob.core.windows.net/invoices/scans/userId/scanId.jpg" → "scans/userId/scanId.jpg"
- *
- * @deprecated No longer needed with scanId-based update contract. To be removed in Task 5.
- */
-function extractBlobNameFromScan(scan: Scan): string {
-  const urlParts = scan.blobUrl.split("/");
-  // Take last 3 parts: scans/userId/scanId.jpg
-  return urlParts.slice(-3).join("/");
-}
-
-/**
  * Creates a single invoice from a scan.
  */
 async function createSingleInvoice(scan: Scan, userIdentifier: string, authToken: string): Promise<Invoice> {
