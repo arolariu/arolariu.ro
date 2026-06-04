@@ -56,7 +56,7 @@
 
 export {addInvoiceMetadata, deleteInvoiceMetadata} from "./metadata";
 export {addInvoiceProduct, deleteInvoiceProduct, updateInvoiceProduct} from "./products";
-export {attachInvoiceScan, createInvoiceScan, deleteInvoiceScan} from "./scans";
+export {attachScanToInvoice, createInvoiceScan, deleteInvoiceScan} from "./scans";
 
 // #region Invoice server-side queries (fetch single/multiple)
 export {fetchInvoice} from "./fetchInvoice";
