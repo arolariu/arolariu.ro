@@ -140,7 +140,7 @@ import styles from "./island.module.scss";
  * @see RFC 2001 - Domain-Driven Design (invoices bounded context)
  */
 export default function RenderViewInvoicesScreen(): React.JSX.Element {
-  const {invoices, isLoading} = useInvoices();
+  const {invoices, isLoading, isError} = useInvoices();
   const t = useTranslations();
 
   if (isLoading) {
@@ -159,6 +159,11 @@ export default function RenderViewInvoicesScreen(): React.JSX.Element {
         </div>
       </section>
     );
+  }
+
+  // TODO: treat isError case with error message and retry button instead of empty fragment
+  if (isError) {
+    return <></>;
   }
 
   return (
