@@ -19,7 +19,7 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
+import {listBlobObjects} from "@/lib/azure/storageClient";
 import {readBlobMetadata} from "@/lib/utils.generic";
 import {createErrorResult, type ServerActionResult} from "@/lib/utils.server";
 import {type Scan, ScanStatus, ScanType} from "@/types/scans";
@@ -112,9 +112,6 @@ export async function fetchScans({includeArchived = false}: ServerActionInputTyp
       addSpanEvent("azure.storage.connect.start");
       const containerName = "invoices";
       const storageEndpoint = await fetchConfigurationValue("Endpoints:Storage:Blob");
-
-      const storageClient = await createBlobClient(storageEndpoint);
-      const containerClient = storageClient.getContainerClient(containerName);
       addSpanEvent("azure.storage.connect.complete");
 
       // Step 3. List blobs with user prefix
@@ -123,10 +120,14 @@ export async function fetchScans({includeArchived = false}: ServerActionInputTyp
       const prefix = `scans/${userIdentifier}/`;
       const scans: Scan[] = [];
 
-      for await (const blob of containerClient.listBlobsFlat({
+      const blobs = await listBlobObjects({
+        storageEndpoint,
+        containerName,
         prefix,
         includeMetadata: true,
-      })) {
+      });
+
+      for (const blob of blobs) {
         let scanMetadata;
         try {
           scanMetadata = readBlobMetadata(blob.metadata ?? {});
@@ -140,8 +141,6 @@ export async function fetchScans({includeArchived = false}: ServerActionInputTyp
           : scanMetadata.status === ScanStatus.READY || scanMetadata.status === ScanStatus.DETACHED;
 
         if (shouldInclude) {
-          const blobUrl = rewriteAzuriteUrl(containerClient.getBlockBlobClient(blob.name).url);
-          const mimeType = blob.properties.contentType ?? "application/octet-stream";
           const blobFileName = blob.name.split("/").pop();
           const displayName = scanMetadata.displayName ?? blobFileName ?? "Unknown";
 
@@ -149,10 +148,10 @@ export async function fetchScans({includeArchived = false}: ServerActionInputTyp
             id: scanMetadata.scanId,
             userIdentifier: scanMetadata.ownerId,
             name: displayName,
-            blobUrl,
-            mimeType,
-            sizeInBytes: blob.properties.contentLength ?? 0,
-            scanType: mimeTypeToScanType(mimeType),
+            blobUrl: blob.url,
+            mimeType: blob.contentType,
+            sizeInBytes: blob.contentLength,
+            scanType: mimeTypeToScanType(blob.contentType),
             uploadedAt: scanMetadata.uploadedAt,
             status: scanMetadata.status,
             metadata: scanMetadata,

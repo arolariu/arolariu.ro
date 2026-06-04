@@ -1,153 +1,50 @@
 "use server";
 
 /**
- * @fileoverview Server action for updating/replacing scan blob content in Azure Storage.
+ * @fileoverview Server action for updating scan blob content and metadata in Azure Storage.
  * @module app/domains/invoices/_actions/scans/updateScan
  *
  * @remarks
- * Handles in-place replacement of scan blob content while preserving identity and
- * metadata. Primary use case is image transformations (rotation, cropping, filters)
- * where the scan ID remains constant but the binary content changes.
+ * Handles in-place update of scan blobs using scanId-based lookup with metadata patch semantics.
+ * Primary use cases: image transformations (rotation, cropping) and metadata corrections.
  *
- * **Architecture Pattern**: Direct Azure SDK integration (NOT REST API).
- * Like `createScan` and `deleteScan`, this action uses the Azure Storage SDK directly
- * for optimal performance and streaming upload support.
- *
- * **Authentication Strategy**:
- * - User authentication: Via `fetchBFFUserFromAuthService` (JWT-based)
- * - Azure authentication: Centralized credential singleton (Managed Identity in prod)
- * - No JWT required for Azure API calls (direct SDK integration)
+ * **Architecture Pattern**: Uses generic storage helpers (resolveBlobObjectByMetadata, updateBlobObject).
  *
  * **Update Semantics**:
- * - **In-place replacement**: Overwrites existing blob content
- * - **Metadata merging**: Preserves existing metadata, merges new metadata
+ * - **Metadata patch**: Add/remove fields while preserving others
+ * - **Content replacement**: Optional full binary content update
  * - **URL stability**: Blob URL remains unchanged (same blob name)
- * - **Version tracking**: Adds `lastModified` timestamp to metadata
+ * - **Lifecycle tracking**: Automatically sets lastModifiedAt and lastModifiedBy
  *
- * **Typical Workflow (Image Rotation)**:
- * 1. User views scan in `/view-scans` route
- * 2. Clicks rotate button (90°, 180°, 270°)
- * 3. Client rotates image using Canvas API and converts to base64
- * 4. This action replaces blob content with rotated version
- * 5. Client updates Zustand store with updated blob URL (same URL, refreshed content)
- * 6. Cache revalidation ensures next page load shows rotated image
- *
- * **Security Note**: This action does NOT validate user ownership of the blob.
- * Unlike `deleteScan` which checks path prefix, this action trusts the caller
- * has permission. Ensure client-side access control prevents unauthorized updates.
- *
- * **Cache Strategy**: Revalidates `/domains/invoices/view-scans` to refresh scan list.
- *
- * @example
- * ```typescript
- * // Rotate image 90 degrees clockwise
- * const canvas = document.createElement("canvas");
- * const ctx = canvas.getContext("2d");
- * // ... rotation logic ...
- * const rotatedBase64 = canvas.toDataURL("image/jpeg").split(",")[1];
- *
- * const result = await updateScan({
- *   base64Data: rotatedBase64,
- *   blobName: extractBlobName(scan.blobUrl),
- *   mimeType: "image/jpeg",
- *   metadata: { rotated: "90", lastRotated: new Date().toISOString() }
- * });
- *
- * if (result.success && result.data.blobUrl) {
- *   // Force cache refresh with query parameter
- *   const refreshedUrl = `${result.data.blobUrl}?t=${Date.now()}`;
- *   scansStore.upsertScan({...scan, blobUrl: refreshedUrl});
- * }
- * ```
- *
- * @example
- * ```typescript
- * // Apply filter/effect to scan
- * const filteredBase64 = await applyFilter(scan.blobUrl, "grayscale");
- * const blobName = extractBlobName(scan.blobUrl);
- *
- * const result = await updateScan({
- *   base64Data: filteredBase64,
- *   blobName: blobName,
- *   mimeType: scan.mimeType,
- *   metadata: {
- *     filter: "grayscale",
- *     filterAppliedAt: new Date().toISOString()
- *   }
- * });
- *
- * if (result.success) {
- *   console.log("Filter applied, URL unchanged:", result.data.blobUrl);
- * }
- * ```
- *
- * @example
- * ```typescript
- * // Update scan with error handling and retry
- * async function updateScanWithRetry(scan: Scan, base64Data: string, maxRetries = 3) {
- *   for (let attempt = 1; attempt <= maxRetries; attempt++) {
- *     const result = await updateScan({
- *       base64Data,
- *       blobName: extractBlobName(scan.blobUrl),
- *       mimeType: scan.mimeType,
- *       metadata: { attempt: attempt.toString() }
- *     });
- *
- *     if (result.success) {
- *       return result;
- *     }
- *
- *     if (attempt < maxRetries) {
- *       await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
- *     }
- *   }
- *
- *   throw new Error("Failed to update scan after retries");
- * }
- * ```
- *
- * @see {@link createScan} - Creates new scans (also uses Azure SDK directly)
- * @see {@link deleteScan} - Deletes scans with ownership validation
+ * @see {@link createScan} - Creates new scans
+ * @see {@link deleteScan} - Deletes scans
  * @see {@link fetchScans} - Retrieves user's scans
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
+import {resolveBlobObjectByMetadata, updateBlobObject} from "@/lib/azure/storageClient";
 import {readBlobMetadata, writeBlobMetadata} from "@/lib/utils.generic";
 import {convertBase64ToBlob, createErrorResult, type ServerActionResult} from "@/lib/utils.server";
 import {revalidatePath} from "next/cache";
+import {type Scan, type ScanMetadata, ScanMetadataKey, ScanStatus, ScanType} from "@/types/scans";
 
 /**
  * Input parameters for updating a scan.
  */
 type ServerActionInputType = Readonly<{
-  /** The base64-encoded data of the updated scan. Must be valid base64 string. */
-  base64Data: string;
-  /**
-   * The blob name to update (e.g., "scans/{userId}/{scanId}_{timestamp}.jpg").
-   * This is the path within the container, not the full URL.
-   */
-  blobName: string;
-  /** MIME type of the updated content (e.g., "image/jpeg", "image/png"). */
-  mimeType: string;
-  /**
-   * Legacy metadata parameter retained for caller compatibility.
-   *
-   * @remarks
-   * **Not merged into canonical blob metadata.** Lifecycle metadata
-   * (`lastModifiedAt`, `lastModifiedBy`, etc.) is managed exclusively through
-   * typed `ScanMetadata` via `readBlobMetadata` and `writeBlobMetadata`.
-   *
-   * Callers should not rely on this parameter for metadata propagation.
-   * Ad hoc metadata keys are intentionally excluded from the canonical metadata
-   * projection to maintain strict type safety and avoid unvalidated blob metadata.
-   *
-   * @deprecated This parameter is preserved for backward compatibility but is ignored
-   * in the current implementation. Remove from caller code where possible.
-   */
-  metadata?: Record<string, string>;
+  /** Scan ID to locate and update */
+  scanId: string;
+  /** Optional content replacement */
+  scanObject?: Readonly<{
+    base64Data: string;
+    mediaType: string;
+  }>;
+  /** Metadata fields to add or update */
+  metadataAdd?: Partial<ScanMetadata>;
+  /** Metadata keys to remove */
+  metadataRemove?: ReadonlyArray<ScanMetadataKey>;
 }>;
 
 /**
@@ -155,162 +52,41 @@ type ServerActionInputType = Readonly<{
  */
 type ServerActionOutputType = ServerActionResult<
   Readonly<{
-    /** The updated blob URL (same as before, but content is refreshed) */
-    blobUrl?: string;
+    /** The updated scan entity */
+    scan: Scan;
   }>
 >;
 
 /**
- * Updates/replaces scan blob content in Azure Blob Storage.
- *
- * @remarks
- * **Execution Context**: Server-side only (Next.js server action).
- *
- * **Authentication**:
- * - User: Automatically fetched via `fetchBFFUserFromAuthService` (JWT-based)
- * - Azure: Centralized credential singleton (Managed Identity in prod)
- * - No JWT required for Azure API calls (direct SDK integration)
- *
- * **Authorization Note**:
- * This action does NOT validate user ownership of the blob. It assumes the caller
- * has verified permissions. Unlike `deleteScan`, there's no path-based authorization
- * check. Ensure client-side code restricts access to user's own scans.
- *
- * **Update Strategy**:
- * 1. Fetch existing blob properties to retrieve current metadata
- * 2. Merge existing metadata with new metadata (new keys overwrite)
- * 3. Add `lastModified` timestamp to merged metadata
- * 4. Upload new content with merged metadata (overwrites existing blob)
- * 5. Return updated blob URL (same URL, content refreshed)
- *
- * **Metadata Merging**:
- * - Existing metadata is preserved (e.g., userIdentifier, scanId, uploadedAt)
- * - New metadata overwrites matching keys
- * - System adds `lastModified` timestamp automatically
- * - Empty metadata object `{}` preserves all existing metadata
- *
- * **Blob URL Stability**:
- * The blob URL remains unchanged because the blob name doesn't change.
- * This means cached URLs in the client are still valid, but the content
- * behind the URL has been updated. Consider adding cache-busting query
- * parameters (`?t={timestamp}`) to force image reload in browsers.
- *
- * **Idempotency**:
- * Not idempotent. Each call replaces the blob content with new data.
- * Multiple calls with the same data will succeed but waste bandwidth.
- *
- * **Side Effects**:
- * - Replaces existing blob content in Azure Storage
- * - Updates blob metadata (merges with existing)
- * - Emits OpenTelemetry spans and events for tracing
- * - Logs operation details for audit trail
- * - Revalidates `/domains/invoices/view-scans` page cache
- *
- * **Error Handling**:
- * - Authentication failures: Thrown by `fetchBFFUserFromAuthService`
- * - Base64 decode errors: Thrown by `convertBase64ToBlob`
- * - Blob not found: Fails with Azure error (blob must exist)
- * - Azure upload errors: Caught and returned as ServerActionResult error
- * - All errors logged with telemetry events
- *
- * **Cache Behavior**:
- * Revalidates `/domains/invoices/view-scans` to ensure next page load shows
- * the updated scan. Consider revalidating invoice detail pages if scan is
- * attached to specific invoices.
- *
- * **Performance Considerations**:
- * - Direct Azure SDK (no REST API intermediary overhead)
- * - Fetches metadata before upload (one extra API call)
- * - Uses streaming upload via ArrayBuffer (efficient for large files)
- * - Base64 conversion happens server-side (not in browser)
- *
- * @param input - Update parameters with base64 data, blob name, MIME type, and optional metadata
- * @param input.base64Data - Base64-encoded replacement content, with or without a data URI prefix.
- * @param input.blobName - Blob path within the `invoices` container to overwrite.
- * @param input.mimeType - MIME type for the replacement content's Azure content type header.
- * @param input.metadata - Optional metadata merged with the existing blob metadata.
- * @returns A result object containing the stable blob URL on success, or an error result when authentication, decoding, or Azure upload fails.
- *
- * @example
- * ```typescript
- * // Rotate scan 90 degrees clockwise
- * const rotatedBase64 = await rotateImage(scan.blobUrl, 90);
- * const blobName = new URL(scan.blobUrl).pathname.split('/').slice(2).join('/');
- *
- * const result = await updateScan({
- *   base64Data: rotatedBase64,
- *   blobName: blobName,
- *   mimeType: "image/jpeg",
- *   metadata: {
- *     rotated: "90",
- *     lastRotation: new Date().toISOString()
- *   }
- * });
- *
- * if (result.success && result.data.blobUrl) {
- *   // Add cache-busting parameter to force browser reload
- *   const refreshedUrl = `${result.data.blobUrl}?v=${Date.now()}`;
- *   scansStore.upsertScan({...scan, blobUrl: refreshedUrl});
- *   toast.success("Image rotated successfully");
- * } else {
- *   toast.error(result.userMessage ?? "Failed to rotate image");
- * }
- * ```
- *
- * @example
- * ```typescript
- * // Apply filter/effect to scan
- * const filteredBase64 = await applyFilter(scan.blobUrl, "grayscale");
- * const blobName = extractBlobName(scan.blobUrl);
- *
- * const result = await updateScan({
- *   base64Data: filteredBase64,
- *   blobName: blobName,
- *   mimeType: scan.mimeType,
- *   metadata: {
- *     filter: "grayscale",
- *     filterAppliedAt: new Date().toISOString()
- *   }
- * });
- *
- * if (result.success) {
- *   console.log("Filter applied, URL unchanged:", result.data.blobUrl);
- * }
- * ```
- *
- * @example
- * ```typescript
- * // Update scan with error handling and retry
- * async function updateScanWithRetry(scan: Scan, base64Data: string, maxRetries = 3) {
- *   for (let attempt = 1; attempt <= maxRetries; attempt++) {
- *     const result = await updateScan({
- *       base64Data,
- *       blobName: extractBlobName(scan.blobUrl),
- *       mimeType: scan.mimeType,
- *       metadata: { attempt: attempt.toString() }
- *     });
- *
- *     if (result.success) {
- *       return result;
- *     }
- *
- *     if (attempt < maxRetries) {
- *       await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
- *     }
- *   }
- *
- *   throw new Error("Failed to update scan after retries");
- * }
- * ```
- *
- * @see {@link fetchBFFUserFromAuthService} - User authentication
- * @see {@link createBlobClient} - Azure Storage client factory
- * @see {@link convertBase64ToBlob} - Base64 decoding utility
- * @see {@link createScan} - Creates new scans
- * @see {@link deleteScan} - Deletes scans with ownership validation
+ * Maps MIME type to ScanType enum for type classification.
  */
-export async function updateScan({base64Data, blobName, mimeType, metadata: _metadata = {}}: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{updateScan}}, with blobName:", blobName);
+function mimeTypeToScanType(mimeType: string): ScanType {
+  switch (mimeType.toLowerCase()) {
+    case "image/jpeg":
+    case "image/jpg":
+      return ScanType.JPEG;
+    case "image/png":
+      return ScanType.PNG;
+    case "application/pdf":
+      return ScanType.PDF;
+    default:
+      return ScanType.OTHER;
+  }
+}
+
+/**
+ * Updates scan blob content and/or metadata by scanId.
+ *
+ * @param input - Update parameters with scanId, optional content, and metadata patch
+ * @returns A result object containing the updated scan entity on success
+ */
+export async function updateScan({
+  scanId,
+  scanObject,
+  metadataAdd,
+  metadataRemove = [],
+}: ServerActionInputType): ServerActionOutputType {
+  console.info(">>> Executing server action {{updateScan}}, with scanId:", scanId);
 
   return withSpan("api.actions.scans.updateScan", async () => {
     try {
@@ -324,52 +100,109 @@ export async function updateScan({base64Data, blobName, mimeType, metadata: _met
       const containerName = "invoices";
       const storageEndpoint = await fetchConfigurationValue("Endpoints:Storage:Blob");
 
-      // Step 3. Get existing blob to preserve metadata
-      addSpanEvent("azure.blob.fetch.metadata.start");
-      const storageClient = await createBlobClient(storageEndpoint);
-      const containerClient = storageClient.getContainerClient(containerName);
-      const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-
-      // Fetch existing metadata
-      const existingProperties = await blockBlobClient.getProperties();
-      const existingMetadata = readBlobMetadata(existingProperties.metadata ?? {});
-
-      // Step 4. Upload the updated blob
-      addSpanEvent("azure.blob.update.start");
-      logWithTrace("info", "Updating scan in Azure Blob Storage", {blobName}, "server");
-
-      const updatedFile = await convertBase64ToBlob(base64Data);
-      const arrayBuffer = await updatedFile.arrayBuffer();
-
-      const updatedMetadata = writeBlobMetadata({
-        ...existingMetadata,
-        lastModifiedAt: new Date(),
-        lastModifiedBy: userIdentifier,
-      });
-
-      const blobUploadResponse = await blockBlobClient.uploadData(arrayBuffer, {
-        blobHTTPHeaders: {
-          blobContentType: mimeType,
+      // Step 3. Resolve scanId to blob by metadata
+      addSpanEvent("azure.blob.resolve.start");
+      const prefix = `scans/${userIdentifier}/`;
+      const blobObject = await resolveBlobObjectByMetadata({
+        storageEndpoint,
+        containerName,
+        prefix,
+        predicate: (blob) => {
+          try {
+            const metadata = readBlobMetadata(blob.metadata);
+            return metadata.scanId === scanId;
+          } catch {
+            return false;
+          }
         },
-        metadata: updatedMetadata,
+      });
+      addSpanEvent("azure.blob.resolve.complete");
+
+      if (!blobObject) {
+        addSpanEvent("scan.not.found");
+        logWithTrace("warn", "Scan not found", {scanId}, "server");
+        return createErrorResult(new Error(`Scan with ID "${scanId}" not found.`));
+      }
+
+      // Step 4. Parse and validate current metadata
+      const currentMetadata = readBlobMetadata(blobObject.metadata);
+
+      if (currentMetadata.ownerId !== userIdentifier) {
+        addSpanEvent("authorization.failed");
+        logWithTrace("warn", "User not authorized to update scan", {scanId, ownerId: currentMetadata.ownerId}, "server");
+        return createErrorResult(new Error("You are not authorized to update this scan."));
+      }
+
+      // Step 5. Apply metadata patch
+      const patchedMetadata: ScanMetadata = {...currentMetadata};
+
+      // Remove specified keys
+      for (const key of metadataRemove) {
+        if (key === ScanMetadataKey.SCAN_ID || key === ScanMetadataKey.OWNER_ID || key === ScanMetadataKey.UPLOADED_AT || key === ScanMetadataKey.UPLOADED_BY) {
+          // Skip immutable fields
+          continue;
+        }
+        // @ts-expect-error - Dynamic key deletion
+        delete patchedMetadata[key];
+      }
+
+      // Add/update specified fields
+      if (metadataAdd) {
+        Object.assign(patchedMetadata, metadataAdd);
+      }
+
+      // Set lifecycle metadata
+      patchedMetadata.lastModifiedAt = new Date();
+      patchedMetadata.lastModifiedBy = userIdentifier;
+
+      const updatedBlobMetadata = writeBlobMetadata(patchedMetadata);
+
+      // Step 6. Update blob content and/or metadata
+      addSpanEvent("azure.blob.update.start");
+      logWithTrace("info", "Updating scan in Azure Blob Storage", {blobName: blobObject.name}, "server");
+
+      let content: Uint8Array | undefined;
+      let contentType: string | undefined;
+
+      if (scanObject) {
+        const updatedFile = await convertBase64ToBlob(scanObject.base64Data);
+        const arrayBuffer = await updatedFile.arrayBuffer();
+        content = new Uint8Array(arrayBuffer);
+        contentType = scanObject.mediaType;
+      }
+
+      const updatedBlob = await updateBlobObject({
+        storageEndpoint,
+        containerName,
+        blobName: blobObject.name,
+        content,
+        contentType,
+        metadata: updatedBlobMetadata,
+        etag: blobObject.etag,
       });
       addSpanEvent("azure.blob.update.complete");
 
-      if (blobUploadResponse._response.status === 201) {
-        logWithTrace("info", "Successfully updated scan in Azure", {blobName}, "server");
-        revalidatePath("/domains/invoices/view-scans", "page");
-        return {
-          success: true,
-          data: {
-            blobUrl: rewriteAzuriteUrl(blockBlobClient.url),
-          },
-        } as const;
-      }
+      logWithTrace("info", "Successfully updated scan in Azure", {scanId}, "server");
+      revalidatePath("/domains/invoices/view-scans", "page");
 
-      addSpanEvent("azure.blob.update.error");
-      const errorText = `Failed to update scan: ${blobUploadResponse._response.status}`;
-      logWithTrace("warn", errorText, {blobName}, "server");
-      return createErrorResult(new Error(errorText));
+      // Step 7. Construct and return updated Scan entity
+      const scan: Scan = {
+        id: patchedMetadata.scanId,
+        userIdentifier: patchedMetadata.ownerId,
+        name: patchedMetadata.displayName ?? blobObject.name.split("/").pop() ?? "Unknown",
+        blobUrl: updatedBlob.url,
+        mimeType: updatedBlob.contentType,
+        sizeInBytes: updatedBlob.contentLength,
+        scanType: mimeTypeToScanType(updatedBlob.contentType),
+        uploadedAt: patchedMetadata.uploadedAt,
+        status: patchedMetadata.status as ScanStatus,
+        metadata: patchedMetadata,
+      };
+
+      return {
+        success: true,
+        data: {scan},
+      } as const;
     } catch (error: unknown) {
       addSpanEvent("scan.update.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";

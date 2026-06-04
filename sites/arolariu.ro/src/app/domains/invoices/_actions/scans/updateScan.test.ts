@@ -3,56 +3,32 @@
  * @module app/domains/invoices/_actions/scans/updateScan.test
  */
 
-import type {BlockBlobUploadOptions} from "@azure/storage-blob";
-import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
-import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
-import {revalidatePath} from "next/cache";
+import {ScanMetadataKey} from "@/types/scans";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder} from "../../../../../../tests/helpers";
-import {updateScan} from "./updateScan";
+
+// Mock all dependencies
+vi.mock("@/instrumentation.server");
+vi.mock("@/lib/actions/storage/fetchConfig");
+vi.mock("@/lib/actions/user/fetchUser");
+vi.mock("@/lib/azure/storageClient");
+vi.mock("next/cache");
+
+const {updateScan} = await import("./updateScan");
+const {addSpanEvent, logWithTrace, withSpan} = await import("@/instrumentation.server");
+const fetchConfigurationValue = (await import("@/lib/actions/storage/fetchConfig")).default;
+const {fetchBFFUserFromAuthService} = await import("@/lib/actions/user/fetchUser");
+const {resolveBlobObjectByMetadata, updateBlobObject} = await import("@/lib/azure/storageClient");
 
 const mockFetchBFFUserFromAuthService = vi.mocked(fetchBFFUserFromAuthService);
 const mockFetchConfigurationValue = vi.mocked(fetchConfigurationValue);
-const mockCreateBlobClient = vi.mocked(createBlobClient);
-const mockRewriteAzuriteUrl = vi.mocked(rewriteAzuriteUrl);
-const mockRevalidatePath = vi.mocked(revalidatePath);
+const mockResolveBlobObjectByMetadata = vi.mocked(resolveBlobObjectByMetadata);
+const mockUpdateBlobObject = vi.mocked(updateBlobObject);
 const mockWithSpan = vi.mocked(withSpan);
 const mockAddSpanEvent = vi.mocked(addSpanEvent);
 const mockLogWithTrace = vi.mocked(logWithTrace);
 
 const VALID_BASE64 = "dXBkYXRlZA==";
-
-type BlobClientOptions = Readonly<{
-  blobUrl?: string;
-  existingMetadata?: Record<string, string>;
-  uploadStatus?: number;
-  onUpload?: (options: BlockBlobUploadOptions) => void;
-}>;
-
-function setupBlobClient({
-  blobUrl = "https://storage.test/invoices/scans/user-123/scan_123.jpg",
-  existingMetadata = {},
-  uploadStatus = 201,
-  onUpload,
-}: BlobClientOptions = {}): void {
-  const blockBlobClient = TestDataBuilder.blockBlobClient({blobUrl, metadata: existingMetadata, uploadStatus});
-
-  // Wrap uploadData to capture calls
-  if (onUpload) {
-    const originalUploadData = blockBlobClient.uploadData;
-    blockBlobClient.uploadData = vi.fn(async (data: Parameters<typeof originalUploadData>[0], options: BlockBlobUploadOptions) => {
-      onUpload(options);
-      return originalUploadData(data, options);
-    });
-  }
-
-  const containerClient = TestDataBuilder.containerClient({blobUrl, metadata: existingMetadata, uploadStatus});
-  vi.mocked(containerClient.getBlockBlobClient).mockReturnValue(blockBlobClient);
-  const blobServiceClient = TestDataBuilder.blobServiceClient(containerClient);
-  mockCreateBlobClient.mockResolvedValue(blobServiceClient);
-}
 
 describe("updateScan", () => {
   beforeEach(() => {
@@ -63,14 +39,13 @@ describe("updateScan", () => {
     mockLogWithTrace.mockImplementation(() => undefined);
     mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-123"}));
     mockFetchConfigurationValue.mockResolvedValue("https://storage.test");
-    mockRewriteAzuriteUrl.mockImplementation((url) => url);
-    setupBlobClient();
   });
 
-  it("should successfully update scan blob content", async () => {
-    setupBlobClient({
-      blobUrl: "https://storage.test/invoices/scans/user-123/scan_123.jpg",
-      existingMetadata: {
+  it("should successfully update scan metadata only", async () => {
+    mockResolveBlobObjectByMetadata.mockResolvedValue({
+      name: "scans/user-123/scan_123.jpg",
+      url: "https://storage.test/invoices/scans/user-123/scan_123.jpg",
+      metadata: {
         scanId: "scan-123",
         ownerId: "user-123",
         displayName: "receipt.jpg",
@@ -80,25 +55,66 @@ describe("updateScan", () => {
         uploadedAt: "2024-01-01T00:00:00.000Z",
         uploadedBy: "user-123",
       },
+      contentType: "image/jpeg",
+      contentLength: 1024,
+      createdOn: new Date(),
+      etag: "test-etag",
+    });
+
+    mockUpdateBlobObject.mockResolvedValue({
+      name: "scans/user-123/scan_123.jpg",
+      url: "https://storage.test/invoices/scans/user-123/scan_123.jpg",
+      metadata: {},
+      contentType: "image/jpeg",
+      contentLength: 1024,
+      createdOn: new Date(),
+      etag: "new-etag",
     });
 
     const result = await updateScan({
-      base64Data: VALID_BASE64,
-      blobName: "scans/user-123/scan_123.jpg",
-      mimeType: "image/jpeg",
+      scanId: "scan-123",
+      metadataAdd: {
+        displayName: "updated-receipt.jpg",
+      },
     });
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.blobUrl).toContain("scans/user-123/scan_123.jpg");
+      expect(result.data.scan).toBeDefined();
+      expect(result.data.scan.id).toBe("scan-123");
     }
+
+    // Verify resolveBlobObjectByMetadata was called
+    expect(mockResolveBlobObjectByMetadata).toHaveBeenCalledWith(
+      expect.objectContaining({
+        storageEndpoint: "https://storage.test",
+        containerName: "invoices",
+        prefix: "scans/user-123/",
+        predicate: expect.any(Function),
+      })
+    );
+
+    // Verify updateBlobObject was called with metadata only
+    expect(mockUpdateBlobObject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        storageEndpoint: "https://storage.test",
+        containerName: "invoices",
+        blobName: "scans/user-123/scan_123.jpg",
+        metadata: expect.objectContaining({
+          scanId: "scan-123",
+          ownerId: "user-123",
+          displayName: "updated-receipt.jpg",
+          lastModifiedBy: "user-123",
+        }),
+      })
+    );
   });
 
-  it("should merge new metadata with existing metadata", async () => {
-    const capturedMetadata: Array<Record<string, string>> = [];
-    setupBlobClient({
-      blobUrl: "https://storage.test/invoices/scans/user-123/scan_123.jpg",
-      existingMetadata: {
+  it("should successfully update scan content and metadata", async () => {
+    mockResolveBlobObjectByMetadata.mockResolvedValue({
+      name: "scans/user-123/scan_123.jpg",
+      url: "https://storage.test/invoices/scans/user-123/scan_123.jpg",
+      metadata: {
         scanId: "scan-123",
         ownerId: "user-123",
         displayName: "receipt.jpg",
@@ -108,56 +124,131 @@ describe("updateScan", () => {
         uploadedAt: "2024-01-01T00:00:00.000Z",
         uploadedBy: "user-123",
       },
-      onUpload: (options) => capturedMetadata.push(options.metadata ?? {}),
+      contentType: "image/jpeg",
+      contentLength: 1024,
+      createdOn: new Date(),
+      etag: "test-etag",
     });
 
-    await updateScan({
-      base64Data: VALID_BASE64,
-      blobName: "scans/user-123/scan_123.jpg",
-      mimeType: "image/jpeg",
-    });
-
-    expect(capturedMetadata).toHaveLength(1);
-    expect(capturedMetadata[0]).toMatchObject({
-      scanId: "scan-123",
-      ownerId: "user-123",
-      status: "ready",
-      lastModifiedBy: "user-123",
-    });
-    
-    // Verify lastModifiedAt is a valid recent timestamp
-    const lastModifiedAt = capturedMetadata[0]?.["lastModifiedAt"];
-    expect(lastModifiedAt).toBeDefined();
-    expect(typeof lastModifiedAt).toBe("string");
-    
-    const parsedDate = new Date(lastModifiedAt ?? "");
-    expect(parsedDate.getTime()).not.toBeNaN();
-    
-    // Verify it's recent (within last 10 seconds)
-    const now = Date.now();
-    const timeDiff = now - parsedDate.getTime();
-    expect(timeDiff).toBeGreaterThanOrEqual(0);
-    expect(timeDiff).toBeLessThan(10000);
-  });
-
-  it("should update blobs that do not have existing metadata", async () => {
-    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-empty-metadata"}));
-    const capturedMetadata: Array<Record<string, string>> = [];
-    setupBlobClient({
-      blobUrl: "https://storage.test/invoices/scans/user-empty-metadata/scan.jpg",
-      onUpload: (options) => capturedMetadata.push(options.metadata ?? {}),
+    mockUpdateBlobObject.mockResolvedValue({
+      name: "scans/user-123/scan_123.jpg",
+      url: "https://storage.test/invoices/scans/user-123/scan_123.jpg",
+      metadata: {},
+      contentType: "image/jpeg",
+      contentLength: 2048,
+      createdOn: new Date(),
+      etag: "new-etag",
     });
 
     const result = await updateScan({
-      base64Data: VALID_BASE64,
-      blobName: "scans/user-empty-metadata/scan.jpg",
-      mimeType: "image/jpeg",
+      scanId: "scan-123",
+      scanObject: {
+        base64Data: VALID_BASE64,
+        mediaType: "image/jpeg",
+      },
+    });
+
+    expect(result.success).toBe(true);
+
+    // Verify updateBlobObject was called with content
+    expect(mockUpdateBlobObject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content: expect.any(Uint8Array),
+        contentType: "image/jpeg",
+      })
+    );
+  });
+
+  it("should remove specified metadata keys", async () => {
+    mockResolveBlobObjectByMetadata.mockResolvedValue({
+      name: "scans/user-123/scan_123.jpg",
+      url: "https://storage.test/invoices/scans/user-123/scan_123.jpg",
+      metadata: {
+        scanId: "scan-123",
+        ownerId: "user-123",
+        displayName: "receipt.jpg",
+        collectionName: "January 2024",
+        documentKind: "receipt",
+        documentRole: "primary",
+        status: "ready",
+        uploadedAt: "2024-01-01T00:00:00.000Z",
+        uploadedBy: "user-123",
+      },
+      contentType: "image/jpeg",
+      contentLength: 1024,
+      createdOn: new Date(),
+      etag: "test-etag",
+    });
+
+    mockUpdateBlobObject.mockResolvedValue({
+      name: "scans/user-123/scan_123.jpg",
+      url: "https://storage.test/invoices/scans/user-123/scan_123.jpg",
+      metadata: {},
+      contentType: "image/jpeg",
+      contentLength: 1024,
+      createdOn: new Date(),
+      etag: "new-etag",
+    });
+
+    const result = await updateScan({
+      scanId: "scan-123",
+      metadataRemove: [ScanMetadataKey.COLLECTION_NAME],
+    });
+
+    expect(result.success).toBe(true);
+
+    // Verify collectionName was removed from metadata
+    const updateCall = mockUpdateBlobObject.mock.calls[0]?.[0];
+    expect(updateCall?.metadata?.[ScanMetadataKey.COLLECTION_NAME]).toBeUndefined();
+  });
+
+  it("should handle scan not found", async () => {
+    mockResolveBlobObjectByMetadata.mockResolvedValue(null);
+
+    const result = await updateScan({
+      scanId: "scan-not-found",
+      metadataAdd: {
+        displayName: "test.jpg",
+      },
     });
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toContain("Missing required blob metadata");
-      expect(result.error.message).toMatch(/scanId|ownerId|documentKind|documentRole|status|uploadedAt|uploadedBy/);
+      expect(result.error.message).toContain("not found");
+    }
+  });
+
+  it("should handle ownership validation failure", async () => {
+    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-123"}));
+    mockResolveBlobObjectByMetadata.mockResolvedValue({
+      name: "scans/user-456/scan_456.jpg",
+      url: "https://storage.test/invoices/scans/user-456/scan_456.jpg",
+      metadata: {
+        scanId: "scan-456",
+        ownerId: "user-456",  // Different owner
+        displayName: "receipt.jpg",
+        documentKind: "receipt",
+        documentRole: "primary",
+        status: "ready",
+        uploadedAt: "2024-01-01T00:00:00.000Z",
+        uploadedBy: "user-456",
+      },
+      contentType: "image/jpeg",
+      contentLength: 1024,
+      createdOn: new Date(),
+      etag: "test-etag",
+    });
+
+    const result = await updateScan({
+      scanId: "scan-456",
+      metadataAdd: {
+        displayName: "test.jpg",
+      },
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.message).toContain("not authorized");
     }
   });
 
@@ -165,9 +256,7 @@ describe("updateScan", () => {
     mockFetchBFFUserFromAuthService.mockRejectedValue(new Error("Unauthorized"));
 
     const result = await updateScan({
-      base64Data: VALID_BASE64,
-      blobName: "scans/user-123/test.jpg",
-      mimeType: "image/jpeg",
+      scanId: "scan-123",
     });
 
     expect(result.success).toBe(false);
@@ -176,109 +265,111 @@ describe("updateScan", () => {
     }
   });
 
-  it("should handle Azure upload failures with non-201 status", async () => {
-    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-fail"}));
-    setupBlobClient({
-      blobUrl: "https://storage.test/blob",
-      existingMetadata: {
-        scanId: "scan-fail",
-        ownerId: "user-fail",
+  it("should handle Azure update failures", async () => {
+    mockResolveBlobObjectByMetadata.mockResolvedValue({
+      name: "scans/user-123/scan_123.jpg",
+      url: "https://storage.test/invoices/scans/user-123/scan_123.jpg",
+      metadata: {
+        scanId: "scan-123",
+        ownerId: "user-123",
+        displayName: "receipt.jpg",
         documentKind: "receipt",
         documentRole: "primary",
         status: "ready",
         uploadedAt: "2024-01-01T00:00:00.000Z",
-        uploadedBy: "user-fail",
+        uploadedBy: "user-123",
       },
-      uploadStatus: 500,
+      contentType: "image/jpeg",
+      contentLength: 1024,
+      createdOn: new Date(),
+      etag: "test-etag",
     });
 
+    mockUpdateBlobObject.mockRejectedValue(new Error("Update failed"));
+
     const result = await updateScan({
-      base64Data: VALID_BASE64,
-      blobName: "scans/user-fail/test.jpg",
-      mimeType: "image/jpeg",
+      scanId: "scan-123",
+      metadataAdd: {
+        displayName: "test.jpg",
+      },
     });
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toContain("Failed to update scan");
+      expect(result.error.message).toContain("Update failed");
     }
   });
 
   it("should handle base64 conversion errors", async () => {
-    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-error"}));
-
-    const result = await updateScan({
-      base64Data: "invalid!!!",
-      blobName: "scans/user-error/test.jpg",
-      mimeType: "image/jpeg",
-    });
-
-    expect(result.success).toBe(false);
-  });
-
-  it("should revalidate view-scans path after update", async () => {
-    setupBlobClient({
-      existingMetadata: {
-        scanId: "scan-revalidate",
+    mockResolveBlobObjectByMetadata.mockResolvedValue({
+      name: "scans/user-123/scan_123.jpg",
+      url: "https://storage.test/invoices/scans/user-123/scan_123.jpg",
+      metadata: {
+        scanId: "scan-123",
         ownerId: "user-123",
+        displayName: "receipt.jpg",
         documentKind: "receipt",
         documentRole: "primary",
         status: "ready",
         uploadedAt: "2024-01-01T00:00:00.000Z",
         uploadedBy: "user-123",
       },
-    });
-
-    await updateScan({
-      base64Data: VALID_BASE64,
-      blobName: "scans/user-123/test.jpg",
-      mimeType: "image/jpeg",
-    });
-
-    expect(mockRevalidatePath).toHaveBeenCalledWith("/domains/invoices/view-scans", "page");
-  });
-
-  it("should handle non-Error thrown exceptions", async () => {
-    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-weird"}));
-    mockFetchConfigurationValue.mockImplementation(() => {
-      throw "String error";
+      contentType: "image/jpeg",
+      contentLength: 1024,
+      createdOn: new Date(),
+      etag: "test-etag",
     });
 
     const result = await updateScan({
-      base64Data: VALID_BASE64,
-      blobName: "scans/user-weird/test.jpg",
-      mimeType: "image/jpeg",
+      scanId: "scan-123",
+      scanObject: {
+        base64Data: "invalid!!!",
+        mediaType: "image/jpeg",
+      },
     });
 
     expect(result.success).toBe(false);
   });
 
-  it("should update MIME type in blob headers", async () => {
-    const capturedHeaders: Array<NonNullable<BlockBlobUploadOptions["blobHTTPHeaders"]>> = [];
-    setupBlobClient({
-      blobUrl: "https://storage.test/blob",
-      existingMetadata: {
-        scanId: "scan-mime",
+  it("should set lastModifiedAt and lastModifiedBy automatically", async () => {
+    mockResolveBlobObjectByMetadata.mockResolvedValue({
+      name: "scans/user-123/scan_123.jpg",
+      url: "https://storage.test/invoices/scans/user-123/scan_123.jpg",
+      metadata: {
+        scanId: "scan-123",
         ownerId: "user-123",
+        displayName: "receipt.jpg",
         documentKind: "receipt",
         documentRole: "primary",
         status: "ready",
         uploadedAt: "2024-01-01T00:00:00.000Z",
         uploadedBy: "user-123",
       },
-      onUpload: (options) => {
-        if (options.blobHTTPHeaders) {
-          capturedHeaders.push(options.blobHTTPHeaders);
-        }
-      },
+      contentType: "image/jpeg",
+      contentLength: 1024,
+      createdOn: new Date(),
+      etag: "test-etag",
+    });
+
+    mockUpdateBlobObject.mockResolvedValue({
+      name: "scans/user-123/scan_123.jpg",
+      url: "https://storage.test/invoices/scans/user-123/scan_123.jpg",
+      metadata: {},
+      contentType: "image/jpeg",
+      contentLength: 1024,
+      createdOn: new Date(),
+      etag: "new-etag",
     });
 
     await updateScan({
-      base64Data: VALID_BASE64,
-      blobName: "scans/user-mime/document.pdf",
-      mimeType: "application/pdf",
+      scanId: "scan-123",
+      metadataAdd: {
+        displayName: "updated.jpg",
+      },
     });
 
-    expect(capturedHeaders[0]?.blobContentType).toBe("application/pdf");
+    const updateCall = mockUpdateBlobObject.mock.calls[0]?.[0];
+    expect(updateCall?.metadata?.lastModifiedBy).toBe("user-123");
+    expect(updateCall?.metadata?.lastModifiedAt).toBeDefined();
   });
 });

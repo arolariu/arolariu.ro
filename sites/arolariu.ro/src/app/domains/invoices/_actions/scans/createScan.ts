@@ -64,7 +64,7 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
+import {uploadBlobObject} from "@/lib/azure/storageClient";
 import {writeBlobMetadata} from "@/lib/utils.generic";
 import {convertBase64ToBlob, createErrorResult, type ServerActionResult} from "@/lib/utils.server";
 import {type Scan, ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, ScanStatus, ScanType} from "@/types/scans";
@@ -245,12 +245,9 @@ export async function createScan({base64Data, fileName, mimeType}: ServerActionI
       addSpanEvent("azure.blob.create.start");
       logWithTrace("info", "Creating scan in Azure Blob Storage", {blobName}, "server");
 
-      const storageClient = await createBlobClient(storageEndpoint);
-      const containerClient = storageClient.getContainerClient(containerName);
-      const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-
       const originalFile = await convertBase64ToBlob(base64Data);
       const arrayBuffer = await originalFile.arrayBuffer();
+      const content = new Uint8Array(arrayBuffer);
 
       const uploadedAt = new Date();
       const scanMetadata = {
@@ -265,27 +262,24 @@ export async function createScan({base64Data, fileName, mimeType}: ServerActionI
       } as const;
       const blobMetadata = writeBlobMetadata(scanMetadata);
 
-      const blobUploadResponse = await blockBlobClient.uploadData(arrayBuffer, {
-        blobHTTPHeaders: {
-          blobContentType: mimeType,
-        },
+      const blobObject = await uploadBlobObject({
+        storageEndpoint,
+        containerName,
+        blobName,
+        content,
+        contentType: mimeType,
         metadata: blobMetadata,
       });
       addSpanEvent("azure.blob.upload.complete");
 
-      if (blobUploadResponse._response.status === 201) {
-        logWithTrace("info", "Successfully created scan in Azure", {scanId}, "server");
-      } else {
-        addSpanEvent("azure.blob.create.error");
-        logWithTrace("error", "Error creating blob in Azure Storage", {status: blobUploadResponse._response.status}, "server");
-      }
+      logWithTrace("info", "Successfully created scan in Azure", {scanId}, "server");
 
       // Step 5. Construct and return the Scan entity
       const scan: Scan = {
         id: scanId,
         userIdentifier,
         name: fileName,
-        blobUrl: rewriteAzuriteUrl(blockBlobClient.url),
+        blobUrl: blobObject.url,
         mimeType,
         sizeInBytes: originalFile.size,
         scanType: mimeTypeToScanType(mimeType),
@@ -297,7 +291,7 @@ export async function createScan({base64Data, fileName, mimeType}: ServerActionI
       return {
         success: true,
         data: {
-          status: blobUploadResponse._response.status,
+          status: 201,
           scan,
         },
       } as const;
