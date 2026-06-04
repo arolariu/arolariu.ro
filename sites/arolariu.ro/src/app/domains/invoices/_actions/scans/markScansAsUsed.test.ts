@@ -16,12 +16,28 @@ describe("markScansAsUsed", () => {
     const mockBlobs = [
       {
         name: "scans/user-123/scan1.jpg",
-        metadata: {scanId: "scan1", status: "ready"},
+        metadata: {
+          scanId: "scan1",
+          ownerId: "user-123",
+          documentKind: "receipt",
+          documentRole: "primary",
+          status: "ready",
+          uploadedAt: "2026-06-03T20:00:00.000Z",
+          uploadedBy: "user-123",
+        },
         etag: "etag1",
       },
       {
         name: "scans/user-123/scan2.jpg",
-        metadata: {scanId: "scan2", status: "ready"},
+        metadata: {
+          scanId: "scan2",
+          ownerId: "user-123",
+          documentKind: "receipt",
+          documentRole: "primary",
+          status: "ready",
+          uploadedAt: "2026-06-03T20:00:00.000Z",
+          uploadedBy: "user-123",
+        },
         etag: "etag2",
       },
     ];
@@ -65,13 +81,21 @@ describe("markScansAsUsed", () => {
     // Act
     await markScansAsUsed({
       blobNames: ["scans/user-123/scan1.jpg", "scans/user-123/scan2.jpg"],
+      attachedTo: "invoice-123",
+      attachedBy: "user-123",
     });
 
     // Assert
     expect(setMetadataCalls).toHaveLength(2);
     setMetadataCalls.forEach((call) => {
-      expect(call.metadata["usedByInvoice"]).toBe("true");
-      expect(call.metadata["status"]).toBe("archived");
+      expect(call.metadata).toMatchObject({
+        status: "attached",
+        attachedBy: "user-123",
+        attachedTo: "invoice-123",
+      });
+      expect(call.metadata["attachedAt"]).toBeDefined();
+      expect(call.metadata["detachedAt"]).toBeUndefined();
+      expect(call.metadata["archivedAt"]).toBeUndefined();
     });
   });
 
@@ -79,9 +103,12 @@ describe("markScansAsUsed", () => {
     // Arrange
     const existingMetadata = {
       scanId: "scan1",
-      userIdentifier: "user-123",
+      ownerId: "user-123",
+      documentKind: "receipt",
+      documentRole: "primary",
       uploadedAt: "2024-01-01T00:00:00.000Z",
-      originalFileName: "receipt.jpg",
+      uploadedBy: "user-123",
+      displayName: "receipt.jpg",
       status: "ready",
     };
 
@@ -119,20 +146,28 @@ describe("markScansAsUsed", () => {
     const {markScansAsUsed} = await import("./markScansAsUsed");
 
     // Act
-    await markScansAsUsed({blobNames: ["scans/user-123/scan1.jpg"]});
+    await markScansAsUsed({
+      blobNames: ["scans/user-123/scan1.jpg"],
+      attachedTo: "invoice-123",
+      attachedBy: "user-123",
+    });
 
     // Assert
     expect(capturedMetadata["scanId"]).toBe("scan1");
-    expect(capturedMetadata["userIdentifier"]).toBe("user-123");
+    expect(capturedMetadata["ownerId"]).toBe("user-123");
     expect(capturedMetadata["uploadedAt"]).toBe("2024-01-01T00:00:00.000Z");
-    expect(capturedMetadata["originalFileName"]).toBe("receipt.jpg");
-    expect(capturedMetadata["usedByInvoice"]).toBe("true");
-    expect(capturedMetadata["status"]).toBe("archived");
+    expect(capturedMetadata["displayName"]).toBe("receipt.jpg");
+    expect(capturedMetadata).toMatchObject({
+      status: "attached",
+      attachedBy: "user-123",
+      attachedTo: "invoice-123",
+    });
+    expect(capturedMetadata["attachedAt"]).toBeDefined();
   });
 
-  it("should create metadata when the blob has no existing metadata", async () => {
+  it("should handle blobs with minimal or no metadata gracefully (best-effort)", async () => {
     // Arrange
-    let capturedMetadata: Record<string, string> = {};
+    let setMetadataCalled = false;
 
     vi.doMock("@/instrumentation.server", () => ({
       withSpan: vi.fn((_name, fn) => fn()),
@@ -148,9 +183,9 @@ describe("markScansAsUsed", () => {
       createBlobClient: vi.fn(() => ({
         getContainerClient: vi.fn(() => ({
           getBlockBlobClient: vi.fn(() => ({
-            getProperties: vi.fn(() => Promise.resolve({etag: "etag-without-metadata"})),
-            setMetadata: vi.fn((metadata) => {
-              capturedMetadata = metadata;
+            getProperties: vi.fn(() => Promise.resolve({etag: "etag-without-metadata", metadata: {}})),
+            setMetadata: vi.fn(() => {
+              setMetadataCalled = true;
               return Promise.resolve();
             }),
           })),
@@ -160,12 +195,17 @@ describe("markScansAsUsed", () => {
 
     const {markScansAsUsed} = await import("./markScansAsUsed");
 
-    // Act
-    await markScansAsUsed({blobNames: ["scans/user-123/no-metadata.jpg"]});
+    // Act - should not throw (best-effort, will log warning internally)
+    await expect(
+      markScansAsUsed({
+        blobNames: ["scans/user-123/no-metadata.jpg"],
+        attachedTo: "invoice-123",
+        attachedBy: "user-123",
+      })
+    ).resolves.not.toThrow();
 
-    // Assert
-    expect(capturedMetadata["usedByInvoice"]).toBe("true");
-    expect(capturedMetadata["status"]).toBe("archived");
+    // Assert - metadata update should not have been called due to missing required fields
+    expect(setMetadataCalled).toBe(false);
   });
 
   it("should handle individual blob failures gracefully (best-effort)", async () => {
@@ -336,7 +376,15 @@ describe("markScansAsUsed", () => {
           getBlockBlobClient: vi.fn(() => ({
             getProperties: vi.fn(() =>
               Promise.resolve({
-                metadata: {scanId: "scan1"},
+                metadata: {
+                  scanId: "scan1",
+                  ownerId: "user-123",
+                  documentKind: "receipt",
+                  documentRole: "primary",
+                  status: "ready",
+                  uploadedAt: "2026-06-03T20:00:00.000Z",
+                  uploadedBy: "user-123",
+                },
                 etag: "expected-etag",
               }),
             ),
@@ -352,7 +400,11 @@ describe("markScansAsUsed", () => {
     const {markScansAsUsed} = await import("./markScansAsUsed");
 
     // Act
-    await markScansAsUsed({blobNames: ["scans/user-123/scan1.jpg"]});
+    await markScansAsUsed({
+      blobNames: ["scans/user-123/scan1.jpg"],
+      attachedTo: "invoice-123",
+      attachedBy: "user-123",
+    });
 
     // Assert
     expect(capturedConditions).toMatchObject({ifMatch: "expected-etag"});

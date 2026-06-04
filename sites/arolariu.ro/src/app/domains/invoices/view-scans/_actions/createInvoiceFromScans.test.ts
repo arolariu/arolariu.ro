@@ -39,7 +39,16 @@ function createTestScan(id: string, overrides: Partial<Scan> = {}): Scan {
     scanType: ScanType.JPEG,
     uploadedAt: new Date("2024-01-01"),
     status: ScanStatus.READY,
-    metadata: {},
+    metadata: {
+      scanId: id,
+      ownerId: "user-123",
+      displayName: `${id}.jpg`,
+      documentKind: "receipt",
+      documentRole: "primary",
+      status: "ready",
+      uploadedAt: new Date("2026-06-03T20:00:00.000Z"),
+      uploadedBy: "user-123",
+    },
     ...overrides,
   };
 }
@@ -94,6 +103,16 @@ describe("createInvoiceFromScans", () => {
       expect(result.convertedScanIds).toEqual(["scan-1", "scan-2"]);
       expect(result.errors).toHaveLength(0);
       expect(mockFetch).toHaveBeenCalledTimes(2);
+
+      // Assert initial scan metadata includes canonical scan metadata
+      const firstCallPayload = JSON.parse(mockFetch.mock.calls[0]?.[1]?.body as string);
+      expect(firstCallPayload.initialScan.metadata).toMatchObject({
+        sourceScanId: "scan-1",
+        sourceOwnerId: "user-123",
+        documentKind: "receipt",
+        documentRole: "primary",
+        uploadedAt: "2026-06-03T20:00:00.000Z",
+      });
     });
 
     it("should handle partial failures in single mode", async () => {
@@ -167,6 +186,26 @@ describe("createInvoiceFromScans", () => {
       expect(result.convertedScanIds).toEqual(["scan-1", "scan-2", "scan-3"]);
       expect(result.errors).toHaveLength(0);
       expect(mockFetch).toHaveBeenCalledTimes(3);
+
+      // Assert initial scan includes canonical metadata
+      const createPayload = JSON.parse(mockFetch.mock.calls[0]?.[1]?.body as string);
+      expect(createPayload.initialScan.metadata).toMatchObject({
+        sourceScanId: "scan-1",
+        sourceOwnerId: "user-123",
+        documentKind: "receipt",
+        documentRole: "primary",
+        uploadedAt: "2026-06-03T20:00:00.000Z",
+      });
+
+      // Assert additional scans include canonical metadata
+      const attachPayload2 = JSON.parse(mockFetch.mock.calls[1]?.[1]?.body as string);
+      expect(attachPayload2.additionalMetadata).toMatchObject({
+        sourceScanId: "scan-2",
+        sourceOwnerId: "user-123",
+        documentKind: "receipt",
+        documentRole: "primary",
+      });
+      expect(attachPayload2.additionalMetadata.attachedAt).toBeDefined();
     });
 
     it("should handle attachment failures in batch mode", async () => {
@@ -532,7 +571,7 @@ describe("createInvoiceFromScans", () => {
 
       // Wait for fire-and-forget warning
       await vi.waitFor(() => {
-        expect(consoleWarnSpy).toHaveBeenCalledWith("Failed to mark scans as used (non-critical):", expect.any(Error));
+        expect(consoleWarnSpy).toHaveBeenCalledWith("Failed to mark scan as attached (non-critical):", expect.any(Error));
       });
 
       consoleWarnSpy.mockRestore();
@@ -564,7 +603,7 @@ describe("createInvoiceFromScans", () => {
 
       // Wait for fire-and-forget warning
       await vi.waitFor(() => {
-        expect(consoleWarnSpy).toHaveBeenCalledWith("Failed to mark scans as used (non-critical):", expect.any(Error));
+        expect(consoleWarnSpy).toHaveBeenCalledWith("Failed to mark scans as attached (non-critical):", expect.any(Error));
       });
 
       consoleWarnSpy.mockRestore();

@@ -10,6 +10,8 @@
  * exposes loading state plus toast feedback for the calling component.
  */
 
+import {writeBlobMetadata} from "@/lib/utils.generic";
+import {ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus} from "@/types/scans";
 import type {InvoiceScanType} from "@/types/invoices";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
@@ -90,13 +92,27 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
         const base64Data = await readBlobAsDataUrl(args.file);
         const ext = args.fileName.includes(".") ? args.fileName.split(".").pop() || "jpg" : "jpg";
         const blobName = `${args.userIdentifier}/${invoiceId}/${crypto.randomUUID()}.${ext}`;
+        
+        const scanId = crypto.randomUUID();
+        const uploadedAt = new Date();
+        const attachedAt = new Date();
+
         const {success, data, error} = await createInvoiceScan({
           base64Data,
           blobName,
-          metadata: {
-            invoiceId,
-            uploadedAt: new Date().toISOString(),
-          },
+          metadata: writeBlobMetadata({
+            scanId,
+            ownerId: args.userIdentifier,
+            displayName: args.fileName,
+            documentKind: ScanDocumentKind.RECEIPT,
+            documentRole: ScanDocumentRole.SUPPLEMENT,
+            status: ScanMetadataStatus.ATTACHED,
+            uploadedAt,
+            uploadedBy: args.userIdentifier,
+            attachedAt,
+            attachedBy: args.userIdentifier,
+            attachedTo: invoiceId,
+          }),
         });
 
         if (!success || !data) {
@@ -110,8 +126,12 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
             type: args.type,
             location: data.blobUrl,
             additionalMetadata: {
-              originalFileName: args.fileName,
-              uploadedAt: new Date().toISOString(),
+              displayName: args.fileName,
+              documentKind: ScanDocumentKind.RECEIPT,
+              documentRole: ScanDocumentRole.SUPPLEMENT,
+              attachedAt: attachedAt.toISOString(),
+              attachedBy: args.userIdentifier,
+              attachedTo: invoiceId,
             },
           },
         });

@@ -96,7 +96,13 @@ async function createSingleInvoice(scan: Scan, userIdentifier: string, authToken
     initialScan: {
       scanType: scanTypeToInvoiceScanType(scan.scanType),
       location: scan.blobUrl,
-      metadata: {},
+      metadata: {
+        sourceScanId: scan.metadata.scanId,
+        sourceOwnerId: scan.metadata.ownerId,
+        documentKind: scan.metadata.documentKind,
+        documentRole: scan.metadata.documentRole,
+        uploadedAt: scan.metadata.uploadedAt.toISOString(),
+      },
     },
     metadata: {
       isImportant: "false",
@@ -137,7 +143,10 @@ async function attachScanToInvoice(invoiceId: string, scan: Scan, authToken: str
     type: scanTypeToInvoiceScanType(scan.scanType),
     location: scan.blobUrl,
     additionalMetadata: {
-      sourceScanId: scan.id,
+      sourceScanId: scan.metadata.scanId,
+      sourceOwnerId: scan.metadata.ownerId,
+      documentKind: scan.metadata.documentKind,
+      documentRole: scan.metadata.documentRole,
       attachedAt: new Date().toISOString(),
     },
   };
@@ -202,14 +211,26 @@ async function createInvoicesInSingleMode(scans: ReadonlyArray<Scan>, userIdenti
     }
   }
 
-  // Mark successfully converted scans as used (best-effort)
+  // Mark successfully converted scans as attached (best-effort)
   if (convertedScanIds.length > 0) {
     const convertedSet = new Set(convertedScanIds);
-    const blobNames = scans.filter((s) => convertedSet.has(s.id)).map((s) => extractBlobNameFromScan(s));
+    const convertedScans = scans.filter((s) => convertedSet.has(s.id));
+    const blobNames = convertedScans.map((s) => extractBlobNameFromScan(s));
 
-    markScansAsUsed({blobNames}).catch((error) => {
-      console.warn("Failed to mark scans as used (non-critical):", error);
-    });
+    // Each scan was converted to its own invoice, so use the invoice ID from the corresponding result
+    for (let i = 0; i < convertedScans.length; i++) {
+      const scan = convertedScans[i];
+      const invoice = invoices.find((inv) => convertedScanIds.indexOf(scan!.id) === invoices.indexOf(inv));
+      if (scan && invoice) {
+        markScansAsUsed({
+          blobNames: [extractBlobNameFromScan(scan)],
+          attachedTo: invoice.id,
+          attachedBy: userIdentifier,
+        }).catch((error) => {
+          console.warn("Failed to mark scan as attached (non-critical):", error);
+        });
+      }
+    }
   }
 
   addSpanEvent("bff.invoices.create.single.complete");
@@ -272,12 +293,16 @@ async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, userIdentif
       "server",
     );
 
-    // Mark successfully converted scans as used (best-effort)
+    // Mark successfully converted scans as attached (best-effort)
     const allConvertedSet = new Set([firstScan.id, ...convertedScanIds]);
     const blobNames = scans.filter((s) => allConvertedSet.has(s.id)).map((s) => extractBlobNameFromScan(s));
 
-    markScansAsUsed({blobNames}).catch((error) => {
-      console.warn("Failed to mark scans as used (non-critical):", error);
+    markScansAsUsed({
+      blobNames,
+      attachedTo: invoice.id,
+      attachedBy: userIdentifier,
+    }).catch((error) => {
+      console.warn("Failed to mark scans as attached (non-critical):", error);
     });
 
     // Fire-and-forget auto-analysis after successful batch creation

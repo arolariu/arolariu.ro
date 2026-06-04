@@ -136,25 +136,42 @@ describe("useScanAdd", () => {
 
       await invokeHookCallback(hookResult, (current) => current.addScanCallback(addArgs));
 
-      expect(mockCreateInvoiceScan).toHaveBeenCalledWith({
-        base64Data: "data:image/png;base64,c2Nhbi1kYXRh",
-        blobName: "user-1/11111111-1111-4111-8111-111111111111/99999999-9999-4999-8999-999999999999.png",
-        metadata: {
-          invoiceId,
-          uploadedAt: expect.any(String),
-        },
+      const createInvoiceScanCall = mockCreateInvoiceScan.mock.calls[0]?.[0];
+      expect(createInvoiceScanCall?.base64Data).toBe("data:image/png;base64,c2Nhbi1kYXRh");
+      expect(createInvoiceScanCall?.blobName).toBe("user-1/11111111-1111-4111-8111-111111111111/99999999-9999-4999-8999-999999999999.png");
+      
+      // Assert canonical blob metadata
+      const metadata = createInvoiceScanCall?.metadata;
+      expect(metadata).toMatchObject({
+        scanId: "99999999-9999-4999-8999-999999999999",
+        ownerId: "user-1",
+        displayName: "receipt.png",
+        documentKind: "receipt",
+        documentRole: "supplement",
+        status: "attached",
+        uploadedBy: "user-1",
+        attachedBy: "user-1",
+        attachedTo: invoiceId,
       });
-      expect(mockAttachInvoiceScan).toHaveBeenCalledWith({
+      expect(metadata?.uploadedAt).toBeDefined();
+      expect(metadata?.attachedAt).toBeDefined();
+
+      const attachCall = mockAttachInvoiceScan.mock.calls[0]?.[0];
+      expect(attachCall).toMatchObject({
         invoiceId,
         payload: {
           type: InvoiceScanType.PNG,
           location: scanBlobUrl,
           additionalMetadata: {
-            originalFileName: "receipt.png",
-            uploadedAt: expect.any(String),
+            displayName: "receipt.png",
+            documentKind: "receipt",
+            documentRole: "supplement",
+            attachedBy: "user-1",
+            attachedTo: invoiceId,
           },
         },
       });
+      expect(attachCall?.payload.additionalMetadata.attachedAt).toBeDefined();
       expect(mockToast.success).toHaveBeenCalledWith("Scan added successfully");
       expect(result.current.isAdding).toBe(false);
     });

@@ -1,11 +1,11 @@
 "use server";
 
 /**
- * @fileoverview Server action for marking scans as used by invoices.
+ * @fileoverview Server action for marking scans as attached to invoices.
  * @module app/domains/invoices/_actions/scans/markScansAsUsed
  *
  * @remarks
- * This is a lightweight metadata-only update that sets `usedByInvoice` flag
+ * This is a lightweight metadata-only update that sets canonical attached metadata
  * on scan blobs without re-uploading the blob data. This prevents scans from
  * reappearing in the scans list after they've been converted to invoices.
  *
@@ -23,6 +23,7 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {createBlobClient} from "@/lib/azure/storageClient";
+import {readBlobMetadata, writeBlobMetadata} from "@/lib/utils.generic";
 
 /**
  * Input parameters for marking scans as used.
@@ -30,17 +31,22 @@ import {createBlobClient} from "@/lib/azure/storageClient";
 type MarkScansAsUsedInput = Readonly<{
   /** Array of blob names (full paths like "scans/userId/scanId.jpg") */
   blobNames: ReadonlyArray<string>;
+  /** The invoice or entity ID this scan is attached to */
+  attachedTo: string;
+  /** The user identifier who is attaching the scan */
+  attachedBy: string;
 }>;
 
 /**
- * Marks scans as used by setting blob metadata.
+ * Marks scans as attached to an invoice by setting canonical blob metadata.
  *
  * @remarks
  * **Execution Context**: Server-side only (Next.js server action).
  *
  * **What it does**:
- * - Sets `usedByInvoice: "true"` in blob metadata
- * - Sets `status: "archived"` to mark as archived
+ * - Sets `status: "attached"` in canonical blob metadata
+ * - Sets `attachedTo`, `attachedBy`, and `attachedAt` fields
+ * - Explicitly removes stale detachment and archive fields
  * - Does NOT re-upload blob data—only updates metadata
  *
  * **Best-effort**: Failures are logged but don't throw. If a scan fails to
@@ -50,6 +56,8 @@ type MarkScansAsUsedInput = Readonly<{
  *
  * @param input - Marking parameters.
  * @param input.blobNames - Blob names within the `invoices` container to mark as used.
+ * @param input.attachedTo - The invoice or entity ID this scan is attached to.
+ * @param input.attachedBy - The user identifier who is attaching the scan.
  * @returns A promise that resolves after all metadata updates have been attempted; failures are logged and swallowed.
  *
  * @example
@@ -58,10 +66,14 @@ type MarkScansAsUsedInput = Readonly<{
  * const blobNames = scans.map(scan =>
  *   scan.blobUrl.split("/").slice(-3).join("/")
  * );
- * await markScansAsUsed({blobNames});
+ * await markScansAsUsed({
+ *   blobNames,
+ *   attachedTo: "invoice-123",
+ *   attachedBy: "user-123",
+ * });
  * ```
  */
-export async function markScansAsUsed({blobNames}: MarkScansAsUsedInput): Promise<void> {
+export async function markScansAsUsed({blobNames, attachedTo, attachedBy}: MarkScansAsUsedInput): Promise<void> {
   console.info(">>> Executing server action::markScansAsUsed");
 
   return withSpan("api.actions.scans.markScansAsUsed", async () => {
@@ -84,24 +96,36 @@ export async function markScansAsUsed({blobNames}: MarkScansAsUsedInput): Promis
 
             // Fetch existing metadata to preserve it
             const props = await blockBlobClient.getProperties();
-            const existingMetadata = props.metadata ?? {};
+            const existingMetadata = readBlobMetadata(props.metadata ?? {});
 
-            // Merge with new flags
-            const updatedMetadata = {
-              ...existingMetadata,
-              usedByInvoice: "true",
-              status: "archived",
-            };
+            // Explicitly remove stale detachment/archive fields
+            const {
+              detachedAt: _detachedAt,
+              detachedBy: _detachedBy,
+              detachedFrom: _detachedFrom,
+              archivedAt: _archivedAt,
+              archivedBy: _archivedBy,
+              ...metadataWithoutStaleLineage
+            } = existingMetadata;
+
+            // Write canonical attached metadata
+            const updatedMetadata = writeBlobMetadata({
+              ...metadataWithoutStaleLineage,
+              status: "attached",
+              attachedAt: new Date(),
+              attachedBy,
+              attachedTo,
+            });
 
             // Set updated metadata with etag conditional write
             await blockBlobClient.setMetadata(updatedMetadata, {
               conditions: {ifMatch: props.etag},
             });
-            logWithTrace("info", `Marked scan as used: ${blobName}`, {blobName}, "server");
+            logWithTrace("info", `Marked scan as attached: ${blobName}`, {blobName}, "server");
           } catch (error) {
             // Log but don't fail—best-effort marking
-            logWithTrace("warn", `Failed to mark scan as used: ${blobName}`, {blobName, error}, "server");
-            console.warn(`Failed to mark scan as used: ${blobName}`, error);
+            logWithTrace("warn", `Failed to mark scan as attached: ${blobName}`, {blobName, error}, "server");
+            console.warn(`Failed to mark scan as attached: ${blobName}`, error);
             throw error;
           }
         }),
