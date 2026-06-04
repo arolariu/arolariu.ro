@@ -1,6 +1,6 @@
 /**
- * @fileoverview Unit tests for attachInvoiceScan server action.
- * @module app/domains/invoices/_actions/invoices/scans/attachInvoiceScan.test
+ * @fileoverview Unit tests for attachScanToInvoice server action.
+ * @module app/domains/invoices/_actions/invoices/scans/attachScanToInvoice.test
  */
 
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
@@ -9,11 +9,11 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder} from "../../../../../../../tests/helpers";
 
 vi.mock("@/lib/actions/user/fetchUser");
-const {attachInvoiceScan} = await import("./attachInvoiceScan");
+const {attachScanToInvoice} = await import("./attachScanToInvoice");
 const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
 const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
 
-describe("attachInvoiceScan", () => {
+describe("attachScanToInvoice", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
@@ -29,7 +29,7 @@ describe("attachInvoiceScan", () => {
       additionalMetadata: {page: "1"},
     });
 
-    const result = await attachInvoiceScan({invoiceId, payload});
+    const result = await attachScanToInvoice({invoiceId, payload});
 
     expect(result.success).toBe(true);
     expect(mockFetchWithTimeout).toHaveBeenCalledWith(
@@ -55,7 +55,7 @@ describe("attachInvoiceScan", () => {
       location: "https://storage.test/scan.jpg",
     });
 
-    const result = await attachInvoiceScan({invoiceId: invalidId, payload});
+    const result = await attachScanToInvoice({invoiceId: invalidId, payload});
 
     expect(result.success).toBe(false);
     expect(mockFetchWithTimeout).not.toHaveBeenCalled();
@@ -71,7 +71,7 @@ describe("attachInvoiceScan", () => {
       TestDataBuilder.textResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
-    const result400 = await attachInvoiceScan({invoiceId, payload});
+    const result400 = await attachScanToInvoice({invoiceId, payload});
 
     expect(result400.success).toBe(false);
     if (!result400.success) {
@@ -83,7 +83,7 @@ describe("attachInvoiceScan", () => {
       TestDataBuilder.textResponse("Not Found", {status: 404, statusText: "Not Found"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
-    const result404 = await attachInvoiceScan({invoiceId, payload});
+    const result404 = await attachScanToInvoice({invoiceId, payload});
 
     expect(result404.success).toBe(false);
     if (!result404.success) {
@@ -97,7 +97,7 @@ describe("attachInvoiceScan", () => {
       >,
     );
 
-    const result500 = await attachInvoiceScan({invoiceId, payload});
+    const result500 = await attachScanToInvoice({invoiceId, payload});
 
     expect(result500.success).toBe(false);
     if (!result500.success) {
@@ -114,7 +114,7 @@ describe("attachInvoiceScan", () => {
       location: "https://storage.test/scan.jpg",
     });
 
-    const result = await attachInvoiceScan({invoiceId, payload});
+    const result = await attachScanToInvoice({invoiceId, payload});
 
     expect(result.success).toBe(false);
     expect(mockFetchWithTimeout).not.toHaveBeenCalled();
@@ -128,7 +128,7 @@ describe("attachInvoiceScan", () => {
       location: "https://storage.test/scan.jpg",
     });
 
-    const result = await attachInvoiceScan({invoiceId, payload});
+    const result = await attachScanToInvoice({invoiceId, payload});
 
     expect(result.success).toBe(false);
   });

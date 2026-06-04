@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Server action for attaching additional scans to existing invoices.
- * @module app/domains/invoices/_actions/invoices/scans/attachInvoiceScan
+ * @module app/domains/invoices/_actions/invoices/scans/attachScanToInvoice
  *
  * @remarks
  * Allows users to add supplementary scans to an invoice after initial creation.
@@ -70,10 +70,10 @@ type ServerActionOutputType = ServerActionResult<void>;
  *
  * @example
  * ```typescript
- * import {attachInvoiceScan} from "@/app/domains/invoices/_actions/invoices/scans/attachInvoiceScan";
+ * import {attachScanToInvoice} from "@/app/domains/invoices/_actions/invoices/scans/attachScanToInvoice";
  * import {InvoiceScanType} from "@/types/invoices";
  *
- * const result = await attachInvoiceScan({
+ * const result = await attachScanToInvoice({
  *   invoiceId: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
  *   payload: {
  *     type: InvoiceScanType.Photo,
@@ -89,10 +89,10 @@ type ServerActionOutputType = ServerActionResult<void>;
  *
  * @see {@link createInvoiceScan} for uploading the scan file first
  */
-export async function attachInvoiceScan({invoiceId, payload}: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{attachInvoiceScan}}, with:", {invoiceId, payload});
+export async function attachScanToInvoice({invoiceId, payload}: ServerActionInputType): ServerActionOutputType {
+  console.info(">>> Executing server action {{attachScanToInvoice}}, with:", {invoiceId, payload});
 
-  return withSpan("api.actions.invoices.attachInvoiceScan", async () => {
+  return withSpan("api.actions.invoices.attachScanToInvoice", async () => {
     try {
       // Step 0. Validate invoice identifier is valid GUID
       logWithTrace("info", "Validating identifier is valid...", {invoiceId}, "server");
