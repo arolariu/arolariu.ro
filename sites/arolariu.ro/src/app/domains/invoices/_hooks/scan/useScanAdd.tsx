@@ -16,7 +16,7 @@ import type {InvoiceScanType} from "@/types/invoices";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
-import {attachInvoiceScan, createInvoiceScan} from "../../_actions/invoices";
+import {attachScanToInvoice, createInvoiceScan} from "../../_actions/invoices";
 
 /**
  * Arguments required to upload and attach a scan.
@@ -120,7 +120,7 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
           throw new Error(t((m) => m.toasts.invoices.useScanAdd.uploadFailed, {status}));
         }
 
-        await attachInvoiceScan({
+        await attachScanToInvoice({
           invoiceId,
           payload: {
             type: args.type,
