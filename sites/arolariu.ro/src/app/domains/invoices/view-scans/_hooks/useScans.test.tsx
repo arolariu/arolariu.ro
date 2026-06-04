@@ -77,7 +77,15 @@ describe("useScans", () => {
     blobUrl: "https://storage.blob.core.windows.net/invoices/scans/user-123/scan-001.jpg",
     sizeInBytes: 1024,
     uploadedAt: new Date(),
-    metadata: {},
+    metadata: {
+      scanId: "scan-001",
+      ownerId: "user-123",
+      documentKind: "receipt",
+      documentRole: "primary",
+      status: "ready",
+      uploadedAt: new Date(),
+      uploadedBy: "user-123",
+    },
     cachedAt: new Date(),
     ...overrides,
   });

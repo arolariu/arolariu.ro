@@ -25,7 +25,15 @@ function createScan(overrides: Partial<Scan> = {}): Scan {
     scanType: "JPEG",
     uploadedAt: new Date("2026-05-26T00:00:00.000Z"),
     status: "ready",
-    metadata: {},
+    metadata: {
+      scanId: "scan-1",
+      ownerId: "user-1",
+      documentKind: "receipt",
+      documentRole: "primary",
+      status: "ready",
+      uploadedAt: new Date("2026-05-26T00:00:00.000Z"),
+      uploadedBy: "user-1",
+    },
     ...overrides,
   };
 }

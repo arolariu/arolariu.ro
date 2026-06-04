@@ -249,7 +249,9 @@ describe("markScansAsUsed", () => {
     const {markScansAsUsed} = await import("./markScansAsUsed");
 
     // Act - should not throw despite one failure
-    await expect(markScansAsUsed({blobNames: [goodBlob, failBlob]})).resolves.not.toThrow();
+    await expect(
+      markScansAsUsed({blobNames: [goodBlob, failBlob], attachedTo: "invoice-123", attachedBy: "user-123"}),
+    ).resolves.not.toThrow();
   });
 
   it("should handle empty blob names array", async () => {
@@ -275,7 +277,7 @@ describe("markScansAsUsed", () => {
     const {markScansAsUsed} = await import("./markScansAsUsed");
 
     // Act
-    await expect(markScansAsUsed({blobNames: []})).resolves.not.toThrow();
+    await expect(markScansAsUsed({blobNames: [], attachedTo: "invoice-123", attachedBy: "user-123"})).resolves.not.toThrow();
   });
 
   it("should handle storage connection failures gracefully", async () => {
@@ -293,7 +295,9 @@ describe("markScansAsUsed", () => {
     const {markScansAsUsed} = await import("./markScansAsUsed");
 
     // Act - should not throw (best-effort)
-    await expect(markScansAsUsed({blobNames: ["scans/user-123/test.jpg"]})).resolves.not.toThrow();
+    await expect(
+      markScansAsUsed({blobNames: ["scans/user-123/test.jpg"], attachedTo: "invoice-123", attachedBy: "user-123"}),
+    ).resolves.not.toThrow();
   });
 
   it("should process blobs in parallel using Promise.allSettled", async () => {
@@ -329,7 +333,7 @@ describe("markScansAsUsed", () => {
     const {markScansAsUsed} = await import("./markScansAsUsed");
 
     // Act
-    await markScansAsUsed({blobNames: delayedBlobs});
+    await markScansAsUsed({blobNames: delayedBlobs, attachedTo: "invoice-123", attachedBy: "user-123"});
 
     // Assert
     expect(processedBlobs).toHaveLength(3);
@@ -353,7 +357,7 @@ describe("markScansAsUsed", () => {
     const {markScansAsUsed} = await import("./markScansAsUsed");
 
     // Act - should not throw (best-effort)
-    await expect(markScansAsUsed({blobNames: ["test.jpg"]})).resolves.not.toThrow();
+    await expect(markScansAsUsed({blobNames: ["test.jpg"], attachedTo: "invoice-123", attachedBy: "user-123"})).resolves.not.toThrow();
   });
 
   it("should use conditional write with etag to prevent race conditions", async () => {

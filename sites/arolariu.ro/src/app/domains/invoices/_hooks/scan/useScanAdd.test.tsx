@@ -153,8 +153,8 @@ describe("useScanAdd", () => {
         attachedBy: "user-1",
         attachedTo: invoiceId,
       });
-      expect(metadata?.uploadedAt).toBeDefined();
-      expect(metadata?.attachedAt).toBeDefined();
+      expect(metadata?.["uploadedAt"]).toBeDefined();
+      expect(metadata?.["attachedAt"]).toBeDefined();
 
       const attachCall = mockAttachInvoiceScan.mock.calls[0]?.[0];
       expect(attachCall).toMatchObject({
@@ -173,7 +173,7 @@ describe("useScanAdd", () => {
           },
         },
       });
-      expect(attachCall?.payload.additionalMetadata.attachedAt).toBeDefined();
+      expect(attachCall?.payload.additionalMetadata["attachedAt"]).toBeDefined();
       expect(mockToast.success).toHaveBeenCalledWith("Scan added successfully");
       expect(result.current.isAdding).toBe(false);
     });

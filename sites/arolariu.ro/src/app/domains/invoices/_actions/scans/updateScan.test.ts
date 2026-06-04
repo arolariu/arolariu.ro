@@ -254,7 +254,7 @@ describe("updateScan", () => {
   });
 
   it("should update MIME type in blob headers", async () => {
-    const capturedHeaders: Array<Readonly<Record<string, string | undefined>>> = [];
+    const capturedHeaders: Array<NonNullable<BlockBlobUploadOptions["blobHTTPHeaders"]>> = [];
     setupBlobClient({
       blobUrl: "https://storage.test/blob",
       existingMetadata: {
@@ -266,7 +266,11 @@ describe("updateScan", () => {
         uploadedAt: "2024-01-01T00:00:00.000Z",
         uploadedBy: "user-123",
       },
-      onUpload: (options) => capturedHeaders.push(options.blobHTTPHeaders ?? {}),
+      onUpload: (options) => {
+        if (options.blobHTTPHeaders) {
+          capturedHeaders.push(options.blobHTTPHeaders);
+        }
+      },
     });
 
     await updateScan({
@@ -275,6 +279,6 @@ describe("updateScan", () => {
       mimeType: "application/pdf",
     });
 
-    expect(capturedHeaders[0]?.["blobContentType"]).toBe("application/pdf");
+    expect(capturedHeaders[0]?.blobContentType).toBe("application/pdf");
   });
 });

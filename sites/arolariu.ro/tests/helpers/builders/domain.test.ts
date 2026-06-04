@@ -59,11 +59,18 @@ describe("domain builders", () => {
     const scan = buildScan({
       id: "scan-1",
       metadata: {
-        customField: "custom-value",
+        scanId: "scan-1",
+        ownerId: "test-user",
+        collectionName: "custom-value",
+        documentKind: "receipt",
+        documentRole: "primary",
+        status: "ready",
+        uploadedAt: new Date("2026-01-01T00:00:00.000Z"),
+        uploadedBy: "test-user",
       },
     });
 
     expect(scan.id).toBe("scan-1");
-    expect(scan.metadata["customField"]).toBe("custom-value");
+    expect(scan.metadata.collectionName).toBe("custom-value");
   });
 });

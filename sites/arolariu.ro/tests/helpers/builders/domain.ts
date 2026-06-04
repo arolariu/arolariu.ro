@@ -489,6 +489,7 @@ export function buildInvoiceAnalysisOptions(value?: InvoiceAnalysisOptions): Inv
  * - scanType: JPEG
  * - status: READY
  * - uploadedAt: TEST_DATE
+ * - Canonical typed metadata with required fields
  *
  * **Use Cases:**
  * - Scan management tests
@@ -499,11 +500,11 @@ export function buildInvoiceAnalysisOptions(value?: InvoiceAnalysisOptions): Inv
  * ```typescript
  * const scan = buildScan({
  *   id: "scan-1",
- *   metadata: {customField: "custom-value"}
+ *   metadata: {collectionName: "custom-collection"}
  * });
  * expect(scan.id).toBe("scan-1");
  * expect(scan.status).toBe(ScanStatus.READY);
- * expect(scan.metadata.customField).toBe("custom-value");
+ * expect(scan.metadata.collectionName).toBe("custom-collection");
  * ```
  */
 export function buildScan(overrides: Partial<Scan> = {}): Scan {
@@ -517,7 +518,15 @@ export function buildScan(overrides: Partial<Scan> = {}): Scan {
     scanType: ScanType.JPEG,
     uploadedAt: TEST_DATE,
     status: ScanStatus.READY,
-    metadata: {},
+    metadata: {
+      scanId: "scan-test-001",
+      ownerId: "test-user",
+      documentKind: "receipt",
+      documentRole: "primary",
+      status: "ready",
+      uploadedAt: TEST_DATE,
+      uploadedBy: "test-user",
+    },
     ...overrides,
   };
 }

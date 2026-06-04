@@ -309,7 +309,7 @@ type ServerActionOutputType = ServerActionResult<
  * @see {@link createScan} - Creates new scans
  * @see {@link deleteScan} - Deletes scans with ownership validation
  */
-export async function updateScan({base64Data, blobName, mimeType, metadata = {}}: ServerActionInputType): ServerActionOutputType {
+export async function updateScan({base64Data, blobName, mimeType, metadata: _metadata = {}}: ServerActionInputType): ServerActionOutputType {
   console.info(">>> Executing server action {{updateScan}}, with blobName:", blobName);
 
   return withSpan("api.actions.scans.updateScan", async () => {

@@ -161,6 +161,32 @@ export const InvoiceCategory = {
 export type InvoiceCategory = (typeof InvoiceCategory)[keyof typeof InvoiceCategory];
 
 /**
+ * Represents a value that can be stored in InvoiceScan metadata.
+ *
+ * @remarks
+ * Invoice scan metadata supports both object structures (for complex nested data)
+ * and string primitives (for simple canonical scan metadata values).
+ *
+ * **Use Cases:**
+ * - String values: Canonical scan metadata fields (scanId, ownerId, status, timestamps, etc.)
+ * - Object values: Legacy OCR confidence scores, dimensions, custom nested structures
+ *
+ * @example
+ * ```typescript
+ * const metadata: Record<string, InvoiceScanMetadataValue> = {
+ *   // String values from canonical scan metadata
+ *   scanId: "scan-123",
+ *   status: "attached",
+ *   uploadedAt: "2026-01-01T00:00:00.000Z",
+ *   // Object values for nested data
+ *   ocrConfidence: { score: 0.95 },
+ *   dimensions: { width: 1920, height: 2560 }
+ * };
+ * ```
+ */
+export type InvoiceScanMetadataValue = string | object;
+
+/**
  * Represents a document scan (image or PDF) attached to an invoice.
  *
  * @remarks
@@ -174,10 +200,11 @@ export type InvoiceCategory = (typeof InvoiceCategory)[keyof typeof InvoiceCateg
  *
  * **Metadata:**
  * The `metadata` object stores scan-specific information such as:
- * - OCR confidence scores
+ * - Canonical scan metadata (scanId, ownerId, status, timestamps as strings)
+ * - OCR confidence scores (as objects)
  * - Page numbers (for multi-page documents)
  * - Extraction timestamps
- * - Original file dimensions
+ * - Original file dimensions (as objects)
  *
  * **Immutability:**
  * Once created, scan locations are immutable. To replace a scan,
@@ -189,6 +216,11 @@ export type InvoiceCategory = (typeof InvoiceCategory)[keyof typeof InvoiceCateg
  *   scanType: InvoiceScanType.JPEG,
  *   location: "https://cdn.arolariu.ro/invoices/user123/scan-001.jpg",
  *   metadata: {
+ *     // Canonical scan metadata (string values)
+ *     scanId: "scan-001",
+ *     status: "attached",
+ *     uploadedAt: "2026-01-01T00:00:00.000Z",
+ *     // Legacy nested structures (object values)
  *     ocrConfidence: { score: 0.95 },
  *     dimensions: { width: 1920, height: 2560 }
  *   }
@@ -203,8 +235,8 @@ export type InvoiceScan = {
   scanType: InvoiceScanType;
   /** The location (URL or path) of the invoice scan. */
   location: string;
-  /** Additional metadata associated with the invoice scan. */
-  metadata: Record<string, object>;
+  /** Additional metadata associated with the invoice scan (supports both string and object values). */
+  metadata: Record<string, InvoiceScanMetadataValue>;
 };
 
 /**
