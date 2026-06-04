@@ -7,7 +7,7 @@ import Image from "next/image";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbAlertTriangle, TbLoader2, TbTrash} from "react-icons/tb";
-import {deleteInvoiceScan} from "../../../_actions/invoices";
+import {detachScanFromInvoice} from "../../../_actions/invoices";
 import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./RemoveScanDialog.module.scss";
 
@@ -26,7 +26,7 @@ import styles from "./RemoveScanDialog.module.scss";
  *
  * @returns Dialog component for removing invoice scans
  *
- * @see {@link deleteInvoiceScan} - Server action for scan removal
+ * @see {@link detachScanFromInvoice} - Server action for scan removal
  */
 export default function RemoveScanDialog(): React.JSX.Element {
   const t = useTranslations();
@@ -63,7 +63,7 @@ export default function RemoveScanDialog(): React.JSX.Element {
 
     setIsDeleting(true);
     try {
-      await deleteInvoiceScan({
+      await detachScanFromInvoice({
         invoiceId: invoice.id,
         scanLocation: scan.location,
       });

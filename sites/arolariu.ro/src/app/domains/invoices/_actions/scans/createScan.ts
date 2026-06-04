@@ -10,7 +10,7 @@
  * then later select and convert them into invoices.
  *
  * **Architecture Pattern**: Direct Azure SDK integration (NOT REST API).
- * Unlike other scan actions (`attachScanToInvoice`, `deleteInvoiceScan`), this action
+ * Unlike other scan actions (`attachScanToInvoice`, `detachScanFromInvoice`), this action
  * bypasses the backend REST API and uses the Azure Storage SDK directly for optimal
  * upload performance and streaming support.
  *
@@ -57,7 +57,7 @@
  * ```
  *
  * @see {@link attachScanToInvoice} - Links scan to invoice (uses REST API)
- * @see {@link deleteInvoiceScan} - Removes scan (uses REST API)
+ * @see {@link detachScanFromInvoice} - Removes scan (uses REST API)
  * @see {@link fetchScans} - Retrieves user's scans
  */
 

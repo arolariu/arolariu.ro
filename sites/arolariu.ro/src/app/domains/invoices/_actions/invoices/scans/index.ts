@@ -10,7 +10,7 @@
  * **Exported Actions:**
  * - `createInvoiceScan` - Uploads invoice scans to Azure Blob Storage
  * - `attachScanToInvoice` - Adds scan references to existing invoices
- * - `deleteInvoiceScan` - Removes scan references from invoices and lets backend cleanup handle the blob lifecycle
+ * - `detachScanFromInvoice` - Removes scan references from invoices and lets backend cleanup handle the blob lifecycle
  *
  * **Usage Pattern:**
  * Instead of importing from individual files:
@@ -20,7 +20,7 @@
  *
  * Import from the barrel:
  * ```typescript
- * import { createInvoiceScan, attachScanToInvoice, deleteInvoiceScan } from "@/app/domains/invoices/_actions/invoices/scans";
+ * import { createInvoiceScan, attachScanToInvoice, detachScanFromInvoice } from "@/app/domains/invoices/_actions/invoices/scans";
  * ```
  *
  * **Architecture Patterns:**
@@ -32,7 +32,7 @@
  * - Direct upload to Azure (no backend API)
  * - No cache revalidation (storage operation)
  *
- * **REST API (attachScanToInvoice, deleteInvoiceScan):**
+ * **REST API (attachScanToInvoice, detachScanFromInvoice):**
  * - Server-side execution with JWT authentication
  * - GUID validation for invoice identifiers
  * - OpenTelemetry instrumentation
@@ -42,7 +42,7 @@
  * **Typical Workflow:**
  * 1. **Upload**: `createInvoiceScan` uploads file to Azure Blob Storage → returns blob URL
  * 2. **Attach**: `attachScanToInvoice` adds blob URL reference to invoice entity
- * 3. **Delete**: `deleteInvoiceScan` removes reference (blob marked for async cleanup)
+ * 3. **Delete**: `detachScanFromInvoice` removes reference (blob marked for async cleanup)
  *
  * **Business Constraints:**
  * - Invoices must retain at least one scan (deletion fails for last scan)
@@ -55,9 +55,9 @@
  *
  * @see {@link createInvoiceScan} - Upload invoice scans to Azure Blob Storage
  * @see {@link attachScanToInvoice} - Add scan references to existing invoices
- * @see {@link deleteInvoiceScan} - Remove scan references from invoices
+ * @see {@link detachScanFromInvoice} - Remove scan references from invoices
  */
 
 export {attachScanToInvoice} from "./attachScanToInvoice";
 export {createInvoiceScan} from "./createInvoiceScan";
-export {deleteInvoiceScan} from "./deleteInvoiceScan";
+export {detachScanFromInvoice} from "./detachScanFromInvoice";
