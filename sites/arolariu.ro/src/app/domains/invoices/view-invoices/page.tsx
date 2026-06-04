@@ -195,9 +195,8 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function ViewInvoicesPage(_props: Readonly<PageProps<"/domains/invoices/view-invoices">>): Promise<React.JSX.Element> {
   const t = await getTranslations();
-  const tCommon = await getTranslations();
   const {user} = await fetchAaaSUserFromAuthService();
-  const username = user?.fullName ?? tCommon((m) => m.pages.invoices.viewInvoices.viewInvoicesPage.guestName);
+  const username = user?.fullName ?? t((m) => m.pages.invoices.viewInvoices.viewInvoicesPage.guestName);
 
   return (
     <div className={pageStyles["pageMain"]}>
