@@ -3,6 +3,7 @@
  * @module app/domains/invoices/_actions/scans/updateScan.test
  */
 
+import type {BlockBlobUploadOptions} from "@azure/storage-blob";
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
@@ -23,16 +24,11 @@ const mockLogWithTrace = vi.mocked(logWithTrace);
 
 const VALID_BASE64 = "dXBkYXRlZA==";
 
-type UploadOptions = Readonly<{
-  metadata?: Record<string, string>;
-  blobHTTPHeaders?: Readonly<Record<string, string | undefined>>;
-}>;
-
 type BlobClientOptions = Readonly<{
   blobUrl?: string;
   existingMetadata?: Record<string, string>;
   uploadStatus?: number;
-  onUpload?: (options: UploadOptions) => void;
+  onUpload?: (options: BlockBlobUploadOptions) => void;
 }>;
 
 function setupBlobClient({
@@ -46,7 +42,7 @@ function setupBlobClient({
   // Wrap uploadData to capture calls
   if (onUpload) {
     const originalUploadData = blockBlobClient.uploadData;
-    blockBlobClient.uploadData = vi.fn(async (data: Parameters<typeof originalUploadData>[0], options: UploadOptions) => {
+    blockBlobClient.uploadData = vi.fn(async (data: Parameters<typeof originalUploadData>[0], options: BlockBlobUploadOptions) => {
       onUpload(options);
       return originalUploadData(data, options);
     });
@@ -128,7 +124,20 @@ describe("updateScan", () => {
       status: "ready",
       lastModifiedBy: "user-123",
     });
-    expect(capturedMetadata[0]?.["lastModifiedAt"]).toBeDefined();
+    
+    // Verify lastModifiedAt is a valid recent timestamp
+    const lastModifiedAt = capturedMetadata[0]?.["lastModifiedAt"];
+    expect(lastModifiedAt).toBeDefined();
+    expect(typeof lastModifiedAt).toBe("string");
+    
+    const parsedDate = new Date(lastModifiedAt ?? "");
+    expect(parsedDate.getTime()).not.toBeNaN();
+    
+    // Verify it's recent (within last 10 seconds)
+    const now = Date.now();
+    const timeDiff = now - parsedDate.getTime();
+    expect(timeDiff).toBeGreaterThanOrEqual(0);
+    expect(timeDiff).toBeLessThan(10000);
   });
 
   it("should update blobs that do not have existing metadata", async () => {
@@ -146,6 +155,10 @@ describe("updateScan", () => {
     });
 
     expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.message).toContain("Missing required blob metadata");
+      expect(result.error.message).toMatch(/scanId|ownerId|documentKind|documentRole|status|uploadedAt|uploadedBy/);
+    }
   });
 
   it("should handle authentication failures", async () => {

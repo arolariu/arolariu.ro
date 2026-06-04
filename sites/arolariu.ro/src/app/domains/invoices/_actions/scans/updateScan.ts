@@ -133,9 +133,19 @@ type ServerActionInputType = Readonly<{
   /** MIME type of the updated content (e.g., "image/jpeg", "image/png"). */
   mimeType: string;
   /**
-   * Additional metadata to merge with existing blob metadata.
-   * Existing metadata is preserved; new keys overwrite existing ones.
-   * Common keys: rotated, cropped, filtered, lastRotated, etc.
+   * Legacy metadata parameter retained for caller compatibility.
+   *
+   * @remarks
+   * **Not merged into canonical blob metadata.** Lifecycle metadata
+   * (`lastModifiedAt`, `lastModifiedBy`, etc.) is managed exclusively through
+   * typed `ScanMetadata` via `readBlobMetadata` and `writeBlobMetadata`.
+   *
+   * Callers should not rely on this parameter for metadata propagation.
+   * Ad hoc metadata keys are intentionally excluded from the canonical metadata
+   * projection to maintain strict type safety and avoid unvalidated blob metadata.
+   *
+   * @deprecated This parameter is preserved for backward compatibility but is ignored
+   * in the current implementation. Remove from caller code where possible.
    */
   metadata?: Record<string, string>;
 }>;
