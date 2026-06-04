@@ -15,11 +15,12 @@
 import {useScansStore} from "@/stores";
 import {InvoiceAnalysisOptions, InvoiceCategory, InvoiceScanType, PaymentType} from "@/types/invoices";
 import type {CachedScan} from "@/types/scans";
-import {ScanStatus} from "@/types/scans";
+import {ScanMetadataKey, ScanMetadataStatus, ScanStatus} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {useRouter} from "next/navigation";
 import {createContext, useCallback, useContext, useMemo, useState, type ReactNode} from "react";
 import {analyzeInvoice, createInvoice} from "../../_actions/invoices";
+import {updateScan} from "../../_actions/scans";
 
 /**
  * Wizard step type definition.
@@ -237,9 +238,31 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
         throw new Error(error?.message ?? "Invoice creation failed");
       }
 
-      // Mark scans as used
+      // Mark scans as used in local store (immediate UI update)
       const scanIds = selectedScans.map((s) => s.id);
       markScansAsUsedByInvoice(scanIds, invoice.id);
+
+      // Persist attachment metadata to blob storage (fire-and-forget)
+      for (const scan of selectedScans) {
+        updateScan({
+          scanId: scan.id,
+          metadataAdd: {
+            status: ScanMetadataStatus.ATTACHED,
+            attachedAt: new Date(),
+            attachedBy: invoice.userIdentifier,
+            attachedTo: invoice.id,
+          },
+          metadataRemove: [
+            ScanMetadataKey.DETACHED_AT,
+            ScanMetadataKey.DETACHED_BY,
+            ScanMetadataKey.DETACHED_FROM,
+            ScanMetadataKey.ARCHIVED_AT,
+            ScanMetadataKey.ARCHIVED_BY,
+          ],
+        }).catch((error) => {
+          console.warn("Failed to persist scan attachment metadata (non-critical):", error);
+        });
+      }
 
       toast.success(`Invoice "${invoiceDetails.name}" has been created successfully.`);
 
