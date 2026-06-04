@@ -17,7 +17,7 @@ import {
  *
  * @remarks Static preview — component transitively imports "use server" actions
  * via DeleteInvoiceDialog (deleteInvoice), ShareInvoiceDialog (patchInvoice),
- * AddScanDialog (attachScanToInvoice/createInvoiceScan), AnalyzeDialog (analyzeInvoice),
+ * AddScanDialog (attachScanToInvoice, createScan), AnalyzeDialog (analyzeInvoice),
  * and RemoveScanDialog (detachScanFromInvoice) that cannot be bundled by Storybook's
  * Vite/Rollup. This story shows a schematic overview of all dialog types
  * the container can render.

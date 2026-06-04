@@ -4,8 +4,8 @@ import {TbCloudUpload, TbUpload} from "react-icons/tb";
 /**
  * Static visual preview of the AddScanDialog component.
  *
- * @remarks Static preview — component imports "use server" actions (attachInvoiceScan,
- * createInvoiceScan from `@/app/domains/invoices/_actions/invoices/`) that cannot be bundled by
+ * @remarks Static preview — component imports "use server" actions (attachScanToInvoice,
+ * createScan from `@/app/domains/invoices/_actions/invoices/`) that cannot be bundled by
  * Storybook's Vite/Rollup. Also depends on `useDialog` context and react-dropzone.
  * This story renders a faithful HTML replica of the upload dialog with dropzone.
  */
