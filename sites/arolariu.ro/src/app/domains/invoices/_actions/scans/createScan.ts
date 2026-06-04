@@ -10,7 +10,7 @@
  * then later select and convert them into invoices.
  *
  * **Architecture Pattern**: Direct Azure SDK integration (NOT REST API).
- * Unlike other scan actions (`attachInvoiceScan`, `deleteInvoiceScan`), this action
+ * Unlike other scan actions (`attachScanToInvoice`, `deleteInvoiceScan`), this action
  * bypasses the backend REST API and uses the Azure Storage SDK directly for optimal
  * upload performance and streaming support.
  *
@@ -31,7 +31,7 @@
  * 3. This action uploads to Azure Blob Storage with READY status
  * 4. User views scans via `/view-scans` route (list by userIdentifier metadata)
  * 5. User selects scan(s) to convert into invoice(s) via AI enrichment
- * 6. `attachInvoiceScan` action links scan to invoice entity
+ * 6. `attachScanToInvoice` action links scan to invoice entity
  *
  * **ID Generation**: Uses UUIDv7-like format (timestamp-based) for:
  * - Chronological ordering in blob listings
@@ -56,7 +56,7 @@
  * }
  * ```
  *
- * @see {@link attachInvoiceScan} - Links scan to invoice (uses REST API)
+ * @see {@link attachScanToInvoice} - Links scan to invoice (uses REST API)
  * @see {@link deleteInvoiceScan} - Removes scan (uses REST API)
  * @see {@link fetchScans} - Retrieves user's scans
  */
