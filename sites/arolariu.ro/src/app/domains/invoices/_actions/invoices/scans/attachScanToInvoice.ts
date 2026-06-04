@@ -87,7 +87,7 @@ type ServerActionOutputType = ServerActionResult<void>;
  * }
  * ```
  *
- * @see {@link createInvoiceScan} for uploading the scan file first
+ * @see {@link createScan} for uploading the scan file first (from `@/app/domains/invoices/_actions/scans`)
  */
 export async function attachScanToInvoice({invoiceId, payload}: ServerActionInputType): ServerActionOutputType {
   console.info(">>> Executing server action {{attachScanToInvoice}}, with:", {invoiceId, payload});

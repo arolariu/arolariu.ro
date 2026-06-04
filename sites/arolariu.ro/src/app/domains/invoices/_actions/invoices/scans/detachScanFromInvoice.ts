@@ -28,7 +28,7 @@
  * - Soft deletion allows recovery within retention window
  *
  * @see {@link attachScanToInvoice} - Sibling action for adding scans
- * @see {@link createInvoiceScan} - Action for uploading new scans
+ * @see {@link createScan} - Action for uploading new scans (from `@/app/domains/invoices/_actions/scans`)
  * @see {@link ServerActionResult} - Standard result wrapper type
  */
 
@@ -167,7 +167,7 @@ type ServerActionOutputType = ServerActionResult<void>;
  * ```
  *
  * @see {@link attachScanToInvoice} - Sibling action for adding scans
- * @see {@link createInvoiceScan} - Action for uploading new scans
+ * @see {@link createScan} - Action for uploading new scans (from `@/app/domains/invoices/_actions/scans`)
  * @see {@link fetchBFFUserFromAuthService} - Authentication token retrieval
  * @see {@link validateStringIsGuidType} - GUID validation utility
  * @see {@link ServerActionResult} - Result type wrapper
