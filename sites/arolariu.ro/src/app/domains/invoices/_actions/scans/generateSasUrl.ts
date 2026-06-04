@@ -33,6 +33,7 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createBlobUploadTarget} from "@/lib/azure/storageClient";
+import {writeBlobMetadata} from "@/lib/utils.generic";
 import {createErrorResult, ServerActionResult} from "@/lib/utils.server";
 import {ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, type ScanMetadata} from "@/types/scans";
 
@@ -99,36 +100,6 @@ function getFileExtension(fileName: string): string {
   }
 
   return fileName.slice(lastDotIndex + 1);
-}
-
-/**
- * Converts ScanMetadata to blob metadata (all string values).
- *
- * @param metadata - Canonical scan metadata
- * @returns String-keyed metadata for blob storage
- */
-function writeBlobMetadata(metadata: ScanMetadata): Record<string, string> {
-  return {
-    scanId: metadata.scanId,
-    ownerId: metadata.ownerId,
-    displayName: metadata.displayName ?? "",
-    collectionName: metadata.collectionName ?? "",
-    documentKind: metadata.documentKind,
-    documentRole: metadata.documentRole,
-    status: metadata.status,
-    uploadedAt: metadata.uploadedAt.toISOString(),
-    uploadedBy: metadata.uploadedBy,
-    lastModifiedAt: metadata.lastModifiedAt?.toISOString() ?? "",
-    lastModifiedBy: metadata.lastModifiedBy ?? "",
-    attachedAt: metadata.attachedAt?.toISOString() ?? "",
-    attachedBy: metadata.attachedBy ?? "",
-    attachedTo: metadata.attachedTo ?? "",
-    detachedAt: metadata.detachedAt?.toISOString() ?? "",
-    detachedBy: metadata.detachedBy ?? "",
-    detachedFrom: metadata.detachedFrom ?? "",
-    archivedAt: metadata.archivedAt?.toISOString() ?? "",
-    archivedBy: metadata.archivedBy ?? "",
-  };
 }
 
 /**
