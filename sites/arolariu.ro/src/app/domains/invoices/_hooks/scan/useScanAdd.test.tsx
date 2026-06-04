@@ -4,7 +4,7 @@
  */
 
 import type {ServerActionResult} from "@/lib/utils.server";
-import type {Scan} from "@/types/scans";
+import {ScanStatus, type Scan} from "@/types/scans";
 import {InvoiceScanType} from "@/types/invoices";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
@@ -116,7 +116,7 @@ describe("useScanAdd", () => {
         sizeInBytes: 1024,
         scanType: "PNG",
         uploadedAt: new Date("2024-01-01T00:00:00Z"),
-        status: "READY",
+        status: ScanStatus.READY,
         metadata: {
           scanId: "99999999-9999-4999-8999-999999999999",
           ownerId: "user-1",
