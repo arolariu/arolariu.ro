@@ -286,7 +286,32 @@ const createScansSlice = (set: (partial: Partial<ScansStore> | ((state: ScansSto
     set((state) => {
       const idSet = new Set(scanIds);
       return {
-        scans: state.scans.map((s) => (idSet.has(s.id) ? {...s, status: ScanStatus.ARCHIVED} : s)),
+        scans: state.scans.map((s) =>
+          idSet.has(s.id)
+            ? {
+                ...s,
+                metadata: (() => {
+                  const {
+                    attachedAt: _attachedAt,
+                    attachedBy: _attachedBy,
+                    attachedTo: _attachedTo,
+                    detachedAt: _detachedAt,
+                    detachedBy: _detachedBy,
+                    detachedFrom: _detachedFrom,
+                    ...metadataWithoutStaleLineage
+                  } = s.metadata;
+
+                  return {
+                    ...metadataWithoutStaleLineage,
+                    status: ScanStatus.ARCHIVED,
+                    archivedAt: new Date(),
+                    archivedBy: s.userIdentifier,
+                  };
+                })(),
+                status: ScanStatus.ARCHIVED,
+              }
+            : s,
+        ),
         selectedScans: state.selectedScans.filter((s) => !idSet.has(s.id)),
       };
     }),
@@ -320,12 +345,25 @@ const createScansSlice = (set: (partial: Partial<ScansStore> | ((state: ScansSto
           idSet.has(s.id)
             ? {
                 ...s,
-                metadata: {
-                  ...s.metadata,
-                  usedByInvoice: "true",
-                  invoiceId,
-                  invoiceCreatedAt: timestamp,
-                },
+                metadata: (() => {
+                  const {
+                    detachedAt: _detachedAt,
+                    detachedBy: _detachedBy,
+                    detachedFrom: _detachedFrom,
+                    archivedAt: _archivedAt,
+                    archivedBy: _archivedBy,
+                    ...metadataWithoutStaleLineage
+                  } = s.metadata;
+
+                  return {
+                    ...metadataWithoutStaleLineage,
+                    status: ScanStatus.ATTACHED,
+                    attachedAt: new Date(timestamp),
+                    attachedBy: s.userIdentifier,
+                    attachedTo: invoiceId,
+                  };
+                })(),
+                status: ScanStatus.ATTACHED,
               }
             : s,
         ),

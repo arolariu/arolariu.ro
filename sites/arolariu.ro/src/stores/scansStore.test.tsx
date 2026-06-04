@@ -7,7 +7,7 @@
  */
 
 import type {CachedScan} from "@/types/scans";
-import {ScanStatus, ScanType} from "@/types/scans";
+import {ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, ScanStatus, ScanType} from "@/types/scans";
 import {act} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
@@ -37,7 +37,16 @@ function createTestScan(id: string, overrides: Partial<CachedScan> = {}): Cached
     scanType: ScanType.JPEG,
     uploadedAt: new Date("2024-01-01"),
     status: ScanStatus.READY,
-    metadata: {},
+    metadata: {
+      scanId: id,
+      ownerId: "test-user",
+      displayName: `Scan ${id}`,
+      documentKind: ScanDocumentKind.RECEIPT,
+      documentRole: ScanDocumentRole.PRIMARY,
+      status: ScanMetadataStatus.READY,
+      uploadedAt: new Date("2024-01-01"),
+      uploadedBy: "test-user",
+    },
     cachedAt: new Date(),
     ...overrides,
   };
@@ -424,6 +433,43 @@ describe("useScansStore", () => {
       expect(useScansStore.getState().selectedScans).toHaveLength(1);
       expect(useScansStore.getState().selectedScans).toContainEqual(scan2);
     });
+
+    it("should set canonical archived metadata and clear stale attachment and detachment fields", () => {
+      const scan = createTestScan("1", {
+        metadata: {
+          scanId: "1",
+          ownerId: "test-user",
+          displayName: "Scan 1",
+          documentKind: ScanDocumentKind.RECEIPT,
+          documentRole: ScanDocumentRole.PRIMARY,
+          status: ScanMetadataStatus.ATTACHED,
+          uploadedAt: new Date("2024-01-01"),
+          uploadedBy: "test-user",
+          attachedAt: new Date("2024-01-02"),
+          attachedBy: "test-user",
+          attachedTo: "invoice-123",
+          detachedAt: new Date("2024-01-03"),
+          detachedBy: "test-user",
+          detachedFrom: "invoice-456",
+        },
+      });
+
+      act(() => {
+        useScansStore.getState().setScans([scan]);
+        useScansStore.getState().archiveScans(["1"]);
+      });
+
+      const archived = useScansStore.getState().scans[0];
+      expect(archived?.metadata.status).toBe(ScanMetadataStatus.ARCHIVED);
+      expect(archived?.metadata.archivedAt).toBeDefined();
+      expect(archived?.metadata.archivedBy).toBe("test-user");
+      expect(archived?.metadata.attachedTo).toBeUndefined();
+      expect(archived?.metadata.attachedAt).toBeUndefined();
+      expect(archived?.metadata.attachedBy).toBeUndefined();
+      expect(archived?.metadata.detachedFrom).toBeUndefined();
+      expect(archived?.metadata.detachedAt).toBeUndefined();
+      expect(archived?.metadata.detachedBy).toBeUndefined();
+    });
   });
 
   describe("clearScans", () => {
@@ -570,31 +616,38 @@ describe("useScansStore", () => {
 
   describe("updateScanMetadata", () => {
     it("should update metadata for a specific scan", () => {
-      const scan = createTestScan("1", {metadata: {key1: "value1"}});
+      const scan = createTestScan("1");
 
       act(() => {
         useScansStore.getState().setScans([scan]);
-        useScansStore.getState().updateScanMetadata("1", {key2: "value2"});
+        useScansStore.getState().updateScanMetadata("1", {customKey1: "value1"});
       });
 
       const updatedScan = useScansStore.getState().scans[0];
-      expect(updatedScan?.metadata).toEqual({key1: "value1", key2: "value2"});
+      // The typed metadata should still be present
+      expect(updatedScan?.metadata.scanId).toBe("1");
+      expect(updatedScan?.metadata.ownerId).toBe("test-user");
+      // Plus the new custom key
+      expect((updatedScan?.metadata as Record<string, unknown>)["customKey1"]).toBe("value1");
     });
 
     it("should merge with existing metadata", () => {
-      const scan = createTestScan("1", {metadata: {existing: "data"}});
+      const scan = createTestScan("1");
 
       act(() => {
         useScansStore.getState().setScans([scan]);
-        useScansStore.getState().updateScanMetadata("1", {new: "value"});
+        useScansStore.getState().updateScanMetadata("1", {customNew: "value"});
       });
 
       const updatedScan = useScansStore.getState().scans[0];
-      expect(updatedScan?.metadata).toEqual({existing: "data", new: "value"});
+      // Original metadata preserved
+      expect(updatedScan?.metadata.scanId).toBe("1");
+      // New custom key added
+      expect((updatedScan?.metadata as Record<string, unknown>)["customNew"]).toBe("value");
     });
 
     it("should also update metadata in selectedScans", () => {
-      const scan = createTestScan("1", {metadata: {}});
+      const scan = createTestScan("1");
 
       act(() => {
         useScansStore.getState().setScans([scan]);
@@ -603,12 +656,12 @@ describe("useScansStore", () => {
       });
 
       const selectedScan = useScansStore.getState().selectedScans[0];
-      expect(selectedScan?.metadata).toEqual({updated: "true"});
+      expect((selectedScan?.metadata as Record<string, unknown>)["updated"]).toBe("true");
     });
 
     it("should not affect other scans", () => {
-      const scan1 = createTestScan("1", {metadata: {original: "1"}});
-      const scan2 = createTestScan("2", {metadata: {original: "2"}});
+      const scan1 = createTestScan("1");
+      const scan2 = createTestScan("2");
 
       act(() => {
         useScansStore.getState().setScans([scan1, scan2]);
@@ -616,13 +669,14 @@ describe("useScansStore", () => {
       });
 
       const unchanged = useScansStore.getState().scans.find((s) => s.id === "2");
-      expect(unchanged?.metadata).toEqual({original: "2"});
+      expect((unchanged?.metadata as Record<string, unknown>)["changed"]).toBeUndefined();
+      expect(unchanged?.metadata.scanId).toBe("2");
     });
 
     it("should only update matching selected scan metadata and leave others unchanged", () => {
       // Exercises the falsy branch of selectedScans.map() ternary in updateScanMetadata
-      const scan1 = createTestScan("1", {metadata: {original: "1"}});
-      const scan2 = createTestScan("2", {metadata: {original: "2"}});
+      const scan1 = createTestScan("1");
+      const scan2 = createTestScan("2");
 
       act(() => {
         useScansStore.getState().setScans([scan1, scan2]);
@@ -631,8 +685,10 @@ describe("useScansStore", () => {
         useScansStore.getState().updateScanMetadata("1", {changed: "true"});
       });
 
-      expect(useScansStore.getState().selectedScans.find((s) => s.id === "1")?.metadata).toEqual({original: "1", changed: "true"});
-      expect(useScansStore.getState().selectedScans.find((s) => s.id === "2")?.metadata).toEqual({original: "2"});
+      const selected1 = useScansStore.getState().selectedScans.find((s) => s.id === "1");
+      const selected2 = useScansStore.getState().selectedScans.find((s) => s.id === "2");
+      expect((selected1?.metadata as Record<string, unknown>)["changed"]).toBe("true");
+      expect((selected2?.metadata as Record<string, unknown>)["changed"]).toBeUndefined();
     });
   });
 
@@ -646,9 +702,11 @@ describe("useScansStore", () => {
       });
 
       const markedScan = useScansStore.getState().scans[0];
-      expect(markedScan?.metadata["usedByInvoice"]).toBe("true");
-      expect(markedScan?.metadata["invoiceId"]).toBe("invoice-123");
-      expect(markedScan?.metadata["invoiceCreatedAt"]).toBeDefined();
+      expect(markedScan?.metadata.status).toBe(ScanMetadataStatus.ATTACHED);
+      expect(markedScan?.metadata.attachedTo).toBe("invoice-123");
+      expect(markedScan?.metadata.attachedAt).toBeDefined();
+      expect(markedScan?.metadata.attachedBy).toBe("test-user");
+      expect(markedScan?.status).toBe(ScanStatus.ATTACHED);
     });
 
     it("should mark multiple scans as used by the same invoice", () => {
@@ -662,13 +720,25 @@ describe("useScansStore", () => {
       });
 
       const scans = useScansStore.getState().scans;
-      expect(scans.find((s) => s.id === "1")?.metadata["usedByInvoice"]).toBe("true");
-      expect(scans.find((s) => s.id === "2")?.metadata["usedByInvoice"]).toBe("true");
-      expect(scans.find((s) => s.id === "3")?.metadata["usedByInvoice"]).toBeUndefined();
+      expect(scans.find((s) => s.id === "1")?.metadata.status).toBe(ScanMetadataStatus.ATTACHED);
+      expect(scans.find((s) => s.id === "2")?.metadata.status).toBe(ScanMetadataStatus.ATTACHED);
+      expect(scans.find((s) => s.id === "3")?.metadata.status).toBe(ScanMetadataStatus.READY);
+      expect(scans.find((s) => s.id === "3")?.metadata.attachedTo).toBeUndefined();
     });
 
     it("should preserve existing metadata when marking", () => {
-      const scan = createTestScan("1", {metadata: {existingKey: "existingValue"}});
+      const scan = createTestScan("1", {
+        metadata: {
+          scanId: "1",
+          ownerId: "test-user",
+          displayName: "Custom Name",
+          documentKind: ScanDocumentKind.INVOICE,
+          documentRole: ScanDocumentRole.PRIMARY,
+          status: ScanMetadataStatus.READY,
+          uploadedAt: new Date("2024-01-01"),
+          uploadedBy: "test-user",
+        },
+      });
 
       act(() => {
         useScansStore.getState().setScans([scan]);
@@ -676,8 +746,9 @@ describe("useScansStore", () => {
       });
 
       const markedScan = useScansStore.getState().scans[0];
-      expect(markedScan?.metadata["existingKey"]).toBe("existingValue");
-      expect(markedScan?.metadata["usedByInvoice"]).toBe("true");
+      expect(markedScan?.metadata.displayName).toBe("Custom Name");
+      expect(markedScan?.metadata.documentKind).toBe(ScanDocumentKind.INVOICE);
+      expect(markedScan?.metadata.status).toBe(ScanMetadataStatus.ATTACHED);
     });
 
     it("should not affect scans not in the scanIds list", () => {
@@ -690,7 +761,40 @@ describe("useScansStore", () => {
       });
 
       const unmarkedScan = useScansStore.getState().scans.find((s) => s.id === "2");
-      expect(unmarkedScan?.metadata["usedByInvoice"]).toBeUndefined();
+      expect(unmarkedScan?.metadata.status).toBe(ScanMetadataStatus.READY);
+      expect(unmarkedScan?.metadata.attachedTo).toBeUndefined();
+    });
+
+    it("should mark scans as attached with canonical metadata and clear stale detachment fields", () => {
+      const scan = createTestScan("1", {
+        metadata: {
+          scanId: "1",
+          ownerId: "test-user",
+          displayName: "Scan 1",
+          documentKind: ScanDocumentKind.RECEIPT,
+          documentRole: ScanDocumentRole.PRIMARY,
+          status: ScanMetadataStatus.DETACHED,
+          uploadedAt: new Date("2024-01-01"),
+          uploadedBy: "test-user",
+          detachedAt: new Date("2024-01-02"),
+          detachedBy: "test-user",
+          detachedFrom: "old-invoice",
+        },
+      });
+
+      act(() => {
+        useScansStore.getState().setScans([scan]);
+        useScansStore.getState().markScansAsUsedByInvoice(["1"], "invoice-123");
+      });
+
+      const updated = useScansStore.getState().scans[0];
+      expect(updated?.metadata.status).toBe(ScanMetadataStatus.ATTACHED);
+      expect(updated?.metadata.attachedTo).toBe("invoice-123");
+      expect(updated?.metadata.detachedFrom).toBeUndefined();
+      expect(updated?.metadata.detachedAt).toBeUndefined();
+      expect(updated?.metadata.detachedBy).toBeUndefined();
+      expect(updated?.metadata.archivedAt).toBeUndefined();
+      expect(updated?.metadata.archivedBy).toBeUndefined();
     });
   });
 });

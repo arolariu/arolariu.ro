@@ -7,6 +7,7 @@
 
 import {formatDate} from "@/lib/utils.generic";
 import type {CachedScan} from "@/types/scans";
+import {ScanStatus} from "@/types/scans";
 import {
   Button,
   Card,
@@ -63,7 +64,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
   const rename = useScanRename(scan);
   const rotation = useScanRotation(scan);
 
-  const isUsedByInvoice = scan.metadata?.["usedByInvoice"] === "true";
+  const isUsedByInvoice = scan.metadata.status === ScanStatus.ATTACHED && Boolean(scan.metadata.attachedTo);
 
   // Focus input when entering rename mode
   useEffect(() => {
