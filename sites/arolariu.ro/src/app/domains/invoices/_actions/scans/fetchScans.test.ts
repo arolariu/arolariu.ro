@@ -3,21 +3,19 @@
  * @module app/domains/invoices/_actions/scans/fetchScans.test
  */
 
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {listBlobObjects} from "@/lib/azure/storageClient";
 import {ScanStatus} from "@/types/scans";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder} from "../../../../../../tests/helpers";
+import {fetchScans} from "./fetchScans";
 
-// Mock all dependencies
 vi.mock("@/instrumentation.server");
 vi.mock("@/lib/actions/storage/fetchConfig");
 vi.mock("@/lib/actions/user/fetchUser");
 vi.mock("@/lib/azure/storageClient");
-
-const {fetchScans} = await import("./fetchScans");
-const {addSpanEvent, logWithTrace, withSpan} = await import("@/instrumentation.server");
-const fetchConfigurationValue = (await import("@/lib/actions/storage/fetchConfig")).default;
-const {fetchBFFUserFromAuthService} = await import("@/lib/actions/user/fetchUser");
-const {listBlobObjects} = await import("@/lib/azure/storageClient");
 
 const mockFetchBFFUserFromAuthService = vi.mocked(fetchBFFUserFromAuthService);
 const mockFetchConfigurationValue = vi.mocked(fetchConfigurationValue);
