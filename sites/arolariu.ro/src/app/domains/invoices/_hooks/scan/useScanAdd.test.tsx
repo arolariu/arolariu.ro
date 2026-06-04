@@ -163,6 +163,8 @@ describe("useScanAdd", () => {
           type: InvoiceScanType.PNG,
           location: scanBlobUrl,
           additionalMetadata: {
+            sourceScanId: "99999999-9999-4999-8999-999999999999",
+            sourceOwnerId: "user-1",
             displayName: "receipt.png",
             documentKind: "receipt",
             documentRole: "supplement",

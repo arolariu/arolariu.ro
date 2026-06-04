@@ -126,6 +126,8 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
             type: args.type,
             location: data.blobUrl,
             additionalMetadata: {
+              sourceScanId: scanId,
+              sourceOwnerId: args.userIdentifier,
               displayName: args.fileName,
               documentKind: ScanDocumentKind.RECEIPT,
               documentRole: ScanDocumentRole.SUPPLEMENT,
