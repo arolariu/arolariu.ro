@@ -115,6 +115,7 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
+import {readBlobMetadata, writeBlobMetadata} from "@/lib/utils.generic";
 import {convertBase64ToBlob, createErrorResult, type ServerActionResult} from "@/lib/utils.server";
 import {revalidatePath} from "next/cache";
 
@@ -321,7 +322,7 @@ export async function updateScan({base64Data, blobName, mimeType, metadata = {}}
 
       // Fetch existing metadata
       const existingProperties = await blockBlobClient.getProperties();
-      const existingMetadata = existingProperties.metadata ?? {};
+      const existingMetadata = readBlobMetadata(existingProperties.metadata ?? {});
 
       // Step 4. Upload the updated blob
       addSpanEvent("azure.blob.update.start");
@@ -330,18 +331,17 @@ export async function updateScan({base64Data, blobName, mimeType, metadata = {}}
       const updatedFile = await convertBase64ToBlob(base64Data);
       const arrayBuffer = await updatedFile.arrayBuffer();
 
-      const mergedMetadata = {
+      const updatedMetadata = writeBlobMetadata({
         ...existingMetadata,
-        ...metadata,
-        lastModifiedAt: new Date().toISOString(),
+        lastModifiedAt: new Date(),
         lastModifiedBy: userIdentifier,
-      };
+      });
 
       const blobUploadResponse = await blockBlobClient.uploadData(arrayBuffer, {
         blobHTTPHeaders: {
           blobContentType: mimeType,
         },
-        metadata: mergedMetadata,
+        metadata: updatedMetadata,
       });
       addSpanEvent("azure.blob.update.complete");
 

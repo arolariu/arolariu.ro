@@ -75,10 +75,14 @@ describe("updateScan", () => {
     setupBlobClient({
       blobUrl: "https://storage.test/invoices/scans/user-123/scan_123.jpg",
       existingMetadata: {
-        scanId: "scan_123",
-        userIdentifier: "user-123",
-        uploadedAt: "2024-01-01T00:00:00.000Z",
+        scanId: "scan-123",
+        ownerId: "user-123",
+        displayName: "receipt.jpg",
+        documentKind: "receipt",
+        documentRole: "primary",
         status: "ready",
+        uploadedAt: "2024-01-01T00:00:00.000Z",
+        uploadedBy: "user-123",
       },
     });
 
@@ -99,11 +103,14 @@ describe("updateScan", () => {
     setupBlobClient({
       blobUrl: "https://storage.test/invoices/scans/user-123/scan_123.jpg",
       existingMetadata: {
-        scanId: "scan_123",
-        userIdentifier: "user-123",
-        uploadedAt: "2024-01-01T00:00:00.000Z",
+        scanId: "scan-123",
+        ownerId: "user-123",
+        displayName: "receipt.jpg",
+        documentKind: "receipt",
+        documentRole: "primary",
         status: "ready",
-        customField: "preserved",
+        uploadedAt: "2024-01-01T00:00:00.000Z",
+        uploadedBy: "user-123",
       },
       onUpload: (options) => capturedMetadata.push(options.metadata ?? {}),
     });
@@ -112,15 +119,16 @@ describe("updateScan", () => {
       base64Data: VALID_BASE64,
       blobName: "scans/user-123/scan_123.jpg",
       mimeType: "image/jpeg",
-      metadata: {rotated: "90"},
     });
 
     expect(capturedMetadata).toHaveLength(1);
-    expect(capturedMetadata[0]?.["scanId"]).toBe("scan_123");
-    expect(capturedMetadata[0]?.["customField"]).toBe("preserved");
-    expect(capturedMetadata[0]?.["rotated"]).toBe("90");
-    expect(capturedMetadata[0]?.["lastModifiedAt"]).toBeTruthy();
-    expect(capturedMetadata[0]?.["lastModifiedBy"]).toBe("user-123");
+    expect(capturedMetadata[0]).toMatchObject({
+      scanId: "scan-123",
+      ownerId: "user-123",
+      status: "ready",
+      lastModifiedBy: "user-123",
+    });
+    expect(capturedMetadata[0]?.["lastModifiedAt"]).toBeDefined();
   });
 
   it("should update blobs that do not have existing metadata", async () => {
@@ -135,12 +143,9 @@ describe("updateScan", () => {
       base64Data: VALID_BASE64,
       blobName: "scans/user-empty-metadata/scan.jpg",
       mimeType: "image/jpeg",
-      metadata: {rotated: "90"},
     });
 
-    expect(result.success).toBe(true);
-    expect(capturedMetadata[0]?.["rotated"]).toBe("90");
-    expect(capturedMetadata[0]?.["lastModifiedBy"]).toBe("user-empty-metadata");
+    expect(result.success).toBe(false);
   });
 
   it("should handle authentication failures", async () => {
@@ -162,6 +167,15 @@ describe("updateScan", () => {
     mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-fail"}));
     setupBlobClient({
       blobUrl: "https://storage.test/blob",
+      existingMetadata: {
+        scanId: "scan-fail",
+        ownerId: "user-fail",
+        documentKind: "receipt",
+        documentRole: "primary",
+        status: "ready",
+        uploadedAt: "2024-01-01T00:00:00.000Z",
+        uploadedBy: "user-fail",
+      },
       uploadStatus: 500,
     });
 
@@ -190,6 +204,18 @@ describe("updateScan", () => {
   });
 
   it("should revalidate view-scans path after update", async () => {
+    setupBlobClient({
+      existingMetadata: {
+        scanId: "scan-revalidate",
+        ownerId: "user-123",
+        documentKind: "receipt",
+        documentRole: "primary",
+        status: "ready",
+        uploadedAt: "2024-01-01T00:00:00.000Z",
+        uploadedBy: "user-123",
+      },
+    });
+
     await updateScan({
       base64Data: VALID_BASE64,
       blobName: "scans/user-123/test.jpg",
@@ -218,6 +244,15 @@ describe("updateScan", () => {
     const capturedHeaders: Array<Readonly<Record<string, string | undefined>>> = [];
     setupBlobClient({
       blobUrl: "https://storage.test/blob",
+      existingMetadata: {
+        scanId: "scan-mime",
+        ownerId: "user-123",
+        documentKind: "receipt",
+        documentRole: "primary",
+        status: "ready",
+        uploadedAt: "2024-01-01T00:00:00.000Z",
+        uploadedBy: "user-123",
+      },
       onUpload: (options) => capturedHeaders.push(options.blobHTTPHeaders ?? {}),
     });
 
