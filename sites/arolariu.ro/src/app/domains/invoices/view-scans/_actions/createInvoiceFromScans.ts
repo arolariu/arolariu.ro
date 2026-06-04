@@ -200,12 +200,14 @@ async function createInvoicesInSingleMode(scans: ReadonlyArray<Scan>, userIdenti
   const invoices: Invoice[] = [];
   const convertedScanIds: string[] = [];
   const errors: Array<{scanId: string; error: string}> = [];
+  const scanToInvoiceMap = new Map<string, Invoice>();
 
   for (const scan of scans) {
     const result = await processSingleScan(scan, userIdentifier, authToken);
     if (result.success) {
       invoices.push(result.invoice);
       convertedScanIds.push(scan.id);
+      scanToInvoiceMap.set(scan.id, result.invoice);
     } else {
       errors.push({scanId: scan.id, error: result.error});
     }
@@ -215,13 +217,11 @@ async function createInvoicesInSingleMode(scans: ReadonlyArray<Scan>, userIdenti
   if (convertedScanIds.length > 0) {
     const convertedSet = new Set(convertedScanIds);
     const convertedScans = scans.filter((s) => convertedSet.has(s.id));
-    const blobNames = convertedScans.map((s) => extractBlobNameFromScan(s));
 
-    // Each scan was converted to its own invoice, so use the invoice ID from the corresponding result
-    for (let i = 0; i < convertedScans.length; i++) {
-      const scan = convertedScans[i];
-      const invoice = invoices.find((inv) => convertedScanIds.indexOf(scan!.id) === invoices.indexOf(inv));
-      if (scan && invoice) {
+    // Each scan was converted to its own invoice, mark with explicit mapping
+    for (const scan of convertedScans) {
+      const invoice = scanToInvoiceMap.get(scan.id);
+      if (invoice) {
         markScansAsUsed({
           blobNames: [extractBlobNameFromScan(scan)],
           attachedTo: invoice.id,
