@@ -29,9 +29,9 @@ import {
   InvoiceAnalysisOptions,
   InvoiceScanType,
 } from "@/types/invoices";
-import {type Scan, ScanType} from "@/types/scans";
+import {type Scan, ScanType, ScanMetadataStatus, ScanMetadataKey} from "@/types/scans";
 import {analyzeInvoice} from "../../_actions/invoices";
-import {markScansAsUsed} from "../../_actions/scans";
+import {updateScan} from "../../_actions/scans";
 
 /**
  * Input parameters for creating invoices from scans.
@@ -80,6 +80,8 @@ function scanTypeToInvoiceScanType(scanType: ScanType): InvoiceScanType {
 /**
  * Extracts blob name from scan's blob URL.
  * E.g., "https://...blob.core.windows.net/invoices/scans/userId/scanId.jpg" → "scans/userId/scanId.jpg"
+ *
+ * @deprecated No longer needed with scanId-based update contract. To be removed in Task 5.
  */
 function extractBlobNameFromScan(scan: Scan): string {
   const urlParts = scan.blobUrl.split("/");
@@ -222,10 +224,21 @@ async function createInvoicesInSingleMode(scans: ReadonlyArray<Scan>, userIdenti
     for (const scan of convertedScans) {
       const invoice = scanToInvoiceMap.get(scan.id);
       if (invoice) {
-        markScansAsUsed({
-          blobNames: [extractBlobNameFromScan(scan)],
-          attachedTo: invoice.id,
-          attachedBy: userIdentifier,
+        updateScan({
+          scanId: scan.id,
+          metadataAdd: {
+            status: ScanMetadataStatus.ATTACHED,
+            attachedAt: new Date(),
+            attachedBy: userIdentifier,
+            attachedTo: invoice.id,
+          },
+          metadataRemove: [
+            ScanMetadataKey.DETACHED_AT,
+            ScanMetadataKey.DETACHED_BY,
+            ScanMetadataKey.DETACHED_FROM,
+            ScanMetadataKey.ARCHIVED_AT,
+            ScanMetadataKey.ARCHIVED_BY,
+          ],
         }).catch((error) => {
           console.warn("Failed to mark scan as attached (non-critical):", error);
         });
@@ -295,15 +308,28 @@ async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, userIdentif
 
     // Mark successfully converted scans as attached (best-effort)
     const allConvertedSet = new Set([firstScan.id, ...convertedScanIds]);
-    const blobNames = scans.filter((s) => allConvertedSet.has(s.id)).map((s) => extractBlobNameFromScan(s));
+    const convertedScans = scans.filter((s) => allConvertedSet.has(s.id));
 
-    markScansAsUsed({
-      blobNames,
-      attachedTo: invoice.id,
-      attachedBy: userIdentifier,
-    }).catch((error) => {
-      console.warn("Failed to mark scans as attached (non-critical):", error);
-    });
+    for (const scan of convertedScans) {
+      updateScan({
+        scanId: scan.id,
+        metadataAdd: {
+          status: ScanMetadataStatus.ATTACHED,
+          attachedAt: new Date(),
+          attachedBy: userIdentifier,
+          attachedTo: invoice.id,
+        },
+        metadataRemove: [
+          ScanMetadataKey.DETACHED_AT,
+          ScanMetadataKey.DETACHED_BY,
+          ScanMetadataKey.DETACHED_FROM,
+          ScanMetadataKey.ARCHIVED_AT,
+          ScanMetadataKey.ARCHIVED_BY,
+        ],
+      }).catch((error) => {
+        console.warn("Failed to mark scan as attached (non-critical):", error);
+      });
+    }
 
     // Fire-and-forget auto-analysis after successful batch creation
     analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {

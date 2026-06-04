@@ -194,7 +194,7 @@ describe("useScanRotation", () => {
       })) as never);
     mockUpdateScan.mockResolvedValue({
       success: true,
-      data: {blobUrl: rotatedUrl},
+      data: {scan: {blobUrl: rotatedUrl} as never},
     });
   });
 
@@ -250,10 +250,11 @@ describe("useScanRotation", () => {
     expect(harness.context.drawImage).toHaveBeenCalled();
     expect(harness.toBlob).toHaveBeenCalledWith(expect.any(Function), "image/jpeg", 0.92);
     expect(mockUpdateScan).toHaveBeenCalledWith({
-      base64Data: "cm90YXRlZA==",
-      blobName: "scans/user-1/receipt.jpg",
-      mimeType: "image/jpeg",
-      metadata: {rotated: "true"},
+      scanId: testScan.id,
+      scanObject: {
+        base64Data: "cm90YXRlZA==",
+        mediaType: "image/jpeg",
+      },
     });
     expect(mockRevokeObjectURL).toHaveBeenCalledWith("blob:scan-object");
     expect(mockUpdateScanBlobUrl).toHaveBeenCalledWith(testScan.id, `${rotatedUrl}?t=123456`);

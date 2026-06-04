@@ -141,24 +141,22 @@ export function useScanRotation(scan: CachedScan): Readonly<HookOutputType> {
           reader.readAsDataURL(blob);
         });
 
-        // 5. Extract blob name from URL (include scans/ prefix)
-        const blobName = scan.blobUrl.split("/").slice(-3).join("/");
-
-        // 6. Upload rotated image
+        // 5. Upload rotated image with scanId-based update contract
         const result = await updateScan({
-          base64Data: base64,
-          blobName,
-          mimeType: "image/jpeg",
-          metadata: {rotated: "true"},
+          scanId: scan.id,
+          scanObject: {
+            base64Data: base64,
+            mediaType: "image/jpeg",
+          },
         });
 
-        // 7. Clean up object URL
+        // 6. Clean up object URL
         URL.revokeObjectURL(objectUrl);
 
-        // 8. Update scan in store (append cache-buster to force browser to re-fetch rotated image)
+        // 7. Update scan in store (append cache-buster to force browser to re-fetch rotated image)
         if (result.success) {
-          const {blobUrl} = result.data;
-          const cacheBustedUrl = `${blobUrl}?t=${Date.now()}`;
+          const {scan: updatedScan} = result.data;
+          const cacheBustedUrl = `${updatedScan.blobUrl}?t=${Date.now()}`;
           updateScanBlobUrl(scan.id, cacheBustedUrl);
           toast.success(t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateSuccess));
         } else {

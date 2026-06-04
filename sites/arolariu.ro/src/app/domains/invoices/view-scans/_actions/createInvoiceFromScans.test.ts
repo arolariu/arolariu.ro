@@ -11,7 +11,7 @@ import {ScanStatus, ScanType} from "@/types/scans";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 vi.mock("../../_actions/scans", () => ({
-  markScansAsUsed: vi.fn(async () => {}),
+  updateScan: vi.fn(async () => ({success: true, data: {scan: {}}})),
 }));
 
 // analyzeInvoice is imported by the module under test — mock it as async (must return a Promise)
@@ -23,7 +23,10 @@ vi.mock("../../_actions/invoices", () => ({
 const mockFetch = vi.mocked(fetchWithTimeout);
 const mockFetchBFFUser = vi.mocked(fetchBFFUserFromAuthService);
 
+import {updateScan} from "../../_actions/scans";
 import {createInvoiceFromScans} from "./createInvoiceFromScans";
+
+const mockUpdateScan = vi.mocked(updateScan);
 
 /**
  * Creates a test scan with default values
@@ -77,6 +80,7 @@ describe("createInvoiceFromScans", () => {
       userJwt: "mock-jwt-token",
       user: null,
     });
+    mockUpdateScan.mockResolvedValue({success: true, data: {scan: {} as never}});
   });
 
   afterEach(() => {
@@ -113,6 +117,29 @@ describe("createInvoiceFromScans", () => {
         documentRole: "primary",
         uploadedAt: "2026-06-03T20:00:00.000Z",
       });
+
+      // Assert updateScan was called for each successfully created invoice with attach metadata
+      expect(mockUpdateScan).toHaveBeenCalledTimes(2);
+      expect(mockUpdateScan).toHaveBeenNthCalledWith(1, {
+        scanId: "scan-1",
+        metadataAdd: {
+          status: "attached",
+          attachedAt: expect.any(Date),
+          attachedBy: "test-user-guid",
+          attachedTo: "invoice-1",
+        },
+        metadataRemove: ["detachedAt", "detachedBy", "detachedFrom", "archivedAt", "archivedBy"],
+      });
+      expect(mockUpdateScan).toHaveBeenNthCalledWith(2, {
+        scanId: "scan-2",
+        metadataAdd: {
+          status: "attached",
+          attachedAt: expect.any(Date),
+          attachedBy: "test-user-guid",
+          attachedTo: "invoice-2",
+        },
+        metadataRemove: ["detachedAt", "detachedBy", "detachedFrom", "archivedAt", "archivedBy"],
+      });
     });
 
     it("should handle partial failures in single mode", async () => {
@@ -139,6 +166,11 @@ describe("createInvoiceFromScans", () => {
       expect(result.convertedScanIds).toEqual(["scan-1", "scan-3"]);
       expect(result.errors).toHaveLength(1);
       expect(result.errors[0]?.scanId).toBe("scan-2");
+
+      // Assert updateScan was called only for successful scans
+      expect(mockUpdateScan).toHaveBeenCalledTimes(2);
+      expect(mockUpdateScan).toHaveBeenCalledWith(expect.objectContaining({scanId: "scan-1"}));
+      expect(mockUpdateScan).toHaveBeenCalledWith(expect.objectContaining({scanId: "scan-3"}));
     });
 
     it("should handle all failures in single mode", async () => {
@@ -155,6 +187,9 @@ describe("createInvoiceFromScans", () => {
       expect(result.invoices).toHaveLength(0);
       expect(result.convertedScanIds).toHaveLength(0);
       expect(result.errors).toHaveLength(2);
+
+      // Assert updateScan was not called when all failed
+      expect(mockUpdateScan).not.toHaveBeenCalled();
     });
 
     it("should handle empty scans array", async () => {
@@ -206,6 +241,39 @@ describe("createInvoiceFromScans", () => {
         documentRole: "primary",
       });
       expect(attachPayload2.additionalMetadata.attachedAt).toBeDefined();
+
+      // Assert updateScan was called once for all scans in batch with same invoiceId
+      expect(mockUpdateScan).toHaveBeenCalledTimes(3);
+      expect(mockUpdateScan).toHaveBeenNthCalledWith(1, {
+        scanId: "scan-1",
+        metadataAdd: {
+          status: "attached",
+          attachedAt: expect.any(Date),
+          attachedBy: "test-user-guid",
+          attachedTo: "invoice-batch",
+        },
+        metadataRemove: ["detachedAt", "detachedBy", "detachedFrom", "archivedAt", "archivedBy"],
+      });
+      expect(mockUpdateScan).toHaveBeenNthCalledWith(2, {
+        scanId: "scan-2",
+        metadataAdd: {
+          status: "attached",
+          attachedAt: expect.any(Date),
+          attachedBy: "test-user-guid",
+          attachedTo: "invoice-batch",
+        },
+        metadataRemove: ["detachedAt", "detachedBy", "detachedFrom", "archivedAt", "archivedBy"],
+      });
+      expect(mockUpdateScan).toHaveBeenNthCalledWith(3, {
+        scanId: "scan-3",
+        metadataAdd: {
+          status: "attached",
+          attachedAt: expect.any(Date),
+          attachedBy: "test-user-guid",
+          attachedTo: "invoice-batch",
+        },
+        metadataRemove: ["detachedAt", "detachedBy", "detachedFrom", "archivedAt", "archivedBy"],
+      });
     });
 
     it("should handle attachment failures in batch mode", async () => {
@@ -229,6 +297,11 @@ describe("createInvoiceFromScans", () => {
       expect(result.convertedScanIds).toEqual(["scan-1", "scan-3"]);
       expect(result.errors).toHaveLength(1);
       expect(result.errors[0]?.scanId).toBe("scan-2");
+
+      // Assert updateScan was called for successfully attached scans
+      expect(mockUpdateScan).toHaveBeenCalledTimes(2);
+      expect(mockUpdateScan).toHaveBeenCalledWith(expect.objectContaining({scanId: "scan-1"}));
+      expect(mockUpdateScan).toHaveBeenCalledWith(expect.objectContaining({scanId: "scan-3"}));
     });
 
     it("should handle non-Error thrown values during attachment in batch mode", async () => {
@@ -547,15 +620,13 @@ describe("createInvoiceFromScans", () => {
       consoleErrorSpy.mockRestore();
     });
 
-    it("should handle markScansAsUsed failure gracefully in single mode", async () => {
+    it("should handle updateScan failure gracefully in single mode", async () => {
       // Arrange
       const scans = [createTestScan("scan-1")];
       const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-      // Import and configure markScansAsUsed mock to reject
-      const {markScansAsUsed} = await import("../../_actions/scans");
-      const mockMarkScans = vi.mocked(markScansAsUsed);
-      mockMarkScans.mockRejectedValueOnce(new Error("Mark scans failed"));
+      // Configure updateScan mock to reject
+      mockUpdateScan.mockRejectedValueOnce(new Error("Update scan failed"));
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -577,15 +648,15 @@ describe("createInvoiceFromScans", () => {
       consoleWarnSpy.mockRestore();
     });
 
-    it("should handle markScansAsUsed failure gracefully in batch mode", async () => {
+    it("should handle updateScan failure gracefully in batch mode", async () => {
       // Arrange
       const scans = [createTestScan("scan-1"), createTestScan("scan-2")];
       const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-      // Import and configure markScansAsUsed mock to reject
-      const {markScansAsUsed} = await import("../../_actions/scans");
-      const mockMarkScans = vi.mocked(markScansAsUsed);
-      mockMarkScans.mockRejectedValueOnce(new Error("Mark scans batch failed"));
+      // Configure updateScan mock to reject for first call, succeed for second
+      mockUpdateScan
+        .mockRejectedValueOnce(new Error("Update scan batch failed"))
+        .mockResolvedValueOnce({success: true, data: {scan: {} as never}});
 
       mockFetch
         .mockResolvedValueOnce({
@@ -601,9 +672,9 @@ describe("createInvoiceFromScans", () => {
       expect(result.invoices).toHaveLength(1);
       expect(result.convertedScanIds).toEqual(["scan-1", "scan-2"]);
 
-      // Wait for fire-and-forget warning
+      // Wait for fire-and-forget warning (multiple calls in batch mode)
       await vi.waitFor(() => {
-        expect(consoleWarnSpy).toHaveBeenCalledWith("Failed to mark scans as attached (non-critical):", expect.any(Error));
+        expect(consoleWarnSpy).toHaveBeenCalledWith("Failed to mark scan as attached (non-critical):", expect.any(Error));
       });
 
       consoleWarnSpy.mockRestore();
