@@ -27,7 +27,7 @@
  * - Background job cleans up orphaned blobs after retention period
  * - Soft deletion allows recovery within retention window
  *
- * @see {@link attachInvoiceScan} - Sibling action for adding scans
+ * @see {@link attachScanToInvoice} - Sibling action for adding scans
  * @see {@link createInvoiceScan} - Action for uploading new scans
  * @see {@link ServerActionResult} - Standard result wrapper type
  */
@@ -166,7 +166,7 @@ type ServerActionOutputType = ServerActionResult<void>;
  * }
  * ```
  *
- * @see {@link attachInvoiceScan} - Sibling action for adding scans
+ * @see {@link attachScanToInvoice} - Sibling action for adding scans
  * @see {@link createInvoiceScan} - Action for uploading new scans
  * @see {@link fetchBFFUserFromAuthService} - Authentication token retrieval
  * @see {@link validateStringIsGuidType} - GUID validation utility

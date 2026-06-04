@@ -6,7 +6,7 @@
 import {describe, expect, it} from "vitest";
 import * as scanActions from "./index";
 
-const expectedExports = ["attachInvoiceScan", "createInvoiceScan", "deleteInvoiceScan"] as const;
+const expectedExports = ["attachScanToInvoice", "createInvoiceScan", "deleteInvoiceScan"] as const;
 
 describe("invoice scans actions index barrel", () => {
   it("exports the expected invoice scan action surface", () => {

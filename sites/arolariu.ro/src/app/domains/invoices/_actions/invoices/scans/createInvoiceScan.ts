@@ -34,7 +34,7 @@
  * that reference the uploaded blob URL.
  *
  * @see {@link createInvoice} - Using uploaded scan in invoice creation
- * @see {@link attachInvoiceScan} - Adding scans to existing invoices
+ * @see {@link attachScanToInvoice} - Adding scans to existing invoices
  * @see {@link ServerActionResult} - Standard result wrapper type
  */
 
@@ -172,7 +172,7 @@ type ServerActionOutputType = ServerActionResult<
  *   console.log("Uploaded successfully");
  *   console.log("Status:", result.data.status); // 201
  *   console.log("Blob URL:", result.data.blobUrl);
- *   // Use blobUrl in createInvoice or attachInvoiceScan
+ *   // Use blobUrl in createInvoice or attachScanToInvoice
  * } else {
  *   console.error("Upload failed:", result.error);
  * }
