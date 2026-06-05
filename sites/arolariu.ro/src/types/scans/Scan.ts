@@ -33,7 +33,7 @@ import type {ScanMetadata} from "./ScanMetadata";
  * OCR strategies and preprocessing steps.
  *
  * **Supported Formats:**
- * - Image formats (JPEG, PNG): Direct OCR processing
+ * - Image formats (JPEG, PNG, BMP, TIFF, HEIF, HEIC): Direct OCR processing
  * - PDF: Multi-page document extraction with embedded text detection
  * - OTHER: Fallback processing with format detection
  *
@@ -50,6 +50,14 @@ export const ScanType = {
   JPEG: "JPEG",
   /** PNG image format */
   PNG: "PNG",
+  /** BMP image format */
+  BMP: "BMP",
+  /** TIFF image format */
+  TIFF: "TIFF",
+  /** HEIF image format */
+  HEIF: "HEIF",
+  /** HEIC image format */
+  HEIC: "HEIC",
   /** PDF document format */
   PDF: "PDF",
   /** Other or unsupported format */

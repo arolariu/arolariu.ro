@@ -75,7 +75,7 @@ export type InvoiceAnalysisOptions = (typeof InvoiceAnalysisOptions)[keyof typeo
  * OCR strategies and preprocessing steps.
  *
  * **Supported Formats:**
- * - Image formats (JPG, JPEG, PNG): Direct OCR processing
+ * - Image formats (JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC): Direct OCR processing
  * - PDF: Multi-page document extraction with embedded text detection
  * - OTHER/UNKNOWN: Fallback processing with format detection
  *
@@ -107,6 +107,14 @@ export const InvoiceScanType = {
   OTHER: 4,
   /** Unknown or unsupported format */
   UNKNOWN: 5,
+  /** BMP image format */
+  BMP: 6,
+  /** TIFF image format */
+  TIFF: 7,
+  /** HEIF image format */
+  HEIF: 8,
+  /** HEIC image format */
+  HEIC: 9,
 } as const;
 export type InvoiceScanType = (typeof InvoiceScanType)[keyof typeof InvoiceScanType];
 
