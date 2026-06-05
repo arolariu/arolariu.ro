@@ -70,5 +70,5 @@ export function useProductAdd({invoice}: Readonly<HookInputType>): Readonly<Hook
     [invoice.id, invoice.items, addProductClientSide],
   );
 
-  return {isAdding, addProductCallback};
+  return {isAdding, addProductCallback} as const;
 }

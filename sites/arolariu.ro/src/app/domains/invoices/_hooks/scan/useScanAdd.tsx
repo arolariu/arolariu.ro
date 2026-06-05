@@ -137,5 +137,5 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
     [invoiceId, t],
   );
 
-  return {isAdding, addScanCallback};
+  return {isAdding, addScanCallback} as const;
 }

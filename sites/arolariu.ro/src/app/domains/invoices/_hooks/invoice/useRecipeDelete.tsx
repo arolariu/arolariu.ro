@@ -55,7 +55,7 @@ export function useRecipeDelete(invoice: Invoice): Readonly<HookOutputType> {
     async (recipeName: string): Promise<Invoice> => {
       setIsDeleting(true);
       try {
-        // TODO: add server side mutation
+        // TODO: add server side mutation and handle errors with toasts
         const updatedRecipes = invoice.possibleRecipes.filter((r) => r.name !== recipeName);
         const updatedInvoice = {...invoice, possibleRecipes: updatedRecipes};
         removeRecipeClientSide(invoice.id, {possibleRecipes: updatedRecipes});
@@ -67,5 +67,5 @@ export function useRecipeDelete(invoice: Invoice): Readonly<HookOutputType> {
     [invoice.id, invoice.possibleRecipes, t, removeRecipeClientSide],
   );
 
-  return {isDeleting, removeRecipeCallback: removeRecipeCallback};
+  return {isDeleting, removeRecipeCallback: removeRecipeCallback} as const;
 }

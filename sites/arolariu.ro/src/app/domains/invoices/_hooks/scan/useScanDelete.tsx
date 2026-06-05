@@ -86,5 +86,5 @@ export function useScanDelete(scan: CachedScan): Readonly<HookOutputType> {
     }
   }, [scan.id, removeScanClientSide, t]);
 
-  return {isDeleting, deleteScanCallback};
+  return {isDeleting, deleteScanCallback} as const;
 }

@@ -56,7 +56,7 @@ export function useRecipeAdd(invoice: Invoice): Readonly<HookOutputType> {
     async (recipe: Recipe): Promise<Invoice> => {
       setIsAdding(true);
       try {
-        // TODO: add server side mudation
+        // TODO: add server side mutation and handle errors with toasts
         const updatedRecipes = [...invoice.possibleRecipes, recipe];
         const updatedInvoice = {...invoice, possibleRecipes: updatedRecipes};
         addRecipeClientSide(invoice.id, {possibleRecipes: updatedRecipes});
@@ -68,5 +68,5 @@ export function useRecipeAdd(invoice: Invoice): Readonly<HookOutputType> {
     [invoice.id, invoice.possibleRecipes, t, addRecipeClientSide],
   );
 
-  return {isAdding, addRecipeCallback};
+  return {isAdding, addRecipeCallback} as const;
 }

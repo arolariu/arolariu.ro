@@ -23,18 +23,20 @@
  */
 
 // #region Hooks for Metadata mutations (add/remove)
-export {useInvoiceMetadataAdd} from "./useInvoiceMetadataAdd";
-export {useInvoiceMetadataRemove} from "./useInvoiceMetadataRemove";
+export { useInvoiceMetadataAdd } from "./useInvoiceMetadataAdd";
+export { useInvoiceMetadataRemove } from "./useInvoiceMetadataRemove";
 // #endregion
 
 // #region Hooks for Recipe mutations (add/update/remove)
-export {useRecipeAdd} from "./useRecipeAdd";
-export {useRecipeDelete} from "./useRecipeDelete";
-export {useRecipeUpdate} from "./useRecipeUpdate";
+export { useRecipeAdd } from "./useRecipeAdd";
+export { useRecipeDelete } from "./useRecipeDelete";
+export { useRecipeUpdate } from "./useRecipeUpdate";
 // #endregion
 
-export {useInvoiceDelete} from "./useInvoiceDelete";
-export {useInvoiceShare} from "./useInvoiceShare";
+export { useInvoiceDelete } from "./useInvoiceDelete";
+export { useInvoiceShare } from "./useInvoiceShare";
 
-export {useInvoice} from "./useInvoice";
-export {useInvoices} from "./useInvoices";
+// #region Hooks for Invoice queries (fetch single/multiple)
+export { useInvoice } from "./useInvoice";
+export { useInvoices } from "./useInvoices";
+// #endregion

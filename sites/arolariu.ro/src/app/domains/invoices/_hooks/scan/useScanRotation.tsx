@@ -172,5 +172,5 @@ export function useScanRotation(scan: CachedScan): Readonly<HookOutputType> {
     [scan.blobUrl, scan.id, scan.mimeType, t, updateScanBlobUrl],
   );
 
-  return {isRotating, rotateScanCallback};
+  return {isRotating, rotateScanCallback} as const;
 }

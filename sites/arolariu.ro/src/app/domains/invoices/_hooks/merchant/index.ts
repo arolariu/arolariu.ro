@@ -19,5 +19,7 @@
  * @see {@link useMerchants} - Fetches merchant collections with store hydration.
  */
 
-export {useMerchant} from "./useMerchant";
-export {useMerchants} from "./useMerchants";
+// #region Hooks for Merchant queries (fetch single/multiple)
+export { useMerchant } from "./useMerchant";
+export { useMerchants } from "./useMerchants";
+// #endregion

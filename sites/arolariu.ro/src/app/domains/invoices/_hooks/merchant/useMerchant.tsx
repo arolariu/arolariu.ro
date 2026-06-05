@@ -126,8 +126,7 @@ export function useMerchant({merchantIdentifier}: HookInputType): HookOutputType
     };
 
     fetchMerchantForUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- upsertMerchant is a stable function
-  }, [merchantIdentifier]);
+  }, [merchantIdentifier, upsertMerchant]);
 
   // Loading is true only until hydration completes (shows stale data while fetching fresh)
   const isLoading = !hasHydrated;
