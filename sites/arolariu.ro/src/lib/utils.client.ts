@@ -31,6 +31,9 @@ export async function extractBase64FromBlob(blob: Blob): Promise<string> {
   });
 }
 
+
+// #region Browser API Functions (storage, navigator, screen)
+
 /**
  * This function checks if the browser storage is available.
  * This function is extracted from the MDN Web Docs regarding the Web Storage API.
@@ -107,3 +110,5 @@ export function dumpBrowserInformation(): Readonly<string> {
 
   return JSON.stringify(returnValue);
 }
+
+// #endregion
