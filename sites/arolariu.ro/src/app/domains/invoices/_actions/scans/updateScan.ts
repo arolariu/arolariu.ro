@@ -28,7 +28,8 @@ import {resolveBlobObjectByMetadata, updateBlobObject} from "@/lib/azure/storage
 import {readBlobMetadata, writeBlobMetadata} from "@/lib/utils.generic";
 import {convertBase64ToBlob, createErrorResult, type ServerActionResult} from "@/lib/utils.server";
 import {revalidatePath} from "next/cache";
-import {type Scan, type ScanMetadata, ScanMetadataKey, ScanStatus, ScanType} from "@/types/scans";
+import {type Scan, type ScanMetadata, ScanMetadataKey, ScanStatus} from "@/types/scans";
+import {mimeTypeToScanType} from "../../_utils/mimeTypeUtilities";
 
 /**
  * Input parameters for updating a scan.
@@ -57,22 +58,6 @@ type ServerActionOutputType = ServerActionResult<
   }>
 >;
 
-/**
- * Maps MIME type to ScanType enum for type classification.
- */
-function mimeTypeToScanType(mimeType: string): ScanType {
-  switch (mimeType.toLowerCase()) {
-    case "image/jpeg":
-    case "image/jpg":
-      return ScanType.JPEG;
-    case "image/png":
-      return ScanType.PNG;
-    case "application/pdf":
-      return ScanType.PDF;
-    default:
-      return ScanType.OTHER;
-  }
-}
 
 /**
  * Updates scan blob content and/or metadata by scanId.

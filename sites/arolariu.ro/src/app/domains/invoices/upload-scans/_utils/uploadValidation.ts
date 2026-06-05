@@ -14,17 +14,7 @@ import {
   type UploadBatchValidationResult,
   type UploadValidationResult,
 } from "./uploadTypes";
-
-/**
- * Extracts a lowercase extension from a file name.
- *
- * @param fileName - Name reported by the browser for the candidate file.
- * @returns The extension without the dot, or `null` when no usable extension exists.
- */
-function getFileExtension(fileName: string): string | null {
-  const extension = fileName.split(".").pop()?.toLowerCase();
-  return extension && extension.length > 0 ? extension : null;
-}
+import {extractFileExtension, isSupportedScanExtension, isSupportedScanMimeType} from "../../_utils/mimeTypeUtilities";
 
 /**
  * Validates a single candidate scan upload file.
@@ -33,7 +23,7 @@ function getFileExtension(fileName: string): string | null {
  * @returns A typed validation result with a user-facing error message on failure.
  */
 export function validateUploadFile(file: File): UploadValidationResult {
-  if (!ACCEPTED_UPLOAD_MIME_TYPES.has(file.type)) {
+  if (!isSupportedScanMimeType(file.type)) {
     return {
       isValid: false,
       file,
@@ -42,8 +32,8 @@ export function validateUploadFile(file: File): UploadValidationResult {
     };
   }
 
-  const extension = getFileExtension(file.name);
-  if (extension === null || !ACCEPTED_UPLOAD_FILE_EXTENSIONS.has(extension)) {
+  const extension = extractFileExtension(file.name);
+  if (extension === null || !isSupportedScanExtension(extension)) {
     return {
       isValid: false,
       file,

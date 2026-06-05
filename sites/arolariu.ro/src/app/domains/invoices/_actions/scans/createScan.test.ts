@@ -250,4 +250,124 @@ describe("createScan", () => {
       expect(result.data.scan.scanType).toBe(ScanType.OTHER);
     }
   });
+
+  it("should map image/bmp to ScanType.BMP", async () => {
+    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-bmp"}));
+    mockUploadBlobObject.mockResolvedValue({
+      name: "scans/user-bmp/scan_bmp.bmp",
+      url: "https://storage.test/invoices/scans/user-bmp/scan_bmp.bmp",
+      metadata: {},
+      contentType: "image/bmp",
+      contentLength: 1024,
+      createdOn: new Date(),
+      etag: "test-etag",
+    });
+
+    const result = await createScan({
+      base64Data: VALID_BASE64,
+      fileName: "image.bmp",
+      mimeType: "image/bmp",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.scan.scanType).toBe(ScanType.BMP);
+    }
+  });
+
+  it("should map image/tiff to ScanType.TIFF", async () => {
+    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-tiff"}));
+    mockUploadBlobObject.mockResolvedValue({
+      name: "scans/user-tiff/scan_tiff.tiff",
+      url: "https://storage.test/invoices/scans/user-tiff/scan_tiff.tiff",
+      metadata: {},
+      contentType: "image/tiff",
+      contentLength: 1024,
+      createdOn: new Date(),
+      etag: "test-etag",
+    });
+
+    const result = await createScan({
+      base64Data: VALID_BASE64,
+      fileName: "image.tiff",
+      mimeType: "image/tiff",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.scan.scanType).toBe(ScanType.TIFF);
+    }
+  });
+
+  it("should map image/heif to ScanType.HEIF", async () => {
+    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-heif"}));
+    mockUploadBlobObject.mockResolvedValue({
+      name: "scans/user-heif/scan_heif.heif",
+      url: "https://storage.test/invoices/scans/user-heif/scan_heif.heif",
+      metadata: {},
+      contentType: "image/heif",
+      contentLength: 1024,
+      createdOn: new Date(),
+      etag: "test-etag",
+    });
+
+    const result = await createScan({
+      base64Data: VALID_BASE64,
+      fileName: "image.heif",
+      mimeType: "image/heif",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.scan.scanType).toBe(ScanType.HEIF);
+    }
+  });
+
+  it("should map image/heic to ScanType.HEIC", async () => {
+    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-heic"}));
+    mockUploadBlobObject.mockResolvedValue({
+      name: "scans/user-heic/scan_heic.heic",
+      url: "https://storage.test/invoices/scans/user-heic/scan_heic.heic",
+      metadata: {},
+      contentType: "image/heic",
+      contentLength: 1024,
+      createdOn: new Date(),
+      etag: "test-etag",
+    });
+
+    const result = await createScan({
+      base64Data: VALID_BASE64,
+      fileName: "image.heic",
+      mimeType: "image/heic",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.scan.scanType).toBe(ScanType.HEIC);
+    }
+  });
+
+  it("should map image/jpg alias to ScanType.JPEG through normalization", async () => {
+    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-jpg"}));
+    mockUploadBlobObject.mockResolvedValue({
+      name: "scans/user-jpg/scan_jpg.jpg",
+      url: "https://storage.test/invoices/scans/user-jpg/scan_jpg.jpg",
+      metadata: {},
+      contentType: "image/jpg",
+      contentLength: 1024,
+      createdOn: new Date(),
+      etag: "test-etag",
+    });
+
+    const result = await createScan({
+      base64Data: VALID_BASE64,
+      fileName: "image.jpg",
+      mimeType: "image/jpg",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.scan.scanType).toBe(ScanType.JPEG);
+    }
+  });
 });

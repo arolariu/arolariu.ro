@@ -67,7 +67,8 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {uploadBlobObject} from "@/lib/azure/storageClient";
 import {writeBlobMetadata} from "@/lib/utils.generic";
 import {convertBase64ToBlob, createErrorResult, type ServerActionResult} from "@/lib/utils.server";
-import {type Scan, ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, ScanStatus, ScanType} from "@/types/scans";
+import {type Scan, ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, ScanStatus} from "@/types/scans";
+import {deriveBlobExtension, mimeTypeToScanType} from "../../_utils/mimeTypeUtilities";
 
 /**
  * Input parameters for uploading a standalone scan.
@@ -97,42 +98,6 @@ type ServerActionOutputType = ServerActionResult<
   }>
 >;
 
-/**
- * Maps MIME type to ScanType enum for type classification.
- *
- * @remarks
- * Normalizes common MIME type variations (e.g., "image/jpg" → "image/jpeg").
- * Unsupported types are classified as ScanType.OTHER.
- *
- * **Supported Types**:
- * - JPEG: image/jpeg, image/jpg
- * - PNG: image/png
- * - PDF: application/pdf
- * - OTHER: All other types (stored but may fail downstream processing)
- *
- * @param mimeType - The MIME type string (case-insensitive)
- * @returns Corresponding ScanType enum value
- *
- * @example
- * ```typescript
- * mimeTypeToScanType("image/jpeg") // ScanType.JPEG
- * mimeTypeToScanType("application/pdf") // ScanType.PDF
- * mimeTypeToScanType("text/plain") // ScanType.OTHER
- * ```
- */
-function mimeTypeToScanType(mimeType: string): ScanType {
-  switch (mimeType.toLowerCase()) {
-    case "image/jpeg":
-    case "image/jpg":
-      return ScanType.JPEG;
-    case "image/png":
-      return ScanType.PNG;
-    case "application/pdf":
-      return ScanType.PDF;
-    default:
-      return ScanType.OTHER;
-  }
-}
 
 /**
  * Generates a UUIDv7-like identifier using timestamp + random bytes.
@@ -168,15 +133,6 @@ function generateScanId(): string {
   return `${timestamp.slice(0, 8)}-${timestamp.slice(8, 12)}-7${random.slice(0, 3)}-${random.slice(3, 7)}-${random.slice(7, 19)}`;
 }
 
-function getFileExtension(fileName: string): string {
-  const lastDotIndex = fileName.lastIndexOf(".");
-
-  if (lastDotIndex < 0 || lastDotIndex === fileName.length - 1) {
-    return "bin";
-  }
-
-  return fileName.slice(lastDotIndex + 1);
-}
 
 /**
  * Uploads a standalone scan to Azure Blob Storage for later invoice conversion.
@@ -234,7 +190,7 @@ export async function createScan({base64Data, fileName, mimeType}: ServerActionI
       addSpanEvent("scan.id.generate");
       const scanId = generateScanId();
       const timestamp = Date.now();
-      const extension = getFileExtension(fileName);
+      const extension = deriveBlobExtension(fileName);
       const blobName = `scans/${userIdentifier}/${scanId}_${timestamp}.${extension}`;
 
       // Step 3. Prepare for blob upload

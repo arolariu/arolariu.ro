@@ -20,16 +20,28 @@ function createFile(name: string, type: string, size = 4): File {
 }
 
 describe("validateUploadFile", () => {
-  it("accepts JPEG, PNG, and PDF files within the size limit", () => {
+  it("accepts JPEG, PNG, BMP, TIFF, HEIF, HEIC, and PDF files within the size limit", () => {
     const files = [
       createFile("receipt.jpg", "image/jpeg"),
+      createFile("receipt.jpeg", "image/jpeg"),
       createFile("receipt.png", "image/png"),
+      createFile("receipt.bmp", "image/bmp"),
+      createFile("receipt.tif", "image/tiff"),
+      createFile("receipt.tiff", "image/tiff"),
+      createFile("receipt.heif", "image/heif"),
+      createFile("receipt.heic", "image/heic"),
       createFile("receipt.pdf", "application/pdf"),
     ];
 
     const results = files.map((file) => validateUploadFile(file));
 
     expect(results).toEqual(files.map((file) => ({isValid: true, file})));
+  });
+
+  it("accepts JPEG with image/jpg alias through normalization", () => {
+    const file = createFile("receipt.jpg", "image/jpg");
+
+    expect(validateUploadFile(file)).toEqual({isValid: true, file});
   });
 
   it("rejects unsupported MIME types", () => {

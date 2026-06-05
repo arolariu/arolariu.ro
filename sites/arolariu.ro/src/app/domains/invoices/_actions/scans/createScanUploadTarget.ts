@@ -36,6 +36,7 @@ import {createBlobUploadTarget} from "@/lib/azure/storageClient";
 import {writeBlobMetadata} from "@/lib/utils.generic";
 import {createErrorResult, ServerActionResult} from "@/lib/utils.server";
 import {ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, type ScanMetadata} from "@/types/scans";
+import {deriveBlobExtension} from "../../_utils/mimeTypeUtilities";
 
 /**
  * Input parameters for creating an upload target.
@@ -92,15 +93,6 @@ function generateScanId(): string {
   return `${timestamp.slice(0, 8)}-${timestamp.slice(8, 12)}-7${random.slice(0, 3)}-${random.slice(3, 7)}-${random.slice(7, 19)}`;
 }
 
-function getFileExtension(fileName: string): string {
-  const lastDotIndex = fileName.lastIndexOf(".");
-
-  if (lastDotIndex < 0 || lastDotIndex === fileName.length - 1) {
-    return "bin";
-  }
-
-  return fileName.slice(lastDotIndex + 1);
-}
 
 /**
  * Creates a blob upload target with prepared metadata for direct client uploads.
@@ -167,7 +159,7 @@ export async function createScanUploadTarget(input: ServerActionInputType): Serv
       addSpanEvent("scan.id.generate");
       const scanId = generateScanId();
       const timestamp = Date.now();
-      const extension = getFileExtension(input.fileName);
+      const extension = deriveBlobExtension(input.fileName);
       const blobName = `scans/${userIdentifier}/${scanId}_${timestamp}.${extension}`;
 
       // Step 3. Build canonical scan metadata

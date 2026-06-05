@@ -22,7 +22,8 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {listBlobObjects} from "@/lib/azure/storageClient";
 import {readBlobMetadata} from "@/lib/utils.generic";
 import {createErrorResult, type ServerActionResult} from "@/lib/utils.server";
-import {type Scan, ScanStatus, ScanType} from "@/types/scans";
+import {type Scan, ScanStatus} from "@/types/scans";
+import {mimeTypeToScanType} from "../../_utils/mimeTypeUtilities";
 
 /**
  * Input parameters for fetching scans.
@@ -37,30 +38,6 @@ type ServerActionInputType = Readonly<{
  */
 type ServerActionOutputType = ServerActionResult<ReadonlyArray<Scan>>;
 
-/**
- * Maps MIME type strings to scan classification values.
- *
- * @remarks
- * Handles the MIME types emitted by browser file inputs and Azure Blob Storage
- * metadata. Unknown types remain listable as `ScanType.OTHER` so the UI can
- * still show unsupported uploads instead of dropping them.
- *
- * @param mimeType - MIME type to normalize, such as `image/jpeg` or `application/pdf`.
- * @returns The scan type used by invoice scan UI and downstream processing.
- */
-function mimeTypeToScanType(mimeType: string): ScanType {
-  switch (mimeType.toLowerCase()) {
-    case "image/jpeg":
-    case "image/jpg":
-      return ScanType.JPEG;
-    case "image/png":
-      return ScanType.PNG;
-    case "application/pdf":
-      return ScanType.PDF;
-    default:
-      return ScanType.OTHER;
-  }
-}
 
 /**
  * Fetches all scans belonging to a user from Azure Blob Storage.

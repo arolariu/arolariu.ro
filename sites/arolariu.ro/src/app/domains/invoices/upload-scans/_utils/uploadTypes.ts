@@ -23,10 +23,14 @@ export const MAX_UPLOAD_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 export const ACCEPTED_UPLOAD_EXTENSIONS = ".jpg,.jpeg,.png,.pdf";
 
 /** MIME types accepted by the scan upload route. */
-export const ACCEPTED_UPLOAD_MIME_TYPES: ReadonlySet<string> = new Set(["image/jpeg", "image/png", "application/pdf"]);
+export {
+  ACCEPTED_SCAN_MIME_TYPES as ACCEPTED_UPLOAD_MIME_TYPES,
+} from "../../_utils/mimeTypeUtilities";
 
 /** File extensions accepted by the scan upload route. */
-export const ACCEPTED_UPLOAD_FILE_EXTENSIONS: ReadonlySet<string> = new Set(["jpg", "jpeg", "png", "pdf"]);
+export {
+  ACCEPTED_SCAN_FILE_EXTENSIONS as ACCEPTED_UPLOAD_FILE_EXTENSIONS,
+} from "../../_utils/mimeTypeUtilities";
 
 /** Delay before removing a completed upload card from the route queue. */
 export const COMPLETED_UPLOAD_REMOVAL_DELAY_MS = 1000;
