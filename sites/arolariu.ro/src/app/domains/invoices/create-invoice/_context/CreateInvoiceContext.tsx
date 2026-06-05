@@ -194,7 +194,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
         throw new Error("No scans selected");
       }
 
-      // Map scan type to InvoiceScanType enum
+      // Derive the invoice scan type through the centralized MIME utility.
       const scanType = scanTypeToInvoiceScanType(firstScan.scanType);
 
       // Create invoice with first scan and ALL invoice details in metadata

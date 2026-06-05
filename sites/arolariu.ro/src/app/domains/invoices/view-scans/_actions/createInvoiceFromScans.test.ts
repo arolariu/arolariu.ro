@@ -419,7 +419,7 @@ describe("createInvoiceFromScans", () => {
       expect(body.initialScan.scanType).toBe(InvoiceScanType.PDF);
     });
 
-    it("should map unknown scan type to OTHER", async () => {
+    it("should map unknown scan type to UNKNOWN", async () => {
       const scans = [createTestScan("scan-1", {scanType: "UNKNOWN" as ScanType})];
 
       mockFetch.mockResolvedValueOnce({
@@ -431,7 +431,7 @@ describe("createInvoiceFromScans", () => {
 
       const fetchCall = mockFetch.mock.calls[0];
       const body = JSON.parse(fetchCall?.[1]?.body as string);
-      expect(body.initialScan.scanType).toBe(InvoiceScanType.OTHER);
+      expect(body.initialScan.scanType).toBe(InvoiceScanType.UNKNOWN);
     });
   });
 

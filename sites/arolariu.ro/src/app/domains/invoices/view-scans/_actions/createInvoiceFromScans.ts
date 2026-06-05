@@ -28,7 +28,7 @@ import {
   type Invoice,
   InvoiceAnalysisOptions,
 } from "@/types/invoices";
-import {type Scan, ScanType, ScanMetadataStatus, ScanMetadataKey} from "@/types/scans";
+import {type Scan, ScanMetadataStatus, ScanMetadataKey} from "@/types/scans";
 import {analyzeInvoice} from "../../_actions/invoices";
 import {updateScan} from "../../_actions/scans";
 import {scanTypeToInvoiceScanType} from "../../_utils/mimeTypeUtilities";

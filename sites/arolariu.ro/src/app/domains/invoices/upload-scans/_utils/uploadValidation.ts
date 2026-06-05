@@ -8,8 +8,6 @@
  */
 
 import {
-  ACCEPTED_UPLOAD_FILE_EXTENSIONS,
-  ACCEPTED_UPLOAD_MIME_TYPES,
   MAX_UPLOAD_FILE_SIZE_BYTES,
   type UploadBatchValidationResult,
   type UploadValidationResult,
