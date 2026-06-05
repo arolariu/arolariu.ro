@@ -1,6 +1,6 @@
 # Dev-only dependencies — NOT installed in production Docker image.
 # Install locally: pip install -r requirements-dev.txt
 -r requirements.txt
-pytest==9.0.2
+pytest==9.0.3
 ruff==0.15.4
 pydoc-markdown==4.8.2
