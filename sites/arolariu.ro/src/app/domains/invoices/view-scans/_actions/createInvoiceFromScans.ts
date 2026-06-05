@@ -27,11 +27,11 @@ import {
   type CreateInvoiceScanDtoPayload,
   type Invoice,
   InvoiceAnalysisOptions,
-  InvoiceScanType,
 } from "@/types/invoices";
 import {type Scan, ScanType, ScanMetadataStatus, ScanMetadataKey} from "@/types/scans";
 import {analyzeInvoice} from "../../_actions/invoices";
 import {updateScan} from "../../_actions/scans";
+import {scanTypeToInvoiceScanType} from "../../_utils/mimeTypeUtilities";
 
 /**
  * Input parameters for creating invoices from scans.
@@ -60,22 +60,6 @@ type CreateInvoiceFromScansOutput = Promise<
     errors: Array<{scanId: string; error: string}>;
   }>
 >;
-
-/**
- * Maps ScanType to InvoiceScanType enum.
- */
-function scanTypeToInvoiceScanType(scanType: ScanType): InvoiceScanType {
-  switch (scanType) {
-    case ScanType.JPEG:
-      return InvoiceScanType.JPEG;
-    case ScanType.PNG:
-      return InvoiceScanType.PNG;
-    case ScanType.PDF:
-      return InvoiceScanType.PDF;
-    default:
-      return InvoiceScanType.OTHER;
-  }
-}
 
 /**
  * Creates a single invoice from a scan.
