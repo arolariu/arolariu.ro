@@ -692,7 +692,11 @@ export function formatRelativeTime(date: Date | string | null | undefined): stri
  * @returns True if the value exists in the collection, false otherwise.
  */
 function containsString(collection: ReadonlySet<string> | readonly string[], value: string): boolean {
-  return Array.isArray(collection) ? collection.includes(value) : collection.has(value);
+  if ("has" in collection) {
+    return collection.has(value);
+  }
+
+  return collection.includes(value);
 }
 
 /**
