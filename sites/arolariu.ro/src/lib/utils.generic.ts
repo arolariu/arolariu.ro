@@ -679,3 +679,194 @@ export function formatRelativeTime(date: Date | string | null | undefined): stri
 }
 
 // #endregion
+
+// ============================================================================
+// MIME Type and File Extension Utilities
+// ============================================================================
+
+/**
+ * Helper function to check if a value exists in a collection (array or set).
+ *
+ * @param collection - The collection to search in (array or set).
+ * @param value - The value to check for.
+ * @returns True if the value exists in the collection, false otherwise.
+ */
+function containsString(collection: ReadonlySet<string> | readonly string[], value: string): boolean {
+  return Array.isArray(collection) ? collection.includes(value) : collection.has(value);
+}
+
+/**
+ * Normalizes a MIME type string by trimming whitespace and converting to lowercase.
+ *
+ * @remarks
+ * **Behavior:**
+ * - Trims leading and trailing whitespace
+ * - Converts to lowercase
+ * - Returns null for empty or whitespace-only strings
+ *
+ * @param mimeType - The MIME type string to normalize.
+ * @returns Normalized MIME type string, or null if invalid.
+ *
+ * @example
+ * ```typescript
+ * normalizeMimeType(" IMAGE/JPEG "); // "image/jpeg"
+ * normalizeMimeType("   ");           // null
+ * ```
+ */
+export function normalizeMimeType(mimeType: string): string | null {
+  const trimmed = mimeType.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+  return trimmed.toLowerCase();
+}
+
+/**
+ * Normalizes a MIME type and validates it against supported types with alias resolution.
+ *
+ * @remarks
+ * **Behavior:**
+ * - Normalizes the MIME type (trim + lowercase)
+ * - Applies alias mapping if the normalized type is in the aliases
+ * - Returns the canonical MIME type only if it exists in the supported collection
+ * - Returns null if the MIME type is invalid or not supported
+ *
+ * @param mimeType - The MIME type string to normalize and validate.
+ * @param aliases - Map of MIME type aliases to canonical types.
+ * @param supportedMimeTypes - Collection of supported MIME types (array or set).
+ * @returns Canonical MIME type if supported, null otherwise.
+ *
+ * @example
+ * ```typescript
+ * normalizeMimeTypeWithAliases(" image/JPG ", {"image/jpg": "image/jpeg"}, ["image/jpeg"]);
+ * // "image/jpeg"
+ *
+ * normalizeMimeTypeWithAliases("image/gif", {}, ["image/jpeg"]);
+ * // null (not in supported list)
+ * ```
+ */
+export function normalizeMimeTypeWithAliases(
+  mimeType: string,
+  aliases: Readonly<Record<string, string>>,
+  supportedMimeTypes: ReadonlySet<string> | readonly string[],
+): string | null {
+  const normalized = normalizeMimeType(mimeType);
+  if (!normalized) {
+    return null;
+  }
+
+  // Apply alias mapping
+  const canonical = aliases[normalized] ?? normalized;
+
+  // Check if canonical type is in supported collection
+  if (!containsString(supportedMimeTypes, canonical)) {
+    return null;
+  }
+
+  return canonical;
+}
+
+/**
+ * Extracts the file extension from a filename.
+ *
+ * @remarks
+ * **Behavior:**
+ * - Extracts extension after the last dot
+ * - Converts to lowercase
+ * - Returns null if no extension or trailing dot
+ *
+ * @param fileName - The filename to extract extension from.
+ * @returns Lowercase file extension without dot, or null if no extension.
+ *
+ * @example
+ * ```typescript
+ * extractFileExtension("receipt.final.JPG"); // "jpg"
+ * extractFileExtension("receipt");           // null
+ * extractFileExtension("receipt.");          // null
+ * ```
+ */
+export function extractFileExtension(fileName: string): string | null {
+  const lastDotIndex = fileName.lastIndexOf(".");
+  if (lastDotIndex === -1 || lastDotIndex === fileName.length - 1) {
+    return null;
+  }
+  return fileName.slice(lastDotIndex + 1).toLowerCase();
+}
+
+/**
+ * Derives a file extension from a filename, with fallback to "bin".
+ *
+ * @remarks
+ * **Behavior:**
+ * - Uses `extractFileExtension` internally
+ * - Returns "bin" if no extension is found
+ *
+ * @param fileName - The filename to derive extension from.
+ * @returns Lowercase file extension without dot, or "bin" as fallback.
+ *
+ * @example
+ * ```typescript
+ * deriveBlobExtension("receipt");     // "bin"
+ * deriveBlobExtension("scan.TIFF");   // "tiff"
+ * ```
+ */
+export function deriveBlobExtension(fileName: string): string {
+  return extractFileExtension(fileName) ?? "bin";
+}
+
+/**
+ * Gets the canonical MIME type for a file extension from a mapping.
+ *
+ * @remarks
+ * **Behavior:**
+ * - Strips leading dot from extension
+ * - Converts to lowercase
+ * - Looks up in provided mapping
+ * - Returns null if not found
+ *
+ * @param extension - The file extension (with or without leading dot).
+ * @param extensionToMimeType - Map of extensions to MIME types.
+ * @returns Canonical MIME type if found, null otherwise.
+ *
+ * @example
+ * ```typescript
+ * getCanonicalMimeTypeForExtension(".JPG", {jpg: "image/jpeg"}); // "image/jpeg"
+ * getCanonicalMimeTypeForExtension("txt", {jpg: "image/jpeg"});  // null
+ * ```
+ */
+export function getCanonicalMimeTypeForExtension(
+  extension: string,
+  extensionToMimeType: Readonly<Record<string, string>>,
+): string | null {
+  const normalized = extension.startsWith(".") ? extension.slice(1).toLowerCase() : extension.toLowerCase();
+  return extensionToMimeType[normalized] ?? null;
+}
+
+/**
+ * Checks if a file extension exists in a collection of supported extensions.
+ *
+ * @remarks
+ * **Behavior:**
+ * - Strips leading dot from extension
+ * - Converts to lowercase
+ * - Checks if exists in provided collection (array or set)
+ *
+ * @param extension - The file extension to check (with or without leading dot).
+ * @param supportedExtensions - Collection of supported extensions (array or set).
+ * @returns True if extension is in the collection, false otherwise.
+ *
+ * @example
+ * ```typescript
+ * isExtensionInSet(".PDF", ["pdf"]); // true
+ * isExtensionInSet("gif", ["pdf"]);  // false
+ * ```
+ */
+export function isExtensionInSet(
+  extension: string,
+  supportedExtensions: ReadonlySet<string> | readonly string[],
+): boolean {
+  const normalized = extension.startsWith(".") ? extension.slice(1).toLowerCase() : extension.toLowerCase();
+  return containsString(supportedExtensions, normalized);
+}
+
+// #endregion

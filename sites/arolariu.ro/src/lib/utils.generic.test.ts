@@ -7,6 +7,8 @@ import {ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, type ScanMetadat
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {
   COMMIT_SHA,
+  deriveBlobExtension,
+  extractFileExtension,
   formatAmount,
   formatCurrency,
   formatDate,
@@ -14,6 +16,10 @@ import {
   formatEnum,
   formatRelativeTime,
   generateGuid,
+  getCanonicalMimeTypeForExtension,
+  isExtensionInSet,
+  normalizeMimeType,
+  normalizeMimeTypeWithAliases,
   readBlobMetadata,
   SITE_ENV,
   SITE_NAME,
@@ -833,3 +839,146 @@ describe("scan blob metadata helpers", () => {
     expect(result["archivedAt"]).toBeUndefined();
   });
 });
+
+describe("MIME and file extension helpers", () => {
+  describe("normalizeMimeType", () => {
+    it("should normalize MIME type with leading/trailing whitespace", () => {
+      expect(normalizeMimeType(" IMAGE/JPEG ")).toBe("image/jpeg");
+    });
+
+    it("should return null for whitespace-only string", () => {
+      expect(normalizeMimeType("   ")).toBeNull();
+    });
+
+    it("should return null for empty string", () => {
+      expect(normalizeMimeType("")).toBeNull();
+    });
+
+    it("should lowercase MIME type", () => {
+      expect(normalizeMimeType("IMAGE/PNG")).toBe("image/png");
+    });
+
+    it("should handle already normalized MIME type", () => {
+      expect(normalizeMimeType("application/pdf")).toBe("application/pdf");
+    });
+  });
+
+  describe("normalizeMimeTypeWithAliases", () => {
+    it("should apply alias and validate against supported types (array)", () => {
+      expect(normalizeMimeTypeWithAliases(" image/JPG ", {"image/jpg": "image/jpeg"}, ["image/jpeg"])).toBe("image/jpeg");
+    });
+
+    it("should return null for unsupported MIME type (array)", () => {
+      expect(normalizeMimeTypeWithAliases("image/gif", {}, ["image/jpeg"])).toBeNull();
+    });
+
+    it("should return null for whitespace-only input", () => {
+      expect(normalizeMimeTypeWithAliases("   ", {}, ["image/jpeg"])).toBeNull();
+    });
+
+    it("should work with Set for supported types", () => {
+      expect(normalizeMimeTypeWithAliases("image/png", {}, new Set(["image/png"]))).toBe("image/png");
+    });
+
+    it("should validate against Set of supported types", () => {
+      expect(normalizeMimeTypeWithAliases("image/gif", {}, new Set(["image/jpeg", "image/png"]))).toBeNull();
+    });
+
+    it("should apply alias and validate against Set", () => {
+      expect(normalizeMimeTypeWithAliases("image/jpg", {"image/jpg": "image/jpeg"}, new Set(["image/jpeg"]))).toBe("image/jpeg");
+    });
+
+    it("should return canonical type without alias if supported", () => {
+      expect(normalizeMimeTypeWithAliases("image/jpeg", {}, ["image/jpeg", "image/png"])).toBe("image/jpeg");
+    });
+  });
+
+  describe("extractFileExtension", () => {
+    it("should extract extension from multi-dot filename", () => {
+      expect(extractFileExtension("receipt.final.JPG")).toBe("jpg");
+    });
+
+    it("should return null for filename without extension", () => {
+      expect(extractFileExtension("receipt")).toBeNull();
+    });
+
+    it("should return null for filename with trailing dot", () => {
+      expect(extractFileExtension("receipt.")).toBeNull();
+    });
+
+    it("should lowercase extension", () => {
+      expect(extractFileExtension("document.PDF")).toBe("pdf");
+    });
+
+    it("should handle single-dot filename", () => {
+      expect(extractFileExtension("file.txt")).toBe("txt");
+    });
+  });
+
+  describe("deriveBlobExtension", () => {
+    it("should return 'bin' for filename without extension", () => {
+      expect(deriveBlobExtension("receipt")).toBe("bin");
+    });
+
+    it("should return extracted extension", () => {
+      expect(deriveBlobExtension("scan.TIFF")).toBe("tiff");
+    });
+
+    it("should return 'bin' for trailing dot", () => {
+      expect(deriveBlobExtension("file.")).toBe("bin");
+    });
+
+    it("should return extracted extension for multi-dot filename", () => {
+      expect(deriveBlobExtension("archive.tar.gz")).toBe("gz");
+    });
+  });
+
+  describe("getCanonicalMimeTypeForExtension", () => {
+    it("should get MIME type for extension with leading dot", () => {
+      expect(getCanonicalMimeTypeForExtension(".JPG", {jpg: "image/jpeg"})).toBe("image/jpeg");
+    });
+
+    it("should return null for unsupported extension", () => {
+      expect(getCanonicalMimeTypeForExtension("txt", {jpg: "image/jpeg"})).toBeNull();
+    });
+
+    it("should get MIME type for extension without leading dot", () => {
+      expect(getCanonicalMimeTypeForExtension("pdf", {pdf: "application/pdf"})).toBe("application/pdf");
+    });
+
+    it("should normalize extension case", () => {
+      expect(getCanonicalMimeTypeForExtension("PNG", {png: "image/png"})).toBe("image/png");
+    });
+
+    it("should return null for empty mapping", () => {
+      expect(getCanonicalMimeTypeForExtension("jpg", {})).toBeNull();
+    });
+  });
+
+  describe("isExtensionInSet", () => {
+    it("should return true for extension in array (with leading dot)", () => {
+      expect(isExtensionInSet(".PDF", ["pdf"])).toBe(true);
+    });
+
+    it("should return false for extension not in array", () => {
+      expect(isExtensionInSet("gif", ["pdf"])).toBe(false);
+    });
+
+    it("should work with Set", () => {
+      expect(isExtensionInSet("png", new Set(["png"]))).toBe(true);
+    });
+
+    it("should return false for extension not in Set", () => {
+      expect(isExtensionInSet("jpg", new Set(["pdf", "png"]))).toBe(false);
+    });
+
+    it("should normalize extension case", () => {
+      expect(isExtensionInSet("PDF", ["pdf"])).toBe(true);
+    });
+
+    it("should handle extension without leading dot in array", () => {
+      expect(isExtensionInSet("pdf", ["pdf", "jpg"])).toBe(true);
+    });
+  });
+});
+
