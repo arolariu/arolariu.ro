@@ -4,3 +4,4 @@
  */
 
 export {copySvgToClipboard} from "./copySvgToClipboard";
+export * from "./mimeTypeUtilities";
