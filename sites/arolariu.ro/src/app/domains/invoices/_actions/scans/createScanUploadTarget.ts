@@ -33,10 +33,10 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createBlobUploadTarget} from "@/lib/azure/storageClient";
-import {writeBlobMetadata} from "@/lib/utils.generic";
 import {createErrorResult, ServerActionResult} from "@/lib/utils.server";
 import {ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, type ScanMetadata} from "@/types/scans";
 import {deriveBlobExtension} from "../../_utils/mimeTypeUtilities";
+import {writeBlobMetadata} from "../../_utils/metadataUtilities";
 
 /**
  * Input parameters for creating an upload target.

@@ -25,11 +25,11 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {resolveBlobObjectByMetadata, updateBlobObject} from "@/lib/azure/storageClient";
-import {readBlobMetadata, writeBlobMetadata} from "@/lib/utils.generic";
 import {convertBase64ToBlob, createErrorResult, type ServerActionResult} from "@/lib/utils.server";
 import {revalidatePath} from "next/cache";
 import {type Scan, type ScanMetadata, ScanMetadataKey, ScanStatus} from "@/types/scans";
 import {mimeTypeToScanType} from "../../_utils/mimeTypeUtilities";
+import {readBlobMetadata, writeBlobMetadata} from "../../_utils/metadataUtilities";
 
 /**
  * Input parameters for updating a scan.

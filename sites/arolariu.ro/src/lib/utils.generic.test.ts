@@ -3,7 +3,6 @@
  * @module sites/arolariu.ro/src/lib/utils.generic/tests
  */
 
-import {ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, type ScanMetadata} from "@/types/scans";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {
   COMMIT_SHA,
@@ -20,14 +19,12 @@ import {
   isExtensionInSet,
   normalizeMimeType,
   normalizeMimeTypeWithAliases,
-  readBlobMetadata,
   SITE_ENV,
   SITE_NAME,
   SITE_URL,
   TIMESTAMP,
   toSafeDate,
   validateStringIsGuidType,
-  writeBlobMetadata,
 } from "./utils.generic";
 
 describe("generateGuid", () => {
@@ -700,146 +697,6 @@ describe("assertValidGuid", () => {
   });
 });
 
-describe("scan blob metadata helpers", () => {
-  const baseMetadata: ScanMetadata = {
-    scanId: "scan-123",
-    ownerId: "user-123",
-    displayName: "Receipt.jpg",
-    documentKind: ScanDocumentKind.RECEIPT,
-    documentRole: ScanDocumentRole.PRIMARY,
-    status: ScanMetadataStatus.READY,
-    uploadedAt: new Date("2026-06-03T20:00:00.000Z"),
-    uploadedBy: "user-123",
-  };
-
-  it("writes required metadata fields as strings", () => {
-    const result = writeBlobMetadata(baseMetadata);
-
-    expect(result).toEqual({
-      scanId: "scan-123",
-      ownerId: "user-123",
-      displayName: "Receipt.jpg",
-      documentKind: "receipt",
-      documentRole: "primary",
-      status: "ready",
-      uploadedAt: "2026-06-03T20:00:00.000Z",
-      uploadedBy: "user-123",
-    });
-  });
-
-  it("omits undefined optional metadata fields", () => {
-    const {displayName: _displayName, ...metadataWithoutDisplayName} = baseMetadata;
-
-    expect(writeBlobMetadata(metadataWithoutDisplayName)).not.toHaveProperty("displayName");
-  });
-
-  it("parses required metadata fields and optional display name", () => {
-    const result = readBlobMetadata({
-      scanId: "scan-123",
-      ownerId: "user-123",
-      displayName: "Receipt.jpg",
-      documentKind: "receipt",
-      documentRole: "primary",
-      status: "ready",
-      uploadedAt: "2026-06-03T20:00:00.000Z",
-      uploadedBy: "user-123",
-    });
-
-    expect(result).toEqual(baseMetadata);
-  });
-
-  it("does not require displayName when parsing metadata", () => {
-    const result = readBlobMetadata({
-      scanId: "scan-123",
-      ownerId: "user-123",
-      documentKind: "receipt",
-      documentRole: "primary",
-      status: "ready",
-      uploadedAt: "2026-06-03T20:00:00.000Z",
-      uploadedBy: "user-123",
-    });
-
-    expect(result.displayName).toBeUndefined();
-  });
-
-  it("parses all optional lifecycle fields", () => {
-    const result = readBlobMetadata({
-      scanId: "scan-123",
-      ownerId: "user-123",
-      documentKind: "receipt",
-      documentRole: "primary",
-      status: "attached",
-      uploadedAt: "2026-06-03T20:00:00.000Z",
-      uploadedBy: "user-123",
-      lastModifiedAt: "2026-06-03T20:10:00.000Z",
-      lastModifiedBy: "user-456",
-      attachedAt: "2026-06-03T20:20:00.000Z",
-      attachedBy: "user-456",
-      attachedTo: "invoice-123",
-    });
-
-    expect(result.lastModifiedAt?.toISOString()).toBe("2026-06-03T20:10:00.000Z");
-    expect(result.attachedAt?.toISOString()).toBe("2026-06-03T20:20:00.000Z");
-    expect(result.attachedTo).toBe("invoice-123");
-  });
-
-  it("throws when a required metadata field is missing", () => {
-    expect(() =>
-      readBlobMetadata({
-        ownerId: "user-123",
-        documentKind: "receipt",
-        documentRole: "primary",
-        status: "ready",
-        uploadedAt: "2026-06-03T20:00:00.000Z",
-        uploadedBy: "user-123",
-      }),
-    ).toThrow("Missing required blob metadata: scanId");
-  });
-
-  it("throws when status is invalid", () => {
-    expect(() =>
-      readBlobMetadata({
-        scanId: "scan-123",
-        ownerId: "user-123",
-        documentKind: "receipt",
-        documentRole: "primary",
-        status: "processing",
-        uploadedAt: "2026-06-03T20:00:00.000Z",
-        uploadedBy: "user-123",
-      }),
-    ).toThrow("Invalid blob metadata status");
-  });
-
-  it("throws when a date is invalid", () => {
-    expect(() =>
-      readBlobMetadata({
-        scanId: "scan-123",
-        ownerId: "user-123",
-        documentKind: "receipt",
-        documentRole: "primary",
-        status: "ready",
-        uploadedAt: "not-a-date",
-        uploadedBy: "user-123",
-      }),
-    ).toThrow("Invalid blob metadata date: uploadedAt");
-  });
-
-  it("writes only the lifecycle fields present on the supplied metadata", () => {
-    const result = writeBlobMetadata({
-      ...baseMetadata,
-      status: ScanMetadataStatus.ATTACHED,
-      attachedAt: new Date("2026-06-03T23:00:00.000Z"),
-      attachedBy: "user-123",
-      attachedTo: "invoice-current",
-    });
-
-    expect(result["status"]).toBe("attached");
-    expect(result["attachedTo"]).toBe("invoice-current");
-    expect(result["detachedFrom"]).toBeUndefined();
-    expect(result["archivedAt"]).toBeUndefined();
-  });
-});
-
 describe("MIME and file extension helpers", () => {
   describe("normalizeMimeType", () => {
     it("should normalize MIME type with leading/trailing whitespace", () => {
@@ -981,4 +838,3 @@ describe("MIME and file extension helpers", () => {
     });
   });
 });
-

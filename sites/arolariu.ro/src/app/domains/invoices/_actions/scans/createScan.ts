@@ -65,10 +65,10 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {uploadBlobObject} from "@/lib/azure/storageClient";
-import {writeBlobMetadata} from "@/lib/utils.generic";
 import {convertBase64ToBlob, createErrorResult, type ServerActionResult} from "@/lib/utils.server";
 import {type Scan, ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, ScanStatus} from "@/types/scans";
 import {deriveBlobExtension, mimeTypeToScanType} from "../../_utils/mimeTypeUtilities";
+import {writeBlobMetadata} from "../../_utils/metadataUtilities";
 
 /**
  * Input parameters for uploading a standalone scan.

@@ -20,10 +20,10 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {listBlobObjects} from "@/lib/azure/storageClient";
-import {readBlobMetadata} from "@/lib/utils.generic";
 import {createErrorResult, type ServerActionResult} from "@/lib/utils.server";
 import {type Scan, ScanStatus} from "@/types/scans";
 import {mimeTypeToScanType} from "../../_utils/mimeTypeUtilities";
+import {readBlobMetadata} from "../../_utils/metadataUtilities";
 
 /**
  * Input parameters for fetching scans.

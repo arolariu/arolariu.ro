@@ -27,8 +27,8 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {deleteBlobObject, resolveBlobObjectByMetadata} from "@/lib/azure/storageClient";
-import {readBlobMetadata} from "@/lib/utils.generic";
 import {createErrorResult, type ServerActionResult} from "@/lib/utils.server";
+import {readBlobMetadata} from "../../_utils/metadataUtilities";
 
 /**
  * Input parameters for deleting a scan.
