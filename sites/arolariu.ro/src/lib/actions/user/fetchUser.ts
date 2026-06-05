@@ -5,22 +5,21 @@
 
 "use server";
 
-import {fetchApiJwtSecret} from "@/lib/config/configProxy";
-import {EMPTY_GUID, generateGuid} from "@/lib/utils.generic";
-import {createJwtToken} from "@/lib/utils.server";
-import type {UserInformation} from "@/types";
-import {auth, currentUser, type User} from "@clerk/nextjs/server";
+import { fetchApiJwtSecret } from "@/lib/config/configProxy";
+import { EMPTY_GUID, generateGuid } from "@/lib/utils.generic";
+import { createJwtToken } from "@/lib/utils.server";
+import type { UserInformation } from "@/types";
+import { auth, currentUser, type User } from "@clerk/nextjs/server";
 
 /**
  * Fetches the current user.
  * @returns A promise of the current user and authentication status.
  */
-export async function fetchAaaSUserFromAuthService(): Promise<{isAuthenticated: boolean; user: User | null}> {
-  "use server";
+export async function fetchAaaSUserFromAuthService(): Promise<{ isAuthenticated: boolean; user: User | null; }> {
   try {
     const user = await currentUser();
     const isAuthenticated = user !== null;
-    return {isAuthenticated, user} as const;
+    return { isAuthenticated, user } as const;
   } catch (error) {
     console.error(">>> Error fetching user from Auth Service:", error);
     throw error;
@@ -32,9 +31,8 @@ export async function fetchAaaSUserFromAuthService(): Promise<{isAuthenticated: 
  * @returns A promise of the user information including authentication status and user object.
  */
 export async function fetchBFFUserFromAuthService(): Promise<Readonly<UserInformation>> {
-  "use server";
   try {
-    const {isAuthenticated, userId} = await auth();
+    const { isAuthenticated, userId } = await auth();
     const jwtSecret = await fetchApiJwtSecret();
     if (!jwtSecret) throw new Error("API JWT secret is empty or unavailable — cannot issue token.");
 
