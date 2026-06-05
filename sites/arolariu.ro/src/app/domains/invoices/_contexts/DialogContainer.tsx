@@ -261,5 +261,6 @@ function DialogContainerImpl(): React.JSX.Element | null {
     }
   }, [type]);
 }
+DialogContainerImpl.displayName = "DialogContainer";
 
 export default memo(DialogContainerImpl);
