@@ -1,3 +1,5 @@
+"use server";
+
 /**
  * @fileoverview Barrel export for invoice metadata server actions.
  * @module app/domains/invoices/_actions/invoices/metadata
@@ -34,5 +36,5 @@
  * @see {@link deleteInvoiceMetadata} - Remove metadata keys from an invoice
  */
 
-export {addInvoiceMetadata} from "./addInvoiceMetadata";
-export {deleteInvoiceMetadata} from "./deleteInvoiceMetadata";
+export { addInvoiceMetadata } from "./addInvoiceMetadata";
+export { deleteInvoiceMetadata } from "./deleteInvoiceMetadata";

@@ -1,3 +1,5 @@
+"use server";
+
 /**
  * @fileoverview Central barrel export for all invoice-related server actions.
  * @module app/domains/invoices/_actions/invoices
@@ -54,19 +56,19 @@
  * @see {@link Product} - Invoice line item type
  */
 
-export {addInvoiceMetadata, deleteInvoiceMetadata} from "./metadata";
-export {addInvoiceProduct, deleteInvoiceProduct, updateInvoiceProduct} from "./products";
-export {attachScanToInvoice, detachScanFromInvoice} from "./scans";
+export { addInvoiceMetadata, deleteInvoiceMetadata } from "./metadata";
+export { addInvoiceProduct, deleteInvoiceProduct, updateInvoiceProduct } from "./products";
+export { attachScanToInvoice, detachScanFromInvoice } from "./scans";
 
 // #region Invoice server-side queries (fetch single/multiple)
-export {fetchInvoice} from "./fetchInvoice";
-export {fetchInvoices} from "./fetchInvoices";
+export { fetchInvoice } from "./fetchInvoice";
+export { fetchInvoices } from "./fetchInvoices";
 // #endregion
 
 // #region Invoice server-side mutations (add/update/delete)
-export {analyzeInvoice} from "./analyzeInvoice";
-export {createInvoice} from "./createInvoice";
-export {deleteInvoice} from "./deleteInvoice";
-export {patchInvoice} from "./patchInvoice";
-export {updateInvoice} from "./updateInvoice";
+export { analyzeInvoice } from "./analyzeInvoice";
+export { createInvoice } from "./createInvoice";
+export { deleteInvoice } from "./deleteInvoice";
+export { patchInvoice } from "./patchInvoice";
+export { updateInvoice } from "./updateInvoice";
 // #endregion

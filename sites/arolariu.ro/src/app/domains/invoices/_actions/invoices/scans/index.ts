@@ -1,3 +1,5 @@
+"use server";
+
 /**
  * @fileoverview Barrel export for invoice scan server actions.
  * @module app/domains/invoices/_actions/invoices/scans
@@ -48,5 +50,5 @@
  * @see {@link detachScanFromInvoice} - Remove scan references from invoices
  */
 
-export {attachScanToInvoice} from "./attachScanToInvoice";
-export {detachScanFromInvoice} from "./detachScanFromInvoice";
+export { attachScanToInvoice } from "./attachScanToInvoice";
+export { detachScanFromInvoice } from "./detachScanFromInvoice";

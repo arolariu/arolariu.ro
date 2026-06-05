@@ -1,3 +1,5 @@
+"use server";
+
 /**
  * @fileoverview Server actions for merchant data management in the invoices domain.
  * @module app/domains/invoices/_actions/merchants
@@ -61,6 +63,6 @@
  */
 
 // #region Merchant server-side queries (fetch single/multiple)
-export {fetchMerchant} from "./fetchMerchant";
-export {fetchMerchants} from "./fetchMerchants";
+export { fetchMerchant } from "./fetchMerchant";
+export { fetchMerchants } from "./fetchMerchants";
 // #endregion

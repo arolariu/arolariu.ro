@@ -1,3 +1,5 @@
+"use server";
+
 /**
  * @fileoverview Barrel export for standalone scan server actions.
  * @module app/domains/invoices/_actions/scans
@@ -24,8 +26,11 @@
  * @see {@link createScanUploadTarget} - Prepares direct upload with metadata.
  */
 
-export {createScan} from "./createScan";
-export {createScanUploadTarget} from "./createScanUploadTarget";
-export {deleteScan} from "./deleteScan";
-export {fetchScans} from "./fetchScans";
-export {updateScan} from "./updateScan";
+export { createScanUploadTarget } from "./createScanUploadTarget";
+
+// #region CRUD operations for standalone scans (not yet attached to invoices)
+export { createScan } from "./createScan";
+export { deleteScan } from "./deleteScan";
+export { fetchScans } from "./fetchScans";
+export { updateScan } from "./updateScan";
+// #endregion
