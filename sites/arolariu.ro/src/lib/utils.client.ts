@@ -9,7 +9,7 @@
 // eslint-disable-next-line n/no-extraneous-import -- client-only is a Next.js build-time marker, not a runtime import
 import "client-only";
 
-import type {BrowserInformation} from "@/types";
+import type { BrowserInformation } from "@/types";
 
 /**
  * Extracts a Base64-encoded string from a Blob object.
@@ -25,7 +25,7 @@ export async function extractBase64FromBlob(blob: Blob): Promise<string> {
         const base64 = reader.result as string;
         resolve(base64);
       },
-      {once: true},
+      { once: true },
     ); // Add { once: true } to remove the event listener after it is triggered
     reader.readAsDataURL(blob);
   });
@@ -48,7 +48,7 @@ export function isBrowserStorageAvailable(type: "localStorage" | "sessionStorage
     storage.setItem(x, x);
     storage.removeItem(x);
     return true;
-  } catch (error) {
+  } catch (error: unknown) {
     return (
       error instanceof DOMException
       && error.name === "QuotaExceededError"
@@ -64,7 +64,7 @@ export function isBrowserStorageAvailable(type: "localStorage" | "sessionStorage
  * @returns The user's browser navigation information.
  */
 export function retrieveNavigatorInformation(): Readonly<BrowserInformation["navigationInformation"]> {
-  const {userAgent, language, languages, cookieEnabled, doNotTrack, hardwareConcurrency, maxTouchPoints} = globalThis.navigator;
+  const { userAgent, language, languages, cookieEnabled, doNotTrack, hardwareConcurrency, maxTouchPoints } = globalThis.navigator;
   return {
     userAgent,
     language,
@@ -81,7 +81,7 @@ export function retrieveNavigatorInformation(): Readonly<BrowserInformation["nav
  * @returns The user's browser screen information.
  */
 export function retrieveScreenInformation(): Readonly<BrowserInformation["screenInformation"]> {
-  const {width, height, availWidth, availHeight, colorDepth, pixelDepth} = globalThis.screen;
+  const { width, height, availWidth, availHeight, colorDepth, pixelDepth } = globalThis.screen;
   return {
     width,
     height,
