@@ -1,5 +1,8 @@
 import type {Invoice} from "@/types/invoices";
 import {act, renderHook} from "@testing-library/react";
+import {readFileSync} from "node:fs";
+import {dirname, join} from "node:path";
+import {fileURLToPath} from "node:url";
 import type {ReactNode} from "react";
 import {describe, expect, test, vi} from "vitest";
 import {DialogProvider, useDialog, useDialogs} from "./DialogContext";
@@ -7,6 +10,13 @@ import {DialogProvider, useDialog, useDialogs} from "./DialogContext";
 // Wrapper component to provide context for the hooks
 const wrapper = ({children}: {children: ReactNode}) => <DialogProvider>{children}</DialogProvider>;
 const mockInvoice = {id: "invoice-1"} as Invoice;
+
+test("keeps dialog implementation types private to the dialog context module", () => {
+  const testDirectory = dirname(fileURLToPath(import.meta.url));
+  const dialogContextSource = readFileSync(join(testDirectory, "DialogContext.tsx"), "utf8");
+
+  expect(dialogContextSource).not.toMatch(/\bexport\s+type\s+Dialog(?:Type|Mode|Payloads)\b/u);
+});
 
 describe("DialogProvider", () => {
   test("should provide the current dialog state", () => {
