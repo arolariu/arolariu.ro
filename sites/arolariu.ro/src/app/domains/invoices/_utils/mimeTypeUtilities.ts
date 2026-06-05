@@ -35,6 +35,13 @@
  * ```
  */
 
+import {
+	deriveBlobExtension as deriveGenericBlobExtension,
+	extractFileExtension as extractGenericFileExtension,
+	getCanonicalMimeTypeForExtension,
+	isExtensionInSet,
+	normalizeMimeTypeWithAliases,
+} from "@/lib/utils.generic";
 import type {InvoiceScanType} from "@/types/invoices";
 import type {ScanType} from "@/types/scans";
 import {InvoiceScanType as InvoiceScanTypeEnum} from "@/types/invoices";
@@ -228,7 +235,7 @@ const SCAN_TYPE_TO_INVOICE_SCAN_TYPE: Readonly<Record<string, InvoiceScanType>> 
 };
 
 /**
- * Normalizes a MIME type string to canonical form.
+ * Normalizes a MIME type string to canonical form for invoice scans.
  *
  * @param mimeType - The MIME type to normalize (may contain whitespace, aliases, mixed case)
  * @returns The canonical MIME type if supported, otherwise `null`
@@ -255,14 +262,7 @@ const SCAN_TYPE_TO_INVOICE_SCAN_TYPE: Readonly<Record<string, InvoiceScanType>> 
  * ```
  */
 export function normalizeScanMimeType(mimeType: string): string | null {
-	const trimmed = mimeType.trim().toLowerCase();
-	if (!trimmed) return null;
-
-	// Apply alias mapping if exists
-	const normalized = MIME_TYPE_ALIASES[trimmed] ?? trimmed;
-
-	// Verify it's a supported MIME type
-	return _ACCEPTED_SCAN_MIME_TYPES_SET.has(normalized) ? normalized : null;
+	return normalizeMimeTypeWithAliases(mimeType, MIME_TYPE_ALIASES, _ACCEPTED_SCAN_MIME_TYPES_SET);
 }
 
 /**
@@ -292,11 +292,7 @@ export function normalizeScanMimeType(mimeType: string): string | null {
  * ```
  */
 export function extractFileExtension(fileName: string): string | null {
-	const lastDotIndex = fileName.lastIndexOf(".");
-	if (lastDotIndex === -1) return null;
-
-	const extension = fileName.slice(lastDotIndex + 1).toLowerCase();
-	return extension.length > 0 ? extension : null;
+	return extractGenericFileExtension(fileName);
 }
 
 /**
@@ -321,7 +317,7 @@ export function extractFileExtension(fileName: string): string | null {
  * ```
  */
 export function deriveBlobExtension(fileName: string): string {
-	return extractFileExtension(fileName) ?? "bin";
+	return deriveGenericBlobExtension(fileName);
 }
 
 /**
@@ -442,10 +438,7 @@ export function scanTypeToInvoiceScanType(scanType: ScanType): InvoiceScanType {
  * ```
  */
 export function getMimeTypeForExtension(extension: string): string | null {
-	// Strip leading dot if present and normalize to lowercase
-	const normalized = extension.startsWith(".") ? extension.slice(1).toLowerCase() : extension.toLowerCase();
-
-	return EXTENSION_TO_MIME[normalized] ?? null;
+	return getCanonicalMimeTypeForExtension(extension, EXTENSION_TO_MIME);
 }
 
 /**
@@ -495,8 +488,5 @@ export function isSupportedScanMimeType(mimeType: string): boolean {
  * ```
  */
 export function isSupportedScanExtension(extension: string): boolean {
-	// Strip leading dot if present and normalize to lowercase
-	const normalized = extension.startsWith(".") ? extension.slice(1).toLowerCase() : extension.toLowerCase();
-
-	return _ACCEPTED_SCAN_FILE_EXTENSIONS_SET.has(normalized);
+	return isExtensionInSet(extension, _ACCEPTED_SCAN_FILE_EXTENSIONS_SET);
 }
