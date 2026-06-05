@@ -41,10 +41,10 @@ import {InvoiceScanType as InvoiceScanTypeEnum} from "@/types/invoices";
 import {ScanType as ScanTypeEnum} from "@/types/scans";
 
 /**
- * Set of accepted MIME types for invoice scans in canonical form.
+ * Immutable array of accepted MIME types for invoice scans in canonical form.
  *
  * @remarks
- * This set contains only the canonical MIME type representations.
+ * This array contains only the canonical MIME type representations.
  * Aliases (e.g., image/jpg, image/pjpeg) are normalized to canonical
  * forms via {@link normalizeScanMimeType} before checking support.
  *
@@ -59,12 +59,12 @@ import {ScanType as ScanTypeEnum} from "@/types/scans";
  *
  * @example
  * ```typescript
- * if (ACCEPTED_SCAN_MIME_TYPES.has(normalizedMimeType)) {
+ * if (ACCEPTED_SCAN_MIME_TYPES.includes(normalizedMimeType)) {
  *   // Process supported format
  * }
  * ```
  */
-export const ACCEPTED_SCAN_MIME_TYPES = new Set<string>([
+export const ACCEPTED_SCAN_MIME_TYPES = [
 	"image/jpeg",
 	"image/png",
 	"image/bmp",
@@ -72,10 +72,10 @@ export const ACCEPTED_SCAN_MIME_TYPES = new Set<string>([
 	"image/heif",
 	"image/heic",
 	"application/pdf",
-]);
+] as const;
 
 /**
- * Set of accepted file extensions for invoice scans.
+ * Immutable array of accepted file extensions for invoice scans.
  *
  * @remarks
  * Extensions are stored in lowercase without leading dots.
@@ -94,12 +94,12 @@ export const ACCEPTED_SCAN_MIME_TYPES = new Set<string>([
  * @example
  * ```typescript
  * const ext = extractFileExtension(filename);
- * if (ext && ACCEPTED_SCAN_FILE_EXTENSIONS.has(ext)) {
+ * if (ext && ACCEPTED_SCAN_FILE_EXTENSIONS.includes(ext)) {
  *   // Valid scan file
  * }
  * ```
  */
-export const ACCEPTED_SCAN_FILE_EXTENSIONS = new Set<string>([
+export const ACCEPTED_SCAN_FILE_EXTENSIONS = [
 	"jpg",
 	"jpeg",
 	"png",
@@ -109,7 +109,19 @@ export const ACCEPTED_SCAN_FILE_EXTENSIONS = new Set<string>([
 	"heif",
 	"heic",
 	"pdf",
-]);
+] as const;
+
+/**
+ * Internal Set for efficient MIME type lookups.
+ * @internal
+ */
+const _ACCEPTED_SCAN_MIME_TYPES_SET = new Set<string>(ACCEPTED_SCAN_MIME_TYPES);
+
+/**
+ * Internal Set for efficient extension lookups.
+ * @internal
+ */
+const _ACCEPTED_SCAN_FILE_EXTENSIONS_SET = new Set<string>(ACCEPTED_SCAN_FILE_EXTENSIONS);
 
 /**
  * MIME type alias mappings to canonical forms.
@@ -250,7 +262,7 @@ export function normalizeScanMimeType(mimeType: string): string | null {
 	const normalized = MIME_TYPE_ALIASES[trimmed] ?? trimmed;
 
 	// Verify it's a supported MIME type
-	return ACCEPTED_SCAN_MIME_TYPES.has(normalized) ? normalized : null;
+	return _ACCEPTED_SCAN_MIME_TYPES_SET.has(normalized) ? normalized : null;
 }
 
 /**
@@ -486,5 +498,5 @@ export function isSupportedScanExtension(extension: string): boolean {
 	// Strip leading dot if present and normalize to lowercase
 	const normalized = extension.startsWith(".") ? extension.slice(1).toLowerCase() : extension.toLowerCase();
 
-	return ACCEPTED_SCAN_FILE_EXTENSIONS.has(normalized);
+	return _ACCEPTED_SCAN_FILE_EXTENSIONS_SET.has(normalized);
 }

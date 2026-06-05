@@ -63,77 +63,97 @@ describe("mimeTypeUtilities", () => {
 
 	describe("ACCEPTED_SCAN_MIME_TYPES", () => {
 		it("should include canonical forms for JPEG", () => {
-			expect(ACCEPTED_SCAN_MIME_TYPES.has("image/jpeg")).toBe(true);
+			expect(ACCEPTED_SCAN_MIME_TYPES).toContain("image/jpeg");
 		});
 
 		it("should include canonical forms for PNG", () => {
-			expect(ACCEPTED_SCAN_MIME_TYPES.has("image/png")).toBe(true);
+			expect(ACCEPTED_SCAN_MIME_TYPES).toContain("image/png");
 		});
 
 		it("should include canonical forms for BMP", () => {
-			expect(ACCEPTED_SCAN_MIME_TYPES.has("image/bmp")).toBe(true);
+			expect(ACCEPTED_SCAN_MIME_TYPES).toContain("image/bmp");
 		});
 
 		it("should include canonical forms for TIFF", () => {
-			expect(ACCEPTED_SCAN_MIME_TYPES.has("image/tiff")).toBe(true);
+			expect(ACCEPTED_SCAN_MIME_TYPES).toContain("image/tiff");
 		});
 
 		it("should include canonical forms for HEIF", () => {
-			expect(ACCEPTED_SCAN_MIME_TYPES.has("image/heif")).toBe(true);
+			expect(ACCEPTED_SCAN_MIME_TYPES).toContain("image/heif");
 		});
 
 		it("should include canonical forms for HEIC", () => {
-			expect(ACCEPTED_SCAN_MIME_TYPES.has("image/heic")).toBe(true);
+			expect(ACCEPTED_SCAN_MIME_TYPES).toContain("image/heic");
 		});
 
 		it("should include canonical forms for PDF", () => {
-			expect(ACCEPTED_SCAN_MIME_TYPES.has("application/pdf")).toBe(true);
+			expect(ACCEPTED_SCAN_MIME_TYPES).toContain("application/pdf");
 		});
 
 		it("should have exactly 7 supported MIME types", () => {
-			expect(ACCEPTED_SCAN_MIME_TYPES.size).toBe(7);
+			expect(ACCEPTED_SCAN_MIME_TYPES.length).toBe(7);
+		});
+
+		it("should not expose Set mutating methods", () => {
+			expect("add" in ACCEPTED_SCAN_MIME_TYPES).toBe(false);
+			expect("delete" in ACCEPTED_SCAN_MIME_TYPES).toBe(false);
+			expect("clear" in ACCEPTED_SCAN_MIME_TYPES).toBe(false);
+		});
+
+		it("should be a readonly array", () => {
+			expect(Array.isArray(ACCEPTED_SCAN_MIME_TYPES)).toBe(true);
 		});
 	});
 
 	describe("ACCEPTED_SCAN_FILE_EXTENSIONS", () => {
 		it("should include jpg extension", () => {
-			expect(ACCEPTED_SCAN_FILE_EXTENSIONS.has("jpg")).toBe(true);
+			expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toContain("jpg");
 		});
 
 		it("should include jpeg extension", () => {
-			expect(ACCEPTED_SCAN_FILE_EXTENSIONS.has("jpeg")).toBe(true);
+			expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toContain("jpeg");
 		});
 
 		it("should include png extension", () => {
-			expect(ACCEPTED_SCAN_FILE_EXTENSIONS.has("png")).toBe(true);
+			expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toContain("png");
 		});
 
 		it("should include bmp extension", () => {
-			expect(ACCEPTED_SCAN_FILE_EXTENSIONS.has("bmp")).toBe(true);
+			expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toContain("bmp");
 		});
 
 		it("should include tif extension", () => {
-			expect(ACCEPTED_SCAN_FILE_EXTENSIONS.has("tif")).toBe(true);
+			expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toContain("tif");
 		});
 
 		it("should include tiff extension", () => {
-			expect(ACCEPTED_SCAN_FILE_EXTENSIONS.has("tiff")).toBe(true);
+			expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toContain("tiff");
 		});
 
 		it("should include heif extension", () => {
-			expect(ACCEPTED_SCAN_FILE_EXTENSIONS.has("heif")).toBe(true);
+			expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toContain("heif");
 		});
 
 		it("should include heic extension", () => {
-			expect(ACCEPTED_SCAN_FILE_EXTENSIONS.has("heic")).toBe(true);
+			expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toContain("heic");
 		});
 
 		it("should include pdf extension", () => {
-			expect(ACCEPTED_SCAN_FILE_EXTENSIONS.has("pdf")).toBe(true);
+			expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toContain("pdf");
 		});
 
 		it("should have exactly 9 supported extensions", () => {
-			expect(ACCEPTED_SCAN_FILE_EXTENSIONS.size).toBe(9);
+			expect(ACCEPTED_SCAN_FILE_EXTENSIONS.length).toBe(9);
+		});
+
+		it("should not expose Set mutating methods", () => {
+			expect("add" in ACCEPTED_SCAN_FILE_EXTENSIONS).toBe(false);
+			expect("delete" in ACCEPTED_SCAN_FILE_EXTENSIONS).toBe(false);
+			expect("clear" in ACCEPTED_SCAN_FILE_EXTENSIONS).toBe(false);
+		});
+
+		it("should be a readonly array", () => {
+			expect(Array.isArray(ACCEPTED_SCAN_FILE_EXTENSIONS)).toBe(true);
 		});
 	});
 
