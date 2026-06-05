@@ -39,11 +39,11 @@ import {useDialogs} from "../_contexts/DialogContext";
 import {useScanRename, useScanRotation} from "../_hooks/scan";
 import styles from "./ScanCard.module.scss";
 
-type ScanCardProps = {
+type Props = Readonly<{
   scan: CachedScan;
   isSelected: boolean;
   onToggleSelect: () => void;
-};
+}>;
 
 /**
  * Formats file size in human-readable format.
@@ -57,7 +57,7 @@ function formatFileSize(bytes: number): string {
 /**
  * Individual scan card with selection checkbox, inline rename, and preview.
  */
-export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<ScanCardProps>): React.JSX.Element {
+export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations();
   const {openDialog} = useDialogs();
 
