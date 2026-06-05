@@ -10,7 +10,10 @@ import {
   ScanMetadataStatus,
   type ScanMetadata,
 } from "@/types/scans";
-import {v4, v5} from "uuid";
+import { v4, v5 } from "uuid";
+
+
+// #region Environment-Derived Constants
 
 /* v8 ignore start - Environment variables evaluated at module load time cannot be unit tested */
 
@@ -18,7 +21,7 @@ import {v4, v5} from "uuid";
  * The environment in which the site is running.
  *
  * @remarks
- * **Source**: `process.env.SITE_ENV`
+ * **Source**: `process.env.SITE_ENV` environment variable injected at build time.
  *
  * **Usage**: Used to determine feature flags, logging levels, and API endpoints.
  *
@@ -30,7 +33,7 @@ export const SITE_ENV = process.env["SITE_ENV"] ?? "";
  * The base URL of the site.
  *
  * @remarks
- * **Source**: `process.env.SITE_URL`
+ * **Source**: `process.env.SITE_URL` environment variable injected at build time.
  *
  * **Usage**: Used for generating absolute URLs for SEO, OpenGraph, and redirects.
  *
@@ -42,7 +45,7 @@ export const SITE_URL = process.env["SITE_URL"] ?? "";
  * The name of the site.
  *
  * @remarks
- * **Source**: `process.env.SITE_NAME`
+ * **Source**: `process.env.SITE_NAME` environment variable injected at build time.
  *
  * **Usage**: Used for page titles, metadata, and branding.
  *
@@ -54,7 +57,7 @@ export const SITE_NAME = process.env["SITE_NAME"] ?? "";
  * The commit SHA of the current build.
  *
  * @remarks
- * **Source**: `process.env.COMMIT_SHA`
+ * **Source**: `process.env.COMMIT_SHA` environment variable injected at build time from CI/CD pipeline.
  *
  * **Usage**: Used for Sentry releases, telemetry, and debugging version issues.
  *
@@ -66,7 +69,7 @@ export const COMMIT_SHA = process.env["COMMIT_SHA"] ?? "";
  * The timestamp of the current build.
  *
  * @remarks
- * **Source**: `process.env.TIMESTAMP`
+ * **Source**: `process.env.TIMESTAMP` environment variable injected at build time from CI/CD pipeline, typically as an ISO 8601 string.
  *
  * **Usage**: Displayed in the footer or debug info to indicate build age.
  *
@@ -76,9 +79,11 @@ export const TIMESTAMP = process.env["TIMESTAMP"] ?? "";
 
 /* v8 ignore stop */
 
-// ============================================================================
-// Sharing Constants
-// ============================================================================
+
+// #endregion
+
+
+// #region Sentinel GUIDs and GUID Validation
 
 /**
  * The maximum possible GUID value (all 9s).
@@ -205,6 +210,11 @@ export function generateGuid(seed?: string | Uint8Array): Readonly<string> {
     return guid;
   }
 }
+
+// #endregion
+
+
+// #region Scan Metadata blob serialization and deserialization
 
 /**
  * Serializes typed scan metadata into provider-neutral blob metadata.
@@ -370,25 +380,30 @@ export function readBlobMetadata(metadata: Readonly<Record<string, string | unde
   return {
     scanId,
     ownerId,
-    ...(metadata[ScanMetadataKey.DISPLAY_NAME] ? {displayName: metadata[ScanMetadataKey.DISPLAY_NAME]} : {}),
-    ...(metadata[ScanMetadataKey.COLLECTION_NAME] ? {collectionName: metadata[ScanMetadataKey.COLLECTION_NAME]} : {}),
+    ...(metadata[ScanMetadataKey.DISPLAY_NAME] ? { displayName: metadata[ScanMetadataKey.DISPLAY_NAME] } : {}),
+    ...(metadata[ScanMetadataKey.COLLECTION_NAME] ? { collectionName: metadata[ScanMetadataKey.COLLECTION_NAME] } : {}),
     documentKind,
     documentRole,
     status,
     uploadedAt,
     uploadedBy,
-    ...(lastModifiedAt ? {lastModifiedAt} : {}),
-    ...(metadata[ScanMetadataKey.LAST_MODIFIED_BY] ? {lastModifiedBy: metadata[ScanMetadataKey.LAST_MODIFIED_BY]} : {}),
-    ...(attachedAt ? {attachedAt} : {}),
-    ...(metadata[ScanMetadataKey.ATTACHED_BY] ? {attachedBy: metadata[ScanMetadataKey.ATTACHED_BY]} : {}),
-    ...(metadata[ScanMetadataKey.ATTACHED_TO] ? {attachedTo: metadata[ScanMetadataKey.ATTACHED_TO]} : {}),
-    ...(detachedAt ? {detachedAt} : {}),
-    ...(metadata[ScanMetadataKey.DETACHED_BY] ? {detachedBy: metadata[ScanMetadataKey.DETACHED_BY]} : {}),
-    ...(metadata[ScanMetadataKey.DETACHED_FROM] ? {detachedFrom: metadata[ScanMetadataKey.DETACHED_FROM]} : {}),
-    ...(archivedAt ? {archivedAt} : {}),
-    ...(metadata[ScanMetadataKey.ARCHIVED_BY] ? {archivedBy: metadata[ScanMetadataKey.ARCHIVED_BY]} : {}),
+    ...(lastModifiedAt ? { lastModifiedAt } : {}),
+    ...(metadata[ScanMetadataKey.LAST_MODIFIED_BY] ? { lastModifiedBy: metadata[ScanMetadataKey.LAST_MODIFIED_BY] } : {}),
+    ...(attachedAt ? { attachedAt } : {}),
+    ...(metadata[ScanMetadataKey.ATTACHED_BY] ? { attachedBy: metadata[ScanMetadataKey.ATTACHED_BY] } : {}),
+    ...(metadata[ScanMetadataKey.ATTACHED_TO] ? { attachedTo: metadata[ScanMetadataKey.ATTACHED_TO] } : {}),
+    ...(detachedAt ? { detachedAt } : {}),
+    ...(metadata[ScanMetadataKey.DETACHED_BY] ? { detachedBy: metadata[ScanMetadataKey.DETACHED_BY] } : {}),
+    ...(metadata[ScanMetadataKey.DETACHED_FROM] ? { detachedFrom: metadata[ScanMetadataKey.DETACHED_FROM] } : {}),
+    ...(archivedAt ? { archivedAt } : {}),
+    ...(metadata[ScanMetadataKey.ARCHIVED_BY] ? { archivedBy: metadata[ScanMetadataKey.ARCHIVED_BY] } : {}),
   };
 }
+
+// #endregion
+
+
+// #region Format Conversion Utilities (dates, enums, amounts, etc.)
 
 /**
  * Configuration options for currency formatting.
@@ -441,8 +456,6 @@ export function formatCurrency(possibleAmount: number, options: FormatCurrencyOp
   const value = new Intl.NumberFormat(options.locale, formatOptions).format(possibleAmount);
   return value;
 }
-
-// #region Date & Number Utilities (Phase 9 — centralized formatting)
 
 /**
  * Safely converts any date-like value to a Date object.
@@ -515,7 +528,7 @@ export function formatDate(possibleDate: string | Date | null | undefined, optio
   // because Intl.DateTimeFormat throws if dateStyle is mixed with individual fields.
   const hasIndividualFields = options.year ?? options.month ?? options.day ?? options.weekday ?? options.era;
   const formatOptions: Intl.DateTimeFormatOptions = {
-    ...(hasIndividualFields ? {} : {dateStyle: "short" as const}),
+    ...(hasIndividualFields ? {} : { dateStyle: "short" as const }),
     ...options,
   };
 
@@ -680,9 +693,8 @@ export function formatRelativeTime(date: Date | string | null | undefined): stri
 
 // #endregion
 
-// ============================================================================
-// MIME Type and File Extension Utilities
-// ============================================================================
+
+// #region MIME Type and File Extension Utilities
 
 /**
  * Helper function to check if a value exists in a collection (array or set).
