@@ -1,5 +1,3 @@
-"use server";
-
 /**
  * @fileoverview Server actions for merchant data management in the invoices domain.
  * @module app/domains/invoices/_actions/merchants

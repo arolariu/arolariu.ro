@@ -1,5 +1,3 @@
-"use server";
-
 /**
  * @fileoverview Central barrel export for all invoice-related server actions.
  * @module app/domains/invoices/_actions/invoices

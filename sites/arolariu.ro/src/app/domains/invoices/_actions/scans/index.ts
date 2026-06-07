@@ -1,5 +1,3 @@
-"use server";
-
 /**
  * @fileoverview Barrel export for standalone scan server actions.
  * @module app/domains/invoices/_actions/scans
