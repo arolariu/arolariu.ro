@@ -13,6 +13,7 @@ import {
   formatDate,
   formatDateTime,
   formatEnum,
+  formatFileSize,
   formatRelativeTime,
   generateGuid,
   getCanonicalMimeTypeForExtension,
@@ -269,6 +270,30 @@ describe("formatAmount", () => {
 
   it("should handle negative numbers", () => {
     expect(formatAmount(-42.1)).toContain("42.10");
+  });
+});
+
+describe("formatFileSize", () => {
+  it("formats byte values below one kilobyte", () => {
+    expect(formatFileSize(0)).toBe("0 B");
+    expect(formatFileSize(512)).toBe("512 B");
+    expect(formatFileSize(1023)).toBe("1023 B");
+  });
+
+  it("formats kilobyte values with one decimal place", () => {
+    expect(formatFileSize(1024)).toBe("1.0 KB");
+    expect(formatFileSize(1536)).toBe("1.5 KB");
+  });
+
+  it("formats megabyte values with one decimal place", () => {
+    expect(formatFileSize(1024 * 1024)).toBe("1.0 MB");
+    expect(formatFileSize(2.5 * 1024 * 1024)).toBe("2.5 MB");
+  });
+
+  it("normalizes invalid or negative byte counts to zero bytes", () => {
+    expect(formatFileSize(-1)).toBe("0 B");
+    expect(formatFileSize(Number.NaN)).toBe("0 B");
+    expect(formatFileSize(Number.POSITIVE_INFINITY)).toBe("0 B");
   });
 });
 

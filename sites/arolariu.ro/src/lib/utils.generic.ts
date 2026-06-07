@@ -414,6 +414,29 @@ export function formatAmount(amount: number, locale = "en-US", decimals = 2): st
 }
 
 /**
+ * Formats a byte count as a human-readable file size.
+ *
+ * @remarks
+ * Keeps scan, upload, and document size displays consistent across client and server code.
+ *
+ * @param bytes - The number of bytes to format.
+ * @returns A formatted size using B, KB, or MB units.
+ *
+ * @example
+ * ```typescript
+ * formatFileSize(512);          // "512 B"
+ * formatFileSize(1536);         // "1.5 KB"
+ * formatFileSize(1048576);      // "1.0 MB"
+ * ```
+ */
+export function formatFileSize(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) return "0 B";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${formatAmount(bytes / 1024, "en-US", 1)} KB`;
+  return `${formatAmount(bytes / (1024 * 1024), "en-US", 1)} MB`;
+}
+
+/**
  * Formats a date with both date and time components.
  *
  * @remarks
