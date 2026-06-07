@@ -51,6 +51,10 @@ describe("invoice label utilities", () => {
       expect(getInvoiceCategoryLabel(InvoiceCategory.NOT_DEFINED, {notDefinedLabel: "Uncategorized"})).toBe("Uncategorized");
       expect(getInvoiceCategoryLabel(42, {unknownLabel: "Unknown"})).toBe("Unknown");
     });
+
+    it("supports context-specific invoice label overrides", () => {
+      expect(getInvoiceCategoryLabel(InvoiceCategory.FAST_FOOD, {labels: {[InvoiceCategory.FAST_FOOD]: "Dining"}})).toBe("Dining");
+    });
   });
 
   describe("getPaymentTypeLabel", () => {

@@ -6,6 +6,7 @@
 import {InvoiceCategory, PaymentType, ProductCategory} from "@/types/invoices";
 
 type LabelFallbackOptions = Readonly<{
+  labels?: Readonly<Record<number, string>>;
   notDefinedLabel?: string;
   unknownLabel?: string;
 }>;
@@ -54,6 +55,7 @@ const PAYMENT_TYPE_LABELS: Readonly<Record<number, string>> = {
  */
 export function getProductCategoryLabel(category: number, options: LabelFallbackOptions = {}): string {
   if (category === ProductCategory.NOT_DEFINED) return options.notDefinedLabel ?? "Uncategorized";
+  if (options.labels?.[category]) return options.labels[category];
   return PRODUCT_CATEGORY_LABELS[category] ?? options.unknownLabel ?? "Unknown";
 }
 
@@ -66,6 +68,7 @@ export function getProductCategoryLabel(category: number, options: LabelFallback
  */
 export function getInvoiceCategoryLabel(category: number, options: LabelFallbackOptions = {}): string {
   if (category === InvoiceCategory.NOT_DEFINED) return options.notDefinedLabel ?? "Not Defined";
+  if (options.labels?.[category]) return options.labels[category];
   return INVOICE_CATEGORY_LABELS[category] ?? options.unknownLabel ?? "Not Defined";
 }
 

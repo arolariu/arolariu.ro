@@ -41,6 +41,9 @@
 import {formatDate, toSafeDate} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
 import {getTransactionYear, toRON} from "../../../../../lib/currency";
+import {getProductCategoryLabel} from "../../_utils/labelUtilities";
+
+export {getProductCategoryLabel};
 
 /**
  * Empty GUID constant used to filter invalid merchant references.
@@ -1428,28 +1431,6 @@ export type AllergenFrequency = {
  * const label2 = getProductCategoryLabel(400); // "Meat"
  * ```
  */
-export function getProductCategoryLabel(categoryId: number): string {
-  const labels: Record<number, string> = {
-    0: "Uncategorized",
-    100: "Baked Goods",
-    200: "Groceries",
-    300: "Dairy",
-    400: "Meat",
-    500: "Fish",
-    600: "Fruits",
-    700: "Vegetables",
-    800: "Beverages",
-    900: "Alcoholic Beverages",
-    1000: "Tobacco",
-    1100: "Cleaning Supplies",
-    1200: "Personal Care",
-    1300: "Medicine",
-    9999: "Other",
-  };
-
-  return labels[categoryId] ?? "Unknown";
-}
-
 /**
  * Computes spending aggregates by product category.
  *
