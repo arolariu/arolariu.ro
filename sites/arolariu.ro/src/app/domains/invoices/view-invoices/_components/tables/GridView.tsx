@@ -45,7 +45,6 @@ type Props = Readonly<{
 export const GridView = (props: Readonly<Props>): React.JSX.Element => {
   const {invoices, pageSize, currentPage, totalPages, handlePrevPage, handleNextPage, handlePageSizeChange} = props;
   const locale = useLocale();
-  const tTableView = useTranslations();
   const t = useTranslations();
   const selectedInvoices = useInvoicesStore((state) => state.selectedEntities);
   const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedEntities);
@@ -73,14 +72,15 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
     [invoices, selectedInvoices, setSelectedInvoices],
   );
 
+  // Early return with empty state when no invoices are present, to avoid rendering the grid structure.
   if (invoices.length === 0) {
     return (
       <EmptyState
         icon={<TbReceipt className={styles["emptyIcon"]} />}
-        title={tTableView((m) => m.pages.invoices.viewInvoices.tableView.empty.title)}
-        description={tTableView((m) => m.pages.invoices.viewInvoices.tableView.empty.description)}
+        title={t((m) => m.pages.invoices.viewInvoices.tableView.empty.title)}
+        description={t((m) => m.pages.invoices.viewInvoices.tableView.empty.description)}
         primaryAction={{
-          label: tTableView((m) => m.pages.invoices.viewInvoices.tableView.empty.uploadCta),
+          label: t((m) => m.pages.invoices.viewInvoices.tableView.empty.uploadCta),
           href: "/domains/invoices/upload-scans",
         }}
       />
@@ -105,7 +105,7 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
                 checked={selectedInvoices.includes(invoice)}
                 // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
                 onCheckedChange={() => handleSelectInvoice(invoice.id)}
-                aria-label={tTableView((m) => m.pages.invoices.viewInvoices.tableView.aria.selectInvoice, {name: invoice.name})}
+                aria-label={t((m) => m.pages.invoices.viewInvoices.tableView.aria.selectInvoice, {name: invoice.name})}
                 className={styles["frostedCheckbox"]}
               />
             </div>
@@ -185,14 +185,14 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
       {totalPages > 1 && (
         <div className={styles["paginationControls"]}>
           <div className={styles["pageSizeSelector"]}>
-            <span className={styles["pageSizeLabel"]}>{tTableView((m) => m.pages.invoices.viewInvoices.tableView.rowsPerPage)}</span>
+            <span className={styles["pageSizeLabel"]}>{t((m) => m.pages.invoices.viewInvoices.tableView.rowsPerPage)}</span>
             <Select
               value={String(pageSize)}
               // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
               onValueChange={(value) => handlePageSizeChange(Number(value))}>
               <SelectTrigger
                 className={styles["pageSizeTrigger"]}
-                aria-label={tTableView((m) => m.pages.invoices.viewInvoices.tableView.aria.rowsPerPage)}>
+                aria-label={t((m) => m.pages.invoices.viewInvoices.tableView.aria.rowsPerPage)}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -208,7 +208,7 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
           </div>
           <div className={styles["pageIndicator"]}>
             <span className={styles["pageLabel"]}>
-              {tTableView((m) => m.pages.invoices.viewInvoices.tableView.pageOf, {current: String(currentPage), total: String(totalPages)})}
+              {t((m) => m.pages.invoices.viewInvoices.tableView.pageOf, {current: String(currentPage), total: String(totalPages)})}
             </span>
           </div>
           <div className={styles["pageNavigation"]}>
@@ -218,8 +218,8 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
               size='sm'
               onClick={handlePrevPage}
               disabled={currentPage === 1}
-              aria-label={tTableView((m) => m.pages.invoices.viewInvoices.tableView.previousPage)}>
-              {tTableView((m) => m.pages.invoices.viewInvoices.tableView.previousPage)}
+              aria-label={t((m) => m.pages.invoices.viewInvoices.tableView.previousPage)}>
+              {t((m) => m.pages.invoices.viewInvoices.tableView.previousPage)}
             </Button>
             <Button
               variant='outline'
@@ -227,8 +227,8 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
               size='sm'
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
-              aria-label={tTableView((m) => m.pages.invoices.viewInvoices.tableView.nextPage)}>
-              {tTableView((m) => m.pages.invoices.viewInvoices.tableView.nextPage)}
+              aria-label={t((m) => m.pages.invoices.viewInvoices.tableView.nextPage)}>
+              {t((m) => m.pages.invoices.viewInvoices.tableView.nextPage)}
             </Button>
           </div>
         </div>
