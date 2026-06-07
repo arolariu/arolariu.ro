@@ -7,11 +7,11 @@ import type {FilterState} from "../../_hooks/useInvoiceFilters";
 import styles from "./DynamicChipFilterCard.module.scss";
 import {FilterCardFrame} from "./FilterCardFrame";
 
-type Props = {
+type Props = Readonly<{
   readonly filters: FilterState;
   readonly availableCurrencies: ReadonlyArray<string>;
   readonly onFiltersChange: (filters: Partial<FilterState>) => void;
-};
+}>;
 
 /**
  * Currency chip card for invoice filters.

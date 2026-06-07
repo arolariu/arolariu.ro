@@ -8,12 +8,12 @@ import type {FilterState} from "../../_hooks/useInvoiceFilters";
 import styles from "./DynamicChipFilterCard.module.scss";
 import {FilterCardFrame} from "./FilterCardFrame";
 
-type Props = {
+type Props = Readonly<{
   readonly filters: FilterState;
   readonly availablePaymentTypes: ReadonlyArray<PaymentType>;
   readonly getPaymentTypeLabel: (paymentType: PaymentType) => string;
   readonly onFiltersChange: (filters: Partial<FilterState>) => void;
-};
+}>;
 
 /**
  * Payment-type chip card for invoice filters.

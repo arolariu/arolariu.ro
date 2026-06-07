@@ -1,11 +1,9 @@
 "use client";
 
-import {selectorFromPath} from "next-intl-selector";
-
 import {formatDate} from "@/lib/utils.generic";
 import {Button, Calendar, Popover, PopoverContent, PopoverTrigger} from "@arolariu/components";
 import {useLocale} from "next-intl";
-import {useTranslations} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 import {useCallback, useMemo} from "react";
 import {TbCalendar} from "react-icons/tb";
 import type {FilterState} from "../../_hooks/useInvoiceFilters";
@@ -13,10 +11,10 @@ import {computePresetRange, deriveActivePreset, type DatePresetKey} from "../../
 import styles from "./DateFilterCard.module.scss";
 import {FilterCardFrame} from "./FilterCardFrame";
 
-type Props = {
+type Props = Readonly<{
   readonly filters: FilterState;
   readonly onFiltersChange: (filters: Partial<FilterState>) => void;
-};
+}>;
 
 const DATE_PRESETS = ["30d", "90d", "ytd", "all"] as const satisfies ReadonlyArray<DatePresetKey>;
 

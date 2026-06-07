@@ -1,26 +1,24 @@
 "use client";
 
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@arolariu/components";
-import {selectorFromPath, useTranslations} from "next-intl-selector";
+import {type SelectorTranslator, useTranslations} from "next-intl-selector";
 import {useCallback, useMemo} from "react";
 import type {FilterState} from "../../_hooks/useInvoiceFilters";
 import {FilterCardFrame} from "./FilterCardFrame";
 import styles from "./SortFilterCard.module.scss";
 
-type Props = {
+type Props = Readonly<{
   readonly filters: FilterState;
   readonly onFiltersChange: (filters: Partial<FilterState>) => void;
-};
+}>;
 
-type TranslationFunction = ReturnType<typeof useTranslations>;
-
-function getSortLabel(t: TranslationFunction, sortBy: FilterState["sortBy"], sortOrder: FilterState["sortOrder"]): string {
-  if (sortBy === "date" && sortOrder === "desc") return t(selectorFromPath("forms.invoices.filters.sortOptions.dateNewest"));
-  if (sortBy === "date" && sortOrder === "asc") return t(selectorFromPath("forms.invoices.filters.sortOptions.dateOldest"));
-  if (sortBy === "amount" && sortOrder === "desc") return t(selectorFromPath("forms.invoices.filters.sortOptions.amountHighToLow"));
-  if (sortBy === "amount" && sortOrder === "asc") return t(selectorFromPath("forms.invoices.filters.sortOptions.amountLowToHigh"));
-  if (sortBy === "name" && sortOrder === "asc") return t(selectorFromPath("forms.invoices.filters.sortOptions.nameAZ"));
-  if (sortBy === "name" && sortOrder === "desc") return t(selectorFromPath("forms.invoices.filters.sortOptions.nameZA"));
+function getSortLabel(t: SelectorTranslator, sortBy: FilterState["sortBy"], sortOrder: FilterState["sortOrder"]): string {
+  if (sortBy === "date" && sortOrder === "desc") return t((m) => m.forms.invoices.filters.sortOptions.dateNewest);
+  if (sortBy === "date" && sortOrder === "asc") return t((m) => m.forms.invoices.filters.sortOptions.dateOldest);
+  if (sortBy === "amount" && sortOrder === "desc") return t((m) => m.forms.invoices.filters.sortOptions.amountHighToLow);
+  if (sortBy === "amount" && sortOrder === "asc") return t((m) => m.forms.invoices.filters.sortOptions.amountLowToHigh);
+  if (sortBy === "name" && sortOrder === "asc") return t((m) => m.forms.invoices.filters.sortOptions.nameAZ);
+  if (sortBy === "name" && sortOrder === "desc") return t((m) => m.forms.invoices.filters.sortOptions.nameZA);
   return "";
 }
 

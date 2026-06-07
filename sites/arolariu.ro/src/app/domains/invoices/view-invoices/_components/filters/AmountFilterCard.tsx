@@ -1,19 +1,17 @@
 "use client";
 
-import {selectorFromPath} from "next-intl-selector";
-
 import {Input} from "@arolariu/components";
-import {useTranslations} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 import {useCallback, useMemo} from "react";
 import {TbCurrencyDollar} from "react-icons/tb";
 import type {FilterState} from "../../_hooks/useInvoiceFilters";
 import styles from "./AmountFilterCard.module.scss";
 import {FilterCardFrame} from "./FilterCardFrame";
 
-type Props = {
+type Props = Readonly<{
   readonly filters: FilterState;
   readonly onFiltersChange: (filters: Partial<FilterState>) => void;
-};
+}>;
 
 type AmountPresetKey = "0-50" | "50-100" | "100-500" | "500+";
 

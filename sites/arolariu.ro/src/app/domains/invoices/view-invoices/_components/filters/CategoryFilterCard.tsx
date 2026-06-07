@@ -8,12 +8,12 @@ import type {FilterState} from "../../_hooks/useInvoiceFilters";
 import styles from "./DynamicChipFilterCard.module.scss";
 import {FilterCardFrame} from "./FilterCardFrame";
 
-type Props = {
+type Props = Readonly<{
   readonly filters: FilterState;
   readonly availableCategories: ReadonlyArray<InvoiceCategory>;
   readonly getCategoryLabel: (category: InvoiceCategory) => string;
   readonly onFiltersChange: (filters: Partial<FilterState>) => void;
-};
+}>;
 
 /**
  * Category chip card for invoice filters.
