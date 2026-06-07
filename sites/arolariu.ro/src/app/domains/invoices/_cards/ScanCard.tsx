@@ -5,7 +5,7 @@
  * @module app/domains/invoices/_cards/ScanCard
  */
 
-import {formatDate} from "@/lib/utils.generic";
+import {formatDate, formatFileSize} from "@/lib/utils.generic";
 import type {CachedScan} from "@/types/scans";
 import {ScanStatus} from "@/types/scans";
 import {
@@ -44,15 +44,6 @@ type Props = Readonly<{
   isSelected: boolean;
   onToggleSelect: () => void;
 }>;
-
-/**
- * Formats file size in human-readable format.
- */
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 /**
  * Individual scan card with selection checkbox, inline rename, and preview.

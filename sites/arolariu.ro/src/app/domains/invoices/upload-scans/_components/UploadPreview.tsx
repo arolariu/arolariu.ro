@@ -8,6 +8,7 @@
  * Displays a grid of pending uploads with status indicators.
  */
 
+import {formatFileSize} from "@/lib/utils.generic";
 import {Badge, Button, Card, CardContent, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import Image from "next/image";
@@ -17,15 +18,6 @@ import {StaggerContainer, StaggerItem} from "../../_components/StaggerContainer"
 import {useScanUpload} from "../_context/ScanUploadContext";
 import type {PendingUploadStatus} from "../_utils/uploadTypes";
 import styles from "./UploadPreview.module.scss";
-
-/**
- * Formats file size in human-readable format.
- */
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 /**
  * Represents a file pending upload for the card component

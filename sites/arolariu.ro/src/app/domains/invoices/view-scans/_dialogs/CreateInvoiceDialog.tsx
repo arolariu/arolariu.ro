@@ -5,6 +5,7 @@
  * @module app/domains/invoices/view-scans/_dialogs/CreateInvoiceDialog
  */
 
+import {formatFileSize} from "@/lib/utils.generic";
 import {useInvoicesStore, useScansStore} from "@/stores";
 import type {CachedScan} from "@/types/scans";
 import {
@@ -45,13 +46,6 @@ import styles from "./CreateInvoiceDialog.module.scss";
 
 type CreationMode = "single" | "batch";
 type CreationStep = "select" | "creating" | "complete";
-
-/** Formats file size in human-readable format */
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 /** Mini scan preview thumbnail */
 function ScanThumbnail({scan}: Readonly<{scan: CachedScan}>): React.JSX.Element {
