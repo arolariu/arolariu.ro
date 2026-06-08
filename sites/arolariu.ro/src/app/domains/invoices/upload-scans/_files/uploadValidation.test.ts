@@ -4,8 +4,8 @@
  */
 
 import {describe, expect, it} from "vitest";
-import {ACCEPTED_UPLOAD_EXTENSIONS, MAX_UPLOAD_FILE_SIZE_BYTES, UPLOAD_INPUT_ACCEPT} from "./uploadFormatPolicy";
-import {extractFilesFromDataTransferItems, validateUploadFiles} from "./uploadValidation";
+import {ACCEPTED_SCAN_FILE_EXTENSIONS} from "../../_utils/mimeTypeUtilities";
+import {extractFilesFromDataTransferItems, MAX_UPLOAD_FILE_SIZE_BYTES, SCAN_UPLOAD_INPUT_ACCEPT, validateUploadFiles} from "./uploadValidation";
 import type {UploadBatchValidationResult} from "../_utils/uploadTypes";
 
 /**
@@ -43,18 +43,18 @@ function validateSingleFile(file: File): UploadBatchValidationResult["invalidFil
 
 describe("upload format policy", () => {
   it("exposes an input accept string that matches all accepted extensions", () => {
-    expect(ACCEPTED_UPLOAD_EXTENSIONS).toEqual(["bin", "pdf", "jpg", "jpeg", "png", "bmp", "heif", "heic", "tif", "tiff"]);
-    expect(UPLOAD_INPUT_ACCEPT).toBe(".bin,.pdf,.jpg,.jpeg,.png,.bmp,.heif,.heic,.tif,.tiff");
+    expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toEqual(["jpg", "jpeg", "png", "bmp", "tif", "tiff", "heif", "heic", "pdf"]);
+    expect(SCAN_UPLOAD_INPUT_ACCEPT).toBe(".jpg,.jpeg,.png,.bmp,.tif,.tiff,.heif,.heic,.pdf");
   });
 });
 
 describe("validateUploadFile", () => {
   it("accepts supported upload files within the size limit", () => {
     const files = [
-      createFile("raw.bin", "application/octet-stream"),
-      createFile("raw-empty-type.bin", ""),
       createFile("receipt.pdf", "application/pdf"),
+      createFile("receipt-empty.pdf", ""),
       createFile("receipt.jpg", "image/jpeg"),
+      createFile("receipt-empty.jpg", ""),
       createFile("receipt.jpeg", "image/jpeg"),
       createFile("receipt-alias.jpg", "image/jpg"),
       createFile("receipt.png", "image/png"),
@@ -62,13 +62,25 @@ describe("validateUploadFile", () => {
       createFile("receipt.heif", "image/heif"),
       createFile("receipt.heic", "image/heic"),
       createFile("receipt.tif", "image/tiff"),
+      createFile("receipt-empty.tiff", ""),
       createFile("receipt.tiff", "image/tiff"),
     ];
 
     expect(files.map((file) => validateSingleFile(file))).toEqual(files.map((file) => ({isValid: true, file})));
   });
 
-  it("rejects generic MIME types for non-bin extensions", () => {
+  it("rejects binary files because upload-scans only accepts scan document formats", () => {
+    const file = createFile("raw.bin", "application/octet-stream");
+
+    expect(validateSingleFile(file)).toEqual({
+      isValid: false,
+      file,
+      reason: "unsupported-extension",
+      message: "Unsupported file extension: raw.bin",
+    });
+  });
+
+  it("rejects generic MIME types for supported scan extensions", () => {
     const file = createFile("receipt.jpg", "application/octet-stream");
 
     expect(validateSingleFile(file)).toEqual({
@@ -79,15 +91,10 @@ describe("validateUploadFile", () => {
     });
   });
 
-  it("rejects empty MIME types for non-bin extensions", () => {
+  it("accepts empty MIME types for supported scan extensions by inferring from extension", () => {
     const file = createFile("receipt.jpg", "");
 
-    expect(validateSingleFile(file)).toEqual({
-      isValid: false,
-      file,
-      reason: "unsupported-type",
-      message: "Unsupported file type: unknown",
-    });
+    expect(validateSingleFile(file)).toEqual({isValid: true, file});
   });
 
   it("rejects unsupported extensions even when the MIME type is supported", () => {
@@ -124,8 +131,8 @@ describe("validateUploadFiles", () => {
         {
           isValid: false,
           file: invalidFile,
-          reason: "unsupported-type",
-          message: "Unsupported file type: text/plain",
+          reason: "unsupported-extension",
+          message: "Unsupported file extension: receipt.txt",
         },
       ],
     });

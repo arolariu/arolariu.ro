@@ -163,24 +163,6 @@ describe("uploadPendingScan", () => {
     }
   });
 
-  it("returns ScanType.OTHER for direct .bin uploads", async () => {
-    const originalFetch = globalThis.fetch;
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, {status: 201})));
-    const file = new File([new Uint8Array(4)], "raw.bin", {type: "application/octet-stream"});
-    const upload = createUpload({name: "raw.bin", file, mimeType: "application/octet-stream", size: file.size});
-
-    try {
-      const result = await uploadPendingScan(upload, createDependencies(), {onProgress: vi.fn()});
-
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.scan.scanType).toBe(ScanType.OTHER);
-      }
-    } finally {
-      vi.stubGlobal("fetch", originalFetch);
-    }
-  });
-
   it("retries up to three attempts before failing", async () => {
     const dependencies = createDependencies({
       createUploadTarget: vi.fn().mockResolvedValue({success: false, error: {message: "Target unavailable"}}),

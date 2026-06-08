@@ -8,7 +8,7 @@
  */
 
 import type {PendingUpload} from "../_utils/uploadTypes";
-import {resolveUploadMimeType} from "./uploadFormatPolicy";
+import {resolveValidatedScanMimeType} from "./uploadValidation";
 
 /**
  * Creates a route-scoped pending upload from a validated file.
@@ -22,7 +22,7 @@ export function createPendingUpload(file: File, uploadId: string): PendingUpload
     id: uploadId,
     name: file.name,
     file,
-    mimeType: resolveUploadMimeType(file),
+    mimeType: resolveValidatedScanMimeType(file),
     size: file.size,
     preview: URL.createObjectURL(file),
     status: "idle",

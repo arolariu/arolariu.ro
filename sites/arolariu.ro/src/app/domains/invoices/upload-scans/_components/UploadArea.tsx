@@ -16,8 +16,7 @@ import {useTranslations} from "next-intl-selector";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {TbUpload} from "react-icons/tb";
 import {useScanUpload} from "../_context/ScanUploadContext";
-import {UPLOAD_INPUT_ACCEPT} from "../_files/uploadFormatPolicy";
-import {extractFilesFromDataTransferItems} from "../_files/uploadValidation";
+import {extractFilesFromDataTransferItems, SCAN_UPLOAD_INPUT_ACCEPT} from "../_files/uploadValidation";
 import styles from "./UploadArea.module.scss";
 
 /**
@@ -161,7 +160,7 @@ export default function UploadArea(): React.JSX.Element {
         <input
           ref={fileInputRef}
           type='file'
-          accept={UPLOAD_INPUT_ACCEPT}
+          accept={SCAN_UPLOAD_INPUT_ACCEPT}
           multiple
           onChange={handleFileChange}
           className={styles["hiddenInput"]}
@@ -230,7 +229,7 @@ export default function UploadArea(): React.JSX.Element {
       <input
         ref={fileInputRef}
         type='file'
-        accept={UPLOAD_INPUT_ACCEPT}
+        accept={SCAN_UPLOAD_INPUT_ACCEPT}
         multiple
         onChange={handleFileChange}
         className={styles["hiddenInput"]}

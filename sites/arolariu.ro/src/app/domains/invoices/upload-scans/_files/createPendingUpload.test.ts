@@ -28,15 +28,28 @@ describe("createPendingUpload", () => {
     });
   });
 
-  it("normalizes bin files without browser MIME type to application/octet-stream", () => {
-    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:raw");
-    const file = new File(["data"], "raw.bin", {type: ""});
+  it("uses inferred canonical MIME type for supported PDF files without browser MIME type", () => {
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:pdf");
+    const file = new File(["data"], "receipt.pdf", {type: ""});
 
-    expect(createPendingUpload(file, "upload-bin")).toMatchObject({
-      id: "upload-bin",
-      name: "raw.bin",
-      mimeType: "application/octet-stream",
-      preview: "blob:raw",
+    expect(createPendingUpload(file, "upload-pdf")).toMatchObject({
+      id: "upload-pdf",
+      name: "receipt.pdf",
+      mimeType: "application/pdf",
+      preview: "blob:pdf",
+      status: "idle",
+    });
+  });
+
+  it("uses inferred canonical MIME type for supported JPEG files without browser MIME type", () => {
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:jpg");
+    const file = new File(["data"], "receipt.jpg", {type: ""});
+
+    expect(createPendingUpload(file, "upload-jpg")).toMatchObject({
+      id: "upload-jpg",
+      name: "receipt.jpg",
+      mimeType: "image/jpeg",
+      preview: "blob:jpg",
       status: "idle",
     });
   });

@@ -9,50 +9,46 @@
 
 import type {UploadBatchValidationResult, UploadValidationResult} from "../_utils/uploadTypes";
 import {
-  ACCEPTED_UPLOAD_EXTENSIONS,
-  BINARY_UPLOAD_MIME_TYPE,
-  MAX_UPLOAD_FILE_SIZE_BYTES,
-  resolveUploadMimeType,
-} from "./uploadFormatPolicy";
-import {extractFileExtension, normalizeScanMimeType} from "../../_utils/mimeTypeUtilities";
+  ACCEPTED_SCAN_FILE_EXTENSIONS,
+  extractFileExtension,
+  getMimeTypeForExtension,
+  isSupportedScanExtension,
+  normalizeScanMimeType,
+} from "../../_utils/mimeTypeUtilities";
 
-const ACCEPTED_UPLOAD_EXTENSION_SET = new Set<string>(ACCEPTED_UPLOAD_EXTENSIONS);
+/** Maximum accepted upload size in bytes. */
+export const MAX_UPLOAD_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
-/**
- * Extracts a normalized extension from an upload file name.
- *
- * @param fileName - Candidate upload file name.
- * @returns Lowercase extension without a leading dot, or `null`.
- */
-function getUploadFileExtension(fileName: string): string | null {
-  return extractFileExtension(fileName);
-}
+/** File input accept attribute value derived from scan document extensions. */
+export const SCAN_UPLOAD_INPUT_ACCEPT = ACCEPTED_SCAN_FILE_EXTENSIONS.map((extension) => `.${extension}`).join(",");
 
 /**
- * Checks whether an extension is accepted by the upload route.
+ * Resolves the canonical scan MIME type for a candidate upload file.
  *
- * @param extension - Extension with or without original casing.
- * @returns `true` when the route accepts this extension.
- */
-function isAcceptedUploadExtension(extension: string): boolean {
-  return ACCEPTED_UPLOAD_EXTENSION_SET.has(extension.toLowerCase());
-}
-
-/**
- * Checks whether a file's MIME type is accepted for its extension.
+ * @remarks
+ * Browser-provided MIME types are preferred when they normalize to a supported
+ * scan MIME type. When browsers omit MIME type metadata, the resolver infers a
+ * canonical MIME type from supported scan file extensions.
  *
- * @param file - Candidate upload file.
- * @returns `true` when MIME and extension policy are compatible.
+ * @param file - Candidate browser file.
+ * @returns Canonical scan MIME type, or an empty string when unsupported.
  */
-function isAcceptedUploadMimeType(file: File): boolean {
-  const extension = getUploadFileExtension(file.name);
-  const mimeType = resolveUploadMimeType(file);
-
-  if (extension === "bin") {
-    return mimeType === BINARY_UPLOAD_MIME_TYPE;
+export function resolveValidatedScanMimeType(file: File): string {
+  const extension = extractFileExtension(file.name);
+  if (extension === null || !isSupportedScanExtension(extension)) {
+    return "";
   }
 
-  return normalizeScanMimeType(mimeType) !== null;
+  const normalizedMimeType = normalizeScanMimeType(file.type);
+  if (normalizedMimeType !== null) {
+    return normalizedMimeType;
+  }
+
+  if (file.type.trim().length > 0) {
+    return "";
+  }
+
+  return getMimeTypeForExtension(extension) ?? "";
 }
 
 /**
@@ -62,23 +58,23 @@ function isAcceptedUploadMimeType(file: File): boolean {
  * @returns Typed validation result with a user-facing message on failure.
  */
 function validateUploadFile(file: File): UploadValidationResult {
-  const mimeType = resolveUploadMimeType(file);
-  if (!isAcceptedUploadMimeType(file)) {
-    return {
-      isValid: false,
-      file,
-      reason: "unsupported-type",
-      message: `Unsupported file type: ${mimeType || "unknown"}`,
-    };
-  }
-
-  const extension = getUploadFileExtension(file.name);
-  if (extension === null || !isAcceptedUploadExtension(extension)) {
+  const extension = extractFileExtension(file.name);
+  if (extension === null || !isSupportedScanExtension(extension)) {
     return {
       isValid: false,
       file,
       reason: "unsupported-extension",
       message: `Unsupported file extension: ${file.name}`,
+    };
+  }
+
+  const mimeType = resolveValidatedScanMimeType(file);
+  if (mimeType.length === 0) {
+    return {
+      isValid: false,
+      file,
+      reason: "unsupported-type",
+      message: `Unsupported file type: ${file.type || "unknown"}`,
     };
   }
 
