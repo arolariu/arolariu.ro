@@ -6,7 +6,7 @@
 import {describe, expect, it, vi} from "vitest";
 import type {Scan} from "../../../../../types/scans";
 import {ScanType} from "../../../../../types/scans";
-import {readFileAsBase64, uploadPendingScan} from "./uploadRunner";
+import {uploadPendingScan} from "./uploadRunner";
 import type {PendingUpload, UploadProgressEvent, UploadRunnerDependencies} from "../_utils/uploadTypes";
 
 /**
@@ -213,11 +213,5 @@ describe("uploadPendingScan", () => {
       reason: "missing-file",
       error: "File reference lost",
     });
-  });
-});
-
-describe("readFileAsBase64", () => {
-  it("reads files as data URLs", async () => {
-    await expect(readFileAsBase64(new File(["hello"], "hello.txt", {type: "text/plain"}))).resolves.toBe("data:text/plain;base64,aGVsbG8=");
   });
 });

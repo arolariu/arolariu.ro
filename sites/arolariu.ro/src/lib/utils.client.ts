@@ -12,21 +12,32 @@ import "client-only";
 import type { BrowserInformation } from "@/types";
 
 /**
- * Extracts a Base64-encoded string from a Blob object.
- * @param blob The Blob object to extract the Base64 string from.
- * @returns A promise that resolves to the Base64-encoded string.
+ * Reads a browser `Blob` as a Base64 data URL.
+ *
+ * @remarks
+ * This helper is browser-only because it depends on `FileReader`. It resolves
+ * only when the browser returns a string data URL and rejects FileReader errors
+ * explicitly so upload fallback paths can surface real read failures.
+ *
+ * @param blob - Blob or File object to encode.
+ * @returns Base64 data URL.
+ * @throws {Error} When FileReader fails or returns a non-string result.
  */
 export async function extractBase64FromBlob(blob: Blob): Promise<string> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.addEventListener(
       "load",
       () => {
-        const base64 = reader.result as string;
-        resolve(base64);
+        if (typeof reader.result === "string") {
+          resolve(reader.result);
+        } else {
+          reject(new Error("Unable to read blob as base64"));
+        }
       },
       { once: true },
-    ); // Add { once: true } to remove the event listener after it is triggered
+    );
+    reader.addEventListener("error", () => reject(reader.error ?? new Error("Unable to read file")), { once: true });
     reader.readAsDataURL(blob);
   });
 }

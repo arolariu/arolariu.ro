@@ -11,6 +11,7 @@
  */
 
 import {toast} from "@arolariu/components";
+import {extractBase64FromBlob} from "@/lib/utils.client";
 import {createContext, use, useCallback, useEffect, useMemo, useReducer, useRef, type ReactNode} from "react";
 import {v4 as uuidv4} from "uuid";
 import {createScan, createScanUploadTarget} from "../../_actions/scans";
@@ -22,7 +23,6 @@ import {uploadReducer} from "../_state/uploadReducer";
 import {selectRemovableUploads, selectUploadableItems} from "../_state/uploadSelectors";
 import {initialUploadState} from "../_state/uploadState";
 import {uploadPendingScanBatch} from "../_upload/uploadBatchRunner";
-import {readFileAsBase64} from "../_upload/uploadRunner";
 import {
   COMPLETED_UPLOAD_REMOVAL_DELAY_MS,
   type CreateUploadTargetResult,
@@ -188,7 +188,7 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
     const dependencies: UploadRunnerDependencies = {
       createUploadTarget,
       uploadScan: createScan,
-      readFileAsBase64,
+      readFileAsBase64: extractBase64FromBlob,
     };
 
     const batchResult = await uploadPendingScanBatch({

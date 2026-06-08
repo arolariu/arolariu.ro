@@ -5,7 +5,8 @@
 
 import {describe, expect, it} from "vitest";
 import {ACCEPTED_UPLOAD_EXTENSIONS, MAX_UPLOAD_FILE_SIZE_BYTES, UPLOAD_INPUT_ACCEPT} from "./uploadFormatPolicy";
-import {extractFilesFromDataTransferItems, validateUploadFile, validateUploadFiles} from "./uploadValidation";
+import {extractFilesFromDataTransferItems, validateUploadFiles} from "./uploadValidation";
+import type {UploadBatchValidationResult} from "../_utils/uploadTypes";
 
 /**
  * Creates a browser file fixture for upload validation tests.
@@ -17,6 +18,27 @@ import {extractFilesFromDataTransferItems, validateUploadFile, validateUploadFil
  */
 function createFile(name: string, type: string, size = 4): File {
   return new File([new Uint8Array(size)], name, {type});
+}
+
+/**
+ * Validates one file through the public batch validation API.
+ *
+ * @param file - Candidate upload file.
+ * @returns The single-file validation result.
+ */
+function validateSingleFile(file: File): UploadBatchValidationResult["invalidFiles"][number] | Readonly<{isValid: true; file: File}> {
+  const result = validateUploadFiles([file]);
+  const validFile = result.validFiles.at(0);
+  if (validFile) {
+    return {isValid: true, file: validFile};
+  }
+
+  const invalidFile = result.invalidFiles.at(0);
+  if (invalidFile) {
+    return invalidFile;
+  }
+
+  throw new Error("Expected one validation result");
 }
 
 describe("upload format policy", () => {
@@ -43,13 +65,13 @@ describe("validateUploadFile", () => {
       createFile("receipt.tiff", "image/tiff"),
     ];
 
-    expect(files.map((file) => validateUploadFile(file))).toEqual(files.map((file) => ({isValid: true, file})));
+    expect(files.map((file) => validateSingleFile(file))).toEqual(files.map((file) => ({isValid: true, file})));
   });
 
   it("rejects generic MIME types for non-bin extensions", () => {
     const file = createFile("receipt.jpg", "application/octet-stream");
 
-    expect(validateUploadFile(file)).toEqual({
+    expect(validateSingleFile(file)).toEqual({
       isValid: false,
       file,
       reason: "unsupported-type",
@@ -60,7 +82,7 @@ describe("validateUploadFile", () => {
   it("rejects empty MIME types for non-bin extensions", () => {
     const file = createFile("receipt.jpg", "");
 
-    expect(validateUploadFile(file)).toEqual({
+    expect(validateSingleFile(file)).toEqual({
       isValid: false,
       file,
       reason: "unsupported-type",
@@ -71,7 +93,7 @@ describe("validateUploadFile", () => {
   it("rejects unsupported extensions even when the MIME type is supported", () => {
     const file = createFile("receipt.gif", "image/png");
 
-    expect(validateUploadFile(file)).toEqual({
+    expect(validateSingleFile(file)).toEqual({
       isValid: false,
       file,
       reason: "unsupported-extension",
@@ -82,7 +104,7 @@ describe("validateUploadFile", () => {
   it("rejects files larger than 10 MB", () => {
     const file = createFile("large.pdf", "application/pdf", MAX_UPLOAD_FILE_SIZE_BYTES + 1);
 
-    expect(validateUploadFile(file)).toEqual({
+    expect(validateSingleFile(file)).toEqual({
       isValid: false,
       file,
       reason: "file-too-large",

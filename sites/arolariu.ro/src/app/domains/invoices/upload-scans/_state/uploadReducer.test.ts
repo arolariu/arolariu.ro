@@ -4,8 +4,7 @@
  */
 
 import {describe, expect, it} from "vitest";
-import {ALL_SCAN_UPLOAD_EVENT_TYPES, type UploadEvent} from "./uploadEvents";
-import {uploadEventHandlers} from "./uploadEventHandlers";
+import type {UploadEvent} from "./uploadEvents";
 import {uploadReducer} from "./uploadReducer";
 import {isRemovableUpload, selectRemovableUploads, selectUploadableItems} from "./uploadSelectors";
 import {initialUploadState} from "./uploadState";
@@ -46,14 +45,6 @@ function event<TEvent extends UploadEvent>(uploadEvent: Omit<TEvent, "occurredAt
     ...uploadEvent,
   } as TEvent;
 }
-
-describe("upload event handlers", () => {
-  it("registers a handler for every scan upload event type", () => {
-    for (const eventType of ALL_SCAN_UPLOAD_EVENT_TYPES) {
-      expect(uploadEventHandlers[eventType]).toBeTypeOf("function");
-    }
-  });
-});
 
 describe("uploadReducer", () => {
   it("handles scanUpload.queue.filesAccepted by appending uploads and incrementing totalAdded", () => {

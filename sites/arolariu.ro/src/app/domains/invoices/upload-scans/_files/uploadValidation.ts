@@ -9,12 +9,51 @@
 
 import type {UploadBatchValidationResult, UploadValidationResult} from "../_utils/uploadTypes";
 import {
-  getUploadFileExtension,
-  isAcceptedUploadExtension,
-  isAcceptedUploadMimeType,
+  ACCEPTED_UPLOAD_EXTENSIONS,
+  BINARY_UPLOAD_MIME_TYPE,
   MAX_UPLOAD_FILE_SIZE_BYTES,
   resolveUploadMimeType,
 } from "./uploadFormatPolicy";
+import {extractFileExtension, normalizeScanMimeType} from "../../_utils/mimeTypeUtilities";
+
+const ACCEPTED_UPLOAD_EXTENSION_SET = new Set<string>(ACCEPTED_UPLOAD_EXTENSIONS);
+
+/**
+ * Extracts a normalized extension from an upload file name.
+ *
+ * @param fileName - Candidate upload file name.
+ * @returns Lowercase extension without a leading dot, or `null`.
+ */
+function getUploadFileExtension(fileName: string): string | null {
+  return extractFileExtension(fileName);
+}
+
+/**
+ * Checks whether an extension is accepted by the upload route.
+ *
+ * @param extension - Extension with or without original casing.
+ * @returns `true` when the route accepts this extension.
+ */
+function isAcceptedUploadExtension(extension: string): boolean {
+  return ACCEPTED_UPLOAD_EXTENSION_SET.has(extension.toLowerCase());
+}
+
+/**
+ * Checks whether a file's MIME type is accepted for its extension.
+ *
+ * @param file - Candidate upload file.
+ * @returns `true` when MIME and extension policy are compatible.
+ */
+function isAcceptedUploadMimeType(file: File): boolean {
+  const extension = getUploadFileExtension(file.name);
+  const mimeType = resolveUploadMimeType(file);
+
+  if (extension === "bin") {
+    return mimeType === BINARY_UPLOAD_MIME_TYPE;
+  }
+
+  return normalizeScanMimeType(mimeType) !== null;
+}
 
 /**
  * Validates a single candidate scan upload file.
@@ -22,7 +61,7 @@ import {
  * @param file - Browser `File` selected, dropped, or pasted by the user.
  * @returns Typed validation result with a user-facing message on failure.
  */
-export function validateUploadFile(file: File): UploadValidationResult {
+function validateUploadFile(file: File): UploadValidationResult {
   const mimeType = resolveUploadMimeType(file);
   if (!isAcceptedUploadMimeType(file)) {
     return {

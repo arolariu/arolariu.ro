@@ -177,24 +177,3 @@ export const handleSessionStatsReset: UploadEventHandler<"scanUpload.session.sta
   ...state,
   sessionStats: initialSessionStats,
 });
-
-/** Handler registry used by tests to enforce complete event coverage. */
-export const uploadEventHandlers = {
-  "scanUpload.queue.filesAccepted": handleFilesAccepted,
-  "scanUpload.queue.itemRemoved": handleQueueItemRemoved,
-  "scanUpload.queue.removableItemsCleared": handleRemovableItemsCleared,
-  "scanUpload.queue.itemRenamed": handleQueueItemRenamed,
-  "scanUpload.batch.requested": handleBatchRequested,
-  "scanUpload.batch.started": handleBatchStarted,
-  "scanUpload.batch.finished": handleBatchFinished,
-  "scanUpload.item.attemptStarted": handleAttemptStarted,
-  "scanUpload.item.progressChanged": handleProgressChanged,
-  "scanUpload.item.retryStarted": handleRetryStarted,
-  "scanUpload.item.uploadSucceeded": handleUploadSucceeded,
-  "scanUpload.item.uploadFailed": handleUploadFailed,
-  "scanUpload.preview.completedItemHidden": handleCompletedItemHidden,
-  "scanUpload.prompt.completedBatchCleared": handleCompletedBatchCleared,
-  "scanUpload.session.statsReset": handleSessionStatsReset,
-} satisfies {
-  readonly [TType in UploadEvent["type"]]: UploadEventHandler<TType>;
-};

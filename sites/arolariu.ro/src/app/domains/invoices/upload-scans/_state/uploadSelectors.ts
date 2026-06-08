@@ -26,7 +26,7 @@ export function isRemovableUpload(upload: PendingUpload): boolean {
  * @returns `true` when the upload is idle or failed.
  */
 export function isUploadableUpload(upload: PendingUpload): boolean {
-  return upload.status === "idle" || upload.status === "failed";
+  return isRemovableUpload(upload);
 }
 
 /**

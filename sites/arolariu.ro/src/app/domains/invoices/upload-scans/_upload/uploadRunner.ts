@@ -27,27 +27,6 @@ type AttemptFailure = Readonly<{
 type FileBackedUpload = PendingUpload & Readonly<{file: File}>;
 
 /**
- * Reads a browser file as a base64 data URL for server-side fallback upload.
- *
- * @param file - Browser file to encode.
- * @returns Base64 data URL.
- */
-export async function readFileAsBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.addEventListener("load", () => {
-      if (typeof reader.result === "string") {
-        resolve(reader.result);
-      } else {
-        reject(new Error("Unable to read file as base64"));
-      }
-    });
-    reader.addEventListener("error", () => reject(reader.error ?? new Error("Unable to read file")));
-    reader.readAsDataURL(file);
-  });
-}
-
-/**
  * Maps an attempt number to its display status.
  *
  * @param attempt - One-based upload attempt.
