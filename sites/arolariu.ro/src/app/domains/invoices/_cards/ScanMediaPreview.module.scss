@@ -1,0 +1,114 @@
+@use '../../../../styles/abstracts' as *;
+
+.previewArea {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background-color: color('muted');
+  @include transition(all);
+
+  @include dark {
+    background-color: color('foreground');
+  }
+}
+
+.interactive {
+  cursor: pointer;
+
+  &:hover .previewOverlay {
+    opacity: 1;
+  }
+
+  &:focus-visible {
+    outline: 2px solid color('primary');
+    outline-offset: 2px;
+  }
+}
+
+.imagePreview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholder {
+  @include flex-center;
+  height: 100%;
+  flex-direction: column;
+  gap: space(2);
+  color: color('muted-foreground');
+}
+
+.pdfIcon,
+.missingIcon {
+  height: space(16);
+  width: space(16);
+}
+
+.pdfIcon {
+  color: color('destructive');
+}
+
+.missingIcon {
+  color: color('muted-foreground');
+}
+
+.placeholderLabel {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.previewOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: color-alpha('background', 0.6);
+  opacity: 0;
+  pointer-events: none;
+  @include transition(opacity);
+}
+
+.previewIcon {
+  height: space(8);
+  width: space(8);
+  color: white;
+  @include shadow('lg');
+}
+
+.topLeft,
+.topRight,
+.bottomLeft,
+.bottomRight,
+.centerOverlay {
+  position: absolute;
+  z-index: 10;
+}
+
+.topLeft {
+  top: space(2);
+  left: space(2);
+}
+
+.topRight {
+  top: space(2);
+  right: space(2);
+}
+
+.bottomLeft {
+  bottom: space(2);
+  left: space(2);
+}
+
+.bottomRight {
+  right: space(2);
+  bottom: space(2);
+}
+
+.centerOverlay {
+  inset: 0;
+  @include flex-center;
+}
