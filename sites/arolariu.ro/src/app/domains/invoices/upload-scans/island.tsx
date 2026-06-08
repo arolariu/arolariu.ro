@@ -10,7 +10,7 @@ import {motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {useRouter} from "next/navigation";
-import {useCallback, useEffect, useRef, useState} from "react";
+import {useCallback} from "react";
 import {
   TbArrowLeft,
   TbArrowRight,
@@ -29,7 +29,7 @@ import PostUploadPrompt from "./_components/PostUploadPrompt";
 import UploadArea from "./_components/UploadArea";
 import UploadPreview from "./_components/UploadPreview";
 import {ScanUploadProvider, useScanUpload} from "./_context/ScanUploadContext";
-import {POST_UPLOAD_PROMPT_DELAY_MS} from "./_utils/uploadTypes";
+import {usePostUploadPrompt} from "./_hooks/usePostUploadPrompt";
 import styles from "./island.module.scss";
 
 /**
@@ -74,50 +74,24 @@ function UploadContent(): React.JSX.Element {
   const t = useTranslations();
   const router = useRouter();
   const {pendingUploads, sessionStats, completedBatch, clearCompletedBatch} = useScanUpload();
-  const [showPrompt, setShowPrompt] = useState(false);
-  const [completedScans, setCompletedScans] = useState<Array<{id: string; preview: string; name: string}>>([]);
-  const hasPromptedRef = useRef(false);
-
-  useEffect(() => {
-    if (pendingUploads.length > 0) {
-      hasPromptedRef.current = false;
-    }
-  }, [pendingUploads.length]);
-
-  /**
-   * Effect to detect when all uploads complete and show the prompt once per batch.
-   */
-  useEffect(() => {
-    const allDone = pendingUploads.length === 0 && sessionStats.totalCompleted > 0 && completedBatch.length > 0;
-
-    if (allDone && !hasPromptedRef.current) {
-      hasPromptedRef.current = true;
-      setCompletedScans(completedBatch);
-      const timer = setTimeout(() => {
-        setShowPrompt(true);
-        clearCompletedBatch();
-      }, POST_UPLOAD_PROMPT_DELAY_MS);
-      return () => clearTimeout(timer);
-    }
-    return;
-  }, [clearCompletedBatch, completedBatch, pendingUploads.length, sessionStats.totalCompleted]);
+  const {isVisible: showPrompt, completedScans, dismissPrompt} = usePostUploadPrompt({
+    pendingUploadCount: pendingUploads.length,
+    totalCompleted: sessionStats.totalCompleted,
+    completedBatch,
+    clearCompletedBatch,
+  });
 
   /** Navigates to the create invoice page after dismissing the prompt. */
   const handleCreateInvoice = useCallback((): void => {
-    setShowPrompt(false);
+    dismissPrompt();
     router.push("/domains/invoices/create-invoice");
-  }, [router]);
+  }, [dismissPrompt, router]);
 
   /** Navigates to the view scans page after dismissing the prompt. */
   const handleViewScans = useCallback((): void => {
-    setShowPrompt(false);
+    dismissPrompt();
     router.push("/domains/invoices/view-scans");
-  }, [router]);
-
-  /** Dismisses the post-upload prompt and stays on the upload page. */
-  const handleDismiss = useCallback((): void => {
-    setShowPrompt(false);
-  }, []);
+  }, [dismissPrompt, router]);
 
   return (
     <section className={styles["contentSection"]}>
@@ -304,7 +278,7 @@ function UploadContent(): React.JSX.Element {
         completedScans={completedScans}
         onCreateInvoice={handleCreateInvoice}
         onViewScans={handleViewScans}
-        onDismiss={handleDismiss}
+        onDismiss={dismissPrompt}
         isVisible={showPrompt}
       />
 

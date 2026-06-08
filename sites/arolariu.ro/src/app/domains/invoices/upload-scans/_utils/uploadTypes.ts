@@ -3,9 +3,9 @@
  * @module app/domains/invoices/upload-scans/_utils/uploadTypes
  *
  * @remarks
- * This module intentionally contains no React state. It defines the public
- * contracts used by the upload context, reducer, validation helpers, runner,
- * and presentation components.
+ * This module intentionally contains no React state or reducer events. It
+ * defines shared route contracts used across the context, upload runners,
+ * validation helpers, hooks, and presentation components.
  */
 
 import type {Scan, ScanMetadata} from "@/types/scans";
@@ -15,22 +15,6 @@ export const UPLOAD_CONCURRENCY_LIMIT = 5;
 
 /** Maximum number of attempts for a single scan upload before it is marked failed. */
 export const MAX_UPLOAD_ATTEMPTS = 3;
-
-/** Maximum accepted upload size in bytes. */
-export const MAX_UPLOAD_FILE_SIZE_BYTES = 10 * 1024 * 1024;
-
-/** File input accept attribute value for supported scan upload formats. */
-export const ACCEPTED_UPLOAD_EXTENSIONS = ".jpg,.jpeg,.png,.pdf";
-
-/** MIME types accepted by the scan upload route. */
-export {
-  ACCEPTED_SCAN_MIME_TYPES as ACCEPTED_UPLOAD_MIME_TYPES,
-} from "../../_utils/mimeTypeUtilities";
-
-/** File extensions accepted by the scan upload route. */
-export {
-  ACCEPTED_SCAN_FILE_EXTENSIONS as ACCEPTED_UPLOAD_FILE_EXTENSIONS,
-} from "../../_utils/mimeTypeUtilities";
 
 /** Delay before removing a completed upload card from the route queue. */
 export const COMPLETED_UPLOAD_REMOVAL_DELAY_MS = 1000;
@@ -198,26 +182,3 @@ export type UploadState = Readonly<{
   sessionStats: SessionStats;
   completedBatch: UploadCompletionSummary[];
 }>;
-
-/** Actions accepted by the upload reducer state machine. */
-export type UploadAction =
-  | Readonly<{type: "uploads-added"; uploads: PendingUpload[]}>
-  | Readonly<{type: "uploads-removed"; ids: string[]}>
-  | Readonly<{type: "uploads-cleared"}>
-  | Readonly<{type: "upload-renamed"; id: string; name: string}>
-  | Readonly<{type: "batch-started"}>
-  | Readonly<{type: "batch-finished"}>
-  | Readonly<{
-      type: "upload-progressed";
-      id: string;
-      status: PendingUploadStatus;
-      progress: number;
-      attempts: number;
-      error?: string;
-      blobUrl?: string;
-    }>
-  | Readonly<{type: "upload-completed"; id: string; attempts: number; blobUrl: string}>
-  | Readonly<{type: "upload-failed"; id: string; attempts: number; error: string}>
-  | Readonly<{type: "upload-removed-after-completion"; id: string}>
-  | Readonly<{type: "session-stats-reset"}>
-  | Readonly<{type: "completed-batch-cleared"}>;

@@ -5,30 +5,35 @@
  * @module app/domains/invoices/upload-scans/_context/ScanUploadContext
  *
  * @remarks
- * Keeps transient browser upload state in memory while delegating validation,
- * reducer transitions, and one-file upload orchestration to focused utilities.
+ * Keeps transient browser upload state in memory while delegating event
+ * transitions, file intake, upload execution, and browser side effects to
+ * focused route-local modules.
  */
 
-import {withConcurrencyLimit} from "@/lib/concurrency.client";
 import {toast} from "@arolariu/components";
 import {createContext, use, useCallback, useEffect, useMemo, useReducer, useRef, type ReactNode} from "react";
 import {v4 as uuidv4} from "uuid";
 import {createScan, createScanUploadTarget} from "../../_actions/scans";
-import {initialUploadState, selectUploadableItems, uploadReducer} from "../_utils/uploadReducer";
-import {readFileAsBase64, uploadPendingScan} from "../_utils/uploadRunner";
+import {createPendingUpload} from "../_files/createPendingUpload";
+import {validateUploadFiles} from "../_files/uploadValidation";
+import {usePreviewUrlLifecycle} from "../_hooks/usePreviewUrlLifecycle";
+import {useUploadProgressEvents} from "../_hooks/useUploadProgressEvents";
+import {uploadReducer} from "../_state/uploadReducer";
+import {selectRemovableUploads, selectUploadableItems} from "../_state/uploadSelectors";
+import {initialUploadState} from "../_state/uploadState";
+import {uploadPendingScanBatch} from "../_upload/uploadBatchRunner";
+import {readFileAsBase64} from "../_upload/uploadRunner";
 import {
   COMPLETED_UPLOAD_REMOVAL_DELAY_MS,
-  UPLOAD_CONCURRENCY_LIMIT,
   type CreateUploadTargetResult,
   type PendingUpload,
   type SessionStats,
   type UploadCompletionSummary,
-  type UploadProgressEvent,
   type UploadRunnerDependencies,
 } from "../_utils/uploadTypes";
-import {validateUploadFiles} from "../_utils/uploadValidation";
 
 type TimeoutHandle = ReturnType<typeof globalThis.setTimeout>;
+type UploadIntakeSource = "input" | "drop" | "paste";
 
 interface ScanUploadContextType {
   /** Files currently tracked by the upload route. */
@@ -40,7 +45,7 @@ interface ScanUploadContextType {
   /** Latest successfully uploaded scans for the post-upload prompt. */
   readonly completedBatch: UploadCompletionSummary[];
   /** Add files to the upload queue. */
-  readonly addFiles: (files: FileList | File[]) => Promise<void>;
+  readonly addFiles: (files: FileList | File[], source?: UploadIntakeSource) => Promise<void>;
   /** Remove idle or failed files from the upload queue. */
   readonly removeFiles: (ids: string[]) => void;
   /** Clear all idle or failed files. Active uploads remain locked. */
@@ -67,69 +72,36 @@ const ScanUploadContext = createContext<ScanUploadContextType | undefined>(undef
 export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>): React.JSX.Element {
   const [state, dispatch] = useReducer(uploadReducer, initialUploadState);
   const removalTimersRef = useRef<Set<TimeoutHandle>>(new Set());
-  const progressFrameRef = useRef<number | null>(null);
-  const pendingProgressEventsRef = useRef<Map<string, UploadProgressEvent>>(new Map());
-  const revokedPreviewUrlsRef = useRef<Set<string>>(new Set());
-  const latestUploadsRef = useRef<PendingUpload[]>([]);
-
-  const revokePreviewUrl = useCallback((preview: string): void => {
-    if (preview && preview.startsWith("blob:") && !revokedPreviewUrlsRef.current.has(preview)) {
-      URL.revokeObjectURL(preview);
-      revokedPreviewUrlsRef.current.add(preview);
-    }
-  }, []);
-
-  const revokePreviews = useCallback(
-    (uploads: PendingUpload[]): void => {
-      for (const upload of uploads) {
-        revokePreviewUrl(upload.preview);
-      }
-    },
-    [revokePreviewUrl],
-  );
-
-  useEffect(() => {
-    latestUploadsRef.current = state.pendingUploads;
-  }, [state.pendingUploads]);
+  const {revokePreviewUrl, revokePreviews} = usePreviewUrlLifecycle(state.pendingUploads);
+  const {dispatchProgress} = useUploadProgressEvents(dispatch);
 
   useEffect(() => {
     return () => {
-      if (progressFrameRef.current !== null) {
-        cancelAnimationFrame(progressFrameRef.current);
-      }
-
       for (const timerId of removalTimersRef.current) {
         globalThis.clearTimeout(timerId);
       }
-
-      revokePreviews(latestUploadsRef.current);
     };
-  }, [revokePreviews]);
+  }, []);
 
-  const addFiles = useCallback(async (files: FileList | File[]): Promise<void> => {
+  const addFiles = useCallback(async (files: FileList | File[], source: UploadIntakeSource = "input"): Promise<void> => {
     const validation = validateUploadFiles(Array.from(files));
 
     for (const invalidFile of validation.invalidFiles) {
       toast.error(invalidFile.message);
     }
 
-    const uploads: PendingUpload[] = validation.validFiles.map((file) => ({
-      id: uuidv4(),
-      name: file.name,
-      file,
-      mimeType: file.type,
-      size: file.size,
-      preview: URL.createObjectURL(file),
-      status: "idle",
-      progress: 0,
-      attempts: 0,
-    }));
+    const uploads = validation.validFiles.map((file) => createPendingUpload(file, uuidv4()));
 
     if (uploads.length === 0) {
       return;
     }
 
-    dispatch({type: "uploads-added", uploads});
+    dispatch({
+      type: "scanUpload.queue.filesAccepted",
+      occurredAt: Date.now(),
+      source,
+      uploads,
+    });
     toast.success(`Added ${uploads.length} file(s) to upload queue`);
   }, []);
 
@@ -140,49 +112,44 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
         (upload) => idsSet.has(upload.id) && (upload.status === "idle" || upload.status === "failed"),
       );
       revokePreviews(removableUploads);
-      dispatch({type: "uploads-removed", ids});
+      dispatch({
+        type: "scanUpload.queue.itemRemoved",
+        occurredAt: Date.now(),
+        source: "input",
+        ids,
+      });
     },
     [revokePreviews, state.pendingUploads],
   );
 
   const clearAll = useCallback((): void => {
-    const removableUploads = state.pendingUploads.filter((upload) => upload.status === "idle" || upload.status === "failed");
-    revokePreviews(removableUploads);
-    dispatch({type: "uploads-cleared"});
+    revokePreviews(selectRemovableUploads(state));
+    dispatch({
+      type: "scanUpload.queue.removableItemsCleared",
+      occurredAt: Date.now(),
+      source: "input",
+    });
     toast.info("All files cleared");
-  }, [revokePreviews, state.pendingUploads]);
+  }, [revokePreviews, state]);
 
   const renameFile = useCallback((id: string, newName: string): void => {
-    dispatch({type: "upload-renamed", id, name: newName});
-  }, []);
-
-  const dispatchProgress = useCallback((event: UploadProgressEvent): void => {
-    pendingProgressEventsRef.current.set(event.uploadId, event);
-
-    if (progressFrameRef.current === null) {
-      progressFrameRef.current = requestAnimationFrame(() => {
-        const events = Array.from(pendingProgressEventsRef.current.values());
-        pendingProgressEventsRef.current.clear();
-        progressFrameRef.current = null;
-
-        for (const progressEvent of events) {
-          dispatch({
-            type: "upload-progressed",
-            id: progressEvent.uploadId,
-            status: progressEvent.status,
-            progress: progressEvent.progress,
-            attempts: progressEvent.attempts,
-            ...(progressEvent.error === undefined ? {} : {error: progressEvent.error}),
-            ...(progressEvent.blobUrl === undefined ? {} : {blobUrl: progressEvent.blobUrl}),
-          });
-        }
-      });
-    }
+    dispatch({
+      type: "scanUpload.queue.itemRenamed",
+      occurredAt: Date.now(),
+      source: "input",
+      id,
+      name: newName,
+    });
   }, []);
 
   const scheduleUploadRemoval = useCallback((uploadId: string): void => {
     const timerId = globalThis.setTimeout(() => {
-      dispatch({type: "upload-removed-after-completion", id: uploadId});
+      dispatch({
+        type: "scanUpload.preview.completedItemHidden",
+        occurredAt: Date.now(),
+        source: "timer",
+        uploadId,
+      });
       removalTimersRef.current.delete(timerId);
     }, COMPLETED_UPLOAD_REMOVAL_DELAY_MS);
 
@@ -197,7 +164,8 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
       return;
     }
 
-    dispatch({type: "batch-started"});
+    dispatch({type: "scanUpload.batch.requested", occurredAt: Date.now(), source: "batch"});
+    dispatch({type: "scanUpload.batch.started", occurredAt: Date.now(), source: "batch"});
 
     /**
      * Adapts the server action to the runner's expected interface.
@@ -223,40 +191,61 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
       readFileAsBase64,
     };
 
-    const uploadTasks = uploadsToProcess.map((upload) => async () => {
-      const result = await uploadPendingScan(upload, dependencies, {onProgress: dispatchProgress});
-
-      if (result.success) {
-        revokePreviewUrl(upload.preview);
-        dispatch({type: "upload-completed", id: upload.id, attempts: result.attempts, blobUrl: result.blobUrl});
-        scheduleUploadRemoval(upload.id);
-      } else {
-        dispatch({type: "upload-failed", id: upload.id, attempts: result.attempts, error: result.error});
-      }
-
-      return result;
+    const batchResult = await uploadPendingScanBatch({
+      uploads: uploadsToProcess,
+      dependencies,
+      callbacks: {onProgress: dispatchProgress},
     });
 
-    const results = await withConcurrencyLimit(uploadTasks, UPLOAD_CONCURRENCY_LIMIT);
-    dispatch({type: "batch-finished"});
-
-    const successCount = results.filter((result) => result?.success === true).length;
-    const failCount = results.filter((result) => result?.success === false).length;
-
-    if (successCount > 0) {
-      toast.success(`Successfully uploaded ${successCount} scan(s)`);
+    for (const result of batchResult.results) {
+      const upload = uploadsToProcess.find((item) => item.id === result.uploadId);
+      if (result.success) {
+        if (upload) {
+          revokePreviewUrl(upload.preview);
+          dispatch({
+            type: "scanUpload.item.uploadSucceeded",
+            occurredAt: Date.now(),
+            source: "runner",
+            uploadId: result.uploadId,
+            attempt: result.attempts,
+            blobUrl: result.blobUrl,
+            completion: {
+              id: upload.id,
+              name: upload.name,
+              preview: result.blobUrl,
+            },
+          });
+          scheduleUploadRemoval(upload.id);
+        }
+      } else {
+        dispatch({
+          type: "scanUpload.item.uploadFailed",
+          occurredAt: Date.now(),
+          source: "runner",
+          uploadId: result.uploadId,
+          attempt: result.attempts,
+          reason: result.reason,
+          error: result.error,
+        });
+      }
     }
-    if (failCount > 0) {
-      toast.error(`Failed to upload ${failCount} scan(s)`);
+
+    dispatch({type: "scanUpload.batch.finished", occurredAt: Date.now(), source: "batch"});
+
+    if (batchResult.successCount > 0) {
+      toast.success(`Successfully uploaded ${batchResult.successCount} scan(s)`);
+    }
+    if (batchResult.failureCount > 0) {
+      toast.error(`Failed to upload ${batchResult.failureCount} scan(s)`);
     }
   }, [dispatchProgress, revokePreviewUrl, scheduleUploadRemoval, state]);
 
   const resetSessionStats = useCallback((): void => {
-    dispatch({type: "session-stats-reset"});
+    dispatch({type: "scanUpload.session.statsReset", occurredAt: Date.now(), source: "input"});
   }, []);
 
   const clearCompletedBatch = useCallback((): void => {
-    dispatch({type: "completed-batch-cleared"});
+    dispatch({type: "scanUpload.prompt.completedBatchCleared", occurredAt: Date.now(), source: "input"});
   }, []);
 
   const value = useMemo<ScanUploadContextType>(

@@ -16,8 +16,8 @@ import {useTranslations} from "next-intl-selector";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {TbUpload} from "react-icons/tb";
 import {useScanUpload} from "../_context/ScanUploadContext";
-import {ACCEPTED_UPLOAD_EXTENSIONS} from "../_utils/uploadTypes";
-import {extractFilesFromDataTransferItems} from "../_utils/uploadValidation";
+import {UPLOAD_INPUT_ACCEPT} from "../_files/uploadFormatPolicy";
+import {extractFilesFromDataTransferItems} from "../_files/uploadValidation";
 import styles from "./UploadArea.module.scss";
 
 /**
@@ -50,7 +50,7 @@ export default function UploadArea(): React.JSX.Element {
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const {files} = event.target;
       if (files && files.length > 0) {
-        void addFiles(files).catch((error) => {
+        void addFiles(files, "input").catch((error) => {
           console.error("Failed to add files:", error);
         }); // Fire-and-forget async operation
       }
@@ -121,7 +121,7 @@ export default function UploadArea(): React.JSX.Element {
 
       const droppedFiles = extractFilesFromDataTransferItems(event.dataTransfer.items);
       if (droppedFiles.length > 0) {
-        void addFiles(droppedFiles).catch((error) => {
+        void addFiles(droppedFiles, "drop").catch((error) => {
           console.error("Failed to add files:", error);
         }); // Fire-and-forget async operation
       }
@@ -144,7 +144,7 @@ export default function UploadArea(): React.JSX.Element {
       if (pastedFiles.length === 0) return;
 
       event.preventDefault();
-      void addFiles(pastedFiles).catch((error) => {
+      void addFiles(pastedFiles, "paste").catch((error) => {
         console.error("Failed to add pasted files:", error);
       });
     };
@@ -161,7 +161,7 @@ export default function UploadArea(): React.JSX.Element {
         <input
           ref={fileInputRef}
           type='file'
-          accept={ACCEPTED_UPLOAD_EXTENSIONS}
+          accept={UPLOAD_INPUT_ACCEPT}
           multiple
           onChange={handleFileChange}
           className={styles["hiddenInput"]}
@@ -230,7 +230,7 @@ export default function UploadArea(): React.JSX.Element {
       <input
         ref={fileInputRef}
         type='file'
-        accept={ACCEPTED_UPLOAD_EXTENSIONS}
+        accept={UPLOAD_INPUT_ACCEPT}
         multiple
         onChange={handleFileChange}
         className={styles["hiddenInput"]}
