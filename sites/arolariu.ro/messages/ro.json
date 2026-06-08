@@ -3611,7 +3611,8 @@
           "preview": "Previzualizare scanare",
           "previewTitle": "Previzualizare Scanare",
           "rename": "Redenumește scanarea",
-          "renamePlaceholder": "Introduceți un nume nou"
+          "renamePlaceholder": "Introduceți un nume nou",
+          "select": "Selectează {name}"
         },
         "sidebar": {
           "howTo": {

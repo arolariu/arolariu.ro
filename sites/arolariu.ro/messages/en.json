@@ -3611,7 +3611,8 @@
           "preview": "Preview scan",
           "previewTitle": "Scan Preview",
           "rename": "Rename scan",
-          "renamePlaceholder": "Enter new name"
+          "renamePlaceholder": "Enter new name",
+          "select": "Select {name}"
         },
         "sidebar": {
           "howTo": {

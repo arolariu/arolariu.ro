@@ -13,6 +13,7 @@
  * - Selected count indicator
  */
 
+import {formatDate, formatFileSize} from "@/lib/utils.generic";
 import {useScansStore} from "@/stores";
 import {ScanStatus} from "@/types/scans";
 import {Badge, Button} from "@arolariu/components";
@@ -131,14 +132,32 @@ export default function ScanSelector(): React.JSX.Element {
       {hasScans ? (
         <>
           <div className={styles["scansGrid"]}>
-            {paginatedScans.map((scan) => (
-              <ScanCard
-                key={scan.id}
-                scan={scan}
-                isSelected={selectedScans.some((s) => s.id === scan.id)}
-                onToggleSelect={createToggleScanHandler(scan)}
-              />
-            ))}
+            {paginatedScans.map((scan) => {
+              const isSelected = selectedScans.some((s) => s.id === scan.id);
+              const handleToggle = createToggleScanHandler(scan);
+              
+              return (
+                <ScanCard
+                  key={scan.id}
+                  media={{
+                    src: scan.blobUrl,
+                    mediaKind: scan.mimeType === "application/pdf" ? "pdf" : "image",
+                    alt: scan.name,
+                  }}
+                  title={scan.name}
+                  metadataItems={[
+                    formatFileSize(scan.sizeInBytes),
+                    formatDate(scan.uploadedAt, {locale: "en-US", month: "short", day: "numeric", year: "numeric"}),
+                  ]}
+                  isSelected={isSelected}
+                  selection={{
+                    checked: isSelected,
+                    onToggle: handleToggle,
+                    label: t((m) => m.pages.invoices.viewScans.scanCard.select, {name: scan.name}),
+                  }}
+                />
+              );
+            })}
           </div>
 
           {/* Pagination controls */}

@@ -3611,7 +3611,8 @@
           "preview": "Aperçu du scan",
           "previewTitle": "Aperçu du scan",
           "rename": "Renommer le scan",
-          "renamePlaceholder": "Entrez le nouveau nom"
+          "renamePlaceholder": "Entrez le nouveau nom",
+          "select": "Sélectionner {name}"
         },
         "sidebar": {
           "howTo": {

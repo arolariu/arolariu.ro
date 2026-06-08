@@ -225,3 +225,59 @@
   font-size: 0.875rem;
   color: color('muted-foreground');
 }
+
+// ===========================================
+// SCAN CARD ROUTE-SPECIFIC OVERLAYS
+// ===========================================
+
+// Linked badge (appears when scan is attached to an invoice)
+.linkedBadge {
+  display: flex;
+  align-items: center;
+  gap: space(1);
+  padding: space(1) space(2);
+  border-radius: radius('md');
+  background-color: color('primary');
+  color: white;
+  font-size: font-size('xs');
+  font-weight: font-weight('medium');
+}
+
+.linkedIcon {
+  @include icon-size(space(3));
+}
+
+// Rotating overlay (appears during image rotation)
+.rotatingOverlay {
+  @include flex-column;
+  @include flex-center;
+  gap: space(2);
+  padding: space(4);
+  border-radius: radius('md');
+  background-color: rgba(0, 0, 0, 0.75);
+  color: white;
+}
+
+.rotatingSpinner {
+  @include icon-size(space(8));
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: radius('full');
+  animation: spin 1s linear infinite;
+}
+
+.rotatingText {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Menu icon for actions
+.menuIcon {
+  @include icon-size(space(4));
+}
