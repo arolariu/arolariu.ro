@@ -19,7 +19,8 @@ import {InvoiceContextProvider} from "../../view-invoice/[id]/_context/InvoiceCo
 import {ScanUploadProvider} from "../../upload-scans/_context/ScanUploadContext";
 import type {Invoice, Merchant} from "@/types/invoices";
 import type {ReactNode} from "react";
-import {storyInvoice, storyMerchant} from "../fixtures/invoiceFixtures";
+import {storyInvoice} from "../fixtures/invoiceFixtures";
+import {storyMerchant} from "../fixtures/merchantFixtures";
 
 /**
  * Simple padded container for invoice story layouts.

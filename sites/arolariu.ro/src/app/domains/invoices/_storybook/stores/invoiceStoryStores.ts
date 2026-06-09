@@ -12,7 +12,8 @@
 import {useInvoicesStore, useMerchantsStore, useScansStore} from "@/stores";
 import type {Invoice, Merchant} from "@/types/invoices";
 import type {CachedScan} from "@/types/scans";
-import {storyInvoice, storyInvoices, storyMerchant, storyMerchants} from "../fixtures/invoiceFixtures";
+import {storyInvoices} from "../fixtures/invoiceFixtures";
+import {storyMerchants} from "../fixtures/merchantFixtures";
 import {storyCachedImageScan, storyCachedPdfScan} from "../fixtures/scanFixtures";
 
 /**
