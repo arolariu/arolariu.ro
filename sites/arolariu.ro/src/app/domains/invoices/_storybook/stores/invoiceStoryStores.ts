@@ -21,7 +21,7 @@ import {storyCachedImageScan, storyCachedPdfScan} from "../fixtures/scanFixtures
 export interface SeedInvoiceStoryStoresOptions {
 	/** Invoices to seed (defaults to storyInvoices) */
 	readonly invoices?: ReadonlyArray<Invoice>;
-	/** Selected invoices (defaults to [storyInvoice]) */
+	/** Selected invoices (defaults to first invoice in storyInvoices array, or empty if none) */
 	readonly selectedInvoices?: Invoice[];
 	/** Merchants to seed (defaults to storyMerchants) */
 	readonly merchants?: ReadonlyArray<Merchant>;
@@ -60,6 +60,7 @@ export function resetInvoiceStoryStores(): void {
 	useInvoicesStore.getState().clearEntities();
 	useMerchantsStore.getState().clearEntities();
 	useScansStore.getState().clearScans();
+	useScansStore.getState().clearSelectedScans();
 }
 
 /**
@@ -67,7 +68,7 @@ export function resetInvoiceStoryStores(): void {
  *
  * @remarks
  * Populates:
- * - `useInvoicesStore` with invoices (default: storyInvoices) and selectedEntities (default: [storyInvoice])
+ * - `useInvoicesStore` with invoices (default: storyInvoices) and selectedEntities (default: first invoice or empty)
  * - `useMerchantsStore` with merchants (default: storyMerchants)
  * - `useScansStore` with scans (default: [storyCachedImageScan, storyCachedPdfScan]) and selectedScans (default: empty)
  *
@@ -87,7 +88,7 @@ export function resetInvoiceStoryStores(): void {
 export function seedInvoiceStoryStores(options: SeedInvoiceStoryStoresOptions = {}): void {
 	const {
 		invoices = storyInvoices,
-		selectedInvoices = [storyInvoice],
+		selectedInvoices = storyInvoices.length > 0 ? [storyInvoices[0]] : [],
 		merchants = storyMerchants,
 		scans = [storyCachedImageScan, storyCachedPdfScan],
 		selectedScans = [],
