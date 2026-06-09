@@ -1,41 +1,56 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import SharingCard from "./SharingCard";
+import {storyInvoice, storyPublicInvoice, WithInvoiceDialogs, installStorybookBrowserMocks} from "../../../_storybook";
 
 /**
  * SharingCard displays invoice sharing status and provides controls for
- * managing shared access.
+ * managing shared access. Depends on `useDialog`, `useUserInformation`,
+ * and `patchInvoice` server action.
  *
- * **DISABLED**: This story is temporarily disabled due to a Vite bundling issue.
- * The real SharingCard component imports `patchInvoice` server action, which
- * transitively imports `@azure/storage-blob` (via instrumentation → storageClient).
- * Even with Vite aliases configured to mock the action, the browser build
- * still attempts to bundle the Azure module, which fails because BlobSASPermissions
- * and generateBlobSASQueryParameters are Node.js-only exports.
- *
- * **Resolution**: Requires investigation into Vite's module resolution for server-only
- * code or refactoring SharingCard to decouple server action imports from the component.
- *
- * @see https://github.com/arolariu/arolariu.ro/issues/TBD
+ * This story mounts the real component wrapped in `WithInvoiceDialogs` with browser mocks.
  */
 const meta = {
   title: "Invoices/EditInvoice/Cards/SharingCard",
+  component: SharingCard,
   parameters: {
     layout: "centered",
   },
-} satisfies Meta;
+  beforeEach: () => {
+    installStorybookBrowserMocks();
+  },
+} satisfies Meta<typeof SharingCard>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Placeholder story (real component disabled due to bundling issue). */
-export const Disabled: Story = {
+/** Private invoice — no shared users. */
+export const PrivateInvoice: Story = {
   render: () => (
-    <div style={{padding: "2rem", textAlign: "center", color: "#6b7280"}}>
-      <p style={{marginBottom: "0.5rem", fontWeight: 600}}>SharingCard Story Disabled</p>
-      <p style={{fontSize: "0.875rem"}}>
-        This story is disabled due to a Vite bundling issue with server-only Azure dependencies.
-        <br />
-        See story file comments for details.
-      </p>
-    </div>
+    <WithInvoiceDialogs>
+      <SharingCard invoice={storyInvoice} />
+    </WithInvoiceDialogs>
+  ),
+};
+
+/** Invoice shared with multiple users. */
+export const SharedWithUsers: Story = {
+  render: () => (
+    <WithInvoiceDialogs>
+      <SharingCard
+        invoice={{
+          ...storyInvoice,
+          sharedWith: ["user-abc-123", "user-def-456", "user-ghi-789"],
+        }}
+      />
+    </WithInvoiceDialogs>
+  ),
+};
+
+/** Public invoice accessible to anyone with the link. */
+export const PublicInvoice: Story = {
+  render: () => (
+    <WithInvoiceDialogs>
+      <SharingCard invoice={storyPublicInvoice} />
+    </WithInvoiceDialogs>
   ),
 };

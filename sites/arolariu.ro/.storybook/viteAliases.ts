@@ -9,31 +9,46 @@ const invoiceDomainRoot = resolve(websiteRoot, "src", "app", "domains", "invoice
 const invoiceStorybookRoot = resolve(invoiceDomainRoot, "_storybook");
 
 /**
+ * Converts Windows backslash paths to forward-slash paths for Vite.
+ *
+ * @param path - Path from Node's resolve()
+ * @returns Forward-slash path for Vite
+ */
+function toVitePath(path: string): string {
+  return path.replaceAll("\\", "/");
+}
+
+/**
  * Storybook-only Vite aliases for dependencies that cannot execute in Storybook.
+ *
+ * @remarks
+ * Maps invoice domain server actions and hooks to browser-safe mocks.
+ * Only uses exact path aliases (not regex) to avoid path concatenation issues.
  *
  * @returns Alias entries consumed by Storybook's Vite builder.
  */
 export function getStorybookViteAliases(): AliasOptions {
   return [
+    // Exact path aliases for absolute imports
     {
-      find: resolve(invoiceDomainRoot, "_actions", "invoices"),
-      replacement: resolve(invoiceStorybookRoot, "mocks", "actions", "invoices.ts"),
+      find: toVitePath(resolve(invoiceDomainRoot, "_actions", "invoices")),
+      replacement: toVitePath(resolve(invoiceStorybookRoot, "mocks", "actions", "invoices.ts")),
     },
     {
-      find: resolve(invoiceDomainRoot, "_actions", "scans"),
-      replacement: resolve(invoiceStorybookRoot, "mocks", "actions", "scans.ts"),
+      find: toVitePath(resolve(invoiceDomainRoot, "_actions", "scans")),
+      replacement: toVitePath(resolve(invoiceStorybookRoot, "mocks", "actions", "scans.ts")),
     },
     {
-      find: resolve(invoiceDomainRoot, "_actions", "merchants"),
-      replacement: resolve(invoiceStorybookRoot, "mocks", "actions", "merchants.ts"),
+      find: toVitePath(resolve(invoiceDomainRoot, "_actions", "merchants")),
+      replacement: toVitePath(resolve(invoiceStorybookRoot, "mocks", "actions", "merchants.ts")),
     },
     {
-      find: resolve(invoiceDomainRoot, "_hooks", "invoice"),
-      replacement: resolve(invoiceStorybookRoot, "mocks", "hooks", "invoice.tsx"),
+      find: toVitePath(resolve(invoiceDomainRoot, "_hooks", "invoice")),
+      replacement: toVitePath(resolve(invoiceStorybookRoot, "mocks", "hooks", "invoice.tsx")),
     },
     {
-      find: resolve(invoiceDomainRoot, "_hooks", "scan"),
-      replacement: resolve(invoiceStorybookRoot, "mocks", "hooks", "scan.tsx"),
+      find: toVitePath(resolve(invoiceDomainRoot, "_hooks", "scan")),
+      replacement: toVitePath(resolve(invoiceStorybookRoot, "mocks", "hooks", "scan.tsx")),
     },
   ];
 }

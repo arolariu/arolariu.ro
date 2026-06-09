@@ -45,13 +45,10 @@ export {
 export {createStoryFile, storyImageFile, storyPdfFile} from "./fixtures/uploadFixtures";
 
 // Provider wrappers
-export {
-	InvoiceStoryFrame,
-	WithInvoiceDialogs,
-	WithEditInvoiceContext,
-	WithViewInvoiceContext,
-	WithScanUploadContext,
-} from "./providers/InvoiceStoryProviders";
+export {WithInvoiceDialogs} from "./providers/DialogProviders";
+export {WithEditInvoiceContext} from "./providers/EditInvoiceProviders";
+export {WithViewInvoiceContext} from "./providers/ViewInvoiceProviders";
+export {InvoiceStoryFrame, WithScanUploadContext} from "./providers/ScanUploadProviders";
 
 // Dialog harness
 export {OpenDialogOnMount} from "./providers/OpenDialogOnMount";

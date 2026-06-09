@@ -1,13 +1,12 @@
 import type {Meta, StoryObj} from "@storybook/react";
 import RecipeCard from "./RecipeCard";
-import {storyRecipeEasy, storyRecipeHard} from "../../../_storybook/fixtures/recipeFixtures";
-import {DialogProvider} from "../../../_contexts/DialogContext";
+import {storyRecipeEasy, storyRecipeHard, WithInvoiceDialogs} from "../../../_storybook";
 
 /**
  * RecipeCard displays a recipe with complexity badge, ingredients, timing,
  * and CRUD dropdown actions. It depends on `useDialog` for edit/delete/share.
  *
- * This story mounts the real component wrapped in DialogProvider.
+ * This story mounts the real component wrapped in `WithInvoiceDialogs`.
  */
 const meta = {
   title: "Invoices/EditInvoice/Cards/RecipeCard",
@@ -23,17 +22,17 @@ type Story = StoryObj<typeof meta>;
 /** Recipe card with easy complexity level. */
 export const EasyRecipe: Story = {
   render: () => (
-    <DialogProvider>
+    <WithInvoiceDialogs>
       <RecipeCard recipe={storyRecipeEasy} />
-    </DialogProvider>
+    </WithInvoiceDialogs>
   ),
 };
 
 /** Recipe card with hard complexity level. */
 export const HardRecipe: Story = {
   render: () => (
-    <DialogProvider>
+    <WithInvoiceDialogs>
       <RecipeCard recipe={storyRecipeHard} />
-    </DialogProvider>
+    </WithInvoiceDialogs>
   ),
 };
