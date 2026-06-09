@@ -21,6 +21,7 @@ import {
   handleProgressChanged,
   handleQueueItemRemoved,
   handleQueueItemRenamed,
+  handleQueueItemRotated,
   handleRemovableItemsCleared,
   handleRetryStarted,
   handleSessionStatsReset,
@@ -45,6 +46,8 @@ export function uploadReducer(state: UploadState, event: UploadEvent): UploadSta
       return handleRemovableItemsCleared(state, event);
     case "scanUpload.queue.itemRenamed":
       return handleQueueItemRenamed(state, event);
+    case "scanUpload.queue.itemRotated":
+      return handleQueueItemRotated(state, event);
     case "scanUpload.batch.requested":
       return handleBatchRequested(state, event);
     case "scanUpload.batch.started":

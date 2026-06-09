@@ -350,6 +350,75 @@ describe("uploadReducer", () => {
     expect(promptCleared.completedBatch).toEqual([]);
     expect(reset.sessionStats).toEqual({totalAdded: 0, totalCompleted: 0, totalFailed: 0});
   });
+
+  it("handles scanUpload.queue.itemRotated for removable image uploads", () => {
+    const originalFile = new File([new Uint8Array([1])], "receipt.jpg", {type: "image/jpeg"});
+    const rotatedFile = new File([new Uint8Array([2])], "receipt.jpg", {type: "image/jpeg"});
+    const idle = createUpload({
+      id: "idle",
+      file: originalFile,
+      preview: "blob:old-preview",
+      size: originalFile.size,
+      mimeType: "image/jpeg",
+      error: "previous error",
+      status: "idle",
+    });
+    const active = createUpload({id: "active", status: "uploading", preview: "blob:active-preview"});
+    const queued = uploadReducer(
+      initialUploadState,
+      event<Extract<UploadEvent, {type: "scanUpload.queue.filesAccepted"}>>({
+        type: "scanUpload.queue.filesAccepted",
+        uploads: [idle, active],
+      }),
+    );
+
+    const state = uploadReducer(
+      queued,
+      event<Extract<UploadEvent, {type: "scanUpload.queue.itemRotated"}>>({
+        type: "scanUpload.queue.itemRotated",
+        id: "idle",
+        file: rotatedFile,
+        preview: "blob:new-preview",
+        mimeType: "image/jpeg",
+        size: rotatedFile.size,
+      }),
+    );
+
+    expect(state.pendingUploads.find((upload) => upload.id === "idle")).toMatchObject({
+      file: rotatedFile,
+      preview: "blob:new-preview",
+      mimeType: "image/jpeg",
+      size: rotatedFile.size,
+    });
+    expect(state.pendingUploads.find((upload) => upload.id === "idle")).not.toHaveProperty("error");
+    expect(state.pendingUploads.find((upload) => upload.id === "active")?.preview).toBe("blob:active-preview");
+  });
+
+  it("ignores scanUpload.queue.itemRotated for active uploads", () => {
+    const active = createUpload({id: "active", status: "uploading", preview: "blob:active-preview"});
+    const rotatedFile = new File([new Uint8Array([2])], "receipt.jpg", {type: "image/jpeg"});
+    const queued = uploadReducer(
+      initialUploadState,
+      event<Extract<UploadEvent, {type: "scanUpload.queue.filesAccepted"}>>({
+        type: "scanUpload.queue.filesAccepted",
+        uploads: [active],
+      }),
+    );
+
+    const state = uploadReducer(
+      queued,
+      event<Extract<UploadEvent, {type: "scanUpload.queue.itemRotated"}>>({
+        type: "scanUpload.queue.itemRotated",
+        id: "active",
+        file: rotatedFile,
+        preview: "blob:new-preview",
+        mimeType: "image/jpeg",
+        size: rotatedFile.size,
+      }),
+    );
+
+    expect(state.pendingUploads[0]).toEqual(active);
+  });
 });
 
 describe("upload selectors", () => {

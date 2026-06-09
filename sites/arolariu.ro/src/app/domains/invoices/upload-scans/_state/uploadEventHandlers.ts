@@ -72,6 +72,24 @@ export const handleQueueItemRenamed: UploadEventHandler<"scanUpload.queue.itemRe
   pendingUploads: updateUpload(state.pendingUploads, event.id, (upload) => (isRemovableUpload(upload) ? {...upload, name: event.name} : upload)),
 });
 
+/** Handles replacing an idle or failed upload with locally rotated media. */
+export const handleQueueItemRotated: UploadEventHandler<"scanUpload.queue.itemRotated"> = (state, event) => ({
+  ...state,
+  pendingUploads: updateUpload(state.pendingUploads, event.id, (upload) => {
+    if (!isRemovableUpload(upload)) {
+      return upload;
+    }
+
+    return {
+      ...removeError(upload),
+      file: event.file,
+      preview: event.preview,
+      mimeType: event.mimeType,
+      size: event.size,
+    };
+  }),
+});
+
 /** Handles a user request to start a new batch. */
 export const handleBatchRequested: UploadEventHandler<"scanUpload.batch.requested"> = (state) => ({
   ...state,

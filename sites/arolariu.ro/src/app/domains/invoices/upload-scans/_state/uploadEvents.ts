@@ -23,6 +23,7 @@ export const ALL_SCAN_UPLOAD_EVENT_TYPES = [
   "scanUpload.queue.itemRemoved",
   "scanUpload.queue.removableItemsCleared",
   "scanUpload.queue.itemRenamed",
+  "scanUpload.queue.itemRotated",
   "scanUpload.batch.requested",
   "scanUpload.batch.started",
   "scanUpload.batch.finished",
@@ -75,6 +76,19 @@ export type UploadEvent =
         id: string;
         /** New display name. */
         name: string;
+      }>)
+  | (UploadEventBase<"scanUpload.queue.itemRotated"> &
+      Readonly<{
+        /** Queue item identifier to update with rotated media. */
+        id: string;
+        /** Rotated browser file that will be uploaded later. */
+        file: File;
+        /** Replacement object URL preview for the rotated file. */
+        preview: string;
+        /** MIME type for the rotated file. */
+        mimeType: string;
+        /** Byte size for the rotated file. */
+        size: number;
       }>)
   | UploadEventBase<"scanUpload.batch.requested">
   | UploadEventBase<"scanUpload.batch.started">
