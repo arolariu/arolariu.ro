@@ -1,5 +1,5 @@
 /**
- * @fileoverview Invoice Storybook barrel export for fixtures and utilities.
+ * @fileoverview Invoice Storybook barrel export for fixtures, providers, stores, and utilities.
  * @module app/domains/invoices/_storybook
  *
  * @remarks
@@ -7,16 +7,11 @@
  * stores, and utilities used in invoice domain stories.
  *
  * **Current Exports:**
- * - Merchant fixtures (local shop, online shop, supermarket, hypermarket)
- * - Recipe fixtures (easy, normal, hard complexity)
- * - Scan fixtures (image, PDF, cached variants)
- * - Invoice fixtures (grocery, public, online)
- * - Upload file utilities
- *
- * **Future Exports (Planned):**
- * - Mock providers (React Context providers for stories)
- * - Mock stores (Zustand store instances with test data)
- * - Test utilities (helper functions for story setup)
+ * - **Fixtures:** Merchant, Recipe, Scan, Invoice, Upload files
+ * - **Providers:** InvoiceStoryFrame, WithInvoiceDialogs, WithEditInvoiceContext, WithViewInvoiceContext, WithScanUploadContext, OpenDialogOnMount
+ * - **Stores:** resetInvoiceStoryStores, seedInvoiceStoryStores
+ * - **Utils:** logStoryAction, successfulStoryAction, installStorybookBrowserMocks
+ * - **Mocks:** Server action and hook mocks for invoices, scans, merchants
  */
 
 // Merchant fixtures
@@ -48,3 +43,22 @@ export {
 
 // Upload file utilities
 export {createStoryFile, storyImageFile, storyPdfFile} from "./fixtures/uploadFixtures";
+
+// Provider wrappers
+export {
+	InvoiceStoryFrame,
+	WithInvoiceDialogs,
+	WithEditInvoiceContext,
+	WithViewInvoiceContext,
+	WithScanUploadContext,
+} from "./providers/InvoiceStoryProviders";
+
+// Dialog harness
+export {OpenDialogOnMount} from "./providers/OpenDialogOnMount";
+
+// Store helpers
+export {resetInvoiceStoryStores, seedInvoiceStoryStores, type SeedInvoiceStoryStoresOptions} from "./stores/invoiceStoryStores";
+
+// Action and browser utilities
+export {logStoryAction, successfulStoryAction, type StoryActionResult} from "./utils/storyActions";
+export {installStorybookBrowserMocks} from "./utils/browserMocks";
