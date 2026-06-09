@@ -65,8 +65,9 @@ export const storyRecipeHard: Recipe = {
 
 /**
  * Normal complexity recipe fixture - moderate skill level.
+ * @internal Used only to compose storyRecipes array.
  */
-export const storyRecipeNormal: Recipe = {
+const storyRecipeNormal: Recipe = {
 	name: "Spaghetti Carbonara",
 	description: "Traditional Italian pasta with eggs, cheese, and pancetta",
 	approximateTotalDuration: 25,

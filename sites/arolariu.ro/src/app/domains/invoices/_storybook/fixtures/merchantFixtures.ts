@@ -74,6 +74,7 @@ export const storyOnlineMerchant: Merchant = {
 
 /**
  * Supermarket merchant fixture.
+ * @internal Used only to compose storyMerchants array.
  */
 const storySupermarket: Merchant = {
 	id: "merchant-story-supermarket-001",
@@ -99,6 +100,7 @@ const storySupermarket: Merchant = {
 
 /**
  * Hypermarket merchant fixture.
+ * @internal Used only to compose storyMerchants array.
  */
 const storyHypermarket: Merchant = {
 	id: "merchant-story-hypermarket-001",

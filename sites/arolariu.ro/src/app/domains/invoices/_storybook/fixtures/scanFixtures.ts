@@ -4,7 +4,7 @@
  */
 
 import type {InvoiceScan, InvoiceScanType} from "@/types/invoices/Invoice";
-import type {CachedScan, Scan, ScanType} from "@/types/scans/Scan";
+import type {CachedScan, ScanType} from "@/types/scans/Scan";
 import type {ScanDocumentKind, ScanDocumentRole, ScanMetadata} from "@/types/scans/ScanMetadata";
 
 /**
@@ -47,6 +47,7 @@ export const storyInvoicePdfScan: InvoiceScan = {
 
 /**
  * Creates a complete ScanMetadata fixture.
+ * @internal Helper for creating CachedScan fixtures.
  */
 function createScanMetadata(overrides: Partial<ScanMetadata> = {}): ScanMetadata {
 	return {
@@ -62,10 +63,10 @@ function createScanMetadata(overrides: Partial<ScanMetadata> = {}): ScanMetadata
 }
 
 /**
- * Standalone Scan fixture for JPEG image.
+ * CachedScan fixture for image - extends Scan with cachedAt timestamp.
  */
-export const storyImageScan: Scan = {
-	id: "scan-story-image-standalone-001",
+export const storyCachedImageScan: CachedScan = {
+	id: "scan-story-image-cached-001",
 	userIdentifier: "user-storybook",
 	name: "Grocery Receipt 2024-03-15",
 	blobUrl: storyImageScanUrl,
@@ -75,17 +76,18 @@ export const storyImageScan: Scan = {
 	uploadedAt: new Date("2024-03-15T10:30:00.000Z"),
 	status: "ready",
 	metadata: createScanMetadata({
-		scanId: "scan-story-image-standalone-001",
+		scanId: "scan-story-image-cached-001",
 		documentKind: "receipt" as ScanDocumentKind,
 		documentRole: "primary" as ScanDocumentRole,
 	}),
+	cachedAt: new Date("2024-03-15T12:00:00.000Z"),
 };
 
 /**
- * Standalone Scan fixture for PDF document.
+ * CachedScan fixture for PDF - extends Scan with cachedAt timestamp.
  */
-export const storyPdfScan: Scan = {
-	id: "scan-story-pdf-standalone-001",
+export const storyCachedPdfScan: CachedScan = {
+	id: "scan-story-pdf-cached-001",
 	userIdentifier: "user-storybook",
 	name: "Invoice 2024-03-15",
 	blobUrl: storyPdfScanUrl,
@@ -95,24 +97,9 @@ export const storyPdfScan: Scan = {
 	uploadedAt: new Date("2024-03-15T11:00:00.000Z"),
 	status: "ready",
 	metadata: createScanMetadata({
-		scanId: "scan-story-pdf-standalone-001",
+		scanId: "scan-story-pdf-cached-001",
 		documentKind: "invoice" as ScanDocumentKind,
 		documentRole: "primary" as ScanDocumentRole,
 	}),
-};
-
-/**
- * CachedScan fixture for image - extends Scan with cachedAt timestamp.
- */
-export const storyCachedImageScan: CachedScan = {
-	...storyImageScan,
-	cachedAt: new Date("2024-03-15T12:00:00.000Z"),
-};
-
-/**
- * CachedScan fixture for PDF - extends Scan with cachedAt timestamp.
- */
-export const storyCachedPdfScan: CachedScan = {
-	...storyPdfScan,
 	cachedAt: new Date("2024-03-15T12:30:00.000Z"),
 };

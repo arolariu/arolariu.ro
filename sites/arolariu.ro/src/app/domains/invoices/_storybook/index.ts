@@ -23,17 +23,15 @@
 export {storyMerchant, storyMerchants, storyOnlineMerchant} from "./fixtures/merchantFixtures";
 
 // Recipe fixtures
-export {storyRecipeEasy, storyRecipeHard, storyRecipeNormal, storyRecipes} from "./fixtures/recipeFixtures";
+export {storyRecipeEasy, storyRecipeHard, storyRecipes} from "./fixtures/recipeFixtures";
 
 // Scan fixtures
 export {
 	storyCachedImageScan,
 	storyCachedPdfScan,
-	storyImageScan,
 	storyImageScanUrl,
 	storyInvoiceImageScan,
 	storyInvoicePdfScan,
-	storyPdfScan,
 	storyPdfScanUrl,
 } from "./fixtures/scanFixtures";
 
