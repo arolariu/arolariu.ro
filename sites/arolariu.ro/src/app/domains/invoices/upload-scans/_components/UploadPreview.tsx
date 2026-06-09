@@ -9,191 +9,15 @@
  */
 
 import {formatFileSize} from "@/lib/utils.generic";
-import {Badge, Button, Card, CardContent, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
+import {Badge, Button} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import Image from "next/image";
 import {useCallback, useEffect, useState} from "react";
-import {TbCheck, TbChevronLeft, TbChevronRight, TbFileTypePdf, TbLoader2, TbTrash, TbX} from "react-icons/tb";
+import {TbCheck, TbChevronLeft, TbChevronRight, TbLoader2, TbRotate, TbRotateClockwise, TbTrash, TbX} from "react-icons/tb";
+import ScanCard from "../../_cards/ScanCard";
 import {StaggerContainer, StaggerItem} from "../../_components/StaggerContainer";
 import {useScanUpload} from "../_context/ScanUploadContext";
-import type {PendingUploadStatus} from "../_utils/uploadTypes";
+import type {PendingUpload} from "../_utils/uploadTypes";
 import styles from "./UploadPreview.module.scss";
-
-/**
- * Represents a file pending upload for the card component
- */
-interface PendingUploadCardProps {
-  id: string;
-  name: string;
-  mimeType: string;
-  size: number;
-  preview: string;
-  status: PendingUploadStatus;
-  progress: number;
-  attempts: number;
-  error?: string;
-  onRemove: (ids: string[]) => void;
-}
-
-/**
- * Individual upload card component to avoid inline function binding.
- */
-function UploadCard({
-  id,
-  name,
-  mimeType,
-  size,
-  preview,
-  status,
-  progress,
-  attempts,
-  error,
-  onRemove,
-}: Readonly<PendingUploadCardProps>): React.JSX.Element {
-  const t = useTranslations();
-  const handleRemove = useCallback(() => {
-    onRemove([id]);
-  }, [onRemove, id]);
-
-  return (
-    <Card className={styles["card"]}>
-      <CardContent className={styles["cardContentFlush"]}>
-        {/* Preview */}
-        <div className={styles["previewArea"]}>
-          {mimeType === "application/pdf" ? (
-            <div className={styles["pdfPlaceholder"]}>
-              <TbFileTypePdf className={styles["pdfIcon"]} />
-            </div>
-          ) : preview ? (
-            <Image
-              src={preview}
-              alt={name}
-              fill
-              className={styles["imagePreview"]}
-              unoptimized
-            />
-          ) : (
-            <div className={styles["pdfPlaceholder"]}>
-              <TbFileTypePdf className={styles["pdfIcon"]} />
-            </div>
-          )}
-
-          {/* Status overlay */}
-          {(status === "uploading" || status === "retrying") && (
-            <div className={`${styles["statusOverlay"]} ${styles["overlayUploading"]}`}>
-              <TbLoader2 className={`${styles["statusIcon"]} ${styles["spinIcon"]}`} />
-            </div>
-          )}
-          {status === "completed" && (
-            <div className={`${styles["statusOverlay"]} ${styles["overlayCompleted"]}`}>
-              <TbCheck className={styles["statusIcon"]} />
-            </div>
-          )}
-          {status === "failed" && (
-            <div className={`${styles["statusOverlay"]} ${styles["overlayFailed"]}`}>
-              <TbX className={styles["statusIcon"]} />
-            </div>
-          )}
-
-          {/* Status badge */}
-          <div className={styles["badgePosition"]}>
-            {status === "idle" && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <Badge
-                        variant='secondary'
-                        className={styles["badgePending"]}>
-                        {t((m) => m.pages.invoices.uploadScans.preview.status.pending)}
-                      </Badge>
-                    }
-                  />
-                  <TooltipContent side='top'>{t((m) => m.pages.invoices.uploadScans.preview.pendingTooltip)}</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-            {status === "uploading" && (
-              <Badge
-                variant='secondary'
-                className={styles["badgeUploading"]}>
-                {t((m) => m.pages.invoices.uploadScans.preview.status.uploading)}
-              </Badge>
-            )}
-            {status === "retrying" && (
-              <Badge
-                variant='secondary'
-                className={styles["badgeRetrying"]}>
-                {t((m) => m.pages.invoices.uploadScans.preview.status.retrying)}
-              </Badge>
-            )}
-            {status === "completed" && (
-              <Badge
-                variant='secondary'
-                className={styles["badgeCompleted"]}>
-                {t((m) => m.pages.invoices.uploadScans.preview.status.completed)}
-              </Badge>
-            )}
-            {status === "failed" && (
-              <Badge
-                variant='secondary'
-                className={styles["badgeFailed"]}>
-                {t((m) => m.pages.invoices.uploadScans.preview.status.failed)}
-              </Badge>
-            )}
-          </div>
-
-          {/* Remove button */}
-          {(status === "idle" || status === "failed") && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      className={styles["removeButton"]}
-                      onClick={handleRemove}>
-                      <TbTrash className={styles["removeIcon"]} />
-                    </Button>
-                  }
-                />
-                <TooltipContent side='right'>{t((m) => m.pages.invoices.uploadScans.preview.removeTooltip)}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-        </div>
-
-        {/* File info */}
-        <div className={styles["fileInfo"]}>
-          <p
-            className={styles["fileName"]}
-            title={name}>
-            {name}
-          </p>
-          <p className={styles["fileSize"]}>{formatFileSize(size)}</p>
-          {(status === "uploading" || status === "retrying") && (
-            <>
-              <div className={styles["progressTrack"]}>
-                <div
-                  className={styles["progressFill"]}
-                  style={{width: `${Math.max(0, Math.min(progress, 100))}%`}}
-                />
-              </div>
-              <p className={styles["fileSize"]}>{progress}%</p>
-            </>
-          )}
-          {status === "retrying" ? (
-            <p className={styles["fileError"]}>
-              {t((m) => m.pages.invoices.uploadScans.preview.retryAttempt, {attempt: String(attempts)})}
-            </p>
-          ) : null}
-          {error ? <p className={styles["fileError"]}>{error}</p> : null}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 /** Number of scans to display per page on mobile devices */
 const MOBILE_PAGE_SIZE = 7;
@@ -208,8 +32,10 @@ const DESKTOP_PAGE_SIZE = 50;
  */
 export default function UploadPreview(): React.JSX.Element | null {
   const t = useTranslations();
-  const {pendingUploads, removeFiles} = useScanUpload();
+  const {pendingUploads, removeFiles, renameFile, rotateFile} = useScanUpload();
   const [page, setPage] = useState(0);
+  const [editingUploadId, setEditingUploadId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
 
   // Detect mobile viewport
   const [isMobile, setIsMobile] = useState(false);
@@ -234,6 +60,30 @@ export default function UploadPreview(): React.JSX.Element | null {
     }
   }, [page, currentPageUploads.length, pendingUploads.length]);
 
+  /** Starts rename mode for an upload. */
+  const startRename = useCallback((upload: PendingUpload): void => {
+    setEditingUploadId(upload.id);
+    setRenameValue(upload.name);
+  }, []);
+
+  /** Cancels rename mode and resets draft. */
+  const cancelRename = useCallback((upload: PendingUpload): void => {
+    setEditingUploadId(null);
+    setRenameValue(upload.name);
+  }, []);
+
+  /** Commits rename if changed, then exits rename mode. */
+  const commitRename = useCallback(
+    (upload: PendingUpload): void => {
+      const trimmedValue = renameValue.trim();
+      if (trimmedValue && trimmedValue !== upload.name) {
+        renameFile(upload.id, trimmedValue);
+      }
+      setEditingUploadId(null);
+    },
+    [renameFile, renameValue],
+  );
+
   /** Navigates to the previous page of uploads. */
   const handlePreviousPage = useCallback(() => {
     setPage((p) => Math.max(0, p - 1));
@@ -257,22 +107,98 @@ export default function UploadPreview(): React.JSX.Element | null {
       <StaggerContainer
         className={styles["grid"]}
         staggerDelay={0.05}>
-        {currentPageUploads.map((upload) => (
-          <StaggerItem key={upload.id}>
-            <UploadCard
-              id={upload.id}
-              name={upload.name}
-              mimeType={upload.mimeType}
-              size={upload.size}
-              preview={upload.preview}
-              status={upload.status}
-              progress={upload.progress}
-              attempts={upload.attempts}
-              error={upload.error}
-              onRemove={removeFiles}
-            />
-          </StaggerItem>
-        ))}
+        {currentPageUploads.map((upload) => {
+          const isLocked = upload.status === "uploading" || upload.status === "retrying" || upload.status === "completed";
+          const isPdf = upload.mimeType === "application/pdf";
+          const isEditing = editingUploadId === upload.id;
+
+          return (
+            <StaggerItem key={upload.id}>
+              <ScanCard
+                media={{
+                  src: upload.preview || upload.blobUrl || "",
+                  mediaKind: isPdf ? "pdf" : "image",
+                  alt: upload.name,
+                }}
+                title={upload.name}
+                metadataItems={[formatFileSize(upload.size)]}
+                isLocked={isLocked}
+                rename={{
+                  value: isEditing ? renameValue : upload.name,
+                  isEditing,
+                  onStart: () => {
+                    startRename(upload);
+                  },
+                  onChange: setRenameValue,
+                  onCommit: () => {
+                    commitRename(upload);
+                  },
+                  onCancel: () => {
+                    cancelRename(upload);
+                  },
+                  placeholder: t((m) => m.pages.invoices.viewScans.scanCard.renamePlaceholder),
+                }}
+                statusBadge={
+                  upload.status === "idle" ? (
+                    <Badge variant='secondary'>{t((m) => m.pages.invoices.uploadScans.preview.status.pending)}</Badge>
+                  ) : upload.status === "uploading" ? (
+                    <Badge variant='secondary'>{t((m) => m.pages.invoices.uploadScans.preview.status.uploading)}</Badge>
+                  ) : upload.status === "retrying" ? (
+                    <Badge variant='secondary'>{t((m) => m.pages.invoices.uploadScans.preview.status.retrying)}</Badge>
+                  ) : upload.status === "completed" ? (
+                    <Badge variant='secondary'>{t((m) => m.pages.invoices.uploadScans.preview.status.completed)}</Badge>
+                  ) : (
+                    <Badge variant='secondary'>{t((m) => m.pages.invoices.uploadScans.preview.status.failed)}</Badge>
+                  )
+                }
+                progress={
+                  upload.status === "uploading" || upload.status === "retrying"
+                    ? {value: upload.progress, label: `${upload.progress}%`}
+                    : undefined
+                }
+                error={
+                  upload.status === "retrying"
+                    ? t((m) => m.pages.invoices.uploadScans.preview.retryAttempt, {attempt: String(upload.attempts)})
+                    : upload.error
+                }
+                actions={[
+                  {
+                    key: "rotate-cw",
+                    label: t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateCW),
+                    icon: <TbRotateClockwise />,
+                    onSelect: () => void rotateFile(upload.id, "cw"),
+                    disabled: isPdf,
+                  },
+                  {
+                    key: "rotate-ccw",
+                    label: t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateCCW),
+                    icon: <TbRotate />,
+                    onSelect: () => void rotateFile(upload.id, "ccw"),
+                    disabled: isPdf,
+                  },
+                  {
+                    key: "remove",
+                    label: t((m) => m.pages.invoices.uploadScans.preview.removeTooltip),
+                    icon: <TbTrash />,
+                    onSelect: () => {
+                      removeFiles([upload.id]);
+                    },
+                    destructive: true,
+                  },
+                ]}
+                centerOverlay={
+                  upload.status === "uploading" || upload.status === "retrying" ? (
+                    <TbLoader2 aria-label='Uploading' />
+                  ) : upload.status === "completed" ? (
+                    <TbCheck aria-label='Upload completed' />
+                  ) : upload.status === "failed" ? (
+                    <TbX aria-label='Upload failed' />
+                  ) : undefined
+                }
+              />
+            </StaggerItem>
+          );
+        })}
       </StaggerContainer>
 
       {totalPages > 1 && (

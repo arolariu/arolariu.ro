@@ -16,6 +16,7 @@ import {createContext, use, useCallback, useEffect, useMemo, useReducer, useRef,
 import {v4 as uuidv4} from "uuid";
 import {createScan, createScanUploadTarget} from "../../_actions/scans";
 import {createPendingUpload} from "../_files/createPendingUpload";
+import {rotatePendingUploadFile} from "../_files/rotatePendingUploadFile";
 import {validateUploadFiles} from "../_files/uploadValidation";
 import {usePreviewUrlLifecycle} from "../_hooks/usePreviewUrlLifecycle";
 import {useUploadProgressEvents} from "../_hooks/useUploadProgressEvents";
@@ -52,6 +53,8 @@ interface ScanUploadContextType {
   readonly clearAll: () => void;
   /** Rename an idle or failed file. */
   readonly renameFile: (id: string, newName: string) => void;
+  /** Rotate an idle or failed pending image upload before upload. */
+  readonly rotateFile: (id: string, direction: "cw" | "ccw") => Promise<void>;
   /** Upload all idle and failed files. */
   readonly uploadAll: () => Promise<void>;
   /** Reset route session statistics. */
@@ -141,6 +144,42 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
       name: newName,
     });
   }, []);
+
+  const rotateFile = useCallback(
+    async (id: string, direction: "cw" | "ccw"): Promise<void> => {
+      const upload = state.pendingUploads.find((item) => item.id === id);
+      if (!upload || upload.status === "uploading" || upload.status === "retrying" || upload.status === "completed") {
+        return;
+      }
+
+      if (!upload.file) {
+        toast.error("Cannot rotate this upload because the original file is unavailable");
+        return;
+      }
+
+      try {
+        const rotated = await rotatePendingUploadFile({
+          file: upload.file,
+          preview: upload.preview,
+          direction,
+        });
+        dispatch({
+          type: "scanUpload.queue.itemRotated",
+          occurredAt: Date.now(),
+          source: "input",
+          id,
+          file: rotated.file,
+          preview: rotated.preview,
+          mimeType: rotated.mimeType,
+          size: rotated.size,
+        });
+      } catch (error: unknown) {
+        console.error(">>> Error rotating pending upload:", error);
+        toast.error(error instanceof Error ? error.message : "Failed to rotate upload");
+      }
+    },
+    [state.pendingUploads],
+  );
 
   const scheduleUploadRemoval = useCallback((uploadId: string): void => {
     const timerId = globalThis.setTimeout(() => {
@@ -258,11 +297,12 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
       removeFiles,
       clearAll,
       renameFile,
+      rotateFile,
       uploadAll,
       resetSessionStats,
       clearCompletedBatch,
     }),
-    [addFiles, clearAll, clearCompletedBatch, removeFiles, renameFile, resetSessionStats, state, uploadAll],
+    [addFiles, clearAll, clearCompletedBatch, removeFiles, renameFile, rotateFile, resetSessionStats, state, uploadAll],
   );
 
   return <ScanUploadContext value={value}>{children}</ScanUploadContext>;
