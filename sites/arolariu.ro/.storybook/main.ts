@@ -1,4 +1,6 @@
 import type {StorybookConfig} from "@storybook/nextjs-vite";
+import {mergeConfig} from "vite";
+import {getStorybookViteAliases} from "./viteAliases";
 
 const config: StorybookConfig = {
   stories: ["../src/**/*.stories.@(ts|tsx)"],
@@ -14,6 +16,12 @@ const config: StorybookConfig = {
   features: {
     experimentalRSC: true,
   },
+  viteFinal: async (config) =>
+    mergeConfig(config, {
+      resolve: {
+        alias: getStorybookViteAliases(),
+      },
+    }),
 };
 
 export default config;
