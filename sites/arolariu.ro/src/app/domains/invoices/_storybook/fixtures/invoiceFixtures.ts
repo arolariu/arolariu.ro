@@ -10,7 +10,7 @@ import type {Product, ProductCategory, ProductMetadata} from "@/types/invoices/P
 import type {Currency} from "@/types/DDD/SharedKernel/Currency";
 import {storyInvoiceImageScan, storyInvoicePdfScan} from "./scanFixtures";
 import {storyMerchant, storyOnlineMerchant} from "./merchantFixtures";
-import {storyRecipeEasy, storyRecipeNormal} from "./recipeFixtures";
+import {storyRecipeEasy, storyRecipeHard} from "./recipeFixtures";
 
 /**
  * Romanian Leu currency fixture.
@@ -167,7 +167,7 @@ export const storyInvoice: Invoice = {
 	paymentInformation: storyPaymentInformation,
 	merchantReference: storyMerchant.id,
 	items: storyProducts,
-	possibleRecipes: [storyRecipeEasy, storyRecipeNormal],
+	possibleRecipes: [storyRecipeEasy, storyRecipeHard],
 	additionalMetadata: {
 		source: "mobile-app",
 		analysisVersion: "v2.1.0",
