@@ -21,11 +21,11 @@ export type StoryActionResult<TValue> = Readonly<{
  * Logs a Storybook action with optional detail.
  *
  * @param action - The action name to log.
- * @param detail - Optional detail object to log.
+ * @param detail - Optional detail value to log.
  */
-export function logStoryAction(action: string, detail?: Record<string, unknown>): void {
+export function logStoryAction(action: string, detail?: unknown): void {
 	const timestamp = new Date().toISOString();
-	if (detail) {
+	if (detail !== undefined) {
 		console.log(`[Storybook Action @ ${timestamp}] ${action}:`, detail);
 	} else {
 		console.log(`[Storybook Action @ ${timestamp}] ${action}`);

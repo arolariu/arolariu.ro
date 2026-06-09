@@ -21,7 +21,7 @@ import {storyCachedImageScan, storyCachedPdfScan} from "../fixtures/scanFixtures
 export interface SeedInvoiceStoryStoresOptions {
 	/** Invoices to seed (defaults to storyInvoices) */
 	readonly invoices?: ReadonlyArray<Invoice>;
-	/** Selected invoice IDs (defaults to first invoice) */
+	/** Selected invoices (defaults to [storyInvoice]) */
 	readonly selectedInvoices?: Invoice[];
 	/** Merchants to seed (defaults to storyMerchants) */
 	readonly merchants?: ReadonlyArray<Merchant>;
@@ -67,7 +67,7 @@ export function resetInvoiceStoryStores(): void {
  *
  * @remarks
  * Populates:
- * - `useInvoicesStore` with invoices (default: storyInvoices) and selectedEntities (default: first invoice)
+ * - `useInvoicesStore` with invoices (default: storyInvoices) and selectedEntities (default: [storyInvoice])
  * - `useMerchantsStore` with merchants (default: storyMerchants)
  * - `useScansStore` with scans (default: [storyCachedImageScan, storyCachedPdfScan]) and selectedScans (default: empty)
  *
