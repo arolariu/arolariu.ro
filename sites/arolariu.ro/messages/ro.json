@@ -3430,7 +3430,8 @@
           "itemCount": "{count, plural, one {# articol} few {# articole} other {# de articole}}",
           "tooltips": {
             "viewDetails": "Vezi detalii"
-          }
+          },
+          "unknownMerchant": "Comerciant necunoscut"
         },
         "invoicesHeader": {
           "actions": {
