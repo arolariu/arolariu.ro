@@ -6,7 +6,7 @@
  *
  * @remarks
  * Opens a dialog automatically on mount to render dialog content in Storybook isolation.
- * Preserves type safety by constraining payload types to the dialog registry.
+ * Uses type-safe dispatch via discriminated union pattern.
  */
 
 import {DialogProvider, useDialogs} from "../../_contexts/DialogContext";
@@ -30,35 +30,27 @@ type DialogsWithStringPayload = "EDIT_INVOICE__IMAGE";
 /**
  * Dialog types that require an object payload.
  */
-type DialogsWithObjectPayload = Exclude<
-	Exclude<
-		Exclude<
-			| "EDIT_INVOICE__ANALYSIS"
-			| "EDIT_INVOICE__ADD_SCAN"
-			| "EDIT_INVOICE__REMOVE_SCAN"
-			| "EDIT_INVOICE__MERCHANT"
-			| "EDIT_INVOICE__MERCHANT_INVOICES"
-			| "EDIT_INVOICE__RECIPE_UPDATE"
-			| "EDIT_INVOICE__RECIPE_DELETE"
-			| "EDIT_INVOICE__RECIPE_PREVIEW"
-			| "EDIT_INVOICE__RECIPE_SHARE"
-			| "EDIT_INVOICE__METADATA"
-			| "EDIT_INVOICE__ITEMS"
-			| "EDIT_INVOICE__ALLERGENS"
-			| "EDIT_INVOICE__BULK_CATEGORY"
-			| "EDIT_INVOICE__FEEDBACK"
-			| "VIEW_INVOICE__SHARE_ANALYTICS"
-			| "VIEW_SCANS__CREATE_INVOICE"
-			| "SHARED__INVOICE_DELETE"
-			| "SHARED__INVOICE_SHARE"
-			| "SHARED__SCAN_DELETE"
-			| "SHARED__SCAN_PREVIEW",
-			DialogsWithUndefinedPayload
-		>,
-		DialogsWithStringPayload
-	>,
-	null
->;
+type DialogsWithObjectPayload =
+	| "EDIT_INVOICE__ANALYSIS"
+	| "EDIT_INVOICE__ADD_SCAN"
+	| "EDIT_INVOICE__REMOVE_SCAN"
+	| "EDIT_INVOICE__MERCHANT"
+	| "EDIT_INVOICE__MERCHANT_INVOICES"
+	| "EDIT_INVOICE__RECIPE_UPDATE"
+	| "EDIT_INVOICE__RECIPE_DELETE"
+	| "EDIT_INVOICE__RECIPE_PREVIEW"
+	| "EDIT_INVOICE__RECIPE_SHARE"
+	| "EDIT_INVOICE__METADATA"
+	| "EDIT_INVOICE__ITEMS"
+	| "EDIT_INVOICE__ALLERGENS"
+	| "EDIT_INVOICE__BULK_CATEGORY"
+	| "EDIT_INVOICE__FEEDBACK"
+	| "VIEW_INVOICE__SHARE_ANALYTICS"
+	| "VIEW_SCANS__CREATE_INVOICE"
+	| "SHARED__INVOICE_DELETE"
+	| "SHARED__INVOICE_SHARE"
+	| "SHARED__SCAN_DELETE"
+	| "SHARED__SCAN_PREVIEW";
 
 /**
  * All dialog types from the DialogType union (excluding null).
@@ -106,7 +98,7 @@ interface PropsForObjectPayload {
 type OpenDialogOnMountProps = PropsForUndefinedPayload | PropsForStringPayload | PropsForObjectPayload;
 
 /**
- * Internal component that opens the dialog on mount.
+ * Internal component that opens the dialog on mount using type-safe dispatch.
  */
 function DialogOpener({
 	dialog,
@@ -122,9 +114,48 @@ function DialogOpener({
 	const {openDialog} = useDialogs();
 
 	useEffect(() => {
-		// Type-cast to bypass strict payload checking in Storybook context
-		// Real type safety is enforced at the component level
-		openDialog(dialog as never, mode, payload as never);
+		// Type-safe dispatch using discriminated union pattern
+		// Each branch has the correct narrowed payload type
+		if (
+			dialog === "EDIT_INVOICE__RECIPE_ADD" ||
+			dialog === "VIEW_INVOICE__EXPORT" ||
+			dialog === "VIEW_INVOICES__IMPORT" ||
+			dialog === "VIEW_INVOICES__EXPORT"
+		) {
+			// Undefined payload dialogs
+			openDialog(dialog, mode);
+		} else if (dialog === "EDIT_INVOICE__IMAGE") {
+			// String payload dialog
+			openDialog(dialog, mode, payload as string);
+		} else {
+			// Object payload dialogs
+			// TypeScript narrows dialog to DialogsWithObjectPayload
+			// Payload is unknown but will be narrowed by the dialog component itself
+			switch (dialog) {
+				case "EDIT_INVOICE__ANALYSIS":
+				case "EDIT_INVOICE__ADD_SCAN":
+				case "EDIT_INVOICE__REMOVE_SCAN":
+				case "EDIT_INVOICE__MERCHANT":
+				case "EDIT_INVOICE__MERCHANT_INVOICES":
+				case "EDIT_INVOICE__RECIPE_UPDATE":
+				case "EDIT_INVOICE__RECIPE_DELETE":
+				case "EDIT_INVOICE__RECIPE_PREVIEW":
+				case "EDIT_INVOICE__RECIPE_SHARE":
+				case "EDIT_INVOICE__METADATA":
+				case "EDIT_INVOICE__ITEMS":
+				case "EDIT_INVOICE__ALLERGENS":
+				case "EDIT_INVOICE__BULK_CATEGORY":
+				case "EDIT_INVOICE__FEEDBACK":
+				case "VIEW_INVOICE__SHARE_ANALYTICS":
+				case "VIEW_SCANS__CREATE_INVOICE":
+				case "SHARED__INVOICE_DELETE":
+				case "SHARED__INVOICE_SHARE":
+				case "SHARED__SCAN_DELETE":
+				case "SHARED__SCAN_PREVIEW":
+					openDialog(dialog, mode, payload);
+					break;
+			}
+		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 

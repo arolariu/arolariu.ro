@@ -8,30 +8,65 @@
  */
 
 import type {CachedScan} from "@/types/scans";
+import {ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, type ScanMetadata} from "@/types/scans";
 import {logStoryAction, successfulStoryAction, type StoryActionResult} from "../../utils/storyActions";
 import {storyCachedImageScan, storyCachedPdfScan} from "../../fixtures/scanFixtures";
 
 /**
  * Upload target metadata for direct client-to-Azure uploads.
+ * Matches the production ServerActionOutputType from createScanUploadTarget.
  */
-interface CreateUploadTargetResult {
-	readonly uploadUrl: string;
-	readonly blobUrl: string;
-	readonly headers: Record<string, string>;
-}
+type CreateUploadTargetResult = StoryActionResult<
+	Readonly<{
+		/** SAS URL for direct upload */
+		sasUrl: string;
+		/** Blob name in Azure Storage */
+		blobName: string;
+		/** Blob URL without SAS token */
+		blobUrl: string;
+		/** Generated scan identifier */
+		scanId: string;
+		/** Required HTTP headers for PUT request (includes metadata) */
+		requiredHeaders: Readonly<Record<string, string>>;
+		/** Canonical scan metadata for building Scan object */
+		metadata: ScanMetadata;
+	}>
+>;
 
 /** Creates a scan upload target (mock). */
 export async function createScanUploadTarget(): Promise<CreateUploadTargetResult> {
 	logStoryAction("createScanUploadTarget");
 	await new Promise((resolve) => globalThis.setTimeout(resolve, 200));
-	return {
-		uploadUrl: "https://storybook.blob.core.windows.net/scans/mock-upload-sas",
-		blobUrl: storyCachedImageScan.blobUrl,
-		headers: {
-			"x-ms-blob-type": "BlockBlob",
-			"x-ms-blob-content-type": "image/jpeg",
-		},
+
+	const scanId = `story-scan-${Date.now().toString(16)}`;
+	const now = new Date();
+	const blobName = `scans/user-storybook/${scanId}_${Date.now()}.jpg`;
+
+	const scanMetadata: ScanMetadata = {
+		scanId,
+		ownerId: "user-storybook",
+		displayName: "storybook-receipt.jpg",
+		collectionName: "default",
+		documentKind: ScanDocumentKind.RECEIPT,
+		documentRole: ScanDocumentRole.PRIMARY,
+		status: ScanMetadataStatus.READY,
+		uploadedAt: now,
+		uploadedBy: "user-storybook",
 	};
+
+	return successfulStoryAction({
+		sasUrl: `https://storybook.blob.core.windows.net/invoices/${blobName}?sv=2021-12-02&st=mock&se=mock&sr=b&sp=cw&sig=mockSignature`,
+		blobName,
+		blobUrl: storyCachedImageScan.blobUrl,
+		scanId,
+		requiredHeaders: {
+			"x-ms-blob-type": "BlockBlob",
+			"Content-Type": "image/jpeg",
+			"x-ms-meta-scanid": scanId,
+			"x-ms-meta-ownerid": "user-storybook",
+		},
+		metadata: scanMetadata,
+	});
 }
 
 /** Creates a scan (mock). */
