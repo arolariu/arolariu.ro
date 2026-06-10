@@ -10,7 +10,7 @@
 import type {CachedScan} from "@/types/scans";
 import {ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, type ScanMetadata} from "@/types/scans";
 import {logStoryAction, successfulStoryAction, type StoryActionResult} from "../../utils/storyActions";
-import {storyCachedImageScan, storyCachedPdfScan} from "../../fixtures/scanFixtures";
+import {storyCachedImageScan} from "../../fixtures/scanFixtures";
 import {useScansStore} from "@/stores";
 
 /**

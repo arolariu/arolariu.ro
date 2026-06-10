@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {WithViewInvoiceContext, storyInvoice, storyMerchant, storyOnlineInvoice} from "../../../../_storybook";
+import {WithViewInvoiceContext, storyInvoice, storyMerchant, storyOnlineInvoice, storyOnlineMerchant} from "../../../../_storybook";
 import {InvoiceDetailsCard} from "./InvoiceDetailsCard";
 import type {Currency} from "@/types/DDD/SharedKernel/Currency";
 import type {Invoice} from "@/types/invoices/Invoice";
@@ -11,11 +11,18 @@ const euroCurrency: Currency = {
   symbol: "€",
 };
 
+// Extract first product from online invoice
+const firstOnlineProduct = storyOnlineInvoice.items.at(0);
+if (!firstOnlineProduct) {
+  throw new Error("storyOnlineInvoice must have at least one product for InvoiceDetailsCard stories");
+}
+
 const foreignCurrencyInvoice: Invoice = {
   ...storyOnlineInvoice,
   id: "invoice-story-foreign-currency",
   name: "Electronics Order - Amazon.de",
   description: "Online purchase in EUR with RON equivalent display",
+  merchantReference: storyOnlineMerchant.id,
   paymentInformation: {
     ...storyOnlineInvoice.paymentInformation,
     transactionDate: new Date("2024-03-10T16:20:00.000Z"),
@@ -28,9 +35,23 @@ const foreignCurrencyInvoice: Invoice = {
   },
   items: [
     {
-      ...storyOnlineInvoice.items[0],
+      ...firstOnlineProduct,
       price: 59.99,
       totalPrice: 59.99,
+    },
+  ],
+  taxDetails: [
+    {
+      amount: 11.39,
+      rate: 19,
+      netAmount: 48.60,
+      description: "VAT 19%",
+    },
+  ],
+  payments: [
+    {
+      method: "Debit Card",
+      amount: 59.99,
     },
   ],
 };
@@ -78,7 +99,7 @@ export const StandardInvoice: Story = {
 
 export const ForeignCurrencyInvoice: Story = {
   render: () => (
-    <WithViewInvoiceContext invoice={foreignCurrencyInvoice} merchant={storyMerchant}>
+    <WithViewInvoiceContext invoice={foreignCurrencyInvoice} merchant={storyOnlineMerchant}>
       <div style={{width: "min(960px, 100vw)"}}>
         <InvoiceDetailsCard />
       </div>

@@ -3,15 +3,18 @@ import {DialogProvider} from "../../_contexts/DialogContext";
 import {resetInvoiceStoryStores, seedInvoiceStoryStores, storyCachedImageScan, storyCachedPdfScan} from "../../_storybook";
 import ScansGrid from "./ScansGrid";
 
-const linkedScan = {
+const thirdReadyScan = {
   ...storyCachedImageScan,
-  id: "scan-story-linked-001",
-  name: "Linked receipt scan",
+  id: "scan-story-third-ready-001",
+  name: "Restaurant receipt scan",
+  uploadedAt: new Date("2024-03-16T09:15:00.000Z"),
+  sizeInBytes: 187520,
   metadata: {
     ...storyCachedImageScan.metadata,
-    status: "attached",
-    attachedTo: "invoice-story-001",
+    scanId: "scan-story-third-ready-001",
+    uploadedAt: new Date("2024-03-16T09:15:00.000Z"),
   },
+  cachedAt: new Date("2024-03-16T09:30:00.000Z"),
   status: "ready",
 } as const;
 
@@ -44,14 +47,14 @@ export const Populated: Story = {
   beforeEach: () => {
     resetInvoiceStoryStores();
     seedInvoiceStoryStores({
-      scans: [storyCachedImageScan, storyCachedPdfScan, linkedScan],
+      scans: [storyCachedImageScan, storyCachedPdfScan, thirdReadyScan],
       selectedScans: [],
     });
   },
   parameters: {
     docs: {
       description: {
-        story: "Shows real scan cards for image, PDF, and attached scans.",
+        story: "Shows real scan cards for multiple ready scans (image, PDF, and additional ready scan).",
       },
     },
   },
@@ -61,7 +64,7 @@ export const WithSelection: Story = {
   beforeEach: () => {
     resetInvoiceStoryStores();
     seedInvoiceStoryStores({
-      scans: [storyCachedImageScan, storyCachedPdfScan, linkedScan],
+      scans: [storyCachedImageScan, storyCachedPdfScan, thirdReadyScan],
       selectedScans: [storyCachedImageScan, storyCachedPdfScan],
     });
   },
