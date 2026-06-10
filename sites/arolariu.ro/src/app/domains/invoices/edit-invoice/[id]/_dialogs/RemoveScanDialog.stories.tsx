@@ -10,7 +10,7 @@ import RemoveScanDialog from "./RemoveScanDialog";
  * harness, opening the dialog automatically on mount with a story invoice and scan payload.
  */
 const meta = {
-	title: "Invoices/EditInvoice/Dialogs/RemoveScanDialog",
+	title: "Invoices/Dialogs/RemoveScanDialog",
 	component: RemoveScanDialog,
 	parameters: {
 		layout: "centered",

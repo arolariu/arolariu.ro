@@ -10,7 +10,7 @@ import AnalyzeDialog from "./AnalyzeDialog";
  * harness, opening the dialog automatically on mount with a story invoice payload.
  */
 const meta = {
-	title: "Invoices/EditInvoice/Dialogs/AnalyzeDialog",
+	title: "Invoices/Dialogs/AnalyzeDialog",
 	component: AnalyzeDialog,
 	parameters: {
 		layout: "centered",

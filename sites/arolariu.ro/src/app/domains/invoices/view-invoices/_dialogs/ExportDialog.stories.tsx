@@ -20,7 +20,7 @@ import ExportDialog from "./ExportDialog";
  * Exports selected invoices from store, or all invoices if none selected.
  */
 const meta = {
-	title: "Invoices/ViewInvoices/Dialogs/ExportDialog",
+	title: "Invoices/Dialogs/InvoiceListExportDialog",
 	component: ExportDialog,
 	parameters: {
 		layout: "centered",

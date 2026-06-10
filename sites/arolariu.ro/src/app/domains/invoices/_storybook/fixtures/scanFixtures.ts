@@ -14,8 +14,13 @@ export const storyImageScanUrl = "https://cdn.arolariu.ro/invoices/storybook/rec
 
 /**
  * Story PDF scan URL fixture.
+ *
+ * @remarks
+ * Uses an embedded minimal PDF so iframe-based PDF stories do not depend on
+ * external CDN framing headers or network availability.
  */
-export const storyPdfScanUrl = "https://cdn.arolariu.ro/invoices/storybook/invoice-001.pdf";
+export const storyPdfScanUrl =
+	"data:application/pdf;base64,JVBERi0xLjQKJcfsj6IKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCAxIDEgXSA+PgplbmRvYmoKeHJlZgowIDQKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDE1IDAwMDAwIG4gCjAwMDAwMDAwNjggMDAwMDAgbiAKMDAwMDAwMDEyNSAwMDAwMCBuIAp0cmFpbGVyCjw8IC9Sb290IDEgMCBSIC9TaXplIDQgPj4Kc3RhcnR4cmVmCjE5NgolJUVPRg==";
 
 /**
  * InvoiceScan fixture for JPEG image.

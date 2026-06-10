@@ -11,7 +11,7 @@ import UpdateRecipeDialog from "./UpdateRecipeDialog";
  * Wrapped with EditInvoiceContextProvider to provide required context.
  */
 const meta = {
-	title: "Invoices/EditInvoice/Dialogs/UpdateRecipeDialog",
+	title: "Invoices/Dialogs/UpdateRecipeDialog",
 	component: UpdateRecipeDialog,
 	parameters: {
 		layout: "centered",

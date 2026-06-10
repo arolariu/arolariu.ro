@@ -10,7 +10,7 @@ import AddScanDialog from "./AddScanDialog";
  * harness, opening the dialog automatically on mount with a story invoice payload.
  */
 const meta = {
-	title: "Invoices/EditInvoice/Dialogs/AddScanDialog",
+	title: "Invoices/Dialogs/AddScanDialog",
 	component: AddScanDialog,
 	parameters: {
 		layout: "centered",

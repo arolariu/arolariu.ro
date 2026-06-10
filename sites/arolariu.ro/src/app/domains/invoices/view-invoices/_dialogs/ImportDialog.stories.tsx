@@ -17,7 +17,7 @@ import ImportDialog from "./ImportDialog";
  * Uses `VIEW_INVOICES__IMPORT` dialog with mode `add`.
  */
 const meta = {
-	title: "Invoices/ViewInvoices/Dialogs/ImportDialog",
+	title: "Invoices/Dialogs/ImportDialog",
 	component: ImportDialog,
 	parameters: {
 		layout: "centered",
