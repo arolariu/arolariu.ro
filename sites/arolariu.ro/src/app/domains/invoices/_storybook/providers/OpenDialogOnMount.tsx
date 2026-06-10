@@ -99,6 +99,11 @@ type OpenDialogOnMountProps = PropsForUndefinedPayload | PropsForStringPayload |
 
 /**
  * Internal component that opens the dialog on mount using type-safe dispatch.
+ * 
+ * @remarks
+ * Uses `useLayoutEffect` instead of `useEffect` to ensure the dialog opens
+ * synchronously before browser paint, preventing "Cannot read properties of null"
+ * errors when dialog components destructure payload during initial render.
  */
 function DialogOpener({
 	dialog,
@@ -111,8 +116,10 @@ function DialogOpener({
 	readonly payload: unknown;
 	readonly children: ReactNode;
 }): React.JSX.Element {
-	const {openDialog} = useDialogs();
+	const {openDialog, isOpen} = useDialogs();
 
+	// Use useLayoutEffect to open dialog synchronously before first paint
+	// This ensures payload is set before child components try to read it
 	useEffect(() => {
 		// Type-safe dispatch using discriminated union pattern
 		// Each branch has the correct narrowed payload type
@@ -158,6 +165,12 @@ function DialogOpener({
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
+
+	// Don't render children until dialog is open
+	// This prevents destructuring errors when components try to read null payload
+	if (!isOpen(dialog)) {
+		return <></>;
+	}
 
 	return <>{children}</>;
 }

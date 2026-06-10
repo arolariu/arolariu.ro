@@ -1,11 +1,12 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {seedInvoiceStoryStores, resetInvoiceStoryStores, storyInvoice, storyPublicInvoice, storyOnlineInvoice} from "../../../_storybook";
+import {seedInvoiceStoryStores, resetInvoiceStoryStores, storyInvoice, storyPublicInvoice, WithInvoiceDialogs} from "../../../_storybook";
 import {InvoiceCard} from "./InvoiceCard";
 
 /**
  * InvoiceCard displays one invoice as a grid card with scan carousel.
  *
  * This story mounts the real InvoiceCard component with various invoice configurations.
+ * Wrapped with DialogProvider to provide required dialog context.
  */
 const meta = {
 	title: "Invoices/ViewInvoices/Tables/InvoiceCard",
@@ -18,9 +19,11 @@ const meta = {
 			resetInvoiceStoryStores();
 			seedInvoiceStoryStores();
 			return (
-				<div style={{maxWidth: "400px"}}>
-					<Story />
-				</div>
+				<WithInvoiceDialogs>
+					<div style={{maxWidth: "400px"}}>
+						<Story />
+					</div>
+				</WithInvoiceDialogs>
 			);
 		},
 	],

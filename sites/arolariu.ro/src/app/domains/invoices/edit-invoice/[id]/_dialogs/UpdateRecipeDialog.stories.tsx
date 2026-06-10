@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {OpenDialogOnMount, storyRecipeEasy} from "../../../_storybook";
+import {OpenDialogOnMount, storyRecipeEasy, WithEditInvoiceContext} from "../../../_storybook";
 import UpdateRecipeDialog from "./UpdateRecipeDialog";
 
 /**
@@ -8,6 +8,7 @@ import UpdateRecipeDialog from "./UpdateRecipeDialog";
  * @remarks
  * This story mounts the real UpdateRecipeDialog component with OpenDialogOnMount
  * harness, opening the dialog automatically on mount with a story recipe payload.
+ * Wrapped with EditInvoiceContextProvider to provide required context.
  */
 const meta = {
 	title: "Invoices/EditInvoice/Dialogs/UpdateRecipeDialog",
@@ -26,8 +27,10 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {
 	render: () => (
-		<OpenDialogOnMount dialog="EDIT_INVOICE__RECIPE_UPDATE" mode="edit" payload={{recipe: storyRecipeEasy}}>
-			<UpdateRecipeDialog />
-		</OpenDialogOnMount>
+		<WithEditInvoiceContext>
+			<OpenDialogOnMount dialog="EDIT_INVOICE__RECIPE_UPDATE" mode="edit" payload={{recipe: storyRecipeEasy}}>
+				<UpdateRecipeDialog />
+			</OpenDialogOnMount>
+		</WithEditInvoiceContext>
 	),
 };
