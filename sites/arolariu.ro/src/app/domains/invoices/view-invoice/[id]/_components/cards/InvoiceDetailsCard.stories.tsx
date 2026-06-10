@@ -20,7 +20,7 @@ if (!firstOnlineProduct) {
 const foreignCurrencyInvoice: Invoice = {
   ...storyOnlineInvoice,
   id: "invoice-story-foreign-currency",
-  name: "Electronics Order - Amazon.de",
+  name: "Electronics Order - FastDelivery.ro EUR",
   description: "Online purchase in EUR with RON equivalent display",
   merchantReference: storyOnlineMerchant.id,
   paymentInformation: {
