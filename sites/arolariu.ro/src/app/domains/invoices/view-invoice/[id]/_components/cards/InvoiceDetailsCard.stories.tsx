@@ -1,6 +1,38 @@
 import type {Meta, StoryObj} from "@storybook/react";
 import {WithViewInvoiceContext, storyInvoice, storyMerchant, storyOnlineInvoice} from "../../../../_storybook";
 import {InvoiceDetailsCard} from "./InvoiceDetailsCard";
+import type {Currency} from "@/types/DDD/SharedKernel/Currency";
+import type {PaymentType} from "@/types/invoices/Payment";
+
+const euroCurrency: Currency = {
+  name: "Euro",
+  code: "EUR",
+  symbol: "€",
+};
+
+const foreignCurrencyInvoice = {
+  ...storyOnlineInvoice,
+  id: "invoice-story-foreign-currency",
+  name: "Electronics Order - Amazon.de",
+  description: "Online purchase in EUR with RON equivalent display",
+  paymentInformation: {
+    ...storyOnlineInvoice.paymentInformation,
+    transactionDate: new Date("2024-03-10T16:20:00.000Z"),
+    paymentType: 200 as PaymentType,
+    currency: euroCurrency,
+    totalCostAmount: 59.99,
+    totalTaxAmount: 11.39,
+    subtotalAmount: 48.60,
+    tipAmount: 0,
+  },
+  items: [
+    {
+      ...storyOnlineInvoice.items[0],
+      price: 59.99,
+      totalPrice: 59.99,
+    },
+  ],
+} as const;
 
 const emptyInvoice = {
   ...storyInvoice,
@@ -46,7 +78,7 @@ export const StandardInvoice: Story = {
 
 export const ForeignCurrencyInvoice: Story = {
   render: () => (
-    <WithViewInvoiceContext invoice={storyOnlineInvoice} merchant={storyMerchant}>
+    <WithViewInvoiceContext invoice={foreignCurrencyInvoice} merchant={storyMerchant}>
       <div style={{width: "min(960px, 100vw)"}}>
         <InvoiceDetailsCard />
       </div>
