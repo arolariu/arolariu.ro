@@ -1,4 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import {useEffect} from "react";
 import {OpenDialogOnMount, resetInvoiceStoryStores, seedInvoiceStoryStores, storyInvoices} from "../../_storybook";
 import ExportDialog from "./ExportDialog";
 
@@ -36,6 +37,28 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
+ * React harness component that seeds invoice stores on mount.
+ *
+ * @param props - Component props.
+ * @param props.selected - Whether to seed selected invoices (true) or none (false).
+ * @returns Opened export dialog with seeded store state.
+ */
+function ExportDialogHarness({selected}: Readonly<{selected: boolean}>): React.JSX.Element {
+	useEffect(() => {
+		seedInvoiceStoryStores({
+			invoices: storyInvoices,
+			selectedInvoices: selected ? storyInvoices.slice(0, 2) : [],
+		});
+	}, [selected]);
+
+	return (
+		<OpenDialogOnMount dialog="VIEW_INVOICES__EXPORT" mode="view">
+			<ExportDialog />
+		</OpenDialogOnMount>
+	);
+}
+
+/**
  * Export dialog with all invoices (none selected).
  *
  * @remarks
@@ -43,17 +66,7 @@ type Story = StoryObj<typeof meta>;
  * Dialog displays count of all invoices to be exported.
  */
 export const AllInvoices: Story = {
-	render: () => {
-		seedInvoiceStoryStores({
-			invoices: storyInvoices,
-			selectedInvoices: [],
-		});
-		return (
-			<OpenDialogOnMount dialog="VIEW_INVOICES__EXPORT" mode="view">
-				<ExportDialog />
-			</OpenDialogOnMount>
-		);
-	},
+	render: () => <ExportDialogHarness selected={false} />,
 };
 
 /**
@@ -64,15 +77,5 @@ export const AllInvoices: Story = {
  * Dialog displays count of selected invoices to be exported.
  */
 export const SelectedInvoices: Story = {
-	render: () => {
-		seedInvoiceStoryStores({
-			invoices: storyInvoices,
-			selectedInvoices: storyInvoices.slice(0, 2),
-		});
-		return (
-			<OpenDialogOnMount dialog="VIEW_INVOICES__EXPORT" mode="view">
-				<ExportDialog />
-			</OpenDialogOnMount>
-		);
-	},
+	render: () => <ExportDialogHarness selected={true} />,
 };
