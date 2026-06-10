@@ -88,19 +88,19 @@ export async function deleteScan(): Promise<StoryActionResult<{scanId: string}>>
  * Fetches all scans (mock).
  *
  * @remarks
- * Returns the current seeded scans from the store if any exist,
- * otherwise returns default fixtures. This preserves story-seeded
- * state when the real `useScans()` hook auto-syncs after hydration.
+ * Returns the current seeded scans from the store exactly, even when empty.
+ * This preserves story-seeded state when the real `useScans()` hook auto-syncs
+ * after hydration. Stories that need populated scans call `seedInvoiceStoryStores()`
+ * with scan fixtures.
  */
 export async function fetchScans(): Promise<StoryActionResult<CachedScan[]>> {
 	logStoryAction("fetchScans");
 	await new Promise((resolve) => globalThis.setTimeout(resolve, 300));
 
-	// Preserve seeded scan state from stories
+	// Preserve seeded scan state from stories, even when empty
 	const seededScans = useScansStore.getState().scans;
-	const scansToReturn = seededScans.length > 0 ? [...seededScans] : [storyCachedImageScan, storyCachedPdfScan];
 
-	return successfulStoryAction(scansToReturn);
+	return successfulStoryAction([...seededScans]);
 }
 
 /** Updates a scan (mock). */
