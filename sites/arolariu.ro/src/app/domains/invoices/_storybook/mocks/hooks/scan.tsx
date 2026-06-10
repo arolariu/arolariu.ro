@@ -9,7 +9,7 @@
  * These mocks provide realistic loading states and action logging without backend dependencies.
  */
 
-import {useState, useCallback} from "react";
+import {useState, useCallback, useRef} from "react";
 import type {CachedScan} from "@/types/scans";
 import type {InvoiceScanType} from "@/types/invoices";
 import {logStoryAction} from "../../utils/storyActions";
@@ -78,39 +78,78 @@ export function useScanDelete(scan: CachedScan): Readonly<{
 }
 
 /**
- * Storybook-safe scan rename hook (stub).
+ * Storybook-safe scan rename hook.
+ *
+ * @param scan - The scan to rename.
+ * @returns Hook state with rename controls matching production ScansGrid expectations.
  *
  * @remarks
- * Provides a no-op implementation for stories that import this hook.
- * Update with realistic implementation if production barrel exports it.
+ * Provides full rename editing state: value, isEditing, isCommitting, justRenamed,
+ * inputRef, start, cancel, change, commit.
  */
-export function useScanRename(): Readonly<{
-	isRenaming: boolean;
-	renameScanCallback: (newName: string) => Promise<void>;
+export function useScanRename(scan: CachedScan): Readonly<{
+	value: string;
+	isEditing: boolean;
+	isCommitting: boolean;
+	justRenamed: boolean;
+	inputRef: React.RefObject<HTMLInputElement | null>;
+	start: () => void;
+	cancel: () => void;
+	change: (newValue: string) => void;
+	commit: () => Promise<void>;
 }> {
-	const [isRenaming, setIsRenaming] = useState(false);
+	const [value, setValue] = useState(scan.name);
+	const [isEditing, setIsEditing] = useState(false);
+	const [justRenamed, setJustRenamed] = useState(false);
+	const inputRef = useRef<HTMLInputElement>(null);
 
-	const renameScanCallback = useCallback(async (newName: string): Promise<void> => {
-		setIsRenaming(true);
-		try {
-			logStoryAction("renameScanCallback", {newName});
-			await new Promise((resolve) => globalThis.setTimeout(resolve, 300));
-		} finally {
-			setIsRenaming(false);
-		}
-	}, []);
+	const start = useCallback((): void => {
+		setValue(scan.name);
+		setIsEditing(true);
+		logStoryAction("startScanRename", {scanId: scan.id});
+	}, [scan.id, scan.name]);
 
-	return {isRenaming, renameScanCallback} as const;
+	const cancel = useCallback((): void => {
+		setValue(scan.name);
+		setIsEditing(false);
+		logStoryAction("cancelScanRename", {scanId: scan.id});
+	}, [scan.id, scan.name]);
+
+	const change = useCallback((newValue: string): void => {
+		setValue(newValue);
+		logStoryAction("changeScanRename", {scanId: scan.id, newValue});
+	}, [scan.id]);
+
+	const commit = useCallback(async (): Promise<void> => {
+		setIsEditing(false);
+		setJustRenamed(true);
+		logStoryAction("commitScanRename", {scanId: scan.id, value});
+		globalThis.setTimeout(() => setJustRenamed(false), 300);
+	}, [scan.id, value]);
+
+	return {
+		value,
+		isEditing,
+		isCommitting: false,
+		justRenamed,
+		inputRef,
+		start,
+		cancel,
+		change,
+		commit,
+	} as const;
 }
 
 /**
- * Storybook-safe scan rotation hook (stub).
+ * Storybook-safe scan rotation hook.
+ *
+ * @param scan - The scan to rotate.
+ * @returns Hook state with rotation progress and the rotate callback.
  *
  * @remarks
- * Provides a no-op implementation for stories that import this hook.
- * Update with realistic implementation if production barrel exports it.
+ * Provides rotation state matching production expectations with scan-specific logging.
  */
-export function useScanRotation(): Readonly<{
+export function useScanRotation(scan: CachedScan): Readonly<{
 	isRotating: boolean;
 	rotateScanCallback: (direction: "cw" | "ccw") => Promise<void>;
 }> {
@@ -119,12 +158,12 @@ export function useScanRotation(): Readonly<{
 	const rotateScanCallback = useCallback(async (direction: "cw" | "ccw"): Promise<void> => {
 		setIsRotating(true);
 		try {
-			logStoryAction("rotateScanCallback", {direction});
+			logStoryAction("rotateScanCallback", {scanId: scan.id, direction});
 			await new Promise((resolve) => globalThis.setTimeout(resolve, 400));
 		} finally {
 			setIsRotating(false);
 		}
-	}, []);
+	}, [scan.id]);
 
 	return {isRotating, rotateScanCallback} as const;
 }

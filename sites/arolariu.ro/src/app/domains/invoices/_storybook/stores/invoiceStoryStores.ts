@@ -59,9 +59,18 @@ export interface SeedInvoiceStoryStoresOptions {
  */
 export function resetInvoiceStoryStores(): void {
 	useInvoicesStore.getState().clearEntities();
+	useInvoicesStore.getState().clearSelectedEntities();
+	useInvoicesStore.getState().setHasHydrated(true);
+
 	useMerchantsStore.getState().clearEntities();
+	useMerchantsStore.getState().clearSelectedEntities();
+	useMerchantsStore.getState().setHasHydrated(true);
+
 	useScansStore.getState().clearScans();
 	useScansStore.getState().clearSelectedScans();
+	useScansStore.getState().setHasHydrated(true);
+	useScansStore.getState().setIsSyncing(false);
+	useScansStore.getState().setLastSyncTimestamp(null);
 }
 
 /**
@@ -97,9 +106,14 @@ export function seedInvoiceStoryStores(options: SeedInvoiceStoryStoresOptions = 
 
 	useInvoicesStore.getState().setEntities(invoices);
 	useInvoicesStore.getState().setSelectedEntities(selectedInvoices);
+	useInvoicesStore.getState().setHasHydrated(true);
 
 	useMerchantsStore.getState().setEntities(merchants);
+	useMerchantsStore.getState().setHasHydrated(true);
 
 	useScansStore.getState().setScans(scans);
 	useScansStore.getState().setSelectedScans(selectedScans);
+	useScansStore.getState().setHasHydrated(true);
+	useScansStore.getState().setIsSyncing(false);
+	useScansStore.getState().setLastSyncTimestamp(new Date("2024-03-15T12:30:00.000Z"));
 }
