@@ -10,7 +10,7 @@
  */
 
 import {useState, useCallback} from "react";
-import type {Invoice} from "@/types/invoices";
+import type {Invoice, Recipe} from "@/types/invoices";
 import {logStoryAction} from "../../utils/storyActions";
 
 /**
@@ -131,4 +131,69 @@ export function useInvoiceShare(): Readonly<{
 	};
 
 	return {isSharing, shareInvoiceCallback} as const;
+}
+
+/**
+ * Storybook-safe recipe add hook.
+ *
+ * @param invoice - The invoice to add the recipe to.
+ * @returns Hook state with add progress and the add callback.
+ */
+export function useRecipeAdd(invoice: Invoice): Readonly<{
+	isAdding: boolean;
+	addRecipeCallback: (recipe: Recipe) => Promise<Invoice>;
+}> {
+	const [isAdding, setIsAdding] = useState(false);
+
+	const addRecipeCallback = useCallback(
+		async (recipe: Recipe): Promise<Invoice> => {
+			setIsAdding(true);
+			try {
+				logStoryAction("addRecipeCallback", {recipeName: recipe.name});
+				await new Promise((resolve) => globalThis.setTimeout(resolve, 500));
+				return {
+					...invoice,
+					possibleRecipes: [...(invoice.possibleRecipes ?? []), recipe],
+				};
+			} finally {
+				setIsAdding(false);
+			}
+		},
+		[invoice],
+	);
+
+	return {isAdding, addRecipeCallback} as const;
+}
+
+/**
+ * Storybook-safe recipe update hook.
+ *
+ * @param invoice - The invoice to update the recipe on.
+ * @returns Hook state with update progress and the update callback.
+ */
+export function useRecipeUpdate(invoice: Invoice): Readonly<{
+	isUpdating: boolean;
+	updateRecipeCallback: (recipeName: string, updated: Recipe) => Promise<Invoice>;
+}> {
+	const [isUpdating, setIsUpdating] = useState(false);
+
+	const updateRecipeCallback = useCallback(
+		async (recipeName: string, updated: Recipe): Promise<Invoice> => {
+			setIsUpdating(true);
+			try {
+				logStoryAction("updateRecipeCallback", {recipeName, updatedName: updated.name});
+				await new Promise((resolve) => globalThis.setTimeout(resolve, 500));
+				const updatedRecipes = (invoice.possibleRecipes ?? []).map((r) => (r.name === recipeName ? updated : r));
+				return {
+					...invoice,
+					possibleRecipes: updatedRecipes,
+				};
+			} finally {
+				setIsUpdating(false);
+			}
+		},
+		[invoice],
+	);
+
+	return {isUpdating, updateRecipeCallback} as const;
 }
