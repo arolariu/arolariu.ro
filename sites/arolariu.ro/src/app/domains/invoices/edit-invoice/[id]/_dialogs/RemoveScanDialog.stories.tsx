@@ -26,6 +26,9 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {
 	render: () => {
+		if (!storyInvoice.scans || storyInvoice.scans.length === 0) {
+			throw new Error("RemoveScanDialog story requires at least one invoice scan fixture.");
+		}
 		const firstScan = storyInvoice.scans[0];
 		return (
 			<OpenDialogOnMount
