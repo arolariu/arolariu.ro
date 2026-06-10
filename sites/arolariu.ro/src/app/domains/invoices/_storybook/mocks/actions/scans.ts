@@ -11,6 +11,7 @@ import type {CachedScan} from "@/types/scans";
 import {ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, type ScanMetadata} from "@/types/scans";
 import {logStoryAction, successfulStoryAction, type StoryActionResult} from "../../utils/storyActions";
 import {storyCachedImageScan, storyCachedPdfScan} from "../../fixtures/scanFixtures";
+import {useScansStore} from "@/stores";
 
 /**
  * Upload target metadata for direct client-to-Azure uploads.
@@ -83,11 +84,23 @@ export async function deleteScan(): Promise<StoryActionResult<{scanId: string}>>
 	return successfulStoryAction({scanId: storyCachedImageScan.id});
 }
 
-/** Fetches all scans (mock). */
+/**
+ * Fetches all scans (mock).
+ *
+ * @remarks
+ * Returns the current seeded scans from the store if any exist,
+ * otherwise returns default fixtures. This preserves story-seeded
+ * state when the real `useScans()` hook auto-syncs after hydration.
+ */
 export async function fetchScans(): Promise<StoryActionResult<CachedScan[]>> {
 	logStoryAction("fetchScans");
 	await new Promise((resolve) => globalThis.setTimeout(resolve, 300));
-	return successfulStoryAction([storyCachedImageScan, storyCachedPdfScan]);
+
+	// Preserve seeded scan state from stories
+	const seededScans = useScansStore.getState().scans;
+	const scansToReturn = seededScans.length > 0 ? [...seededScans] : [storyCachedImageScan, storyCachedPdfScan];
+
+	return successfulStoryAction(scansToReturn);
 }
 
 /** Updates a scan (mock). */

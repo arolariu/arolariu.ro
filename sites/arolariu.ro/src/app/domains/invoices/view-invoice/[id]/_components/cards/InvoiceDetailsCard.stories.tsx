@@ -2,6 +2,7 @@ import type {Meta, StoryObj} from "@storybook/react";
 import {WithViewInvoiceContext, storyInvoice, storyMerchant, storyOnlineInvoice} from "../../../../_storybook";
 import {InvoiceDetailsCard} from "./InvoiceDetailsCard";
 import type {Currency} from "@/types/DDD/SharedKernel/Currency";
+import type {Invoice} from "@/types/invoices/Invoice";
 import type {PaymentType} from "@/types/invoices/Payment";
 
 const euroCurrency: Currency = {
@@ -10,7 +11,7 @@ const euroCurrency: Currency = {
   symbol: "€",
 };
 
-const foreignCurrencyInvoice = {
+const foreignCurrencyInvoice: Invoice = {
   ...storyOnlineInvoice,
   id: "invoice-story-foreign-currency",
   name: "Electronics Order - Amazon.de",
@@ -32,16 +33,15 @@ const foreignCurrencyInvoice = {
       totalPrice: 59.99,
     },
   ],
-} as const;
+};
 
-const emptyInvoice = {
+const emptyInvoice: Invoice = {
   ...storyInvoice,
   id: "invoice-story-empty-items",
   name: "Empty items invoice",
   description: "Invoice with no extracted line items",
   items: [],
-  isImportant: false,
-} as const;
+};
 
 const meta = {
   title: "Invoices/ViewInvoice/Cards/InvoiceDetails",
