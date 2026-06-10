@@ -29,6 +29,23 @@ function toVitePath(path: string): string {
  */
 export function getStorybookViteAliases(): AliasOptions {
   return [
+    // App-wide browser-only Storybook mocks.
+    {
+      find: /^@clerk\/nextjs$/,
+      replacement: toVitePath(resolve(storybookDirectory, "mocks", "clerkNextjs.tsx")),
+    },
+    {
+      find: /^next\/image$/,
+      replacement: toVitePath(resolve(storybookDirectory, "mocks", "nextImage.tsx")),
+    },
+    {
+      find: /^@\/hooks$/,
+      replacement: toVitePath(resolve(invoiceStorybookRoot, "mocks", "appHooks.ts")),
+    },
+    {
+      find: /^@\/hooks\/useUserInformation$/,
+      replacement: toVitePath(resolve(invoiceStorybookRoot, "mocks", "appHooks.ts")),
+    },
     // Exact path aliases for absolute imports
     {
       find: toVitePath(resolve(invoiceDomainRoot, "_actions", "invoices")),
