@@ -97,15 +97,15 @@ export const Perfect: Story = {
  */
 export const Good: Story = {
   render: () => {
-    const mixedProducts = storyProducts.slice(0, 8).map((product, i) => ({
+    const partialProducts = storyProducts.map((product, i) => ({
       ...product,
-      metadata: {...product.metadata, isComplete: i < 6, confidence: 0.85},
+      metadata: {...product.metadata, isComplete: i < 3, confidence: 0.85},
       category: ProductCategory.GROCERIES,
     }));
 
     const invoice = {
       ...storyInvoice,
-      items: mixedProducts,
+      items: partialProducts,
       merchantReference: "merchant-uuid-456",
       paymentInformation: {
         ...storyInvoice.paymentInformation,
@@ -125,7 +125,7 @@ export const Good: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Good invoice with ~75% health score. Has merchant, payment info, and categorized products, but some products are incomplete and no recipes have been generated.",
+        story: "Good invoice with ~75% health score: 4 products, 3 complete (75% completeness), all with good OCR confidence (0.85), merchant linked, payment info complete, but no recipes.",
       },
     },
   },
