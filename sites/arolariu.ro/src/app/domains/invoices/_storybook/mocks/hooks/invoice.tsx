@@ -197,3 +197,36 @@ export function useRecipeUpdate(invoice: Invoice): Readonly<{
 
 	return {isUpdating, updateRecipeCallback} as const;
 }
+
+/**
+ * Storybook-safe recipe delete hook.
+ *
+ * @param invoice - The invoice to delete the recipe from.
+ * @returns Hook state with delete progress and the delete callback.
+ */
+export function useRecipeDelete(invoice: Invoice): Readonly<{
+	isDeleting: boolean;
+	removeRecipeCallback: (recipeName: string) => Promise<Invoice>;
+}> {
+	const [isDeleting, setIsDeleting] = useState(false);
+
+	const removeRecipeCallback = useCallback(
+		async (recipeName: string): Promise<Invoice> => {
+			setIsDeleting(true);
+			try {
+				logStoryAction("removeRecipeCallback", {recipeName});
+				await new Promise((resolve) => globalThis.setTimeout(resolve, 500));
+				const updatedRecipes = (invoice.possibleRecipes ?? []).filter((r) => r.name !== recipeName);
+				return {
+					...invoice,
+					possibleRecipes: updatedRecipes,
+				};
+			} finally {
+				setIsDeleting(false);
+			}
+		},
+		[invoice],
+	);
+
+	return {isDeleting, removeRecipeCallback} as const;
+}
