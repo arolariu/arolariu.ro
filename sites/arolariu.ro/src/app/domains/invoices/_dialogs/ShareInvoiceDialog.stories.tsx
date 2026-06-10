@@ -28,6 +28,7 @@ export const Selection: Story = {
   render: () => (
     <OpenDialogOnMount
       dialog="SHARED__INVOICE_SHARE"
+      mode="share"
       payload={{invoice: {...storyInvoice, sharedWith: []}}}>
       <ShareInvoiceDialog />
     </OpenDialogOnMount>
@@ -42,6 +43,7 @@ export const PublicFlow: Story = {
   render: () => (
     <OpenDialogOnMount
       dialog="SHARED__INVOICE_SHARE"
+      mode="share"
       payload={{invoice: {...storyInvoice, sharedWith: []}}}>
       <ShareInvoiceDialog />
     </OpenDialogOnMount>
@@ -53,6 +55,7 @@ export const AlreadyPublic: Story = {
   render: () => (
     <OpenDialogOnMount
       dialog="SHARED__INVOICE_SHARE"
+      mode="share"
       payload={{invoice: storyPublicInvoice}}>
       <ShareInvoiceDialog />
     </OpenDialogOnMount>

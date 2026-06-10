@@ -8,6 +8,7 @@ import type {Invoice, InvoiceCategory} from "@/types/invoices/Invoice";
 import type {PaymentDetail, PaymentInformation, PaymentType, TaxDetail} from "@/types/invoices/Payment";
 import type {Product, ProductCategory, ProductMetadata} from "@/types/invoices/Product";
 import type {Currency} from "@/types/DDD/SharedKernel/Currency";
+import {LAST_GUID} from "@/lib/utils.generic";
 import {storyInvoiceImageScan, storyInvoicePdfScan} from "./scanFixtures";
 import {storyMerchant, storyOnlineMerchant} from "./merchantFixtures";
 import {storyRecipeEasy, storyRecipeHard} from "./recipeFixtures";
@@ -193,7 +194,7 @@ export const storyPublicInvoice: Invoice = {
 	id: "invoice-story-public-001",
 	name: "Public Grocery Invoice",
 	description: "Example invoice shared publicly for demonstration",
-	sharedWith: ["public-guid-sentinel-00000000-0000-0000-0000-000000000000"],
+	sharedWith: [LAST_GUID],
 	isImportant: true,
 };
 
