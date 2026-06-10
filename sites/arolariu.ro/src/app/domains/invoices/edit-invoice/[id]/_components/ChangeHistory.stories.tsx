@@ -1,26 +1,30 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {generateRandomInvoice} from "@/data/mocks";
+import {WithEditInvoiceContext, storyInvoice} from "@/app/domains/invoices/_storybook";
 import {InvoiceCategory} from "@/types/invoices";
 import ChangeHistory from "./ChangeHistory";
-import {EditInvoiceContextProvider} from "../_context/EditInvoiceContext";
 
 /**
  * Change history timeline component showing invoice modification history.
  *
  * **Component Description:**
- * Displays a chronological timeline of invoice changes, including pending modifications,
- * last update timestamp, and creation date. Provides visual feedback for unsaved changes
- * using the EditInvoiceContext to track pending modifications.
+ * Displays a chronological timeline of invoice changes, including creation date
+ * and last modified timestamp. The component reads from EditInvoiceContext to
+ * detect pending changes (when user modifies fields but hasn't saved yet).
  *
  * **Features:**
  * - Timeline visualization with icons for different change types
- * - Before/after value display for field changes
  * - Relative time formatting (e.g., "2 minutes ago")
  * - Automatic category label transformation
- * - Badge indicator for unsaved changes
+ * - Badge indicator for unsaved changes (when pendingChanges exist)
  *
  * **Context Requirements:**
- * Requires EditInvoiceContextProvider with invoice and pendingChanges.
+ * Requires EditInvoiceContextProvider with invoice data.
+ *
+ * **Note on Pending Changes:**
+ * This component displays pending changes from EditInvoiceContext when users
+ * interact with form fields in the edit page. Stories show the timeline with
+ * creation/modification history. Pending changes are managed by the real
+ * EditInvoiceContext during actual editing sessions.
  */
 const meta = {
   title: "Invoices/Edit Invoice/Components/ChangeHistory",
@@ -30,7 +34,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Timeline component displaying invoice modification history with pending changes from EditInvoiceContext. Shows creation date, last modified timestamp, and all unsaved field modifications with before/after values.",
+          "Timeline component displaying invoice modification history from EditInvoiceContext. Shows creation date and last modified timestamp. Pending changes appear when users modify fields in the edit page.",
       },
     },
   },
@@ -41,49 +45,22 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Story helper to wrap ChangeHistory with EditInvoiceContext.
- */
-function WithEditInvoiceContext({
-  invoice = generateRandomInvoice(),
-  merchant = null,
-  pendingChanges = {},
-  children,
-}: {
-  readonly invoice?: ReturnType<typeof generateRandomInvoice>;
-  readonly merchant?: null;
-  readonly pendingChanges?: Record<string, unknown>;
-  readonly children: React.ReactNode;
-}): React.JSX.Element {
-  // Create a mock context provider that simulates EditInvoiceContext
-  return (
-    <EditInvoiceContextProvider
-      invoice={invoice}
-      merchant={merchant}>
-      {children}
-    </EditInvoiceContextProvider>
-  );
-}
-
-/**
  * Default state showing a newly created invoice with no modifications.
  *
  * **Story Description:**
  * Displays the minimal timeline with only the creation timestamp.
- * No pending changes or modification history.
+ * No pending changes or modification history since the invoice is fresh.
  */
 export const Default: Story = {
-  render: () => {
-    const invoice = generateRandomInvoice();
-    return (
-      <WithEditInvoiceContext invoice={invoice}>
-        <ChangeHistory />
-      </WithEditInvoiceContext>
-    );
-  },
+  render: () => (
+    <WithEditInvoiceContext>
+      <ChangeHistory />
+    </WithEditInvoiceContext>
+  ),
   parameters: {
     docs: {
       description: {
-        story: "Default timeline showing only the invoice creation timestamp. No pending changes or modification history.",
+        story: "Default timeline showing only the invoice creation timestamp. The invoice has no modification history.",
       },
     },
   },
@@ -98,14 +75,13 @@ export const Default: Story = {
  */
 export const WithPreviousModifications: Story = {
   render: () => {
-    const invoice = generateRandomInvoice();
-    const updatedInvoice = {
-      ...invoice,
+    const invoice = {
+      ...storyInvoice,
       lastUpdatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
       numberOfUpdates: 3,
     };
     return (
-      <WithEditInvoiceContext invoice={updatedInvoice}>
+      <WithEditInvoiceContext invoice={invoice}>
         <ChangeHistory />
       </WithEditInvoiceContext>
     );
@@ -114,27 +90,27 @@ export const WithPreviousModifications: Story = {
     docs: {
       description: {
         story:
-          "Timeline showing creation date and last modified timestamp, indicating the invoice has been updated multiple times after creation.",
+          "Timeline showing creation date and last modified timestamp. The invoice has been updated 3 times after creation, with the most recent update 2 hours ago.",
       },
     },
   },
 };
 
 /**
- * Invoice with pending name change (not yet saved).
+ * Invoice with a long modification history.
  *
  * **Story Description:**
- * Shows a pending change where the invoice name has been modified
- * but not yet saved. Displays before/after values and a "pending" badge.
+ * Shows an invoice that was created long ago and has been
+ * modified multiple times over its lifetime.
  */
-export const WithPendingNameChange: Story = {
+export const LongHistory: Story = {
   render: () => {
-    const invoice = generateRandomInvoice();
-    invoice.name = "Original Invoice Name";
-
-    // Mock the EditInvoiceContext to simulate pending name change
-    // Note: This is a simplified mock since we can't directly inject pendingChanges
-    // In a real scenario, EditInvoiceContextProvider would manage this state
+    const invoice = {
+      ...storyInvoice,
+      createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+      lastUpdatedAt: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
+      numberOfUpdates: 12,
+    };
     return (
       <WithEditInvoiceContext invoice={invoice}>
         <ChangeHistory />
@@ -145,24 +121,27 @@ export const WithPendingNameChange: Story = {
     docs: {
       description: {
         story:
-          'Displays a pending name change in the timeline. Shows the before and after values (e.g., "Original Name" → "New Name") with a "pending" indicator.',
+          "Timeline for an older invoice (created 30 days ago) with extensive modification history (12 updates). Most recent modification was 1 hour ago.",
       },
     },
   },
 };
 
 /**
- * Invoice with pending category change.
+ * Recently created invoice (moments ago).
  *
  * **Story Description:**
- * Shows a pending category modification with human-readable labels
- * (e.g., "Uncategorized" → "Dining").
+ * Shows relative time formatting for a very recent invoice
+ * (created within the last few minutes).
  */
-export const WithPendingCategoryChange: Story = {
+export const RecentlyCreated: Story = {
   render: () => {
-    const invoice = generateRandomInvoice();
-    invoice.category = InvoiceCategory.NOT_DEFINED;
-
+    const invoice = {
+      ...storyInvoice,
+      createdAt: new Date(Date.now() - 2 * 60 * 1000), // 2 minutes ago
+      lastUpdatedAt: new Date(Date.now() - 2 * 60 * 1000),
+      numberOfUpdates: 0,
+    };
     return (
       <WithEditInvoiceContext invoice={invoice}>
         <ChangeHistory />
@@ -172,28 +151,28 @@ export const WithPendingCategoryChange: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Timeline showing a pending category change with friendly labels. For example, changing from 'Uncategorized' to 'Dining' or 'Auto'.",
+        story: "Timeline for a brand new invoice created just 2 minutes ago. Demonstrates relative time formatting for very recent timestamps.",
       },
     },
   },
 };
 
 /**
- * Invoice with multiple pending changes (name, category, description, importance).
+ * Invoice never modified since creation.
  *
  * **Story Description:**
- * Displays a complex timeline with several pending modifications,
- * demonstrating how multiple unsaved changes appear together.
+ * Created and last modified timestamps are identical,
+ * showing a single timeline entry.
  */
-export const WithMultiplePendingChanges: Story = {
+export const NeverModified: Story = {
   render: () => {
-    const invoice = generateRandomInvoice();
-    invoice.name = "Original Name";
-    invoice.category = InvoiceCategory.NOT_DEFINED;
-    invoice.description = "Original description text";
-    invoice.isImportant = false;
-
+    const timestamp = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // 7 days ago
+    const invoice = {
+      ...storyInvoice,
+      createdAt: timestamp,
+      lastUpdatedAt: timestamp,
+      numberOfUpdates: 0,
+    };
     return (
       <WithEditInvoiceContext invoice={invoice}>
         <ChangeHistory />
@@ -203,29 +182,28 @@ export const WithMultiplePendingChanges: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Complex timeline showing multiple pending changes: name, category, description, and importance flag. Each change displays with its own icon and before/after values.",
+        story: "Invoice created 7 days ago with no modifications since. The creation and last modified timestamps match, showing a single timeline entry.",
       },
     },
   },
 };
 
 /**
- * Comprehensive timeline: previous saves + pending changes.
+ * Grocery invoice with category and metadata.
  *
  * **Story Description:**
- * Full timeline showing creation, previous modification history,
- * and multiple pending unsaved changes.
+ * Timeline for a typical grocery invoice showing creation and modification history.
  */
-export const FullTimeline: Story = {
+export const GroceryInvoice: Story = {
   render: () => {
-    const invoice = generateRandomInvoice();
-    invoice.name = "Grocery Store Receipt";
-    invoice.category = InvoiceCategory.GROCERIES;
-    invoice.lastUpdatedAt = new Date(Date.now() - 5 * 60 * 60 * 1000); // 5 hours ago
-    invoice.createdAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000); // 2 days ago
-    invoice.numberOfUpdates = 4;
-
+    const invoice = {
+      ...storyInvoice,
+      name: "Grocery Store Receipt",
+      category: InvoiceCategory.GROCERIES,
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+      lastUpdatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+      numberOfUpdates: 2,
+    };
     return (
       <WithEditInvoiceContext invoice={invoice}>
         <ChangeHistory />
@@ -235,8 +213,7 @@ export const FullTimeline: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Complete timeline showing: (1) pending unsaved changes at the top, (2) last modified timestamp, (3) original creation date. Demonstrates the full change history view.",
+        story: "Timeline for a grocery invoice created 5 days ago and last modified 3 days ago (2 updates total).",
       },
     },
   },

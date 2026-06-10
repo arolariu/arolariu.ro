@@ -1,8 +1,7 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {generateRandomInvoice} from "@/data/mocks";
+import {WithViewInvoiceContext, storyInvoice} from "@/app/domains/invoices/_storybook";
 import {InvoiceAnalysisOptions} from "@/types/invoices";
 import {AnalysisPanel} from "./AnalysisPanel";
-import {InvoiceContextProvider} from "../../_context/InvoiceContext";
 
 /**
  * Analysis control panel for triggering invoice re-analysis.
@@ -43,27 +42,6 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Story helper to wrap AnalysisPanel with InvoiceContext.
- */
-function WithInvoiceContext({
-  invoice = generateRandomInvoice(),
-  merchant = null,
-  children,
-}: {
-  readonly invoice?: ReturnType<typeof generateRandomInvoice>;
-  readonly merchant?: null;
-  readonly children: React.ReactNode;
-}): React.JSX.Element {
-  return (
-    <InvoiceContextProvider
-      invoice={invoice}
-      merchant={merchant}>
-      {children}
-    </InvoiceContextProvider>
-  );
-}
-
-/**
  * Default state: invoice has items (panel hidden by default).
  *
  * **Story Description:**
@@ -72,15 +50,15 @@ function WithInvoiceContext({
  */
 export const Default: Story = {
   render: () => {
-    const invoice = generateRandomInvoice();
-    invoice.items = Array(5)
-      .fill(null)
-      .map(() => ({...generateRandomInvoice().items[0]}));
+    const invoice = {
+      ...storyInvoice,
+      items: storyInvoice.items.slice(0, 5),
+    };
 
     return (
-      <WithInvoiceContext invoice={invoice}>
+      <WithViewInvoiceContext invoice={invoice}>
         <AnalysisPanel />
-      </WithInvoiceContext>
+      </WithViewInvoiceContext>
     );
   },
   parameters: {
@@ -101,15 +79,17 @@ export const Default: Story = {
  */
 export const WithoutItems: Story = {
   render: () => {
-    const invoice = generateRandomInvoice();
-    invoice.items = [];
-    invoice.lastUpdatedAt = new Date(Date.now() - 2 * 60 * 60 * 1000); // 2 hours ago
-    invoice.numberOfUpdates = 1;
+    const invoice = {
+      ...storyInvoice,
+      items: [],
+      lastUpdatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+      numberOfUpdates: 1,
+    };
 
     return (
-      <WithInvoiceContext invoice={invoice}>
+      <WithViewInvoiceContext invoice={invoice}>
         <AnalysisPanel />
-      </WithInvoiceContext>
+      </WithViewInvoiceContext>
     );
   },
   parameters: {
@@ -130,15 +110,17 @@ export const WithoutItems: Story = {
  */
 export const NeverAnalyzed: Story = {
   render: () => {
-    const invoice = generateRandomInvoice();
-    invoice.items = [];
-    invoice.lastUpdatedAt = invoice.createdAt;
-    invoice.numberOfUpdates = 0;
+    const invoice = {
+      ...storyInvoice,
+      items: [],
+      lastUpdatedAt: storyInvoice.createdAt,
+      numberOfUpdates: 0,
+    };
 
     return (
-      <WithInvoiceContext invoice={invoice}>
+      <WithViewInvoiceContext invoice={invoice}>
         <AnalysisPanel />
-      </WithInvoiceContext>
+      </WithViewInvoiceContext>
     );
   },
   parameters: {
@@ -158,15 +140,17 @@ export const NeverAnalyzed: Story = {
  */
 export const MultipleAnalyses: Story = {
   render: () => {
-    const invoice = generateRandomInvoice();
-    invoice.items = [];
-    invoice.lastUpdatedAt = new Date(Date.now() - 30 * 60 * 1000); // 30 minutes ago
-    invoice.numberOfUpdates = 5;
+    const invoice = {
+      ...storyInvoice,
+      items: [],
+      lastUpdatedAt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
+      numberOfUpdates: 5,
+    };
 
     return (
-      <WithInvoiceContext invoice={invoice}>
+      <WithViewInvoiceContext invoice={invoice}>
         <AnalysisPanel />
-      </WithInvoiceContext>
+      </WithViewInvoiceContext>
     );
   },
   parameters: {
@@ -186,16 +170,18 @@ export const MultipleAnalyses: Story = {
  */
 export const RecentlyCreated: Story = {
   render: () => {
-    const invoice = generateRandomInvoice();
-    invoice.items = [];
-    invoice.createdAt = new Date(Date.now() - 5 * 60 * 1000); // 5 minutes ago
-    invoice.lastUpdatedAt = new Date(Date.now() - 5 * 60 * 1000);
-    invoice.numberOfUpdates = 0;
+    const invoice = {
+      ...storyInvoice,
+      items: [],
+      createdAt: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
+      lastUpdatedAt: new Date(Date.now() - 5 * 60 * 1000),
+      numberOfUpdates: 0,
+    };
 
     return (
-      <WithInvoiceContext invoice={invoice}>
+      <WithViewInvoiceContext invoice={invoice}>
         <AnalysisPanel />
-      </WithInvoiceContext>
+      </WithViewInvoiceContext>
     );
   },
   parameters: {
@@ -215,15 +201,17 @@ export const RecentlyCreated: Story = {
  */
 export const AnalyzedLongAgo: Story = {
   render: () => {
-    const invoice = generateRandomInvoice();
-    invoice.items = [];
-    invoice.lastUpdatedAt = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // 7 days ago
-    invoice.numberOfUpdates = 2;
+    const invoice = {
+      ...storyInvoice,
+      items: [],
+      lastUpdatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+      numberOfUpdates: 2,
+    };
 
     return (
-      <WithInvoiceContext invoice={invoice}>
+      <WithViewInvoiceContext invoice={invoice}>
         <AnalysisPanel />
-      </WithInvoiceContext>
+      </WithViewInvoiceContext>
     );
   },
   parameters: {

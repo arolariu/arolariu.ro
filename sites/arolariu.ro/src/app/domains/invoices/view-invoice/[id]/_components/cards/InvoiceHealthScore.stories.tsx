@@ -1,8 +1,7 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {generateRandomInvoice, generateRandomProduct} from "@/data/mocks";
+import {WithViewInvoiceContext, storyInvoice, storyProducts} from "@/app/domains/invoices/_storybook";
 import {ProductCategory} from "@/types/invoices";
 import {InvoiceHealthScore} from "./InvoiceHealthScore";
-import {InvoiceContextProvider} from "../../_context/InvoiceContext";
 
 /**
  * Invoice Health Score component displaying data quality metrics.
@@ -46,27 +45,6 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Story helper to wrap InvoiceHealthScore with InvoiceContext.
- */
-function WithInvoiceContext({
-  invoice = generateRandomInvoice(),
-  merchant = null,
-  children,
-}: {
-  readonly invoice?: ReturnType<typeof generateRandomInvoice>;
-  readonly merchant?: null;
-  readonly children: React.ReactNode;
-}): React.JSX.Element {
-  return (
-    <InvoiceContextProvider
-      invoice={invoice}
-      merchant={merchant}>
-      {children}
-    </InvoiceContextProvider>
-  );
-}
-
-/**
  * Perfect invoice with 100% health score.
  *
  * **Story Description:**
@@ -75,28 +53,31 @@ function WithInvoiceContext({
  */
 export const Perfect: Story = {
   render: () => {
-    const invoice = generateRandomInvoice();
-    invoice.items = Array(10)
-      .fill(null)
-      .map(() => {
-        const product = generateRandomProduct();
-        product.metadata.isComplete = true;
-        product.metadata.confidence = 0.95;
-        product.category = ProductCategory.GROCERIES;
-        return product;
-      });
-    invoice.merchantReference = "merchant-uuid-123";
-    invoice.paymentInformation.transactionDate = new Date();
-    invoice.paymentInformation.totalCostAmount = 150.5;
-    invoice.paymentInformation.currency = {code: "RON", symbol: "lei", name: "Romanian Leu"};
-    invoice.possibleRecipes = [
-      {id: "recipe-1", name: "Pasta Carbonara", complexity: 1, ingredients: [], instructions: [], metadata: {isComplete: true, confidence: 0.9, isSoftDeleted: false}},
-    ];
+    const completeProducts = storyProducts.slice(0, 10).map(product => ({
+      ...product,
+      metadata: {...product.metadata, isComplete: true, confidence: 0.95},
+      category: ProductCategory.GROCERIES,
+    }));
+
+    const invoice = {
+      ...storyInvoice,
+      items: completeProducts,
+      merchantReference: "merchant-uuid-123",
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(),
+        totalCostAmount: 150.5,
+        currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      },
+      possibleRecipes: [
+        {id: "recipe-1", name: "Pasta Carbonara", complexity: 1, ingredients: [], instructions: [], metadata: {isComplete: true, confidence: 0.9, isSoftDeleted: false}},
+      ],
+    };
 
     return (
-      <WithInvoiceContext invoice={invoice}>
+      <WithViewInvoiceContext invoice={invoice}>
         <InvoiceHealthScore />
-      </WithInvoiceContext>
+      </WithViewInvoiceContext>
     );
   },
   parameters: {
@@ -116,26 +97,29 @@ export const Perfect: Story = {
  */
 export const Good: Story = {
   render: () => {
-    const invoice = generateRandomInvoice();
-    invoice.items = Array(8)
-      .fill(null)
-      .map((_, i) => {
-        const product = generateRandomProduct();
-        product.metadata.isComplete = i < 6; // 75% complete
-        product.metadata.confidence = 0.85;
-        product.category = ProductCategory.GROCERIES;
-        return product;
-      });
-    invoice.merchantReference = "merchant-uuid-456";
-    invoice.paymentInformation.transactionDate = new Date();
-    invoice.paymentInformation.totalCostAmount = 89.99;
-    invoice.paymentInformation.currency = {code: "RON", symbol: "RON", name: "Romanian Leu"};
-    invoice.possibleRecipes = []; // No recipes
+    const mixedProducts = storyProducts.slice(0, 8).map((product, i) => ({
+      ...product,
+      metadata: {...product.metadata, isComplete: i < 6, confidence: 0.85},
+      category: ProductCategory.GROCERIES,
+    }));
+
+    const invoice = {
+      ...storyInvoice,
+      items: mixedProducts,
+      merchantReference: "merchant-uuid-456",
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(),
+        totalCostAmount: 89.99,
+        currency: {code: "RON", symbol: "RON", name: "Romanian Leu"},
+      },
+      possibleRecipes: [],
+    };
 
     return (
-      <WithInvoiceContext invoice={invoice}>
+      <WithViewInvoiceContext invoice={invoice}>
         <InvoiceHealthScore />
-      </WithInvoiceContext>
+      </WithViewInvoiceContext>
     );
   },
   parameters: {
@@ -155,26 +139,29 @@ export const Good: Story = {
  */
 export const NeedsAttention: Story = {
   render: () => {
-    const invoice = generateRandomInvoice();
-    invoice.items = Array(5)
-      .fill(null)
-      .map(() => {
-        const product = generateRandomProduct();
-        product.metadata.isComplete = false;
-        product.metadata.confidence = 0.6; // Low confidence
-        product.category = ProductCategory.NOT_DEFINED; // Uncategorized
-        return product;
-      });
-    invoice.merchantReference = "00000000-0000-0000-0000-000000000000"; // Empty GUID
-    invoice.paymentInformation.transactionDate = new Date();
-    invoice.paymentInformation.totalCostAmount = 45.0;
-    invoice.paymentInformation.currency = {code: "RON", symbol: "lei", name: "Romanian Leu"};
-    invoice.possibleRecipes = [];
+    const lowQualityProducts = storyProducts.slice(0, 5).map(product => ({
+      ...product,
+      metadata: {...product.metadata, isComplete: false, confidence: 0.6},
+      category: ProductCategory.NOT_DEFINED,
+    }));
+
+    const invoice = {
+      ...storyInvoice,
+      items: lowQualityProducts,
+      merchantReference: "00000000-0000-0000-0000-000000000000",
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(),
+        totalCostAmount: 45.0,
+        currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      },
+      possibleRecipes: [],
+    };
 
     return (
-      <WithInvoiceContext invoice={invoice}>
+      <WithViewInvoiceContext invoice={invoice}>
         <InvoiceHealthScore />
-      </WithInvoiceContext>
+      </WithViewInvoiceContext>
     );
   },
   parameters: {
@@ -194,26 +181,29 @@ export const NeedsAttention: Story = {
  */
 export const Incomplete: Story = {
   render: () => {
-    const invoice = generateRandomInvoice();
-    invoice.items = Array(2)
-      .fill(null)
-      .map(() => {
-        const product = generateRandomProduct();
-        product.metadata.isComplete = false;
-        product.metadata.confidence = 0.3;
-        product.category = ProductCategory.NOT_DEFINED;
-        return product;
-      });
-    invoice.merchantReference = "00000000-0000-0000-0000-000000000000";
-    invoice.paymentInformation.transactionDate = undefined;
-    invoice.paymentInformation.totalCostAmount = 0;
-    invoice.paymentInformation.currency = {code: "", symbol: "", name: ""};
-    invoice.possibleRecipes = [];
+    const minimalProducts = storyProducts.slice(0, 2).map(product => ({
+      ...product,
+      metadata: {...product.metadata, isComplete: false, confidence: 0.3},
+      category: ProductCategory.NOT_DEFINED,
+    }));
+
+    const invoice = {
+      ...storyInvoice,
+      items: minimalProducts,
+      merchantReference: "00000000-0000-0000-0000-000000000000",
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: undefined,
+        totalCostAmount: 0,
+        currency: {code: "", symbol: "", name: ""},
+      },
+      possibleRecipes: [],
+    };
 
     return (
-      <WithInvoiceContext invoice={invoice}>
+      <WithViewInvoiceContext invoice={invoice}>
         <InvoiceHealthScore />
-      </WithInvoiceContext>
+      </WithViewInvoiceContext>
     );
   },
   parameters: {
@@ -233,18 +223,23 @@ export const Incomplete: Story = {
  */
 export const Empty: Story = {
   render: () => {
-    const invoice = generateRandomInvoice();
-    invoice.items = [];
-    invoice.merchantReference = "00000000-0000-0000-0000-000000000000";
-    invoice.paymentInformation.transactionDate = undefined;
-    invoice.paymentInformation.totalCostAmount = 0;
-    invoice.paymentInformation.currency = {code: "", symbol: "", name: ""};
-    invoice.possibleRecipes = [];
+    const invoice = {
+      ...storyInvoice,
+      items: [],
+      merchantReference: "00000000-0000-0000-0000-000000000000",
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: undefined,
+        totalCostAmount: 0,
+        currency: {code: "", symbol: "", name: ""},
+      },
+      possibleRecipes: [],
+    };
 
     return (
-      <WithInvoiceContext invoice={invoice}>
+      <WithViewInvoiceContext invoice={invoice}>
         <InvoiceHealthScore />
-      </WithInvoiceContext>
+      </WithViewInvoiceContext>
     );
   },
   parameters: {
@@ -264,26 +259,29 @@ export const Empty: Story = {
  */
 export const PartialCompleteness: Story = {
   render: () => {
-    const invoice = generateRandomInvoice();
-    invoice.items = Array(10)
-      .fill(null)
-      .map((_, i) => {
-        const product = generateRandomProduct();
-        product.metadata.isComplete = i % 2 === 0; // 50% complete
-        product.metadata.confidence = i % 2 === 0 ? 0.9 : 0.5;
-        product.category = i % 2 === 0 ? ProductCategory.GROCERIES : ProductCategory.NOT_DEFINED;
-        return product;
-      });
-    invoice.merchantReference = "merchant-uuid-789";
-    invoice.paymentInformation.transactionDate = new Date();
-    invoice.paymentInformation.totalCostAmount = 125.0;
-    invoice.paymentInformation.currency = {code: "RON", symbol: "RON", name: "Romanian Leu"};
-    invoice.possibleRecipes = [];
+    const partialProducts = storyProducts.slice(0, 10).map((product, i) => ({
+      ...product,
+      metadata: {...product.metadata, isComplete: i % 2 === 0, confidence: i % 2 === 0 ? 0.9 : 0.5},
+      category: i % 2 === 0 ? ProductCategory.GROCERIES : ProductCategory.NOT_DEFINED,
+    }));
+
+    const invoice = {
+      ...storyInvoice,
+      items: partialProducts,
+      merchantReference: "merchant-uuid-789",
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(),
+        totalCostAmount: 125.0,
+        currency: {code: "RON", symbol: "RON", name: "Romanian Leu"},
+      },
+      possibleRecipes: [],
+    };
 
     return (
-      <WithInvoiceContext invoice={invoice}>
+      <WithViewInvoiceContext invoice={invoice}>
         <InvoiceHealthScore />
-      </WithInvoiceContext>
+      </WithViewInvoiceContext>
     );
   },
   parameters: {
@@ -303,26 +301,29 @@ export const PartialCompleteness: Story = {
  */
 export const HighConfidenceNoCategorization: Story = {
   render: () => {
-    const invoice = generateRandomInvoice();
-    invoice.items = Array(7)
-      .fill(null)
-      .map(() => {
-        const product = generateRandomProduct();
-        product.metadata.isComplete = true;
-        product.metadata.confidence = 0.95;
-        product.category = ProductCategory.NOT_DEFINED; // High confidence but not categorized
-        return product;
-      });
-    invoice.merchantReference = "merchant-uuid-abc";
-    invoice.paymentInformation.transactionDate = new Date();
-    invoice.paymentInformation.totalCostAmount = 200.0;
-    invoice.paymentInformation.currency = {code: "RON", symbol: "lei", name: "Romanian Leu"};
-    invoice.possibleRecipes = [];
+    const uncategorizedProducts = storyProducts.slice(0, 7).map(product => ({
+      ...product,
+      metadata: {...product.metadata, isComplete: true, confidence: 0.95},
+      category: ProductCategory.NOT_DEFINED,
+    }));
+
+    const invoice = {
+      ...storyInvoice,
+      items: uncategorizedProducts,
+      merchantReference: "merchant-uuid-abc",
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(),
+        totalCostAmount: 200.0,
+        currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      },
+      possibleRecipes: [],
+    };
 
     return (
-      <WithInvoiceContext invoice={invoice}>
+      <WithViewInvoiceContext invoice={invoice}>
         <InvoiceHealthScore />
-      </WithInvoiceContext>
+      </WithViewInvoiceContext>
     );
   },
   parameters: {
