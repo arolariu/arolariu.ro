@@ -15,6 +15,15 @@ const meta = {
 	component: DeleteRecipeDialog,
 	parameters: {
 		layout: "centered",
+		docs: {
+			description: {
+				component:
+					"DeleteRecipeDialog is a destructive confirmation AlertDialog for removing recipes from an invoice's possibleRecipes array. " +
+					"Displays the recipe name in bold within the confirmation message and provides Cancel and Delete action buttons. " +
+					"Uses the useRecipeDelete hook to perform client-side removal from the Zustand invoices store. " +
+					"Requires EditInvoiceContextProvider to access the invoice context.",
+			},
+		},
 	},
 	tags: ["autodocs"],
 } satisfies Meta<typeof DeleteRecipeDialog>;
@@ -29,6 +38,16 @@ type Story = StoryObj<typeof meta>;
  * Displays confirmation dialog for deleting "Classic Scrambled Eggs" recipe.
  */
 export const EasyRecipe: Story = {
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Demonstrates the delete confirmation dialog for an easy-complexity recipe ('Classic Scrambled Eggs'). " +
+					"Shows how the recipe name is displayed in bold within the confirmation message, along with Cancel and Delete buttons. " +
+					"The Delete button shows a loading state ('Deleting...') while the operation is in progress.",
+			},
+		},
+	},
 	render: () => (
 		<WithEditInvoiceContext>
 			<OpenDialogOnMount dialog="EDIT_INVOICE__RECIPE_DELETE" mode="delete" payload={{recipe: storyRecipeEasy}}>
@@ -45,6 +64,16 @@ export const EasyRecipe: Story = {
  * Displays confirmation dialog for deleting "Beef Wellington" recipe.
  */
 export const ComplexRecipe: Story = {
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Demonstrates the delete confirmation dialog for a hard-complexity recipe ('Beef Wellington'). " +
+					"Shows the same confirmation UI as the easy recipe, ensuring consistent destructive action patterns " +
+					"regardless of recipe complexity. Useful for testing longer recipe names in the confirmation message.",
+			},
+		},
+	},
 	render: () => (
 		<WithEditInvoiceContext>
 			<OpenDialogOnMount dialog="EDIT_INVOICE__RECIPE_DELETE" mode="delete" payload={{recipe: storyRecipeHard}}>

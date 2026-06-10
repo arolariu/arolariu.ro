@@ -16,6 +16,15 @@ const meta = {
 	component: PreviewRecipeDialog,
 	parameters: {
 		layout: "centered",
+		docs: {
+			description: {
+				component:
+					"PreviewRecipeDialog renders a read-only view of a recipe with all its details: name (as dialog title), " +
+					"description, ingredients list, complexity badge (Easy/Normal/Hard with variant styling), cooking instructions, " +
+					"preparation time, and cooking time with icon indicators. Includes graceful empty state fallbacks for optional fields, " +
+					"displaying 'Not specified' or 'No description' when values are missing.",
+			},
+		},
 	},
 	tags: ["autodocs"],
 } satisfies Meta<typeof PreviewRecipeDialog>;
@@ -31,6 +40,16 @@ type Story = StoryObj<typeof meta>;
  * instructions, complexity badge, and cooking times.
  */
 export const CompleteRecipe: Story = {
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Demonstrates the recipe preview dialog with a complete recipe ('Classic Scrambled Eggs') that has all fields populated: " +
+					"description, 5 ingredients, detailed step-by-step instructions, Easy complexity badge (green variant), " +
+					"3 minutes prep time, and 7 minutes cooking time. Shows the full-featured recipe display with all UI elements rendered.",
+			},
+		},
+	},
 	render: () => (
 		<OpenDialogOnMount dialog="EDIT_INVOICE__RECIPE_PREVIEW" mode="view" payload={{recipe: storyRecipeEasy}}>
 			<PreviewRecipeDialog />
@@ -46,6 +65,16 @@ export const CompleteRecipe: Story = {
  * for optional fields (description, instructions, times).
  */
 export const MinimalRecipe: Story = {
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Demonstrates the recipe preview dialog with a minimal recipe ('Simple Toast') that has only required fields populated. " +
+					"Shows empty state fallbacks: 'No description' for missing description, 'Not specified' for missing instructions " +
+					"and times, and just 2 ingredients. Useful for testing graceful degradation when optional recipe data is absent.",
+			},
+		},
+	},
 	render: () => {
 		const minimalRecipe: Recipe = {
 			name: "Simple Toast",

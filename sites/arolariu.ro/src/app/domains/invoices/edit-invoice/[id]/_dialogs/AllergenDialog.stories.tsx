@@ -15,6 +15,15 @@ const meta = {
 	component: AllergenDialog,
 	parameters: {
 		layout: "centered",
+		docs: {
+			description: {
+				component:
+					"AllergenDialog provides a user-friendly interface for managing allergens on individual invoice products. " +
+					"Features include viewing current allergens with remove buttons, quick-add buttons for 14 common EU-regulated allergens " +
+					"(Gluten, Lactose, Nuts, etc.), and a custom allergen text input for adding unlisted allergens. " +
+					"All changes are validated for duplicates and empty names before being persisted via the updateInvoiceProduct server action.",
+			},
+		},
 	},
 	tags: ["autodocs"],
 } satisfies Meta<typeof AllergenDialog>;
@@ -30,6 +39,16 @@ type Story = StoryObj<typeof meta>;
  * and custom allergen entry field.
  */
 export const ExistingAllergens: Story = {
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Demonstrates the allergen dialog opened for a milk product that already has one detected allergen (Lactose). " +
+					"Shows how existing allergens are displayed as removable badges, how the Lactose quick-add button is disabled " +
+					"(because it's already added), and how users can add additional allergens via quick-add buttons or custom text input.",
+			},
+		},
+	},
 	render: () => {
 		// Get the milk product which has lactose allergen
 		const milkProduct = storyProducts[0];
@@ -55,6 +74,16 @@ export const ExistingAllergens: Story = {
  * Displays empty allergen state with quick-add buttons and custom entry.
  */
 export const NoAllergens: Story = {
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Demonstrates the allergen dialog opened for a product (Organic Apples) with no detected allergens. " +
+					"Shows the empty state message 'No allergens detected' and how all 14 quick-add buttons are enabled " +
+					"for adding allergens. Users can either click quick-add buttons for common allergens or type custom allergen names.",
+			},
+		},
+	},
 	render: () => {
 		// Get the apples product which has no allergens
 		const applesProduct = storyProducts[3];
