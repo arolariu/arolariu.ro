@@ -13,8 +13,10 @@ function StorybookPrintHeaderWrapper({children}: Readonly<{children: React.React
     <>
       <style>{`
         /* Storybook-only override: make print header visible in canvas/docs */
-        .sb-show-main [class*="printHeader_printHeader"],
-        #storybook-docs [class*="printHeader_printHeader"] {
+        .sb-show-main [class^="_printHeader_"],
+        .sb-show-main [class*=" _printHeader_"],
+        #storybook-docs [class^="_printHeader_"],
+        #storybook-docs [class*=" _printHeader_"] {
           display: block !important;
         }
       `}</style>
