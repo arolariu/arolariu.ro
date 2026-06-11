@@ -175,10 +175,10 @@ export const ExplicitRON: Story = {
 };
 
 /**
- * High invoice count delta.
- * Demonstrates significant change in number of invoices.
+ * Modest invoice count delta.
+ * Demonstrates realistic change in number of invoices.
  */
-export const HighInvoiceCountChange: Story = {
+export const ModestInvoiceCountChange: Story = {
   args: {
     data: computeMonthComparison(mockInvoices),
     currency: "RON",
@@ -186,7 +186,7 @@ export const HighInvoiceCountChange: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Shows scenario with significant change in invoice frequency month-over-month.",
+        story: "Shows realistic scenario with modest change in invoice frequency month-over-month (e.g., +1 or +2 invoices).",
       },
     },
   },

@@ -103,10 +103,10 @@ export const SingleInvoice: Story = {
 };
 
 /**
- * Low-price items dominant.
- * Demonstrates scenario with most items in 0-10 range.
+ * Filtered invoice subset.
+ * Demonstrates distribution from invoices with low-price items present.
  */
-export const LowPriceDominant: Story = {
+export const FilteredSubset: Story = {
   args: {
     data: computePriceDistribution(mockInvoices.filter((inv) => inv.items.some((item) => item.price < 10))),
     currency: "RON",
@@ -114,7 +114,7 @@ export const LowPriceDominant: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Shows distribution where low-price items (0-10) dominate, typical for grocery shopping.",
+        story: "Shows distribution from invoices containing at least one low-price item. Note: computePriceDistribution buckets by invoice total, not individual item prices.",
       },
     },
   },
@@ -139,18 +139,18 @@ export const HighPriceOutliers: Story = {
 };
 
 /**
- * EUR currency display.
- * Shows price distribution in euros.
+ * RON currency display (explicit label variant).
+ * Shows price distribution with explicit RON currency label.
  */
-export const EuroCurrency: Story = {
+export const ExplicitRONCurrency: Story = {
   args: {
     data: computePriceDistribution(mockInvoices),
-    currency: "EUR",
+    currency: "RON",
   },
   parameters: {
     docs: {
       description: {
-        story: "Price distribution displayed in EUR for European users.",
+        story: "Price distribution with explicit RON label. Note: computePriceDistribution returns RON-normalized bucket amounts.",
       },
     },
   },

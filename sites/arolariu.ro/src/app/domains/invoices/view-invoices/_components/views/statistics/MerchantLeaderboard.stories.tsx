@@ -139,36 +139,18 @@ export const DominantMerchant: Story = {
 };
 
 /**
- * EUR currency display.
- * Shows merchant leaderboard in euros.
+ * RON currency display (explicit label variant).
+ * Shows merchant leaderboard with explicit RON currency label.
  */
-export const EuroCurrency: Story = {
+export const ExplicitRONCurrency: Story = {
   args: {
     data: computeMerchantAggregates(mockInvoices).slice(0, 10),
-    currency: "EUR",
+    currency: "RON",
   },
   parameters: {
     docs: {
       description: {
-        story: "Merchant leaderboard displayed in EUR currency.",
-      },
-    },
-  },
-};
-
-/**
- * USD currency display.
- * Shows merchant leaderboard in US dollars.
- */
-export const UsdCurrency: Story = {
-  args: {
-    data: computeMerchantAggregates(mockInvoices).slice(0, 10),
-    currency: "USD",
-  },
-  parameters: {
-    docs: {
-      description: {
-        story: "Merchant leaderboard displayed in USD for international users.",
+        story: "Merchant leaderboard with explicit RON currency label. Note: computeMerchantAggregates returns RON-normalized amounts.",
       },
     },
   },

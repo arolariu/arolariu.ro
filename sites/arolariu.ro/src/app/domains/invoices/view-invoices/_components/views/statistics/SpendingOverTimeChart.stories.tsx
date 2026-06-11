@@ -122,10 +122,10 @@ export const VariedTrend: Story = {
 };
 
 /**
- * Decreasing trend - reducing spending.
- * Shows downward spending pattern (budget improvement).
+ * Varied trend - limited data subset.
+ * Shows spending pattern from subset of invoices.
  */
-export const DecreasingTrend: Story = {
+export const LimitedDataSubset: Story = {
   args: {
     data: computeMonthlySpending(mockInvoices.slice(0, 5)),
     currency: "RON",
@@ -133,7 +133,7 @@ export const DecreasingTrend: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Shows downward trend indicating successful budget reduction over time.",
+        story: "Shows spending trend from limited invoice subset. Data may vary month-to-month depending on invoice distribution.",
       },
     },
   },
