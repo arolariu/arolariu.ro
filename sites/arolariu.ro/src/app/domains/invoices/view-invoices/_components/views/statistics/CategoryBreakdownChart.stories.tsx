@@ -51,7 +51,7 @@ type Story = StoryObj<typeof meta>;
 
 /**
  * Default view with diverse categories.
- * Shows spending across multiple invoice categories (grocery, electronics, etc.).
+ * Shows spending across several invoice categories from the deterministic mock dataset.
  */
 export const Default: Story = {
   args: {
