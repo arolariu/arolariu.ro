@@ -77,12 +77,23 @@ const meta = {
     },
   },
   beforeEach: () => {
+    // Snapshot previous state for restoration after story
+    const previousState = {
+      entities: [...useMerchantsStore.getState().entities],
+      selectedEntities: [...useMerchantsStore.getState().selectedEntities],
+      hasHydrated: useMerchantsStore.getState().hasHydrated,
+    };
+
+    // Seed deterministic merchant data for the story
     useMerchantsStore.getState().clearEntities();
     useMerchantsStore.getState().setEntities(storyMerchants);
     useMerchantsStore.getState().setHasHydrated(true);
 
     return () => {
-      useMerchantsStore.getState().clearEntities();
+      // Restore previous state instead of clearing
+      useMerchantsStore.getState().setEntities(previousState.entities);
+      useMerchantsStore.getState().setSelectedEntities(previousState.selectedEntities);
+      useMerchantsStore.getState().setHasHydrated(previousState.hasHydrated);
     };
   },
   tags: ["autodocs"],
