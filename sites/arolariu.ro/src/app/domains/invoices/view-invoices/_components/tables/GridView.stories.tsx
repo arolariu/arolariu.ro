@@ -30,14 +30,14 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Grid view with 6 invoice cards. */
+/** Grid view with 3 invoice cards from story fixtures. */
 export const WithInvoices: Story = {
   beforeEach: () => {
     resetInvoiceStoryStores();
     seedInvoiceStoryStores();
   },
   args: {
-    invoices: storyInvoices.slice(0, 6),
+    invoices: storyInvoices,
     pageSize: 10,
     currentPage: 1,
     totalPages: 1,

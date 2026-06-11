@@ -1,240 +1,65 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import {storyInvoice, WithEditInvoiceContext} from "../../../../_storybook";
+import ItemsTable from "./ItemsTable";
 
 /**
  * ItemsTable renders a paginated table of invoice line items with editing
  * capabilities.
- *
- * @remarks Static preview — component imports "use server" action `patchInvoice`
- * from `@/app/domains/invoices/_actions/invoices` that cannot be bundled by
- * Storybook's Vite/Rollup. Component also uses `usePaginationWithSearch` hook
- * from `@/hooks` and `useEditInvoiceContext` which are tightly coupled to
- * Next.js router and invoice edit page state. This story shows a schematic
- * table layout for documentation purposes.
  */
 const meta = {
   title: "Invoices/EditInvoice/Tables/ItemsTable",
+  component: ItemsTable,
   parameters: {
     layout: "centered",
     docs: {
       description: {
         component:
-          "Paginated table of invoice line items with inline editing, search, category assignment, and delete capabilities. Real component requires server action (`patchInvoice`) and edit invoice context that cannot be isolated for Storybook.",
+          "Paginated table of invoice line items with inline editing, search, category assignment, and delete capabilities. Supports add new item row, bulk select and delete, sort columns, and search within items.",
       },
     },
   },
-} satisfies Meta;
+  decorators: [
+    (Story) => (
+      <WithEditInvoiceContext>
+        <div style={{padding: "2rem", backgroundColor: "var(--color-background)", minWidth: "800px"}}>
+          <Story />
+        </div>
+      </WithEditInvoiceContext>
+    ),
+  ],
+} satisfies Meta<typeof ItemsTable>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Preview of items table with sample products. */
+/** Items table with sample products from story invoice. */
 export const WithItems: Story = {
+  args: {
+    invoice: storyInvoice,
+  },
   parameters: {
     docs: {
       description: {
         story:
-          "Schematic table layout showing 3 line items with quantity, unit price, and total columns. Displays Edit Items button, pagination controls, and grand total footer. Real component supports inline editing, search, category assignment, and bulk actions.",
+          "Table showing invoice line items with inline editing, search, and category assignment. Story invoice includes 3 products (milk, bread, chicken). Click cells to edit in-place, use checkboxes for bulk actions.",
       },
     },
   },
-  render: () => (
-    <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "#ffffff"}}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderBottom: "1px solid #e5e7eb",
-          padding: "1rem",
-        }}>
-        <h3 style={{fontSize: "0.875rem", fontWeight: "600"}}>Items (5)</h3>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            paddingLeft: "0.75rem",
-            paddingRight: "0.75rem",
-            paddingTop: "0.375rem",
-            paddingBottom: "0.375rem",
-            fontSize: "0.875rem",
-          }}>
-          ✏️ Edit Items
-        </button>
-      </div>
-      <table style={{width: "100%", fontSize: "0.875rem"}}>
-        <thead>
-          <tr style={{borderBottom: "1px solid #e5e7eb", fontSize: "0.75rem", color: "#6b7280"}}>
-            <th style={{paddingLeft: "1rem", paddingRight: "1rem", paddingTop: "0.5rem", paddingBottom: "0.5rem", textAlign: "left"}}>
-              Item
-            </th>
-            <th style={{paddingLeft: "1rem", paddingRight: "1rem", paddingTop: "0.5rem", paddingBottom: "0.5rem", textAlign: "right"}}>
-              Qty
-            </th>
-            <th style={{paddingLeft: "1rem", paddingRight: "1rem", paddingTop: "0.5rem", paddingBottom: "0.5rem", textAlign: "right"}}>
-              Unit Price
-            </th>
-            <th style={{paddingLeft: "1rem", paddingRight: "1rem", paddingTop: "0.5rem", paddingBottom: "0.5rem", textAlign: "right"}}>
-              Total
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style={{borderBottom: "1px solid #e5e7eb"}}>
-            <td style={{paddingLeft: "1rem", paddingRight: "1rem", paddingTop: "0.5rem", paddingBottom: "0.5rem"}}>Organic Milk 2L</td>
-            <td style={{paddingLeft: "1rem", paddingRight: "1rem", paddingTop: "0.5rem", paddingBottom: "0.5rem", textAlign: "right"}}>
-              2 pcs
-            </td>
-            <td style={{paddingLeft: "1rem", paddingRight: "1rem", paddingTop: "0.5rem", paddingBottom: "0.5rem", textAlign: "right"}}>
-              $3.99
-            </td>
-            <td
-              style={{
-                paddingLeft: "1rem",
-                paddingRight: "1rem",
-                paddingTop: "0.5rem",
-                paddingBottom: "0.5rem",
-                textAlign: "right",
-                fontWeight: "500",
-              }}>
-              $7.98
-            </td>
-          </tr>
-          <tr style={{borderBottom: "1px solid #e5e7eb"}}>
-            <td style={{paddingLeft: "1rem", paddingRight: "1rem", paddingTop: "0.5rem", paddingBottom: "0.5rem"}}>Sourdough Bread</td>
-            <td style={{paddingLeft: "1rem", paddingRight: "1rem", paddingTop: "0.5rem", paddingBottom: "0.5rem", textAlign: "right"}}>
-              1 pcs
-            </td>
-            <td style={{paddingLeft: "1rem", paddingRight: "1rem", paddingTop: "0.5rem", paddingBottom: "0.5rem", textAlign: "right"}}>
-              $5.50
-            </td>
-            <td
-              style={{
-                paddingLeft: "1rem",
-                paddingRight: "1rem",
-                paddingTop: "0.5rem",
-                paddingBottom: "0.5rem",
-                textAlign: "right",
-                fontWeight: "500",
-              }}>
-              $5.50
-            </td>
-          </tr>
-          <tr style={{borderBottom: "1px solid #e5e7eb"}}>
-            <td style={{paddingLeft: "1rem", paddingRight: "1rem", paddingTop: "0.5rem", paddingBottom: "0.5rem"}}>Fresh Chicken Breast</td>
-            <td style={{paddingLeft: "1rem", paddingRight: "1rem", paddingTop: "0.5rem", paddingBottom: "0.5rem", textAlign: "right"}}>
-              0.8 kg
-            </td>
-            <td style={{paddingLeft: "1rem", paddingRight: "1rem", paddingTop: "0.5rem", paddingBottom: "0.5rem", textAlign: "right"}}>
-              $8.99
-            </td>
-            <td
-              style={{
-                paddingLeft: "1rem",
-                paddingRight: "1rem",
-                paddingTop: "0.5rem",
-                paddingBottom: "0.5rem",
-                textAlign: "right",
-                fontWeight: "500",
-              }}>
-              $7.19
-            </td>
-          </tr>
-        </tbody>
-        <tfoot>
-          <tr style={{backgroundColor: "#f9fafb", fontWeight: "600"}}>
-            <td
-              style={{paddingLeft: "1rem", paddingRight: "1rem", paddingTop: "0.5rem", paddingBottom: "0.5rem"}}
-              colSpan={3}>
-              Grand Total
-            </td>
-            <td style={{paddingLeft: "1rem", paddingRight: "1rem", paddingTop: "0.5rem", paddingBottom: "0.5rem", textAlign: "right"}}>
-              $20.67
-            </td>
-          </tr>
-        </tfoot>
-      </table>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderTop: "1px solid #e5e7eb",
-          padding: "1rem",
-          fontSize: "0.875rem",
-          color: "#6b7280",
-        }}>
-        <span>Page 1 of 2</span>
-        <div style={{display: "flex", gap: "0.5rem"}}>
-          <button
-            type='button'
-            disabled
-            style={{
-              borderRadius: "0.375rem",
-              border: "1px solid #e5e7eb",
-              paddingLeft: "0.75rem",
-              paddingRight: "0.75rem",
-              paddingTop: "0.25rem",
-              paddingBottom: "0.25rem",
-              fontSize: "0.875rem",
-              opacity: 0.5,
-            }}>
-            ← Previous
-          </button>
-          <button
-            type='button'
-            style={{
-              borderRadius: "0.375rem",
-              border: "1px solid #e5e7eb",
-              paddingLeft: "0.75rem",
-              paddingRight: "0.75rem",
-              paddingTop: "0.25rem",
-              paddingBottom: "0.25rem",
-              fontSize: "0.875rem",
-            }}>
-            Next →
-          </button>
-        </div>
-      </div>
-    </div>
-  ),
 };
 
-/** Empty items table. */
+/** Empty items table with no products. */
 export const Empty: Story = {
+  args: {
+    invoice: {
+      ...storyInvoice,
+      products: [],
+    },
+  },
   parameters: {
     docs: {
       description: {
-        story: "Empty state showing no items on the invoice. Displays Edit Items button to open items dialog where user can add line items.",
+        story: "Empty state showing no items on the invoice. Displays message encouraging user to add items via the Items dialog.",
       },
     },
   },
-  render: () => (
-    <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "#ffffff"}}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderBottom: "1px solid #e5e7eb",
-          padding: "1rem",
-        }}>
-        <h3 style={{fontSize: "0.875rem", fontWeight: "600"}}>Items (0)</h3>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            paddingLeft: "0.75rem",
-            paddingRight: "0.75rem",
-            paddingTop: "0.375rem",
-            paddingBottom: "0.375rem",
-            fontSize: "0.875rem",
-          }}>
-          ✏️ Edit Items
-        </button>
-      </div>
-      <div style={{padding: "2rem", textAlign: "center", fontSize: "0.875rem", color: "#6b7280"}}>No items found on this invoice.</div>
-    </div>
-  ),
 };

@@ -140,7 +140,7 @@ export const Default: Story = {
     docs: {
       description: {
         story:
-          "Displays a schematic grid showing all 16 dialog types the container can render, organized by category (analysis, items, merchant, metadata, scans, recipes, sharing, deletion). Each row shows the dialog icon, type constant, label, and current status indicator.",
+          "Displays a schematic grid showing all 18 dialog types the container can render, organized by category (analysis, items, merchant, metadata, scans, recipes, sharing, deletion). Each row shows the dialog icon, type constant, label, and current status indicator.",
       },
     },
   },

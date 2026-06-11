@@ -30,14 +30,14 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Table view with 8 invoice rows. */
+/** Table view with 3 invoice rows from story fixtures. */
 export const WithInvoices: Story = {
   beforeEach: () => {
     resetInvoiceStoryStores();
     seedInvoiceStoryStores();
   },
   args: {
-    invoices: storyInvoices.slice(0, 8),
+    invoices: storyInvoices,
     pageSize: 10,
     currentPage: 1,
     totalPages: 1,
