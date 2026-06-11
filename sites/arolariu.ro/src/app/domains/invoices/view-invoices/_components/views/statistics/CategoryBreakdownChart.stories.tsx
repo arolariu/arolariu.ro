@@ -1,4 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import {InvoiceCategory} from "@/types/invoices";
 import {computeCategoryAggregates} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {CategoryBreakdownChart} from "./CategoryBreakdownChart";
@@ -108,7 +109,7 @@ export const Empty: Story = {
  */
 export const GroceryDominant: Story = {
   args: {
-    data: computeCategoryAggregates(mockInvoices.filter((inv) => inv.category === 1 || Math.random() < 0.2)),
+    data: computeCategoryAggregates(mockInvoices.filter((inv) => inv.category === InvoiceCategory.GROCERY)),
     currency: "RON",
   },
   parameters: {
