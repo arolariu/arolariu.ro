@@ -35,7 +35,7 @@ export function createMockInvoice(overrides: Partial<Invoice>): Invoice {
     totalTaxAmount: 19,
     subtotalAmount: 0,
     tipAmount: 0,
-    transactionDate: new Date("2026-06-01T12:00:00Z"),
+    transactionDate: new Date(2026, 5, 1, 12, 0, 0, 0),
     paymentType: 200,
     currency: {
       code: "RON",
@@ -61,8 +61,8 @@ export function createMockInvoice(overrides: Partial<Invoice>): Invoice {
     countryRegion: "RO",
     taxDetails: [],
     payments: [],
-    createdAt: new Date("2026-06-01T12:00:00Z"),
-    lastUpdatedAt: new Date("2026-06-01T12:00:00Z"),
+    createdAt: new Date(2026, 5, 1, 12, 0, 0, 0),
+    lastUpdatedAt: new Date(2026, 5, 1, 12, 0, 0, 0),
     ...overrides,
   } as unknown as Invoice;
 }
@@ -107,13 +107,13 @@ export const MOCK_MERCHANTS = {
   PIZZA_HUT: "merchant-pizza-hut-001",
 };
 
-// Date helpers for generating deterministic past dates
+// Date helpers for generating deterministic past dates in local time
 const getDateMonthsAgo = (months: number, day: number = 15, hour: number = 12): Date => {
-  const baseDate = new Date("2026-06-01T12:00:00Z");
-  const date = new Date(baseDate);
+  // Use local time base date (2026, June is month index 5)
+  const date = new Date(2026, 5, 1, 12, 0, 0, 0);
   date.setMonth(date.getMonth() - months);
   date.setDate(day);
-  date.setUTCHours(hour, 0, 0, 0);
+  date.setHours(hour, 0, 0, 0);
   return date;
 };
 
