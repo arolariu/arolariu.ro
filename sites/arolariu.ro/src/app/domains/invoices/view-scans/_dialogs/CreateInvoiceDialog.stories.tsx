@@ -13,6 +13,16 @@ const meta = {
   title: "Invoices/ViewScans/Dialogs/CreateInvoiceDialog",
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "**Static Preview:** Multi-step wizard dialog for creating invoices from uploaded scans. Users choose between creating " +
+          "one invoice per scan or combining all scans into a single invoice, then monitors AI-powered OCR processing progress. " +
+          "**Blocker:** Component imports from `@/stores` barrel which re-exports `preferencesStore` that imports a 'use server' setCookie action. " +
+          "Storybook's Vite/Rollup bundler cannot process server-only modules. Additionally requires Zustand store state and DialogContext. " +
+          "Static HTML preview demonstrates the selection step UI.",
+      },
+    },
   },
 } satisfies Meta;
 
@@ -21,6 +31,16 @@ type Story = StoryObj<typeof meta>;
 
 /** Default wizard selection step with scan previews and mode options. */
 export const Default: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Static preview of the first wizard step where users select invoice creation mode. Shows scan thumbnails, " +
+          "total file size, and radio options for 'one invoice per scan' vs 'combine into one invoice'. " +
+          "Displays AI processing indicator for OCR and categorization. Real component includes multi-step flow with progress tracking.",
+      },
+    },
+  },
   render: () => (
     <div style={{borderRadius: "0.75rem", border: "1px solid #e5e7eb", backgroundColor: "white", boxShadow: "0 20px 25px rgba(0,0,0,0.1)"}}>
       {/* Header */}

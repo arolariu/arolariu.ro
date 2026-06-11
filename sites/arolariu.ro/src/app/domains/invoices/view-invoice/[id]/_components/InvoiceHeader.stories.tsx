@@ -20,6 +20,14 @@ const meta = {
   title: "Invoices/ViewInvoice/InvoiceHeader",
   parameters: {
     layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "**Static Preview:** Displays invoice title, importance indicator, and action buttons (edit, delete, export, print). " +
+          "**Blocker:** Component depends on `useUserInformation` hook which requires Clerk authentication (useUser, useAuth) that cannot " +
+          "be mocked in Storybook without fragile deep provider stubs. Static HTML preview demonstrates visual layout for owner and guest views.",
+      },
+    },
   },
 } satisfies Meta;
 
@@ -28,6 +36,15 @@ type Story = StoryObj<typeof meta>;
 
 /** Owner view — edit and delete buttons visible. */
 export const OwnerView: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Static preview of the header when the current user owns the invoice. Shows all action buttons: Edit, Delete, Print, and Export. " +
+          "Displays importance badge when `invoice.isImportant` is true.",
+      },
+    },
+  },
   render: () => (
     <div
       style={{
@@ -97,6 +114,15 @@ export const OwnerView: Story = {
 
 /** Guest view — only print button visible. */
 export const GuestView: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Static preview of the header when the current user is viewing a shared invoice they do not own. " +
+          "Only shows Print and Export buttons; Edit and Delete are hidden for non-owners.",
+      },
+    },
+  },
   render: () => (
     <div
       style={{
