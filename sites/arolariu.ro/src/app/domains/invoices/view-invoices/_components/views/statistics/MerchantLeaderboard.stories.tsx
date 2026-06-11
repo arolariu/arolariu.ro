@@ -121,10 +121,10 @@ export const FewMerchants: Story = {
 };
 
 /**
- * Dominant merchant - one outlier.
- * Demonstrates scenario where one merchant has significantly higher spending.
+ * Top merchants ranking.
+ * Shows top 10 merchants from the full mock dataset.
  */
-export const DominantMerchant: Story = {
+export const TopMerchantsRanking: Story = {
   args: {
     data: computeMerchantAggregates(mockInvoices).slice(0, 10),
     currency: "RON",
@@ -132,7 +132,7 @@ export const DominantMerchant: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Shows leaderboard where one merchant dominates total spending (e.g., primary grocery store).",
+        story: "Shows top 10 merchants ranked by total spending from the full mock dataset.",
       },
     },
   },
@@ -157,10 +157,10 @@ export const ExplicitRONCurrency: Story = {
 };
 
 /**
- * Balanced spending - no dominant merchant.
- * Shows even distribution across multiple merchants.
+ * First 10 invoices subset.
+ * Shows merchant leaderboard from first 10 invoices.
  */
-export const BalancedSpending: Story = {
+export const FirstTenInvoices: Story = {
   args: {
     data: computeMerchantAggregates(mockInvoices.slice(0, 10)),
     currency: "RON",
@@ -168,7 +168,7 @@ export const BalancedSpending: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Balanced scenario where spending is distributed evenly across merchants.",
+        story: "Merchant leaderboard computed from first 10 invoices in the mock dataset.",
       },
     },
   },

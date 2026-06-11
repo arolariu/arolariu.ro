@@ -4,12 +4,12 @@ import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoic
 import {PriceDistributionChart} from "./PriceDistributionChart";
 
 /**
- * PriceDistributionChart displays item price distribution in buckets as a vertical bar chart.
+ * PriceDistributionChart displays invoice total distribution in buckets as a vertical bar chart.
  *
  * ## Features
  * - Vertical bar chart with price range buckets
  * - Default buckets: 0-5, 5-10, 10-25, 25-50, 50-100, 100+
- * - Item count per price range
+ * - Invoice count per price range (based on invoice totals)
  * - Hover tooltips with count details
  * - Color-coded bars (cycling through 5 chart colors)
  * - Total amount per bucket tracked
@@ -28,7 +28,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Visualizes how items are distributed across price ranges using a vertical bar chart. Groups items into predefined buckets (0-5, 5-10, etc.) showing count and total amount per range. Useful for understanding typical transaction sizes and identifying spending patterns.",
+          "Visualizes how invoice totals are distributed across price ranges using a vertical bar chart. Groups invoices into predefined buckets (0-5, 5-10, etc.) showing count and total amount per range. Useful for understanding typical transaction sizes and identifying spending patterns.",
       },
     },
   },
@@ -60,7 +60,7 @@ export const Default: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Default price distribution showing items spread across multiple price ranges.",
+        story: "Default price distribution showing invoices spread across multiple price ranges.",
       },
     },
   },
@@ -78,7 +78,7 @@ export const Empty: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Empty state when no items exist to distribute across price buckets.",
+        story: "Empty state when no invoices exist to distribute across price buckets.",
       },
     },
   },
@@ -96,7 +96,7 @@ export const SingleInvoice: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Minimal distribution from a single invoice's product prices.",
+        story: "Minimal distribution from a single invoice total.",
       },
     },
   },
@@ -132,7 +132,7 @@ export const HighPriceOutliers: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Distribution showing presence of expensive items in the 100+ bucket.",
+        story: "Distribution showing presence of high-value invoices in the 100+ bucket.",
       },
     },
   },
@@ -157,10 +157,10 @@ export const ExplicitRONCurrency: Story = {
 };
 
 /**
- * Mid-range concentration.
- * Demonstrates normal distribution centered around 10-50 range.
+ * Invoice subset (3-12).
+ * Shows distribution from invoices 3-12 in the dataset.
  */
-export const MidRangeConcentration: Story = {
+export const InvoiceSubset: Story = {
   args: {
     data: computePriceDistribution(mockInvoices.slice(3, 12)),
     currency: "RON",
@@ -168,7 +168,7 @@ export const MidRangeConcentration: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Shows distribution where most items fall in the middle price ranges (10-50).",
+        story: "Shows price distribution computed from invoices 3-12 in the mock dataset.",
       },
     },
   },
@@ -186,7 +186,7 @@ export const SparseBuckets: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Sparse distribution scenario with very few items across buckets.",
+        story: "Sparse distribution scenario with very few invoices across buckets.",
       },
     },
   },

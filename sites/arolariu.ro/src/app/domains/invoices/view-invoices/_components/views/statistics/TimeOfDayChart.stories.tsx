@@ -188,17 +188,17 @@ export const NightDominant: Story = {
 };
 
 /**
- * Balanced pattern - even distribution.
- * Shows roughly equal activity across all time segments.
+ * Full dataset time pattern.
+ * Shows time-of-day distribution from all mock invoices.
  */
-export const Balanced: Story = {
+export const FullDataset: Story = {
   args: {
     data: computeTimeOfDay(mockInvoices),
   },
   parameters: {
     docs: {
       description: {
-        story: "Balanced distribution where shopping activity is evenly spread across all time segments.",
+        story: "Time-of-day distribution computed from the full mock invoice dataset.",
       },
     },
   },

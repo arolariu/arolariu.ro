@@ -140,10 +140,10 @@ export const ExplicitRON: Story = {
 };
 
 /**
- * Balanced distribution.
- * Shows roughly equal spending across multiple categories.
+ * Subset of invoices.
+ * Shows spending distribution from first 10 invoices.
  */
-export const Balanced: Story = {
+export const SubsetDistribution: Story = {
   args: {
     data: computeCategoryAggregates(mockInvoices.slice(0, 10)),
     currency: "RON",
@@ -151,7 +151,7 @@ export const Balanced: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Balanced spending distribution where no single category dominates.",
+        story: "Spending distribution from first 10 invoices in the mock dataset.",
       },
     },
   },
