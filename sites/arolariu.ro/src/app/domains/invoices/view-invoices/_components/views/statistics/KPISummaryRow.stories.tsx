@@ -39,7 +39,7 @@ const meta = {
       control: false,
     },
     currency: {
-      description: "Currency code for display (e.g., RON, EUR, USD)",
+      description: "Currency code for display (RON). Aggregate data is RON-normalized.",
       control: "text",
     },
   },
@@ -50,7 +50,7 @@ type Story = StoryObj<typeof meta>;
 
 /**
  * Default view with diverse metrics.
- * Shows balanced KPI summary with realistic values across all invoices.
+ * Shows KPI summary with realistic values across all invoices.
  */
 export const Default: Story = {
   args: {

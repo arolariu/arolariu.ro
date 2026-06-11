@@ -39,7 +39,7 @@ const meta = {
       control: false,
     },
     currency: {
-      description: "Currency code for display (e.g., RON, EUR, USD)",
+      description: "Currency code for display (RON). Aggregate data is RON-normalized.",
       control: "text",
     },
   },
@@ -50,7 +50,7 @@ type Story = StoryObj<typeof meta>;
 
 /**
  * Default view with varied distribution.
- * Shows realistic price distribution across all buckets.
+ * Shows realistic price distribution across several buckets.
  */
 export const Default: Story = {
   args: {
@@ -67,8 +67,8 @@ export const Default: Story = {
 };
 
 /**
- * Empty state - no items.
- * Shows chart when no invoice items are available.
+ * Empty state - no invoices.
+ * Shows chart when no invoices are available.
  */
 export const Empty: Story = {
   args: {
@@ -86,7 +86,7 @@ export const Empty: Story = {
 
 /**
  * Single invoice - minimal data.
- * Shows distribution for one invoice's items.
+ * Shows distribution for one invoice total.
  */
 export const SingleInvoice: Story = {
   args: {
@@ -122,7 +122,7 @@ export const FilteredSubset: Story = {
 
 /**
  * High-price outliers.
- * Shows distribution with significant high-value items (100+).
+ * Shows distribution with significant high-value invoices (100+).
  */
 export const HighPriceOutliers: Story = {
   args: {
@@ -175,8 +175,8 @@ export const InvoiceSubset: Story = {
 };
 
 /**
- * Sparse buckets - few items.
- * Shows distribution with only a few items total.
+ * Sparse buckets - few invoices.
+ * Shows distribution with only a few invoices total.
  */
 export const SparseBuckets: Story = {
   args: {

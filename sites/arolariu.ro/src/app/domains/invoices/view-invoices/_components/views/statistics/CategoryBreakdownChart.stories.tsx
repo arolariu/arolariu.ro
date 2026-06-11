@@ -40,7 +40,7 @@ const meta = {
       control: false,
     },
     currency: {
-      description: "Currency code for display (e.g., RON, EUR, USD)",
+      description: "Currency code for display (RON). Aggregate data is RON-normalized.",
       control: "text",
     },
   },
@@ -51,7 +51,7 @@ type Story = StoryObj<typeof meta>;
 
 /**
  * Default view with diverse categories.
- * Shows balanced spending across multiple invoice categories (grocery, electronics, etc.).
+ * Shows spending across multiple invoice categories (grocery, electronics, etc.).
  */
 export const Default: Story = {
   args: {
