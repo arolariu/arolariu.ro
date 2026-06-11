@@ -45,10 +45,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Perfect invoice with 100% health score.
+ * Perfect invoice with 99% health score.
  *
  * **Story Description:**
- * All quality factors met: complete products, high OCR confidence,
+ * All quality factors met: complete products, high OCR confidence (95% rounds to 19/20 points),
  * merchant linked, payment info complete, all categories assigned, recipes generated.
  */
 export const Perfect: Story = {
@@ -83,7 +83,7 @@ export const Perfect: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Perfect invoice with 100% health score. All quality factors are met: complete products, high OCR confidence, merchant linked, payment info complete, categories assigned, and recipes generated.",
+        story: "Perfect invoice with 99% health score. All quality factors are met: complete products, high OCR confidence (95% confidence rounds to 19/20 points), merchant linked, payment info complete, categories assigned, and recipes generated. Total: 15 + 20 + 19 + 10 + 15 + 10 + 10 = 99%.",
       },
     },
   },
@@ -132,10 +132,10 @@ export const Good: Story = {
 };
 
 /**
- * Needs attention - 50% health score.
+ * Needs attention - 42% health score.
  *
  * **Story Description:**
- * Several quality issues: low OCR confidence, no merchant, uncategorized products.
+ * Several quality issues: low OCR confidence (60%), no merchant, uncategorized products.
  */
 export const NeedsAttention: Story = {
   render: () => {
@@ -167,17 +167,17 @@ export const NeedsAttention: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Invoice needing attention (~50% score). Issues: low OCR confidence, no merchant linked, uncategorized products, incomplete product data, and no recipes.",
+        story: "Invoice needing attention (42% score). Issues: low OCR confidence (60% = 12 pts), no merchant linked, uncategorized products, incomplete product data, and no recipes. Total: 15 + 0 + 12 + 0 + 15 + 0 + 0 = 42%.",
       },
     },
   },
 };
 
 /**
- * Incomplete invoice - 25% health score.
+ * Incomplete invoice - 21% health score.
  *
  * **Story Description:**
- * Minimal data: few products, low confidence, no merchant, incomplete payment info.
+ * Minimal data: few products, low confidence (30%), no merchant, incomplete payment info.
  */
 export const Incomplete: Story = {
   render: () => {
@@ -209,7 +209,7 @@ export const Incomplete: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Incomplete invoice with ~25% health score. Minimal data: only 2 products, low OCR confidence, no merchant, incomplete payment information, and no recipes.",
+        story: "Incomplete invoice with 21% health score. Minimal data: only 2 products, low OCR confidence (30% = 6 pts), no merchant, incomplete payment information, and no recipes. Total: 15 + 0 + 6 + 0 + 0 + 0 + 0 = 21%.",
       },
     },
   },
@@ -252,7 +252,7 @@ export const Empty: Story = {
 };
 
 /**
- * Partial completeness - some products complete, some not.
+ * Partial completeness - 69% health score.
  *
  * **Story Description:**
  * Mixed state: half products complete, half incomplete, demonstrating partial scoring.
@@ -287,7 +287,7 @@ export const PartialCompleteness: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Invoice with partial completeness (~60% score). Half the products are complete with high confidence and categories, while the other half are incomplete. Demonstrates partial credit scoring.",
+        story: "Invoice with partial completeness (69% score). Half the products are complete with high confidence (90%) and categories, while the other half are incomplete (50% confidence). Average OCR = 70% (14 pts), 50% completeness (10 pts), 50% categorization (5 pts). Total: 15 + 10 + 14 + 10 + 15 + 5 + 0 = 69%.",
       },
     },
   },
