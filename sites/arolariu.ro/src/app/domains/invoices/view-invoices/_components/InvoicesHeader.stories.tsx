@@ -27,15 +27,15 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Default invoices header with all action buttons fully interactive.
- * Buttons trigger respective dialogs via WithInvoiceDialogs decorator.
+ * Default invoices header with all action buttons enabled.
+ * Dialog buttons dispatch DialogContext state through WithInvoiceDialogs; dialog content is covered by dialog-specific stories.
  */
 export const Default: Story = {
   parameters: {
     docs: {
       description: {
         story:
-          "Interactive header rendering with all action buttons enabled. Import Scans opens file picker, Export All triggers download dialog, Print All opens browser print, New Invoice navigates to creation flow.",
+          "Interactive header rendering with all action buttons enabled. Import and export actions dispatch dialog state through DialogContext; dialog content is covered by dedicated dialog stories.",
       },
     },
   },

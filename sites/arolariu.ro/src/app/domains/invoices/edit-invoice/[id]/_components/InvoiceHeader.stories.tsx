@@ -1,6 +1,4 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import InvoiceHeader from "./InvoiceHeader";
-
 /**
  * InvoiceHeader (edit) renders the editable invoice header with inline name
  * editing, save, discard, print, and delete controls.

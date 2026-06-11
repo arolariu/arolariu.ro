@@ -1,6 +1,4 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import ScansHeader from "./ScansHeader";
-
 /**
  * ScansHeader shows the scan count, sync status, and action buttons
  * (upload, invoices, sync).
