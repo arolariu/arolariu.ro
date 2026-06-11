@@ -331,7 +331,7 @@ export const HighConfidenceNoCategorization: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Invoice with high OCR confidence but no categorization (79% score). All 7 products are complete with 95% OCR confidence, merchant linked, and payment info present, but no categories or recipes. Total: 15 + 20 + 19 + 10 + 15 + 0 + 0 = 79%.",
+        story: "Invoice with high OCR confidence but no categorization (79% score). All 4 products are complete with 95% OCR confidence, merchant linked, and payment info present, but no categories or recipes. Total: 15 + 20 + 19 + 10 + 15 + 0 + 0 = 79%.",
       },
     },
   },
