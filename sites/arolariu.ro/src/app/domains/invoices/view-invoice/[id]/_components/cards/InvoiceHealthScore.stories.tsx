@@ -294,10 +294,12 @@ export const PartialCompleteness: Story = {
 };
 
 /**
- * High OCR confidence but missing categories.
+ * High OCR confidence but missing categories - 79% health score.
  *
  * **Story Description:**
  * Products have high OCR confidence but lack category assignments.
+ * Demonstrates that strong OCR and completeness can still yield a good score,
+ * but missing categorization prevents reaching excellence.
  */
 export const HighConfidenceNoCategorization: Story = {
   render: () => {
@@ -329,7 +331,7 @@ export const HighConfidenceNoCategorization: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Invoice with high OCR confidence (95%) but no product categorization. Demonstrates the importance of category assignments in the overall health score.",
+        story: "Invoice with high OCR confidence but no categorization (79% score). All 7 products are complete with 95% OCR confidence, merchant linked, and payment info present, but no categories or recipes. Total: 15 + 20 + 19 + 10 + 15 + 0 + 0 = 79%.",
       },
     },
   },
