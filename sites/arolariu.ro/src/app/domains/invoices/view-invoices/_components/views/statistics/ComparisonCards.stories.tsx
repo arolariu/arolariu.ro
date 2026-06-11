@@ -67,10 +67,10 @@ export const Default: Story = {
 };
 
 /**
- * Spending increased significantly.
- * Demonstrates scenario where current month spending is much higher.
+ * Mixed trends with slight spending decrease.
+ * Demonstrates scenario with varied month-over-month metrics.
  */
-export const SpendingIncreased: Story = {
+export const MixedTrends: Story = {
   args: {
     data: computeMonthComparison(mockInvoices),
     currency: "RON",
@@ -78,7 +78,7 @@ export const SpendingIncreased: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Scenario where spending has increased compared to the previous month (negative trend for savings).",
+        story: "Realistic scenario showing mixed metrics: slight spending decrease but varied invoice count and merchant patterns.",
       },
     },
   },
@@ -103,10 +103,10 @@ export const SpendingDecreased: Story = {
 };
 
 /**
- * New merchants discovered.
- * Highlights month where user shopped at several new places.
+ * Familiar merchants - no new discoveries.
+ * Shows month where user shopped at previously visited merchants.
  */
-export const NewMerchantsFound: Story = {
+export const NoNewMerchants: Story = {
   args: {
     data: computeMonthComparison(mockInvoices),
     currency: "RON",
@@ -114,7 +114,7 @@ export const NewMerchantsFound: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Shows month with new merchant discoveries, indicating shopping pattern changes.",
+        story: "Shows month with no new merchant discoveries (newMerchantCount = 0), indicating consistent shopping patterns.",
       },
     },
   },
@@ -157,18 +157,18 @@ export const Empty: Story = {
 };
 
 /**
- * EUR currency display.
- * Shows comparison metrics in euros.
+ * RON currency display (alternative label).
+ * Shows comparison metrics with RON label (data is always RON-normalized).
  */
-export const EuroCurrency: Story = {
+export const ExplicitRON: Story = {
   args: {
     data: computeMonthComparison(mockInvoices),
-    currency: "EUR",
+    currency: "RON",
   },
   parameters: {
     docs: {
       description: {
-        story: "Month-over-month comparison displayed in EUR for European users.",
+        story: "Month-over-month comparison with explicit RON currency label. All aggregate data is RON-normalized.",
       },
     },
   },

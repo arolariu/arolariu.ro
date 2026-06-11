@@ -104,10 +104,10 @@ export const SingleMonth: Story = {
 };
 
 /**
- * Increasing trend - growing spending.
- * Demonstrates upward spending trend over months.
+ * Varied trend - fluctuating spending.
+ * Demonstrates spending pattern with ups and downs over months.
  */
-export const IncreasingTrend: Story = {
+export const VariedTrend: Story = {
   args: {
     data: computeMonthlySpending(mockInvoices),
     currency: "RON",
@@ -115,7 +115,7 @@ export const IncreasingTrend: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Shows upward spending trend indicating increased monthly expenses over time.",
+        story: "Shows realistic spending pattern with month-to-month fluctuations (not monotonically increasing).",
       },
     },
   },
@@ -158,18 +158,18 @@ export const VolatileSpending: Story = {
 };
 
 /**
- * EUR currency display.
- * Shows spending trend in euros.
+ * RON currency display (alternative label).
+ * Shows spending trend with RON label (data is always RON-normalized).
  */
-export const EuroCurrency: Story = {
+export const ExplicitRON: Story = {
   args: {
     data: computeMonthlySpending(mockInvoices),
-    currency: "EUR",
+    currency: "RON",
   },
   parameters: {
     docs: {
       description: {
-        story: "Monthly spending chart displayed in EUR for European users.",
+        story: "Monthly spending chart with explicit RON label. All aggregate data is RON-normalized.",
       },
     },
   },

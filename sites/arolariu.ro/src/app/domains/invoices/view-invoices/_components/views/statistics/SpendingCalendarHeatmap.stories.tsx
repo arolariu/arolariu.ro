@@ -149,10 +149,10 @@ export const SingleDay: Story = {
 };
 
 /**
- * Frequent spending - high activity.
- * Demonstrates heatmap with spending on most days.
+ * Moderate spending activity.
+ * Demonstrates heatmap with spending on several days of the month.
  */
-export const HighActivity: Story = {
+export const ModerateActivity: Story = {
   args: {
     data: computeDailySpending(mockInvoices),
     currency: "RON",
@@ -160,7 +160,7 @@ export const HighActivity: Story = {
   parameters: {
     docs: {
       description: {
-        story: "High-activity scenario where user makes purchases most days of the month.",
+        story: "Moderate-activity scenario where user makes purchases on a few days of the month (4 active days in June).",
       },
     },
   },
@@ -206,18 +206,18 @@ export const SparseActivity: Story = {
 };
 
 /**
- * EUR currency display.
- * Shows calendar heatmap in euros.
+ * RON currency display (alternative label).
+ * Shows calendar heatmap with RON label (data is always RON-normalized).
  */
-export const EuroCurrency: Story = {
+export const ExplicitRON: Story = {
   args: {
     data: computeDailySpending(mockInvoices),
-    currency: "EUR",
+    currency: "RON",
   },
   parameters: {
     docs: {
       description: {
-        story: "Calendar heatmap displayed in EUR for European users.",
+        story: "Calendar heatmap with explicit RON label. All aggregate data is RON-normalized.",
       },
     },
   },

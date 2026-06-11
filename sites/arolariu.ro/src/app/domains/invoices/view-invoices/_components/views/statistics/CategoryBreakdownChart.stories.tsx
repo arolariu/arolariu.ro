@@ -122,18 +122,18 @@ export const GroceryDominant: Story = {
 };
 
 /**
- * Multi-currency view.
- * Shows category breakdown with EUR currency display.
+ * RON currency display (alternative label).
+ * Shows category breakdown with RON label (data is always RON-normalized).
  */
-export const EuroCurrency: Story = {
+export const ExplicitRON: Story = {
   args: {
     data: computeCategoryAggregates(mockInvoices),
-    currency: "EUR",
+    currency: "RON",
   },
   parameters: {
     docs: {
       description: {
-        story: "Category breakdown displayed in EUR currency. Amounts are shown with EUR label.",
+        story: "Category breakdown with explicit RON label. All aggregate data is RON-normalized.",
       },
     },
   },
@@ -170,24 +170,6 @@ export const FewCategories: Story = {
     docs: {
       description: {
         story: "Sparse data scenario with only a few invoice categories represented.",
-      },
-    },
-  },
-};
-
-/**
- * USD currency display.
- * Shows category breakdown in US dollars.
- */
-export const UsdCurrency: Story = {
-  args: {
-    data: computeCategoryAggregates(mockInvoices),
-    currency: "USD",
-  },
-  parameters: {
-    docs: {
-      description: {
-        story: "Category breakdown displayed in USD currency for international users.",
       },
     },
   },

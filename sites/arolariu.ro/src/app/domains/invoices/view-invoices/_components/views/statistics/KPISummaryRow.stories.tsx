@@ -121,36 +121,18 @@ export const HighVolume: Story = {
 };
 
 /**
- * EUR currency display.
- * Shows KPI summary in euros.
+ * RON currency display (alternative label).
+ * Shows KPI summary with RON label (data is always RON-normalized).
  */
-export const EuroCurrency: Story = {
+export const ExplicitRON: Story = {
   args: {
     data: computeKPIs(mockInvoices),
-    currency: "EUR",
+    currency: "RON",
   },
   parameters: {
     docs: {
       description: {
-        story: "KPI summary displayed in EUR for European users.",
-      },
-    },
-  },
-};
-
-/**
- * USD currency display.
- * Shows KPI summary in US dollars.
- */
-export const UsdCurrency: Story = {
-  args: {
-    data: computeKPIs(mockInvoices),
-    currency: "USD",
-  },
-  parameters: {
-    docs: {
-      description: {
-        story: "KPI summary displayed in USD for international users.",
+        story: "KPI summary with explicit RON label. All aggregate data is RON-normalized.",
       },
     },
   },
