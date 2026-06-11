@@ -49,6 +49,7 @@ export {WithInvoiceDialogs} from "./providers/DialogProviders";
 export {WithEditInvoiceContext} from "./providers/EditInvoiceProviders";
 export {WithViewInvoiceContext} from "./providers/ViewInvoiceProviders";
 export {InvoiceStoryFrame, WithScanUploadContext} from "./providers/ScanUploadProviders";
+export {WithCreateInvoiceContext} from "./providers/CreateInvoiceProviders";
 
 // Dialog harness
 export {OpenDialogOnMount} from "./providers/OpenDialogOnMount";
