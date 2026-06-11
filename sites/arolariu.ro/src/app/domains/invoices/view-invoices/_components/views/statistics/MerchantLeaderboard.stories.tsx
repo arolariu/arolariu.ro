@@ -1,7 +1,51 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import {useMerchantsStore} from "@/stores";
+import type {ContactInformation, Merchant} from "@/types/invoices/Merchant";
+import {MerchantCategory} from "@/types/invoices/Merchant";
 import {computeMerchantAggregates} from "../../../_utils/statistics";
-import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
+import {emptyInvoices, MOCK_MERCHANTS, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {MerchantLeaderboard} from "./MerchantLeaderboard";
+
+function createContactInformation(name: string): ContactInformation {
+  return {
+    fullName: `${name} Romania SRL`,
+    address: "Bucharest, Romania",
+    phoneNumber: "+40 21 000 0000",
+    emailAddress: `contact@${name.toLowerCase().replaceAll(" ", "")}.example`,
+    website: "https://example.com",
+  };
+}
+
+function createMerchant(id: string, name: string, category: Merchant["category"]): Merchant {
+  return {
+    id,
+    name,
+    description: `${name} deterministic statistics story merchant`,
+    category,
+    address: createContactInformation(name),
+    parentCompanyId: "",
+    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    createdBy: "storybook-user",
+    lastUpdatedAt: new Date("2026-01-01T00:00:00.000Z"),
+    lastUpdatedBy: "storybook-user",
+    numberOfUpdates: 0,
+    isImportant: false,
+    isSoftDeleted: false,
+  };
+}
+
+const storyMerchants: Merchant[] = [
+  createMerchant(MOCK_MERCHANTS.LIDL, "Lidl", MerchantCategory.SUPERMARKET),
+  createMerchant(MOCK_MERCHANTS.KAUFLAND, "Kaufland", MerchantCategory.HYPERMARKET),
+  createMerchant(MOCK_MERCHANTS.CARREFOUR, "Carrefour", MerchantCategory.HYPERMARKET),
+  createMerchant(MOCK_MERCHANTS.MEGA_IMAGE, "Mega Image", MerchantCategory.SUPERMARKET),
+  createMerchant(MOCK_MERCHANTS.AUCHAN, "Auchan", MerchantCategory.HYPERMARKET),
+  createMerchant(MOCK_MERCHANTS.PROFI, "Profi", MerchantCategory.SUPERMARKET),
+  createMerchant(MOCK_MERCHANTS.PENNY, "Penny", MerchantCategory.SUPERMARKET),
+  createMerchant(MOCK_MERCHANTS.MCDONALD, "McDonald's", MerchantCategory.OTHER),
+  createMerchant(MOCK_MERCHANTS.KFC, "KFC", MerchantCategory.OTHER),
+  createMerchant(MOCK_MERCHANTS.PIZZA_HUT, "Pizza Hut", MerchantCategory.OTHER),
+];
 
 /**
  * MerchantLeaderboard displays top merchants by spending as horizontal bars.
@@ -31,6 +75,15 @@ const meta = {
           "Visualizes top merchants ranked by total spending using a horizontal bar chart. Shows merchant names (or IDs if names unavailable) with total spend and invoice counts. Integrates with the merchant store to resolve display names.",
       },
     },
+  },
+  beforeEach: () => {
+    useMerchantsStore.getState().clearEntities();
+    useMerchantsStore.getState().setEntities(storyMerchants);
+    useMerchantsStore.getState().setHasHydrated(true);
+
+    return () => {
+      useMerchantsStore.getState().clearEntities();
+    };
   },
   tags: ["autodocs"],
   argTypes: {
