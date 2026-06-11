@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {resetInvoiceStoryStores, seedInvoiceStoryStores, storyInvoices} from "../../../_storybook";
+import {resetInvoiceStoryStores, seedInvoiceStoryStores, storyInvoices, WithInvoiceDialogs} from "../../../_storybook";
 import {GridView} from "./GridView";
 
 /**
@@ -20,9 +20,11 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div style={{padding: "2rem", backgroundColor: "var(--color-background)"}}>
-        <Story />
-      </div>
+      <WithInvoiceDialogs>
+        <div style={{padding: "2rem", backgroundColor: "var(--color-background)"}}>
+          <Story />
+        </div>
+      </WithInvoiceDialogs>
     ),
   ],
 } satisfies Meta<typeof GridView>;
