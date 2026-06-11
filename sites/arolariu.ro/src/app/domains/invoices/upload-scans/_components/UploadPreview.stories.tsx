@@ -4,12 +4,21 @@ import type {Meta, StoryObj} from "@storybook/react";
  * UploadPreview displays a grid of pending file uploads with status indicators,
  * progress bars, and remove buttons. Depends on `useScanUpload`.
  *
- * This story renders static previews of various upload states.
+ * @remarks Static preview — component uses `useScanUpload` hook which manages
+ * ephemeral upload state (files, progress, abort controllers) that cannot be
+ * cleanly mocked in Storybook. This story demonstrates the visual layout of
+ * various upload states.
  */
 const meta = {
   title: "Invoices/UploadScans/UploadPreview",
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "Grid of pending file uploads showing various states: pending, uploading with progress, completed, and failed. Real component depends on `useScanUpload` hook for state management.",
+      },
+    },
   },
 } satisfies Meta;
 
@@ -18,6 +27,13 @@ type Story = StoryObj<typeof meta>;
 
 /** Mixed upload states — pending, uploading, completed, failed. */
 export const MixedStates: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows a grid with four cards representing different upload states: pending (awaiting upload), uploading (with progress bar at 65%), completed (successful upload with checkmark), and failed (with error message and retry option).",
+      },
+    },
+  },
   render: () => (
     <div>
       <div style={{marginBottom: "1rem"}}>

@@ -26,6 +26,12 @@ const meta = {
   title: "Invoices/Dialogs/DialogContainer",
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "Manages visibility of all invoice-related dialogs via `useDialogs` context. Renders the active dialog based on the current dialog type. Real component imports server actions that cannot be bundled by Storybook.",
+      },
+    },
   },
 } satisfies Meta;
 
@@ -130,6 +136,14 @@ const dialogTypes = [
 
 /** Overview of all dialog types managed by the container. */
 export const Default: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Displays a schematic grid showing all 16 dialog types the container can render, organized by category (analysis, items, merchant, metadata, scans, recipes, sharing, deletion). Each row shows the dialog icon, type constant, label, and current status indicator.",
+      },
+    },
+  },
   render: () => (
     <div
       style={{

@@ -15,6 +15,12 @@ const meta = {
 	component: ScanCard,
 	parameters: {
 		layout: "centered",
+		docs: {
+			description: {
+				component:
+					"Displays a receipt scan thumbnail with title, metadata, optional status badge, progress indicator, linked badge, center overlay, actions menu, and rename capability. Supports image and PDF media types with preview activation.",
+			},
+		},
 	},
 	tags: ["autodocs"],
 } satisfies Meta<typeof ScanCard>;

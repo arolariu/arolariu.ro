@@ -13,6 +13,12 @@ const meta = {
 	component: ScanMediaPreview,
 	parameters: {
 		layout: "centered",
+		docs: {
+			description: {
+				component:
+					"Media preview component for scan cards. Displays image thumbnails or PDF placeholders with fallback support. Handles click activation for preview dialogs and locked states during upload or processing.",
+			},
+		},
 	},
 	tags: ["autodocs"],
 } satisfies Meta<typeof ScanMediaPreview>;
