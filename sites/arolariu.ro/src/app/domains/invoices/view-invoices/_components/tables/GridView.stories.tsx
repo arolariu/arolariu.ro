@@ -45,6 +45,14 @@ export const WithInvoices: Story = {
     handleNextPage: () => console.log("Next page"),
     handlePageSizeChange: (size: number) => console.log("Page size:", size),
   },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Grid layout showing 3 invoice cards with scan thumbnails, selection checkboxes, vendor names, dates, amounts, and item counts. Includes pagination controls and page size selector at bottom. Cards use motion animations for entrance.",
+      },
+    },
+  },
 };
 
 /** Empty state — no invoices available. */
@@ -60,5 +68,13 @@ export const EmptyState: Story = {
     handlePrevPage: () => console.log("Previous page"),
     handleNextPage: () => console.log("Next page"),
     handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Empty state when no invoices exist or all invoices are filtered out. Displays centered message with icon encouraging user to create their first invoice or adjust filters. Pagination controls are hidden.",
+      },
+    },
   },
 };

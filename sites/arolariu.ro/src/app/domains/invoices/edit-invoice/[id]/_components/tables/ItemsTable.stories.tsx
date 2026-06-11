@@ -52,7 +52,7 @@ export const Empty: Story = {
   args: {
     invoice: {
       ...storyInvoice,
-      products: [],
+      items: [],
     },
   },
   parameters: {

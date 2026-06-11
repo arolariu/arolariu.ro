@@ -63,6 +63,14 @@ export const ImageWithActions: Story = {
 			},
 		],
 	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Image scan card with clickable preview activation and kebab menu actions (rotate, delete). Click the thumbnail to trigger preview dialog; use the actions menu for rotate and delete operations.",
+			},
+		},
+	},
 };
 
 /**
@@ -100,6 +108,14 @@ export const PdfSelected: Story = {
 			},
 		],
 	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"PDF scan card in selected state with visible checkbox and delete action. Shows PDF file icon placeholder, multi-metadata line (size, date, page count), and selection highlight. Checkbox toggles selection state.",
+			},
+		},
+	},
 };
 
 /**
@@ -128,6 +144,14 @@ export const UploadProgress: Story = {
 			</span>
 		),
 		progress: {value: 70, label: "70% uploaded"},
+	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Scan card during upload with linear progress bar at 70%, blue 'Uploading' status badge, and locked state (no interactions). Progress indicator shows percentage below the card.",
+			},
+		},
 	},
 };
 
@@ -176,6 +200,14 @@ export const RenameEditing: Story = {
 			/>
 		);
 	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Inline rename editing with controlled state harness. Click title to enter edit mode; input field replaces title with commit/cancel controls. Demonstrates rename lifecycle: onStart → onChange → onCommit/onCancel.",
+			},
+		},
+	},
 };
 
 /**
@@ -219,6 +251,14 @@ export const LinkedToInvoice: Story = {
 			},
 		],
 	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Scan card with top-left 'Linked' badge indicating attachment to an existing invoice. Badge includes link icon and blue background. Card remains interactive with delete action available.",
+			},
+		},
+	},
 };
 
 /**
@@ -248,6 +288,14 @@ export const UploadError: Story = {
 			</span>
 		),
 		error: "Upload failed: Network error",
+	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Error state showing failed upload with red 'Failed' badge, error message below card, and locked state. Error text displays diagnostic message (e.g., 'Upload failed: Network error').",
+			},
+		},
 	},
 };
 
@@ -289,5 +337,13 @@ export const ProcessingOverlay: Story = {
 				<span style={{fontSize: "0.875rem", fontWeight: 500, color: "#374151"}}>Processing...</span>
 			</div>
 		),
+	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Scan card with centered processing overlay covering the thumbnail. Displays animated spinner with 'Processing...' label in white card overlay. Card is locked during processing.",
+			},
+		},
 	},
 };

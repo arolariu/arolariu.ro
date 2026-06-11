@@ -48,6 +48,14 @@ export const WithInvoices: Story = {
     handlePageSizeChange: (size: number) => console.log("Page size:", size),
     onSort: (field: "date" | "amount" | "name") => console.log("Sort by:", field),
   },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Sortable table showing 3 invoice rows with selection checkboxes, vendor names, category badges, formatted dates, amounts, and row action menus. Click column headers to toggle sort direction. Default sort: date descending.",
+      },
+    },
+  },
 };
 
 /** Empty state — no invoices. */
@@ -66,5 +74,13 @@ export const EmptyState: Story = {
     handleNextPage: () => console.log("Next page"),
     handlePageSizeChange: (size: number) => console.log("Page size:", size),
     onSort: (field: "date" | "amount" | "name") => console.log("Sort by:", field),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Empty state when no invoices exist or all invoices are filtered out. Displays centered message with icon in the table body area encouraging user to create or adjust filters. Table headers remain visible; pagination controls hidden.",
+      },
+    },
   },
 };

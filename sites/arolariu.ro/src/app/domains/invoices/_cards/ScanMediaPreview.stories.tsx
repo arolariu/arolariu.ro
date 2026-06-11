@@ -36,6 +36,14 @@ export const Image: Story = {
 		alt: "Grocery receipt scan from storybook fixture",
 		loading: "eager",
 	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Standard image preview displaying grocery receipt thumbnail. Uses Next.js Image component with eager loading for immediate render in Storybook. Demonstrates default image media type rendering.",
+			},
+		},
+	},
 };
 
 /**
@@ -48,6 +56,14 @@ export const Pdf: Story = {
 		alt: "Invoice PDF scan from storybook fixture",
 		loading: "eager",
 	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"PDF preview showing file icon placeholder instead of thumbnail. Renders TbFileTypePdf icon with neutral background since PDFs cannot be previewed as thumbnails. Demonstrates PDF media type handling.",
+			},
+		},
+	},
 };
 
 /**
@@ -59,6 +75,14 @@ export const MissingPreview: Story = {
 		mediaKind: "unknown",
 		alt: "Missing scan preview",
 		loading: "eager",
+	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Fallback state when no preview source is available. Displays TbFileUnknown icon with muted background. Demonstrates graceful degradation when media cannot be loaded or is unavailable.",
+			},
+		},
 	},
 };
 
@@ -73,6 +97,14 @@ export const WithPreviewActivation: Story = {
 		loading: "eager",
 		onPreviewActivate: () => {
 			logStoryAction("Preview activated");
+		},
+	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Interactive preview that triggers callback on click. Cursor changes to pointer on hover; click logs 'Preview activated' action. Use for opening full-screen preview dialogs or lightboxes.",
+			},
 		},
 	},
 };
@@ -139,6 +171,14 @@ export const WithOverlays: Story = {
 			</div>
 		),
 	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Preview with all four corner overlay slots populated. Demonstrates positioning for status badges, linked indicators, selection checkboxes, or action buttons. Each overlay uses distinct color for clarity.",
+			},
+		},
+	},
 };
 
 /**
@@ -175,5 +215,13 @@ export const WithCenterOverlay: Story = {
 				<span style={{fontSize: "0.875rem", fontWeight: 500, color: "#374151"}}>Processing...</span>
 			</div>
 		),
+	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Preview with centered overlay card (processing state). Overlay covers entire preview area with semi-transparent background. Use for upload progress, OCR processing, or other blocking operations.",
+			},
+		},
 	},
 };
