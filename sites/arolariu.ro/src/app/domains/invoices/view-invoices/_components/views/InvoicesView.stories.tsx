@@ -20,6 +20,12 @@ const meta = {
   ],
   parameters: {
     layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "Mounts the real invoice list view with the invoice dialog provider, seeded invoice stores, filters, and table/grid switching behavior.",
+      },
+    },
   },
 } satisfies Meta<typeof RenderInvoicesView>;
 
@@ -35,6 +41,13 @@ export const Default: Story = {
   args: {
     invoices: storyInvoices,
   },
+  parameters: {
+    docs: {
+      description: {
+        story: "Interactive invoice list view populated with the deterministic invoice fixtures and seeded invoice store.",
+      },
+    },
+  },
 };
 
 /** Empty state — no invoices available. */
@@ -44,5 +57,12 @@ export const EmptyState: Story = {
   },
   args: {
     invoices: [],
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Empty invoice list state with no invoices and a reset store.",
+      },
+    },
   },
 };

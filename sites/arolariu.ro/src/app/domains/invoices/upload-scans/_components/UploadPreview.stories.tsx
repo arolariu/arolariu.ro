@@ -70,4 +70,12 @@ export const WithPendingFiles: Story = {
  * Empty state — no uploads pending.
  * Real component returns null when pendingUploads array is empty.
  */
-export const EmptyState: Story = {};
+export const EmptyState: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "No pending uploads in the real ScanUploadContext; UploadPreview intentionally renders nothing.",
+      },
+    },
+  },
+};
