@@ -104,7 +104,7 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
   );
 
   const chartConfig = {
-    totalSpent: {
+    totalSpend: {
       label: t((m) => m.cards.invoices.statistics.merchantLeaderboard.labels.totalSpent),
       color: "var(--ac-chart-2)",
     },
@@ -172,7 +172,7 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
               />
               <ChartTooltip content={renderTooltip} />
               <Bar
-                dataKey='totalSpent'
+                dataKey='totalSpend'
                 fill='var(--ac-chart-2)'
                 radius={[0, 4, 4, 0]}
               />
