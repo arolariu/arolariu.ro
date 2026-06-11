@@ -104,10 +104,10 @@ export const Empty: Story = {
 };
 
 /**
- * Grocery-heavy spending.
- * Demonstrates scenario where grocery category dominates spending.
+ * Grocery-only spending.
+ * Demonstrates scenario with grocery category invoices.
  */
-export const GroceryDominant: Story = {
+export const GroceryFocused: Story = {
   args: {
     data: computeCategoryAggregates(mockInvoices.filter((inv) => inv.category === InvoiceCategory.GROCERY)),
     currency: "RON",
@@ -115,7 +115,7 @@ export const GroceryDominant: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Shows spending pattern where grocery category represents majority of expenses.",
+        story: "Shows spending pattern with grocery category invoices from the dataset.",
       },
     },
   },

@@ -100,10 +100,10 @@ export const SingleSegment: Story = {
 };
 
 /**
- * Morning shopper - dominant morning activity.
- * Demonstrates pattern where user shops primarily in the morning (6-12).
+ * Morning shopper - morning activity focus.
+ * Demonstrates pattern with invoices in the morning segment (6-12).
  */
-export const MorningDominant: Story = {
+export const MorningFocused: Story = {
   args: {
     data: computeTimeOfDay(
       mockInvoices.filter((inv) => {
@@ -115,17 +115,17 @@ export const MorningDominant: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Shows strong morning shopping pattern (6am-12pm), indicating early-bird shopper behavior.",
+        story: "Shows morning shopping pattern (6am-12pm) from filtered invoice subset.",
       },
     },
   },
 };
 
 /**
- * Afternoon shopper - peak afternoon activity.
- * Shows pattern where afternoon (12-17) is most active.
+ * Afternoon shopper - afternoon activity focus.
+ * Shows pattern with invoices in the afternoon segment (12-17).
  */
-export const AfternoonDominant: Story = {
+export const AfternoonFocused: Story = {
   args: {
     data: computeTimeOfDay(
       mockInvoices.filter((inv) => {
@@ -137,17 +137,17 @@ export const AfternoonDominant: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Shows peak afternoon shopping activity (12pm-5pm), typical for lunch-break or post-work shopping.",
+        story: "Shows afternoon shopping activity (12pm-5pm) from filtered invoice subset.",
       },
     },
   },
 };
 
 /**
- * Evening shopper - evening hours dominant.
- * Demonstrates evening (17-21) shopping preference.
+ * Evening shopper - evening activity focus.
+ * Demonstrates pattern with invoices in the evening segment (17-21).
  */
-export const EveningDominant: Story = {
+export const EveningFocused: Story = {
   args: {
     data: computeTimeOfDay(
       mockInvoices.filter((inv) => {
@@ -159,17 +159,17 @@ export const EveningDominant: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Shows evening shopping pattern (5pm-9pm), indicating after-work shopping habits.",
+        story: "Shows evening shopping pattern (5pm-9pm) from filtered invoice subset.",
       },
     },
   },
 };
 
 /**
- * Night owl - late night activity.
- * Shows pattern where user shops during night hours (21-6).
+ * Night owl - late night activity focus.
+ * Shows pattern with invoices during night hours (21-6).
  */
-export const NightDominant: Story = {
+export const NightFocused: Story = {
   args: {
     data: computeTimeOfDay(
       mockInvoices.filter((inv) => {
@@ -181,7 +181,7 @@ export const NightDominant: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Shows late-night shopping pattern (9pm-6am), indicating night owl shopping behavior.",
+        story: "Shows late-night shopping pattern (9pm-6am) from filtered invoice subset.",
       },
     },
   },
@@ -205,8 +205,8 @@ export const FullDataset: Story = {
 };
 
 /**
- * Business hours - morning and afternoon only.
- * Shows shopping concentrated in standard business hours.
+ * Business hours - morning and afternoon segments.
+ * Shows shopping during standard business hours.
  */
 export const BusinessHours: Story = {
   args: {
@@ -220,7 +220,7 @@ export const BusinessHours: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Shows shopping pattern limited to business hours (morning and afternoon only).",
+        story: "Shows shopping pattern from business hours segments (morning and afternoon).",
       },
     },
   },

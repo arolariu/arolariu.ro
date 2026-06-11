@@ -40,7 +40,7 @@ const meta = {
       control: false,
     },
     currency: {
-      description: "Currency code for display (e.g., RON, EUR, USD)",
+      description: "Display currency label for RON-normalized aggregates.",
       control: "text",
     },
   },

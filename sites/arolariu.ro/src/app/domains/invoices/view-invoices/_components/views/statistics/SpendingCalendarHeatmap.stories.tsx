@@ -40,7 +40,7 @@ const meta = {
       control: false,
     },
     currency: {
-      description: "Currency code for display (e.g., RON, EUR, USD)",
+      description: "Display currency label for RON-normalized aggregates.",
       control: "text",
     },
   },
@@ -167,8 +167,8 @@ export const ModerateActivity: Story = {
 };
 
 /**
- * Weekend-heavy pattern.
- * Shows spending concentrated on weekends (Saturdays/Sundays).
+ * Weekend spending pattern.
+ * Shows spending on weekends (Saturdays/Sundays).
  */
 export const WeekendPattern: Story = {
   args: {
@@ -181,7 +181,7 @@ export const WeekendPattern: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Shows spending pattern concentrated on weekends, indicating weekend shopping habits.",
+        story: "Shows spending pattern on weekends, indicating weekend shopping habits.",
       },
     },
   },
@@ -224,8 +224,8 @@ export const ExplicitRON: Story = {
 };
 
 /**
- * Mid-month concentration.
- * Shows spending concentrated in the middle of the month.
+ * Mid-month window.
+ * Shows spending in the middle of the month.
  */
 export const MidMonthSpending: Story = {
   args: {
@@ -238,7 +238,7 @@ export const MidMonthSpending: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Shows spending pattern where most activity occurs mid-month (days 10-20).",
+        story: "Shows spending pattern from mid-month date range (days 10-20).",
       },
     },
   },
