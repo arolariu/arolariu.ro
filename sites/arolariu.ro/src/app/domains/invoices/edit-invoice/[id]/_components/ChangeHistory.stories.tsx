@@ -89,7 +89,7 @@ export const WithPreviousModifications: Story = {
     docs: {
       description: {
         story:
-          "Timeline showing creation date and last modified timestamp. The invoice has been updated 3 times after creation, with the most recent update 2 hours ago.",
+          "Timeline showing creation date and last modified entry. The invoice was most recently modified 2 hours ago.",
       },
     },
   },
@@ -100,7 +100,7 @@ export const WithPreviousModifications: Story = {
  *
  * **Story Description:**
  * Shows an invoice that was created long ago and has been
- * modified multiple times over its lifetime.
+ * modified, with a significant time span between creation and last modification.
  */
 export const LongHistory: Story = {
   render: () => {
@@ -120,7 +120,7 @@ export const LongHistory: Story = {
     docs: {
       description: {
         story:
-          "Timeline for an older invoice (created 30 days ago) with extensive modification history (12 updates). Most recent modification was 1 hour ago.",
+          "Timeline for an older invoice created 30 days ago with last modified entry from 1 hour ago, demonstrating a long time span between creation and most recent modification.",
       },
     },
   },
@@ -191,7 +191,7 @@ export const NeverModified: Story = {
  * Grocery invoice with category and metadata.
  *
  * **Story Description:**
- * Timeline for a typical grocery invoice showing creation and modification history.
+ * Timeline for a typical grocery invoice showing creation and last modified entry.
  */
 export const GroceryInvoice: Story = {
   render: () => {
@@ -211,7 +211,7 @@ export const GroceryInvoice: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Timeline for a grocery invoice created 5 days ago and last modified 3 days ago (2 updates total).",
+        story: "Timeline for a grocery invoice created 5 days ago with last modified entry from 3 days ago.",
       },
     },
   },
