@@ -2,6 +2,26 @@ import type {Meta, StoryObj} from "@storybook/react";
 import {generateRandomInvoice, generateRandomMerchant, generateRandomProduct} from "@/data/mocks";
 import {InvoiceCategory} from "@/types/invoices";
 import {PrintHeader} from "./PrintHeader";
+import type React from "react";
+
+/**
+ * Storybook wrapper that makes the print-only header visible in canvas/docs.
+ * Uses a scoped style override to display the header without modifying production code.
+ */
+function StorybookPrintHeaderWrapper({children}: Readonly<{children: React.ReactNode}>): React.JSX.Element {
+  return (
+    <>
+      <style>{`
+        /* Storybook-only override: make print header visible in canvas/docs */
+        .sb-show-main [class*="printHeader_printHeader"],
+        #storybook-docs [class*="printHeader_printHeader"] {
+          display: block !important;
+        }
+      `}</style>
+      {children}
+    </>
+  );
+}
 
 /**
  * Print header component - only visible when printing.
@@ -48,6 +68,13 @@ const meta = {
       control: false,
     },
   },
+  decorators: [
+    (Story) => (
+      <StorybookPrintHeaderWrapper>
+        <Story />
+      </StorybookPrintHeaderWrapper>
+    ),
+  ],
 } satisfies Meta<typeof PrintHeader>;
 
 export default meta;
