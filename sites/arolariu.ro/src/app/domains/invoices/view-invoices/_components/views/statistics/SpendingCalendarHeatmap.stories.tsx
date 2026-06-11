@@ -3,6 +3,43 @@ import {computeDailySpending} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import SpendingCalendarHeatmap from "./SpendingCalendarHeatmap";
 
+type DateConstructorArguments =
+  | []
+  | [value: string | number | Date]
+  | [year: number, monthIndex: number, date?: number, hours?: number, minutes?: number, seconds?: number, ms?: number];
+
+const NativeDate = globalThis.Date;
+const fixedStoryDate = new NativeDate(2026, 5, 11, 12, 0, 0, 0);
+let activeDateMocks = 0;
+
+function createFixedDateConstructor(fixedTime: number): DateConstructor {
+  function FixedDate(...args: DateConstructorArguments): string | Date {
+    if (new.target === undefined) {
+      return new NativeDate(fixedTime).toString();
+    }
+
+    if (args.length === 0) {
+      return new NativeDate(fixedTime);
+    }
+
+    if (args.length === 1) {
+      return new NativeDate(args[0]);
+    }
+
+    const [year, monthIndex, date, hours, minutes, seconds, ms] = args;
+    return new NativeDate(year, monthIndex, date, hours, minutes, seconds, ms);
+  }
+
+  Object.setPrototypeOf(FixedDate, NativeDate);
+  FixedDate.prototype = NativeDate.prototype;
+  Object.defineProperty(FixedDate, "now", {
+    configurable: true,
+    value: () => fixedTime,
+  });
+
+  return FixedDate as DateConstructor;
+}
+
 /**
  * SpendingCalendarHeatmap displays daily spending as a GitHub-style calendar heatmap.
  *
@@ -45,48 +82,16 @@ const meta = {
     },
   },
   beforeEach: () => {
-    // Mock Date to June 2026 for deterministic calendar rendering
-    const OriginalDate = globalThis.Date;
-    const fixedDate = new OriginalDate("2026-06-11T12:00:00.000Z");
-
-    class FixedDate extends OriginalDate {
-      public constructor();
-      public constructor(value: string | number | Date);
-      public constructor(year: number, monthIndex: number, date?: number, hours?: number, minutes?: number, seconds?: number, ms?: number);
-      public constructor(
-        valueOrYear?: string | number | Date,
-        monthIndex?: number,
-        date?: number,
-        hours?: number,
-        minutes?: number,
-        seconds?: number,
-        ms?: number,
-      ) {
-        if (valueOrYear === undefined) {
-          super(fixedDate.getTime());
-          return;
-        }
-        if (monthIndex === undefined) {
-          super(valueOrYear);
-          return;
-        }
-        if (typeof valueOrYear === "number") {
-          super(valueOrYear, monthIndex, date, hours, minutes, seconds, ms);
-          return;
-        }
-        super(valueOrYear);
-      }
-
-      public static override now(): number {
-        return fixedDate.getTime();
-      }
+    if (activeDateMocks === 0) {
+      globalThis.Date = createFixedDateConstructor(fixedStoryDate.getTime());
     }
+    activeDateMocks += 1;
 
-    globalThis.Date = FixedDate as DateConstructor;
-
-    // Return cleanup function that restores original Date after story
     return () => {
-      globalThis.Date = OriginalDate;
+      activeDateMocks = Math.max(0, activeDateMocks - 1);
+      if (activeDateMocks === 0) {
+        globalThis.Date = NativeDate;
+      }
     };
   },
 } satisfies Meta<typeof SpendingCalendarHeatmap>;
