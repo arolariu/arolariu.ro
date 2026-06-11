@@ -30,6 +30,7 @@ import styles from "./MerchantLeaderboard.module.scss";
 type Props = {
   readonly data: MerchantAggregate[];
   readonly currency: string;
+  readonly merchantNamesById?: Readonly<Record<string, string>>;
 };
 
 type TooltipPayloadItem = {
@@ -73,17 +74,22 @@ function CustomTooltip({active, payload, currency, getMerchantName}: Readonly<Cu
  * @param currency - Currency code for display
  * @returns Horizontal bar chart component
  */
-export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element {
+export function MerchantLeaderboard({data, currency, merchantNamesById}: Props): React.JSX.Element {
   const t = useTranslations();
   const getMerchantById = useMerchantsStore((state) => state.getEntityById);
 
   // Create a function to get merchant name or fallback to ID
   const getMerchantName = useCallback(
     (id: string): string => {
+      const storyMerchantName = merchantNamesById?.[id];
+      if (storyMerchantName) {
+        return storyMerchantName;
+      }
+
       const merchant = getMerchantById(id);
       return merchant?.name ?? t((m) => m.cards.invoices.statistics.merchantLeaderboard.unknownMerchant);
     },
-    [getMerchantById, t],
+    [getMerchantById, merchantNamesById, t],
   );
 
   /**

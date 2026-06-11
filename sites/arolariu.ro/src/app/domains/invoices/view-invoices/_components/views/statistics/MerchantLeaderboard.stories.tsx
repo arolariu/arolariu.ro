@@ -1,51 +1,20 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {useMerchantsStore} from "@/stores";
-import type {ContactInformation, Merchant} from "@/types/invoices/Merchant";
-import {MerchantCategory} from "@/types/invoices/Merchant";
 import {computeMerchantAggregates} from "../../../_utils/statistics";
 import {emptyInvoices, MOCK_MERCHANTS, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {MerchantLeaderboard} from "./MerchantLeaderboard";
 
-function createContactInformation(name: string): ContactInformation {
-  return {
-    fullName: `${name} Romania SRL`,
-    address: "Bucharest, Romania",
-    phoneNumber: "+40 21 000 0000",
-    emailAddress: `contact@${name.toLowerCase().replaceAll(" ", "")}.example`,
-    website: "https://example.com",
-  };
-}
-
-function createMerchant(id: string, name: string, category: Merchant["category"]): Merchant {
-  return {
-    id,
-    name,
-    description: `${name} deterministic statistics story merchant`,
-    category,
-    address: createContactInformation(name),
-    parentCompanyId: "",
-    createdAt: new Date("2026-01-01T00:00:00.000Z"),
-    createdBy: "storybook-user",
-    lastUpdatedAt: new Date("2026-01-01T00:00:00.000Z"),
-    lastUpdatedBy: "storybook-user",
-    numberOfUpdates: 0,
-    isImportant: false,
-    isSoftDeleted: false,
-  };
-}
-
-const storyMerchants: Merchant[] = [
-  createMerchant(MOCK_MERCHANTS.LIDL, "Lidl", MerchantCategory.SUPERMARKET),
-  createMerchant(MOCK_MERCHANTS.KAUFLAND, "Kaufland", MerchantCategory.HYPERMARKET),
-  createMerchant(MOCK_MERCHANTS.CARREFOUR, "Carrefour", MerchantCategory.HYPERMARKET),
-  createMerchant(MOCK_MERCHANTS.MEGA_IMAGE, "Mega Image", MerchantCategory.SUPERMARKET),
-  createMerchant(MOCK_MERCHANTS.AUCHAN, "Auchan", MerchantCategory.HYPERMARKET),
-  createMerchant(MOCK_MERCHANTS.PROFI, "Profi", MerchantCategory.SUPERMARKET),
-  createMerchant(MOCK_MERCHANTS.PENNY, "Penny", MerchantCategory.SUPERMARKET),
-  createMerchant(MOCK_MERCHANTS.MCDONALD, "McDonald's", MerchantCategory.OTHER),
-  createMerchant(MOCK_MERCHANTS.KFC, "KFC", MerchantCategory.OTHER),
-  createMerchant(MOCK_MERCHANTS.PIZZA_HUT, "Pizza Hut", MerchantCategory.OTHER),
-];
+const merchantNamesById = {
+  [MOCK_MERCHANTS.LIDL]: "Lidl",
+  [MOCK_MERCHANTS.KAUFLAND]: "Kaufland",
+  [MOCK_MERCHANTS.CARREFOUR]: "Carrefour",
+  [MOCK_MERCHANTS.MEGA_IMAGE]: "Mega Image",
+  [MOCK_MERCHANTS.AUCHAN]: "Auchan",
+  [MOCK_MERCHANTS.PROFI]: "Profi",
+  [MOCK_MERCHANTS.PENNY]: "Penny",
+  [MOCK_MERCHANTS.MCDONALD]: "McDonald's",
+  [MOCK_MERCHANTS.KFC]: "KFC",
+  [MOCK_MERCHANTS.PIZZA_HUT]: "Pizza Hut",
+} as const;
 
 /**
  * MerchantLeaderboard displays top merchants by spending as horizontal bars.
@@ -55,7 +24,7 @@ const storyMerchants: Merchant[] = [
  * - Merchant name labels (truncated if long)
  * - Hover tooltips with spending and invoice count
  * - Empty state with icon and message
- * - Integrates with merchant store for name resolution
+ * - Accepts deterministic story merchant names while production uses store resolution
  * - Top 10 merchants by default
  *
  * ## Use Cases
@@ -72,29 +41,9 @@ const meta = {
     docs: {
       description: {
         component:
-          "Visualizes top merchants ranked by total spending using a horizontal bar chart. Shows merchant names (or IDs if names unavailable) with total spend and invoice counts. Integrates with the merchant store to resolve display names.",
+          "Visualizes top merchants ranked by total spending using a horizontal bar chart. Stories pass deterministic merchant names while production falls back to the persisted merchant store.",
       },
     },
-  },
-  beforeEach: () => {
-    // Snapshot previous state for restoration after story
-    const previousState = {
-      entities: [...useMerchantsStore.getState().entities],
-      selectedEntities: [...useMerchantsStore.getState().selectedEntities],
-      hasHydrated: useMerchantsStore.getState().hasHydrated,
-    };
-
-    // Seed deterministic merchant data for the story
-    useMerchantsStore.getState().clearEntities();
-    useMerchantsStore.getState().setEntities(storyMerchants);
-    useMerchantsStore.getState().setHasHydrated(true);
-
-    return () => {
-      // Restore previous state instead of clearing
-      useMerchantsStore.getState().setEntities(previousState.entities);
-      useMerchantsStore.getState().setSelectedEntities(previousState.selectedEntities);
-      useMerchantsStore.getState().setHasHydrated(previousState.hasHydrated);
-    };
   },
   tags: ["autodocs"],
   argTypes: {
@@ -120,6 +69,7 @@ export const Default: Story = {
   args: {
     data: computeMerchantAggregates(mockInvoices).slice(0, 10),
     currency: "RON",
+    merchantNamesById,
   },
   parameters: {
     docs: {
@@ -138,6 +88,7 @@ export const Empty: Story = {
   args: {
     data: computeMerchantAggregates(emptyInvoices),
     currency: "RON",
+    merchantNamesById,
   },
   parameters: {
     docs: {
@@ -156,6 +107,7 @@ export const SingleMerchant: Story = {
   args: {
     data: computeMerchantAggregates(singleInvoice),
     currency: "RON",
+    merchantNamesById,
   },
   parameters: {
     docs: {
@@ -174,6 +126,7 @@ export const FewMerchants: Story = {
   args: {
     data: computeMerchantAggregates(mockInvoices.slice(0, 3)),
     currency: "RON",
+    merchantNamesById,
   },
   parameters: {
     docs: {
@@ -192,6 +145,7 @@ export const TopMerchantsRanking: Story = {
   args: {
     data: computeMerchantAggregates(mockInvoices).slice(0, 10),
     currency: "RON",
+    merchantNamesById,
   },
   parameters: {
     docs: {
@@ -210,6 +164,7 @@ export const ExplicitRONCurrency: Story = {
   args: {
     data: computeMerchantAggregates(mockInvoices).slice(0, 10),
     currency: "RON",
+    merchantNamesById,
   },
   parameters: {
     docs: {
@@ -228,6 +183,7 @@ export const FirstTenInvoices: Story = {
   args: {
     data: computeMerchantAggregates(mockInvoices.slice(0, 10)),
     currency: "RON",
+    merchantNamesById,
   },
   parameters: {
     docs: {
@@ -246,6 +202,7 @@ export const TopFive: Story = {
   args: {
     data: computeMerchantAggregates(mockInvoices).slice(0, 5),
     currency: "RON",
+    merchantNamesById,
   },
   parameters: {
     docs: {
