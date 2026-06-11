@@ -134,13 +134,13 @@ const dialogTypes = [
   },
 ];
 
-/** Overview of all dialog types managed by the container. */
+/** Overview of representative dialog types managed by the container. */
 export const Default: Story = {
   parameters: {
     docs: {
       description: {
         story:
-          "Displays a schematic grid showing all 18 dialog types the container can render, organized by category (analysis, items, merchant, metadata, scans, recipes, sharing, deletion). Each row shows the dialog icon, type constant, label, and current status indicator.",
+          "Displays a schematic grid showing representative dialog types the container can render, organized by category (analysis, items, merchant, metadata, scans, recipes, sharing, deletion). Each row shows the dialog icon, type constant, label, and current status indicator.",
       },
     },
   },

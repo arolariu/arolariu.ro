@@ -54,7 +54,7 @@ export const WithInvoices: Story = {
     docs: {
       description: {
         story:
-          "Sortable table showing 3 invoice rows with selection checkboxes, vendor names, category badges, formatted dates, amounts, and row action menus. Click column headers to toggle sort direction. Default sort: date descending.",
+          "Table showing 3 invoice rows with selection checkboxes, vendor names, category badges, formatted dates, amounts, and row action menus. Column headers display sort indicators based on current sortBy and sortDirection. Default sort: date descending.",
       },
     },
   },
@@ -81,7 +81,7 @@ export const EmptyState: Story = {
     docs: {
       description: {
         story:
-          "Empty state when no invoices exist or all invoices are filtered out. Displays centered message with icon in the table body area encouraging user to create or adjust filters. Table headers remain visible; pagination controls hidden.",
+          "Empty state when no invoices exist or all invoices are filtered out. Displays centered message with icon encouraging user to create or adjust filters. Component returns EmptyState directly without rendering table structure; pagination controls hidden.",
       },
     },
   },

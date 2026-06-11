@@ -10,7 +10,7 @@ import InvoicesHeader from "./InvoicesHeader";
 const meta = {
   title: "Invoices/ViewInvoices/InvoicesHeader",
   component: InvoicesHeader,
-  decorators: [WithInvoiceDialogs],
+  decorators: [(Story) => <WithInvoiceDialogs><Story /></WithInvoiceDialogs>],
   parameters: {
     layout: "fullscreen",
   },

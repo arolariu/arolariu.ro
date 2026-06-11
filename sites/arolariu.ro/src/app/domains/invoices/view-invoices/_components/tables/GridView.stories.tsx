@@ -51,7 +51,7 @@ export const WithInvoices: Story = {
     docs: {
       description: {
         story:
-          "Grid layout showing 3 invoice cards with scan thumbnails, selection checkboxes, vendor names, dates, amounts, and item counts. Includes pagination controls and page size selector at bottom. Cards use motion animations for entrance.",
+          "Grid layout showing 3 invoice cards with scan thumbnails, selection checkboxes, vendor names, dates, amounts, and item counts. Cards use motion animations for entrance. Pagination controls hidden when totalPages is 1.",
       },
     },
   },

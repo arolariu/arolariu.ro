@@ -160,6 +160,14 @@ export const UploadProgress: Story = {
  * Uses a small harness component to demonstrate rename state management.
  */
 export const RenameEditing: Story = {
+	args: {
+		media: {
+			src: storyImageScanUrl,
+			mediaKind: "image",
+			alt: "Scan being renamed",
+		},
+		title: "old-receipt-name.jpg",
+	},
 	render: () => {
 		// eslint-disable-next-line react-hooks/rules-of-hooks -- Storybook render function is equivalent to a component
 		const [isEditing, setIsEditing] = useState(false);
