@@ -2,14 +2,25 @@ import type {Meta, StoryObj} from "@storybook/react";
 
 /**
  * ItemsTable renders a paginated table of invoice line items with editing
- * capabilities. Depends on `useDialog` for the edit dialog.
+ * capabilities.
  *
- * This story renders a static preview of the items table layout.
+ * @remarks Static preview — component imports "use server" action `patchInvoice`
+ * from `@/app/domains/invoices/_actions/invoices` that cannot be bundled by
+ * Storybook's Vite/Rollup. Component also uses `usePaginationWithSearch` hook
+ * from `@/hooks` and `useEditInvoiceContext` which are tightly coupled to
+ * Next.js router and invoice edit page state. This story shows a schematic
+ * table layout for documentation purposes.
  */
 const meta = {
   title: "Invoices/EditInvoice/Tables/ItemsTable",
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "Paginated table of invoice line items with inline editing, search, category assignment, and delete capabilities. Real component requires server action (`patchInvoice`) and edit invoice context that cannot be isolated for Storybook.",
+      },
+    },
   },
 } satisfies Meta;
 
@@ -18,6 +29,14 @@ type Story = StoryObj<typeof meta>;
 
 /** Preview of items table with sample products. */
 export const WithItems: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Schematic table layout showing 3 line items with quantity, unit price, and total columns. Displays Edit Items button, pagination controls, and grand total footer. Real component supports inline editing, search, category assignment, and bulk actions.",
+      },
+    },
+  },
   render: () => (
     <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "#ffffff"}}>
       <div
@@ -183,6 +202,13 @@ export const WithItems: Story = {
 
 /** Empty items table. */
 export const Empty: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Empty state showing no items on the invoice. Displays Edit Items button to open items dialog where user can add line items.",
+      },
+    },
+  },
   render: () => (
     <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "#ffffff"}}>
       <div
