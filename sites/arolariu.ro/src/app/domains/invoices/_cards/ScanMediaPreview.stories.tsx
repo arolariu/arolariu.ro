@@ -3,7 +3,7 @@
  * @module app/domains/invoices/_cards/ScanMediaPreview.stories
  */
 
-import {Badge, Card} from "@arolariu/components";
+import {Badge, Card, Spinner} from "@arolariu/components";
 import type {Meta, StoryObj} from "@storybook/react";
 import {ScanMediaPreview} from "./ScanMediaPreview";
 import {storyImageScanUrl, storyPdfScanUrl} from "@/app/domains/invoices/_storybook/fixtures/scanFixtures";
@@ -145,7 +145,7 @@ export const WithCenterOverlay: Story = {
 		loading: "eager",
 		centerOverlay: (
 			<Card className='flex flex-col items-center gap-2 bg-background/95 p-6 shadow-md'>
-				<div className='h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary' />
+				<Spinner />
 				<span className='text-sm font-medium text-foreground'>Processing...</span>
 			</Card>
 		),

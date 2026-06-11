@@ -5,7 +5,16 @@ import type {Meta, StoryObj} from "@storybook/react";
  * and action buttons (edit, delete, print). Depends on `useInvoiceContext`,
  * `useUserInformation`, and `useDialog`.
  *
- * This story renders a static preview of the view-invoice header layout.
+ * **Static Preview Rationale:**
+ * This story renders a static HTML replica instead of mounting the real component because
+ * `useUserInformation` hook depends on Clerk authentication state (useUser, useAuth),
+ * which requires full app initialization and cannot be isolated in Storybook.
+ * `useInvoiceContext` and `useDialog` are available via `WithViewInvoiceContext`, but
+ * mocking Clerk's authentication hooks would require deep provider stubs that are fragile
+ * and would not accurately represent production behavior.
+ *
+ * The static preview demonstrates the visual layout for owner and guest views without
+ * requiring authentication infrastructure.
  */
 const meta = {
   title: "Invoices/ViewInvoice/InvoiceHeader",

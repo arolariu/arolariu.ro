@@ -3,7 +3,7 @@
  * @module app/domains/invoices/_cards/ScanCard.stories
  */
 
-import {Badge, Card} from "@arolariu/components";
+import {Badge, Card, Spinner} from "@arolariu/components";
 import type {Meta, StoryObj} from "@storybook/react";
 import {useState} from "react";
 import {TbLink, TbRotateClockwise, TbTrash} from "react-icons/tb";
@@ -290,7 +290,7 @@ export const ProcessingOverlay: Story = {
 		isLocked: true,
 		centerOverlay: (
 			<Card className='flex flex-col items-center gap-2 bg-background/95 p-6 shadow-md'>
-				<div className='h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary' />
+				<Spinner />
 				<span className='text-sm font-medium text-foreground'>Processing...</span>
 			</Card>
 		),
