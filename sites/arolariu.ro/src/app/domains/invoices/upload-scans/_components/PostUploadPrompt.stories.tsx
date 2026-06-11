@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {storyImageScanUrl, storyPdfScanUrl} from "../../_storybook";
+import {storyImageScanUrl} from "../../_storybook";
 import PostUploadPrompt from "./PostUploadPrompt";
 
 const meta = {
@@ -55,7 +55,7 @@ export const MultipleScans: Story = {
 			},
 			{
 				id: "scan-2",
-				preview: storyPdfScanUrl,
+				preview: storyImageScanUrl,
 				name: "receipt-2.pdf",
 			},
 			{
@@ -79,7 +79,7 @@ export const ManyScans: Story = {
 		isVisible: true,
 		completedScans: [
 			{id: "scan-1", preview: storyImageScanUrl, name: "receipt-1.jpg"},
-			{id: "scan-2", preview: storyPdfScanUrl, name: "receipt-2.pdf"},
+			{id: "scan-2", preview: storyImageScanUrl, name: "receipt-2.pdf"},
 			{id: "scan-3", preview: storyImageScanUrl, name: "receipt-3.jpg"},
 			{id: "scan-4", preview: storyImageScanUrl, name: "receipt-4.jpg"},
 			{id: "scan-5", preview: storyImageScanUrl, name: "receipt-5.jpg"},

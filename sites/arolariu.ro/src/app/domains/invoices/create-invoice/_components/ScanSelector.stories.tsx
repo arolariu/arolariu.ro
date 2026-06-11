@@ -23,16 +23,17 @@ const additionalScans: CachedScan[] = Array.from({length: 8}, (_, i) => ({
  * Wrapper that selects scans in CreateInvoiceContext on mount.
  */
 function ScanSelectorWithSelection({scansToSelect}: Readonly<{scansToSelect: CachedScan[]}>): React.JSX.Element {
-	const {toggleScan, selectedScans} = useCreateInvoiceContext();
+	const {toggleScan} = useCreateInvoiceContext();
+	const hasInitialized = React.useRef(false);
 
 	React.useEffect(() => {
-		// Only select if not already selected
+		if (hasInitialized.current) return;
+		hasInitialized.current = true;
+
 		for (const scan of scansToSelect) {
-			if (!selectedScans.some((s) => s.id === scan.id)) {
-				toggleScan(scan);
-			}
+			toggleScan(scan);
 		}
-	}, [scansToSelect, toggleScan, selectedScans]);
+	}, [scansToSelect, toggleScan]);
 
 	return <ScanSelector />;
 }
