@@ -10,11 +10,10 @@ const meta = {
     layout: "padded",
     docs: {
       description: {
-        component: "Horizontal carousel card displaying related invoices based on merchant, category, or amount similarity.",
+        component: "Horizontal carousel card displaying related invoices based on merchant, category, or amount similarity. **Note:** These stories seed global invoice store state and are intended for isolated canvas viewing to prevent cross-story contamination.",
       },
     },
   },
-  tags: ["autodocs"],
 } satisfies Meta<typeof RelatedInvoicesCard>;
 
 export default meta;
