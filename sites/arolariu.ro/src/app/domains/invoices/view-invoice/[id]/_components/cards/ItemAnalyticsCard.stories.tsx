@@ -33,7 +33,7 @@ export const WithCategorizedProducts: Story = {
   render: () => {
     const products = storyProducts.map((product, i) => ({
       ...product,
-      category: [ProductCategory.GROCERIES, ProductCategory.DAIRY, ProductCategory.BAKED_GOODS, ProductCategory.MEAT][i % 4],
+      category: [ProductCategory.GROCERIES, ProductCategory.DAIRY, ProductCategory.BAKED_GOODS, ProductCategory.MEAT][i % 4] ?? ProductCategory.NOT_DEFINED,
       quantity: i + 1,
       price: 5 + i * 2,
       totalPrice: (i + 1) * (5 + i * 2),
@@ -60,9 +60,9 @@ export const WidePriceRange: Story = {
   render: () => {
     const products = storyProducts.map((product, i) => ({
       ...product,
-      price: [0.5, 15.0, 120.0, 350.99][i],
+      price: [0.5, 15.0, 120.0, 350.99][i] ?? 0,
       quantity: 1,
-      totalPrice: [0.5, 15.0, 120.0, 350.99][i],
+      totalPrice: [0.5, 15.0, 120.0, 350.99][i] ?? 0,
     }));
     return (
       <WithViewInvoiceContext invoice={{...storyInvoice, items: products}}>
@@ -77,9 +77,9 @@ export const HighQuantities: Story = {
   render: () => {
     const products = storyProducts.map((product, i) => ({
       ...product,
-      quantity: [1, 10, 50, 100][i],
+      quantity: [1, 10, 50, 100][i] ?? 1,
       price: 2.5,
-      totalPrice: [1, 10, 50, 100][i] * 2.5,
+      totalPrice: ([1, 10, 50, 100][i] ?? 1) * 2.5,
     }));
     return (
       <WithViewInvoiceContext invoice={{...storyInvoice, items: products}}>

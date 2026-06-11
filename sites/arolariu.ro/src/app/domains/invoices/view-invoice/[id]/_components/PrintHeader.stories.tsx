@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {generateRandomInvoice, generateRandomMerchant} from "@/data/mocks";
+import {generateRandomInvoice, generateRandomMerchant, generateRandomProduct} from "@/data/mocks";
 import {InvoiceCategory} from "@/types/invoices";
 import {PrintHeader} from "./PrintHeader";
 
@@ -106,10 +106,10 @@ export const GroceryInvoice: Story = {
     invoice: {
       ...generateRandomInvoice(),
       name: "Carrefour Grocery Shopping",
-      category: InvoiceCategory.GROCERIES,
+      category: InvoiceCategory.GROCERY,
       items: Array(15)
         .fill(null)
-        .map(() => ({...generateRandomInvoice().items[0]})),
+        .map(() => generateRandomProduct()),
       paymentInformation: {
         ...generateRandomInvoice().paymentInformation,
         totalCostAmount: 245.67,
@@ -145,7 +145,7 @@ export const RestaurantInvoice: Story = {
       category: InvoiceCategory.FAST_FOOD,
       items: Array(5)
         .fill(null)
-        .map(() => ({...generateRandomInvoice().items[0]})),
+        .map(() => generateRandomProduct()),
       paymentInformation: {
         ...generateRandomInvoice().paymentInformation,
         totalCostAmount: 128.5,
@@ -178,10 +178,10 @@ export const HighValueInvoice: Story = {
     invoice: {
       ...generateRandomInvoice(),
       name: "Electronics Purchase - Laptop & Accessories",
-      category: InvoiceCategory.ELECTRONICS,
+      category: InvoiceCategory.OTHER,
       items: Array(8)
         .fill(null)
-        .map(() => ({...generateRandomInvoice().items[0]})),
+        .map(() => generateRandomProduct()),
       paymentInformation: {
         ...generateRandomInvoice().paymentInformation,
         totalCostAmount: 5499.99,
@@ -215,7 +215,7 @@ export const WithLongName: Story = {
       name: "Monthly Grocery Shopping Including Fresh Produce, Dairy Products, Beverages, Household Cleaning Supplies and Personal Care Items",
       items: Array(20)
         .fill(null)
-        .map(() => ({...generateRandomInvoice().items[0]})),
+        .map(() => generateRandomProduct()),
     },
     merchant: generateRandomMerchant(),
   },
@@ -239,7 +239,7 @@ export const SingleItem: Story = {
     invoice: {
       ...generateRandomInvoice(),
       name: "Coffee Purchase",
-      items: [generateRandomInvoice().items[0]],
+      items: [generateRandomProduct()],
       paymentInformation: {
         ...generateRandomInvoice().paymentInformation,
         totalCostAmount: 12.5,

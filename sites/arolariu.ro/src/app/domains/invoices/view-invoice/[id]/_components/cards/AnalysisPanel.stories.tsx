@@ -1,6 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
 import {WithViewInvoiceContext, storyInvoice} from "@/app/domains/invoices/_storybook";
-import {InvoiceAnalysisOptions} from "@/types/invoices";
 import {AnalysisPanel} from "./AnalysisPanel";
 
 /**

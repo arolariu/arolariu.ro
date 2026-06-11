@@ -1,6 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
 import {WithEditInvoiceContext, storyInvoice} from "@/app/domains/invoices/_storybook";
-import {InvoiceCategory} from "@/types/invoices";
 import ChangeHistory from "./ChangeHistory";
 
 /**
@@ -199,7 +198,6 @@ export const GroceryInvoice: Story = {
     const invoice = {
       ...storyInvoice,
       name: "Grocery Store Receipt",
-      category: InvoiceCategory.GROCERIES,
       createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
       lastUpdatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
       numberOfUpdates: 2,

@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {WithViewInvoiceContext, storyInvoice, storyProducts} from "@/app/domains/invoices/_storybook";
+import {WithViewInvoiceContext, storyInvoice, storyProducts, storyRecipeEasy} from "@/app/domains/invoices/_storybook";
 import {ProductCategory} from "@/types/invoices";
 import {InvoiceHealthScore} from "./InvoiceHealthScore";
 
@@ -69,9 +69,7 @@ export const Perfect: Story = {
         totalCostAmount: 150.5,
         currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
       },
-      possibleRecipes: [
-        {id: "recipe-1", name: "Pasta Carbonara", complexity: 1, ingredients: [], instructions: [], metadata: {isComplete: true, confidence: 0.9, isSoftDeleted: false}},
-      ],
+      possibleRecipes: [storyRecipeEasy],
     };
 
     return (
@@ -193,7 +191,7 @@ export const Incomplete: Story = {
       merchantReference: "00000000-0000-0000-0000-000000000000",
       paymentInformation: {
         ...storyInvoice.paymentInformation,
-        transactionDate: undefined,
+        transactionDate: new Date(0),
         totalCostAmount: 0,
         currency: {code: "", symbol: "", name: ""},
       },
@@ -229,7 +227,7 @@ export const Empty: Story = {
       merchantReference: "00000000-0000-0000-0000-000000000000",
       paymentInformation: {
         ...storyInvoice.paymentInformation,
-        transactionDate: undefined,
+        transactionDate: new Date(0),
         totalCostAmount: 0,
         currency: {code: "", symbol: "", name: ""},
       },
