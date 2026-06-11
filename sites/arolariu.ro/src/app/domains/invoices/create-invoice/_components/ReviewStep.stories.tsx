@@ -1,25 +1,28 @@
 import React from "react";
 import type {Meta, StoryObj} from "@storybook/react";
+import type {CachedScan} from "@/types/scans";
 import {InvoiceCategory, PaymentType} from "@/types/invoices";
 import {resetInvoiceStoryStores, seedInvoiceStoryStores, storyCachedImageScan, storyCachedPdfScan, WithCreateInvoiceContext} from "../../_storybook";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import ReviewStep from "./ReviewStep";
 
 /**
- * Wrapper that seeds invoice details via context.
+ * Wrapper that seeds invoice details and selected scans via context.
  */
-function ReviewStepWithDetails({
+function ReviewStepWithDetailsAndScans({
+	scansToSelect,
 	name = "Grocery Shopping",
 	category = InvoiceCategory.GROCERY,
 	paymentType = PaymentType.Card,
 	description = "Weekly grocery shopping at local supermarket",
 }: Readonly<{
+	scansToSelect: CachedScan[];
 	name?: string;
 	category?: InvoiceCategory;
 	paymentType?: PaymentType;
 	description?: string;
 }>): React.JSX.Element {
-	const {setName, setCategory, setPaymentType, setDescription, setTransactionDate} = useCreateInvoiceContext();
+	const {setName, setCategory, setPaymentType, setDescription, setTransactionDate, toggleScan, selectedScans} = useCreateInvoiceContext();
 
 	React.useEffect(() => {
 		setName(name);
@@ -28,6 +31,15 @@ function ReviewStepWithDetails({
 		setDescription(description);
 		setTransactionDate(new Date("2024-03-15T10:30:00.000Z"));
 	}, [name, category, paymentType, description, setName, setCategory, setPaymentType, setDescription, setTransactionDate]);
+
+	React.useEffect(() => {
+		// Only select if not already selected
+		for (const scan of scansToSelect) {
+			if (!selectedScans.some((s) => s.id === scan.id)) {
+				toggleScan(scan);
+			}
+		}
+	}, [scansToSelect, toggleScan, selectedScans]);
 
 	return <ReviewStep />;
 }
@@ -63,10 +75,10 @@ export const SingleScan: Story = {
 		resetInvoiceStoryStores();
 		seedInvoiceStoryStores({
 			scans: [storyCachedImageScan],
-			selectedScans: [storyCachedImageScan],
+			selectedScans: [],
 		});
 	},
-	render: () => <ReviewStepWithDetails />,
+	render: () => <ReviewStepWithDetailsAndScans scansToSelect={[storyCachedImageScan]} />,
 	parameters: {
 		docs: {
 			description: {
@@ -79,7 +91,7 @@ export const SingleScan: Story = {
 export const MultipleScans: Story = {
 	beforeEach: () => {
 		resetInvoiceStoryStores();
-		const scans = [
+		const scans: CachedScan[] = [
 			storyCachedImageScan,
 			storyCachedPdfScan,
 			{
@@ -91,10 +103,22 @@ export const MultipleScans: Story = {
 		];
 		seedInvoiceStoryStores({
 			scans,
-			selectedScans: scans,
+			selectedScans: [],
 		});
 	},
-	render: () => <ReviewStepWithDetails />,
+	render: () => {
+		const scans: CachedScan[] = [
+			storyCachedImageScan,
+			storyCachedPdfScan,
+			{
+				...storyCachedImageScan,
+				id: "scan-review-3",
+				name: "Receipt 3",
+				metadata: {...storyCachedImageScan.metadata, scanId: "scan-review-3"},
+			},
+		];
+		return <ReviewStepWithDetailsAndScans scansToSelect={scans} />;
+	},
 	parameters: {
 		docs: {
 			description: {
@@ -109,11 +133,12 @@ export const FastFoodCategory: Story = {
 		resetInvoiceStoryStores();
 		seedInvoiceStoryStores({
 			scans: [storyCachedImageScan],
-			selectedScans: [storyCachedImageScan],
+			selectedScans: [],
 		});
 	},
 	render: () => (
-		<ReviewStepWithDetails
+		<ReviewStepWithDetailsAndScans
+			scansToSelect={[storyCachedImageScan]}
 			name='McDonalds Lunch'
 			category={InvoiceCategory.FAST_FOOD}
 			paymentType={PaymentType.Cash}
@@ -134,10 +159,10 @@ export const NoDescription: Story = {
 		resetInvoiceStoryStores();
 		seedInvoiceStoryStores({
 			scans: [storyCachedImageScan],
-			selectedScans: [storyCachedImageScan],
+			selectedScans: [],
 		});
 	},
-	render: () => <ReviewStepWithDetails description='' />,
+	render: () => <ReviewStepWithDetailsAndScans scansToSelect={[storyCachedImageScan]} description='' />,
 	parameters: {
 		docs: {
 			description: {
@@ -152,11 +177,12 @@ export const UnknownPayment: Story = {
 		resetInvoiceStoryStores();
 		seedInvoiceStoryStores({
 			scans: [storyCachedPdfScan],
-			selectedScans: [storyCachedPdfScan],
+			selectedScans: [],
 		});
 	},
 	render: () => (
-		<ReviewStepWithDetails
+		<ReviewStepWithDetailsAndScans
+			scansToSelect={[storyCachedPdfScan]}
 			name='Car Maintenance'
 			category={InvoiceCategory.CAR_AUTO}
 			paymentType={PaymentType.Unknown}

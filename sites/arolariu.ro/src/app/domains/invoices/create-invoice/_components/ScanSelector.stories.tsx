@@ -1,11 +1,14 @@
+import React from "react";
 import type {Meta, StoryObj} from "@storybook/react";
+import type {CachedScan} from "@/types/scans";
 import {resetInvoiceStoryStores, seedInvoiceStoryStores, storyCachedImageScan, storyCachedPdfScan, WithCreateInvoiceContext} from "../../_storybook";
+import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import ScanSelector from "./ScanSelector";
 
 /**
  * Additional scan fixtures to create a larger grid.
  */
-const additionalScans = Array.from({length: 8}, (_, i) => ({
+const additionalScans: CachedScan[] = Array.from({length: 8}, (_, i) => ({
 	...storyCachedImageScan,
 	id: `scan-selector-${i + 1}`,
 	name: `Receipt ${i + 1}`,
@@ -14,7 +17,25 @@ const additionalScans = Array.from({length: 8}, (_, i) => ({
 		...storyCachedImageScan.metadata,
 		scanId: `scan-selector-${i + 1}`,
 	},
-})) as const;
+}));
+
+/**
+ * Wrapper that selects scans in CreateInvoiceContext on mount.
+ */
+function ScanSelectorWithSelection({scansToSelect}: Readonly<{scansToSelect: CachedScan[]}>): React.JSX.Element {
+	const {toggleScan, selectedScans} = useCreateInvoiceContext();
+
+	React.useEffect(() => {
+		// Only select if not already selected
+		for (const scan of scansToSelect) {
+			if (!selectedScans.some((s) => s.id === scan.id)) {
+				toggleScan(scan);
+			}
+		}
+	}, [scansToSelect, toggleScan, selectedScans]);
+
+	return <ScanSelector />;
+}
 
 const meta = {
 	title: "Invoices/CreateInvoice/ScanSelector",
@@ -64,9 +85,10 @@ export const WithSelection: Story = {
 		resetInvoiceStoryStores();
 		seedInvoiceStoryStores({
 			scans: [storyCachedImageScan, storyCachedPdfScan, ...additionalScans.slice(0, 3)],
-			selectedScans: [storyCachedImageScan, storyCachedPdfScan],
+			selectedScans: [],
 		});
 	},
+	render: () => <ScanSelectorWithSelection scansToSelect={[storyCachedImageScan, storyCachedPdfScan]} />,
 	parameters: {
 		docs: {
 			description: {
@@ -82,8 +104,12 @@ export const AllSelected: Story = {
 		const allScans = [storyCachedImageScan, storyCachedPdfScan, ...additionalScans.slice(0, 3)];
 		seedInvoiceStoryStores({
 			scans: allScans,
-			selectedScans: allScans,
+			selectedScans: [],
 		});
+	},
+	render: () => {
+		const allScans = [storyCachedImageScan, storyCachedPdfScan, ...additionalScans.slice(0, 3)];
+		return <ScanSelectorWithSelection scansToSelect={allScans} />;
 	},
 	parameters: {
 		docs: {

@@ -1,6 +1,27 @@
+import React from "react";
 import type {Meta, StoryObj} from "@storybook/react";
+import type {CachedScan} from "@/types/scans";
 import {resetInvoiceStoryStores, seedInvoiceStoryStores, storyCachedImageScan, WithCreateInvoiceContext} from "../../_storybook";
+import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import InvoiceDetailsForm from "./InvoiceDetailsForm";
+
+/**
+ * Wrapper that selects scans in CreateInvoiceContext on mount.
+ */
+function InvoiceDetailsFormWithSelection({scansToSelect}: Readonly<{scansToSelect: CachedScan[]}>): React.JSX.Element {
+	const {toggleScan, selectedScans} = useCreateInvoiceContext();
+
+	React.useEffect(() => {
+		// Only select if not already selected
+		for (const scan of scansToSelect) {
+			if (!selectedScans.some((s) => s.id === scan.id)) {
+				toggleScan(scan);
+			}
+		}
+	}, [scansToSelect, toggleScan, selectedScans]);
+
+	return <InvoiceDetailsForm />;
+}
 
 const meta = {
 	title: "Invoices/CreateInvoice/InvoiceDetailsForm",
@@ -33,9 +54,10 @@ export const WithSelectedScan: Story = {
 		resetInvoiceStoryStores();
 		seedInvoiceStoryStores({
 			scans: [storyCachedImageScan],
-			selectedScans: [storyCachedImageScan],
+			selectedScans: [],
 		});
 	},
+	render: () => <InvoiceDetailsFormWithSelection scansToSelect={[storyCachedImageScan]} />,
 	parameters: {
 		docs: {
 			description: {
