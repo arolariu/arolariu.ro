@@ -168,9 +168,6 @@ export const Dismissed: Story = {
 		// Simulate user having dismissed the banner
 		sessionStorage.setItem("scan-group-banner-dismissed", "true");
 	},
-	args: {
-		initialVisible: false,
-	},
 	parameters: {
 		docs: {
 			description: {
