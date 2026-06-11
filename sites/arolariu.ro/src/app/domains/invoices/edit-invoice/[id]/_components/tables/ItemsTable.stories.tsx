@@ -41,7 +41,7 @@ export const WithItems: Story = {
     docs: {
       description: {
         story:
-          "Table showing invoice line items with inline editing, search, and category assignment. Story invoice includes 3 products (milk, bread, chicken). Click cells to edit in-place, use checkboxes for bulk actions.",
+          "Table showing invoice line items with inline editing, search, and category assignment. Story invoice includes 4 products (milk, bread, eggs, apples). Click cells to edit in-place, use checkboxes for bulk actions.",
       },
     },
   },
