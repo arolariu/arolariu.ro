@@ -6,9 +6,11 @@ import {RelatedInvoicesCard} from "./RelatedInvoicesCard";
 const meta = {
   title: "Invoices/View Invoice/Cards/RelatedInvoicesCard",
   component: RelatedInvoicesCard,
+  tags: ["!autodocs"],
   parameters: {
     layout: "padded",
     docs: {
+      disable: true,
       description: {
         component: "Horizontal carousel card displaying related invoices based on merchant, category, or amount similarity. **Note:** These stories seed global invoice store state and are intended for isolated canvas viewing to prevent cross-story contamination.",
       },
