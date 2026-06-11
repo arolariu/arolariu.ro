@@ -47,22 +47,42 @@ const meta = {
   beforeEach: () => {
     // Mock Date to June 2026 for deterministic calendar rendering
     const OriginalDate = globalThis.Date;
-    const mockDate = new Date("2026-06-11T12:00:00Z");
+    const fixedDate = new OriginalDate("2026-06-11T12:00:00.000Z");
 
-    globalThis.Date = class extends OriginalDate {
-      constructor(...args: unknown[]) {
-        if (args.length === 0) {
-          super(mockDate.getTime());
-        } else {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          super(...(args as any));
+    class FixedDate extends OriginalDate {
+      public constructor();
+      public constructor(value: string | number | Date);
+      public constructor(year: number, monthIndex: number, date?: number, hours?: number, minutes?: number, seconds?: number, ms?: number);
+      public constructor(
+        valueOrYear?: string | number | Date,
+        monthIndex?: number,
+        date?: number,
+        hours?: number,
+        minutes?: number,
+        seconds?: number,
+        ms?: number,
+      ) {
+        if (valueOrYear === undefined) {
+          super(fixedDate.getTime());
+          return;
         }
+        if (monthIndex === undefined) {
+          super(valueOrYear);
+          return;
+        }
+        if (typeof valueOrYear === "number") {
+          super(valueOrYear, monthIndex, date, hours, minutes, seconds, ms);
+          return;
+        }
+        super(valueOrYear);
       }
 
-      static now(): number {
-        return mockDate.getTime();
+      public static override now(): number {
+        return fixedDate.getTime();
       }
-    } as DateConstructor;
+    }
+
+    globalThis.Date = FixedDate as DateConstructor;
 
     // Return cleanup function that restores original Date after story
     return () => {
