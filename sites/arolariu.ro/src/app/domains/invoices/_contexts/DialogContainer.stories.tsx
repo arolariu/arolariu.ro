@@ -18,9 +18,8 @@ import {
  * @remarks Static preview — component transitively imports "use server" actions
  * via DeleteInvoiceDialog (deleteInvoice), ShareInvoiceDialog (patchInvoice),
  * AddScanDialog (attachScanToInvoice, createScan), AnalyzeDialog (analyzeInvoice),
- * and RemoveScanDialog (detachScanFromInvoice) that cannot be bundled by Storybook's
- * Vite/Rollup. This story shows a schematic overview of all dialog types
- * the container can render.
+ * and RemoveScanDialog (detachScanFromInvoice). This story is a schematic subset
+ * of commonly used dialog registrations rather than an exhaustive registry dump.
  */
 const meta = {
   title: "Invoices/Dialogs/DialogContainer",
@@ -29,7 +28,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Manages visibility of all invoice-related dialogs via `useDialogs` context. Renders the active dialog based on the current dialog type. Real component imports server actions that cannot be bundled by Storybook.",
+          "Manages visibility of invoice-related dialogs via `useDialogs` context. This static schematic documents representative dialog registrations; individual dialog stories cover concrete mounted dialog content.",
       },
     },
   },
@@ -140,7 +139,7 @@ export const Default: Story = {
     docs: {
       description: {
         story:
-          "Displays a schematic grid showing representative dialog types the container can render, organized by category (analysis, items, merchant, metadata, scans, recipes, sharing, deletion). Each row shows the dialog icon, type constant, label, and current status indicator.",
+          "Displays a schematic grid showing representative dialog types from the container, organized by category (analysis, items, merchant, metadata, scans, recipes, sharing, deletion). This is intentionally not an exhaustive registry.",
       },
     },
   },
@@ -155,7 +154,7 @@ export const Default: Story = {
       <div style={{borderBottom: "1px solid #e5e7eb", padding: "1.5rem"}}>
         <h2 style={{fontSize: "1.125rem", fontWeight: "600"}}>Dialog Container</h2>
         <p style={{marginTop: "0.25rem", fontSize: "0.875rem", color: "#6b7280"}}>
-          Manages visibility of all invoice-related dialogs via{" "}
+          Shows representative invoice dialog registrations via{" "}
           <code
             style={{
               borderRadius: "0.25rem",
