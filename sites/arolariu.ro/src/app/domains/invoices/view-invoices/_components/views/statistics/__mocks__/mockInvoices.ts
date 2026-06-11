@@ -108,17 +108,20 @@ export const MOCK_MERCHANTS = {
 };
 
 // Date helpers for generating deterministic past dates
-const getDateMonthsAgo = (months: number, day: number = 15): Date => {
+const getDateMonthsAgo = (months: number, day: number = 15, hour: number = 12): Date => {
   const baseDate = new Date("2026-06-01T12:00:00Z");
   const date = new Date(baseDate);
   date.setMonth(date.getMonth() - months);
   date.setDate(day);
+  date.setUTCHours(hour, 0, 0, 0);
   return date;
 };
 
 /**
  * Comprehensive mock invoice dataset for statistics testing.
  * Includes 15+ invoices spanning 6 months with diverse data.
+ * Dates are varied across days (1-28) and hours (morning/afternoon/evening/night)
+ * to ensure all statistics scenarios have data.
  */
 export const mockInvoices: Invoice[] = [
   // Month 0 (Current) - RON invoices
@@ -132,7 +135,7 @@ export const mockInvoices: Invoice[] = [
       totalTaxAmount: 23,
       subtotalAmount: 0,
       tipAmount: 0,
-      transactionDate: getDateMonthsAgo(0, 5),
+      transactionDate: getDateMonthsAgo(0, 3, 8), // Morning: 3rd day, 8am
       paymentType: 200,
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
     },
@@ -186,8 +189,8 @@ export const mockInvoices: Invoice[] = [
         detectedAllergens: [],
       }),
     ],
-    createdAt: getDateMonthsAgo(0, 5),
-    lastUpdatedAt: getDateMonthsAgo(0, 5),
+    createdAt: getDateMonthsAgo(0, 3, 8),
+    lastUpdatedAt: getDateMonthsAgo(0, 3, 8),
   }),
 
   createMockInvoice({
@@ -200,7 +203,7 @@ export const mockInvoices: Invoice[] = [
       totalTaxAmount: 8.55,
       subtotalAmount: 0,
       tipAmount: 0,
-      transactionDate: getDateMonthsAgo(0, 5),
+      transactionDate: getDateMonthsAgo(0, 7, 19), // Evening: 7th day, 7pm
       paymentType: 200,
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
     },
@@ -217,8 +220,8 @@ export const mockInvoices: Invoice[] = [
         ],
       }),
     ],
-    createdAt: getDateMonthsAgo(0, 5),
-    lastUpdatedAt: getDateMonthsAgo(0, 5),
+    createdAt: getDateMonthsAgo(0, 7, 19),
+    lastUpdatedAt: getDateMonthsAgo(0, 7, 19),
   }),
 
   // Month 1 - EUR invoice
@@ -232,7 +235,7 @@ export const mockInvoices: Invoice[] = [
       totalTaxAmount: 8.7,
       subtotalAmount: 0,
       tipAmount: 0,
-      transactionDate: getDateMonthsAgo(1, 5),
+      transactionDate: getDateMonthsAgo(1, 12, 14), // Afternoon: 12th day, 2pm
       paymentType: 200,
       currency: {code: "EUR", symbol: "€", name: "Euro"},
     },
@@ -265,8 +268,8 @@ export const mockInvoices: Invoice[] = [
         ],
       }),
     ],
-    createdAt: getDateMonthsAgo(1, 5),
-    lastUpdatedAt: getDateMonthsAgo(1, 5),
+    createdAt: getDateMonthsAgo(1, 12, 14),
+    lastUpdatedAt: getDateMonthsAgo(1, 12, 14),
   }),
 
   createMockInvoice({
@@ -279,7 +282,7 @@ export const mockInvoices: Invoice[] = [
       totalTaxAmount: 29.7,
       subtotalAmount: 0,
       tipAmount: 0,
-      transactionDate: getDateMonthsAgo(1, 5),
+      transactionDate: getDateMonthsAgo(1, 18, 22), // Night: 18th day, 10pm
       paymentType: 200,
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
     },
@@ -322,8 +325,8 @@ export const mockInvoices: Invoice[] = [
         detectedAllergens: [{name: "Lactose", description: "Milk sugar", learnMoreAddress: ""}],
       }),
     ],
-    createdAt: getDateMonthsAgo(1, 5),
-    lastUpdatedAt: getDateMonthsAgo(1, 5),
+    createdAt: getDateMonthsAgo(1, 18, 22),
+    lastUpdatedAt: getDateMonthsAgo(1, 18, 22),
   }),
 
   // Month 2 - USD invoice
@@ -335,7 +338,7 @@ export const mockInvoices: Invoice[] = [
     paymentInformation: {
       totalCostAmount: 28.5,
       totalTaxAmount: 2.85,
-      transactionDate: getDateMonthsAgo(2, 5),
+      transactionDate: getDateMonthsAgo(2, 6, 10), // Morning: 6th day, 10am
       currency: {code: "USD", symbol: "$", name: "US Dollar"},
       subtotalAmount: 0,
       tipAmount: 0,
@@ -362,8 +365,8 @@ export const mockInvoices: Invoice[] = [
         detectedAllergens: [{name: "Gluten", description: "Wheat protein", learnMoreAddress: ""}],
       }),
     ],
-    createdAt: getDateMonthsAgo(2, 5),
-    lastUpdatedAt: getDateMonthsAgo(2, 5),
+    createdAt: getDateMonthsAgo(2, 6, 10),
+    lastUpdatedAt: getDateMonthsAgo(2, 6, 10),
   }),
 
   createMockInvoice({
@@ -374,7 +377,7 @@ export const mockInvoices: Invoice[] = [
     paymentInformation: {
       totalCostAmount: 145.7,
       totalTaxAmount: 27.68,
-      transactionDate: getDateMonthsAgo(2, 5),
+      transactionDate: getDateMonthsAgo(2, 14, 16), // Afternoon: 14th day, 4pm
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
       subtotalAmount: 0,
       tipAmount: 0,
@@ -406,8 +409,8 @@ export const mockInvoices: Invoice[] = [
         detectedAllergens: [],
       }),
     ],
-    createdAt: getDateMonthsAgo(2, 5),
-    lastUpdatedAt: getDateMonthsAgo(2, 5),
+    createdAt: getDateMonthsAgo(2, 14, 16),
+    lastUpdatedAt: getDateMonthsAgo(2, 14, 16),
   }),
 
   // Month 3
@@ -419,7 +422,7 @@ export const mockInvoices: Invoice[] = [
     paymentInformation: {
       totalCostAmount: 198.3,
       totalTaxAmount: 18.8,
-      transactionDate: getDateMonthsAgo(3, 5),
+      transactionDate: getDateMonthsAgo(3, 9, 7), // Morning: 9th day, 7am
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
       subtotalAmount: 0,
       tipAmount: 0,
@@ -459,8 +462,8 @@ export const mockInvoices: Invoice[] = [
         detectedAllergens: [{name: "Tree Nuts", description: "Almonds", learnMoreAddress: ""}],
       }),
     ],
-    createdAt: getDateMonthsAgo(3, 5),
-    lastUpdatedAt: getDateMonthsAgo(3, 5),
+    createdAt: getDateMonthsAgo(3, 9, 7),
+    lastUpdatedAt: getDateMonthsAgo(3, 9, 7),
   }),
 
   createMockInvoice({
@@ -471,7 +474,7 @@ export const mockInvoices: Invoice[] = [
     paymentInformation: {
       totalCostAmount: 89,
       totalTaxAmount: 16.91,
-      transactionDate: getDateMonthsAgo(3, 5),
+      transactionDate: getDateMonthsAgo(3, 20, 20), // Evening: 20th day, 8pm
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
       subtotalAmount: 0,
       tipAmount: 0,
@@ -498,8 +501,8 @@ export const mockInvoices: Invoice[] = [
         detectedAllergens: [{name: "Gluten", description: "Wheat protein", learnMoreAddress: ""}],
       }),
     ],
-    createdAt: getDateMonthsAgo(3, 5),
-    lastUpdatedAt: getDateMonthsAgo(3, 5),
+    createdAt: getDateMonthsAgo(3, 20, 20),
+    lastUpdatedAt: getDateMonthsAgo(3, 20, 20),
   }),
 
   // Month 4
@@ -511,7 +514,7 @@ export const mockInvoices: Invoice[] = [
     paymentInformation: {
       totalCostAmount: 425.6,
       totalTaxAmount: 40.4,
-      transactionDate: getDateMonthsAgo(4, 5),
+      transactionDate: getDateMonthsAgo(4, 15, 13), // Afternoon: 15th day, 1pm
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
       subtotalAmount: 0,
       tipAmount: 0,
@@ -551,8 +554,8 @@ export const mockInvoices: Invoice[] = [
         detectedAllergens: [{name: "Lactose", description: "Milk sugar", learnMoreAddress: ""}],
       }),
     ],
-    createdAt: getDateMonthsAgo(4, 5),
-    lastUpdatedAt: getDateMonthsAgo(4, 5),
+    createdAt: getDateMonthsAgo(4, 15, 13),
+    lastUpdatedAt: getDateMonthsAgo(4, 15, 13),
   }),
 
   createMockInvoice({
@@ -563,7 +566,7 @@ export const mockInvoices: Invoice[] = [
     paymentInformation: {
       totalCostAmount: 67.5,
       totalTaxAmount: 6.4,
-      transactionDate: getDateMonthsAgo(4, 5),
+      transactionDate: getDateMonthsAgo(4, 22, 23), // Night: 22nd day, 11pm
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
       subtotalAmount: 0,
       tipAmount: 0,
@@ -595,8 +598,8 @@ export const mockInvoices: Invoice[] = [
         detectedAllergens: [],
       }),
     ],
-    createdAt: getDateMonthsAgo(4, 5),
-    lastUpdatedAt: getDateMonthsAgo(4, 5),
+    createdAt: getDateMonthsAgo(4, 22, 23),
+    lastUpdatedAt: getDateMonthsAgo(4, 22, 23),
   }),
 
   // Month 5
@@ -608,7 +611,7 @@ export const mockInvoices: Invoice[] = [
     paymentInformation: {
       totalCostAmount: 178.9,
       totalTaxAmount: 17,
-      transactionDate: getDateMonthsAgo(5, 5),
+      transactionDate: getDateMonthsAgo(5, 11, 18), // Evening: 11th day, 6pm
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
       subtotalAmount: 0,
       tipAmount: 0,
@@ -651,8 +654,8 @@ export const mockInvoices: Invoice[] = [
         detectedAllergens: [{name: "Fish", description: "Seafood", learnMoreAddress: ""}],
       }),
     ],
-    createdAt: getDateMonthsAgo(5, 5),
-    lastUpdatedAt: getDateMonthsAgo(5, 5),
+    createdAt: getDateMonthsAgo(5, 11, 18),
+    lastUpdatedAt: getDateMonthsAgo(5, 11, 18),
   }),
 
   createMockInvoice({
@@ -663,7 +666,7 @@ export const mockInvoices: Invoice[] = [
     paymentInformation: {
       totalCostAmount: 56,
       totalTaxAmount: 10.64,
-      transactionDate: getDateMonthsAgo(5, 5),
+      transactionDate: getDateMonthsAgo(5, 25, 2), // Night: 25th day, 2am
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
       subtotalAmount: 0,
       tipAmount: 0,
@@ -682,8 +685,8 @@ export const mockInvoices: Invoice[] = [
         ],
       }),
     ],
-    createdAt: getDateMonthsAgo(5, 5),
-    lastUpdatedAt: getDateMonthsAgo(5, 5),
+    createdAt: getDateMonthsAgo(5, 25, 2),
+    lastUpdatedAt: getDateMonthsAgo(5, 25, 2),
   }),
 
   // Additional current month invoices for variety
@@ -695,7 +698,7 @@ export const mockInvoices: Invoice[] = [
     paymentInformation: {
       totalCostAmount: 89.3,
       totalTaxAmount: 8.5,
-      transactionDate: getDateMonthsAgo(0, 5),
+      transactionDate: getDateMonthsAgo(0, 12, 11), // Morning: 12th day, 11am
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
       subtotalAmount: 0,
       tipAmount: 0,
@@ -727,8 +730,8 @@ export const mockInvoices: Invoice[] = [
         detectedAllergens: [],
       }),
     ],
-    createdAt: getDateMonthsAgo(0, 5),
-    lastUpdatedAt: getDateMonthsAgo(0, 5),
+    createdAt: getDateMonthsAgo(0, 12, 11),
+    lastUpdatedAt: getDateMonthsAgo(0, 12, 11),
   }),
 
   createMockInvoice({
@@ -739,7 +742,7 @@ export const mockInvoices: Invoice[] = [
     paymentInformation: {
       totalCostAmount: 125.4,
       totalTaxAmount: 23.83,
-      transactionDate: getDateMonthsAgo(0, 5),
+      transactionDate: getDateMonthsAgo(0, 16, 15), // Afternoon: 16th day, 3pm
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
       subtotalAmount: 0,
       tipAmount: 0,
@@ -771,8 +774,8 @@ export const mockInvoices: Invoice[] = [
         detectedAllergens: [],
       }),
     ],
-    createdAt: getDateMonthsAgo(0, 5),
-    lastUpdatedAt: getDateMonthsAgo(0, 5),
+    createdAt: getDateMonthsAgo(0, 16, 15),
+    lastUpdatedAt: getDateMonthsAgo(0, 16, 15),
   }),
 
   createMockInvoice({
@@ -783,7 +786,7 @@ export const mockInvoices: Invoice[] = [
     paymentInformation: {
       totalCostAmount: 95.7,
       totalTaxAmount: 9.1,
-      transactionDate: getDateMonthsAgo(1, 5),
+      transactionDate: getDateMonthsAgo(1, 5, 9), // Morning: 5th day, 9am
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
       subtotalAmount: 0,
       tipAmount: 0,
@@ -819,8 +822,8 @@ export const mockInvoices: Invoice[] = [
         ],
       }),
     ],
-    createdAt: getDateMonthsAgo(1, 5),
-    lastUpdatedAt: getDateMonthsAgo(1, 5),
+    createdAt: getDateMonthsAgo(1, 5, 9),
+    lastUpdatedAt: getDateMonthsAgo(1, 5, 9),
   }),
 ];
 

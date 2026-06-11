@@ -44,6 +44,36 @@ const meta = {
       control: "text",
     },
   },
+  decorators: [
+    (Story) => {
+      // Mock Date to June 2026 for deterministic calendar rendering
+      const OriginalDate = globalThis.Date;
+      const mockDate = new Date("2026-06-11T12:00:00Z");
+
+      // @ts-expect-error - Mocking Date constructor for stories
+      globalThis.Date = class extends OriginalDate {
+        constructor(...args: unknown[]) {
+          if (args.length === 0) {
+            super(mockDate.getTime());
+          } else {
+            // @ts-expect-error - Pass through arguments
+            super(...args);
+          }
+        }
+
+        static now(): number {
+          return mockDate.getTime();
+        }
+      } as DateConstructor;
+
+      const result = <Story />;
+
+      // Restore original Date after render
+      globalThis.Date = OriginalDate;
+
+      return result;
+    },
+  ],
 } satisfies Meta<typeof SpendingCalendarHeatmap>;
 
 export default meta;
