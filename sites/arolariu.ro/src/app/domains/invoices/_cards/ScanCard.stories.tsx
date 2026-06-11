@@ -3,6 +3,7 @@
  * @module app/domains/invoices/_cards/ScanCard.stories
  */
 
+import {Badge, Card} from "@arolariu/components";
 import type {Meta, StoryObj} from "@storybook/react";
 import {useState} from "react";
 import {TbLink, TbRotateClockwise, TbTrash} from "react-icons/tb";
@@ -130,26 +131,14 @@ export const UploadProgress: Story = {
 		},
 		title: "uploading-receipt.jpg",
 		isLocked: true,
-		statusBadge: (
-			<span
-				style={{
-					borderRadius: "9999px",
-					backgroundColor: "rgba(59, 130, 246, 0.9)",
-					padding: "0.25rem 0.75rem",
-					fontSize: "0.75rem",
-					fontWeight: 500,
-					color: "white",
-				}}>
-				Uploading
-			</span>
-		),
+		statusBadge: <Badge variant='default'>Uploading</Badge>,
 		progress: {value: 70, label: "70% uploaded"},
 	},
 	parameters: {
 		docs: {
 			description: {
 				story:
-					"Scan card during upload with linear progress bar at 70%, blue 'Uploading' status badge, and locked state (no interactions). Progress indicator shows percentage below the card.",
+					"Scan card during upload with linear progress bar at 70%, blue 'Uploading' status badge (Badge primitive with default variant), and locked state (no interactions). Progress indicator shows percentage below the card.",
 			},
 		},
 	},
@@ -231,21 +220,12 @@ export const LinkedToInvoice: Story = {
 		title: "invoice-attachment.jpg",
 		metadataItems: ["950 KB", "Mar 13, 2024"],
 		linkedBadge: (
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					gap: "0.25rem",
-					borderRadius: "9999px",
-					backgroundColor: "rgba(59, 130, 246, 0.9)",
-					padding: "0.25rem 0.75rem",
-					fontSize: "0.75rem",
-					fontWeight: 500,
-					color: "white",
-				}}>
-				<TbLink style={{height: "0.75rem", width: "0.75rem"}} />
+			<Badge
+				variant='default'
+				className='flex items-center gap-1'>
+				<TbLink className='h-3 w-3' />
 				Linked
-			</div>
+			</Badge>
 		),
 		actions: [
 			{
@@ -263,7 +243,7 @@ export const LinkedToInvoice: Story = {
 		docs: {
 			description: {
 				story:
-					"Scan card with top-left 'Linked' badge indicating attachment to an existing invoice. Badge includes link icon and blue background. Card remains interactive with delete action available.",
+					"Scan card with top-left 'Linked' badge (Badge primitive with default variant) indicating attachment to an existing invoice. Badge includes link icon and uses @arolariu/components styling. Card remains interactive with delete action available.",
 			},
 		},
 	},
@@ -282,26 +262,14 @@ export const UploadError: Story = {
 		title: "failed-receipt.jpg",
 		metadataItems: ["2.1 MB"],
 		isLocked: true,
-		statusBadge: (
-			<span
-				style={{
-					borderRadius: "9999px",
-					backgroundColor: "rgba(239, 68, 68, 0.9)",
-					padding: "0.25rem 0.75rem",
-					fontSize: "0.75rem",
-					fontWeight: 500,
-					color: "white",
-				}}>
-				Failed
-			</span>
-		),
+		statusBadge: <Badge variant='destructive'>Failed</Badge>,
 		error: "Upload failed: Network error",
 	},
 	parameters: {
 		docs: {
 			description: {
 				story:
-					"Error state showing failed upload with red 'Failed' badge, error message below card, and locked state. Error text displays diagnostic message (e.g., 'Upload failed: Network error').",
+					"Error state showing failed upload with red 'Failed' badge (Badge primitive with destructive variant), error message below card, and locked state. Error text displays diagnostic message (e.g., 'Upload failed: Network error').",
 			},
 		},
 	},
@@ -321,36 +289,17 @@ export const ProcessingOverlay: Story = {
 		metadataItems: ["1.8 MB", "Mar 12, 2024"],
 		isLocked: true,
 		centerOverlay: (
-			<div
-				style={{
-					display: "flex",
-					flexDirection: "column",
-					alignItems: "center",
-					gap: "0.5rem",
-					backgroundColor: "rgba(255, 255, 255, 0.95)",
-					padding: "1.5rem",
-					borderRadius: "0.5rem",
-					boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-				}}>
-				<div
-					style={{
-						height: "2rem",
-						width: "2rem",
-						border: "3px solid #e5e7eb",
-						borderTopColor: "#3b82f6",
-						borderRadius: "9999px",
-						animation: "spin 0.8s linear infinite",
-					}}
-				/>
-				<span style={{fontSize: "0.875rem", fontWeight: 500, color: "#374151"}}>Processing...</span>
-			</div>
+			<Card className='flex flex-col items-center gap-2 bg-background/95 p-6 shadow-md'>
+				<div className='h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary' />
+				<span className='text-sm font-medium text-foreground'>Processing...</span>
+			</Card>
 		),
 	},
 	parameters: {
 		docs: {
 			description: {
 				story:
-					"Scan card with centered processing overlay covering the thumbnail. Displays animated spinner with 'Processing...' label in white card overlay. Card is locked during processing.",
+					"Scan card with centered processing overlay covering the thumbnail. Displays animated spinner with 'Processing...' label using Card primitive from @arolariu/components. Card is locked during processing.",
 			},
 		},
 	},

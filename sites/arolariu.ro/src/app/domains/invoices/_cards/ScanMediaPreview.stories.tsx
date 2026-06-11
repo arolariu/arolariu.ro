@@ -3,6 +3,7 @@
  * @module app/domains/invoices/_cards/ScanMediaPreview.stories
  */
 
+import {Badge, Card} from "@arolariu/components";
 import type {Meta, StoryObj} from "@storybook/react";
 import {ScanMediaPreview} from "./ScanMediaPreview";
 import {storyImageScanUrl, storyPdfScanUrl} from "@/app/domains/invoices/_storybook/fixtures/scanFixtures";
@@ -118,64 +119,16 @@ export const WithOverlays: Story = {
 		mediaKind: "image",
 		alt: "Scan with overlay badges",
 		loading: "eager",
-		topLeftOverlay: (
-			<div
-				style={{
-					borderRadius: "9999px",
-					backgroundColor: "rgba(59, 130, 246, 0.9)",
-					padding: "0.25rem 0.5rem",
-					fontSize: "0.75rem",
-					fontWeight: 500,
-					color: "white",
-				}}>
-				Top Left
-			</div>
-		),
-		topRightOverlay: (
-			<div
-				style={{
-					borderRadius: "9999px",
-					backgroundColor: "rgba(34, 197, 94, 0.9)",
-					padding: "0.25rem 0.5rem",
-					fontSize: "0.75rem",
-					fontWeight: 500,
-					color: "white",
-				}}>
-				Top Right
-			</div>
-		),
-		bottomLeftOverlay: (
-			<div
-				style={{
-					borderRadius: "9999px",
-					backgroundColor: "rgba(168, 85, 247, 0.9)",
-					padding: "0.25rem 0.5rem",
-					fontSize: "0.75rem",
-					fontWeight: 500,
-					color: "white",
-				}}>
-				Bottom Left
-			</div>
-		),
-		bottomRightOverlay: (
-			<div
-				style={{
-					borderRadius: "9999px",
-					backgroundColor: "rgba(239, 68, 68, 0.9)",
-					padding: "0.25rem 0.5rem",
-					fontSize: "0.75rem",
-					fontWeight: 500,
-					color: "white",
-				}}>
-				Bottom Right
-			</div>
-		),
+		topLeftOverlay: <Badge variant='default'>Top Left</Badge>,
+		topRightOverlay: <Badge variant='secondary'>Top Right</Badge>,
+		bottomLeftOverlay: <Badge variant='outline'>Bottom Left</Badge>,
+		bottomRightOverlay: <Badge variant='destructive'>Bottom Right</Badge>,
 	},
 	parameters: {
 		docs: {
 			description: {
 				story:
-					"Preview with all four corner overlay slots populated. Demonstrates positioning for status badges, linked indicators, selection checkboxes, or action buttons. Each overlay uses distinct color for clarity.",
+					"Preview with all four corner overlay slots populated using Badge primitives from @arolariu/components. Demonstrates positioning for status badges, linked indicators, selection checkboxes, or action buttons. Each overlay uses distinct Badge variant for clarity.",
 			},
 		},
 	},
@@ -191,36 +144,17 @@ export const WithCenterOverlay: Story = {
 		alt: "Scan with center processing overlay",
 		loading: "eager",
 		centerOverlay: (
-			<div
-				style={{
-					display: "flex",
-					flexDirection: "column",
-					alignItems: "center",
-					gap: "0.5rem",
-					backgroundColor: "rgba(255, 255, 255, 0.95)",
-					padding: "1.5rem",
-					borderRadius: "0.5rem",
-					boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-				}}>
-				<div
-					style={{
-						height: "2rem",
-						width: "2rem",
-						border: "3px solid #e5e7eb",
-						borderTopColor: "#3b82f6",
-						borderRadius: "9999px",
-						animation: "spin 0.8s linear infinite",
-					}}
-				/>
-				<span style={{fontSize: "0.875rem", fontWeight: 500, color: "#374151"}}>Processing...</span>
-			</div>
+			<Card className='flex flex-col items-center gap-2 bg-background/95 p-6 shadow-md'>
+				<div className='h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary' />
+				<span className='text-sm font-medium text-foreground'>Processing...</span>
+			</Card>
 		),
 	},
 	parameters: {
 		docs: {
 			description: {
 				story:
-					"Preview with centered overlay card (processing state). Overlay covers entire preview area with semi-transparent background. Use for upload progress, OCR processing, or other blocking operations.",
+					"Preview with centered overlay card (processing state) using Card primitive from @arolariu/components. Overlay covers entire preview area with semi-transparent background. Use for upload progress, OCR processing, or other blocking operations.",
 			},
 		},
 	},

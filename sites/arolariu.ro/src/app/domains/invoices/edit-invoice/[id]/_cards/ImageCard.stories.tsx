@@ -1,22 +1,50 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import ImageCard from "./ImageCard";
+import {storyInvoice, WithEditInvoiceContext, WithInvoiceDialogs} from "@/app/domains/invoices/_storybook";
 
 /**
  * ImageCard displays receipt images with navigation, zoom, and add/remove controls.
  *
- * Because it depends on `useDialog` from DialogContext, this story renders
- * a **static preview** of the card layout and image gallery structure.
+ * ## Static Preview Blocker
+ *
+ * **Cannot mount real component** because it requires both:
+ * 1. `useDialog` hook from DialogContext (via `useDialog("EDIT_INVOICE__ADD_SCAN", ...)`)
+ * 2. `EditInvoiceContext` for invoice data and state management
+ * 3. Complex modal/dialog orchestration that does not render meaningfully in isolation
+ *
+ * Storybook mounting requires wrapping in `WithEditInvoiceContext` and `WithInvoiceDialogs`,
+ * which depend on runtime invoice state and server action mocks that are not suitable for
+ * static component documentation.
+ *
+ * **Alternatives attempted:**
+ * - Wrapping with WithEditInvoiceContext + WithInvoiceDialogs results in dialog state pollution
+ *   between stories and incomplete rendering of modal stacks
+ * - Component has no meaningful "prop-based" API—all interactions are context-driven
+ *
+ * **Decision:** Use static preview to document layout and visual structure.
+ * Integration testing via Playwright validates full component behavior with real contexts.
  */
 const meta = {
   title: "Invoices/EditInvoice/Cards/ImageCard",
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "Displays receipt scan gallery with navigation, zoom dialog, and add/remove controls. Depends on DialogContext and EditInvoiceContext—see component docs for integration details.",
+      },
+    },
   },
+  tags: ["autodocs"],
 } satisfies Meta;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Static preview of the image card with a placeholder receipt image. */
+/**
+ * Static preview of image card layout with single scan.
+ * Shows card structure, image preview area, and action buttons (Expand, Add Scan, Remove).
+ */
 export const Preview: Story = {
   render: () => (
     <div
@@ -83,9 +111,19 @@ export const Preview: Story = {
       </div>
     </div>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Single scan card layout showing image preview, expand button for zoom dialog, and add/remove controls. Placeholder image demonstrates aspect ratio and layout.",
+      },
+    },
+  },
 };
 
-/** Multiple scans with navigation indicators. */
+/**
+ * Static preview with multiple scans showing navigation indicator (2/3) and Previous/Next buttons.
+ */
 export const MultipleScans: Story = {
   render: () => (
     <div
@@ -145,4 +183,12 @@ export const MultipleScans: Story = {
       </div>
     </div>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Multi-scan gallery state showing scan position indicator (2/3) and Previous/Next navigation buttons. Demonstrates navigation UI that appears only when invoice has multiple scans.",
+      },
+    },
+  },
 };

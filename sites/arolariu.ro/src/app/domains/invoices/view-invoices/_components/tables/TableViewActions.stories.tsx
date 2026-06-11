@@ -21,22 +21,51 @@ const meta = {
   ],
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "Dropdown menu for invoice row actions in table view. Provides Edit (navigate to edit page), Share (copy public URL), and Delete (confirmation dialog) options. Uses DialogContext for delete confirmation and navigation hooks.",
+      },
+    },
   },
+  tags: ["autodocs"],
 } satisfies Meta<typeof TableViewActions>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Default invoice actions dropdown (interactive). */
+/**
+ * Default invoice actions dropdown with standard invoice data.
+ * Shows Edit, Share, and Delete options for local/offline invoice.
+ */
 export const Default: Story = {
   args: {
     invoice: storyInvoice,
   },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Standard invoice actions menu. Edit navigates to /edit-invoice/[id], Share copies public URL to clipboard, Delete opens confirmation dialog via DialogContext.",
+      },
+    },
+  },
 };
 
-/** Online invoice actions dropdown. */
+/**
+ * Online invoice actions dropdown (invoice from online merchant/source).
+ * Uses online invoice fixture to demonstrate any conditional behavior.
+ */
 export const OnlineInvoice: Story = {
   args: {
     invoice: storyOnlineInvoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Actions menu for online invoice (from online merchant). Same Edit/Share/Delete options as standard invoice. Demonstrates component behavior with online invoice metadata.",
+      },
+    },
   },
 };

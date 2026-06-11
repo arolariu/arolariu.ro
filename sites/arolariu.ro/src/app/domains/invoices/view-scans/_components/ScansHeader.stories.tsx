@@ -1,22 +1,46 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import ScansHeader from "./ScansHeader";
 
 /**
  * ScansHeader shows the scan count, sync status, and action buttons
- * (upload, invoices, sync). Depends on `useScans` hook.
+ * (upload, invoices, sync).
  *
- * This story renders a static preview of the scans header.
+ * ## Static Preview Blocker
+ *
+ * **Cannot mount real component** because it requires:
+ * 1. `useScans` hook from ScansContext (provides scans array, isSyncing state, lastSyncTimestamp, syncScans callback)
+ * 2. `useTranslations` hook with next-intl runtime dictionary
+ * 3. Client-side state management for sync operations and local storage integration
+ *
+ * **Alternatives attempted:**
+ * - Wrapping with mock `ScansProvider` requires complex zustand store setup and sync logic mocks
+ * - Component has no stable prop-based API—all state is hook-driven
+ * - Sync button interaction requires server action mocks for scan synchronization
+ *
+ * **Decision:** Use static preview to document header layout and sync states.
+ * Integration testing via Playwright validates full behavior with real ScansContext.
  */
 const meta = {
   title: "Invoices/ViewScans/ScansHeader",
   parameters: {
     layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "Header for scans listing page showing total count, last sync timestamp, and actions (Upload More, My Invoices, Sync). Depends on useScans hook for scan state and sync operations—see component docs for integration details.",
+      },
+    },
   },
+  tags: ["autodocs"],
 } satisfies Meta;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Default header with scans and sync info. */
+/**
+ * Static preview of scans header with scan count and sync info.
+ * Shows title with count, last synced timestamp, info tooltip, and action buttons.
+ */
 export const Default: Story = {
   render: () => (
     <div
@@ -87,9 +111,20 @@ export const Default: Story = {
       </div>
     </div>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Default header state showing scan count (12), relative last sync time (5m ago), info tooltip, and three action buttons. Upload More button uses gradient primary styling; My Invoices and Sync use outline variants.",
+      },
+    },
+  },
 };
 
-/** Syncing state. */
+/**
+ * Static preview of header during active sync operation.
+ * Shows syncing status text and disabled Sync button with spinner.
+ */
 export const Syncing: Story = {
   render: () => (
     <div
@@ -137,4 +172,12 @@ export const Syncing: Story = {
       </div>
     </div>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Active sync state showing 'Syncing...' status text and disabled Sync button with reduced opacity. Demonstrates visual feedback during server synchronization operation.",
+      },
+    },
+  },
 };
