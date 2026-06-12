@@ -19,7 +19,7 @@ const meta = {
 			description: {
 				component:
 					"Dialog for creating a new recipe from invoice items. Users can input recipe details " +
-					"(name, description, ingredients, prep time, cook time, difficulty) and save. Integrated with EditInvoiceContext " +
+					"(name, description, prep time, cook time, difficulty) and save. Ingredient fields render from the current recipe state and are read-only in this flow. Integrated with EditInvoiceContext " +
 					"and DialogContext to control visibility. Product selection UI is not currently implemented.",
 			},
 		},
@@ -40,7 +40,7 @@ export const Default: Story = {
 				story:
 					"Shows the recipe creation dialog in its initial state with an empty form. The dialog opens automatically " +
 					"on mount via the OpenDialogOnMount harness. Users can input recipe details including name, description, " +
-					"ingredients, prep/cook time, and difficulty.",
+					"prep/cook time, and difficulty while ingredient rows remain read-only until provided by recipe state.",
 			},
 		},
 	},

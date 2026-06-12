@@ -40,7 +40,7 @@ export const UnderBudget: Story = {
       description: {
         story:
           "Budget impact card showing healthy spending with low monthly budget usage. Displays remaining budget, " +
-          "days left in month, and daily allowance with positive trend indicator. Transaction from mid-January 2026.",
+          "days left in month, and daily allowance with a neutral trend indicator for this fixture. Transaction from mid-January 2026.",
       },
     },
   },
