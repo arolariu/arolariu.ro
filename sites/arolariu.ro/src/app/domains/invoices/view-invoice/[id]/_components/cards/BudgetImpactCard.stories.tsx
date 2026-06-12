@@ -14,10 +14,49 @@ const meta = {
   component: BudgetImpactCard,
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "Displays the monthly budget impact analysis for an invoice. Shows progress bar of budget usage, " +
+          "daily allowance, remaining budget, and spending trends. Relies on InvoiceContext for invoice data " +
+          "and computes analytics including percentage used, days remaining, and over-budget warnings. " +
+          "Mounted with real component wrapped in InvoiceContext decorator that accepts invoice via story-specific render.",
+      },
+    },
+  },
+} satisfies Meta<typeof BudgetImpactCard>;
+
+export default meta;
+
+type InvoiceStoryProps = {
+  invoice: Invoice;
+};
+type Story = StoryObj<InvoiceStoryProps>;
+
+/** Under budget — healthy spending. */
+export const UnderBudget: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Budget impact card showing healthy spending with 5% of monthly budget used. Displays remaining budget, " +
+          "days left in month, and daily allowance with positive trend indicator. Transaction from mid-January 2026.",
+      },
+    },
   },
   decorators: [
-    (Story, {args}) => {
-      const invoice = args.invoice as Invoice;
+    (Story) => {
+      const invoice = new InvoiceBuilder()
+        .withPaymentInformation({
+          transactionDate: new Date(2026, 0, 15), // January 15, 2026
+          paymentType: PaymentType.Card,
+          currency: {code: "USD", name: "US Dollar", symbol: "$"},
+          totalCostAmount: 125.5,
+          totalTaxAmount: 15.5,
+          subtotalAmount: 110.0,
+          tipAmount: 0,
+        })
+        .build();
       return (
         <InvoiceContextProvider
           invoice={invoice}
@@ -29,41 +68,41 @@ const meta = {
       );
     },
   ],
-} satisfies Meta<typeof BudgetImpactCard>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-/** Under budget — healthy spending. */
-export const UnderBudget: Story = {
-  args: {
-    invoice: new InvoiceBuilder()
-      .withPaymentInformation({
-        transactionDate: new Date(2026, 0, 15), // January 15, 2026
-        paymentType: PaymentType.Card,
-        currency: {code: "USD", name: "US Dollar", symbol: "$"},
-        totalCostAmount: 125.5,
-        totalTaxAmount: 15.5,
-        subtotalAmount: 110.0,
-        tipAmount: 0,
-      })
-      .build(),
-  },
 };
 
 /** Over budget — warning state. */
 export const OverBudget: Story = {
-  args: {
-    invoice: new InvoiceBuilder()
-      .withPaymentInformation({
-        transactionDate: new Date(2025, 11, 26), // December 26, 2025
-        paymentType: PaymentType.Card,
-        currency: {code: "USD", name: "US Dollar", symbol: "$"},
-        totalCostAmount: 2800.0,
-        totalTaxAmount: 280.0,
-        subtotalAmount: 2520.0,
-        tipAmount: 0,
-      })
-      .build(),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Budget impact card in over-budget warning state with 112% of monthly budget used. Shows negative remaining " +
+          "balance, over-budget alert styling, and hides daily allowance (not applicable when over budget). Transaction from late December 2025.",
+      },
+    },
   },
+  decorators: [
+    (Story) => {
+      const invoice = new InvoiceBuilder()
+        .withPaymentInformation({
+          transactionDate: new Date(2025, 11, 26), // December 26, 2025
+          paymentType: PaymentType.Card,
+          currency: {code: "USD", name: "US Dollar", symbol: "$"},
+          totalCostAmount: 2800.0,
+          totalTaxAmount: 280.0,
+          subtotalAmount: 2520.0,
+          tipAmount: 0,
+        })
+        .build();
+      return (
+        <InvoiceContextProvider
+          invoice={invoice}
+          merchant={null}>
+          <div style={{minWidth: "400px"}}>
+            <Story />
+          </div>
+        </InvoiceContextProvider>
+      );
+    },
+  ],
 };

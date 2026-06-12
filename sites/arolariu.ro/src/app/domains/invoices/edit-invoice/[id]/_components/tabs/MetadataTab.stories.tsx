@@ -11,6 +11,14 @@ const meta = {
   component: MetadataTab,
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "Displays custom metadata key-value pairs for an invoice with inline editing capabilities. " +
+          "Provides add, edit, and delete actions through dialog interactions using DialogContext. " +
+          "Shows empty state when no metadata exists. Mounted with real component wrapped in DialogProvider decorator.",
+      },
+    },
   },
   decorators: [
     (Story) => (
@@ -28,6 +36,15 @@ type Story = StoryObj<typeof meta>;
 
 /** Metadata tab with sample key-value pairs. */
 export const WithMetadata: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Metadata tab populated with five sample key-value pairs including store ID, receipt number, cashier, " +
+          "loyalty points, and payment method. Demonstrates table layout with action buttons for each entry.",
+      },
+    },
+  },
   args: {
     metadata: {
       store_id: "KFL-2024-BUC",
@@ -41,6 +58,13 @@ export const WithMetadata: Story = {
 
 /** Empty metadata tab showing empty state. */
 export const Empty: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Empty state when no metadata exists for the invoice. Shows placeholder message and add button.",
+      },
+    },
+  },
   args: {
     metadata: {},
   },
