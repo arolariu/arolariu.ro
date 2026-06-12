@@ -37,8 +37,41 @@ const createMockScan = (id: string): CachedScan => ({
   ...storyCachedImageScan,
   id,
   name: `Scan ${id}`,
-  cachedAt: new Date(),
+  cachedAt: new Date("2024-03-16T10:00:00.000Z"),
 });
+
+const singleSelectedScans = [createMockScan("scan-1")] as const;
+const multipleSelectedScans = [
+  createMockScan("scan-1"),
+  createMockScan("scan-2"),
+  createMockScan("scan-3"),
+  createMockScan("scan-4"),
+  createMockScan("scan-5"),
+] as const;
+
+function seedSelectedScans(mockScans: readonly CachedScan[]): () => void {
+  const store = useScansStore.getState();
+  const previousScans = [...store.scans];
+  const previousSelectedScans = [...store.selectedScans];
+  const previousHasHydrated = store.hasHydrated;
+  const previousIsSyncing = store.isSyncing;
+  const previousLastSyncTimestamp = store.lastSyncTimestamp;
+
+  store.clearSelectedScans();
+  store.setHasHydrated(false);
+  store.setIsSyncing(false);
+  store.setScans(mockScans);
+  store.selectAllScans();
+
+  return () => {
+    const currentStore = useScansStore.getState();
+    currentStore.setScans(previousScans);
+    currentStore.setSelectedScans(previousSelectedScans);
+    currentStore.setHasHydrated(previousHasHydrated);
+    currentStore.setIsSyncing(previousIsSyncing);
+    currentStore.setLastSyncTimestamp(previousLastSyncTimestamp);
+  };
+}
 
 /** Single scan selected. */
 export const SingleSelected: Story = {
@@ -51,23 +84,9 @@ export const SingleSelected: Story = {
   },
   decorators: [
     (Story) => {
-      const {setScans, setHasHydrated, clearSelectedScans, selectAllScans} = useScansStore();
-      const mockScans = [createMockScan("scan-1")];
-
       useEffect(() => {
-        // Reset store state and prevent auto-sync
-        clearSelectedScans();
-        setHasHydrated(false);
-
-        setScans(mockScans);
-        selectAllScans();
-
-        // Cleanup on unmount
-        return () => {
-          clearSelectedScans();
-          setScans([]);
-        };
-      }, [setScans, setHasHydrated, clearSelectedScans, selectAllScans]);
+        return seedSelectedScans(singleSelectedScans);
+      }, []);
 
       return <Story />;
     },
@@ -88,29 +107,9 @@ export const MultipleSelected: Story = {
   },
   decorators: [
     (Story) => {
-      const {setScans, setHasHydrated, clearSelectedScans, selectAllScans} = useScansStore();
-      const mockScans = [
-        createMockScan("scan-1"),
-        createMockScan("scan-2"),
-        createMockScan("scan-3"),
-        createMockScan("scan-4"),
-        createMockScan("scan-5"),
-      ];
-
       useEffect(() => {
-        // Reset store state and prevent auto-sync
-        clearSelectedScans();
-        setHasHydrated(false);
-
-        setScans(mockScans);
-        selectAllScans();
-
-        // Cleanup on unmount
-        return () => {
-          clearSelectedScans();
-          setScans([]);
-        };
-      }, [setScans, setHasHydrated, clearSelectedScans, selectAllScans]);
+        return seedSelectedScans(multipleSelectedScans);
+      }, []);
 
       return <Story />;
     },

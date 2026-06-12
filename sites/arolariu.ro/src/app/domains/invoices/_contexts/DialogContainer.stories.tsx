@@ -15,12 +15,9 @@ import {
 /**
  * Static visual preview of the DialogContainer component.
  *
- * @remarks Static preview — DialogContainer imports child dialog components that transitively
- * import "use server" actions from domain-level modules: DeleteInvoiceDialog → `deleteInvoice` from `_actions/invoices`,
- * ShareInvoiceDialog → `patchInvoice` from `_actions/invoices`, AddScanDialog → `attachScanToInvoice`
- * and `createScan` from `_actions/scans`, AnalyzeDialog → `analyzeInvoice` from `_actions/invoices`,
- * RemoveScanDialog → `detachScanFromInvoice` from `_actions/invoices`, and CreateInvoiceDialog → `createInvoiceFromScans`
- * from `view-scans/_actions/createInvoiceFromScans`. Storybook's Vite bundler cannot process server-only modules.
+ * @remarks Static preview — Storybook mocks cover the common invoice and scan action modules,
+ * but the full DialogContainer also reaches CreateInvoiceDialog, which imports the unmocked
+ * `"use server"` `createInvoiceFromScans` action from `view-scans/_actions/createInvoiceFromScans`.
  * This story renders a schematic subset of common dialog registrations rather than an exhaustive registry dump.
  */
 const meta = {
@@ -32,10 +29,9 @@ const meta = {
         component:
           "**Static Preview:** Manages visibility of invoice-related dialogs via `useDialogs` context. Conditionally renders the active dialog " +
           "based on current dialog type from context state. Returns `null` when no dialog is open. " +
-          "**Blocker:** Real component imports child dialogs (DeleteInvoiceDialog, ShareInvoiceDialog, AddScanDialog, AnalyzeDialog, RemoveScanDialog, CreateInvoiceDialog) " +
-          "that transitively import 'use server' actions (`deleteInvoice`, `patchInvoice`, `attachScanToInvoice`, `createScan`, `analyzeInvoice`, " +
-          "`detachScanFromInvoice`, `createInvoiceFromScans`) from domain-level action modules (`_actions/invoices`, `_actions/scans`, `_actions/invoices`, `view-scans/_actions/createInvoiceFromScans`). " +
-          "Storybook's Vite bundler cannot process server-only modules. This static schematic documents representative dialog registrations; individual dialog stories cover concrete mounted dialog content.",
+          "**Blocker:** Storybook mocks cover the common invoice and scan action modules, but the full container also reaches CreateInvoiceDialog, " +
+          "which imports the unmocked server action `createInvoiceFromScans` from `view-scans/_actions/createInvoiceFromScans`. " +
+          "This static schematic documents representative dialog registrations; individual dialog stories cover concrete mounted dialog content.",
       },
     },
   },
