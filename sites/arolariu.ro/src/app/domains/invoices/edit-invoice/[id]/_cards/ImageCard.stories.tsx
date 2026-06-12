@@ -73,7 +73,7 @@ export const MultipleScans: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Real image card with local invoice fixture containing multiple scans (image and PDF) to exercise scan gallery navigation.",
+        story: "Real image card with a local invoice fixture containing two image scans to exercise scan gallery navigation.",
       },
     },
   },
