@@ -17,6 +17,14 @@ const meta = {
 	component: FilterBar,
 	parameters: {
 		layout: "padded",
+		docs: {
+			description: {
+				component:
+					"Advanced filtering control bar for invoice list views. Provides search input, date range picker, amount range filter, " +
+					"category/payment type/currency selectors, sort controls, and table/grid view toggle. Displays active filter count badge " +
+					"and filtered result count. Mounted with real component wrapped in state harness with seeded invoice store.",
+			},
+		},
 	},
 	decorators: [
 		(Story) => {
@@ -93,6 +101,15 @@ function FilterBarHarness({
  * Default state — no active filters.
  */
 export const Default: Story = {
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Default state with no active filters applied. Shows clean search input, all dropdown selectors at default values, " +
+					"default sort (date descending), and table view mode selected. Active filter count badge is hidden (0 filters).",
+			},
+		},
+	},
 	render: () => <FilterBarHarness initialFilters={{}} />,
 };
 
@@ -100,5 +117,14 @@ export const Default: Story = {
  * With active search query.
  */
 export const WithActiveSearch: Story = {
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Filter bar with active search query 'Grocery' applied. Demonstrates search input populated with user query, " +
+					"active filter count badge showing 1 active filter, and filtered results count displayed.",
+			},
+		},
+	},
 	render: () => <FilterBarHarness initialFilters={{search: "Grocery"}} />,
 };

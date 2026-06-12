@@ -4,10 +4,11 @@ import {TbArrowRight, TbFileInvoice, TbPhoto, TbSparkles, TbStack2} from "react-
 /**
  * Static visual preview of the CreateInvoiceDialog component.
  *
- * @remarks Static preview — component imports from `@/stores` barrel which includes
- * `preferencesStore` that imports "use server" action (setCookie) that cannot be bundled
- * by Storybook's Vite/Rollup. Also depends on `useDialog` context and Zustand stores.
- * This story renders a faithful HTML replica of the creation wizard's selection step.
+ * @remarks Static preview — CreateInvoiceDialog imports from `@/stores` barrel which re-exports
+ * `preferencesStore` that transitively imports the server-only "use server" setCookie action
+ * from `@/lib/actions/cookies.ts`. Storybook's Vite bundler cannot process server-only modules.
+ * Additionally, component requires unmocked `useDialog` context and `useInvoiceScanStore` state.
+ * This story renders a faithful static HTML replica of the wizard's selection step.
  */
 const meta = {
   title: "Invoices/ViewScans/Dialogs/CreateInvoiceDialog",
@@ -18,9 +19,10 @@ const meta = {
         component:
           "**Static Preview:** Multi-step wizard dialog for creating invoices from uploaded scans. Users choose between creating " +
           "one invoice per scan or combining all scans into a single invoice, then monitors AI-powered OCR processing progress. " +
-          "**Blocker:** Component imports from `@/stores` barrel which re-exports `preferencesStore` that imports a 'use server' setCookie action. " +
-          "Storybook's Vite/Rollup bundler cannot process server-only modules. Additionally requires Zustand store state and DialogContext. " +
-          "Static HTML preview demonstrates the selection step UI.",
+          "**Blocker:** Real component imports from `@/stores` barrel which re-exports `preferencesStore` that imports the server-only " +
+          "`setCookie` action from `@/lib/actions/cookies.ts`. Storybook's Vite bundler cannot process 'use server' modules. " +
+          "Additionally requires unmocked `useDialog` context and `useInvoiceScanStore` Zustand state. " +
+          "This static HTML preview demonstrates the selection step UI structure and styling.",
       },
     },
   },

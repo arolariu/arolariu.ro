@@ -15,11 +15,13 @@ import {
 /**
  * Static visual preview of the DialogContainer component.
  *
- * @remarks Static preview — component transitively imports "use server" actions
- * via DeleteInvoiceDialog (deleteInvoice), ShareInvoiceDialog (patchInvoice),
- * AddScanDialog (attachScanToInvoice, createScan), AnalyzeDialog (analyzeInvoice),
- * and RemoveScanDialog (detachScanFromInvoice). This story is a schematic subset
- * of commonly used dialog registrations rather than an exhaustive registry dump.
+ * @remarks Static preview — DialogContainer imports child dialog components that transitively
+ * import "use server" actions: DeleteInvoiceDialog → `deleteInvoice` from `@/lib/actions/invoices.ts`,
+ * ShareInvoiceDialog → `patchInvoice` from `@/lib/actions/invoices.ts`, AddScanDialog → `attachScanToInvoice`
+ * and `createScan` from `@/lib/actions/scans.ts`, AnalyzeDialog → `analyzeInvoice` from `@/lib/actions/invoices.ts`,
+ * and RemoveScanDialog → `detachScanFromInvoice` from `@/lib/actions/scans.ts`. Storybook's Vite bundler
+ * cannot process server-only modules. This story renders a schematic subset of common dialog registrations
+ * rather than an exhaustive registry dump.
  */
 const meta = {
   title: "Invoices/Dialogs/DialogContainer",
@@ -28,7 +30,12 @@ const meta = {
     docs: {
       description: {
         component:
-          "Manages visibility of invoice-related dialogs via `useDialogs` context. This static schematic documents representative dialog registrations; individual dialog stories cover concrete mounted dialog content.",
+          "**Static Preview:** Manages visibility of invoice-related dialogs via `useDialogs` context. Conditionally renders the active dialog " +
+          "based on current dialog type from context state. Returns `null` when no dialog is open. " +
+          "**Blocker:** Real component imports child dialogs (DeleteInvoiceDialog, ShareInvoiceDialog, AddScanDialog, AnalyzeDialog, RemoveScanDialog) " +
+          "that transitively import 'use server' actions (`deleteInvoice`, `patchInvoice`, `attachScanToInvoice`, `createScan`, `analyzeInvoice`, " +
+          "`detachScanFromInvoice`) from `@/lib/actions/invoices.ts` and `@/lib/actions/scans.ts`. Storybook's Vite bundler cannot process server-only modules. " +
+          "This static schematic documents representative dialog registrations; individual dialog stories cover concrete mounted dialog content.",
       },
     },
   },
