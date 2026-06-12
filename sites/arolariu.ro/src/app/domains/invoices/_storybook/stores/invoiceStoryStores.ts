@@ -98,7 +98,7 @@ export function resetInvoiceStoryStores(): void {
 export function seedInvoiceStoryStores(options: SeedInvoiceStoryStoresOptions = {}): void {
 	const {
 		invoices = storyInvoices,
-		selectedInvoices = storyInvoices.length > 0 ? [storyInvoices[0]] : [],
+		selectedInvoices = storyInvoices.slice(0, 1),
 		merchants = storyMerchants,
 		scans = [storyCachedImageScan, storyCachedPdfScan],
 		selectedScans = [],

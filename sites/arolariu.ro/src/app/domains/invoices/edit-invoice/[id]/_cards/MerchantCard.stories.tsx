@@ -21,6 +21,9 @@ type Story = StoryObj<typeof meta>;
 
 /** Merchant card with linked merchant data. */
 export const LinkedMerchant: Story = {
+  args: {
+    merchant: storyMerchant,
+  },
   render: () => (
     <WithInvoiceDialogs>
       <MerchantCard merchant={storyMerchant} />
@@ -30,6 +33,9 @@ export const LinkedMerchant: Story = {
 
 /** Merchant card with no merchant linked (null). */
 export const NoMerchant: Story = {
+  args: {
+    merchant: null,
+  },
   render: () => (
     <WithInvoiceDialogs>
       <MerchantCard merchant={null} />

@@ -25,6 +25,9 @@ type Story = StoryObj<typeof meta>;
 
 /** Private invoice — no shared users. */
 export const PrivateInvoice: Story = {
+  args: {
+    invoice: storyInvoice,
+  },
   render: () => (
     <WithInvoiceDialogs>
       <SharingCard invoice={storyInvoice} />
@@ -34,6 +37,12 @@ export const PrivateInvoice: Story = {
 
 /** Invoice shared with multiple users. */
 export const SharedWithUsers: Story = {
+  args: {
+    invoice: {
+      ...storyInvoice,
+      sharedWith: ["user-abc-123", "user-def-456", "user-ghi-789"],
+    },
+  },
   render: () => (
     <WithInvoiceDialogs>
       <SharingCard
@@ -48,6 +57,9 @@ export const SharedWithUsers: Story = {
 
 /** Public invoice accessible to anyone with the link. */
 export const PublicInvoice: Story = {
+  args: {
+    invoice: storyPublicInvoice,
+  },
   render: () => (
     <WithInvoiceDialogs>
       <SharingCard invoice={storyPublicInvoice} />

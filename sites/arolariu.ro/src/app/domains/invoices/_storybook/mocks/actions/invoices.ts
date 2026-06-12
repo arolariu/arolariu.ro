@@ -7,10 +7,9 @@
  * These mocks return realistic success results without backend dependencies.
  */
 
-import type {Invoice, InvoiceScan, Product} from "@/types/invoices";
+import type {Invoice} from "@/types/invoices";
 import {logStoryAction, successfulStoryAction, type StoryActionResult} from "../../utils/storyActions";
 import {storyInvoice, storyInvoices, storyProducts} from "../../fixtures/invoiceFixtures";
-import {storyInvoiceImageScan} from "../../fixtures/scanFixtures";
 
 /** Analyzes an invoice (mock). */
 export async function analyzeInvoice(): Promise<StoryActionResult<Invoice>> {
@@ -93,9 +92,14 @@ export async function deleteInvoiceMetadata(): Promise<StoryActionResult<Invoice
 export async function addInvoiceProduct(): Promise<StoryActionResult<Invoice>> {
 	logStoryAction("addInvoiceProduct");
 	await new Promise((resolve) => globalThis.setTimeout(resolve, 300));
+	const [firstProduct] = storyProducts;
+	if (!firstProduct) {
+		return successfulStoryAction(storyInvoice);
+	}
+
 	const updatedInvoice: Invoice = {
 		...storyInvoice,
-		items: [...storyInvoice.items, storyProducts[0]],
+		items: [...storyInvoice.items, firstProduct],
 	};
 	return successfulStoryAction(updatedInvoice);
 }

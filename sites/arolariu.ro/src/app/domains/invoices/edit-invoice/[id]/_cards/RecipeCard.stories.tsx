@@ -21,6 +21,9 @@ type Story = StoryObj<typeof meta>;
 
 /** Recipe card with easy complexity level. */
 export const EasyRecipe: Story = {
+  args: {
+    recipe: storyRecipeEasy,
+  },
   render: () => (
     <WithInvoiceDialogs>
       <RecipeCard recipe={storyRecipeEasy} />
@@ -30,6 +33,9 @@ export const EasyRecipe: Story = {
 
 /** Recipe card with hard complexity level. */
 export const HardRecipe: Story = {
+  args: {
+    recipe: storyRecipeHard,
+  },
   render: () => (
     <WithInvoiceDialogs>
       <RecipeCard recipe={storyRecipeHard} />

@@ -31,8 +31,6 @@ function createNativeDateFromArguments(args: DateConstructorArguments): Date {
     case 7:
       return new NativeDate(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
   }
-
-  return new NativeDate(fixedStoryDate.getTime());
 }
 
 function createFixedDateConstructor(fixedTime: number): DateConstructor {

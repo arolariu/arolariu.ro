@@ -10,6 +10,8 @@
  */
 
 import {DialogProvider, useDialogs} from "../../_contexts/DialogContext";
+import type {Invoice, InvoiceScan, Merchant, Product, Recipe} from "@/types/invoices";
+import type {CachedScan} from "@/types/scans";
 import type {ReactNode} from "react";
 import {useEffect} from "react";
 
@@ -62,6 +64,20 @@ type AllDialogTypes = DialogsWithUndefinedPayload | DialogsWithStringPayload | D
  */
 type DialogMode = "view" | "add" | "edit" | "delete" | "share";
 
+type ObjectDialogPayload =
+	| Merchant
+	| Invoice
+	| Record<string, string>
+	| {readonly invoice: Invoice}
+	| {readonly invoice: Invoice; readonly scan: InvoiceScan; readonly scanIndex: number}
+	| {readonly recipe: Recipe}
+	| {readonly invoice: Invoice; readonly product: Product; readonly productIndex: number}
+	| {readonly invoice: Invoice; readonly selectedProducts: Product[]; readonly selectedIndices: number[]}
+	| {readonly invoice: Invoice; readonly merchant: Merchant | null}
+	| {readonly invoice: Invoice; readonly merchant: Merchant}
+	| {readonly selectedScans: CachedScan[]}
+	| {readonly scan: CachedScan};
+
 /**
  * Props for dialogs that require no payload.
  */
@@ -88,7 +104,7 @@ interface PropsForStringPayload {
 interface PropsForObjectPayload {
 	readonly dialog: DialogsWithObjectPayload;
 	readonly mode?: DialogMode;
-	readonly payload: unknown;
+	readonly payload: ObjectDialogPayload;
 	readonly children: ReactNode;
 }
 
@@ -113,7 +129,7 @@ function DialogOpener({
 }: {
 	readonly dialog: AllDialogTypes;
 	readonly mode: DialogMode;
-	readonly payload: unknown;
+	readonly payload: ObjectDialogPayload | string | undefined;
 	readonly children: ReactNode;
 }): React.JSX.Element {
 	const {openDialog, isOpen} = useDialogs();
@@ -159,7 +175,7 @@ function DialogOpener({
 				case "SHARED__INVOICE_SHARE":
 				case "SHARED__SCAN_DELETE":
 				case "SHARED__SCAN_PREVIEW":
-					openDialog(dialog, mode, payload);
+					openDialog(dialog, mode, payload as ObjectDialogPayload);
 					break;
 			}
 		}

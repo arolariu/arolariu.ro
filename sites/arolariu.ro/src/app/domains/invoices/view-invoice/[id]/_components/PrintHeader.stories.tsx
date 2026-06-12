@@ -1,6 +1,6 @@
 import type {Meta, StoryObj} from "@storybook/react";
 import {storyInvoice, storyMerchant, storyOnlineInvoice, storyOnlineMerchant, storyProducts} from "@/app/domains/invoices/_storybook";
-import {InvoiceCategory, type Invoice, type Merchant, type Product} from "@/types/invoices";
+import {InvoiceCategory, type Invoice, type Product} from "@/types/invoices";
 import {PrintHeader} from "./PrintHeader";
 import type React from "react";
 
@@ -32,8 +32,6 @@ function createNativeDateFromArguments(args: DateConstructorArguments): Date {
     case 7:
       return new NativeDate(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
   }
-
-  return new NativeDate(fixedPrintDate.getTime());
 }
 
 function createFixedDateConstructor(fixedTime: number): DateConstructor {
