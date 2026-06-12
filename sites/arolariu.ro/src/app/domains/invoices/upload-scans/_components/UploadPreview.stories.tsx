@@ -15,6 +15,7 @@ import UploadPreview from "./UploadPreview";
 const meta = {
   title: "Invoices/UploadScans/UploadPreview",
   component: UploadPreview,
+  tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
     docs: {

@@ -9,6 +9,7 @@ import ItemsTable from "./ItemsTable";
 const meta = {
   title: "Invoices/EditInvoice/Tables/ItemsTable",
   component: ItemsTable,
+  tags: ["autodocs"],
   parameters: {
     layout: "centered",
     docs: {
