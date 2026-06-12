@@ -2,6 +2,11 @@ import type {Meta, StoryObj} from "@storybook/react";
 import {WithViewInvoiceContext, storyInvoice} from "@/app/domains/invoices/_storybook";
 import {AnalysisPanel} from "./AnalysisPanel";
 
+const analyzedTwoHoursAgo = new Date("2024-03-15T12:30:00.000Z");
+const analyzedThirtyMinutesAgo = new Date("2024-03-15T14:00:00.000Z");
+const recentlyCreated = new Date("2024-03-15T14:25:00.000Z");
+const analyzedSevenDaysAgo = new Date("2024-03-08T14:30:00.000Z");
+
 /**
  * Analysis control panel for triggering invoice re-analysis.
  *
@@ -81,7 +86,7 @@ export const WithoutItems: Story = {
     const invoice = {
       ...storyInvoice,
       items: [],
-      lastUpdatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+      lastUpdatedAt: analyzedTwoHoursAgo,
       numberOfUpdates: 1,
     };
 
@@ -142,7 +147,7 @@ export const MultipleAnalyses: Story = {
     const invoice = {
       ...storyInvoice,
       items: [],
-      lastUpdatedAt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
+      lastUpdatedAt: analyzedThirtyMinutesAgo,
       numberOfUpdates: 5,
     };
 
@@ -172,8 +177,8 @@ export const RecentlyCreated: Story = {
     const invoice = {
       ...storyInvoice,
       items: [],
-      createdAt: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
-      lastUpdatedAt: new Date(Date.now() - 5 * 60 * 1000),
+      createdAt: recentlyCreated,
+      lastUpdatedAt: recentlyCreated,
       numberOfUpdates: 0,
     };
 
@@ -203,7 +208,7 @@ export const AnalyzedLongAgo: Story = {
     const invoice = {
       ...storyInvoice,
       items: [],
-      lastUpdatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+      lastUpdatedAt: analyzedSevenDaysAgo,
       numberOfUpdates: 2,
     };
 

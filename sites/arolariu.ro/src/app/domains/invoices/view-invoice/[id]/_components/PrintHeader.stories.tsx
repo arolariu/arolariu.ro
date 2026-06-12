@@ -1,8 +1,85 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {generateRandomInvoice, generateRandomMerchant, generateRandomProduct} from "@/data/mocks";
-import {InvoiceCategory} from "@/types/invoices";
+import {storyInvoice, storyMerchant, storyOnlineInvoice, storyOnlineMerchant, storyProducts} from "@/app/domains/invoices/_storybook";
+import {InvoiceCategory, type Invoice, type Merchant, type Product} from "@/types/invoices";
 import {PrintHeader} from "./PrintHeader";
 import type React from "react";
+
+type DateConstructorArguments =
+  | []
+  | [value: string | number | Date]
+  | [year: number, monthIndex: number, date?: number, hours?: number, minutes?: number, seconds?: number, ms?: number];
+
+const NativeDate = globalThis.Date;
+const fixedPrintDate = new NativeDate(2026, 5, 12, 10, 0, 0, 0);
+let activeDateMocks = 0;
+
+function createFixedDateConstructor(fixedTime: number): DateConstructor {
+  function FixedDate(...args: DateConstructorArguments): string | Date {
+    if (new.target === undefined) {
+      return new NativeDate(fixedTime).toString();
+    }
+
+    if (args.length === 0) {
+      return new NativeDate(fixedTime);
+    }
+
+    if (args.length === 1) {
+      return new NativeDate(args[0]);
+    }
+
+    const [year, monthIndex, date, hours, minutes, seconds, ms] = args;
+    return new NativeDate(year, monthIndex, date, hours, minutes, seconds, ms);
+  }
+
+  Object.setPrototypeOf(FixedDate, NativeDate);
+  FixedDate.prototype = NativeDate.prototype;
+  Object.defineProperty(FixedDate, "now", {
+    configurable: true,
+    value: () => fixedTime,
+  });
+
+  return FixedDate as DateConstructor;
+}
+
+function useFixedPrintDate(): () => void {
+  if (activeDateMocks === 0) {
+    globalThis.Date = createFixedDateConstructor(fixedPrintDate.getTime());
+  }
+
+  activeDateMocks += 1;
+
+  return () => {
+    activeDateMocks = Math.max(0, activeDateMocks - 1);
+    if (activeDateMocks === 0) {
+      globalThis.Date = NativeDate;
+    }
+  };
+}
+
+function repeatedProducts(count: number): Product[] {
+  return Array.from({length: count}, (_, index) => {
+    const sourceProduct = storyProducts[index % storyProducts.length];
+    if (!sourceProduct) {
+      throw new Error("Story products fixture must contain at least one product.");
+    }
+
+    return {
+      ...sourceProduct,
+      name: `${sourceProduct.name} ${index + 1}`,
+    };
+  });
+}
+
+function withPaymentTotal(invoice: Invoice, totalCostAmount: number): Invoice {
+  return {
+    ...invoice,
+    paymentInformation: {
+      ...invoice.paymentInformation,
+      totalCostAmount,
+      currency: {code: "RON", symbol: "RON", name: "Romanian Leu"},
+    },
+  };
+}
 
 /**
  * Storybook wrapper that makes the print-only header visible in canvas/docs.
@@ -25,27 +102,52 @@ function StorybookPrintHeaderWrapper({children}: Readonly<{children: React.React
   );
 }
 
+const groceryInvoice: Invoice = {
+  ...withPaymentTotal(storyInvoice, 245.67),
+  id: "invoice-print-grocery",
+  name: "Carrefour Grocery Shopping",
+  category: InvoiceCategory.GROCERY,
+  items: repeatedProducts(15),
+};
+
+const restaurantInvoice: Invoice = {
+  ...withPaymentTotal(storyInvoice, 128.5),
+  id: "invoice-print-restaurant",
+  name: "Dinner at La Mama Restaurant",
+  category: InvoiceCategory.FAST_FOOD,
+  items: repeatedProducts(5),
+  paymentInformation: {
+    ...storyInvoice.paymentInformation,
+    totalCostAmount: 128.5,
+    currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+    transactionDate: new Date("2024-06-15T19:30:00.000Z"),
+  },
+};
+
+const highValueInvoice: Invoice = {
+  ...withPaymentTotal(storyOnlineInvoice, 5499.99),
+  id: "invoice-print-high-value",
+  name: "Electronics Purchase - Laptop & Accessories",
+  category: InvoiceCategory.OTHER,
+  items: repeatedProducts(8),
+};
+
+const longNameInvoice: Invoice = {
+  ...storyInvoice,
+  id: "invoice-print-long-name",
+  name: "Monthly Grocery Shopping Including Fresh Produce, Dairy Products, Beverages, Household Cleaning Supplies and Personal Care Items",
+  items: repeatedProducts(20),
+};
+
+const singleItemInvoice: Invoice = {
+  ...withPaymentTotal(storyInvoice, 12.5),
+  id: "invoice-print-single-item",
+  name: "Coffee Purchase",
+  items: repeatedProducts(1),
+};
+
 /**
  * Print header component - only visible when printing.
- *
- * **Component Description:**
- * Displays invoice summary information at the top of printed pages, including:
- * - Invoice name
- * - Transaction date
- * - Merchant name
- * - Total amount
- * - Item count
- * - Print generation timestamp
- *
- * **Features:**
- * - Clean print-optimized layout
- * - Formatted currency and date displays
- * - Print-only visibility (hidden on screen)
- * - Responsive grid layout for invoice details
- *
- * **Usage:**
- * This component is automatically included in the view-invoice page
- * and appears at the top of the page when the user prints or exports to PDF.
  */
 const meta = {
   title: "Invoices/View Invoice/Components/PrintHeader",
@@ -55,7 +157,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Print-only header component displaying invoice summary information at the top of printed pages. Includes invoice name, date, merchant, total, and item count with clean formatting optimized for print media.",
+          "Print-only header component displaying deterministic invoice summary information at the top of printed pages. Includes invoice name, date, merchant, total, and item count with clean formatting optimized for print media.",
       },
     },
   },
@@ -77,42 +179,29 @@ const meta = {
       </StorybookPrintHeaderWrapper>
     ),
   ],
+  beforeEach: () => useFixedPrintDate(),
 } satisfies Meta<typeof PrintHeader>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * Default print header with complete invoice and merchant data.
- *
- * **Story Description:**
- * Shows a typical print header with all fields populated:
- * invoice name, date, merchant name, total amount, and item count.
- */
 export const Default: Story = {
   args: {
-    invoice: generateRandomInvoice(),
-    merchant: generateRandomMerchant(),
+    invoice: storyInvoice,
+    merchant: storyMerchant,
   },
   parameters: {
     docs: {
       description: {
-        story: "Default print header with complete invoice and merchant information. Displays all summary fields including date, merchant name, total, and item count.",
+        story: "Default print header with complete deterministic invoice and merchant information.",
       },
     },
   },
 };
 
-/**
- * Print header with no merchant information.
- *
- * **Story Description:**
- * Displays the print header when merchant data is unavailable or not linked.
- * Merchant field shows empty.
- */
 export const WithoutMerchant: Story = {
   args: {
-    invoice: generateRandomInvoice(),
+    invoice: storyInvoice,
     merchant: null,
   },
   parameters: {
@@ -124,129 +213,52 @@ export const WithoutMerchant: Story = {
   },
 };
 
-/**
- * Print header for a grocery invoice.
- *
- * **Story Description:**
- * Example of a print header for a grocery store receipt with multiple items.
- */
 export const GroceryInvoice: Story = {
   args: {
-    invoice: {
-      ...generateRandomInvoice(),
-      name: "Carrefour Grocery Shopping",
-      category: InvoiceCategory.GROCERY,
-      items: Array(15)
-        .fill(null)
-        .map(() => generateRandomProduct()),
-      paymentInformation: {
-        ...generateRandomInvoice().paymentInformation,
-        totalCostAmount: 245.67,
-        currency: {code: "RON", symbol: "RON", name: "Romanian Leu"},
-      },
-    },
-    merchant: {
-      ...generateRandomMerchant(),
-      name: "Carrefour",
-    },
+    invoice: groceryInvoice,
+    merchant: storyMerchant,
   },
   parameters: {
     docs: {
       description: {
-        story: "Print header for a grocery store invoice with 15 items and a total of 245.67 RON.",
+        story: "Print header for a grocery store invoice with 15 deterministic line items and a total of 245.67 RON.",
       },
     },
   },
 };
 
-/**
- * Print header for a restaurant/dining invoice.
- *
- * **Story Description:**
- * Example of a print header for a restaurant receipt with fewer items
- * and a different currency format.
- */
 export const RestaurantInvoice: Story = {
   args: {
-    invoice: {
-      ...generateRandomInvoice(),
-      name: "Dinner at La Mama Restaurant",
-      category: InvoiceCategory.FAST_FOOD,
-      items: Array(5)
-        .fill(null)
-        .map(() => generateRandomProduct()),
-      paymentInformation: {
-        ...generateRandomInvoice().paymentInformation,
-        totalCostAmount: 128.5,
-        currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
-        transactionDate: new Date("2024-06-15T19:30:00"),
-      },
-    },
-    merchant: {
-      ...generateRandomMerchant(),
-      name: "La Mama Restaurant",
-    },
+    invoice: restaurantInvoice,
+    merchant: storyMerchant,
   },
   parameters: {
     docs: {
       description: {
-        story: "Print header for a restaurant invoice with 5 items and dinner timestamp. Total amount: 128.50 lei.",
+        story: "Print header for a restaurant invoice with 5 deterministic items and dinner timestamp. Total amount: 128.50 lei.",
       },
     },
   },
 };
 
-/**
- * Print header for a high-value invoice.
- *
- * **Story Description:**
- * Example showing formatting of a large total amount with many items.
- */
 export const HighValueInvoice: Story = {
   args: {
-    invoice: {
-      ...generateRandomInvoice(),
-      name: "Electronics Purchase - Laptop & Accessories",
-      category: InvoiceCategory.OTHER,
-      items: Array(8)
-        .fill(null)
-        .map(() => generateRandomProduct()),
-      paymentInformation: {
-        ...generateRandomInvoice().paymentInformation,
-        totalCostAmount: 5499.99,
-        currency: {code: "RON", symbol: "RON", name: "Romanian Leu"},
-      },
-    },
-    merchant: {
-      ...generateRandomMerchant(),
-      name: "eMAG Electronics",
-    },
+    invoice: highValueInvoice,
+    merchant: storyOnlineMerchant,
   },
   parameters: {
     docs: {
       description: {
-        story: "Print header for a high-value electronics purchase with 8 items and a total of 5,499.99 RON.",
+        story: "Print header for a high-value electronics purchase with 8 deterministic items and a total of 5,499.99 RON.",
       },
     },
   },
 };
 
-/**
- * Print header with long invoice name.
- *
- * **Story Description:**
- * Tests layout with a very long invoice name to ensure proper wrapping/truncation.
- */
 export const WithLongName: Story = {
   args: {
-    invoice: {
-      ...generateRandomInvoice(),
-      name: "Monthly Grocery Shopping Including Fresh Produce, Dairy Products, Beverages, Household Cleaning Supplies and Personal Care Items",
-      items: Array(20)
-        .fill(null)
-        .map(() => generateRandomProduct()),
-    },
-    merchant: generateRandomMerchant(),
+    invoice: longNameInvoice,
+    merchant: storyMerchant,
   },
   parameters: {
     docs: {
@@ -257,33 +269,15 @@ export const WithLongName: Story = {
   },
 };
 
-/**
- * Print header with single item.
- *
- * **Story Description:**
- * Minimal invoice with just one item purchased.
- */
 export const SingleItem: Story = {
   args: {
-    invoice: {
-      ...generateRandomInvoice(),
-      name: "Coffee Purchase",
-      items: [generateRandomProduct()],
-      paymentInformation: {
-        ...generateRandomInvoice().paymentInformation,
-        totalCostAmount: 12.5,
-        currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
-      },
-    },
-    merchant: {
-      ...generateRandomMerchant(),
-      name: "Starbucks",
-    },
+    invoice: singleItemInvoice,
+    merchant: storyMerchant,
   },
   parameters: {
     docs: {
       description: {
-        story: "Print header for a minimal invoice with just one item (coffee for 12.50 lei).",
+        story: "Print header for a minimal deterministic invoice with one item and a total of 12.50 lei.",
       },
     },
   },
