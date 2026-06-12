@@ -1,4 +1,5 @@
 import {InvoiceBuilder} from "@/data/mocks/invoice";
+import {PaymentType} from "@/types/invoices";
 import type {Invoice} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
 import {InvoiceContextProvider} from "../../_context/InvoiceContext";
@@ -38,10 +39,13 @@ export const UnderBudget: Story = {
   args: {
     invoice: new InvoiceBuilder()
       .withPaymentInformation({
-        totalAmount: 125.5,
+        transactionDate: new Date(2026, 0, 15), // January 15, 2026
+        paymentType: PaymentType.Card,
         currency: {code: "USD", name: "US Dollar", symbol: "$"},
-        date: new Date(2026, 0, 15), // January 15, 2026
-        type: "CARD" as const,
+        totalCostAmount: 125.5,
+        totalTaxAmount: 15.5,
+        subtotalAmount: 110.0,
+        tipAmount: 0,
       })
       .build(),
   },
@@ -52,10 +56,13 @@ export const OverBudget: Story = {
   args: {
     invoice: new InvoiceBuilder()
       .withPaymentInformation({
-        totalAmount: 2800.0,
+        transactionDate: new Date(2025, 11, 26), // December 26, 2025
+        paymentType: PaymentType.Card,
         currency: {code: "USD", name: "US Dollar", symbol: "$"},
-        date: new Date(2025, 11, 26), // December 26, 2025
-        type: "CARD" as const,
+        totalCostAmount: 2800.0,
+        totalTaxAmount: 280.0,
+        subtotalAmount: 2520.0,
+        tipAmount: 0,
       })
       .build(),
   },

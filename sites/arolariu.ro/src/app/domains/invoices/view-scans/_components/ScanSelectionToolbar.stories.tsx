@@ -1,5 +1,6 @@
+import {storyCachedImageScan} from "@/app/domains/invoices/_storybook/fixtures/scanFixtures";
 import {useScansStore} from "@/stores";
-import {ScanStatus, type CachedScan} from "@/types/scans";
+import type {CachedScan} from "@/types/scans";
 import type {Meta, StoryObj} from "@storybook/react";
 import {useEffect} from "react";
 import ScanSelectionToolbar from "./ScanSelectionToolbar";
@@ -44,22 +45,15 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+/**
+ * Creates a mock CachedScan fixture based on the story fixture.
+ * @param id - Unique identifier for the scan
+ * @internal
+ */
 const createMockScan = (id: string): CachedScan => ({
+  ...storyCachedImageScan,
   id,
   name: `Scan ${id}`,
-  description: "Mock scan for testing",
-  userIdentifier: "user-123",
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  isSoftDeleted: false,
-  status: ScanStatus.READY,
-  imageUrl: "https://via.placeholder.com/400x600",
-  imageMetadata: {
-    width: 400,
-    height: 600,
-    size: 102400,
-    contentType: "image/jpeg",
-  },
   cachedAt: new Date(),
 });
 
