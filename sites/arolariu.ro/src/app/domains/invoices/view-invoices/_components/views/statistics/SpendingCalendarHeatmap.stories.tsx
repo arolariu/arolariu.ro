@@ -12,22 +12,36 @@ const NativeDate = globalThis.Date;
 const fixedStoryDate = new NativeDate(2026, 5, 11, 12, 0, 0, 0);
 let activeDateMocks = 0;
 
+function createNativeDateFromArguments(args: DateConstructorArguments): Date {
+  switch (args.length) {
+    case 0:
+      return new NativeDate(fixedStoryDate.getTime());
+    case 1:
+      return new NativeDate(args[0]);
+    case 2:
+      return new NativeDate(args[0], args[1]);
+    case 3:
+      return new NativeDate(args[0], args[1], args[2]);
+    case 4:
+      return new NativeDate(args[0], args[1], args[2], args[3]);
+    case 5:
+      return new NativeDate(args[0], args[1], args[2], args[3], args[4]);
+    case 6:
+      return new NativeDate(args[0], args[1], args[2], args[3], args[4], args[5]);
+    case 7:
+      return new NativeDate(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
+  }
+
+  return new NativeDate(fixedStoryDate.getTime());
+}
+
 function createFixedDateConstructor(fixedTime: number): DateConstructor {
   function FixedDate(...args: DateConstructorArguments): string | Date {
     if (new.target === undefined) {
       return new NativeDate(fixedTime).toString();
     }
 
-    if (args.length === 0) {
-      return new NativeDate(fixedTime);
-    }
-
-    if (args.length === 1) {
-      return new NativeDate(args[0]);
-    }
-
-    const [year, monthIndex, date, hours, minutes, seconds, ms] = args;
-    return new NativeDate(year, monthIndex, date, hours, minutes, seconds, ms);
+    return args.length === 0 ? new NativeDate(fixedTime) : createNativeDateFromArguments(args);
   }
 
   Object.setPrototypeOf(FixedDate, NativeDate);
