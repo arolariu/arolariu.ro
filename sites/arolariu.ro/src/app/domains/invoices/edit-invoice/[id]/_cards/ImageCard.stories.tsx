@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {storyInvoice, storyInvoiceImageScan, storyInvoicePdfScan, WithInvoiceDialogs} from "@/app/domains/invoices/_storybook";
+import {storyImageScanUrl, storyInvoice, storyInvoiceImageScan, WithInvoiceDialogs} from "@/app/domains/invoices/_storybook";
 import ImageCard from "./ImageCard";
 
 const invoiceWithoutScans = {
@@ -13,7 +13,18 @@ const invoiceWithMultipleScans = {
   ...storyInvoice,
   id: "invoice-story-multiple-scans",
   name: "Invoice with multiple scans",
-  scans: [storyInvoiceImageScan, storyInvoicePdfScan],
+  scans: [
+    storyInvoiceImageScan,
+    {
+      ...storyInvoiceImageScan,
+      location: `${storyImageScanUrl}?variant=second`,
+      metadata: {
+        ...storyInvoiceImageScan.metadata,
+        scanId: "scan-story-image-002",
+        uploadedAt: "2024-03-15T11:15:00.000Z",
+      },
+    },
+  ],
 };
 
 const meta = {
