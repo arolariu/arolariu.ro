@@ -24,7 +24,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Dropdown menu for invoice row actions in table view. Provides Edit (navigate to edit page), Share (copy public URL), and Delete (confirmation dialog) options. Uses DialogContext for delete confirmation and navigation hooks.",
+          "Dropdown menu for invoice row actions in table view. Provides Edit (navigate to edit page), Share (open share dialog), and Delete (confirmation dialog) options. Uses DialogContext for share and delete interactions and navigation hooks.",
       },
     },
   },
@@ -46,7 +46,7 @@ export const Default: Story = {
     docs: {
       description: {
         story:
-          "Standard invoice actions menu. Edit navigates to /edit-invoice/[id], Share copies public URL to clipboard, Delete opens confirmation dialog via DialogContext.",
+          "Standard invoice actions menu. Edit navigates to /edit-invoice/[id], Share opens share dialog via DialogContext, Delete opens confirmation dialog via DialogContext.",
       },
     },
   },

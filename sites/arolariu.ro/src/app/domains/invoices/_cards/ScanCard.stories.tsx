@@ -68,7 +68,7 @@ export const ImageWithActions: Story = {
 		docs: {
 			description: {
 				story:
-					"Image scan card with clickable preview activation and kebab menu actions (rotate, delete). Click the thumbnail to trigger preview dialog; use the actions menu for rotate and delete operations.",
+					"Image scan card with clickable preview activation and kebab menu actions (rotate, delete). Clicking the thumbnail triggers preview callback/action (logged in story); use the actions menu for rotate and delete operations.",
 			},
 		},
 	},
@@ -201,7 +201,7 @@ export const RenameEditing: Story = {
 		docs: {
 			description: {
 				story:
-					"Inline rename editing with controlled state harness. Click title to enter edit mode; input field replaces title with commit/cancel controls. Demonstrates rename lifecycle: onStart → onChange → onCommit/onCancel.",
+					"Inline rename editing with controlled state harness. Double-click title or click pencil button to enter edit mode; input field replaces title with commit/cancel controls. Demonstrates rename lifecycle: onStart → onChange → onCommit/onCancel.",
 			},
 		},
 	},

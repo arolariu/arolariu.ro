@@ -14,8 +14,8 @@ const meta = {
     docs: {
       description: {
         component:
-          "Displays custom metadata key-value pairs for an invoice with inline editing capabilities. " +
-          "Provides add, edit, and delete actions through dialog interactions using DialogContext. " +
+          "Displays custom metadata key-value pairs for an invoice in read-only table layout. " +
+          "Edit and delete action buttons are currently disabled. Add action may be available. " +
           "Shows empty state when no metadata exists. Mounted with real component wrapped in DialogProvider decorator.",
       },
     },
@@ -41,7 +41,7 @@ export const WithMetadata: Story = {
       description: {
         story:
           "Metadata tab populated with five sample key-value pairs including store ID, receipt number, cashier, " +
-          "loyalty points, and payment method. Demonstrates table layout with action buttons for each entry.",
+          "loyalty points, and payment method. Demonstrates table layout with disabled action buttons for each entry.",
       },
     },
   },

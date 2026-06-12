@@ -19,7 +19,7 @@ import {
  * import "use server" actions from domain-level modules: DeleteInvoiceDialog → `deleteInvoice` from `_actions/invoices`,
  * ShareInvoiceDialog → `patchInvoice` from `_actions/invoices`, AddScanDialog → `attachScanToInvoice`
  * and `createScan` from `_actions/scans`, AnalyzeDialog → `analyzeInvoice` from `_actions/invoices`,
- * RemoveScanDialog → `detachScanFromInvoice` from `_actions/scans`, and CreateInvoiceDialog → `createInvoiceFromScans`
+ * RemoveScanDialog → `detachScanFromInvoice` from `_actions/invoices`, and CreateInvoiceDialog → `createInvoiceFromScans`
  * from `view-scans/_actions/createInvoiceFromScans`. Storybook's Vite bundler cannot process server-only modules.
  * This story renders a schematic subset of common dialog registrations rather than an exhaustive registry dump.
  */
@@ -34,7 +34,7 @@ const meta = {
           "based on current dialog type from context state. Returns `null` when no dialog is open. " +
           "**Blocker:** Real component imports child dialogs (DeleteInvoiceDialog, ShareInvoiceDialog, AddScanDialog, AnalyzeDialog, RemoveScanDialog, CreateInvoiceDialog) " +
           "that transitively import 'use server' actions (`deleteInvoice`, `patchInvoice`, `attachScanToInvoice`, `createScan`, `analyzeInvoice`, " +
-          "`detachScanFromInvoice`, `createInvoiceFromScans`) from domain-level action modules (`_actions/invoices`, `_actions/scans`, `view-scans/_actions/createInvoiceFromScans`). " +
+          "`detachScanFromInvoice`, `createInvoiceFromScans`) from domain-level action modules (`_actions/invoices`, `_actions/scans`, `_actions/invoices`, `view-scans/_actions/createInvoiceFromScans`). " +
           "Storybook's Vite bundler cannot process server-only modules. This static schematic documents representative dialog registrations; individual dialog stories cover concrete mounted dialog content.",
       },
     },
