@@ -9,6 +9,7 @@ import {GridView} from "./GridView";
 const meta = {
   title: "Invoices/ViewInvoices/Views/GridView",
   component: GridView,
+  tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
     docs: {

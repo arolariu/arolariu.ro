@@ -22,7 +22,7 @@ function seedScansHeaderStore(scans: readonly CachedScan[], isSyncing = false): 
 
   useScansStore.getState().setScans(scans);
   useScansStore.getState().setSelectedScans([]);
-  useScansStore.getState().setHasHydrated(true);
+  useScansStore.getState().setHasHydrated(false);
   useScansStore.getState().setIsSyncing(isSyncing);
   useScansStore.getState().setLastSyncTimestamp(new Date("2024-03-16T09:35:00.000Z"));
 

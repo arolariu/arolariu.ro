@@ -9,6 +9,7 @@ import RenderInvoicesView from "./InvoicesView";
 const meta = {
   title: "Invoices/ViewInvoices/Views/InvoicesView",
   component: RenderInvoicesView,
+  tags: ["autodocs"],
   decorators: [
     (Story) => (
       <WithInvoiceDialogs>

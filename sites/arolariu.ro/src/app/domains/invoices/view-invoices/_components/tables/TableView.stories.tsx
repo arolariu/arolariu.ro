@@ -9,6 +9,7 @@ import {TableView} from "./TableView";
 const meta = {
   title: "Invoices/ViewInvoices/Views/TableView",
   component: TableView,
+  tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
     docs: {
