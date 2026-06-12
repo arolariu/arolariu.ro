@@ -81,7 +81,7 @@ export const MissingPreview: Story = {
 		docs: {
 			description: {
 				story:
-					"Fallback state when no preview source is available. Displays TbFileUnknown icon with muted background. Demonstrates graceful degradation when media cannot be loaded or is unavailable.",
+					"Fallback state when no preview source is available. Displays the TbPhotoOff icon with muted background. Demonstrates graceful degradation when media cannot be loaded or is unavailable.",
 			},
 		},
 	},
