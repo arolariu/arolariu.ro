@@ -7,7 +7,7 @@ import {TbArrowRight, TbFileInvoice, TbPhoto, TbSparkles, TbStack2} from "react-
  * @remarks Static preview — CreateInvoiceDialog component imports the server-only "use server"
  * `createInvoiceFromScans` action from `@/app/domains/invoices/view-scans/_actions/createInvoiceFromScans.ts`.
  * Storybook's Vite bundler cannot process server-only modules. Additionally, component requires unmocked
- * `useDialog` context and `useInvoiceScanStore` state. This story renders a faithful static HTML replica
+ * `useDialog` context and `useScansStore` state. This story renders a faithful static HTML replica
  * of the wizard's selection step.
  */
 const meta = {
@@ -22,7 +22,7 @@ const meta = {
           "**Blocker:** Real component imports the server-only `createInvoiceFromScans` action from " +
           "`@/app/domains/invoices/view-scans/_actions/createInvoiceFromScans.ts` (module marked 'use server'). " +
           "Storybook's Vite bundler cannot process server-only modules. Additionally requires unmocked `useDialog` context and " +
-          "`useInvoiceScanStore` Zustand state. This static HTML preview demonstrates the selection step UI structure and styling.",
+          "`useScansStore` Zustand state. This static HTML preview demonstrates the selection step UI structure and styling.",
       },
     },
   },

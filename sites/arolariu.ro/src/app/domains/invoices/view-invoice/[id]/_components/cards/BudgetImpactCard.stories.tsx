@@ -39,7 +39,7 @@ export const UnderBudget: Story = {
     docs: {
       description: {
         story:
-          "Budget impact card showing healthy spending with 5% of monthly budget used. Displays remaining budget, " +
+          "Budget impact card showing healthy spending with low monthly budget usage. Displays remaining budget, " +
           "days left in month, and daily allowance with positive trend indicator. Transaction from mid-January 2026.",
       },
     },
@@ -76,7 +76,7 @@ export const OverBudget: Story = {
     docs: {
       description: {
         story:
-          "Budget impact card in over-budget warning state with 112% of monthly budget used. Shows negative remaining " +
+          "Budget impact card in over-budget warning state with high monthly budget usage. Shows negative remaining " +
           "balance, over-budget alert styling, and hides daily allowance (not applicable when over budget). Transaction from late December 2025.",
       },
     },

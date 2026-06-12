@@ -32,7 +32,7 @@ export const Default: Story = {
     docs: {
       description: {
         story:
-          "Default state with realistic invoice fixture showing merchant 'Fresh Market', category 'Groceries', " +
+          "Default state with realistic invoice fixture showing merchant 'Corner Shop ABC', category 'Groceries', " +
           "payment type 'Card', and formatted total. Displays all editable fields with standard styling.",
       },
     },
