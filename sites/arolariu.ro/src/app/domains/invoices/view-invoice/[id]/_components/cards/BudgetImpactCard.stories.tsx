@@ -20,7 +20,7 @@ const meta = {
           "Displays the monthly budget impact analysis for an invoice. Shows progress bar of budget usage, " +
           "daily allowance, remaining budget, and spending trends. Relies on InvoiceContext for invoice data " +
           "and computes analytics including percentage used, days remaining, and over-budget warnings. " +
-          "Mounted with real component wrapped in InvoiceContext decorator that accepts invoice via story-specific render.",
+          "Mounted with real component through story-specific InvoiceContext decorators.",
       },
     },
   },
