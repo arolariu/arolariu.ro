@@ -17,7 +17,7 @@ const meta = {
 		docs: {
 			description: {
 				component:
-					"Media preview component for scan cards. Displays image thumbnails or PDF placeholders with fallback support. Handles click activation for preview dialogs and locked states during upload or processing.",
+					"Media preview component for scan cards. Displays image thumbnails or PDF placeholders with fallback support. Handles click activation for preview dialogs. Uses plain HTML img element for images (not Next.js Image component) to support object/blob/CDN URLs.",
 			},
 		},
 	},
@@ -41,7 +41,7 @@ export const Image: Story = {
 		docs: {
 			description: {
 				story:
-					"Standard image preview displaying grocery receipt thumbnail. Uses Next.js Image component with eager loading for immediate render in Storybook. Demonstrates default image media type rendering.",
+					"Standard image preview displaying grocery receipt thumbnail. Uses plain HTML img element with eager loading for immediate render in Storybook. Demonstrates default image media type rendering.",
 			},
 		},
 	},

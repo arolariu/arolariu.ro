@@ -18,9 +18,9 @@ const meta = {
 		docs: {
 			description: {
 				component:
-					"Dialog for creating a new recipe from invoice items. Users can select products from the current invoice, " +
-					"set recipe metadata (name, servings, prep time, cook time), and save. Integrated with EditInvoiceContext " +
-					"to access invoice products and DialogContext to control visibility.",
+					"Dialog for creating a new recipe from invoice items. Users can input recipe details " +
+					"(name, description, ingredients, prep time, cook time, difficulty) and save. Integrated with EditInvoiceContext " +
+					"and DialogContext to control visibility. Product selection UI is not currently implemented.",
 			},
 		},
 	},
@@ -39,8 +39,8 @@ export const Default: Story = {
 			description: {
 				story:
 					"Shows the recipe creation dialog in its initial state with an empty form. The dialog opens automatically " +
-					"on mount via the OpenDialogOnMount harness. Users can select products from the invoice's product list and " +
-					"configure recipe details.",
+					"on mount via the OpenDialogOnMount harness. Users can input recipe details including name, description, " +
+					"ingredients, prep/cook time, and difficulty.",
 			},
 		},
 	},

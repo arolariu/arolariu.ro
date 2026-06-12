@@ -76,8 +76,8 @@ export const OverBudget: Story = {
     docs: {
       description: {
         story:
-          "Budget impact card in over-budget warning state with high monthly budget usage. Shows negative remaining " +
-          "balance, over-budget alert styling, and hides daily allowance (not applicable when over budget). Transaction from late December 2025.",
+          "Budget impact card in over-budget warning state with high monthly budget usage. Displays absolute value of " +
+          "remaining balance with over-budget label, over-budget alert styling, and hides daily allowance (not applicable when over budget). Transaction from late December 2025.",
       },
     },
   },

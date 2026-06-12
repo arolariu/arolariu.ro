@@ -46,7 +46,7 @@ export const Default: Story = {
     docs: {
       description: {
         story:
-          "Standard invoice actions menu. Edit navigates to /edit-invoice/[id], Share opens share dialog via DialogContext, Delete opens confirmation dialog via DialogContext.",
+          "Standard invoice actions menu. Edit navigates to /domains/invoices/edit-invoice/[id], Share opens share dialog via DialogContext, Delete opens confirmation dialog via DialogContext.",
       },
     },
   },
