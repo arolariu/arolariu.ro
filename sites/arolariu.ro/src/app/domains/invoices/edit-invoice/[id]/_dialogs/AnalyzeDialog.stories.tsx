@@ -32,3 +32,15 @@ export const Default: Story = {
 		</OpenDialogButton>
 	),
 };
+
+/**
+ * Analyze dialog for an invoice that has no scans attached yet.
+ */
+export const NoScans: Story = {
+  play: playOpenDialog,
+	render: () => (
+		<OpenDialogButton dialog="EDIT_INVOICE__ANALYSIS" mode="view" payload={{invoice: {...storyInvoice, scans: []}}}>
+			<AnalyzeDialog />
+		</OpenDialogButton>
+	),
+};

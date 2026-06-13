@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {OpenDialogButton, playOpenDialog, storyRecipeEasy, WithEditInvoiceContext} from "../../../_storybook";
+import {OpenDialogButton, playOpenDialog, storyRecipeEasy, storyRecipeHard, WithEditInvoiceContext} from "../../../_storybook";
 import UpdateRecipeDialog from "./UpdateRecipeDialog";
 
 /**
@@ -30,6 +30,20 @@ export const Default: Story = {
 	render: () => (
 		<WithEditInvoiceContext>
 			<OpenDialogButton dialog="EDIT_INVOICE__RECIPE_UPDATE" mode="edit" payload={{recipe: storyRecipeEasy}}>
+				<UpdateRecipeDialog />
+			</OpenDialogButton>
+		</WithEditInvoiceContext>
+	),
+};
+
+/**
+ * Edit dialog pre-filled with a complex (hard) recipe.
+ */
+export const HardRecipe: Story = {
+  play: playOpenDialog,
+	render: () => (
+		<WithEditInvoiceContext>
+			<OpenDialogButton dialog="EDIT_INVOICE__RECIPE_UPDATE" mode="edit" payload={{recipe: storyRecipeHard}}>
 				<UpdateRecipeDialog />
 			</OpenDialogButton>
 		</WithEditInvoiceContext>

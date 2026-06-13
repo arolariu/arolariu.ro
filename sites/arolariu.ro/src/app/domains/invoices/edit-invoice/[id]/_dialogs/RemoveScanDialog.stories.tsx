@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {OpenDialogButton, playOpenDialog, storyInvoice} from "../../../_storybook";
+import {OpenDialogButton, playOpenDialog, storyInvoice, storyInvoicePdfScan} from "../../../_storybook";
 import RemoveScanDialog from "./RemoveScanDialog";
 
 /**
@@ -36,6 +36,24 @@ export const Default: Story = {
 				dialog="EDIT_INVOICE__REMOVE_SCAN"
 				mode="delete"
 				payload={{invoice: storyInvoice, scan: firstScan, scanIndex: 0}}>
+				<RemoveScanDialog />
+			</OpenDialogButton>
+		);
+	},
+};
+
+/**
+ * Remove-scan confirmation for a PDF document scan.
+ */
+export const PdfScan: Story = {
+  play: playOpenDialog,
+	render: () => {
+		const invoiceWithPdf = {...storyInvoice, scans: [storyInvoicePdfScan]};
+		return (
+			<OpenDialogButton
+				dialog="EDIT_INVOICE__REMOVE_SCAN"
+				mode="delete"
+				payload={{invoice: invoiceWithPdf, scan: storyInvoicePdfScan, scanIndex: 0}}>
 				<RemoveScanDialog />
 			</OpenDialogButton>
 		);

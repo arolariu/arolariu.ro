@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {OpenDialogButton, playOpenDialog, storyMerchant} from "../../../_storybook";
+import {OpenDialogButton, playOpenDialog, storyMerchant, storyOnlineMerchant} from "../../../_storybook";
 import MerchantDialog from "./MerchantDialog";
 
 /**
@@ -28,6 +28,18 @@ export const Default: Story = {
   play: playOpenDialog,
 	render: () => (
 		<OpenDialogButton dialog="EDIT_INVOICE__MERCHANT" mode="view" payload={storyMerchant}>
+			<MerchantDialog />
+		</OpenDialogButton>
+	),
+};
+
+/**
+ * Merchant details dialog for an online-only merchant.
+ */
+export const OnlineMerchant: Story = {
+  play: playOpenDialog,
+	render: () => (
+		<OpenDialogButton dialog="EDIT_INVOICE__MERCHANT" mode="view" payload={storyOnlineMerchant}>
 			<MerchantDialog />
 		</OpenDialogButton>
 	),
