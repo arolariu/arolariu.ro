@@ -42,3 +42,20 @@ export const HardRecipe: Story = {
     </WithInvoiceDialogs>
   ),
 };
+
+/** Recipe card with a very long title to exercise heading truncation/wrapping. */
+export const LongTitleRecipe: Story = {
+  args: {
+    recipe: storyRecipeEasy,
+  },
+  render: () => (
+    <WithInvoiceDialogs>
+      <RecipeCard
+        recipe={{
+          ...storyRecipeEasy,
+          name: "Slow-Roasted Mediterranean Vegetable & Halloumi Traybake with Lemon-Herb Dressing and Toasted Pine Nuts",
+        }}
+      />
+    </WithInvoiceDialogs>
+  ),
+};

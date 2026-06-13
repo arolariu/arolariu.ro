@@ -1,6 +1,13 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {storyImageScanUrl, storyInvoice, storyInvoiceImageScan, WithInvoiceDialogs} from "@/app/domains/invoices/_storybook";
+import {storyImageScanUrl, storyInvoice, storyInvoiceImageScan, storyInvoicePdfScan, WithInvoiceDialogs} from "@/app/domains/invoices/_storybook";
 import ImageCard from "./ImageCard";
+
+const invoiceWithPdfScan = {
+  ...storyInvoice,
+  id: "invoice-story-pdf-scan",
+  name: "Invoice with a PDF scan",
+  scans: [storyInvoicePdfScan],
+};
 
 const invoiceWithoutScans = {
   ...storyInvoice,
@@ -87,6 +94,19 @@ export const NoScans: Story = {
     docs: {
       description: {
         story: "Fallback state for an invoice without attached scans; the real component displays its placeholder image and add-scan action.",
+      },
+    },
+  },
+};
+
+export const PdfScan: Story = {
+  args: {
+    invoice: invoiceWithPdfScan,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Image card with a PDF document scan attached, exercising the PDF preview/thumbnail path instead of a raster image.",
       },
     },
   },

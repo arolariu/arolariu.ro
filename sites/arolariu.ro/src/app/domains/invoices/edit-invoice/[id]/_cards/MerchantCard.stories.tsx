@@ -1,6 +1,6 @@
 import type {Meta, StoryObj} from "@storybook/react";
 import MerchantCard from "./MerchantCard";
-import {storyMerchant, WithInvoiceDialogs} from "../../../_storybook";
+import {storyMerchant, storyOnlineMerchant, WithInvoiceDialogs} from "../../../_storybook";
 
 /**
  * MerchantCard (edit) displays merchant information with navigation buttons
@@ -39,6 +39,37 @@ export const NoMerchant: Story = {
   render: () => (
     <WithInvoiceDialogs>
       <MerchantCard merchant={null} />
+    </WithInvoiceDialogs>
+  ),
+};
+
+/** Online-only merchant (no physical store address). */
+export const OnlineMerchant: Story = {
+  args: {
+    merchant: storyOnlineMerchant,
+  },
+  render: () => (
+    <WithInvoiceDialogs>
+      <MerchantCard merchant={storyOnlineMerchant} />
+    </WithInvoiceDialogs>
+  ),
+};
+
+/** Merchant with a very long name and description to exercise text overflow. */
+export const LongText: Story = {
+  args: {
+    merchant: storyMerchant,
+  },
+  render: () => (
+    <WithInvoiceDialogs>
+      <MerchantCard
+        merchant={{
+          ...storyMerchant,
+          name: "Corner Shop ABC International Wholesale & Retail Distribution Center Bucuresti Militari Branch",
+          description:
+            "A very long merchant description used to validate truncation, wrapping, and layout stability inside the merchant card across themes and locales.",
+        }}
+      />
     </WithInvoiceDialogs>
   ),
 };
