@@ -106,3 +106,40 @@ export const OverBudget: Story = {
     },
   ],
 };
+
+/** Near the monthly budget limit — high but not over. */
+export const NearLimit: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Budget impact card with spending close to the monthly budget limit. Shows a near-full progress bar and a small " +
+          "remaining balance with a warning-leaning trend, mid-month transaction.",
+      },
+    },
+  },
+  decorators: [
+    (Story) => {
+      const invoice = new InvoiceBuilder()
+        .withPaymentInformation({
+          transactionDate: new Date(2026, 0, 12), // January 12, 2026
+          paymentType: PaymentType.Card,
+          currency: {code: "USD", name: "US Dollar", symbol: "$"},
+          totalCostAmount: 1450.0,
+          totalTaxAmount: 145.0,
+          subtotalAmount: 1305.0,
+          tipAmount: 0,
+        })
+        .build();
+      return (
+        <InvoiceContextProvider
+          invoice={invoice}
+          merchant={null}>
+          <div style={{minWidth: "400px"}}>
+            <Story />
+          </div>
+        </InvoiceContextProvider>
+      );
+    },
+  ],
+};

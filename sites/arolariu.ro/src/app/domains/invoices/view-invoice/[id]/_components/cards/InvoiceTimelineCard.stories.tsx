@@ -36,3 +36,14 @@ export const ImportantAndShared: Story = {
     },
   },
 };
+
+/** Timeline for an invoice that has been edited many times. */
+export const ManyUpdates: Story = {
+  args: {
+    invoice: {
+      ...mockInvoice,
+      numberOfUpdates: 12,
+      lastUpdatedAt: new Date("2026-01-20T16:30:00.000Z"),
+    },
+  },
+};
