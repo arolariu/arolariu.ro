@@ -45,3 +45,29 @@ export function successfulStoryAction<TValue>(value: TValue): StoryActionResult<
 		data: value,
 	} as const;
 }
+
+/**
+ * Named latency values for Storybook mocks.
+ */
+export const STORYBOOK_LATENCY = {
+	short: 200,
+	medium: 300,
+	long: 500,
+	bulk: 800,
+} as const;
+
+/**
+ * Waits for a configured Storybook mock latency.
+ *
+ * @param milliseconds - Latency duration in milliseconds.
+ * @returns A promise that resolves after the configured delay.
+ */
+export async function waitForStorybookLatency(milliseconds: number): Promise<void> {
+	if (globalThis.sessionStorage?.getItem("storybook-zero-latency") === "true") {
+		return;
+	}
+
+	await new Promise<void>((resolve) => {
+		globalThis.setTimeout(resolve, milliseconds);
+	});
+}

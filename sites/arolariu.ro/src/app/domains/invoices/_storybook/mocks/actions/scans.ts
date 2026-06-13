@@ -9,7 +9,13 @@
 
 import type {CachedScan} from "@/types/scans";
 import {ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, type ScanMetadata} from "@/types/scans";
-import {logStoryAction, successfulStoryAction, type StoryActionResult} from "../../utils/storyActions";
+import {
+	logStoryAction,
+	STORYBOOK_LATENCY,
+	successfulStoryAction,
+	type StoryActionResult,
+	waitForStorybookLatency,
+} from "../../utils/storyActions";
 import {storyCachedImageScan} from "../../fixtures/scanFixtures";
 import {useScansStore} from "@/stores";
 
@@ -37,7 +43,7 @@ type CreateUploadTargetResult = StoryActionResult<
 /** Creates a scan upload target (mock). */
 export async function createScanUploadTarget(): Promise<CreateUploadTargetResult> {
 	logStoryAction("createScanUploadTarget");
-	await new Promise((resolve) => globalThis.setTimeout(resolve, 200));
+	await waitForStorybookLatency(STORYBOOK_LATENCY.short);
 
 	const scanId = `story-scan-${Date.now().toString(16)}`;
 	const now = new Date();
@@ -73,14 +79,14 @@ export async function createScanUploadTarget(): Promise<CreateUploadTargetResult
 /** Creates a scan (mock). */
 export async function createScan(): Promise<StoryActionResult<CachedScan>> {
 	logStoryAction("createScan");
-	await new Promise((resolve) => globalThis.setTimeout(resolve, 500));
+	await waitForStorybookLatency(STORYBOOK_LATENCY.long);
 	return successfulStoryAction(storyCachedImageScan);
 }
 
 /** Deletes a scan (mock). */
 export async function deleteScan(): Promise<StoryActionResult<{scanId: string}>> {
 	logStoryAction("deleteScan");
-	await new Promise((resolve) => globalThis.setTimeout(resolve, 300));
+	await waitForStorybookLatency(STORYBOOK_LATENCY.medium);
 	return successfulStoryAction({scanId: storyCachedImageScan.id});
 }
 
@@ -95,7 +101,7 @@ export async function deleteScan(): Promise<StoryActionResult<{scanId: string}>>
  */
 export async function fetchScans(): Promise<StoryActionResult<CachedScan[]>> {
 	logStoryAction("fetchScans");
-	await new Promise((resolve) => globalThis.setTimeout(resolve, 300));
+	await waitForStorybookLatency(STORYBOOK_LATENCY.medium);
 
 	// Preserve seeded scan state from stories, even when empty
 	const seededScans = useScansStore.getState().scans;
@@ -106,6 +112,6 @@ export async function fetchScans(): Promise<StoryActionResult<CachedScan[]>> {
 /** Updates a scan (mock). */
 export async function updateScan(): Promise<StoryActionResult<CachedScan>> {
 	logStoryAction("updateScan");
-	await new Promise((resolve) => globalThis.setTimeout(resolve, 300));
+	await waitForStorybookLatency(STORYBOOK_LATENCY.medium);
 	return successfulStoryAction(storyCachedImageScan);
 }

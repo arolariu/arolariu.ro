@@ -23,13 +23,13 @@ export interface SeedInvoiceStoryStoresOptions {
 	/** Invoices to seed (defaults to storyInvoices) */
 	readonly invoices?: ReadonlyArray<Invoice>;
 	/** Selected invoices (defaults to first invoice in storyInvoices array, or empty if none) */
-	readonly selectedInvoices?: Invoice[];
+	readonly selectedInvoices?: readonly Invoice[];
 	/** Merchants to seed (defaults to storyMerchants) */
 	readonly merchants?: ReadonlyArray<Merchant>;
 	/** Scans to seed (defaults to [storyCachedImageScan, storyCachedPdfScan]) */
 	readonly scans?: ReadonlyArray<CachedScan>;
 	/** Selected scans (defaults to empty) */
-	readonly selectedScans?: CachedScan[];
+	readonly selectedScans?: readonly CachedScan[];
 }
 
 /**
@@ -105,14 +105,14 @@ export function seedInvoiceStoryStores(options: SeedInvoiceStoryStoresOptions = 
 	} = options;
 
 	useInvoicesStore.getState().setEntities(invoices);
-	useInvoicesStore.getState().setSelectedEntities(selectedInvoices);
+	useInvoicesStore.getState().setSelectedEntities([...selectedInvoices]);
 	useInvoicesStore.getState().setHasHydrated(true);
 
 	useMerchantsStore.getState().setEntities(merchants);
 	useMerchantsStore.getState().setHasHydrated(true);
 
 	useScansStore.getState().setScans(scans);
-	useScansStore.getState().setSelectedScans(selectedScans);
+	useScansStore.getState().setSelectedScans([...selectedScans]);
 	useScansStore.getState().setHasHydrated(true);
 	useScansStore.getState().setIsSyncing(false);
 	useScansStore.getState().setLastSyncTimestamp(new Date("2024-03-15T12:30:00.000Z"));

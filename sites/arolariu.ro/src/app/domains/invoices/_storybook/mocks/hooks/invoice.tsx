@@ -11,7 +11,7 @@
 
 import {useState, useCallback} from "react";
 import type {Invoice, Recipe} from "@/types/invoices";
-import {logStoryAction} from "../../utils/storyActions";
+import {logStoryAction, STORYBOOK_LATENCY, waitForStorybookLatency} from "../../utils/storyActions";
 
 /**
  * Bulk delete result.
@@ -43,12 +43,12 @@ export function useInvoiceDelete(): Readonly<{
 				if (typeof invoiceIdOrIds === "string") {
 					// Single deletion
 					logStoryAction("deleteInvoiceCallback (single)", {invoiceId: invoiceIdOrIds});
-					await new Promise((resolve) => globalThis.setTimeout(resolve, 500));
+					await waitForStorybookLatency(STORYBOOK_LATENCY.long);
 					return;
 				} else {
 					// Bulk deletion
 					logStoryAction("deleteInvoiceCallback (bulk)", {count: invoiceIdOrIds.length});
-					await new Promise((resolve) => globalThis.setTimeout(resolve, 800));
+					await waitForStorybookLatency(STORYBOOK_LATENCY.bulk);
 					return {
 						successCount: invoiceIdOrIds.length,
 						failureCount: 0,
@@ -107,12 +107,12 @@ export function useInvoiceShare(): Readonly<{
 				if (typeof invoiceIdOrIds === "string") {
 					// Single share
 					logStoryAction("shareInvoiceCallback (single)", {invoiceId: invoiceIdOrIds, action: action.type});
-					await new Promise((resolve) => globalThis.setTimeout(resolve, 500));
+					await waitForStorybookLatency(STORYBOOK_LATENCY.long);
 					return null;
 				} else {
 					// Bulk share
 					logStoryAction("shareInvoiceCallback (bulk)", {count: invoiceIdOrIds.length, action: action.type});
-					await new Promise((resolve) => globalThis.setTimeout(resolve, 800));
+					await waitForStorybookLatency(STORYBOOK_LATENCY.bulk);
 					return {
 						successCount: invoiceIdOrIds.length,
 						failureCount: 0,
@@ -150,7 +150,7 @@ export function useRecipeAdd(invoice: Invoice): Readonly<{
 			setIsAdding(true);
 			try {
 				logStoryAction("addRecipeCallback", {recipeName: recipe.name});
-				await new Promise((resolve) => globalThis.setTimeout(resolve, 500));
+				await waitForStorybookLatency(STORYBOOK_LATENCY.long);
 				return {
 					...invoice,
 					possibleRecipes: [...(invoice.possibleRecipes ?? []), recipe],
@@ -182,7 +182,7 @@ export function useRecipeUpdate(invoice: Invoice): Readonly<{
 			setIsUpdating(true);
 			try {
 				logStoryAction("updateRecipeCallback", {recipeName, updatedName: updated.name});
-				await new Promise((resolve) => globalThis.setTimeout(resolve, 500));
+				await waitForStorybookLatency(STORYBOOK_LATENCY.long);
 				const updatedRecipes = (invoice.possibleRecipes ?? []).map((r) => (r.name === recipeName ? updated : r));
 				return {
 					...invoice,
@@ -215,7 +215,7 @@ export function useRecipeDelete(invoice: Invoice): Readonly<{
 			setIsDeleting(true);
 			try {
 				logStoryAction("removeRecipeCallback", {recipeName});
-				await new Promise((resolve) => globalThis.setTimeout(resolve, 500));
+				await waitForStorybookLatency(STORYBOOK_LATENCY.long);
 				const updatedRecipes = (invoice.possibleRecipes ?? []).filter((r) => r.name !== recipeName);
 				return {
 					...invoice,

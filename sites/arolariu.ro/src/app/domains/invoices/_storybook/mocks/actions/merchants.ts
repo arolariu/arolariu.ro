@@ -8,19 +8,25 @@
  */
 
 import type {Merchant} from "@/types/invoices";
-import {logStoryAction, successfulStoryAction, type StoryActionResult} from "../../utils/storyActions";
+import {
+	logStoryAction,
+	STORYBOOK_LATENCY,
+	successfulStoryAction,
+	type StoryActionResult,
+	waitForStorybookLatency,
+} from "../../utils/storyActions";
 import {storyMerchant, storyMerchants} from "../../fixtures/merchantFixtures";
 
 /** Fetches a single merchant (mock). */
 export async function fetchMerchant(): Promise<StoryActionResult<Merchant>> {
 	logStoryAction("fetchMerchant");
-	await new Promise((resolve) => globalThis.setTimeout(resolve, 200));
+	await waitForStorybookLatency(STORYBOOK_LATENCY.short);
 	return successfulStoryAction(storyMerchant);
 }
 
 /** Fetches all merchants (mock). */
 export async function fetchMerchants(): Promise<StoryActionResult<Merchant[]>> {
 	logStoryAction("fetchMerchants");
-	await new Promise((resolve) => globalThis.setTimeout(resolve, 300));
+	await waitForStorybookLatency(STORYBOOK_LATENCY.medium);
 	return successfulStoryAction(storyMerchants as Merchant[]);
 }

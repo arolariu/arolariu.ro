@@ -12,7 +12,7 @@
 import {useState, useCallback, useRef} from "react";
 import type {CachedScan} from "@/types/scans";
 import type {InvoiceScanType} from "@/types/invoices";
-import {logStoryAction} from "../../utils/storyActions";
+import {logStoryAction, STORYBOOK_LATENCY, waitForStorybookLatency} from "../../utils/storyActions";
 
 /**
  * Scan add arguments.
@@ -41,7 +41,7 @@ export function useScanAdd(invoiceId: string): Readonly<{
 			setIsAdding(true);
 			try {
 				logStoryAction("addScanCallback", {invoiceId, fileName: args.fileName});
-				await new Promise((resolve) => globalThis.setTimeout(resolve, 800));
+				await waitForStorybookLatency(STORYBOOK_LATENCY.bulk);
 			} finally {
 				setIsAdding(false);
 			}
@@ -68,7 +68,7 @@ export function useScanDelete(scan: CachedScan): Readonly<{
 		setIsDeleting(true);
 		try {
 			logStoryAction("deleteScanCallback", {scanId: scan.id});
-			await new Promise((resolve) => globalThis.setTimeout(resolve, 500));
+			await waitForStorybookLatency(STORYBOOK_LATENCY.long);
 		} finally {
 			setIsDeleting(false);
 		}
@@ -159,7 +159,7 @@ export function useScanRotation(scan: CachedScan): Readonly<{
 		setIsRotating(true);
 		try {
 			logStoryAction("rotateScanCallback", {scanId: scan.id, direction});
-			await new Promise((resolve) => globalThis.setTimeout(resolve, 400));
+			await waitForStorybookLatency(400);
 		} finally {
 			setIsRotating(false);
 		}
