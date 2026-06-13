@@ -24,7 +24,7 @@ function generateMockMerchantData(count: number): MerchantBreakdown[] {
  * is highlighted with the primary color.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/Charts/MerchantBreakdownChart",
+  title: "arolariu.ro/IMS/ViewInvoice/Charts/MerchantBreakdownChart",
   component: MerchantBreakdownChart,
   parameters: {
     layout: "centered",

@@ -7,7 +7,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * This story renders a static preview of the seasonal insights card.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/Cards/SeasonalInsights",
+  title: "arolariu.ro/IMS/ViewInvoice/Cards/Invoice/SeasonalInsights",
   parameters: {
     layout: "centered",
   },

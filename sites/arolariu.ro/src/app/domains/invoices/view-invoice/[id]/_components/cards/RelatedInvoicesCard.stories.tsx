@@ -4,7 +4,7 @@ import {InvoiceCategory} from "@/types/invoices";
 import {RelatedInvoicesCard} from "./RelatedInvoicesCard";
 
 const meta = {
-  title: "Invoices/View Invoice/Cards/RelatedInvoicesCard",
+  title: "arolariu.ro/IMS/ViewInvoice/Cards/Invoice/RelatedInvoices",
   component: RelatedInvoicesCard,
   tags: ["!autodocs"],
   parameters: {

@@ -10,7 +10,7 @@ import {DiningCard} from "./DiningCard";
  * These stories mount the real component through `WithViewInvoiceContext`.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/Insights/DiningCard",
+  title: "arolariu.ro/IMS/ViewInvoice/Insights/DiningCard",
   component: DiningCard,
   parameters: {
     layout: "centered",

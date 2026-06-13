@@ -21,7 +21,7 @@ function generateMockQuantityData(count: number): QuantityData[] {
  * Each bar is colored uniquely using Recharts Cell components.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/Charts/ItemsBreakdownChart",
+  title: "arolariu.ro/IMS/ViewInvoice/Charts/ItemsBreakdownChart",
   component: ItemsBreakdownChart,
   parameters: {
     layout: "centered",

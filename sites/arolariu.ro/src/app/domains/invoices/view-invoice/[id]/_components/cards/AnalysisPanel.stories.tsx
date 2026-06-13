@@ -28,7 +28,7 @@ const analyzedSevenDaysAgo = new Date("2024-03-08T14:30:00.000Z");
  * Requires InvoiceContextProvider to access invoice data.
  */
 const meta = {
-  title: "Invoices/View Invoice/Cards/AnalysisPanel",
+  title: "arolariu.ro/IMS/ViewInvoice/Cards/Invoice/AnalysisPanel",
   component: AnalysisPanel,
   parameters: {
     layout: "padded",

@@ -4,7 +4,7 @@ import {LAST_GUID} from "@/lib/utils.generic";
 import {ShareCollaborateCard} from "./ShareCollaborateCard";
 
 const meta = {
-  title: "Invoices/View Invoice/Cards/ShareCollaborateCard",
+  title: "arolariu.ro/IMS/ViewInvoice/Cards/Invoice/ShareCollaborate",
   component: ShareCollaborateCard,
   parameters: {
     layout: "padded",

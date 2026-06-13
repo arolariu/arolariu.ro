@@ -11,7 +11,7 @@ import {TbChefHat, TbClock, TbExternalLink, TbInfoCircle} from "react-icons/tb";
  * "Additional Info" tabs.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/InvoiceTabs",
+  title: "arolariu.ro/IMS/ViewInvoice/Components/InvoiceTabs",
   parameters: {
     layout: "centered",
   },

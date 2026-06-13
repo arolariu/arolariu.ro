@@ -8,7 +8,7 @@ import {TimelineItem} from "./TimelineItem";
  * title, description, tooltip, and relative time label.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/Timeline/TimelineItem",
+  title: "arolariu.ro/IMS/ViewInvoice/Timeline/TimelineItem",
   component: TimelineItem,
   parameters: {
     layout: "centered",

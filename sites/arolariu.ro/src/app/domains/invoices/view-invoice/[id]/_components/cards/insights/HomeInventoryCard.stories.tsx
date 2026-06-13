@@ -9,7 +9,7 @@ import {HomeInventoryCard} from "./HomeInventoryCard";
  * These stories mount the real component through `WithViewInvoiceContext`.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/Insights/HomeInventoryCard",
+  title: "arolariu.ro/IMS/ViewInvoice/Insights/HomeInventoryCard",
   component: HomeInventoryCard,
   parameters: {
     layout: "centered",

@@ -18,7 +18,7 @@ const guestInvoice = {
 };
 
 const meta = {
-  title: "Invoices/ViewInvoice/InvoiceHeader",
+  title: "arolariu.ro/IMS/ViewInvoice/Components/InvoiceHeader",
   component: InvoiceHeader,
   parameters: {
     layout: "fullscreen",

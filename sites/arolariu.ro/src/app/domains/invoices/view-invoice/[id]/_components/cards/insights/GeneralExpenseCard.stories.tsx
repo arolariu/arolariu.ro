@@ -10,7 +10,7 @@ import {GeneralExpenseCard} from "./GeneralExpenseCard";
  * These stories mount the real component through `WithViewInvoiceContext`.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/Insights/GeneralExpenseCard",
+  title: "arolariu.ro/IMS/ViewInvoice/Insights/GeneralExpenseCard",
   component: GeneralExpenseCard,
   parameters: {
     layout: "centered",

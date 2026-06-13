@@ -7,7 +7,7 @@ import {InvoiceTimelineCard} from "./InvoiceTimelineCard";
  * invoice. It takes an `invoice` prop and generates timeline events from it.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/Cards/InvoiceTimeline",
+  title: "arolariu.ro/IMS/ViewInvoice/Cards/Invoice/InvoiceTimeline",
   component: InvoiceTimelineCard,
   parameters: {
     layout: "centered",

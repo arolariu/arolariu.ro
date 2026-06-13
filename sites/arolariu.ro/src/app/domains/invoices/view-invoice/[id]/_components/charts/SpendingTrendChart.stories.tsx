@@ -22,7 +22,7 @@ function generateMockSpendingTrend(count: number, currentIndex?: number): Spendi
  * invoice. Uses Recharts AreaChart with gradient fill.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/Charts/SpendingTrendChart",
+  title: "arolariu.ro/IMS/ViewInvoice/Charts/SpendingTrendChart",
   component: SpendingTrendChart,
   parameters: {
     layout: "centered",
