@@ -8,7 +8,7 @@ import Perspectives from "./Perspectives";
  * Uses the `sections.about.author.Perspectives` i18n namespace.
  */
 const meta = {
-  title: "Pages/About/TheAuthor/Perspectives",
+  title: "arolariu.ro/Pages/About/TheAuthor/Perspectives",
   component: Perspectives,
   parameters: {
     layout: "fullscreen",

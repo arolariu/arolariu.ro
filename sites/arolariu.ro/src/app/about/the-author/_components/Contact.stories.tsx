@@ -9,7 +9,7 @@ import Contact from "./Contact";
  * Uses the `sections.about.author.Contact` i18n namespace.
  */
 const meta = {
-  title: "Pages/About/TheAuthor/Contact",
+  title: "arolariu.ro/Pages/About/TheAuthor/Contact",
   component: Contact,
   parameters: {
     layout: "fullscreen",

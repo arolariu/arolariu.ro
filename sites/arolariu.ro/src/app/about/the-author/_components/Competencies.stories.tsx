@@ -7,7 +7,7 @@ import Competencies from "./Competencies";
  * Uses the `sections.about.author.Competencies` i18n namespace.
  */
 const meta = {
-  title: "Pages/About/TheAuthor/Competencies",
+  title: "arolariu.ro/Pages/About/TheAuthor/Competencies",
   component: Competencies,
   parameters: {
     layout: "fullscreen",

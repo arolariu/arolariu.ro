@@ -7,7 +7,7 @@ import Loading from "./loading";
  * Navigation, FAQ, and CTA — all rendered as skeleton placeholders.
  */
 const meta = {
-  title: "Pages/About/Loading",
+  title: "arolariu.ro/Pages/About/Loading",
   component: Loading,
   parameters: {
     layout: "fullscreen",

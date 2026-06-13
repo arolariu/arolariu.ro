@@ -8,7 +8,7 @@ import CallToAction from "./CallToAction";
  * Uses the `About.Hub.cta` i18n namespace.
  */
 const meta = {
-  title: "Pages/About/CallToAction",
+  title: "arolariu.ro/Pages/About/CallToAction",
   component: CallToAction,
   parameters: {
     layout: "fullscreen",

@@ -9,7 +9,7 @@ import Hero from "./Hero";
  * Uses the `sections.about.platform.hero` i18n namespace.
  */
 const meta = {
-  title: "Pages/About/ThePlatform/Hero",
+  title: "arolariu.ro/Pages/About/ThePlatform/Hero",
   component: Hero,
   parameters: {
     layout: "fullscreen",

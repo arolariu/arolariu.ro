@@ -9,7 +9,7 @@ import {ThemeProvider} from "next-themes";
  * to avoid requiring a full Clerk provider.
  */
 const meta = {
-  title: "Site/Navigation",
+  title: "arolariu.ro/Site/Navigation",
   decorators: [
     (Story) => (
       <ThemeProvider

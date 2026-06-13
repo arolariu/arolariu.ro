@@ -8,7 +8,7 @@ import Values from "./Values";
  * Uses the `About.Hub.values` i18n namespace.
  */
 const meta = {
-  title: "Pages/About/Values",
+  title: "arolariu.ro/Pages/About/Values",
   component: Values,
   parameters: {
     layout: "fullscreen",

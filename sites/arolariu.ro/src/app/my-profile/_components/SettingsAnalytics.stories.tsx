@@ -8,7 +8,7 @@ import {TbChartBar, TbChartPie, TbClock, TbDatabase, TbDownload, TbTrendingUp} f
  * so this story renders a faithful HTML replica of the analytics settings panel.
  */
 const meta = {
-  title: "Pages/Profile/SettingsAnalytics",
+  title: "arolariu.ro/Pages/Profile/SettingsAnalytics",
   parameters: {
     layout: "fullscreen",
   },

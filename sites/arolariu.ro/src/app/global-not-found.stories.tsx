@@ -9,7 +9,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * QR code placeholder, and action buttons.
  */
 const meta = {
-  title: "Pages/Home/GlobalNotFound",
+  title: "arolariu.ro/Pages/Home/GlobalNotFound",
   parameters: {
     layout: "fullscreen",
   },

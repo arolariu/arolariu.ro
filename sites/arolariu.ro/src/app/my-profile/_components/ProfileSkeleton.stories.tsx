@@ -9,7 +9,7 @@ import {ProfileSkeleton} from "./ProfileSkeleton";
  * This is a pure visual skeleton with no translations or interactivity.
  */
 const meta = {
-  title: "Pages/Profile/ProfileSkeleton",
+  title: "arolariu.ro/Pages/Profile/ProfileSkeleton",
   component: ProfileSkeleton,
   parameters: {
     layout: "fullscreen",

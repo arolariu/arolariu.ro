@@ -7,7 +7,7 @@ import Loading from "./loading";
  * and bottom mobile navigation placeholders.
  */
 const meta = {
-  title: "Pages/Profile/Loading",
+  title: "arolariu.ro/Pages/Profile/Loading",
   component: Loading,
   parameters: {
     layout: "fullscreen",

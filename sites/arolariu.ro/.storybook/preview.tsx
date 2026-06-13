@@ -51,7 +51,10 @@ const preview: Preview = {
     options: {
       storySort: {
         method: "alphabetical",
-        order: ["Site", "Pages", ["Home", "About", "Auth", "Legal", "Acknowledgements", "Profile"], "Invoices"],
+        order: [
+          "arolariu.ro",
+          ["Site", "Pages", ["Home", "About", "Auth", "Legal", "Acknowledgements", "Profile"], "IMS"],
+        ],
       },
     },
   },

@@ -10,7 +10,7 @@ import EulaShimmer from "./EULA.shimmers";
  * This is a pure visual skeleton with no translations or interactivity.
  */
 const meta = {
-  title: "Pages/Home/EulaShimmer",
+  title: "arolariu.ro/Pages/Home/EulaShimmer",
   component: EulaShimmer,
   parameters: {
     layout: "fullscreen",

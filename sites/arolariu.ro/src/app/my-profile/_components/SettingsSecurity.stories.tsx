@@ -8,7 +8,7 @@ import {TbClock, TbDevices, TbKey, TbLock, TbShieldCheck, TbTrash} from "react-i
  * trusted devices, so this story renders a faithful HTML replica.
  */
 const meta = {
-  title: "Pages/Profile/SettingsSecurity",
+  title: "arolariu.ro/Pages/Profile/SettingsSecurity",
   parameters: {
     layout: "fullscreen",
   },

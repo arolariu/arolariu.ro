@@ -9,7 +9,7 @@ import {TbBrush, TbGlobe, TbMoon, TbPalette, TbSettings, TbSun, TbTypography} fr
  * a faithful HTML replica of the appearance settings panel.
  */
 const meta = {
-  title: "Pages/Profile/SettingsAppearance",
+  title: "arolariu.ro/Pages/Profile/SettingsAppearance",
   parameters: {
     layout: "fullscreen",
   },

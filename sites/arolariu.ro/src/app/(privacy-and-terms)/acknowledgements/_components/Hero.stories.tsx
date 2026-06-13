@@ -8,7 +8,7 @@ import Hero from "./Hero";
  * Uses the `Acknowledgements.hero` i18n namespace.
  */
 const meta = {
-  title: "Pages/Acknowledgements/Hero",
+  title: "arolariu.ro/Pages/Acknowledgements/Hero",
   component: Hero,
   parameters: {
     layout: "fullscreen",

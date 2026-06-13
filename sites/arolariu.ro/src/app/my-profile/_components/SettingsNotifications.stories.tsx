@@ -8,7 +8,7 @@ import {TbBell, TbMail, TbReport, TbShield, TbSparkles, TbWallet} from "react-ic
  * so this story renders a faithful HTML replica of the notification settings panel.
  */
 const meta = {
-  title: "Pages/Profile/SettingsNotifications",
+  title: "arolariu.ro/Pages/Profile/SettingsNotifications",
   parameters: {
     layout: "fullscreen",
   },

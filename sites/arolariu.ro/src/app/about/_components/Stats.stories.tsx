@@ -7,7 +7,7 @@ import Stats from "./Stats";
  * with a gradient icon. Uses the `About.Hub.stats` i18n namespace.
  */
 const meta = {
-  title: "Pages/About/Stats",
+  title: "arolariu.ro/Pages/About/Stats",
   component: Stats,
   parameters: {
     layout: "fullscreen",

@@ -8,7 +8,7 @@ import RenderTermsOfServiceScreen from "./island";
  * covering license, restrictions, cookies, liability, and arbitration.
  */
 const meta = {
-  title: "Pages/Legal/TermsOfService",
+  title: "arolariu.ro/Pages/Legal/TermsOfService",
   component: RenderTermsOfServiceScreen,
   parameters: {
     layout: "padded",

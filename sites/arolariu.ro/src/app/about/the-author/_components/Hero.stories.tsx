@@ -8,7 +8,7 @@ import Hero from "./Hero";
  * Uses the `sections.about.author` i18n namespace.
  */
 const meta = {
-  title: "Pages/About/TheAuthor/Hero",
+  title: "arolariu.ro/Pages/About/TheAuthor/Hero",
   component: Hero,
   parameters: {
     layout: "fullscreen",

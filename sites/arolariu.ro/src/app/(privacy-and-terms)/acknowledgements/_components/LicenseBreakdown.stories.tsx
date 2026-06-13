@@ -38,7 +38,7 @@ const mockPackages: NodePackagesJSON = {
  * Uses the `Acknowledgements.licenses` i18n namespace.
  */
 const meta = {
-  title: "Pages/Acknowledgements/LicenseBreakdown",
+  title: "arolariu.ro/Pages/Acknowledgements/LicenseBreakdown",
   component: LicenseBreakdown,
   parameters: {
     layout: "fullscreen",

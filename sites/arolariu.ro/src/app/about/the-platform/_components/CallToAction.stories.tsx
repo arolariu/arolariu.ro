@@ -8,7 +8,7 @@ import CallToAction from "./CallToAction";
  * Uses the `sections.about.platform.callToAction` i18n namespace.
  */
 const meta = {
-  title: "Pages/About/ThePlatform/CallToAction",
+  title: "arolariu.ro/Pages/About/ThePlatform/CallToAction",
   component: CallToAction,
   parameters: {
     layout: "fullscreen",

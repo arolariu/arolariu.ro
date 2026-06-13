@@ -26,7 +26,7 @@ const storyMessages: AbstractIntlMessages = {
 };
 
 const meta = {
-  title: "Site/RichText",
+  title: "arolariu.ro/Site/RichText",
   component: RichText,
   decorators: [
     (Story) => (

@@ -12,7 +12,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * is `false`.
  */
 const meta = {
-  title: "Site/Buttons/AuthButton",
+  title: "arolariu.ro/Site/Buttons/AuthButton",
   parameters: {
     layout: "centered",
     backgrounds: {default: "light-gray"},

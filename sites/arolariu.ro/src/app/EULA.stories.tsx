@@ -30,7 +30,7 @@ import {
  * using the same Card/Button/Badge/Accordion/Switch components from @arolariu/components.
  */
 const meta = {
-  title: "Pages/Home/EULA",
+  title: "arolariu.ro/Pages/Home/EULA",
   parameters: {
     layout: "fullscreen",
   },

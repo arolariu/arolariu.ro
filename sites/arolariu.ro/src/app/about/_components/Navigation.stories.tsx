@@ -7,7 +7,7 @@ import Navigation from "./Navigation";
  * and a CTA button. Uses the `About.Hub.navigation` i18n namespace.
  */
 const meta = {
-  title: "Pages/About/Navigation",
+  title: "arolariu.ro/Pages/About/Navigation",
   component: Navigation,
   parameters: {
     layout: "fullscreen",

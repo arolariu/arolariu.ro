@@ -8,7 +8,7 @@ import {TbAlertTriangle, TbCloud, TbDatabase, TbDownload, TbShieldCheck, TbTrash
  * so this story renders a faithful HTML replica of the data management panel.
  */
 const meta = {
-  title: "Pages/Profile/SettingsData",
+  title: "arolariu.ro/Pages/Profile/SettingsData",
   parameters: {
     layout: "fullscreen",
   },

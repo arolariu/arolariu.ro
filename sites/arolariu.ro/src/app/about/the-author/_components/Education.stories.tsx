@@ -8,7 +8,7 @@ import Education from "./Education";
  * Uses the `sections.about.author.Education` i18n namespace.
  */
 const meta = {
-  title: "Pages/About/TheAuthor/Education",
+  title: "arolariu.ro/Pages/About/TheAuthor/Education",
   component: Education,
   parameters: {
     layout: "fullscreen",

@@ -8,7 +8,7 @@ import Hero from "./Hero";
  * All text is internationalised via the `About.Hub.hero` i18n namespace.
  */
 const meta = {
-  title: "Pages/About/Hero",
+  title: "arolariu.ro/Pages/About/Hero",
   component: Hero,
   parameters: {
     layout: "fullscreen",

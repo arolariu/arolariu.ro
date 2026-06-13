@@ -8,7 +8,7 @@ import Loading from "./loading";
  * Perspectives, and Contact sections.
  */
 const meta = {
-  title: "Pages/About/TheAuthor/Loading",
+  title: "arolariu.ro/Pages/About/TheAuthor/Loading",
   component: Loading,
   parameters: {
     layout: "fullscreen",

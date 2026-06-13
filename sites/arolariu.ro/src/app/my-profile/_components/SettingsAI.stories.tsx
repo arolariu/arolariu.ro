@@ -8,7 +8,7 @@ import {TbBrain, TbMicrophone, TbRobot, TbSettings, TbSparkles, TbTemperature} f
  * constants, so this story renders a faithful HTML replica of the AI settings panel.
  */
 const meta = {
-  title: "Pages/Profile/SettingsAI",
+  title: "arolariu.ro/Pages/Profile/SettingsAI",
   parameters: {
     layout: "fullscreen",
   },

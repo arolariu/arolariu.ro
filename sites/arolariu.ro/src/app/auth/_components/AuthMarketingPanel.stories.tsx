@@ -7,7 +7,7 @@ import AuthMarketingPanel from "./AuthMarketingPanel";
  * optional trust badges.
  */
 const meta = {
-  title: "Pages/Auth/AuthMarketingPanel",
+  title: "arolariu.ro/Pages/Auth/AuthMarketingPanel",
   component: AuthMarketingPanel,
   parameters: {
     layout: "centered",
