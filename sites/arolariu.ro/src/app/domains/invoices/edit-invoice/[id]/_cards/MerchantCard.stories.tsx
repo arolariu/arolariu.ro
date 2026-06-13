@@ -9,7 +9,7 @@ import {storyMerchant, storyOnlineMerchant, WithInvoiceDialogs} from "../../../_
  * This story mounts the real component wrapped in `WithInvoiceDialogs`.
  */
 const meta = {
-  title: "Invoices/EditInvoice/Cards/MerchantCard",
+  title: "arolariu.ro/IMS/EditInvoice/Cards/Merchant/MerchantCard",
   component: MerchantCard,
   parameters: {
     layout: "centered",

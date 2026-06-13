@@ -7,7 +7,7 @@ import MetadataTab from "./MetadataTab";
  * add, edit, and delete capabilities. Depends on `useDialog`.
  */
 const meta = {
-  title: "Invoices/EditInvoice/Tabs/MetadataTab",
+  title: "arolariu.ro/IMS/EditInvoice/Tabs/MetadataTab",
   component: MetadataTab,
   parameters: {
     layout: "centered",
