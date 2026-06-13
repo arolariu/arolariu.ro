@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {OpenDialogOnMount, WithViewInvoiceContext, storyInvoice, storyMerchant} from "../../../_storybook";
+import {OpenDialogButton, playOpenDialog, WithViewInvoiceContext, storyInvoice, storyMerchant} from "../../../_storybook";
 import {ExportDialog} from "./ExportDialog";
 
 /**
@@ -35,11 +35,12 @@ type Story = StoryObj<typeof meta>;
  * Opens dialog automatically on mount in `view` mode.
  */
 export const Default: Story = {
+  play: playOpenDialog,
 	render: () => (
 		<WithViewInvoiceContext invoice={storyInvoice} merchant={storyMerchant}>
-			<OpenDialogOnMount dialog="VIEW_INVOICE__EXPORT" mode="view">
+			<OpenDialogButton dialog="VIEW_INVOICE__EXPORT" mode="view">
 				<ExportDialog />
-			</OpenDialogOnMount>
+			</OpenDialogButton>
 		</WithViewInvoiceContext>
 	),
 };

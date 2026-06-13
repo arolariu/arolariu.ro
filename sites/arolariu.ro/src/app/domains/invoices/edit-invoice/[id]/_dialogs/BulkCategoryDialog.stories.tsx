@@ -1,12 +1,12 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {OpenDialogOnMount, storyInvoice, storyProducts} from "../../../_storybook";
+import {OpenDialogButton, playOpenDialog, storyInvoice, storyProducts} from "../../../_storybook";
 import BulkCategoryDialog from "./BulkCategoryDialog";
 
 /**
  * BulkCategoryDialog allows users to change the category of multiple products at once.
  *
  * @remarks
- * This story mounts the real BulkCategoryDialog component with OpenDialogOnMount
+ * This story mounts the real BulkCategoryDialog component with OpenDialogButton
  * harness, opening the dialog automatically on mount with selected products payload.
  * Shows category selection dropdown and progress tracking during save.
  */
@@ -38,6 +38,7 @@ type Story = StoryObj<typeof meta>;
  * Displays first three products selected for category reassignment.
  */
 export const FewProducts: Story = {
+  play: playOpenDialog,
 	parameters: {
 		docs: {
 			description: {
@@ -54,12 +55,12 @@ export const FewProducts: Story = {
 		const selectedIndices = [0, 1, 2];
 
 		return (
-			<OpenDialogOnMount
+			<OpenDialogButton
 				dialog="EDIT_INVOICE__BULK_CATEGORY"
 				mode="edit"
 				payload={{invoice: storyInvoice, selectedProducts, selectedIndices}}>
 				<BulkCategoryDialog />
-			</OpenDialogOnMount>
+			</OpenDialogButton>
 		);
 	},
 };
@@ -71,6 +72,7 @@ export const FewProducts: Story = {
  * Displays all story invoice products selected, demonstrating the "and X more" preview.
  */
 export const ManyProducts: Story = {
+  play: playOpenDialog,
 	parameters: {
 		docs: {
 			description: {
@@ -87,12 +89,12 @@ export const ManyProducts: Story = {
 		const selectedIndices = storyProducts.map((_, index) => index);
 
 		return (
-			<OpenDialogOnMount
+			<OpenDialogButton
 				dialog="EDIT_INVOICE__BULK_CATEGORY"
 				mode="edit"
 				payload={{invoice: storyInvoice, selectedProducts, selectedIndices}}>
 				<BulkCategoryDialog />
-			</OpenDialogOnMount>
+			</OpenDialogButton>
 		);
 	},
 };

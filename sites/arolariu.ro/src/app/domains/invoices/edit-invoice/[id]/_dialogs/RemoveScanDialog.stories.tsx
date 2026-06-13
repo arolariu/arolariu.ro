@@ -1,12 +1,12 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {OpenDialogOnMount, storyInvoice} from "../../../_storybook";
+import {OpenDialogButton, playOpenDialog, storyInvoice} from "../../../_storybook";
 import RemoveScanDialog from "./RemoveScanDialog";
 
 /**
  * RemoveScanDialog allows users to remove a scan from an invoice.
  *
  * @remarks
- * This story mounts the real RemoveScanDialog component with OpenDialogOnMount
+ * This story mounts the real RemoveScanDialog component with OpenDialogButton
  * harness, opening the dialog automatically on mount with a story invoice and scan payload.
  */
 const meta = {
@@ -25,18 +25,19 @@ type Story = StoryObj<typeof meta>;
  * Default remove scan confirmation dialog.
  */
 export const Default: Story = {
+  play: playOpenDialog,
 	render: () => {
 		if (!storyInvoice.scans || storyInvoice.scans.length === 0) {
 			throw new Error("RemoveScanDialog story requires at least one invoice scan fixture.");
 		}
 		const firstScan = storyInvoice.scans[0];
 		return (
-			<OpenDialogOnMount
+			<OpenDialogButton
 				dialog="EDIT_INVOICE__REMOVE_SCAN"
 				mode="delete"
 				payload={{invoice: storyInvoice, scan: firstScan, scanIndex: 0}}>
 				<RemoveScanDialog />
-			</OpenDialogOnMount>
+			</OpenDialogButton>
 		);
 	},
 };

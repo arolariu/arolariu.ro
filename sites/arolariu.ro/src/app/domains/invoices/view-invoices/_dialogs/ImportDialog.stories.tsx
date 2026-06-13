@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {OpenDialogOnMount, resetInvoiceStoryStores} from "../../_storybook";
+import {OpenDialogButton, playOpenDialog, resetInvoiceStoryStores} from "../../_storybook";
 import ImportDialog from "./ImportDialog";
 
 /**
@@ -41,9 +41,10 @@ type Story = StoryObj<typeof meta>;
  * Users can drag and drop CSV files or click to browse.
  */
 export const OpenCsvImport: Story = {
+  play: playOpenDialog,
 	render: () => (
-		<OpenDialogOnMount dialog="VIEW_INVOICES__IMPORT" mode="add">
+		<OpenDialogButton dialog="VIEW_INVOICES__IMPORT" mode="add">
 			<ImportDialog />
-		</OpenDialogOnMount>
+		</OpenDialogButton>
 	),
 };

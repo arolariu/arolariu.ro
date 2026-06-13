@@ -1,12 +1,12 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {OpenDialogOnMount, storyRecipeEasy, storyRecipeHard, WithEditInvoiceContext} from "../../../_storybook";
+import {OpenDialogButton, playOpenDialog, storyRecipeEasy, storyRecipeHard, WithEditInvoiceContext} from "../../../_storybook";
 import DeleteRecipeDialog from "./DeleteRecipeDialog";
 
 /**
  * DeleteRecipeDialog allows users to confirm deletion of a recipe.
  *
  * @remarks
- * This story mounts the real DeleteRecipeDialog component with OpenDialogOnMount
+ * This story mounts the real DeleteRecipeDialog component with OpenDialogButton
  * harness, opening the dialog automatically on mount with a story recipe payload.
  * Wrapped with EditInvoiceContextProvider to provide required context.
  */
@@ -38,6 +38,7 @@ type Story = StoryObj<typeof meta>;
  * Displays confirmation dialog for deleting "Classic Scrambled Eggs" recipe.
  */
 export const EasyRecipe: Story = {
+  play: playOpenDialog,
 	parameters: {
 		docs: {
 			description: {
@@ -50,9 +51,9 @@ export const EasyRecipe: Story = {
 	},
 	render: () => (
 		<WithEditInvoiceContext>
-			<OpenDialogOnMount dialog="EDIT_INVOICE__RECIPE_DELETE" mode="delete" payload={{recipe: storyRecipeEasy}}>
+			<OpenDialogButton dialog="EDIT_INVOICE__RECIPE_DELETE" mode="delete" payload={{recipe: storyRecipeEasy}}>
 				<DeleteRecipeDialog />
-			</OpenDialogOnMount>
+			</OpenDialogButton>
 		</WithEditInvoiceContext>
 	),
 };
@@ -64,6 +65,7 @@ export const EasyRecipe: Story = {
  * Displays confirmation dialog for deleting "Beef Wellington" recipe.
  */
 export const ComplexRecipe: Story = {
+  play: playOpenDialog,
 	parameters: {
 		docs: {
 			description: {
@@ -76,9 +78,9 @@ export const ComplexRecipe: Story = {
 	},
 	render: () => (
 		<WithEditInvoiceContext>
-			<OpenDialogOnMount dialog="EDIT_INVOICE__RECIPE_DELETE" mode="delete" payload={{recipe: storyRecipeHard}}>
+			<OpenDialogButton dialog="EDIT_INVOICE__RECIPE_DELETE" mode="delete" payload={{recipe: storyRecipeHard}}>
 				<DeleteRecipeDialog />
-			</OpenDialogOnMount>
+			</OpenDialogButton>
 		</WithEditInvoiceContext>
 	),
 };

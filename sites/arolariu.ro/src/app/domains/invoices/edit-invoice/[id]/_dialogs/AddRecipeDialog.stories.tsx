@@ -1,12 +1,12 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {OpenDialogOnMount, WithEditInvoiceContext} from "../../../_storybook";
+import {OpenDialogButton, playOpenDialog, WithEditInvoiceContext} from "../../../_storybook";
 import AddRecipeDialog from "./AddRecipeDialog";
 
 /**
  * AddRecipeDialog allows users to create a new recipe from invoice items.
  *
  * @remarks
- * This story mounts the real AddRecipeDialog component with OpenDialogOnMount
+ * This story mounts the real AddRecipeDialog component with OpenDialogButton
  * harness, opening the dialog automatically on mount. Wrapped with
  * EditInvoiceContextProvider to provide required context.
  */
@@ -34,21 +34,22 @@ type Story = StoryObj<typeof meta>;
  * Default add recipe dialog with empty form.
  */
 export const Default: Story = {
+  play: playOpenDialog,
 	parameters: {
 		docs: {
 			description: {
 				story:
 					"Shows the recipe creation dialog in its initial state with an empty form. The dialog opens automatically " +
-					"on mount via the OpenDialogOnMount harness. Users can input recipe details including name, description, " +
+					"on mount via the OpenDialogButton harness. Users can input recipe details including name, description, " +
 					"prep/cook time, and difficulty while ingredient rows remain read-only until provided by recipe state.",
 			},
 		},
 	},
 	render: () => (
 		<WithEditInvoiceContext>
-			<OpenDialogOnMount dialog="EDIT_INVOICE__RECIPE_ADD" mode="add">
+			<OpenDialogButton dialog="EDIT_INVOICE__RECIPE_ADD" mode="add">
 				<AddRecipeDialog />
-			</OpenDialogOnMount>
+			</OpenDialogButton>
 		</WithEditInvoiceContext>
 	),
 };

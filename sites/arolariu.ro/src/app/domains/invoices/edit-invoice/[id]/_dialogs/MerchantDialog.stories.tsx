@@ -1,12 +1,12 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {OpenDialogOnMount, storyMerchant} from "../../../_storybook";
+import {OpenDialogButton, playOpenDialog, storyMerchant} from "../../../_storybook";
 import MerchantDialog from "./MerchantDialog";
 
 /**
  * MerchantDialog renders merchant details view.
  *
  * @remarks
- * This story mounts the real MerchantDialog component with OpenDialogOnMount
+ * This story mounts the real MerchantDialog component with OpenDialogButton
  * harness, opening the dialog automatically on mount with a story merchant payload.
  */
 const meta = {
@@ -25,9 +25,10 @@ type Story = StoryObj<typeof meta>;
  * Default merchant details dialog.
  */
 export const Default: Story = {
+  play: playOpenDialog,
 	render: () => (
-		<OpenDialogOnMount dialog="EDIT_INVOICE__MERCHANT" mode="view" payload={storyMerchant}>
+		<OpenDialogButton dialog="EDIT_INVOICE__MERCHANT" mode="view" payload={storyMerchant}>
 			<MerchantDialog />
-		</OpenDialogOnMount>
+		</OpenDialogButton>
 	),
 };

@@ -8,7 +8,7 @@
  *
  * **Current Exports:**
  * - **Fixtures:** Merchant, Recipe, Scan, Invoice, Upload files
- * - **Providers:** InvoiceStoryFrame, WithInvoiceDialogs, WithEditInvoiceContext, WithViewInvoiceContext, WithScanUploadContext, OpenDialogOnMount
+ * - **Providers:** InvoiceStoryFrame, WithInvoiceDialogs, WithEditInvoiceContext, WithViewInvoiceContext, WithScanUploadContext, OpenDialogButton
  * - **Stores:** resetInvoiceStoryStores, seedInvoiceStoryStores
  * - **Utils:** logStoryAction, successfulStoryAction, installStorybookBrowserMocks
  * - **Mocks:** Server action and hook mocks for invoices, scans, merchants
@@ -52,7 +52,7 @@ export {InvoiceStoryFrame, WithScanUploadContext} from "./providers/ScanUploadPr
 export {WithCreateInvoiceContext} from "./providers/CreateInvoiceProviders";
 
 // Dialog harness
-export {OpenDialogOnMount} from "./providers/OpenDialogOnMount";
+export {OpenDialogButton} from "./providers/OpenDialogButton";
 
 // Store helpers
 export {resetInvoiceStoryStores, seedInvoiceStoryStores, type SeedInvoiceStoryStoresOptions} from "./stores/invoiceStoryStores";

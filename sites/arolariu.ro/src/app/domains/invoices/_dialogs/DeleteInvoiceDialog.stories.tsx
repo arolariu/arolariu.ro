@@ -1,13 +1,13 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {expect, within} from "storybook/test";
-import {OpenDialogOnMount, setupViewInvoiceStory, storyInvoice} from "@/app/domains/invoices/_storybook";
+import {expect, userEvent, waitFor, within} from "storybook/test";
+import {OpenDialogButton, setupViewInvoiceStory, storyInvoice} from "@/app/domains/invoices/_storybook";
 import DeleteInvoiceDialog from "./DeleteInvoiceDialog";
 
 /**
  * DeleteInvoiceDialog displays a destructive confirmation dialog for permanently
  * removing an invoice with all associated data (scans, line items, shared access).
  *
- * This story mounts the real component wrapped in `OpenDialogOnMount` with
+ * This story mounts the real component wrapped in `OpenDialogButton` with
  * `SHARED__INVOICE_DELETE` dialog context seeded with fixture data.
  */
 const meta = {
@@ -43,20 +43,35 @@ export const OpenConfirmation: Story = {
     },
   },
   render: () => (
-    <OpenDialogOnMount
+    <OpenDialogButton
       dialog="SHARED__INVOICE_DELETE"
       mode="delete"
       payload={{invoice: storyInvoice}}>
       <DeleteInvoiceDialog />
-    </OpenDialogOnMount>
+    </OpenDialogButton>
   ),
-  play: async ({step}) => {
+  play: async ({canvasElement, step}) => {
+    const canvas = within(canvasElement);
     const body = within(document.body);
+    const openButton = canvas.getByRole("button", {name: /open dialog/i});
 
-    await step("renders destructive confirmation dialog", async () => {
+    await step("opens the dialog via the trigger button", async () => {
+      await userEvent.click(openButton);
       await expect(await body.findByRole("dialog")).toBeInTheDocument();
       const nameMatches = await body.findAllByText(storyInvoice.name);
       await expect(nameMatches.length).toBeGreaterThan(0);
+    });
+
+    await step("closes the dialog with Escape", async () => {
+      await userEvent.keyboard("{Escape}");
+      await waitFor(async () => {
+        await expect(body.queryByRole("dialog")).not.toBeInTheDocument();
+      });
+    });
+
+    await step("re-opens the dialog via the trigger button", async () => {
+      await userEvent.click(openButton);
+      await expect(await body.findByRole("dialog")).toBeInTheDocument();
     });
   },
 };

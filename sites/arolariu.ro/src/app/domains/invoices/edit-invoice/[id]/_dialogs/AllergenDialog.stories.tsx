@@ -1,12 +1,12 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {OpenDialogOnMount, storyInvoice, storyProducts} from "../../../_storybook";
+import {OpenDialogButton, playOpenDialog, storyInvoice, storyProducts} from "../../../_storybook";
 import AllergenDialog from "./AllergenDialog";
 
 /**
  * AllergenDialog allows users to edit allergens on individual products.
  *
  * @remarks
- * This story mounts the real AllergenDialog component with OpenDialogOnMount
+ * This story mounts the real AllergenDialog component with OpenDialogButton
  * harness, opening the dialog automatically on mount with a story invoice and product payload.
  * Shows quick-add buttons for common allergens and custom allergen entry.
  */
@@ -39,6 +39,7 @@ type Story = StoryObj<typeof meta>;
  * and custom allergen entry field.
  */
 export const ExistingAllergens: Story = {
+  play: playOpenDialog,
 	parameters: {
 		docs: {
 			description: {
@@ -57,12 +58,12 @@ export const ExistingAllergens: Story = {
 		}
 
 		return (
-			<OpenDialogOnMount
+			<OpenDialogButton
 				dialog="EDIT_INVOICE__ALLERGENS"
 				mode="edit"
 				payload={{invoice: storyInvoice, product: milkProduct, productIndex: 0}}>
 				<AllergenDialog />
-			</OpenDialogOnMount>
+			</OpenDialogButton>
 		);
 	},
 };
@@ -74,6 +75,7 @@ export const ExistingAllergens: Story = {
  * Displays empty allergen state with quick-add buttons and custom entry.
  */
 export const NoAllergens: Story = {
+  play: playOpenDialog,
 	parameters: {
 		docs: {
 			description: {
@@ -92,12 +94,12 @@ export const NoAllergens: Story = {
 		}
 
 		return (
-			<OpenDialogOnMount
+			<OpenDialogButton
 				dialog="EDIT_INVOICE__ALLERGENS"
 				mode="edit"
 				payload={{invoice: storyInvoice, product: applesProduct, productIndex: 3}}>
 				<AllergenDialog />
-			</OpenDialogOnMount>
+			</OpenDialogButton>
 		);
 	},
 };

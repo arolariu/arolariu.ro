@@ -1,5 +1,5 @@
 export {WithInvoiceDialogs} from "./DialogProviders";
 export {WithEditInvoiceContext} from "./EditInvoiceProviders";
-export {OpenDialogOnMount} from "./OpenDialogOnMount";
+export {OpenDialogButton} from "./OpenDialogButton";
 export {InvoiceStoryFrame, WithScanUploadContext} from "./ScanUploadProviders";
 export {WithViewInvoiceContext} from "./ViewInvoiceProviders";

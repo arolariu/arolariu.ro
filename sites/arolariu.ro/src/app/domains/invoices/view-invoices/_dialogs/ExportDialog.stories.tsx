@@ -1,6 +1,6 @@
 import type {Meta, StoryObj} from "@storybook/react";
 import {useEffect} from "react";
-import {OpenDialogOnMount, resetInvoiceStoryStores, seedInvoiceStoryStores, storyInvoices} from "../../_storybook";
+import {OpenDialogButton, playOpenDialog, resetInvoiceStoryStores, seedInvoiceStoryStores, storyInvoices} from "../../_storybook";
 import ExportDialog from "./ExportDialog";
 
 /**
@@ -52,9 +52,9 @@ function ExportDialogHarness({selected}: Readonly<{selected: boolean}>): React.J
 	}, [selected]);
 
 	return (
-		<OpenDialogOnMount dialog="VIEW_INVOICES__EXPORT" mode="view">
+		<OpenDialogButton dialog="VIEW_INVOICES__EXPORT" mode="view">
 			<ExportDialog />
-		</OpenDialogOnMount>
+		</OpenDialogButton>
 	);
 }
 
@@ -66,6 +66,7 @@ function ExportDialogHarness({selected}: Readonly<{selected: boolean}>): React.J
  * Dialog displays count of all invoices to be exported.
  */
 export const AllInvoices: Story = {
+  play: playOpenDialog,
 	render: () => <ExportDialogHarness selected={false} />,
 };
 
@@ -77,5 +78,6 @@ export const AllInvoices: Story = {
  * Dialog displays count of selected invoices to be exported.
  */
 export const SelectedInvoices: Story = {
+  play: playOpenDialog,
 	render: () => <ExportDialogHarness selected={true} />,
 };

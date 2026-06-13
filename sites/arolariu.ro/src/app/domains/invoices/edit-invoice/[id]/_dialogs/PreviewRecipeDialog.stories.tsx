@@ -1,13 +1,13 @@
 import type {Meta, StoryObj} from "@storybook/react";
 import type {Recipe, RecipeComplexity} from "@/types/invoices/Recipe";
-import {OpenDialogOnMount, storyRecipeEasy} from "../../../_storybook";
+import {OpenDialogButton, playOpenDialog, storyRecipeEasy} from "../../../_storybook";
 import PreviewRecipeDialog from "./PreviewRecipeDialog";
 
 /**
  * PreviewRecipeDialog allows users to view recipe details in read-only mode.
  *
  * @remarks
- * This story mounts the real PreviewRecipeDialog component with OpenDialogOnMount
+ * This story mounts the real PreviewRecipeDialog component with OpenDialogButton
  * harness, opening the dialog automatically on mount with a story recipe payload.
  * Displays recipe name, description, ingredients, complexity, instructions, and cooking times.
  */
@@ -40,6 +40,7 @@ type Story = StoryObj<typeof meta>;
  * instructions, complexity badge, and cooking times.
  */
 export const CompleteRecipe: Story = {
+  play: playOpenDialog,
 	parameters: {
 		docs: {
 			description: {
@@ -51,9 +52,9 @@ export const CompleteRecipe: Story = {
 		},
 	},
 	render: () => (
-		<OpenDialogOnMount dialog="EDIT_INVOICE__RECIPE_PREVIEW" mode="view" payload={{recipe: storyRecipeEasy}}>
+		<OpenDialogButton dialog="EDIT_INVOICE__RECIPE_PREVIEW" mode="view" payload={{recipe: storyRecipeEasy}}>
 			<PreviewRecipeDialog />
-		</OpenDialogOnMount>
+		</OpenDialogButton>
 	),
 };
 
@@ -65,6 +66,7 @@ export const CompleteRecipe: Story = {
  * for optional fields (description, instructions, times).
  */
 export const MinimalRecipe: Story = {
+  play: playOpenDialog,
 	parameters: {
 		docs: {
 			description: {
@@ -89,9 +91,9 @@ export const MinimalRecipe: Story = {
 		};
 
 		return (
-			<OpenDialogOnMount dialog="EDIT_INVOICE__RECIPE_PREVIEW" mode="view" payload={{recipe: minimalRecipe}}>
+			<OpenDialogButton dialog="EDIT_INVOICE__RECIPE_PREVIEW" mode="view" payload={{recipe: minimalRecipe}}>
 				<PreviewRecipeDialog />
-			</OpenDialogOnMount>
+			</OpenDialogButton>
 		);
 	},
 };
