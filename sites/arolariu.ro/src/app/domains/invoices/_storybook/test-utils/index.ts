@@ -6,6 +6,8 @@ import {storyMerchant, storyMerchants} from "../fixtures/merchantFixtures";
 import {storyCachedImageScan, storyCachedPdfScan} from "../fixtures/scanFixtures";
 import {resetInvoiceStoryStores, seedInvoiceStoryStores} from "../stores/invoiceStoryStores";
 
+export {playOpenDialog} from "./dialogPlay";
+
 /**
  * Resets and seeds stores for invoice-list stories.
  *
