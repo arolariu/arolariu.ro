@@ -80,15 +80,19 @@ export const withFontSwitcher: Decorator = (Story, context) => {
 };
 
 /**
- * Sets data-theme-preset attribute from toolbar.
- * Uses a React key to force full remount when preset changes.
+ * Applies the selected theme preset by mirroring production's PreferencesSubscriptions:
+ * sets data-theme-preset on <html> so [data-theme-preset] and
+ * [data-theme-preset].dark SCSS selectors both match.
  */
 export const withThemePreset: Decorator = (Story, context) => {
   const preset = (context.globals["themePreset"] as string) ?? "default";
+
+  if (typeof document !== "undefined") {
+    document.documentElement.dataset["themePreset"] = preset;
+  }
+
   return (
-    <div
-      key={`preset-${preset}`}
-      data-theme-preset={preset}>
+    <div key={`preset-${preset}`}>
       <Story />
     </div>
   );
