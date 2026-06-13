@@ -13,7 +13,7 @@ import UploadPreview from "./UploadPreview";
  * Stories use WithScanUploadContext provider to supply the required context.
  */
 const meta = {
-  title: "Invoices/UploadScans/UploadPreview",
+  title: "arolariu.ro/IMS/UploadScans/UploadPreview",
   component: UploadPreview,
   tags: ["autodocs"],
   parameters: {

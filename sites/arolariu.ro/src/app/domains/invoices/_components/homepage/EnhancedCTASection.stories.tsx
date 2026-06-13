@@ -8,7 +8,7 @@ import EnhancedCTASection from "./EnhancedCTASection";
  * Uses the `Invoices.Homepage` i18n namespace.
  */
 const meta = {
-  title: "Invoices/Homepage/EnhancedCTASection",
+  title: "arolariu.ro/IMS/Homepage/EnhancedCTASection",
   component: EnhancedCTASection,
   parameters: {
     layout: "fullscreen",

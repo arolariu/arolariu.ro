@@ -24,7 +24,7 @@ function InvoiceDetailsFormWithSelection({scansToSelect}: Readonly<{scansToSelec
 }
 
 const meta = {
-	title: "Invoices/CreateInvoice/InvoiceDetailsForm",
+	title: "arolariu.ro/IMS/CreateInvoice/InvoiceDetailsForm",
 	component: InvoiceDetailsForm,
 	parameters: {
 		layout: "fullscreen",

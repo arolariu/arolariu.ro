@@ -9,7 +9,7 @@ import WorkflowCard from "./WorkflowCard";
  * This is a pure presentational component with no translations.
  */
 const meta = {
-  title: "Invoices/Homepage/WorkflowCard",
+  title: "arolariu.ro/IMS/Homepage/WorkflowCard",
   component: WorkflowCard,
   parameters: {
     layout: "centered",

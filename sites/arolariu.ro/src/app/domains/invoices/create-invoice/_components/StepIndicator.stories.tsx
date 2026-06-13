@@ -19,7 +19,7 @@ function StepIndicatorWithStep({step}: Readonly<{step: "select-scans" | "details
 }
 
 const meta = {
-	title: "Invoices/CreateInvoice/StepIndicator",
+	title: "arolariu.ro/IMS/CreateInvoice/StepIndicator",
 	component: StepIndicator,
 	parameters: {
 		layout: "centered",

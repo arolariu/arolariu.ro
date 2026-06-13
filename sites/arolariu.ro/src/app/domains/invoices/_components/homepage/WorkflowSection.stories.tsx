@@ -8,7 +8,7 @@ import WorkflowSection from "./WorkflowSection";
  * Uses the `Invoices.Homepage` i18n namespace.
  */
 const meta = {
-  title: "Invoices/Homepage/WorkflowSection",
+  title: "arolariu.ro/IMS/Homepage/WorkflowSection",
   component: WorkflowSection,
   parameters: {
     layout: "fullscreen",

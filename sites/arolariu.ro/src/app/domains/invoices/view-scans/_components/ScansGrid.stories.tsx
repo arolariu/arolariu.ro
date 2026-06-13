@@ -19,7 +19,7 @@ const thirdReadyScan = {
 } as const;
 
 const meta = {
-  title: "Invoices/ViewScans/ScansGrid",
+  title: "arolariu.ro/IMS/ViewScans/Components/ScansGrid",
   component: ScansGrid,
   parameters: {
     layout: "fullscreen",

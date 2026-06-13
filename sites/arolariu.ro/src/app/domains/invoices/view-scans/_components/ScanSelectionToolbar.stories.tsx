@@ -10,7 +10,7 @@ import ScanSelectionToolbar from "./ScanSelectionToolbar";
  * actions like creating invoices. Depends on `useScans` hook.
  */
 const meta = {
-  title: "Invoices/ViewScans/ScanSelectionToolbar",
+  title: "arolariu.ro/IMS/ViewScans/Components/ScanSelectionToolbar",
   component: ScanSelectionToolbar,
   parameters: {
     layout: "fullscreen",

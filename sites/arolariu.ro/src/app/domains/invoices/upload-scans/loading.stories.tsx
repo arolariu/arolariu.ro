@@ -6,7 +6,7 @@ import Loading from "./loading";
  * upload area placeholders.
  */
 const meta = {
-  title: "Invoices/UploadScans/Loading",
+  title: "arolariu.ro/IMS/UploadScans/Loading",
   component: Loading,
   parameters: {
     layout: "fullscreen",

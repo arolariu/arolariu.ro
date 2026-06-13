@@ -10,7 +10,7 @@ import {storyImageScanUrl, storyPdfScanUrl} from "@/app/domains/invoices/_storyb
 import {logStoryAction} from "@/app/domains/invoices/_storybook/utils/storyActions";
 
 const meta = {
-	title: "Invoices/Shared/ScanMediaPreview",
+	title: "arolariu.ro/IMS/Shared/ScanMediaPreview",
 	component: ScanMediaPreview,
 	parameters: {
 		layout: "centered",

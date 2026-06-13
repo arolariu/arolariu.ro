@@ -39,7 +39,7 @@ function ScanSelectorWithSelection({scansToSelect}: Readonly<{scansToSelect: Cac
 }
 
 const meta = {
-	title: "Invoices/CreateInvoice/ScanSelector",
+	title: "arolariu.ro/IMS/CreateInvoice/ScanSelector",
 	component: ScanSelector,
 	parameters: {
 		layout: "fullscreen",

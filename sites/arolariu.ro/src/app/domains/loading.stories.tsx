@@ -6,7 +6,7 @@ import Loading from "./loading";
  * progress bar, title, subtitle, and service cards grid placeholders.
  */
 const meta = {
-  title: "Invoices/States/DomainsLoading",
+  title: "arolariu.ro/IMS/States/DomainsLoading",
   component: Loading,
   parameters: {
     layout: "fullscreen",

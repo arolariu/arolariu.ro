@@ -10,7 +10,7 @@ import UploadArea from "./UploadArea";
  * This story mounts the real UploadArea component wrapped with WithScanUploadContext.
  */
 const meta = {
-	title: "Invoices/UploadScans/UploadArea",
+	title: "arolariu.ro/IMS/UploadScans/UploadArea",
 	component: UploadArea,
 	parameters: {
 		layout: "centered",

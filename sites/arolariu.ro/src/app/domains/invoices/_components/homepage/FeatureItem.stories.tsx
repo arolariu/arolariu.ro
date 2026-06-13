@@ -8,7 +8,7 @@ import FeatureItem from "./FeatureItem";
  * This is a pure presentational component with no translations.
  */
 const meta = {
-  title: "Invoices/Homepage/FeatureItem",
+  title: "arolariu.ro/IMS/Homepage/FeatureItem",
   component: FeatureItem,
   parameters: {
     layout: "centered",
