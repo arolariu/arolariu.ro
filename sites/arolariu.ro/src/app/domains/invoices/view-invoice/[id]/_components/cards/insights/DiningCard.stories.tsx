@@ -1,6 +1,9 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {storyInvoice, storyProducts, WithViewInvoiceContext} from "@/app/domains/invoices/_storybook";
+import type {Invoice} from "@/types/invoices";
+import {invoicePresets, storyInvoice, storyProducts, WithViewInvoiceContext, withEntityPreset} from "@/app/domains/invoices/_storybook";
 import {DiningCard} from "./DiningCard";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 /**
  * DiningCard displays dining-related insights from restaurant/fast-food invoices,
@@ -15,15 +18,21 @@ const meta = {
   parameters: {
     layout: "centered",
   },
-} satisfies Meta<typeof DiningCard>;
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /** Dining insights for a full multi-item receipt. */
 export const Default: Story = {
-  render: () => (
-    <WithViewInvoiceContext invoice={storyInvoice}>
+  render: ({invoice}) => (
+    <WithViewInvoiceContext invoice={invoice}>
       <DiningCard />
     </WithViewInvoiceContext>
   ),
@@ -31,12 +40,12 @@ export const Default: Story = {
 
 /** Dining insights for a small single-item, low-cost receipt. */
 export const SingleDiner: Story = {
-  render: () => (
+  render: ({invoice}) => (
     <WithViewInvoiceContext
       invoice={{
-        ...storyInvoice,
+        ...invoice,
         items: storyProducts.slice(0, 1),
-        paymentInformation: {...storyInvoice.paymentInformation, totalCostAmount: 12.5},
+        paymentInformation: {...invoice.paymentInformation, totalCostAmount: 12.5},
       }}>
       <DiningCard />
     </WithViewInvoiceContext>

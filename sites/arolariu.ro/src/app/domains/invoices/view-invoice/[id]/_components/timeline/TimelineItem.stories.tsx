@@ -1,7 +1,14 @@
 import type {Meta, StoryObj} from "@storybook/react";
 import {TbCheck, TbFileInvoice, TbRobot, TbShare, TbStar} from "react-icons/tb";
+import type {TimelineEvent} from "../../_types/timeline";
 import {TimelineEventType} from "../../_types/timeline";
 import {TimelineItem} from "./TimelineItem";
+
+type StoryArgs = {
+  event: TimelineEvent;
+  icon: React.ReactNode;
+  isLast: boolean;
+};
 
 /**
  * TimelineItem renders a single event in the invoice timeline with an icon,
@@ -13,10 +20,15 @@ const meta = {
   parameters: {
     layout: "centered",
   },
-} satisfies Meta<typeof TimelineItem>;
+  argTypes: {
+    event: {control: "object"},
+    icon: {control: false},
+    isLast: {control: "boolean"},
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /** Created event — the first event in any timeline. */
 export const CreatedEvent: Story = {
@@ -34,6 +46,7 @@ export const CreatedEvent: Story = {
     icon: <TbFileInvoice style={{height: "0.875rem", width: "0.875rem"}} />,
     isLast: false,
   },
+  render: ({event, icon, isLast}) => <TimelineItem event={event} icon={icon} isLast={isLast} />,
 };
 
 /** AI analysis event. */
@@ -52,6 +65,7 @@ export const AIAnalysisEvent: Story = {
     icon: <TbRobot style={{height: "0.875rem", width: "0.875rem"}} />,
     isLast: false,
   },
+  render: ({event, icon, isLast}) => <TimelineItem event={event} icon={icon} isLast={isLast} />,
 };
 
 /** Shared event. */
@@ -70,6 +84,7 @@ export const SharedEvent: Story = {
     icon: <TbShare style={{height: "0.875rem", width: "0.875rem"}} />,
     isLast: false,
   },
+  render: ({event, icon, isLast}) => <TimelineItem event={event} icon={icon} isLast={isLast} />,
 };
 
 /** Marked important — last event in timeline. */
@@ -87,6 +102,7 @@ export const MarkedImportantLast: Story = {
     icon: <TbStar style={{height: "0.875rem", width: "0.875rem"}} />,
     isLast: true,
   },
+  render: ({event, icon, isLast}) => <TimelineItem event={event} icon={icon} isLast={isLast} />,
 };
 
 /** Pending event (not yet completed). */
@@ -105,6 +121,7 @@ export const PendingEvent: Story = {
     icon: <TbCheck style={{height: "0.875rem", width: "0.875rem"}} />,
     isLast: true,
   },
+  render: ({event, icon, isLast}) => <TimelineItem event={event} icon={icon} isLast={isLast} />,
 };
 
 /** Event with a very long description to test text wrapping and overflow. */
@@ -127,6 +144,7 @@ export const WithLongDescription: Story = {
     icon: <TbFileInvoice style={{height: "0.875rem", width: "0.875rem"}} />,
     isLast: false,
   },
+  render: ({event, icon, isLast}) => <TimelineItem event={event} icon={icon} isLast={isLast} />,
 };
 
 /** Error/warning type event — exported with a failed state. */
@@ -145,6 +163,7 @@ export const ErrorEvent: Story = {
     icon: <TbFileInvoice style={{height: "0.875rem", width: "0.875rem"}} />,
     isLast: true,
   },
+  render: ({event, icon, isLast}) => <TimelineItem event={event} icon={icon} isLast={isLast} />,
 };
 
 /** Completed event with checkmark styling — final step in a workflow. */
@@ -163,4 +182,5 @@ export const Completed: Story = {
     icon: <TbCheck style={{height: "0.875rem", width: "0.875rem"}} />,
     isLast: true,
   },
+  render: ({event, icon, isLast}) => <TimelineItem event={event} icon={icon} isLast={isLast} />,
 };

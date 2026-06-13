@@ -1,6 +1,9 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {storyInvoice, WithViewInvoiceContext} from "@/app/domains/invoices/_storybook";
+import type {Invoice} from "@/types/invoices";
+import {invoicePresets, storyInvoice, WithViewInvoiceContext, withEntityPreset} from "@/app/domains/invoices/_storybook";
 import {VehicleCard} from "./VehicleCard";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 /**
  * VehicleCard shows fuel/vehicle spending insights with a spend trend chart.
@@ -14,15 +17,21 @@ const meta = {
   parameters: {
     layout: "centered",
   },
-} satisfies Meta<typeof VehicleCard>;
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /** Vehicle insights for a standard fuel receipt. */
 export const Default: Story = {
-  render: () => (
-    <WithViewInvoiceContext invoice={storyInvoice}>
+  render: ({invoice}) => (
+    <WithViewInvoiceContext invoice={invoice}>
       <VehicleCard />
     </WithViewInvoiceContext>
   ),
@@ -30,11 +39,11 @@ export const Default: Story = {
 
 /** Vehicle insights for a high-cost fill-up. */
 export const HighFuelSpend: Story = {
-  render: () => (
+  render: ({invoice}) => (
     <WithViewInvoiceContext
       invoice={{
-        ...storyInvoice,
-        paymentInformation: {...storyInvoice.paymentInformation, totalCostAmount: 320.75},
+        ...invoice,
+        paymentInformation: {...invoice.paymentInformation, totalCostAmount: 320.75},
       }}>
       <VehicleCard />
     </WithViewInvoiceContext>

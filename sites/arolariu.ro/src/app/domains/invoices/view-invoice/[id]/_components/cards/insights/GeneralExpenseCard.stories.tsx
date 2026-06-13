@@ -1,6 +1,9 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {storyInvoice, WithViewInvoiceContext} from "@/app/domains/invoices/_storybook";
+import type {Invoice} from "@/types/invoices";
+import {invoicePresets, storyInvoice, WithViewInvoiceContext, withEntityPreset} from "@/app/domains/invoices/_storybook";
 import {GeneralExpenseCard} from "./GeneralExpenseCard";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 /**
  * GeneralExpenseCard shows a general-purpose expense breakdown with auto-detected
@@ -15,15 +18,21 @@ const meta = {
   parameters: {
     layout: "centered",
   },
-} satisfies Meta<typeof GeneralExpenseCard>;
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /** General expense insights for a standard-value receipt. */
 export const Default: Story = {
-  render: () => (
-    <WithViewInvoiceContext invoice={storyInvoice}>
+  render: ({invoice}) => (
+    <WithViewInvoiceContext invoice={invoice}>
       <GeneralExpenseCard />
     </WithViewInvoiceContext>
   ),
@@ -31,11 +40,11 @@ export const Default: Story = {
 
 /** General expense insights for a high-value purchase. */
 export const HighValue: Story = {
-  render: () => (
+  render: ({invoice}) => (
     <WithViewInvoiceContext
       invoice={{
-        ...storyInvoice,
-        paymentInformation: {...storyInvoice.paymentInformation, totalCostAmount: 2499.99},
+        ...invoice,
+        paymentInformation: {...invoice.paymentInformation, totalCostAmount: 2499.99},
       }}>
       <GeneralExpenseCard />
     </WithViewInvoiceContext>

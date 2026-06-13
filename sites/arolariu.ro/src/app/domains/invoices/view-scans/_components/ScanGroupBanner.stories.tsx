@@ -1,69 +1,85 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {resetInvoiceStoryStores, seedInvoiceStoryStores, storyCachedImageScan, storyCachedPdfScan} from "../../_storybook";
+import type {Scan} from "@/types/invoices";
+import {
+  resetInvoiceStoryStores,
+  scanPresets,
+  seedInvoiceStoryStores,
+  storyCachedImageScan,
+  storyCachedPdfScan,
+  withEntityPreset,
+} from "../../_storybook";
 import ScanGroupBanner from "./ScanGroupBanner";
+
+type StoryArgs = {scan: Scan; scanPreset: "image" | "pdf"};
 
 /**
  * Create scan fixtures uploaded within 5 minutes of each other.
  */
 const scanGroup = [
-	{
-		...storyCachedImageScan,
-		id: "scan-group-1",
-		name: "Receipt 1",
-		uploadedAt: new Date("2024-03-15T10:00:00.000Z"),
-		metadata: {
-			...storyCachedImageScan.metadata,
-			scanId: "scan-group-1",
-			uploadedAt: new Date("2024-03-15T10:00:00.000Z"),
-		},
-	},
-	{
-		...storyCachedPdfScan,
-		id: "scan-group-2",
-		name: "Receipt 2",
-		uploadedAt: new Date("2024-03-15T10:02:00.000Z"),
-		metadata: {
-			...storyCachedPdfScan.metadata,
-			scanId: "scan-group-2",
-			uploadedAt: new Date("2024-03-15T10:02:00.000Z"),
-		},
-	},
-	{
-		...storyCachedImageScan,
-		id: "scan-group-3",
-		name: "Receipt 3",
-		uploadedAt: new Date("2024-03-15T10:04:00.000Z"),
-		metadata: {
-			...storyCachedImageScan.metadata,
-			scanId: "scan-group-3",
-			uploadedAt: new Date("2024-03-15T10:04:00.000Z"),
-		},
-	},
+  {
+    ...storyCachedImageScan,
+    id: "scan-group-1",
+    name: "Receipt 1",
+    uploadedAt: new Date("2024-03-15T10:00:00.000Z"),
+    metadata: {
+      ...storyCachedImageScan.metadata,
+      scanId: "scan-group-1",
+      uploadedAt: new Date("2024-03-15T10:00:00.000Z"),
+    },
+  },
+  {
+    ...storyCachedPdfScan,
+    id: "scan-group-2",
+    name: "Receipt 2",
+    uploadedAt: new Date("2024-03-15T10:02:00.000Z"),
+    metadata: {
+      ...storyCachedPdfScan.metadata,
+      scanId: "scan-group-2",
+      uploadedAt: new Date("2024-03-15T10:02:00.000Z"),
+    },
+  },
+  {
+    ...storyCachedImageScan,
+    id: "scan-group-3",
+    name: "Receipt 3",
+    uploadedAt: new Date("2024-03-15T10:04:00.000Z"),
+    metadata: {
+      ...storyCachedImageScan.metadata,
+      scanId: "scan-group-3",
+      uploadedAt: new Date("2024-03-15T10:04:00.000Z"),
+    },
+  },
 ] as const;
 
 const meta = {
-	title: "arolariu.ro/IMS/Banners/Scan/ScanGroupBanner",
-	component: ScanGroupBanner,
-	parameters: {
-		layout: "fullscreen",
-		docs: {
-			description: {
-				component:
-					"Banner that suggests combining scans uploaded within 5 minutes of each other. Displays thumbnails of grouped scans and provides quick navigation to invoice creation. Dismissible with session storage persistence.",
-			},
-		},
-	},
-	decorators: [
-		(Story) => (
-			<div style={{padding: "2rem", backgroundColor: "var(--color-background)"}}>
-				<Story />
-			</div>
-		),
-	],
-} satisfies Meta<typeof ScanGroupBanner>;
+  title: "arolariu.ro/IMS/Banners/Scan/ScanGroupBanner",
+  component: ScanGroupBanner,
+  parameters: {
+    layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "Banner that suggests combining scans uploaded within 5 minutes of each other. Displays thumbnails of grouped scans and provides quick navigation to invoice creation. Dismissible with session storage persistence.",
+      },
+    },
+  },
+  argTypes: {
+    scanPreset: {control: "select", options: ["image", "pdf"]},
+    scan: {control: "object"},
+  },
+  args: {scanPreset: "image", scan: storyCachedImageScan},
+  decorators: [
+    withEntityPreset("scanPreset", "scan", scanPresets),
+    (Story) => (
+      <div style={{padding: "2rem", backgroundColor: "var(--color-background)"}}>
+        <Story />
+      </div>
+    ),
+  ],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 export const WithGroupedScans: Story = {
 	beforeEach: () => {
