@@ -1,4 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import {expect, within} from "storybook/test";
 import {setupViewInvoiceStory, storyInvoice, storyProducts, storyRecipeEasy, WithViewInvoiceContext} from "@/app/domains/invoices/_storybook";
 import {ProductCategory} from "@/types/invoices";
 import {InvoiceHealthScore} from "./InvoiceHealthScore";
@@ -80,6 +81,13 @@ export const Perfect: Story = {
         <InvoiceHealthScore />
       </WithViewInvoiceContext>
     );
+  },
+  play: async ({canvasElement, step}) => {
+    const canvas = within(canvasElement);
+
+    await step("renders health score content", async () => {
+      await expect(canvas.getAllByText(/health/i).length).toBeGreaterThan(0);
+    });
   },
   parameters: {
     docs: {

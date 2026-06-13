@@ -1,4 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import {expect, within} from "storybook/test";
 import {setupScanUploadStory, WithScanUploadContext} from "@/app/domains/invoices/_storybook";
 import UploadArea from "./UploadArea";
 
@@ -33,4 +34,12 @@ type Story = StoryObj<typeof meta>;
  * Empty state — no files selected yet.
  * The component renders the large dropzone with instructions.
  */
-export const EmptyState: Story = {};
+export const EmptyState: Story = {
+	play: async ({canvasElement, step}) => {
+		const canvas = within(canvasElement);
+
+		await step("renders upload interaction target", async () => {
+			await expect(canvas.getAllByText(/drag/i).length).toBeGreaterThan(0);
+		});
+	},
+};

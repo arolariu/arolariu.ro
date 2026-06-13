@@ -1,4 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import {expect, within} from "storybook/test";
 import {OpenDialogOnMount, setupViewInvoiceStory, storyInvoice} from "@/app/domains/invoices/_storybook";
 import DeleteInvoiceDialog from "./DeleteInvoiceDialog";
 
@@ -49,4 +50,13 @@ export const OpenConfirmation: Story = {
       <DeleteInvoiceDialog />
     </OpenDialogOnMount>
   ),
+  play: async ({step}) => {
+    const body = within(document.body);
+
+    await step("renders destructive confirmation dialog", async () => {
+      await expect(await body.findByRole("dialog")).toBeInTheDocument();
+      const nameMatches = await body.findAllByText(storyInvoice.name);
+      await expect(nameMatches.length).toBeGreaterThan(0);
+    });
+  },
 };
