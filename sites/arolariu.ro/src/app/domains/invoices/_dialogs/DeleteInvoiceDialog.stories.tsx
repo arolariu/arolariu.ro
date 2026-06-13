@@ -1,6 +1,6 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import {OpenDialogOnMount, setupViewInvoiceStory, storyInvoice} from "@/app/domains/invoices/_storybook";
 import DeleteInvoiceDialog from "./DeleteInvoiceDialog";
-import {OpenDialogOnMount, storyInvoice} from "../_storybook";
 
 /**
  * DeleteInvoiceDialog displays a destructive confirmation dialog for permanently
@@ -21,6 +21,9 @@ const meta = {
           "Displays invoice identifier, title, and metadata with clear warning messaging. Mounted with real dialog context.",
       },
     },
+  },
+  beforeEach: () => {
+    setupViewInvoiceStory({invoice: storyInvoice});
   },
 } satisfies Meta<typeof DeleteInvoiceDialog>;
 

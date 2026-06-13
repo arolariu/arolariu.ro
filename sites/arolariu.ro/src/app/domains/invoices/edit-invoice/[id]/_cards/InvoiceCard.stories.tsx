@@ -1,6 +1,6 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import {setupEditInvoiceStory, storyInvoice, storyMerchant, WithEditInvoiceContext} from "@/app/domains/invoices/_storybook";
 import InvoiceCard from "./InvoiceCard";
-import {storyInvoice, storyMerchant, WithEditInvoiceContext} from "../../../_storybook";
 
 /**
  * InvoiceCard (edit) displays comprehensive invoice details with inline editing.
@@ -20,6 +20,9 @@ const meta = {
           "Mounted with real EditInvoiceContext provider.",
       },
     },
+  },
+  beforeEach: () => {
+    setupEditInvoiceStory({invoice: storyInvoice, merchant: storyMerchant});
   },
 } satisfies Meta<typeof InvoiceCard>;
 

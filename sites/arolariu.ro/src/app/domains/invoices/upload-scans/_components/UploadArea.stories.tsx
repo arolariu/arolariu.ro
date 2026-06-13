@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {WithScanUploadContext} from "../../_storybook";
+import {setupScanUploadStory, WithScanUploadContext} from "@/app/domains/invoices/_storybook";
 import UploadArea from "./UploadArea";
 
 /**
@@ -13,6 +13,9 @@ const meta = {
 	component: UploadArea,
 	parameters: {
 		layout: "centered",
+	},
+	beforeEach: () => {
+		setupScanUploadStory();
 	},
 	decorators: [
 		(Story) => (

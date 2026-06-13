@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {WithViewInvoiceContext, storyInvoice, storyProducts, storyRecipeEasy} from "@/app/domains/invoices/_storybook";
+import {setupViewInvoiceStory, storyInvoice, storyProducts, storyRecipeEasy, WithViewInvoiceContext} from "@/app/domains/invoices/_storybook";
 import {ProductCategory} from "@/types/invoices";
 import {InvoiceHealthScore} from "./InvoiceHealthScore";
 
@@ -39,6 +39,9 @@ const meta = {
     },
   },
   tags: ["autodocs"],
+  beforeEach: () => {
+    setupViewInvoiceStory({invoice: storyInvoice});
+  },
 } satisfies Meta<typeof InvoiceHealthScore>;
 
 export default meta;
