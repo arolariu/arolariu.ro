@@ -11,6 +11,7 @@
 
 import {ScanUploadProvider} from "../../upload-scans/_context/ScanUploadContext";
 import type {ReactNode} from "react";
+import styles from "../styles/InvoiceStoryFrame.module.css";
 
 /**
  * Simple padded container for invoice story layouts.
@@ -20,7 +21,7 @@ import type {ReactNode} from "react";
  * @returns A padded container with standard spacing.
  */
 export function InvoiceStoryFrame({children}: Readonly<{children: ReactNode}>): React.JSX.Element {
-	return <div style={{padding: "2rem"}}>{children}</div>;
+	return <div className={styles.frame}>{children}</div>;
 }
 
 /**

@@ -69,3 +69,10 @@ export * as mockMerchantActions from "./mocks/actions/merchants";
 // Mock hooks
 export * as mockInvoiceHooks from "./mocks/hooks/invoice";
 export * as mockScanHooks from "./mocks/hooks/scan";
+
+// Focused entrypoints (re-exported for backward-compatible barrel access)
+export * from "./fixtures";
+export * from "./providers";
+export * from "./stores";
+export * from "./test-utils";
+export {getInvoiceStorybookAliases, getInvoiceStorybookResolverPlugins} from "./domainAliases";
