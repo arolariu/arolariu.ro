@@ -1,6 +1,6 @@
 import type {Meta, StoryObj} from "@storybook/react";
 import DeleteScanDialog from "./DeleteScanDialog";
-import {OpenDialogButton, playOpenDialog, storyCachedImageScan} from "../_storybook";
+import {OpenDialogButton, playOpenDialog, storyCachedImageScan, storyCachedPdfScan} from "../_storybook";
 
 /**
  * DeleteScanDialog displays a destructive confirmation dialog for permanently
@@ -28,6 +28,19 @@ export const OpenConfirmation: Story = {
       dialog="SHARED__SCAN_DELETE"
       mode="delete"
       payload={{scan: storyCachedImageScan}}>
+      <DeleteScanDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Confirmation dialog for deleting a standalone PDF scan. */
+export const PdfScan: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog="SHARED__SCAN_DELETE"
+      mode="delete"
+      payload={{scan: storyCachedPdfScan}}>
       <DeleteScanDialog />
     </OpenDialogButton>
   ),

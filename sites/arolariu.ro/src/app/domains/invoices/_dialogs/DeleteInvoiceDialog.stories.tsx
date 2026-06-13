@@ -1,6 +1,6 @@
 import type {Meta, StoryObj} from "@storybook/react";
 import {expect, userEvent, waitFor, within} from "storybook/test";
-import {OpenDialogButton, setupViewInvoiceStory, storyInvoice} from "@/app/domains/invoices/_storybook";
+import {OpenDialogButton, playOpenDialog, setupViewInvoiceStory, storyInvoice} from "@/app/domains/invoices/_storybook";
 import DeleteInvoiceDialog from "./DeleteInvoiceDialog";
 
 /**
@@ -74,4 +74,24 @@ export const OpenConfirmation: Story = {
       await expect(await body.findByRole("dialog")).toBeInTheDocument();
     });
   },
+};
+
+/** Delete dialog for an invoice with no scans, line items, or shares (minimal impact). */
+export const MinimalInvoice: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Delete confirmation for an invoice with no associated scans, line items, or shared access, showing the minimal-impact variant of the warning.",
+      },
+    },
+  },
+  render: () => (
+    <OpenDialogButton
+      dialog="SHARED__INVOICE_DELETE"
+      mode="delete"
+      payload={{invoice: {...storyInvoice, items: [], scans: [], sharedWith: []}}}>
+      <DeleteInvoiceDialog />
+    </OpenDialogButton>
+  ),
+  play: playOpenDialog,
 };
