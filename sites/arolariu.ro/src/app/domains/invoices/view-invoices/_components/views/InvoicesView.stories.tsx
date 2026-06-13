@@ -67,3 +67,21 @@ export const EmptyState: Story = {
     },
   },
 };
+
+/** Sparse list with a single invoice. */
+export const FewInvoices: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyInvoices.slice(0, 1)});
+  },
+  args: {
+    invoices: storyInvoices.slice(0, 1),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice list view populated with a single invoice to show the sparse-list layout between the empty and full states.",
+      },
+    },
+  },
+};
