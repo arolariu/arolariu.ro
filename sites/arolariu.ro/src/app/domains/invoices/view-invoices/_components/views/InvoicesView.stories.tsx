@@ -7,7 +7,7 @@ import RenderInvoicesView from "./InvoicesView";
  * Depends on `useDialog`, Next.js navigation hooks, and `usePaginationWithSearch`.
  */
 const meta = {
-  title: "Invoices/ViewInvoices/Views/InvoicesView",
+  title: "arolariu.ro/IMS/ViewInvoices/Views/InvoicesView",
   component: RenderInvoicesView,
   tags: ["autodocs"],
   decorators: [

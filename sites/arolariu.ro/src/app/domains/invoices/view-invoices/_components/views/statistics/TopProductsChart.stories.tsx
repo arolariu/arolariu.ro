@@ -19,7 +19,7 @@ import {TopProductsChart} from "./TopProductsChart";
  * - Shopping habit analysis
  */
 const meta = {
-  title: "Invoices/Statistics/TopProductsChart",
+  title: "arolariu.ro/IMS/ViewInvoices/Statistics/TopProductsChart",
   component: TopProductsChart,
   parameters: {
     layout: "padded",

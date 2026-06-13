@@ -21,7 +21,7 @@ import {ComparisonCards} from "./ComparisonCards";
  * - Financial behavior insights
  */
 const meta = {
-  title: "Invoices/ViewInvoices/Statistics/ComparisonCards",
+  title: "arolariu.ro/IMS/ViewInvoices/Statistics/ComparisonCards",
   component: ComparisonCards,
   parameters: {
     layout: "padded",

@@ -21,7 +21,7 @@ import {PriceDistributionChart} from "./PriceDistributionChart";
  * - Spending outlier identification
  */
 const meta = {
-  title: "Invoices/ViewInvoices/Statistics/PriceDistributionChart",
+  title: "arolariu.ro/IMS/ViewInvoices/Statistics/PriceDistributionChart",
   component: PriceDistributionChart,
   parameters: {
     layout: "padded",

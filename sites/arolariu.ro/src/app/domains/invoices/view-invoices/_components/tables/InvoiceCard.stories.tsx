@@ -9,7 +9,7 @@ import {InvoiceCard} from "./InvoiceCard";
  * Wrapped with DialogProvider to provide required dialog context.
  */
 const meta = {
-	title: "Invoices/ViewInvoices/Tables/InvoiceCard",
+	title: "arolariu.ro/IMS/ViewInvoices/Tables/InvoiceCard",
 	component: InvoiceCard,
 	parameters: {
 		layout: "centered",

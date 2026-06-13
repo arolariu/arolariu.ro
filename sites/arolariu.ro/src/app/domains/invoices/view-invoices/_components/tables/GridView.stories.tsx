@@ -7,7 +7,7 @@ import {GridView} from "./GridView";
  * titles, dates, amounts, and selection checkboxes.
  */
 const meta = {
-  title: "Invoices/ViewInvoices/Views/GridView",
+  title: "arolariu.ro/IMS/ViewInvoices/Views/GridView",
   component: GridView,
   tags: ["autodocs"],
   parameters: {

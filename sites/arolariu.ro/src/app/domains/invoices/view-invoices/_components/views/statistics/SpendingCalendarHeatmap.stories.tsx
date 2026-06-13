@@ -71,7 +71,7 @@ function createFixedDateConstructor(fixedTime: number): DateConstructor {
  * - Budget tracking by day
  */
 const meta = {
-  title: "Invoices/ViewInvoices/Statistics/SpendingCalendarHeatmap",
+  title: "arolariu.ro/IMS/ViewInvoices/Statistics/SpendingCalendarHeatmap",
   component: SpendingCalendarHeatmap,
   parameters: {
     layout: "padded",

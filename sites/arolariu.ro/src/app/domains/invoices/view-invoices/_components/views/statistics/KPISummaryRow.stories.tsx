@@ -21,7 +21,7 @@ import {KPISummaryRow} from "./KPISummaryRow";
  * - Spending behavior insights
  */
 const meta = {
-  title: "Invoices/ViewInvoices/Statistics/KPISummaryRow",
+  title: "arolariu.ro/IMS/ViewInvoices/Statistics/KPISummaryRow",
   component: KPISummaryRow,
   parameters: {
     layout: "padded",
