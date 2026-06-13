@@ -76,3 +76,37 @@ export const NoScans: Story = {
 		},
 	},
 };
+
+/**
+ * Important invoice card (flagged) to show the importance indicator.
+ */
+export const Important: Story = {
+	args: {
+		invoice: {
+			...storyInvoice,
+			isImportant: true,
+		},
+		isSelected: false,
+		loading: "eager",
+		onToggleSelection: (invoiceId: string) => {
+			console.log("Toggle selection for invoice:", invoiceId);
+		},
+	},
+};
+
+/**
+ * Invoice card with a very long name to exercise title truncation.
+ */
+export const LongName: Story = {
+	args: {
+		invoice: {
+			...storyInvoice,
+			name: "Monthly Bulk Grocery & Household Supplies Shopping Trip - Mega Image Militari - March 2024",
+		},
+		isSelected: false,
+		loading: "eager",
+		onToggleSelection: (invoiceId: string) => {
+			console.log("Toggle selection for invoice:", invoiceId);
+		},
+	},
+};
