@@ -11,7 +11,7 @@ import DeleteInvoiceDialog from "./DeleteInvoiceDialog";
  * `SHARED__INVOICE_DELETE` dialog context seeded with fixture data.
  */
 const meta = {
-  title: "Invoices/Dialogs/DeleteInvoiceDialog",
+  title: "arolariu.ro/IMS/Dialogs/Invoice/DeleteInvoice",
   component: DeleteInvoiceDialog,
   parameters: {
     layout: "centered",

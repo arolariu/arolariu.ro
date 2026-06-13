@@ -10,7 +10,7 @@ import MerchantDialog from "./MerchantDialog";
  * harness, opening the dialog automatically on mount with a story merchant payload.
  */
 const meta = {
-	title: "Invoices/Dialogs/MerchantDialog",
+	title: "arolariu.ro/IMS/Dialogs/Merchant/MerchantDetails",
 	component: MerchantDialog,
 	parameters: {
 		layout: "centered",

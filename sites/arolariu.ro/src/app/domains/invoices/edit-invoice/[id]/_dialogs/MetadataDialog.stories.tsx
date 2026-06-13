@@ -12,7 +12,7 @@ import {TbDiscFilled} from "react-icons/tb";
  * @see {@link VALID_METADATA_KEYS} for the predefined metadata key definitions
  */
 const meta = {
-  title: "Invoices/EditInvoice/Dialogs/MetadataDialog",
+  title: "arolariu.ro/IMS/Dialogs/Invoice/EditMetadata",
   parameters: {
     layout: "centered",
   },

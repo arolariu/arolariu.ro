@@ -17,7 +17,7 @@ import ImportDialog from "./ImportDialog";
  * Uses `VIEW_INVOICES__IMPORT` dialog with mode `add`.
  */
 const meta = {
-	title: "Invoices/Dialogs/ImportDialog",
+	title: "arolariu.ro/IMS/Dialogs/Invoice/Import",
 	component: ImportDialog,
 	parameters: {
 		layout: "centered",

@@ -8,7 +8,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * with a receipt image placeholder.
  */
 const meta = {
-  title: "Invoices/EditInvoice/Dialogs/ImageDialog",
+  title: "arolariu.ro/IMS/Dialogs/Scan/Image",
   parameters: {
     layout: "centered",
   },

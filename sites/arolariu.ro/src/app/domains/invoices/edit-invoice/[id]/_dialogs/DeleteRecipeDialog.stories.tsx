@@ -11,7 +11,7 @@ import DeleteRecipeDialog from "./DeleteRecipeDialog";
  * Wrapped with EditInvoiceContextProvider to provide required context.
  */
 const meta = {
-	title: "Invoices/Dialogs/DeleteRecipeDialog",
+	title: "arolariu.ro/IMS/Dialogs/Recipe/DeleteRecipe",
 	component: DeleteRecipeDialog,
 	parameters: {
 		layout: "centered",

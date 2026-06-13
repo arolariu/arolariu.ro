@@ -10,7 +10,7 @@ import {OpenDialogButton, playOpenDialog, storyInvoice, storyPublicInvoice, inst
  * `SHARED__INVOICE_SHARE` dialog context and browser mocks for clipboard APIs.
  */
 const meta = {
-  title: "Invoices/Dialogs/ShareInvoiceDialog",
+  title: "arolariu.ro/IMS/Dialogs/Invoice/ShareInvoice",
   component: ShareInvoiceDialog,
   parameters: {
     layout: "centered",

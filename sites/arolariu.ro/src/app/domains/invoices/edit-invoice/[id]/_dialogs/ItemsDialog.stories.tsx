@@ -11,7 +11,7 @@ import {TbDisc, TbPlus, TbTrash} from "react-icons/tb";
  * with sample line items.
  */
 const meta = {
-  title: "Invoices/EditInvoice/Dialogs/ItemsDialog",
+  title: "arolariu.ro/IMS/Dialogs/Products/EditItems",
   parameters: {
     layout: "centered",
   },

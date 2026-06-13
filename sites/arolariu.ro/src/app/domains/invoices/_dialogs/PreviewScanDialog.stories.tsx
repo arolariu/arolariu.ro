@@ -10,7 +10,7 @@ import {OpenDialogButton, playOpenDialog, storyCachedImageScan, storyCachedPdfSc
  * `SHARED__SCAN_PREVIEW` dialog context seeded with fixture data.
  */
 const meta = {
-  title: "Invoices/Dialogs/PreviewScanDialog",
+  title: "arolariu.ro/IMS/Dialogs/Scan/PreviewScan",
   component: PreviewScanDialog,
   parameters: {
     layout: "centered",

@@ -11,7 +11,7 @@ import UpdateRecipeDialog from "./UpdateRecipeDialog";
  * Wrapped with EditInvoiceContextProvider to provide required context.
  */
 const meta = {
-	title: "Invoices/Dialogs/UpdateRecipeDialog",
+	title: "arolariu.ro/IMS/Dialogs/Recipe/UpdateRecipe",
 	component: UpdateRecipeDialog,
 	parameters: {
 		layout: "centered",

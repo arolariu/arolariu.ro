@@ -11,7 +11,7 @@ import {TbArrowsUpDown, TbCalendar, TbDownload, TbSearch} from "react-icons/tb";
  * filtering controls.
  */
 const meta = {
-  title: "Invoices/EditInvoice/Dialogs/MerchantReceiptsDialog",
+  title: "arolariu.ro/IMS/Dialogs/Merchant/MerchantReceipts",
   parameters: {
     layout: "centered",
   },

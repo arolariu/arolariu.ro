@@ -10,7 +10,7 @@ const noop = () => {};
  * with shareable link and QR code tabs. Accepts callback props.
  */
 const meta = {
-  title: "Invoices/Dialogs/ShareInvoiceDialogPublic",
+  title: "arolariu.ro/IMS/Dialogs/Invoice/ShareInvoicePublic",
   component: PublicMode,
   parameters: {
     layout: "centered",

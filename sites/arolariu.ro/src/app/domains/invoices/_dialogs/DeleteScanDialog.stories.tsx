@@ -10,7 +10,7 @@ import {OpenDialogButton, playOpenDialog, storyCachedImageScan, storyCachedPdfSc
  * `SHARED__SCAN_DELETE` dialog context seeded with fixture data.
  */
 const meta = {
-  title: "Invoices/Dialogs/DeleteScanDialog",
+  title: "arolariu.ro/IMS/Dialogs/Scan/DeleteScan",
   component: DeleteScanDialog,
   parameters: {
     layout: "centered",

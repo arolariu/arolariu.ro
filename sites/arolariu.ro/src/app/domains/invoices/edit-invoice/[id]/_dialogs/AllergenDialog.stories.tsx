@@ -11,7 +11,7 @@ import AllergenDialog from "./AllergenDialog";
  * Shows quick-add buttons for common allergens and custom allergen entry.
  */
 const meta = {
-	title: "Invoices/Dialogs/AllergenDialog",
+	title: "arolariu.ro/IMS/Dialogs/Products/EditAllergens",
 	component: AllergenDialog,
 	parameters: {
 		layout: "centered",

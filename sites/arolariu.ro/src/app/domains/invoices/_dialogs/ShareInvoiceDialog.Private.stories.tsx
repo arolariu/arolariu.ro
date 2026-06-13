@@ -10,7 +10,7 @@ const noop = () => {};
  * with email input. Accepts callback props for navigation and form handling.
  */
 const meta = {
-  title: "Invoices/Dialogs/ShareInvoiceDialogPrivate",
+  title: "arolariu.ro/IMS/Dialogs/Invoice/ShareInvoicePrivate",
   component: PrivateMode,
   parameters: {
     layout: "centered",

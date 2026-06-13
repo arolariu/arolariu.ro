@@ -10,7 +10,7 @@ import ShareRecipeDialog from "./ShareRecipeDialog";
  * harness, opening the dialog automatically on mount with a story recipe payload.
  */
 const meta = {
-	title: "Invoices/Dialogs/ShareRecipeDialog",
+	title: "arolariu.ro/IMS/Dialogs/Recipe/ShareRecipe",
 	component: ShareRecipeDialog,
 	parameters: {
 		layout: "centered",

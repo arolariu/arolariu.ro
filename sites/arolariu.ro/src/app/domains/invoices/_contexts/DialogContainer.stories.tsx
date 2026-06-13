@@ -21,7 +21,7 @@ import {
  * This story renders a schematic subset of common dialog registrations rather than an exhaustive registry dump.
  */
 const meta = {
-  title: "Invoices/Dialogs/DialogContainer",
+  title: "arolariu.ro/IMS/Dialogs/Container",
   parameters: {
     layout: "centered",
     docs: {

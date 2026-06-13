@@ -11,7 +11,7 @@ import {TbArrowRight, TbFileInvoice, TbPhoto, TbSparkles, TbStack2} from "react-
  * of the wizard's selection step.
  */
 const meta = {
-  title: "Invoices/ViewScans/Dialogs/CreateInvoiceDialog",
+  title: "arolariu.ro/IMS/Dialogs/Scan/CreateInvoice",
   parameters: {
     layout: "centered",
     docs: {

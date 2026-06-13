@@ -9,7 +9,7 @@ import {TbStar} from "react-icons/tb";
  * form with star rating, feature badges, and textarea.
  */
 const meta = {
-  title: "Invoices/EditInvoice/Dialogs/FeedbackDialog",
+  title: "arolariu.ro/IMS/Dialogs/Invoice/Feedback",
   parameters: {
     layout: "centered",
   },

@@ -12,7 +12,7 @@ import PreviewRecipeDialog from "./PreviewRecipeDialog";
  * Displays recipe name, description, ingredients, complexity, instructions, and cooking times.
  */
 const meta = {
-	title: "Invoices/Dialogs/PreviewRecipeDialog",
+	title: "arolariu.ro/IMS/Dialogs/Recipe/PreviewRecipe",
 	component: PreviewRecipeDialog,
 	parameters: {
 		layout: "centered",

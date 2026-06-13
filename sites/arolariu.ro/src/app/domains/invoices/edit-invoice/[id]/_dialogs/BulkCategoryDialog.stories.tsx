@@ -11,7 +11,7 @@ import BulkCategoryDialog from "./BulkCategoryDialog";
  * Shows category selection dropdown and progress tracking during save.
  */
 const meta = {
-	title: "Invoices/Dialogs/BulkCategoryDialog",
+	title: "arolariu.ro/IMS/Dialogs/Products/BulkCategory",
 	component: BulkCategoryDialog,
 	parameters: {
 		layout: "centered",

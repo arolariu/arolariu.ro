@@ -20,7 +20,7 @@ import ExportDialog from "./ExportDialog";
  * Exports selected invoices from store, or all invoices if none selected.
  */
 const meta = {
-	title: "Invoices/Dialogs/InvoiceListExportDialog",
+	title: "arolariu.ro/IMS/Dialogs/Invoice/ExportList",
 	component: ExportDialog,
 	parameters: {
 		layout: "centered",

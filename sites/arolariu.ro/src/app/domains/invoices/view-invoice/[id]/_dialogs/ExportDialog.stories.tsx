@@ -17,7 +17,7 @@ import {ExportDialog} from "./ExportDialog";
  * Requires `InvoiceContext` to access invoice and merchant data.
  */
 const meta = {
-	title: "Invoices/Dialogs/InvoiceDetailExportDialog",
+	title: "arolariu.ro/IMS/Dialogs/Invoice/ExportDetail",
 	component: ExportDialog,
 	parameters: {
 		layout: "centered",

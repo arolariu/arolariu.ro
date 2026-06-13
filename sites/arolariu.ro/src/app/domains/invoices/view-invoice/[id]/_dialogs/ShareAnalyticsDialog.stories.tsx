@@ -8,7 +8,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * render when opened programmatically via the DialogContext.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/Dialogs/ShareAnalyticsDialog",
+  title: "arolariu.ro/IMS/Dialogs/Invoice/ShareAnalytics",
   parameters: {
     layout: "centered",
   },
