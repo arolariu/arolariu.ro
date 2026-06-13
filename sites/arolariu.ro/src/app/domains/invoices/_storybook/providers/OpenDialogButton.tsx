@@ -13,6 +13,7 @@
 import {DialogProvider, useDialogs} from "../../_contexts/DialogContext";
 import type {AllDialogTypes, DialogHarnessProps, DialogMode, ObjectDialogPayload} from "./dialogHarnessTypes";
 import type {ReactNode} from "react";
+import styles from "./OpenDialogButton.module.css";
 
 /**
  * Internal opener that renders a button and the dialog (only while open).
@@ -24,7 +25,7 @@ function DialogButton({
 	dialog,
 	mode = "view",
 	payload,
-	label = "Open dialog",
+	label = "Open Dialog",
 	children,
 }: {
 	readonly dialog: AllDialogTypes;
@@ -54,6 +55,7 @@ function DialogButton({
 		<div>
 			<button
 				type="button"
+				className={styles.trigger}
 				onClick={handleOpen}>
 				{label}
 			</button>
@@ -81,7 +83,7 @@ function DialogButton({
  * ```
  */
 export function OpenDialogButton(props: Readonly<DialogHarnessProps>): React.JSX.Element {
-	const {dialog, mode = "view", payload, label = "Open dialog", children} = props;
+	const {dialog, mode = "view", payload, label = "Open Dialog", children} = props;
 
 	return (
 		<DialogProvider>
