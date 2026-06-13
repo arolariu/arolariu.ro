@@ -11,16 +11,22 @@
 import {withThemeByClassName} from "@storybook/addon-themes";
 import type {Preview} from "@storybook/react";
 
-// CSS imports — order matters: component library first, then app SCSS
-// @ts-ignore -- css file has no typings
+// CSS imports - order matters: component library first, then app SCSS.
+// @ts-expect-error css file has no TypeScript typings.
 import "@arolariu/components/styles.css";
 import "../src/app/globals.scss";
 
+import {installStorybookBrowserMocks} from "../src/app/domains/invoices/_storybook";
 import {withFontSwitcher, withI18n, withThemePreset} from "./decorators";
+
+installStorybookBrowserMocks();
 
 // ─── Preview config ──────────────────────────────────────────────
 const preview: Preview = {
   parameters: {
+    a11y: {
+      test: "error",
+    },
     nextjs: {
       appDirectory: true,
     },
