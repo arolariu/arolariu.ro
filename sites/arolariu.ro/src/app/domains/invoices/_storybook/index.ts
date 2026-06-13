@@ -77,3 +77,7 @@ export * from "./fixtures";
 export * from "./providers";
 export * from "./stores";
 export * from "./test-utils";
+
+// Story controls
+export {invoicePresets, merchantPresets, recipePresets, scanPresets} from "./controls/entityPresets";
+export {withEntityPreset} from "./controls/withEntityPreset";
