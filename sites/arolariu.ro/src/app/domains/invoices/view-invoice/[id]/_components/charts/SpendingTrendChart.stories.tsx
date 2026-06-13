@@ -16,6 +16,8 @@ function generateMockSpendingTrend(count: number, currentIndex?: number): Spendi
   }));
 }
 
+type StoryArgs = {data: SpendingTrendData[]; currency: string};
+
 /**
  * SpendingTrendChart renders an area chart showing spending
  * over time with a highlighted reference dot for the current
@@ -27,18 +29,21 @@ const meta = {
   parameters: {
     layout: "centered",
   },
-} satisfies Meta<typeof SpendingTrendChart>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-/** Default with 10 data points, last one is current. */
-export const Default: Story = {
+  argTypes: {
+    data: {control: "object"},
+    currency: {control: "text"},
+  },
   args: {
     data: generateMockSpendingTrend(10),
     currency: "RON",
   },
-};
+} satisfies Meta<StoryArgs>;
+
+export default meta;
+type Story = StoryObj<StoryArgs>;
+
+/** Default with 10 data points, last one is current. */
+export const Default: Story = {};
 
 /** Few data points — sparse trend. */
 export const FewPoints: Story = {

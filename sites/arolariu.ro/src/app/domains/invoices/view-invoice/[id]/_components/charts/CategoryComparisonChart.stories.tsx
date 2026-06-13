@@ -14,6 +14,8 @@ function generateMockCategoryTrendData(count: number): CategoryTrendData[] {
   }));
 }
 
+type StoryArgs = {data: CategoryTrendData[]; currency: string};
+
 /**
  * CategoryComparisonChart renders a horizontal bar chart comparing
  * current spending per category against historical averages.
@@ -25,18 +27,21 @@ const meta = {
   parameters: {
     layout: "centered",
   },
-} satisfies Meta<typeof CategoryComparisonChart>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-/** Default with 4 categories and RON currency. */
-export const Default: Story = {
+  argTypes: {
+    data: {control: "object"},
+    currency: {control: "text"},
+  },
   args: {
     data: generateMockCategoryTrendData(4),
     currency: "RON",
   },
-};
+} satisfies Meta<StoryArgs>;
+
+export default meta;
+type Story = StoryObj<StoryArgs>;
+
+/** Default with 4 categories and RON currency. */
+export const Default: Story = {};
 
 /** Many categories — 8 bars for a dense chart. */
 export const ManyCategories: Story = {

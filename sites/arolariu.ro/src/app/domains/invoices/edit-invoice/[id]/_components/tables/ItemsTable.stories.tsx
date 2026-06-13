@@ -1,6 +1,9 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {storyInvoice, WithEditInvoiceContext} from "../../../../_storybook";
+import type {Invoice} from "@/types/invoices";
+import {invoicePresets, storyInvoice, WithEditInvoiceContext, withEntityPreset} from "../../../../_storybook";
 import ItemsTable from "./ItemsTable";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 /**
  * ItemsTable renders a paginated table of invoice line items with editing
@@ -19,7 +22,16 @@ const meta = {
       },
     },
   },
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {
+    invoicePreset: "standard",
+    invoice: storyInvoice,
+  },
   decorators: [
+    withEntityPreset("invoicePreset", "invoice", invoicePresets),
     (Story) => (
       <WithEditInvoiceContext>
         <div style={{padding: "2rem", backgroundColor: "var(--color-background)", minWidth: "800px"}}>
@@ -28,16 +40,13 @@ const meta = {
       </WithEditInvoiceContext>
     ),
   ],
-} satisfies Meta<typeof ItemsTable>;
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /** Items table with sample products from story invoice. */
 export const WithItems: Story = {
-  args: {
-    invoice: storyInvoice,
-  },
   parameters: {
     docs: {
       description: {
@@ -52,7 +61,7 @@ export const WithItems: Story = {
 export const Empty: Story = {
   args: {
     invoice: {
-      ...storyInvoice,
+      ...invoicePresets.standard,
       items: [],
     },
   },

@@ -18,6 +18,11 @@ function generateMockMerchantData(count: number): MerchantBreakdown[] {
   });
 }
 
+type StoryArgs = {data: MerchantBreakdown[]; currency: string; currentMerchant: string};
+
+const mockData = generateMockMerchantData(5);
+const currentMerchant = mockData[0]?.name ?? "Lidl";
+
 /**
  * MerchantBreakdownChart renders a vertical bar chart comparing
  * total spending across different merchants. The current merchant
@@ -29,22 +34,23 @@ const meta = {
   parameters: {
     layout: "centered",
   },
-} satisfies Meta<typeof MerchantBreakdownChart>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-const mockData = generateMockMerchantData(5);
-const currentMerchant = mockData[0]?.name ?? "Lidl";
-
-/** Default with 5 merchants, one highlighted. */
-export const Default: Story = {
+  argTypes: {
+    data: {control: "object"},
+    currency: {control: "text"},
+    currentMerchant: {control: "text"},
+  },
   args: {
     data: mockData,
     currency: "RON",
     currentMerchant,
   },
-};
+} satisfies Meta<StoryArgs>;
+
+export default meta;
+type Story = StoryObj<StoryArgs>;
+
+/** Default with 5 merchants, one highlighted. */
+export const Default: Story = {};
 
 /** Single merchant — minimal chart. */
 export const SingleMerchant: Story = {

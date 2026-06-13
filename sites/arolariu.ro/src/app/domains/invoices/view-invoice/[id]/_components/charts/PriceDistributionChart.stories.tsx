@@ -2,6 +2,8 @@ import type {Meta, StoryObj} from "@storybook/react";
 import type {PriceRange} from "../../_utils/analytics";
 import {PriceDistributionChart} from "./PriceDistributionChart";
 
+type StoryArgs = {data: PriceRange[]; currency: string};
+
 const mockPriceRanges: PriceRange[] = [
   {range: "Under 10", count: 5, fill: "var(--ac-chart-1)"},
   {range: "10-25", count: 8, fill: "var(--ac-chart-2)"},
@@ -20,18 +22,21 @@ const meta = {
   parameters: {
     layout: "centered",
   },
-} satisfies Meta<typeof PriceDistributionChart>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-/** Default with 4 price ranges in RON. */
-export const Default: Story = {
+  argTypes: {
+    data: {control: "object"},
+    currency: {control: "text"},
+  },
   args: {
     data: mockPriceRanges,
     currency: "RON",
   },
-};
+} satisfies Meta<StoryArgs>;
+
+export default meta;
+type Story = StoryObj<StoryArgs>;
+
+/** Default with 4 price ranges in RON. */
+export const Default: Story = {};
 
 /** All items in a single price range. */
 export const SingleRange: Story = {

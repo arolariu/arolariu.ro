@@ -15,6 +15,8 @@ function generateMockCategorySpending(count: number): CategorySpending[] {
   }));
 }
 
+type StoryArgs = {data: CategorySpending[]; currency: string};
+
 /**
  * SpendingByCategoryChart renders a donut (pie) chart showing
  * spending distribution across product categories with a
@@ -26,18 +28,21 @@ const meta = {
   parameters: {
     layout: "centered",
   },
-} satisfies Meta<typeof SpendingByCategoryChart>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-/** Default with 5 categories in RON. */
-export const Default: Story = {
+  argTypes: {
+    data: {control: "object"},
+    currency: {control: "text"},
+  },
   args: {
     data: generateMockCategorySpending(5),
     currency: "RON",
   },
-};
+} satisfies Meta<StoryArgs>;
+
+export default meta;
+type Story = StoryObj<StoryArgs>;
+
+/** Default with 5 categories in RON. */
+export const Default: Story = {};
 
 /** Two categories — simple donut. */
 export const TwoCategories: Story = {

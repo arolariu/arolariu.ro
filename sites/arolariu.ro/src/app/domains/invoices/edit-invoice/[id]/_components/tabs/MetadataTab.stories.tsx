@@ -2,6 +2,8 @@ import {DialogProvider} from "@/app/domains/invoices/_contexts/DialogContext";
 import type {Meta, StoryObj} from "@storybook/react";
 import MetadataTab from "./MetadataTab";
 
+type StoryArgs = {metadata: Record<string, string>};
+
 /**
  * MetadataTab displays key-value metadata pairs for an invoice with
  * add, edit, and delete capabilities. Depends on `useDialog`.
@@ -20,6 +22,18 @@ const meta = {
       },
     },
   },
+  argTypes: {
+    metadata: {control: "object"},
+  },
+  args: {
+    metadata: {
+      store_id: "KFL-2024-BUC",
+      receipt_number: "INV-2024-001234",
+      cashier: "Station 3",
+      loyalty_points: "150",
+      payment_method: "VISA-4242",
+    },
+  },
   decorators: [
     (Story) => (
       <DialogProvider>
@@ -29,10 +43,10 @@ const meta = {
       </DialogProvider>
     ),
   ],
-} satisfies Meta<typeof MetadataTab>;
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /** Metadata tab with sample key-value pairs. */
 export const WithMetadata: Story = {
@@ -43,15 +57,6 @@ export const WithMetadata: Story = {
           "Metadata tab populated with five sample key-value pairs including store ID, receipt number, cashier, " +
           "loyalty points, and payment method. Demonstrates card grid layout with disabled action buttons for each entry.",
       },
-    },
-  },
-  args: {
-    metadata: {
-      store_id: "KFL-2024-BUC",
-      receipt_number: "INV-2024-001234",
-      cashier: "Station 3",
-      loyalty_points: "150",
-      payment_method: "VISA-4242",
     },
   },
 };

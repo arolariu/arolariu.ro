@@ -1,6 +1,9 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {seedInvoiceStoryStores, resetInvoiceStoryStores, storyInvoice, storyPublicInvoice, WithInvoiceDialogs} from "../../../_storybook";
+import type {Invoice} from "@/types/invoices";
+import {invoicePresets, seedInvoiceStoryStores, resetInvoiceStoryStores, storyInvoice, WithInvoiceDialogs, withEntityPreset} from "../../../_storybook";
 import {InvoiceCard} from "./InvoiceCard";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"; isSelected: boolean; loading: "eager" | "lazy"; onToggleSelection: (invoiceId: string) => void};
 
 /**
  * InvoiceCard displays one invoice as a grid card with scan carousel.
@@ -14,7 +17,24 @@ const meta = {
 	parameters: {
 		layout: "centered",
 	},
+	argTypes: {
+		invoicePreset: {control: "select", options: ["standard", "public"]},
+		invoice: {control: "object"},
+		isSelected: {control: "boolean"},
+		loading: {control: "select", options: ["eager", "lazy"]},
+		onToggleSelection: {action: "onToggleSelection"},
+	},
+	args: {
+		invoicePreset: "standard",
+		invoice: storyInvoice,
+		isSelected: false,
+		loading: "eager",
+		onToggleSelection: (invoiceId: string) => {
+			console.log("Toggle selection for invoice:", invoiceId);
+		},
+	},
 	decorators: [
+		withEntityPreset("invoicePreset", "invoice", invoicePresets),
 		(Story) => {
 			resetInvoiceStoryStores();
 			seedInvoiceStoryStores();
@@ -27,36 +47,22 @@ const meta = {
 			);
 		},
 	],
-} satisfies Meta<typeof InvoiceCard>;
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default invoice card with scans.
  */
-export const Default: Story = {
-	args: {
-		invoice: storyInvoice,
-		isSelected: false,
-		loading: "eager",
-		onToggleSelection: (invoiceId: string) => {
-			console.log("Toggle selection for invoice:", invoiceId);
-		},
-	},
-};
+export const Default: Story = {};
 
 /**
  * Selected invoice card.
  */
 export const Selected: Story = {
 	args: {
-		invoice: storyInvoice,
 		isSelected: true,
-		loading: "eager",
-		onToggleSelection: (invoiceId: string) => {
-			console.log("Toggle selection for invoice:", invoiceId);
-		},
 	},
 };
 
@@ -65,14 +71,10 @@ export const Selected: Story = {
  */
 export const NoScans: Story = {
 	args: {
+		invoicePreset: "public",
 		invoice: {
-			...storyPublicInvoice,
+			...invoicePresets.public,
 			scans: [],
-		},
-		isSelected: false,
-		loading: "eager",
-		onToggleSelection: (invoiceId: string) => {
-			console.log("Toggle selection for invoice:", invoiceId);
 		},
 	},
 };
@@ -83,13 +85,8 @@ export const NoScans: Story = {
 export const Important: Story = {
 	args: {
 		invoice: {
-			...storyInvoice,
+			...invoicePresets.standard,
 			isImportant: true,
-		},
-		isSelected: false,
-		loading: "eager",
-		onToggleSelection: (invoiceId: string) => {
-			console.log("Toggle selection for invoice:", invoiceId);
 		},
 	},
 };
@@ -100,13 +97,8 @@ export const Important: Story = {
 export const LongName: Story = {
 	args: {
 		invoice: {
-			...storyInvoice,
+			...invoicePresets.standard,
 			name: "Monthly Bulk Grocery & Household Supplies Shopping Trip - Mega Image Militari - March 2024",
-		},
-		isSelected: false,
-		loading: "eager",
-		onToggleSelection: (invoiceId: string) => {
-			console.log("Toggle selection for invoice:", invoiceId);
 		},
 	},
 };

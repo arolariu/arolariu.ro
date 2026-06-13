@@ -15,6 +15,8 @@ function generateMockQuantityData(count: number): QuantityData[] {
   }));
 }
 
+type StoryArgs = {data: QuantityData[]; currency: string};
+
 /**
  * ItemsBreakdownChart renders a horizontal bar chart showing
  * the price breakdown of individual items on an invoice.
@@ -26,18 +28,21 @@ const meta = {
   parameters: {
     layout: "centered",
   },
-} satisfies Meta<typeof ItemsBreakdownChart>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-/** Default with 5 items in RON. */
-export const Default: Story = {
+  argTypes: {
+    data: {control: "object"},
+    currency: {control: "text"},
+  },
   args: {
     data: generateMockQuantityData(5),
     currency: "RON",
   },
-};
+} satisfies Meta<StoryArgs>;
+
+export default meta;
+type Story = StoryObj<StoryArgs>;
+
+/** Default with 5 items in RON. */
+export const Default: Story = {};
 
 /** Few items — minimalist chart. */
 export const FewItems: Story = {
