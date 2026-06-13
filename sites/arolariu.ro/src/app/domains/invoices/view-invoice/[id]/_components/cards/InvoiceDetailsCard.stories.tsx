@@ -1,9 +1,19 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {WithViewInvoiceContext, storyInvoice, storyMerchant, storyOnlineInvoice, storyOnlineMerchant} from "../../../../_storybook";
+import type {Invoice} from "@/types/invoices";
+import {
+  invoicePresets,
+  WithViewInvoiceContext,
+  storyInvoice,
+  storyMerchant,
+  storyOnlineInvoice,
+  storyOnlineMerchant,
+  withEntityPreset,
+} from "../../../../_storybook";
 import {InvoiceDetailsCard} from "./InvoiceDetailsCard";
 import type {Currency} from "@/types/DDD/SharedKernel/Currency";
-import type {Invoice} from "@/types/invoices/Invoice";
 import type {PaymentType} from "@/types/invoices/Payment";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 const euroCurrency: Currency = {
   name: "Euro",
@@ -75,14 +85,20 @@ const meta = {
       },
     },
   },
-} satisfies Meta<typeof InvoiceDetailsCard>;
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 export const StandardInvoice: Story = {
-  render: () => (
-    <WithViewInvoiceContext invoice={storyInvoice} merchant={storyMerchant}>
+  render: ({invoice}) => (
+    <WithViewInvoiceContext invoice={invoice} merchant={storyMerchant}>
       <div style={{width: "min(960px, 100vw)"}}>
         <InvoiceDetailsCard />
       </div>

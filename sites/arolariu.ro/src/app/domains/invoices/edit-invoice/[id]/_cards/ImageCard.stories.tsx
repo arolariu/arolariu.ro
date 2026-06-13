@@ -1,6 +1,17 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {storyImageScanUrl, storyInvoice, storyInvoiceImageScan, storyInvoicePdfScan, WithInvoiceDialogs} from "@/app/domains/invoices/_storybook";
+import type {Invoice} from "@/types/invoices";
+import {
+  invoicePresets,
+  storyImageScanUrl,
+  storyInvoice,
+  storyInvoiceImageScan,
+  storyInvoicePdfScan,
+  WithInvoiceDialogs,
+  withEntityPreset,
+} from "@/app/domains/invoices/_storybook";
 import ImageCard from "./ImageCard";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 const invoiceWithPdfScan = {
   ...storyInvoice,
@@ -55,15 +66,27 @@ const meta = {
     },
   },
   tags: ["autodocs"],
-} satisfies Meta<typeof ImageCard>;
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [
+    (Story) => (
+      <WithInvoiceDialogs>
+        <div style={{width: "min(420px, 100vw)"}}>
+          <Story />
+        </div>
+      </WithInvoiceDialogs>
+    ),
+    withEntityPreset("invoicePreset", "invoice", invoicePresets),
+  ],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 export const SingleScan: Story = {
-  args: {
-    invoice: storyInvoice,
-  },
   parameters: {
     docs: {
       description: {
@@ -74,9 +97,7 @@ export const SingleScan: Story = {
 };
 
 export const MultipleScans: Story = {
-  args: {
-    invoice: invoiceWithMultipleScans,
-  },
+  render: () => <ImageCard invoice={invoiceWithMultipleScans} />,
   parameters: {
     docs: {
       description: {
@@ -87,9 +108,7 @@ export const MultipleScans: Story = {
 };
 
 export const NoScans: Story = {
-  args: {
-    invoice: invoiceWithoutScans,
-  },
+  render: () => <ImageCard invoice={invoiceWithoutScans} />,
   parameters: {
     docs: {
       description: {
@@ -100,9 +119,7 @@ export const NoScans: Story = {
 };
 
 export const PdfScan: Story = {
-  args: {
-    invoice: invoiceWithPdfScan,
-  },
+  render: () => <ImageCard invoice={invoiceWithPdfScan} />,
   parameters: {
     docs: {
       description: {

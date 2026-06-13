@@ -1,6 +1,16 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {setupEditInvoiceStory, storyInvoice, storyMerchant, WithEditInvoiceContext} from "@/app/domains/invoices/_storybook";
+import type {Invoice} from "@/types/invoices";
+import {
+  invoicePresets,
+  setupEditInvoiceStory,
+  storyInvoice,
+  storyMerchant,
+  WithEditInvoiceContext,
+  withEntityPreset,
+} from "@/app/domains/invoices/_storybook";
 import InvoiceCard from "./InvoiceCard";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 /**
  * InvoiceCard (edit) displays comprehensive invoice details with inline editing.
@@ -21,13 +31,20 @@ const meta = {
       },
     },
   },
-  beforeEach: () => {
-    setupEditInvoiceStory({invoice: storyInvoice, merchant: storyMerchant});
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
   },
-} satisfies Meta<typeof InvoiceCard>;
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+  beforeEach: (context) => {
+    const {invoice} = context.args as StoryArgs;
+    setupEditInvoiceStory({invoice, merchant: storyMerchant});
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /** Default invoice card with standard invoice data. */
 export const Default: Story = {
@@ -40,8 +57,8 @@ export const Default: Story = {
       },
     },
   },
-  render: () => (
-    <WithEditInvoiceContext invoice={storyInvoice} merchant={storyMerchant}>
+  render: ({invoice}) => (
+    <WithEditInvoiceContext invoice={invoice} merchant={storyMerchant}>
       <InvoiceCard />
     </WithEditInvoiceContext>
   ),
@@ -58,9 +75,9 @@ export const ImportantInvoice: Story = {
       },
     },
   },
-  render: () => (
+  render: ({invoice}) => (
     <WithEditInvoiceContext
-      invoice={{...storyInvoice, isImportant: true}}
+      invoice={{...invoice, isImportant: true}}
       merchant={storyMerchant}>
       <InvoiceCard />
     </WithEditInvoiceContext>
@@ -69,9 +86,9 @@ export const ImportantInvoice: Story = {
 
 /** Invoice whose merchant has a very long name to exercise truncation/wrapping. */
 export const LongMerchantName: Story = {
-  render: () => (
+  render: ({invoice}) => (
     <WithEditInvoiceContext
-      invoice={storyInvoice}
+      invoice={invoice}
       merchant={{
         ...storyMerchant,
         name: "Corner Shop ABC International Wholesale & Retail Distribution Center Bucuresti Militari Branch",
@@ -83,9 +100,9 @@ export const LongMerchantName: Story = {
 
 /** Invoice with only the minimal fields populated (no description, recipes, or importance). */
 export const MinimalFields: Story = {
-  render: () => (
+  render: ({invoice}) => (
     <WithEditInvoiceContext
-      invoice={{...storyInvoice, description: "", isImportant: false, possibleRecipes: []}}
+      invoice={{...invoice, description: "", isImportant: false, possibleRecipes: []}}
       merchant={storyMerchant}>
       <InvoiceCard />
     </WithEditInvoiceContext>
@@ -94,9 +111,9 @@ export const MinimalFields: Story = {
 
 /** Invoice categorised differently to show category-dependent presentation. */
 export const DifferentCategory: Story = {
-  render: () => (
+  render: ({invoice}) => (
     <WithEditInvoiceContext
-      invoice={{...storyInvoice, category: 200 as typeof storyInvoice.category}}
+      invoice={{...invoice, category: 200 as typeof invoice.category}}
       merchant={storyMerchant}>
       <InvoiceCard />
     </WithEditInvoiceContext>

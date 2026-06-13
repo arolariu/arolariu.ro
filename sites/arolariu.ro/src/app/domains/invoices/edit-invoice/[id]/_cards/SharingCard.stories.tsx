@@ -1,6 +1,16 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {Invoice} from "@/types/invoices";
 import SharingCard from "./SharingCard";
-import {storyInvoice, storyPublicInvoice, WithInvoiceDialogs, installStorybookBrowserMocks} from "../../../_storybook";
+import {
+  installStorybookBrowserMocks,
+  invoicePresets,
+  storyInvoice,
+  storyPublicInvoice,
+  WithInvoiceDialogs,
+  withEntityPreset,
+} from "../../../_storybook";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 /**
  * SharingCard displays invoice sharing status and provides controls for
@@ -15,39 +25,36 @@ const meta = {
   parameters: {
     layout: "centered",
   },
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
   beforeEach: () => {
     installStorybookBrowserMocks();
   },
-} satisfies Meta<typeof SharingCard>;
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /** Private invoice — no shared users. */
 export const PrivateInvoice: Story = {
-  args: {
-    invoice: storyInvoice,
-  },
-  render: () => (
+  render: ({invoice}) => (
     <WithInvoiceDialogs>
-      <SharingCard invoice={storyInvoice} />
+      <SharingCard invoice={invoice} />
     </WithInvoiceDialogs>
   ),
 };
 
 /** Invoice shared with multiple users. */
 export const SharedWithUsers: Story = {
-  args: {
-    invoice: {
-      ...storyInvoice,
-      sharedWith: ["user-abc-123", "user-def-456", "user-ghi-789"],
-    },
-  },
-  render: () => (
+  render: ({invoice}) => (
     <WithInvoiceDialogs>
       <SharingCard
         invoice={{
-          ...storyInvoice,
+          ...invoice,
           sharedWith: ["user-abc-123", "user-def-456", "user-ghi-789"],
         }}
       />
@@ -57,12 +64,10 @@ export const SharedWithUsers: Story = {
 
 /** Public invoice accessible to anyone with the link. */
 export const PublicInvoice: Story = {
-  args: {
-    invoice: storyPublicInvoice,
-  },
-  render: () => (
+  args: {invoicePreset: "public", invoice: storyPublicInvoice},
+  render: ({invoice}) => (
     <WithInvoiceDialogs>
-      <SharingCard invoice={storyPublicInvoice} />
+      <SharingCard invoice={invoice} />
     </WithInvoiceDialogs>
   ),
 };

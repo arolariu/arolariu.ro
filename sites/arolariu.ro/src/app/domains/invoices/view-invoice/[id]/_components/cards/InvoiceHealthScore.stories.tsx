@@ -1,8 +1,11 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {Invoice} from "@/types/invoices";
 import {expect, within} from "storybook/test";
-import {setupViewInvoiceStory, storyInvoice, storyProducts, storyRecipeEasy, WithViewInvoiceContext} from "@/app/domains/invoices/_storybook";
+import {invoicePresets, setupViewInvoiceStory, storyInvoice, storyProducts, storyRecipeEasy, WithViewInvoiceContext, withEntityPreset} from "@/app/domains/invoices/_storybook";
 import {ProductCategory} from "@/types/invoices";
 import {InvoiceHealthScore} from "./InvoiceHealthScore";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 /**
  * Invoice Health Score component displaying data quality metrics.
@@ -40,13 +43,19 @@ const meta = {
     },
   },
   tags: ["autodocs"],
-  beforeEach: () => {
-    setupViewInvoiceStory({invoice: storyInvoice});
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
   },
-} satisfies Meta<typeof InvoiceHealthScore>;
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+  beforeEach: ({args}) => {
+    setupViewInvoiceStory({invoice: (args as {invoice: Invoice}).invoice});
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Perfect invoice with 99% health score.

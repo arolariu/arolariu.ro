@@ -1,6 +1,9 @@
-import {generateRandomInvoice} from "@/data/mocks";
+import type {Invoice} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
+import {invoicePresets, storyInvoice, withEntityPreset} from "@/app/domains/invoices/_storybook";
 import {InvoiceTimelineCard} from "./InvoiceTimelineCard";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 /**
  * InvoiceTimelineCard displays a chronological timeline of events for an
@@ -12,38 +15,42 @@ const meta = {
   parameters: {
     layout: "centered",
   },
-} satisfies Meta<typeof InvoiceTimelineCard>;
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
-
-const mockInvoice = generateRandomInvoice();
+type Story = StoryObj<StoryArgs>;
 
 /** Default timeline with events generated from a mock invoice. */
 export const Default: Story = {
-  args: {
-    invoice: mockInvoice,
-  },
+  render: ({invoice}) => <InvoiceTimelineCard invoice={invoice} />,
 };
 
 /** Timeline for an important invoice with sharing data. */
 export const ImportantAndShared: Story = {
-  args: {
-    invoice: {
-      ...mockInvoice,
+  render: ({invoice}) => {
+    const invoiceVariant = {
+      ...invoice,
       isImportant: true,
       sharedWith: ["user-abc-123", "user-xyz-456"],
-    },
+    };
+    return <InvoiceTimelineCard invoice={invoiceVariant} />;
   },
 };
 
 /** Timeline for an invoice that has been edited many times. */
 export const ManyUpdates: Story = {
-  args: {
-    invoice: {
-      ...mockInvoice,
+  render: ({invoice}) => {
+    const invoiceVariant = {
+      ...invoice,
       numberOfUpdates: 12,
       lastUpdatedAt: new Date("2026-01-20T16:30:00.000Z"),
-    },
+    };
+    return <InvoiceTimelineCard invoice={invoiceVariant} />;
   },
 };

@@ -1,7 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {WithViewInvoiceContext, storyInvoice} from "@/app/domains/invoices/_storybook";
+import type {Invoice} from "@/types/invoices";
+import {WithViewInvoiceContext, storyInvoice, invoicePresets, withEntityPreset} from "@/app/domains/invoices/_storybook";
 import {LAST_GUID} from "@/lib/utils.generic";
 import {ShareCollaborateCard} from "./ShareCollaborateCard";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 const meta = {
   title: "arolariu.ro/IMS/Cards/Invoice/ShareCollaborate",
@@ -15,14 +18,20 @@ const meta = {
     },
   },
   tags: ["autodocs"],
-} satisfies Meta<typeof ShareCollaborateCard>;
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 export const Private: Story = {
-  render: () => (
-    <WithViewInvoiceContext invoice={{...storyInvoice, sharedWith: []}}>
+  render: ({invoice}) => (
+    <WithViewInvoiceContext invoice={{...invoice, sharedWith: []}}>
       <ShareCollaborateCard />
     </WithViewInvoiceContext>
   ),
@@ -30,8 +39,8 @@ export const Private: Story = {
 };
 
 export const SharedWithUsers: Story = {
-  render: () => (
-    <WithViewInvoiceContext invoice={{...storyInvoice, sharedWith: ["user-uuid-1", "user-uuid-2", "user-uuid-3"]}}>
+  render: ({invoice}) => (
+    <WithViewInvoiceContext invoice={{...invoice, sharedWith: ["user-uuid-1", "user-uuid-2", "user-uuid-3"]}}>
       <ShareCollaborateCard />
     </WithViewInvoiceContext>
   ),
@@ -39,8 +48,8 @@ export const SharedWithUsers: Story = {
 };
 
 export const Public: Story = {
-  render: () => (
-    <WithViewInvoiceContext invoice={{...storyInvoice, sharedWith: [LAST_GUID]}}>
+  render: ({invoice}) => (
+    <WithViewInvoiceContext invoice={{...invoice, sharedWith: [LAST_GUID]}}>
       <ShareCollaborateCard />
     </WithViewInvoiceContext>
   ),
@@ -48,8 +57,8 @@ export const Public: Story = {
 };
 
 export const PublicAndShared: Story = {
-  render: () => (
-    <WithViewInvoiceContext invoice={{...storyInvoice, sharedWith: ["user-uuid-1", "user-uuid-2", LAST_GUID]}}>
+  render: ({invoice}) => (
+    <WithViewInvoiceContext invoice={{...invoice, sharedWith: ["user-uuid-1", "user-uuid-2", LAST_GUID]}}>
       <ShareCollaborateCard />
     </WithViewInvoiceContext>
   ),

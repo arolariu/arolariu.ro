@@ -5,11 +5,14 @@
 
 import {Badge, Card, Spinner} from "@arolariu/components";
 import type {Meta, StoryObj} from "@storybook/react";
+import type {CachedScan} from "@/types/scans";
 import {useState} from "react";
 import {TbLink, TbRotateClockwise, TbTrash} from "react-icons/tb";
 import ScanCard from "./ScanCard";
-import {storyImageScanUrl, storyPdfScanUrl} from "@/app/domains/invoices/_storybook/fixtures/scanFixtures";
+import {storyImageScanUrl, storyPdfScanUrl, storyCachedImageScan, scanPresets, withEntityPreset} from "@/app/domains/invoices/_storybook";
 import {logStoryAction} from "@/app/domains/invoices/_storybook/utils/storyActions";
+
+type StoryArgs = {scan: CachedScan; scanPreset: "image" | "pdf"};
 
 const meta = {
 	title: "arolariu.ro/IMS/Cards/Scan/ScanCard",
@@ -24,10 +27,16 @@ const meta = {
 		},
 	},
 	tags: ["autodocs"],
-} satisfies Meta<typeof ScanCard>;
+	argTypes: {
+		scanPreset: {control: "select", options: ["image", "pdf"]},
+		scan: {control: "object"},
+	},
+	args: {scanPreset: "image", scan: storyCachedImageScan},
+	decorators: [withEntityPreset("scanPreset", "scan", scanPresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Image scan with action menu.

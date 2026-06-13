@@ -1,7 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {WithViewInvoiceContext, storyInvoice, storyProducts} from "@/app/domains/invoices/_storybook";
+import type {Invoice} from "@/types/invoices";
+import {WithViewInvoiceContext, storyInvoice, storyProducts, invoicePresets, withEntityPreset} from "@/app/domains/invoices/_storybook";
 import {ProductCategory} from "@/types/invoices";
 import {ItemAnalyticsCard} from "./ItemAnalyticsCard";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 const meta = {
   title: "arolariu.ro/IMS/Cards/Products/ItemAnalytics",
@@ -15,14 +18,20 @@ const meta = {
     },
   },
   tags: ["autodocs"],
-} satisfies Meta<typeof ItemAnalyticsCard>;
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 export const Default: Story = {
-  render: () => (
-    <WithViewInvoiceContext invoice={storyInvoice}>
+  render: ({invoice}) => (
+    <WithViewInvoiceContext invoice={invoice}>
       <ItemAnalyticsCard />
     </WithViewInvoiceContext>
   ),
@@ -30,7 +39,7 @@ export const Default: Story = {
 };
 
 export const WithCategorizedProducts: Story = {
-  render: () => {
+  render: ({invoice}) => {
     const products = storyProducts.map((product, i) => ({
       ...product,
       category: [ProductCategory.GROCERIES, ProductCategory.DAIRY, ProductCategory.BAKED_GOODS, ProductCategory.MEAT][i % 4] ?? ProductCategory.NOT_DEFINED,
@@ -39,7 +48,7 @@ export const WithCategorizedProducts: Story = {
       totalPrice: (i + 1) * (5 + i * 2),
     }));
     return (
-      <WithViewInvoiceContext invoice={{...storyInvoice, items: products}}>
+      <WithViewInvoiceContext invoice={{...invoice, items: products}}>
         <ItemAnalyticsCard />
       </WithViewInvoiceContext>
     );
@@ -48,8 +57,8 @@ export const WithCategorizedProducts: Story = {
 };
 
 export const Empty: Story = {
-  render: () => (
-    <WithViewInvoiceContext invoice={{...storyInvoice, items: []}}>
+  render: ({invoice}) => (
+    <WithViewInvoiceContext invoice={{...invoice, items: []}}>
       <ItemAnalyticsCard />
     </WithViewInvoiceContext>
   ),
@@ -57,7 +66,7 @@ export const Empty: Story = {
 };
 
 export const WidePriceRange: Story = {
-  render: () => {
+  render: ({invoice}) => {
     const products = storyProducts.map((product, i) => ({
       ...product,
       price: [0.5, 15.0, 120.0, 350.99][i] ?? 0,
@@ -65,7 +74,7 @@ export const WidePriceRange: Story = {
       totalPrice: [0.5, 15.0, 120.0, 350.99][i] ?? 0,
     }));
     return (
-      <WithViewInvoiceContext invoice={{...storyInvoice, items: products}}>
+      <WithViewInvoiceContext invoice={{...invoice, items: products}}>
         <ItemAnalyticsCard />
       </WithViewInvoiceContext>
     );
@@ -74,7 +83,7 @@ export const WidePriceRange: Story = {
 };
 
 export const HighQuantities: Story = {
-  render: () => {
+  render: ({invoice}) => {
     const products = storyProducts.map((product, i) => ({
       ...product,
       quantity: [1, 10, 50, 100][i] ?? 1,
@@ -82,7 +91,7 @@ export const HighQuantities: Story = {
       totalPrice: ([1, 10, 50, 100][i] ?? 1) * 2.5,
     }));
     return (
-      <WithViewInvoiceContext invoice={{...storyInvoice, items: products}}>
+      <WithViewInvoiceContext invoice={{...invoice, items: products}}>
         <ItemAnalyticsCard />
       </WithViewInvoiceContext>
     );

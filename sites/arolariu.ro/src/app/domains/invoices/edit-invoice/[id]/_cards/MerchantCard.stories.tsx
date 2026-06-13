@@ -1,6 +1,9 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {Merchant} from "@/types/invoices";
 import MerchantCard from "./MerchantCard";
-import {storyMerchant, storyOnlineMerchant, WithInvoiceDialogs} from "../../../_storybook";
+import {merchantPresets, storyMerchant, storyOnlineMerchant, WithInvoiceDialogs, withEntityPreset} from "../../../_storybook";
+
+type StoryArgs = {merchant: Merchant | null; merchantPreset: "physical" | "online" | "none"};
 
 /**
  * MerchantCard (edit) displays merchant information with navigation buttons
@@ -14,61 +17,69 @@ const meta = {
   parameters: {
     layout: "centered",
   },
-} satisfies Meta<typeof MerchantCard>;
+  argTypes: {
+    merchantPreset: {control: "select", options: ["physical", "online", "none"]},
+    merchant: {control: "object"},
+  },
+  args: {merchantPreset: "physical", merchant: storyMerchant},
+  decorators: [
+    (Story, context) => {
+      const preset = context.args.merchantPreset as "physical" | "online" | "none";
+      if (preset === "none") {
+        context.args.merchant = null;
+      } else if (preset === "physical" && context.args.merchant !== storyMerchant) {
+        context.args.merchant = storyMerchant;
+      } else if (preset === "online" && context.args.merchant !== storyOnlineMerchant) {
+        context.args.merchant = storyOnlineMerchant;
+      }
+      return <Story />;
+    },
+  ],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /** Merchant card with linked merchant data. */
 export const LinkedMerchant: Story = {
-  args: {
-    merchant: storyMerchant,
-  },
-  render: () => (
+  render: ({merchant}) => (
     <WithInvoiceDialogs>
-      <MerchantCard merchant={storyMerchant} />
+      <MerchantCard merchant={merchant} />
     </WithInvoiceDialogs>
   ),
 };
 
 /** Merchant card with no merchant linked (null). */
 export const NoMerchant: Story = {
-  args: {
-    merchant: null,
-  },
-  render: () => (
+  args: {merchantPreset: "none", merchant: null},
+  render: ({merchant}) => (
     <WithInvoiceDialogs>
-      <MerchantCard merchant={null} />
+      <MerchantCard merchant={merchant} />
     </WithInvoiceDialogs>
   ),
 };
 
 /** Online-only merchant (no physical store address). */
 export const OnlineMerchant: Story = {
-  args: {
-    merchant: storyOnlineMerchant,
-  },
-  render: () => (
+  args: {merchantPreset: "online", merchant: storyOnlineMerchant},
+  render: ({merchant}) => (
     <WithInvoiceDialogs>
-      <MerchantCard merchant={storyOnlineMerchant} />
+      <MerchantCard merchant={merchant} />
     </WithInvoiceDialogs>
   ),
 };
 
 /** Merchant with a very long name and description to exercise text overflow. */
 export const LongText: Story = {
-  args: {
-    merchant: storyMerchant,
-  },
-  render: () => (
+  render: ({merchant}) => (
     <WithInvoiceDialogs>
       <MerchantCard
-        merchant={{
-          ...storyMerchant,
+        merchant={merchant ? {
+          ...merchant,
           name: "Corner Shop ABC International Wholesale & Retail Distribution Center Bucuresti Militari Branch",
           description:
             "A very long merchant description used to validate truncation, wrapping, and layout stability inside the merchant card across themes and locales.",
-        }}
+        } : null}
       />
     </WithInvoiceDialogs>
   ),

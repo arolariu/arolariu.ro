@@ -2,8 +2,11 @@ import {InvoiceBuilder} from "@/data/mocks/invoice";
 import {PaymentType} from "@/types/invoices";
 import type {Invoice} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
+import {invoicePresets, storyInvoice, withEntityPreset} from "@/app/domains/invoices/_storybook";
 import {InvoiceContextProvider} from "../../_context/InvoiceContext";
 import {BudgetImpactCard} from "./BudgetImpactCard";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 /**
  * BudgetImpactCard shows the monthly budget impact of an invoice including
@@ -24,14 +27,17 @@ const meta = {
       },
     },
   },
-} satisfies Meta<typeof BudgetImpactCard>;
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
 
-type InvoiceStoryProps = {
-  invoice: Invoice;
-};
-type Story = StoryObj<InvoiceStoryProps>;
+type Story = StoryObj<StoryArgs>;
 
 /** Under budget — healthy spending. */
 export const UnderBudget: Story = {

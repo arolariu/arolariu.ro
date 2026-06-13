@@ -1,6 +1,9 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {WithViewInvoiceContext, storyInvoice} from "@/app/domains/invoices/_storybook";
+import type {Invoice} from "@/types/invoices";
+import {invoicePresets, WithViewInvoiceContext, storyInvoice, withEntityPreset} from "@/app/domains/invoices/_storybook";
 import {AnalysisPanel} from "./AnalysisPanel";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 const analyzedTwoHoursAgo = new Date("2024-03-15T12:30:00.000Z");
 const analyzedThirtyMinutesAgo = new Date("2024-03-15T14:00:00.000Z");
@@ -40,10 +43,16 @@ const meta = {
     },
   },
   tags: ["autodocs"],
-} satisfies Meta<typeof AnalysisPanel>;
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default state: invoice has items (panel hidden by default).
@@ -53,14 +62,14 @@ type Story = StoryObj<typeof meta>;
  * This story shows the empty state.
  */
 export const Default: Story = {
-  render: () => {
-    const invoice = {
-      ...storyInvoice,
-      items: storyInvoice.items.slice(0, 5),
+  render: ({invoice}) => {
+    const invoiceWithItems = {
+      ...invoice,
+      items: invoice.items.slice(0, 5),
     };
 
     return (
-      <WithViewInvoiceContext invoice={invoice}>
+      <WithViewInvoiceContext invoice={invoiceWithItems}>
         <AnalysisPanel />
       </WithViewInvoiceContext>
     );
@@ -82,16 +91,16 @@ export const Default: Story = {
  * Displays last analyzed timestamp and all granular analysis options.
  */
 export const WithoutItems: Story = {
-  render: () => {
-    const invoice = {
-      ...storyInvoice,
+  render: ({invoice}) => {
+    const invoiceWithoutItems = {
+      ...invoice,
       items: [],
       lastUpdatedAt: analyzedTwoHoursAgo,
       numberOfUpdates: 1,
     };
 
     return (
-      <WithViewInvoiceContext invoice={invoice}>
+      <WithViewInvoiceContext invoice={invoiceWithoutItems}>
         <AnalysisPanel />
       </WithViewInvoiceContext>
     );
@@ -113,16 +122,16 @@ export const WithoutItems: Story = {
  * Last analyzed timestamp is creation date with zero updates.
  */
 export const NeverAnalyzed: Story = {
-  render: () => {
-    const invoice = {
-      ...storyInvoice,
+  render: ({invoice}) => {
+    const invoiceNeverAnalyzed = {
+      ...invoice,
       items: [],
-      lastUpdatedAt: storyInvoice.createdAt,
+      lastUpdatedAt: invoice.createdAt,
       numberOfUpdates: 0,
     };
 
     return (
-      <WithViewInvoiceContext invoice={invoice}>
+      <WithViewInvoiceContext invoice={invoiceNeverAnalyzed}>
         <AnalysisPanel />
       </WithViewInvoiceContext>
     );
@@ -143,16 +152,16 @@ export const NeverAnalyzed: Story = {
  * Shows update count badge for invoices that have been re-analyzed several times.
  */
 export const MultipleAnalyses: Story = {
-  render: () => {
-    const invoice = {
-      ...storyInvoice,
+  render: ({invoice}) => {
+    const invoiceMultipleAnalyses = {
+      ...invoice,
       items: [],
       lastUpdatedAt: analyzedThirtyMinutesAgo,
       numberOfUpdates: 5,
     };
 
     return (
-      <WithViewInvoiceContext invoice={invoice}>
+      <WithViewInvoiceContext invoice={invoiceMultipleAnalyses}>
         <AnalysisPanel />
       </WithViewInvoiceContext>
     );
@@ -173,9 +182,9 @@ export const MultipleAnalyses: Story = {
  * Brand new invoice created moments ago, ready for initial analysis.
  */
 export const RecentlyCreated: Story = {
-  render: () => {
-    const invoice = {
-      ...storyInvoice,
+  render: ({invoice}) => {
+    const invoiceRecentlyCreated = {
+      ...invoice,
       items: [],
       createdAt: recentlyCreated,
       lastUpdatedAt: recentlyCreated,
@@ -183,7 +192,7 @@ export const RecentlyCreated: Story = {
     };
 
     return (
-      <WithViewInvoiceContext invoice={invoice}>
+      <WithViewInvoiceContext invoice={invoiceRecentlyCreated}>
         <AnalysisPanel />
       </WithViewInvoiceContext>
     );
@@ -204,16 +213,16 @@ export const RecentlyCreated: Story = {
  * Shows relative time formatting for invoices last analyzed days or weeks ago.
  */
 export const AnalyzedLongAgo: Story = {
-  render: () => {
-    const invoice = {
-      ...storyInvoice,
+  render: ({invoice}) => {
+    const invoiceAnalyzedLongAgo = {
+      ...invoice,
       items: [],
       lastUpdatedAt: analyzedSevenDaysAgo,
       numberOfUpdates: 2,
     };
 
     return (
-      <WithViewInvoiceContext invoice={invoice}>
+      <WithViewInvoiceContext invoice={invoiceAnalyzedLongAgo}>
         <AnalysisPanel />
       </WithViewInvoiceContext>
     );

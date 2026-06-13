@@ -1,6 +1,9 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {Recipe} from "@/types/invoices";
 import RecipeCard from "./RecipeCard";
-import {storyRecipeEasy, storyRecipeHard, WithInvoiceDialogs} from "../../../_storybook";
+import {recipePresets, storyRecipeEasy, storyRecipeHard, WithInvoiceDialogs, withEntityPreset} from "../../../_storybook";
+
+type StoryArgs = {recipe: Recipe; recipePreset: "easy" | "hard"};
 
 /**
  * RecipeCard displays a recipe with complexity badge, ingredients, timing,
@@ -14,45 +17,43 @@ const meta = {
   parameters: {
     layout: "centered",
   },
-} satisfies Meta<typeof RecipeCard>;
+  argTypes: {
+    recipePreset: {control: "select", options: ["easy", "hard"]},
+    recipe: {control: "object"},
+  },
+  args: {recipePreset: "easy", recipe: storyRecipeEasy},
+  decorators: [withEntityPreset("recipePreset", "recipe", recipePresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /** Recipe card with easy complexity level. */
 export const EasyRecipe: Story = {
-  args: {
-    recipe: storyRecipeEasy,
-  },
-  render: () => (
+  render: ({recipe}) => (
     <WithInvoiceDialogs>
-      <RecipeCard recipe={storyRecipeEasy} />
+      <RecipeCard recipe={recipe} />
     </WithInvoiceDialogs>
   ),
 };
 
 /** Recipe card with hard complexity level. */
 export const HardRecipe: Story = {
-  args: {
-    recipe: storyRecipeHard,
-  },
-  render: () => (
+  args: {recipePreset: "hard", recipe: storyRecipeHard},
+  render: ({recipe}) => (
     <WithInvoiceDialogs>
-      <RecipeCard recipe={storyRecipeHard} />
+      <RecipeCard recipe={recipe} />
     </WithInvoiceDialogs>
   ),
 };
 
 /** Recipe card with a very long title to exercise heading truncation/wrapping. */
 export const LongTitleRecipe: Story = {
-  args: {
-    recipe: storyRecipeEasy,
-  },
-  render: () => (
+  render: ({recipe}) => (
     <WithInvoiceDialogs>
       <RecipeCard
         recipe={{
-          ...storyRecipeEasy,
+          ...recipe,
           name: "Slow-Roasted Mediterranean Vegetable & Halloumi Traybake with Lemon-Herb Dressing and Toasted Pine Nuts",
         }}
       />

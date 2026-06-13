@@ -1,7 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {WithViewInvoiceContext, storyInvoice, storyPublicInvoice, storyOnlineInvoice, seedInvoiceStoryStores, resetInvoiceStoryStores} from "@/app/domains/invoices/_storybook";
+import type {Invoice} from "@/types/invoices";
+import {WithViewInvoiceContext, storyInvoice, storyPublicInvoice, storyOnlineInvoice, seedInvoiceStoryStores, resetInvoiceStoryStores, invoicePresets, withEntityPreset} from "@/app/domains/invoices/_storybook";
 import {InvoiceCategory} from "@/types/invoices";
 import {RelatedInvoicesCard} from "./RelatedInvoicesCard";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 const meta = {
   title: "arolariu.ro/IMS/Cards/Invoice/RelatedInvoices",
@@ -16,17 +19,23 @@ const meta = {
       },
     },
   },
-} satisfies Meta<typeof RelatedInvoicesCard>;
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 export const NoRelated: Story = {
-  render: () => {
+  render: ({invoice}) => {
     resetInvoiceStoryStores();
-    seedInvoiceStoryStores({invoices: [storyInvoice]});
+    seedInvoiceStoryStores({invoices: [invoice]});
     return (
-      <WithViewInvoiceContext invoice={storyInvoice}>
+      <WithViewInvoiceContext invoice={invoice}>
         <RelatedInvoicesCard />
       </WithViewInvoiceContext>
     );
