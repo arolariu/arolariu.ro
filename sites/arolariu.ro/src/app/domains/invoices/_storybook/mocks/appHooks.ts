@@ -9,7 +9,7 @@ const storybookUserInformation = {
     lastName: "User",
     fullName: "Story User",
     username: "story.user",
-    imageUrl: "",
+    imageUrl: "https://picsum.photos/seed/arolariu-user/96/96",
     primaryEmailAddress: {emailAddress: "story.user@example.com"},
     emailAddresses: [{emailAddress: "story.user@example.com"}],
   },

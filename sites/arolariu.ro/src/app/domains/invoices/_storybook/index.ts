@@ -25,6 +25,8 @@ export {
 	storyCachedImageScan,
 	storyCachedPdfScan,
 	storyImageScanUrl,
+	storyImageScanUrlSecondary,
+	storyImageScanUrlWide,
 	storyInvoiceImageScan,
 	storyInvoicePdfScan,
 	storyPdfScanUrl,

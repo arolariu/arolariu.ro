@@ -9,8 +9,18 @@ import type {ScanDocumentKind, ScanDocumentRole, ScanMetadata} from "@/types/sca
 
 /**
  * Story image scan URL fixture.
+ *
+ * @remarks
+ * Uses a deterministic picsum.photos seed so the preview is stable and never
+ * falls back to a broken image. Same seed always yields the same image.
  */
-export const storyImageScanUrl = "https://cdn.arolariu.ro/invoices/storybook/receipt-001.jpg";
+export const storyImageScanUrl = "https://picsum.photos/seed/arolariu-receipt-001/400/600";
+
+/** Secondary seeded image scan URL for multi-scan variation stories. */
+export const storyImageScanUrlSecondary = "https://picsum.photos/seed/arolariu-receipt-002/400/600";
+
+/** Wide-format seeded image scan URL for landscape preview stories. */
+export const storyImageScanUrlWide = "https://picsum.photos/seed/arolariu-receipt-wide/800/400";
 
 /**
  * Story PDF scan URL fixture.
