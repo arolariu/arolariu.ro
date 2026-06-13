@@ -1,6 +1,17 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {OpenDialogButton, playOpenDialog, storyRecipeEasy, storyRecipeHard, WithEditInvoiceContext} from "../../../_storybook";
+import type {Recipe} from "@/types/invoices";
+import {
+  OpenDialogButton,
+  playOpenDialog,
+  recipePresets,
+  storyRecipeEasy,
+  storyRecipeHard,
+  WithEditInvoiceContext,
+  withEntityPreset,
+} from "../../../_storybook";
 import DeleteRecipeDialog from "./DeleteRecipeDialog";
+
+type StoryArgs = {recipe: Recipe; recipePreset: "easy" | "hard"};
 
 /**
  * DeleteRecipeDialog allows users to confirm deletion of a recipe.
@@ -26,10 +37,16 @@ const meta = {
 		},
 	},
 	tags: ["autodocs"],
-} satisfies Meta<typeof DeleteRecipeDialog>;
+	argTypes: {
+		recipePreset: {control: "select", options: ["easy", "hard"]},
+		recipe: {control: "object"},
+	},
+	args: {recipePreset: "easy", recipe: storyRecipeEasy},
+	decorators: [withEntityPreset("recipePreset", "recipe", recipePresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Shows delete confirmation for an easy recipe.
@@ -49,9 +66,9 @@ export const EasyRecipe: Story = {
 			},
 		},
 	},
-	render: () => (
+	render: ({recipe}) => (
 		<WithEditInvoiceContext>
-			<OpenDialogButton dialog="EDIT_INVOICE__RECIPE_DELETE" mode="delete" payload={{recipe: storyRecipeEasy}}>
+			<OpenDialogButton dialog="EDIT_INVOICE__RECIPE_DELETE" mode="delete" payload={{recipe}}>
 				<DeleteRecipeDialog />
 			</OpenDialogButton>
 		</WithEditInvoiceContext>
@@ -65,6 +82,7 @@ export const EasyRecipe: Story = {
  * Displays confirmation dialog for deleting "Beef Wellington" recipe.
  */
 export const ComplexRecipe: Story = {
+  args: {recipePreset: "hard", recipe: storyRecipeHard},
   play: playOpenDialog,
 	parameters: {
 		docs: {
@@ -76,9 +94,9 @@ export const ComplexRecipe: Story = {
 			},
 		},
 	},
-	render: () => (
+	render: ({recipe}) => (
 		<WithEditInvoiceContext>
-			<OpenDialogButton dialog="EDIT_INVOICE__RECIPE_DELETE" mode="delete" payload={{recipe: storyRecipeHard}}>
+			<OpenDialogButton dialog="EDIT_INVOICE__RECIPE_DELETE" mode="delete" payload={{recipe}}>
 				<DeleteRecipeDialog />
 			</OpenDialogButton>
 		</WithEditInvoiceContext>

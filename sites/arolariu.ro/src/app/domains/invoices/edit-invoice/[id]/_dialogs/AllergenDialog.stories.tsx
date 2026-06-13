@@ -1,6 +1,9 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {OpenDialogButton, playOpenDialog, storyInvoice, storyProducts} from "../../../_storybook";
+import type {Invoice} from "@/types/invoices";
+import {invoicePresets, OpenDialogButton, playOpenDialog, storyInvoice, storyProducts, withEntityPreset} from "../../../_storybook";
 import AllergenDialog from "./AllergenDialog";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 /**
  * AllergenDialog allows users to edit allergens on individual products.
@@ -26,10 +29,16 @@ const meta = {
 		},
 	},
 	tags: ["autodocs"],
-} satisfies Meta<typeof AllergenDialog>;
+	argTypes: {
+		invoicePreset: {control: "select", options: ["standard", "public"]},
+		invoice: {control: "object"},
+	},
+	args: {invoicePreset: "standard", invoice: storyInvoice},
+	decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Shows allergen dialog with existing allergens on milk product.
@@ -50,7 +59,7 @@ export const ExistingAllergens: Story = {
 			},
 		},
 	},
-	render: () => {
+	render: ({invoice}) => {
 		// Get the milk product which has lactose allergen
 		const milkProduct = storyProducts[0];
 		if (!milkProduct) {
@@ -61,7 +70,7 @@ export const ExistingAllergens: Story = {
 			<OpenDialogButton
 				dialog="EDIT_INVOICE__ALLERGENS"
 				mode="edit"
-				payload={{invoice: storyInvoice, product: milkProduct, productIndex: 0}}>
+				payload={{invoice, product: milkProduct, productIndex: 0}}>
 				<AllergenDialog />
 			</OpenDialogButton>
 		);
@@ -86,7 +95,7 @@ export const NoAllergens: Story = {
 			},
 		},
 	},
-	render: () => {
+	render: ({invoice}) => {
 		// Get the apples product which has no allergens
 		const applesProduct = storyProducts[3];
 		if (!applesProduct) {
@@ -97,7 +106,7 @@ export const NoAllergens: Story = {
 			<OpenDialogButton
 				dialog="EDIT_INVOICE__ALLERGENS"
 				mode="edit"
-				payload={{invoice: storyInvoice, product: applesProduct, productIndex: 3}}>
+				payload={{invoice, product: applesProduct, productIndex: 3}}>
 				<AllergenDialog />
 			</OpenDialogButton>
 		);

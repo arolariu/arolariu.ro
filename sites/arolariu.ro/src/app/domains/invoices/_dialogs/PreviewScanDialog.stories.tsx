@@ -1,6 +1,16 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {CachedScan} from "@/types/scans";
 import PreviewScanDialog from "./PreviewScanDialog";
-import {OpenDialogButton, playOpenDialog, storyCachedImageScan, storyCachedPdfScan} from "../_storybook";
+import {
+  OpenDialogButton,
+  playOpenDialog,
+  scanPresets,
+  storyCachedImageScan,
+  storyCachedPdfScan,
+  withEntityPreset,
+} from "../_storybook";
+
+type StoryArgs = {scan: CachedScan; scanPreset: "image" | "pdf"};
 
 /**
  * PreviewScanDialog displays a full-screen preview of a scan (image or PDF)
@@ -15,19 +25,25 @@ const meta = {
   parameters: {
     layout: "centered",
   },
-} satisfies Meta<typeof PreviewScanDialog>;
+  argTypes: {
+    scanPreset: {control: "select", options: ["image", "pdf"]},
+    scan: {control: "object"},
+  },
+  args: {scanPreset: "image", scan: storyCachedImageScan},
+  decorators: [withEntityPreset("scanPreset", "scan", scanPresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /** Image preview dialog showing a JPEG scan. */
 export const ImagePreview: Story = {
   play: playOpenDialog,
-  render: () => (
+  render: ({scan}) => (
     <OpenDialogButton
       dialog="SHARED__SCAN_PREVIEW"
       mode="view"
-      payload={{scan: storyCachedImageScan}}>
+      payload={{scan}}>
       <PreviewScanDialog />
     </OpenDialogButton>
   ),
@@ -35,12 +51,13 @@ export const ImagePreview: Story = {
 
 /** PDF preview dialog showing a PDF scan with browser-native viewer. */
 export const PdfPreview: Story = {
+  args: {scanPreset: "pdf", scan: storyCachedPdfScan},
   play: playOpenDialog,
-  render: () => (
+  render: ({scan}) => (
     <OpenDialogButton
       dialog="SHARED__SCAN_PREVIEW"
       mode="view"
-      payload={{scan: storyCachedPdfScan}}>
+      payload={{scan}}>
       <PreviewScanDialog />
     </OpenDialogButton>
   ),

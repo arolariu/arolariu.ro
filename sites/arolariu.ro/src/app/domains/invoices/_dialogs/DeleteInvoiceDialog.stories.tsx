@@ -1,7 +1,18 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {Invoice} from "@/types/invoices";
 import {expect, userEvent, waitFor, within} from "storybook/test";
-import {OpenDialogButton, playOpenDialog, setupViewInvoiceStory, storyInvoice} from "@/app/domains/invoices/_storybook";
+import {
+  invoicePresets,
+  OpenDialogButton,
+  playOpenDialog,
+  setupViewInvoiceStory,
+  storyInvoice,
+  storyPublicInvoice,
+  withEntityPreset,
+} from "@/app/domains/invoices/_storybook";
 import DeleteInvoiceDialog from "./DeleteInvoiceDialog";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 /**
  * DeleteInvoiceDialog displays a destructive confirmation dialog for permanently
@@ -23,13 +34,19 @@ const meta = {
       },
     },
   },
-  beforeEach: () => {
-    setupViewInvoiceStory({invoice: storyInvoice});
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
   },
-} satisfies Meta<typeof DeleteInvoiceDialog>;
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+  beforeEach: (context) => {
+    setupViewInvoiceStory({invoice: context.args.invoice});
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /** Confirmation dialog for deleting an invoice with items and scans. */
 export const OpenConfirmation: Story = {
@@ -42,15 +59,15 @@ export const OpenConfirmation: Story = {
       },
     },
   },
-  render: () => (
+  render: ({invoice}) => (
     <OpenDialogButton
       dialog="SHARED__INVOICE_DELETE"
       mode="delete"
-      payload={{invoice: storyInvoice}}>
+      payload={{invoice}}>
       <DeleteInvoiceDialog />
     </OpenDialogButton>
   ),
-  play: async ({canvasElement, step}) => {
+  play: async ({args, canvasElement, step}) => {
     const canvas = within(canvasElement);
     const body = within(document.body);
     const openButton = canvas.getByRole("button", {name: /open dialog/i});
@@ -58,7 +75,7 @@ export const OpenConfirmation: Story = {
     await step("opens the dialog via the trigger button", async () => {
       await userEvent.click(openButton);
       await expect(await body.findByRole("dialog")).toBeInTheDocument();
-      const nameMatches = await body.findAllByText(storyInvoice.name);
+      const nameMatches = await body.findAllByText(args.invoice.name);
       await expect(nameMatches.length).toBeGreaterThan(0);
     });
 
@@ -85,11 +102,11 @@ export const MinimalInvoice: Story = {
       },
     },
   },
-  render: () => (
+  render: ({invoice}) => (
     <OpenDialogButton
       dialog="SHARED__INVOICE_DELETE"
       mode="delete"
-      payload={{invoice: {...storyInvoice, items: [], scans: [], sharedWith: []}}}>
+      payload={{invoice: {...invoice, items: [], scans: [], sharedWith: []}}}>
       <DeleteInvoiceDialog />
     </OpenDialogButton>
   ),

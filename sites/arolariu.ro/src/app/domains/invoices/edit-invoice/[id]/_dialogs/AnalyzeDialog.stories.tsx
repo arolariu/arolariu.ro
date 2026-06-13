@@ -1,6 +1,9 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {OpenDialogButton, playOpenDialog, storyInvoice} from "../../../_storybook";
+import type {Invoice} from "@/types/invoices";
+import {invoicePresets, OpenDialogButton, playOpenDialog, storyInvoice, withEntityPreset} from "../../../_storybook";
 import AnalyzeDialog from "./AnalyzeDialog";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 /**
  * AnalyzeDialog allows users to perform AI analysis on invoice scans.
@@ -16,18 +19,24 @@ const meta = {
 		layout: "centered",
 	},
 	tags: ["autodocs"],
-} satisfies Meta<typeof AnalyzeDialog>;
+	argTypes: {
+		invoicePreset: {control: "select", options: ["standard", "public"]},
+		invoice: {control: "object"},
+	},
+	args: {invoicePreset: "standard", invoice: storyInvoice},
+	decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default dialog content with analysis options.
  */
 export const Default: Story = {
   play: playOpenDialog,
-	render: () => (
-		<OpenDialogButton dialog="EDIT_INVOICE__ANALYSIS" mode="view" payload={{invoice: storyInvoice}}>
+	render: ({invoice}) => (
+		<OpenDialogButton dialog="EDIT_INVOICE__ANALYSIS" mode="view" payload={{invoice}}>
 			<AnalyzeDialog />
 		</OpenDialogButton>
 	),
@@ -38,8 +47,8 @@ export const Default: Story = {
  */
 export const NoScans: Story = {
   play: playOpenDialog,
-	render: () => (
-		<OpenDialogButton dialog="EDIT_INVOICE__ANALYSIS" mode="view" payload={{invoice: {...storyInvoice, scans: []}}}>
+	render: ({invoice}) => (
+		<OpenDialogButton dialog="EDIT_INVOICE__ANALYSIS" mode="view" payload={{invoice: {...invoice, scans: []}}}>
 			<AnalyzeDialog />
 		</OpenDialogButton>
 	),

@@ -1,6 +1,9 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {OpenDialogButton, playOpenDialog, storyInvoice, storyProducts} from "../../../_storybook";
+import type {Invoice} from "@/types/invoices";
+import {invoicePresets, OpenDialogButton, playOpenDialog, storyInvoice, storyProducts, withEntityPreset} from "../../../_storybook";
 import BulkCategoryDialog from "./BulkCategoryDialog";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 /**
  * BulkCategoryDialog allows users to change the category of multiple products at once.
@@ -26,10 +29,16 @@ const meta = {
 		},
 	},
 	tags: ["autodocs"],
-} satisfies Meta<typeof BulkCategoryDialog>;
+	argTypes: {
+		invoicePreset: {control: "select", options: ["standard", "public"]},
+		invoice: {control: "object"},
+	},
+	args: {invoicePreset: "standard", invoice: storyInvoice},
+	decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Shows bulk category dialog with a few selected products.
@@ -49,7 +58,7 @@ export const FewProducts: Story = {
 			},
 		},
 	},
-	render: () => {
+	render: ({invoice}) => {
 		// Select first three products
 		const selectedProducts = storyProducts.slice(0, 3);
 		const selectedIndices = [0, 1, 2];
@@ -58,7 +67,7 @@ export const FewProducts: Story = {
 			<OpenDialogButton
 				dialog="EDIT_INVOICE__BULK_CATEGORY"
 				mode="edit"
-				payload={{invoice: storyInvoice, selectedProducts, selectedIndices}}>
+				payload={{invoice, selectedProducts, selectedIndices}}>
 				<BulkCategoryDialog />
 			</OpenDialogButton>
 		);
@@ -83,7 +92,7 @@ export const ManyProducts: Story = {
 			},
 		},
 	},
-	render: () => {
+	render: ({invoice}) => {
 		// Select all products
 		const selectedProducts = storyProducts;
 		const selectedIndices = storyProducts.map((_, index) => index);
@@ -92,7 +101,7 @@ export const ManyProducts: Story = {
 			<OpenDialogButton
 				dialog="EDIT_INVOICE__BULK_CATEGORY"
 				mode="edit"
-				payload={{invoice: storyInvoice, selectedProducts, selectedIndices}}>
+				payload={{invoice, selectedProducts, selectedIndices}}>
 				<BulkCategoryDialog />
 			</OpenDialogButton>
 		);

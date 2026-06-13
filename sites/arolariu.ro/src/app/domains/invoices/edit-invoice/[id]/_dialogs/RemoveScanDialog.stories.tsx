@@ -1,6 +1,9 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {OpenDialogButton, playOpenDialog, storyInvoice, storyInvoicePdfScan} from "../../../_storybook";
+import type {Invoice} from "@/types/invoices";
+import {invoicePresets, OpenDialogButton, playOpenDialog, storyInvoice, storyInvoicePdfScan, withEntityPreset} from "../../../_storybook";
 import RemoveScanDialog from "./RemoveScanDialog";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 /**
  * RemoveScanDialog allows users to remove a scan from an invoice.
@@ -16,26 +19,32 @@ const meta = {
 		layout: "centered",
 	},
 	tags: ["autodocs"],
-} satisfies Meta<typeof RemoveScanDialog>;
+	argTypes: {
+		invoicePreset: {control: "select", options: ["standard", "public"]},
+		invoice: {control: "object"},
+	},
+	args: {invoicePreset: "standard", invoice: storyInvoice},
+	decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default remove scan confirmation dialog.
  */
 export const Default: Story = {
   play: playOpenDialog,
-	render: () => {
-		if (!storyInvoice.scans || storyInvoice.scans.length === 0) {
+	render: ({invoice}) => {
+		if (!invoice.scans || invoice.scans.length === 0) {
 			throw new Error("RemoveScanDialog story requires at least one invoice scan fixture.");
 		}
-		const firstScan = storyInvoice.scans[0];
+		const firstScan = invoice.scans[0];
 		return (
 			<OpenDialogButton
 				dialog="EDIT_INVOICE__REMOVE_SCAN"
 				mode="delete"
-				payload={{invoice: storyInvoice, scan: firstScan, scanIndex: 0}}>
+				payload={{invoice, scan: firstScan, scanIndex: 0}}>
 				<RemoveScanDialog />
 			</OpenDialogButton>
 		);
@@ -47,8 +56,8 @@ export const Default: Story = {
  */
 export const PdfScan: Story = {
   play: playOpenDialog,
-	render: () => {
-		const invoiceWithPdf = {...storyInvoice, scans: [storyInvoicePdfScan]};
+	render: ({invoice}) => {
+		const invoiceWithPdf = {...invoice, scans: [storyInvoicePdfScan]};
 		return (
 			<OpenDialogButton
 				dialog="EDIT_INVOICE__REMOVE_SCAN"

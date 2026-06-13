@@ -1,6 +1,17 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {Invoice} from "@/types/invoices";
 import ShareInvoiceDialog from "./ShareInvoiceDialog";
-import {OpenDialogButton, playOpenDialog, storyInvoice, storyPublicInvoice, installStorybookBrowserMocks} from "../_storybook";
+import {
+  installStorybookBrowserMocks,
+  invoicePresets,
+  OpenDialogButton,
+  playOpenDialog,
+  storyInvoice,
+  storyPublicInvoice,
+  withEntityPreset,
+} from "../_storybook";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 /**
  * ShareInvoiceDialog provides privacy-aware invoice sharing with public link
@@ -15,22 +26,28 @@ const meta = {
   parameters: {
     layout: "centered",
   },
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
   beforeEach: () => {
     installStorybookBrowserMocks();
   },
-} satisfies Meta<typeof ShareInvoiceDialog>;
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /** Selection mode for private invoice — user chooses between public or private sharing. */
 export const Selection: Story = {
   play: playOpenDialog,
-  render: () => (
+  render: ({invoice}) => (
     <OpenDialogButton
       dialog="SHARED__INVOICE_SHARE"
       mode="share"
-      payload={{invoice: {...storyInvoice, sharedWith: []}}}>
+      payload={{invoice: {...invoice, sharedWith: []}}}>
       <ShareInvoiceDialog />
     </OpenDialogButton>
   ),
@@ -42,11 +59,11 @@ export const Selection: Story = {
  */
 export const PublicFlow: Story = {
   play: playOpenDialog,
-  render: () => (
+  render: ({invoice}) => (
     <OpenDialogButton
       dialog="SHARED__INVOICE_SHARE"
       mode="share"
-      payload={{invoice: {...storyInvoice, sharedWith: []}}}>
+      payload={{invoice: {...invoice, sharedWith: []}}}>
       <ShareInvoiceDialog />
     </OpenDialogButton>
   ),
@@ -54,12 +71,13 @@ export const PublicFlow: Story = {
 
 /** Invoice already public — displays current public link with QR code and revoke option. */
 export const AlreadyPublic: Story = {
+  args: {invoicePreset: "public", invoice: storyPublicInvoice},
   play: playOpenDialog,
-  render: () => (
+  render: ({invoice}) => (
     <OpenDialogButton
       dialog="SHARED__INVOICE_SHARE"
       mode="share"
-      payload={{invoice: storyPublicInvoice}}>
+      payload={{invoice}}>
       <ShareInvoiceDialog />
     </OpenDialogButton>
   ),

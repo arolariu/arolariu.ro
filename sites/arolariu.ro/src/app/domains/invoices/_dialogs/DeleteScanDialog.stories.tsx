@@ -1,6 +1,16 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {CachedScan} from "@/types/scans";
 import DeleteScanDialog from "./DeleteScanDialog";
-import {OpenDialogButton, playOpenDialog, storyCachedImageScan, storyCachedPdfScan} from "../_storybook";
+import {
+  OpenDialogButton,
+  playOpenDialog,
+  scanPresets,
+  storyCachedImageScan,
+  storyCachedPdfScan,
+  withEntityPreset,
+} from "../_storybook";
+
+type StoryArgs = {scan: CachedScan; scanPreset: "image" | "pdf"};
 
 /**
  * DeleteScanDialog displays a destructive confirmation dialog for permanently
@@ -15,19 +25,25 @@ const meta = {
   parameters: {
     layout: "centered",
   },
-} satisfies Meta<typeof DeleteScanDialog>;
+  argTypes: {
+    scanPreset: {control: "select", options: ["image", "pdf"]},
+    scan: {control: "object"},
+  },
+  args: {scanPreset: "image", scan: storyCachedImageScan},
+  decorators: [withEntityPreset("scanPreset", "scan", scanPresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /** Confirmation dialog for deleting a standalone scan. */
 export const OpenConfirmation: Story = {
   play: playOpenDialog,
-  render: () => (
+  render: ({scan}) => (
     <OpenDialogButton
       dialog="SHARED__SCAN_DELETE"
       mode="delete"
-      payload={{scan: storyCachedImageScan}}>
+      payload={{scan}}>
       <DeleteScanDialog />
     </OpenDialogButton>
   ),
@@ -35,12 +51,13 @@ export const OpenConfirmation: Story = {
 
 /** Confirmation dialog for deleting a standalone PDF scan. */
 export const PdfScan: Story = {
+  args: {scanPreset: "pdf", scan: storyCachedPdfScan},
   play: playOpenDialog,
-  render: () => (
+  render: ({scan}) => (
     <OpenDialogButton
       dialog="SHARED__SCAN_DELETE"
       mode="delete"
-      payload={{scan: storyCachedPdfScan}}>
+      payload={{scan}}>
       <DeleteScanDialog />
     </OpenDialogButton>
   ),

@@ -1,6 +1,17 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {OpenDialogButton, playOpenDialog, storyRecipeEasy, storyRecipeHard, WithEditInvoiceContext} from "../../../_storybook";
+import type {Recipe} from "@/types/invoices";
+import {
+  OpenDialogButton,
+  playOpenDialog,
+  recipePresets,
+  storyRecipeEasy,
+  storyRecipeHard,
+  WithEditInvoiceContext,
+  withEntityPreset,
+} from "../../../_storybook";
 import UpdateRecipeDialog from "./UpdateRecipeDialog";
+
+type StoryArgs = {recipe: Recipe; recipePreset: "easy" | "hard"};
 
 /**
  * UpdateRecipeDialog allows users to edit an existing recipe.
@@ -17,19 +28,25 @@ const meta = {
 		layout: "centered",
 	},
 	tags: ["autodocs"],
-} satisfies Meta<typeof UpdateRecipeDialog>;
+	argTypes: {
+		recipePreset: {control: "select", options: ["easy", "hard"]},
+		recipe: {control: "object"},
+	},
+	args: {recipePreset: "easy", recipe: storyRecipeEasy},
+	decorators: [withEntityPreset("recipePreset", "recipe", recipePresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default edit recipe dialog.
  */
 export const Default: Story = {
   play: playOpenDialog,
-	render: () => (
+	render: ({recipe}) => (
 		<WithEditInvoiceContext>
-			<OpenDialogButton dialog="EDIT_INVOICE__RECIPE_UPDATE" mode="edit" payload={{recipe: storyRecipeEasy}}>
+			<OpenDialogButton dialog="EDIT_INVOICE__RECIPE_UPDATE" mode="edit" payload={{recipe}}>
 				<UpdateRecipeDialog />
 			</OpenDialogButton>
 		</WithEditInvoiceContext>
@@ -40,10 +57,11 @@ export const Default: Story = {
  * Edit dialog pre-filled with a complex (hard) recipe.
  */
 export const HardRecipe: Story = {
+  args: {recipePreset: "hard", recipe: storyRecipeHard},
   play: playOpenDialog,
-	render: () => (
+	render: ({recipe}) => (
 		<WithEditInvoiceContext>
-			<OpenDialogButton dialog="EDIT_INVOICE__RECIPE_UPDATE" mode="edit" payload={{recipe: storyRecipeHard}}>
+			<OpenDialogButton dialog="EDIT_INVOICE__RECIPE_UPDATE" mode="edit" payload={{recipe}}>
 				<UpdateRecipeDialog />
 			</OpenDialogButton>
 		</WithEditInvoiceContext>

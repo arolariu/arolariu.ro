@@ -1,7 +1,9 @@
 import type {Meta, StoryObj} from "@storybook/react";
 import type {Recipe, RecipeComplexity} from "@/types/invoices/Recipe";
-import {OpenDialogButton, playOpenDialog, storyRecipeEasy} from "../../../_storybook";
+import {OpenDialogButton, playOpenDialog, recipePresets, storyRecipeEasy, withEntityPreset} from "../../../_storybook";
 import PreviewRecipeDialog from "./PreviewRecipeDialog";
+
+type StoryArgs = {recipe: Recipe; recipePreset: "easy" | "hard"};
 
 /**
  * PreviewRecipeDialog allows users to view recipe details in read-only mode.
@@ -27,10 +29,16 @@ const meta = {
 		},
 	},
 	tags: ["autodocs"],
-} satisfies Meta<typeof PreviewRecipeDialog>;
+	argTypes: {
+		recipePreset: {control: "select", options: ["easy", "hard"]},
+		recipe: {control: "object"},
+	},
+	args: {recipePreset: "easy", recipe: storyRecipeEasy},
+	decorators: [withEntityPreset("recipePreset", "recipe", recipePresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Shows complete recipe with all fields populated.
@@ -51,8 +59,8 @@ export const CompleteRecipe: Story = {
 			},
 		},
 	},
-	render: () => (
-		<OpenDialogButton dialog="EDIT_INVOICE__RECIPE_PREVIEW" mode="view" payload={{recipe: storyRecipeEasy}}>
+	render: ({recipe}) => (
+		<OpenDialogButton dialog="EDIT_INVOICE__RECIPE_PREVIEW" mode="view" payload={{recipe}}>
 			<PreviewRecipeDialog />
 		</OpenDialogButton>
 	),
