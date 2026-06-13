@@ -29,3 +29,13 @@ export const Default: Story = {
     onSendEmail: noop as unknown as (e: React.FormEvent) => void,
   },
 };
+
+/** Private sharing form pre-filled with a recipient email address. */
+export const WithEmail: Story = {
+  args: {
+    onBack: noop,
+    email: "friend@example.com",
+    onEmailChange: noop,
+    onSendEmail: noop as unknown as (e: React.FormEvent) => void,
+  },
+};

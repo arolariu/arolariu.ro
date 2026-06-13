@@ -30,3 +30,14 @@ export const Default: Story = {
     onCopyQRCode: noop,
   },
 };
+
+/** Public sharing view immediately after the link was copied (shows copied feedback). */
+export const Copied: Story = {
+  args: {
+    onBack: noop,
+    shareUrl: "https://arolariu.ro/domains/invoices/view-invoice/a1b2c3d4",
+    copied: true,
+    onCopyLink: noop,
+    onCopyQRCode: noop,
+  },
+};

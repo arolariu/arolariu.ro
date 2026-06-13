@@ -49,3 +49,36 @@ export const Default: Story = {
     </div>
   ),
 };
+
+/** Image dialog showing a wide, landscape-orientation scan. */
+export const Landscape: Story = {
+  render: () => (
+    <div
+      style={{
+        borderRadius: "0.75rem",
+        border: "1px solid #e5e7eb",
+        backgroundColor: "#fff",
+        boxShadow: "0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1)",
+      }}>
+      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1.5rem"}}>
+        <h2 style={{fontSize: "1.125rem", fontWeight: 600}}>Receipt Image</h2>
+      </div>
+      <div
+        style={{
+          position: "relative",
+          display: "flex",
+          aspectRatio: "16/9",
+          maxHeight: "500px",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#f9fafb",
+        }}>
+        <img
+          src='https://picsum.photos/seed/arolariu-receipt-wide/800/400'
+          alt='Wide receipt scan preview'
+          style={{height: "100%", width: "100%", objectFit: "contain"}}
+        />
+      </div>
+    </div>
+  ),
+};
