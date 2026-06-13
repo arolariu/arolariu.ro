@@ -57,10 +57,23 @@
         "storybook": {
           "command": "npm run test:storybook"
         },
+        "storybook-vitest": {
+          "command": "npm run test:storybook:vitest"
+        },
         "all": {
           "command": "npm run test"
         }
       }
+    },
+    "test:storybook": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run test:storybook:vitest",
+        "cwd": "sites/arolariu.ro"
+      },
+      "outputs": [
+        "{projectRoot}/storybook-static"
+      ]
     },
     "storybook": {
       "executor": "nx:run-commands",

@@ -5,7 +5,7 @@ import {getStorybookResolverPlugins, getStorybookViteAliases} from "./domainAlia
 
 const config: StorybookConfig = {
   stories: ["../src/**/*.stories.@(ts|tsx)"],
-  addons: ["@storybook/addon-a11y", "@storybook/addon-docs", "@storybook/addon-themes"],
+  addons: ["@storybook/addon-a11y", "@storybook/addon-docs", "@storybook/addon-themes", "@storybook/addon-vitest"],
   framework: {
     name: "@storybook/nextjs-vite",
     options: {},

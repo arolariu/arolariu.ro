@@ -75,4 +75,3 @@ export * from "./fixtures";
 export * from "./providers";
 export * from "./stores";
 export * from "./test-utils";
-export {getInvoiceStorybookAliases, getInvoiceStorybookResolverPlugins} from "./domainAliases";
