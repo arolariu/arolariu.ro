@@ -20,6 +20,11 @@ import enMessages from "../messages/en.json";
 import frMessages from "../messages/fr.json";
 import roMessages from "../messages/ro.json";
 
+import {Atkinson_Hyperlegible, Caudex} from "next/font/google";
+
+const normalFont = Caudex({weight: "700", style: "normal", subsets: ["latin"], variable: "--font-default", preload: true});
+const dyslexicFont = Atkinson_Hyperlegible({weight: "400", style: "normal", subsets: ["latin"], variable: "--font-dyslexic", preload: false});
+
 // ─── Message catalog ─────────────────────────────────────────────
 const messagesByLocale: Record<string, AbstractIntlMessages> = {
   en: enMessages as AbstractIntlMessages,
@@ -46,50 +51,29 @@ export const withI18n: Decorator = (Story, context) => {
 };
 
 /**
- * Loads Storybook font choices and applies the selected font through scoped
- * wrapper classes.
+ * Applies the selected next/font className to the document root from the toolbar.
+ * Mirrors production's FontContext: the chosen font's className is applied to
+ * <html>, setting a real, cascading font-family (Caudex normal / Atkinson dyslexic).
  */
 export const withFontSwitcher: Decorator = (Story, context) => {
   const font = (context.globals["font"] as string) ?? "normal";
-  const fontClass = font === "dyslexic" ? "sb-font-dyslexic" : "sb-font-normal";
 
   if (typeof document !== "undefined") {
-    const fontLinkId = "sb-google-fonts";
-    const fontStyleId = "sb-font-switcher-styles";
+    const root = document.documentElement;
+    const active = font === "dyslexic" ? dyslexicFont : normalFont;
+    const other = font === "dyslexic" ? normalFont : dyslexicFont;
 
-    if (!document.getElementById(fontLinkId)) {
-      const link = document.createElement("link");
-      link.id = fontLinkId;
-      link.rel = "stylesheet";
-      link.href =
-        "https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Caudex:wght@400;700&display=swap";
-      document.head.appendChild(link);
+    for (const cls of `${other.className} ${other.variable}`.split(" ").filter(Boolean)) {
+      root.classList.remove(cls);
     }
-
-    if (!document.getElementById(fontStyleId)) {
-      const style = document.createElement("style");
-      style.id = fontStyleId;
-      style.textContent = `
-        .sb-font-normal {
-          --font-default: 'Caudex', Georgia, 'Times New Roman', serif;
-          --font-dyslexic: 'Atkinson Hyperlegible', system-ui, sans-serif;
-          font-family: var(--font-default);
-        }
-
-        .sb-font-dyslexic {
-          --font-default: 'Atkinson Hyperlegible', system-ui, sans-serif;
-          --font-dyslexic: 'Atkinson Hyperlegible', system-ui, sans-serif;
-          font-family: var(--font-default);
-        }
-      `;
-      document.head.appendChild(style);
+    for (const cls of `${active.className} ${active.variable}`.split(" ").filter(Boolean)) {
+      root.classList.add(cls);
     }
+    root.style.fontFamily = active.style.fontFamily;
   }
 
   return (
-    <div
-      key={`font-${font}`}
-      className={fontClass}>
+    <div key={`font-${font}`}>
       <Story />
     </div>
   );
