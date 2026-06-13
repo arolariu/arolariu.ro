@@ -1,4 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {MerchantAggregate} from "../../../_utils/statistics";
 import {computeMerchantAggregates} from "../../../_utils/statistics";
 import {emptyInvoices, MOCK_MERCHANTS, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {MerchantLeaderboard} from "./MerchantLeaderboard";
@@ -15,6 +16,8 @@ const merchantNamesById = {
   [MOCK_MERCHANTS.KFC]: "KFC",
   [MOCK_MERCHANTS.PIZZA_HUT]: "Pizza Hut",
 } as const;
+
+type StoryArgs = {data: MerchantAggregate[]; currency: string; merchantNamesById?: Record<string, string>};
 
 /**
  * MerchantLeaderboard displays top merchants by spending as horizontal bars.
@@ -47,30 +50,25 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    data: {
-      description: "Array of merchant aggregates sorted by total spending (descending)",
-      control: false,
-    },
-    currency: {
-      description: "Display currency label for RON-normalized aggregates.",
-      control: "text",
-    },
+    data: {control: "object"},
+    currency: {control: "text"},
+    merchantNamesById: {control: "object"},
   },
-} satisfies Meta<typeof MerchantLeaderboard>;
+  args: {
+    data: computeMerchantAggregates(mockInvoices).slice(0, 10),
+    currency: "RON",
+    merchantNamesById,
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default view with top merchants.
  * Shows realistic leaderboard with diverse merchant spending.
  */
 export const Default: Story = {
-  args: {
-    data: computeMerchantAggregates(mockInvoices).slice(0, 10),
-    currency: "RON",
-    merchantNamesById,
-  },
   parameters: {
     docs: {
       description: {

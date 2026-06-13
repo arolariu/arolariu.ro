@@ -1,7 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {TimeOfDaySegment} from "../../../_utils/statistics";
 import {computeTimeOfDay} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {TimeOfDayChart} from "./TimeOfDayChart";
+
+type StoryArgs = {data: TimeOfDaySegment[]};
 
 /**
  * TimeOfDayChart displays shopping patterns by time segment as a radar chart.
@@ -38,24 +41,21 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    data: {
-      description: "Array of time-of-day segments with segment names, invoice counts, and spending totals",
-      control: false,
-    },
+    data: {control: "object"},
   },
-} satisfies Meta<typeof TimeOfDayChart>;
+  args: {
+    data: computeTimeOfDay(mockInvoices),
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default view with diverse patterns.
  * Shows realistic distribution across all time segments.
  */
 export const Default: Story = {
-  args: {
-    data: computeTimeOfDay(mockInvoices),
-  },
   parameters: {
     docs: {
       description: {

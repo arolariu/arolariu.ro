@@ -1,7 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {KPISummary} from "../../../_utils/statistics";
 import {computeKPIs} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {KPISummaryRow} from "./KPISummaryRow";
+
+type StoryArgs = {data: KPISummary; currency: string};
 
 /**
  * KPISummaryRow displays key performance indicators in animated cards.
@@ -34,29 +37,23 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    data: {
-      description: "Computed KPI data with totals, averages, and aggregates",
-      control: false,
-    },
-    currency: {
-      description: "Currency code for display (RON). Aggregate data is RON-normalized.",
-      control: "text",
-    },
+    data: {control: "object"},
+    currency: {control: "text"},
   },
-} satisfies Meta<typeof KPISummaryRow>;
+  args: {
+    data: computeKPIs(mockInvoices),
+    currency: "RON",
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default view with diverse metrics.
  * Shows KPI summary with realistic values across all invoices.
  */
 export const Default: Story = {
-  args: {
-    data: computeKPIs(mockInvoices),
-    currency: "RON",
-  },
   parameters: {
     docs: {
       description: {

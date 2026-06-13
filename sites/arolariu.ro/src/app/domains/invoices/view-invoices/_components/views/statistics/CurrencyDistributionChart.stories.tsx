@@ -1,7 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {CurrencyDistribution} from "../../../_utils/statistics";
 import {computeCurrencyDistribution} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, ronOnlyInvoices} from "./__mocks__/mockInvoices";
 import {CurrencyDistributionChart} from "./CurrencyDistributionChart";
+
+type StoryArgs = {data: CurrencyDistribution[]};
 
 /**
  * CurrencyDistributionChart displays multi-currency spending patterns.
@@ -32,25 +35,21 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    data: {
-      description: "Array of currency distribution data with totals and percentages",
-      control: false,
-    },
+    data: {control: "object"},
   },
-} satisfies Meta<typeof CurrencyDistributionChart>;
+  args: {
+    data: computeCurrencyDistribution(mockInvoices),
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default view with multiple currencies (RON, EUR, USD).
  * Shows spending across 3 different currencies with RON conversion.
  */
-export const Default: Story = {
-  args: {
-    data: computeCurrencyDistribution(mockInvoices),
-  },
-};
+export const Default: Story = {};
 
 /**
  * Single currency scenario - displays special message instead of chart.

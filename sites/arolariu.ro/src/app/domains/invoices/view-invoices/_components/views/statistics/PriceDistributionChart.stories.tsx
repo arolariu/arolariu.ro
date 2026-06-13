@@ -1,7 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {PriceBucket} from "../../../_utils/statistics";
 import {computePriceDistribution} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {PriceDistributionChart} from "./PriceDistributionChart";
+
+type StoryArgs = {data: PriceBucket[]; currency: string};
 
 /**
  * PriceDistributionChart displays invoice total distribution in buckets as a vertical bar chart.
@@ -34,29 +37,23 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    data: {
-      description: "Array of price buckets with range labels, counts, and total amounts",
-      control: false,
-    },
-    currency: {
-      description: "Currency code for display (RON). Aggregate data is RON-normalized.",
-      control: "text",
-    },
+    data: {control: "object"},
+    currency: {control: "text"},
   },
-} satisfies Meta<typeof PriceDistributionChart>;
+  args: {
+    data: computePriceDistribution(mockInvoices),
+    currency: "RON",
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default view with varied distribution.
  * Shows realistic price distribution across several buckets.
  */
 export const Default: Story = {
-  args: {
-    data: computePriceDistribution(mockInvoices),
-    currency: "RON",
-  },
   parameters: {
     docs: {
       description: {

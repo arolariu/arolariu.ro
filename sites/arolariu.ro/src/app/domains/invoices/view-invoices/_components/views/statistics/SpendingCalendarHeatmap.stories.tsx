@@ -1,4 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {DailySpending} from "../../../_utils/statistics";
 import {computeDailySpending} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import SpendingCalendarHeatmap from "./SpendingCalendarHeatmap";
@@ -52,6 +53,8 @@ function createFixedDateConstructor(fixedTime: number): DateConstructor {
   return FixedDate as DateConstructor;
 }
 
+type StoryArgs = {data: DailySpending[]; currency: string};
+
 /**
  * SpendingCalendarHeatmap displays daily spending as a GitHub-style calendar heatmap.
  *
@@ -84,14 +87,12 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    data: {
-      description: "Array of daily spending data with ISO date strings, amounts, and invoice counts",
-      control: false,
-    },
-    currency: {
-      description: "Display currency label for RON-normalized aggregates.",
-      control: "text",
-    },
+    data: {control: "object"},
+    currency: {control: "text"},
+  },
+  args: {
+    data: computeDailySpending(mockInvoices),
+    currency: "RON",
   },
   beforeEach: () => {
     if (activeDateMocks === 0) {
@@ -106,20 +107,16 @@ const meta = {
       }
     };
   },
-} satisfies Meta<typeof SpendingCalendarHeatmap>;
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default view with varied daily spending.
  * Shows realistic heatmap with diverse spending patterns across days.
  */
 export const Default: Story = {
-  args: {
-    data: computeDailySpending(mockInvoices),
-    currency: "RON",
-  },
   parameters: {
     docs: {
       description: {

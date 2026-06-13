@@ -1,8 +1,11 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {CategoryAggregate} from "../../../_utils/statistics";
 import {InvoiceCategory} from "@/types/invoices";
 import {computeCategoryAggregates} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {CategoryBreakdownChart} from "./CategoryBreakdownChart";
+
+type StoryArgs = {data: CategoryAggregate[]; currency: string};
 
 /**
  * CategoryBreakdownChart displays spending breakdown by invoice category as a donut chart.
@@ -35,29 +38,23 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    data: {
-      description: "Array of category aggregates with spending amounts, counts, and percentages",
-      control: false,
-    },
-    currency: {
-      description: "Currency code for display (RON). Aggregate data is RON-normalized.",
-      control: "text",
-    },
+    data: {control: "object"},
+    currency: {control: "text"},
   },
-} satisfies Meta<typeof CategoryBreakdownChart>;
+  args: {
+    data: computeCategoryAggregates(mockInvoices),
+    currency: "RON",
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default view with diverse categories.
  * Shows spending across several invoice categories from the deterministic mock dataset.
  */
 export const Default: Story = {
-  args: {
-    data: computeCategoryAggregates(mockInvoices),
-    currency: "RON",
-  },
   parameters: {
     docs: {
       description: {

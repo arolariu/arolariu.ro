@@ -1,7 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {AllergenFrequency} from "../../../_utils/statistics";
 import {computeAllergenFrequency} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {AllergenSummaryChart} from "./AllergenSummaryChart";
+
+type StoryArgs = {data: AllergenFrequency[]};
 
 /**
  * AllergenSummaryChart displays allergen frequency across products.
@@ -32,25 +35,21 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    data: {
-      description: "Array of allergen frequencies sorted by product count",
-      control: false,
-    },
+    data: {control: "object"},
   },
-} satisfies Meta<typeof AllergenSummaryChart>;
+  args: {
+    data: computeAllergenFrequency(mockInvoices),
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default view with diverse allergens.
  * Shows common allergens found across all products (gluten, lactose, etc.).
  */
-export const Default: Story = {
-  args: {
-    data: computeAllergenFrequency(mockInvoices),
-  },
-};
+export const Default: Story = {};
 
 /**
  * Empty state - no allergens detected.

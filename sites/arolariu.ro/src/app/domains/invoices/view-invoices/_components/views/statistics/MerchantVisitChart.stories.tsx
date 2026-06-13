@@ -1,7 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {MerchantVisitPattern} from "../../../_utils/statistics";
 import {computeMerchantVisitFrequency} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {MerchantVisitChart} from "./MerchantVisitChart";
+
+type StoryArgs = {data: MerchantVisitPattern[]; currency: string; topN: number};
 
 /**
  * MerchantVisitChart displays visit patterns and shopping behavior per merchant.
@@ -33,35 +36,25 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    data: {
-      description: "Array of merchant visit pattern data sorted by total visits",
-      control: false,
-    },
-    currency: {
-      description: "Currency code for display",
-      control: "text",
-    },
-    topN: {
-      description: "Number of merchants to display (default: 6)",
-      control: "number",
-    },
+    data: {control: "object"},
+    currency: {control: "text"},
+    topN: {control: "number"},
   },
-} satisfies Meta<typeof MerchantVisitChart>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-/**
- * Default view showing top 6 merchants.
- * Displays visit patterns for most frequented stores.
- */
-export const Default: Story = {
   args: {
     data: computeMerchantVisitFrequency(mockInvoices),
     currency: "lei",
     topN: 6,
   },
-};
+} satisfies Meta<StoryArgs>;
+
+export default meta;
+type Story = StoryObj<StoryArgs>;
+
+/**
+ * Default view showing top 6 merchants.
+ * Displays visit patterns for most frequented stores.
+ */
+export const Default: Story = {};
 
 /**
  * Empty state - no merchant data.

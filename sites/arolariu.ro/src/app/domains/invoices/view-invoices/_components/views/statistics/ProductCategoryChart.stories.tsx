@@ -1,7 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {ProductCategorySpending} from "../../../_utils/statistics";
 import {computeProductCategorySpending} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {ProductCategoryChart} from "./ProductCategoryChart";
+
+type StoryArgs = {data: ProductCategorySpending[]; currency: string};
 
 /**
  * ProductCategoryChart displays spending breakdown by product category.
@@ -32,30 +35,23 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    data: {
-      description: "Array of product category spending aggregates",
-      control: false,
-    },
-    currency: {
-      description: "Currency code for display (always RON for normalized data)",
-      control: "text",
-    },
+    data: {control: "object"},
+    currency: {control: "text"},
   },
-} satisfies Meta<typeof ProductCategoryChart>;
+  args: {
+    data: computeProductCategorySpending(mockInvoices),
+    currency: "lei",
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default view with diverse product categories.
  * Shows spending across multiple product types (dairy, meat, beverages, etc.).
  */
-export const Default: Story = {
-  args: {
-    data: computeProductCategorySpending(mockInvoices),
-    currency: "lei",
-  },
-};
+export const Default: Story = {};
 
 /**
  * Empty state - no products available.

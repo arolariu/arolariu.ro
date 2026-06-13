@@ -1,7 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {TopProduct} from "../../../_utils/statistics";
 import {computeTopProducts} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {TopProductsChart} from "./TopProductsChart";
+
+type StoryArgs = {data: TopProduct[]; currency: string};
 
 /**
  * TopProductsChart displays most purchased products in leaderboard format.
@@ -32,30 +35,23 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    data: {
-      description: "Array of top products sorted by total spending",
-      control: false,
-    },
-    currency: {
-      description: "Currency code for display (always RON for normalized data)",
-      control: "text",
-    },
+    data: {control: "object"},
+    currency: {control: "text"},
   },
-} satisfies Meta<typeof TopProductsChart>;
+  args: {
+    data: computeTopProducts(mockInvoices),
+    currency: "lei",
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default view showing top 10 products.
  * Displays most purchased items across all invoices.
  */
-export const Default: Story = {
-  args: {
-    data: computeTopProducts(mockInvoices),
-    currency: "lei",
-  },
-};
+export const Default: Story = {};
 
 /**
  * Empty state - no products available.

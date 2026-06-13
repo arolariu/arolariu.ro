@@ -1,7 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {MerchantTrend} from "../../../_utils/statistics";
 import {computeMerchantTrends} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {MerchantTrendsChart} from "./MerchantTrendsChart";
+
+type StoryArgs = {data: MerchantTrend[]; currency: string};
 
 /**
  * MerchantTrendsChart displays spending trends for top merchants over time.
@@ -32,30 +35,23 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    data: {
-      description: "Array of merchant trend data sorted by total spend",
-      control: false,
-    },
-    currency: {
-      description: "Currency display label or symbol",
-      control: "text",
-    },
+    data: {control: "object"},
+    currency: {control: "text"},
   },
-} satisfies Meta<typeof MerchantTrendsChart>;
+  args: {
+    data: computeMerchantTrends(mockInvoices),
+    currency: "lei",
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default view showing top 5 merchants.
  * Displays spending trends for most frequented stores.
  */
-export const Default: Story = {
-  args: {
-    data: computeMerchantTrends(mockInvoices),
-    currency: "lei",
-  },
-};
+export const Default: Story = {};
 
 /**
  * Empty state - no merchant data.

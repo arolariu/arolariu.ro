@@ -1,7 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {MonthComparison} from "../../../_utils/statistics";
 import {computeMonthComparison} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {ComparisonCards} from "./ComparisonCards";
+
+type StoryArgs = {data: MonthComparison; currency: string};
 
 /**
  * ComparisonCards displays month-over-month comparison metrics in animated cards.
@@ -34,29 +37,23 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    data: {
-      description: "Month comparison data with current/previous month metrics and deltas",
-      control: false,
-    },
-    currency: {
-      description: "Display currency label for RON-normalized aggregates.",
-      control: "text",
-    },
+    data: {control: "object"},
+    currency: {control: "text"},
   },
-} satisfies Meta<typeof ComparisonCards>;
+  args: {
+    data: computeMonthComparison(mockInvoices),
+    currency: "RON",
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default view with mixed trends.
  * Shows realistic month-over-month comparison with varied metrics.
  */
 export const Default: Story = {
-  args: {
-    data: computeMonthComparison(mockInvoices),
-    currency: "RON",
-  },
   parameters: {
     docs: {
       description: {

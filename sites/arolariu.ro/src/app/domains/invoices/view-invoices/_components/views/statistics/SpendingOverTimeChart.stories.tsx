@@ -1,7 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {MonthlySpending} from "../../../_utils/statistics";
 import {computeMonthlySpending} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {SpendingOverTimeChart} from "./SpendingOverTimeChart";
+
+type StoryArgs = {data: MonthlySpending[]; currency: string};
 
 /**
  * SpendingOverTimeChart displays monthly spending trends as an area chart.
@@ -35,29 +38,23 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    data: {
-      description: "Array of monthly spending data with month labels, amounts, counts, and invoice details",
-      control: false,
-    },
-    currency: {
-      description: "Display currency label for RON-normalized aggregates.",
-      control: "text",
-    },
+    data: {control: "object"},
+    currency: {control: "text"},
   },
-} satisfies Meta<typeof SpendingOverTimeChart>;
+  args: {
+    data: computeMonthlySpending(mockInvoices),
+    currency: "RON",
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default view with multi-month trends.
  * Shows realistic spending pattern across several months.
  */
 export const Default: Story = {
-  args: {
-    data: computeMonthlySpending(mockInvoices),
-    currency: "RON",
-  },
   parameters: {
     docs: {
       description: {
