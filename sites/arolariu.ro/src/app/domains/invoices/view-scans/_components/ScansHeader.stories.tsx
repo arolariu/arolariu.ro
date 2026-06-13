@@ -36,7 +36,7 @@ function seedScansHeaderStore(scans: readonly CachedScan[], isSyncing = false): 
 }
 
 const meta = {
-  title: "arolariu.ro/IMS/ViewScans/Components/ScansHeader",
+  title: "arolariu.ro/IMS/Components/Scan/ScansHeader",
   component: ScansHeader,
   parameters: {
     layout: "fullscreen",

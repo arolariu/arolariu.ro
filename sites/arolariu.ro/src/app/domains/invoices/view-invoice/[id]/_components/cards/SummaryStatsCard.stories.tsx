@@ -6,7 +6,7 @@ import {SummaryStatsCard} from "./SummaryStatsCard";
  * categories, average price, tax rate, and extreme price items.
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoice/Cards/Invoice/SummaryStats",
+  title: "arolariu.ro/IMS/Cards/Invoice/SummaryStats",
   component: SummaryStatsCard,
   parameters: {
     layout: "centered",

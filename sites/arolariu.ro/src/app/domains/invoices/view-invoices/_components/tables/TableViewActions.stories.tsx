@@ -8,7 +8,7 @@ import TableViewActions from "./TableViewActions";
  * `useDialog` context and `useTranslations`.
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoices/Views/TableViewActions",
+  title: "arolariu.ro/IMS/Views/TableViewActions",
   component: TableViewActions,
   decorators: [
     (Story) => (

@@ -8,7 +8,7 @@ import FeaturesSection from "./FeaturesSection";
  * Uses the `Invoices.Homepage` i18n namespace.
  */
 const meta = {
-  title: "arolariu.ro/IMS/Homepage/FeaturesSection",
+  title: "arolariu.ro/IMS/Sections/FeaturesSection",
   component: FeaturesSection,
   parameters: {
     layout: "fullscreen",

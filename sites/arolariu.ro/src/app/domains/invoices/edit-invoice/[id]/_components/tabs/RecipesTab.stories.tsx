@@ -7,7 +7,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * This story renders a static preview of the recipes tab layout.
  */
 const meta = {
-  title: "arolariu.ro/IMS/EditInvoice/Tabs/RecipesTab",
+  title: "arolariu.ro/IMS/Tabs/Recipe/RecipesTab",
   parameters: {
     layout: "centered",
   },

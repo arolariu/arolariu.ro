@@ -7,7 +7,7 @@ import {TableView} from "./TableView";
  * checkboxes, category badges, dates, amounts, and row-level actions.
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoices/Views/TableView",
+  title: "arolariu.ro/IMS/Views/TableView",
   component: TableView,
   tags: ["autodocs"],
   parameters: {

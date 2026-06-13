@@ -12,7 +12,7 @@ import {storyImageScanUrl, storyPdfScanUrl} from "@/app/domains/invoices/_storyb
 import {logStoryAction} from "@/app/domains/invoices/_storybook/utils/storyActions";
 
 const meta = {
-	title: "arolariu.ro/IMS/Shared/ScanCard",
+	title: "arolariu.ro/IMS/Cards/Scan/ScanCard",
 	component: ScanCard,
 	parameters: {
 		layout: "centered",

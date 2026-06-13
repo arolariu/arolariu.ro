@@ -45,7 +45,7 @@ function ReviewStepWithDetailsAndScans({
 }
 
 const meta = {
-	title: "arolariu.ro/IMS/CreateInvoice/ReviewStep",
+	title: "arolariu.ro/IMS/Forms/ReviewStep",
 	component: ReviewStep,
 	parameters: {
 		layout: "fullscreen",

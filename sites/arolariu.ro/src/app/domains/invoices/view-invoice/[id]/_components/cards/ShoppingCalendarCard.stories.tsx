@@ -8,7 +8,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * These stories render static previews of the shopping calendar card.
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoice/Cards/Invoice/ShoppingCalendar",
+  title: "arolariu.ro/IMS/Cards/Invoice/ShoppingCalendar",
   parameters: {
     layout: "centered",
   },

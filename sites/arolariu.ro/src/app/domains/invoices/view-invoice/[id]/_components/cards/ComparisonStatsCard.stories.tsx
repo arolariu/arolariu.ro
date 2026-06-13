@@ -6,7 +6,7 @@ import {ComparisonStatsCard} from "./ComparisonStatsCard";
  * showing spending range, item count, and same-merchant comparisons.
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoice/Cards/Invoice/ComparisonStats",
+  title: "arolariu.ro/IMS/Cards/Invoice/ComparisonStats",
   component: ComparisonStatsCard,
   parameters: {
     layout: "centered",

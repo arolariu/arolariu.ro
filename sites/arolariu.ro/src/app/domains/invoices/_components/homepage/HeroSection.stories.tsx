@@ -9,7 +9,7 @@ import HeroSection from "./HeroSection";
  * Uses the `Invoices.Homepage` i18n namespace.
  */
 const meta = {
-  title: "arolariu.ro/IMS/Homepage/HeroSection",
+  title: "arolariu.ro/IMS/Sections/HeroSection",
   component: HeroSection,
   parameters: {
     layout: "fullscreen",

@@ -10,7 +10,7 @@ import {NutritionCard} from "./NutritionCard";
  * These stories mount the real component through `WithViewInvoiceContext`.
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoice/Insights/NutritionCard",
+  title: "arolariu.ro/IMS/Insights/Products/NutritionCard",
   component: NutritionCard,
   parameters: {
     layout: "centered",

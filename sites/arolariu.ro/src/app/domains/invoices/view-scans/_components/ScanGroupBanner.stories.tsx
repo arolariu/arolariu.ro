@@ -42,7 +42,7 @@ const scanGroup = [
 ] as const;
 
 const meta = {
-	title: "arolariu.ro/IMS/ViewScans/Components/ScanGroupBanner",
+	title: "arolariu.ro/IMS/Banners/Scan/ScanGroupBanner",
 	component: ScanGroupBanner,
 	parameters: {
 		layout: "fullscreen",

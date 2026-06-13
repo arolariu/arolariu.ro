@@ -53,7 +53,13 @@ const preview: Preview = {
         method: "alphabetical",
         order: [
           "arolariu.ro",
-          ["Site", "Pages", ["Home", "About", "Auth", "Legal", "Acknowledgements", "Profile"], "IMS"],
+          [
+            "Site",
+            "Pages",
+            ["Home", "About", "Auth", "Legal", "Acknowledgements", "Profile"],
+            "IMS",
+            ["Dialogs", "Cards", "Charts", "Tables", "Tabs", "Timeline", "Banners", "Insights", "Statistics", "Views", "Components", "Sections", "Forms", "States"],
+          ],
         ],
       },
     },

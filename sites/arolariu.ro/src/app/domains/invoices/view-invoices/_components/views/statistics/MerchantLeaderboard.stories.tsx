@@ -34,7 +34,7 @@ const merchantNamesById = {
  * - Shopping pattern awareness
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoices/Statistics/MerchantLeaderboard",
+  title: "arolariu.ro/IMS/Statistics/Merchant/MerchantLeaderboard",
   component: MerchantLeaderboard,
   parameters: {
     layout: "padded",

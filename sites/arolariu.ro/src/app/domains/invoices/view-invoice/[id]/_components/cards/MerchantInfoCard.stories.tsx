@@ -7,7 +7,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * This story renders a static preview of the merchant info card layout.
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoice/Cards/Merchant/MerchantInfo",
+  title: "arolariu.ro/IMS/Cards/Merchant/MerchantInfo",
   parameters: {
     layout: "centered",
   },

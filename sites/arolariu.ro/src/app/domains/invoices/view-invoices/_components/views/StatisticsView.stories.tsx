@@ -17,7 +17,7 @@ import RenderStatisticsView from "./StatisticsView";
  * - Time of Day Analysis (radar chart)
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoices/Views/StatisticsView",
+  title: "arolariu.ro/IMS/Views/StatisticsView",
   component: RenderStatisticsView,
   parameters: {
     layout: "fullscreen",

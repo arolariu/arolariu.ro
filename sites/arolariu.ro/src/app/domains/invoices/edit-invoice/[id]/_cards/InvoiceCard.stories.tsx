@@ -8,7 +8,7 @@ import InvoiceCard from "./InvoiceCard";
  * This story mounts the real component wrapped in `WithEditInvoiceContext`.
  */
 const meta = {
-  title: "arolariu.ro/IMS/EditInvoice/Cards/Invoice/InvoiceCard",
+  title: "arolariu.ro/IMS/Cards/Invoice/InvoiceCard",
   component: InvoiceCard,
   parameters: {
     layout: "centered",

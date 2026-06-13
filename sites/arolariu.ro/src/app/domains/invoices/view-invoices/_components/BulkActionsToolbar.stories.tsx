@@ -9,7 +9,7 @@ import BulkActionsToolbar from "./BulkActionsToolbar";
  * WithInvoiceDialogs and seeds the invoice store with selected invoices.
  */
 const meta = {
-	title: "arolariu.ro/IMS/ViewInvoices/Components/BulkActionsToolbar",
+	title: "arolariu.ro/IMS/Components/Invoice/BulkActionsToolbar",
 	component: BulkActionsToolbar,
 	parameters: {
 		layout: "fullscreen",

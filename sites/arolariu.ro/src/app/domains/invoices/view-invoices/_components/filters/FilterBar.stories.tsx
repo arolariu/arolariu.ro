@@ -13,7 +13,7 @@ import FilterBar from "./FilterBar";
  * FilterState using useState and seeds the invoice store.
  */
 const meta = {
-	title: "arolariu.ro/IMS/ViewInvoices/Components/FilterBar",
+	title: "arolariu.ro/IMS/Components/Invoice/FilterBar",
 	component: FilterBar,
 	parameters: {
 		layout: "padded",

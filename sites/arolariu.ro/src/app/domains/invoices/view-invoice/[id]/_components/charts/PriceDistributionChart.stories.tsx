@@ -15,7 +15,7 @@ const mockPriceRanges: PriceRange[] = [
  * Uses Recharts BarChart with color-coded Cell components.
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoice/Charts/PriceDistributionChart",
+  title: "arolariu.ro/IMS/Charts/Products/PriceDistributionChart",
   component: PriceDistributionChart,
   parameters: {
     layout: "centered",

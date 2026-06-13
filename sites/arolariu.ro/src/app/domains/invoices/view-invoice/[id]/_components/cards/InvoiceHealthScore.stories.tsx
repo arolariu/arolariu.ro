@@ -28,7 +28,7 @@ import {InvoiceHealthScore} from "./InvoiceHealthScore";
  * Requires InvoiceContextProvider to access invoice data.
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoice/Cards/Invoice/InvoiceHealthScore",
+  title: "arolariu.ro/IMS/Cards/Invoice/InvoiceHealthScore",
   component: InvoiceHealthScore,
   parameters: {
     layout: "padded",

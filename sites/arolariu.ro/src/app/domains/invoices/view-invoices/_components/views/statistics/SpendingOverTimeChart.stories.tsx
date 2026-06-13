@@ -22,7 +22,7 @@ import {SpendingOverTimeChart} from "./SpendingOverTimeChart";
  * - Invoice drill-down from chart
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoices/Statistics/SpendingOverTimeChart",
+  title: "arolariu.ro/IMS/Statistics/Invoice/SpendingOverTimeChart",
   component: SpendingOverTimeChart,
   parameters: {
     layout: "padded",

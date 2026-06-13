@@ -6,7 +6,7 @@ import {MessageList} from "./MessageList";
  * an AI assistant. Each message includes an avatar, timestamp, and content.
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoices/Components/MessageList",
+  title: "arolariu.ro/IMS/Components/Invoice/MessageList",
   component: MessageList,
   parameters: {
     layout: "centered",

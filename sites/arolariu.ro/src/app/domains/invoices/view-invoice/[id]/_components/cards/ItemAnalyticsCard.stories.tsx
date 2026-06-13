@@ -4,7 +4,7 @@ import {ProductCategory} from "@/types/invoices";
 import {ItemAnalyticsCard} from "./ItemAnalyticsCard";
 
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoice/Cards/Products/ItemAnalytics",
+  title: "arolariu.ro/IMS/Cards/Products/ItemAnalytics",
   component: ItemAnalyticsCard,
   parameters: {
     layout: "padded",

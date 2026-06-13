@@ -26,7 +26,7 @@ import ChangeHistory from "./ChangeHistory";
  * EditInvoiceContext during actual editing sessions.
  */
 const meta = {
-  title: "arolariu.ro/IMS/EditInvoice/Components/ChangeHistory",
+  title: "arolariu.ro/IMS/Components/Invoice/ChangeHistory",
   component: ChangeHistory,
   parameters: {
     layout: "padded",

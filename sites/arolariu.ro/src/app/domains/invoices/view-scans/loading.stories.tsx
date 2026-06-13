@@ -6,7 +6,7 @@ import Loading from "./loading";
  * and a grid of skeleton scan cards.
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewScans/Components/Loading",
+  title: "arolariu.ro/IMS/States/ScansLoading",
   component: Loading,
   parameters: {
     layout: "fullscreen",

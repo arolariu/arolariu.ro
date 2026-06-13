@@ -162,7 +162,7 @@ const singleItemInvoice: Invoice = {
  * Print header component - only visible when printing.
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoice/Components/PrintHeader",
+  title: "arolariu.ro/IMS/Components/Invoice/PrintHeader",
   component: PrintHeader,
   parameters: {
     layout: "fullscreen",

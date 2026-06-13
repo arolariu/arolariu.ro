@@ -19,7 +19,7 @@ import {MerchantTrendsChart} from "./MerchantTrendsChart";
  * - Compare merchant visit trends
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoices/Statistics/MerchantTrendsChart",
+  title: "arolariu.ro/IMS/Statistics/Merchant/MerchantTrendsChart",
   component: MerchantTrendsChart,
   parameters: {
     layout: "padded",

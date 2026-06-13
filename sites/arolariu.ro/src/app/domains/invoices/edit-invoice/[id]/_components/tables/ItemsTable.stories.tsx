@@ -7,7 +7,7 @@ import ItemsTable from "./ItemsTable";
  * capabilities.
  */
 const meta = {
-  title: "arolariu.ro/IMS/EditInvoice/Tables/ItemsTable",
+  title: "arolariu.ro/IMS/Tables/Products/ItemsTable",
   component: ItemsTable,
   tags: ["autodocs"],
   parameters: {

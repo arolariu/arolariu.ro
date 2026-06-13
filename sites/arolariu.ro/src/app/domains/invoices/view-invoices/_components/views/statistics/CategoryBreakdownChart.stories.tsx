@@ -22,7 +22,7 @@ import {CategoryBreakdownChart} from "./CategoryBreakdownChart";
  * - Expense categorization insights
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoices/Statistics/CategoryBreakdownChart",
+  title: "arolariu.ro/IMS/Statistics/Products/CategoryBreakdownChart",
   component: CategoryBreakdownChart,
   parameters: {
     layout: "padded",

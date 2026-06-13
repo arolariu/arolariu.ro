@@ -3,7 +3,7 @@ import {storyImageScanUrl} from "../../_storybook";
 import PostUploadPrompt from "./PostUploadPrompt";
 
 const meta = {
-	title: "arolariu.ro/IMS/UploadScans/PostUploadPrompt",
+	title: "arolariu.ro/IMS/Components/Scan/PostUploadPrompt",
 	component: PostUploadPrompt,
 	parameters: {
 		layout: "fullscreen",

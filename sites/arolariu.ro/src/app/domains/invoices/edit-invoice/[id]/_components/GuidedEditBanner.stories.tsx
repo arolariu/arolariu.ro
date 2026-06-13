@@ -13,7 +13,7 @@ import GuidedEditBanner from "./GuidedEditBanner";
  * - Responsive layout with badges
  */
 const meta = {
-  title: "arolariu.ro/IMS/EditInvoice/Components/GuidedEditBanner",
+  title: "arolariu.ro/IMS/Banners/Invoice/GuidedEditBanner",
   component: GuidedEditBanner,
   parameters: {
     layout: "padded",

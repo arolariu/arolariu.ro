@@ -19,7 +19,7 @@ import {CurrencyDistributionChart} from "./CurrencyDistributionChart";
  * - Currency exposure tracking
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoices/Statistics/CurrencyDistributionChart",
+  title: "arolariu.ro/IMS/Statistics/Invoice/CurrencyDistributionChart",
   component: CurrencyDistributionChart,
   parameters: {
     layout: "padded",

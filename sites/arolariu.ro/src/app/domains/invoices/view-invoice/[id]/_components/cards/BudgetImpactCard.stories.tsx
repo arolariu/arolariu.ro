@@ -10,7 +10,7 @@ import {BudgetImpactCard} from "./BudgetImpactCard";
  * progress bar, daily allowance, and remaining budget. Depends on `useInvoiceContext`.
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoice/Cards/Invoice/BudgetImpact",
+  title: "arolariu.ro/IMS/Cards/Invoice/BudgetImpact",
   component: BudgetImpactCard,
   parameters: {
     layout: "centered",

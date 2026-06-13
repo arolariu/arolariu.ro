@@ -22,7 +22,7 @@ const invoiceWithoutItems = {
 };
 
 const meta = {
-  title: "arolariu.ro/IMS/EditInvoice/Components/InvoiceHeader",
+  title: "arolariu.ro/IMS/Components/Invoice/EditInvoiceHeader",
   component: InvoiceHeader,
   decorators: [
     (Story) => (

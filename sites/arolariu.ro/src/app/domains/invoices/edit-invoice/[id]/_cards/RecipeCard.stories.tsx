@@ -9,7 +9,7 @@ import {storyRecipeEasy, storyRecipeHard, WithInvoiceDialogs} from "../../../_st
  * This story mounts the real component wrapped in `WithInvoiceDialogs`.
  */
 const meta = {
-  title: "arolariu.ro/IMS/EditInvoice/Cards/Recipe/RecipeCard",
+  title: "arolariu.ro/IMS/Cards/Recipe/RecipeCard",
   component: RecipeCard,
   parameters: {
     layout: "centered",

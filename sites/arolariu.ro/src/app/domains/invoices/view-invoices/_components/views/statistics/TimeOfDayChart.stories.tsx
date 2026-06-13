@@ -25,7 +25,7 @@ import {TimeOfDayChart} from "./TimeOfDayChart";
  * Mismatches will cause the chart to render with zero values.
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoices/Statistics/TimeOfDayChart",
+  title: "arolariu.ro/IMS/Statistics/Invoice/TimeOfDayChart",
   component: TimeOfDayChart,
   parameters: {
     layout: "padded",

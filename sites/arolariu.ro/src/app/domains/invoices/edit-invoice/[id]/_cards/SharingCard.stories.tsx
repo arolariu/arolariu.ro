@@ -10,7 +10,7 @@ import {storyInvoice, storyPublicInvoice, WithInvoiceDialogs, installStorybookBr
  * This story mounts the real component wrapped in `WithInvoiceDialogs` with browser mocks.
  */
 const meta = {
-  title: "arolariu.ro/IMS/EditInvoice/Cards/Invoice/SharingCard",
+  title: "arolariu.ro/IMS/Cards/Invoice/SharingCard",
   component: SharingCard,
   parameters: {
     layout: "centered",

@@ -7,7 +7,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * This story renders a static preview of the receipt scan card.
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoice/Cards/Scan/ReceiptScan",
+  title: "arolariu.ro/IMS/Cards/Scan/ReceiptScan",
   parameters: {
     layout: "centered",
   },

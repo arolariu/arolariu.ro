@@ -20,7 +20,7 @@ import {MerchantVisitChart} from "./MerchantVisitChart";
  * - Analyze basket size trends
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoices/Statistics/MerchantVisitChart",
+  title: "arolariu.ro/IMS/Statistics/Merchant/MerchantVisitChart",
   component: MerchantVisitChart,
   parameters: {
     layout: "padded",

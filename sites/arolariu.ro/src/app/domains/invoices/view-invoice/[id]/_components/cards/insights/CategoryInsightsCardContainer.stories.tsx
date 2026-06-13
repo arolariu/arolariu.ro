@@ -11,7 +11,7 @@ import {TbChefHat, TbLeaf, TbShoppingCart, TbToolsKitchen2, TbTruck} from "react
  * This story shows a representative card for each category.
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoice/Insights/CategoryInsightsContainer",
+  title: "arolariu.ro/IMS/Insights/Products/CategoryInsightsContainer",
   parameters: {
     layout: "centered",
   },

@@ -11,7 +11,7 @@ import {TbChartBar, TbTrendingUp} from "react-icons/tb";
  * and chart placeholders.
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoice/Components/InvoiceAnalytics",
+  title: "arolariu.ro/IMS/Components/Invoice/InvoiceAnalytics",
   parameters: {
     layout: "centered",
   },

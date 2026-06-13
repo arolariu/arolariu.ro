@@ -19,7 +19,7 @@ import {AllergenSummaryChart} from "./AllergenSummaryChart";
  * - Product safety awareness
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoices/Statistics/AllergenSummaryChart",
+  title: "arolariu.ro/IMS/Statistics/Products/AllergenSummaryChart",
   component: AllergenSummaryChart,
   parameters: {
     layout: "padded",

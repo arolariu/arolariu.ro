@@ -8,7 +8,7 @@ import InvoicesHeader from "./InvoicesHeader";
  * Depends on `useDialog`.
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoices/Components/InvoicesHeader",
+  title: "arolariu.ro/IMS/Components/Invoice/InvoicesHeader",
   component: InvoicesHeader,
   decorators: [(Story) => <WithInvoiceDialogs><Story /></WithInvoiceDialogs>],
   parameters: {

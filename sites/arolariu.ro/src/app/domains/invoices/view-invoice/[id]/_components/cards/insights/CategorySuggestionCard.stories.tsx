@@ -8,7 +8,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * This story renders a static preview of the category suggestion card.
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoice/Insights/CategorySuggestionCard",
+  title: "arolariu.ro/IMS/Insights/Products/CategorySuggestionCard",
   parameters: {
     layout: "centered",
   },

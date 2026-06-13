@@ -21,7 +21,7 @@ function generateMockCategorySpending(count: number): CategorySpending[] {
  * total amount label in the center. Uses Recharts PieChart.
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoice/Charts/SpendingByCategoryChart",
+  title: "arolariu.ro/IMS/Charts/Products/SpendingByCategoryChart",
   component: SpendingByCategoryChart,
   parameters: {
     layout: "centered",

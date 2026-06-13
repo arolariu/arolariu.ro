@@ -19,7 +19,7 @@ import {ProductCategoryChart} from "./ProductCategoryChart";
  * - Shopping behavior insights
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoices/Statistics/ProductCategoryChart",
+  title: "arolariu.ro/IMS/Statistics/Products/ProductCategoryChart",
   component: ProductCategoryChart,
   parameters: {
     layout: "padded",

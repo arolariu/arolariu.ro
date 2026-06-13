@@ -65,7 +65,7 @@ const emptyInvoice: Invoice = {
 };
 
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoice/Cards/Invoice/InvoiceDetails",
+  title: "arolariu.ro/IMS/Cards/Invoice/InvoiceDetails",
   component: InvoiceDetailsCard,
   parameters: {
     layout: "centered",

@@ -9,7 +9,7 @@ import {VehicleCard} from "./VehicleCard";
  * These stories mount the real component through `WithViewInvoiceContext`.
  */
 const meta = {
-  title: "arolariu.ro/IMS/ViewInvoice/Insights/VehicleCard",
+  title: "arolariu.ro/IMS/Insights/Products/VehicleCard",
   component: VehicleCard,
   parameters: {
     layout: "centered",

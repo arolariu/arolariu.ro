@@ -35,7 +35,7 @@ const invoiceWithMultipleScans = {
 };
 
 const meta = {
-  title: "arolariu.ro/IMS/EditInvoice/Cards/Scan/ImageCard",
+  title: "arolariu.ro/IMS/Cards/Scan/ImageCard",
   component: ImageCard,
   decorators: [
     (Story) => (
