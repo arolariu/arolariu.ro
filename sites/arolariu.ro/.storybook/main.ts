@@ -23,6 +23,18 @@ const config: StorybookConfig = {
         alias: getStorybookViteAliases(),
       },
       plugins: getStorybookResolverPlugins(),
+      optimizeDeps: {
+        include: ["motion", "motion/react", "next-intl", "@arolariu/components", "recharts", "three", "react-icons/tb"],
+      },
+      server: {
+        warmup: {
+          clientFiles: [
+            "./.storybook/preview.tsx",
+            "./src/app/_effects/TechSphere.stories.tsx",
+            "./src/app/domains/invoices/view-invoices/_components/views/statistics/SpendingOverTimeChart.stories.tsx",
+          ],
+        },
+      },
     }),
 };
 
