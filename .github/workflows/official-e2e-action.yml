@@ -256,7 +256,7 @@ jobs:
           pattern: e2e-*
 
       - name: 🐛 Create GitHub issue for failures
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           ARTIFACTS_DIR: reports
           EVENT_NAME: ${{ github.event_name }}
