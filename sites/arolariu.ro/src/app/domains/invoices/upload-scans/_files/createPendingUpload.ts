@@ -7,7 +7,7 @@
  * remains the responsibility of the provider lifecycle hook.
  */
 
-import type {PendingUpload} from "../_utils/uploadTypes";
+import type {PendingUpload} from "../_types";
 import {resolveValidatedScanMimeType} from "./uploadValidation";
 
 /**

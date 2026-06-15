@@ -8,7 +8,7 @@ import type {UploadEvent} from "./uploadEvents";
 import {uploadReducer} from "./uploadReducer";
 import {isRemovableUpload, selectRemovableUploads, selectUploadableItems} from "./uploadSelectors";
 import {initialUploadState} from "./uploadState";
-import type {PendingUpload} from "../_utils/uploadTypes";
+import type {PendingUpload} from "../_types";
 
 /**
  * Creates a deterministic pending upload fixture for reducer tests.

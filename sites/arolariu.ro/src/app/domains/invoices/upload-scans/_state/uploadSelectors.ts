@@ -7,7 +7,7 @@
  * controllers do not duplicate status predicates.
  */
 
-import type {PendingUpload, UploadState} from "../_utils/uploadTypes";
+import type {PendingUpload, UploadState} from "../_types";
 
 /**
  * Determines whether the user can remove or rename an upload.

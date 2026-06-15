@@ -11,7 +11,7 @@
  */
 
 import {useCallback, useEffect, useRef} from "react";
-import type {PendingUpload} from "../_utils/uploadTypes";
+import type {PendingUpload} from "../_types";
 
 type HookOutput = Readonly<{
   /** Revokes one preview URL when it is a blob URL and has not been revoked. */

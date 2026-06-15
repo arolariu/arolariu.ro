@@ -16,7 +16,7 @@ import {TbCheck, TbChevronLeft, TbChevronRight, TbLoader2, TbRotate, TbRotateClo
 import ScanCard from "../../_cards/ScanCard";
 import {StaggerContainer, StaggerItem} from "../../_components/StaggerContainer";
 import {useScanUpload} from "../_context/ScanUploadContext";
-import type {PendingUpload} from "../_utils/uploadTypes";
+import type {PendingUpload} from "../_types";
 import styles from "./UploadPreview.module.scss";
 
 /** Number of scans to display per page on mobile devices */

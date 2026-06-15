@@ -8,7 +8,7 @@
  * accumulating business logic.
  */
 
-import type {UploadState} from "../_utils/uploadTypes";
+import type {UploadState} from "../_types";
 import type {UploadEvent} from "./uploadEvents";
 import {
   handleAttemptStarted,

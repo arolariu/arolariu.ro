@@ -7,7 +7,7 @@
  * no timers, toasts, network calls, object URL revocation, or clock reads.
  */
 
-import type {PendingUpload, UploadState} from "../_utils/uploadTypes";
+import type {PendingUpload, UploadState} from "../_types";
 import type {UploadEvent} from "./uploadEvents";
 import {isRemovableUpload} from "./uploadSelectors";
 import {initialSessionStats} from "./uploadState";

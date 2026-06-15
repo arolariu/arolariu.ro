@@ -10,14 +10,8 @@
  */
 
 import {mimeTypeToScanType} from "../../_utils/mimeTypeUtilities";
-import {
-  MAX_UPLOAD_ATTEMPTS,
-  type PendingUpload,
-  type UploadFailureReason,
-  type UploadRunnerCallbacks,
-  type UploadRunnerDependencies,
-  type UploadRunnerResult,
-} from "../_utils/uploadTypes";
+import {MAX_UPLOAD_ATTEMPTS} from "../_model/constants";
+import type {PendingUpload, UploadFailureReason, UploadRunnerCallbacks, UploadRunnerDependencies, UploadRunnerResult} from "../_types";
 
 type AttemptFailure = Readonly<{
   reason: UploadFailureReason;

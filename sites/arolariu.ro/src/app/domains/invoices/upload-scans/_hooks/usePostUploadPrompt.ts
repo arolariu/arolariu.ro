@@ -11,7 +11,8 @@
  */
 
 import {useCallback, useEffect, useRef, useState} from "react";
-import {POST_UPLOAD_PROMPT_DELAY_MS, type UploadCompletionSummary} from "../_utils/uploadTypes";
+import {POST_UPLOAD_PROMPT_DELAY_MS} from "../_model/constants";
+import type {UploadCompletionSummary} from "../_types";
 
 type HookInput = Readonly<{
   /** Number of upload cards still present in the queue. */

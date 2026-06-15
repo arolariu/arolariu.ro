@@ -9,7 +9,7 @@
  * pure state transition instead of looking up side-effect state.
  */
 
-import type {PendingUpload, PendingUploadStatus, UploadCompletionSummary, UploadFailureReason} from "../_utils/uploadTypes";
+import type {PendingUpload, PendingUploadStatus, UploadCompletionSummary, UploadFailureReason} from "../_types";
 
 /**
  * Complete event type inventory handled by the upload reducer facade.

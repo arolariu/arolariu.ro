@@ -7,7 +7,7 @@
  * browser file-intake path enforces the same upload constraints.
  */
 
-import type {UploadBatchValidationResult, UploadValidationResult} from "../_utils/uploadTypes";
+import type {UploadBatchValidationResult, UploadValidationResult} from "../_types";
 import {
   ACCEPTED_SCAN_FILE_EXTENSIONS,
   extractFileExtension,

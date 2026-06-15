@@ -24,14 +24,8 @@ import {uploadReducer} from "../_state/uploadReducer";
 import {selectRemovableUploads, selectUploadableItems} from "../_state/uploadSelectors";
 import {initialUploadState} from "../_state/uploadState";
 import {uploadPendingScanBatch} from "../_upload/uploadBatchRunner";
-import {
-  COMPLETED_UPLOAD_REMOVAL_DELAY_MS,
-  type CreateUploadTargetResult,
-  type PendingUpload,
-  type SessionStats,
-  type UploadCompletionSummary,
-  type UploadRunnerDependencies,
-} from "../_utils/uploadTypes";
+import {COMPLETED_UPLOAD_REMOVAL_DELAY_MS} from "../_model/constants";
+import type {CreateUploadTargetResult, PendingUpload, SessionStats, UploadCompletionSummary, UploadRunnerDependencies} from "../_types";
 
 type TimeoutHandle = ReturnType<typeof globalThis.setTimeout>;
 type UploadIntakeSource = "input" | "drop" | "paste";

@@ -9,8 +9,8 @@
  */
 
 import {withConcurrencyLimitAndProgress} from "@/lib/concurrency.client";
-import type {PendingUpload, UploadRunnerCallbacks, UploadRunnerDependencies, UploadRunnerResult} from "../_utils/uploadTypes";
-import {UPLOAD_CONCURRENCY_LIMIT} from "../_utils/uploadTypes";
+import {UPLOAD_CONCURRENCY_LIMIT} from "../_model/constants";
+import type {PendingUpload, UploadRunnerCallbacks, UploadRunnerDependencies, UploadRunnerResult} from "../_types";
 import {uploadPendingScan} from "./uploadRunner";
 
 type UploadOne = (

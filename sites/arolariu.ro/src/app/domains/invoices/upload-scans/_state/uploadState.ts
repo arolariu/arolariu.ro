@@ -7,7 +7,7 @@
  * network, or toast behavior so reducer tests can import it safely.
  */
 
-import type {SessionStats, UploadState} from "../_utils/uploadTypes";
+import type {SessionStats, UploadState} from "../_types";
 
 /** Initial upload statistics for a route session. */
 export const initialSessionStats: SessionStats = {

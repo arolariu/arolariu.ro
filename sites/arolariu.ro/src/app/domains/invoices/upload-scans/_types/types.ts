@@ -1,6 +1,6 @@
 /**
- * @fileoverview Shared types and constants for the route-scoped scan upload workflow.
- * @module app/domains/invoices/upload-scans/_utils/uploadTypes
+ * @fileoverview Shared type contracts for the route-scoped scan upload workflow.
+ * @module app/domains/invoices/upload-scans/_types/types
  *
  * @remarks
  * This module intentionally contains no React state or reducer events. It
@@ -9,18 +9,6 @@
  */
 
 import type {Scan, ScanMetadata} from "@/types/scans";
-
-/** Maximum number of scan uploads that may run in parallel. */
-export const UPLOAD_CONCURRENCY_LIMIT = 5;
-
-/** Maximum number of attempts for a single scan upload before it is marked failed. */
-export const MAX_UPLOAD_ATTEMPTS = 3;
-
-/** Delay before removing a completed upload card from the route queue. */
-export const COMPLETED_UPLOAD_REMOVAL_DELAY_MS = 1000;
-
-/** Delay before showing the post-upload prompt after a batch completes. */
-export const POST_UPLOAD_PROMPT_DELAY_MS = 500;
 
 /** Status values for an individual client-side pending upload. */
 export type PendingUploadStatus = "idle" | "uploading" | "retrying" | "completed" | "failed";

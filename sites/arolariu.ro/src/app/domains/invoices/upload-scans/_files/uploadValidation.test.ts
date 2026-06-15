@@ -6,7 +6,7 @@
 import {describe, expect, it} from "vitest";
 import {ACCEPTED_SCAN_FILE_EXTENSIONS} from "../../_utils/mimeTypeUtilities";
 import {extractFilesFromDataTransferItems, MAX_UPLOAD_FILE_SIZE_BYTES, SCAN_UPLOAD_INPUT_ACCEPT, validateUploadFiles} from "./uploadValidation";
-import type {UploadBatchValidationResult} from "../_utils/uploadTypes";
+import type {UploadBatchValidationResult} from "../_types";
 
 /**
  * Creates a browser file fixture for upload validation tests.

@@ -4,7 +4,7 @@
  */
 
 import {describe, expect, it, vi} from "vitest";
-import type {PendingUpload, UploadRunnerCallbacks, UploadRunnerDependencies, UploadRunnerResult} from "../_utils/uploadTypes";
+import type {PendingUpload, UploadRunnerCallbacks, UploadRunnerDependencies, UploadRunnerResult} from "../_types";
 import {uploadPendingScanBatch} from "./uploadBatchRunner";
 
 /**
