@@ -1,31 +1,32 @@
 "use client";
 
 /**
- * @fileoverview Context provider for managing route-scoped scan upload state.
+ * @fileoverview Slim provider for route-scoped scan upload state.
  * @module app/domains/invoices/upload-scans/_context/ScanUploadContext
  *
  * @remarks
- * Keeps transient browser upload state in memory while delegating event
- * transitions, file intake, upload execution, and browser side effects to
- * focused route-local modules.
+ * Owns the reducer, composes the lifecycle hooks, and exposes the action API.
+ * Heavy batch orchestration lives in `_upload/uploadSession`; all user-facing
+ * strings are localized via `next-intl-selector`.
  */
 
-import {toast} from "@arolariu/components";
 import {extractBase64FromBlob} from "@/lib/utils.client";
+import {toast} from "@arolariu/components";
+import {useTranslations} from "next-intl-selector";
 import {createContext, use, useCallback, useEffect, useMemo, useReducer, useRef, type ReactNode} from "react";
 import {v4 as uuidv4} from "uuid";
 import {createScan, createScanUploadTarget} from "../../_actions/scans";
+import {usePreviewUrlLifecycle} from "../_hooks/usePreviewUrlLifecycle";
+import {useUploadProgressEvents} from "../_hooks/useUploadProgressEvents";
 import {createPendingUpload} from "../_intake/pendingUploadFactory";
 import {rotatePendingUploadFile} from "../_intake/rotatePendingUploadFile";
 import {validateUploadFiles} from "../_intake/validation";
-import {usePreviewUrlLifecycle} from "../_hooks/usePreviewUrlLifecycle";
-import {useUploadProgressEvents} from "../_hooks/useUploadProgressEvents";
+import {COMPLETED_UPLOAD_REMOVAL_DELAY_MS} from "../_model/constants";
 import {uploadReducer} from "../_model/reducer";
 import {selectRemovableUploads, selectUploadableItems} from "../_model/selectors";
 import {initialUploadState} from "../_model/state";
-import {uploadPendingScanMultiple} from "../_upload/multipleUploadRunner";
-import {COMPLETED_UPLOAD_REMOVAL_DELAY_MS} from "../_model/constants";
-import type {CreateUploadTargetResult, PendingUpload, SessionStats, UploadCompletionSummary, UploadRunnerDependencies} from "../_types";
+import type {PendingUpload, SessionStats, UploadCompletionSummary, UploadRunnerDependencies} from "../_types";
+import {runUploadSession} from "../_upload/uploadSession";
 
 type TimeoutHandle = ReturnType<typeof globalThis.setTimeout>;
 type UploadIntakeSource = "input" | "drop" | "paste";
@@ -67,6 +68,7 @@ const ScanUploadContext = createContext<ScanUploadContextType | undefined>(undef
  * @returns Provider wrapping the upload route subtree.
  */
 export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>): React.JSX.Element {
+  const t = useTranslations();
   const [state, dispatch] = useReducer(uploadReducer, initialUploadState);
   const removalTimersRef = useRef<Set<TimeoutHandle>>(new Set());
   const {revokePreviewUrl, revokePreviews} = usePreviewUrlLifecycle(state.pendingUploads);
@@ -80,27 +82,34 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
     };
   }, []);
 
-  const addFiles = useCallback(async (files: FileList | File[], source: UploadIntakeSource = "input"): Promise<void> => {
-    const validation = validateUploadFiles(Array.from(files));
+  const addFiles = useCallback(
+    async (files: FileList | File[], source: UploadIntakeSource = "input"): Promise<void> => {
+      const validation = validateUploadFiles(Array.from(files));
 
-    for (const invalidFile of validation.invalidFiles) {
-      toast.error(invalidFile.message);
-    }
+      for (const invalid of validation.invalidFiles) {
+        switch (invalid.reason) {
+          case "file-too-large":
+            toast.error(t((m) => m.pages.invoices.uploadScans.errors.tooLarge, {name: invalid.file.name}));
+            break;
+          case "unsupported-type":
+            toast.error(t((m) => m.pages.invoices.uploadScans.errors.unsupportedType, {type: invalid.file.type || "unknown"}));
+            break;
+          case "unsupported-extension":
+            toast.error(t((m) => m.pages.invoices.uploadScans.errors.unsupportedExtension, {name: invalid.file.name}));
+            break;
+        }
+      }
 
-    const uploads = validation.validFiles.map((file) => createPendingUpload(file, uuidv4()));
+      const uploads = validation.validFiles.map((file) => createPendingUpload(file, uuidv4()));
+      if (uploads.length === 0) {
+        return;
+      }
 
-    if (uploads.length === 0) {
-      return;
-    }
-
-    dispatch({
-      type: "scanUpload.queue.filesAccepted",
-      occurredAt: Date.now(),
-      source,
-      uploads,
-    });
-    toast.success(`Added ${uploads.length} file(s) to upload queue`);
-  }, []);
+      dispatch({type: "scanUpload.queue.filesAccepted", occurredAt: Date.now(), source, uploads});
+      toast.success(t((m) => m.pages.invoices.uploadScans.toast.filesAdded, {count: uploads.length}));
+    },
+    [t],
+  );
 
   const removeFiles = useCallback(
     (ids: string[]): void => {
@@ -109,34 +118,19 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
         (upload) => idsSet.has(upload.id) && (upload.status === "idle" || upload.status === "failed"),
       );
       revokePreviews(removableUploads);
-      dispatch({
-        type: "scanUpload.queue.itemRemoved",
-        occurredAt: Date.now(),
-        source: "input",
-        ids,
-      });
+      dispatch({type: "scanUpload.queue.itemRemoved", occurredAt: Date.now(), source: "input", ids});
     },
     [revokePreviews, state.pendingUploads],
   );
 
   const clearAll = useCallback((): void => {
     revokePreviews(selectRemovableUploads(state));
-    dispatch({
-      type: "scanUpload.queue.removableItemsCleared",
-      occurredAt: Date.now(),
-      source: "input",
-    });
-    toast.info("All files cleared");
-  }, [revokePreviews, state]);
+    dispatch({type: "scanUpload.queue.removableItemsCleared", occurredAt: Date.now(), source: "input"});
+    toast.info(t((m) => m.pages.invoices.uploadScans.toast.allFilesCleared));
+  }, [revokePreviews, state, t]);
 
   const renameFile = useCallback((id: string, newName: string): void => {
-    dispatch({
-      type: "scanUpload.queue.itemRenamed",
-      occurredAt: Date.now(),
-      source: "input",
-      id,
-      name: newName,
-    });
+    dispatch({type: "scanUpload.queue.itemRenamed", occurredAt: Date.now(), source: "input", id, name: newName});
   }, []);
 
   const rotateFile = useCallback(
@@ -147,16 +141,12 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
       }
 
       if (!upload.file) {
-        toast.error("Cannot rotate this upload because the original file is unavailable");
+        toast.error(t((m) => m.pages.invoices.uploadScans.toast.rotateUnavailable));
         return;
       }
 
       try {
-        const rotated = await rotatePendingUploadFile({
-          file: upload.file,
-          preview: upload.preview,
-          direction,
-        });
+        const rotated = await rotatePendingUploadFile({file: upload.file, preview: upload.preview, direction});
         dispatch({
           type: "scanUpload.queue.itemRotated",
           occurredAt: Date.now(),
@@ -167,22 +157,16 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
           mimeType: rotated.mimeType,
           size: rotated.size,
         });
-      } catch (error: unknown) {
-        console.error(">>> Error rotating pending upload:", error);
-        toast.error(error instanceof Error ? error.message : "Failed to rotate upload");
+      } catch {
+        toast.error(t((m) => m.pages.invoices.uploadScans.toast.rotateFailed));
       }
     },
-    [state.pendingUploads],
+    [state.pendingUploads, t],
   );
 
   const scheduleUploadRemoval = useCallback((uploadId: string): void => {
     const timerId = globalThis.setTimeout(() => {
-      dispatch({
-        type: "scanUpload.preview.completedItemHidden",
-        occurredAt: Date.now(),
-        source: "timer",
-        uploadId,
-      });
+      dispatch({type: "scanUpload.preview.completedItemHidden", occurredAt: Date.now(), source: "timer", uploadId});
       removalTimersRef.current.delete(timerId);
     }, COMPLETED_UPLOAD_REMOVAL_DELAY_MS);
 
@@ -191,87 +175,34 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
 
   const uploadAll = useCallback(async (): Promise<void> => {
     const uploadsToProcess = selectUploadableItems(state);
-
     if (uploadsToProcess.length === 0) {
-      toast.info("No files to upload");
+      toast.info(t((m) => m.pages.invoices.uploadScans.toast.noFilesToUpload));
       return;
     }
 
-    dispatch({type: "scanUpload.batch.requested", occurredAt: Date.now(), source: "batch"});
-    dispatch({type: "scanUpload.batch.started", occurredAt: Date.now(), source: "batch"});
-
-    /**
-     * Adapts the server action to the runner's expected interface.
-     *
-     * @param input - Upload target request parameters.
-     * @returns Upload target result with metadata.
-     */
-    const createUploadTarget = async (input: Readonly<{
-      fileName: string;
-      mimeType: string;
-      sizeInBytes: number;
-    }>): Promise<CreateUploadTargetResult> => {
-      return createScanUploadTarget({
-        fileName: input.fileName,
-        mimeType: input.mimeType,
-        sizeInBytes: input.sizeInBytes,
-      });
-    };
-
     const dependencies: UploadRunnerDependencies = {
-      createUploadTarget,
+      createUploadTarget: createScanUploadTarget,
       uploadScan: createScan,
       readFileAsBase64: extractBase64FromBlob,
     };
 
-    const batchResult = await uploadPendingScanMultiple({
+    const outcome = await runUploadSession({
       uploads: uploadsToProcess,
       dependencies,
-      callbacks: {onProgress: dispatchProgress},
+      emit: dispatch,
+      onProgress: dispatchProgress,
+      revokePreview: revokePreviewUrl,
+      scheduleRemoval: scheduleUploadRemoval,
     });
 
-    for (const result of batchResult.results) {
-      const upload = uploadsToProcess.find((item) => item.id === result.uploadId);
-      if (result.success) {
-        if (upload) {
-          revokePreviewUrl(upload.preview);
-          dispatch({
-            type: "scanUpload.item.uploadSucceeded",
-            occurredAt: Date.now(),
-            source: "runner",
-            uploadId: result.uploadId,
-            attempt: result.attempts,
-            blobUrl: result.blobUrl,
-            completion: {
-              id: upload.id,
-              name: upload.name,
-              preview: result.blobUrl,
-            },
-          });
-          scheduleUploadRemoval(upload.id);
-        }
+    for (const code of outcome.toasts) {
+      if (code.key === "uploadSucceeded") {
+        toast.success(t((m) => m.pages.invoices.uploadScans.toast.uploadSucceeded, {count: code.count}));
       } else {
-        dispatch({
-          type: "scanUpload.item.uploadFailed",
-          occurredAt: Date.now(),
-          source: "runner",
-          uploadId: result.uploadId,
-          attempt: result.attempts,
-          reason: result.reason,
-          error: result.error,
-        });
+        toast.error(t((m) => m.pages.invoices.uploadScans.toast.uploadFailed, {count: code.count}));
       }
     }
-
-    dispatch({type: "scanUpload.batch.finished", occurredAt: Date.now(), source: "batch"});
-
-    if (batchResult.successCount > 0) {
-      toast.success(`Successfully uploaded ${batchResult.successCount} scan(s)`);
-    }
-    if (batchResult.failureCount > 0) {
-      toast.error(`Failed to upload ${batchResult.failureCount} scan(s)`);
-    }
-  }, [dispatchProgress, revokePreviewUrl, scheduleUploadRemoval, state]);
+  }, [dispatchProgress, revokePreviewUrl, scheduleUploadRemoval, state, t]);
 
   const resetSessionStats = useCallback((): void => {
     dispatch({type: "scanUpload.session.statsReset", occurredAt: Date.now(), source: "input"});
