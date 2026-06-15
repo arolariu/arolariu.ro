@@ -1,6 +1,6 @@
 /**
  * @fileoverview Pure event handlers for the scan upload reducer facade.
- * @module app/domains/invoices/upload-scans/_state/uploadEventHandlers
+ * @module app/domains/invoices/upload-scans/_model/handlers
  *
  * @remarks
  * Each handler owns one small state transition. Handlers must stay pure:
@@ -8,9 +8,9 @@
  */
 
 import type {PendingUpload, UploadState} from "../_types";
-import type {UploadEvent} from "./uploadEvents";
-import {isRemovableUpload} from "./uploadSelectors";
-import {initialSessionStats} from "./uploadState";
+import type {UploadEvent} from "./events";
+import {isRemovableUpload} from "./selectors";
+import {initialSessionStats} from "./state";
 
 /** Extracts one upload event shape by event type. */
 type EventOf<TType extends UploadEvent["type"]> = Extract<UploadEvent, {type: TType}>;

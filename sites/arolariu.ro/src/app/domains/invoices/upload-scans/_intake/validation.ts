@@ -1,6 +1,6 @@
 /**
  * @fileoverview File validation helpers for the scan upload route.
- * @module app/domains/invoices/upload-scans/_files/uploadValidation
+ * @module app/domains/invoices/upload-scans/_intake/validation
  *
  * @remarks
  * These helpers are shared by input, drag/drop, and paste handlers so every

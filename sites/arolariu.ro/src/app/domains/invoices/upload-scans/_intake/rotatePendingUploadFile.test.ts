@@ -1,6 +1,6 @@
 /**
  * @fileoverview Unit tests for pending upload image rotation.
- * @module app/domains/invoices/upload-scans/_files/rotatePendingUploadFile.test
+ * @module app/domains/invoices/upload-scans/_intake/rotatePendingUploadFile.test
  */
 
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";

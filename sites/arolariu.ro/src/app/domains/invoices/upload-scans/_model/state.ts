@@ -1,6 +1,6 @@
 /**
  * @fileoverview Initial state for the scan upload state machine.
- * @module app/domains/invoices/upload-scans/_state/uploadState
+ * @module app/domains/invoices/upload-scans/_model/state
  *
  * @remarks
  * This module is intentionally pure. It contains no React, browser, timer,

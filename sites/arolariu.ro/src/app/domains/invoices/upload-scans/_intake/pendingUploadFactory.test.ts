@@ -1,10 +1,10 @@
 /**
  * @fileoverview Unit tests for pending upload creation.
- * @module app/domains/invoices/upload-scans/_files/createPendingUpload.test
+ * @module app/domains/invoices/upload-scans/_intake/pendingUploadFactory.test
  */
 
 import {afterEach, describe, expect, it, vi} from "vitest";
-import {createPendingUpload} from "./createPendingUpload";
+import {createPendingUpload} from "./pendingUploadFactory";
 
 describe("createPendingUpload", () => {
   afterEach(() => {

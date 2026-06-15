@@ -1,6 +1,6 @@
 /**
  * @fileoverview Reducer facade for the event-driven scan upload state machine.
- * @module app/domains/invoices/upload-scans/_state/uploadReducer
+ * @module app/domains/invoices/upload-scans/_model/reducer
  *
  * @remarks
  * The reducer intentionally delegates immediately to named handlers. This keeps
@@ -9,7 +9,7 @@
  */
 
 import type {UploadState} from "../_types";
-import type {UploadEvent} from "./uploadEvents";
+import type {UploadEvent} from "./events";
 import {
   handleAttemptStarted,
   handleBatchFinished,
@@ -27,7 +27,7 @@ import {
   handleSessionStatsReset,
   handleUploadFailed,
   handleUploadSucceeded,
-} from "./uploadEventHandlers";
+} from "./handlers";
 
 /**
  * Applies one upload event to route-scoped upload state.

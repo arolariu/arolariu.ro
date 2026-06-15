@@ -1,6 +1,6 @@
 /**
  * @fileoverview Event contracts for the scan upload state machine.
- * @module app/domains/invoices/upload-scans/_state/uploadEvents
+ * @module app/domains/invoices/upload-scans/_model/events
  *
  * @remarks
  * The upload route uses namespaced lifecycle events so queue, batch, item,

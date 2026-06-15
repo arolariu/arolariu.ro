@@ -1,6 +1,6 @@
 /**
  * @fileoverview Single-file upload runner for the scan upload route.
- * @module app/domains/invoices/upload-scans/_upload/uploadRunner
+ * @module app/domains/invoices/upload-scans/_upload/singleUploadRunner
  *
  * @remarks
  * The runner owns one upload item's network journey: request a server-prepared

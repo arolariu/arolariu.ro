@@ -1,6 +1,6 @@
 /**
  * @fileoverview Batch upload runner for route-scoped scan uploads.
- * @module app/domains/invoices/upload-scans/_upload/uploadBatchRunner
+ * @module app/domains/invoices/upload-scans/_upload/multipleUploadRunner
  *
  * @remarks
  * Batch execution is intentionally tolerant: one upload failing must not stop
@@ -11,7 +11,7 @@
 import {withConcurrencyLimitAndProgress} from "@/lib/concurrency.client";
 import {UPLOAD_CONCURRENCY_LIMIT} from "../_model/constants";
 import type {PendingUpload, UploadRunnerCallbacks, UploadRunnerDependencies, UploadRunnerResult} from "../_types";
-import {uploadPendingScan} from "./uploadRunner";
+import {uploadPendingScan} from "./singleUploadRunner";
 
 type UploadOne = (
   upload: PendingUpload,
@@ -66,7 +66,7 @@ function normalizeThrownUpload(upload: PendingUpload, error: unknown): UploadRun
  * @param input - Batch runner configuration.
  * @returns Aggregated success and failure results.
  */
-export async function uploadPendingScanBatch({
+export async function uploadPendingScanMultiple({
   uploads,
   dependencies,
   callbacks,

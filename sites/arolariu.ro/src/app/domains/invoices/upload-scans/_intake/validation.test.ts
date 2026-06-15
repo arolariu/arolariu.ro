@@ -1,11 +1,11 @@
 /**
  * @fileoverview Unit tests for scan upload file validation.
- * @module app/domains/invoices/upload-scans/_files/uploadValidation.test
+ * @module app/domains/invoices/upload-scans/_intake/validation.test
  */
 
 import {describe, expect, it} from "vitest";
 import {ACCEPTED_SCAN_FILE_EXTENSIONS} from "../../_utils/mimeTypeUtilities";
-import {extractFilesFromDataTransferItems, MAX_UPLOAD_FILE_SIZE_BYTES, SCAN_UPLOAD_INPUT_ACCEPT, validateUploadFiles} from "./uploadValidation";
+import {extractFilesFromDataTransferItems, MAX_UPLOAD_FILE_SIZE_BYTES, SCAN_UPLOAD_INPUT_ACCEPT, validateUploadFiles} from "./validation";
 import type {UploadBatchValidationResult} from "../_types";
 
 /**

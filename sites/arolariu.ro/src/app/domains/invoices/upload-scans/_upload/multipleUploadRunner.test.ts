@@ -1,11 +1,11 @@
 /**
  * @fileoverview Unit tests for batch scan upload execution.
- * @module app/domains/invoices/upload-scans/_upload/uploadBatchRunner.test
+ * @module app/domains/invoices/upload-scans/_upload/multipleUploadRunner.test
  */
 
 import {describe, expect, it, vi} from "vitest";
 import type {PendingUpload, UploadRunnerCallbacks, UploadRunnerDependencies, UploadRunnerResult} from "../_types";
-import {uploadPendingScanBatch} from "./uploadBatchRunner";
+import {uploadPendingScanMultiple} from "./multipleUploadRunner";
 
 /**
  * Creates a pending upload fixture for batch runner tests.
@@ -74,7 +74,7 @@ function createResult(uploadId: string, success: boolean): UploadRunnerResult {
   };
 }
 
-describe("uploadPendingScanBatch", () => {
+describe("uploadPendingScanMultiple", () => {
   it("returns partial success and failure results without fail-fast behavior", async () => {
     const uploads = [createUpload("success-1"), createUpload("failed-1"), createUpload("success-2")];
     const uploadOne = vi
@@ -83,7 +83,7 @@ describe("uploadPendingScanBatch", () => {
       .mockResolvedValueOnce(createResult("failed-1", false))
       .mockResolvedValueOnce(createResult("success-2", true));
 
-    const result = await uploadPendingScanBatch({
+    const result = await uploadPendingScanMultiple({
       uploads,
       dependencies: {
         createUploadTarget: vi.fn(),
@@ -105,7 +105,7 @@ describe("uploadPendingScanBatch", () => {
     const uploads = [createUpload("throws-1")];
     const uploadOne = vi.fn().mockRejectedValue(new Error("Network exploded"));
 
-    const result = await uploadPendingScanBatch({
+    const result = await uploadPendingScanMultiple({
       uploads,
       dependencies: {
         createUploadTarget: vi.fn(),

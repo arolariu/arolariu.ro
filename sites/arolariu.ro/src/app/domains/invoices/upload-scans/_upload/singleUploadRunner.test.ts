@@ -1,12 +1,12 @@
 /**
  * @fileoverview Unit tests for the scan upload runner.
- * @module app/domains/invoices/upload-scans/_upload/uploadRunner.test
+ * @module app/domains/invoices/upload-scans/_upload/singleUploadRunner.test
  */
 
 import {describe, expect, it, vi} from "vitest";
 import type {Scan} from "../../../../../types/scans";
 import {ScanType} from "../../../../../types/scans";
-import {uploadPendingScan} from "./uploadRunner";
+import {uploadPendingScan} from "./singleUploadRunner";
 import type {PendingUpload, UploadProgressEvent, UploadRunnerDependencies} from "../_types";
 
 /**

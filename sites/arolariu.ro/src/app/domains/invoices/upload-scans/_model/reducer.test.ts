@@ -1,13 +1,13 @@
 /**
  * @fileoverview Unit tests for the event-driven scan upload reducer.
- * @module app/domains/invoices/upload-scans/_state/uploadReducer.test
+ * @module app/domains/invoices/upload-scans/_model/reducer.test
  */
 
 import {describe, expect, it} from "vitest";
-import type {UploadEvent} from "./uploadEvents";
-import {uploadReducer} from "./uploadReducer";
-import {isRemovableUpload, selectRemovableUploads, selectUploadableItems} from "./uploadSelectors";
-import {initialUploadState} from "./uploadState";
+import type {UploadEvent} from "./events";
+import {uploadReducer} from "./reducer";
+import {isRemovableUpload, selectRemovableUploads, selectUploadableItems} from "./selectors";
+import {initialUploadState} from "./state";
 import type {PendingUpload} from "../_types";
 
 /**

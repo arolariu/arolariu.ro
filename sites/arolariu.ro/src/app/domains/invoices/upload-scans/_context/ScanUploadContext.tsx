@@ -15,15 +15,15 @@ import {extractBase64FromBlob} from "@/lib/utils.client";
 import {createContext, use, useCallback, useEffect, useMemo, useReducer, useRef, type ReactNode} from "react";
 import {v4 as uuidv4} from "uuid";
 import {createScan, createScanUploadTarget} from "../../_actions/scans";
-import {createPendingUpload} from "../_files/createPendingUpload";
-import {rotatePendingUploadFile} from "../_files/rotatePendingUploadFile";
-import {validateUploadFiles} from "../_files/uploadValidation";
+import {createPendingUpload} from "../_intake/pendingUploadFactory";
+import {rotatePendingUploadFile} from "../_intake/rotatePendingUploadFile";
+import {validateUploadFiles} from "../_intake/validation";
 import {usePreviewUrlLifecycle} from "../_hooks/usePreviewUrlLifecycle";
 import {useUploadProgressEvents} from "../_hooks/useUploadProgressEvents";
-import {uploadReducer} from "../_state/uploadReducer";
-import {selectRemovableUploads, selectUploadableItems} from "../_state/uploadSelectors";
-import {initialUploadState} from "../_state/uploadState";
-import {uploadPendingScanBatch} from "../_upload/uploadBatchRunner";
+import {uploadReducer} from "../_model/reducer";
+import {selectRemovableUploads, selectUploadableItems} from "../_model/selectors";
+import {initialUploadState} from "../_model/state";
+import {uploadPendingScanMultiple} from "../_upload/multipleUploadRunner";
 import {COMPLETED_UPLOAD_REMOVAL_DELAY_MS} from "../_model/constants";
 import type {CreateUploadTargetResult, PendingUpload, SessionStats, UploadCompletionSummary, UploadRunnerDependencies} from "../_types";
 
@@ -224,7 +224,7 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
       readFileAsBase64: extractBase64FromBlob,
     };
 
-    const batchResult = await uploadPendingScanBatch({
+    const batchResult = await uploadPendingScanMultiple({
       uploads: uploadsToProcess,
       dependencies,
       callbacks: {onProgress: dispatchProgress},

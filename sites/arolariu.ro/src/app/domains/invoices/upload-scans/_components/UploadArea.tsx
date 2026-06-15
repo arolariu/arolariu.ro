@@ -16,7 +16,7 @@ import {useTranslations} from "next-intl-selector";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {TbUpload} from "react-icons/tb";
 import {useScanUpload} from "../_context/ScanUploadContext";
-import {extractFilesFromDataTransferItems, SCAN_UPLOAD_INPUT_ACCEPT} from "../_files/uploadValidation";
+import {extractFilesFromDataTransferItems, SCAN_UPLOAD_INPUT_ACCEPT} from "../_intake/validation";
 import styles from "./UploadArea.module.scss";
 
 /**

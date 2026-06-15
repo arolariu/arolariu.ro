@@ -1,6 +1,6 @@
 /**
  * @fileoverview Pure selectors for scan upload state.
- * @module app/domains/invoices/upload-scans/_state/uploadSelectors
+ * @module app/domains/invoices/upload-scans/_model/selectors
  *
  * @remarks
  * Selectors centralize queue business rules so reducer handlers and React

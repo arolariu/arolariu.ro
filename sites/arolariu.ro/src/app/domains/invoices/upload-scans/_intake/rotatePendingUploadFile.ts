@@ -1,6 +1,6 @@
 /**
  * @fileoverview Local image rotation helper for pending scan uploads.
- * @module app/domains/invoices/upload-scans/_files/rotatePendingUploadFile
+ * @module app/domains/invoices/upload-scans/_intake/rotatePendingUploadFile
  */
 
 type RotateDirection = "cw" | "ccw";

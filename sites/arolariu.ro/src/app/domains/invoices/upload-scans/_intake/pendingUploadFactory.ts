@@ -1,6 +1,6 @@
 /**
  * @fileoverview Pending upload factory for scan upload files.
- * @module app/domains/invoices/upload-scans/_files/createPendingUpload
+ * @module app/domains/invoices/upload-scans/_intake/pendingUploadFactory
  *
  * @remarks
  * The factory is the only file-intake helper that creates object URLs. Cleanup
@@ -8,7 +8,7 @@
  */
 
 import type {PendingUpload} from "../_types";
-import {resolveValidatedScanMimeType} from "./uploadValidation";
+import {resolveValidatedScanMimeType} from "./validation";
 
 /**
  * Creates a route-scoped pending upload from a validated file.
