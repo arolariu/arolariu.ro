@@ -108,39 +108,24 @@ export const handleBatchFinished: UploadEventHandler<"scanUpload.batch.finished"
   isUploading: false,
 });
 
-/** Handles the first upload attempt for an item. */
-export const handleAttemptStarted: UploadEventHandler<"scanUpload.item.attemptStarted"> = (state, event) => ({
-  ...state,
-  pendingUploads: updateUpload(state.pendingUploads, event.uploadId, (upload) => ({
-    ...upload,
-    status: "uploading",
-    progress: 0,
-    attempts: event.attempt,
-  })),
-});
-
-/** Handles a retry attempt for an item. */
-export const handleRetryStarted: UploadEventHandler<"scanUpload.item.retryStarted"> = (state, event) => ({
-  ...state,
-  pendingUploads: updateUpload(state.pendingUploads, event.uploadId, (upload) => ({
-    ...upload,
-    status: "retrying",
-    progress: 0,
-    attempts: event.attempt,
-  })),
-});
-
 /** Handles progress updates emitted by the upload runner. */
 export const handleProgressChanged: UploadEventHandler<"scanUpload.item.progressChanged"> = (state, event) => ({
   ...state,
-  pendingUploads: updateUpload(state.pendingUploads, event.uploadId, (upload) => ({
-    ...upload,
-    status: event.status,
-    progress: Math.max(0, Math.min(event.progress, 100)),
-    attempts: event.attempt,
-    ...(event.error === undefined ? {} : {error: event.error}),
-    ...(event.blobUrl === undefined ? {} : {blobUrl: event.blobUrl}),
-  })),
+  pendingUploads: updateUpload(state.pendingUploads, event.uploadId, (upload) => {
+    // A terminal item must not be reverted by a late (rAF-coalesced) progress frame.
+    if (upload.status === "completed" || upload.status === "failed") {
+      return upload;
+    }
+
+    return {
+      ...upload,
+      status: event.status,
+      progress: Math.max(0, Math.min(event.progress, 100)),
+      attempts: event.attempt,
+      ...(event.error === undefined ? {} : {error: event.error}),
+      ...(event.blobUrl === undefined ? {} : {blobUrl: event.blobUrl}),
+    };
+  }),
 });
 
 /** Handles a successful item upload. */

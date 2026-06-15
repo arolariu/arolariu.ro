@@ -11,7 +11,6 @@
 import type {UploadState} from "../_types";
 import type {UploadEvent} from "./events";
 import {
-  handleAttemptStarted,
   handleBatchFinished,
   handleBatchRequested,
   handleBatchStarted,
@@ -23,7 +22,6 @@ import {
   handleQueueItemRenamed,
   handleQueueItemRotated,
   handleRemovableItemsCleared,
-  handleRetryStarted,
   handleSessionStatsReset,
   handleUploadFailed,
   handleUploadSucceeded,
@@ -54,12 +52,8 @@ export function uploadReducer(state: UploadState, event: UploadEvent): UploadSta
       return handleBatchStarted(state, event);
     case "scanUpload.batch.finished":
       return handleBatchFinished(state, event);
-    case "scanUpload.item.attemptStarted":
-      return handleAttemptStarted(state, event);
     case "scanUpload.item.progressChanged":
       return handleProgressChanged(state, event);
-    case "scanUpload.item.retryStarted":
-      return handleRetryStarted(state, event);
     case "scanUpload.item.uploadSucceeded":
       return handleUploadSucceeded(state, event);
     case "scanUpload.item.uploadFailed":

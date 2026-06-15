@@ -186,7 +186,7 @@ describe("uploadReducer", () => {
     expect(finished.isUploading).toBe(false);
   });
 
-  it("handles first attempts, retry attempts, and progress changes", () => {
+  it("applies progress updates to a non-terminal upload", () => {
     const upload = createUpload();
     const queued = uploadReducer(
       initialUploadState,
@@ -196,36 +196,18 @@ describe("uploadReducer", () => {
       }),
     );
 
-    const attemptStarted = uploadReducer(
-      queued,
-      event<Extract<UploadEvent, {type: "scanUpload.item.attemptStarted"}>>({
-        type: "scanUpload.item.attemptStarted",
-        uploadId: upload.id,
-        attempt: 1,
-      }),
-    );
-    const retryStarted = uploadReducer(
-      attemptStarted,
-      event<Extract<UploadEvent, {type: "scanUpload.item.retryStarted"}>>({
-        type: "scanUpload.item.retryStarted",
-        uploadId: upload.id,
-        attempt: 2,
-      }),
-    );
     const progressed = uploadReducer(
-      retryStarted,
+      queued,
       event<Extract<UploadEvent, {type: "scanUpload.item.progressChanged"}>>({
         type: "scanUpload.item.progressChanged",
         uploadId: upload.id,
-        status: "retrying",
+        status: "uploading",
         progress: 70,
-        attempt: 2,
+        attempt: 1,
       }),
     );
 
-    expect(attemptStarted.pendingUploads[0]).toMatchObject({status: "uploading", progress: 0, attempts: 1});
-    expect(retryStarted.pendingUploads[0]).toMatchObject({status: "retrying", progress: 0, attempts: 2});
-    expect(progressed.pendingUploads[0]).toMatchObject({status: "retrying", progress: 70, attempts: 2});
+    expect(progressed.pendingUploads[0]).toMatchObject({status: "uploading", progress: 70, attempts: 1});
   });
 
   it("handles scanUpload.item.uploadSucceeded by completing an upload and recording prompt summary", () => {
@@ -418,6 +400,42 @@ describe("uploadReducer", () => {
     );
 
     expect(state.pendingUploads[0]).toEqual(active);
+  });
+
+  it("ignores scanUpload.item.progressChanged for an already completed upload", () => {
+    const completed = createUpload({id: "u1", status: "completed", progress: 100, attempts: 1, file: null, preview: "", blobUrl: "https://storage/u1.jpg"});
+    const state = {...initialUploadState, pendingUploads: [completed]};
+
+    const next = uploadReducer(
+      state,
+      event<Extract<UploadEvent, {type: "scanUpload.item.progressChanged"}>>({
+        type: "scanUpload.item.progressChanged",
+        uploadId: "u1",
+        status: "uploading",
+        progress: 70,
+        attempt: 1,
+      }),
+    );
+
+    expect(next.pendingUploads[0]).toEqual(completed);
+  });
+
+  it("ignores scanUpload.item.progressChanged for an already failed upload", () => {
+    const failed = createUpload({id: "u1", status: "failed", progress: 0, attempts: 3, error: "boom"});
+    const state = {...initialUploadState, pendingUploads: [failed]};
+
+    const next = uploadReducer(
+      state,
+      event<Extract<UploadEvent, {type: "scanUpload.item.progressChanged"}>>({
+        type: "scanUpload.item.progressChanged",
+        uploadId: "u1",
+        status: "retrying",
+        progress: 30,
+        attempt: 2,
+      }),
+    );
+
+    expect(next.pendingUploads[0]).toEqual(failed);
   });
 });
 

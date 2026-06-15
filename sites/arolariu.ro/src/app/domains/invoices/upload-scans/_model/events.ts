@@ -27,9 +27,7 @@ export const ALL_SCAN_UPLOAD_EVENT_TYPES = [
   "scanUpload.batch.requested",
   "scanUpload.batch.started",
   "scanUpload.batch.finished",
-  "scanUpload.item.attemptStarted",
   "scanUpload.item.progressChanged",
-  "scanUpload.item.retryStarted",
   "scanUpload.item.uploadSucceeded",
   "scanUpload.item.uploadFailed",
   "scanUpload.preview.completedItemHidden",
@@ -93,13 +91,6 @@ export type UploadEvent =
   | UploadEventBase<"scanUpload.batch.requested">
   | UploadEventBase<"scanUpload.batch.started">
   | UploadEventBase<"scanUpload.batch.finished">
-  | (UploadEventBase<"scanUpload.item.attemptStarted"> &
-      Readonly<{
-        /** Upload item identifier. */
-        uploadId: string;
-        /** One-based attempt number. */
-        attempt: number;
-      }>)
   | (UploadEventBase<"scanUpload.item.progressChanged"> &
       Readonly<{
         /** Upload item identifier. */
@@ -114,13 +105,6 @@ export type UploadEvent =
         error?: string;
         /** Optional uploaded blob URL. */
         blobUrl?: string;
-      }>)
-  | (UploadEventBase<"scanUpload.item.retryStarted"> &
-      Readonly<{
-        /** Upload item identifier. */
-        uploadId: string;
-        /** One-based retry attempt number. */
-        attempt: number;
       }>)
   | (UploadEventBase<"scanUpload.item.uploadSucceeded"> &
       Readonly<{
