@@ -196,7 +196,7 @@ export default function UploadArea(): React.JSX.Element {
             <Badge
               variant='secondary'
               className={styles["dragCountBadge"]}>
-              {dragCount} file(s)
+              {t((m) => m.pages.invoices.uploadScans.uploadArea.dragCount, {count: dragCount})}
             </Badge>
           ) : null}
           {isDragActive ? (
