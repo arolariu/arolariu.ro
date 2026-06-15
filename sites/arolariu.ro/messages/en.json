@@ -2943,6 +2943,7 @@
         },
         "errors": {
           "tooLarge": "File too large: {name} (max 10MB)",
+          "unsupportedExtension": "Unsupported file extension: {name}",
           "unsupportedType": "Unsupported file type: {type}"
         },
         "header": {
@@ -3015,6 +3016,15 @@
         },
         "subtitle": "Upload receipt images or PDFs. Create invoices from them later.",
         "title": "Upload Scans",
+        "toast": {
+          "allFilesCleared": "All files cleared",
+          "filesAdded": "{count, plural, one {Added # file to the upload queue} other {Added # files to the upload queue}}",
+          "noFilesToUpload": "No files to upload",
+          "rotateFailed": "Failed to rotate upload",
+          "rotateUnavailable": "Cannot rotate this upload because the original file is unavailable",
+          "uploadFailed": "{count, plural, one {Failed to upload # scan} other {Failed to upload # scans}}",
+          "uploadSucceeded": "{count, plural, one {Uploaded # scan} other {Uploaded # scans}}"
+        },
         "upload": {
           "browse": "Browse files",
           "dropzone": "Drag and drop your receipt images or PDFs here",
@@ -3034,6 +3044,7 @@
             "dropInactive": "Drag files here or click to browse",
             "subtitle": "JPG, PNG, PDF up to 10MB"
           },
+          "dragCount": "{count, plural, one {# file} other {# files}}",
           "empty": {
             "chooseFiles": "Choose Files",
             "dropActive": "Drop files to upload",

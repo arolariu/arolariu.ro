@@ -2943,7 +2943,8 @@
         },
         "errors": {
           "tooLarge": "Fișier prea mare: {name} (max 10MB)",
-          "unsupportedType": "Tip de fișier neacceptat: {type}"
+          "unsupportedType": "Tip de fișier neacceptat: {type}",
+          "unsupportedExtension": "Extensie de fișier neacceptată: {name}"
         },
         "header": {
           "description": "Încărcați imagini sau PDF-uri cu chitanțe. Creați facturi din ele mai târziu.",
@@ -3046,7 +3047,17 @@
           "tooltips": {
             "clearAll": "Elimină toate încărcările în așteptare",
             "uploadScans": "Pornește încărcarea tuturor scanărilor în așteptare"
-          }
+          },
+          "dragCount": "{count, plural, one {# fișier} few {# fișiere} other {# de fișiere}}"
+        },
+        "toast": {
+          "allFilesCleared": "Toate fișierele au fost șterse",
+          "filesAdded": "{count, plural, one {S-a adăugat # fișier în coada de încărcare} few {S-au adăugat # fișiere în coada de încărcare} other {S-au adăugat # de fișiere în coada de încărcare}}",
+          "noFilesToUpload": "Niciun fișier de încărcat",
+          "rotateFailed": "Rotirea încărcării a eșuat",
+          "rotateUnavailable": "Această scanare nu poate fi rotită deoarece fișierul original nu este disponibil",
+          "uploadFailed": "{count, plural, one {Încărcarea a # scanare a eșuat} few {Încărcarea a # scanări a eșuat} other {Încărcarea a # de scanări a eșuat}}",
+          "uploadSucceeded": "{count, plural, one {S-a încărcat # scanare} few {S-au încărcat # scanări} other {S-au încărcat # de scanări}}"
         }
       },
       "viewInvoice": {

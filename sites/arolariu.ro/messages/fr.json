@@ -2943,7 +2943,8 @@
         },
         "errors": {
           "tooLarge": "Fichier trop volumineux : {name} (max 10 Mo)",
-          "unsupportedType": "Type de fichier non pris en charge : {type}"
+          "unsupportedType": "Type de fichier non pris en charge : {type}",
+          "unsupportedExtension": "Extension de fichier non prise en charge : {name}"
         },
         "header": {
           "description": "Téléchargez des images de reçus ou des PDF. Créez des factures à partir de ceux-ci plus tard.",
@@ -3046,7 +3047,17 @@
           "tooltips": {
             "clearAll": "Supprimer tous les téléversements en attente",
             "uploadScans": "Démarrer le téléversement de tous les scans en attente"
-          }
+          },
+          "dragCount": "{count, plural, one {# fichier} other {# fichiers}}"
+        },
+        "toast": {
+          "allFilesCleared": "Tous les fichiers ont été effacés",
+          "filesAdded": "{count, plural, one {# fichier ajouté à la file d'attente} other {# fichiers ajoutés à la file d'attente}}",
+          "noFilesToUpload": "Aucun fichier à téléverser",
+          "rotateFailed": "Échec de la rotation du téléversement",
+          "rotateUnavailable": "Impossible de faire pivoter ce téléversement car le fichier d'origine n'est pas disponible",
+          "uploadFailed": "{count, plural, one {Échec du téléversement de # scan} other {Échec du téléversement de # scans}}",
+          "uploadSucceeded": "{count, plural, one {# scan téléversé} other {# scans téléversés}}"
         }
       },
       "viewInvoice": {
