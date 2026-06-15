@@ -60,31 +60,16 @@ export function resolveValidatedScanMimeType(file: File): string {
 function validateUploadFile(file: File): UploadValidationResult {
   const extension = extractFileExtension(file.name);
   if (extension === null || !isSupportedScanExtension(extension)) {
-    return {
-      isValid: false,
-      file,
-      reason: "unsupported-extension",
-      message: `Unsupported file extension: ${file.name}`,
-    };
+    return {isValid: false, file, reason: "unsupported-extension"};
   }
 
   const mimeType = resolveValidatedScanMimeType(file);
   if (mimeType.length === 0) {
-    return {
-      isValid: false,
-      file,
-      reason: "unsupported-type",
-      message: `Unsupported file type: ${file.type || "unknown"}`,
-    };
+    return {isValid: false, file, reason: "unsupported-type"};
   }
 
   if (file.size > MAX_UPLOAD_FILE_SIZE_BYTES) {
-    return {
-      isValid: false,
-      file,
-      reason: "file-too-large",
-      message: `File too large: ${file.name} (max 10MB)`,
-    };
+    return {isValid: false, file, reason: "file-too-large"};
   }
 
   return {isValid: true, file};

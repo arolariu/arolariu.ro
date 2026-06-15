@@ -76,7 +76,6 @@ describe("validateUploadFile", () => {
       isValid: false,
       file,
       reason: "unsupported-extension",
-      message: "Unsupported file extension: raw.bin",
     });
   });
 
@@ -87,7 +86,6 @@ describe("validateUploadFile", () => {
       isValid: false,
       file,
       reason: "unsupported-type",
-      message: "Unsupported file type: application/octet-stream",
     });
   });
 
@@ -104,7 +102,6 @@ describe("validateUploadFile", () => {
       isValid: false,
       file,
       reason: "unsupported-extension",
-      message: "Unsupported file extension: receipt.gif",
     });
   });
 
@@ -115,7 +112,6 @@ describe("validateUploadFile", () => {
       isValid: false,
       file,
       reason: "file-too-large",
-      message: "File too large: large.pdf (max 10MB)",
     });
   });
 });
@@ -132,7 +128,6 @@ describe("validateUploadFiles", () => {
           isValid: false,
           file: invalidFile,
           reason: "unsupported-extension",
-          message: "Unsupported file extension: receipt.txt",
         },
       ],
     });

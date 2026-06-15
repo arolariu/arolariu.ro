@@ -75,7 +75,6 @@ export type UploadValidationResult =
       isValid: false;
       file: File;
       reason: UploadValidationErrorReason;
-      message: string;
     }>;
 
 /** Valid and invalid files produced by batch upload validation. */
@@ -139,12 +138,7 @@ export type UploadRunnerCallbacks = Readonly<{
 }>;
 
 /** Failure categories returned by the upload runner. */
-export type UploadFailureReason =
-  | "missing-file"
-  | "upload-target-failed"
-  | "direct-upload-failed"
-  | "server-upload-failed"
-  | "unexpected-error";
+export type UploadFailureReason = "missing-file" | "server-upload-failed" | "unexpected-error";
 
 /** Final result for one pending scan upload. */
 export type UploadRunnerResult =

@@ -129,9 +129,6 @@ async function runSingleAttempt(
         blobUrl: targetResult.data.blobUrl,
       };
     }
-
-    const fallbackResult = await uploadWithServerFallback(upload, dependencies);
-    return isSuccessfulUploadResult(fallbackResult) ? {...fallbackResult, attempts: attempt} : fallbackResult;
   }
 
   const fallbackResult = await uploadWithServerFallback(upload, dependencies);
