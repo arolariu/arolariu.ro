@@ -8,7 +8,7 @@
 import {Card, CardContent} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {TbShieldCheck} from "react-icons/tb";
-import styles from "../../island.module.scss";
+import styles from "./SecurityCard.module.scss";
 
 /** Renders the secure-storage assurance card. */
 export default function SecurityCard(): React.JSX.Element {

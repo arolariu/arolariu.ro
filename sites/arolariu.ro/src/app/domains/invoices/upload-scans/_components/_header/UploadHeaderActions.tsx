@@ -10,7 +10,7 @@ import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import type {ComponentProps, ReactNode} from "react";
 import {TbEye, TbFileInvoice} from "react-icons/tb";
-import styles from "../../island.module.scss";
+import styles from "./UploadHeaderActions.module.scss";
 
 type LinkHref = ComponentProps<typeof Link>["href"];
 

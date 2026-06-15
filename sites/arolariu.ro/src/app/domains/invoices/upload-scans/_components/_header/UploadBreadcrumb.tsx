@@ -8,7 +8,7 @@
 import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {TbArrowLeft} from "react-icons/tb";
-import styles from "../../island.module.scss";
+import styles from "./UploadBreadcrumb.module.scss";
 
 /** Renders the "back to invoices" breadcrumb. */
 export default function UploadBreadcrumb(): React.JSX.Element {

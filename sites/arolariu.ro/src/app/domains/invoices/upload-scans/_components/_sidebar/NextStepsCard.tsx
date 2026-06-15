@@ -11,7 +11,7 @@ import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {TbArrowRight} from "react-icons/tb";
 import {useScanUpload} from "../../_context/ScanUploadContext";
-import styles from "../../island.module.scss";
+import styles from "./NextStepsCard.module.scss";
 
 /** Renders the post-completion "continue to view scans" card, or nothing. */
 export default function NextStepsCard(): React.JSX.Element | null {

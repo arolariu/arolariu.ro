@@ -8,7 +8,7 @@
 import {Card, CardContent} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {TbFileTypePdf, TbPhoto} from "react-icons/tb";
-import styles from "../../island.module.scss";
+import styles from "./FormatsCard.module.scss";
 
 /** One supported-format row (icon + label + extensions). */
 function FileTypeCard({icon, label, extensions}: Readonly<{icon: React.ReactNode; label: string; extensions: string}>): React.JSX.Element {

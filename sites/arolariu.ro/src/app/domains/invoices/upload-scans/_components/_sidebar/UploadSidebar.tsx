@@ -9,7 +9,7 @@ import FormatsCard from "./FormatsCard";
 import NextStepsCard from "./NextStepsCard";
 import SecurityCard from "./SecurityCard";
 import TipsCard from "./TipsCard";
-import styles from "../../island.module.scss";
+import styles from "./UploadSidebar.module.scss";
 
 /** Renders the upload-scans informational sidebar. */
 export default function UploadSidebar(): React.JSX.Element {

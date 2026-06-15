@@ -8,7 +8,7 @@
 import {Card, CardContent} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {TbCheck} from "react-icons/tb";
-import styles from "../../island.module.scss";
+import styles from "./TipsCard.module.scss";
 
 /** One tip list item. */
 function TipItem({children}: Readonly<{children: React.ReactNode}>): React.JSX.Element {

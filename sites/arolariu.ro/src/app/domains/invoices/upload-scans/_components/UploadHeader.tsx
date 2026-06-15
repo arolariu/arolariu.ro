@@ -10,7 +10,7 @@ import {useTranslations} from "next-intl-selector";
 import {TbInfoCircle} from "react-icons/tb";
 import {FadeIn} from "../../_components/FadeIn";
 import UploadHeaderActions from "./_header/UploadHeaderActions";
-import styles from "../island.module.scss";
+import styles from "./UploadHeader.module.scss";
 
 /** Renders the page title, info tooltip, and header actions. */
 export default function UploadHeader(): React.JSX.Element {
