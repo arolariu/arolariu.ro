@@ -13,7 +13,8 @@
 ```bash
 npm run dev:website        # Dev server → http://localhost:3000
 npm run build:website      # Production build
-npm run test:website       # Vitest unit tests
+npm run test:unit          # Vitest unit tests only (fast — use for routine checks)
+npm run test:website       # FULL suite: Vitest + Playwright E2E + Storybook (expensive)
 npm run lint               # ESLint (20+ plugins)
 npm run format             # Prettier
 npm run generate           # Generate env, i18n, GraphQL types
