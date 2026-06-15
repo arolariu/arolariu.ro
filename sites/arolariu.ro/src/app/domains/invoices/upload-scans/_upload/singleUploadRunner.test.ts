@@ -163,6 +163,25 @@ describe("uploadPendingScan", () => {
     }
   });
 
+  it("uses server upload fallback when the direct Azure upload throws a network error", async () => {
+    const originalFetch = globalThis.fetch;
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
+    const scan = createScan({id: "fallback-after-throw"});
+    const dependencies = createDependencies({
+      uploadScan: vi.fn().mockResolvedValue({success: true, data: {status: 201, scan}}),
+    });
+
+    try {
+      const result = await uploadPendingScan(createUpload(), dependencies, {onProgress: vi.fn()});
+
+      expect(result).toMatchObject({success: true, attempts: 1, blobUrl: scan.blobUrl});
+      expect(dependencies.uploadScan).toHaveBeenCalledOnce();
+      expect(dependencies.createUploadTarget).toHaveBeenCalledOnce();
+    } finally {
+      vi.stubGlobal("fetch", originalFetch);
+    }
+  });
+
   it("retries up to three attempts before failing", async () => {
     const dependencies = createDependencies({
       createUploadTarget: vi.fn().mockResolvedValue({success: false, error: {message: "Target unavailable"}}),

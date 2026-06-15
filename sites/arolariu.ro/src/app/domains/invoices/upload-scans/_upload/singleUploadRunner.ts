@@ -98,36 +98,41 @@ async function runSingleAttempt(
   callbacks.onProgress({uploadId: upload.id, status, progress: 30, attempts: attempt});
 
   if (targetResult.success) {
-    const uploadResponse = await globalThis.fetch(targetResult.data.sasUrl, {
-      method: "PUT",
-      body: upload.file,
-      headers: targetResult.data.requiredHeaders,
-    });
+    try {
+      const uploadResponse = await globalThis.fetch(targetResult.data.sasUrl, {
+        method: "PUT",
+        body: upload.file,
+        headers: targetResult.data.requiredHeaders,
+      });
 
-    callbacks.onProgress({uploadId: upload.id, status, progress: 70, attempts: attempt});
+      callbacks.onProgress({uploadId: upload.id, status, progress: 70, attempts: attempt});
 
-    if (uploadResponse.ok) {
-      const {metadata} = targetResult.data;
-      const scan = {
-        id: metadata.scanId,
-        userIdentifier: metadata.ownerId,
-        name: upload.name,
-        blobUrl: targetResult.data.blobUrl,
-        mimeType: upload.mimeType,
-        sizeInBytes: upload.size,
-        scanType: mimeTypeToScanType(upload.mimeType),
-        uploadedAt: metadata.uploadedAt,
-        status: "ready" as const,
-        metadata,
-      };
+      if (uploadResponse.ok) {
+        const {metadata} = targetResult.data;
+        const scan = {
+          id: metadata.scanId,
+          userIdentifier: metadata.ownerId,
+          name: upload.name,
+          blobUrl: targetResult.data.blobUrl,
+          mimeType: upload.mimeType,
+          sizeInBytes: upload.size,
+          scanType: mimeTypeToScanType(upload.mimeType),
+          uploadedAt: metadata.uploadedAt,
+          status: "ready" as const,
+          metadata,
+        };
 
-      return {
-        success: true,
-        uploadId: upload.id,
-        attempts: attempt,
-        scan,
-        blobUrl: targetResult.data.blobUrl,
-      };
+        return {
+          success: true,
+          uploadId: upload.id,
+          attempts: attempt,
+          scan,
+          blobUrl: targetResult.data.blobUrl,
+        };
+      }
+    } catch {
+      // Direct SAS upload failed at the network layer (e.g. CORS/DNS/offline).
+      // Fall through to the server-side fallback instead of failing the attempt.
     }
   }
 
