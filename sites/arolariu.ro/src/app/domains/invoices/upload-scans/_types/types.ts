@@ -170,3 +170,18 @@ export type UploadState = Readonly<{
   sessionStats: SessionStats;
   completedBatch: UploadCompletionSummary[];
 }>;
+
+/** Translation code returned by the upload session for the React layer to toast. */
+export type ToastCode =
+  | Readonly<{kind: "success"; key: "uploadSucceeded"; count: number}>
+  | Readonly<{kind: "error"; key: "uploadFailed"; count: number}>;
+
+/** Aggregated outcome returned by `runUploadSession`. */
+export type UploadOutcome = Readonly<{
+  /** Number of scans uploaded successfully in this batch. */
+  successCount: number;
+  /** Number of scans that failed in this batch. */
+  failureCount: number;
+  /** Translation codes to surface as toasts (translated by the caller). */
+  toasts: readonly ToastCode[];
+}>;
