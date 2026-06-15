@@ -61,7 +61,7 @@ export function usePostUploadPrompt({
 
     if (allDone && !hasPromptedRef.current) {
       hasPromptedRef.current = true;
-      setCompletedScans([...completedBatch]);
+      setCompletedScans(completedBatch.slice(-3));
       const timer = setTimeout(() => {
         setIsVisible(true);
         clearCompletedBatch();

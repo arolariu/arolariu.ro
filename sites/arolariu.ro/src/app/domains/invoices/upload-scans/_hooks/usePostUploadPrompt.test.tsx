@@ -60,4 +60,28 @@ describe("usePostUploadPrompt", () => {
 
     expect(result.current.isVisible).toBe(false);
   });
+
+  it("remembers only the last three completed scans", () => {
+    const completedBatch = Array.from({length: 5}, (_, index) => ({
+      id: `scan-${index}`,
+      name: `receipt-${index}.jpg`,
+      preview: `https://storage/scan-${index}.jpg`,
+    }));
+
+    const {result} = renderHook(() =>
+      usePostUploadPrompt({
+        pendingUploadCount: 0,
+        totalCompleted: 5,
+        completedBatch,
+        clearCompletedBatch: vi.fn(),
+      }),
+    );
+
+    act(() => {
+      vi.runAllTimers();
+    });
+
+    expect(result.current.completedScans).toEqual(completedBatch.slice(-3));
+    expect(result.current.completedScans).toHaveLength(3);
+  });
 });
