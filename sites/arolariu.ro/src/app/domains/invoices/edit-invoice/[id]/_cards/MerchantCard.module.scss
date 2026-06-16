@@ -26,9 +26,10 @@
 }
 
 .actions {
-  & > * + * {
-    margin-top: space(2);
-  }
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: space(2);
 }
 
 .card {
@@ -51,7 +52,8 @@
 }
 
 .actionButton {
-  width: 100%;
+  flex: 1 1 0;
+  min-width: 0;
   cursor: pointer;
 }
 
