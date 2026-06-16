@@ -1,182 +1,64 @@
+import {seedInvoiceStoryStores, storyInvoice, storyInvoices, WithViewInvoiceContext} from "@/app/domains/invoices/_storybook";
 import type {Meta, StoryObj} from "@storybook/react";
-import {TbChartBar, TbTrendingUp} from "react-icons/tb";
+import {InvoiceAnalytics} from "./InvoiceAnalytics";
 
 /**
- * Static visual preview of the InvoiceAnalytics component.
+ * InvoiceAnalytics renders the tabbed analytics dashboard for a single invoice:
+ * a "Current" tab (summary, category spending, price distribution, items
+ * breakdown) and — for the invoice owner — a "Compare" tab with cross-invoice
+ * trends and merchant breakdowns.
  *
- * @remarks Static preview — component uses `useInvoice` hook which imports "use server"
- * action (fetchInvoice from `@/app/domains/invoices/_actions/invoices/fetchInvoice`) that cannot be bundled
- * by Storybook's Vite/Rollup. Also depends on `useInvoiceContext` and `useUserInformation`.
- * This story renders a faithful HTML replica of the analytics dashboard with summary stats
- * and chart placeholders.
+ * @remarks
+ * The real component depends on `useInvoiceContext` (focused invoice + merchant),
+ * `useInvoicesStore` (all cached invoices for comparison analytics), and
+ * `useUserInformation` (which gates the owner-only Compare tab). Stories mount
+ * the real component inside `WithViewInvoiceContext` and seed the Zustand stores
+ * so the charts and tables compute from real fixture data.
  */
 const meta = {
   title: "arolariu.ro/IMS/Components/Invoice/InvoiceAnalytics",
+  component: InvoiceAnalytics,
   parameters: {
-    layout: "centered",
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "Tabbed invoice analytics dashboard. Mounts the real component with seeded invoice/merchant stores so summary stats and charts render from fixture data.",
+      },
+    },
   },
-} satisfies Meta;
+  tags: ["autodocs"],
+} satisfies Meta<typeof InvoiceAnalytics>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Default analytics dashboard with current invoice tab. */
+/** Default analytics dashboard with summary stats, category spending, price distribution, and items breakdown. */
 export const Default: Story = {
+  decorators: [
+    (Story) => {
+      seedInvoiceStoryStores({invoices: storyInvoices});
+      return <Story />;
+    },
+  ],
   render: () => (
-    <div
-      style={{
-        borderRadius: "0.75rem",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "#fff",
-        boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)",
-      }}>
-      {/* Tab Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderBottom: "1px solid #e5e7eb",
-          padding: "1.5rem",
-        }}>
-        <div style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
-          <TbChartBar style={{height: "1.25rem", width: "1.25rem", color: "#9ca3af"}} />
-          <h2 style={{fontSize: "1.125rem", fontWeight: 600}}>Invoice Analytics</h2>
-        </div>
-        <div style={{display: "flex", borderRadius: "0.5rem", border: "1px solid #e5e7eb"}}>
-          <button
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.375rem",
-              borderTopLeftRadius: "0.5rem",
-              borderBottomLeftRadius: "0.5rem",
-              backgroundColor: "#f3f4f6",
-              paddingLeft: "0.75rem",
-              paddingRight: "0.75rem",
-              paddingTop: "0.375rem",
-              paddingBottom: "0.375rem",
-              fontSize: "0.875rem",
-              fontWeight: 500,
-            }}>
-            <TbChartBar style={{height: "0.875rem", width: "0.875rem"}} />
-            Current
-          </button>
-          <button
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.375rem",
-              borderTopRightRadius: "0.5rem",
-              borderBottomRightRadius: "0.5rem",
-              paddingLeft: "0.75rem",
-              paddingRight: "0.75rem",
-              paddingTop: "0.375rem",
-              paddingBottom: "0.375rem",
-              fontSize: "0.875rem",
-              color: "#6b7280",
-            }}>
-            <TbTrendingUp style={{height: "0.875rem", width: "0.875rem"}} />
-            Compare
-          </button>
-        </div>
-      </div>
+    <WithViewInvoiceContext invoice={storyInvoice}>
+      <InvoiceAnalytics />
+    </WithViewInvoiceContext>
+  ),
+};
 
-      {/* Analytics Grid */}
-      <div style={{display: "grid", gap: "1rem", padding: "1.5rem", gridTemplateColumns: "repeat(2, minmax(0, 1fr))"}}>
-        {/* Summary Stats */}
-        <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", padding: "1rem"}}>
-          <h3 style={{marginBottom: "0.75rem", fontSize: "0.875rem", fontWeight: 500, color: "#6b7280"}}>Summary</h3>
-          <div style={{display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "1rem"}}>
-            <div>
-              <p style={{fontSize: "1.5rem", fontWeight: "bold"}}>€42.75</p>
-              <p style={{fontSize: "0.75rem", color: "#6b7280"}}>Total Amount</p>
-            </div>
-            <div>
-              <p style={{fontSize: "1.5rem", fontWeight: "bold"}}>12</p>
-              <p style={{fontSize: "0.75rem", color: "#6b7280"}}>Items Purchased</p>
-            </div>
-            <div>
-              <p style={{fontSize: "1.5rem", fontWeight: "bold"}}>€3.56</p>
-              <p style={{fontSize: "0.75rem", color: "#6b7280"}}>Average Price</p>
-            </div>
-            <div>
-              <p style={{fontSize: "1.5rem", fontWeight: "bold"}}>4</p>
-              <p style={{fontSize: "0.75rem", color: "#6b7280"}}>Categories</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Spending by Category */}
-        <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", padding: "1rem"}}>
-          <h3 style={{marginBottom: "0.75rem", fontSize: "0.875rem", fontWeight: 500, color: "#6b7280"}}>Spending by Category</h3>
-          <div style={{display: "flex", flexDirection: "column", gap: "0.5rem"}}>
-            {[
-              {name: "Dairy", pct: 35, color: "#3b82f6"},
-              {name: "Bakery", pct: 25, color: "#22c55e"},
-              {name: "Produce", pct: 22, color: "#f97316"},
-              {name: "Other", pct: 18, color: "#9ca3af"},
-            ].map((cat) => (
-              <div key={cat.name}>
-                <div style={{display: "flex", justifyContent: "space-between", fontSize: "0.75rem"}}>
-                  <span>{cat.name}</span>
-                  <span style={{color: "#6b7280"}}>{cat.pct}%</span>
-                </div>
-                <div
-                  style={{marginTop: "0.25rem", height: "0.5rem", overflow: "hidden", borderRadius: "9999px", backgroundColor: "#f3f4f6"}}>
-                  <div style={{height: "100%", borderRadius: "9999px", backgroundColor: cat.color, width: `${String(cat.pct)}%`}} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Price Distribution */}
-        <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", padding: "1rem"}}>
-          <h3 style={{marginBottom: "0.75rem", fontSize: "0.875rem", fontWeight: 500, color: "#6b7280"}}>Price Distribution</h3>
-          <div style={{display: "flex", height: "8rem", alignItems: "flex-end", justifyContent: "space-around"}}>
-            {[30, 55, 80, 45, 65, 40, 25].map((h, i) => (
-              <div
-                key={i}
-                style={{
-                  width: "1.5rem",
-                  borderTopLeftRadius: "0.25rem",
-                  borderTopRightRadius: "0.25rem",
-                  backgroundColor: "#c084fc",
-                  height: `${String(h)}%`,
-                }}
-              />
-            ))}
-          </div>
-          <div style={{marginTop: "0.5rem", display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#9ca3af"}}>
-            <span>€0</span>
-            <span>€5</span>
-            <span>€10</span>
-            <span>€15</span>
-            <span>€20+</span>
-          </div>
-        </div>
-
-        {/* Items Breakdown (full width) */}
-        <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", padding: "1rem", gridColumn: "span 2"}}>
-          <h3 style={{marginBottom: "0.75rem", fontSize: "0.875rem", fontWeight: 500, color: "#6b7280"}}>Items Breakdown</h3>
-          <div style={{display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "0.5rem"}}>
-            {["Whole Milk", "Bread", "Eggs", "Bananas", "Cheese", "Butter", "Yogurt", "Apples"].map((item) => (
-              <div
-                key={item}
-                style={{
-                  borderRadius: "0.375rem",
-                  border: "1px solid #e5e7eb",
-                  padding: "0.5rem",
-                  textAlign: "center",
-                  fontSize: "0.75rem",
-                }}>
-                {item}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
+/** Invoice with no line items, exercising the analytics empty/zero states. */
+export const NoItems: Story = {
+  decorators: [
+    (Story) => {
+      seedInvoiceStoryStores({invoices: storyInvoices});
+      return <Story />;
+    },
+  ],
+  render: () => (
+    <WithViewInvoiceContext invoice={{...storyInvoice, items: []}}>
+      <InvoiceAnalytics />
+    </WithViewInvoiceContext>
   ),
 };
