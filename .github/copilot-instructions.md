@@ -48,6 +48,9 @@ If rules conflict, resolve in this order:
 - Use sync-over-async patterns (`.Result`, `.Wait()`) in .NET
 - Auto-create or delete files without user confirmation
 - Force-push to `main` or `preview` branches
+- Run `npm run lint` or `npm run test:website` for routine verification — both are expensive (see [Local Dev Loop](#local-dev-loop--verification)); use `npm run test:unit` + `npm run build:website` instead
+- Create a git worktree unless the user explicitly asks — work in the current checkout/branch by default
+- Mock our own modules in tests — mock only true external boundaries
 
 ## Ask First
 
@@ -57,6 +60,13 @@ If rules conflict, resolve in this order:
 - Modifying authentication/authorization logic
 - Changes to `next.config.ts`, CI/CD workflows, or infrastructure
 - Modifying shared component library (`packages/components/`)
+
+## Local Dev Loop & Verification
+
+- **Routine verification is cheap by design.** For typical edits, verify with `npm run test:unit` (Vitest unit + xUnit only) and `npm run build:website`. Run these freely.
+- **`npm run lint` and `npm run test:website` are expensive — don't run them for routine edits.** `lint` runs ESLint with 20+ plugins; `test:website` runs the **full** website suite (`test:unit && test:e2e` Playwright **&&** `test:storybook`), not unit-only. Reserve both for a final pass before a PR, or when the user explicitly asks.
+- **Tests are colocated.** Put `*.test.ts` next to the file it covers (e.g. `utils.generic.test.ts` beside `utils.generic.ts`); shared test builders live in `sites/arolariu.ro/tests/helpers/builders/`.
+- **Minimize test doubles.** Prefer real implementations and never mock our own modules — mock only true external boundaries (network, Azure SDK, Clerk, etc.). Excess mocks/stubs/fakes are a smell in this codebase.
 
 ## Copilot Runtime Guidance
 
@@ -68,9 +78,10 @@ If rules conflict, resolve in this order:
 - **Memory.** Copilot Memory (server-side) and the file-based `memory` MCP at `.github/memory/memory.json` (mirrored to Copilot CLI via `.copilot/mcp-config.json`) coexist as separate persistent stores.
 - **Cloud agent.** When running on a PR, `.github/instructions/**` files matching `applyTo` globs are loaded; this file (`copilot-instructions.md`) is always loaded. AGENTS.md may or may not be loaded depending on surface.
 
-## Worktree Bootstrap
+## Worktrees
 
-- When working in `.worktrees/**` or any fresh checkout and touching `sites/arolariu.ro` tests, typechecks, or builds that import `@arolariu/components`, run setup in that same worktree first: `npm install`, then `npm run build:components`.
+- **Default: work in the current checkout/branch.** Do not create a git worktree unless the user explicitly asks for one.
+- When you *do* work in `.worktrees/**` or any fresh checkout and touch `sites/arolariu.ro` tests, typechecks, or builds that import `@arolariu/components`, run setup in that same worktree first: `npm install`, then `npm run build:components`.
 
 ---
 

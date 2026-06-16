@@ -6,7 +6,7 @@
 import {act, renderHook} from "@testing-library/react";
 import {afterEach, describe, expect, it, vi} from "vitest";
 import {useUploadProgressEvents} from "./useUploadProgressEvents";
-import type {UploadEvent} from "../_state/uploadEvents";
+import type {UploadEvent} from "../_model/events";
 
 describe("useUploadProgressEvents", () => {
   afterEach(() => {

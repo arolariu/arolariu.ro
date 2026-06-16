@@ -16,7 +16,7 @@ import {useTranslations} from "next-intl-selector";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {TbUpload} from "react-icons/tb";
 import {useScanUpload} from "../_context/ScanUploadContext";
-import {extractFilesFromDataTransferItems, SCAN_UPLOAD_INPUT_ACCEPT} from "../_files/uploadValidation";
+import {extractFilesFromDataTransferItems, SCAN_UPLOAD_INPUT_ACCEPT} from "../_intake/validation";
 import styles from "./UploadArea.module.scss";
 
 /**
@@ -196,7 +196,7 @@ export default function UploadArea(): React.JSX.Element {
             <Badge
               variant='secondary'
               className={styles["dragCountBadge"]}>
-              {dragCount} file(s)
+              {t((m) => m.pages.invoices.uploadScans.uploadArea.dragCount, {count: dragCount})}
             </Badge>
           ) : null}
           {isDragActive ? (

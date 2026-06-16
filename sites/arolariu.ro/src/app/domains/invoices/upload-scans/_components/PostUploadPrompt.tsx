@@ -135,7 +135,7 @@ export default function PostUploadPrompt({
                     initial={{opacity: 0, y: 10}}
                     animate={{opacity: 1, y: 0}}
                     transition={{delay: 0.2}}>
-                    {completedScans.slice(0, 5).map((scan, index) => (
+                    {completedScans.map((scan, index) => (
                       <motion.img
                         key={scan.id}
                         src={scan.preview}
@@ -146,15 +146,6 @@ export default function PostUploadPrompt({
                         transition={{delay: 0.3 + index * 0.05}}
                       />
                     ))}
-                    {completedScans.length > 5 && (
-                      <motion.div
-                        className={styles["thumbnailMore"]}
-                        initial={{opacity: 0, scale: 0.8}}
-                        animate={{opacity: 1, scale: 1}}
-                        transition={{delay: 0.55}}>
-                        +{completedScans.length - 5}
-                      </motion.div>
-                    )}
                   </motion.div>
                 )}
 

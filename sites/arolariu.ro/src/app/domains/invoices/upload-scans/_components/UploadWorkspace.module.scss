@@ -1,0 +1,12 @@
+@use '../../../../../styles/abstracts' as abstracts;
+
+.mainArea {
+  @include abstracts.respond-to('lg') {
+    grid-column: span 2;
+  }
+
+  // Even wider on xl screens
+  @include abstracts.respond-to('xl') {
+    grid-column: span 2;
+  }
+}

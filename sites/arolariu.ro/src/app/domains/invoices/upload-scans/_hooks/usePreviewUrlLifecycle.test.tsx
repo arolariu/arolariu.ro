@@ -6,7 +6,7 @@
 import {renderHook} from "@testing-library/react";
 import {afterEach, describe, expect, it, vi} from "vitest";
 import {usePreviewUrlLifecycle} from "./usePreviewUrlLifecycle";
-import type {PendingUpload} from "../_utils/uploadTypes";
+import type {PendingUpload} from "../_types";
 
 /**
  * Creates a pending upload with a configurable preview URL.

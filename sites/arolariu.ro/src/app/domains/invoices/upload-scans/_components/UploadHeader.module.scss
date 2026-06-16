@@ -1,0 +1,75 @@
+@use '../../../../../styles/abstracts' as abstracts;
+
+.header {
+  margin-bottom: abstracts.space(8);
+  @include abstracts.flex-column;
+  gap: abstracts.space(4);
+
+  @include abstracts.respond-to('sm') {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.headerLeft {
+  display: flex;
+  align-items: flex-start;
+  gap: abstracts.space(2);
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: abstracts.space(2);
+}
+
+.headerTitle {
+  font-size: abstracts.font-size('2xl');
+  font-weight: abstracts.font-weight('bold');
+  color: abstracts.color('muted-foreground');
+
+  @include abstracts.respond-to('lg') {
+    font-size: abstracts.font-size('3xl');
+  }
+
+  @include abstracts.dark {
+    color: white;
+  }
+}
+
+.headerDescription {
+  font-size: abstracts.font-size('sm');
+  color: abstracts.color('muted-foreground');
+}
+
+.infoButton {
+  margin-top: abstracts.space(0.5);
+  height: auto;
+  width: auto;
+  padding: 0;
+  color: abstracts.color('muted-foreground');
+
+  &:hover {
+    background-color: transparent;
+    color: abstracts.color('foreground');
+  }
+
+  @include abstracts.dark {
+    color: abstracts.color('muted-foreground');
+
+    &:hover {
+      background-color: transparent;
+      color: abstracts.color('foreground');
+    }
+  }
+}
+
+.infoIcon {
+  @include abstracts.icon-size(abstracts.space(5));
+  color: abstracts.color('foreground');
+}
+
+.tooltipContent {
+  max-width: 20rem;
+}

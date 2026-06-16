@@ -11,8 +11,8 @@
  */
 
 import {useCallback, useEffect, useRef} from "react";
-import type {UploadEvent} from "../_state/uploadEvents";
-import type {UploadProgressEvent} from "../_utils/uploadTypes";
+import type {UploadEvent} from "../_model/events";
+import type {UploadProgressEvent} from "../_types";
 
 type HookOutput = Readonly<{
   /** Queues an upload progress event for the next animation frame. */
