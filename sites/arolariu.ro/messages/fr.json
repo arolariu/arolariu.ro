@@ -2984,7 +2984,7 @@
           "formats": {
             "documentExtensions": ".pdf",
             "documents": "Documents",
-            "imageExtensions": ".jpg, .jpeg, .png",
+            "imageExtensions": ".jpg, .jpeg, .png, .bmp, .tif, .tiff, .heif, .heic",
             "images": "Images",
             "maxSize": "Taille maximale du fichier : 10 Mo par fichier",
             "title": "Formats Pris en Charge"
@@ -3033,13 +3033,13 @@
           "compact": {
             "dropActive": "Déposez les fichiers pour les ajouter",
             "dropInactive": "Glissez des fichiers ici ou cliquez pour parcourir",
-            "subtitle": "JPG, PNG, PDF jusqu'à 10 Mo"
+            "subtitle": "JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF jusqu'à 10 Mo"
           },
           "empty": {
             "chooseFiles": "Choisir des fichiers",
             "dropActive": "Déposez les fichiers pour les téléverser",
             "dropInactive": "Cliquez ou glissez des fichiers pour les téléverser",
-            "formats": "Formats pris en charge : JPG, PNG, PDF (10 Mo max chacun)",
+            "formats": "Formats pris en charge : JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF (10 Mo max chacun)",
             "note": "Vous pouvez sélectionner plusieurs fichiers.",
             "pasteHint": "Astuce : vous pouvez aussi coller une image depuis le presse-papiers (Ctrl+V).",
             "title": "Glissez-déposez vos fichiers ici"

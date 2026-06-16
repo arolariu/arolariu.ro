@@ -2984,7 +2984,7 @@
           "formats": {
             "documentExtensions": ".pdf",
             "documents": "Documente",
-            "imageExtensions": ".jpg, .jpeg, .png",
+            "imageExtensions": ".jpg, .jpeg, .png, .bmp, .tif, .tiff, .heif, .heic",
             "images": "Imagini",
             "maxSize": "Dimensiune maximă: 10MB per fișier",
             "title": "Formate Acceptate"
@@ -3033,13 +3033,13 @@
           "compact": {
             "dropActive": "Plasează fișierele pentru a le adăuga",
             "dropInactive": "Trage fișiere aici sau fă clic pentru a naviga",
-            "subtitle": "JPG, PNG, PDF până la 10MB"
+            "subtitle": "JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF până la 10MB"
           },
           "empty": {
             "chooseFiles": "Alege fișiere",
             "dropActive": "Plasează fișierele pentru încărcare",
             "dropInactive": "Fă clic sau trage fișiere pentru încărcare",
-            "formats": "Formate acceptate: JPG, PNG, PDF (maxim 10MB fiecare)",
+            "formats": "Formate acceptate: JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF (maxim 10MB fiecare)",
             "note": "Poți selecta mai multe fișiere.",
             "pasteHint": "Sfat: poți lipi o imagine direct din clipboard (Ctrl+V).",
             "title": "Trage și plasează fișierele aici"

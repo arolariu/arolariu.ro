@@ -2984,7 +2984,7 @@
           "formats": {
             "documentExtensions": ".pdf",
             "documents": "Documents",
-            "imageExtensions": ".jpg, .jpeg, .png",
+            "imageExtensions": ".jpg, .jpeg, .png, .bmp, .tif, .tiff, .heif, .heic",
             "images": "Images",
             "maxSize": "Maximum file size: 10MB per file",
             "title": "Supported Formats"
@@ -3042,14 +3042,14 @@
           "compact": {
             "dropActive": "Drop files to add them",
             "dropInactive": "Drag files here or click to browse",
-            "subtitle": "JPG, PNG, PDF up to 10MB"
+            "subtitle": "JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF up to 10MB"
           },
           "dragCount": "{count, plural, one {# file} other {# files}}",
           "empty": {
             "chooseFiles": "Choose Files",
             "dropActive": "Drop files to upload",
             "dropInactive": "Click or drag files to upload",
-            "formats": "Supported formats: JPG, PNG, PDF (max 10MB each)",
+            "formats": "Supported formats: JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF (max 10MB each)",
             "note": "You can select multiple files.",
             "pasteHint": "Tip: you can also paste an image from your clipboard (Ctrl+V).",
             "title": "Drag and drop your files here"
