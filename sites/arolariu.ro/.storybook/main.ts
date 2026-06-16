@@ -11,9 +11,6 @@ const config: StorybookConfig = {
     options: {},
   },
   staticDirs: ["../public"],
-  docs: {
-    docsMode: true,
-  },
   features: {
     experimentalRSC: true,
   },
