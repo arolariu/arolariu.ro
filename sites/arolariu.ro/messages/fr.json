@@ -830,7 +830,7 @@
         "dropzone": {
           "dragAndDrop": "Glissez-déposez un fichier ici",
           "dropHere": "Déposez le fichier ici...",
-          "formats": "JPEG, PNG, PDF (max 10 Mo)",
+          "formats": "JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF (max 10 Mo)",
           "orClickBrowse": "ou cliquez pour parcourir"
         },
         "scanType": {
