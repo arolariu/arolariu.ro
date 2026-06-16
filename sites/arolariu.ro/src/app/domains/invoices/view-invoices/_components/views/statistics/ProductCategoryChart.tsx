@@ -197,6 +197,7 @@ export function ProductCategoryChart({data, currency}: Props): React.JSX.Element
               <Bar
                 dataKey='totalSpent'
                 radius={[0, 4, 4, 0]}
+                className={styles["bar"]}
               />
             </BarChart>
           </ResponsiveContainer>
