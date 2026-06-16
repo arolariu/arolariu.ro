@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import {TbBuilding, TbBuildingStore, TbMapPin, TbPhone} from "react-icons/tb";
+import {TbBuilding, TbMapPin, TbPhone} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./MerchantDialog.module.scss";
 
@@ -30,7 +30,6 @@ import styles from "./MerchantDialog.module.scss";
  * - **Name**: Business name with category badge
  * - **Address**: Physical location with map pin icon
  * - **Phone**: Contact number with phone icon
- * - **Parent Company**: Corporate parent identifier
  *
  * **Actions**:
  * - **Open in Maps**: Placeholder for map integration (not yet implemented)
@@ -116,15 +115,6 @@ export default function MerchantDialog(): React.JSX.Element {
                   </div>
                 </TableCell>
                 <TableCell className={styles["valueCell"]}>{merchant.address.phoneNumber}</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className={styles["labelCell"]}>
-                  <div className={styles["detailRow"]}>
-                    <TbBuildingStore className={styles["mutedIcon"]} />
-                    <span className={styles["detailLabel"]}>{t((m) => m.dialogs.invoices.merchantDialog.fields.parentCompany)}</span>
-                  </div>
-                </TableCell>
-                <TableCell className={styles["valueCell"]}>{merchant.parentCompanyId}</TableCell>
               </TableRow>
             </TableBody>
           </Table>
