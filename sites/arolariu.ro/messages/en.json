@@ -3229,11 +3229,6 @@
             "possibleRecipes": "Possible Recipes"
           }
         },
-        "invoiceTimeline": {
-          "eventCount": "{count, plural, one {# event} other {# events}}",
-          "subtitle": "Complete history of actions and changes",
-          "title": "Invoice Timeline"
-        },
         "itemAnalytics": {
           "columns": {
             "category": "Category",
@@ -3360,23 +3355,6 @@
           "tooltip": {
             "andMore": "and {count} more...",
             "currentInvoice": "Current Invoice"
-          }
-        },
-        "timelineSharedWithList": {
-          "actions": {
-            "manageSharing": "Manage Sharing",
-            "sendEmail": "Send email"
-          },
-          "aria": {
-            "sendEmail": "Send email to {user}"
-          },
-          "header": {
-            "publicBadge": "Public",
-            "title": "Shared With"
-          },
-          "publicAccess": {
-            "description": "This invoice is publicly accessible. Anyone with the link can view it, including guests without an account.",
-            "title": "Public Access Enabled"
           }
         }
       },

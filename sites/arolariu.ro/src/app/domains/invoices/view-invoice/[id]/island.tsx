@@ -25,7 +25,6 @@ import {InvoiceAnalytics} from "./_components/InvoiceAnalytics";
 import {InvoiceHeader} from "./_components/InvoiceHeader";
 import {PrintHeader} from "./_components/PrintHeader";
 import {InvoiceTabs} from "./_components/tabs/InvoiceTabs";
-import {InvoiceTimeline} from "./_components/timeline/InvoiceTimeline";
 import {InvoiceContextProvider} from "./_context/InvoiceContext";
 import {calculateHealthScorePercentage} from "./_utils/healthScore";
 import styles from "./island.module.scss";
@@ -81,13 +80,6 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
           </div>
 
           <div className={styles["mainGrid"]}>
-            {/* Left Column - Timeline (hidden on mobile, shown on lg+) */}
-            <div className={styles["leftColumn"]}>
-              <div className={styles["leftColumnSticky"]}>
-                <InvoiceTimeline />
-              </div>
-            </div>
-
             {/* Main Content - Center Column */}
             <div className={styles["centerColumn"]}>
               <div className={styles["centerItem"]}>
@@ -122,11 +114,6 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
 
               <div className={styles["centerItem"]}>
                 <InvoiceTabs />
-              </div>
-
-              {/* Timeline on mobile/tablet (shown below main content) */}
-              <div className={styles["mobileTimeline"]}>
-                <InvoiceTimeline />
               </div>
             </div>
 

@@ -3229,11 +3229,6 @@
             "possibleRecipes": "Recettes possibles"
           }
         },
-        "invoiceTimeline": {
-          "eventCount": "{count, plural, one {# événement} other {# événements}}",
-          "subtitle": "Historique complet des actions et modifications",
-          "title": "Chronologie de la facture"
-        },
         "itemAnalytics": {
           "columns": {
             "category": "Catégorie",
@@ -3360,23 +3355,6 @@
           "tooltip": {
             "andMore": "et {count} de plus…",
             "currentInvoice": "Facture actuelle"
-          }
-        },
-        "timelineSharedWithList": {
-          "actions": {
-            "manageSharing": "Gérer le partage",
-            "sendEmail": "Envoyer un e-mail"
-          },
-          "aria": {
-            "sendEmail": "Envoyer un e-mail à {user}"
-          },
-          "header": {
-            "publicBadge": "Public",
-            "title": "Partagée avec"
-          },
-          "publicAccess": {
-            "description": "Cette facture est accessible publiquement. Toute personne disposant du lien peut la voir, y compris les invités sans compte.",
-            "title": "Accès public activé"
           }
         }
       },

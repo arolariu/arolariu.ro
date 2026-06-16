@@ -3229,11 +3229,6 @@
             "possibleRecipes": "Rețete posibile"
           }
         },
-        "invoiceTimeline": {
-          "eventCount": "{count, plural, one {# eveniment} few {# evenimente} other {# de evenimente}}",
-          "subtitle": "Istoric complet al acțiunilor și modificărilor",
-          "title": "Cronologia facturii"
-        },
         "itemAnalytics": {
           "columns": {
             "category": "Categorie",
@@ -3360,23 +3355,6 @@
           "tooltip": {
             "andMore": "și încă {count}...",
             "currentInvoice": "Factura curentă"
-          }
-        },
-        "timelineSharedWithList": {
-          "actions": {
-            "manageSharing": "Gestionează partajarea",
-            "sendEmail": "Trimite email"
-          },
-          "aria": {
-            "sendEmail": "Trimite email către {user}"
-          },
-          "header": {
-            "publicBadge": "Public",
-            "title": "Partajată cu"
-          },
-          "publicAccess": {
-            "description": "Această factură este accesibilă public. Oricine are linkul o poate vedea, inclusiv invitații fără cont.",
-            "title": "Acces public activat"
           }
         }
       },
