@@ -60,3 +60,9 @@
   height: 200px;
   width: 100%;
 }
+
+.bar {
+  :global(.recharts-bar-rectangle) {
+    cursor: pointer;
+  }
+}
