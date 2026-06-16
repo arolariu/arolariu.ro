@@ -34,6 +34,7 @@
 
 .card {
   transition: box-shadow 300ms;
+
   &:hover {
     box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
   }
@@ -62,6 +63,7 @@
   width: space(4);
   height: space(4);
   transition: transform 150ms;
+
   .actionButton:hover & {
     transform: translateX(space(1));
   }
