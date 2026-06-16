@@ -175,12 +175,14 @@ export function MerchantLeaderboard({data, currency, merchantNamesById}: Props):
                 tickLine={false}
                 axisLine={false}
                 width={80}
+                interval={0}
               />
               <ChartTooltip content={renderTooltip} />
               <Bar
                 dataKey='totalSpend'
                 fill='var(--ac-chart-2)'
                 radius={[0, 4, 4, 0]}
+                className={styles["bar"]}
               />
             </BarChart>
           </ResponsiveContainer>
