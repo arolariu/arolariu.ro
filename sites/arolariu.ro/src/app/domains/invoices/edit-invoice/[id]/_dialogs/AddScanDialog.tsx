@@ -39,14 +39,14 @@ function getDropzoneClassName(isAdding: boolean, isDragReject: boolean, isDragAc
  *
  * @remarks
  * **Workflow**:
- * 1. User selects an image file (JPEG, PNG, WebP, HEIC, or PDF)
+ * 1. User selects an image or PDF file (JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, or PDF)
  * 2. File is converted to base64 and uploaded to Azure Blob Storage
  * 3. Blob URL is attached to the invoice via API
  * 4. Page refreshes to show the new scan
  *
  * **File Validation**:
  * - Maximum size: 10MB
- * - Supported formats: JPEG, PNG, WebP, HEIC, PDF
+ * - Supported formats: JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF
  *
  * @returns Dialog component for adding invoice scans
  *
@@ -74,6 +74,11 @@ export default function AddScanDialog(): React.JSX.Element {
       jpg: InvoiceScanType.JPEG,
       jpeg: InvoiceScanType.JPEG,
       png: InvoiceScanType.PNG,
+      bmp: InvoiceScanType.BMP,
+      tif: InvoiceScanType.TIFF,
+      tiff: InvoiceScanType.TIFF,
+      heif: InvoiceScanType.HEIF,
+      heic: InvoiceScanType.HEIC,
       pdf: InvoiceScanType.PDF,
     };
     return extension && typeMap[extension] ? typeMap[extension] : InvoiceScanType.OTHER;
@@ -107,6 +112,10 @@ export default function AddScanDialog(): React.JSX.Element {
     accept: {
       "image/jpeg": [".jpg", ".jpeg"],
       "image/png": [".png"],
+      "image/bmp": [".bmp"],
+      "image/tiff": [".tif", ".tiff"],
+      "image/heif": [".heif"],
+      "image/heic": [".heic"],
       "application/pdf": [".pdf"],
     },
     maxFiles: 1,

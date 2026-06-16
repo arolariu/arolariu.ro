@@ -149,6 +149,7 @@ export function MerchantBreakdownChart({data, currency, currentMerchant}: Props)
                 dataKey='total'
                 radius={[4, 4, 0, 0]}
                 maxBarSize={48}
+                className={styles["bar"]}
               />
             </BarChart>
           </ResponsiveContainer>

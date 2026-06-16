@@ -9,7 +9,7 @@ import {Alert, AlertDescription, AlertTitle, Button, Input, Tabs, TabsContent, T
 import {useTranslations} from "next-intl-selector";
 import React from "react";
 import {TbAlertTriangle, TbArrowLeft, TbCheck, TbCopy, TbGlobe, TbQrcode, TbShieldOff} from "react-icons/tb";
-import QRCode from "react-qr-code";
+import {QRCode} from "react-qr-code";
 import styles from "./ShareInvoiceDialog.Public.module.scss";
 
 // ============================================================================

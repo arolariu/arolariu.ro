@@ -26,13 +26,15 @@
 }
 
 .actions {
-  & > * + * {
-    margin-top: space(2);
-  }
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: space(2);
 }
 
 .card {
   transition: box-shadow 300ms;
+
   &:hover {
     box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
   }
@@ -51,7 +53,8 @@
 }
 
 .actionButton {
-  width: 100%;
+  flex: 1 1 0;
+  min-width: 0;
   cursor: pointer;
 }
 
@@ -60,6 +63,7 @@
   width: space(4);
   height: space(4);
   transition: transform 150ms;
+
   .actionButton:hover & {
     transform: translateX(space(1));
   }

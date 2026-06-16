@@ -830,7 +830,7 @@
         "dropzone": {
           "dragAndDrop": "Trage și plasează un fișier aici",
           "dropHere": "Plasează fișierul aici...",
-          "formats": "JPEG, PNG, PDF (max 10MB)",
+          "formats": "JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF (max 10MB)",
           "orClickBrowse": "sau apasă pentru a răsfoi"
         },
         "scanType": {

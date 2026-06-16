@@ -30,6 +30,7 @@ import styles from "./MerchantLeaderboard.module.scss";
 type Props = {
   readonly data: MerchantAggregate[];
   readonly currency: string;
+  readonly merchantNamesById?: Readonly<Record<string, string>>;
 };
 
 type TooltipPayloadItem = {
@@ -73,17 +74,22 @@ function CustomTooltip({active, payload, currency, getMerchantName}: Readonly<Cu
  * @param currency - Currency code for display
  * @returns Horizontal bar chart component
  */
-export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element {
+export function MerchantLeaderboard({data, currency, merchantNamesById}: Props): React.JSX.Element {
   const t = useTranslations();
   const getMerchantById = useMerchantsStore((state) => state.getEntityById);
 
   // Create a function to get merchant name or fallback to ID
   const getMerchantName = useCallback(
     (id: string): string => {
+      const storyMerchantName = merchantNamesById?.[id];
+      if (storyMerchantName) {
+        return storyMerchantName;
+      }
+
       const merchant = getMerchantById(id);
       return merchant?.name ?? t((m) => m.cards.invoices.statistics.merchantLeaderboard.unknownMerchant);
     },
-    [getMerchantById, t],
+    [getMerchantById, merchantNamesById, t],
   );
 
   /**
@@ -104,7 +110,7 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
   );
 
   const chartConfig = {
-    totalSpent: {
+    totalSpend: {
       label: t((m) => m.cards.invoices.statistics.merchantLeaderboard.labels.totalSpent),
       color: "var(--ac-chart-2)",
     },
@@ -128,14 +134,18 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
     );
   }
 
-  // Map data to include display names
-  const displayData = data.map((item) => {
-    const merchantName = getMerchantName(item.merchantId);
-    return {
-      ...item,
-      displayName: merchantName.length > 20 ? `${merchantName.slice(0, 17)}...` : merchantName,
-    };
-  });
+  // Map data to include display names. Always cap to the top 10 merchants by
+  // spend so the chart stays readable instead of being flooded with bars.
+  const displayData = data
+    .toSorted((a, b) => b.totalSpend - a.totalSpend)
+    .slice(0, 10)
+    .map((item) => {
+      const merchantName = getMerchantName(item.merchantId);
+      return {
+        ...item,
+        displayName: merchantName.length > 20 ? `${merchantName.slice(0, 17)}...` : merchantName,
+      };
+    });
 
   return (
     <Card className={styles["card"]}>
@@ -169,12 +179,14 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
                 tickLine={false}
                 axisLine={false}
                 width={80}
+                interval={0}
               />
               <ChartTooltip content={renderTooltip} />
               <Bar
-                dataKey='totalSpent'
+                dataKey='totalSpend'
                 fill='var(--ac-chart-2)'
                 radius={[0, 4, 4, 0]}
+                className={styles["bar"]}
               />
             </BarChart>
           </ResponsiveContainer>

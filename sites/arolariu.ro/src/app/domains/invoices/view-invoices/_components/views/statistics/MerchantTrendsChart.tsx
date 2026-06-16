@@ -15,7 +15,7 @@ import {useMerchantsStore} from "@/stores/merchantsStore";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
 import {useLocale} from "next-intl";
 import {useTranslations} from "next-intl-selector";
-import {useMemo} from "react";
+import {useCallback, useMemo} from "react";
 import type {MerchantTrend} from "../../../_utils/statistics";
 import styles from "./MerchantTrendsChart.module.scss";
 
@@ -23,6 +23,29 @@ type Props = {
   readonly data: MerchantTrend[];
   readonly currency: string;
 };
+
+type MonthTooltipProps = {
+  readonly monthLabel: string;
+  readonly amountLabel: string;
+};
+
+/**
+ * Custom tooltip for a single month's spending in the merchant trends sparkline.
+ *
+ * @param monthLabel - Formatted month label (e.g., "Jan '25")
+ * @param amountLabel - Formatted amount with currency (e.g., "234.19 lei")
+ * @returns The rendered tooltip.
+ */
+function MonthTooltip({monthLabel, amountLabel}: Readonly<MonthTooltipProps>): React.JSX.Element {
+  return (
+    <div
+      role='tooltip'
+      className={styles["barTooltip"]}>
+      <span className={styles["barTooltipMonth"]}>{monthLabel}</span>
+      <span className={styles["barTooltipAmount"]}>{amountLabel}</span>
+    </div>
+  );
+}
 
 /**
  * Formats a month key (YYYY-MM) into a short display format.
@@ -93,6 +116,21 @@ export function MerchantTrendsChart({data, currency}: Props): React.JSX.Element 
   // Show only last 6 months for readability
   const displayMonths = allMonthKeys.slice(-6);
 
+  /**
+   * Render-prop adapter that builds the month tooltip for a given bar. Mirrors
+   * the `renderTooltip` pattern used in `MerchantLeaderboard`, keeping tooltip
+   * markup in a single dedicated component.
+   */
+  const renderTooltip = useCallback(
+    (monthLabel: string, amountLabel: string) => (
+      <MonthTooltip
+        monthLabel={monthLabel}
+        amountLabel={amountLabel}
+      />
+    ),
+    [],
+  );
+
   if (data.length === 0) {
     return (
       <Card className={styles["card"]}>
@@ -119,8 +157,8 @@ export function MerchantTrendsChart({data, currency}: Props): React.JSX.Element 
             <thead>
               <tr>
                 <th className={styles["headerMerchant"]}>{t((m) => m.cards.invoices.statistics.merchantTrends.labels.merchant)}</th>
-                <th className={styles["headerTotal"]}>{t((m) => m.cards.invoices.statistics.merchantTrends.labels.totalSpend)}</th>
                 <th className={styles["headerTrend"]}>{t((m) => m.cards.invoices.statistics.merchantTrends.labels.trend)}</th>
+                <th className={styles["headerTotal"]}>{t((m) => m.cards.invoices.statistics.merchantTrends.labels.totalSpend)}</th>
               </tr>
             </thead>
             <tbody>
@@ -139,11 +177,6 @@ export function MerchantTrendsChart({data, currency}: Props): React.JSX.Element 
                     <td className={styles["cellMerchant"]}>
                       <span className={styles["merchantName"]}>{merchantName}</span>
                     </td>
-                    <td className={styles["cellTotal"]}>
-                      <span className={styles["totalAmount"]}>
-                        {formatAmount(merchant.totalSpend)} {currency}
-                      </span>
-                    </td>
                     <td className={styles["cellTrend"]}>
                       <div
                         className={styles["sparkline"]}
@@ -151,17 +184,19 @@ export function MerchantTrendsChart({data, currency}: Props): React.JSX.Element 
                         {displayMonths.map((monthKey) => {
                           const amount = monthlyMap.get(monthKey) ?? 0;
                           const heightPercent = maxMonthlyAmount > 0 ? (amount / maxMonthlyAmount) * 100 : 0;
+                          const monthLabel = formatMonthLabel(monthKey, locale);
+                          const amountLabel = `${formatAmount(amount)} ${currency}`;
 
                           return (
                             <div
                               key={monthKey}
                               className={styles["bar"]}
-                              title={`${formatMonthLabel(monthKey, locale)}: ${formatAmount(amount)} ${currency}`}
-                              aria-label={`${formatMonthLabel(monthKey, locale)}: ${formatAmount(amount)} ${currency}`}>
+                              aria-label={`${monthLabel}: ${amountLabel}`}>
                               <div
                                 className={styles["barFill"]}
                                 style={{height: `${heightPercent}%`}}
                               />
+                              {renderTooltip(monthLabel, amountLabel)}
                             </div>
                           );
                         })}
@@ -175,6 +210,11 @@ export function MerchantTrendsChart({data, currency}: Props): React.JSX.Element 
                           </span>
                         ))}
                       </div>
+                    </td>
+                    <td className={styles["cellTotal"]}>
+                      <span className={styles["totalAmount"]}>
+                        {formatAmount(merchant.totalSpend)} {currency}
+                      </span>
                     </td>
                   </tr>
                 );

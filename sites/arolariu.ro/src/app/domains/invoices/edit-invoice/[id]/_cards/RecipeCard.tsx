@@ -111,7 +111,7 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
 
   return (
     <Card className={styles["card"]}>
-      <CardHeader>
+      <CardHeader className={styles["cardHeader"]}>
         <CardTitle>
           <h3 className={styles["title"]}>{name}</h3>
           <Badge
