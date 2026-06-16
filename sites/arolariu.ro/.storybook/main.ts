@@ -1,7 +1,7 @@
-import type {StorybookConfig} from "@storybook/nextjs-vite";
-import {mergeConfig} from "vite";
+import type { StorybookConfig } from "@storybook/nextjs-vite";
+import { mergeConfig } from "vite";
 
-import {getStorybookResolverPlugins, getStorybookViteAliases} from "./domainAliases.js";
+import { getStorybookResolverPlugins, getStorybookViteAliases } from "./domainAliases.js";
 
 const config: StorybookConfig = {
   stories: ["../src/**/*.stories.@(ts|tsx)"],
