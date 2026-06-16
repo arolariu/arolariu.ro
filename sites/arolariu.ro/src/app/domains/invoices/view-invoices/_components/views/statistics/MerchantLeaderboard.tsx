@@ -134,14 +134,18 @@ export function MerchantLeaderboard({data, currency, merchantNamesById}: Props):
     );
   }
 
-  // Map data to include display names
-  const displayData = data.map((item) => {
-    const merchantName = getMerchantName(item.merchantId);
-    return {
-      ...item,
-      displayName: merchantName.length > 20 ? `${merchantName.slice(0, 17)}...` : merchantName,
-    };
-  });
+  // Map data to include display names. Always cap to the top 10 merchants by
+  // spend so the chart stays readable instead of being flooded with bars.
+  const displayData = data
+    .toSorted((a, b) => b.totalSpend - a.totalSpend)
+    .slice(0, 10)
+    .map((item) => {
+      const merchantName = getMerchantName(item.merchantId);
+      return {
+        ...item,
+        displayName: merchantName.length > 20 ? `${merchantName.slice(0, 17)}...` : merchantName,
+      };
+    });
 
   return (
     <Card className={styles["card"]}>
