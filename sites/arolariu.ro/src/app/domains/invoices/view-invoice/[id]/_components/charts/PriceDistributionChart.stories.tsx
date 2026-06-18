@@ -197,3 +197,31 @@ export const BimodalDistribution: Story = {
     currency: "EUR",
   },
 };
+
+/** Single dominant range — 90%+ items in one bucket. */
+export const SingleDominantRange: Story = {
+  args: {
+    data: [
+      {range: "Under 10", count: 2, fill: "var(--ac-chart-1)"},
+      {range: "10-25", count: 48, fill: "var(--ac-chart-2)"},
+      {range: "25-50", count: 1, fill: "var(--ac-chart-3)"},
+      {range: "50+", count: 1, fill: "var(--ac-chart-4)"},
+    ],
+    currency: "RON",
+  },
+};
+
+/** Long-tail distribution — many small counts, few large. */
+export const LongTailDistribution: Story = {
+  args: {
+    data: [
+      {range: "Under 5", count: 25, fill: "var(--ac-chart-1)"},
+      {range: "5-10", count: 12, fill: "var(--ac-chart-2)"},
+      {range: "10-15", count: 6, fill: "var(--ac-chart-3)"},
+      {range: "15-25", count: 3, fill: "var(--ac-chart-4)"},
+      {range: "25-50", count: 2, fill: "var(--ac-chart-5)"},
+      {range: "50+", count: 1, fill: "var(--ac-chart-1)"},
+    ],
+    currency: "USD",
+  },
+};

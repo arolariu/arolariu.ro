@@ -308,3 +308,48 @@ export const InvoiceCountDrop: Story = {
     },
   },
 };
+
+/** Zero new merchants — stable shopping pattern. */
+export const ZeroNewMerchants: Story = {
+  args: {
+    data: computeMonthComparison(mockInvoices),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Month with no new merchants discovered (consistent shopping locations).",
+      },
+    },
+  },
+};
+
+/** Drastic spending cut — major budget reduction. */
+export const DrasticSpendingCut: Story = {
+  args: {
+    data: computeMonthComparison(mockInvoices.slice(0, 2)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows major spending decrease (50%+ reduction month-over-month).",
+      },
+    },
+  },
+};
+
+/** Spending explosion — sudden large increase. */
+export const SpendingExplosion: Story = {
+  args: {
+    data: computeMonthComparison(mockInvoices),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows sudden large spending increase month-over-month.",
+      },
+    },
+  },
+};

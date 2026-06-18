@@ -159,3 +159,23 @@ export const SparseMultiCurrency: Story = {
     data: computeCurrencyDistribution(mockInvoices.slice(0, 4)),
   },
 };
+
+/** Bimodal currency split — two dominant currencies. */
+export const BimodalCurrencySplit: Story = {
+  args: {
+    data: computeCurrencyDistribution([
+      ...mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "RON"),
+      ...mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "EUR"),
+    ]),
+  },
+};
+
+/** Foreign-heavy spending — mostly non-RON currencies. */
+export const ForeignHeavySpending: Story = {
+  args: {
+    data: computeCurrencyDistribution([
+      ...mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "RON").slice(0, 2),
+      ...mockInvoices.filter((inv) => inv.paymentInformation.currency?.code !== "RON"),
+    ]),
+  },
+};

@@ -224,3 +224,43 @@ export const SparseTwoCategories: Story = {
     currency: "USD",
   },
 };
+
+/** Negative variance — all current values below average. */
+export const NegativeVariance: Story = {
+  args: {
+    data: [
+      {category: "Dairy", current: 15.5, average: 35.0},
+      {category: "Fruits", current: 8.2, average: 22.5},
+      {category: "Meat", current: 28.0, average: 65.8},
+      {category: "Beverages", current: 5.5, average: 18.0},
+    ],
+    currency: "RON",
+  },
+};
+
+/** Positive variance — all current values above average. */
+export const PositiveVariance: Story = {
+  args: {
+    data: [
+      {category: "Dairy", current: 68.5, average: 42.0},
+      {category: "Fruits", current: 45.8, average: 28.5},
+      {category: "Meat", current: 105.0, average: 72.3},
+      {category: "Beverages", current: 32.5, average: 18.0},
+    ],
+    currency: "EUR",
+  },
+};
+
+/** Mixed with zero current — some categories with zero spending this period. */
+export const MixedWithZeroCurrent: Story = {
+  args: {
+    data: [
+      {category: "Dairy", current: 45.5, average: 38.2},
+      {category: "Fruits", current: 0, average: 28.5},
+      {category: "Meat", current: 67.0, average: 55.8},
+      {category: "Beverages", current: 0, average: 22.0},
+      {category: "Baked Goods", current: 28.5, average: 25.0},
+    ],
+    currency: "RON",
+  },
+};

@@ -244,3 +244,31 @@ export const MinimalSpending: Story = {
     currency: "USD",
   },
 };
+
+/** Bimodal spending — two dominant categories, rest minimal. */
+export const BimodalSpending: Story = {
+  args: {
+    data: [
+      {category: "Groceries", amount: 350.0, count: 18, fill: "var(--ac-chart-1)"},
+      {category: "Meat", amount: 280.5, count: 12, fill: "var(--ac-chart-2)"},
+      {category: "Dairy", amount: 15.0, count: 2, fill: "var(--ac-chart-3)"},
+      {category: "Beverages", amount: 8.5, count: 1, fill: "var(--ac-chart-4)"},
+      {category: "Snacks", amount: 12.0, count: 2, fill: "var(--ac-chart-5)"},
+    ],
+    currency: "RON",
+  },
+};
+
+/** Mixed zero amounts — some categories with no spending. */
+export const MixedWithZero: Story = {
+  args: {
+    data: [
+      {category: "Dairy", amount: 45.5, count: 8, fill: "var(--ac-chart-1)"},
+      {category: "Fruits", amount: 0, count: 0, fill: "var(--ac-chart-2)"},
+      {category: "Meat", amount: 67.8, count: 6, fill: "var(--ac-chart-3)"},
+      {category: "Beverages", amount: 0, count: 0, fill: "var(--ac-chart-4)"},
+      {category: "Baked Goods", amount: 28.5, count: 4, fill: "var(--ac-chart-5)"},
+    ],
+    currency: "EUR",
+  },
+};

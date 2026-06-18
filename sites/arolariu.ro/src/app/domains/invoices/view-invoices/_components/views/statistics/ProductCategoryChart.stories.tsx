@@ -181,3 +181,19 @@ export const SparseCategories: Story = {
     currency: "lei",
   },
 };
+
+/** USD currency spending — US dollar display. */
+export const UsdCurrencySpending: Story = {
+  args: {
+    data: computeProductCategorySpending(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "USD")),
+    currency: "$",
+  },
+};
+
+/** GBP currency spending — British pound display. */
+export const GbpCurrencySpending: Story = {
+  args: {
+    data: computeProductCategorySpending(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "GBP")),
+    currency: "£",
+  },
+};

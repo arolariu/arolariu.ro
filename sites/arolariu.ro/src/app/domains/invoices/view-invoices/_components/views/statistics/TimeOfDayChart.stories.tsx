@@ -367,3 +367,60 @@ export const DenseTimeData: Story = {
     },
   },
 };
+
+/** Single dominant segment — mostly morning shopping. */
+export const SingleDominantSegment: Story = {
+  args: {
+    data: computeTimeOfDay(
+      mockInvoices.filter((inv) => {
+        const hour = new Date(inv.paymentInformation?.transactionDate ?? inv.createdAt).getHours();
+        return hour >= 6 && hour < 12;
+      }),
+    ),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Radar chart dominated by a single time segment (morning shopping pattern).",
+      },
+    },
+  },
+};
+
+/** Bimodal time pattern — morning and evening peaks. */
+export const BimodalTimePattern: Story = {
+  args: {
+    data: computeTimeOfDay(
+      mockInvoices.filter((inv) => {
+        const hour = new Date(inv.paymentInformation?.transactionDate ?? inv.createdAt).getHours();
+        return (hour >= 7 && hour < 10) || (hour >= 18 && hour < 20);
+      }),
+    ),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Radar showing two distinct shopping peaks (morning and evening rush hours).",
+      },
+    },
+  },
+};
+
+/** Off-hours shopping — night and early morning only. */
+export const OffHoursShopping: Story = {
+  args: {
+    data: computeTimeOfDay(
+      mockInvoices.filter((inv) => {
+        const hour = new Date(inv.paymentInformation?.transactionDate ?? inv.createdAt).getHours();
+        return hour >= 22 || hour < 5;
+      }),
+    ),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows shopping pattern during off-hours (late night and early morning).",
+      },
+    },
+  },
+};

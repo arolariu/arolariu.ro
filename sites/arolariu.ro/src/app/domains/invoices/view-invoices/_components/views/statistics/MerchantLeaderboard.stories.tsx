@@ -361,3 +361,35 @@ export const EurCurrencyLeaderboard: Story = {
     },
   },
 };
+
+/** USD currency leaderboard — US dollar spending. */
+export const UsdCurrencyLeaderboard: Story = {
+  args: {
+    data: computeMerchantAggregates(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "USD")).slice(0, 10),
+    currency: "USD",
+    merchantNamesById,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Merchant leaderboard with USD currency for US dollar invoices.",
+      },
+    },
+  },
+};
+
+/** GBP currency leaderboard — British pound spending. */
+export const GbpCurrencyLeaderboard: Story = {
+  args: {
+    data: computeMerchantAggregates(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "GBP")).slice(0, 10),
+    currency: "GBP",
+    merchantNamesById,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Merchant leaderboard with GBP currency for British pound invoices.",
+      },
+    },
+  },
+};

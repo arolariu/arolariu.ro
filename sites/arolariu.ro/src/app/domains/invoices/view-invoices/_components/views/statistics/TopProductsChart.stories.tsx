@@ -233,3 +233,43 @@ export const DenseProductDataset: Story = {
     currency: "lei",
   },
 };
+
+/** EUR currency products — Euro display. */
+export const EurCurrencyProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "EUR")),
+    currency: "€",
+  },
+};
+
+/** GBP currency products — British pound display. */
+export const GbpCurrencyProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "GBP")),
+    currency: "£",
+  },
+};
+
+/** Single product dominance — one product overwhelms others. */
+export const SingleProductDominance: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices, 10),
+    currency: "lei",
+  },
+};
+
+/** Bimodal product spending — two dominant products. */
+export const BimodalProductSpending: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices, 8),
+    currency: "lei",
+  },
+};
+
+/** Long-tail product distribution — many small spenders. */
+export const LongTailProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices, 15),
+    currency: "lei",
+  },
+};

@@ -263,3 +263,30 @@ export const SparseVisitData: Story = {
     topN: 6,
   },
 };
+
+/** GBP currency visit patterns — British pound display. */
+export const GbpCurrencyVisits: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "GBP")),
+    currency: "£",
+    topN: 6,
+  },
+};
+
+/** Ten merchants — dense grid layout. */
+export const TenMerchants: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices),
+    currency: "lei",
+    topN: 10,
+  },
+};
+
+/** Twelve merchants — comprehensive visit grid. */
+export const TwelveMerchants: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices),
+    currency: "lei",
+    topN: 12,
+  },
+};

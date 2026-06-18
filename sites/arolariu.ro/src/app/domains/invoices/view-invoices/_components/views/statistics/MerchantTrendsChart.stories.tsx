@@ -211,3 +211,27 @@ export const SparseTrends: Story = {
     currency: "lei",
   },
 };
+
+/** GBP currency trends — British pound display. */
+export const GbpCurrencyTrends: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "GBP")),
+    currency: "£",
+  },
+};
+
+/** Eight merchants — extended trends view. */
+export const EightMerchants: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices, 8),
+    currency: "lei",
+  },
+};
+
+/** Nine merchants — comprehensive trends analysis. */
+export const NineMerchants: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices, 9),
+    currency: "lei",
+  },
+};

@@ -294,3 +294,36 @@ export const DominantCategory: Story = {
     },
   },
 };
+
+/** Bimodal distribution — two dominant categories. */
+export const BimodalDistribution: Story = {
+  args: {
+    data: computeCategoryAggregates([
+      ...mockInvoices.filter((inv) => inv.category === InvoiceCategory.GROCERY),
+      ...mockInvoices.filter((inv) => inv.category === InvoiceCategory.FAST_FOOD),
+    ]),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows donut chart with two dominant categories (bimodal spending pattern).",
+      },
+    },
+  },
+};
+
+/** Long-tail distribution — one dominant, many tiny slices. */
+export const LongTailDistribution: Story = {
+  args: {
+    data: computeCategoryAggregates(mockInvoices),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows long-tail spending distribution with one large category and many small ones.",
+      },
+    },
+  },
+};

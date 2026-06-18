@@ -396,3 +396,33 @@ export const EurCurrencyHeatmap: Story = {
     },
   },
 };
+
+/** USD currency heatmap — US dollar spending calendar. */
+export const UsdCurrencyHeatmap: Story = {
+  args: {
+    data: computeDailySpending(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "USD")),
+    currency: "USD",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Calendar heatmap with USD currency for US dollar invoices.",
+      },
+    },
+  },
+};
+
+/** GBP currency heatmap — British pound spending calendar. */
+export const GbpCurrencyHeatmap: Story = {
+  args: {
+    data: computeDailySpending(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "GBP")),
+    currency: "GBP",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Calendar heatmap with GBP currency for British pound invoices.",
+      },
+    },
+  },
+};

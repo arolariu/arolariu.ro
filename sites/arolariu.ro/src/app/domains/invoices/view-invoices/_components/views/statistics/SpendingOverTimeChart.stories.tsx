@@ -324,3 +324,33 @@ export const DecreasingTrend: Story = {
     },
   },
 };
+
+/** USD currency trend — US dollar spending over time. */
+export const UsdCurrencyTrend: Story = {
+  args: {
+    data: computeMonthlySpending(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "USD")),
+    currency: "USD",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Monthly spending chart with USD currency for US dollar invoices.",
+      },
+    },
+  },
+};
+
+/** GBP currency trend — British pound spending over time. */
+export const GbpCurrencyTrend: Story = {
+  args: {
+    data: computeMonthlySpending(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "GBP")),
+    currency: "GBP",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Monthly spending chart with GBP currency for British pound invoices.",
+      },
+    },
+  },
+};

@@ -310,3 +310,33 @@ export const DenseDistribution: Story = {
     },
   },
 };
+
+/** USD currency distribution — US dollar price buckets. */
+export const UsdCurrencyDistribution: Story = {
+  args: {
+    data: computePriceDistribution(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "USD")),
+    currency: "USD",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Price distribution with USD currency for US dollar invoices.",
+      },
+    },
+  },
+};
+
+/** GBP currency distribution — British pound price buckets. */
+export const GbpCurrencyDistribution: Story = {
+  args: {
+    data: computePriceDistribution(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "GBP")),
+    currency: "GBP",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Price distribution with GBP currency for British pound invoices.",
+      },
+    },
+  },
+};

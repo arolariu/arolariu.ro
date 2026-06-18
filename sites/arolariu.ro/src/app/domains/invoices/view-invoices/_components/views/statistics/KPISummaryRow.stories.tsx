@@ -290,3 +290,33 @@ export const DenseInvoiceDataset: Story = {
     },
   },
 };
+
+/** GBP currency KPIs — British pound display label. */
+export const GbpCurrencyKPIs: Story = {
+  args: {
+    data: computeKPIs(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "GBP")),
+    currency: "GBP",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "KPI summary with GBP currency label for British pound invoices.",
+      },
+    },
+  },
+};
+
+/** USD currency KPIs — US dollar display. */
+export const UsdCurrencyKPIs: Story = {
+  args: {
+    data: computeKPIs(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "USD")),
+    currency: "USD",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "KPI summary with USD currency label for US dollar invoices.",
+      },
+    },
+  },
+};

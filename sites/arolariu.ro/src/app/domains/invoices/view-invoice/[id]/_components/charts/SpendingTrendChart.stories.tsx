@@ -217,3 +217,47 @@ export const CurrentAtStart: Story = {
     currency: "EUR",
   },
 };
+
+/** Bimodal trend — two spending peaks with valley. */
+export const BimodalTrend: Story = {
+  args: {
+    data: [
+      {date: "Jan", amount: 250.0, isCurrent: false, name: "Peak 1", invoices: []},
+      {date: "Feb", amount: 100.0, isCurrent: false, name: "Valley", invoices: []},
+      {date: "Mar", amount: 85.0, isCurrent: false, name: "Low", invoices: []},
+      {date: "Apr", amount: 110.0, isCurrent: false, name: "Valley", invoices: []},
+      {date: "May", amount: 280.0, isCurrent: true, name: "Peak 2", invoices: []},
+    ],
+    currency: "RON",
+  },
+};
+
+/** Mixed zero and non-zero amounts — intermittent spending. */
+export const MixedZeroAndNonZero: Story = {
+  args: {
+    data: [
+      {date: "Week 1", amount: 125.5, isCurrent: false, name: "Active Week 1", invoices: []},
+      {date: "Week 2", amount: 0, isCurrent: false, name: "No Spending", invoices: []},
+      {date: "Week 3", amount: 0, isCurrent: false, name: "No Spending", invoices: []},
+      {date: "Week 4", amount: 185.0, isCurrent: false, name: "Active Week 4", invoices: []},
+      {date: "Week 5", amount: 0, isCurrent: false, name: "No Spending", invoices: []},
+      {date: "Week 6", amount: 98.5, isCurrent: true, name: "Current Week", invoices: []},
+    ],
+    currency: "EUR",
+  },
+};
+
+/** Stepped increase — clear spending level shifts. */
+export const SteppedIncrease: Story = {
+  args: {
+    data: [
+      {date: "Phase 1", amount: 50.0, isCurrent: false, name: "Low Budget", invoices: []},
+      {date: "Phase 1B", amount: 52.0, isCurrent: false, name: "Low Budget", invoices: []},
+      {date: "Phase 2", amount: 100.0, isCurrent: false, name: "Medium Budget", invoices: []},
+      {date: "Phase 2B", amount: 105.0, isCurrent: false, name: "Medium Budget", invoices: []},
+      {date: "Phase 3", amount: 200.0, isCurrent: false, name: "High Budget", invoices: []},
+      {date: "Phase 3B", amount: 195.0, isCurrent: true, name: "High Budget", invoices: []},
+    ],
+    currency: "USD",
+  },
+};

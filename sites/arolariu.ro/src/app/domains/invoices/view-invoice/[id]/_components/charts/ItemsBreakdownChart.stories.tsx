@@ -229,3 +229,47 @@ export const FractionalQuantities: Story = {
     currency: "EUR",
   },
 };
+
+/** Mixed zero and non-zero prices — promotional items scenario. */
+export const MixedZeroAndNonZero: Story = {
+  args: {
+    data: [
+      {name: "Milk", quantity: 2, unit: "L", price: 12.5},
+      {name: "Free Sample Cheese", quantity: 1, unit: "pcs", price: 0},
+      {name: "Bread", quantity: 1, unit: "pcs", price: 8.0},
+      {name: "Promotional Yogurt", quantity: 3, unit: "pcs", price: 0},
+      {name: "Butter", quantity: 0.25, unit: "kg", price: 15.75},
+      {name: "Free Coffee Sample", quantity: 1, unit: "pcs", price: 0},
+    ],
+    currency: "RON",
+  },
+};
+
+/** Bimodal price distribution — two price clusters. */
+export const BimodalPriceDistribution: Story = {
+  args: {
+    data: [
+      {name: "Budget Milk", quantity: 2, unit: "L", price: 8.5},
+      {name: "Budget Bread", quantity: 2, unit: "pcs", price: 6.0},
+      {name: "Budget Eggs", quantity: 10, unit: "pcs", price: 12.0},
+      {name: "Premium Cheese", quantity: 0.3, unit: "kg", price: 75.0},
+      {name: "Premium Ham", quantity: 0.2, unit: "kg", price: 68.5},
+      {name: "Premium Salmon", quantity: 0.25, unit: "kg", price: 82.0},
+    ],
+    currency: "EUR",
+  },
+};
+
+/** All same price — uniform pricing scenario. */
+export const UniformPricing: Story = {
+  args: {
+    data: [
+      {name: "Item A", quantity: 1, unit: "pcs", price: 19.99},
+      {name: "Item B", quantity: 2, unit: "pcs", price: 19.99},
+      {name: "Item C", quantity: 1, unit: "kg", price: 19.99},
+      {name: "Item D", quantity: 3, unit: "L", price: 19.99},
+      {name: "Item E", quantity: 1, unit: "pcs", price: 19.99},
+    ],
+    currency: "USD",
+  },
+};

@@ -213,3 +213,34 @@ export const SingleVisitMerchants: Story = {
     currentMerchant: "Farmers Market",
   },
 };
+
+/** Bimodal visit pattern — two distinct merchant groups by frequency. */
+export const BimodalVisitPattern: Story = {
+  args: {
+    data: [
+      {name: "Weekly Supermarket A", count: 15, total: 850.0, average: 56.67},
+      {name: "Weekly Supermarket B", count: 14, total: 780.5, average: 55.75},
+      {name: "Weekly Supermarket C", count: 13, total: 720.0, average: 55.38},
+      {name: "Once-Off Store D", count: 1, total: 45.0, average: 45.0},
+      {name: "Once-Off Store E", count: 1, total: 38.5, average: 38.5},
+      {name: "Once-Off Store F", count: 1, total: 52.0, average: 52.0},
+    ],
+    currency: "RON",
+    currentMerchant: "Weekly Supermarket B",
+  },
+};
+
+/** Mixed zero and non-zero totals — inactive merchants included. */
+export const MixedZeroAndNonZero: Story = {
+  args: {
+    data: [
+      {name: "Active Merchant A", count: 8, total: 325.5, average: 40.69},
+      {name: "Inactive Merchant B", count: 0, total: 0, average: 0},
+      {name: "Active Merchant C", count: 5, total: 185.0, average: 37.0},
+      {name: "Inactive Merchant D", count: 0, total: 0, average: 0},
+      {name: "Active Merchant E", count: 3, total: 125.75, average: 41.92},
+    ],
+    currency: "EUR",
+    currentMerchant: "Active Merchant C",
+  },
+};

@@ -215,3 +215,25 @@ export const NutAllergens: Story = {
     ),
   },
 };
+
+/** Shellfish allergen focus — seafood allergen tracking. */
+export const ShellfishFocused: Story = {
+  args: {
+    data: computeAllergenFrequency(
+      mockInvoices.filter((inv: Invoice) =>
+        inv.items.some((item: Product) =>
+          item.detectedAllergens.some(
+            (a: {name: string}) => a.name.toLowerCase().includes("shellfish") || a.name.toLowerCase().includes("seafood"),
+          ),
+        ),
+      ),
+    ),
+  },
+};
+
+/** Mixed allergen levels — diverse warning severity. */
+export const MixedAllergenLevels: Story = {
+  args: {
+    data: computeAllergenFrequency(mockInvoices),
+  },
+};
