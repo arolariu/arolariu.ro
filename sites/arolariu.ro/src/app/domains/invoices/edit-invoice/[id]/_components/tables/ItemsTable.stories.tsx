@@ -1,5 +1,5 @@
 import type {Invoice} from "@/types/invoices";
-import type {Product} from "@/types/invoices/Product";
+import type {Product, ProductCategory} from "@/types/invoices/Product";
 import type {Meta, StoryObj} from "@storybook/react";
 import {invoicePresets, storyHugeInvoice, storyInvoice, WithEditInvoiceContext, withEntityPreset} from "../../../../_storybook";
 import ItemsTable from "./ItemsTable";
@@ -142,6 +142,176 @@ export const LongItemName: Story = {
       description: {
         story:
           "Items table with product having an extremely long name. Tests text truncation, ellipsis, and tooltip behavior in table cells without breaking layout.",
+      },
+    },
+  },
+};
+
+/** Items with soft-deleted rows (strikethrough rendering). */
+export const WithSoftDeletedItems: Story = {
+  args: {
+    invoice: {
+      ...invoicePresets["standard"],
+      items: [
+        ...(invoicePresets["standard"]?.items ?? []).slice(0, 2),
+        {
+          name: "Removed Product",
+          category: 200 as ProductCategory,
+          quantity: 1,
+          quantityUnit: "pcs",
+          productCode: "5900000999999",
+          price: 5.5,
+          totalPrice: 5.5,
+          detectedAllergens: [],
+          metadata: {isEdited: false, isComplete: true, isSoftDeleted: true, confidence: 0.9},
+        } as Product,
+      ],
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Items table with soft-deleted products. Tests strikethrough styling and visual distinction of removed items.",
+      },
+    },
+  },
+};
+
+/** Items with zero prices. */
+export const WithZeroPriceItems: Story = {
+  args: {
+    invoice: {
+      ...invoicePresets["standard"],
+      items: (invoicePresets["standard"]?.items ?? []).map((item) => ({...item, price: 0, totalPrice: 0})),
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Items table with all items having zero price. Tests edge-case number formatting and total calculations.",
+      },
+    },
+  },
+};
+
+/** Items with low confidence values (highlighted). */
+export const WithLowConfidence: Story = {
+  args: {
+    invoice: {
+      ...invoicePresets["standard"],
+      items: (invoicePresets["standard"]?.items ?? []).map((item) => ({
+        ...item,
+        metadata: {...item.metadata, confidence: 0.35},
+      })),
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Items table with low-confidence OCR results. Tests confidence indicator rendering and visual warnings.",
+      },
+    },
+  },
+};
+
+/** Items with mixed confidence levels. */
+export const WithMixedConfidence: Story = {
+  args: {
+    invoice: {
+      ...invoicePresets["standard"],
+      items: [
+        ...(invoicePresets["standard"]?.items ?? []).slice(0, 2).map((item) => ({...item, metadata: {...item.metadata, confidence: 0.95}})),
+        ...(invoicePresets["standard"]?.items ?? []).slice(2, 4).map((item) => ({...item, metadata: {...item.metadata, confidence: 0.4}})),
+      ],
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Items table with mixed confidence levels (high and low). Tests conditional confidence indicator rendering.",
+      },
+    },
+  },
+};
+
+/** Items with fractional quantities. */
+export const WithFractionalQuantities: Story = {
+  args: {
+    invoice: {
+      ...invoicePresets["standard"],
+      items: (invoicePresets["standard"]?.items ?? []).map((item, idx) => ({
+        ...item,
+        quantity: idx === 0 ? 2.5 : idx === 1 ? 0.75 : 1.33,
+        quantityUnit: idx === 0 ? "kg" : idx === 1 ? "L" : "lb",
+      })),
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Items table with fractional quantities and varied units. Tests decimal number formatting and unit display.",
+      },
+    },
+  },
+};
+
+/** Items with many allergens per product. */
+export const WithManyAllergens: Story = {
+  args: {
+    invoice: {
+      ...invoicePresets["standard"],
+      items: (invoicePresets["standard"]?.items ?? []).map((item) => ({
+        ...item,
+        detectedAllergens: [
+          {name: "Lactose", description: "Milk sugar", learnMoreAddress: "https://www.who.int/allergens/lactose"},
+          {name: "Gluten", description: "Wheat protein", learnMoreAddress: "https://www.who.int/allergens/gluten"},
+          {name: "Nuts", description: "Tree nuts", learnMoreAddress: "https://www.who.int/allergens/nuts"},
+          {name: "Soy", description: "Soybean protein", learnMoreAddress: "https://www.who.int/allergens/soy"},
+        ],
+      })),
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Items table with products containing multiple allergens. Tests allergen badge overflow and truncation.",
+      },
+    },
+  },
+};
+
+/** Three items — typical small invoice. */
+export const ThreeItems: Story = {
+  args: {
+    invoice: {
+      ...invoicePresets["standard"],
+      items: (invoicePresets["standard"]?.items ?? []).slice(0, 3),
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Items table with three products. Tests typical small invoice layout and spacing.",
+      },
+    },
+  },
+};
+
+/** Items with many categories assigned. */
+export const WithVariedCategories: Story = {
+  args: {
+    invoice: {
+      ...invoicePresets["standard"],
+      items: (invoicePresets["standard"]?.items ?? []).map((item, idx) => ({
+        ...item,
+        category: (200 + idx * 100) as ProductCategory,
+      })),
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Items table with products assigned to different categories. Tests category badge variety and color coding.",
       },
     },
   },

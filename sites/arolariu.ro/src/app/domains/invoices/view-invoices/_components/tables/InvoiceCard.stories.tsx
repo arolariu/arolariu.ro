@@ -327,3 +327,145 @@ export const WithTip: Story = {
     },
   },
 };
+
+/** Invoice with GBP currency. */
+export const GbpCurrency: Story = {
+  args: {
+    invoice: {
+      ...storyInvoice,
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        currency: {code: "GBP", name: "Pound Sterling", symbol: "£"},
+      },
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice card with GBP currency to verify pound symbol display.",
+      },
+    },
+  },
+};
+
+/** Invoice with large total amount — number formatting. */
+export const LargeAmount: Story = {
+  args: {
+    invoice: {
+      ...storyInvoice,
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        totalCostAmount: 1_234_567.89,
+        subtotalAmount: 1_037_037.03,
+        totalTaxAmount: 197_530.86,
+      },
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice card with large total amount to test number formatting with thousand separators.",
+      },
+    },
+  },
+};
+
+/** Important and soft-deleted invoice. */
+export const ImportantAndSoftDeleted: Story = {
+  args: {
+    invoice: {
+      ...invoicePresets["standard"],
+      isImportant: true,
+      isSoftDeleted: true,
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice card that is both important and soft-deleted. Tests combined flag rendering.",
+      },
+    },
+  },
+};
+
+/** Invoice with single scan. */
+export const SingleScan: Story = {
+  args: {
+    invoice: {
+      ...invoicePresets["standard"],
+      scans: (invoicePresets["standard"]?.scans ?? []).slice(0, 1),
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice card with a single scan. Tests carousel without navigation controls.",
+      },
+    },
+  },
+};
+
+/** Invoice with many scans (carousel overflow). */
+export const ManyScans: Story = {
+  args: {
+    invoice: {
+      ...invoicePresets["standard"],
+      scans: Array.from({length: 8}, (_, i) => {
+        const baseScan = invoicePresets["standard"]?.scans?.[0];
+        return baseScan
+          ? {
+              ...baseScan,
+              location: `${baseScan.location}?scan=${i + 1}`,
+            }
+          : undefined;
+      }).filter((scan): scan is NonNullable<typeof scan> => scan !== undefined),
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice card with 8 scans. Tests carousel navigation and scroll performance.",
+      },
+    },
+  },
+};
+
+/** Invoice with no items (empty items array). */
+export const NoItems: Story = {
+  args: {
+    invoice: {
+      ...invoicePresets["standard"],
+      items: [],
+      paymentInformation: {
+        ...(invoicePresets["standard"]?.paymentInformation ?? storyInvoice.paymentInformation),
+        totalCostAmount: 0,
+        subtotalAmount: 0,
+        totalTaxAmount: 0,
+      },
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice card with no items. Tests zero-item count display and empty state rendering.",
+      },
+    },
+  },
+};
+
+/** Invoice with many updates (high edit count). */
+export const ManyUpdates: Story = {
+  args: {
+    invoice: {
+      ...invoicePresets["standard"],
+      numberOfUpdates: 42,
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice card with many edits/updates. Tests update counter display and overflow handling.",
+      },
+    },
+  },
+};
