@@ -65,3 +65,67 @@ export const LargeDataset: Story = {
     invoices: Array.from({length: 50}, () => new InvoiceBuilder().build()),
   },
 };
+
+/** Huge dataset (100 invoices) — performance stress test. */
+export const HugeDataset: Story = {
+  args: {
+    invoices: Array.from({length: 100}, (_, i) => new InvoiceBuilder().withCategory(((i % 5) * 100) as 100 | 200 | 300 | 400).build()),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Statistics view with 100 invoices. Tests chart rendering performance, data aggregation, and overflow handling with large data sets.",
+      },
+    },
+  },
+};
+
+/** Two invoices — minimal viable statistics. */
+export const TwoInvoices: Story = {
+  args: {
+    invoices: [new InvoiceBuilder().withCategory(100).build(), new InvoiceBuilder().withCategory(200).build()],
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Statistics view with two invoices. Tests minimal data rendering, chart display with limited data points, and edge case handling.",
+      },
+    },
+  },
+};
+
+/** Five invoices across different categories. */
+export const FiveInvoices: Story = {
+  args: {
+    invoices: [
+      new InvoiceBuilder().withCategory(100).build(),
+      new InvoiceBuilder().withCategory(200).build(),
+      new InvoiceBuilder().withCategory(300).build(),
+      new InvoiceBuilder().withCategory(400).build(),
+      new InvoiceBuilder().withCategory(100).build(),
+    ],
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Statistics view with five invoices across four categories. Tests category distribution charts with small data set.",
+      },
+    },
+  },
+};
+
+/** Thirty invoices — medium data set. */
+export const MediumDataset: Story = {
+  args: {
+    invoices: Array.from({length: 30}, (_, i) => new InvoiceBuilder().withCategory(((i % 4) * 100) as 100 | 200 | 300 | 400).build()),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Statistics view with 30 invoices. Tests chart rendering and data aggregation with medium-sized data set.",
+      },
+    },
+  },
+};

@@ -1,3 +1,4 @@
+import type {CachedScan} from "@/types/scans";
 import type {Meta, StoryObj} from "@storybook/react";
 import {DialogProvider} from "../../_contexts/DialogContext";
 import {resetInvoiceStoryStores, seedInvoiceStoryStores, storyCachedImageScan, storyCachedPdfScan} from "../../_storybook";
@@ -86,6 +87,96 @@ export const Empty: Story = {
     docs: {
       description: {
         story: "Shows the production empty state after the scan store has hydrated.",
+      },
+    },
+  },
+};
+
+/** Single scan — minimal data edge case. */
+export const SingleScan: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({
+      scans: [storyCachedImageScan],
+      selectedScans: [],
+    });
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with a single scan card. Tests sparse layout rendering between empty and full states.",
+      },
+    },
+  },
+};
+
+/** Two scans — minimal viable grid. */
+export const TwoScans: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({
+      scans: [storyCachedImageScan, storyCachedPdfScan],
+      selectedScans: [],
+    });
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with two scan cards (image and PDF). Verifies layout with minimal viable data set.",
+      },
+    },
+  },
+};
+
+/** Many scans (15) — overflow grid test. */
+export const ManyScans: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    const manyScans: CachedScan[] = Array.from({length: 15}, (_, i) => ({
+      ...storyCachedImageScan,
+      id: `scan-story-many-${String(i).padStart(3, "0")}`,
+      name: `Scan ${i + 1}`,
+      uploadedAt: new Date(Date.now() - i * 3600000),
+      metadata: {
+        ...storyCachedImageScan.metadata,
+        scanId: `scan-story-many-${String(i).padStart(3, "0")}`,
+        uploadedAt: new Date(Date.now() - i * 3600000),
+      },
+    }));
+    seedInvoiceStoryStores({
+      scans: manyScans,
+      selectedScans: [],
+    });
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with 15 scan cards. Tests grid layout overflow, responsive design, and rendering performance with many items.",
+      },
+    },
+  },
+};
+
+/** Mixed scan types (images and PDFs). */
+export const MixedScanTypes: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    const mixedScans: CachedScan[] = [
+      storyCachedImageScan,
+      storyCachedPdfScan,
+      {...storyCachedImageScan, id: "scan-story-img-2", name: "Grocery receipt 2"},
+      {...storyCachedPdfScan, id: "scan-story-pdf-2", name: "Restaurant invoice"},
+      {...storyCachedImageScan, id: "scan-story-img-3", name: "Pharmacy receipt"},
+    ];
+    seedInvoiceStoryStores({
+      scans: mixedScans,
+      selectedScans: [],
+    });
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with mixed scan types (images and PDFs). Tests rendering of different scan formats in the same grid.",
       },
     },
   },

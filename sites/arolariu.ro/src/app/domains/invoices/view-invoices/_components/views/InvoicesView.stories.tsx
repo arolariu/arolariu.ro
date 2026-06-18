@@ -1,5 +1,12 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {resetInvoiceStoryStores, seedInvoiceStoryStores, storyInvoices, WithInvoiceDialogs} from "../../../_storybook";
+import {
+  resetInvoiceStoryStores,
+  seedInvoiceStoryStores,
+  storyInvoices,
+  storyLongNameInvoice,
+  storyManyInvoices,
+  WithInvoiceDialogs,
+} from "../../../_storybook";
 import RenderInvoicesView from "./InvoicesView";
 
 /**
@@ -81,6 +88,62 @@ export const FewInvoices: Story = {
     docs: {
       description: {
         story: "Invoice list view populated with a single invoice to show the sparse-list layout between the empty and full states.",
+      },
+    },
+  },
+};
+
+/** Many invoices (60) — overflow and pagination test. */
+export const ManyInvoices: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyManyInvoices});
+  },
+  args: {
+    invoices: storyManyInvoices,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Invoice list view populated with 60 invoices. Tests pagination, overflow, filtering, and rendering performance with large data sets.",
+      },
+    },
+  },
+};
+
+/** Long invoice name — text truncation test. */
+export const LongInvoiceName: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: [storyLongNameInvoice]});
+  },
+  args: {
+    invoices: [storyLongNameInvoice],
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Invoice list view with an invoice having an extremely long name. Tests text truncation, ellipsis, and tooltip behavior in both table and grid views.",
+      },
+    },
+  },
+};
+
+/** Two invoices — minimal viable list. */
+export const TwoInvoices: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyInvoices.slice(0, 2)});
+  },
+  args: {
+    invoices: storyInvoices.slice(0, 2),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice list view with two invoices. Tests minimal viable data set rendering and view switching.",
       },
     },
   },

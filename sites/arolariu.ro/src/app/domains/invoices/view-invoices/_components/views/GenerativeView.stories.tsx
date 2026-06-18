@@ -1,4 +1,4 @@
-import {storyInvoices, storyManyInvoices} from "@/app/domains/invoices/_storybook";
+import {storyHugeInvoice, storyInvoices, storyManyInvoices} from "@/app/domains/invoices/_storybook";
 import type {Meta, StoryObj} from "@storybook/react";
 import RenderGenerativeView from "./GenerativeView";
 
@@ -24,3 +24,28 @@ export const Empty: Story = {args: {invoices: []}};
 
 /** Large invoice set in scope. */
 export const ManyInvoices: Story = {args: {invoices: storyManyInvoices}};
+
+/** Single invoice in scope — minimal data. */
+export const SingleInvoice: Story = {
+  args: {invoices: storyInvoices.slice(0, 1)},
+  parameters: {
+    docs: {
+      description: {
+        story: "Chat view with a single invoice in scope. Tests AI chat interface with minimal data context.",
+      },
+    },
+  },
+};
+
+/** Huge invoice (120 items) in scope — large item list context. */
+export const HugeInvoice: Story = {
+  args: {invoices: [storyHugeInvoice]},
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Chat view with a huge invoice (120 line items) in scope. Tests AI chat interface handling large invoice metadata and item lists.",
+      },
+    },
+  },
+};

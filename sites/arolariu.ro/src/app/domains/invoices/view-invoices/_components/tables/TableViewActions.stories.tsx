@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {storyInvoice, storyOnlineInvoice, WithInvoiceDialogs} from "../../../_storybook";
+import {storyInvoice, storyLongNameInvoice, storyOnlineInvoice, WithInvoiceDialogs} from "../../../_storybook";
 import TableViewActions from "./TableViewActions";
 
 /**
@@ -65,6 +65,24 @@ export const OnlineInvoice: Story = {
       description: {
         story:
           "Actions menu for online invoice (from online merchant). Same Edit/Share/Delete options as standard invoice. Demonstrates component behavior with online invoice metadata.",
+      },
+    },
+  },
+};
+
+/**
+ * Invoice actions dropdown with very long invoice name.
+ * Tests text truncation and tooltip behavior in menu items.
+ */
+export const LongInvoiceName: Story = {
+  args: {
+    invoice: storyLongNameInvoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Actions menu for invoice with extremely long name. Tests text truncation, ellipsis, and tooltip rendering in menu items without breaking dropdown layout.",
       },
     },
   },

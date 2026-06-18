@@ -1,5 +1,12 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {resetInvoiceStoryStores, seedInvoiceStoryStores, storyInvoices, WithInvoiceDialogs} from "../../../_storybook";
+import {
+  resetInvoiceStoryStores,
+  seedInvoiceStoryStores,
+  storyInvoices,
+  storyLongNameInvoice,
+  storyManyInvoices,
+  WithInvoiceDialogs,
+} from "../../../_storybook";
 import {GridView} from "./GridView";
 
 /**
@@ -77,6 +84,152 @@ export const EmptyState: Story = {
       description: {
         story:
           "Empty state when no invoices exist or all invoices are filtered out. Displays centered message with icon encouraging user to create their first invoice or adjust filters. Pagination controls are hidden.",
+      },
+    },
+  },
+};
+
+/** Single invoice — sparse list edge case. */
+export const SingleInvoice: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyInvoices.slice(0, 1)});
+  },
+  args: {
+    invoices: storyInvoices.slice(0, 1),
+    pageSize: 10,
+    currentPage: 1,
+    totalPages: 1,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with a single invoice card. Tests sparse layout rendering between empty and full states.",
+      },
+    },
+  },
+};
+
+/** Two invoices — minimal viable list. */
+export const TwoInvoices: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyInvoices.slice(0, 2)});
+  },
+  args: {
+    invoices: storyInvoices.slice(0, 2),
+    pageSize: 10,
+    currentPage: 1,
+    totalPages: 1,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with two invoice cards. Verifies layout with minimal viable data set.",
+      },
+    },
+  },
+};
+
+/** Many invoices (60) — overflow scrolling and performance test. */
+export const ManyInvoices: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyManyInvoices});
+  },
+  args: {
+    invoices: storyManyInvoices.slice(0, 10),
+    pageSize: 10,
+    currentPage: 1,
+    totalPages: 6,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Grid with 60 invoices paginated (10 per page, 6 pages total). Tests pagination controls, overflow, and rendering performance with large data sets.",
+      },
+    },
+  },
+};
+
+/** Long invoice name — text truncation test. */
+export const LongInvoiceName: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: [storyLongNameInvoice]});
+  },
+  args: {
+    invoices: [storyLongNameInvoice],
+    pageSize: 10,
+    currentPage: 1,
+    totalPages: 1,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Grid with an invoice having an extremely long name. Tests text truncation, ellipsis, and tooltip behavior without breaking card layout.",
+      },
+    },
+  },
+};
+
+/** Paginated view (page 2 of 3). */
+export const PaginatedPage2: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyManyInvoices});
+  },
+  args: {
+    invoices: storyManyInvoices.slice(10, 20),
+    pageSize: 10,
+    currentPage: 2,
+    totalPages: 6,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid showing page 2 of 6 with both previous and next navigation enabled. Tests mid-pagination state.",
+      },
+    },
+  },
+};
+
+/** Large page size (25 items per page). */
+export const LargePageSize: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyManyInvoices});
+  },
+  args: {
+    invoices: storyManyInvoices.slice(0, 25),
+    pageSize: 25,
+    currentPage: 1,
+    totalPages: 3,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with 25 items per page. Tests dense layout and page size selector with larger page sizes.",
       },
     },
   },

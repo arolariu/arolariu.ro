@@ -17,9 +17,9 @@ const meta = {
     docs: {
       description: {
         component:
-          "Floating toolbar that appears when one or more scans are selected. Provides bulk actions including creating invoices " +
-          "from selected scans and bulk deletion. Displays selected scan count and animates in/out based on selection state. " +
-          "Mounted with real component using seeded scan store state via decorator that seeds scans and selected state without auto-sync.",
+          "Floating toolbar that appears when one or more scans are selected. Provides bulk actions including creating invoices "
+          + "from selected scans and bulk deletion. Displays selected scan count and animates in/out based on selection state. "
+          + "Mounted with real component using seeded scan store state via decorator that seeds scans and selected state without auto-sync.",
       },
     },
   },
@@ -109,6 +109,30 @@ export const MultipleSelected: Story = {
     (Story) => {
       useEffect(() => {
         return seedSelectedScans(multipleSelectedScans);
+      }, []);
+
+      return <Story />;
+    },
+  ],
+  args: {
+    onCreateInvoice: () => console.log("Create invoices clicked"),
+  },
+};
+
+/** Many scans selected (15) — bulk selection stress test. */
+export const ManySelected: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Toolbar with 15 scans selected. Tests count display, plural text, and bulk action performance with larger selections.",
+      },
+    },
+  },
+  decorators: [
+    (Story) => {
+      const manySelectedScans = Array.from({length: 15}, (_, i) => createMockScan(`scan-many-${i + 1}`));
+      useEffect(() => {
+        return seedSelectedScans(manySelectedScans);
       }, []);
 
       return <Story />;

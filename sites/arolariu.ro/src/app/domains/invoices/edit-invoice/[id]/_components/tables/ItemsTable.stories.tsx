@@ -1,6 +1,7 @@
-import type {Meta, StoryObj} from "@storybook/react";
 import type {Invoice} from "@/types/invoices";
-import {invoicePresets, storyInvoice, WithEditInvoiceContext, withEntityPreset} from "../../../../_storybook";
+import type {Product} from "@/types/invoices/Product";
+import type {Meta, StoryObj} from "@storybook/react";
+import {invoicePresets, storyHugeInvoice, storyInvoice, WithEditInvoiceContext, withEntityPreset} from "../../../../_storybook";
 import ItemsTable from "./ItemsTable";
 
 type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
@@ -61,14 +62,86 @@ export const WithItems: Story = {
 export const Empty: Story = {
   args: {
     invoice: {
-      ...invoicePresets.standard,
+      ...invoicePresets["standard"],
       items: [],
-    },
+    } as Invoice,
   },
   parameters: {
     docs: {
       description: {
         story: "Empty state showing no items on the invoice. Displays message encouraging user to add items via the Items dialog.",
+      },
+    },
+  },
+};
+
+/** Single item — minimal data edge case. */
+export const SingleItem: Story = {
+  args: {
+    invoice: {
+      ...invoicePresets["standard"],
+      items: (invoicePresets["standard"]?.items ?? []).slice(0, 1),
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Table with a single product item. Tests sparse table rendering between empty and full states.",
+      },
+    },
+  },
+};
+
+/** Two items — minimal viable table. */
+export const TwoItems: Story = {
+  args: {
+    invoice: {
+      ...invoicePresets["standard"],
+      items: (invoicePresets["standard"]?.items ?? []).slice(0, 2),
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Table with two product items. Verifies layout with minimal viable data set.",
+      },
+    },
+  },
+};
+
+/** Huge invoice with 120 items — overflow and pagination test. */
+export const HugeInvoice: Story = {
+  args: {
+    invoice: storyHugeInvoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Items table with 120 products from huge invoice fixture. Tests pagination, overflow scrolling, search, and rendering performance with large data sets.",
+      },
+    },
+  },
+};
+
+/** Item with very long name — text truncation test. */
+export const LongItemName: Story = {
+  args: {
+    invoice: {
+      ...invoicePresets["standard"],
+      items: [
+        {
+          ...(invoicePresets["standard"]?.items?.[0] ?? {}),
+          name: "Premium Organic Extra Virgin Olive Oil Cold-Pressed First Harvest Limited Edition 750ml Glass Bottle",
+        } as Product,
+      ],
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Items table with product having an extremely long name. Tests text truncation, ellipsis, and tooltip behavior in table cells without breaking layout.",
       },
     },
   },
