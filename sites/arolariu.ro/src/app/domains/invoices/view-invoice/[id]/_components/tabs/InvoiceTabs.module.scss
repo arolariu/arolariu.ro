@@ -61,35 +61,6 @@
   margin-top: space(2);
 }
 
-.metadataList {
-  & > * + * {
-    margin-top: space(3);
-  }
-}
-
-.metadataItem {
-  display: flex;
-  justify-content: space-between;
-  gap: space(4);
-  border-bottom: 1px solid color('border');
-  padding-bottom: space(2);
-
-  &:last-child {
-    border-bottom: none;
-  }
-}
-
-.metadataKey {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
-}
-
-.metadataValue {
-  font-size: font-size('sm');
-  text-align: right;
-}
-
 .card {
   transition: box-shadow 300ms;
 

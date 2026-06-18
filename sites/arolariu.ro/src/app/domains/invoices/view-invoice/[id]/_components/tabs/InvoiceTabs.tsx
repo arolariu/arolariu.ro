@@ -3,6 +3,7 @@
 import {Card, CardContent, CardHeader, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {TbChefHat, TbInfoCircle} from "react-icons/tb";
+import MetadataTab from "../../../../edit-invoice/[id]/_components/tabs/MetadataTab";
 import RecipeCard from "../../../../edit-invoice/[id]/_cards/RecipeCard";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./InvoiceTabs.module.scss";
@@ -66,23 +67,7 @@ export function InvoiceTabs(): React.JSX.Element {
           <TabsContent
             value='info'
             className={styles["tabsContent"]}>
-            {Object.keys(invoice.additionalMetadata).length > 0 ? (
-              <dl className={styles["metadataList"]}>
-                {Object.entries(invoice.additionalMetadata).map(([key, value]) => (
-                  <div
-                    key={key}
-                    className={styles["metadataItem"]}>
-                    <dt className={styles["metadataKey"]}>{key}</dt>
-                    <dd className={styles["metadataValue"]}>{value}</dd>
-                  </div>
-                ))}
-              </dl>
-            ) : (
-              <div className={styles["emptyState"]}>
-                <TbInfoCircle className={styles["emptyIcon"]} />
-                <p className={styles["emptyStateText"]}>{t((m) => m.pages.invoices.viewInvoice.invoiceTabs.empty.additionalInfo)}</p>
-              </div>
-            )}
+            <MetadataTab metadata={invoice.additionalMetadata} />
           </TabsContent>
         </CardContent>
       </Tabs>
