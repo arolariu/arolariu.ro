@@ -235,3 +235,28 @@ export const AnalyzedLongAgo: Story = {
     },
   },
 };
+
+/** Invoice with many updates — high update count. */
+export const ManyUpdates: Story = {
+  render: ({invoice}) => {
+    const invoiceManyUpdates = {
+      ...invoice,
+      items: [],
+      lastUpdatedAt: analyzedThirtyMinutesAgo,
+      numberOfUpdates: 25,
+    };
+
+    return (
+      <WithViewInvoiceContext invoice={invoiceManyUpdates}>
+        <AnalysisPanel />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice that has been re-analyzed 25 times. Tests update count badge display with high numbers.",
+      },
+    },
+  },
+};

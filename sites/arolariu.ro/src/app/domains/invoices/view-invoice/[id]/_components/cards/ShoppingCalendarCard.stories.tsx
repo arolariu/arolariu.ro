@@ -89,3 +89,58 @@ export const EmptyStore: Story = {
     </WithViewInvoiceContext>
   ),
 };
+
+/** Many invoices spread across the month — active heat map. */
+export const DenseCalendar: Story = {
+  decorators: [
+    (Story) => {
+      const denseInvoices = Array.from({length: 25}, (_, i) => ({
+        ...storyInvoice,
+        id: `invoice-dense-${i}`,
+        paymentInformation: {
+          ...storyInvoice.paymentInformation,
+          transactionDate: new Date(2024, 2, (i % 28) + 1),
+          totalCostAmount: Number((20 + i * 5 + Math.random() * 30).toFixed(2)),
+        },
+      }));
+      seedInvoiceStoryStores({invoices: denseInvoices});
+      return <Story />;
+    },
+  ],
+  render: () => (
+    <WithViewInvoiceContext invoice={storyInvoice}>
+      <ShoppingCalendarCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** First invoice of the month — sparse calendar. */
+export const FirstInvoice: Story = {
+  decorators: [
+    (Story) => {
+      const firstInvoice = {
+        ...storyInvoice,
+        paymentInformation: {
+          ...storyInvoice.paymentInformation,
+          transactionDate: new Date(2024, 2, 1),
+        },
+      };
+      seedInvoiceStoryStores({invoices: [firstInvoice]});
+      return <Story />;
+    },
+  ],
+  render: () => {
+    const firstInvoice = {
+      ...storyInvoice,
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(2024, 2, 1),
+      },
+    };
+    return (
+      <WithViewInvoiceContext invoice={firstInvoice}>
+        <ShoppingCalendarCard />
+      </WithViewInvoiceContext>
+    );
+  },
+};

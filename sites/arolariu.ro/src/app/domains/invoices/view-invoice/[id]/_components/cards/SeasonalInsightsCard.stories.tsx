@@ -53,3 +53,45 @@ export const InsufficientData: Story = {
     </WithViewInvoiceContext>
   ),
 };
+
+/** Many invoices seeded — rich insights with multiple data points. */
+export const RichHistory: Story = {
+  decorators: [
+    (Story) => {
+      resetInvoiceStoryStores();
+      const manyInvoices = Array.from({length: 30}, (_, i) => ({
+        ...storyInvoice,
+        id: `invoice-${i}`,
+        name: `Invoice ${i + 1}`,
+        paymentInformation: {
+          ...storyInvoice.paymentInformation,
+          transactionDate: new Date(2024, 2, i + 1),
+          totalCostAmount: Number((50 + i * 10 + Math.random() * 20).toFixed(2)),
+        },
+      }));
+      seedInvoiceStoryStores({invoices: manyInvoices});
+      return <Story />;
+    },
+  ],
+  render: () => (
+    <WithViewInvoiceContext invoice={storyInvoice}>
+      <SeasonalInsightsCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Empty store — no invoices. */
+export const EmptyStore: Story = {
+  decorators: [
+    (Story) => {
+      resetInvoiceStoryStores();
+      seedInvoiceStoryStores({invoices: []});
+      return <Story />;
+    },
+  ],
+  render: () => (
+    <WithViewInvoiceContext invoice={storyInvoice}>
+      <SeasonalInsightsCard />
+    </WithViewInvoiceContext>
+  ),
+};

@@ -1,7 +1,7 @@
-import type {Meta, StoryObj} from "@storybook/react";
 import type {Recipe} from "@/types/invoices";
+import type {Meta, StoryObj} from "@storybook/react";
+import {recipePresets, storyRecipeEasy, storyRecipeHard, withEntityPreset, WithInvoiceDialogs} from "../../../_storybook";
 import RecipeCard from "./RecipeCard";
-import {recipePresets, storyRecipeEasy, storyRecipeHard, WithInvoiceDialogs, withEntityPreset} from "../../../_storybook";
 
 type StoryArgs = {recipe: Recipe; recipePreset: "easy" | "hard"};
 
@@ -55,6 +55,66 @@ export const LongTitleRecipe: Story = {
         recipe={{
           ...recipe,
           name: "Slow-Roasted Mediterranean Vegetable & Halloumi Traybake with Lemon-Herb Dressing and Toasted Pine Nuts",
+        }}
+      />
+    </WithInvoiceDialogs>
+  ),
+};
+
+/** Recipe card with minimal ingredients list. */
+export const MinimalIngredients: Story = {
+  render: ({recipe}) => (
+    <WithInvoiceDialogs>
+      <RecipeCard
+        recipe={{
+          ...recipe,
+          ingredients: ["Flour", "Water"],
+        }}
+      />
+    </WithInvoiceDialogs>
+  ),
+};
+
+/** Recipe card with many ingredients — overflow test. */
+export const ManyIngredients: Story = {
+  render: ({recipe}) => (
+    <WithInvoiceDialogs>
+      <RecipeCard
+        recipe={{
+          ...recipe,
+          ingredients: Array.from({length: 25}, (_, i) => `Ingredient ${i + 1}`),
+        }}
+      />
+    </WithInvoiceDialogs>
+  ),
+};
+
+/** Recipe card with very long ingredient names. */
+export const LongIngredientNames: Story = {
+  render: ({recipe}) => (
+    <WithInvoiceDialogs>
+      <RecipeCard
+        recipe={{
+          ...recipe,
+          ingredients: [
+            "Extra Virgin Organic Cold-Pressed Mediterranean Olive Oil (First Harvest)",
+            "Aged Parmigiano-Reggiano DOP 36-Month Matured Cheese (Finely Grated)",
+            "Fresh Hand-Picked Heirloom Cherry Tomatoes (Vine-Ripened)",
+          ],
+        }}
+      />
+    </WithInvoiceDialogs>
+  ),
+};
+
+/** Recipe card with zero cooking time. */
+export const NoCookingTime: Story = {
+  render: ({recipe}) => (
+    <WithInvoiceDialogs>
+      <RecipeCard
+        recipe={{
+          ...recipe,
+          estimatedTime: 0,
         }}
       />
     </WithInvoiceDialogs>

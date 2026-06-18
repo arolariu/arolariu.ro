@@ -41,3 +41,39 @@ export const PdfScan: Story = {
     </WithViewInvoiceContext>
   ),
 };
+
+/** Invoice with multiple image scans — carousel navigation. */
+export const MultipleImageScans: Story = {
+  render: () => {
+    const multiScanInvoice = {
+      ...storyInvoice,
+      scans: Array.from({length: 5}, (_, i) => ({
+        ...storyInvoice.scans[0],
+        metadata: {
+          ...storyInvoice.scans[0].metadata,
+          scanId: `scan-${String(i).padStart(3, "0")}`,
+        },
+      })),
+    };
+    return (
+      <WithViewInvoiceContext invoice={multiScanInvoice}>
+        <ReceiptScanCard />
+      </WithViewInvoiceContext>
+    );
+  },
+};
+
+/** Invoice with mixed image and PDF scans. */
+export const MixedMediaTypes: Story = {
+  render: () => {
+    const mixedScanInvoice = {
+      ...storyInvoice,
+      scans: [storyInvoice.scans[0], storyOnlineInvoice.scans[0], storyInvoice.scans[0]],
+    };
+    return (
+      <WithViewInvoiceContext invoice={mixedScanInvoice}>
+        <ReceiptScanCard />
+      </WithViewInvoiceContext>
+    );
+  },
+};

@@ -134,3 +134,50 @@ export const MixedRelationships: Story = {
     docs: {description: {story: "Displays 2 related invoices: one by same merchant (priority 1), one by same category (priority 2)."}},
   },
 };
+
+/** Many related invoices — overflow/carousel test. */
+export const ManyRelated: Story = {
+  render: () => {
+    const merchantId = "merchant-abc";
+    const currentInvoice = {...storyInvoice, merchantReference: merchantId, name: "Current"};
+    const relatedInvoices = Array.from({length: 10}, (_, i) => ({
+      ...storyPublicInvoice,
+      id: `related-${i}`,
+      merchantReference: merchantId,
+      name: `Related Invoice ${i + 1}`,
+    }));
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: [currentInvoice, ...relatedInvoices]});
+    return (
+      <WithViewInvoiceContext invoice={currentInvoice}>
+        <RelatedInvoicesCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Carousel with 10 related invoices from the same merchant to verify horizontal scrolling and overflow handling.",
+      },
+    },
+  },
+};
+
+/** Single related invoice only. */
+export const SingleRelated: Story = {
+  render: () => {
+    const merchantId = "merchant-single";
+    const currentInvoice = {...storyInvoice, merchantReference: merchantId, name: "Current Invoice"};
+    const relatedInvoice = {...storyPublicInvoice, merchantReference: merchantId, name: "Related Invoice"};
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: [currentInvoice, relatedInvoice]});
+    return (
+      <WithViewInvoiceContext invoice={currentInvoice}>
+        <RelatedInvoicesCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {description: {story: "Card displaying a single related invoice (carousel with one item)."}},
+  },
+};

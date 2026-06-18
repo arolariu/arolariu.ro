@@ -369,3 +369,83 @@ export const HighConfidenceNoCategorization: Story = {
     },
   },
 };
+
+/** Low product count but perfect quality — edge case. */
+export const LowCountPerfectQuality: Story = {
+  render: () => {
+    const fewPerfectProducts = storyProducts.slice(0, 2).map((product) => ({
+      ...product,
+      metadata: {...product.metadata, isComplete: true, confidence: 1.0},
+      category: ProductCategory.GROCERIES,
+    }));
+
+    const invoice = {
+      ...storyInvoice,
+      items: fewPerfectProducts,
+      merchantReference: "merchant-uuid-xyz",
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(),
+        totalCostAmount: 45.0,
+        currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      },
+      possibleRecipes: [storyRecipeEasy],
+    };
+
+    return (
+      <WithViewInvoiceContext invoice={invoice}>
+        <InvoiceHealthScore />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Invoice with only 2 products but perfect quality (90% score). Both products are complete with 100% OCR confidence, categorized, merchant linked, payment info complete, and recipe generated. Total: 15 + 20 + 20 + 10 + 15 + 10 + 10 = 100% (capped at achievable maximum).",
+      },
+    },
+  },
+};
+
+/** Products with mixed confidence levels. */
+export const MixedConfidence: Story = {
+  render: () => {
+    const mixedProducts = storyProducts.slice(0, 8).map((product, i) => ({
+      ...product,
+      metadata: {
+        ...product.metadata,
+        isComplete: true,
+        confidence: i % 2 === 0 ? 0.95 : 0.4,
+      },
+      category: ProductCategory.GROCERIES,
+    }));
+
+    const invoice = {
+      ...storyInvoice,
+      items: mixedProducts,
+      merchantReference: "merchant-uuid-mixed",
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(),
+        totalCostAmount: 175.0,
+        currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      },
+      possibleRecipes: [],
+    };
+
+    return (
+      <WithViewInvoiceContext invoice={invoice}>
+        <InvoiceHealthScore />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Invoice with mixed OCR confidence levels. Half the products have 95% confidence and half have 40% confidence, averaging ~67.5% (13.5 pts). All products complete and categorized. Total: 15 + 20 + 13.5 + 10 + 15 + 10 + 0 = 83.5%.",
+      },
+    },
+  },
+};

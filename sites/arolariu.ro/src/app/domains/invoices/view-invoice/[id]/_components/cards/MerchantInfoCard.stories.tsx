@@ -56,3 +56,40 @@ export const WithoutMerchant: Story = {
     </WithViewInvoiceContext>
   ),
 };
+
+/** Merchant with minimal data — no website, no description. */
+export const MinimalMerchantData: Story = {
+  render: () => (
+    <WithViewInvoiceContext merchant={{...storyMerchant, website: "", description: ""}}>
+      <MerchantInfoCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Merchant with very long description. */
+export const LongDescription: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      merchant={{
+        ...storyMerchant,
+        description:
+          "This is an intentionally very long merchant description that spans multiple lines to verify text wrapping, clamping, and ellipsis behavior in the merchant info card. The description continues to test layout stability and responsive text handling across different viewport sizes and themes.",
+      }}>
+      <MerchantInfoCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Merchant with very long website URL. */
+export const LongWebsiteUrl: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      merchant={{
+        ...storyMerchant,
+        website:
+          "https://www.corner-shop-abc-international-wholesale-and-retail-distribution-center-bucuresti-militari-branch-42.ro/shop/products/categories/groceries/organic",
+      }}>
+      <MerchantInfoCard />
+    </WithViewInvoiceContext>
+  ),
+};

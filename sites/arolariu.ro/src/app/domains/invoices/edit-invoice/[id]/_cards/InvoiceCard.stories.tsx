@@ -1,5 +1,3 @@
-import type {Meta, StoryObj} from "@storybook/react";
-import type {Invoice} from "@/types/invoices";
 import {
   invoicePresets,
   setupEditInvoiceStory,
@@ -8,6 +6,8 @@ import {
   WithEditInvoiceContext,
   withEntityPreset,
 } from "@/app/domains/invoices/_storybook";
+import type {Invoice} from "@/types/invoices";
+import type {Meta, StoryObj} from "@storybook/react";
 import InvoiceCard from "./InvoiceCard";
 
 type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
@@ -25,9 +25,9 @@ const meta = {
     docs: {
       description: {
         component:
-          "Comprehensive invoice details card for the edit page. Displays merchant info, date, category, payment type, total, " +
-          "currency, importance flag, and optional notes. Enables inline editing of invoice metadata via context-provided callbacks. " +
-          "Mounted with real EditInvoiceContext provider.",
+          "Comprehensive invoice details card for the edit page. Displays merchant info, date, category, payment type, total, "
+          + "currency, importance flag, and optional notes. Enables inline editing of invoice metadata via context-provided callbacks. "
+          + "Mounted with real EditInvoiceContext provider.",
       },
     },
   },
@@ -52,13 +52,15 @@ export const Default: Story = {
     docs: {
       description: {
         story:
-          "Default state with realistic invoice fixture showing merchant 'Corner Shop ABC', category 'Groceries', " +
-          "payment type 'Card', and formatted total. Displays all editable fields with standard styling.",
+          "Default state with realistic invoice fixture showing merchant 'Corner Shop ABC', category 'Groceries', "
+          + "payment type 'Card', and formatted total. Displays all editable fields with standard styling.",
       },
     },
   },
   render: ({invoice}) => (
-    <WithEditInvoiceContext invoice={invoice} merchant={storyMerchant}>
+    <WithEditInvoiceContext
+      invoice={invoice}
+      merchant={storyMerchant}>
       <InvoiceCard />
     </WithEditInvoiceContext>
   ),
@@ -70,8 +72,8 @@ export const ImportantInvoice: Story = {
     docs: {
       description: {
         story:
-          "Variant with `isImportant: true` flag enabled. Displays enhanced visual indicators (star icon, accent color) " +
-          "to highlight high-priority or bookmarked invoices in the edit interface.",
+          "Variant with `isImportant: true` flag enabled. Displays enhanced visual indicators (star icon, accent color) "
+          + "to highlight high-priority or bookmarked invoices in the edit interface.",
       },
     },
   },
@@ -114,6 +116,61 @@ export const DifferentCategory: Story = {
   render: ({invoice}) => (
     <WithEditInvoiceContext
       invoice={{...invoice, category: 200 as typeof invoice.category}}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Invoice with extremely long description text. */
+export const LongDescription: Story = {
+  render: ({invoice}) => (
+    <WithEditInvoiceContext
+      invoice={{
+        ...invoice,
+        description:
+          "This invoice intentionally carries an extremely long description to verify that text wrapping, clamping, and ellipsis behaviour render correctly across cards, tables, and dialog headers without breaking layout or overflowing containers. The description continues to test multi-line handling and responsive text overflow strategies.",
+      }}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Invoice with zero total amount — edge case. */
+export const ZeroAmount: Story = {
+  render: ({invoice}) => (
+    <WithEditInvoiceContext
+      invoice={{
+        ...invoice,
+        paymentInformation: {
+          ...invoice.paymentInformation,
+          totalCostAmount: 0,
+          subtotalAmount: 0,
+          totalTaxAmount: 0,
+          tipAmount: 0,
+        },
+      }}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Invoice with very high amount — formatting test. */
+export const HighAmount: Story = {
+  render: ({invoice}) => (
+    <WithEditInvoiceContext
+      invoice={{
+        ...invoice,
+        paymentInformation: {
+          ...invoice.paymentInformation,
+          totalCostAmount: 99999.99,
+          subtotalAmount: 84033.61,
+          totalTaxAmount: 15966.38,
+          tipAmount: 0,
+        },
+      }}
       merchant={storyMerchant}>
       <InvoiceCard />
     </WithEditInvoiceContext>

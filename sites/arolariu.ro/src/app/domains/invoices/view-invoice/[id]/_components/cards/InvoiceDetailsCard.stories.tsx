@@ -152,3 +152,70 @@ export const EmptyLineItems: Story = {
     },
   },
 };
+
+/** Invoice with many line items — overflow/scroll test. */
+export const ManyLineItems: Story = {
+  render: ({invoice}) => {
+    const manyItemsInvoice = {
+      ...invoice,
+      items: Array.from({length: 50}, (_, i) => ({
+        ...invoice.items[0],
+        name: `Product ${i + 1}`,
+        quantity: (i % 5) + 1,
+        price: Number(((i % 20) + 2.99).toFixed(2)),
+        totalPrice: Number((((i % 5) + 1) * ((i % 20) + 2.99)).toFixed(2)),
+      })),
+    };
+    return (
+      <WithViewInvoiceContext
+        invoice={manyItemsInvoice}
+        merchant={storyMerchant}>
+        <div style={{width: "min(960px, 100vw)"}}>
+          <InvoiceDetailsCard />
+        </div>
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice with 50 line items to verify table scrolling, pagination, and layout stability.",
+      },
+    },
+  },
+};
+
+/** Invoice with very long product names. */
+export const LongProductNames: Story = {
+  render: ({invoice}) => {
+    const longNamesInvoice = {
+      ...invoice,
+      items: [
+        {
+          ...invoice.items[0],
+          name: "Extra Virgin Organic Cold-Pressed Mediterranean Olive Oil First Harvest Limited Edition Premium Quality",
+        },
+        {
+          ...invoice.items[0],
+          name: "Aged Parmigiano-Reggiano DOP 36-Month Matured Cheese from Emilia-Romagna Region Italy Finely Grated",
+        },
+      ],
+    };
+    return (
+      <WithViewInvoiceContext
+        invoice={longNamesInvoice}
+        merchant={storyMerchant}>
+        <div style={{width: "min(960px, 100vw)"}}>
+          <InvoiceDetailsCard />
+        </div>
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice with extremely long product names to test text wrapping and truncation in the items table.",
+      },
+    },
+  },
+};

@@ -100,3 +100,50 @@ export const HighQuantities: Story = {
   },
   parameters: {docs: {description: {story: "4 products with bulk quantities (1, 10, 50, 100 units)."}}},
 };
+
+/** Invoice with single item only. */
+export const SingleItem: Story = {
+  render: ({invoice}) => (
+    <WithViewInvoiceContext invoice={{...invoice, items: invoice.items.slice(0, 1)}}>
+      <ItemAnalyticsCard />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {docs: {description: {story: "Invoice containing only one product item."}}},
+};
+
+/** Invoice with many items — scroll/pagination test. */
+export const ManyItems: Story = {
+  render: ({invoice}) => {
+    const products = Array.from({length: 30}, (_, i) => ({
+      ...storyProducts[0],
+      name: `Product ${i + 1}`,
+      quantity: (i % 5) + 1,
+      price: Number(((i % 20) + 2.99).toFixed(2)),
+      totalPrice: Number((((i % 5) + 1) * ((i % 20) + 2.99)).toFixed(2)),
+      category: [ProductCategory.GROCERIES, ProductCategory.DAIRY, ProductCategory.BAKED_GOODS][i % 3] ?? ProductCategory.NOT_DEFINED,
+    }));
+    return (
+      <WithViewInvoiceContext invoice={{...invoice, items: products}}>
+        <ItemAnalyticsCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {docs: {description: {story: "Invoice with 30 items to verify table scrolling and pagination."}}},
+};
+
+/** Products with zero prices — edge case. */
+export const ZeroPrices: Story = {
+  render: ({invoice}) => {
+    const products = storyProducts.map((product) => ({
+      ...product,
+      price: 0,
+      totalPrice: 0,
+    }));
+    return (
+      <WithViewInvoiceContext invoice={{...invoice, items: products}}>
+        <ItemAnalyticsCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {docs: {description: {story: "Products with zero prices to test edge-case currency formatting."}}},
+};

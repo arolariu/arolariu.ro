@@ -1,7 +1,7 @@
-import type {Meta, StoryObj} from "@storybook/react";
 import type {Merchant} from "@/types/invoices";
+import type {Meta, StoryObj} from "@storybook/react";
+import {storyMerchant, storyOnlineMerchant, WithInvoiceDialogs} from "../../../_storybook";
 import MerchantCard from "./MerchantCard";
-import {merchantPresets, storyMerchant, storyOnlineMerchant, WithInvoiceDialogs, withEntityPreset} from "../../../_storybook";
 
 type StoryArgs = {merchant: Merchant | null; merchantPreset: "physical" | "online" | "none"};
 
@@ -74,12 +74,54 @@ export const LongText: Story = {
   render: ({merchant}) => (
     <WithInvoiceDialogs>
       <MerchantCard
-        merchant={merchant ? {
-          ...merchant,
-          name: "Corner Shop ABC International Wholesale & Retail Distribution Center Bucuresti Militari Branch",
-          description:
-            "A very long merchant description used to validate truncation, wrapping, and layout stability inside the merchant card across themes and locales.",
-        } : null}
+        merchant={
+          merchant
+            ? {
+                ...merchant,
+                name: "Corner Shop ABC International Wholesale & Retail Distribution Center Bucuresti Militari Branch",
+                description:
+                  "A very long merchant description used to validate truncation, wrapping, and layout stability inside the merchant card across themes and locales.",
+              }
+            : null
+        }
+      />
+    </WithInvoiceDialogs>
+  ),
+};
+
+/** Merchant with minimal data — no description or optional fields. */
+export const MinimalData: Story = {
+  render: ({merchant}) => (
+    <WithInvoiceDialogs>
+      <MerchantCard
+        merchant={
+          merchant
+            ? {
+                ...merchant,
+                description: "",
+                website: "",
+              }
+            : null
+        }
+      />
+    </WithInvoiceDialogs>
+  ),
+};
+
+/** Merchant with very long website URL. */
+export const LongWebsiteUrl: Story = {
+  render: ({merchant}) => (
+    <WithInvoiceDialogs>
+      <MerchantCard
+        merchant={
+          merchant
+            ? {
+                ...merchant,
+                website:
+                  "https://www.corner-shop-abc-international-wholesale-and-retail-distribution-center-bucuresti-militari-branch.ro/shop/products/categories/groceries",
+              }
+            : null
+        }
       />
     </WithInvoiceDialogs>
   ),

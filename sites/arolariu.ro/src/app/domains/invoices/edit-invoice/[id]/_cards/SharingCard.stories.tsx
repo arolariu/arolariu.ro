@@ -1,14 +1,14 @@
-import type {Meta, StoryObj} from "@storybook/react";
 import type {Invoice} from "@/types/invoices";
-import SharingCard from "./SharingCard";
+import type {Meta, StoryObj} from "@storybook/react";
 import {
   installStorybookBrowserMocks,
   invoicePresets,
   storyInvoice,
   storyPublicInvoice,
-  WithInvoiceDialogs,
   withEntityPreset,
+  WithInvoiceDialogs,
 } from "../../../_storybook";
+import SharingCard from "./SharingCard";
 
 type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
@@ -68,6 +68,34 @@ export const PublicInvoice: Story = {
   render: ({invoice}) => (
     <WithInvoiceDialogs>
       <SharingCard invoice={invoice} />
+    </WithInvoiceDialogs>
+  ),
+};
+
+/** Invoice shared with many users — overflow test. */
+export const SharedWithManyUsers: Story = {
+  render: ({invoice}) => (
+    <WithInvoiceDialogs>
+      <SharingCard
+        invoice={{
+          ...invoice,
+          sharedWith: Array.from({length: 15}, (_, i) => `user-${String(i).padStart(3, "0")}`),
+        }}
+      />
+    </WithInvoiceDialogs>
+  ),
+};
+
+/** Invoice shared with one user only. */
+export const SharedWithSingleUser: Story = {
+  render: ({invoice}) => (
+    <WithInvoiceDialogs>
+      <SharingCard
+        invoice={{
+          ...invoice,
+          sharedWith: ["user-single-001"],
+        }}
+      />
     </WithInvoiceDialogs>
   ),
 };

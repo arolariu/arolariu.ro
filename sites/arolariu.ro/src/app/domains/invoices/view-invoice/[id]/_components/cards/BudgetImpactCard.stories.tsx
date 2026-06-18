@@ -149,3 +149,75 @@ export const NearLimit: Story = {
     },
   ],
 };
+
+/** Very low spending — early in the month. */
+export const VeryLowSpending: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Budget impact card showing minimal spending early in the month. Displays high remaining budget and favorable daily allowance.",
+      },
+    },
+  },
+  decorators: [
+    (Story) => {
+      const invoice = new InvoiceBuilder()
+        .withPaymentInformation({
+          transactionDate: new Date(2026, 0, 3), // January 3, 2026
+          paymentType: PaymentType.Card,
+          currency: {code: "USD", name: "US Dollar", symbol: "$"},
+          totalCostAmount: 15.0,
+          totalTaxAmount: 1.5,
+          subtotalAmount: 13.5,
+          tipAmount: 0,
+        })
+        .build();
+      return (
+        <InvoiceContextProvider
+          invoice={invoice}
+          merchant={null}>
+          <div style={{minWidth: "400px"}}>
+            <Story />
+          </div>
+        </InvoiceContextProvider>
+      );
+    },
+  ],
+};
+
+/** End of month transaction — few days remaining. */
+export const EndOfMonth: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Budget impact card for a transaction near the end of the month. Shows only a few days remaining with adjusted daily allowance.",
+      },
+    },
+  },
+  decorators: [
+    (Story) => {
+      const invoice = new InvoiceBuilder()
+        .withPaymentInformation({
+          transactionDate: new Date(2026, 0, 29), // January 29, 2026
+          paymentType: PaymentType.Card,
+          currency: {code: "USD", name: "US Dollar", symbol: "$"},
+          totalCostAmount: 875.0,
+          totalTaxAmount: 87.5,
+          subtotalAmount: 787.5,
+          tipAmount: 0,
+        })
+        .build();
+      return (
+        <InvoiceContextProvider
+          invoice={invoice}
+          merchant={null}>
+          <div style={{minWidth: "400px"}}>
+            <Story />
+          </div>
+        </InvoiceContextProvider>
+      );
+    },
+  ],
+};

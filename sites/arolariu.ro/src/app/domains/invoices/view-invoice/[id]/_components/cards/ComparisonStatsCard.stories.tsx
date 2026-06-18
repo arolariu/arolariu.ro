@@ -78,3 +78,66 @@ export const NearAverage: Story = {
     },
   },
 };
+
+/** Significantly above average — high spending alert. */
+export const SignificantlyAbove: Story = {
+  args: {
+    currency: "USD",
+    stats: {
+      totalInvoices: 30,
+      currentAmount: 450.0,
+      averageAmount: 150.0,
+      percentageDiff: 200.0,
+      isAboveAverage: true,
+      minAmount: 20,
+      maxAmount: 500,
+      currentItemCount: 35,
+      averageItemCount: 12,
+      itemCountDiff: 191.7,
+      sameMerchantAvg: 160.0,
+      sameMerchantDiff: 181.3,
+    },
+  },
+};
+
+/** Very few invoices for comparison. */
+export const LowDataSet: Story = {
+  args: {
+    currency: "EUR",
+    stats: {
+      totalInvoices: 3,
+      currentAmount: 75.0,
+      averageAmount: 60.0,
+      percentageDiff: 25.0,
+      isAboveAverage: true,
+      minAmount: 45,
+      maxAmount: 75,
+      currentItemCount: 8,
+      averageItemCount: 6,
+      itemCountDiff: 33.3,
+      sameMerchantAvg: 72.0,
+      sameMerchantDiff: 4.2,
+    },
+  },
+};
+
+/** Zero previous data — first invoice. */
+export const FirstInvoice: Story = {
+  args: {
+    currency: "USD",
+    stats: {
+      totalInvoices: 1,
+      currentAmount: 125.0,
+      averageAmount: 125.0,
+      percentageDiff: 0,
+      isAboveAverage: false,
+      minAmount: 125.0,
+      maxAmount: 125.0,
+      currentItemCount: 10,
+      averageItemCount: 10,
+      itemCountDiff: 0,
+      sameMerchantAvg: 125.0,
+      sameMerchantDiff: 0,
+    },
+  },
+};

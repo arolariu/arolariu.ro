@@ -64,3 +64,27 @@ export const PublicAndShared: Story = {
   ),
   parameters: {docs: {description: {story: "Invoice that is both public AND shared with 2 specific users."}}},
 };
+
+/** Invoice shared with many users — overflow test. */
+export const SharedWithManyUsers: Story = {
+  render: ({invoice}) => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...invoice,
+        sharedWith: Array.from({length: 20}, (_, i) => `user-${String(i).padStart(3, "0")}`),
+      }}>
+      <ShareCollaborateCard />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {docs: {description: {story: "Invoice shared with 20 users to test badge count display and overflow handling."}}},
+};
+
+/** Invoice shared with single user only. */
+export const SharedWithSingleUser: Story = {
+  render: ({invoice}) => (
+    <WithViewInvoiceContext invoice={{...invoice, sharedWith: ["user-single-001"]}}>
+      <ShareCollaborateCard />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {docs: {description: {story: "Invoice shared with exactly one user - displays 'Shared' badge with count of 1."}}},
+};

@@ -1,14 +1,14 @@
-import type {Meta, StoryObj} from "@storybook/react";
-import type {Invoice} from "@/types/invoices";
 import {
   invoicePresets,
   storyImageScanUrl,
   storyInvoice,
   storyInvoiceImageScan,
   storyInvoicePdfScan,
-  WithInvoiceDialogs,
   withEntityPreset,
+  WithInvoiceDialogs,
 } from "@/app/domains/invoices/_storybook";
+import type {Invoice} from "@/types/invoices";
+import type {Meta, StoryObj} from "@storybook/react";
 import ImageCard from "./ImageCard";
 
 type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
@@ -61,7 +61,8 @@ const meta = {
     layout: "centered",
     docs: {
       description: {
-        component: "Mounts the real receipt image gallery card with DialogContext so zoom, add, and remove actions can dispatch dialog state.",
+        component:
+          "Mounts the real receipt image gallery card with DialogContext so zoom, add, and remove actions can dispatch dialog state.",
       },
     },
   },
@@ -112,7 +113,8 @@ export const NoScans: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Fallback state for an invoice without attached scans; the real component displays its placeholder image and add-scan action.",
+        story:
+          "Fallback state for an invoice without attached scans; the real component displays its placeholder image and add-scan action.",
       },
     },
   },
@@ -124,6 +126,54 @@ export const PdfScan: Story = {
     docs: {
       description: {
         story: "Image card with a PDF document scan attached, exercising the PDF preview/thumbnail path instead of a raster image.",
+      },
+    },
+  },
+};
+
+/** Invoice with 10 scans — exercises gallery overflow and navigation. */
+export const ManyScans: Story = {
+  render: () => {
+    const invoiceWithManyScans = {
+      ...storyInvoice,
+      id: "invoice-story-many-scans",
+      name: "Invoice with many scans",
+      scans: Array.from({length: 10}, (_, i) => ({
+        ...storyInvoiceImageScan,
+        location: `${storyImageScanUrl}?scan=${i}`,
+        metadata: {
+          ...storyInvoiceImageScan.metadata,
+          scanId: `scan-story-image-${String(i).padStart(3, "0")}`,
+          uploadedAt: new Date(2024, 2, 15, 10, i).toISOString(),
+        },
+      })),
+    };
+    return <ImageCard invoice={invoiceWithManyScans} />;
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Image card with 10 scans to verify carousel navigation, pagination, and thumbnail overflow behavior.",
+      },
+    },
+  },
+};
+
+/** Invoice with mixed image and PDF scans. */
+export const MixedMediaTypes: Story = {
+  render: () => {
+    const invoiceWithMixedScans = {
+      ...storyInvoice,
+      id: "invoice-story-mixed-scans",
+      name: "Invoice with mixed media types",
+      scans: [storyInvoiceImageScan, storyInvoicePdfScan, {...storyInvoiceImageScan, location: `${storyImageScanUrl}?variant=second`}],
+    };
+    return <ImageCard invoice={invoiceWithMixedScans} />;
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Image card with a mix of image and PDF scans to verify media type switching and preview rendering.",
       },
     },
   },
