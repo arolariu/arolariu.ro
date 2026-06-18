@@ -14,8 +14,8 @@ import {__setStorybookSignedOut} from "../../../../../../.storybook/mocks/clerkN
  * @returns A Storybook decorator.
  */
 export function withAuthState(signedOut: boolean): Decorator {
-	return function AuthStateDecorator(Story) {
-		__setStorybookSignedOut(signedOut);
-		return <Story />;
-	};
+  return function AuthStateDecorator(Story) {
+    __setStorybookSignedOut(signedOut);
+    return <Story />;
+  };
 }
