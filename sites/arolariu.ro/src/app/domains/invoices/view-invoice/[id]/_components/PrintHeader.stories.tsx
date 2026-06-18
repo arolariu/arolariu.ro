@@ -1,8 +1,8 @@
-import type {Meta, StoryObj} from "@storybook/react";
 import {storyInvoice, storyMerchant, storyOnlineInvoice, storyOnlineMerchant, storyProducts} from "@/app/domains/invoices/_storybook";
 import {InvoiceCategory, type Invoice, type Product} from "@/types/invoices";
-import {PrintHeader} from "./PrintHeader";
+import type {Meta, StoryObj} from "@storybook/react";
 import type React from "react";
+import {PrintHeader} from "./PrintHeader";
 
 type DateConstructorArguments =
   | []

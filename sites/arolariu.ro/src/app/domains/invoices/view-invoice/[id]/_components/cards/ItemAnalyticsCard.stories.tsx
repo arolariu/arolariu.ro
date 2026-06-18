@@ -1,7 +1,7 @@
-import type {Meta, StoryObj} from "@storybook/react";
+import {WithViewInvoiceContext, invoicePresets, storyInvoice, storyProducts, withEntityPreset} from "@/app/domains/invoices/_storybook";
 import type {Invoice} from "@/types/invoices";
-import {WithViewInvoiceContext, storyInvoice, storyProducts, invoicePresets, withEntityPreset} from "@/app/domains/invoices/_storybook";
 import {ProductCategory} from "@/types/invoices";
+import type {Meta, StoryObj} from "@storybook/react";
 import {ItemAnalyticsCard} from "./ItemAnalyticsCard";
 
 type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
@@ -35,14 +35,16 @@ export const Default: Story = {
       <ItemAnalyticsCard />
     </WithViewInvoiceContext>
   ),
-  parameters: { docs: { description: { story: "Default item analytics table with 4 products (milk, bread, eggs, apples)." } } },
+  parameters: {docs: {description: {story: "Default item analytics table with 4 products (milk, bread, eggs, apples)."}}},
 };
 
 export const WithCategorizedProducts: Story = {
   render: ({invoice}) => {
     const products = storyProducts.map((product, i) => ({
       ...product,
-      category: [ProductCategory.GROCERIES, ProductCategory.DAIRY, ProductCategory.BAKED_GOODS, ProductCategory.MEAT][i % 4] ?? ProductCategory.NOT_DEFINED,
+      category:
+        [ProductCategory.GROCERIES, ProductCategory.DAIRY, ProductCategory.BAKED_GOODS, ProductCategory.MEAT][i % 4]
+        ?? ProductCategory.NOT_DEFINED,
       quantity: i + 1,
       price: 5 + i * 2,
       totalPrice: (i + 1) * (5 + i * 2),
@@ -53,7 +55,7 @@ export const WithCategorizedProducts: Story = {
       </WithViewInvoiceContext>
     );
   },
-  parameters: { docs: { description: { story: "4 products with varied categories and quantities." } } },
+  parameters: {docs: {description: {story: "4 products with varied categories and quantities."}}},
 };
 
 export const Empty: Story = {
@@ -62,7 +64,7 @@ export const Empty: Story = {
       <ItemAnalyticsCard />
     </WithViewInvoiceContext>
   ),
-  parameters: { docs: { description: { story: "Empty invoice with no items." } } },
+  parameters: {docs: {description: {story: "Empty invoice with no items."}}},
 };
 
 export const WidePriceRange: Story = {
@@ -79,7 +81,7 @@ export const WidePriceRange: Story = {
       </WithViewInvoiceContext>
     );
   },
-  parameters: { docs: { description: { story: "4 products with wide price range (0.50 to 350.99) testing currency formatting." } } },
+  parameters: {docs: {description: {story: "4 products with wide price range (0.50 to 350.99) testing currency formatting."}}},
 };
 
 export const HighQuantities: Story = {
@@ -96,5 +98,5 @@ export const HighQuantities: Story = {
       </WithViewInvoiceContext>
     );
   },
-  parameters: { docs: { description: { story: "4 products with bulk quantities (1, 10, 50, 100 units)." } } },
+  parameters: {docs: {description: {story: "4 products with bulk quantities (1, 10, 50, 100 units)."}}},
 };

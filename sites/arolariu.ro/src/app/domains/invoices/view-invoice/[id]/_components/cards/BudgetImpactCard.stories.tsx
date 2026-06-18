@@ -1,8 +1,8 @@
-import {InvoiceBuilder} from "@/data/mocks/invoice";
-import {PaymentType} from "@/types/invoices";
-import type {Invoice} from "@/types/invoices";
-import type {Meta, StoryObj} from "@storybook/react";
 import {invoicePresets, storyInvoice, withEntityPreset} from "@/app/domains/invoices/_storybook";
+import {InvoiceBuilder} from "@/data/mocks/invoice";
+import type {Invoice} from "@/types/invoices";
+import {PaymentType} from "@/types/invoices";
+import type {Meta, StoryObj} from "@storybook/react";
 import {InvoiceContextProvider} from "../../_context/InvoiceContext";
 import {BudgetImpactCard} from "./BudgetImpactCard";
 
@@ -20,10 +20,10 @@ const meta = {
     docs: {
       description: {
         component:
-          "Displays the monthly budget impact analysis for an invoice. Shows progress bar of budget usage, " +
-          "daily allowance, remaining budget, and spending trends. Relies on InvoiceContext for invoice data " +
-          "and computes analytics including percentage used, days remaining, and over-budget warnings. " +
-          "Mounted with real component through story-specific InvoiceContext decorators.",
+          "Displays the monthly budget impact analysis for an invoice. Shows progress bar of budget usage, "
+          + "daily allowance, remaining budget, and spending trends. Relies on InvoiceContext for invoice data "
+          + "and computes analytics including percentage used, days remaining, and over-budget warnings. "
+          + "Mounted with real component through story-specific InvoiceContext decorators.",
       },
     },
   },
@@ -45,8 +45,8 @@ export const UnderBudget: Story = {
     docs: {
       description: {
         story:
-          "Budget impact card showing healthy spending with low monthly budget usage. Displays remaining budget, " +
-          "days left in month, and daily allowance with a neutral trend indicator for this fixture. Transaction from mid-January 2026.",
+          "Budget impact card showing healthy spending with low monthly budget usage. Displays remaining budget, "
+          + "days left in month, and daily allowance with a neutral trend indicator for this fixture. Transaction from mid-January 2026.",
       },
     },
   },
@@ -82,8 +82,8 @@ export const OverBudget: Story = {
     docs: {
       description: {
         story:
-          "Budget impact card in over-budget warning state with high monthly budget usage. Displays absolute value of " +
-          "remaining balance with over-budget label, over-budget alert styling, and hides daily allowance (not applicable when over budget). Transaction from late December 2025.",
+          "Budget impact card in over-budget warning state with high monthly budget usage. Displays absolute value of "
+          + "remaining balance with over-budget label, over-budget alert styling, and hides daily allowance (not applicable when over budget). Transaction from late December 2025.",
       },
     },
   },
@@ -119,8 +119,8 @@ export const NearLimit: Story = {
     docs: {
       description: {
         story:
-          "Budget impact card with spending close to the monthly budget limit. Shows a near-full progress bar and a small " +
-          "remaining balance with a warning-leaning trend, mid-month transaction.",
+          "Budget impact card with spending close to the monthly budget limit. Shows a near-full progress bar and a small "
+          + "remaining balance with a warning-leaning trend, mid-month transaction.",
       },
     },
   },

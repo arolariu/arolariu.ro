@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {OpenDialogButton, playOpenDialog, WithViewInvoiceContext, storyInvoice, storyMerchant} from "../../../_storybook";
+import {OpenDialogButton, playOpenDialog, storyInvoice, storyMerchant, WithViewInvoiceContext} from "../../../_storybook";
 import {ExportDialog} from "./ExportDialog";
 
 /**
@@ -17,11 +17,11 @@ import {ExportDialog} from "./ExportDialog";
  * Requires `InvoiceContext` to access invoice and merchant data.
  */
 const meta = {
-	title: "arolariu.ro/IMS/Dialogs/Invoice/ExportDetail",
-	component: ExportDialog,
-	parameters: {
-		layout: "centered",
-	},
+  title: "arolariu.ro/IMS/Dialogs/Invoice/ExportDetail",
+  component: ExportDialog,
+  parameters: {
+    layout: "centered",
+  },
 } satisfies Meta<typeof ExportDialog>;
 
 export default meta;
@@ -36,11 +36,15 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {
   play: playOpenDialog,
-	render: () => (
-		<WithViewInvoiceContext invoice={storyInvoice} merchant={storyMerchant}>
-			<OpenDialogButton dialog="VIEW_INVOICE__EXPORT" mode="view">
-				<ExportDialog />
-			</OpenDialogButton>
-		</WithViewInvoiceContext>
-	),
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={storyInvoice}
+      merchant={storyMerchant}>
+      <OpenDialogButton
+        dialog='VIEW_INVOICE__EXPORT'
+        mode='view'>
+        <ExportDialog />
+      </OpenDialogButton>
+    </WithViewInvoiceContext>
+  ),
 };

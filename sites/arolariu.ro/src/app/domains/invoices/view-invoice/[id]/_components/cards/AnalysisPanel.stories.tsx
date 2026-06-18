@@ -1,6 +1,6 @@
-import type {Meta, StoryObj} from "@storybook/react";
+import {invoicePresets, storyInvoice, withEntityPreset, WithViewInvoiceContext} from "@/app/domains/invoices/_storybook";
 import type {Invoice} from "@/types/invoices";
-import {invoicePresets, WithViewInvoiceContext, storyInvoice, withEntityPreset} from "@/app/domains/invoices/_storybook";
+import type {Meta, StoryObj} from "@storybook/react";
 import {AnalysisPanel} from "./AnalysisPanel";
 
 type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};

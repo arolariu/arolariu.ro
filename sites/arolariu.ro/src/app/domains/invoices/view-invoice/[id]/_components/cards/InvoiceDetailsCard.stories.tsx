@@ -1,17 +1,17 @@
-import type {Meta, StoryObj} from "@storybook/react";
+import type {Currency} from "@/types/DDD/SharedKernel/Currency";
 import type {Invoice} from "@/types/invoices";
+import type {PaymentType} from "@/types/invoices/Payment";
+import type {Meta, StoryObj} from "@storybook/react";
 import {
   invoicePresets,
-  WithViewInvoiceContext,
   storyInvoice,
   storyMerchant,
   storyOnlineInvoice,
   storyOnlineMerchant,
   withEntityPreset,
+  WithViewInvoiceContext,
 } from "../../../../_storybook";
 import {InvoiceDetailsCard} from "./InvoiceDetailsCard";
-import type {Currency} from "@/types/DDD/SharedKernel/Currency";
-import type {PaymentType} from "@/types/invoices/Payment";
 
 type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
@@ -40,7 +40,7 @@ const foreignCurrencyInvoice: Invoice = {
     currency: euroCurrency,
     totalCostAmount: 59.99,
     totalTaxAmount: 11.39,
-    subtotalAmount: 48.60,
+    subtotalAmount: 48.6,
     tipAmount: 0,
   },
   items: [
@@ -54,7 +54,7 @@ const foreignCurrencyInvoice: Invoice = {
     {
       amount: 11.39,
       rate: 19,
-      netAmount: 48.60,
+      netAmount: 48.6,
       description: "VAT 19%",
     },
   ],
@@ -98,7 +98,9 @@ type Story = StoryObj<StoryArgs>;
 
 export const StandardInvoice: Story = {
   render: ({invoice}) => (
-    <WithViewInvoiceContext invoice={invoice} merchant={storyMerchant}>
+    <WithViewInvoiceContext
+      invoice={invoice}
+      merchant={storyMerchant}>
       <div style={{width: "min(960px, 100vw)"}}>
         <InvoiceDetailsCard />
       </div>
@@ -115,7 +117,9 @@ export const StandardInvoice: Story = {
 
 export const ForeignCurrencyInvoice: Story = {
   render: () => (
-    <WithViewInvoiceContext invoice={foreignCurrencyInvoice} merchant={storyOnlineMerchant}>
+    <WithViewInvoiceContext
+      invoice={foreignCurrencyInvoice}
+      merchant={storyOnlineMerchant}>
       <div style={{width: "min(960px, 100vw)"}}>
         <InvoiceDetailsCard />
       </div>
@@ -132,7 +136,9 @@ export const ForeignCurrencyInvoice: Story = {
 
 export const EmptyLineItems: Story = {
   render: () => (
-    <WithViewInvoiceContext invoice={emptyInvoice} merchant={storyMerchant}>
+    <WithViewInvoiceContext
+      invoice={emptyInvoice}
+      merchant={storyMerchant}>
       <div style={{width: "min(960px, 100vw)"}}>
         <InvoiceDetailsCard />
       </div>

@@ -1,7 +1,16 @@
-import type {Meta, StoryObj} from "@storybook/react";
+import {
+  WithViewInvoiceContext,
+  invoicePresets,
+  resetInvoiceStoryStores,
+  seedInvoiceStoryStores,
+  storyInvoice,
+  storyOnlineInvoice,
+  storyPublicInvoice,
+  withEntityPreset,
+} from "@/app/domains/invoices/_storybook";
 import type {Invoice} from "@/types/invoices";
-import {WithViewInvoiceContext, storyInvoice, storyPublicInvoice, storyOnlineInvoice, seedInvoiceStoryStores, resetInvoiceStoryStores, invoicePresets, withEntityPreset} from "@/app/domains/invoices/_storybook";
 import {InvoiceCategory} from "@/types/invoices";
+import type {Meta, StoryObj} from "@storybook/react";
 import {RelatedInvoicesCard} from "./RelatedInvoicesCard";
 
 type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
@@ -15,7 +24,8 @@ const meta = {
     docs: {
       disable: true,
       description: {
-        component: "Horizontal carousel card displaying related invoices based on merchant, category, or amount similarity. **Note:** These stories seed global invoice store state and are intended for isolated canvas viewing to prevent cross-story contamination.",
+        component:
+          "Horizontal carousel card displaying related invoices based on merchant, category, or amount similarity. **Note:** These stories seed global invoice store state and are intended for isolated canvas viewing to prevent cross-story contamination.",
       },
     },
   },
@@ -40,7 +50,7 @@ export const NoRelated: Story = {
       </WithViewInvoiceContext>
     );
   },
-  parameters: { docs: { description: { story: "No related invoices found - component returns null (only current invoice in store)." } } },
+  parameters: {docs: {description: {story: "No related invoices found - component returns null (only current invoice in store)."}}},
 };
 
 export const SameMerchant: Story = {
@@ -57,14 +67,26 @@ export const SameMerchant: Story = {
       </WithViewInvoiceContext>
     );
   },
-  parameters: { docs: { description: { story: "Carousel displaying 2 related invoices from the same merchant (current invoice filtered out)." } } },
+  parameters: {
+    docs: {description: {story: "Carousel displaying 2 related invoices from the same merchant (current invoice filtered out)."}},
+  },
 };
 
 export const SameCategory: Story = {
   render: () => {
     const currentInvoice = {...storyInvoice, category: InvoiceCategory.GROCERY, name: "Current Grocery Invoice"};
-    const related1 = {...storyPublicInvoice, category: InvoiceCategory.GROCERY, merchantReference: "merchant-diff-1", name: "Grocery Invoice 1"};
-    const related2 = {...storyOnlineInvoice, category: InvoiceCategory.GROCERY, merchantReference: "merchant-diff-2", name: "Grocery Invoice 2"};
+    const related1 = {
+      ...storyPublicInvoice,
+      category: InvoiceCategory.GROCERY,
+      merchantReference: "merchant-diff-1",
+      name: "Grocery Invoice 1",
+    };
+    const related2 = {
+      ...storyOnlineInvoice,
+      category: InvoiceCategory.GROCERY,
+      merchantReference: "merchant-diff-2",
+      name: "Grocery Invoice 2",
+    };
     resetInvoiceStoryStores();
     seedInvoiceStoryStores({invoices: [currentInvoice, related1, related2]});
     return (
@@ -73,7 +95,9 @@ export const SameCategory: Story = {
       </WithViewInvoiceContext>
     );
   },
-  parameters: { docs: { description: { story: "Carousel displaying 2 related invoices with the same category (current invoice filtered out)." } } },
+  parameters: {
+    docs: {description: {story: "Carousel displaying 2 related invoices with the same category (current invoice filtered out)."}},
+  },
 };
 
 export const MixedRelationships: Story = {
@@ -86,8 +110,18 @@ export const MixedRelationships: Story = {
       paymentInformation: {...storyInvoice.paymentInformation, totalCostAmount: 150.0},
       name: "Current Invoice",
     };
-    const sameMerchant = {...storyPublicInvoice, merchantReference: merchantId, category: InvoiceCategory.NOT_DEFINED, name: "Same Merchant"};
-    const sameCategory = {...storyOnlineInvoice, merchantReference: "different-merchant", category: InvoiceCategory.GROCERY, name: "Same Category"};
+    const sameMerchant = {
+      ...storyPublicInvoice,
+      merchantReference: merchantId,
+      category: InvoiceCategory.NOT_DEFINED,
+      name: "Same Merchant",
+    };
+    const sameCategory = {
+      ...storyOnlineInvoice,
+      merchantReference: "different-merchant",
+      category: InvoiceCategory.GROCERY,
+      name: "Same Category",
+    };
     resetInvoiceStoryStores();
     seedInvoiceStoryStores({invoices: [currentInvoice, sameMerchant, sameCategory]});
     return (
@@ -96,5 +130,7 @@ export const MixedRelationships: Story = {
       </WithViewInvoiceContext>
     );
   },
-  parameters: { docs: { description: { story: "Displays 2 related invoices: one by same merchant (priority 1), one by same category (priority 2)." } } },
+  parameters: {
+    docs: {description: {story: "Displays 2 related invoices: one by same merchant (priority 1), one by same category (priority 2)."}},
+  },
 };

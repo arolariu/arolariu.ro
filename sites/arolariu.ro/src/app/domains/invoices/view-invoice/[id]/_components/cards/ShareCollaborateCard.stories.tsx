@@ -1,7 +1,7 @@
-import type {Meta, StoryObj} from "@storybook/react";
-import type {Invoice} from "@/types/invoices";
-import {WithViewInvoiceContext, storyInvoice, invoicePresets, withEntityPreset} from "@/app/domains/invoices/_storybook";
+import {WithViewInvoiceContext, invoicePresets, storyInvoice, withEntityPreset} from "@/app/domains/invoices/_storybook";
 import {LAST_GUID} from "@/lib/utils.generic";
+import type {Invoice} from "@/types/invoices";
+import type {Meta, StoryObj} from "@storybook/react";
 import {ShareCollaborateCard} from "./ShareCollaborateCard";
 
 type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
@@ -35,7 +35,7 @@ export const Private: Story = {
       <ShareCollaborateCard />
     </WithViewInvoiceContext>
   ),
-  parameters: { docs: { description: { story: "Private invoice not shared with anyone - shows 'Private' badge." } } },
+  parameters: {docs: {description: {story: "Private invoice not shared with anyone - shows 'Private' badge."}}},
 };
 
 export const SharedWithUsers: Story = {
@@ -44,7 +44,7 @@ export const SharedWithUsers: Story = {
       <ShareCollaborateCard />
     </WithViewInvoiceContext>
   ),
-  parameters: { docs: { description: { story: "Invoice shared with 3 specific users - displays 'Shared' badge with count." } } },
+  parameters: {docs: {description: {story: "Invoice shared with 3 specific users - displays 'Shared' badge with count."}}},
 };
 
 export const Public: Story = {
@@ -53,7 +53,7 @@ export const Public: Story = {
       <ShareCollaborateCard />
     </WithViewInvoiceContext>
   ),
-  parameters: { docs: { description: { story: "Public invoice accessible to anyone with link - shows 'Public' badge." } } },
+  parameters: {docs: {description: {story: "Public invoice accessible to anyone with link - shows 'Public' badge."}}},
 };
 
 export const PublicAndShared: Story = {
@@ -62,5 +62,5 @@ export const PublicAndShared: Story = {
       <ShareCollaborateCard />
     </WithViewInvoiceContext>
   ),
-  parameters: { docs: { description: { story: "Invoice that is both public AND shared with 2 specific users." } } },
+  parameters: {docs: {description: {story: "Invoice that is both public AND shared with 2 specific users."}}},
 };

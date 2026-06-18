@@ -1,5 +1,5 @@
-import type {Meta, StoryObj} from "@storybook/react";
 import {storyInvoice, storyMerchant, WithViewInvoiceContext} from "@/app/domains/invoices/_storybook";
+import type {Meta, StoryObj} from "@storybook/react";
 import {InvoiceHeader} from "./InvoiceHeader";
 
 const ownerInvoice = {
@@ -24,8 +24,7 @@ const meta = {
     layout: "fullscreen",
     docs: {
       description: {
-        component:
-          "Mounts the real view-invoice header with ViewInvoiceContext, DialogContext, and the Storybook user-information mock.",
+        component: "Mounts the real view-invoice header with ViewInvoiceContext, DialogContext, and the Storybook user-information mock.",
       },
     },
   },
@@ -63,7 +62,8 @@ export const GuestView: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Real header for a shared invoice owned by another user, hiding owner-only edit and delete actions while keeping print/export actions.",
+        story:
+          "Real header for a shared invoice owned by another user, hiding owner-only edit and delete actions while keeping print/export actions.",
       },
     },
   },
