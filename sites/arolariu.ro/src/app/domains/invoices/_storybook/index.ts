@@ -22,36 +22,45 @@ export {storyRecipeEasy, storyRecipeHard, storyRecipes} from "./fixtures/recipeF
 
 // Scan fixtures
 export {
-	storyCachedImageScan,
-	storyCachedPdfScan,
-	storyImageScanUrl,
-	storyImageScanUrlSecondary,
-	storyImageScanUrlWide,
-	storyInvoiceImageScan,
-	storyInvoicePdfScan,
-	storyPdfScanUrl,
+  storyCachedImageScan,
+  storyCachedPdfScan,
+  storyImageScanUrl,
+  storyImageScanUrlSecondary,
+  storyImageScanUrlWide,
+  storyInvoiceImageScan,
+  storyInvoicePdfScan,
+  storyPdfScanUrl,
 } from "./fixtures/scanFixtures";
 
 // Invoice fixtures
 export {
-	storyCurrency,
-	storyInvoice,
-	storyInvoices,
-	storyOnlineInvoice,
-	storyPaymentInformation,
-	storyProducts,
-	storyPublicInvoice,
+  storyCurrency,
+  storyInvoice,
+  storyInvoices,
+  storyOnlineInvoice,
+  storyPaymentInformation,
+  storyProducts,
+  storyPublicInvoice,
 } from "./fixtures/invoiceFixtures";
+
+// Edge-case fixtures (empty / huge / long-text)
+export {
+  storyEmptyInvoice,
+  storyHugeInvoice,
+  storyLongNameInvoice,
+  storyLongNameMerchant,
+  storyManyInvoices,
+} from "./fixtures/edgeCaseFixtures";
 
 // Upload file utilities
 export {createStoryFile, storyImageFile, storyPdfFile} from "./fixtures/uploadFixtures";
 
 // Provider wrappers
+export {WithCreateInvoiceContext} from "./providers/CreateInvoiceProviders";
 export {WithInvoiceDialogs} from "./providers/DialogProviders";
 export {WithEditInvoiceContext} from "./providers/EditInvoiceProviders";
-export {WithViewInvoiceContext} from "./providers/ViewInvoiceProviders";
 export {InvoiceStoryFrame, WithScanUploadContext} from "./providers/ScanUploadProviders";
-export {WithCreateInvoiceContext} from "./providers/CreateInvoiceProviders";
+export {WithViewInvoiceContext} from "./providers/ViewInvoiceProviders";
 
 // Dialog harness
 export {OpenDialogButton} from "./providers/OpenDialogButton";
@@ -61,13 +70,13 @@ export {resetInvoiceStoryStores, seedInvoiceStoryStores, type SeedInvoiceStorySt
 export {resetPreferencesStore, seedPreferencesStore, type SeedPreferencesStoreOptions} from "./stores/preferencesStoryStore";
 
 // Action and browser utilities
-export {logStoryAction, successfulStoryAction, type StoryActionResult} from "./utils/storyActions";
 export {installStorybookBrowserMocks} from "./utils/browserMocks";
+export {logStoryAction, successfulStoryAction, type StoryActionResult} from "./utils/storyActions";
 
 // Mock server actions
 export * as mockInvoiceActions from "./mocks/actions/invoices";
-export * as mockScanActions from "./mocks/actions/scans";
 export * as mockMerchantActions from "./mocks/actions/merchants";
+export * as mockScanActions from "./mocks/actions/scans";
 
 // Mock hooks
 export * as mockInvoiceHooks from "./mocks/hooks/invoice";
@@ -81,5 +90,5 @@ export * from "./test-utils";
 
 // Story controls
 export {invoicePresets, merchantPresets, recipePresets, scanPresets} from "./controls/entityPresets";
-export {withEntityPreset} from "./controls/withEntityPreset";
 export {withAuthState} from "./controls/withAuthState";
+export {withEntityPreset} from "./controls/withEntityPreset";
