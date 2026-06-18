@@ -52,6 +52,28 @@ export {
   storyManyInvoices,
 } from "./fixtures/edgeCaseFixtures";
 
+// Data/state scenario fixtures (currency, amounts, confidence, sharing, dates)
+export {
+  PUBLIC_SHARE_GUID,
+  storyDeletedInvoice,
+  storyEpochDateInvoice,
+  storyEurInvoice,
+  storyFutureDatedInvoice,
+  storyGbpInvoice,
+  storyLargeTotalInvoice,
+  storyLowConfidenceInvoice,
+  storyManyAllergensInvoice,
+  storyManyUpdatesInvoice,
+  storyMinimalMerchant,
+  storyMixedConfidenceInvoice,
+  storySharedManyInvoice,
+  storySoftDeletedItemsInvoice,
+  storyTipInvoice,
+  storyUsdInvoice,
+  storyZeroPriceItemsInvoice,
+  storyZeroTotalInvoice,
+} from "./fixtures/dataStateFixtures";
+
 // Upload file utilities
 export {createStoryFile, storyImageFile, storyPdfFile} from "./fixtures/uploadFixtures";
 
