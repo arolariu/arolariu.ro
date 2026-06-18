@@ -1,8 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {FormEvent} from "react";
 import {PrivateMode} from "./ShareInvoiceDialog.Private";
 
 /* eslint-disable @typescript-eslint/no-empty-function -- Storybook action stubs */
 const noop = () => {};
+const onSubmit = (_event: FormEvent): void => {};
 /* eslint-enable @typescript-eslint/no-empty-function */
 
 /**
@@ -26,7 +28,7 @@ export const Default: Story = {
     onBack: noop,
     email: "",
     onEmailChange: noop,
-    onSendEmail: noop as unknown as (e: React.FormEvent) => void,
+    onSendEmail: onSubmit,
   },
 };
 
@@ -36,7 +38,7 @@ export const WithEmail: Story = {
     onBack: noop,
     email: "friend@example.com",
     onEmailChange: noop,
-    onSendEmail: noop as unknown as (e: React.FormEvent) => void,
+    onSendEmail: onSubmit,
   },
 };
 
@@ -46,7 +48,7 @@ export const MultipleEmails: Story = {
     onBack: noop,
     email: "user1@example.com, user2@example.com",
     onEmailChange: noop,
-    onSendEmail: noop as unknown as (e: React.FormEvent) => void,
+    onSendEmail: onSubmit,
   },
 };
 
@@ -56,7 +58,7 @@ export const LongEmail: Story = {
     onBack: noop,
     email: "verylongemailaddresswithlotofcharacters@subdomain.example-domain.com",
     onEmailChange: noop,
-    onSendEmail: noop as unknown as (e: React.FormEvent) => void,
+    onSendEmail: onSubmit,
   },
 };
 
@@ -66,6 +68,6 @@ export const EmptyForm: Story = {
     onBack: noop,
     email: "",
     onEmailChange: noop,
-    onSendEmail: noop as unknown as (e: React.FormEvent) => void,
+    onSendEmail: onSubmit,
   },
 };
