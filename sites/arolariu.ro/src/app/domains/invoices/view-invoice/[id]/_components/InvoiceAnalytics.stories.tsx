@@ -62,3 +62,160 @@ export const NoItems: Story = {
     </WithViewInvoiceContext>
   ),
 };
+
+/** Invoice with many items (20) — rich analytics data. */
+export const ManyItems: Story = {
+  decorators: [
+    (Story) => {
+      seedInvoiceStoryStores({invoices: storyInvoices});
+      return <Story />;
+    },
+  ],
+  render: () => {
+    const manyItemsInvoice = {
+      ...storyInvoice,
+      items: Array.from({length: 20}, (_, i) => ({
+        ...storyInvoice.items[0]!,
+        name: `Item ${i + 1}`,
+        price: 10 + i * 2,
+      })),
+    };
+    return (
+      <WithViewInvoiceContext invoice={manyItemsInvoice}>
+        <InvoiceAnalytics />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Analytics for an invoice with 20 line items. Tests chart rendering, category distribution, and price breakdown with rich data.",
+      },
+    },
+  },
+};
+
+/** Invoice with EUR currency — multi-currency analytics. */
+export const EurInvoice: Story = {
+  decorators: [
+    (Story) => {
+      seedInvoiceStoryStores({invoices: storyInvoices});
+      return <Story />;
+    },
+  ],
+  render: () => {
+    const eurInvoice = {
+      ...storyInvoice,
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        currency: {code: "EUR", symbol: "€", name: "Euro"},
+        totalCostAmount: 125.5,
+      },
+    };
+    return (
+      <WithViewInvoiceContext invoice={eurInvoice}>
+        <InvoiceAnalytics />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Analytics for an invoice in EUR currency. Tests currency formatting and symbol rendering in charts and summaries.",
+      },
+    },
+  },
+};
+
+/** Invoice with USD currency — US dollar analytics. */
+export const UsdInvoice: Story = {
+  decorators: [
+    (Story) => {
+      seedInvoiceStoryStores({invoices: storyInvoices});
+      return <Story />;
+    },
+  ],
+  render: () => {
+    const usdInvoice = {
+      ...storyInvoice,
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        currency: {code: "USD", symbol: "$", name: "US Dollar"},
+        totalCostAmount: 89.99,
+      },
+    };
+    return (
+      <WithViewInvoiceContext invoice={usdInvoice}>
+        <InvoiceAnalytics />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Analytics for an invoice in USD currency. Tests dollar symbol rendering and US currency formatting.",
+      },
+    },
+  },
+};
+
+/** Analytics with many invoices in store (50) — comparison analytics stress test. */
+export const WithManyInvoices: Story = {
+  decorators: [
+    (Story) => {
+      const manyInvoices = Array.from({length: 50}, (_, i) => ({
+        ...storyInvoice,
+        id: `invoice-analytics-many-${i}`,
+        name: `Invoice ${i + 1}`,
+        paymentInformation: {
+          ...storyInvoice.paymentInformation,
+          totalCostAmount: 50 + i * 5,
+        },
+      }));
+      seedInvoiceStoryStores({invoices: manyInvoices});
+      return <Story />;
+    },
+  ],
+  render: () => (
+    <WithViewInvoiceContext invoice={storyInvoice}>
+      <InvoiceAnalytics />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Analytics with 50 invoices in store. Tests comparison tab rendering, trend calculations, and performance with large dataset.",
+      },
+    },
+  },
+};
+
+/** Analytics with single item invoice — minimal data. */
+export const SingleItemInvoice: Story = {
+  decorators: [
+    (Story) => {
+      seedInvoiceStoryStores({invoices: storyInvoices});
+      return <Story />;
+    },
+  ],
+  render: () => {
+    const singleItemInvoice = {
+      ...storyInvoice,
+      items: [storyInvoice.items[0]!],
+    };
+    return (
+      <WithViewInvoiceContext invoice={singleItemInvoice}>
+        <InvoiceAnalytics />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Analytics for an invoice with only one line item. Tests minimal data state and chart rendering with sparse data.",
+      },
+    },
+  },
+};

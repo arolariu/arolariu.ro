@@ -25,7 +25,13 @@ const meta = {
       },
     },
   },
-  decorators: [(Story) => <WithScanUploadContext><Story /></WithScanUploadContext>],
+  decorators: [
+    (Story) => (
+      <WithScanUploadContext>
+        <Story />
+      </WithScanUploadContext>
+    ),
+  ],
 } satisfies Meta<typeof UploadPreview>;
 
 export default meta;
@@ -76,6 +82,139 @@ export const EmptyState: Story = {
     docs: {
       description: {
         story: "No pending uploads in the real ScanUploadContext; UploadPreview intentionally renders nothing.",
+      },
+    },
+  },
+};
+
+/** Harness for seeding single file upload. */
+function UploadPreviewWithSingleFile(): React.JSX.Element {
+  const {addFiles} = useScanUpload();
+
+  useEffect(() => {
+    const mockFiles = [createStoryFile("receipt.jpg", "image/jpeg", 1024 * 150)];
+    void addFiles(mockFiles, "input");
+  }, [addFiles]);
+
+  return <UploadPreview />;
+}
+
+/** Single file upload — minimal viable upload preview. */
+export const SingleFile: Story = {
+  render: () => <UploadPreviewWithSingleFile />,
+  parameters: {
+    docs: {
+      description: {
+        story: "Upload preview with single file pending. Tests sparse layout rendering between empty and multi-file states.",
+      },
+    },
+  },
+};
+
+/** Harness for seeding many file uploads (10 files). */
+function UploadPreviewWithManyFiles(): React.JSX.Element {
+  const {addFiles} = useScanUpload();
+
+  useEffect(() => {
+    const mockFiles = Array.from({length: 10}, (_, i) => createStoryFile(`receipt-${i + 1}.jpg`, "image/jpeg", 1024 * (120 + i * 10)));
+    void addFiles(mockFiles, "input");
+  }, [addFiles]);
+
+  return <UploadPreview />;
+}
+
+/** Many files (10) — bulk upload test. */
+export const ManyFiles: Story = {
+  render: () => <UploadPreviewWithManyFiles />,
+  parameters: {
+    docs: {
+      description: {
+        story: "Upload preview with 10 pending files. Tests grid layout, pagination, and rendering performance with bulk uploads.",
+      },
+    },
+  },
+};
+
+/** Harness for seeding mixed file types (images and PDFs). */
+function UploadPreviewWithMixedTypes(): React.JSX.Element {
+  const {addFiles} = useScanUpload();
+
+  useEffect(() => {
+    const mockFiles = [
+      createStoryFile("receipt-1.jpg", "image/jpeg", 1024 * 200),
+      createStoryFile("invoice-1.pdf", "application/pdf", 1024 * 600),
+      createStoryFile("receipt-2.jpg", "image/jpeg", 1024 * 180),
+      createStoryFile("invoice-2.pdf", "application/pdf", 1024 * 550),
+      createStoryFile("receipt-3.jpg", "image/jpeg", 1024 * 160),
+    ];
+    void addFiles(mockFiles, "input");
+  }, [addFiles]);
+
+  return <UploadPreview />;
+}
+
+/** Mixed file types (images and PDFs). */
+export const MixedFileTypes: Story = {
+  render: () => <UploadPreviewWithMixedTypes />,
+  parameters: {
+    docs: {
+      description: {
+        story: "Upload preview with mixed file types (JPEGs and PDFs). Tests rendering of different file format cards in the same grid.",
+      },
+    },
+  },
+};
+
+/** Harness for seeding two files. */
+function UploadPreviewWithTwoFiles(): React.JSX.Element {
+  const {addFiles} = useScanUpload();
+
+  useEffect(() => {
+    const mockFiles = [
+      createStoryFile("grocery-receipt.jpg", "image/jpeg", 1024 * 220),
+      createStoryFile("restaurant-bill.pdf", "application/pdf", 1024 * 480),
+    ];
+    void addFiles(mockFiles, "input");
+  }, [addFiles]);
+
+  return <UploadPreview />;
+}
+
+/** Two files — minimal multi-file upload. */
+export const TwoFiles: Story = {
+  render: () => <UploadPreviewWithTwoFiles />,
+  parameters: {
+    docs: {
+      description: {
+        story: "Upload preview with two files (one image, one PDF). Tests minimal multi-file layout rendering.",
+      },
+    },
+  },
+};
+
+/** Harness for seeding three files. */
+function UploadPreviewWithThreeFiles(): React.JSX.Element {
+  const {addFiles} = useScanUpload();
+
+  useEffect(() => {
+    const mockFiles = [
+      createStoryFile("scan-1.jpg", "image/jpeg", 1024 * 195),
+      createStoryFile("scan-2.jpg", "image/jpeg", 1024 * 210),
+      createStoryFile("scan-3.pdf", "application/pdf", 1024 * 530),
+    ];
+    void addFiles(mockFiles, "input");
+  }, [addFiles]);
+
+  return <UploadPreview />;
+}
+
+/** Three files — small batch upload. */
+export const ThreeFiles: Story = {
+  render: () => <UploadPreviewWithThreeFiles />,
+  parameters: {
+    docs: {
+      description: {
+        story: "Upload preview with three files. Tests small batch layout and grid responsiveness.",
       },
     },
   },

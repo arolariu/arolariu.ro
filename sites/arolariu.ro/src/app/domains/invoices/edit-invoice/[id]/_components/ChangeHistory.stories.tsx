@@ -1,5 +1,5 @@
-import type {Meta, StoryObj} from "@storybook/react";
 import {WithEditInvoiceContext, storyInvoice} from "@/app/domains/invoices/_storybook";
+import type {Meta, StoryObj} from "@storybook/react";
 import ChangeHistory from "./ChangeHistory";
 
 /**
@@ -88,8 +88,7 @@ export const WithPreviousModifications: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Timeline showing creation date and last modified entry. The invoice was most recently modified 2 hours ago.",
+        story: "Timeline showing creation date and last modified entry. The invoice was most recently modified 2 hours ago.",
       },
     },
   },
@@ -150,7 +149,8 @@ export const RecentlyCreated: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Timeline for a brand new invoice created just 2 minutes ago. Demonstrates relative time formatting for very recent timestamps.",
+        story:
+          "Timeline for a brand new invoice created just 2 minutes ago. Demonstrates relative time formatting for very recent timestamps.",
       },
     },
   },
@@ -181,7 +181,8 @@ export const NeverModified: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Invoice created 7 days ago with no modifications since. The creation and last modified timestamps match, showing a single timeline entry.",
+        story:
+          "Invoice created 7 days ago with no modifications since. The creation and last modified timestamps match, showing a single timeline entry.",
       },
     },
   },
@@ -212,6 +213,106 @@ export const GroceryInvoice: Story = {
     docs: {
       description: {
         story: "Timeline for a grocery invoice created 5 days ago with last modified entry from 3 days ago.",
+      },
+    },
+  },
+};
+
+/** Very frequent modifications (20 updates) — high-activity invoice. */
+export const ManyUpdates: Story = {
+  render: () => {
+    const invoice = {
+      ...storyInvoice,
+      createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), // 60 days ago
+      lastUpdatedAt: new Date(Date.now() - 1 * 60 * 1000), // 1 minute ago
+      numberOfUpdates: 20,
+    };
+    return (
+      <WithEditInvoiceContext invoice={invoice}>
+        <ChangeHistory />
+      </WithEditInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Timeline for an invoice with 20 updates over 60 days. Tests rendering of high-activity invoice history and frequent modification indicators.",
+      },
+    },
+  },
+};
+
+/** Modified within the last minute — real-time editing. */
+export const JustModified: Story = {
+  render: () => {
+    const invoice = {
+      ...storyInvoice,
+      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
+      lastUpdatedAt: new Date(Date.now() - 30 * 1000), // 30 seconds ago
+      numberOfUpdates: 5,
+    };
+    return (
+      <WithEditInvoiceContext invoice={invoice}>
+        <ChangeHistory />
+      </WithEditInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Timeline for an invoice modified 30 seconds ago. Tests real-time relative timestamp formatting (e.g., 'just now', 'seconds ago').",
+      },
+    },
+  },
+};
+
+/** Very old invoice (1 year) with recent modification. */
+export const OldInvoiceRecentlyUpdated: Story = {
+  render: () => {
+    const invoice = {
+      ...storyInvoice,
+      createdAt: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000), // 1 year ago
+      lastUpdatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+      numberOfUpdates: 8,
+    };
+    return (
+      <WithEditInvoiceContext invoice={invoice}>
+        <ChangeHistory />
+      </WithEditInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Timeline for a 1-year-old invoice that was modified 2 hours ago. Tests long timespan rendering between creation and recent modification.",
+      },
+    },
+  },
+};
+
+/** Single update — minimal modification history. */
+export const SingleUpdate: Story = {
+  render: () => {
+    const invoice = {
+      ...storyInvoice,
+      createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 2 weeks ago
+      lastUpdatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 1 week ago
+      numberOfUpdates: 1,
+    };
+    return (
+      <WithEditInvoiceContext invoice={invoice}>
+        <ChangeHistory />
+      </WithEditInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Timeline for an invoice with exactly one update. Tests minimal modification history rendering between never-modified and many-updates states.",
       },
     },
   },

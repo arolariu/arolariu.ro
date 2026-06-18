@@ -142,3 +142,51 @@ export const ManySelected: Story = {
     onCreateInvoice: () => console.log("Create invoices clicked"),
   },
 };
+
+/** Two scans selected — minimal multi-selection. */
+export const TwoSelected: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Toolbar with two scans selected. Tests minimal plural selection rendering between single and many states.",
+      },
+    },
+  },
+  decorators: [
+    (Story) => {
+      const twoScans = [createMockScan("scan-1"), createMockScan("scan-2")] as const;
+      useEffect(() => {
+        return seedSelectedScans(twoScans);
+      }, []);
+
+      return <Story />;
+    },
+  ],
+  args: {
+    onCreateInvoice: () => console.log("Create invoices clicked"),
+  },
+};
+
+/** Ten scans selected — moderate bulk selection. */
+export const TenSelected: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Toolbar with ten scans selected. Tests moderate selection count display and bulk action behavior.",
+      },
+    },
+  },
+  decorators: [
+    (Story) => {
+      const tenScans = Array.from({length: 10}, (_, i) => createMockScan(`scan-ten-${i + 1}`));
+      useEffect(() => {
+        return seedSelectedScans(tenScans);
+      }, []);
+
+      return <Story />;
+    },
+  ],
+  args: {
+    onCreateInvoice: () => console.log("Create invoices clicked"),
+  },
+};

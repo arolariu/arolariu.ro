@@ -181,3 +181,120 @@ export const MixedScanTypes: Story = {
     },
   },
 };
+
+/** All scans selected — full selection state. */
+export const AllSelected: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({
+      scans: [storyCachedImageScan, storyCachedPdfScan, thirdReadyScan],
+      selectedScans: [storyCachedImageScan, storyCachedPdfScan, thirdReadyScan],
+    });
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with all scans selected. Tests full selection UI state and select-all behavior.",
+      },
+    },
+  },
+};
+
+/** Three scans with one selected — partial selection. */
+export const PartialSelection: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({
+      scans: [storyCachedImageScan, storyCachedPdfScan, thirdReadyScan],
+      selectedScans: [storyCachedPdfScan],
+    });
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with partial selection (1 of 3 scans selected). Tests mixed selection state rendering.",
+      },
+    },
+  },
+};
+
+/** Very many scans (30) — performance and pagination test. */
+export const VeryManyScans: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    const veryManyScans: CachedScan[] = Array.from({length: 30}, (_, i) => ({
+      ...storyCachedImageScan,
+      id: `scan-story-vm-${String(i).padStart(3, "0")}`,
+      name: `Receipt ${i + 1}`,
+      uploadedAt: new Date(Date.now() - i * 3600000),
+      metadata: {
+        ...storyCachedImageScan.metadata,
+        scanId: `scan-story-vm-${String(i).padStart(3, "0")}`,
+        uploadedAt: new Date(Date.now() - i * 3600000),
+      },
+    }));
+    seedInvoiceStoryStores({
+      scans: veryManyScans,
+      selectedScans: [],
+    });
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with 30 scan cards. Tests pagination, virtualization, and rendering performance with large dataset.",
+      },
+    },
+  },
+};
+
+/** Six scans — moderate dataset. */
+export const SixScans: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    const sixScans: CachedScan[] = Array.from({length: 6}, (_, i) => ({
+      ...storyCachedImageScan,
+      id: `scan-story-six-${i}`,
+      name: `Scan ${i + 1}`,
+      uploadedAt: new Date(Date.now() - i * 3600000),
+      metadata: {
+        ...storyCachedImageScan.metadata,
+        scanId: `scan-story-six-${i}`,
+        uploadedAt: new Date(Date.now() - i * 3600000),
+      },
+    }));
+    seedInvoiceStoryStores({
+      scans: sixScans,
+      selectedScans: [],
+    });
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with six scan cards. Tests moderate grid layout and responsive design.",
+      },
+    },
+  },
+};
+
+/** All PDFs (no images). */
+export const AllPDFs: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    const pdfScans: CachedScan[] = Array.from({length: 5}, (_, i) => ({
+      ...storyCachedPdfScan,
+      id: `scan-story-pdf-${i}`,
+      name: `Invoice ${i + 1}.pdf`,
+    }));
+    seedInvoiceStoryStores({
+      scans: pdfScans,
+      selectedScans: [],
+    });
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with only PDF scans. Tests PDF-specific rendering and icon display without image thumbnails.",
+      },
+    },
+  },
+};

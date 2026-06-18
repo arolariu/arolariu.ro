@@ -200,3 +200,203 @@ export const SixMessages: Story = {
     },
   },
 };
+
+/** Single user message — one-sided conversation edge case. */
+export const SingleUserMessage: Story = {
+  args: {
+    messages: [
+      {
+        id: "1",
+        role: "user",
+        content: "Show me all my grocery spending from last month",
+        timestamp: new Date(Date.now() - 1800000).toISOString(),
+      },
+    ],
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Message list with single user message (no assistant response yet). Tests one-sided conversation rendering and waiting state.",
+      },
+    },
+  },
+};
+
+/** Three messages — minimal conversation with context. */
+export const ThreeMessages: Story = {
+  args: {
+    messages: [
+      {
+        id: "1",
+        role: "user",
+        content: "What's my total spending this month?",
+        timestamp: new Date(Date.now() - 3600000).toISOString(),
+      },
+      {
+        id: "2",
+        role: "assistant",
+        content: "Your total spending for this month is 1,245.50 RON across 28 invoices.",
+        timestamp: new Date(Date.now() - 3500000).toISOString(),
+      },
+      {
+        id: "3",
+        role: "user",
+        content: "How does that compare to my average?",
+        timestamp: new Date(Date.now() - 3400000).toISOString(),
+      },
+    ],
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Message list with three messages showing incomplete conversation (user awaiting response). Tests mid-conversation state.",
+      },
+    },
+  },
+};
+
+/** Ten messages — larger conversation test. */
+export const TenMessages: Story = {
+  args: {
+    messages: Array.from({length: 10}, (_, i) => ({
+      id: String(i + 1),
+      role: i % 2 === 0 ? ("user" as const) : ("assistant" as const),
+      content:
+        i % 2 === 0
+          ? `User question ${i / 2 + 1}: Can you analyze my spending patterns?`
+          : `Assistant response ${Math.floor(i / 2) + 1}: Here's what I found in your invoices...`,
+      timestamp: new Date(Date.now() - (10 - i) * 300000).toISOString(),
+    })),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Message list with 10 alternating messages. Tests scrolling behavior and layout with larger conversation history.",
+      },
+    },
+  },
+};
+
+/** Message with markdown-style formatting — structured content test. */
+export const WithStructuredContent: Story = {
+  args: {
+    messages: [
+      {
+        id: "1",
+        role: "user",
+        content: "Give me a detailed breakdown of my spending",
+        timestamp: new Date(Date.now() - 3600000).toISOString(),
+      },
+      {
+        id: "2",
+        role: "assistant",
+        content:
+          "Here's your spending breakdown:\n\n**Top Categories:**\n1. Groceries - 450.00 RON (45%)\n2. Dining - 250.00 RON (25%)\n3. Transportation - 150.00 RON (15%)\n\n**Monthly Trend:**\n• Current month: 1,000 RON\n• Last month: 900 RON\n• Change: +11%\n\n**Recommendations:**\n- Consider meal planning to reduce grocery costs\n- Look for loyalty programs at your frequent merchants",
+        timestamp: new Date(Date.now() - 3500000).toISOString(),
+      },
+    ],
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Message list with structured markdown-style content including lists, bold text, and bullet points. Tests rich content rendering.",
+      },
+    },
+  },
+};
+
+/** Four messages — balanced conversation. */
+export const FourMessages: Story = {
+  args: {
+    messages: [
+      {
+        id: "1",
+        role: "user",
+        content: "What were my top merchants last month?",
+        timestamp: new Date(Date.now() - 3600000).toISOString(),
+      },
+      {
+        id: "2",
+        role: "assistant",
+        content: "Your top merchants were Carrefour (8 visits), Kaufland (5 visits), and Mega Image (4 visits).",
+        timestamp: new Date(Date.now() - 3500000).toISOString(),
+      },
+      {
+        id: "3",
+        role: "user",
+        content: "How much did I spend at Carrefour?",
+        timestamp: new Date(Date.now() - 3400000).toISOString(),
+      },
+      {
+        id: "4",
+        role: "assistant",
+        content: "You spent a total of 487.50 RON at Carrefour across 8 invoices.",
+        timestamp: new Date(Date.now() - 3300000).toISOString(),
+      },
+    ],
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Message list with four messages in balanced conversation. Tests even back-and-forth rendering.",
+      },
+    },
+  },
+};
+
+/** Fifteen messages — scroll stress test. */
+export const FifteenMessages: Story = {
+  args: {
+    messages: Array.from({length: 15}, (_, i) => ({
+      id: String(i + 1),
+      role: i % 2 === 0 ? ("user" as const) : ("assistant" as const),
+      content:
+        i % 2 === 0
+          ? `User message ${i / 2 + 1}: Tell me about my spending habits`
+          : `Assistant message ${Math.floor(i / 2) + 1}: Based on your data, I can share these insights...`,
+      timestamp: new Date(Date.now() - (15 - i) * 300000).toISOString(),
+    })),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Message list with 15 alternating messages. Tests scroll performance and long conversation rendering.",
+      },
+    },
+  },
+};
+
+/** Very short messages — minimal content test. */
+export const ShortMessages: Story = {
+  args: {
+    messages: [
+      {
+        id: "1",
+        role: "user",
+        content: "Hi",
+        timestamp: new Date(Date.now() - 3600000).toISOString(),
+      },
+      {
+        id: "2",
+        role: "assistant",
+        content: "Hello! How can I help?",
+        timestamp: new Date(Date.now() - 3500000).toISOString(),
+      },
+      {
+        id: "3",
+        role: "user",
+        content: "Thanks",
+        timestamp: new Date(Date.now() - 3400000).toISOString(),
+      },
+    ],
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Message list with very short messages. Tests minimal content layout and bubble rendering.",
+      },
+    },
+  },
+};

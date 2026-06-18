@@ -294,3 +294,25 @@ export const SingleItem: Story = {
     },
   },
 };
+
+/** Invoice with EUR currency — Euro symbol rendering. */
+export const EurInvoice: Story = {
+  args: {
+    invoice: {
+      ...groceryInvoice,
+      paymentInformation: {
+        ...groceryInvoice.paymentInformation,
+        currency: {code: "EUR", symbol: "€", name: "Euro"},
+        totalCostAmount: 215.5,
+      },
+    },
+    merchant: storyMerchant,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Print header for an invoice in EUR currency. Tests Euro symbol rendering and currency formatting.",
+      },
+    },
+  },
+};

@@ -68,3 +68,78 @@ export const GuestView: Story = {
     },
   },
 };
+
+/** Important invoice — flagged for attention. */
+export const ImportantInvoice: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={{...ownerInvoice, isImportant: true}}
+      merchant={storyMerchant}>
+      <InvoiceHeader />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Header for an invoice marked as important. Tests important flag indicator rendering and visual prominence.",
+      },
+    },
+  },
+};
+
+/** Invoice with very long name — text overflow test. */
+export const LongInvoiceName: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...ownerInvoice,
+        name: "Monthly Grocery Shopping Including Fresh Produce, Dairy Products, Beverages, Household Cleaning Supplies and Personal Care Items from Multiple Stores",
+      }}
+      merchant={storyMerchant}>
+      <InvoiceHeader />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Header with very long invoice name. Tests text truncation, wrapping, and layout resilience with extended titles.",
+      },
+    },
+  },
+};
+
+/** Soft-deleted invoice — archived state. */
+export const SoftDeleted: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={{...ownerInvoice, isSoftDeleted: true}}
+      merchant={storyMerchant}>
+      <InvoiceHeader />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Header for a soft-deleted (archived) invoice. Tests deleted state indicator and action availability.",
+      },
+    },
+  },
+};
+
+/** Invoice with no merchant data — minimal context. */
+export const NoMerchant: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={ownerInvoice}
+      merchant={null}>
+      <InvoiceHeader />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Header when merchant information is unavailable. Tests graceful handling of missing merchant data.",
+      },
+    },
+  },
+};

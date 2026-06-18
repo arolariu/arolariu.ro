@@ -305,3 +305,356 @@ export const WithDateRange: Story = {
   },
   render: (args) => <FilterBarHarness initialFilters={args.filters} />,
 };
+
+/** With many active filters (7 filters) — max complexity state. */
+export const ManyActiveFilters: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Filter bar with 7 active filters: search, date range, amount range, category, payment type, currency, and custom sort. Tests complex filter state rendering and count badge with high filter count.",
+      },
+    },
+  },
+  args: {
+    filters: {
+      search: "Carrefour",
+      dateFrom: "2024-01-01",
+      dateTo: "2024-12-31",
+      amountMin: 20,
+      amountMax: 500,
+      categories: [100, 200],
+      paymentTypes: [1, 2],
+      currencies: ["RON", "EUR"],
+      sortBy: "amount",
+      sortOrder: "asc",
+      view: "grid",
+    },
+    onFiltersChange: (): void => {},
+    activeFilterCount: 7,
+    viewMode: "grid",
+    onViewModeChange: (): void => {},
+    filteredCount: 18,
+  },
+  render: (args) => <FilterBarHarness initialFilters={args.filters} />,
+};
+
+/** With currency filter only. */
+export const WithCurrencyFilter: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Filter bar with currency selector filter applied (EUR, USD). Tests multi-currency filtering and currency dropdown state.",
+      },
+    },
+  },
+  args: {
+    filters: {
+      search: "",
+      dateFrom: null,
+      dateTo: null,
+      amountMin: null,
+      amountMax: null,
+      categories: [],
+      paymentTypes: [],
+      currencies: ["EUR", "USD"],
+      sortBy: "date",
+      sortOrder: "desc",
+      view: "table",
+    },
+    onFiltersChange: (): void => {},
+    activeFilterCount: 2,
+    viewMode: "table",
+    onViewModeChange: (): void => {},
+    filteredCount: 22,
+  },
+  render: (args) => <FilterBarHarness initialFilters={args.filters} />,
+};
+
+/** With category filter only — single dimension filtering. */
+export const WithCategoryFilter: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Filter bar with single category filter applied. Tests category selector state and single-dimension filtering.",
+      },
+    },
+  },
+  args: {
+    filters: {
+      search: "",
+      dateFrom: null,
+      dateTo: null,
+      amountMin: null,
+      amountMax: null,
+      categories: [100],
+      paymentTypes: [],
+      currencies: [],
+      sortBy: "date",
+      sortOrder: "desc",
+      view: "table",
+    },
+    onFiltersChange: (): void => {},
+    activeFilterCount: 1,
+    viewMode: "table",
+    onViewModeChange: (): void => {},
+    filteredCount: 8,
+  },
+  render: (args) => <FilterBarHarness initialFilters={args.filters} />,
+};
+
+/** With payment type filter only. */
+export const WithPaymentTypeFilter: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Filter bar with payment type filter applied (cash payments). Tests payment type selector and filtering behavior.",
+      },
+    },
+  },
+  args: {
+    filters: {
+      search: "",
+      dateFrom: null,
+      dateTo: null,
+      amountMin: null,
+      amountMax: null,
+      categories: [],
+      paymentTypes: [1],
+      currencies: [],
+      sortBy: "date",
+      sortOrder: "desc",
+      view: "table",
+    },
+    onFiltersChange: (): void => {},
+    activeFilterCount: 1,
+    viewMode: "table",
+    onViewModeChange: (): void => {},
+    filteredCount: 15,
+  },
+  render: (args) => <FilterBarHarness initialFilters={args.filters} />,
+};
+
+/** Sort by amount ascending — non-default sort. */
+export const SortByAmountAscending: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Filter bar with amount-based ascending sort. Tests sort control rendering with non-default sort criteria.",
+      },
+    },
+  },
+  args: {
+    filters: {
+      search: "",
+      dateFrom: null,
+      dateTo: null,
+      amountMin: null,
+      amountMax: null,
+      categories: [],
+      paymentTypes: [],
+      currencies: [],
+      sortBy: "amount",
+      sortOrder: "asc",
+      view: "table",
+    },
+    onFiltersChange: (): void => {},
+    activeFilterCount: 0,
+    viewMode: "table",
+    onViewModeChange: (): void => {},
+    filteredCount: 3,
+  },
+  render: (args) => <FilterBarHarness initialFilters={args.filters} />,
+};
+
+/** With minimal amount range (min only). */
+export const WithMinAmountOnly: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Filter bar with only minimum amount filter set (no maximum). Tests partial numeric range filtering.",
+      },
+    },
+  },
+  args: {
+    filters: {
+      search: "",
+      dateFrom: null,
+      dateTo: null,
+      amountMin: 100,
+      amountMax: null,
+      categories: [],
+      paymentTypes: [],
+      currencies: [],
+      sortBy: "amount",
+      sortOrder: "desc",
+      view: "table",
+    },
+    onFiltersChange: (): void => {},
+    activeFilterCount: 1,
+    viewMode: "table",
+    onViewModeChange: (): void => {},
+    filteredCount: 6,
+  },
+  render: (args) => <FilterBarHarness initialFilters={args.filters} />,
+};
+
+/** With search and date range combined. */
+export const SearchAndDateRange: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Filter bar with search query and date range combined. Tests compound text and temporal filtering.",
+      },
+    },
+  },
+  args: {
+    filters: {
+      search: "Kaufland",
+      dateFrom: "2024-06-01",
+      dateTo: "2024-06-30",
+      amountMin: null,
+      amountMax: null,
+      categories: [],
+      paymentTypes: [],
+      currencies: [],
+      sortBy: "date",
+      sortOrder: "desc",
+      view: "table",
+    },
+    onFiltersChange: (): void => {},
+    activeFilterCount: 3,
+    viewMode: "table",
+    onViewModeChange: (): void => {},
+    filteredCount: 4,
+  },
+  render: (args) => <FilterBarHarness initialFilters={args.filters} />,
+};
+
+/** With max amount only (no minimum). */
+export const WithMaxAmountOnly: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Filter bar with only maximum amount filter set (no minimum). Tests upper-bound-only numeric filtering.",
+      },
+    },
+  },
+  args: {
+    filters: {
+      search: "",
+      dateFrom: null,
+      dateTo: null,
+      amountMin: null,
+      amountMax: 50,
+      categories: [],
+      paymentTypes: [],
+      currencies: [],
+      sortBy: "amount",
+      sortOrder: "asc",
+      view: "table",
+    },
+    onFiltersChange: (): void => {},
+    activeFilterCount: 1,
+    viewMode: "table",
+    onViewModeChange: (): void => {},
+    filteredCount: 9,
+  },
+  render: (args) => <FilterBarHarness initialFilters={args.filters} />,
+};
+
+/** Multiple categories selected. */
+export const MultipleCategoriesSelected: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Filter bar with multiple categories selected. Tests multi-select category filtering.",
+      },
+    },
+  },
+  args: {
+    filters: {
+      search: "",
+      dateFrom: null,
+      dateTo: null,
+      amountMin: null,
+      amountMax: null,
+      categories: [100, 200, 300],
+      paymentTypes: [],
+      currencies: [],
+      sortBy: "date",
+      sortOrder: "desc",
+      view: "table",
+    },
+    onFiltersChange: (): void => {},
+    activeFilterCount: 3,
+    viewMode: "table",
+    onViewModeChange: (): void => {},
+    filteredCount: 14,
+  },
+  render: (args) => <FilterBarHarness initialFilters={args.filters} />,
+};
+
+/** Grid view with active filters. */
+export const GridViewWithFilters: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Filter bar in grid view mode with active search filter. Tests view mode + filtering combination.",
+      },
+    },
+  },
+  args: {
+    filters: {
+      search: "Lidl",
+      dateFrom: null,
+      dateTo: null,
+      amountMin: null,
+      amountMax: null,
+      categories: [],
+      paymentTypes: [],
+      currencies: [],
+      sortBy: "date",
+      sortOrder: "desc",
+      view: "grid",
+    },
+    onFiltersChange: (): void => {},
+    activeFilterCount: 1,
+    viewMode: "grid",
+    onViewModeChange: (): void => {},
+    filteredCount: 7,
+  },
+  render: (args) => <FilterBarHarness initialFilters={args.filters} />,
+};
+
+/** Zero filtered results. */
+export const ZeroResults: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Filter bar with filters applied but zero results. Tests empty result state rendering.",
+      },
+    },
+  },
+  args: {
+    filters: {
+      search: "NonexistentMerchant",
+      dateFrom: null,
+      dateTo: null,
+      amountMin: null,
+      amountMax: null,
+      categories: [],
+      paymentTypes: [],
+      currencies: [],
+      sortBy: "date",
+      sortOrder: "desc",
+      view: "table",
+    },
+    onFiltersChange: (): void => {},
+    activeFilterCount: 1,
+    viewMode: "table",
+    onViewModeChange: (): void => {},
+    filteredCount: 0,
+  },
+  render: (args) => <FilterBarHarness initialFilters={args.filters} />,
+};

@@ -1,6 +1,6 @@
-import type {Meta, StoryObj} from "@storybook/react";
 import {useScansStore} from "@/stores";
 import type {CachedScan} from "@/types/scans";
+import type {Meta, StoryObj} from "@storybook/react";
 import {storyCachedImageScan, storyCachedPdfScan} from "../../_storybook";
 import ScansHeader from "./ScansHeader";
 
@@ -81,6 +81,37 @@ export const Syncing: Story = {
     docs: {
       description: {
         story: "Header while scan synchronization is in progress, using the real disabled sync button state.",
+      },
+    },
+  },
+};
+
+/** Single scan — minimal count display. */
+export const SingleScan: Story = {
+  beforeEach: () => seedScansHeaderStore([storyCachedImageScan]),
+  parameters: {
+    docs: {
+      description: {
+        story: "Header with a single scan. Tests singular count display and minimal state rendering.",
+      },
+    },
+  },
+};
+
+/** Many scans (10) — larger count test. */
+export const ManyScans: Story = {
+  beforeEach: () => {
+    const manyScans = Array.from({length: 10}, (_, i) => ({
+      ...storyCachedImageScan,
+      id: `scan-header-many-${i}`,
+      name: `Scan ${i + 1}`,
+    }));
+    return seedScansHeaderStore(manyScans);
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Header with 10 scans. Tests count display with larger dataset and plural text rendering.",
       },
     },
   },

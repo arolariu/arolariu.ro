@@ -93,3 +93,64 @@ export const ManySelected: Story = {
     },
   },
 };
+
+/** Very large selection (50 invoices) — performance stress test. */
+export const VeryLargeSelection: Story = {
+  decorators: [
+    (Story) => {
+      resetInvoiceStoryStores();
+      seedInvoiceStoryStores({
+        selectedInvoices: storyManyInvoices.slice(0, 50),
+      });
+      return <Story />;
+    },
+  ],
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Toolbar with 50 invoices selected. Tests count display and bulk action UI with very large selections, verifying performance and layout stability.",
+      },
+    },
+  },
+};
+
+/** Two invoices selected — minimal multi-selection. */
+export const TwoSelected: Story = {
+  decorators: [
+    (Story) => {
+      resetInvoiceStoryStores();
+      seedInvoiceStoryStores({
+        selectedInvoices: [storyInvoice, storyPublicInvoice],
+      });
+      return <Story />;
+    },
+  ],
+  parameters: {
+    docs: {
+      description: {
+        story: "Toolbar with two invoices selected. Tests minimal plural selection rendering between single and many states.",
+      },
+    },
+  },
+};
+
+/** Five invoices selected — moderate selection. */
+export const FiveSelected: Story = {
+  decorators: [
+    (Story) => {
+      resetInvoiceStoryStores();
+      seedInvoiceStoryStores({
+        selectedInvoices: storyManyInvoices.slice(0, 5),
+      });
+      return <Story />;
+    },
+  ],
+  parameters: {
+    docs: {
+      description: {
+        story: "Toolbar with five invoices selected. Tests moderate selection count display and bulk action behavior.",
+      },
+    },
+  },
+};

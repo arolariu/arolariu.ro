@@ -32,3 +32,35 @@ export const Empty: Story = {
     </WithViewInvoiceContext>
   ),
 };
+
+/** Invoice with recipes only (no metadata). */
+export const RecipesOnly: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={{...storyInvoice, additionalMetadata: {}}}>
+      <InvoiceTabs />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Tabs with recipes present but no additional metadata. Tests recipes tab rendering without metadata.",
+      },
+    },
+  },
+};
+
+/** Invoice with metadata only (no recipes). */
+export const MetadataOnly: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={{...storyInvoice, possibleRecipes: []}}>
+      <InvoiceTabs />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Tabs with metadata present but no recipes. Tests metadata tab rendering without recipes.",
+      },
+    },
+  },
+};
