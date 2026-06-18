@@ -215,3 +215,11 @@ div[class*="popup-"] {
 div[class*="backdrop-"] {
   z-index: z('modal-backdrop') !important;
 }
+
+// Portaled positioners (e.g. Select/dropdown popups) can be opened from within
+// a dialog. Their positioner wrapper owns the stacking context, so it must sit
+// above the modal layer; otherwise the elevated popup is clipped behind the
+// dialog popup.
+div[class*="positioner-"] {
+  z-index: z('popover') !important;
+}

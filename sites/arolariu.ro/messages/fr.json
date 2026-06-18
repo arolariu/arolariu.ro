@@ -834,12 +834,16 @@
           "orClickBrowse": "ou cliquez pour parcourir"
         },
         "scanType": {
+          "bmp": "Image BMP",
+          "heic": "Image HEIC",
+          "heif": "Image HEIF",
           "jpeg": "Image JPEG",
           "label": "Type de scan",
           "other": "Autre",
           "pdf": "Document PDF",
           "placeholder": "Sélectionnez le type de scan",
-          "png": "Image PNG"
+          "png": "Image PNG",
+          "tiff": "Image TIFF"
         },
         "title": "Ajouter un nouveau scan",
         "toasts": {
