@@ -58,6 +58,7 @@ export {OpenDialogButton} from "./providers/OpenDialogButton";
 
 // Store helpers
 export {resetInvoiceStoryStores, seedInvoiceStoryStores, type SeedInvoiceStoryStoresOptions} from "./stores/invoiceStoryStores";
+export {resetPreferencesStore, seedPreferencesStore, type SeedPreferencesStoreOptions} from "./stores/preferencesStoryStore";
 
 // Action and browser utilities
 export {logStoryAction, successfulStoryAction, type StoryActionResult} from "./utils/storyActions";
