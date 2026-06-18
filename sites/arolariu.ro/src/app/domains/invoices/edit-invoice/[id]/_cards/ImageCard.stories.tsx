@@ -48,15 +48,6 @@ const invoiceWithMultipleScans = {
 const meta = {
   title: "arolariu.ro/IMS/Cards/Scan/ImageCard",
   component: ImageCard,
-  decorators: [
-    (Story) => (
-      <WithInvoiceDialogs>
-        <div style={{width: "min(420px, 100vw)"}}>
-          <Story />
-        </div>
-      </WithInvoiceDialogs>
-    ),
-  ],
   parameters: {
     layout: "centered",
     docs: {

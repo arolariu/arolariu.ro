@@ -8,6 +8,7 @@ import {
   storyMerchant,
   storyOnlineInvoice,
   storyOnlineMerchant,
+  storyProducts,
   withEntityPreset,
   WithViewInvoiceContext,
 } from "../../../../_storybook";
@@ -156,10 +157,10 @@ export const EmptyLineItems: Story = {
 /** Invoice with many line items — overflow/scroll test. */
 export const ManyLineItems: Story = {
   render: ({invoice}) => {
-    const manyItemsInvoice = {
+    const manyItemsInvoice: Invoice = {
       ...invoice,
       items: Array.from({length: 50}, (_, i) => ({
-        ...invoice.items[0],
+        ...(invoice.items[0] ?? storyProducts[0]),
         name: `Product ${i + 1}`,
         quantity: (i % 5) + 1,
         price: Number(((i % 20) + 2.99).toFixed(2)),
@@ -188,15 +189,15 @@ export const ManyLineItems: Story = {
 /** Invoice with very long product names. */
 export const LongProductNames: Story = {
   render: ({invoice}) => {
-    const longNamesInvoice = {
+    const longNamesInvoice: Invoice = {
       ...invoice,
       items: [
         {
-          ...invoice.items[0],
+          ...(invoice.items[0] ?? storyProducts[0]),
           name: "Extra Virgin Organic Cold-Pressed Mediterranean Olive Oil First Harvest Limited Edition Premium Quality",
         },
         {
-          ...invoice.items[0],
+          ...(invoice.items[0] ?? storyProducts[0]),
           name: "Aged Parmigiano-Reggiano DOP 36-Month Matured Cheese from Emilia-Romagna Region Italy Finely Grated",
         },
       ],

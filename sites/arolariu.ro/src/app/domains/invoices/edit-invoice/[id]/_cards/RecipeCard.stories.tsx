@@ -114,7 +114,9 @@ export const NoCookingTime: Story = {
       <RecipeCard
         recipe={{
           ...recipe,
-          estimatedTime: 0,
+          approximateTotalDuration: 0,
+          preparationTime: 0,
+          cookingTime: 0,
         }}
       />
     </WithInvoiceDialogs>

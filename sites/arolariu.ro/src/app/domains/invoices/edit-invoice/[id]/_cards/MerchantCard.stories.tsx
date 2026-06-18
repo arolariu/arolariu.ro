@@ -96,11 +96,11 @@ export const MinimalData: Story = {
       <MerchantCard
         merchant={
           merchant
-            ? {
+            ? ({
                 ...merchant,
                 description: "",
                 website: "",
-              }
+              } as Merchant)
             : null
         }
       />
@@ -115,11 +115,11 @@ export const LongWebsiteUrl: Story = {
       <MerchantCard
         merchant={
           merchant
-            ? {
+            ? ({
                 ...merchant,
                 website:
                   "https://www.corner-shop-abc-international-wholesale-and-retail-distribution-center-bucuresti-militari-branch.ro/shop/products/categories/groceries",
-              }
+              } as Merchant)
             : null
         }
       />
