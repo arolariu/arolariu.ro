@@ -44,6 +44,10 @@ export function getInvoiceStorybookAliases(): AliasOptions {
       replacement: toVitePath(resolve(invoiceStorybookRoot, "mocks", "actions", "merchants.ts")),
     },
     {
+      find: toVitePath(resolve(invoiceDomainRoot, "view-scans", "_actions", "createInvoiceFromScans")),
+      replacement: toVitePath(resolve(invoiceStorybookRoot, "mocks", "actions", "createInvoiceFromScans.ts")),
+    },
+    {
       find: toVitePath(resolve(invoiceDomainRoot, "_hooks", "invoice")),
       replacement: toVitePath(resolve(invoiceStorybookRoot, "mocks", "hooks", "invoice.tsx")),
     },
@@ -76,6 +80,10 @@ export function getInvoiceStorybookResolverPlugins(): PluginOption[] {
 
         if (id.endsWith("/_actions/merchants")) {
           return toVitePath(resolve(invoiceStorybookRoot, "mocks", "actions", "merchants.ts"));
+        }
+
+        if (id.endsWith("/_actions/createInvoiceFromScans")) {
+          return toVitePath(resolve(invoiceStorybookRoot, "mocks", "actions", "createInvoiceFromScans.ts"));
         }
 
         if (id.endsWith("/_hooks/invoice")) {
