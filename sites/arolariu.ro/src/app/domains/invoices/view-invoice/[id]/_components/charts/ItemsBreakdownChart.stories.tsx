@@ -151,3 +151,81 @@ export const ThreeItems: Story = {
     currency: "RON",
   },
 };
+
+/** All zero prices — free items or promotional scenario. */
+export const ZeroPrices: Story = {
+  args: {
+    data: [
+      {name: "Milk", quantity: 2, unit: "L", price: 0},
+      {name: "Bread", quantity: 1, unit: "pcs", price: 0},
+      {name: "Eggs", quantity: 12, unit: "pcs", price: 0},
+      {name: "Butter", quantity: 0.25, unit: "kg", price: 0},
+    ],
+    currency: "RON",
+  },
+};
+
+/** Flat identical prices — all items same cost. */
+export const FlatPrices: Story = {
+  args: {
+    data: [
+      {name: "Milk", quantity: 2, unit: "L", price: 25.0},
+      {name: "Bread", quantity: 1, unit: "pcs", price: 25.0},
+      {name: "Chicken", quantity: 0.5, unit: "kg", price: 25.0},
+      {name: "Apples", quantity: 1.2, unit: "kg", price: 25.0},
+      {name: "Rice", quantity: 1, unit: "kg", price: 25.0},
+    ],
+    currency: "EUR",
+  },
+};
+
+/** Extreme price outlier — one very expensive item. */
+export const ExtremePriceOutlier: Story = {
+  args: {
+    data: [
+      {name: "Premium Caviar", quantity: 0.05, unit: "kg", price: 450.0},
+      {name: "Milk", quantity: 2, unit: "L", price: 12.5},
+      {name: "Bread", quantity: 1, unit: "pcs", price: 8.0},
+      {name: "Eggs", quantity: 10, unit: "pcs", price: 15.5},
+    ],
+    currency: "RON",
+  },
+};
+
+/** GBP currency with diverse units. */
+export const GbpCurrency: Story = {
+  args: {
+    data: [
+      {name: "Milk", quantity: 2.5, unit: "L", price: 3.2},
+      {name: "Chicken Breast", quantity: 0.8, unit: "kg", price: 6.5},
+      {name: "Bananas", quantity: 1.2, unit: "kg", price: 1.8},
+      {name: "Orange Juice", quantity: 1, unit: "L", price: 2.4},
+    ],
+    currency: "GBP",
+  },
+};
+
+/** Ultra-dense — 50+ items to test extreme chart density. */
+export const UltraDense: Story = {
+  args: {
+    data: Array.from({length: 50}, (_, i) => ({
+      name: `Item ${String(i + 1).padStart(3, "0")}`,
+      quantity: faker.number.int({min: 1, max: 10}),
+      unit: faker.helpers.arrayElement(["kg", "pcs", "L", "g"]),
+      price: faker.number.float({min: 2, max: 80, fractionDigits: 2}),
+    })),
+    currency: "RON",
+  },
+};
+
+/** Sparse fractional quantities — decimal precision test. */
+export const FractionalQuantities: Story = {
+  args: {
+    data: [
+      {name: "Parmesan Cheese", quantity: 0.125, unit: "kg", price: 18.75},
+      {name: "Smoked Salmon", quantity: 0.35, unit: "kg", price: 42.5},
+      {name: "Extra Virgin Olive Oil", quantity: 0.75, unit: "L", price: 28.9},
+    ],
+    currency: "EUR",
+  },
+};

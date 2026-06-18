@@ -153,3 +153,74 @@ export const ThreeCategories: Story = {
     currency: "RON",
   },
 };
+
+/** All zero current values — baseline spending scenario. */
+export const ZeroCurrentValues: Story = {
+  args: {
+    data: [
+      {category: "Dairy", current: 0, average: 45.5},
+      {category: "Fruits", current: 0, average: 32.8},
+      {category: "Meat", current: 0, average: 78.2},
+      {category: "Beverages", current: 0, average: 22.0},
+    ],
+    currency: "RON",
+  },
+};
+
+/** All zero average values — no historical baseline. */
+export const ZeroAverageValues: Story = {
+  args: {
+    data: [
+      {category: "Dairy", current: 45.5, average: 0},
+      {category: "Fruits", current: 32.8, average: 0},
+      {category: "Meat", current: 78.2, average: 0},
+    ],
+    currency: "EUR",
+  },
+};
+
+/** Flat identical values — current equals average across all categories. */
+export const FlatIdenticalValues: Story = {
+  args: {
+    data: [
+      {category: "Dairy", current: 50.0, average: 50.0},
+      {category: "Fruits", current: 50.0, average: 50.0},
+      {category: "Meat", current: 50.0, average: 50.0},
+      {category: "Beverages", current: 50.0, average: 50.0},
+      {category: "Baked Goods", current: 50.0, average: 50.0},
+    ],
+    currency: "RON",
+  },
+};
+
+/** Extreme outlier — one category dominates both current and average. */
+export const ExtremeOutlier: Story = {
+  args: {
+    data: [
+      {category: "Groceries", current: 850.0, average: 920.5},
+      {category: "Dairy", current: 12.0, average: 15.3},
+      {category: "Beverages", current: 8.5, average: 9.2},
+      {category: "Fruits", current: 5.0, average: 6.8},
+    ],
+    currency: "RON",
+  },
+};
+
+/** GBP currency with six categories. */
+export const GbpCurrency: Story = {
+  args: {
+    data: generateMockCategoryTrendData(6),
+    currency: "GBP",
+  },
+};
+
+/** Sparse two categories — minimal comparison scenario. */
+export const SparseTwoCategories: Story = {
+  args: {
+    data: [
+      {category: "Dairy", current: 28.5, average: 35.2},
+      {category: "Meat", current: 67.8, average: 59.4},
+    ],
+    currency: "USD",
+  },
+};

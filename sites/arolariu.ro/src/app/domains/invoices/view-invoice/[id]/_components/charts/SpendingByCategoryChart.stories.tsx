@@ -163,3 +163,84 @@ export const ThreeCategories: Story = {
     currency: "RON",
   },
 };
+
+/** All zero amounts — no spending scenario. */
+export const ZeroAmounts: Story = {
+  args: {
+    data: [
+      {category: "Dairy", amount: 0, count: 0, fill: "var(--ac-chart-1)"},
+      {category: "Fruits", amount: 0, count: 0, fill: "var(--ac-chart-2)"},
+      {category: "Meat", amount: 0, count: 0, fill: "var(--ac-chart-3)"},
+    ],
+    currency: "RON",
+  },
+};
+
+/** Flat equal amounts — perfect donut balance. */
+export const FlatEqualAmounts: Story = {
+  args: {
+    data: [
+      {category: "Dairy", amount: 50.0, count: 5, fill: "var(--ac-chart-1)"},
+      {category: "Fruits", amount: 50.0, count: 5, fill: "var(--ac-chart-2)"},
+      {category: "Meat", amount: 50.0, count: 5, fill: "var(--ac-chart-3)"},
+      {category: "Beverages", amount: 50.0, count: 5, fill: "var(--ac-chart-4)"},
+      {category: "Baked Goods", amount: 50.0, count: 5, fill: "var(--ac-chart-5)"},
+    ],
+    currency: "EUR",
+  },
+};
+
+/** Extreme dominance — one category is 95% of total. */
+export const ExtremeDominance: Story = {
+  args: {
+    data: [
+      {category: "Groceries", amount: 950.0, count: 45, fill: "var(--ac-chart-1)"},
+      {category: "Dairy", amount: 15.0, count: 2, fill: "var(--ac-chart-2)"},
+      {category: "Beverages", amount: 10.0, count: 1, fill: "var(--ac-chart-3)"},
+      {category: "Fruits", amount: 15.0, count: 2, fill: "var(--ac-chart-4)"},
+      {category: "Vegetables", amount: 10.0, count: 1, fill: "var(--ac-chart-5)"},
+    ],
+    currency: "RON",
+  },
+};
+
+/** GBP currency with balanced six categories. */
+export const GbpCurrency: Story = {
+  args: {
+    data: [
+      {category: "Dairy", amount: 28.5, count: 8, fill: "var(--ac-chart-1)"},
+      {category: "Meat", amount: 42.3, count: 6, fill: "var(--ac-chart-2)"},
+      {category: "Vegetables", amount: 19.8, count: 12, fill: "var(--ac-chart-3)"},
+      {category: "Beverages", amount: 15.6, count: 7, fill: "var(--ac-chart-4)"},
+      {category: "Bakery", amount: 23.4, count: 9, fill: "var(--ac-chart-5)"},
+      {category: "Cleaning", amount: 12.7, count: 3, fill: "var(--ac-chart-1)"},
+    ],
+    currency: "GBP",
+  },
+};
+
+/** Ultra-diverse — 40+ tiny slices to test donut density. */
+export const UltraDiverse: Story = {
+  args: {
+    data: Array.from({length: 40}, (_, i) => ({
+      category: `Cat ${String(i + 1).padStart(2, "0")}`,
+      amount: faker.number.float({min: 5, max: 50, fractionDigits: 2}),
+      count: faker.number.int({min: 1, max: 5}),
+      fill: `var(--ac-chart-${(i % 5) + 1})`,
+    })),
+    currency: "RON",
+  },
+};
+
+/** Minimal spending — very small amounts across categories. */
+export const MinimalSpending: Story = {
+  args: {
+    data: [
+      {category: "Dairy", amount: 2.5, count: 2, fill: "var(--ac-chart-1)"},
+      {category: "Beverages", amount: 3.8, count: 3, fill: "var(--ac-chart-2)"},
+      {category: "Snacks", amount: 1.2, count: 1, fill: "var(--ac-chart-3)"},
+      {category: "Fruits", amount: 4.5, count: 2, fill: "var(--ac-chart-4)"},
+    ],
+    currency: "USD",
+  },
+};

@@ -132,3 +132,88 @@ export const ThreeDataPoints: Story = {
     currency: "RON",
   },
 };
+
+/** All zero amounts — no spending baseline. */
+export const ZeroAmounts: Story = {
+  args: {
+    data: [
+      {date: "Jan 5", amount: 0, isCurrent: false, name: "No Spending 1", invoices: []},
+      {date: "Jan 12", amount: 0, isCurrent: false, name: "No Spending 2", invoices: []},
+      {date: "Jan 19", amount: 0, isCurrent: true, name: "No Spending 3", invoices: []},
+      {date: "Jan 26", amount: 0, isCurrent: false, name: "No Spending 4", invoices: []},
+    ],
+    currency: "RON",
+  },
+};
+
+/** Flat identical amounts — constant spending over time. */
+export const FlatSpending: Story = {
+  args: {
+    data: [
+      {date: "Week 1", amount: 100.0, isCurrent: false, name: "Regular Purchase 1", invoices: []},
+      {date: "Week 2", amount: 100.0, isCurrent: false, name: "Regular Purchase 2", invoices: []},
+      {date: "Week 3", amount: 100.0, isCurrent: false, name: "Regular Purchase 3", invoices: []},
+      {date: "Week 4", amount: 100.0, isCurrent: true, name: "Regular Purchase 4", invoices: []},
+      {date: "Week 5", amount: 100.0, isCurrent: false, name: "Regular Purchase 5", invoices: []},
+    ],
+    currency: "EUR",
+  },
+};
+
+/** Downward trend — decreasing spending over time. */
+export const DownwardTrend: Story = {
+  args: {
+    data: Array.from({length: 8}, (_, i) => ({
+      date: `Week ${i + 1}`,
+      amount: 350 - i * 35 + faker.number.float({min: 0, max: 15, fractionDigits: 2}),
+      isCurrent: i === 7,
+      name: `Purchase ${i + 1}`,
+      invoices: [],
+    })),
+    currency: "RON",
+  },
+};
+
+/** Volatile — extreme fluctuations between periods. */
+export const VolatileSpending: Story = {
+  args: {
+    data: [
+      {date: "Jan", amount: 50.0, isCurrent: false, name: "Low Month", invoices: []},
+      {date: "Feb", amount: 450.0, isCurrent: false, name: "Spike Month", invoices: []},
+      {date: "Mar", amount: 80.0, isCurrent: false, name: "Low Month", invoices: []},
+      {date: "Apr", amount: 520.0, isCurrent: false, name: "High Month", invoices: []},
+      {date: "May", amount: 60.0, isCurrent: true, name: "Current Low", invoices: []},
+    ],
+    currency: "USD",
+  },
+};
+
+/** GBP currency with gradual increase. */
+export const GbpCurrency: Story = {
+  args: {
+    data: Array.from({length: 6}, (_, i) => ({
+      date: `Month ${i + 1}`,
+      amount: 80 + i * 20 + faker.number.float({min: 0, max: 10, fractionDigits: 2}),
+      isCurrent: i === 5,
+      name: `Monthly Shop ${i + 1}`,
+      invoices: [],
+    })),
+    currency: "GBP",
+  },
+};
+
+/** Ultra-dense — 60+ data points to test extreme area chart density. */
+export const UltraDense: Story = {
+  args: {
+    data: generateMockSpendingTrend(60),
+    currency: "RON",
+  },
+};
+
+/** Current at start — earliest invoice is highlighted. */
+export const CurrentAtStart: Story = {
+  args: {
+    data: generateMockSpendingTrend(10, 0),
+    currency: "EUR",
+  },
+};
