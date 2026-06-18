@@ -111,7 +111,8 @@ export const FilteredSubset: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Shows distribution from invoices containing at least one low-price item. Note: computePriceDistribution buckets by invoice total, not individual item prices.",
+        story:
+          "Shows distribution from invoices containing at least one low-price item. Note: computePriceDistribution buckets by invoice total, not individual item prices.",
       },
     },
   },
@@ -184,6 +185,36 @@ export const SparseBuckets: Story = {
     docs: {
       description: {
         story: "Sparse distribution scenario with very few invoices across buckets.",
+      },
+    },
+  },
+};
+
+/** Two invoices — minimal distribution for comparison. */
+export const TwoInvoices: Story = {
+  args: {
+    data: computePriceDistribution(mockInvoices.slice(0, 2)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Minimal distribution with exactly two invoices in the dataset.",
+      },
+    },
+  },
+};
+
+/** Three invoices — early user scenario. */
+export const ThreeInvoices: Story = {
+  args: {
+    data: computePriceDistribution(mockInvoices.slice(0, 3)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Early user distribution from exactly three invoices.",
       },
     },
   },

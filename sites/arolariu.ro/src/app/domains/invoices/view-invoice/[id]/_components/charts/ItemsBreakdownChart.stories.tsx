@@ -103,3 +103,51 @@ export const HighVolume: Story = {
     currency: "RON",
   },
 };
+
+/** Long product names — test label truncation in Y-axis. */
+export const LongProductNames: Story = {
+  args: {
+    data: [
+      {
+        name: "Organic Grass-Fed Free-Range Whole Milk",
+        quantity: 2,
+        unit: "L",
+        price: 18.5,
+      },
+      {
+        name: "Artisan Sourdough Multi-Grain Bread Loaf",
+        quantity: 1,
+        unit: "pcs",
+        price: 12.99,
+      },
+      {
+        name: "Premium Wild-Caught Atlantic Salmon Fillet",
+        quantity: 0.5,
+        unit: "kg",
+        price: 45.0,
+      },
+    ],
+    currency: "EUR",
+  },
+};
+
+/** Very high volume — 30+ items to stress test chart scrolling. */
+export const VeryHighVolume: Story = {
+  args: {
+    data: Array.from({length: 30}, (_, i) => ({
+      name: `Product ${String(i + 1).padStart(2, "0")}`,
+      quantity: faker.number.int({min: 1, max: 10}),
+      unit: faker.helpers.arrayElement(["kg", "pcs", "L", "g"]),
+      price: faker.number.float({min: 2, max: 80, fractionDigits: 2}),
+    })),
+    currency: "RON",
+  },
+};
+
+/** Three items — minimal balanced view. */
+export const ThreeItems: Story = {
+  args: {
+    data: generateMockQuantityData(3),
+    currency: "RON",
+  },
+};

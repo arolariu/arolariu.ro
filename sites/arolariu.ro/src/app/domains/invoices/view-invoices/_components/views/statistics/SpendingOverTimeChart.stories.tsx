@@ -173,7 +173,7 @@ export const ExplicitRON: Story = {
 };
 
 /**
- * Few months - short history.
+ * Short history - few months.
  * Shows chart with only 2-3 months of data.
  */
 export const ShortHistory: Story = {
@@ -185,6 +185,51 @@ export const ShortHistory: Story = {
     docs: {
       description: {
         story: "Short history scenario with only a few months of spending data.",
+      },
+    },
+  },
+};
+
+/** Two months — minimal trend for comparison. */
+export const TwoMonths: Story = {
+  args: {
+    data: computeMonthlySpending(mockInvoices.slice(0, 4)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Minimal area chart with exactly two months of data.",
+      },
+    },
+  },
+};
+
+/** Many months — high volume of 12+ months data. */
+export const ManyMonths: Story = {
+  args: {
+    data: computeMonthlySpending(mockInvoices),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Extended area chart showing 12+ months of spending history for trend analysis.",
+      },
+    },
+  },
+};
+
+/** Three months — balanced trend view. */
+export const ThreeMonths: Story = {
+  args: {
+    data: computeMonthlySpending(mockInvoices.slice(0, 8)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Balanced area chart with exactly three months of data for quick insights.",
       },
     },
   },

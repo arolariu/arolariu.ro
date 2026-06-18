@@ -1,10 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import type {KPISummary} from "../../../_utils/statistics";
+import type {KPIData} from "../../../_utils/statistics";
 import {computeKPIs} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {KPISummaryRow} from "./KPISummaryRow";
 
-type StoryArgs = {data: KPISummary; currency: string};
+type StoryArgs = {data: KPIData; currency: string};
 
 /**
  * KPISummaryRow displays key performance indicators in animated cards.
@@ -166,6 +166,36 @@ export const HighItemAverage: Story = {
     docs: {
       description: {
         story: "Shows KPIs when users purchase many items per invoice (bulk shoppers).",
+      },
+    },
+  },
+};
+
+/** Two invoices — minimal but non-empty KPI state. */
+export const TwoInvoices: Story = {
+  args: {
+    data: computeKPIs(mockInvoices.slice(0, 2)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Minimal KPI state with exactly two invoices for baseline comparison.",
+      },
+    },
+  },
+};
+
+/** Three invoices — early adopter scenario. */
+export const ThreeInvoices: Story = {
+  args: {
+    data: computeKPIs(mockInvoices.slice(0, 3)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Early user scenario with exactly three invoices.",
       },
     },
   },

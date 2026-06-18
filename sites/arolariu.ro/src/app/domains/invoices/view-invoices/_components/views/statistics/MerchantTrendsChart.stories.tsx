@@ -147,3 +147,19 @@ export const EuroCurrency: Story = {
     currency: "€",
   },
 };
+
+/** Two merchants — minimal trends table. */
+export const TwoMerchants: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices, 2),
+    currency: "lei",
+  },
+};
+
+/** Four merchants — balanced trends grid. */
+export const FourMerchants: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices, 4),
+    currency: "lei",
+  },
+};

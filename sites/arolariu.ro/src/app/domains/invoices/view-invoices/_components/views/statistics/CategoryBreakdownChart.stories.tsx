@@ -1,6 +1,6 @@
+import {InvoiceCategory} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
 import type {CategoryAggregate} from "../../../_utils/statistics";
-import {InvoiceCategory} from "@/types/invoices";
 import {computeCategoryAggregates} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {CategoryBreakdownChart} from "./CategoryBreakdownChart";
@@ -167,6 +167,36 @@ export const FewCategories: Story = {
     docs: {
       description: {
         story: "Sparse data scenario with only a few invoice categories represented.",
+      },
+    },
+  },
+};
+
+/** Two categories — minimal donut for comparison. */
+export const TwoCategories: Story = {
+  args: {
+    data: computeCategoryAggregates(mockInvoices.slice(0, 2)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Minimal donut chart with exactly two categories for comparison.",
+      },
+    },
+  },
+};
+
+/** Three categories — balanced donut view. */
+export const ThreeCategories: Story = {
+  args: {
+    data: computeCategoryAggregates(mockInvoices.slice(0, 3)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Balanced donut chart with three categories for optimal visual density.",
       },
     },
   },

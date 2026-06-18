@@ -109,3 +109,27 @@ export const EuroCurrency: Story = {
     currency: "€",
   },
 };
+
+/** Two categories — minimal bar chart for comparison. */
+export const TwoCategories: Story = {
+  args: {
+    data: computeProductCategorySpending(mockInvoices.slice(0, 2)),
+    currency: "lei",
+  },
+};
+
+/** Many categories — high volume of 15+ product types. */
+export const ManyCategories: Story = {
+  args: {
+    data: computeProductCategorySpending(mockInvoices),
+    currency: "lei",
+  },
+};
+
+/** Three categories — balanced bar chart view. */
+export const ThreeCategories: Story = {
+  args: {
+    data: computeProductCategorySpending(mockInvoices.slice(0, 3)),
+    currency: "lei",
+  },
+};

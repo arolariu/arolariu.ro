@@ -101,3 +101,22 @@ export const HighVolume: Story = {
     currency: "RON",
   },
 };
+
+/** Two data points — minimal distribution for comparison. */
+export const TwoRanges: Story = {
+  args: {
+    data: [
+      {range: "Under 10", count: 8, fill: "var(--ac-chart-1)"},
+      {range: "50+", count: 2, fill: "var(--ac-chart-4)"},
+    ],
+    currency: "RON",
+  },
+};
+
+/** Three ranges — balanced distribution view. */
+export const ThreeRanges: Story = {
+  args: {
+    data: mockPriceRanges.slice(0, 3),
+    currency: "RON",
+  },
+};

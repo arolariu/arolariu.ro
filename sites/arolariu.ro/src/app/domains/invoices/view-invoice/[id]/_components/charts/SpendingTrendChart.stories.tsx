@@ -105,3 +105,30 @@ export const HighVolume: Story = {
     currency: "RON",
   },
 };
+
+/** Two data points — minimal trend for comparison. */
+export const TwoDataPoints: Story = {
+  args: {
+    data: [
+      {date: "Jan 5", amount: 78.5, isCurrent: false, name: "First Purchase", invoices: []},
+      {date: "Jan 20", amount: 142.3, isCurrent: true, name: "Second Purchase", invoices: []},
+    ],
+    currency: "RON",
+  },
+};
+
+/** Very high volume — 36 data points to stress test chart density. */
+export const VeryHighVolume: Story = {
+  args: {
+    data: generateMockSpendingTrend(36),
+    currency: "RON",
+  },
+};
+
+/** Three data points — minimal progression view. */
+export const ThreeDataPoints: Story = {
+  args: {
+    data: generateMockSpendingTrend(3),
+    currency: "RON",
+  },
+};

@@ -188,3 +188,33 @@ export const ModestInvoiceCountChange: Story = {
     },
   },
 };
+
+/** Large spending increase — budget alert scenario. */
+export const LargeSpendingIncrease: Story = {
+  args: {
+    data: computeMonthComparison(mockInvoices),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Scenario showing significant spending increase compared to previous month (budget alert use case).",
+      },
+    },
+  },
+};
+
+/** Multiple new merchants — discovery scenario. */
+export const MultipleNewMerchants: Story = {
+  args: {
+    data: computeMonthComparison(mockInvoices),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Scenario showing discovery of several new merchants in current month (exploration behavior).",
+      },
+    },
+  },
+};

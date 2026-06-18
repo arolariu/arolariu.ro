@@ -225,3 +225,41 @@ export const BusinessHours: Story = {
     },
   },
 };
+
+/** Two segments active — morning and evening contrast. */
+export const TwoSegments: Story = {
+  args: {
+    data: computeTimeOfDay(
+      mockInvoices.filter((inv) => {
+        const hour = new Date(inv.paymentInformation?.transactionDate ?? inv.createdAt).getHours();
+        return (hour >= 6 && hour < 12) || (hour >= 17 && hour < 21);
+      }),
+    ),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Minimal radar showing exactly two active segments (morning and evening).",
+      },
+    },
+  },
+};
+
+/** Three segments active — balanced radar pattern. */
+export const ThreeSegments: Story = {
+  args: {
+    data: computeTimeOfDay(
+      mockInvoices.filter((inv) => {
+        const hour = new Date(inv.paymentInformation?.transactionDate ?? inv.createdAt).getHours();
+        return (hour >= 6 && hour < 12) || (hour >= 12 && hour < 17) || (hour >= 17 && hour < 21);
+      }),
+    ),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Balanced radar chart showing three active time segments.",
+      },
+    },
+  },
+};

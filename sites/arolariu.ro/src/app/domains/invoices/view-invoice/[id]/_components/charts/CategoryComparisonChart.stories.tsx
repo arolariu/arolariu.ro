@@ -109,3 +109,47 @@ export const HighVolume: Story = {
     currency: "RON",
   },
 };
+
+/** Long category names — test label truncation and wrapping. */
+export const LongCategoryNames: Story = {
+  args: {
+    data: [
+      {
+        category: "Organic Free-Range Gluten-Free Products",
+        current: 125.5,
+        average: 98.3,
+      },
+      {
+        category: "Premium Artisan Bakery & Pastry Items",
+        current: 89.2,
+        average: 102.7,
+      },
+      {
+        category: "Specialty International Imported Beverages",
+        current: 67.8,
+        average: 73.5,
+      },
+    ],
+    currency: "RON",
+  },
+};
+
+/** Very high volume — 30+ categories to stress test chart scrolling. */
+export const VeryHighVolume: Story = {
+  args: {
+    data: Array.from({length: 30}, (_, i) => ({
+      category: `Category ${String(i + 1).padStart(2, "0")}`,
+      current: faker.number.float({min: 10, max: 200, fractionDigits: 2}),
+      average: faker.number.float({min: 10, max: 200, fractionDigits: 2}),
+    })),
+    currency: "RON",
+  },
+};
+
+/** Three categories — minimal balanced view. */
+export const ThreeCategories: Story = {
+  args: {
+    data: generateMockCategoryTrendData(3),
+    currency: "RON",
+  },
+};

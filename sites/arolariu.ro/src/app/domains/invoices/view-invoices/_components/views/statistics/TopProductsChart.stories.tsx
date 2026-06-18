@@ -131,3 +131,57 @@ export const EuroCurrency: Story = {
     currency: "€",
   },
 };
+
+/** Two products — minimal leaderboard for comparison. */
+export const TwoProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices, 2),
+    currency: "lei",
+  },
+};
+
+/** Many products — high volume top 30 leaderboard. */
+export const ManyProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices, 30),
+    currency: "lei",
+  },
+};
+
+/** Long product names — test table layout with lengthy names. */
+export const LongProductNames: Story = {
+  args: {
+    data: [
+      {
+        name: "Organic Free-Range Grass-Fed Whole Milk Premium Quality 1L Bottle",
+        totalQuantity: 12,
+        totalSpent: 145.5,
+        purchaseCount: 8,
+        averagePrice: 12.13,
+      },
+      {
+        name: "Artisan Multi-Grain Sourdough Bread Loaf With Seeds and Nuts",
+        totalQuantity: 8,
+        totalSpent: 98.4,
+        purchaseCount: 5,
+        averagePrice: 12.3,
+      },
+      {
+        name: "Premium Wild-Caught Atlantic Salmon Fillet Fresh Daily",
+        totalQuantity: 3.5,
+        totalSpent: 189.0,
+        purchaseCount: 4,
+        averagePrice: 54.0,
+      },
+    ],
+    currency: "lei",
+  },
+};
+
+/** Four products — compact leaderboard view. */
+export const FourProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices, 4),
+    currency: "lei",
+  },
+};

@@ -186,10 +186,12 @@ export const ModerateActivity: Story = {
  */
 export const WeekendPattern: Story = {
   args: {
-    data: computeDailySpending(mockInvoices.filter((inv) => {
-      const day = new Date(inv.paymentInformation?.transactionDate ?? inv.createdAt).getDay();
-      return day === 0 || day === 6; // Sunday or Saturday
-    })),
+    data: computeDailySpending(
+      mockInvoices.filter((inv) => {
+        const day = new Date(inv.paymentInformation?.transactionDate ?? inv.createdAt).getDay();
+        return day === 0 || day === 6; // Sunday or Saturday
+      }),
+    ),
     currency: "RON",
   },
   parameters: {
@@ -243,16 +245,48 @@ export const ExplicitRON: Story = {
  */
 export const MidMonthSpending: Story = {
   args: {
-    data: computeDailySpending(mockInvoices.filter((inv) => {
-      const date = new Date(inv.paymentInformation?.transactionDate ?? inv.createdAt).getDate();
-      return date >= 10 && date <= 20;
-    })),
+    data: computeDailySpending(
+      mockInvoices.filter((inv) => {
+        const date = new Date(inv.paymentInformation?.transactionDate ?? inv.createdAt).getDate();
+        return date >= 10 && date <= 20;
+      }),
+    ),
     currency: "RON",
   },
   parameters: {
     docs: {
       description: {
         story: "Shows spending pattern from mid-month date range (days 10-20).",
+      },
+    },
+  },
+};
+
+/** Two days activity — minimal heatmap for comparison. */
+export const TwoDaysActivity: Story = {
+  args: {
+    data: computeDailySpending(mockInvoices.slice(0, 2)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Minimal heatmap showing spending on exactly two days.",
+      },
+    },
+  },
+};
+
+/** Three days activity — early usage pattern. */
+export const ThreeDaysActivity: Story = {
+  args: {
+    data: computeDailySpending(mockInvoices.slice(0, 3)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Early usage heatmap showing spending on exactly three days.",
       },
     },
   },

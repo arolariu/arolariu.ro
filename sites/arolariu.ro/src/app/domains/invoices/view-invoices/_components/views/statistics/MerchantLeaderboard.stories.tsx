@@ -193,8 +193,8 @@ export const FirstTenInvoices: Story = {
 };
 
 /**
- * Top 5 merchants - truncated list.
- * Shows only the top 5 merchants instead of 10.
+ * Top 5 merchants only - compact leaderboard.
+ * Limited to top 5 for reduced vertical space.
  */
 export const TopFive: Story = {
   args: {
@@ -206,6 +206,61 @@ export const TopFive: Story = {
     docs: {
       description: {
         story: "Truncated leaderboard showing only top 5 merchants.",
+      },
+    },
+  },
+};
+
+/** Two merchants — minimal leaderboard for comparison. */
+export const TwoMerchants: Story = {
+  args: {
+    data: computeMerchantAggregates(mockInvoices.slice(0, 2)),
+    currency: "RON",
+    merchantNamesById,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Minimal leaderboard with exactly two merchants for baseline comparison.",
+      },
+    },
+  },
+};
+
+/** Long merchant names — test label truncation in chart. */
+export const LongMerchantNames: Story = {
+  args: {
+    data: [
+      {
+        merchantId: "merchant-long-name-1",
+        totalSpend: 450.75,
+        invoiceCount: 8,
+        averageSpend: 56.34,
+      },
+      {
+        merchantId: "merchant-long-name-2",
+        totalSpend: 320.5,
+        invoiceCount: 5,
+        averageSpend: 64.1,
+      },
+      {
+        merchantId: "merchant-long-name-3",
+        totalSpend: 198.3,
+        invoiceCount: 3,
+        averageSpend: 66.1,
+      },
+    ],
+    currency: "RON",
+    merchantNamesById: {
+      "merchant-long-name-1": "International Premium Organic Foods & Beverages Supermarket Chain",
+      "merchant-long-name-2": "Artisan Local Farm-to-Table Specialty Grocery Store",
+      "merchant-long-name-3": "Budget Discount Wholesale Warehouse Club",
+    },
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Tests Y-axis label truncation with very long merchant names (20+ characters).",
       },
     },
   },

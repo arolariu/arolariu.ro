@@ -124,3 +124,24 @@ export const MediumWarnings: Story = {
     data: computeAllergenFrequency(mockInvoices.slice(2, 8)),
   },
 };
+
+/** Many allergens — high volume of 15+ distinct allergen types. */
+export const ManyAllergens: Story = {
+  args: {
+    data: computeAllergenFrequency(mockInvoices),
+  },
+};
+
+/** Single allergen type — minimal warning card. */
+export const SingleAllergen: Story = {
+  args: {
+    data: computeAllergenFrequency(mockInvoices.filter((inv) => inv.items.some((item) => item.detectedAllergens.length > 0))).slice(0, 1),
+  },
+};
+
+/** Two allergen types — minimal comparison view. */
+export const TwoAllergens: Story = {
+  args: {
+    data: computeAllergenFrequency(mockInvoices.filter((inv) => inv.items.some((item) => item.detectedAllergens.length > 0))).slice(0, 2),
+  },
+};

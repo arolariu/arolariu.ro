@@ -95,3 +95,44 @@ export const HighVolume: Story = {
     currentMerchant: "Highlighted Store",
   },
 };
+
+/** Long merchant names — test label truncation in chart. */
+export const LongMerchantNames: Story = {
+  args: {
+    data: [
+      {
+        name: "International Premium Organic Foods & Beverages Supermarket Chain",
+        count: 5,
+        total: 350.75,
+        average: 70.15,
+      },
+      {
+        name: "Artisan Local Farm-to-Table Specialty Grocery Store",
+        count: 3,
+        total: 189.5,
+        average: 63.17,
+      },
+      {name: "Budget Discount Wholesale Warehouse Club", count: 7, total: 420.0, average: 60.0},
+    ],
+    currency: "RON",
+    currentMerchant: "Artisan Local Farm-to-Table Specialty Grocery Store",
+  },
+};
+
+/** Very high volume — 40+ merchants to stress test chart scrolling. */
+export const VeryHighVolume: Story = {
+  args: {
+    data: generateMockMerchantData(40),
+    currency: "RON",
+    currentMerchant: "Store #15",
+  },
+};
+
+/** Three merchants — minimal balanced comparison. */
+export const ThreeMerchants: Story = {
+  args: {
+    data: generateMockMerchantData(3),
+    currency: "RON",
+    currentMerchant: "Store",
+  },
+};

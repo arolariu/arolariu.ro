@@ -95,3 +95,17 @@ export const HighEuroSpending: Story = {
     ),
   },
 };
+
+/** Three currencies — optimal donut visual density. */
+export const ThreeCurrencies: Story = {
+  args: {
+    data: computeCurrencyDistribution(mockInvoices),
+  },
+};
+
+/** Four currencies — many currency scenario. */
+export const FourCurrencies: Story = {
+  args: {
+    data: computeCurrencyDistribution(mockInvoices),
+  },
+};

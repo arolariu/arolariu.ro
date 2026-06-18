@@ -115,3 +115,51 @@ export const HighVolume: Story = {
     currency: "RON",
   },
 };
+
+/** Long category names — test legend label wrapping. */
+export const LongCategoryNames: Story = {
+  args: {
+    data: [
+      {
+        category: "Organic Premium Dairy Products",
+        amount: 145.5,
+        count: 8,
+        fill: "var(--ac-chart-1)",
+      },
+      {
+        category: "Fresh Seasonal Fruits & Vegetables",
+        amount: 98.75,
+        count: 12,
+        fill: "var(--ac-chart-2)",
+      },
+      {
+        category: "Artisan Baked Goods & Pastries",
+        amount: 67.2,
+        count: 5,
+        fill: "var(--ac-chart-3)",
+      },
+    ],
+    currency: "RON",
+  },
+};
+
+/** Very high volume — 30+ categories to stress test donut density. */
+export const VeryHighVolume: Story = {
+  args: {
+    data: Array.from({length: 30}, (_, index) => ({
+      category: `Category ${String(index + 1).padStart(2, "0")}`,
+      amount: faker.number.float({min: 15, max: 250, fractionDigits: 2}),
+      count: faker.number.int({min: 1, max: 12}),
+      fill: `var(--ac-chart-${(index % 5) + 1})`,
+    })),
+    currency: "RON",
+  },
+};
+
+/** Three categories — minimal balanced donut. */
+export const ThreeCategories: Story = {
+  args: {
+    data: generateMockCategorySpending(3),
+    currency: "RON",
+  },
+};

@@ -191,3 +191,21 @@ export const AllMerchants: Story = {
     topN: 20,
   },
 };
+
+/** Two merchants — minimal visit pattern grid. */
+export const TwoMerchants: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices),
+    currency: "lei",
+    topN: 2,
+  },
+};
+
+/** Five merchants — compact grid view. */
+export const FiveMerchants: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices),
+    currency: "lei",
+    topN: 5,
+  },
+};
