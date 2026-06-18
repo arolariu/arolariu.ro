@@ -1,5 +1,5 @@
 import type {Currency} from "@/types/DDD/SharedKernel/Currency";
-import type {Invoice} from "@/types/invoices";
+import type {Invoice, Product} from "@/types/invoices";
 import type {PaymentType} from "@/types/invoices/Payment";
 import type {Meta, StoryObj} from "@storybook/react";
 import {
@@ -157,17 +157,18 @@ export const EmptyLineItems: Story = {
 /** Invoice with many line items — overflow/scroll test. */
 export const ManyLineItems: Story = {
   render: ({invoice}) => {
-    const firstProduct = invoice.items[0] ?? storyProducts[0];
-    const manyItemsInvoice: typeof invoice = {
-      ...invoice,
-      items: Array.from({length: 50}, (_, i) => ({
-        ...firstProduct,
+    const baseProduct: Product = invoice.items[0] ?? storyProducts[0]!;
+    const items = Array.from({length: 50}, (_, i) => {
+      const product: Product = {
+        ...baseProduct,
         name: `Product ${i + 1}`,
         quantity: (i % 5) + 1,
         price: Number(((i % 20) + 2.99).toFixed(2)),
         totalPrice: Number((((i % 5) + 1) * ((i % 20) + 2.99)).toFixed(2)),
-      })),
-    };
+      };
+      return product;
+    });
+    const manyItemsInvoice: typeof invoice = {...invoice, items};
     return (
       <WithViewInvoiceContext
         invoice={manyItemsInvoice}
@@ -190,19 +191,18 @@ export const ManyLineItems: Story = {
 /** Invoice with very long product names. */
 export const LongProductNames: Story = {
   render: ({invoice}) => {
-    const firstProduct = invoice.items[0] ?? storyProducts[0];
+    const baseProduct: Product = invoice.items[0] ?? storyProducts[0]!;
+    const item1: Product = {
+      ...baseProduct,
+      name: "Extra Virgin Organic Cold-Pressed Mediterranean Olive Oil First Harvest Limited Edition Premium Quality",
+    };
+    const item2: Product = {
+      ...baseProduct,
+      name: "Aged Parmigiano-Reggiano DOP 36-Month Matured Cheese from Emilia-Romagna Region Italy Finely Grated",
+    };
     const longNamesInvoice: typeof invoice = {
       ...invoice,
-      items: [
-        {
-          ...firstProduct,
-          name: "Extra Virgin Organic Cold-Pressed Mediterranean Olive Oil First Harvest Limited Edition Premium Quality",
-        },
-        {
-          ...firstProduct,
-          name: "Aged Parmigiano-Reggiano DOP 36-Month Matured Cheese from Emilia-Romagna Region Italy Finely Grated",
-        },
-      ],
+      items: [item1, item2],
     };
     return (
       <WithViewInvoiceContext

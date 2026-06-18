@@ -1,5 +1,5 @@
 import {WithViewInvoiceContext, invoicePresets, storyInvoice, storyProducts, withEntityPreset} from "@/app/domains/invoices/_storybook";
-import type {Invoice} from "@/types/invoices";
+import type {Invoice, Product} from "@/types/invoices";
 import {ProductCategory} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
 import {ItemAnalyticsCard} from "./ItemAnalyticsCard";
@@ -114,14 +114,18 @@ export const SingleItem: Story = {
 /** Invoice with many items — scroll/pagination test. */
 export const ManyItems: Story = {
   render: ({invoice}) => {
-    const products = Array.from({length: 30}, (_, i) => ({
-      ...storyProducts[0],
-      name: `Product ${i + 1}`,
-      quantity: (i % 5) + 1,
-      price: Number(((i % 20) + 2.99).toFixed(2)),
-      totalPrice: Number((((i % 5) + 1) * ((i % 20) + 2.99)).toFixed(2)),
-      category: [ProductCategory.GROCERIES, ProductCategory.DAIRY, ProductCategory.BAKED_GOODS][i % 3] ?? ProductCategory.NOT_DEFINED,
-    }));
+    const baseProduct: Product = storyProducts[0]!;
+    const products: Product[] = Array.from({length: 30}, (_, i) => {
+      const product: Product = {
+        ...baseProduct,
+        name: `Product ${i + 1}`,
+        quantity: (i % 5) + 1,
+        price: Number(((i % 20) + 2.99).toFixed(2)),
+        totalPrice: Number((((i % 5) + 1) * ((i % 20) + 2.99)).toFixed(2)),
+        category: [ProductCategory.GROCERIES, ProductCategory.DAIRY, ProductCategory.BAKED_GOODS][i % 3] ?? ProductCategory.NOT_DEFINED,
+      };
+      return product;
+    });
     const manyItemsInvoice: typeof invoice = {...invoice, items: products};
     return (
       <WithViewInvoiceContext invoice={manyItemsInvoice}>

@@ -3,16 +3,13 @@
  * @module app/domains/invoices/_cards/ScanCard.stories
  */
 
-import {scanPresets, storyCachedImageScan, storyImageScanUrl, storyPdfScanUrl, withEntityPreset} from "@/app/domains/invoices/_storybook";
+import {storyImageScanUrl, storyPdfScanUrl} from "@/app/domains/invoices/_storybook";
 import {logStoryAction} from "@/app/domains/invoices/_storybook/utils/storyActions";
-import type {CachedScan} from "@/types/scans";
 import {Badge, Card, Spinner} from "@arolariu/components";
 import type {Meta, StoryObj} from "@storybook/react";
 import {useState} from "react";
 import {TbLink, TbRotateClockwise, TbTrash} from "react-icons/tb";
 import ScanCard from "./ScanCard";
-
-type StoryArgs = {scan: CachedScan; scanPreset: "image" | "pdf"};
 
 const meta = {
   title: "arolariu.ro/IMS/Cards/Scan/ScanCard",
@@ -27,12 +24,6 @@ const meta = {
     },
   },
   tags: ["autodocs"],
-  argTypes: {
-    scanPreset: {control: "select", options: ["image", "pdf"]},
-    scan: {control: "object"},
-  },
-  args: {scanPreset: "image", scan: storyCachedImageScan},
-  decorators: [withEntityPreset("scanPreset", "scan", scanPresets)],
 } satisfies Meta<typeof ScanCard>;
 
 export default meta;
