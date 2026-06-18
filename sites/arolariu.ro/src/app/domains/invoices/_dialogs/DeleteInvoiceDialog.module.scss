@@ -193,18 +193,32 @@
   @include respond-to('sm') {
     max-width: 32rem;
   }
+
+  // Allow vertical scrolling without showing a scrollbar for a natural look.
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .dialogTitleRed {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: #dc2626;
+  gap: space(2);
+  color: color('destructive');
 }
 
 .alertRed {
-  border-color: #fecaca;
-  background-color: #fef2f2;
+  border-color: color-alpha('destructive', 0.3);
+  background-color: color-alpha('destructive', 0.08);
+
+  @include dark {
+    border-color: color-alpha('destructive', 0.4);
+    background-color: color-alpha('destructive', 0.15);
+  }
 }
 
 .inputGreen {
@@ -224,9 +238,9 @@
 }
 
 .dialogFooterGap {
-  gap: 0.5rem;
+  gap: space(3);
 
   @include respond-to('sm') {
-    gap: 0;
+    gap: space(2);
   }
 }
