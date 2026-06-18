@@ -144,3 +144,172 @@ export const FirstInvoice: Story = {
     );
   },
 };
+
+/** Last day of month — edge-case calendar rendering. */
+export const LastDayOfMonth: Story = {
+  decorators: [
+    (Story) => {
+      const lastDayInvoice = {
+        ...storyInvoice,
+        paymentInformation: {
+          ...storyInvoice.paymentInformation,
+          transactionDate: new Date(2024, 2, 31),
+        },
+      };
+      seedInvoiceStoryStores({invoices: [lastDayInvoice]});
+      return <Story />;
+    },
+  ],
+  render: () => {
+    const lastDayInvoice = {
+      ...storyInvoice,
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(2024, 2, 31),
+      },
+    };
+    return (
+      <WithViewInvoiceContext invoice={lastDayInvoice}>
+        <ShoppingCalendarCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {description: {story: "Invoice on the last day of the month (March 31) to test month-end edge cases."}},
+  },
+};
+
+/** Mid-month cluster — several invoices in one week. */
+export const MidMonthCluster: Story = {
+  decorators: [
+    (Story) => {
+      const clusterInvoices = Array.from({length: 7}, (_, i) => ({
+        ...storyInvoice,
+        id: `invoice-cluster-${i}`,
+        paymentInformation: {
+          ...storyInvoice.paymentInformation,
+          transactionDate: new Date(2024, 2, 15 + i),
+          totalCostAmount: Number((30 + i * 10).toFixed(2)),
+        },
+      }));
+      seedInvoiceStoryStores({invoices: clusterInvoices});
+      return <Story />;
+    },
+  ],
+  render: () => (
+    <WithViewInvoiceContext invoice={storyInvoice}>
+      <ShoppingCalendarCard />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {
+    docs: {description: {story: "Seven consecutive days with invoices (mid-month cluster) to show concentrated spending."}},
+  },
+};
+
+/** February — 28-day month. */
+export const FebruaryMonth: Story = {
+  decorators: [
+    (Story) => {
+      const febInvoices = Array.from({length: 5}, (_, i) => ({
+        ...storyInvoice,
+        id: `invoice-feb-${i}`,
+        paymentInformation: {
+          ...storyInvoice.paymentInformation,
+          transactionDate: new Date(2024, 1, i * 5 + 3),
+          totalCostAmount: Number((40 + i * 15).toFixed(2)),
+        },
+      }));
+      seedInvoiceStoryStores({invoices: febInvoices});
+      return <Story />;
+    },
+  ],
+  render: () => {
+    const febInvoice = {
+      ...storyInvoice,
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(2024, 1, 15),
+      },
+    };
+    return (
+      <WithViewInvoiceContext invoice={febInvoice}>
+        <ShoppingCalendarCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {description: {story: "Calendar for February (28 days in 2024 leap year) to test month length handling."}},
+  },
+};
+
+/** December — year-end month. */
+export const DecemberMonth: Story = {
+  decorators: [
+    (Story) => {
+      const decInvoices = Array.from({length: 8}, (_, i) => ({
+        ...storyInvoice,
+        id: `invoice-dec-${i}`,
+        paymentInformation: {
+          ...storyInvoice.paymentInformation,
+          transactionDate: new Date(2024, 11, i * 3 + 2),
+          totalCostAmount: Number((60 + i * 20).toFixed(2)),
+        },
+      }));
+      seedInvoiceStoryStores({invoices: decInvoices});
+      return <Story />;
+    },
+  ],
+  render: () => {
+    const decInvoice = {
+      ...storyInvoice,
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(2024, 11, 20),
+      },
+    };
+    return (
+      <WithViewInvoiceContext invoice={decInvoice}>
+        <ShoppingCalendarCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {description: {story: "Calendar for December to test year-end month display."}},
+  },
+};
+
+/** Same day multiple invoices. */
+export const SameDayMultiple: Story = {
+  decorators: [
+    (Story) => {
+      const sameDayInvoices = Array.from({length: 4}, (_, i) => ({
+        ...storyInvoice,
+        id: `invoice-same-${i}`,
+        paymentInformation: {
+          ...storyInvoice.paymentInformation,
+          transactionDate: new Date(2024, 2, 15, 10 + i, 0, 0),
+          totalCostAmount: Number((25 + i * 10).toFixed(2)),
+        },
+      }));
+      seedInvoiceStoryStores({invoices: sameDayInvoices});
+      return <Story />;
+    },
+  ],
+  render: () => {
+    const sameDayInvoice = {
+      ...storyInvoice,
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(2024, 2, 15, 12, 0, 0),
+      },
+    };
+    return (
+      <WithViewInvoiceContext invoice={sameDayInvoice}>
+        <ShoppingCalendarCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {description: {story: "Four invoices on the same day to test same-day aggregation and heat intensity."}},
+  },
+};

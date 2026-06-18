@@ -122,3 +122,66 @@ export const NoCookingTime: Story = {
     </WithInvoiceDialogs>
   ),
 };
+
+/** Recipe card with normal complexity level. */
+export const NormalRecipe: Story = {
+  render: ({recipe}) => (
+    <WithInvoiceDialogs>
+      <RecipeCard
+        recipe={{
+          ...recipe,
+          complexity: 1,
+        }}
+      />
+    </WithInvoiceDialogs>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Recipe with normal complexity level (middle tier).",
+      },
+    },
+  },
+};
+
+/** Recipe with single ingredient. */
+export const SingleIngredient: Story = {
+  render: ({recipe}) => (
+    <WithInvoiceDialogs>
+      <RecipeCard
+        recipe={{
+          ...recipe,
+          ingredients: ["Water"],
+        }}
+      />
+    </WithInvoiceDialogs>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Recipe with only one ingredient to test minimal ingredients list.",
+      },
+    },
+  },
+};
+
+/** Recipe with no instructions/description. */
+export const NoDescription: Story = {
+  render: ({recipe}) => (
+    <WithInvoiceDialogs>
+      <RecipeCard
+        recipe={{
+          ...recipe,
+          description: "",
+        }}
+      />
+    </WithInvoiceDialogs>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Recipe without a description to test empty description state.",
+      },
+    },
+  },
+};

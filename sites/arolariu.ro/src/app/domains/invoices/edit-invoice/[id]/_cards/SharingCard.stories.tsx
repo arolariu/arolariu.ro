@@ -99,3 +99,46 @@ export const SharedWithSingleUser: Story = {
     </WithInvoiceDialogs>
   ),
 };
+
+/** Invoice shared with exactly two users. */
+export const SharedWithTwoUsers: Story = {
+  render: ({invoice}) => (
+    <WithInvoiceDialogs>
+      <SharingCard
+        invoice={{
+          ...invoice,
+          sharedWith: ["user-001", "user-002"],
+        }}
+      />
+    </WithInvoiceDialogs>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice shared with exactly two users — minimal plural state.",
+      },
+    },
+  },
+};
+
+/** Important invoice that is also shared. */
+export const ImportantAndShared: Story = {
+  render: ({invoice}) => (
+    <WithInvoiceDialogs>
+      <SharingCard
+        invoice={{
+          ...invoice,
+          isImportant: true,
+          sharedWith: ["user-abc", "user-def"],
+        }}
+      />
+    </WithInvoiceDialogs>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Important invoice that is also shared to test combined visual states.",
+      },
+    },
+  },
+};

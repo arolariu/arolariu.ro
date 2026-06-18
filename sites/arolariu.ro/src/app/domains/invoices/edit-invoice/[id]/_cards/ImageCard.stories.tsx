@@ -169,3 +169,110 @@ export const MixedMediaTypes: Story = {
     },
   },
 };
+
+/** Invoice with single scan only. */
+export const SingleImage: Story = {
+  render: () => {
+    const invoiceWithSingleScan = {
+      ...storyInvoice,
+      id: "invoice-story-single-scan",
+      name: "Invoice with single scan",
+      scans: [storyInvoiceImageScan],
+    };
+    return <ImageCard invoice={invoiceWithSingleScan} />;
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Image card with exactly one image scan — minimal carousel state.",
+      },
+    },
+  },
+};
+
+/** Invoice with exactly two scans — exercises next/prev navigation. */
+export const TwoScans: Story = {
+  render: () => {
+    const invoiceWithTwoScans = {
+      ...storyInvoice,
+      id: "invoice-story-two-scans",
+      name: "Invoice with two scans",
+      scans: [
+        storyInvoiceImageScan,
+        {
+          ...storyInvoiceImageScan,
+          location: `${storyImageScanUrl}?variant=second`,
+          metadata: {
+            ...storyInvoiceImageScan.metadata,
+            scanId: "scan-story-image-002",
+            uploadedAt: "2024-03-15T11:15:00.000Z",
+          },
+        },
+      ],
+    };
+    return <ImageCard invoice={invoiceWithTwoScans} />;
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Image card with exactly two scans to exercise basic carousel navigation.",
+      },
+    },
+  },
+};
+
+/** Invoice with three scans. */
+export const ThreeScans: Story = {
+  render: () => {
+    const invoiceWithThreeScans = {
+      ...storyInvoice,
+      id: "invoice-story-three-scans",
+      name: "Invoice with three scans",
+      scans: Array.from({length: 3}, (_, i) => ({
+        ...storyInvoiceImageScan,
+        location: `${storyImageScanUrl}?scan=${i}`,
+        metadata: {
+          ...storyInvoiceImageScan.metadata,
+          scanId: `scan-story-image-${String(i).padStart(3, "0")}`,
+          uploadedAt: new Date(2024, 2, 15, 10, i).toISOString(),
+        },
+      })),
+    };
+    return <ImageCard invoice={invoiceWithThreeScans} />;
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Image card with three scans to verify carousel mid-range navigation.",
+      },
+    },
+  },
+};
+
+/** Invoice with five scans. */
+export const FiveScans: Story = {
+  render: () => {
+    const invoiceWithFiveScans = {
+      ...storyInvoice,
+      id: "invoice-story-five-scans",
+      name: "Invoice with five scans",
+      scans: Array.from({length: 5}, (_, i) => ({
+        ...storyInvoiceImageScan,
+        location: `${storyImageScanUrl}?scan=${i}`,
+        metadata: {
+          ...storyInvoiceImageScan.metadata,
+          scanId: `scan-story-image-${String(i).padStart(3, "0")}`,
+          uploadedAt: new Date(2024, 2, 15, 10, i).toISOString(),
+        },
+      })),
+    };
+    return <ImageCard invoice={invoiceWithFiveScans} />;
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Image card with five scans to verify carousel with moderate item count.",
+      },
+    },
+  },
+};

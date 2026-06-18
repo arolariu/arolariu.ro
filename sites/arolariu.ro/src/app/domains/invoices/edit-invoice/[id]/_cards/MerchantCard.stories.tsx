@@ -1,6 +1,6 @@
 import type {Merchant} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
-import {storyMerchant, storyOnlineMerchant, WithInvoiceDialogs} from "../../../_storybook";
+import {storyMerchant, storyMinimalMerchant, storyOnlineMerchant, WithInvoiceDialogs} from "../../../_storybook";
 import MerchantCard from "./MerchantCard";
 
 type StoryArgs = {merchant: Merchant | null; merchantPreset: "physical" | "online" | "none"};
@@ -125,4 +125,49 @@ export const LongWebsiteUrl: Story = {
       />
     </WithInvoiceDialogs>
   ),
+};
+
+/** Minimal merchant — uses the new storyMinimalMerchant fixture. */
+export const MinimalMerchant: Story = {
+  render: () => (
+    <WithInvoiceDialogs>
+      <MerchantCard merchant={storyMinimalMerchant} />
+    </WithInvoiceDialogs>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Merchant with minimal contact information to verify fallback handling for missing fields.",
+      },
+    },
+  },
+};
+
+/** Merchant with very long address. */
+export const LongAddress: Story = {
+  render: ({merchant}) => (
+    <WithInvoiceDialogs>
+      <MerchantCard
+        merchant={
+          merchant
+            ? ({
+                ...merchant,
+                address: {
+                  ...merchant.address,
+                  line1: "Strada Petre Ispirescu, Nr. 45-47, Bloc M12, Scara A, Etaj 3, Apartament 15",
+                  line2: "Complex Rezidential Green Park Phase II, Zona Industriala Bucuresti Nord-Vest",
+                },
+              } as Merchant)
+            : null
+        }
+      />
+    </WithInvoiceDialogs>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Merchant with very long address to verify text wrapping and truncation.",
+      },
+    },
+  },
 };

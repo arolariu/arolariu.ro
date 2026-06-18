@@ -1,8 +1,14 @@
 import {
   invoicePresets,
   setupEditInvoiceStory,
+  storyDeletedInvoice,
+  storyEurInvoice,
+  storyGbpInvoice,
   storyInvoice,
   storyMerchant,
+  storySharedManyInvoice,
+  storyTipInvoice,
+  storyUsdInvoice,
   WithEditInvoiceContext,
   withEntityPreset,
 } from "@/app/domains/invoices/_storybook";
@@ -171,6 +177,86 @@ export const HighAmount: Story = {
           tipAmount: 0,
         },
       }}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Invoice with EUR currency. */
+export const EuroCurrency: Story = {
+  render: () => (
+    <WithEditInvoiceContext
+      invoice={storyEurInvoice}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Invoice with USD currency. */
+export const UsdCurrency: Story = {
+  render: () => (
+    <WithEditInvoiceContext
+      invoice={storyUsdInvoice}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Invoice with GBP currency. */
+export const GbpCurrency: Story = {
+  render: () => (
+    <WithEditInvoiceContext
+      invoice={storyGbpInvoice}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Invoice with tip amount. */
+export const WithTip: Story = {
+  render: () => (
+    <WithEditInvoiceContext
+      invoice={storyTipInvoice}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Invoice with cash payment type. */
+export const CashPayment: Story = {
+  render: ({invoice}) => (
+    <WithEditInvoiceContext
+      invoice={{
+        ...invoice,
+        paymentInformation: {...invoice.paymentInformation, paymentType: 100 as typeof invoice.paymentInformation.paymentType},
+      }}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Soft-deleted invoice. */
+export const SoftDeleted: Story = {
+  render: () => (
+    <WithEditInvoiceContext
+      invoice={storyDeletedInvoice}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Invoice shared with many users. */
+export const SharedWithMany: Story = {
+  render: () => (
+    <WithEditInvoiceContext
+      invoice={storySharedManyInvoice}
       merchant={storyMerchant}>
       <InvoiceCard />
     </WithEditInvoiceContext>

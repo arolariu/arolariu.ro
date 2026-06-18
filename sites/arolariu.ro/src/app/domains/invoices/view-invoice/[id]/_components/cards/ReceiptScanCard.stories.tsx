@@ -83,3 +83,57 @@ export const MixedMediaTypes: Story = {
     );
   },
 };
+
+/** Invoice with many scans — 8 scans. */
+export const ManyScans: Story = {
+  render: () => {
+    const firstScan = storyInvoice.scans[0];
+    const manyScansInvoice: typeof storyInvoice = {
+      ...storyInvoice,
+      scans: firstScan
+        ? Array.from({length: 8}, (_, i) => ({
+            ...firstScan,
+            metadata: {
+              ...firstScan.metadata,
+              scanId: `scan-${String(i).padStart(3, "0")}`,
+            },
+          }))
+        : [],
+    };
+    return (
+      <WithViewInvoiceContext invoice={manyScansInvoice}>
+        <ReceiptScanCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice with 8 scans to verify carousel scrolling and navigation.",
+      },
+    },
+  },
+};
+
+/** Invoice with exactly two scans. */
+export const TwoScans: Story = {
+  render: () => {
+    const firstScan = storyInvoice.scans[0];
+    const twoScansInvoice: typeof storyInvoice = {
+      ...storyInvoice,
+      scans: firstScan ? [firstScan, {...firstScan, metadata: {...firstScan.metadata, scanId: "scan-002"}}] : [],
+    };
+    return (
+      <WithViewInvoiceContext invoice={twoScansInvoice}>
+        <ReceiptScanCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice with exactly two scans — minimal carousel navigation state.",
+      },
+    },
+  },
+};

@@ -364,3 +364,132 @@ export const ManyMetadataItems: Story = {
     },
   },
 };
+
+/** Scan card without any actions. */
+export const NoActions: Story = {
+  args: {
+    media: {
+      src: storyImageScanUrl,
+      mediaKind: "image",
+      alt: "Scan without actions",
+    },
+    title: "readonly-scan.jpg",
+    metadataItems: ["1.2 MB", "Mar 18, 2024"],
+    actions: undefined,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Scan card without actions menu to test read-only state.",
+      },
+    },
+  },
+};
+
+/** Scan card selected but not checkable. */
+export const SelectedNoCheckbox: Story = {
+  args: {
+    media: {
+      src: storyImageScanUrl,
+      mediaKind: "image",
+      alt: "Selected scan",
+    },
+    title: "selected-scan.jpg",
+    metadataItems: ["800 KB", "Mar 19, 2024"],
+    isSelected: true,
+    selection: undefined,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Scan card in selected state without checkbox UI (selection prop undefined).",
+      },
+    },
+  },
+};
+
+/** Scan card with locked state. */
+export const LockedState: Story = {
+  args: {
+    media: {
+      src: storyImageScanUrl,
+      mediaKind: "image",
+      alt: "Locked scan",
+    },
+    title: "locked-scan.jpg",
+    metadataItems: ["1.5 MB", "Mar 20, 2024"],
+    isLocked: true,
+    statusBadge: <Badge variant='secondary'>Locked</Badge>,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Scan card in locked state with secondary status badge.",
+      },
+    },
+  },
+};
+
+/** Scan card with zero progress. */
+export const ZeroProgress: Story = {
+  args: {
+    media: {
+      src: storyImageScanUrl,
+      mediaKind: "image",
+      alt: "Scan with zero progress",
+    },
+    title: "starting-upload.jpg",
+    metadataItems: ["2.0 MB"],
+    progress: {value: 0, label: "Starting upload..."},
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Scan card with progress bar at 0% to test upload start state.",
+      },
+    },
+  },
+};
+
+/** Scan card with 50% progress. */
+export const HalfProgress: Story = {
+  args: {
+    media: {
+      src: storyImageScanUrl,
+      mediaKind: "image",
+      alt: "Scan at half progress",
+    },
+    title: "half-upload.jpg",
+    metadataItems: ["1.8 MB"],
+    progress: {value: 50, label: "50% uploaded"},
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Scan card with progress bar at 50% to test mid-upload state.",
+      },
+    },
+  },
+};
+
+/** Scan card with complete progress. */
+export const CompleteProgress: Story = {
+  args: {
+    media: {
+      src: storyImageScanUrl,
+      mediaKind: "image",
+      alt: "Scan upload complete",
+    },
+    title: "complete-upload.jpg",
+    metadataItems: ["1.5 MB", "Mar 21, 2024"],
+    progress: {value: 100, label: "Upload complete"},
+    statusBadge: <Badge variant='default'>Complete</Badge>,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Scan card with progress bar at 100% and success badge.",
+      },
+    },
+  },
+};

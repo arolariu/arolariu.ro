@@ -4,6 +4,7 @@ import {
   storyInvoice,
   storyProducts,
   storyRecipeEasy,
+  storyRecipeHard,
   withEntityPreset,
   WithViewInvoiceContext,
 } from "@/app/domains/invoices/_storybook";
@@ -445,6 +446,263 @@ export const MixedConfidence: Story = {
       description: {
         story:
           "Invoice with mixed OCR confidence levels. Half the products have 95% confidence and half have 40% confidence, averaging ~67.5% (13.5 pts). All products complete and categorized. Total: 15 + 20 + 13.5 + 10 + 15 + 10 + 0 = 83.5%.",
+      },
+    },
+  },
+};
+
+/** Zero products — absolute minimum score. */
+export const ZeroProducts: Story = {
+  render: () => {
+    const invoice = {
+      ...storyInvoice,
+      items: [],
+      merchantReference: "00000000-0000-0000-0000-000000000000",
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(0),
+        totalCostAmount: 0,
+        currency: {code: "", symbol: "", name: ""},
+      },
+      possibleRecipes: [],
+    };
+
+    return (
+      <WithViewInvoiceContext invoice={invoice}>
+        <InvoiceHealthScore />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice with zero products — absolute minimum score of 0%. No data to score.",
+      },
+    },
+  },
+};
+
+/** Invoice with recipes but low product quality. */
+export const RecipesButLowQuality: Story = {
+  render: () => {
+    const lowQualityProducts = storyProducts.slice(0, 3).map((product) => ({
+      ...product,
+      metadata: {...product.metadata, isComplete: false, confidence: 0.5},
+      category: ProductCategory.NOT_DEFINED,
+    }));
+
+    const invoice = {
+      ...storyInvoice,
+      items: lowQualityProducts,
+      merchantReference: "merchant-uuid-recipes",
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(),
+        totalCostAmount: 50.0,
+        currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      },
+      possibleRecipes: [storyRecipeEasy],
+    };
+
+    return (
+      <WithViewInvoiceContext invoice={invoice}>
+        <InvoiceHealthScore />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Invoice with recipes generated but low product quality. Demonstrates that recipes alone don't guarantee a high score. Total: 15 + 0 + 10 + 10 + 15 + 0 + 10 = 60%.",
+      },
+    },
+  },
+};
+
+/** Invoice with very high confidence but few products. */
+export const HighConfidenceFewProducts: Story = {
+  render: () => {
+    const fewProducts = storyProducts.slice(0, 1).map((product) => ({
+      ...product,
+      metadata: {...product.metadata, isComplete: true, confidence: 1.0},
+      category: ProductCategory.GROCERIES,
+    }));
+
+    const invoice = {
+      ...storyInvoice,
+      items: fewProducts,
+      merchantReference: "merchant-uuid-single",
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(),
+        totalCostAmount: 25.0,
+        currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      },
+      possibleRecipes: [],
+    };
+
+    return (
+      <WithViewInvoiceContext invoice={invoice}>
+        <InvoiceHealthScore />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Invoice with just one product but perfect quality (100% OCR confidence, complete, categorized). Total: 15 + 20 + 20 + 10 + 15 + 10 + 0 = 90%.",
+      },
+    },
+  },
+};
+
+/** Invoice missing payment info — payment factor zero. */
+export const MissingPaymentInfo: Story = {
+  render: () => {
+    const invoice = {
+      ...storyInvoice,
+      items: storyProducts.slice(0, 5).map((product) => ({
+        ...product,
+        metadata: {...product.metadata, isComplete: true, confidence: 0.9},
+        category: ProductCategory.GROCERIES,
+      })),
+      merchantReference: "merchant-uuid-nopayment",
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(0),
+        totalCostAmount: 0,
+        currency: {code: "", symbol: "", name: ""},
+      },
+      possibleRecipes: [],
+    };
+
+    return (
+      <WithViewInvoiceContext invoice={invoice}>
+        <InvoiceHealthScore />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Invoice missing payment information (0 total, epoch date, empty currency). Payment factor contributes 0%. Total: 15 + 20 + 18 + 10 + 0 + 10 + 0 = 73%.",
+      },
+    },
+  },
+};
+
+/** Invoice with all products incomplete. */
+export const AllIncomplete: Story = {
+  render: () => {
+    const incompleteProducts = storyProducts.slice(0, 6).map((product) => ({
+      ...product,
+      metadata: {...product.metadata, isComplete: false, confidence: 0.8},
+      category: ProductCategory.GROCERIES,
+    }));
+
+    const invoice = {
+      ...storyInvoice,
+      items: incompleteProducts,
+      merchantReference: "merchant-uuid-incomplete",
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(),
+        totalCostAmount: 120.0,
+        currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      },
+      possibleRecipes: [],
+    };
+
+    return (
+      <WithViewInvoiceContext invoice={invoice}>
+        <InvoiceHealthScore />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Invoice with all products marked incomplete but good OCR confidence (80%). Completeness factor contributes 0%. Total: 15 + 0 + 16 + 10 + 15 + 10 + 0 = 66%.",
+      },
+    },
+  },
+};
+
+/** Invoice with many products but no merchant. */
+export const ManyProductsNoMerchant: Story = {
+  render: () => {
+    const manyProducts = storyProducts.slice(0, 15).map((product, i) => ({
+      ...product,
+      name: `Product ${i + 1}`,
+      metadata: {...product.metadata, isComplete: true, confidence: 0.85},
+      category: ProductCategory.GROCERIES,
+    }));
+
+    const invoice = {
+      ...storyInvoice,
+      items: manyProducts,
+      merchantReference: "00000000-0000-0000-0000-000000000000",
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(),
+        totalCostAmount: 300.0,
+        currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      },
+      possibleRecipes: [],
+    };
+
+    return (
+      <WithViewInvoiceContext invoice={invoice}>
+        <InvoiceHealthScore />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Invoice with 15 products but no linked merchant. Merchant factor contributes 0%. Total: 15 + 20 + 17 + 0 + 15 + 10 + 0 = 77%.",
+      },
+    },
+  },
+};
+
+/** Invoice with recipes and merchant but low product data. */
+export const RecipesAndMerchantOnly: Story = {
+  render: () => {
+    const minimalProducts = storyProducts.slice(0, 2).map((product) => ({
+      ...product,
+      metadata: {...product.metadata, isComplete: false, confidence: 0.4},
+      category: ProductCategory.NOT_DEFINED,
+    }));
+
+    const invoice = {
+      ...storyInvoice,
+      items: minimalProducts,
+      merchantReference: "merchant-uuid-recipes-merchant",
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(),
+        totalCostAmount: 50.0,
+        currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      },
+      possibleRecipes: [storyRecipeEasy, storyRecipeHard],
+    };
+
+    return (
+      <WithViewInvoiceContext invoice={invoice}>
+        <InvoiceHealthScore />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice with recipes and merchant linked but low-quality product data. Total: 15 + 0 + 8 + 10 + 15 + 0 + 10 = 58%.",
       },
     },
   },

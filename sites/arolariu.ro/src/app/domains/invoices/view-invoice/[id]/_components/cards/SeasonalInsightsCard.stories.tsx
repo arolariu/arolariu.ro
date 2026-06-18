@@ -95,3 +95,61 @@ export const EmptyStore: Story = {
     </WithViewInvoiceContext>
   ),
 };
+
+/** Two invoices only — minimal history. */
+export const TwoInvoices: Story = {
+  decorators: [
+    (Story) => {
+      resetInvoiceStoryStores();
+      const invoice1 = {
+        ...storyInvoice,
+        id: "invoice-1",
+        paymentInformation: {...storyInvoice.paymentInformation, transactionDate: new Date(2024, 2, 10), totalCostAmount: 50.0},
+      };
+      const invoice2 = {
+        ...storyInvoice,
+        id: "invoice-2",
+        paymentInformation: {...storyInvoice.paymentInformation, transactionDate: new Date(2024, 2, 20), totalCostAmount: 75.0},
+      };
+      seedInvoiceStoryStores({invoices: [invoice1, invoice2]});
+      return <Story />;
+    },
+  ],
+  render: () => (
+    <WithViewInvoiceContext invoice={storyInvoice}>
+      <SeasonalInsightsCard />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {
+    docs: {description: {story: "Two invoices to test minimal viable seasonal insights."}},
+  },
+};
+
+/** Invoices spanning multiple months. */
+export const MultiMonth: Story = {
+  decorators: [
+    (Story) => {
+      resetInvoiceStoryStores();
+      const multiMonthInvoices = Array.from({length: 12}, (_, i) => ({
+        ...storyInvoice,
+        id: `invoice-month-${i}`,
+        name: `Invoice Month ${i + 1}`,
+        paymentInformation: {
+          ...storyInvoice.paymentInformation,
+          transactionDate: new Date(2024, i, 15),
+          totalCostAmount: Number((100 + i * 25 + Math.random() * 50).toFixed(2)),
+        },
+      }));
+      seedInvoiceStoryStores({invoices: multiMonthInvoices});
+      return <Story />;
+    },
+  ],
+  render: () => (
+    <WithViewInvoiceContext invoice={storyInvoice}>
+      <SeasonalInsightsCard />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {
+    docs: {description: {story: "Invoices spanning 12 months to show year-long seasonal trends."}},
+  },
+};

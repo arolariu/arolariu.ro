@@ -221,3 +221,143 @@ export const EndOfMonth: Story = {
     },
   ],
 };
+
+/** Start of month transaction — many days remaining. */
+export const StartOfMonth: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Budget impact card for a transaction at the start of the month. Shows many days remaining with favorable daily allowance.",
+      },
+    },
+  },
+  decorators: [
+    (Story) => {
+      const invoice = new InvoiceBuilder()
+        .withPaymentInformation({
+          transactionDate: new Date(2026, 0, 2), // January 2, 2026
+          paymentType: PaymentType.Card,
+          currency: {code: "USD", name: "US Dollar", symbol: "$"},
+          totalCostAmount: 50.0,
+          totalTaxAmount: 5.0,
+          subtotalAmount: 45.0,
+          tipAmount: 0,
+        })
+        .build();
+      return (
+        <InvoiceContextProvider
+          invoice={invoice}
+          merchant={null}>
+          <div style={{minWidth: "400px"}}>
+            <Story />
+          </div>
+        </InvoiceContextProvider>
+      );
+    },
+  ],
+};
+
+/** Mid-month transaction. */
+export const MidMonth: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Budget impact card for a mid-month transaction. Shows typical monthly budget consumption at the halfway point.",
+      },
+    },
+  },
+  decorators: [
+    (Story) => {
+      const invoice = new InvoiceBuilder()
+        .withPaymentInformation({
+          transactionDate: new Date(2026, 0, 16), // January 16, 2026
+          paymentType: PaymentType.Card,
+          currency: {code: "USD", name: "US Dollar", symbol: "$"},
+          totalCostAmount: 600.0,
+          totalTaxAmount: 60.0,
+          subtotalAmount: 540.0,
+          tipAmount: 0,
+        })
+        .build();
+      return (
+        <InvoiceContextProvider
+          invoice={invoice}
+          merchant={null}>
+          <div style={{minWidth: "400px"}}>
+            <Story />
+          </div>
+        </InvoiceContextProvider>
+      );
+    },
+  ],
+};
+
+/** Cash payment type variant. */
+export const CashPayment: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Budget impact card for a cash payment transaction (payment type 100).",
+      },
+    },
+  },
+  decorators: [
+    (Story) => {
+      const invoice = new InvoiceBuilder()
+        .withPaymentInformation({
+          transactionDate: new Date(2026, 0, 10),
+          paymentType: 100 as PaymentType,
+          currency: {code: "USD", name: "US Dollar", symbol: "$"},
+          totalCostAmount: 200.0,
+          totalTaxAmount: 20.0,
+          subtotalAmount: 180.0,
+          tipAmount: 0,
+        })
+        .build();
+      return (
+        <InvoiceContextProvider
+          invoice={invoice}
+          merchant={null}>
+          <div style={{minWidth: "400px"}}>
+            <Story />
+          </div>
+        </InvoiceContextProvider>
+      );
+    },
+  ],
+};
+
+/** EUR currency variant. */
+export const EuroCurrency: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Budget impact card for a transaction in EUR currency.",
+      },
+    },
+  },
+  decorators: [
+    (Story) => {
+      const invoice = new InvoiceBuilder()
+        .withPaymentInformation({
+          transactionDate: new Date(2026, 0, 14),
+          paymentType: PaymentType.Card,
+          currency: {code: "EUR", name: "Euro", symbol: "€"},
+          totalCostAmount: 450.0,
+          totalTaxAmount: 45.0,
+          subtotalAmount: 405.0,
+          tipAmount: 0,
+        })
+        .build();
+      return (
+        <InvoiceContextProvider
+          invoice={invoice}
+          merchant={null}>
+          <div style={{minWidth: "400px"}}>
+            <Story />
+          </div>
+        </InvoiceContextProvider>
+      );
+    },
+  ],
+};

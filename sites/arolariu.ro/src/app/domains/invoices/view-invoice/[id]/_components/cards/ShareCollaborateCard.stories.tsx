@@ -88,3 +88,33 @@ export const SharedWithSingleUser: Story = {
   ),
   parameters: {docs: {description: {story: "Invoice shared with exactly one user - displays 'Shared' badge with count of 1."}}},
 };
+
+/** Important invoice that is private. */
+export const ImportantAndPrivate: Story = {
+  render: ({invoice}) => (
+    <WithViewInvoiceContext invoice={{...invoice, isImportant: true, sharedWith: []}}>
+      <ShareCollaborateCard />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {docs: {description: {story: "Important invoice that remains private — combination of importance and privacy."}}},
+};
+
+/** Invoice shared with exactly two users. */
+export const SharedWithTwoUsers: Story = {
+  render: ({invoice}) => (
+    <WithViewInvoiceContext invoice={{...invoice, sharedWith: ["user-001", "user-002"]}}>
+      <ShareCollaborateCard />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {docs: {description: {story: "Invoice shared with exactly two users — minimal plural state."}}},
+};
+
+/** Soft-deleted invoice that is public. */
+export const SoftDeletedAndPublic: Story = {
+  render: ({invoice}) => (
+    <WithViewInvoiceContext invoice={{...invoice, isSoftDeleted: true, sharedWith: [LAST_GUID]}}>
+      <ShareCollaborateCard />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {docs: {description: {story: "Soft-deleted invoice that is still public — tests combined state display."}}},
+};

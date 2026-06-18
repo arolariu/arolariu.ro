@@ -169,3 +169,161 @@ export const ImportantAndSelected: Story = {
     },
   },
 };
+
+/** Invoice with EUR currency. */
+export const EuroCurrency: Story = {
+  args: {
+    invoice: {
+      ...storyInvoice,
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        currency: {code: "EUR", name: "Euro", symbol: "€"},
+      },
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice card with EUR currency to verify currency symbol display.",
+      },
+    },
+  },
+};
+
+/** Invoice with USD currency. */
+export const UsdCurrency: Story = {
+  args: {
+    invoice: {
+      ...storyInvoice,
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        currency: {code: "USD", name: "US Dollar", symbol: "$"},
+      },
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice card with USD currency to verify dollar symbol display.",
+      },
+    },
+  },
+};
+
+/** Invoice with zero total amount. */
+export const ZeroAmount: Story = {
+  args: {
+    invoice: {
+      ...storyInvoice,
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        totalCostAmount: 0,
+        subtotalAmount: 0,
+        totalTaxAmount: 0,
+        tipAmount: 0,
+      },
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice card with zero total amount to test edge-case formatting.",
+      },
+    },
+  },
+};
+
+/** Soft-deleted invoice. */
+export const SoftDeleted: Story = {
+  args: {
+    invoice: {
+      ...invoicePresets["standard"],
+      isSoftDeleted: true,
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Soft-deleted invoice card to verify deletion markers.",
+      },
+    },
+  },
+};
+
+/** Invoice shared with many users — overflow test. */
+export const SharedWithManyUsers: Story = {
+  args: {
+    invoice: {
+      ...invoicePresets["standard"],
+      sharedWith: Array.from({length: 12}, (_, i) => `user-${String(i).padStart(3, "0")}`),
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice shared with 12 users to test multi-user display.",
+      },
+    },
+  },
+};
+
+/** Invoice with future date. */
+export const FutureDate: Story = {
+  args: {
+    invoice: {
+      ...storyInvoice,
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date("2099-12-31T10:00:00.000Z"),
+      },
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice with future transaction date to test date edge case.",
+      },
+    },
+  },
+};
+
+/** Invoice with epoch date. */
+export const EpochDate: Story = {
+  args: {
+    invoice: {
+      ...storyInvoice,
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(0),
+      },
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice with epoch date (1970-01-01) to test date edge case.",
+      },
+    },
+  },
+};
+
+/** Invoice with tip. */
+export const WithTip: Story = {
+  args: {
+    invoice: {
+      ...storyInvoice,
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        tipAmount: 15.0,
+        totalCostAmount: 115.0,
+      },
+    } as Invoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice with tip amount to test payment breakdown.",
+      },
+    },
+  },
+};

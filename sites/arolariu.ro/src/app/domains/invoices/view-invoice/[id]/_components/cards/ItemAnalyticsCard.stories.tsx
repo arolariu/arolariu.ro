@@ -1,4 +1,14 @@
-import {WithViewInvoiceContext, invoicePresets, storyInvoice, storyProducts, withEntityPreset} from "@/app/domains/invoices/_storybook";
+import {
+  invoicePresets,
+  storyInvoice,
+  storyLowConfidenceInvoice,
+  storyManyAllergensInvoice,
+  storyMixedConfidenceInvoice,
+  storyProducts,
+  storySoftDeletedItemsInvoice,
+  withEntityPreset,
+  WithViewInvoiceContext,
+} from "@/app/domains/invoices/_storybook";
 import type {Invoice, Product} from "@/types/invoices";
 import {ProductCategory} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
@@ -151,4 +161,136 @@ export const ZeroPrices: Story = {
     );
   },
   parameters: {docs: {description: {story: "Products with zero prices to test edge-case currency formatting."}}},
+};
+
+/** Products with low confidence. */
+export const LowConfidenceProducts: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyLowConfidenceInvoice}>
+      <ItemAnalyticsCard />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {docs: {description: {story: "Products with low OCR confidence (30%) to verify confidence indicators."}}},
+};
+
+/** Products with mixed confidence levels. */
+export const MixedConfidenceProducts: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyMixedConfidenceInvoice}>
+      <ItemAnalyticsCard />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {docs: {description: {story: "Products with mixed confidence levels (95% and 40%) to test confidence display."}}},
+};
+
+/** Products with allergens. */
+export const ProductsWithAllergens: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyManyAllergensInvoice}>
+      <ItemAnalyticsCard />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {docs: {description: {story: "Products with multiple allergens (lactose, gluten, nuts) per item."}}},
+};
+
+/** Products with soft-deleted items. */
+export const WithSoftDeletedItems: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storySoftDeletedItemsInvoice}>
+      <ItemAnalyticsCard />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {docs: {description: {story: "Invoice containing soft-deleted items to verify deletion markers."}}},
+};
+
+/** Products with fractional quantities. */
+export const FractionalQuantities: Story = {
+  render: ({invoice}) => {
+    const products: Product[] = storyProducts.map((product, i) => ({
+      ...product,
+      quantity: [0.5, 1.25, 2.75, 3.33][i] ?? 1,
+      price: 10.0,
+      totalPrice: ([0.5, 1.25, 2.75, 3.33][i] ?? 1) * 10.0,
+    }));
+    return (
+      <WithViewInvoiceContext invoice={{...invoice, items: products}}>
+        <ItemAnalyticsCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {docs: {description: {story: "Products with fractional quantities (0.5, 1.25, 2.75, 3.33) to test decimal display."}}},
+};
+
+/** Products with varied categories — full spectrum. */
+export const VariedCategories: Story = {
+  render: ({invoice}) => {
+    const baseProduct: Product = storyProducts[0]!;
+    const products: Product[] = [
+      {...baseProduct, name: "Milk", category: ProductCategory.DAIRY},
+      {...baseProduct, name: "Bread", category: ProductCategory.BAKED_GOODS},
+      {...baseProduct, name: "Chicken", category: ProductCategory.MEAT},
+      {...baseProduct, name: "Tomatoes", category: ProductCategory.VEGETABLES},
+      {...baseProduct, name: "Wine", category: ProductCategory.ALCOHOLIC_BEVERAGES},
+      {...baseProduct, name: "Chocolate", category: ProductCategory.OTHER},
+    ];
+    return (
+      <WithViewInvoiceContext invoice={{...invoice, items: products}}>
+        <ItemAnalyticsCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {docs: {description: {story: "Products spanning 6 different categories to test category diversity display."}}},
+};
+
+/** Products with very small prices — under 1.00. */
+export const VerySmallPrices: Story = {
+  render: ({invoice}) => {
+    const products: Product[] = storyProducts.map((product, i) => ({
+      ...product,
+      price: [0.01, 0.25, 0.5, 0.99][i] ?? 1,
+      totalPrice: [0.01, 0.25, 0.5, 0.99][i] ?? 1,
+    }));
+    return (
+      <WithViewInvoiceContext invoice={{...invoice, items: products}}>
+        <ItemAnalyticsCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {docs: {description: {story: "Products with very small prices (0.01 to 0.99) to test sub-unit currency formatting."}}},
+};
+
+/** Products with duplicate names. */
+export const DuplicateNames: Story = {
+  render: ({invoice}) => {
+    const products: Product[] = storyProducts.map((product) => ({
+      ...product,
+      name: "Generic Product",
+      price: 5.0,
+      totalPrice: 5.0,
+    }));
+    return (
+      <WithViewInvoiceContext invoice={{...invoice, items: products}}>
+        <ItemAnalyticsCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {docs: {description: {story: "Products with identical names to test duplicate item handling."}}},
+};
+
+/** Products with very high quantities — bulk purchase. */
+export const BulkQuantities: Story = {
+  render: ({invoice}) => {
+    const products: Product[] = storyProducts.map((product, i) => ({
+      ...product,
+      quantity: [100, 250, 500, 1000][i] ?? 1,
+      price: 0.5,
+      totalPrice: ([100, 250, 500, 1000][i] ?? 1) * 0.5,
+    }));
+    return (
+      <WithViewInvoiceContext invoice={{...invoice, items: products}}>
+        <ItemAnalyticsCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {docs: {description: {story: "Products with very high quantities (100, 250, 500, 1000) to test bulk purchase display."}}},
 };

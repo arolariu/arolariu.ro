@@ -181,3 +181,119 @@ export const SingleRelated: Story = {
     docs: {description: {story: "Card displaying a single related invoice (carousel with one item)."}},
   },
 };
+
+/** Related by similar amount. */
+export const SimilarAmount: Story = {
+  render: () => {
+    const currentInvoice = {
+      ...storyInvoice,
+      paymentInformation: {...storyInvoice.paymentInformation, totalCostAmount: 100.0},
+      name: "Current Invoice",
+    };
+    const related1 = {
+      ...storyPublicInvoice,
+      paymentInformation: {...storyPublicInvoice.paymentInformation, totalCostAmount: 95.0},
+      merchantReference: "merchant-diff-1",
+      category: 300 as typeof storyPublicInvoice.category,
+      name: "Similar Amount Invoice 1",
+    };
+    const related2 = {
+      ...storyOnlineInvoice,
+      paymentInformation: {...storyOnlineInvoice.paymentInformation, totalCostAmount: 105.0},
+      merchantReference: "merchant-diff-2",
+      category: 400 as typeof storyOnlineInvoice.category,
+      name: "Similar Amount Invoice 2",
+    };
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: [currentInvoice, related1, related2]});
+    return (
+      <WithViewInvoiceContext invoice={currentInvoice}>
+        <RelatedInvoicesCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {description: {story: "Invoices related by similar total amounts (within tolerance)."}},
+  },
+};
+
+/** Related by date proximity. */
+export const DateProximity: Story = {
+  render: () => {
+    const baseDate = new Date("2024-03-15T10:00:00.000Z");
+    const currentInvoice = {
+      ...storyInvoice,
+      paymentInformation: {...storyInvoice.paymentInformation, transactionDate: baseDate},
+      name: "Current Invoice",
+    };
+    const related1 = {
+      ...storyPublicInvoice,
+      paymentInformation: {...storyPublicInvoice.paymentInformation, transactionDate: new Date("2024-03-14T10:00:00.000Z")},
+      merchantReference: "merchant-diff-1",
+      category: 300 as typeof storyPublicInvoice.category,
+      name: "Previous Day Invoice",
+    };
+    const related2 = {
+      ...storyOnlineInvoice,
+      paymentInformation: {...storyOnlineInvoice.paymentInformation, transactionDate: new Date("2024-03-16T10:00:00.000Z")},
+      merchantReference: "merchant-diff-2",
+      category: 400 as typeof storyOnlineInvoice.category,
+      name: "Next Day Invoice",
+    };
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: [currentInvoice, related1, related2]});
+    return (
+      <WithViewInvoiceContext invoice={currentInvoice}>
+        <RelatedInvoicesCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {description: {story: "Invoices related by date proximity (within 1-2 days)."}},
+  },
+};
+
+/** Three related invoices — mid-size carousel. */
+export const ThreeRelated: Story = {
+  render: () => {
+    const merchantId = "merchant-three";
+    const currentInvoice = {...storyInvoice, merchantReference: merchantId, name: "Current"};
+    const related1 = {...storyPublicInvoice, merchantReference: merchantId, id: "related-1", name: "Related 1"};
+    const related2 = {...storyOnlineInvoice, merchantReference: merchantId, id: "related-2", name: "Related 2"};
+    const related3 = {...storyInvoice, merchantReference: merchantId, id: "related-3", name: "Related 3"};
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: [currentInvoice, related1, related2, related3]});
+    return (
+      <WithViewInvoiceContext invoice={currentInvoice}>
+        <RelatedInvoicesCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {description: {story: "Carousel with exactly three related invoices."}},
+  },
+};
+
+/** Five related invoices — mid-range carousel. */
+export const FiveRelated: Story = {
+  render: () => {
+    const merchantId = "merchant-five";
+    const currentInvoice = {...storyInvoice, merchantReference: merchantId, name: "Current"};
+    const relatedInvoices = Array.from({length: 5}, (_, i) => ({
+      ...storyPublicInvoice,
+      id: `related-${i}`,
+      merchantReference: merchantId,
+      name: `Related ${i + 1}`,
+    }));
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: [currentInvoice, ...relatedInvoices]});
+    return (
+      <WithViewInvoiceContext invoice={currentInvoice}>
+        <RelatedInvoicesCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {description: {story: "Carousel with five related invoices to test mid-range scrolling."}},
+  },
+};

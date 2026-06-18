@@ -141,3 +141,115 @@ export const FirstInvoice: Story = {
     },
   },
 };
+
+/** Very high spending — 500% above average. */
+export const ExtremelyAboveAverage: Story = {
+  args: {
+    currency: "USD",
+    stats: {
+      totalInvoices: 50,
+      currentAmount: 3000.0,
+      averageAmount: 500.0,
+      percentageDiff: 500.0,
+      isAboveAverage: true,
+      minAmount: 50,
+      maxAmount: 3500,
+      currentItemCount: 150,
+      averageItemCount: 25,
+      itemCountDiff: 500.0,
+      sameMerchantAvg: 600.0,
+      sameMerchantDiff: 400.0,
+    },
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Extremely high spending (500% above average) to test outlier display and warning indicators.",
+      },
+    },
+  },
+};
+
+/** Very low spending — 90% below average. */
+export const ExtremelyBelowAverage: Story = {
+  args: {
+    currency: "EUR",
+    stats: {
+      totalInvoices: 75,
+      currentAmount: 5.0,
+      averageAmount: 50.0,
+      percentageDiff: -90.0,
+      isAboveAverage: false,
+      minAmount: 5.0,
+      maxAmount: 150,
+      currentItemCount: 1,
+      averageItemCount: 10,
+      itemCountDiff: -90.0,
+      sameMerchantAvg: 55.0,
+      sameMerchantDiff: -90.9,
+    },
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Extremely low spending (90% below average) to test minimal spending display.",
+      },
+    },
+  },
+};
+
+/** Large data set — 500 previous invoices. */
+export const LargeDataSet: Story = {
+  args: {
+    currency: "RON",
+    stats: {
+      totalInvoices: 500,
+      currentAmount: 200.0,
+      averageAmount: 185.0,
+      percentageDiff: 8.1,
+      isAboveAverage: true,
+      minAmount: 10,
+      maxAmount: 2000,
+      currentItemCount: 12,
+      averageItemCount: 11,
+      itemCountDiff: 9.1,
+      sameMerchantAvg: 190.0,
+      sameMerchantDiff: 5.3,
+    },
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Comparison stats with 500 historical invoices to verify large dataset handling.",
+      },
+    },
+  },
+};
+
+/** GBP currency variant. */
+export const GbpCurrency: Story = {
+  args: {
+    currency: "GBP",
+    stats: {
+      totalInvoices: 35,
+      currentAmount: 89.99,
+      averageAmount: 75.5,
+      percentageDiff: 19.2,
+      isAboveAverage: true,
+      minAmount: 15,
+      maxAmount: 200,
+      currentItemCount: 8,
+      averageItemCount: 7,
+      itemCountDiff: 14.3,
+      sameMerchantAvg: 80.0,
+      sameMerchantDiff: 12.5,
+    },
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Comparison stats in GBP currency to verify British pound formatting.",
+      },
+    },
+  },
+};

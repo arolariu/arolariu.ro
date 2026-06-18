@@ -260,3 +260,53 @@ export const ManyUpdates: Story = {
     },
   },
 };
+
+/** Invoice analyzed just now — very recent. */
+export const AnalyzedJustNow: Story = {
+  render: ({invoice}) => {
+    const nowDate = new Date();
+    const invoiceAnalyzedNow = {
+      ...invoice,
+      items: [],
+      lastUpdatedAt: nowDate,
+      numberOfUpdates: 1,
+    };
+
+    return (
+      <WithViewInvoiceContext invoice={invoiceAnalyzedNow}>
+        <AnalysisPanel />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice analyzed just now (current timestamp) to test 'just now' relative time display.",
+      },
+    },
+  },
+};
+
+/** Invoice with items but user wants to re-analyze. */
+export const WithItemsReanalyze: Story = {
+  render: ({invoice}) => {
+    const invoiceWithItems = {
+      ...invoice,
+      items: invoice.items.slice(0, 3),
+      numberOfUpdates: 2,
+    };
+
+    return (
+      <WithViewInvoiceContext invoice={invoiceWithItems}>
+        <AnalysisPanel />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice with items already extracted. Panel is typically hidden but story shows the component state if mounted.",
+      },
+    },
+  },
+};

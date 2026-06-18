@@ -4,6 +4,8 @@ import {
   storyInvoices,
   storyLongNameMerchant,
   storyMerchant,
+  storyMinimalMerchant,
+  storyOnlineMerchant,
   WithViewInvoiceContext,
 } from "@/app/domains/invoices/_storybook";
 import type {Meta, StoryObj} from "@storybook/react";
@@ -100,4 +102,36 @@ export const LongWebsiteUrl: Story = {
       <MerchantInfoCard />
     </WithViewInvoiceContext>
   ),
+};
+
+/** Merchant using storyMinimalMerchant. */
+export const MinimalMerchant: Story = {
+  render: () => (
+    <WithViewInvoiceContext merchant={storyMinimalMerchant}>
+      <MerchantInfoCard />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Merchant with minimal contact information from storyMinimalMerchant fixture.",
+      },
+    },
+  },
+};
+
+/** Online merchant (storyOnlineMerchant). */
+export const OnlineMerchant: Story = {
+  render: () => (
+    <WithViewInvoiceContext merchant={storyOnlineMerchant}>
+      <MerchantInfoCard />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Online-only merchant with no physical store address.",
+      },
+    },
+  },
 };
