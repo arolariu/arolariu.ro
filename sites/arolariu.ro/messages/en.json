@@ -441,10 +441,10 @@
           "visitReference": "Visit Reference"
         },
         "complexity": {
-          "easy": "Easy",
-          "hard": "Hard",
-          "normal": "Normal",
-          "unknown": "Unknown"
+          "easy": "Easy Complexity",
+          "hard": "Hard Complexity",
+          "normal": "Normal Complexity",
+          "unknown": "Unknown Complexity"
         },
         "dropdown": {
           "delete": "Delete",

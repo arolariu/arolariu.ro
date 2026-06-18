@@ -441,10 +441,10 @@
           "visitReference": "Vizitează referința"
         },
         "complexity": {
-          "easy": "Ușor",
-          "hard": "Greu",
-          "normal": "Normal",
-          "unknown": "Necunoscut"
+          "easy": "Complexitate ușoară",
+          "hard": "Complexitate ridicată",
+          "normal": "Complexitate normală",
+          "unknown": "Complexitate necunoscută"
         },
         "dropdown": {
           "delete": "Șterge",
