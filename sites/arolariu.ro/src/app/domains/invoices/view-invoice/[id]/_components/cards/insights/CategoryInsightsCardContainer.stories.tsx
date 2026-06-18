@@ -83,3 +83,69 @@ export const Other: Story = {
     </WithViewInvoiceContext>
   ),
 };
+
+/** Grocery category with zero-cost invoice and empty store history. */
+export const GroceryZeroCost: Story = {
+  decorators: [
+    (Story) => {
+      resetInvoiceStoryStores();
+      return <Story />;
+    },
+  ],
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...storyInvoice,
+        category: InvoiceCategory.GROCERY,
+        paymentInformation: {...storyInvoice.paymentInformation, totalCostAmount: 0},
+      }}>
+      <CategoryInsightsCardContainer />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Fast-food category with huge total and rich store history. */
+export const FastFoodHugeTotal: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...storyInvoice,
+        category: InvoiceCategory.FAST_FOOD,
+        paymentInformation: {...storyInvoice.paymentInformation, totalCostAmount: 5000.0},
+      }}>
+      <CategoryInsightsCardContainer />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Home cleaning category with EUR currency. */
+export const HomeCleaningEur: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...storyInvoice,
+        category: InvoiceCategory.HOME_CLEANING,
+        paymentInformation: {
+          ...storyInvoice.paymentInformation,
+          totalCostAmount: 45.99,
+        },
+      }}>
+      <CategoryInsightsCardContainer />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Car/Auto category with empty store history (first vehicle purchase). */
+export const CarAutoFirstPurchase: Story = {
+  decorators: [
+    (Story) => {
+      resetInvoiceStoryStores();
+      return <Story />;
+    },
+  ],
+  render: () => (
+    <WithViewInvoiceContext invoice={{...storyInvoice, category: InvoiceCategory.CAR_AUTO}}>
+      <CategoryInsightsCardContainer />
+    </WithViewInvoiceContext>
+  ),
+};

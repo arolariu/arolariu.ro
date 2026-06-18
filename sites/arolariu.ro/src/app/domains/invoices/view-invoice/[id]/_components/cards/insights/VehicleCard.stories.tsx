@@ -1,4 +1,15 @@
-import {invoicePresets, storyEmptyInvoice, storyInvoice, withEntityPreset, WithViewInvoiceContext} from "@/app/domains/invoices/_storybook";
+import {
+  invoicePresets,
+  storyEmptyInvoice,
+  storyEurInvoice,
+  storyGbpInvoice,
+  storyInvoice,
+  storyLargeTotalInvoice,
+  storyUsdInvoice,
+  storyZeroTotalInvoice,
+  withEntityPreset,
+  WithViewInvoiceContext,
+} from "@/app/domains/invoices/_storybook";
 import type {Invoice} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
 import {VehicleCard} from "./VehicleCard";
@@ -80,6 +91,63 @@ export const PremiumFuel: Story = {
         ...invoice,
         paymentInformation: {...invoice.paymentInformation, totalCostAmount: 180.0},
       }}>
+      <VehicleCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Vehicle insights for a zero-cost receipt (fuel voucher, refund). */
+export const ZeroCost: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyZeroTotalInvoice}>
+      <VehicleCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Vehicle insights for a EUR-denominated fuel receipt. */
+export const EuroFuel: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...storyEurInvoice,
+        paymentInformation: {...storyEurInvoice.paymentInformation, totalCostAmount: 95.5},
+      }}>
+      <VehicleCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Vehicle insights for a USD-denominated fuel receipt. */
+export const UsdFuel: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...storyUsdInvoice,
+        paymentInformation: {...storyUsdInvoice.paymentInformation, totalCostAmount: 110.25},
+      }}>
+      <VehicleCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Vehicle insights for a GBP-denominated fuel receipt. */
+export const GbpFuel: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...storyGbpInvoice,
+        paymentInformation: {...storyGbpInvoice.paymentInformation, totalCostAmount: 87.0},
+      }}>
+      <VehicleCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Vehicle insights for an extremely expensive fleet fuel order. */
+export const HugeTotal: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyLargeTotalInvoice}>
       <VehicleCard />
     </WithViewInvoiceContext>
   ),

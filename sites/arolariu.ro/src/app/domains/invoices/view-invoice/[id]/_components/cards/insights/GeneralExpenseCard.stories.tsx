@@ -1,7 +1,10 @@
 import {
   invoicePresets,
+  storyEurInvoice,
+  storyGbpInvoice,
   storyInvoice,
   storyLongNameInvoice,
+  storyUsdInvoice,
   withEntityPreset,
   WithViewInvoiceContext,
 } from "@/app/domains/invoices/_storybook";
@@ -87,6 +90,67 @@ export const ZeroCost: Story = {
 export const LongText: Story = {
   render: () => (
     <WithViewInvoiceContext invoice={storyLongNameInvoice}>
+      <GeneralExpenseCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** General expense insights for a EUR-denominated receipt. */
+export const EuroCurrency: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...storyEurInvoice,
+        paymentInformation: {
+          ...storyEurInvoice.paymentInformation,
+          totalCostAmount: 89.99,
+        },
+      }}>
+      <GeneralExpenseCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** General expense insights for a USD-denominated receipt. */
+export const UsdCurrency: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...storyUsdInvoice,
+        paymentInformation: {
+          ...storyUsdInvoice.paymentInformation,
+          totalCostAmount: 125.49,
+        },
+      }}>
+      <GeneralExpenseCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** General expense insights for a GBP-denominated receipt. */
+export const GbpCurrency: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...storyGbpInvoice,
+        paymentInformation: {
+          ...storyGbpInvoice.paymentInformation,
+          totalCostAmount: 67.5,
+        },
+      }}>
+      <GeneralExpenseCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** General expense insights for an extremely high-value enterprise purchase. */
+export const HugeTotal: Story = {
+  render: ({invoice}) => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...invoice,
+        paymentInformation: {...invoice.paymentInformation, totalCostAmount: 99999.99},
+      }}>
       <GeneralExpenseCard />
     </WithViewInvoiceContext>
   ),

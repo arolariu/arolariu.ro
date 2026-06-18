@@ -1,9 +1,13 @@
 import {
   invoicePresets,
   storyEmptyInvoice,
+  storyEurInvoice,
   storyHugeInvoice,
   storyInvoice,
+  storyLowConfidenceInvoice,
+  storyManyAllergensInvoice,
   storyProducts,
+  storyZeroTotalInvoice,
   withEntityPreset,
   WithViewInvoiceContext,
 } from "@/app/domains/invoices/_storybook";
@@ -82,6 +86,62 @@ export const SingleItem: Story = {
     const oneItem: Product[] = storyProducts.slice(0, 1);
     return (
       <WithViewInvoiceContext invoice={{...invoice, items: oneItem}}>
+        <NutritionCard />
+      </WithViewInvoiceContext>
+    );
+  },
+};
+
+/** Nutrition insights for an invoice with many allergen-heavy items. */
+export const ManyAllergens: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyManyAllergensInvoice}>
+      <NutritionCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Nutrition insights for a low-confidence OCR extraction (smudged receipt). */
+export const LowConfidence: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyLowConfidenceInvoice}>
+      <NutritionCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Nutrition insights for a EUR-denominated grocery basket. */
+export const EuroBasket: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...storyEurInvoice,
+        items: storyProducts,
+      }}>
+      <NutritionCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Nutrition insights for a zero-cost basket (free samples, promos). */
+export const ZeroCost: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...storyZeroTotalInvoice,
+        items: storyProducts,
+      }}>
+      <NutritionCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Nutrition insights for a mid-size balanced grocery basket. */
+export const BalancedBasket: Story = {
+  render: ({invoice}) => {
+    const balancedItems: Product[] = storyProducts.slice(0, 10);
+    return (
+      <WithViewInvoiceContext invoice={{...invoice, items: balancedItems}}>
         <NutritionCard />
       </WithViewInvoiceContext>
     );

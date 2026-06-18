@@ -37,3 +37,21 @@ export const Tablet: Story = {
     viewport: {defaultViewport: "tablet"},
   },
 };
+
+/** Category suggestion card in compact layout (narrow container). */
+export const Compact: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile2"},
+  },
+};
+
+/** Category suggestion card with accessibility features highlighted. */
+export const Accessible: Story = {
+  parameters: {
+    a11y: {
+      config: {
+        rules: [{id: "color-contrast", enabled: true}],
+      },
+    },
+  },
+};

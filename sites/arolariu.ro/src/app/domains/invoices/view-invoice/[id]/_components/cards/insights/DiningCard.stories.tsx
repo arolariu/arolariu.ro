@@ -1,9 +1,13 @@
 import {
   invoicePresets,
   storyEmptyInvoice,
+  storyEurInvoice,
   storyHugeInvoice,
   storyInvoice,
+  storyLowConfidenceInvoice,
+  storyManyAllergensInvoice,
   storyProducts,
+  storyZeroTotalInvoice,
   withEntityPreset,
   WithViewInvoiceContext,
 } from "@/app/domains/invoices/_storybook";
@@ -88,6 +92,59 @@ export const GroupDining: Story = {
       invoice={{
         ...invoice,
         paymentInformation: {...invoice.paymentInformation, totalCostAmount: 450.0},
+      }}>
+      <DiningCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Dining insights for a zero-cost receipt (voucher, comp, or free sample). */
+export const ZeroCost: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyZeroTotalInvoice}>
+      <DiningCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Dining insights for a EUR-denominated restaurant receipt. */
+export const EuroDining: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...storyEurInvoice,
+        paymentInformation: {...storyEurInvoice.paymentInformation, totalCostAmount: 78.5},
+      }}>
+      <DiningCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Dining insights for a low-confidence OCR extraction (blurry receipt). */
+export const LowConfidence: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyLowConfidenceInvoice}>
+      <DiningCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Dining insights for a receipt with many allergen-heavy items. */
+export const ManyAllergens: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyManyAllergensInvoice}>
+      <DiningCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Dining insights for a high-value multi-course fine dining receipt. */
+export const FineDining: Story = {
+  render: ({invoice}) => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...invoice,
+        paymentInformation: {...invoice.paymentInformation, totalCostAmount: 890.0},
       }}>
       <DiningCard />
     </WithViewInvoiceContext>
