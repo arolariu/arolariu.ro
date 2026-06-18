@@ -28,6 +28,21 @@ const storybookUser: ClerkStorybookUser = {
   emailAddresses: [{emailAddress: "story.user@example.com"}],
 };
 
+/**
+ * Module-level auth state for Storybook. Mutated by stories via
+ * {@link __setStorybookSignedOut} to toggle signed-in/out rendering.
+ */
+let signedIn = true;
+
+/**
+ * Storybook-only: force the mock Clerk auth into a signed-out (or signed-in) state.
+ *
+ * @param value - When true, the mock renders as a signed-out user.
+ */
+export function __setStorybookSignedOut(value: boolean): void {
+  signedIn = !value;
+}
+
 type ChildrenProps = Readonly<{
   children?: ReactNode;
 }>;
@@ -56,10 +71,10 @@ export function useAuth(): Readonly<{
 }> {
   return {
     isLoaded: true,
-    isSignedIn: true,
-    userId: storybookUser.id,
-    sessionId: "session_storybook",
-    getToken: async () => "storybook-token",
+    isSignedIn: signedIn,
+    userId: signedIn ? storybookUser.id : "",
+    sessionId: signedIn ? "session_storybook" : "",
+    getToken: async () => (signedIn ? "storybook-token" : ""),
   };
 }
 
@@ -71,12 +86,12 @@ export function useAuth(): Readonly<{
 export function useUser(): Readonly<{
   isLoaded: boolean;
   isSignedIn: boolean;
-  user: ClerkStorybookUser;
+  user: ClerkStorybookUser | null;
 }> {
   return {
     isLoaded: true,
-    isSignedIn: true,
-    user: storybookUser,
+    isSignedIn: signedIn,
+    user: signedIn ? storybookUser : null,
   };
 }
 
@@ -87,16 +102,17 @@ export function useUser(): Readonly<{
  * @returns Children.
  */
 export function SignedIn({children}: ChildrenProps): React.JSX.Element {
-  return <>{children}</>;
+  return <>{signedIn ? children : null}</>;
 }
 
 /**
- * Hides signed-out-only content in Storybook.
+ * Hides signed-out-only content in Storybook when signed in.
  *
- * @returns Empty fragment.
+ * @param props - Component props.
+ * @returns Children when signed out; otherwise nothing.
  */
-export function SignedOut(): React.JSX.Element {
-  return <></>;
+export function SignedOut({children}: ChildrenProps): React.JSX.Element {
+  return <>{signedIn ? null : children}</>;
 }
 
 /**

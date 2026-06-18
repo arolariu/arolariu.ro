@@ -82,3 +82,4 @@ export * from "./test-utils";
 // Story controls
 export {invoicePresets, merchantPresets, recipePresets, scanPresets} from "./controls/entityPresets";
 export {withEntityPreset} from "./controls/withEntityPreset";
+export {withAuthState} from "./controls/withAuthState";
