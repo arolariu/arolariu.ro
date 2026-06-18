@@ -1,14 +1,7 @@
-import type {Meta, StoryObj} from "@storybook/react";
 import type {CachedScan} from "@/types/scans";
+import type {Meta, StoryObj} from "@storybook/react";
+import {OpenDialogButton, playOpenDialog, scanPresets, storyCachedImageScan, storyCachedPdfScan, withEntityPreset} from "../_storybook";
 import PreviewScanDialog from "./PreviewScanDialog";
-import {
-  OpenDialogButton,
-  playOpenDialog,
-  scanPresets,
-  storyCachedImageScan,
-  storyCachedPdfScan,
-  withEntityPreset,
-} from "../_storybook";
 
 type StoryArgs = {scan: CachedScan; scanPreset: "image" | "pdf"};
 
@@ -41,8 +34,8 @@ export const ImagePreview: Story = {
   play: playOpenDialog,
   render: ({scan}) => (
     <OpenDialogButton
-      dialog="SHARED__SCAN_PREVIEW"
-      mode="view"
+      dialog='SHARED__SCAN_PREVIEW'
+      mode='view'
       payload={{scan}}>
       <PreviewScanDialog />
     </OpenDialogButton>
@@ -55,9 +48,23 @@ export const PdfPreview: Story = {
   play: playOpenDialog,
   render: ({scan}) => (
     <OpenDialogButton
-      dialog="SHARED__SCAN_PREVIEW"
-      mode="view"
+      dialog='SHARED__SCAN_PREVIEW'
+      mode='view'
       payload={{scan}}>
+      <PreviewScanDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Image preview dialog with a different scan variation. */
+export const ImagePreviewSecondary: Story = {
+  args: {scanPreset: "image"},
+  play: playOpenDialog,
+  render: ({scan}) => (
+    <OpenDialogButton
+      dialog='SHARED__SCAN_PREVIEW'
+      mode='view'
+      payload={{scan: {...scan, id: "scan-preview-003", name: "Restaurant Bill"}}}>
       <PreviewScanDialog />
     </OpenDialogButton>
   ),

@@ -1,6 +1,6 @@
-import type {Meta, StoryObj} from "@storybook/react";
 import type {Invoice} from "@/types/invoices";
-import {invoicePresets, OpenDialogButton, playOpenDialog, storyInvoice, withEntityPreset} from "../../../_storybook";
+import type {Meta, StoryObj} from "@storybook/react";
+import {invoicePresets, OpenDialogButton, playOpenDialog, storyEmptyInvoice, storyInvoice, withEntityPreset} from "../../../_storybook";
 import AddScanDialog from "./AddScanDialog";
 
 type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
@@ -13,18 +13,18 @@ type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
  * harness, opening the dialog automatically on mount with a story invoice payload.
  */
 const meta = {
-	title: "arolariu.ro/IMS/Dialogs/Scan/AddScan",
-	component: AddScanDialog,
-	parameters: {
-		layout: "centered",
-	},
-	tags: ["autodocs"],
-	argTypes: {
-		invoicePreset: {control: "select", options: ["standard", "public"]},
-		invoice: {control: "object"},
-	},
-	args: {invoicePreset: "standard", invoice: storyInvoice},
-	decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+  title: "arolariu.ro/IMS/Dialogs/Scan/AddScan",
+  component: AddScanDialog,
+  parameters: {
+    layout: "centered",
+  },
+  tags: ["autodocs"],
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
 } satisfies Meta<StoryArgs>;
 
 export default meta;
@@ -35,9 +35,25 @@ type Story = StoryObj<StoryArgs>;
  */
 export const Default: Story = {
   play: playOpenDialog,
-	render: ({invoice}) => (
-		<OpenDialogButton dialog="EDIT_INVOICE__ADD_SCAN" mode="add" payload={{invoice}}>
-			<AddScanDialog />
-		</OpenDialogButton>
-	),
+  render: ({invoice}) => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__ADD_SCAN'
+      mode='add'
+      payload={{invoice}}>
+      <AddScanDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Add scan dialog for an empty invoice (no existing scans). */
+export const EmptyInvoice: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__ADD_SCAN'
+      mode='add'
+      payload={{invoice: storyEmptyInvoice}}>
+      <AddScanDialog />
+    </OpenDialogButton>
+  ),
 };

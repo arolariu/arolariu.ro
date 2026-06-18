@@ -1,9 +1,10 @@
-import type {Meta, StoryObj} from "@storybook/react";
 import type {Merchant} from "@/types/invoices";
+import type {Meta, StoryObj} from "@storybook/react";
 import {
   merchantPresets,
   OpenDialogButton,
   playOpenDialog,
+  storyLongNameMerchant,
   storyMerchant,
   storyOnlineMerchant,
   withEntityPreset,
@@ -20,18 +21,18 @@ type StoryArgs = {merchant: Merchant; merchantPreset: "physical" | "online"};
  * harness, opening the dialog automatically on mount with a story merchant payload.
  */
 const meta = {
-	title: "arolariu.ro/IMS/Dialogs/Merchant/MerchantDetails",
-	component: MerchantDialog,
-	parameters: {
-		layout: "centered",
-	},
-	tags: ["autodocs"],
-	argTypes: {
-		merchantPreset: {control: "select", options: ["physical", "online"]},
-		merchant: {control: "object"},
-	},
-	args: {merchantPreset: "physical", merchant: storyMerchant},
-	decorators: [withEntityPreset("merchantPreset", "merchant", merchantPresets)],
+  title: "arolariu.ro/IMS/Dialogs/Merchant/MerchantDetails",
+  component: MerchantDialog,
+  parameters: {
+    layout: "centered",
+  },
+  tags: ["autodocs"],
+  argTypes: {
+    merchantPreset: {control: "select", options: ["physical", "online"]},
+    merchant: {control: "object"},
+  },
+  args: {merchantPreset: "physical", merchant: storyMerchant},
+  decorators: [withEntityPreset("merchantPreset", "merchant", merchantPresets)],
 } satisfies Meta<StoryArgs>;
 
 export default meta;
@@ -42,11 +43,14 @@ type Story = StoryObj<StoryArgs>;
  */
 export const Default: Story = {
   play: playOpenDialog,
-	render: ({merchant}) => (
-		<OpenDialogButton dialog="EDIT_INVOICE__MERCHANT" mode="view" payload={merchant}>
-			<MerchantDialog />
-		</OpenDialogButton>
-	),
+  render: ({merchant}) => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__MERCHANT'
+      mode='view'
+      payload={merchant}>
+      <MerchantDialog />
+    </OpenDialogButton>
+  ),
 };
 
 /**
@@ -55,9 +59,25 @@ export const Default: Story = {
 export const OnlineMerchant: Story = {
   args: {merchantPreset: "online", merchant: storyOnlineMerchant},
   play: playOpenDialog,
-	render: ({merchant}) => (
-		<OpenDialogButton dialog="EDIT_INVOICE__MERCHANT" mode="view" payload={merchant}>
-			<MerchantDialog />
-		</OpenDialogButton>
-	),
+  render: ({merchant}) => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__MERCHANT'
+      mode='view'
+      payload={merchant}>
+      <MerchantDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Merchant details dialog with long merchant name (tests truncation). */
+export const LongNameMerchant: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__MERCHANT'
+      mode='view'
+      payload={storyLongNameMerchant}>
+      <MerchantDialog />
+    </OpenDialogButton>
+  ),
 };

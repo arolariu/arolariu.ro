@@ -1,4 +1,4 @@
-import {OpenDialogButton, playOpenDialog, storyImageScanUrl} from "@/app/domains/invoices/_storybook";
+import {OpenDialogButton, playOpenDialog, storyImageScanUrl, storyImageScanUrlSecondary} from "@/app/domains/invoices/_storybook";
 import type {Meta, StoryObj} from "@storybook/react";
 import ImageDialog from "./ImageDialog";
 
@@ -24,6 +24,19 @@ export const Default: Story = {
       dialog='EDIT_INVOICE__IMAGE'
       mode='view'
       payload={storyImageScanUrl}>
+      <ImageDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Image dialog with a different image URL. */
+export const SecondaryImage: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__IMAGE'
+      mode='view'
+      payload={storyImageScanUrlSecondary}>
       <ImageDialog />
     </OpenDialogButton>
   ),

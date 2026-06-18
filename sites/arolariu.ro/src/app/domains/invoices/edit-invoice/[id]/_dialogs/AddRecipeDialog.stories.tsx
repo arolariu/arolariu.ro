@@ -11,20 +11,20 @@ import AddRecipeDialog from "./AddRecipeDialog";
  * EditInvoiceContextProvider to provide required context.
  */
 const meta = {
-	title: "arolariu.ro/IMS/Dialogs/Recipe/AddRecipe",
-	component: AddRecipeDialog,
-	parameters: {
-		layout: "centered",
-		docs: {
-			description: {
-				component:
-					"Dialog for creating a new recipe from invoice items. Users can input recipe details " +
-					"(name, description, prep time, cook time, difficulty) and save. Ingredient fields render from the current recipe state and are read-only in this flow. Integrated with EditInvoiceContext " +
-					"and DialogContext to control visibility. Product selection UI is not currently implemented.",
-			},
-		},
-	},
-	tags: ["autodocs"],
+  title: "arolariu.ro/IMS/Dialogs/Recipe/AddRecipe",
+  component: AddRecipeDialog,
+  parameters: {
+    layout: "centered",
+    docs: {
+      description: {
+        component:
+          "Dialog for creating a new recipe from invoice items. Users can input recipe details "
+          + "(name, description, prep time, cook time, difficulty) and save. Ingredient fields render from the current recipe state and are read-only in this flow. Integrated with EditInvoiceContext "
+          + "and DialogContext to control visibility. Product selection UI is not currently implemented.",
+      },
+    },
+  },
+  tags: ["autodocs"],
 } satisfies Meta<typeof AddRecipeDialog>;
 
 export default meta;
@@ -35,21 +35,37 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {
   play: playOpenDialog,
-	parameters: {
-		docs: {
-			description: {
-				story:
-					"Shows the recipe creation dialog in its initial state with an empty form. The dialog opens automatically " +
-					"on mount via the OpenDialogButton harness. Users can input recipe details including name, description, " +
-					"prep/cook time, and difficulty while ingredient rows remain read-only until provided by recipe state.",
-			},
-		},
-	},
-	render: () => (
-		<WithEditInvoiceContext>
-			<OpenDialogButton dialog="EDIT_INVOICE__RECIPE_ADD" mode="add">
-				<AddRecipeDialog />
-			</OpenDialogButton>
-		</WithEditInvoiceContext>
-	),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Shows the recipe creation dialog in its initial state with an empty form. The dialog opens automatically "
+          + "on mount via the OpenDialogButton harness. Users can input recipe details including name, description, "
+          + "prep/cook time, and difficulty while ingredient rows remain read-only until provided by recipe state.",
+      },
+    },
+  },
+  render: () => (
+    <WithEditInvoiceContext>
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__RECIPE_ADD'
+        mode='add'>
+        <AddRecipeDialog />
+      </OpenDialogButton>
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Add recipe dialog opened in edit invoice context with existing items. */
+export const WithInvoiceItems: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <WithEditInvoiceContext>
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__RECIPE_ADD'
+        mode='add'>
+        <AddRecipeDialog />
+      </OpenDialogButton>
+    </WithEditInvoiceContext>
+  ),
 };

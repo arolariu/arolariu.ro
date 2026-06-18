@@ -1,15 +1,16 @@
-import type {Meta, StoryObj} from "@storybook/react";
 import type {Invoice} from "@/types/invoices";
-import ShareInvoiceDialog from "./ShareInvoiceDialog";
+import type {Meta, StoryObj} from "@storybook/react";
 import {
   installStorybookBrowserMocks,
   invoicePresets,
   OpenDialogButton,
   playOpenDialog,
+  storyEmptyInvoice,
   storyInvoice,
   storyPublicInvoice,
   withEntityPreset,
 } from "../_storybook";
+import ShareInvoiceDialog from "./ShareInvoiceDialog";
 
 type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
@@ -45,8 +46,8 @@ export const Selection: Story = {
   play: playOpenDialog,
   render: ({invoice}) => (
     <OpenDialogButton
-      dialog="SHARED__INVOICE_SHARE"
-      mode="share"
+      dialog='SHARED__INVOICE_SHARE'
+      mode='share'
       payload={{invoice: {...invoice, sharedWith: []}}}>
       <ShareInvoiceDialog />
     </OpenDialogButton>
@@ -61,8 +62,8 @@ export const PublicFlow: Story = {
   play: playOpenDialog,
   render: ({invoice}) => (
     <OpenDialogButton
-      dialog="SHARED__INVOICE_SHARE"
-      mode="share"
+      dialog='SHARED__INVOICE_SHARE'
+      mode='share'
       payload={{invoice: {...invoice, sharedWith: []}}}>
       <ShareInvoiceDialog />
     </OpenDialogButton>
@@ -75,9 +76,35 @@ export const AlreadyPublic: Story = {
   play: playOpenDialog,
   render: ({invoice}) => (
     <OpenDialogButton
-      dialog="SHARED__INVOICE_SHARE"
-      mode="share"
+      dialog='SHARED__INVOICE_SHARE'
+      mode='share'
       payload={{invoice}}>
+      <ShareInvoiceDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Private invoice with existing shared access (non-public sharing). */
+export const PrivateWithShares: Story = {
+  play: playOpenDialog,
+  render: ({invoice}) => (
+    <OpenDialogButton
+      dialog='SHARED__INVOICE_SHARE'
+      mode='share'
+      payload={{invoice: {...invoice, sharedWith: ["user1@example.com", "user2@example.com"]}}}>
+      <ShareInvoiceDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Share dialog for an empty invoice with no items. */
+export const EmptyInvoice: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='SHARED__INVOICE_SHARE'
+      mode='share'
+      payload={{invoice: storyEmptyInvoice}}>
       <ShareInvoiceDialog />
     </OpenDialogButton>
   ),

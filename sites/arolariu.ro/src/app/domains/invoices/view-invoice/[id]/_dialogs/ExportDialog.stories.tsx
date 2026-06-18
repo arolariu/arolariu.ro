@@ -1,5 +1,12 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {OpenDialogButton, playOpenDialog, storyInvoice, storyMerchant, WithViewInvoiceContext} from "../../../_storybook";
+import {
+  OpenDialogButton,
+  playOpenDialog,
+  storyEmptyInvoice,
+  storyInvoice,
+  storyMerchant,
+  WithViewInvoiceContext,
+} from "../../../_storybook";
 import {ExportDialog} from "./ExportDialog";
 
 /**
@@ -39,6 +46,22 @@ export const Default: Story = {
   render: () => (
     <WithViewInvoiceContext
       invoice={storyInvoice}
+      merchant={storyMerchant}>
+      <OpenDialogButton
+        dialog='VIEW_INVOICE__EXPORT'
+        mode='view'>
+        <ExportDialog />
+      </OpenDialogButton>
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Export dialog for an empty invoice. */
+export const EmptyInvoice: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={storyEmptyInvoice}
       merchant={storyMerchant}>
       <OpenDialogButton
         dialog='VIEW_INVOICE__EXPORT'

@@ -17,17 +17,17 @@ import ImportDialog from "./ImportDialog";
  * Uses `VIEW_INVOICES__IMPORT` dialog with mode `add`.
  */
 const meta = {
-	title: "arolariu.ro/IMS/Dialogs/Invoice/Import",
-	component: ImportDialog,
-	parameters: {
-		layout: "centered",
-	},
-	decorators: [
-		(Story) => {
-			resetInvoiceStoryStores();
-			return <Story />;
-		},
-	],
+  title: "arolariu.ro/IMS/Dialogs/Invoice/Import",
+  component: ImportDialog,
+  parameters: {
+    layout: "centered",
+  },
+  decorators: [
+    (Story) => {
+      resetInvoiceStoryStores();
+      return <Story />;
+    },
+  ],
 } satisfies Meta<typeof ImportDialog>;
 
 export default meta;
@@ -42,9 +42,23 @@ type Story = StoryObj<typeof meta>;
  */
 export const OpenCsvImport: Story = {
   play: playOpenDialog,
-	render: () => (
-		<OpenDialogButton dialog="VIEW_INVOICES__IMPORT" mode="add">
-			<ImportDialog />
-		</OpenDialogButton>
-	),
+  render: () => (
+    <OpenDialogButton
+      dialog='VIEW_INVOICES__IMPORT'
+      mode='add'>
+      <ImportDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Import dialog (alternative render for testing different states). */
+export const OpenForUpload: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='VIEW_INVOICES__IMPORT'
+      mode='add'>
+      <ImportDialog />
+    </OpenDialogButton>
+  ),
 };

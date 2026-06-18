@@ -1,4 +1,4 @@
-import {OpenDialogButton, playOpenDialog, storyInvoice, storyMerchant} from "@/app/domains/invoices/_storybook";
+import {OpenDialogButton, playOpenDialog, storyEmptyInvoice, storyInvoice, storyMerchant} from "@/app/domains/invoices/_storybook";
 import type {Meta, StoryObj} from "@storybook/react";
 import ShareAnalyticsDialog from "./ShareAnalyticsDialog";
 
@@ -24,6 +24,19 @@ export const Default: Story = {
       dialog='VIEW_INVOICE__SHARE_ANALYTICS'
       mode='share'
       payload={{invoice: storyInvoice, merchant: storyMerchant}}>
+      <ShareAnalyticsDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Share analytics dialog with an empty invoice (no items). */
+export const EmptyInvoice: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='VIEW_INVOICE__SHARE_ANALYTICS'
+      mode='share'
+      payload={{invoice: storyEmptyInvoice, merchant: storyMerchant}}>
       <ShareAnalyticsDialog />
     </OpenDialogButton>
   ),

@@ -41,3 +41,23 @@ export const Empty: Story = {
     </OpenDialogButton>
   ),
 };
+
+/** Metadata dialog with many metadata entries. */
+export const ManyEntries: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__METADATA'
+      mode='edit'
+      payload={{
+        "Payment Method": "Credit Card",
+        "Transaction ID": "TRX-2024-001234",
+        "Store Location": "Downtown Branch",
+        "Cashier ID": "CSH-42",
+        "Terminal Number": "T-05",
+        "Receipt Number": "R-987654",
+      }}>
+      <MetadataDialog />
+    </OpenDialogButton>
+  ),
+};

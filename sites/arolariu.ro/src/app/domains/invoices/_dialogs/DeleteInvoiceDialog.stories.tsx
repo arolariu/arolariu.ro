@@ -1,15 +1,16 @@
-import type {Meta, StoryObj} from "@storybook/react";
-import type {Invoice} from "@/types/invoices";
-import {expect, userEvent, waitFor, within} from "storybook/test";
 import {
   invoicePresets,
   OpenDialogButton,
   playOpenDialog,
   setupViewInvoiceStory,
   storyInvoice,
+  storyLongNameInvoice,
   storyPublicInvoice,
   withEntityPreset,
 } from "@/app/domains/invoices/_storybook";
+import type {Invoice} from "@/types/invoices";
+import type {Meta, StoryObj} from "@storybook/react";
+import {expect, userEvent, waitFor, within} from "storybook/test";
 import DeleteInvoiceDialog from "./DeleteInvoiceDialog";
 
 type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
@@ -29,8 +30,8 @@ const meta = {
     docs: {
       description: {
         component:
-          "Destructive confirmation dialog for permanently deleting an invoice and all associated data (scans, line items, shared access). " +
-          "Displays invoice identifier, title, and metadata with clear warning messaging. Mounted with real dialog context.",
+          "Destructive confirmation dialog for permanently deleting an invoice and all associated data (scans, line items, shared access). "
+          + "Displays invoice identifier, title, and metadata with clear warning messaging. Mounted with real dialog context.",
       },
     },
   },
@@ -54,15 +55,15 @@ export const OpenConfirmation: Story = {
     docs: {
       description: {
         story:
-          "Displays the delete confirmation dialog with a realistic invoice fixture containing merchant name, invoice identifier, " +
-          "and metadata. Shows destructive action styling with warning color scheme and dual-button footer (Cancel/Delete).",
+          "Displays the delete confirmation dialog with a realistic invoice fixture containing merchant name, invoice identifier, "
+          + "and metadata. Shows destructive action styling with warning color scheme and dual-button footer (Cancel/Delete).",
       },
     },
   },
   render: ({invoice}) => (
     <OpenDialogButton
-      dialog="SHARED__INVOICE_DELETE"
-      mode="delete"
+      dialog='SHARED__INVOICE_DELETE'
+      mode='delete'
       payload={{invoice}}>
       <DeleteInvoiceDialog />
     </OpenDialogButton>
@@ -98,15 +99,43 @@ export const MinimalInvoice: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Delete confirmation for an invoice with no associated scans, line items, or shared access, showing the minimal-impact variant of the warning.",
+        story:
+          "Delete confirmation for an invoice with no associated scans, line items, or shared access, showing the minimal-impact variant of the warning.",
       },
     },
   },
   render: ({invoice}) => (
     <OpenDialogButton
-      dialog="SHARED__INVOICE_DELETE"
-      mode="delete"
+      dialog='SHARED__INVOICE_DELETE'
+      mode='delete'
       payload={{invoice: {...invoice, items: [], scans: [], sharedWith: []}}}>
+      <DeleteInvoiceDialog />
+    </OpenDialogButton>
+  ),
+  play: playOpenDialog,
+};
+
+/** Delete dialog for a public invoice with shared access. */
+export const PublicInvoice: Story = {
+  args: {invoicePreset: "public", invoice: storyPublicInvoice},
+  render: ({invoice}) => (
+    <OpenDialogButton
+      dialog='SHARED__INVOICE_DELETE'
+      mode='delete'
+      payload={{invoice}}>
+      <DeleteInvoiceDialog />
+    </OpenDialogButton>
+  ),
+  play: playOpenDialog,
+};
+
+/** Delete dialog for an invoice with a long name (truncation test). */
+export const LongNameInvoice: Story = {
+  render: () => (
+    <OpenDialogButton
+      dialog='SHARED__INVOICE_DELETE'
+      mode='delete'
+      payload={{invoice: storyLongNameInvoice}}>
       <DeleteInvoiceDialog />
     </OpenDialogButton>
   ),

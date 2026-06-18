@@ -56,3 +56,16 @@ export const SingleScan: Story = {
     </OpenDialogButton>
   ),
 };
+
+/** Create-invoice wizard with a PDF scan. */
+export const PdfScan: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='VIEW_SCANS__CREATE_INVOICE'
+      mode='add'
+      payload={{selectedScans: [storyCachedPdfScan]}}>
+      <CreateInvoiceDialog />
+    </OpenDialogButton>
+  ),
+};

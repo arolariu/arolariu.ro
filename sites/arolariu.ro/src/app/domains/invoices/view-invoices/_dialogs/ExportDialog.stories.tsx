@@ -20,17 +20,17 @@ import ExportDialog from "./ExportDialog";
  * Exports selected invoices from store, or all invoices if none selected.
  */
 const meta = {
-	title: "arolariu.ro/IMS/Dialogs/Invoice/ExportList",
-	component: ExportDialog,
-	parameters: {
-		layout: "centered",
-	},
-	decorators: [
-		(Story) => {
-			resetInvoiceStoryStores();
-			return <Story />;
-		},
-	],
+  title: "arolariu.ro/IMS/Dialogs/Invoice/ExportList",
+  component: ExportDialog,
+  parameters: {
+    layout: "centered",
+  },
+  decorators: [
+    (Story) => {
+      resetInvoiceStoryStores();
+      return <Story />;
+    },
+  ],
 } satisfies Meta<typeof ExportDialog>;
 
 export default meta;
@@ -44,18 +44,20 @@ type Story = StoryObj<typeof meta>;
  * @returns Opened export dialog with seeded store state.
  */
 function ExportDialogHarness({selected}: Readonly<{selected: boolean}>): React.JSX.Element {
-	useEffect(() => {
-		seedInvoiceStoryStores({
-			invoices: storyInvoices,
-			selectedInvoices: selected ? storyInvoices.slice(0, 2) : [],
-		});
-	}, [selected]);
+  useEffect(() => {
+    seedInvoiceStoryStores({
+      invoices: storyInvoices,
+      selectedInvoices: selected ? storyInvoices.slice(0, 2) : [],
+    });
+  }, [selected]);
 
-	return (
-		<OpenDialogButton dialog="VIEW_INVOICES__EXPORT" mode="view">
-			<ExportDialog />
-		</OpenDialogButton>
-	);
+  return (
+    <OpenDialogButton
+      dialog='VIEW_INVOICES__EXPORT'
+      mode='view'>
+      <ExportDialog />
+    </OpenDialogButton>
+  );
 }
 
 /**
@@ -67,7 +69,7 @@ function ExportDialogHarness({selected}: Readonly<{selected: boolean}>): React.J
  */
 export const AllInvoices: Story = {
   play: playOpenDialog,
-	render: () => <ExportDialogHarness selected={false} />,
+  render: () => <ExportDialogHarness selected={false} />,
 };
 
 /**
@@ -79,5 +81,20 @@ export const AllInvoices: Story = {
  */
 export const SelectedInvoices: Story = {
   play: playOpenDialog,
-	render: () => <ExportDialogHarness selected={true} />,
+  render: () => <ExportDialogHarness selected={true} />,
+};
+
+/** Export dialog with no invoices (empty state). */
+export const NoInvoices: Story = {
+  play: playOpenDialog,
+  render: () => {
+    resetInvoiceStoryStores();
+    return (
+      <OpenDialogButton
+        dialog='VIEW_INVOICES__EXPORT'
+        mode='view'>
+        <ExportDialog />
+      </OpenDialogButton>
+    );
+  },
 };

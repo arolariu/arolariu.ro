@@ -1,4 +1,11 @@
-import {OpenDialogButton, playOpenDialog, storyInvoice, storyMerchant} from "@/app/domains/invoices/_storybook";
+import {
+  OpenDialogButton,
+  playOpenDialog,
+  storyInvoice,
+  storyMerchant,
+  storyOnlineInvoice,
+  storyOnlineMerchant,
+} from "@/app/domains/invoices/_storybook";
 import type {Meta, StoryObj} from "@storybook/react";
 import FeedbackDialog from "./FeedbackDialog";
 
@@ -24,6 +31,19 @@ export const Default: Story = {
       dialog='EDIT_INVOICE__FEEDBACK'
       mode='add'
       payload={{invoice: storyInvoice, merchant: storyMerchant}}>
+      <FeedbackDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Feedback dialog with online merchant context. */
+export const OnlineMerchant: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__FEEDBACK'
+      mode='add'
+      payload={{invoice: storyOnlineInvoice, merchant: storyOnlineMerchant}}>
       <FeedbackDialog />
     </OpenDialogButton>
   ),

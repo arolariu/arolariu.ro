@@ -1,14 +1,7 @@
-import type {Meta, StoryObj} from "@storybook/react";
 import type {CachedScan} from "@/types/scans";
+import type {Meta, StoryObj} from "@storybook/react";
+import {OpenDialogButton, playOpenDialog, scanPresets, storyCachedImageScan, storyCachedPdfScan, withEntityPreset} from "../_storybook";
 import DeleteScanDialog from "./DeleteScanDialog";
-import {
-  OpenDialogButton,
-  playOpenDialog,
-  scanPresets,
-  storyCachedImageScan,
-  storyCachedPdfScan,
-  withEntityPreset,
-} from "../_storybook";
 
 type StoryArgs = {scan: CachedScan; scanPreset: "image" | "pdf"};
 
@@ -41,8 +34,8 @@ export const OpenConfirmation: Story = {
   play: playOpenDialog,
   render: ({scan}) => (
     <OpenDialogButton
-      dialog="SHARED__SCAN_DELETE"
-      mode="delete"
+      dialog='SHARED__SCAN_DELETE'
+      mode='delete'
       payload={{scan}}>
       <DeleteScanDialog />
     </OpenDialogButton>
@@ -55,9 +48,23 @@ export const PdfScan: Story = {
   play: playOpenDialog,
   render: ({scan}) => (
     <OpenDialogButton
-      dialog="SHARED__SCAN_DELETE"
-      mode="delete"
+      dialog='SHARED__SCAN_DELETE'
+      mode='delete'
       payload={{scan}}>
+      <DeleteScanDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Confirmation dialog for deleting an image scan with different metadata. */
+export const ImageScanVariant: Story = {
+  args: {scanPreset: "image"},
+  play: playOpenDialog,
+  render: ({scan}) => (
+    <OpenDialogButton
+      dialog='SHARED__SCAN_DELETE'
+      mode='delete'
+      payload={{scan: {...scan, id: "scan-variant-002", name: "Grocery Receipt 2024"}}}>
       <DeleteScanDialog />
     </OpenDialogButton>
   ),

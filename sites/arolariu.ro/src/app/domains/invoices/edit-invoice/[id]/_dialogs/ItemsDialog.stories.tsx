@@ -1,4 +1,11 @@
-import {OpenDialogButton, playOpenDialog, storyEmptyInvoice, storyInvoice} from "@/app/domains/invoices/_storybook";
+import {
+  OpenDialogButton,
+  playOpenDialog,
+  storyEmptyInvoice,
+  storyHugeInvoice,
+  storyInvoice,
+  storyLongNameInvoice,
+} from "@/app/domains/invoices/_storybook";
 import type {Meta, StoryObj} from "@storybook/react";
 import ItemsDialog from "./ItemsDialog";
 
@@ -37,6 +44,32 @@ export const Empty: Story = {
       dialog='EDIT_INVOICE__ITEMS'
       mode='edit'
       payload={storyEmptyInvoice}>
+      <ItemsDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Items dialog opened on an invoice with many products (huge list). */
+export const HugeList: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__ITEMS'
+      mode='edit'
+      payload={storyHugeInvoice}>
+      <ItemsDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Items dialog with a long invoice name (tests header truncation). */
+export const LongInvoiceName: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__ITEMS'
+      mode='edit'
+      payload={storyLongNameInvoice}>
       <ItemsDialog />
     </OpenDialogButton>
   ),
