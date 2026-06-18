@@ -33,10 +33,10 @@ const meta = {
   },
   args: {scanPreset: "image", scan: storyCachedImageScan},
   decorators: [withEntityPreset("scanPreset", "scan", scanPresets)],
-} satisfies Meta<StoryArgs>;
+} satisfies Meta<typeof ScanCard>;
 
 export default meta;
-type Story = StoryObj<StoryArgs>;
+type Story = StoryObj<typeof meta>;
 
 /**
  * Image scan with action menu.

@@ -122,8 +122,9 @@ export const ManyItems: Story = {
       totalPrice: Number((((i % 5) + 1) * ((i % 20) + 2.99)).toFixed(2)),
       category: [ProductCategory.GROCERIES, ProductCategory.DAIRY, ProductCategory.BAKED_GOODS][i % 3] ?? ProductCategory.NOT_DEFINED,
     }));
+    const manyItemsInvoice: typeof invoice = {...invoice, items: products};
     return (
-      <WithViewInvoiceContext invoice={{...invoice, items: products}}>
+      <WithViewInvoiceContext invoice={manyItemsInvoice}>
         <ItemAnalyticsCard />
       </WithViewInvoiceContext>
     );

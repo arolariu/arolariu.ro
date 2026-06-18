@@ -157,10 +157,11 @@ export const EmptyLineItems: Story = {
 /** Invoice with many line items — overflow/scroll test. */
 export const ManyLineItems: Story = {
   render: ({invoice}) => {
-    const manyItemsInvoice: Invoice = {
+    const firstProduct = invoice.items[0] ?? storyProducts[0];
+    const manyItemsInvoice: typeof invoice = {
       ...invoice,
       items: Array.from({length: 50}, (_, i) => ({
-        ...(invoice.items[0] ?? storyProducts[0]),
+        ...firstProduct,
         name: `Product ${i + 1}`,
         quantity: (i % 5) + 1,
         price: Number(((i % 20) + 2.99).toFixed(2)),
@@ -189,15 +190,16 @@ export const ManyLineItems: Story = {
 /** Invoice with very long product names. */
 export const LongProductNames: Story = {
   render: ({invoice}) => {
-    const longNamesInvoice: Invoice = {
+    const firstProduct = invoice.items[0] ?? storyProducts[0];
+    const longNamesInvoice: typeof invoice = {
       ...invoice,
       items: [
         {
-          ...(invoice.items[0] ?? storyProducts[0]),
+          ...firstProduct,
           name: "Extra Virgin Organic Cold-Pressed Mediterranean Olive Oil First Harvest Limited Edition Premium Quality",
         },
         {
-          ...(invoice.items[0] ?? storyProducts[0]),
+          ...firstProduct,
           name: "Aged Parmigiano-Reggiano DOP 36-Month Matured Cheese from Emilia-Romagna Region Italy Finely Grated",
         },
       ],

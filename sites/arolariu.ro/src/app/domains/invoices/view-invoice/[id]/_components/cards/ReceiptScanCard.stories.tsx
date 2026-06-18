@@ -45,12 +45,14 @@ export const PdfScan: Story = {
 /** Invoice with multiple image scans — carousel navigation. */
 export const MultipleImageScans: Story = {
   render: () => {
-    const multiScanInvoice = {
+    const firstScan = storyInvoice.scans[0];
+    if (!firstScan) return null;
+    const multiScanInvoice: typeof storyInvoice = {
       ...storyInvoice,
       scans: Array.from({length: 5}, (_, i) => ({
-        ...storyInvoice.scans[0],
+        ...firstScan,
         metadata: {
-          ...storyInvoice.scans[0].metadata,
+          ...firstScan.metadata,
           scanId: `scan-${String(i).padStart(3, "0")}`,
         },
       })),
@@ -66,9 +68,12 @@ export const MultipleImageScans: Story = {
 /** Invoice with mixed image and PDF scans. */
 export const MixedMediaTypes: Story = {
   render: () => {
-    const mixedScanInvoice = {
+    const firstScan = storyInvoice.scans[0];
+    const pdfScan = storyOnlineInvoice.scans[0];
+    if (!firstScan || !pdfScan) return null;
+    const mixedScanInvoice: typeof storyInvoice = {
       ...storyInvoice,
-      scans: [storyInvoice.scans[0], storyOnlineInvoice.scans[0], storyInvoice.scans[0]],
+      scans: [firstScan, pdfScan, firstScan],
     };
     return (
       <WithViewInvoiceContext invoice={mixedScanInvoice}>

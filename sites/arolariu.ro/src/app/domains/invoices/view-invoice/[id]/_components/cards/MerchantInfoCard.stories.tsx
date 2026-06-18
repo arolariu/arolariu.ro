@@ -60,7 +60,12 @@ export const WithoutMerchant: Story = {
 /** Merchant with minimal data — no website, no description. */
 export const MinimalMerchantData: Story = {
   render: () => (
-    <WithViewInvoiceContext merchant={{...storyMerchant, website: "", description: ""}}>
+    <WithViewInvoiceContext
+      merchant={{
+        ...storyMerchant,
+        address: {...storyMerchant.address, website: ""},
+        description: "",
+      }}>
       <MerchantInfoCard />
     </WithViewInvoiceContext>
   ),
@@ -86,8 +91,11 @@ export const LongWebsiteUrl: Story = {
     <WithViewInvoiceContext
       merchant={{
         ...storyMerchant,
-        website:
-          "https://www.corner-shop-abc-international-wholesale-and-retail-distribution-center-bucuresti-militari-branch-42.ro/shop/products/categories/groceries/organic",
+        address: {
+          ...storyMerchant.address,
+          website:
+            "https://www.corner-shop-abc-international-wholesale-and-retail-distribution-center-bucuresti-militari-branch-42.ro/shop/products/categories/groceries/organic",
+        },
       }}>
       <MerchantInfoCard />
     </WithViewInvoiceContext>
