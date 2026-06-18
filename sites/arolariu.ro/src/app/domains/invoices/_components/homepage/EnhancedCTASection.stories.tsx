@@ -20,3 +20,24 @@ type Story = StoryObj<typeof meta>;
 
 /** Default CTA section with action buttons and trust badges. */
 export const Default: Story = {};
+
+/** CTA section in dark mode. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** CTA section with mobile viewport. */
+export const Mobile: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};
+
+/** CTA section with tablet viewport. */
+export const Tablet: Story = {
+  parameters: {
+    viewport: {defaultViewport: "tablet"},
+  },
+};

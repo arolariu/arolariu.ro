@@ -31,3 +31,33 @@ export const Unauthenticated: Story = {
     isAuthenticated: false,
   },
 };
+
+/** Authenticated state in dark mode. */
+export const AuthenticatedDark: Story = {
+  args: {
+    isAuthenticated: true,
+  },
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Unauthenticated state in dark mode. */
+export const UnauthenticatedDark: Story = {
+  args: {
+    isAuthenticated: false,
+  },
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Authenticated state with mobile viewport. */
+export const Mobile: Story = {
+  args: {
+    isAuthenticated: true,
+  },
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

@@ -39,3 +39,43 @@ export const WithLongUserName: Story = {
     isAuthenticated: true,
   },
 };
+
+/** Authenticated state in dark mode. */
+export const AuthenticatedDark: Story = {
+  args: {
+    isAuthenticated: true,
+  },
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Unauthenticated state in dark mode. */
+export const UnauthenticatedDark: Story = {
+  args: {
+    isAuthenticated: false,
+  },
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Authenticated state with mobile viewport. */
+export const Mobile: Story = {
+  args: {
+    isAuthenticated: true,
+  },
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};
+
+/** Unauthenticated state with tablet viewport. */
+export const Tablet: Story = {
+  args: {
+    isAuthenticated: false,
+  },
+  parameters: {
+    viewport: {defaultViewport: "tablet"},
+  },
+};

@@ -16,3 +16,24 @@ type Story = StoryObj<typeof meta>;
 
 /** Default category suggestion card with selectable main/extended categories. */
 export const Default: Story = {};
+
+/** Category suggestion card in dark mode. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Category suggestion card with mobile viewport. */
+export const Mobile: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};
+
+/** Category suggestion card with tablet viewport. */
+export const Tablet: Story = {
+  parameters: {
+    viewport: {defaultViewport: "tablet"},
+  },
+};

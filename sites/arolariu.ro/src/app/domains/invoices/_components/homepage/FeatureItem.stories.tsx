@@ -85,3 +85,22 @@ export const SecurityDark: Story = {
     themes: {themeOverride: "dark"},
   },
 };
+
+/** Feature item with very long title and description text. */
+export const LongText: Story = {
+  args: {
+    icon: TbBrain,
+    title: "Advanced Artificial Intelligence-Powered Machine Learning Analytics and Predictive Insights Platform",
+    description:
+      "Leveraging cutting-edge neural network architectures and natural language processing techniques, our system provides comprehensive real-time analysis of your financial data with unprecedented accuracy. This feature automatically detects spending patterns, identifies anomalies, and generates actionable insights to help you optimize your budget allocation and improve your financial health over time.",
+  },
+};
+
+/** Feature item with minimal description. */
+export const MinimalDescription: Story = {
+  args: {
+    icon: TbPhoto,
+    title: "Quick Scan",
+    description: "Scan receipts instantly.",
+  },
+};

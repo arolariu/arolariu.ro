@@ -81,3 +81,30 @@ export const ManageStepDark: Story = {
     themes: {themeOverride: "dark"},
   },
 };
+
+/** Workflow card with very long title and description. */
+export const LongText: Story = {
+  args: {
+    step: 1,
+    title: "Upload Your High-Resolution Receipt Images and Document Scans for Comprehensive Analysis",
+    description:
+      "Take high-quality photographs of your receipts using your smartphone camera or upload existing digital images from your computer. Our advanced system supports all major image formats including JPEG, PNG, HEIC, as well as multi-page PDF documents for batch processing. The platform automatically optimizes image quality and orientation for maximum accuracy during the extraction process.",
+    icon: TbUpload,
+    href: "/domains/invoices/upload-scans",
+    buttonText: "Start Uploading Documents Now",
+    delay: 0,
+  },
+};
+
+/** Workflow card with minimal text content. */
+export const MinimalText: Story = {
+  args: {
+    step: 1,
+    title: "Upload",
+    description: "Quick scan upload.",
+    icon: TbUpload,
+    href: "/domains/invoices/upload-scans",
+    buttonText: "Go",
+    delay: 0,
+  },
+};

@@ -1,4 +1,4 @@
-import {invoicePresets, storyInvoice, withEntityPreset, WithViewInvoiceContext} from "@/app/domains/invoices/_storybook";
+import {invoicePresets, storyEmptyInvoice, storyInvoice, withEntityPreset, WithViewInvoiceContext} from "@/app/domains/invoices/_storybook";
 import type {Invoice} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
 import {VehicleCard} from "./VehicleCard";
@@ -44,6 +44,41 @@ export const HighFuelSpend: Story = {
       invoice={{
         ...invoice,
         paymentInformation: {...invoice.paymentInformation, totalCostAmount: 320.75},
+      }}>
+      <VehicleCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Vehicle insights for a low-cost partial fill-up. */
+export const LowFuelSpend: Story = {
+  render: ({invoice}) => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...invoice,
+        paymentInformation: {...invoice.paymentInformation, totalCostAmount: 25.5},
+      }}>
+      <VehicleCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Vehicle insights for an empty receipt (no items). */
+export const Empty: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyEmptyInvoice}>
+      <VehicleCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Vehicle insights for a premium fuel fill-up (diesel/premium). */
+export const PremiumFuel: Story = {
+  render: ({invoice}) => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...invoice,
+        paymentInformation: {...invoice.paymentInformation, totalCostAmount: 180.0},
       }}>
       <VehicleCard />
     </WithViewInvoiceContext>

@@ -1,4 +1,10 @@
-import {invoicePresets, storyInvoice, withEntityPreset, WithViewInvoiceContext} from "@/app/domains/invoices/_storybook";
+import {
+  invoicePresets,
+  storyInvoice,
+  storyLongNameInvoice,
+  withEntityPreset,
+  WithViewInvoiceContext,
+} from "@/app/domains/invoices/_storybook";
 import type {Invoice} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
 import {GeneralExpenseCard} from "./GeneralExpenseCard";
@@ -46,6 +52,41 @@ export const HighValue: Story = {
         ...invoice,
         paymentInformation: {...invoice.paymentInformation, totalCostAmount: 2499.99},
       }}>
+      <GeneralExpenseCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** General expense insights for a low-value receipt (under $5). */
+export const LowValue: Story = {
+  render: ({invoice}) => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...invoice,
+        paymentInformation: {...invoice.paymentInformation, totalCostAmount: 3.49},
+      }}>
+      <GeneralExpenseCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** General expense insights for a zero-cost invoice (free sample or void). */
+export const ZeroCost: Story = {
+  render: ({invoice}) => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...invoice,
+        paymentInformation: {...invoice.paymentInformation, totalCostAmount: 0},
+      }}>
+      <GeneralExpenseCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** General expense insights for an invoice with long name and description. */
+export const LongText: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyLongNameInvoice}>
       <GeneralExpenseCard />
     </WithViewInvoiceContext>
   ),

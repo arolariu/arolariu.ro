@@ -1,5 +1,13 @@
-import {invoicePresets, storyInvoice, storyProducts, withEntityPreset, WithViewInvoiceContext} from "@/app/domains/invoices/_storybook";
-import type {Invoice} from "@/types/invoices";
+import {
+  invoicePresets,
+  storyEmptyInvoice,
+  storyHugeInvoice,
+  storyInvoice,
+  storyProducts,
+  withEntityPreset,
+  WithViewInvoiceContext,
+} from "@/app/domains/invoices/_storybook";
+import type {Invoice, Product} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
 import {NutritionCard} from "./NutritionCard";
 
@@ -40,9 +48,42 @@ export const Default: Story = {
 
 /** Nutrition insights for a small basket with only a couple of items. */
 export const FewItems: Story = {
-  render: ({invoice}) => (
-    <WithViewInvoiceContext invoice={{...invoice, items: storyProducts.slice(0, 2)}}>
+  render: ({invoice}) => {
+    const twoItems: Product[] = storyProducts.slice(0, 2);
+    return (
+      <WithViewInvoiceContext invoice={{...invoice, items: twoItems}}>
+        <NutritionCard />
+      </WithViewInvoiceContext>
+    );
+  },
+};
+
+/** Nutrition insights for an empty basket (no items). */
+export const Empty: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyEmptyInvoice}>
       <NutritionCard />
     </WithViewInvoiceContext>
   ),
+};
+
+/** Nutrition insights for a huge grocery basket with 120+ items. */
+export const HugeBasket: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyHugeInvoice}>
+      <NutritionCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Nutrition insights for a single-item purchase. */
+export const SingleItem: Story = {
+  render: ({invoice}) => {
+    const oneItem: Product[] = storyProducts.slice(0, 1);
+    return (
+      <WithViewInvoiceContext invoice={{...invoice, items: oneItem}}>
+        <NutritionCard />
+      </WithViewInvoiceContext>
+    );
+  },
 };

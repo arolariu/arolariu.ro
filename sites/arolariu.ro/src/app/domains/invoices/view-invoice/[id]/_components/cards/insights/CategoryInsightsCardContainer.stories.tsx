@@ -56,3 +56,30 @@ export const CarAuto: Story = {
     </WithViewInvoiceContext>
   ),
 };
+
+/** Fast-food category → DiningCard branch. */
+export const FastFood: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={{...storyInvoice, category: InvoiceCategory.FAST_FOOD}}>
+      <CategoryInsightsCardContainer />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Home cleaning category → HomeInventoryCard branch. */
+export const HomeCleaning: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={{...storyInvoice, category: InvoiceCategory.HOME_CLEANING}}>
+      <CategoryInsightsCardContainer />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Other category → general fallback (no specific card). */
+export const Other: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={{...storyInvoice, category: InvoiceCategory.OTHER}}>
+      <CategoryInsightsCardContainer />
+    </WithViewInvoiceContext>
+  ),
+};

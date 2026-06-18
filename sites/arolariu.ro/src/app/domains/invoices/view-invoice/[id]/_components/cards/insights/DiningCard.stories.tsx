@@ -1,5 +1,13 @@
-import {invoicePresets, storyInvoice, storyProducts, withEntityPreset, WithViewInvoiceContext} from "@/app/domains/invoices/_storybook";
-import type {Invoice} from "@/types/invoices";
+import {
+  invoicePresets,
+  storyEmptyInvoice,
+  storyHugeInvoice,
+  storyInvoice,
+  storyProducts,
+  withEntityPreset,
+  WithViewInvoiceContext,
+} from "@/app/domains/invoices/_storybook";
+import type {Invoice, Product} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
 import {DiningCard} from "./DiningCard";
 
@@ -40,12 +48,46 @@ export const Default: Story = {
 
 /** Dining insights for a small single-item, low-cost receipt. */
 export const SingleDiner: Story = {
+  render: ({invoice}) => {
+    const oneItem: Product[] = storyProducts.slice(0, 1);
+    return (
+      <WithViewInvoiceContext
+        invoice={{
+          ...invoice,
+          items: oneItem,
+          paymentInformation: {...invoice.paymentInformation, totalCostAmount: 12.5},
+        }}>
+        <DiningCard />
+      </WithViewInvoiceContext>
+    );
+  },
+};
+
+/** Dining insights for an empty receipt (no items). */
+export const Empty: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyEmptyInvoice}>
+      <DiningCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Dining insights for a huge receipt with many items. */
+export const HugeReceipt: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyHugeInvoice}>
+      <DiningCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Dining insights for a high-cost multi-diner group meal. */
+export const GroupDining: Story = {
   render: ({invoice}) => (
     <WithViewInvoiceContext
       invoice={{
         ...invoice,
-        items: storyProducts.slice(0, 1),
-        paymentInformation: {...invoice.paymentInformation, totalCostAmount: 12.5},
+        paymentInformation: {...invoice.paymentInformation, totalCostAmount: 450.0},
       }}>
       <DiningCard />
     </WithViewInvoiceContext>
