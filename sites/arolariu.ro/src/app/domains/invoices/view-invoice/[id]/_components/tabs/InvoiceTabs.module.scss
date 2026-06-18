@@ -49,94 +49,6 @@
   }
 }
 
-.recipeHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: space(2);
-}
-
-.recipeDescription {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
-  line-height: line-height('relaxed');
-}
-
-.recipeDetails {
-  display: flex;
-  align-items: center;
-  gap: space(4);
-  font-size: font-size('sm');
-  flex-wrap: wrap;
-}
-
-.recipeDetailItem {
-  display: flex;
-  align-items: center;
-  gap: space(1);
-  color: color('muted-foreground');
-}
-
-.recipeDetailMuted {
-  color: color('muted-foreground');
-}
-
-.ingredientsSection {
-  padding: space(3);
-  background-color: color-alpha('muted', 0.3);
-  border-radius: border-radius('md');
-}
-
-.ingredientsHeader {
-  display: flex;
-  align-items: center;
-  gap: space(2);
-  margin-bottom: space(2);
-}
-
-.sectionIcon {
-  @include icon-size(space(4));
-  color: color('muted-foreground');
-}
-
-.sectionTitle {
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
-  color: color('foreground');
-  margin: 0;
-}
-
-.ingredientsList {
-  list-style: disc;
-  padding-left: space(5);
-  margin: 0;
-
-  li + li {
-    margin-top: space(1);
-  }
-}
-
-.ingredientItem {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
-  line-height: line-height('relaxed');
-}
-
-.instructionsSection {
-  padding: space(3);
-  border-left: 2px solid color('border');
-  padding-left: space(4);
-}
-
-.instructionsText {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
-  line-height: line-height('relaxed');
-  white-space: pre-line;
-  margin: 0;
-  margin-top: space(2);
-}
-
 .emptyState {
   @include flex-column-center;
   justify-content: center;
@@ -214,40 +126,6 @@
 
 .tabsContent {
   margin-top: 0;
-}
-
-.recipeCard {
-  transition: box-shadow 300ms;
-
-  &:hover {
-    @include shadow('md');
-  }
-}
-
-.recipeCardHeader {
-  padding-bottom: space(2);
-}
-
-.recipeTitle {
-  font-size: font-size('base');
-}
-
-.recipeBody {
-  & > * + * {
-    margin-top: space(3);
-  }
-}
-
-.recipeLink {
-  height: auto;
-  padding: 0;
-  font-size: font-size('sm');
-}
-
-.externalLinkIcon {
-  height: space(3);
-  width: space(3);
-  margin-left: space(0.5);
 }
 
 .emptyIcon {
