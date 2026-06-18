@@ -125,3 +125,67 @@ export const HardRecipe: Story = {
     </OpenDialogButton>
   ),
 };
+
+/** Preview dialog for a medium-complexity recipe. */
+export const MediumRecipe: Story = {
+  play: playOpenDialog,
+  render: () => {
+    const mediumRecipe: Recipe = {
+      name: "Spaghetti Aglio e Olio",
+      description: "Simple Italian pasta with garlic and oil",
+      approximateTotalDuration: 20,
+      complexity: 3 as RecipeComplexity,
+      ingredients: ["Spaghetti", "Garlic", "Olive Oil", "Red Pepper Flakes", "Parsley"],
+      instructions: "Boil pasta. Sauté garlic in oil. Toss pasta with garlic oil.",
+      preparationTime: 5,
+      cookingTime: 15,
+      referenceForMoreDetails: "https://example.com/recipe",
+    };
+
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__RECIPE_PREVIEW'
+        mode='view'
+        payload={{recipe: mediumRecipe}}>
+        <PreviewRecipeDialog />
+      </OpenDialogButton>
+    );
+  },
+};
+
+/** Preview dialog for a recipe with very long name and description. */
+export const LongContentRecipe: Story = {
+  play: playOpenDialog,
+  render: () => {
+    const longRecipe: Recipe = {
+      name: "Traditional Grandmother's Secret Family Recipe Ultra Premium Gourmet Specialty Dish with Exotic Imported Ingredients",
+      description:
+        "This is an extremely detailed and comprehensive recipe description that goes into great depth about the historical origins of the dish, the specific techniques required, and the cultural significance of each ingredient used in the preparation process.",
+      approximateTotalDuration: 180,
+      complexity: 5 as RecipeComplexity,
+      ingredients: [
+        "Ingredient One",
+        "Ingredient Two",
+        "Ingredient Three",
+        "Ingredient Four",
+        "Ingredient Five",
+        "Ingredient Six",
+        "Ingredient Seven",
+        "Ingredient Eight",
+      ],
+      instructions: "Step 1: Very long instruction... Step 2: Another long instruction... Step 3: Even more detailed steps...",
+      preparationTime: 60,
+      cookingTime: 120,
+      referenceForMoreDetails: "https://example.com/very-long-recipe-url",
+    };
+
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__RECIPE_PREVIEW'
+        mode='view'
+        payload={{recipe: longRecipe}}>
+        <PreviewRecipeDialog />
+      </OpenDialogButton>
+    );
+  },
+};

@@ -137,3 +137,61 @@ export const MinimalRecipe: Story = {
     );
   },
 };
+
+/** Delete confirmation for a recipe with very long name. */
+export const LongRecipeName: Story = {
+  play: playOpenDialog,
+  render: () => {
+    const longRecipe: Recipe = {
+      name: "Premium Gourmet Artisanal Handcrafted Traditional French Onion Soup with Imported Swiss Gruyere Cheese",
+      description: "A very elaborate recipe",
+      approximateTotalDuration: 120,
+      complexity: 5 as RecipeComplexity,
+      ingredients: ["Onions", "Cheese", "Broth"],
+      instructions: "Complex steps",
+      preparationTime: 30,
+      cookingTime: 90,
+      referenceForMoreDetails: "https://example.com/recipe",
+    };
+
+    return (
+      <WithEditInvoiceContext>
+        <OpenDialogButton
+          dialog='EDIT_INVOICE__RECIPE_DELETE'
+          mode='delete'
+          payload={{recipe: longRecipe}}>
+          <DeleteRecipeDialog />
+        </OpenDialogButton>
+      </WithEditInvoiceContext>
+    );
+  },
+};
+
+/** Delete confirmation for a medium complexity recipe. */
+export const MediumRecipe: Story = {
+  play: playOpenDialog,
+  render: () => {
+    const mediumRecipe: Recipe = {
+      name: "Pasta Carbonara",
+      description: "Classic Italian pasta dish",
+      approximateTotalDuration: 25,
+      complexity: 3 as RecipeComplexity,
+      ingredients: ["Pasta", "Eggs", "Bacon", "Parmesan"],
+      instructions: "Cook pasta, mix with sauce",
+      preparationTime: 10,
+      cookingTime: 15,
+      referenceForMoreDetails: "",
+    };
+
+    return (
+      <WithEditInvoiceContext>
+        <OpenDialogButton
+          dialog='EDIT_INVOICE__RECIPE_DELETE'
+          mode='delete'
+          payload={{recipe: mediumRecipe}}>
+          <DeleteRecipeDialog />
+        </OpenDialogButton>
+      </WithEditInvoiceContext>
+    );
+  },
+};

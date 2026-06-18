@@ -69,3 +69,37 @@ export const ImageScanVariant: Story = {
     </OpenDialogButton>
   ),
 };
+
+/** Confirmation dialog for deleting a scan with long name. */
+export const LongScanName: Story = {
+  args: {scanPreset: "image"},
+  play: playOpenDialog,
+  render: ({scan}) => (
+    <OpenDialogButton
+      dialog='SHARED__SCAN_DELETE'
+      mode='delete'
+      payload={{
+        scan: {
+          ...scan,
+          id: "scan-longname-001",
+          name: "Annual Business Expense Receipt from Premium International Shopping Center Downtown District Branch Location Number 42",
+        },
+      }}>
+      <DeleteScanDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Confirmation dialog for deleting a PDF scan with custom name. */
+export const CustomPdfScan: Story = {
+  args: {scanPreset: "pdf"},
+  play: playOpenDialog,
+  render: ({scan}) => (
+    <OpenDialogButton
+      dialog='SHARED__SCAN_DELETE'
+      mode='delete'
+      payload={{scan: {...scan, id: "scan-custom-003", name: "Invoice_2024_Q1"}}}>
+      <DeleteScanDialog />
+    </OpenDialogButton>
+  ),
+};

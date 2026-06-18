@@ -74,3 +74,57 @@ export const EasyRecipe: Story = {
     </OpenDialogButton>
   ),
 };
+
+/** Share dialog for a medium-complexity recipe. */
+export const MediumRecipe: Story = {
+  play: playOpenDialog,
+  render: () => {
+    const mediumRecipe: Recipe = {
+      name: "Chicken Tikka Masala",
+      description: "Popular Indian-British fusion dish",
+      approximateTotalDuration: 45,
+      complexity: 3,
+      ingredients: ["Chicken", "Yogurt", "Tomato", "Cream", "Spices"],
+      instructions: "Marinate chicken, grill, make sauce, combine",
+      preparationTime: 20,
+      cookingTime: 25,
+      referenceForMoreDetails: "",
+    };
+
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__RECIPE_SHARE'
+        mode='share'
+        payload={{recipe: mediumRecipe}}>
+        <ShareRecipeDialog />
+      </OpenDialogButton>
+    );
+  },
+};
+
+/** Share dialog for a recipe with minimal details. */
+export const MinimalRecipe: Story = {
+  play: playOpenDialog,
+  render: () => {
+    const minimalRecipe: Recipe = {
+      name: "Quick Salad",
+      description: "",
+      approximateTotalDuration: 5,
+      complexity: 1,
+      ingredients: ["Lettuce", "Tomato"],
+      instructions: "",
+      preparationTime: 5,
+      cookingTime: 0,
+      referenceForMoreDetails: "",
+    };
+
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__RECIPE_SHARE'
+        mode='share'
+        payload={{recipe: minimalRecipe}}>
+        <ShareRecipeDialog />
+      </OpenDialogButton>
+    );
+  },
+};

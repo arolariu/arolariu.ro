@@ -1,6 +1,15 @@
 import type {Invoice} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
-import {invoicePresets, OpenDialogButton, playOpenDialog, storyInvoice, withEntityPreset} from "../../../_storybook";
+import {
+  invoicePresets,
+  OpenDialogButton,
+  playOpenDialog,
+  storyEmptyInvoice,
+  storyInvoice,
+  storyLowConfidenceInvoice,
+  storyMixedConfidenceInvoice,
+  withEntityPreset,
+} from "../../../_storybook";
 import AnalyzeDialog from "./AnalyzeDialog";
 
 type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
@@ -68,6 +77,45 @@ export const ManyScans: Story = {
       dialog='EDIT_INVOICE__ANALYSIS'
       mode='view'
       payload={{invoice: {...invoice, scans: [...invoice.scans, ...invoice.scans, ...invoice.scans]}}}>
+      <AnalyzeDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Analyze dialog for a low-confidence invoice. */
+export const LowConfidence: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__ANALYSIS'
+      mode='view'
+      payload={{invoice: storyLowConfidenceInvoice}}>
+      <AnalyzeDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Analyze dialog for an invoice with mixed confidence. */
+export const MixedConfidence: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__ANALYSIS'
+      mode='view'
+      payload={{invoice: storyMixedConfidenceInvoice}}>
+      <AnalyzeDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Analyze dialog for an empty invoice. */
+export const EmptyInvoice: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__ANALYSIS'
+      mode='view'
+      payload={{invoice: storyEmptyInvoice}}>
       <AnalyzeDialog />
     </OpenDialogButton>
   ),

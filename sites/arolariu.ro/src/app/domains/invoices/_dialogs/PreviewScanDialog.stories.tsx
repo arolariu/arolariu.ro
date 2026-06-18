@@ -69,3 +69,37 @@ export const ImagePreviewSecondary: Story = {
     </OpenDialogButton>
   ),
 };
+
+/** Scan preview with long scan name. */
+export const LongScanName: Story = {
+  args: {scanPreset: "image"},
+  play: playOpenDialog,
+  render: ({scan}) => (
+    <OpenDialogButton
+      dialog='SHARED__SCAN_PREVIEW'
+      mode='view'
+      payload={{
+        scan: {
+          ...scan,
+          id: "scan-preview-longname",
+          name: "Annual Business Expense Receipt from Premium International Shopping Center Downtown District Branch Location Number 42",
+        },
+      }}>
+      <PreviewScanDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Scan preview for wide-format image. */
+export const WideImagePreview: Story = {
+  args: {scanPreset: "image"},
+  play: playOpenDialog,
+  render: ({scan}) => (
+    <OpenDialogButton
+      dialog='SHARED__SCAN_PREVIEW'
+      mode='view'
+      payload={{scan: {...scan, id: "scan-preview-wide", name: "Wide Format Receipt"}}}>
+      <PreviewScanDialog />
+    </OpenDialogButton>
+  ),
+};

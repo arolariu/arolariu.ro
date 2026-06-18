@@ -5,6 +5,9 @@ import {
   storyHugeInvoice,
   storyInvoice,
   storyLongNameInvoice,
+  storyManyAllergensInvoice,
+  storySoftDeletedItemsInvoice,
+  storyZeroPriceItemsInvoice,
 } from "@/app/domains/invoices/_storybook";
 import type {Meta, StoryObj} from "@storybook/react";
 import ItemsDialog from "./ItemsDialog";
@@ -70,6 +73,45 @@ export const LongInvoiceName: Story = {
       dialog='EDIT_INVOICE__ITEMS'
       mode='edit'
       payload={storyLongNameInvoice}>
+      <ItemsDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Items dialog with soft-deleted items invoice. */
+export const SoftDeletedItems: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__ITEMS'
+      mode='edit'
+      payload={storySoftDeletedItemsInvoice}>
+      <ItemsDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Items dialog with many allergens invoice. */
+export const ManyAllergensInvoice: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__ITEMS'
+      mode='edit'
+      payload={storyManyAllergensInvoice}>
+      <ItemsDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Items dialog with zero-price items invoice. */
+export const ZeroPriceItems: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__ITEMS'
+      mode='edit'
+      payload={storyZeroPriceItemsInvoice}>
       <ItemsDialog />
     </OpenDialogButton>
   ),

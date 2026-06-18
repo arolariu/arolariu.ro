@@ -3,9 +3,12 @@ import {
   OpenDialogButton,
   playOpenDialog,
   setupViewInvoiceStory,
+  storyDeletedInvoice,
+  storyHugeInvoice,
   storyInvoice,
   storyLongNameInvoice,
   storyPublicInvoice,
+  storySharedManyInvoice,
   withEntityPreset,
 } from "@/app/domains/invoices/_storybook";
 import type {Invoice} from "@/types/invoices";
@@ -136,6 +139,45 @@ export const LongNameInvoice: Story = {
       dialog='SHARED__INVOICE_DELETE'
       mode='delete'
       payload={{invoice: storyLongNameInvoice}}>
+      <DeleteInvoiceDialog />
+    </OpenDialogButton>
+  ),
+  play: playOpenDialog,
+};
+
+/** Delete dialog for a soft-deleted invoice. */
+export const SoftDeletedInvoice: Story = {
+  render: () => (
+    <OpenDialogButton
+      dialog='SHARED__INVOICE_DELETE'
+      mode='delete'
+      payload={{invoice: storyDeletedInvoice}}>
+      <DeleteInvoiceDialog />
+    </OpenDialogButton>
+  ),
+  play: playOpenDialog,
+};
+
+/** Delete dialog for an invoice with huge data. */
+export const HugeInvoice: Story = {
+  render: () => (
+    <OpenDialogButton
+      dialog='SHARED__INVOICE_DELETE'
+      mode='delete'
+      payload={{invoice: storyHugeInvoice}}>
+      <DeleteInvoiceDialog />
+    </OpenDialogButton>
+  ),
+  play: playOpenDialog,
+};
+
+/** Delete dialog for invoice with many shares. */
+export const SharedManyInvoice: Story = {
+  render: () => (
+    <OpenDialogButton
+      dialog='SHARED__INVOICE_DELETE'
+      mode='delete'
+      payload={{invoice: storySharedManyInvoice}}>
       <DeleteInvoiceDialog />
     </OpenDialogButton>
   ),

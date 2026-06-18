@@ -6,8 +6,11 @@ import {
   OpenDialogButton,
   playOpenDialog,
   storyEmptyInvoice,
+  storyHugeInvoice,
   storyInvoice,
+  storyLongNameInvoice,
   storyPublicInvoice,
+  storySharedManyInvoice,
   withEntityPreset,
 } from "../_storybook";
 import ShareInvoiceDialog from "./ShareInvoiceDialog";
@@ -105,6 +108,45 @@ export const EmptyInvoice: Story = {
       dialog='SHARED__INVOICE_SHARE'
       mode='share'
       payload={{invoice: storyEmptyInvoice}}>
+      <ShareInvoiceDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Share dialog for invoice with long name. */
+export const LongInvoiceName: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='SHARED__INVOICE_SHARE'
+      mode='share'
+      payload={{invoice: storyLongNameInvoice}}>
+      <ShareInvoiceDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Share dialog for invoice with many shares already. */
+export const ManyShares: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='SHARED__INVOICE_SHARE'
+      mode='share'
+      payload={{invoice: storySharedManyInvoice}}>
+      <ShareInvoiceDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Share dialog for huge invoice. */
+export const HugeInvoice: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='SHARED__INVOICE_SHARE'
+      mode='share'
+      payload={{invoice: storyHugeInvoice}}>
       <ShareInvoiceDialog />
     </OpenDialogButton>
   ),

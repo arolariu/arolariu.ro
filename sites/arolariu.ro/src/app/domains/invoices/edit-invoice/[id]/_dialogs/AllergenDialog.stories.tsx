@@ -1,6 +1,16 @@
 import type {Invoice} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
-import {invoicePresets, OpenDialogButton, playOpenDialog, storyInvoice, storyProducts, withEntityPreset} from "../../../_storybook";
+import {
+  invoicePresets,
+  OpenDialogButton,
+  playOpenDialog,
+  storyEmptyInvoice,
+  storyHugeInvoice,
+  storyInvoice,
+  storyManyAllergensInvoice,
+  storyProducts,
+  withEntityPreset,
+} from "../../../_storybook";
 import AllergenDialog from "./AllergenDialog";
 
 type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
@@ -147,6 +157,67 @@ export const EggsProduct: Story = {
         dialog='EDIT_INVOICE__ALLERGENS'
         mode='edit'
         payload={{invoice, product: eggsProduct, productIndex: 2}}>
+        <AllergenDialog />
+      </OpenDialogButton>
+    );
+  },
+};
+
+/** Allergen dialog for a product in an invoice with many allergens. */
+export const ManyAllergensInvoice: Story = {
+  play: playOpenDialog,
+  render: () => {
+    const firstProduct = storyManyAllergensInvoice.items[0];
+    if (!firstProduct) {
+      throw new Error("Story fixture error: first product not found in many allergens invoice");
+    }
+
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__ALLERGENS'
+        mode='edit'
+        payload={{invoice: storyManyAllergensInvoice, product: firstProduct, productIndex: 0}}>
+        <AllergenDialog />
+      </OpenDialogButton>
+    );
+  },
+};
+
+/** Allergen dialog for a product in an empty invoice. */
+export const EmptyInvoiceProduct: Story = {
+  play: playOpenDialog,
+  render: () => {
+    const emptyProduct = storyProducts[3];
+    if (!emptyProduct) {
+      throw new Error("Story fixture error: empty product not found");
+    }
+
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__ALLERGENS'
+        mode='edit'
+        payload={{invoice: storyEmptyInvoice, product: emptyProduct, productIndex: 0}}>
+        <AllergenDialog />
+      </OpenDialogButton>
+    );
+  },
+};
+
+/** Allergen dialog for last product in huge invoice. */
+export const HugeInvoiceProduct: Story = {
+  play: playOpenDialog,
+  render: () => {
+    const lastIndex = storyHugeInvoice.items.length - 1;
+    const lastProduct = storyHugeInvoice.items[lastIndex];
+    if (!lastProduct) {
+      throw new Error("Story fixture error: last product not found in huge invoice");
+    }
+
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__ALLERGENS'
+        mode='edit'
+        payload={{invoice: storyHugeInvoice, product: lastProduct, productIndex: lastIndex}}>
         <AllergenDialog />
       </OpenDialogButton>
     );

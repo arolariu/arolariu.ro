@@ -89,3 +89,61 @@ export const SimpleRecipe: Story = {
     </WithEditInvoiceContext>
   ),
 };
+
+/** Update recipe dialog with medium-complexity recipe. */
+export const MediumRecipe: Story = {
+  play: playOpenDialog,
+  render: () => {
+    const mediumRecipe: Recipe = {
+      name: "Risotto Milanese",
+      description: "Creamy Italian rice dish with saffron",
+      approximateTotalDuration: 40,
+      complexity: 3,
+      ingredients: ["Arborio Rice", "Saffron", "Parmesan", "White Wine", "Broth"],
+      instructions: "Toast rice, add wine, gradually add broth while stirring",
+      preparationTime: 10,
+      cookingTime: 30,
+      referenceForMoreDetails: "https://example.com/risotto",
+    };
+
+    return (
+      <WithEditInvoiceContext>
+        <OpenDialogButton
+          dialog='EDIT_INVOICE__RECIPE_UPDATE'
+          mode='edit'
+          payload={{recipe: mediumRecipe}}>
+          <UpdateRecipeDialog />
+        </OpenDialogButton>
+      </WithEditInvoiceContext>
+    );
+  },
+};
+
+/** Update recipe dialog with minimal recipe data. */
+export const MinimalRecipe: Story = {
+  play: playOpenDialog,
+  render: () => {
+    const minimalRecipe: Recipe = {
+      name: "Cereal Bowl",
+      description: "",
+      approximateTotalDuration: 2,
+      complexity: 1,
+      ingredients: ["Cereal", "Milk"],
+      instructions: "",
+      preparationTime: 2,
+      cookingTime: 0,
+      referenceForMoreDetails: "",
+    };
+
+    return (
+      <WithEditInvoiceContext>
+        <OpenDialogButton
+          dialog='EDIT_INVOICE__RECIPE_UPDATE'
+          mode='edit'
+          payload={{recipe: minimalRecipe}}>
+          <UpdateRecipeDialog />
+        </OpenDialogButton>
+      </WithEditInvoiceContext>
+    );
+  },
+};

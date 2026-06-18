@@ -41,3 +41,36 @@ export const Copied: Story = {
     onCopyQRCode: noop,
   },
 };
+
+/** Public sharing view with long URL. */
+export const LongUrl: Story = {
+  args: {
+    onBack: noop,
+    shareUrl: "https://arolariu.ro/domains/invoices/view-invoice/a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0",
+    copied: false,
+    onCopyLink: noop,
+    onCopyQRCode: noop,
+  },
+};
+
+/** Public sharing view with custom domain URL. */
+export const CustomDomain: Story = {
+  args: {
+    onBack: noop,
+    shareUrl: "https://custom.arolariu.ro/invoices/xyz123",
+    copied: false,
+    onCopyLink: noop,
+    onCopyQRCode: noop,
+  },
+};
+
+/** Public sharing view after QR code copied. */
+export const QRCodeCopied: Story = {
+  args: {
+    onBack: noop,
+    shareUrl: "https://arolariu.ro/domains/invoices/view-invoice/qr-test",
+    copied: true,
+    onCopyLink: noop,
+    onCopyQRCode: noop,
+  },
+};

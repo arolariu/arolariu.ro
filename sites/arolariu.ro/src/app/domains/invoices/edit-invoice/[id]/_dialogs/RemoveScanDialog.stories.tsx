@@ -88,3 +88,44 @@ export const LastScan: Story = {
     );
   },
 };
+
+/** Remove scan dialog for a middle scan in multi-scan invoice. */
+export const MiddleScan: Story = {
+  play: playOpenDialog,
+  render: ({invoice}) => {
+    const middleIndex = Math.floor(invoice.scans.length / 2);
+    const middleScan = invoice.scans[middleIndex];
+    if (!middleScan) {
+      throw new Error("RemoveScanDialog story requires multiple scans");
+    }
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__REMOVE_SCAN'
+        mode='delete'
+        payload={{invoice, scan: middleScan, scanIndex: middleIndex}}>
+        <RemoveScanDialog />
+      </OpenDialogButton>
+    );
+  },
+};
+
+/** Remove scan dialog for invoice with many scans. */
+export const ManyScans: Story = {
+  play: playOpenDialog,
+  render: ({invoice}) => {
+    const manyScans = [...invoice.scans, ...invoice.scans, ...invoice.scans];
+    const invoiceWithMany = {...invoice, scans: manyScans};
+    const firstScan = manyScans[0];
+    if (!firstScan) {
+      throw new Error("RemoveScanDialog story requires scans");
+    }
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__REMOVE_SCAN'
+        mode='delete'
+        payload={{invoice: invoiceWithMany, scan: firstScan, scanIndex: 0}}>
+        <RemoveScanDialog />
+      </OpenDialogButton>
+    );
+  },
+};

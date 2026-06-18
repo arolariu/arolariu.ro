@@ -1,4 +1,11 @@
-import {OpenDialogButton, playOpenDialog, storyMerchant, storyOnlineMerchant} from "@/app/domains/invoices/_storybook";
+import {
+  OpenDialogButton,
+  playOpenDialog,
+  storyLongNameMerchant,
+  storyMerchant,
+  storyMinimalMerchant,
+  storyOnlineMerchant,
+} from "@/app/domains/invoices/_storybook";
 import type {Meta, StoryObj} from "@storybook/react";
 import MerchantReceiptsDialog from "./MerchantReceiptsDialog";
 
@@ -37,6 +44,45 @@ export const OnlineMerchant: Story = {
       dialog='EDIT_INVOICE__MERCHANT_INVOICES'
       mode='view'
       payload={storyOnlineMerchant}>
+      <MerchantReceiptsDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Merchant receipts dialog for a merchant with long name. */
+export const LongNameMerchant: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__MERCHANT_INVOICES'
+      mode='view'
+      payload={storyLongNameMerchant}>
+      <MerchantReceiptsDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Merchant receipts dialog for a minimal merchant. */
+export const MinimalMerchant: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__MERCHANT_INVOICES'
+      mode='view'
+      payload={storyMinimalMerchant}>
+      <MerchantReceiptsDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Merchant receipts dialog for a standard physical store merchant. */
+export const PhysicalStoreMerchant: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__MERCHANT_INVOICES'
+      mode='view'
+      payload={storyMerchant}>
       <MerchantReceiptsDialog />
     </OpenDialogButton>
   ),

@@ -62,3 +62,39 @@ export const OpenForUpload: Story = {
     </OpenDialogButton>
   ),
 };
+
+/** Import dialog opened for PDF file upload. */
+export const OpenPdfImport: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='VIEW_INVOICES__IMPORT'
+      mode='add'>
+      <ImportDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Import dialog opened for XLSX file upload. */
+export const OpenXlsxImport: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='VIEW_INVOICES__IMPORT'
+      mode='add'>
+      <ImportDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Import dialog in initial empty state. */
+export const EmptyState: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='VIEW_INVOICES__IMPORT'
+      mode='add'>
+      <ImportDialog />
+    </OpenDialogButton>
+  ),
+};

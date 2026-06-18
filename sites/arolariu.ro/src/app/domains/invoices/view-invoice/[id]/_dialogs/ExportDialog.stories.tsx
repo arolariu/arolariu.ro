@@ -3,8 +3,11 @@ import {
   OpenDialogButton,
   playOpenDialog,
   storyEmptyInvoice,
+  storyHugeInvoice,
   storyInvoice,
+  storyLongNameInvoice,
   storyMerchant,
+  storyMinimalMerchant,
   WithViewInvoiceContext,
 } from "../../../_storybook";
 import {ExportDialog} from "./ExportDialog";
@@ -63,6 +66,54 @@ export const EmptyInvoice: Story = {
     <WithViewInvoiceContext
       invoice={storyEmptyInvoice}
       merchant={storyMerchant}>
+      <OpenDialogButton
+        dialog='VIEW_INVOICE__EXPORT'
+        mode='view'>
+        <ExportDialog />
+      </OpenDialogButton>
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Export dialog for invoice with long name. */
+export const LongInvoiceName: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={storyLongNameInvoice}
+      merchant={storyMerchant}>
+      <OpenDialogButton
+        dialog='VIEW_INVOICE__EXPORT'
+        mode='view'>
+        <ExportDialog />
+      </OpenDialogButton>
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Export dialog for huge invoice with many items. */
+export const HugeInvoice: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={storyHugeInvoice}
+      merchant={storyMerchant}>
+      <OpenDialogButton
+        dialog='VIEW_INVOICE__EXPORT'
+        mode='view'>
+        <ExportDialog />
+      </OpenDialogButton>
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Export dialog for invoice with minimal merchant. */
+export const MinimalMerchant: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={storyInvoice}
+      merchant={storyMinimalMerchant}>
       <OpenDialogButton
         dialog='VIEW_INVOICE__EXPORT'
         mode='view'>

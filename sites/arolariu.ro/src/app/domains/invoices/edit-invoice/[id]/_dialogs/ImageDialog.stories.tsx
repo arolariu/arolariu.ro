@@ -1,4 +1,10 @@
-import {OpenDialogButton, playOpenDialog, storyImageScanUrl, storyImageScanUrlSecondary} from "@/app/domains/invoices/_storybook";
+import {
+  OpenDialogButton,
+  playOpenDialog,
+  storyImageScanUrl,
+  storyImageScanUrlSecondary,
+  storyImageScanUrlWide,
+} from "@/app/domains/invoices/_storybook";
 import type {Meta, StoryObj} from "@storybook/react";
 import ImageDialog from "./ImageDialog";
 
@@ -31,6 +37,45 @@ export const Default: Story = {
 
 /** Image dialog with a different image URL. */
 export const SecondaryImage: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__IMAGE'
+      mode='view'
+      payload={storyImageScanUrlSecondary}>
+      <ImageDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Image dialog with wide-format scan image. */
+export const WideImage: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__IMAGE'
+      mode='view'
+      payload={storyImageScanUrlWide}>
+      <ImageDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Image dialog with primary scan image URL. */
+export const PrimaryScanImage: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__IMAGE'
+      mode='view'
+      payload={storyImageScanUrl}>
+      <ImageDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Image dialog with alternate scan variation. */
+export const AlternateScan: Story = {
   play: playOpenDialog,
   render: () => (
     <OpenDialogButton

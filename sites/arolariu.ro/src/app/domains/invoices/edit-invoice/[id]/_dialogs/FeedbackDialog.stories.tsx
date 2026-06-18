@@ -2,7 +2,9 @@ import {
   OpenDialogButton,
   playOpenDialog,
   storyInvoice,
+  storyLongNameMerchant,
   storyMerchant,
+  storyMinimalMerchant,
   storyOnlineInvoice,
   storyOnlineMerchant,
 } from "@/app/domains/invoices/_storybook";
@@ -44,6 +46,45 @@ export const OnlineMerchant: Story = {
       dialog='EDIT_INVOICE__FEEDBACK'
       mode='add'
       payload={{invoice: storyOnlineInvoice, merchant: storyOnlineMerchant}}>
+      <FeedbackDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Feedback dialog with null merchant. */
+export const NoMerchant: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__FEEDBACK'
+      mode='add'
+      payload={{invoice: storyInvoice, merchant: null}}>
+      <FeedbackDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Feedback dialog with long-name merchant. */
+export const LongNameMerchant: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__FEEDBACK'
+      mode='add'
+      payload={{invoice: storyInvoice, merchant: storyLongNameMerchant}}>
+      <FeedbackDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Feedback dialog with minimal merchant. */
+export const MinimalMerchant: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__FEEDBACK'
+      mode='add'
+      payload={{invoice: storyInvoice, merchant: storyMinimalMerchant}}>
       <FeedbackDialog />
     </OpenDialogButton>
   ),

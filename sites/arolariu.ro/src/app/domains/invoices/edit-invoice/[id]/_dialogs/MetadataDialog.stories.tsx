@@ -61,3 +61,47 @@ export const ManyEntries: Story = {
     </OpenDialogButton>
   ),
 };
+
+/** Metadata dialog with single entry. */
+export const SingleEntry: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__METADATA'
+      mode='edit'
+      payload={{"Order ID": "ORD-123456"}}>
+      <MetadataDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Metadata dialog with long values. */
+export const LongValues: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__METADATA'
+      mode='edit'
+      payload={{
+        "Customer Notes":
+          "This is an extremely long customer note that contains detailed instructions and special requests that need to be preserved for future reference and audit purposes",
+        "Delivery Instructions":
+          "Please deliver to the back entrance of the building located at the corner of Main Street and Second Avenue during business hours only",
+      }}>
+      <MetadataDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Metadata dialog with standard invoice metadata. */
+export const StandardMetadata: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__METADATA'
+      mode='edit'
+      payload={storyInvoice.additionalMetadata}>
+      <MetadataDialog />
+    </OpenDialogButton>
+  ),
+};

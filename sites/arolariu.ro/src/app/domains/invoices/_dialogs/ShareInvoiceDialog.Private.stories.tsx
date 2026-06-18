@@ -39,3 +39,33 @@ export const WithEmail: Story = {
     onSendEmail: noop as unknown as (e: React.FormEvent) => void,
   },
 };
+
+/** Private sharing form with multiple email addresses. */
+export const MultipleEmails: Story = {
+  args: {
+    onBack: noop,
+    email: "user1@example.com, user2@example.com",
+    onEmailChange: noop,
+    onSendEmail: noop as unknown as (e: React.FormEvent) => void,
+  },
+};
+
+/** Private sharing form with long email address. */
+export const LongEmail: Story = {
+  args: {
+    onBack: noop,
+    email: "verylongemailaddresswithlotofcharacters@subdomain.example-domain.com",
+    onEmailChange: noop,
+    onSendEmail: noop as unknown as (e: React.FormEvent) => void,
+  },
+};
+
+/** Private sharing form in empty state. */
+export const EmptyForm: Story = {
+  args: {
+    onBack: noop,
+    email: "",
+    onEmailChange: noop,
+    onSendEmail: noop as unknown as (e: React.FormEvent) => void,
+  },
+};

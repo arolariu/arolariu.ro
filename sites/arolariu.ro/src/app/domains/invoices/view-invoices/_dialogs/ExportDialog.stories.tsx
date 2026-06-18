@@ -1,6 +1,14 @@
 import type {Meta, StoryObj} from "@storybook/react";
 import {useEffect} from "react";
-import {OpenDialogButton, playOpenDialog, resetInvoiceStoryStores, seedInvoiceStoryStores, storyInvoices} from "../../_storybook";
+import {
+  OpenDialogButton,
+  playOpenDialog,
+  resetInvoiceStoryStores,
+  seedInvoiceStoryStores,
+  storyInvoice,
+  storyInvoices,
+  storyManyInvoices,
+} from "../../_storybook";
 import ExportDialog from "./ExportDialog";
 
 /**
@@ -89,6 +97,48 @@ export const NoInvoices: Story = {
   play: playOpenDialog,
   render: () => {
     resetInvoiceStoryStores();
+    return (
+      <OpenDialogButton
+        dialog='VIEW_INVOICES__EXPORT'
+        mode='view'>
+        <ExportDialog />
+      </OpenDialogButton>
+    );
+  },
+};
+
+/** Export dialog with many selected invoices. */
+export const ManySelected: Story = {
+  play: playOpenDialog,
+  render: () => {
+    useEffect(() => {
+      seedInvoiceStoryStores({
+        invoices: storyManyInvoices,
+        selectedInvoices: storyManyInvoices.slice(0, 10),
+      });
+    }, []);
+
+    return (
+      <OpenDialogButton
+        dialog='VIEW_INVOICES__EXPORT'
+        mode='view'>
+        <ExportDialog />
+      </OpenDialogButton>
+    );
+  },
+};
+
+/** Export dialog with single invoice selected. */
+export const SingleSelected: Story = {
+  play: playOpenDialog,
+  render: () => {
+    useEffect(() => {
+      seedInvoiceStoryStores({
+        invoices: storyInvoices,
+        selectedInvoices: [storyInvoices[0] ?? storyInvoice],
+      });
+    }, []);
+
     return (
       <OpenDialogButton
         dialog='VIEW_INVOICES__EXPORT'

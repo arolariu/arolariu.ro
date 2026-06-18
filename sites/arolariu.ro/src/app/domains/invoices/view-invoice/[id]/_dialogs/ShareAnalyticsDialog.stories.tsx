@@ -1,4 +1,12 @@
-import {OpenDialogButton, playOpenDialog, storyEmptyInvoice, storyInvoice, storyMerchant} from "@/app/domains/invoices/_storybook";
+import {
+  OpenDialogButton,
+  playOpenDialog,
+  storyEmptyInvoice,
+  storyHugeInvoice,
+  storyInvoice,
+  storyManyAllergensInvoice,
+  storyMerchant,
+} from "@/app/domains/invoices/_storybook";
 import type {Meta, StoryObj} from "@storybook/react";
 import ShareAnalyticsDialog from "./ShareAnalyticsDialog";
 
@@ -37,6 +45,45 @@ export const EmptyInvoice: Story = {
       dialog='VIEW_INVOICE__SHARE_ANALYTICS'
       mode='share'
       payload={{invoice: storyEmptyInvoice, merchant: storyMerchant}}>
+      <ShareAnalyticsDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Share analytics dialog with null merchant. */
+export const NoMerchant: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='VIEW_INVOICE__SHARE_ANALYTICS'
+      mode='share'
+      payload={{invoice: storyInvoice, merchant: null}}>
+      <ShareAnalyticsDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Share analytics dialog with huge invoice. */
+export const HugeInvoice: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='VIEW_INVOICE__SHARE_ANALYTICS'
+      mode='share'
+      payload={{invoice: storyHugeInvoice, merchant: storyMerchant}}>
+      <ShareAnalyticsDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Share analytics dialog with many allergens invoice. */
+export const ManyAllergensInvoice: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='VIEW_INVOICE__SHARE_ANALYTICS'
+      mode='share'
+      payload={{invoice: storyManyAllergensInvoice, merchant: storyMerchant}}>
       <ShareAnalyticsDialog />
     </OpenDialogButton>
   ),

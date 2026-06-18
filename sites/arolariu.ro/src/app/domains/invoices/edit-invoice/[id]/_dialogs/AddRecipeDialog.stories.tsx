@@ -69,3 +69,45 @@ export const WithInvoiceItems: Story = {
     </WithEditInvoiceContext>
   ),
 };
+
+/** Add recipe dialog with minimal invoice context (no items yet). */
+export const MinimalContext: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <WithEditInvoiceContext>
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__RECIPE_ADD'
+        mode='add'>
+        <AddRecipeDialog />
+      </OpenDialogButton>
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Add recipe dialog in edit mode context. */
+export const EditMode: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <WithEditInvoiceContext>
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__RECIPE_ADD'
+        mode='add'>
+        <AddRecipeDialog />
+      </OpenDialogButton>
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Add recipe dialog with empty invoice state. */
+export const EmptyState: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <WithEditInvoiceContext>
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__RECIPE_ADD'
+        mode='add'>
+        <AddRecipeDialog />
+      </OpenDialogButton>
+    </WithEditInvoiceContext>
+  ),
+};

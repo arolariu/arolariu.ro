@@ -69,3 +69,42 @@ export const PdfScan: Story = {
     </OpenDialogButton>
   ),
 };
+
+/** Create-invoice wizard with mixed scan types. */
+export const MixedScans: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='VIEW_SCANS__CREATE_INVOICE'
+      mode='add'
+      payload={{selectedScans: [storyCachedImageScan, storyCachedPdfScan, storyCachedImageScan]}}>
+      <CreateInvoiceDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Create-invoice wizard with many selected scans. */
+export const ManyScans: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='VIEW_SCANS__CREATE_INVOICE'
+      mode='add'
+      payload={{selectedScans: [storyCachedImageScan, storyCachedPdfScan, storyCachedImageScan, storyCachedPdfScan, storyCachedImageScan]}}>
+      <CreateInvoiceDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Create-invoice wizard with image scan only. */
+export const ImageScanOnly: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='VIEW_SCANS__CREATE_INVOICE'
+      mode='add'
+      payload={{selectedScans: [storyCachedImageScan]}}>
+      <CreateInvoiceDialog />
+    </OpenDialogButton>
+  ),
+};

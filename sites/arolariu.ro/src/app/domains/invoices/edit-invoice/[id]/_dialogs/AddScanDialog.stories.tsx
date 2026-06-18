@@ -1,6 +1,16 @@
 import type {Invoice} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
-import {invoicePresets, OpenDialogButton, playOpenDialog, storyEmptyInvoice, storyInvoice, withEntityPreset} from "../../../_storybook";
+import {
+  invoicePresets,
+  OpenDialogButton,
+  playOpenDialog,
+  storyEmptyInvoice,
+  storyInvoice,
+  storyLongNameInvoice,
+  storyManyUpdatesInvoice,
+  storySoftDeletedItemsInvoice,
+  withEntityPreset,
+} from "../../../_storybook";
 import AddScanDialog from "./AddScanDialog";
 
 type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
@@ -53,6 +63,45 @@ export const EmptyInvoice: Story = {
       dialog='EDIT_INVOICE__ADD_SCAN'
       mode='add'
       payload={{invoice: storyEmptyInvoice}}>
+      <AddScanDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Add scan dialog for a soft-deleted invoice. */
+export const SoftDeletedInvoice: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__ADD_SCAN'
+      mode='add'
+      payload={{invoice: storySoftDeletedItemsInvoice}}>
+      <AddScanDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Add scan dialog for an invoice with long name. */
+export const LongInvoiceName: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__ADD_SCAN'
+      mode='add'
+      payload={{invoice: storyLongNameInvoice}}>
+      <AddScanDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Add scan dialog for an invoice with many updates. */
+export const ManyUpdates: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__ADD_SCAN'
+      mode='add'
+      payload={{invoice: storyManyUpdatesInvoice}}>
       <AddScanDialog />
     </OpenDialogButton>
   ),

@@ -1,6 +1,16 @@
 import type {Invoice, Product} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
-import {invoicePresets, OpenDialogButton, playOpenDialog, storyInvoice, storyProducts, withEntityPreset} from "../../../_storybook";
+import {
+  invoicePresets,
+  OpenDialogButton,
+  playOpenDialog,
+  storyEmptyInvoice,
+  storyHugeInvoice,
+  storyInvoice,
+  storyManyAllergensInvoice,
+  storyProducts,
+  withEntityPreset,
+} from "../../../_storybook";
 import BulkCategoryDialog from "./BulkCategoryDialog";
 
 type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
@@ -139,6 +149,60 @@ export const FiveProducts: Story = {
         dialog='EDIT_INVOICE__BULK_CATEGORY'
         mode='edit'
         payload={{invoice, selectedProducts, selectedIndices}}>
+        <BulkCategoryDialog />
+      </OpenDialogButton>
+    );
+  },
+};
+
+/** Bulk category dialog on empty invoice with synthetic products. */
+export const EmptyInvoice: Story = {
+  play: playOpenDialog,
+  render: () => {
+    const selectedProducts: Product[] = storyProducts.slice(0, 2);
+    const selectedIndices = [0, 1];
+
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__BULK_CATEGORY'
+        mode='edit'
+        payload={{invoice: storyEmptyInvoice, selectedProducts, selectedIndices}}>
+        <BulkCategoryDialog />
+      </OpenDialogButton>
+    );
+  },
+};
+
+/** Bulk category dialog on huge invoice (many products selected). */
+export const HugeInvoiceProducts: Story = {
+  play: playOpenDialog,
+  render: () => {
+    const selectedProducts: Product[] = storyHugeInvoice.items.slice(0, 10);
+    const selectedIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__BULK_CATEGORY'
+        mode='edit'
+        payload={{invoice: storyHugeInvoice, selectedProducts, selectedIndices}}>
+        <BulkCategoryDialog />
+      </OpenDialogButton>
+    );
+  },
+};
+
+/** Bulk category dialog with products from invoice with many allergens. */
+export const AllergicProducts: Story = {
+  play: playOpenDialog,
+  render: () => {
+    const selectedProducts: Product[] = storyManyAllergensInvoice.items.slice(0, 3);
+    const selectedIndices = [0, 1, 2];
+
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__BULK_CATEGORY'
+        mode='edit'
+        payload={{invoice: storyManyAllergensInvoice, selectedProducts, selectedIndices}}>
         <BulkCategoryDialog />
       </OpenDialogButton>
     );
