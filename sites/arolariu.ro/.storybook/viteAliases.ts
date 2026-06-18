@@ -31,5 +31,9 @@ export function getCoreStorybookViteAliases(): AliasOptions {
       find: /^next\/image$/,
       replacement: toVitePath(resolve(storybookDirectory, "mocks", "nextImage.tsx")),
     },
+    {
+      find: /^@\/lib\/actions\/cookies$/,
+      replacement: toVitePath(resolve(storybookDirectory, "mocks", "cookies.tsx")),
+    },
   ];
 }
