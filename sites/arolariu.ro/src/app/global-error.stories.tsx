@@ -4,10 +4,12 @@ import {TbAlertTriangle, TbClipboard, TbHome, TbRefresh} from "react-icons/tb";
 /**
  * Static visual preview of the GlobalError component.
  *
- * The actual component renders a full HTML shell (html/body) with error
- * boundary recovery, QR diagnostics, and context providers. This story
- * renders a faithful HTML replica of the error UI content without the
- * full document shell.
+ * INTENTIONAL EXCEPTION (does not mount the real component): `GlobalError` is a
+ * Next.js framework route handler (global error boundary) that renders a full
+ * `<html>`/`<body>` document and pulls Header/Footer/ContextProviders/Tracking and
+ * `react-qr-code`. It cannot be mounted in the Storybook browser/test runtime
+ * without faking the entire request/document context, so this story keeps a
+ * faithful HTML replica of the error UI by design. Do not flag in real-mount audits.
  */
 const meta = {
   title: "arolariu.ro/Pages/Home/GlobalError",
