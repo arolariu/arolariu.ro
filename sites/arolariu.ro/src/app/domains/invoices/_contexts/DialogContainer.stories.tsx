@@ -15,10 +15,11 @@ import {
 /**
  * Static visual preview of the DialogContainer component.
  *
- * @remarks Static preview — Storybook mocks cover the common invoice and scan action modules,
- * but the full DialogContainer also reaches CreateInvoiceDialog, which imports the unmocked
- * `"use server"` `createInvoiceFromScans` action from `view-scans/_actions/createInvoiceFromScans`.
- * This story renders a schematic subset of common dialog registrations rather than an exhaustive registry dump.
+ * INTENTIONAL EXCEPTION (registry container): DialogContainer is a thin registry that
+ * renders whichever invoice/scan dialog is currently active in `useDialogs` context —
+ * it renders nothing on its own. Each concrete dialog it can render is covered by its
+ * own real-mount story (see IMS/Dialogs/*), so this registry keeps a schematic preview
+ * rather than duplicating those. Do not flag in real-mount audits.
  */
 const meta = {
   title: "arolariu.ro/IMS/Dialogs/Container",
