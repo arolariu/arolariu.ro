@@ -218,3 +218,93 @@ export const MultipleNewMerchants: Story = {
     },
   },
 };
+
+/** Significant spending drop — budget success scenario. */
+export const SignificantSpendingDrop: Story = {
+  args: {
+    data: computeMonthComparison(mockInvoices.slice(0, 3)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Scenario with major spending decrease showing successful budget discipline.",
+      },
+    },
+  },
+};
+
+/** Flat spending — zero delta month-over-month. */
+export const FlatSpending: Story = {
+  args: {
+    data: computeMonthComparison(mockInvoices.slice(2, 8)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Neutral scenario showing minimal change in spending between months.",
+      },
+    },
+  },
+};
+
+/** Invoice count surge — shopping frequency increase. */
+export const InvoiceCountSurge: Story = {
+  args: {
+    data: computeMonthComparison(mockInvoices),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows significant increase in number of invoices (more shopping trips).",
+      },
+    },
+  },
+};
+
+/** First invoice month — onboarding scenario. */
+export const FirstInvoiceMonth: Story = {
+  args: {
+    data: computeMonthComparison([mockInvoices[0] ?? singleInvoice[0]].filter(Boolean)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "New user scenario with very first invoice (no previous data for comparison).",
+      },
+    },
+  },
+};
+
+/** EUR currency comparison — multi-currency delta. */
+export const EurCurrencyComparison: Story = {
+  args: {
+    data: computeMonthComparison(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "EUR")),
+    currency: "EUR",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Month-over-month comparison with EUR as display currency.",
+      },
+    },
+  },
+};
+
+/** Invoice count drop — reduced shopping frequency. */
+export const InvoiceCountDrop: Story = {
+  args: {
+    data: computeMonthComparison(mockInvoices.slice(0, 5)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows decrease in invoice count (fewer shopping trips this month).",
+      },
+    },
+  },
+};

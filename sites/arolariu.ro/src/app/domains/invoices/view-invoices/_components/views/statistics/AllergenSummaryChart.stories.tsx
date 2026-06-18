@@ -1,4 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {Invoice, Product} from "../../../../../../../types/invoices";
 import type {AllergenFrequency} from "../../../_utils/statistics";
 import {computeAllergenFrequency} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
@@ -77,7 +78,9 @@ export const SingleInvoice: Story = {
  */
 export const HighWarningLevels: Story = {
   args: {
-    data: computeAllergenFrequency(mockInvoices.filter((inv) => inv.items.some((item) => item.detectedAllergens.length > 0))),
+    data: computeAllergenFrequency(
+      mockInvoices.filter((inv: Invoice) => inv.items.some((item: Product) => item.detectedAllergens.length > 0)),
+    ),
   },
 };
 
@@ -88,7 +91,9 @@ export const HighWarningLevels: Story = {
 export const GlutenFocused: Story = {
   args: {
     data: computeAllergenFrequency(
-      mockInvoices.filter((inv) => inv.items.some((item) => item.detectedAllergens.some((a) => a.name.toLowerCase().includes("gluten")))),
+      mockInvoices.filter((inv: Invoice) =>
+        inv.items.some((item: Product) => item.detectedAllergens.some((a: {name: string}) => a.name.toLowerCase().includes("gluten"))),
+      ),
     ),
   },
 };
@@ -100,7 +105,9 @@ export const GlutenFocused: Story = {
 export const DairyFocused: Story = {
   args: {
     data: computeAllergenFrequency(
-      mockInvoices.filter((inv) => inv.items.some((item) => item.detectedAllergens.some((a) => a.name.toLowerCase().includes("lactose")))),
+      mockInvoices.filter((inv: Invoice) =>
+        inv.items.some((item: Product) => item.detectedAllergens.some((a: {name: string}) => a.name.toLowerCase().includes("lactose"))),
+      ),
     ),
   },
 };
@@ -135,13 +142,76 @@ export const ManyAllergens: Story = {
 /** Single allergen type — minimal warning card. */
 export const SingleAllergen: Story = {
   args: {
-    data: computeAllergenFrequency(mockInvoices.filter((inv) => inv.items.some((item) => item.detectedAllergens.length > 0))).slice(0, 1),
+    data: computeAllergenFrequency(
+      mockInvoices.filter((inv: Invoice) => inv.items.some((item: Product) => item.detectedAllergens.length > 0)),
+    ).slice(0, 1),
   },
 };
 
 /** Two allergen types — minimal comparison view. */
 export const TwoAllergens: Story = {
   args: {
-    data: computeAllergenFrequency(mockInvoices.filter((inv) => inv.items.some((item) => item.detectedAllergens.length > 0))).slice(0, 2),
+    data: computeAllergenFrequency(
+      mockInvoices.filter((inv: Invoice) => inv.items.some((item: Product) => item.detectedAllergens.length > 0)),
+    ).slice(0, 2),
+  },
+};
+
+/** Three allergen types — balanced warning card grid. */
+export const ThreeAllergens: Story = {
+  args: {
+    data: computeAllergenFrequency(
+      mockInvoices.filter((inv: Invoice) => inv.items.some((item: Product) => item.detectedAllergens.length > 0)),
+    ).slice(0, 3),
+  },
+};
+
+/** Four allergen types — compact warning overview. */
+export const FourAllergens: Story = {
+  args: {
+    data: computeAllergenFrequency(
+      mockInvoices.filter((inv: Invoice) => inv.items.some((item: Product) => item.detectedAllergens.length > 0)),
+    ).slice(0, 4),
+  },
+};
+
+/** All low-frequency allergens — all blue warning cards. */
+export const AllLowFrequency: Story = {
+  args: {
+    data: computeAllergenFrequency(mockInvoices.slice(5, 15)),
+  },
+};
+
+/** Dense allergen data — 20+ distinct allergens across many products. */
+export const DenseAllergenData: Story = {
+  args: {
+    data: computeAllergenFrequency(mockInvoices),
+  },
+};
+
+/** Soy-heavy products — soy allergen prominence test. */
+export const SoyFocused: Story = {
+  args: {
+    data: computeAllergenFrequency(
+      mockInvoices.filter((inv: Invoice) =>
+        inv.items.some((item: Product) => item.detectedAllergens.some((a: {name: string}) => a.name.toLowerCase().includes("soy"))),
+      ),
+    ),
+  },
+};
+
+/** Nut allergen products — tree nut allergen filter. */
+export const NutAllergens: Story = {
+  args: {
+    data: computeAllergenFrequency(
+      mockInvoices.filter((inv: Invoice) =>
+        inv.items.some((item: Product) =>
+          item.detectedAllergens.some(
+            (a: {name: string}) =>
+              a.name.toLowerCase().includes("nut") || a.name.toLowerCase().includes("almond") || a.name.toLowerCase().includes("peanut"),
+          ),
+        ),
+      ),
+    ),
   },
 };

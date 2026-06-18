@@ -263,3 +263,107 @@ export const ThreeSegments: Story = {
     },
   },
 };
+
+/** Four segments active — complete radar coverage. */
+export const FourSegments: Story = {
+  args: {
+    data: computeTimeOfDay(mockInvoices),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Complete radar showing activity across all four time segments.",
+      },
+    },
+  },
+};
+
+/** Morning and afternoon — business day pattern. */
+export const MorningAndAfternoon: Story = {
+  args: {
+    data: computeTimeOfDay(
+      mockInvoices.filter((inv) => {
+        const hour = new Date(inv.paymentInformation?.transactionDate ?? inv.createdAt).getHours();
+        return hour >= 6 && hour < 17;
+      }),
+    ),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows shopping during morning and afternoon (business day pattern).",
+      },
+    },
+  },
+};
+
+/** Evening and night — after-hours pattern. */
+export const EveningAndNight: Story = {
+  args: {
+    data: computeTimeOfDay(
+      mockInvoices.filter((inv) => {
+        const hour = new Date(inv.paymentInformation?.transactionDate ?? inv.createdAt).getHours();
+        return hour >= 17 || hour < 6;
+      }),
+    ),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows shopping during evening and night (after-hours pattern).",
+      },
+    },
+  },
+};
+
+/** Morning and evening — peak shopping times. */
+export const MorningAndEvening: Story = {
+  args: {
+    data: computeTimeOfDay(
+      mockInvoices.filter((inv) => {
+        const hour = new Date(inv.paymentInformation?.transactionDate ?? inv.createdAt).getHours();
+        return (hour >= 6 && hour < 12) || (hour >= 17 && hour < 21);
+      }),
+    ),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows shopping during typical peak times (morning and evening).",
+      },
+    },
+  },
+};
+
+/** Afternoon and night — unconventional pattern. */
+export const AfternoonAndNight: Story = {
+  args: {
+    data: computeTimeOfDay(
+      mockInvoices.filter((inv) => {
+        const hour = new Date(inv.paymentInformation?.transactionDate ?? inv.createdAt).getHours();
+        return (hour >= 12 && hour < 17) || hour >= 21 || hour < 6;
+      }),
+    ),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows unconventional shopping pattern (afternoon and late night).",
+      },
+    },
+  },
+};
+
+/** Dense time data — balanced activity across all segments. */
+export const DenseTimeData: Story = {
+  args: {
+    data: computeTimeOfDay(mockInvoices),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Dense dataset showing balanced shopping activity across all time segments.",
+      },
+    },
+  },
+};

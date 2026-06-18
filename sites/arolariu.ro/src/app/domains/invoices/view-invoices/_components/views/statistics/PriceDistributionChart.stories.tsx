@@ -1,4 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {Invoice, Product} from "../../../../../../../types/invoices";
 import type {PriceBucket} from "../../../_utils/statistics";
 import {computePriceDistribution} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
@@ -105,7 +106,7 @@ export const SingleInvoice: Story = {
  */
 export const FilteredSubset: Story = {
   args: {
-    data: computePriceDistribution(mockInvoices.filter((inv) => inv.items.some((item) => item.price < 10))),
+    data: computePriceDistribution(mockInvoices.filter((inv: Invoice) => inv.items.some((item: Product) => item.price < 10))),
     currency: "RON",
   },
   parameters: {
@@ -215,6 +216,96 @@ export const ThreeInvoices: Story = {
     docs: {
       description: {
         story: "Early user distribution from exactly three invoices.",
+      },
+    },
+  },
+};
+
+/** Four invoices — minimal active user. */
+export const FourInvoices: Story = {
+  args: {
+    data: computePriceDistribution(mockInvoices.slice(0, 4)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Minimal active user distribution from four invoices.",
+      },
+    },
+  },
+};
+
+/** Five invoices — growing dataset. */
+export const FiveInvoices: Story = {
+  args: {
+    data: computePriceDistribution(mockInvoices.slice(0, 5)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Growing user distribution from exactly five invoices.",
+      },
+    },
+  },
+};
+
+/** Low-price bucket focus — 0-10 range. */
+export const LowPriceFocus: Story = {
+  args: {
+    data: computePriceDistribution(mockInvoices.slice(0, 8)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Distribution showing concentration in low-price buckets (0-10 RON).",
+      },
+    },
+  },
+};
+
+/** Mid-range bucket focus — 25-100 range. */
+export const MidRangeFocus: Story = {
+  args: {
+    data: computePriceDistribution(mockInvoices.slice(5, 15)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Distribution showing concentration in mid-range buckets (25-100 RON).",
+      },
+    },
+  },
+};
+
+/** EUR currency distribution — Euro price buckets. */
+export const EurCurrencyDistribution: Story = {
+  args: {
+    data: computePriceDistribution(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "EUR")),
+    currency: "EUR",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Price distribution with EUR currency for Euro-based invoices.",
+      },
+    },
+  },
+};
+
+/** Dense distribution — many invoices across all buckets. */
+export const DenseDistribution: Story = {
+  args: {
+    data: computePriceDistribution(mockInvoices),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Dense distribution showing invoices spread evenly across all price buckets.",
       },
     },
   },

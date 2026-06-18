@@ -185,3 +185,51 @@ export const FourProducts: Story = {
     currency: "lei",
   },
 };
+
+/** Five products — optimal table density. */
+export const FiveProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices, 5),
+    currency: "lei",
+  },
+};
+
+/** Six products — extended podium view. */
+export const SixProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices, 6),
+    currency: "lei",
+  },
+};
+
+/** Seven products — full leaderboard. */
+export const SevenProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices, 7),
+    currency: "lei",
+  },
+};
+
+/** RON currency products — lei display. */
+export const RonCurrencyProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "RON")),
+    currency: "lei",
+  },
+};
+
+/** USD currency products — dollar display. */
+export const UsdCurrencyProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "USD")),
+    currency: "$",
+  },
+};
+
+/** Dense product dataset — 40+ products. */
+export const DenseProductDataset: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices, 40),
+    currency: "lei",
+  },
+};

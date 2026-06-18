@@ -291,3 +291,108 @@ export const ThreeDaysActivity: Story = {
     },
   },
 };
+
+/** Four days activity — growing usage pattern. */
+export const FourDaysActivity: Story = {
+  args: {
+    data: computeDailySpending(mockInvoices.slice(0, 4)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Growing usage heatmap showing spending on exactly four days.",
+      },
+    },
+  },
+};
+
+/** Five days activity — moderate usage pattern. */
+export const FiveDaysActivity: Story = {
+  args: {
+    data: computeDailySpending(mockInvoices.slice(0, 5)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Moderate usage heatmap showing spending on exactly five days.",
+      },
+    },
+  },
+};
+
+/** Weekday-only pattern — Monday-Friday spending. */
+export const WeekdayOnlyPattern: Story = {
+  args: {
+    data: computeDailySpending(
+      mockInvoices.filter((inv) => {
+        const day = new Date(inv.paymentInformation?.transactionDate ?? inv.createdAt).getDay();
+        return day >= 1 && day <= 5; // Monday-Friday
+      }),
+    ),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows spending pattern on weekdays only (Monday-Friday).",
+      },
+    },
+  },
+};
+
+/** Monthly start pattern — first week of month. */
+export const MonthlyStartPattern: Story = {
+  args: {
+    data: computeDailySpending(
+      mockInvoices.filter((inv) => {
+        const date = new Date(inv.paymentInformation?.transactionDate ?? inv.createdAt).getDate();
+        return date >= 1 && date <= 7;
+      }),
+    ),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows spending pattern from first week of month (days 1-7).",
+      },
+    },
+  },
+};
+
+/** Monthly end pattern — last week of month. */
+export const MonthlyEndPattern: Story = {
+  args: {
+    data: computeDailySpending(
+      mockInvoices.filter((inv) => {
+        const date = new Date(inv.paymentInformation?.transactionDate ?? inv.createdAt).getDate();
+        return date >= 21;
+      }),
+    ),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows spending pattern from last week of month (days 21+).",
+      },
+    },
+  },
+};
+
+/** EUR currency heatmap — Euro spending calendar. */
+export const EurCurrencyHeatmap: Story = {
+  args: {
+    data: computeDailySpending(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "EUR")),
+    currency: "EUR",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Calendar heatmap with EUR currency for Euro-based invoices.",
+      },
+    },
+  },
+};

@@ -265,3 +265,99 @@ export const LongMerchantNames: Story = {
     },
   },
 };
+
+/** Three merchants — balanced leaderboard. */
+export const ThreeMerchants: Story = {
+  args: {
+    data: computeMerchantAggregates(mockInvoices.slice(0, 3)),
+    currency: "RON",
+    merchantNamesById,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Balanced leaderboard with exactly three merchants for compact view.",
+      },
+    },
+  },
+};
+
+/** Four merchants — compact leaderboard grid. */
+export const FourMerchants: Story = {
+  args: {
+    data: computeMerchantAggregates(mockInvoices.slice(0, 4)),
+    currency: "RON",
+    merchantNamesById,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Compact leaderboard with four merchants.",
+      },
+    },
+  },
+};
+
+/** Top 7 merchants — optimal vertical space. */
+export const TopSeven: Story = {
+  args: {
+    data: computeMerchantAggregates(mockInvoices).slice(0, 7),
+    currency: "RON",
+    merchantNamesById,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Leaderboard showing top 7 merchants for balanced vertical layout.",
+      },
+    },
+  },
+};
+
+/** Top 15 merchants — extended leaderboard. */
+export const TopFifteen: Story = {
+  args: {
+    data: computeMerchantAggregates(mockInvoices).slice(0, 15),
+    currency: "RON",
+    merchantNamesById,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Extended leaderboard with top 15 merchants for deep analysis.",
+      },
+    },
+  },
+};
+
+/** Even spending distribution — all merchants similar totals. */
+export const EvenSpendingDistribution: Story = {
+  args: {
+    data: computeMerchantAggregates(mockInvoices.slice(0, 6)),
+    currency: "RON",
+    merchantNamesById,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Leaderboard showing even spending distribution across merchants (minimal variance).",
+      },
+    },
+  },
+};
+
+/** EUR currency leaderboard — Euro spending display. */
+export const EurCurrencyLeaderboard: Story = {
+  args: {
+    data: computeMerchantAggregates(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "EUR")).slice(0, 10),
+    currency: "EUR",
+    merchantNamesById,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Merchant leaderboard with EUR currency for Euro-based invoices.",
+      },
+    },
+  },
+};

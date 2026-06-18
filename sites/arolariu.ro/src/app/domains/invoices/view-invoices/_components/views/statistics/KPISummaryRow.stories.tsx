@@ -200,3 +200,93 @@ export const ThreeInvoices: Story = {
     },
   },
 };
+
+/** Four invoices — minimal active user. */
+export const FourInvoices: Story = {
+  args: {
+    data: computeKPIs(mockInvoices.slice(0, 4)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Minimal active user with exactly four invoices recorded.",
+      },
+    },
+  },
+};
+
+/** Five invoices — growing user base. */
+export const FiveInvoices: Story = {
+  args: {
+    data: computeKPIs(mockInvoices.slice(0, 5)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Growing user with exactly five invoices.",
+      },
+    },
+  },
+};
+
+/** High total spending — heavy spender KPIs. */
+export const HighTotalSpending: Story = {
+  args: {
+    data: computeKPIs(mockInvoices),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "KPIs showing significant total spending from full dataset.",
+      },
+    },
+  },
+};
+
+/** Low item average — few items per invoice. */
+export const LowItemAverage: Story = {
+  args: {
+    data: computeKPIs(mockInvoices.filter((inv) => inv.items.length <= 3)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows KPIs when users purchase very few items per invoice.",
+      },
+    },
+  },
+};
+
+/** EUR currency KPIs — Euro display label. */
+export const EurCurrencyKPIs: Story = {
+  args: {
+    data: computeKPIs(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "EUR")),
+    currency: "EUR",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "KPI summary with EUR currency label for Euro-based invoices.",
+      },
+    },
+  },
+};
+
+/** Dense invoice dataset — many invoices scenario. */
+export const DenseInvoiceDataset: Story = {
+  args: {
+    data: computeKPIs(mockInvoices),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "KPIs computed from dense invoice dataset (30+ invoices).",
+      },
+    },
+  },
+};

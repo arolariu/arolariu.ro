@@ -163,3 +163,51 @@ export const FourMerchants: Story = {
     currency: "lei",
   },
 };
+
+/** Five merchants — optimal trends table. */
+export const FiveMerchants: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices, 5),
+    currency: "lei",
+  },
+};
+
+/** Six merchants — full grid view. */
+export const SixMerchants: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices, 6),
+    currency: "lei",
+  },
+};
+
+/** Seven merchants — extended trends analysis. */
+export const SevenMerchants: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices, 7),
+    currency: "lei",
+  },
+};
+
+/** RON currency trends — lei display. */
+export const RonCurrencyTrends: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "RON")),
+    currency: "lei",
+  },
+};
+
+/** USD currency trends — dollar display. */
+export const UsdCurrencyTrends: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "USD")),
+    currency: "$",
+  },
+};
+
+/** Sparse trends — minimal monthly data. */
+export const SparseTrends: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices.slice(0, 3)),
+    currency: "lei",
+  },
+};

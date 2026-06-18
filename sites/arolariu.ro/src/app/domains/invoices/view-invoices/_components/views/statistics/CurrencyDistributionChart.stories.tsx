@@ -109,3 +109,53 @@ export const FourCurrencies: Story = {
     data: computeCurrencyDistribution(mockInvoices),
   },
 };
+
+/** Five currencies — complex multi-currency scenario. */
+export const FiveCurrencies: Story = {
+  args: {
+    data: computeCurrencyDistribution(mockInvoices),
+  },
+};
+
+/** Dominant single currency — 95% RON spending. */
+export const DominantSingleCurrency: Story = {
+  args: {
+    data: computeCurrencyDistribution([
+      ...mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "RON"),
+      ...mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "EUR").slice(0, 1),
+    ]),
+  },
+};
+
+/** USD-heavy spending — US dollar prominence. */
+export const HighUsdSpending: Story = {
+  args: {
+    data: computeCurrencyDistribution(
+      mockInvoices.filter((inv, index) => {
+        const code = inv.paymentInformation.currency?.code;
+        return code === "USD" || (code === "RON" && index % 4 === 0);
+      }),
+    ),
+  },
+};
+
+/** Even three-way split — balanced RON/EUR/USD. */
+export const EvenThreeWaySplit: Story = {
+  args: {
+    data: computeCurrencyDistribution(mockInvoices.slice(0, 9)),
+  },
+};
+
+/** GBP-only subset — British pound filter. */
+export const GbpOnlySpending: Story = {
+  args: {
+    data: computeCurrencyDistribution(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "GBP")),
+  },
+};
+
+/** Sparse multi-currency — minimal invoices across currencies. */
+export const SparseMultiCurrency: Story = {
+  args: {
+    data: computeCurrencyDistribution(mockInvoices.slice(0, 4)),
+  },
+};

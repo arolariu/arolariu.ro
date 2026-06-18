@@ -133,3 +133,51 @@ export const ThreeCategories: Story = {
     currency: "lei",
   },
 };
+
+/** Four categories — diverse bar layout. */
+export const FourCategories: Story = {
+  args: {
+    data: computeProductCategorySpending(mockInvoices.slice(0, 4)),
+    currency: "lei",
+  },
+};
+
+/** Five categories — optimal horizontal density. */
+export const FiveCategories: Story = {
+  args: {
+    data: computeProductCategorySpending(mockInvoices.slice(0, 6)),
+    currency: "lei",
+  },
+};
+
+/** Dense category data — 15+ product categories. */
+export const DenseCategoryData: Story = {
+  args: {
+    data: computeProductCategorySpending(mockInvoices),
+    currency: "lei",
+  },
+};
+
+/** RON currency spending — lei display. */
+export const RonCurrencySpending: Story = {
+  args: {
+    data: computeProductCategorySpending(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "RON")),
+    currency: "lei",
+  },
+};
+
+/** Dominant category — heavily skewed spending. */
+export const DominantCategory: Story = {
+  args: {
+    data: computeProductCategorySpending([...mockInvoices.filter((inv) => inv.category === 100), ...mockInvoices.slice(0, 1)]),
+    currency: "lei",
+  },
+};
+
+/** Sparse categories — minimal product diversity. */
+export const SparseCategories: Story = {
+  args: {
+    data: computeProductCategorySpending(mockInvoices.slice(0, 2)),
+    currency: "lei",
+  },
+};

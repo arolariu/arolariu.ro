@@ -234,3 +234,93 @@ export const ThreeMonths: Story = {
     },
   },
 };
+
+/** Four months — quarterly overview. */
+export const FourMonths: Story = {
+  args: {
+    data: computeMonthlySpending(mockInvoices.slice(0, 10)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Quarterly overview showing four months of spending trends.",
+      },
+    },
+  },
+};
+
+/** Five months — extended recent history. */
+export const FiveMonths: Story = {
+  args: {
+    data: computeMonthlySpending(mockInvoices.slice(0, 12)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Extended recent history with five months of data.",
+      },
+    },
+  },
+};
+
+/** Six months — half-year analysis. */
+export const SixMonths: Story = {
+  args: {
+    data: computeMonthlySpending(mockInvoices.slice(0, 15)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Half-year spending analysis showing six months of trends.",
+      },
+    },
+  },
+};
+
+/** EUR currency trend — Euro spending over time. */
+export const EurCurrencyTrend: Story = {
+  args: {
+    data: computeMonthlySpending(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "EUR")),
+    currency: "EUR",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Monthly spending chart with EUR currency for Euro-based invoices.",
+      },
+    },
+  },
+};
+
+/** Increasing trend — consistent spending growth. */
+export const IncreasingTrend: Story = {
+  args: {
+    data: computeMonthlySpending(mockInvoices),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows increasing spending trend over multiple months.",
+      },
+    },
+  },
+};
+
+/** Decreasing trend — spending reduction pattern. */
+export const DecreasingTrend: Story = {
+  args: {
+    data: computeMonthlySpending(mockInvoices.slice(0, 6)),
+    currency: "RON",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows decreasing spending trend indicating budget improvement.",
+      },
+    },
+  },
+};

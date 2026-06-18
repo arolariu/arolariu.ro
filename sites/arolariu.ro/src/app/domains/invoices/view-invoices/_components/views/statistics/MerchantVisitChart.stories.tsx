@@ -209,3 +209,57 @@ export const FiveMerchants: Story = {
     topN: 5,
   },
 };
+
+/** Six merchants — optimal 2x3 grid. */
+export const SixMerchants: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices),
+    currency: "lei",
+    topN: 6,
+  },
+};
+
+/** Seven merchants — extended visit analysis. */
+export const SevenMerchants: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices),
+    currency: "lei",
+    topN: 7,
+  },
+};
+
+/** Eight merchants — 2x4 grid layout. */
+export const EightMerchants: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices),
+    currency: "lei",
+    topN: 8,
+  },
+};
+
+/** RON currency visit patterns — lei display. */
+export const RonCurrencyVisits: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "RON")),
+    currency: "lei",
+    topN: 6,
+  },
+};
+
+/** USD currency visit patterns — dollar display. */
+export const UsdCurrencyVisits: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "USD")),
+    currency: "$",
+    topN: 6,
+  },
+};
+
+/** Sparse visit data — minimal merchant interactions. */
+export const SparseVisitData: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices.slice(0, 4)),
+    currency: "lei",
+    topN: 6,
+  },
+};
