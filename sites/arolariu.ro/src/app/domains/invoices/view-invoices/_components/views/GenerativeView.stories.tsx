@@ -1,4 +1,13 @@
-import {storyHugeInvoice, storyInvoices, storyManyInvoices} from "@/app/domains/invoices/_storybook";
+import {
+  storyDeletedInvoice,
+  storyEurInvoice,
+  storyGbpInvoice,
+  storyHugeInvoice,
+  storyInvoices,
+  storyLongNameInvoice,
+  storyManyInvoices,
+  storyUsdInvoice,
+} from "@/app/domains/invoices/_storybook";
 import type {Meta, StoryObj} from "@storybook/react";
 import RenderGenerativeView from "./GenerativeView";
 
@@ -48,4 +57,29 @@ export const HugeInvoice: Story = {
       },
     },
   },
+};
+
+/** Two invoices in scope. */
+export const TwoInvoices: Story = {
+  args: {invoices: storyInvoices.slice(0, 2)},
+};
+
+/** Multi-currency invoices (EUR, USD, GBP) in scope. */
+export const MultiCurrency: Story = {
+  args: {invoices: [storyEurInvoice, storyUsdInvoice, storyGbpInvoice]},
+};
+
+/** Long invoice name in scope. */
+export const LongInvoiceName: Story = {
+  args: {invoices: [storyLongNameInvoice]},
+};
+
+/** With soft-deleted invoice in scope. */
+export const WithSoftDeleted: Story = {
+  args: {invoices: [...storyInvoices, storyDeletedInvoice]},
+};
+
+/** Five invoices in scope. */
+export const FiveInvoices: Story = {
+  args: {invoices: storyInvoices.slice(0, 5)},
 };

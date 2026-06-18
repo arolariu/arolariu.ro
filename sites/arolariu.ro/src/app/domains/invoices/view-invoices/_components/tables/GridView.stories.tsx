@@ -2,9 +2,13 @@ import type {Meta, StoryObj} from "@storybook/react";
 import {
   resetInvoiceStoryStores,
   seedInvoiceStoryStores,
+  storyDeletedInvoice,
+  storyEurInvoice,
+  storyGbpInvoice,
   storyInvoices,
   storyLongNameInvoice,
   storyManyInvoices,
+  storyUsdInvoice,
   WithInvoiceDialogs,
 } from "../../../_storybook";
 import {GridView} from "./GridView";
@@ -232,5 +236,91 @@ export const LargePageSize: Story = {
         story: "Grid with 25 items per page. Tests dense layout and page size selector with larger page sizes.",
       },
     },
+  },
+};
+
+/** Last page (page 6 of 6) — next button disabled. */
+export const LastPage: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyManyInvoices});
+  },
+  args: {
+    invoices: storyManyInvoices.slice(50, 60),
+    pageSize: 10,
+    currentPage: 6,
+    totalPages: 6,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+};
+
+/** Multi-currency invoices (EUR, USD, GBP mixed). */
+export const MultiCurrency: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: [storyEurInvoice, storyUsdInvoice, storyGbpInvoice]});
+  },
+  args: {
+    invoices: [storyEurInvoice, storyUsdInvoice, storyGbpInvoice],
+    pageSize: 10,
+    currentPage: 1,
+    totalPages: 1,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+};
+
+/** Grid with soft-deleted invoice included. */
+export const WithSoftDeleted: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: [...storyInvoices, storyDeletedInvoice]});
+  },
+  args: {
+    invoices: [...storyInvoices, storyDeletedInvoice],
+    pageSize: 10,
+    currentPage: 1,
+    totalPages: 1,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+};
+
+/** Huge data set (120 items) — stress test with large page. */
+export const HugeDataset: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    const hugeSet = [...storyManyInvoices, ...storyManyInvoices];
+    seedInvoiceStoryStores({invoices: hugeSet});
+  },
+  args: {
+    invoices: [...storyManyInvoices, ...storyManyInvoices].slice(0, 50),
+    pageSize: 50,
+    currentPage: 1,
+    totalPages: 3,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+};
+
+/** Page 3 of 6 — mid-range pagination state. */
+export const PaginatedPage3: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyManyInvoices});
+  },
+  args: {
+    invoices: storyManyInvoices.slice(20, 30),
+    pageSize: 10,
+    currentPage: 3,
+    totalPages: 6,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
   },
 };

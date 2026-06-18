@@ -1,5 +1,14 @@
 import {InvoiceBuilder} from "@/data/mocks";
 import type {Meta, StoryObj} from "@storybook/react";
+import {
+  storyDeletedInvoice,
+  storyEurInvoice,
+  storyGbpInvoice,
+  storyHugeInvoice,
+  storyInvoices,
+  storyManyInvoices,
+  storyUsdInvoice,
+} from "../../../_storybook";
 import RenderStatisticsView from "./StatisticsView";
 
 /**
@@ -127,5 +136,52 @@ export const MediumDataset: Story = {
         story: "Statistics view with 30 invoices. Tests chart rendering and data aggregation with medium-sized data set.",
       },
     },
+  },
+};
+
+/** Multi-currency invoices (EUR, USD, GBP). */
+export const MultiCurrency: Story = {
+  args: {
+    invoices: [storyEurInvoice, storyUsdInvoice, storyGbpInvoice],
+  },
+};
+
+/** With soft-deleted invoice. */
+export const WithSoftDeleted: Story = {
+  args: {
+    invoices: [...storyInvoices, storyDeletedInvoice],
+  },
+};
+
+/** Ten invoices across categories. */
+export const TenInvoices: Story = {
+  args: {
+    invoices: Array.from({length: 10}, (_, i) => new InvoiceBuilder().withCategory(((i % 4) * 100) as 100 | 200 | 300 | 400).build()),
+  },
+};
+
+/** Single huge invoice (120 items). */
+export const HugeInvoice: Story = {
+  args: {
+    invoices: [storyHugeInvoice],
+  },
+};
+
+/** Sixty invoices (from storyManyInvoices). */
+export const SixtyInvoices: Story = {
+  args: {
+    invoices: storyManyInvoices,
+  },
+};
+
+/** Mixed currencies and categories. */
+export const MixedDataset: Story = {
+  args: {
+    invoices: [
+      ...storyInvoices,
+      storyEurInvoice,
+      storyUsdInvoice,
+      ...Array.from({length: 5}, () => new InvoiceBuilder().withCategory(300).build()),
+    ],
   },
 };

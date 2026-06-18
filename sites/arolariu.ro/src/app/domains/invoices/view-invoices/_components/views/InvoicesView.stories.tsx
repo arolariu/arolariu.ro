@@ -2,9 +2,13 @@ import type {Meta, StoryObj} from "@storybook/react";
 import {
   resetInvoiceStoryStores,
   seedInvoiceStoryStores,
+  storyDeletedInvoice,
+  storyEurInvoice,
+  storyGbpInvoice,
   storyInvoices,
   storyLongNameInvoice,
   storyManyInvoices,
+  storyUsdInvoice,
   WithInvoiceDialogs,
 } from "../../../_storybook";
 import RenderInvoicesView from "./InvoicesView";
@@ -146,5 +150,50 @@ export const TwoInvoices: Story = {
         story: "Invoice list view with two invoices. Tests minimal viable data set rendering and view switching.",
       },
     },
+  },
+};
+
+/** Multi-currency invoices (EUR, USD, GBP). */
+export const MultiCurrency: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: [storyEurInvoice, storyUsdInvoice, storyGbpInvoice]});
+  },
+  args: {
+    invoices: [storyEurInvoice, storyUsdInvoice, storyGbpInvoice],
+  },
+};
+
+/** With soft-deleted invoice. */
+export const WithSoftDeleted: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: [...storyInvoices, storyDeletedInvoice]});
+  },
+  args: {
+    invoices: [...storyInvoices, storyDeletedInvoice],
+  },
+};
+
+/** Huge data set (120 invoices). */
+export const HugeDataset: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    const hugeSet = [...storyManyInvoices, ...storyManyInvoices];
+    seedInvoiceStoryStores({invoices: hugeSet});
+  },
+  args: {
+    invoices: [...storyManyInvoices, ...storyManyInvoices],
+  },
+};
+
+/** Five invoices — small data set. */
+export const FiveInvoices: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyInvoices.slice(0, 5)});
+  },
+  args: {
+    invoices: storyInvoices.slice(0, 5),
   },
 };

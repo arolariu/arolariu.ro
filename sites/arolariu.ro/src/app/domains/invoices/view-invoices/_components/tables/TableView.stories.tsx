@@ -2,9 +2,13 @@ import type {Meta, StoryObj} from "@storybook/react";
 import {
   resetInvoiceStoryStores,
   seedInvoiceStoryStores,
+  storyDeletedInvoice,
+  storyEurInvoice,
+  storyGbpInvoice,
   storyInvoices,
   storyLongNameInvoice,
   storyManyInvoices,
+  storyUsdInvoice,
   WithInvoiceDialogs,
 } from "../../../_storybook";
 import {TableView} from "./TableView";
@@ -283,5 +287,105 @@ export const SortedByNameDesc: Story = {
         story: "Table sorted by name in descending order. Tests alphabetical sort and column header state.",
       },
     },
+  },
+};
+
+/** Sorted by amount descending. */
+export const SortedByAmountDesc: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores();
+  },
+  args: {
+    invoices: storyInvoices,
+    pageSize: 10,
+    currentPage: 1,
+    totalPages: 1,
+    sortBy: "amount",
+    sortDirection: "desc",
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+    onSort: (field: "date" | "amount" | "name") => console.log("Sort by:", field),
+  },
+};
+
+/** Multi-currency rows (EUR, USD, GBP). */
+export const MultiCurrency: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: [storyEurInvoice, storyUsdInvoice, storyGbpInvoice]});
+  },
+  args: {
+    invoices: [storyEurInvoice, storyUsdInvoice, storyGbpInvoice],
+    pageSize: 10,
+    currentPage: 1,
+    totalPages: 1,
+    sortBy: "date",
+    sortDirection: "desc",
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+    onSort: (field: "date" | "amount" | "name") => console.log("Sort by:", field),
+  },
+};
+
+/** Table with soft-deleted invoice row. */
+export const WithSoftDeleted: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: [...storyInvoices, storyDeletedInvoice]});
+  },
+  args: {
+    invoices: [...storyInvoices, storyDeletedInvoice],
+    pageSize: 10,
+    currentPage: 1,
+    totalPages: 1,
+    sortBy: "date",
+    sortDirection: "desc",
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+    onSort: (field: "date" | "amount" | "name") => console.log("Sort by:", field),
+  },
+};
+
+/** Last page (page 6 of 6) — next disabled. */
+export const LastPage: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyManyInvoices});
+  },
+  args: {
+    invoices: storyManyInvoices.slice(50, 60),
+    pageSize: 10,
+    currentPage: 6,
+    totalPages: 6,
+    sortBy: "date",
+    sortDirection: "desc",
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+    onSort: (field: "date" | "amount" | "name") => console.log("Sort by:", field),
+  },
+};
+
+/** Large page size (25 items). */
+export const LargePageSize: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyManyInvoices});
+  },
+  args: {
+    invoices: storyManyInvoices.slice(0, 25),
+    pageSize: 25,
+    currentPage: 1,
+    totalPages: 3,
+    sortBy: "date",
+    sortDirection: "desc",
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+    onSort: (field: "date" | "amount" | "name") => console.log("Sort by:", field),
   },
 };

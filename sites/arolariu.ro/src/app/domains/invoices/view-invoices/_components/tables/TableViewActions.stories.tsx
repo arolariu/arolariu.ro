@@ -1,5 +1,13 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {storyInvoice, storyLongNameInvoice, storyOnlineInvoice, WithInvoiceDialogs} from "../../../_storybook";
+import {
+  storyDeletedInvoice,
+  storyEurInvoice,
+  storyInvoice,
+  storyLongNameInvoice,
+  storyOnlineInvoice,
+  storyUsdInvoice,
+  WithInvoiceDialogs,
+} from "../../../_storybook";
 import TableViewActions from "./TableViewActions";
 
 /**
@@ -85,5 +93,26 @@ export const LongInvoiceName: Story = {
           "Actions menu for invoice with extremely long name. Tests text truncation, ellipsis, and tooltip rendering in menu items without breaking dropdown layout.",
       },
     },
+  },
+};
+
+/** Actions menu for soft-deleted invoice. */
+export const SoftDeletedInvoice: Story = {
+  args: {
+    invoice: storyDeletedInvoice,
+  },
+};
+
+/** Actions menu for EUR currency invoice. */
+export const EurInvoice: Story = {
+  args: {
+    invoice: storyEurInvoice,
+  },
+};
+
+/** Actions menu for USD currency invoice. */
+export const UsdInvoice: Story = {
+  args: {
+    invoice: storyUsdInvoice,
   },
 };
