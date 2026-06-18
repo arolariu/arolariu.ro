@@ -267,7 +267,7 @@ export const InvoiceCountSurge: Story = {
 /** First invoice month — onboarding scenario. */
 export const FirstInvoiceMonth: Story = {
   args: {
-    data: computeMonthComparison([mockInvoices[0] ?? singleInvoice[0]].filter(Boolean)),
+    data: computeMonthComparison(singleInvoice),
     currency: "RON",
   },
   parameters: {
