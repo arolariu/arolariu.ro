@@ -35,7 +35,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Input,
   Label,
   Separator,
 } from "@arolariu/components";
@@ -97,28 +96,12 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
     },
   } = useDialog("SHARED__INVOICE_DELETE", "delete");
 
-  const [confirmText, setConfirmText] = useState<string>("");
   const [understoodCheckbox, setUnderstoodCheckbox] = useState<boolean>(false);
 
   const {deleteInvoiceCallback, isDeleting} = useInvoiceDelete();
 
   const invoiceName = invoice.name || `${invoice.id.slice(0, 8)}`;
-  const isConfirmValid = confirmText === invoiceName && understoodCheckbox;
-
-  /**
-   * Updates the typed confirmation value used to unlock deletion.
-   *
-   * @remarks
-   * This callback intentionally stores the raw input value without trimming.
-   * The dialog requires an exact match with `invoiceName`, so whitespace is a
-   * meaningful mismatch and keeps the destructive action disabled.
-   *
-   * @param e - Change event emitted by the confirmation text input.
-   * @returns Nothing; updates local confirmation state.
-   */
-  const handleConfirmTextChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setConfirmText(e.target.value);
-  }, []);
+  const isConfirmValid = understoodCheckbox;
 
   /**
    * Records whether the user acknowledged the deletion impact.
@@ -139,13 +122,12 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
    * Closes the dialog and resets transient confirmation state.
    *
    * @remarks
-   * Resetting before closing prevents a previously confirmed invoice name or
-   * acknowledgement checkbox from leaking into the next invoice deletion flow.
+   * Resetting before closing prevents a previously confirmed acknowledgement
+   * checkbox from leaking into the next invoice deletion flow.
    *
    * @returns Nothing; clears local state and closes the shared dialog.
    */
   const handleClose = useCallback(() => {
-    setConfirmText("");
     setUnderstoodCheckbox(false);
     close();
   }, [close]);
@@ -278,26 +260,8 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
 
               <Separator />
 
-              {/* Confirmation Input */}
+              {/* Confirmation */}
               <div className={styles["confirmSection"]}>
-                <div className={styles["confirmField"]}>
-                  <Label htmlFor='confirm-name'>
-                    {t.rich((m) => m.dialogs.invoices.deleteInvoiceDialog.confirmation.typeToConfirm, {
-                      name: invoiceName,
-                      // eslint-disable-next-line react/no-unstable-nested-components -- single-call site; hoisting is more boilerplate than benefit
-                      highlight: (chunks) => <span className={styles["confirmHighlight"]}>{chunks}</span>,
-                    })}
-                  </Label>
-                  <Input
-                    id='confirm-name'
-                    value={confirmText}
-                    onChange={handleConfirmTextChange}
-                    placeholder={invoiceName}
-                    className={confirmText === invoiceName ? styles["inputGreen"] : ""}
-                    autoComplete='off'
-                  />
-                </div>
-
                 {/* Understanding Checkbox */}
                 <div className={styles["checkboxCard"]}>
                   <Checkbox
