@@ -171,6 +171,14 @@
 }
 
 .dayButton {
+
+  // Days with spending are wrapped in a Tooltip trigger, which adds the library
+  // `.trigger-GlwNv7 { max-width: max-content }`. The doubled-class selector
+  // outranks it so marked cells stay full-width squares like the unmarked ones.
+  &.dayButton {
+    max-width: none;
+  }
+
   width: 100%;
   height: auto;
   aspect-ratio: 1;
