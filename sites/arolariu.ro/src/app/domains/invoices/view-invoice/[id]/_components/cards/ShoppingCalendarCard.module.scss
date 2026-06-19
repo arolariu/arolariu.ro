@@ -171,18 +171,17 @@
 }
 
 .dayButton {
-  height: space(9);
-  width: space(9);
+  width: 100%;
+  height: auto;
   aspect-ratio: 1;
+  box-sizing: border-box;
   padding: 0;
-  margin: space(0.5);
   font-weight: font-weight('normal');
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: radius('md');
   position: relative;
-  overflow: hidden;
   @include transition(all);
 }
 
@@ -253,6 +252,20 @@
 .calendar {
   border-radius: radius('md');
   border: 1px solid color('border');
+
+  // Breathing room around each heatmap day cell (without touching the library's
+  // `width: 100%` that keeps the seven day columns evenly distributed).
+  td {
+    padding: space(0.5);
+  }
+}
+
+// Give the calendar a definite width so its flex grid (library default) can
+// distribute the seven columns to fit the card instead of keeping its intrinsic
+// `width: fit-content`, which made the fixed-size day cells overflow.
+.contentCentered .calendar {
+  width: 100%;
+  max-width: 100%;
 }
 
 .card {
