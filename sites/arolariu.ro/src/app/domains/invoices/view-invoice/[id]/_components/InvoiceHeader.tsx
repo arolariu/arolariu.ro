@@ -35,7 +35,6 @@ export function InvoiceHeader(): React.JSX.Element {
               </Tooltip>
             )}
           </div>
-          <p className={styles["invoiceId"]}>{t((m) => m.shared.invoices.invoiceHeader.id, {id: invoice.id})}</p>
         </div>
         <div className={styles["actions"]}>
           {Boolean(isOwner) && (

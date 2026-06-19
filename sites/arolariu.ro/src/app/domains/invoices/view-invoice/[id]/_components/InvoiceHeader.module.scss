@@ -29,12 +29,6 @@
   letter-spacing: letter-spacing('tight');
 }
 
-.invoiceId {
-  color: color('muted-foreground');
-  font-family: $font-family-mono;
-  font-size: font-size('sm');
-}
-
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -74,10 +68,6 @@
 
   .title {
     color: black !important;
-  }
-
-  .invoiceId {
-    display: none !important;
   }
 
   .actions {
