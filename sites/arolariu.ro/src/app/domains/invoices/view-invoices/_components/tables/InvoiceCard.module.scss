@@ -56,6 +56,16 @@
   @media print {
     display: none;
   }
+
+  // The menu trigger comes from TableViewActions and keeps its base space(8)
+  // size; match the enlarged eye button on small screens so both overlay
+  // buttons stay the same size. The eye is an <a>, so only the <button> matches.
+  button {
+    @include respond-below('md') {
+      height: space(10);
+      width: space(10);
+    }
+  }
 }
 
 .contentRow {
