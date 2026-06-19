@@ -441,10 +441,10 @@
           "visitReference": "Vizitează referința"
         },
         "complexity": {
-          "easy": "Ușor",
-          "hard": "Greu",
-          "normal": "Normal",
-          "unknown": "Necunoscut"
+          "easy": "Complexitate ușoară",
+          "hard": "Complexitate ridicată",
+          "normal": "Complexitate normală",
+          "unknown": "Complexitate necunoscută"
         },
         "dropdown": {
           "delete": "Șterge",
@@ -834,12 +834,16 @@
           "orClickBrowse": "sau apasă pentru a răsfoi"
         },
         "scanType": {
+          "bmp": "Imagine BMP",
+          "heic": "Imagine HEIC",
+          "heif": "Imagine HEIF",
           "jpeg": "Imagine JPEG",
           "label": "Tip scanare",
           "other": "Altele",
           "pdf": "Document PDF",
           "placeholder": "Selectează tipul de scanare",
-          "png": "Imagine PNG"
+          "png": "Imagine PNG",
+          "tiff": "Imagine TIFF"
         },
         "title": "Adaugă o scanare nouă",
         "toasts": {

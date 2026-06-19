@@ -121,7 +121,7 @@ function formatDate(dateStr: string, locale: string): string {
 }
 
 /**
- * Builds the Sun→Sat week rows for a single month.
+ * Builds the Mon→Sun week rows for a single month.
  *
  * @param year - Calendar year
  * @param month - Zero-based month index (0 = January)
@@ -138,8 +138,9 @@ function buildMonthGrid(year: number, month: number, dataMap: Map<string, DailyS
   const weeks: WeekRow[] = [];
   let currentWeek: DayCell[] = [];
 
-  // Pad days before the first of the month so weeks line up Sun→Sat.
-  const firstDayOfWeek = firstDay.getDay();
+  // Pad days before the first of the month so weeks line up Mon→Sun.
+  // `getDay()` is 0=Sun..6=Sat; shift so Monday becomes the first column.
+  const firstDayOfWeek = (firstDay.getDay() + 6) % 7;
   for (let i = 0; i < firstDayOfWeek; i++) {
     currentWeek.push(emptyCell());
   }
@@ -270,13 +271,13 @@ export default function SpendingCalendarHeatmap({data, currency}: Props): React.
   const {months, periodLabel} = useMemo(() => generateYearGrid(data, yearOffset), [data, yearOffset]);
 
   const dayLabels = [
-    t((m) => m.cards.invoices.statistics.calendarHeatmap.days.sun),
     t((m) => m.cards.invoices.statistics.calendarHeatmap.days.mon),
     t((m) => m.cards.invoices.statistics.calendarHeatmap.days.tue),
     t((m) => m.cards.invoices.statistics.calendarHeatmap.days.wed),
     t((m) => m.cards.invoices.statistics.calendarHeatmap.days.thu),
     t((m) => m.cards.invoices.statistics.calendarHeatmap.days.fri),
     t((m) => m.cards.invoices.statistics.calendarHeatmap.days.sat),
+    t((m) => m.cards.invoices.statistics.calendarHeatmap.days.sun),
   ];
 
   /** Navigates to the previous year in the calendar. */
