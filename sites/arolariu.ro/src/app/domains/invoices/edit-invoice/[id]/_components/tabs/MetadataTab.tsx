@@ -21,7 +21,11 @@ import {motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import {TbEdit, TbPencil, TbPlus, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
+import {VALID_METADATA_KEYS} from "../../_dialogs/MetadataDialog";
 import styles from "./MetadataTab.module.scss";
+
+/** Keys that the user is allowed to edit; everything else is treated as readonly. */
+const EDITABLE_METADATA_KEYS = new Set(VALID_METADATA_KEYS.filter((entry) => !entry.readonly).map((entry) => entry.key));
 
 type Props = {
   metadata: Record<string, string>;
@@ -102,55 +106,63 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
         <CardContent>
           {Object.keys(metadata).length > 0 ? (
             <div className={styles["metadataGrid"]}>
-              {Object.entries(metadata).map(([key, value], index) => (
-                <motion.div
-                  key={key}
-                  initial={{opacity: 0, scale: 0.9}}
-                  animate={{opacity: 1, scale: 1}}
-                  transition={{delay: index * 0.05}}
-                  whileHover={{scale: 1.02}}
-                  className={styles["metadataField"]}>
-                  <div className={styles["fieldHeader"]}>
-                    <span className={styles["fieldKey"]}>{key}</span>
-                    <Badge
-                      variant='outline'
-                      className={styles["readonlyBadge"]}>
-                      {t((m) => m.pages.invoices.editInvoice.metadataTab.badges.readonly)}
-                    </Badge>
-                  </div>
-                  <span className={styles["fieldValue"]}>{String(value)}</span>
+              {Object.entries(metadata).map(([key, value], index) => {
+                const isReadonly = !EDITABLE_METADATA_KEYS.has(key);
 
-                  <div className={styles["editButton"]}>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        render={
-                          <Button
-                            variant='ghost'
-                            size='icon'
-                            className={styles["editIconButton"]}>
-                            <TbPencil className={styles["icon4"]} />
-                          </Button>
-                        }
-                      />
-                      <DropdownMenuContent align='end'>
-                        <DropdownMenuItem
-                          onClick={openEditDialog}
-                          disabled>
-                          <TbEdit className={styles["menuIcon"]} />
-                          {t((m) => m.pages.invoices.editInvoice.metadataTab.dropdown.edit)}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={openDeleteDialog}
-                          className={styles["deleteMenuItem"]}
-                          disabled>
-                          <TbTrash className={styles["menuIcon"]} />
-                          {t((m) => m.pages.invoices.editInvoice.metadataTab.dropdown.delete)}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </motion.div>
-              ))}
+                return (
+                  <motion.div
+                    key={key}
+                    initial={{opacity: 0, scale: 0.9}}
+                    animate={{opacity: 1, scale: 1}}
+                    transition={{delay: index * 0.05}}
+                    whileHover={{scale: 1.02}}
+                    className={styles["metadataField"]}>
+                    <div className={styles["fieldHeader"]}>
+                      <span className={styles["fieldKey"]}>{key}</span>
+                      {isReadonly ? (
+                        <Badge
+                          variant='outline'
+                          className={styles["readonlyBadge"]}>
+                          {t((m) => m.pages.invoices.editInvoice.metadataTab.badges.readonly)}
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <span className={styles["fieldValue"]}>{String(value)}</span>
+
+                    {isReadonly ? null : (
+                      <div className={styles["editButton"]}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            render={
+                              <Button
+                                variant='ghost'
+                                size='icon'
+                                className={styles["editIconButton"]}>
+                                <TbPencil className={styles["icon4"]} />
+                              </Button>
+                            }
+                          />
+                          <DropdownMenuContent align='end'>
+                            <DropdownMenuItem
+                              onClick={openEditDialog}
+                              disabled>
+                              <TbEdit className={styles["menuIcon"]} />
+                              {t((m) => m.pages.invoices.editInvoice.metadataTab.dropdown.edit)}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={openDeleteDialog}
+                              className={styles["deleteMenuItem"]}
+                              disabled>
+                              <TbTrash className={styles["menuIcon"]} />
+                              {t((m) => m.pages.invoices.editInvoice.metadataTab.dropdown.delete)}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
             </div>
           ) : (
             <div className={styles["emptyState"]}>
