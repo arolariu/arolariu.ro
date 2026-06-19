@@ -41,7 +41,7 @@ import {
 import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
-import {TbAlertTriangle, TbFileX, TbLoader2, TbPhoto, TbReceipt, TbShoppingCart, TbTrash, TbX} from "react-icons/tb";
+import {TbAlertOctagon, TbLoader2, TbReceipt, TbTrash} from "react-icons/tb";
 import {useDialog} from "../_contexts/DialogContext";
 import {useInvoiceDelete} from "../_hooks/invoice";
 import styles from "./DeleteInvoiceDialog.module.scss";
@@ -227,30 +227,26 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
               <Alert
                 variant='destructive'
                 className={styles["alertRed"]}>
-                <TbAlertTriangle className={styles["impactIcon"]} />
+                <TbAlertOctagon className={styles["impactIcon"]} />
                 <AlertTitle>{t((m) => m.dialogs.invoices.deleteInvoiceDialog.impact.title)}</AlertTitle>
                 <AlertDescription>
                   <p className={styles["impactIntro"]}>{t((m) => m.dialogs.invoices.deleteInvoiceDialog.impact.intro)}</p>
                   <ul className={styles["impactList"]}>
                     <li className={styles["impactItem"]}>
-                      <TbFileX className={styles["impactIcon"]} />
                       {t((m) => m.dialogs.invoices.deleteInvoiceDialog.impact.invoiceRecord)}
                     </li>
                     {scanCount > 0 && (
                       <li className={styles["impactItem"]}>
-                        <TbPhoto className={styles["impactIcon"]} />
                         {t((m) => m.dialogs.invoices.deleteInvoiceDialog.impact.uploadedScans, {count: String(scanCount)})}
                       </li>
                     )}
                     {itemCount > 0 && (
                       <li className={styles["impactItem"]}>
-                        <TbShoppingCart className={styles["impactIcon"]} />
                         {t((m) => m.dialogs.invoices.deleteInvoiceDialog.impact.lineItems, {count: String(itemCount)})}
                       </li>
                     )}
                     {sharedCount > 0 && (
                       <li className={styles["impactItem"]}>
-                        <TbX className={styles["impactIcon"]} />
                         {t((m) => m.dialogs.invoices.deleteInvoiceDialog.impact.sharedAccess, {count: String(sharedCount)})}
                       </li>
                     )}

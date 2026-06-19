@@ -93,15 +93,15 @@
 // IMPACT LIST
 // ===========================================
 .impactList {
-  @include spaced-children(space(1));
-
+  list-style: disc;
+  padding-left: space(5);
   font-size: font-size('sm');
 }
 
 .impactItem {
-  display: flex;
-  align-items: center;
-  gap: space(2);
+  & + & {
+    margin-top: space(1);
+  }
 }
 
 // ===========================================
