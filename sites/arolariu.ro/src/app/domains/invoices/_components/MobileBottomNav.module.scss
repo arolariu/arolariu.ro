@@ -1,6 +1,6 @@
 /**
  * Mobile Bottom Navigation Styles
- * 
+ *
  * Fixed bottom navigation bar with glass morphism effect, visible only on mobile devices.
  * Features safe area insets for notched devices and active state highlighting.
  */
@@ -60,19 +60,6 @@
 .navItemActive {
   color: color('primary');
   font-weight: font-weight('medium');
-
-  // Add subtle bottom indicator for active state
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: space(1);
-    height: space(1);
-    background-color: color('primary');
-    border-radius: radius('full');
-  }
 }
 
 // ===========================================
