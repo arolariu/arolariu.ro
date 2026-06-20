@@ -8,7 +8,7 @@ import WorkflowSection from "./WorkflowSection";
  * Uses the `Invoices.Homepage` i18n namespace.
  */
 const meta = {
-  title: "Invoices/Homepage/WorkflowSection",
+  title: "arolariu.ro/IMS/Sections/WorkflowSection",
   component: WorkflowSection,
   parameters: {
     layout: "fullscreen",
@@ -20,3 +20,24 @@ type Story = StoryObj<typeof meta>;
 
 /** Default 3-step workflow section. */
 export const Default: Story = {};
+
+/** Workflow section in dark mode. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Workflow section with mobile viewport. */
+export const Mobile: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};
+
+/** Workflow section with tablet viewport. */
+export const Tablet: Story = {
+  parameters: {
+    viewport: {defaultViewport: "tablet"},
+  },
+};

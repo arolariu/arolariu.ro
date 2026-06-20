@@ -10,7 +10,7 @@ import ThemeButton from "./ThemeButton";
  * to avoid SSR hydration mismatches.
  */
 const meta = {
-  title: "Site/Buttons/ThemeButton",
+  title: "arolariu.ro/Site/Buttons/ThemeButton",
   component: ThemeButton,
   decorators: [
     (Story) => (

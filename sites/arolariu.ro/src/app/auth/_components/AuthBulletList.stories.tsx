@@ -6,7 +6,7 @@ import AuthBulletList from "./AuthBulletList";
  * authentication marketing panels. Each bullet is preceded by a decorative dot.
  */
 const meta = {
-  title: "Pages/Auth/AuthBulletList",
+  title: "arolariu.ro/Pages/Auth/AuthBulletList",
   component: AuthBulletList,
   parameters: {
     layout: "centered",

@@ -1,7 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {MerchantTrend} from "../../../_utils/statistics";
 import {computeMerchantTrends} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {MerchantTrendsChart} from "./MerchantTrendsChart";
+
+type StoryArgs = {data: MerchantTrend[]; currency: string};
 
 /**
  * MerchantTrendsChart displays spending trends for top merchants over time.
@@ -19,7 +22,7 @@ import {MerchantTrendsChart} from "./MerchantTrendsChart";
  * - Compare merchant visit trends
  */
 const meta = {
-  title: "Invoices/Statistics/MerchantTrendsChart",
+  title: "arolariu.ro/IMS/Statistics/Merchant/MerchantTrendsChart",
   component: MerchantTrendsChart,
   parameters: {
     layout: "padded",
@@ -32,30 +35,23 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    data: {
-      description: "Array of merchant trend data sorted by total spend",
-      control: false,
-    },
-    currency: {
-      description: "Currency display label or symbol",
-      control: "text",
-    },
+    data: {control: "object"},
+    currency: {control: "text"},
   },
-} satisfies Meta<typeof MerchantTrendsChart>;
+  args: {
+    data: computeMerchantTrends(mockInvoices),
+    currency: "lei",
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default view showing top 5 merchants.
  * Displays spending trends for most frequented stores.
  */
-export const Default: Story = {
-  args: {
-    data: computeMerchantTrends(mockInvoices),
-    currency: "lei",
-  },
-};
+export const Default: Story = {};
 
 /**
  * Empty state - no merchant data.
@@ -149,5 +145,93 @@ export const EuroCurrency: Story = {
   args: {
     data: computeMerchantTrends(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "EUR")),
     currency: "€",
+  },
+};
+
+/** Two merchants — minimal trends table. */
+export const TwoMerchants: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices, 2),
+    currency: "lei",
+  },
+};
+
+/** Four merchants — balanced trends grid. */
+export const FourMerchants: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices, 4),
+    currency: "lei",
+  },
+};
+
+/** Five merchants — optimal trends table. */
+export const FiveMerchants: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices, 5),
+    currency: "lei",
+  },
+};
+
+/** Six merchants — full grid view. */
+export const SixMerchants: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices, 6),
+    currency: "lei",
+  },
+};
+
+/** Seven merchants — extended trends analysis. */
+export const SevenMerchants: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices, 7),
+    currency: "lei",
+  },
+};
+
+/** RON currency trends — lei display. */
+export const RonCurrencyTrends: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "RON")),
+    currency: "lei",
+  },
+};
+
+/** USD currency trends — dollar display. */
+export const UsdCurrencyTrends: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "USD")),
+    currency: "$",
+  },
+};
+
+/** Sparse trends — minimal monthly data. */
+export const SparseTrends: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices.slice(0, 3)),
+    currency: "lei",
+  },
+};
+
+/** GBP currency trends — British pound display. */
+export const GbpCurrencyTrends: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "GBP")),
+    currency: "£",
+  },
+};
+
+/** Eight merchants — extended trends view. */
+export const EightMerchants: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices, 8),
+    currency: "lei",
+  },
+};
+
+/** Nine merchants — comprehensive trends analysis. */
+export const NineMerchants: Story = {
+  args: {
+    data: computeMerchantTrends(mockInvoices, 9),
+    currency: "lei",
   },
 };

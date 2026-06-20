@@ -6,7 +6,7 @@ import {InvoiceGuestBanner} from "./InvoiceGuestBanner";
  * invoice they don't own. It uses a blue-themed Alert component.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/Banners/GuestBanner",
+  title: "arolariu.ro/IMS/Banners/Invoice/GuestBanner",
   component: InvoiceGuestBanner,
   parameters: {
     layout: "centered",

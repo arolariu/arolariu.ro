@@ -9,7 +9,7 @@ import RenderForbiddenScreen from "./ForbiddenScreen";
  * strings come from the `Common.states.forbidden` i18n namespace.
  */
 const meta = {
-  title: "Site/ForbiddenScreen",
+  title: "arolariu.ro/Site/ForbiddenScreen",
   component: RenderForbiddenScreen,
   parameters: {
     layout: "fullscreen",

@@ -1,91 +1,192 @@
+import {storyCachedImageScan} from "@/app/domains/invoices/_storybook/fixtures/scanFixtures";
+import {useScansStore} from "@/stores";
+import type {CachedScan} from "@/types/scans";
 import type {Meta, StoryObj} from "@storybook/react";
+import {useEffect} from "react";
+import ScanSelectionToolbar from "./ScanSelectionToolbar";
 
 /**
  * ScanSelectionToolbar appears when scans are selected, providing bulk
  * actions like creating invoices. Depends on `useScans` hook.
- *
- * This story renders a static preview of the selection toolbar.
  */
 const meta = {
-  title: "Invoices/ViewScans/ScanSelectionToolbar",
+  title: "arolariu.ro/IMS/Components/Scan/ScanSelectionToolbar",
+  component: ScanSelectionToolbar,
   parameters: {
     layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "Floating toolbar that appears when one or more scans are selected. Provides bulk actions including creating invoices "
+          + "from selected scans and bulk deletion. Displays selected scan count and animates in/out based on selection state. "
+          + "Mounted with real component using seeded scan store state via decorator that seeds scans and selected state without auto-sync.",
+      },
+    },
   },
-} satisfies Meta;
+} satisfies Meta<typeof ScanSelectionToolbar>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+/**
+ * Creates a mock CachedScan fixture based on the story fixture.
+ * @param id - Unique identifier for the scan
+ * @internal
+ */
+const createMockScan = (id: string): CachedScan => ({
+  ...storyCachedImageScan,
+  id,
+  name: `Scan ${id}`,
+  cachedAt: new Date("2024-03-16T10:00:00.000Z"),
+});
+
+const singleSelectedScans = [createMockScan("scan-1")] as const;
+const multipleSelectedScans = [
+  createMockScan("scan-1"),
+  createMockScan("scan-2"),
+  createMockScan("scan-3"),
+  createMockScan("scan-4"),
+  createMockScan("scan-5"),
+] as const;
+
+function seedSelectedScans(mockScans: readonly CachedScan[]): () => void {
+  const store = useScansStore.getState();
+  const previousScans = [...store.scans];
+  const previousSelectedScans = [...store.selectedScans];
+  const previousHasHydrated = store.hasHydrated;
+  const previousIsSyncing = store.isSyncing;
+  const previousLastSyncTimestamp = store.lastSyncTimestamp;
+
+  store.clearSelectedScans();
+  store.setHasHydrated(false);
+  store.setIsSyncing(false);
+  store.setScans(mockScans);
+  store.selectAllScans();
+
+  return () => {
+    const currentStore = useScansStore.getState();
+    currentStore.setScans(previousScans);
+    currentStore.setSelectedScans(previousSelectedScans);
+    currentStore.setHasHydrated(previousHasHydrated);
+    currentStore.setIsSyncing(previousIsSyncing);
+    currentStore.setLastSyncTimestamp(previousLastSyncTimestamp);
+  };
+}
+
 /** Single scan selected. */
 export const SingleSelected: Story = {
-  render: () => (
-    <div
-      style={{
-        borderBottom: "1px solid #e5e7eb",
-        backgroundColor: "white",
-        paddingInline: "1rem",
-        paddingBlock: "0.75rem",
-        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-      }}>
-      <div style={{marginInline: "auto", display: "flex", maxWidth: "80rem", alignItems: "center", justifyContent: "space-between"}}>
-        <div style={{display: "flex", alignItems: "center", gap: "0.75rem"}}>
-          <span style={{fontSize: "0.875rem", fontWeight: 500}}>1 selected</span>
-          <button
-            type='button'
-            style={{fontSize: "0.875rem", color: "#6b7280"}}>
-            ✕ Clear
-          </button>
-        </div>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            backgroundImage: "linear-gradient(to right, #16a34a, #059669)",
-            paddingInline: "1rem",
-            paddingBlock: "0.5rem",
-            fontSize: "0.875rem",
-            color: "white",
-          }}>
-          📄 Create Invoice
-        </button>
-      </div>
-    </div>
-  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Toolbar with one scan selected. Shows singular 'Create invoice' action and delete option.",
+      },
+    },
+  },
+  decorators: [
+    (Story) => {
+      useEffect(() => {
+        return seedSelectedScans(singleSelectedScans);
+      }, []);
+
+      return <Story />;
+    },
+  ],
+  args: {
+    onCreateInvoice: () => console.log("Create invoice clicked"),
+  },
 };
 
 /** Multiple scans selected. */
 export const MultipleSelected: Story = {
-  render: () => (
-    <div
-      style={{
-        borderBottom: "1px solid #e5e7eb",
-        backgroundColor: "white",
-        paddingInline: "1rem",
-        paddingBlock: "0.75rem",
-        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-      }}>
-      <div style={{marginInline: "auto", display: "flex", maxWidth: "80rem", alignItems: "center", justifyContent: "space-between"}}>
-        <div style={{display: "flex", alignItems: "center", gap: "0.75rem"}}>
-          <span style={{fontSize: "0.875rem", fontWeight: 500}}>5 selected</span>
-          <button
-            type='button'
-            style={{fontSize: "0.875rem", color: "#6b7280"}}>
-            ✕ Clear
-          </button>
-        </div>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            backgroundImage: "linear-gradient(to right, #16a34a, #059669)",
-            paddingInline: "1rem",
-            paddingBlock: "0.5rem",
-            fontSize: "0.875rem",
-            color: "white",
-          }}>
-          📄 Create Invoices
-        </button>
-      </div>
-    </div>
-  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Toolbar with five scans selected. Shows plural 'Create invoices' action and bulk delete option.",
+      },
+    },
+  },
+  decorators: [
+    (Story) => {
+      useEffect(() => {
+        return seedSelectedScans(multipleSelectedScans);
+      }, []);
+
+      return <Story />;
+    },
+  ],
+  args: {
+    onCreateInvoice: () => console.log("Create invoices clicked"),
+  },
+};
+
+/** Many scans selected (15) — bulk selection stress test. */
+export const ManySelected: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Toolbar with 15 scans selected. Tests count display, plural text, and bulk action performance with larger selections.",
+      },
+    },
+  },
+  decorators: [
+    (Story) => {
+      const manySelectedScans = Array.from({length: 15}, (_, i) => createMockScan(`scan-many-${i + 1}`));
+      useEffect(() => {
+        return seedSelectedScans(manySelectedScans);
+      }, []);
+
+      return <Story />;
+    },
+  ],
+  args: {
+    onCreateInvoice: () => console.log("Create invoices clicked"),
+  },
+};
+
+/** Two scans selected — minimal multi-selection. */
+export const TwoSelected: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Toolbar with two scans selected. Tests minimal plural selection rendering between single and many states.",
+      },
+    },
+  },
+  decorators: [
+    (Story) => {
+      const twoScans = [createMockScan("scan-1"), createMockScan("scan-2")] as const;
+      useEffect(() => {
+        return seedSelectedScans(twoScans);
+      }, []);
+
+      return <Story />;
+    },
+  ],
+  args: {
+    onCreateInvoice: () => console.log("Create invoices clicked"),
+  },
+};
+
+/** Ten scans selected — moderate bulk selection. */
+export const TenSelected: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Toolbar with ten scans selected. Tests moderate selection count display and bulk action behavior.",
+      },
+    },
+  },
+  decorators: [
+    (Story) => {
+      const tenScans = Array.from({length: 10}, (_, i) => createMockScan(`scan-ten-${i + 1}`));
+      useEffect(() => {
+        return seedSelectedScans(tenScans);
+      }, []);
+
+      return <Story />;
+    },
+  ],
+  args: {
+    onCreateInvoice: () => console.log("Create invoices clicked"),
+  },
 };

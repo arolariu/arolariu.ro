@@ -1,182 +1,185 @@
+import {
+  invoicePresets,
+  OpenDialogButton,
+  playOpenDialog,
+  setupViewInvoiceStory,
+  storyDeletedInvoice,
+  storyHugeInvoice,
+  storyInvoice,
+  storyLongNameInvoice,
+  storyPublicInvoice,
+  storySharedManyInvoice,
+  withEntityPreset,
+} from "@/app/domains/invoices/_storybook";
+import type {Invoice} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
-import {TbAlertTriangle, TbFileX, TbPhoto, TbReceipt, TbShoppingCart, TbTrash, TbX} from "react-icons/tb";
+import {expect, userEvent, waitFor, within} from "storybook/test";
+import DeleteInvoiceDialog from "./DeleteInvoiceDialog";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 /**
- * Static visual preview of the DeleteInvoiceDialog component.
+ * DeleteInvoiceDialog displays a destructive confirmation dialog for permanently
+ * removing an invoice with all associated data (scans, line items, shared access).
  *
- * @remarks Static preview — component imports "use server" action (deleteInvoice
- * from `@/app/domains/invoices/_actions/invoices/deleteInvoice`) that cannot be bundled by Storybook's
- * Vite/Rollup. Also depends on `useDialog` context and Zustand stores. This story
- * renders a faithful HTML replica of the confirmation dialog with impact summary.
+ * This story mounts the real component wrapped in `OpenDialogButton` with
+ * `SHARED__INVOICE_DELETE` dialog context seeded with fixture data.
  */
 const meta = {
-  title: "Invoices/Dialogs/DeleteInvoiceDialog",
+  title: "arolariu.ro/IMS/Dialogs/Invoice/DeleteInvoice",
+  component: DeleteInvoiceDialog,
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "Destructive confirmation dialog for permanently deleting an invoice and all associated data (scans, line items, shared access). "
+          + "Displays invoice identifier, title, and metadata with clear warning messaging. Mounted with real dialog context.",
+      },
+    },
   },
-} satisfies Meta;
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+  beforeEach: (context) => {
+    setupViewInvoiceStory({invoice: context.args.invoice});
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
-/** Default delete confirmation dialog with invoice summary and impact warning. */
-export const Default: Story = {
-  render: () => (
-    <div
-      style={{
-        borderRadius: "0.75rem",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "#ffffff",
-        boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-      }}>
-      {/* Header */}
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1.5rem"}}>
-        <h2 style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.125rem", fontWeight: "600", color: "#dc2626"}}>
-          <TbTrash style={{height: "1.25rem", width: "1.25rem"}} />
-          Delete Invoice
-        </h2>
-        <p style={{marginTop: "0.25rem", fontSize: "0.875rem", color: "#6b7280"}}>
-          This action cannot be undone. The invoice and all associated data will be permanently removed.
-        </p>
-      </div>
-
-      <div style={{display: "flex", flexDirection: "column", gap: "1rem", padding: "1.5rem"}}>
-        {/* Invoice Summary Card */}
-        <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "#f9fafb", padding: "1rem"}}>
-          <div style={{display: "flex", alignItems: "flex-start", gap: "0.75rem"}}>
-            <div
-              style={{
-                display: "flex",
-                height: "2.5rem",
-                width: "2.5rem",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: "0.5rem",
-                backgroundColor: "#fee2e2",
-              }}>
-              <TbReceipt style={{height: "1.25rem", width: "1.25rem", color: "#dc2626"}} />
-            </div>
-            <div>
-              <p style={{fontWeight: "500"}}>Weekly Groceries</p>
-              <p style={{fontSize: "0.75rem", color: "#6b7280"}}>a1b2c3d4-e5f6-7890-abcd-ef1234567890</p>
-              <p style={{marginTop: "0.25rem", fontSize: "0.875rem", color: "#4b5563"}}>Shopping at Lidl — weekly grocery run</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Deletion Impact Warning */}
-        <div style={{borderRadius: "0.5rem", border: "1px solid #fecaca", backgroundColor: "#fef2f2", padding: "1rem"}}>
-          <div style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
-            <TbAlertTriangle style={{height: "1rem", width: "1rem", color: "#dc2626"}} />
-            <h4 style={{fontSize: "0.875rem", fontWeight: "600", color: "#991b1b"}}>Deletion Impact</h4>
-          </div>
-          <p style={{marginTop: "0.25rem", fontSize: "0.75rem", color: "#b91c1c"}}>The following data will be permanently deleted:</p>
-          <ul style={{marginTop: "0.5rem", display: "flex", flexDirection: "column", gap: "0.25rem"}}>
-            <li style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "#b91c1c"}}>
-              <TbFileX style={{height: "0.875rem", width: "0.875rem"}} />
-              Invoice record and all metadata
-            </li>
-            <li style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "#b91c1c"}}>
-              <TbPhoto style={{height: "0.875rem", width: "0.875rem"}} />3 uploaded scans
-            </li>
-            <li style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "#b91c1c"}}>
-              <TbShoppingCart style={{height: "0.875rem", width: "0.875rem"}} />
-              12 line items
-            </li>
-            <li style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "#b91c1c"}}>
-              <TbX style={{height: "0.875rem", width: "0.875rem"}} />2 shared access entries revoked
-            </li>
-          </ul>
-        </div>
-
-        <hr style={{borderColor: "#e5e7eb"}} />
-
-        {/* Confirmation Input */}
-        <div style={{display: "flex", flexDirection: "column", gap: "0.75rem"}}>
-          <div>
-            <label style={{fontSize: "0.875rem", fontWeight: "500"}}>
-              Type <span style={{fontWeight: "600", color: "#dc2626"}}>Weekly Groceries</span> to confirm
-            </label>
-            <input
-              style={{
-                marginTop: "0.25rem",
-                width: "100%",
-                borderRadius: "0.375rem",
-                border: "1px solid #e5e7eb",
-                backgroundColor: "transparent",
-                paddingLeft: "0.75rem",
-                paddingRight: "0.75rem",
-                paddingTop: "0.5rem",
-                paddingBottom: "0.5rem",
-                fontSize: "0.875rem",
-                outline: "none",
-              }}
-              placeholder='Weekly Groceries'
-              readOnly
-            />
-          </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: "0.5rem",
-              borderRadius: "0.5rem",
-              border: "1px solid #e5e7eb",
-              padding: "0.75rem",
-            }}>
-            <input
-              type='checkbox'
-              style={{marginTop: "0.125rem", height: "1rem", width: "1rem", borderRadius: "0.25rem", border: "1px solid #e5e7eb"}}
-              readOnly
-            />
-            <div>
-              <p style={{fontSize: "0.875rem", lineHeight: "1", fontWeight: "500"}}>I understand this action is irreversible</p>
-              <p style={{marginTop: "0.25rem", fontSize: "0.75rem", color: "#6b7280"}}>
-                All invoice data, scans, and shared access will be permanently deleted.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div style={{display: "flex", justifyContent: "flex-end", gap: "0.5rem", borderTop: "1px solid #e5e7eb", padding: "1rem"}}>
-        <button
-          style={{
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            paddingLeft: "1rem",
-            paddingRight: "1rem",
-            paddingTop: "0.5rem",
-            paddingBottom: "0.5rem",
-            fontSize: "0.875rem",
-            backgroundColor: "transparent",
-            cursor: "pointer",
-          }}>
-          Cancel
-        </button>
-        <button
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            borderRadius: "0.375rem",
-            backgroundColor: "#dc2626",
-            paddingLeft: "1rem",
-            paddingRight: "1rem",
-            paddingTop: "0.5rem",
-            paddingBottom: "0.5rem",
-            fontSize: "0.875rem",
-            color: "#ffffff",
-            opacity: 0.5,
-            border: "none",
-            cursor: "not-allowed",
-          }}
-          disabled>
-          <TbTrash style={{height: "1rem", width: "1rem"}} />
-          Delete Permanently
-        </button>
-      </div>
-    </div>
+/** Confirmation dialog for deleting an invoice with items and scans. */
+export const OpenConfirmation: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Displays the delete confirmation dialog with a realistic invoice fixture containing merchant name, invoice identifier, "
+          + "and metadata. Shows destructive action styling with warning color scheme and dual-button footer (Cancel/Delete).",
+      },
+    },
+  },
+  render: ({invoice}) => (
+    <OpenDialogButton
+      dialog='SHARED__INVOICE_DELETE'
+      mode='delete'
+      payload={{invoice}}>
+      <DeleteInvoiceDialog />
+    </OpenDialogButton>
   ),
+  play: async ({args, canvasElement, step}) => {
+    const canvas = within(canvasElement);
+    const body = within(document.body);
+    const openButton = canvas.getByRole("button", {name: /open dialog/i});
+
+    await step("opens the dialog via the trigger button", async () => {
+      await userEvent.click(openButton);
+      await expect(await body.findByRole("dialog")).toBeInTheDocument();
+      const nameMatches = await body.findAllByText(args.invoice.name);
+      await expect(nameMatches.length).toBeGreaterThan(0);
+    });
+
+    await step("closes the dialog with Escape", async () => {
+      await userEvent.keyboard("{Escape}");
+      await waitFor(async () => {
+        await expect(body.queryByRole("dialog")).not.toBeInTheDocument();
+      });
+    });
+
+    await step("re-opens the dialog via the trigger button", async () => {
+      await userEvent.click(openButton);
+      await expect(await body.findByRole("dialog")).toBeInTheDocument();
+    });
+  },
+};
+
+/** Delete dialog for an invoice with no scans, line items, or shares (minimal impact). */
+export const MinimalInvoice: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Delete confirmation for an invoice with no associated scans, line items, or shared access, showing the minimal-impact variant of the warning.",
+      },
+    },
+  },
+  render: ({invoice}) => (
+    <OpenDialogButton
+      dialog='SHARED__INVOICE_DELETE'
+      mode='delete'
+      payload={{invoice: {...invoice, items: [], scans: [], sharedWith: []}}}>
+      <DeleteInvoiceDialog />
+    </OpenDialogButton>
+  ),
+  play: playOpenDialog,
+};
+
+/** Delete dialog for a public invoice with shared access. */
+export const PublicInvoice: Story = {
+  args: {invoicePreset: "public", invoice: storyPublicInvoice},
+  render: ({invoice}) => (
+    <OpenDialogButton
+      dialog='SHARED__INVOICE_DELETE'
+      mode='delete'
+      payload={{invoice}}>
+      <DeleteInvoiceDialog />
+    </OpenDialogButton>
+  ),
+  play: playOpenDialog,
+};
+
+/** Delete dialog for an invoice with a long name (truncation test). */
+export const LongNameInvoice: Story = {
+  render: () => (
+    <OpenDialogButton
+      dialog='SHARED__INVOICE_DELETE'
+      mode='delete'
+      payload={{invoice: storyLongNameInvoice}}>
+      <DeleteInvoiceDialog />
+    </OpenDialogButton>
+  ),
+  play: playOpenDialog,
+};
+
+/** Delete dialog for a soft-deleted invoice. */
+export const SoftDeletedInvoice: Story = {
+  render: () => (
+    <OpenDialogButton
+      dialog='SHARED__INVOICE_DELETE'
+      mode='delete'
+      payload={{invoice: storyDeletedInvoice}}>
+      <DeleteInvoiceDialog />
+    </OpenDialogButton>
+  ),
+  play: playOpenDialog,
+};
+
+/** Delete dialog for an invoice with huge data. */
+export const HugeInvoice: Story = {
+  render: () => (
+    <OpenDialogButton
+      dialog='SHARED__INVOICE_DELETE'
+      mode='delete'
+      payload={{invoice: storyHugeInvoice}}>
+      <DeleteInvoiceDialog />
+    </OpenDialogButton>
+  ),
+  play: playOpenDialog,
+};
+
+/** Delete dialog for invoice with many shares. */
+export const SharedManyInvoice: Story = {
+  render: () => (
+    <OpenDialogButton
+      dialog='SHARED__INVOICE_DELETE'
+      mode='delete'
+      payload={{invoice: storySharedManyInvoice}}>
+      <DeleteInvoiceDialog />
+    </OpenDialogButton>
+  ),
+  play: playOpenDialog,
 };

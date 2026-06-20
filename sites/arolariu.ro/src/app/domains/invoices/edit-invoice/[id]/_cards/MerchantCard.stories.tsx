@@ -1,80 +1,173 @@
+import type {Merchant} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
+import {storyMerchant, storyMinimalMerchant, storyOnlineMerchant, WithInvoiceDialogs} from "../../../_storybook";
+import MerchantCard from "./MerchantCard";
+
+type StoryArgs = {merchant: Merchant | null; merchantPreset: "physical" | "online" | "none"};
 
 /**
  * MerchantCard (edit) displays merchant information with navigation buttons
  * to view merchant details and receipt history.
  *
- * Because it depends on `useDialog`, this story renders a static preview.
+ * This story mounts the real component wrapped in `WithInvoiceDialogs`.
  */
 const meta = {
-  title: "Invoices/EditInvoice/Cards/MerchantCard",
+  title: "arolariu.ro/IMS/Cards/Merchant/MerchantCard",
+  component: MerchantCard,
   parameters: {
     layout: "centered",
   },
-} satisfies Meta;
+  argTypes: {
+    merchantPreset: {control: "select", options: ["physical", "online", "none"]},
+    merchant: {control: "object"},
+  },
+  args: {merchantPreset: "physical", merchant: storyMerchant},
+  decorators: [
+    (Story, context) => {
+      const preset = context.args.merchantPreset as "physical" | "online" | "none";
+      if (preset === "none") {
+        context.args.merchant = null;
+      } else if (preset === "physical" && context.args.merchant !== storyMerchant) {
+        context.args.merchant = storyMerchant;
+      } else if (preset === "online" && context.args.merchant !== storyOnlineMerchant) {
+        context.args.merchant = storyOnlineMerchant;
+      }
+      return <Story />;
+    },
+  ],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
-/** Static preview of the merchant card. */
-export const Preview: Story = {
-  render: () => (
-    <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.05)"}}>
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
-        <h3 style={{fontSize: "1.125rem", fontWeight: 600}}>Merchant Info</h3>
-      </div>
-      <div style={{display: "flex", flexDirection: "column", gap: "1rem", padding: "1rem"}}>
-        <div style={{display: "flex", alignItems: "center", gap: "0.75rem"}}>
-          <div
-            style={{
-              display: "flex",
-              height: "2.5rem",
-              width: "2.5rem",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: "9999px",
-              backgroundColor: "#dbeafe",
-            }}>
-            🛒
-          </div>
-          <div>
-            <p style={{fontWeight: 500}}>Kaufland</p>
-            <p style={{fontSize: "0.875rem", color: "#6b7280"}}>123 Main Street, Bucharest</p>
-          </div>
-        </div>
-        <div style={{display: "flex", flexDirection: "column", gap: "0.5rem"}}>
-          <button
-            type='button'
-            style={{
-              display: "flex",
-              width: "100%",
-              alignItems: "center",
-              justifyContent: "space-between",
-              borderRadius: "0.375rem",
-              border: "1px solid #e5e7eb",
-              padding: "0.5rem 1rem",
-              fontSize: "0.875rem",
-            }}>
-            <span>View Merchant Details</span>
-            <span>→</span>
-          </button>
-          <button
-            type='button'
-            style={{
-              display: "flex",
-              width: "100%",
-              alignItems: "center",
-              justifyContent: "space-between",
-              borderRadius: "0.375rem",
-              border: "1px solid #e5e7eb",
-              padding: "0.5rem 1rem",
-              fontSize: "0.875rem",
-            }}>
-            <span>🛍 View All Receipts</span>
-            <span>→</span>
-          </button>
-        </div>
-      </div>
-    </div>
+/** Merchant card with linked merchant data. */
+export const LinkedMerchant: Story = {
+  render: ({merchant}) => (
+    <WithInvoiceDialogs>
+      <MerchantCard merchant={merchant} />
+    </WithInvoiceDialogs>
   ),
+};
+
+/** Merchant card with no merchant linked (null). */
+export const NoMerchant: Story = {
+  args: {merchantPreset: "none", merchant: null},
+  render: ({merchant}) => (
+    <WithInvoiceDialogs>
+      <MerchantCard merchant={merchant} />
+    </WithInvoiceDialogs>
+  ),
+};
+
+/** Online-only merchant (no physical store address). */
+export const OnlineMerchant: Story = {
+  args: {merchantPreset: "online", merchant: storyOnlineMerchant},
+  render: ({merchant}) => (
+    <WithInvoiceDialogs>
+      <MerchantCard merchant={merchant} />
+    </WithInvoiceDialogs>
+  ),
+};
+
+/** Merchant with a very long name and description to exercise text overflow. */
+export const LongText: Story = {
+  render: ({merchant}) => (
+    <WithInvoiceDialogs>
+      <MerchantCard
+        merchant={
+          merchant
+            ? {
+                ...merchant,
+                name: "Corner Shop ABC International Wholesale & Retail Distribution Center Bucuresti Militari Branch",
+                description:
+                  "A very long merchant description used to validate truncation, wrapping, and layout stability inside the merchant card across themes and locales.",
+              }
+            : null
+        }
+      />
+    </WithInvoiceDialogs>
+  ),
+};
+
+/** Merchant with minimal data — no description or optional fields. */
+export const MinimalData: Story = {
+  render: ({merchant}) => (
+    <WithInvoiceDialogs>
+      <MerchantCard
+        merchant={
+          merchant
+            ? ({
+                ...merchant,
+                description: "",
+                website: "",
+              } as Merchant)
+            : null
+        }
+      />
+    </WithInvoiceDialogs>
+  ),
+};
+
+/** Merchant with very long website URL. */
+export const LongWebsiteUrl: Story = {
+  render: ({merchant}) => (
+    <WithInvoiceDialogs>
+      <MerchantCard
+        merchant={
+          merchant
+            ? ({
+                ...merchant,
+                website:
+                  "https://www.corner-shop-abc-international-wholesale-and-retail-distribution-center-bucuresti-militari-branch.ro/shop/products/categories/groceries",
+              } as Merchant)
+            : null
+        }
+      />
+    </WithInvoiceDialogs>
+  ),
+};
+
+/** Minimal merchant — uses the new storyMinimalMerchant fixture. */
+export const MinimalMerchant: Story = {
+  render: () => (
+    <WithInvoiceDialogs>
+      <MerchantCard merchant={storyMinimalMerchant} />
+    </WithInvoiceDialogs>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Merchant with minimal contact information to verify fallback handling for missing fields.",
+      },
+    },
+  },
+};
+
+/** Merchant with very long address. */
+export const LongAddress: Story = {
+  render: ({merchant}) => (
+    <WithInvoiceDialogs>
+      <MerchantCard
+        merchant={
+          merchant
+            ? ({
+                ...merchant,
+                address: {
+                  ...merchant.address,
+                  line1: "Strada Petre Ispirescu, Nr. 45-47, Bloc M12, Scara A, Etaj 3, Apartament 15",
+                  line2: "Complex Rezidential Green Park Phase II, Zona Industriala Bucuresti Nord-Vest",
+                },
+              } as Merchant)
+            : null
+        }
+      />
+    </WithInvoiceDialogs>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Merchant with very long address to verify text wrapping and truncation.",
+      },
+    },
+  },
 };

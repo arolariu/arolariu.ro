@@ -8,7 +8,7 @@ import Certifications from "./Certifications";
  * Uses the `sections.about.author.Certifications` i18n namespace.
  */
 const meta = {
-  title: "Pages/About/TheAuthor/Certifications",
+  title: "arolariu.ro/Pages/About/TheAuthor/Certifications",
   component: Certifications,
   parameters: {
     layout: "fullscreen",

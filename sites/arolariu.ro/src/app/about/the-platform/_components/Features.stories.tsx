@@ -8,7 +8,7 @@ import Features from "./Features";
  * Uses the `sections.about.platform.features` i18n namespace.
  */
 const meta = {
-  title: "Pages/About/ThePlatform/Features",
+  title: "arolariu.ro/Pages/About/ThePlatform/Features",
   component: Features,
   parameters: {
     layout: "fullscreen",

@@ -26,7 +26,7 @@ function createMockClerkUser(overrides: Record<string, unknown> = {}): User {
  * Uses the `Profile` i18n namespace and accepts a Clerk `User` object.
  */
 const meta = {
-  title: "Pages/Profile/ProfileHeader",
+  title: "arolariu.ro/Pages/Profile/ProfileHeader",
   component: ProfileHeader,
   parameters: {
     layout: "fullscreen",

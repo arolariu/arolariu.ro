@@ -10,7 +10,7 @@ const noop = () => {};
  * with shareable link and QR code tabs. Accepts callback props.
  */
 const meta = {
-  title: "Invoices/Dialogs/ShareInvoiceDialogPublic",
+  title: "arolariu.ro/IMS/Dialogs/Invoice/ShareInvoicePublic",
   component: PublicMode,
   parameters: {
     layout: "centered",
@@ -26,6 +26,50 @@ export const Default: Story = {
     onBack: noop,
     shareUrl: "https://arolariu.ro/domains/invoices/view-invoice/a1b2c3d4",
     copied: false,
+    onCopyLink: noop,
+    onCopyQRCode: noop,
+  },
+};
+
+/** Public sharing view immediately after the link was copied (shows copied feedback). */
+export const Copied: Story = {
+  args: {
+    onBack: noop,
+    shareUrl: "https://arolariu.ro/domains/invoices/view-invoice/a1b2c3d4",
+    copied: true,
+    onCopyLink: noop,
+    onCopyQRCode: noop,
+  },
+};
+
+/** Public sharing view with long URL. */
+export const LongUrl: Story = {
+  args: {
+    onBack: noop,
+    shareUrl: "https://arolariu.ro/domains/invoices/view-invoice/a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0",
+    copied: false,
+    onCopyLink: noop,
+    onCopyQRCode: noop,
+  },
+};
+
+/** Public sharing view with custom domain URL. */
+export const CustomDomain: Story = {
+  args: {
+    onBack: noop,
+    shareUrl: "https://custom.arolariu.ro/invoices/xyz123",
+    copied: false,
+    onCopyLink: noop,
+    onCopyQRCode: noop,
+  },
+};
+
+/** Public sharing view after QR code copied. */
+export const QRCodeCopied: Story = {
+  args: {
+    onBack: noop,
+    shareUrl: "https://arolariu.ro/domains/invoices/view-invoice/qr-test",
+    copied: true,
     onCopyLink: noop,
     onCopyQRCode: noop,
   },

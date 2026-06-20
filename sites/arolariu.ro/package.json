@@ -42,7 +42,9 @@
     "test": "npm run test:unit && npm run test:e2e && npm run test:storybook",
     "test:unit": "vitest run",
     "test:e2e": "playwright test --config=playwright.config.ts",
-    "test:storybook": "storybook build -o storybook-static --test"
+    "test:storybook": "storybook build -o storybook-static --test",
+    "test:storybook:vitest": "vitest run --config vitest.storybook.config.ts",
+    "test:storybook:vitest:ui": "vitest --config vitest.storybook.config.ts --ui"
   },
   "dependencies": {
     "@arolariu/components": "*",

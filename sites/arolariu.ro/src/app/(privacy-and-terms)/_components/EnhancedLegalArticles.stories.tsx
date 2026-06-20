@@ -9,7 +9,7 @@ import EnhancedLegalArticles from "./EnhancedLegalArticles";
  * Supports two page types: `sections.legal.privacyPolicy` and `sections.legal.termsOfService`.
  */
 const meta = {
-  title: "Pages/Legal/EnhancedLegalArticles",
+  title: "arolariu.ro/Pages/Legal/EnhancedLegalArticles",
   component: EnhancedLegalArticles,
   parameters: {
     layout: "padded",

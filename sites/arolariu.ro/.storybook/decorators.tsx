@@ -20,6 +20,11 @@ import enMessages from "../messages/en.json";
 import frMessages from "../messages/fr.json";
 import roMessages from "../messages/ro.json";
 
+import {Atkinson_Hyperlegible, Caudex} from "next/font/google";
+
+const normalFont = Caudex({weight: "700", style: "normal", subsets: ["latin"], variable: "--font-default", preload: true});
+const dyslexicFont = Atkinson_Hyperlegible({weight: "400", style: "normal", subsets: ["latin"], variable: "--font-dyslexic", preload: false});
+
 // ─── Message catalog ─────────────────────────────────────────────
 const messagesByLocale: Record<string, AbstractIntlMessages> = {
   en: enMessages as AbstractIntlMessages,
@@ -46,28 +51,25 @@ export const withI18n: Decorator = (Story, context) => {
 };
 
 /**
- * Loads Google Fonts and sets --font-default CSS variable from toolbar.
- * Uses a React key to force full remount when font changes.
+ * Applies the selected next/font className to the document root from the toolbar.
+ * Mirrors production's FontContext: the chosen font's className is applied to
+ * <html>, setting a real, cascading font-family (Caudex normal / Atkinson dyslexic).
  */
 export const withFontSwitcher: Decorator = (Story, context) => {
   const font = (context.globals["font"] as string) ?? "normal";
 
   if (typeof document !== "undefined") {
-    const fontId = "sb-google-fonts";
-    if (!document.getElementById(fontId)) {
-      const link = document.createElement("link");
-      link.id = fontId;
-      link.rel = "stylesheet";
-      link.href = "https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Caudex:wght@400;700&display=swap";
-      document.head.appendChild(link);
+    const root = document.documentElement;
+    const active = font === "dyslexic" ? dyslexicFont : normalFont;
+    const other = font === "dyslexic" ? normalFont : dyslexicFont;
+
+    for (const cls of `${other.className} ${other.variable}`.split(" ").filter(Boolean)) {
+      root.classList.remove(cls);
     }
-
-    const fontFamily =
-      font === "dyslexic" ? "'Atkinson Hyperlegible', system-ui, sans-serif" : "'Caudex', Georgia, 'Times New Roman', serif";
-
-    document.body.style.setProperty("--font-default", fontFamily);
-    document.body.style.setProperty("--font-dyslexic", "'Atkinson Hyperlegible', system-ui, sans-serif");
-    document.body.style.fontFamily = fontFamily;
+    for (const cls of `${active.className} ${active.variable}`.split(" ").filter(Boolean)) {
+      root.classList.add(cls);
+    }
+    root.style.fontFamily = active.style.fontFamily;
   }
 
   return (
@@ -78,15 +80,19 @@ export const withFontSwitcher: Decorator = (Story, context) => {
 };
 
 /**
- * Sets data-theme-preset attribute from toolbar.
- * Uses a React key to force full remount when preset changes.
+ * Applies the selected theme preset by mirroring production's PreferencesSubscriptions:
+ * sets data-theme-preset on <html> so [data-theme-preset] and
+ * [data-theme-preset].dark SCSS selectors both match.
  */
 export const withThemePreset: Decorator = (Story, context) => {
   const preset = (context.globals["themePreset"] as string) ?? "default";
+
+  if (typeof document !== "undefined") {
+    document.documentElement.dataset["themePreset"] = preset;
+  }
+
   return (
-    <div
-      key={`preset-${preset}`}
-      data-theme-preset={preset}>
+    <div key={`preset-${preset}`}>
       <Story />
     </div>
   );

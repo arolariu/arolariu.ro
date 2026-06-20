@@ -38,7 +38,7 @@ const mockPackages: NodePackagesJSON = {
  * Uses the `Acknowledgements.stats` i18n namespace.
  */
 const meta = {
-  title: "Pages/Acknowledgements/Stats",
+  title: "arolariu.ro/Pages/Acknowledgements/Stats",
   component: Stats,
   parameters: {
     layout: "fullscreen",

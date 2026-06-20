@@ -8,7 +8,7 @@ import Biography from "./Biography";
  * Uses the `sections.about.author.Biography` i18n namespace.
  */
 const meta = {
-  title: "Pages/About/TheAuthor/Biography",
+  title: "arolariu.ro/Pages/About/TheAuthor/Biography",
   component: Biography,
   parameters: {
     layout: "fullscreen",

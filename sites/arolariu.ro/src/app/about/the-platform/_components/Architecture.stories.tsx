@@ -9,7 +9,7 @@ import Architecture from "./Architecture";
  * Uses the `sections.about.platform.architecture` i18n namespace.
  */
 const meta = {
-  title: "Pages/About/ThePlatform/Architecture",
+  title: "arolariu.ro/Pages/About/ThePlatform/Architecture",
   component: Architecture,
   parameters: {
     layout: "fullscreen",

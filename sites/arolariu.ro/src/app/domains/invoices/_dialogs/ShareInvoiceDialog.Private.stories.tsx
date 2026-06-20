@@ -1,8 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {FormEvent} from "react";
 import {PrivateMode} from "./ShareInvoiceDialog.Private";
 
 /* eslint-disable @typescript-eslint/no-empty-function -- Storybook action stubs */
 const noop = () => {};
+const onSubmit = (_event: FormEvent): void => {};
 /* eslint-enable @typescript-eslint/no-empty-function */
 
 /**
@@ -10,7 +12,7 @@ const noop = () => {};
  * with email input. Accepts callback props for navigation and form handling.
  */
 const meta = {
-  title: "Invoices/Dialogs/ShareInvoiceDialogPrivate",
+  title: "arolariu.ro/IMS/Dialogs/Invoice/ShareInvoicePrivate",
   component: PrivateMode,
   parameters: {
     layout: "centered",
@@ -26,6 +28,46 @@ export const Default: Story = {
     onBack: noop,
     email: "",
     onEmailChange: noop,
-    onSendEmail: noop as unknown as (e: React.FormEvent) => void,
+    onSendEmail: onSubmit,
+  },
+};
+
+/** Private sharing form pre-filled with a recipient email address. */
+export const WithEmail: Story = {
+  args: {
+    onBack: noop,
+    email: "friend@example.com",
+    onEmailChange: noop,
+    onSendEmail: onSubmit,
+  },
+};
+
+/** Private sharing form with multiple email addresses. */
+export const MultipleEmails: Story = {
+  args: {
+    onBack: noop,
+    email: "user1@example.com, user2@example.com",
+    onEmailChange: noop,
+    onSendEmail: onSubmit,
+  },
+};
+
+/** Private sharing form with long email address. */
+export const LongEmail: Story = {
+  args: {
+    onBack: noop,
+    email: "verylongemailaddresswithlotofcharacters@subdomain.example-domain.com",
+    onEmailChange: noop,
+    onSendEmail: onSubmit,
+  },
+};
+
+/** Private sharing form in empty state. */
+export const EmptyForm: Story = {
+  args: {
+    onBack: noop,
+    email: "",
+    onEmailChange: noop,
+    onSendEmail: onSubmit,
   },
 };

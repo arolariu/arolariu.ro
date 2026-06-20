@@ -1,5 +1,14 @@
 import {InvoiceBuilder} from "@/data/mocks";
 import type {Meta, StoryObj} from "@storybook/react";
+import {
+  storyDeletedInvoice,
+  storyEurInvoice,
+  storyGbpInvoice,
+  storyHugeInvoice,
+  storyInvoices,
+  storyManyInvoices,
+  storyUsdInvoice,
+} from "../../../_storybook";
 import RenderStatisticsView from "./StatisticsView";
 
 /**
@@ -17,7 +26,7 @@ import RenderStatisticsView from "./StatisticsView";
  * - Time of Day Analysis (radar chart)
  */
 const meta = {
-  title: "Invoices/ViewInvoices/Views/StatisticsView",
+  title: "arolariu.ro/IMS/Views/StatisticsView",
   component: RenderStatisticsView,
   parameters: {
     layout: "fullscreen",
@@ -63,5 +72,116 @@ export const WithData: Story = {
 export const LargeDataset: Story = {
   args: {
     invoices: Array.from({length: 50}, () => new InvoiceBuilder().build()),
+  },
+};
+
+/** Huge dataset (100 invoices) — performance stress test. */
+export const HugeDataset: Story = {
+  args: {
+    invoices: Array.from({length: 100}, (_, i) => new InvoiceBuilder().withCategory(((i % 5) * 100) as 100 | 200 | 300 | 400).build()),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Statistics view with 100 invoices. Tests chart rendering performance, data aggregation, and overflow handling with large data sets.",
+      },
+    },
+  },
+};
+
+/** Two invoices — minimal viable statistics. */
+export const TwoInvoices: Story = {
+  args: {
+    invoices: [new InvoiceBuilder().withCategory(100).build(), new InvoiceBuilder().withCategory(200).build()],
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Statistics view with two invoices. Tests minimal data rendering, chart display with limited data points, and edge case handling.",
+      },
+    },
+  },
+};
+
+/** Five invoices across different categories. */
+export const FiveInvoices: Story = {
+  args: {
+    invoices: [
+      new InvoiceBuilder().withCategory(100).build(),
+      new InvoiceBuilder().withCategory(200).build(),
+      new InvoiceBuilder().withCategory(300).build(),
+      new InvoiceBuilder().withCategory(400).build(),
+      new InvoiceBuilder().withCategory(100).build(),
+    ],
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Statistics view with five invoices across four categories. Tests category distribution charts with small data set.",
+      },
+    },
+  },
+};
+
+/** Thirty invoices — medium data set. */
+export const MediumDataset: Story = {
+  args: {
+    invoices: Array.from({length: 30}, (_, i) => new InvoiceBuilder().withCategory(((i % 4) * 100) as 100 | 200 | 300 | 400).build()),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Statistics view with 30 invoices. Tests chart rendering and data aggregation with medium-sized data set.",
+      },
+    },
+  },
+};
+
+/** Multi-currency invoices (EUR, USD, GBP). */
+export const MultiCurrency: Story = {
+  args: {
+    invoices: [storyEurInvoice, storyUsdInvoice, storyGbpInvoice],
+  },
+};
+
+/** With soft-deleted invoice. */
+export const WithSoftDeleted: Story = {
+  args: {
+    invoices: [...storyInvoices, storyDeletedInvoice],
+  },
+};
+
+/** Ten invoices across categories. */
+export const TenInvoices: Story = {
+  args: {
+    invoices: Array.from({length: 10}, (_, i) => new InvoiceBuilder().withCategory(((i % 4) * 100) as 100 | 200 | 300 | 400).build()),
+  },
+};
+
+/** Single huge invoice (120 items). */
+export const HugeInvoice: Story = {
+  args: {
+    invoices: [storyHugeInvoice],
+  },
+};
+
+/** Sixty invoices (from storyManyInvoices). */
+export const SixtyInvoices: Story = {
+  args: {
+    invoices: storyManyInvoices,
+  },
+};
+
+/** Mixed currencies and categories. */
+export const MixedDataset: Story = {
+  args: {
+    invoices: [
+      ...storyInvoices,
+      storyEurInvoice,
+      storyUsdInvoice,
+      ...Array.from({length: 5}, () => new InvoiceBuilder().withCategory(300).build()),
+    ],
   },
 };

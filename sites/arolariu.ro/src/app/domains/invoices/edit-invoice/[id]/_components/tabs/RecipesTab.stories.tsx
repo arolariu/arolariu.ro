@@ -1,124 +1,165 @@
+import {storyRecipeEasy, storyRecipeHard, storyRecipes, WithInvoiceDialogs} from "@/app/domains/invoices/_storybook";
+import type {RecipeComplexity} from "@/types/invoices/Recipe";
 import type {Meta, StoryObj} from "@storybook/react";
+import RecipesTab from "./RecipesTab";
 
 /**
- * RecipesTab displays recipe cards generated from invoice items, with
- * pagination and a generate-more action. Depends on `useDialog`.
+ * RecipesTab displays a paginated grid of `RecipeCard`s generated from invoice
+ * items, with generate-more and add-recipe actions.
  *
- * This story renders a static preview of the recipes tab layout.
+ * @remarks
+ * The real component depends on `useDialog` (via the dialog context) for the
+ * add/edit/delete/share recipe dialogs. Stories mount the real component wrapped
+ * in `WithInvoiceDialogs` and pass recipe fixtures through the `recipes` prop.
  */
 const meta = {
-  title: "Invoices/EditInvoice/Tabs/RecipesTab",
+  title: "arolariu.ro/IMS/Tabs/Recipe/RecipesTab",
+  component: RecipesTab,
   parameters: {
     layout: "centered",
   },
-} satisfies Meta;
+  tags: ["autodocs"],
+  decorators: [
+    (Story) => (
+      <WithInvoiceDialogs>
+        <Story />
+      </WithInvoiceDialogs>
+    ),
+  ],
+} satisfies Meta<typeof RecipesTab>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Preview with recipe cards. */
+/** Recipes tab populated with the story recipe fixtures. */
 export const WithRecipes: Story = {
-  render: () => (
-    <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "#ffffff"}}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderBottom: "1px solid #e5e7eb",
-          padding: "1rem",
-        }}>
-        <div>
-          <h3 style={{fontSize: "1.125rem", fontWeight: "600"}}>AI-Generated Recipes</h3>
-          <p style={{fontSize: "0.875rem", color: "#6b7280"}}>Recipes created from your invoice items</p>
-        </div>
-        <div style={{display: "flex", gap: "0.5rem"}}>
-          <button
-            type='button'
-            style={{
-              borderRadius: "0.375rem",
-              border: "1px solid #e5e7eb",
-              paddingLeft: "0.75rem",
-              paddingRight: "0.75rem",
-              paddingTop: "0.375rem",
-              paddingBottom: "0.375rem",
-              fontSize: "0.875rem",
-            }}>
-            🎉 Generate More
-          </button>
-          <button
-            type='button'
-            style={{
-              borderRadius: "0.375rem",
-              border: "1px solid #e5e7eb",
-              paddingLeft: "0.75rem",
-              paddingRight: "0.75rem",
-              paddingTop: "0.375rem",
-              paddingBottom: "0.375rem",
-              fontSize: "0.875rem",
-            }}>
-            ➕ Add Recipe
-          </button>
-        </div>
-      </div>
-      <div style={{display: "grid", gap: "1rem", padding: "1rem", gridTemplateColumns: "repeat(2, 1fr)"}}>
-        {[
-          {name: "Creamy Pasta", complexity: "Easy", time: "30 min"},
-          {name: "Grilled Chicken Salad", complexity: "Easy", time: "25 min"},
-          {name: "Beef Stir-Fry", complexity: "Medium", time: "40 min"},
-        ].map((recipe) => (
-          <div
-            key={recipe.name}
-            style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", padding: "1rem"}}>
-            <h4 style={{fontWeight: "500"}}>{recipe.name}</h4>
-            <div style={{marginTop: "0.25rem", display: "flex", gap: "0.5rem"}}>
-              <span
-                style={{
-                  borderRadius: "9999px",
-                  backgroundColor: "#dbeafe",
-                  paddingLeft: "0.5rem",
-                  paddingRight: "0.5rem",
-                  paddingTop: "0.125rem",
-                  paddingBottom: "0.125rem",
-                  fontSize: "0.75rem",
-                  color: "#1e40af",
-                }}>
-                {recipe.complexity}
-              </span>
-              <span style={{fontSize: "0.75rem", color: "#6b7280"}}>⏱ {recipe.time}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  ),
+  args: {recipes: storyRecipes},
 };
 
-/** Empty recipes tab. */
+/** Empty recipes tab showing the create-first-recipe state. */
 export const NoRecipes: Story = {
-  render: () => (
-    <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "#ffffff"}}>
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
-        <h3 style={{fontSize: "1.125rem", fontWeight: "600"}}>AI-Generated Recipes</h3>
-        <p style={{fontSize: "0.875rem", color: "#6b7280"}}>No recipes generated yet</p>
-      </div>
-      <div style={{display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", padding: "2rem", textAlign: "center"}}>
-        <p style={{fontSize: "0.875rem", color: "#6b7280"}}>No recipes have been generated for this invoice yet.</p>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            backgroundColor: "#2563eb",
-            paddingLeft: "1rem",
-            paddingRight: "1rem",
-            paddingTop: "0.5rem",
-            paddingBottom: "0.5rem",
-            fontSize: "0.875rem",
-            color: "#ffffff",
-          }}>
-          🎉 Generate Recipes
-        </button>
-      </div>
-    </div>
-  ),
+  args: {recipes: []},
+};
+
+/** Recipes tab with a single easy-complexity recipe for minimal content testing. */
+export const SingleEasyRecipe: Story = {
+  args: {recipes: [storyRecipeEasy]},
+};
+
+/** Recipes tab with a single hard-complexity recipe showing all ingredient details. */
+export const SingleHardRecipe: Story = {
+  args: {recipes: [storyRecipeHard]},
+};
+
+/** Recipes tab with many recipes to test pagination and grid overflow handling. */
+export const ManyRecipes: Story = {
+  args: {
+    recipes: [
+      storyRecipeEasy,
+      storyRecipeHard,
+      {
+        name: "Greek Salad",
+        description: "Fresh Mediterranean salad with feta cheese",
+        approximateTotalDuration: 15,
+        complexity: 1 as RecipeComplexity,
+        ingredients: ["Tomatoes", "Cucumber", "Red Onion", "Feta Cheese", "Olives", "Olive Oil", "Lemon"],
+        instructions: "1. Chop vegetables\n2. Add feta and olives\n3. Drizzle with oil and lemon",
+        preparationTime: 15,
+        cookingTime: 0,
+        referenceForMoreDetails: "https://example.com/greek-salad",
+      },
+      {
+        name: "Chicken Stir Fry",
+        description: "Quick Asian-inspired chicken with vegetables",
+        approximateTotalDuration: 20,
+        complexity: 2 as RecipeComplexity,
+        ingredients: ["Chicken Breast", "Soy Sauce", "Ginger", "Garlic", "Bell Peppers", "Broccoli", "Sesame Oil"],
+        instructions: "1. Slice chicken and vegetables\n2. Heat wok\n3. Stir fry chicken\n4. Add vegetables\n5. Add sauce",
+        preparationTime: 10,
+        cookingTime: 10,
+        referenceForMoreDetails: "https://example.com/stir-fry",
+      },
+      {
+        name: "Banana Bread",
+        description: "Moist and sweet banana bread for breakfast or snack",
+        approximateTotalDuration: 75,
+        complexity: 2 as RecipeComplexity,
+        ingredients: ["Ripe Bananas", "Flour", "Sugar", "Eggs", "Butter", "Baking Soda", "Vanilla Extract", "Salt"],
+        instructions: "1. Mash bananas\n2. Mix wet ingredients\n3. Combine with dry ingredients\n4. Bake at 175°C for 60 minutes",
+        preparationTime: 15,
+        cookingTime: 60,
+        referenceForMoreDetails: "https://example.com/banana-bread",
+      },
+    ],
+  },
+};
+
+/** Recipes tab with recipe containing very long name and ingredient list to test text overflow. */
+export const LongRecipeNames: Story = {
+  args: {
+    recipes: [
+      {
+        name: "Grandma's Traditional Homemade Extra-Special Sunday Roast Beef Wellington with Mushroom Duxelles and Herb-Infused Puff Pastry",
+        description:
+          "An exceptionally elaborate and time-consuming recipe passed down through generations with meticulous attention to detail",
+        approximateTotalDuration: 240,
+        complexity: 3 as RecipeComplexity,
+        ingredients: [
+          "Premium Beef Tenderloin Fillet",
+          "Artisanal Puff Pastry",
+          "Wild Forest Mushrooms",
+          "French Shallots",
+          "Fresh Garlic Cloves",
+          "Organic Thyme Sprigs",
+          "Whole Grain Dijon Mustard",
+          "Free Range Egg Yolks",
+          "Grass-Fed Butter",
+          "Extra Virgin Olive Oil",
+          "Sea Salt Flakes",
+          "Freshly Ground Black Pepper",
+          "Italian Parma Ham",
+          "White Wine for Deglazing",
+          "Fresh Rosemary",
+        ],
+        instructions:
+          "1. Season the premium beef tenderloin generously\n2. Sear on all sides until beautifully caramelized\n3. Prepare the mushroom duxelles with precision\n4. Layer the pastry with ham and duxelles\n5. Wrap and seal meticulously\n6. Bake to golden perfection",
+        preparationTime: 90,
+        cookingTime: 150,
+        referenceForMoreDetails: "https://example.com/elaborate-beef-wellington-recipe-traditional-family-version",
+      },
+    ],
+  },
+};
+
+/** Recipes tab with mix of all complexity levels to test filter and display variety. */
+export const MixedComplexity: Story = {
+  args: {
+    recipes: [
+      storyRecipeEasy,
+      {
+        name: "Pasta Aglio e Olio",
+        description: "Simple Italian pasta with garlic and olive oil",
+        approximateTotalDuration: 20,
+        complexity: 1 as RecipeComplexity,
+        ingredients: ["Spaghetti", "Garlic", "Olive Oil", "Red Pepper Flakes", "Parsley", "Parmesan"],
+        instructions: "1. Cook pasta\n2. Sauté garlic in oil\n3. Toss pasta with garlic oil\n4. Add pepper flakes and parsley",
+        preparationTime: 5,
+        cookingTime: 15,
+        referenceForMoreDetails: "https://example.com/aglio-olio",
+      },
+      {
+        name: "Homemade Pizza Margherita",
+        description: "Classic Italian pizza with fresh mozzarella and basil",
+        approximateTotalDuration: 150,
+        complexity: 2 as RecipeComplexity,
+        ingredients: ["Pizza Dough", "Tomato Sauce", "Fresh Mozzarella", "Fresh Basil", "Olive Oil", "Salt"],
+        instructions:
+          "1. Prepare and rest dough for 2 hours\n2. Roll out dough\n3. Spread sauce\n4. Add mozzarella\n5. Bake at 250°C for 12 minutes\n6. Top with fresh basil",
+        preparationTime: 120,
+        cookingTime: 30,
+        referenceForMoreDetails: "https://example.com/pizza-margherita",
+      },
+      storyRecipeHard,
+    ],
+  },
 };

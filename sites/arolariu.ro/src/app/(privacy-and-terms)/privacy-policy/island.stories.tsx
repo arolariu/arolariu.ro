@@ -9,7 +9,7 @@ import RenderPrivacyPolicyScreen from "./island";
  * and user rights.
  */
 const meta = {
-  title: "Pages/Legal/PrivacyPolicy",
+  title: "arolariu.ro/Pages/Legal/PrivacyPolicy",
   component: RenderPrivacyPolicyScreen,
   parameters: {
     layout: "padded",

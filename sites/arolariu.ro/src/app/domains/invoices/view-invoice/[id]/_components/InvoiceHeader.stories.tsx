@@ -1,125 +1,145 @@
+import {storyInvoice, storyMerchant, WithViewInvoiceContext} from "@/app/domains/invoices/_storybook";
 import type {Meta, StoryObj} from "@storybook/react";
+import {InvoiceHeader} from "./InvoiceHeader";
 
-/**
- * InvoiceHeader (view) displays the invoice title, importance badge,
- * and action buttons (edit, delete, print). Depends on `useInvoiceContext`,
- * `useUserInformation`, and `useDialog`.
- *
- * This story renders a static preview of the view-invoice header layout.
- */
+const ownerInvoice = {
+  ...storyInvoice,
+  id: "invoice-story-owner-header",
+  userIdentifier: "user_storybook",
+  isImportant: true,
+};
+
+const guestInvoice = {
+  ...storyInvoice,
+  id: "invoice-story-guest-header",
+  name: "Shared invoice header",
+  userIdentifier: "user_different",
+  isImportant: false,
+};
+
 const meta = {
-  title: "Invoices/ViewInvoice/InvoiceHeader",
+  title: "arolariu.ro/IMS/Components/Invoice/ViewInvoiceHeader",
+  component: InvoiceHeader,
   parameters: {
     layout: "fullscreen",
+    docs: {
+      description: {
+        component: "Mounts the real view-invoice header with ViewInvoiceContext, DialogContext, and the Storybook user-information mock.",
+      },
+    },
   },
-} satisfies Meta;
+  tags: ["autodocs"],
+} satisfies Meta<typeof InvoiceHeader>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Owner view — edit and delete buttons visible. */
 export const OwnerView: Story = {
   render: () => (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "0.75rem",
-        borderBottom: "1px solid #e5e7eb",
-        backgroundColor: "#fff",
-        paddingLeft: "1.5rem",
-        paddingRight: "1.5rem",
-        paddingTop: "1rem",
-        paddingBottom: "1rem",
-      }}>
-      <div>
-        <div style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
-          <h1 style={{fontSize: "1.875rem", fontWeight: "bold", letterSpacing: "-0.025em"}}>Weekly Grocery Shopping</h1>
-          <span title='Important invoice'>❤️</span>
-        </div>
-        <p style={{fontSize: "0.875rem", color: "#6b7280"}}>ID: a1b2c3d4-e5f6-7890-abcd-ef1234567890</p>
-      </div>
-      <div style={{display: "flex", gap: "0.5rem"}}>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            backgroundColor: "#2563eb",
-            paddingLeft: "1rem",
-            paddingRight: "1rem",
-            paddingTop: "0.5rem",
-            paddingBottom: "0.5rem",
-            fontSize: "0.875rem",
-            color: "#fff",
-          }}>
-          ✏️ Edit
-        </button>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            backgroundColor: "#dc2626",
-            paddingLeft: "1rem",
-            paddingRight: "1rem",
-            paddingTop: "0.5rem",
-            paddingBottom: "0.5rem",
-            fontSize: "0.875rem",
-            color: "#fff",
-          }}>
-          🗑 Delete
-        </button>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            paddingLeft: "1rem",
-            paddingRight: "1rem",
-            paddingTop: "0.5rem",
-            paddingBottom: "0.5rem",
-            fontSize: "0.875rem",
-          }}>
-          🖨 Print
-        </button>
-      </div>
-    </div>
+    <WithViewInvoiceContext
+      invoice={ownerInvoice}
+      merchant={storyMerchant}>
+      <InvoiceHeader />
+    </WithViewInvoiceContext>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Real header for an invoice owned by the mocked Storybook user, showing edit, delete, print, and export actions.",
+      },
+    },
+  },
 };
 
-/** Guest view — only print button visible. */
 export const GuestView: Story = {
   render: () => (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "0.75rem",
-        borderBottom: "1px solid #e5e7eb",
-        backgroundColor: "#fff",
-        paddingLeft: "1.5rem",
-        paddingRight: "1.5rem",
-        paddingTop: "1rem",
-        paddingBottom: "1rem",
-      }}>
-      <div>
-        <h1 style={{fontSize: "1.875rem", fontWeight: "bold", letterSpacing: "-0.025em"}}>Shared Invoice</h1>
-        <p style={{fontSize: "0.875rem", color: "#6b7280"}}>ID: xyz-shared-invoice-id</p>
-      </div>
-      <div style={{display: "flex", gap: "0.5rem"}}>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            paddingLeft: "1rem",
-            paddingRight: "1rem",
-            paddingTop: "0.5rem",
-            paddingBottom: "0.5rem",
-            fontSize: "0.875rem",
-          }}>
-          🖨 Print
-        </button>
-      </div>
-    </div>
+    <WithViewInvoiceContext
+      invoice={guestInvoice}
+      merchant={storyMerchant}>
+      <InvoiceHeader />
+    </WithViewInvoiceContext>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Real header for a shared invoice owned by another user, hiding owner-only edit and delete actions while keeping print/export actions.",
+      },
+    },
+  },
+};
+
+/** Important invoice — flagged for attention. */
+export const ImportantInvoice: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={{...ownerInvoice, isImportant: true}}
+      merchant={storyMerchant}>
+      <InvoiceHeader />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Header for an invoice marked as important. Tests important flag indicator rendering and visual prominence.",
+      },
+    },
+  },
+};
+
+/** Invoice with very long name — text overflow test. */
+export const LongInvoiceName: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...ownerInvoice,
+        name: "Monthly Grocery Shopping Including Fresh Produce, Dairy Products, Beverages, Household Cleaning Supplies and Personal Care Items from Multiple Stores",
+      }}
+      merchant={storyMerchant}>
+      <InvoiceHeader />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Header with very long invoice name. Tests text truncation, wrapping, and layout resilience with extended titles.",
+      },
+    },
+  },
+};
+
+/** Soft-deleted invoice — archived state. */
+export const SoftDeleted: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={{...ownerInvoice, isSoftDeleted: true}}
+      merchant={storyMerchant}>
+      <InvoiceHeader />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Header for a soft-deleted (archived) invoice. Tests deleted state indicator and action availability.",
+      },
+    },
+  },
+};
+
+/** Invoice with no merchant data — minimal context. */
+export const NoMerchant: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={ownerInvoice}
+      merchant={null}>
+      <InvoiceHeader />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Header when merchant information is unavailable. Tests graceful handling of missing merchant data.",
+      },
+    },
+  },
 };

@@ -9,7 +9,7 @@ import {ScrollToTop} from "./useScrollToTop";
  * This story wraps the component with tall content to trigger the scroll threshold.
  */
 const meta = {
-  title: "Site/ScrollToTop",
+  title: "arolariu.ro/Site/ScrollToTop",
   component: ScrollToTop,
   parameters: {
     layout: "fullscreen",

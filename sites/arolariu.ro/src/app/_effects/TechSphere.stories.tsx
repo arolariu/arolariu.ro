@@ -13,7 +13,7 @@ import TechSphere from "./TechSphere";
  * Storybook usage within a standard browser.
  */
 const meta = {
-  title: "Site/TechSphere",
+  title: "arolariu.ro/Site/TechSphere",
   component: TechSphere,
   parameters: {
     layout: "centered",

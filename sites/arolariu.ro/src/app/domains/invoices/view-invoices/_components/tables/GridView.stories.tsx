@@ -1,94 +1,326 @@
-import {faker} from "@faker-js/faker";
 import type {Meta, StoryObj} from "@storybook/react";
-
-faker.seed(42);
+import {
+  resetInvoiceStoryStores,
+  seedInvoiceStoryStores,
+  storyDeletedInvoice,
+  storyEurInvoice,
+  storyGbpInvoice,
+  storyInvoices,
+  storyLongNameInvoice,
+  storyManyInvoices,
+  storyUsdInvoice,
+  WithInvoiceDialogs,
+} from "../../../_storybook";
+import {GridView} from "./GridView";
 
 /**
  * GridView renders invoices as a responsive card grid with images,
  * titles, dates, amounts, and selection checkboxes.
- * Depends on `useInvoicesStore` and `useTranslations`.
- *
- * This story renders a static preview of the grid layout since the
- * component depends on Zustand store and complex context.
  */
 const meta = {
-  title: "Invoices/ViewInvoices/Views/GridView",
+  title: "arolariu.ro/IMS/Views/GridView",
+  component: GridView,
+  tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "Responsive card grid view for invoices with scan thumbnails, selection checkboxes, dates, amounts, and item counts. Includes pagination controls and page size selector. Uses motion animations for card entrance.",
+      },
+    },
   },
-} satisfies Meta;
+  decorators: [
+    (Story) => (
+      <WithInvoiceDialogs>
+        <div style={{padding: "2rem", backgroundColor: "var(--color-background)"}}>
+          <Story />
+        </div>
+      </WithInvoiceDialogs>
+    ),
+  ],
+} satisfies Meta<typeof GridView>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-function generateMockCards(count: number) {
-  return Array.from({length: count}, (_, i) => ({
-    id: faker.string.uuid(),
-    name: faker.commerce.productName(),
-    description: faker.lorem.sentence(),
-    date: faker.date.recent({days: 90}).toLocaleDateString("en-US", {dateStyle: "full"}),
-    amount: faker.number.float({min: 10, max: 500, fractionDigits: 2}),
-    itemCount: faker.number.int({min: 1, max: 20}),
-    index: i,
-  }));
-}
-
-/** Preview of the grid view with 6 invoice cards. */
-export const Preview: Story = {
-  render: () => {
-    const cards = generateMockCards(6);
-    return (
-      <div style={{display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem", padding: "1.5rem"}}>
-        {cards.map((card) => (
-          <div
-            key={card.id}
-            style={{
-              position: "relative",
-              overflow: "hidden",
-              borderRadius: "0.5rem",
-              border: "1px solid #e5e7eb",
-              backgroundColor: "#ffffff",
-              boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)",
-            }}>
-            <div style={{position: "relative", height: "10rem", background: "linear-gradient(to bottom right, #f3f4f6, #e5e7eb)"}}>
-              <div style={{position: "absolute", top: "0.5rem", left: "0.5rem"}}>
-                <input
-                  type='checkbox'
-                  style={{borderRadius: "0.25rem"}}
-                />
-              </div>
-              <div style={{display: "flex", height: "100%", alignItems: "center", justifyContent: "center", fontSize: "2.25rem"}}>🧾</div>
-            </div>
-            <div style={{padding: "1rem"}}>
-              <h4 style={{fontWeight: 600}}>{card.name}</h4>
-              <p style={{fontSize: "0.875rem", color: "#6b7280"}}>{card.description}</p>
-              <div
-                style={{
-                  marginTop: "0.75rem",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  fontSize: "0.875rem",
-                }}>
-                <span style={{color: "#6b7280"}}>📅 {card.date}</span>
-                <span style={{fontWeight: 700}}>{card.amount.toFixed(2)} RON</span>
-              </div>
-              <div style={{marginTop: "0.5rem", fontSize: "0.75rem", color: "#9ca3af"}}>{card.itemCount} items</div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
+/** Grid view with 3 invoice cards from story fixtures. */
+export const WithInvoices: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores();
+  },
+  args: {
+    invoices: storyInvoices,
+    pageSize: 10,
+    currentPage: 1,
+    totalPages: 1,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Grid layout showing 3 invoice cards with scan thumbnails, selection checkboxes, vendor names, dates, amounts, and item counts. Cards use motion animations for entrance. Pagination controls hidden when totalPages is 1.",
+      },
+    },
   },
 };
 
 /** Empty state — no invoices available. */
 export const EmptyState: Story = {
-  render: () => (
-    <div style={{display: "flex", alignItems: "center", justifyContent: "center", padding: "3rem"}}>
-      <div style={{textAlign: "center", color: "#6b7280"}}>
-        <p style={{fontSize: "1.125rem"}}>No invoices found</p>
-      </div>
-    </div>
-  ),
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+  },
+  args: {
+    invoices: [],
+    pageSize: 10,
+    currentPage: 1,
+    totalPages: 0,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Empty state when no invoices exist or all invoices are filtered out. Displays centered message with icon encouraging user to create their first invoice or adjust filters. Pagination controls are hidden.",
+      },
+    },
+  },
+};
+
+/** Single invoice — sparse list edge case. */
+export const SingleInvoice: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyInvoices.slice(0, 1)});
+  },
+  args: {
+    invoices: storyInvoices.slice(0, 1),
+    pageSize: 10,
+    currentPage: 1,
+    totalPages: 1,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with a single invoice card. Tests sparse layout rendering between empty and full states.",
+      },
+    },
+  },
+};
+
+/** Two invoices — minimal viable list. */
+export const TwoInvoices: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyInvoices.slice(0, 2)});
+  },
+  args: {
+    invoices: storyInvoices.slice(0, 2),
+    pageSize: 10,
+    currentPage: 1,
+    totalPages: 1,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with two invoice cards. Verifies layout with minimal viable data set.",
+      },
+    },
+  },
+};
+
+/** Many invoices (60) — overflow scrolling and performance test. */
+export const ManyInvoices: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyManyInvoices});
+  },
+  args: {
+    invoices: storyManyInvoices.slice(0, 10),
+    pageSize: 10,
+    currentPage: 1,
+    totalPages: 6,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Grid with 60 invoices paginated (10 per page, 6 pages total). Tests pagination controls, overflow, and rendering performance with large data sets.",
+      },
+    },
+  },
+};
+
+/** Long invoice name — text truncation test. */
+export const LongInvoiceName: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: [storyLongNameInvoice]});
+  },
+  args: {
+    invoices: [storyLongNameInvoice],
+    pageSize: 10,
+    currentPage: 1,
+    totalPages: 1,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Grid with an invoice having an extremely long name. Tests text truncation, ellipsis, and tooltip behavior without breaking card layout.",
+      },
+    },
+  },
+};
+
+/** Paginated view (page 2 of 3). */
+export const PaginatedPage2: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyManyInvoices});
+  },
+  args: {
+    invoices: storyManyInvoices.slice(10, 20),
+    pageSize: 10,
+    currentPage: 2,
+    totalPages: 6,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid showing page 2 of 6 with both previous and next navigation enabled. Tests mid-pagination state.",
+      },
+    },
+  },
+};
+
+/** Large page size (25 items per page). */
+export const LargePageSize: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyManyInvoices});
+  },
+  args: {
+    invoices: storyManyInvoices.slice(0, 25),
+    pageSize: 25,
+    currentPage: 1,
+    totalPages: 3,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with 25 items per page. Tests dense layout and page size selector with larger page sizes.",
+      },
+    },
+  },
+};
+
+/** Last page (page 6 of 6) — next button disabled. */
+export const LastPage: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyManyInvoices});
+  },
+  args: {
+    invoices: storyManyInvoices.slice(50, 60),
+    pageSize: 10,
+    currentPage: 6,
+    totalPages: 6,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+};
+
+/** Multi-currency invoices (EUR, USD, GBP mixed). */
+export const MultiCurrency: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: [storyEurInvoice, storyUsdInvoice, storyGbpInvoice]});
+  },
+  args: {
+    invoices: [storyEurInvoice, storyUsdInvoice, storyGbpInvoice],
+    pageSize: 10,
+    currentPage: 1,
+    totalPages: 1,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+};
+
+/** Grid with soft-deleted invoice included. */
+export const WithSoftDeleted: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: [...storyInvoices, storyDeletedInvoice]});
+  },
+  args: {
+    invoices: [...storyInvoices, storyDeletedInvoice],
+    pageSize: 10,
+    currentPage: 1,
+    totalPages: 1,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+};
+
+/** Huge data set (120 items) — stress test with large page. */
+export const HugeDataset: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    const hugeSet = [...storyManyInvoices, ...storyManyInvoices];
+    seedInvoiceStoryStores({invoices: hugeSet});
+  },
+  args: {
+    invoices: [...storyManyInvoices, ...storyManyInvoices].slice(0, 50),
+    pageSize: 50,
+    currentPage: 1,
+    totalPages: 3,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
+};
+
+/** Page 3 of 6 — mid-range pagination state. */
+export const PaginatedPage3: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyManyInvoices});
+  },
+  args: {
+    invoices: storyManyInvoices.slice(20, 30),
+    pageSize: 10,
+    currentPage: 3,
+    totalPages: 6,
+    handlePrevPage: () => console.log("Previous page"),
+    handleNextPage: () => console.log("Next page"),
+    handlePageSizeChange: (size: number) => console.log("Page size:", size),
+  },
 };

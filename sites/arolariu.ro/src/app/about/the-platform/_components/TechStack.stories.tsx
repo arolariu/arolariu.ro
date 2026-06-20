@@ -9,7 +9,7 @@ import TechStack from "./TechStack";
  * `sections.about.platform.statistics` i18n namespaces.
  */
 const meta = {
-  title: "Pages/About/ThePlatform/TechStack",
+  title: "arolariu.ro/Pages/About/ThePlatform/TechStack",
   component: TechStack,
   parameters: {
     layout: "fullscreen",

@@ -1,154 +1,144 @@
+import type {Invoice} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
+import {
+  installStorybookBrowserMocks,
+  invoicePresets,
+  storyInvoice,
+  storyPublicInvoice,
+  withEntityPreset,
+  WithInvoiceDialogs,
+} from "../../../_storybook";
+import SharingCard from "./SharingCard";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 /**
  * SharingCard displays invoice sharing status and provides controls for
  * managing shared access. Depends on `useDialog`, `useUserInformation`,
  * and `patchInvoice` server action.
  *
- * This story renders a static preview of the sharing card layout.
+ * This story mounts the real component wrapped in `WithInvoiceDialogs` with browser mocks.
  */
 const meta = {
-  title: "Invoices/EditInvoice/Cards/SharingCard",
+  title: "arolariu.ro/IMS/Cards/Invoice/SharingCard",
+  component: SharingCard,
   parameters: {
     layout: "centered",
   },
-} satisfies Meta;
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+  beforeEach: () => {
+    installStorybookBrowserMocks();
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /** Private invoice — no shared users. */
 export const PrivateInvoice: Story = {
-  render: () => (
-    <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.05)"}}>
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
-        <h3 style={{fontSize: "1.125rem", fontWeight: 600}}>Sharing &amp; Access</h3>
-      </div>
-      <div style={{display: "flex", flexDirection: "column", gap: "1rem", padding: "1rem"}}>
-        <div style={{display: "flex", alignItems: "center", gap: "0.75rem"}}>
-          <div
-            style={{
-              display: "flex",
-              height: "2.5rem",
-              width: "2.5rem",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: "9999px",
-              backgroundColor: "#e5e7eb",
-            }}>
-            👤
-          </div>
-          <div>
-            <p style={{fontSize: "0.875rem", fontWeight: 500}}>Owner</p>
-            <p style={{fontSize: "0.75rem", color: "#6b7280"}}>john.doe</p>
-          </div>
-          <button
-            type='button'
-            style={{
-              marginLeft: "auto",
-              borderRadius: "0.375rem",
-              border: "1px solid #e5e7eb",
-              padding: "0.375rem 0.75rem",
-              fontSize: "0.875rem",
-            }}>
-            🔒 Manage Sharing
-          </button>
-        </div>
-        <hr />
-        <div>
-          <h4 style={{marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 600}}>Shared With</h4>
-          <p style={{fontSize: "0.875rem", color: "#6b7280"}}>This invoice is private and not shared with anyone.</p>
-        </div>
-      </div>
-      <div style={{borderTop: "1px solid #e5e7eb", padding: "1rem"}}>
-        <button
-          type='button'
-          style={{width: "100%", borderRadius: "0.375rem", border: "1px solid #e5e7eb", padding: "0.5rem 1rem", fontSize: "0.875rem"}}>
-          🔗 Share Invoice →
-        </button>
-      </div>
-    </div>
+  render: ({invoice}) => (
+    <WithInvoiceDialogs>
+      <SharingCard invoice={invoice} />
+    </WithInvoiceDialogs>
   ),
 };
 
-/** Public invoice with shared users. */
-export const PublicInvoice: Story = {
-  render: () => (
-    <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.05)"}}>
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
-        <h3 style={{fontSize: "1.125rem", fontWeight: 600}}>Sharing &amp; Access</h3>
-      </div>
-      <div style={{display: "flex", flexDirection: "column", gap: "1rem", padding: "1rem"}}>
-        <div style={{display: "flex", alignItems: "center", gap: "0.75rem"}}>
-          <div
-            style={{
-              display: "flex",
-              height: "2.5rem",
-              width: "2.5rem",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: "9999px",
-              backgroundColor: "#e5e7eb",
-            }}>
-            👤
-          </div>
-          <div>
-            <p style={{fontSize: "0.875rem", fontWeight: 500}}>Owner</p>
-            <p style={{fontSize: "0.75rem", color: "#6b7280"}}>john.doe</p>
-          </div>
-        </div>
-        <hr />
-        <div
-          style={{
-            borderRadius: "0.375rem",
-            border: "1px solid #fdba74",
-            backgroundColor: "#fff7ed",
-            padding: "0.75rem",
-            fontSize: "0.875rem",
-            color: "#9a3412",
-          }}>
-          🌐 <strong>Public Invoice</strong> — Anyone with the link can view this invoice.
-        </div>
-        <div>
-          <h4 style={{marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 600}}>Shared With</h4>
-          <div style={{display: "flex", flexDirection: "column", gap: "0.5rem"}}>
-            <div style={{display: "flex", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", padding: "0.5rem"}}>
-              <div
-                style={{
-                  display: "flex",
-                  height: "2rem",
-                  width: "2rem",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "9999px",
-                  backgroundColor: "#e5e7eb",
-                }}>
-                👤
-              </div>
-              <span style={{fontSize: "0.875rem"}}>user-abc-123</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div style={{display: "flex", flexDirection: "column", gap: "0.5rem", borderTop: "1px solid #e5e7eb", padding: "1rem"}}>
-        <button
-          type='button'
-          style={{width: "100%", borderRadius: "0.375rem", border: "1px solid #e5e7eb", padding: "0.5rem 1rem", fontSize: "0.875rem"}}>
-          🔗 Share Invoice →
-        </button>
-        <button
-          type='button'
-          style={{
-            width: "100%",
-            borderRadius: "0.375rem",
-            backgroundColor: "#dc2626",
-            padding: "0.5rem 1rem",
-            fontSize: "0.875rem",
-            color: "white",
-          }}>
-          Mark as Private 🔒
-        </button>
-      </div>
-    </div>
+/** Invoice shared with multiple users. */
+export const SharedWithUsers: Story = {
+  render: ({invoice}) => (
+    <WithInvoiceDialogs>
+      <SharingCard
+        invoice={{
+          ...invoice,
+          sharedWith: ["user-abc-123", "user-def-456", "user-ghi-789"],
+        }}
+      />
+    </WithInvoiceDialogs>
   ),
+};
+
+/** Public invoice accessible to anyone with the link. */
+export const PublicInvoice: Story = {
+  args: {invoicePreset: "public", invoice: storyPublicInvoice},
+  render: ({invoice}) => (
+    <WithInvoiceDialogs>
+      <SharingCard invoice={invoice} />
+    </WithInvoiceDialogs>
+  ),
+};
+
+/** Invoice shared with many users — overflow test. */
+export const SharedWithManyUsers: Story = {
+  render: ({invoice}) => (
+    <WithInvoiceDialogs>
+      <SharingCard
+        invoice={{
+          ...invoice,
+          sharedWith: Array.from({length: 15}, (_, i) => `user-${String(i).padStart(3, "0")}`),
+        }}
+      />
+    </WithInvoiceDialogs>
+  ),
+};
+
+/** Invoice shared with one user only. */
+export const SharedWithSingleUser: Story = {
+  render: ({invoice}) => (
+    <WithInvoiceDialogs>
+      <SharingCard
+        invoice={{
+          ...invoice,
+          sharedWith: ["user-single-001"],
+        }}
+      />
+    </WithInvoiceDialogs>
+  ),
+};
+
+/** Invoice shared with exactly two users. */
+export const SharedWithTwoUsers: Story = {
+  render: ({invoice}) => (
+    <WithInvoiceDialogs>
+      <SharingCard
+        invoice={{
+          ...invoice,
+          sharedWith: ["user-001", "user-002"],
+        }}
+      />
+    </WithInvoiceDialogs>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice shared with exactly two users — minimal plural state.",
+      },
+    },
+  },
+};
+
+/** Important invoice that is also shared. */
+export const ImportantAndShared: Story = {
+  render: ({invoice}) => (
+    <WithInvoiceDialogs>
+      <SharingCard
+        invoice={{
+          ...invoice,
+          isImportant: true,
+          sharedWith: ["user-abc", "user-def"],
+        }}
+      />
+    </WithInvoiceDialogs>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Important invoice that is also shared to test combined visual states.",
+      },
+    },
+  },
 };

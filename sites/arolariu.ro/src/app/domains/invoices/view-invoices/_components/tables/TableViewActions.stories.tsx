@@ -1,100 +1,118 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import {
+  storyDeletedInvoice,
+  storyEurInvoice,
+  storyInvoice,
+  storyLongNameInvoice,
+  storyOnlineInvoice,
+  storyUsdInvoice,
+  WithInvoiceDialogs,
+} from "../../../_storybook";
+import TableViewActions from "./TableViewActions";
 
 /**
  * TableViewActions renders a dropdown menu with edit, share, and
  * delete actions for individual invoice rows. Depends on
  * `useDialog` context and `useTranslations`.
- *
- * This story renders a static preview of the actions dropdown.
  */
 const meta = {
-  title: "Invoices/ViewInvoices/Views/TableViewActions",
+  title: "arolariu.ro/IMS/Views/TableViewActions",
+  component: TableViewActions,
   decorators: [
     (Story) => (
-      <div style={{display: "flex", minHeight: "200px", alignItems: "flex-start", justifyContent: "center", paddingTop: "2rem"}}>
-        <Story />
-      </div>
+      <WithInvoiceDialogs>
+        <div style={{display: "flex", minHeight: "200px", alignItems: "flex-start", justifyContent: "center", paddingTop: "2rem"}}>
+          <Story />
+        </div>
+      </WithInvoiceDialogs>
     ),
   ],
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "Dropdown menu for invoice row actions in table view. Provides Edit as a link to the edit page, plus Share and Delete actions that dispatch DialogContext state; dialog content is covered by dedicated dialog stories.",
+      },
+    },
   },
-} satisfies Meta;
+  tags: ["autodocs"],
+} satisfies Meta<typeof TableViewActions>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Preview of the actions dropdown menu (expanded). */
-export const Preview: Story = {
-  render: () => (
-    <div
-      style={{
-        width: "10rem",
-        borderRadius: "0.5rem",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "#ffffff",
-        boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
-      }}>
-      <div style={{padding: "0.25rem"}}>
-        <button
-          type='button'
-          style={{
-            display: "flex",
-            width: "100%",
-            alignItems: "center",
-            gap: "0.5rem",
-            borderRadius: "0.375rem",
-            padding: "0.5rem 0.75rem",
-            fontSize: "0.875rem",
-          }}>
-          ✏️ Edit
-        </button>
-        <button
-          type='button'
-          style={{
-            display: "flex",
-            width: "100%",
-            alignItems: "center",
-            gap: "0.5rem",
-            borderRadius: "0.375rem",
-            padding: "0.5rem 0.75rem",
-            fontSize: "0.875rem",
-          }}>
-          🔗 Share
-        </button>
-        <hr style={{margin: "0.25rem 0", borderColor: "#e5e7eb"}} />
-        <button
-          type='button'
-          style={{
-            display: "flex",
-            width: "100%",
-            alignItems: "center",
-            gap: "0.5rem",
-            borderRadius: "0.375rem",
-            padding: "0.5rem 0.75rem",
-            fontSize: "0.875rem",
-            color: "#ef4444",
-          }}>
-          🗑 Delete
-        </button>
-      </div>
-    </div>
-  ),
+/**
+ * Default invoice actions dropdown with standard invoice data.
+ * Shows Edit, Share, and Delete options for local/offline invoice.
+ */
+export const Default: Story = {
+  args: {
+    invoice: storyInvoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Standard invoice actions menu. Edit links to /domains/invoices/edit-invoice/[id], while Share and Delete dispatch DialogContext state without rendering dialog content in this isolated menu story.",
+      },
+    },
+  },
 };
 
-/** Collapsed state — just the trigger button. */
-export const Collapsed: Story = {
-  render: () => (
-    <button
-      type='button'
-      style={{
-        borderRadius: "0.375rem",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "#ffffff",
-        padding: "0.5rem",
-        boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)",
-      }}>
-      <span style={{color: "#6b7280"}}>☰</span>
-    </button>
-  ),
+/**
+ * Online invoice actions dropdown (invoice from online merchant/source).
+ * Uses online invoice fixture to demonstrate any conditional behavior.
+ */
+export const OnlineInvoice: Story = {
+  args: {
+    invoice: storyOnlineInvoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Actions menu for online invoice (from online merchant). Same Edit/Share/Delete options as standard invoice. Demonstrates component behavior with online invoice metadata.",
+      },
+    },
+  },
+};
+
+/**
+ * Invoice actions dropdown with very long invoice name.
+ * Tests text truncation and tooltip behavior in menu items.
+ */
+export const LongInvoiceName: Story = {
+  args: {
+    invoice: storyLongNameInvoice,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Actions menu for invoice with extremely long name. Tests text truncation, ellipsis, and tooltip rendering in menu items without breaking dropdown layout.",
+      },
+    },
+  },
+};
+
+/** Actions menu for soft-deleted invoice. */
+export const SoftDeletedInvoice: Story = {
+  args: {
+    invoice: storyDeletedInvoice,
+  },
+};
+
+/** Actions menu for EUR currency invoice. */
+export const EurInvoice: Story = {
+  args: {
+    invoice: storyEurInvoice,
+  },
+};
+
+/** Actions menu for USD currency invoice. */
+export const UsdInvoice: Story = {
+  args: {
+    invoice: storyUsdInvoice,
+  },
 };

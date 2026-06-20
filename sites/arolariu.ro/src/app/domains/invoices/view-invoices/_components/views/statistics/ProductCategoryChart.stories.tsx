@@ -1,7 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {ProductCategorySpending} from "../../../_utils/statistics";
 import {computeProductCategorySpending} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {ProductCategoryChart} from "./ProductCategoryChart";
+
+type StoryArgs = {data: ProductCategorySpending[]; currency: string};
 
 /**
  * ProductCategoryChart displays spending breakdown by product category.
@@ -19,7 +22,7 @@ import {ProductCategoryChart} from "./ProductCategoryChart";
  * - Shopping behavior insights
  */
 const meta = {
-  title: "Invoices/Statistics/ProductCategoryChart",
+  title: "arolariu.ro/IMS/Statistics/Products/ProductCategoryChart",
   component: ProductCategoryChart,
   parameters: {
     layout: "padded",
@@ -32,30 +35,23 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    data: {
-      description: "Array of product category spending aggregates",
-      control: false,
-    },
-    currency: {
-      description: "Currency code for display (always RON for normalized data)",
-      control: "text",
-    },
+    data: {control: "object"},
+    currency: {control: "text"},
   },
-} satisfies Meta<typeof ProductCategoryChart>;
+  args: {
+    data: computeProductCategorySpending(mockInvoices),
+    currency: "lei",
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default view with diverse product categories.
  * Shows spending across multiple product types (dairy, meat, beverages, etc.).
  */
-export const Default: Story = {
-  args: {
-    data: computeProductCategorySpending(mockInvoices),
-    currency: "lei",
-  },
-};
+export const Default: Story = {};
 
 /**
  * Empty state - no products available.
@@ -111,5 +107,93 @@ export const EuroCurrency: Story = {
   args: {
     data: computeProductCategorySpending(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "EUR")),
     currency: "€",
+  },
+};
+
+/** Two categories — minimal bar chart for comparison. */
+export const TwoCategories: Story = {
+  args: {
+    data: computeProductCategorySpending(mockInvoices.slice(0, 2)),
+    currency: "lei",
+  },
+};
+
+/** Many categories — high volume of 15+ product types. */
+export const ManyCategories: Story = {
+  args: {
+    data: computeProductCategorySpending(mockInvoices),
+    currency: "lei",
+  },
+};
+
+/** Three categories — balanced bar chart view. */
+export const ThreeCategories: Story = {
+  args: {
+    data: computeProductCategorySpending(mockInvoices.slice(0, 3)),
+    currency: "lei",
+  },
+};
+
+/** Four categories — diverse bar layout. */
+export const FourCategories: Story = {
+  args: {
+    data: computeProductCategorySpending(mockInvoices.slice(0, 4)),
+    currency: "lei",
+  },
+};
+
+/** Five categories — optimal horizontal density. */
+export const FiveCategories: Story = {
+  args: {
+    data: computeProductCategorySpending(mockInvoices.slice(0, 6)),
+    currency: "lei",
+  },
+};
+
+/** Dense category data — 15+ product categories. */
+export const DenseCategoryData: Story = {
+  args: {
+    data: computeProductCategorySpending(mockInvoices),
+    currency: "lei",
+  },
+};
+
+/** RON currency spending — lei display. */
+export const RonCurrencySpending: Story = {
+  args: {
+    data: computeProductCategorySpending(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "RON")),
+    currency: "lei",
+  },
+};
+
+/** Dominant category — heavily skewed spending. */
+export const DominantCategory: Story = {
+  args: {
+    data: computeProductCategorySpending([...mockInvoices.filter((inv) => inv.category === 100), ...mockInvoices.slice(0, 1)]),
+    currency: "lei",
+  },
+};
+
+/** Sparse categories — minimal product diversity. */
+export const SparseCategories: Story = {
+  args: {
+    data: computeProductCategorySpending(mockInvoices.slice(0, 2)),
+    currency: "lei",
+  },
+};
+
+/** USD currency spending — US dollar display. */
+export const UsdCurrencySpending: Story = {
+  args: {
+    data: computeProductCategorySpending(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "USD")),
+    currency: "$",
+  },
+};
+
+/** GBP currency spending — British pound display. */
+export const GbpCurrencySpending: Story = {
+  args: {
+    data: computeProductCategorySpending(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "GBP")),
+    currency: "£",
   },
 };

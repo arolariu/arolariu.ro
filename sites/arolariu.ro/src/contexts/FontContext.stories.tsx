@@ -6,9 +6,14 @@ import {FontContextProvider, useFontContext} from "./FontContext";
  * normal (Caudex) and dyslexic-friendly (Atkinson Hyperlegible) fonts.
  *
  * This story demonstrates the font switching functionality via a demo component.
+ *
+ * INTENTIONAL EXCEPTION (no standalone UI component): this is a React-context demo.
+ * The story mounts the REAL `FontContextProvider` and a thin `FontSwitcherDemo` that
+ * consumes the REAL `useFontContext`; there is no real UI component to mount directly.
+ * Do not flag in real-mount audits.
  */
 const meta = {
-  title: "Site/FontContext",
+  title: "arolariu.ro/Site/FontContext",
   parameters: {
     layout: "centered",
   },

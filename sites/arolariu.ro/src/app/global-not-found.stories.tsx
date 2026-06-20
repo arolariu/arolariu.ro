@@ -3,13 +3,15 @@ import type {Meta, StoryObj} from "@storybook/react";
 /**
  * Static visual preview of the GlobalNotFound (404) page.
  *
- * The actual component is a React Server Component that uses `headers()`,
- * `getLocale()`, `getMessages()`, and server actions, so this story
- * renders a faithful HTML replica of the 404 page with hero section,
- * QR code placeholder, and action buttons.
+ * INTENTIONAL EXCEPTION (does not mount the real component): `GlobalNotFound` is a
+ * Next.js framework route handler implemented as an async React Server Component
+ * that awaits `headers()`, `getLocale()`, `getMessages()`, a user auth server action,
+ * and `getCookie`. It cannot render in the Storybook browser/test runtime without
+ * faking the entire Next.js request context, so this story keeps a faithful HTML
+ * replica of the 404 page by design. Do not flag in real-mount audits.
  */
 const meta = {
-  title: "Pages/Home/GlobalNotFound",
+  title: "arolariu.ro/Pages/Home/GlobalNotFound",
   parameters: {
     layout: "fullscreen",
   },

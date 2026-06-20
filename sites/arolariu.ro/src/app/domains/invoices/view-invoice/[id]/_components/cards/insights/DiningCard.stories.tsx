@@ -1,75 +1,152 @@
+import {
+  invoicePresets,
+  storyEmptyInvoice,
+  storyEurInvoice,
+  storyHugeInvoice,
+  storyInvoice,
+  storyLowConfidenceInvoice,
+  storyManyAllergensInvoice,
+  storyProducts,
+  storyZeroTotalInvoice,
+  withEntityPreset,
+  WithViewInvoiceContext,
+} from "@/app/domains/invoices/_storybook";
+import type {Invoice, Product} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
+import {DiningCard} from "./DiningCard";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 /**
  * DiningCard displays dining-related insights from restaurant/fast-food invoices,
- * including estimated calories, cost per person, and dining tips.
- * Depends on `useInvoiceContext`.
+ * including estimated calories, cost per person, and dining tips. Reads the
+ * active invoice from `useInvoiceContext`.
  *
- * This story renders a static preview of the dining card layout.
+ * These stories mount the real component through `WithViewInvoiceContext`.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/Insights/DiningCard",
+  title: "arolariu.ro/IMS/Insights/Products/DiningCard",
+  component: DiningCard,
   parameters: {
     layout: "centered",
   },
-} satisfies Meta;
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
-/** Preview of the dining insights card. */
-export const Preview: Story = {
+/** Dining insights for a full multi-item receipt. */
+export const Default: Story = {
+  render: ({invoice}) => (
+    <WithViewInvoiceContext invoice={invoice}>
+      <DiningCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Dining insights for a small single-item, low-cost receipt. */
+export const SingleDiner: Story = {
+  render: ({invoice}) => {
+    const oneItem: Product[] = storyProducts.slice(0, 1);
+    return (
+      <WithViewInvoiceContext
+        invoice={{
+          ...invoice,
+          items: oneItem,
+          paymentInformation: {...invoice.paymentInformation, totalCostAmount: 12.5},
+        }}>
+        <DiningCard />
+      </WithViewInvoiceContext>
+    );
+  },
+};
+
+/** Dining insights for an empty receipt (no items). */
+export const Empty: Story = {
   render: () => (
-    <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "#fff", boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)"}}>
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
-        <h3 style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.125rem", fontWeight: 600}}>🍽 Dining Insights</h3>
-      </div>
-      <div style={{display: "flex", flexDirection: "column", gap: "1rem", padding: "1rem"}}>
-        <div style={{display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.75rem"}}>
-          <div style={{borderRadius: "0.375rem", border: "1px solid #e5e7eb", padding: "0.75rem", textAlign: "center"}}>
-            <span style={{fontSize: "1.5rem"}}>🔥</span>
-            <p style={{fontSize: "1.125rem", fontWeight: 700}}>1,820</p>
-            <p style={{fontSize: "0.75rem", color: "#6b7280"}}>Est. Calories</p>
-          </div>
-          <div style={{borderRadius: "0.375rem", border: "1px solid #e5e7eb", padding: "0.75rem", textAlign: "center"}}>
-            <span style={{fontSize: "1.5rem"}}>👥</span>
-            <p style={{fontSize: "1.125rem", fontWeight: 700}}>$18.50</p>
-            <p style={{fontSize: "0.75rem", color: "#6b7280"}}>Cost / Person</p>
-          </div>
-        </div>
-        <div style={{display: "flex", flexDirection: "column", gap: "0.5rem"}}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: "0.5rem",
-              borderRadius: "0.375rem",
-              backgroundColor: "#fffbeb",
-              padding: "0.75rem",
-            }}>
-            <span style={{marginTop: "0.125rem"}}>⚠️</span>
-            <div>
-              <p style={{fontSize: "0.875rem", fontWeight: 500}}>High Calorie Meal</p>
-              <p style={{fontSize: "0.75rem", color: "#4b5563"}}>This meal exceeds typical recommended intake.</p>
-            </div>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: "0.5rem",
-              borderRadius: "0.375rem",
-              backgroundColor: "#eff6ff",
-              padding: "0.75rem",
-            }}>
-            <span style={{marginTop: "0.125rem"}}>💡</span>
-            <div>
-              <p style={{fontSize: "0.875rem", fontWeight: 500}}>Budget Tip</p>
-              <p style={{fontSize: "0.75rem", color: "#4b5563"}}>Cooking at home could save up to 60% per meal.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <WithViewInvoiceContext invoice={storyEmptyInvoice}>
+      <DiningCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Dining insights for a huge receipt with many items. */
+export const HugeReceipt: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyHugeInvoice}>
+      <DiningCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Dining insights for a high-cost multi-diner group meal. */
+export const GroupDining: Story = {
+  render: ({invoice}) => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...invoice,
+        paymentInformation: {...invoice.paymentInformation, totalCostAmount: 450.0},
+      }}>
+      <DiningCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Dining insights for a zero-cost receipt (voucher, comp, or free sample). */
+export const ZeroCost: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyZeroTotalInvoice}>
+      <DiningCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Dining insights for a EUR-denominated restaurant receipt. */
+export const EuroDining: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...storyEurInvoice,
+        paymentInformation: {...storyEurInvoice.paymentInformation, totalCostAmount: 78.5},
+      }}>
+      <DiningCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Dining insights for a low-confidence OCR extraction (blurry receipt). */
+export const LowConfidence: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyLowConfidenceInvoice}>
+      <DiningCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Dining insights for a receipt with many allergen-heavy items. */
+export const ManyAllergens: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyManyAllergensInvoice}>
+      <DiningCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Dining insights for a high-value multi-course fine dining receipt. */
+export const FineDining: Story = {
+  render: ({invoice}) => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...invoice,
+        paymentInformation: {...invoice.paymentInformation, totalCostAmount: 890.0},
+      }}>
+      <DiningCard />
+    </WithViewInvoiceContext>
   ),
 };

@@ -1,111 +1,155 @@
+import {
+  resetInvoiceStoryStores,
+  seedInvoiceStoryStores,
+  storyInvoice,
+  storyInvoices,
+  WithViewInvoiceContext,
+} from "@/app/domains/invoices/_storybook";
 import type {Meta, StoryObj} from "@storybook/react";
+import {SeasonalInsightsCard} from "./SeasonalInsightsCard";
 
 /**
- * SeasonalInsightsCard detects and displays seasonal spending patterns
- * and provides actionable insights. Depends on `useInvoiceContext`.
- *
- * This story renders a static preview of the seasonal insights card.
+ * SeasonalInsightsCard derives month-over-month spending insights from
+ * `useInvoiceContext` and `useInvoicesStore`. Mounts the real component with a
+ * seeded invoices store.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/Cards/SeasonalInsights",
-  parameters: {
-    layout: "centered",
-  },
-} satisfies Meta;
+  title: "arolariu.ro/IMS/Cards/Invoice/SeasonalInsights",
+  component: SeasonalInsightsCard,
+  parameters: {layout: "centered"},
+} satisfies Meta<typeof SeasonalInsightsCard>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** December holiday season insights. */
-export const HolidaySeason: Story = {
+/** Rich history — multiple invoices seeded so insights compute. */
+export const WithHistory: Story = {
+  decorators: [
+    (Story) => {
+      resetInvoiceStoryStores();
+      seedInvoiceStoryStores({invoices: storyInvoices});
+      return <Story />;
+    },
+  ],
   render: () => (
-    <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "#fff", boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)"}}>
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
-        <h3 style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.125rem", fontWeight: 600}}>✨ Seasonal Insights</h3>
-      </div>
-      <div style={{display: "flex", flexDirection: "column", gap: "1rem", padding: "1rem"}}>
-        <div>
-          <div style={{display: "flex", justifyContent: "space-between", fontSize: "0.875rem"}}>
-            <span style={{color: "#6b7280"}}>Spending so far in December</span>
-            <span style={{fontWeight: 500}}>$1,245.00</span>
-          </div>
-          <div
-            style={{
-              marginTop: "0.5rem",
-              height: "0.5rem",
-              width: "100%",
-              overflow: "hidden",
-              borderRadius: "9999px",
-              backgroundColor: "#e5e7eb",
-            }}>
-            <div style={{height: "100%", borderRadius: "9999px", backgroundColor: "#2563eb", width: "69%"}} />
-          </div>
-          <div style={{marginTop: "0.25rem", display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#6b7280"}}>
-            <span>vs. December average: $1,800.00</span>
-            <span>69%</span>
-          </div>
-        </div>
-        <div style={{display: "flex", flexDirection: "column", gap: "0.5rem"}}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: "0.75rem",
-              borderRadius: "0.375rem",
-              backgroundColor: "#eff6ff",
-              padding: "0.75rem",
-            }}>
-            <span style={{marginTop: "0.125rem", color: "#2563eb"}}>✨</span>
-            <div>
-              <p style={{fontSize: "0.875rem", fontWeight: 500}}>Holiday Season</p>
-              <p style={{fontSize: "0.75rem", color: "#4b5563"}}>Spending tends to increase during the holiday season.</p>
-            </div>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: "0.75rem",
-              borderRadius: "0.375rem",
-              backgroundColor: "#f0fdf4",
-              padding: "0.75rem",
-            }}>
-            <span style={{marginTop: "0.125rem", color: "#16a34a"}}>💡</span>
-            <div>
-              <p style={{fontSize: "0.875rem", fontWeight: 500}}>Stock Up Tip</p>
-              <p style={{fontSize: "0.75rem", color: "#4b5563"}}>Consider buying non-perishables early for better deals.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <WithViewInvoiceContext invoice={storyInvoice}>
+      <SeasonalInsightsCard />
+    </WithViewInvoiceContext>
   ),
 };
 
-/** Normal spending pattern. */
-export const NormalPattern: Story = {
+/** Insufficient data — only the current invoice, so the placeholder shows. */
+export const InsufficientData: Story = {
+  decorators: [
+    (Story) => {
+      resetInvoiceStoryStores();
+      seedInvoiceStoryStores({invoices: [storyInvoice]});
+      return <Story />;
+    },
+  ],
   render: () => (
-    <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "#fff", boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)"}}>
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
-        <h3 style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.125rem", fontWeight: 600}}>✨ Seasonal Insights</h3>
-      </div>
-      <div style={{display: "flex", flexDirection: "column", gap: "1rem", padding: "1rem"}}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            gap: "0.75rem",
-            borderRadius: "0.375rem",
-            backgroundColor: "#f0fdf4",
-            padding: "0.75rem",
-          }}>
-          <span style={{marginTop: "0.125rem", color: "#16a34a"}}>🛍</span>
-          <div>
-            <p style={{fontSize: "0.875rem", fontWeight: 500}}>Normal Spending</p>
-            <p style={{fontSize: "0.75rem", color: "#4b5563"}}>Your spending patterns look consistent with your historical average.</p>
-          </div>
-        </div>
-      </div>
-    </div>
+    <WithViewInvoiceContext invoice={storyInvoice}>
+      <SeasonalInsightsCard />
+    </WithViewInvoiceContext>
   ),
+};
+
+/** Many invoices seeded — rich insights with multiple data points. */
+export const RichHistory: Story = {
+  decorators: [
+    (Story) => {
+      resetInvoiceStoryStores();
+      const manyInvoices = Array.from({length: 30}, (_, i) => ({
+        ...storyInvoice,
+        id: `invoice-${i}`,
+        name: `Invoice ${i + 1}`,
+        paymentInformation: {
+          ...storyInvoice.paymentInformation,
+          transactionDate: new Date(2024, 2, i + 1),
+          totalCostAmount: Number((50 + i * 10 + Math.random() * 20).toFixed(2)),
+        },
+      }));
+      seedInvoiceStoryStores({invoices: manyInvoices});
+      return <Story />;
+    },
+  ],
+  render: () => (
+    <WithViewInvoiceContext invoice={storyInvoice}>
+      <SeasonalInsightsCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Empty store — no invoices. */
+export const EmptyStore: Story = {
+  decorators: [
+    (Story) => {
+      resetInvoiceStoryStores();
+      seedInvoiceStoryStores({invoices: []});
+      return <Story />;
+    },
+  ],
+  render: () => (
+    <WithViewInvoiceContext invoice={storyInvoice}>
+      <SeasonalInsightsCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Two invoices only — minimal history. */
+export const TwoInvoices: Story = {
+  decorators: [
+    (Story) => {
+      resetInvoiceStoryStores();
+      const invoice1 = {
+        ...storyInvoice,
+        id: "invoice-1",
+        paymentInformation: {...storyInvoice.paymentInformation, transactionDate: new Date(2024, 2, 10), totalCostAmount: 50.0},
+      };
+      const invoice2 = {
+        ...storyInvoice,
+        id: "invoice-2",
+        paymentInformation: {...storyInvoice.paymentInformation, transactionDate: new Date(2024, 2, 20), totalCostAmount: 75.0},
+      };
+      seedInvoiceStoryStores({invoices: [invoice1, invoice2]});
+      return <Story />;
+    },
+  ],
+  render: () => (
+    <WithViewInvoiceContext invoice={storyInvoice}>
+      <SeasonalInsightsCard />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {
+    docs: {description: {story: "Two invoices to test minimal viable seasonal insights."}},
+  },
+};
+
+/** Invoices spanning multiple months. */
+export const MultiMonth: Story = {
+  decorators: [
+    (Story) => {
+      resetInvoiceStoryStores();
+      const multiMonthInvoices = Array.from({length: 12}, (_, i) => ({
+        ...storyInvoice,
+        id: `invoice-month-${i}`,
+        name: `Invoice Month ${i + 1}`,
+        paymentInformation: {
+          ...storyInvoice.paymentInformation,
+          transactionDate: new Date(2024, i, 15),
+          totalCostAmount: Number((100 + i * 25 + Math.random() * 50).toFixed(2)),
+        },
+      }));
+      seedInvoiceStoryStores({invoices: multiMonthInvoices});
+      return <Story />;
+    },
+  ],
+  render: () => (
+    <WithViewInvoiceContext invoice={storyInvoice}>
+      <SeasonalInsightsCard />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {
+    docs: {description: {story: "Invoices spanning 12 months to show year-long seasonal trends."}},
+  },
 };

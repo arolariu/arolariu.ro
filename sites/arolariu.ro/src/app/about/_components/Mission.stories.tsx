@@ -7,7 +7,7 @@ import Mission from "./Mission";
  * animated entrance effects. Uses the `About.Hub.mission` i18n namespace.
  */
 const meta = {
-  title: "Pages/About/Mission",
+  title: "arolariu.ro/Pages/About/Mission",
   component: Mission,
   parameters: {
     layout: "fullscreen",

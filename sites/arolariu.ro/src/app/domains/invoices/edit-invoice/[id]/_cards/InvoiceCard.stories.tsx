@@ -1,102 +1,264 @@
+import {
+  invoicePresets,
+  setupEditInvoiceStory,
+  storyDeletedInvoice,
+  storyEurInvoice,
+  storyGbpInvoice,
+  storyInvoice,
+  storyMerchant,
+  storySharedManyInvoice,
+  storyTipInvoice,
+  storyUsdInvoice,
+  WithEditInvoiceContext,
+  withEntityPreset,
+} from "@/app/domains/invoices/_storybook";
+import type {Invoice} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
+import InvoiceCard from "./InvoiceCard";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 /**
  * InvoiceCard (edit) displays comprehensive invoice details with inline editing.
  *
- * Because it depends on `useEditInvoiceContext`, this story renders a
- * **static preview** of the card layout with mock invoice data.
+ * This story mounts the real component wrapped in `WithEditInvoiceContext`.
  */
 const meta = {
-  title: "Invoices/EditInvoice/Cards/InvoiceCard",
+  title: "arolariu.ro/IMS/Cards/Invoice/InvoiceCard",
+  component: InvoiceCard,
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "Comprehensive invoice details card for the edit page. Displays merchant info, date, category, payment type, total, "
+          + "currency, importance flag, and optional notes. Enables inline editing of invoice metadata via context-provided callbacks. "
+          + "Mounted with real EditInvoiceContext provider.",
+      },
+    },
   },
-} satisfies Meta;
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+  beforeEach: (context) => {
+    const {invoice} = context.args as StoryArgs;
+    setupEditInvoiceStory({invoice, merchant: storyMerchant});
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
-/** Static preview of the editable invoice card. */
-export const Preview: Story = {
-  render: () => (
-    <div
-      style={{
-        overflow: "hidden",
-        borderRadius: "0.5rem",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "white",
-        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+/** Default invoice card with standard invoice data. */
+export const Default: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Default state with realistic invoice fixture showing merchant 'Corner Shop ABC', category 'Groceries', "
+          + "payment type 'Card', and formatted total. Displays all editable fields with standard styling.",
+      },
+    },
+  },
+  render: ({invoice}) => (
+    <WithEditInvoiceContext
+      invoice={invoice}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Important invoice card with isImportant flag set. */
+export const ImportantInvoice: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Variant with `isImportant: true` flag enabled. Displays enhanced visual indicators (star icon, accent color) "
+          + "to highlight high-priority or bookmarked invoices in the edit interface.",
+      },
+    },
+  },
+  render: ({invoice}) => (
+    <WithEditInvoiceContext
+      invoice={{...invoice, isImportant: true}}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Invoice whose merchant has a very long name to exercise truncation/wrapping. */
+export const LongMerchantName: Story = {
+  render: ({invoice}) => (
+    <WithEditInvoiceContext
+      invoice={invoice}
+      merchant={{
+        ...storyMerchant,
+        name: "Corner Shop ABC International Wholesale & Retail Distribution Center Bucuresti Militari Branch",
       }}>
-      <div style={{display: "flex", flexDirection: "column", gap: "0.25rem", borderBottom: "1px solid #e5e7eb", padding: "1.5rem"}}>
-        <div style={{display: "flex", alignItems: "center", justifyContent: "space-between"}}>
-          <h3 style={{fontSize: "1.125rem", fontWeight: 600}}>Invoice Details</h3>
-          <span
-            style={{
-              cursor: "pointer",
-              borderRadius: "9999px",
-              border: "1px solid #e5e7eb",
-              padding: "0.25rem 0.75rem",
-              fontSize: "0.75rem",
-            }}>
-            ♡ Mark Important
-          </span>
-        </div>
-        <p style={{fontSize: "0.875rem", color: "#6b7280"}}>From: Mock Merchant • Weekly grocery shopping</p>
-      </div>
-      <div style={{display: "flex", flexDirection: "column", gap: "1rem", padding: "1.5rem"}}>
-        <div style={{display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem"}}>
-          <div>
-            <h4 style={{fontSize: "0.75rem", fontWeight: 500, color: "#6b7280"}}>Date (UTC)</h4>
-            <p style={{fontSize: "0.875rem"}}>📅 January 15, 2025, 10:30 AM</p>
-          </div>
-          <div>
-            <h4 style={{fontSize: "0.75rem", fontWeight: 500, color: "#6b7280"}}>Category</h4>
-            <p style={{fontSize: "0.875rem"}}>🏷 GROCERIES</p>
-          </div>
-          <div>
-            <h4 style={{fontSize: "0.75rem", fontWeight: 500, color: "#6b7280"}}>Payment Method</h4>
-            <p style={{fontSize: "0.875rem"}}>💳 CREDIT CARD</p>
-          </div>
-          <div>
-            <h4 style={{fontSize: "0.75rem", fontWeight: 500, color: "#6b7280"}}>Total Amount</h4>
-            <p style={{fontSize: "1.125rem", fontWeight: 700, color: "#16a34a"}}>$125.50</p>
-          </div>
-        </div>
-        <hr />
-        <div>
-          <h4 style={{marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 600}}>Items (3)</h4>
-          <table style={{width: "100%", fontSize: "0.875rem"}}>
-            <thead>
-              <tr style={{borderBottom: "1px solid #e5e7eb", textAlign: "left", fontSize: "0.75rem", color: "#6b7280"}}>
-                <th style={{paddingBottom: "0.5rem"}}>Item</th>
-                <th style={{paddingBottom: "0.5rem", textAlign: "right"}}>Qty</th>
-                <th style={{paddingBottom: "0.5rem", textAlign: "right"}}>Price</th>
-                <th style={{paddingBottom: "0.5rem", textAlign: "right"}}>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr style={{borderBottom: "1px solid #e5e7eb"}}>
-                <td style={{padding: "0.5rem 0"}}>Organic Milk</td>
-                <td style={{padding: "0.5rem 0", textAlign: "right"}}>2</td>
-                <td style={{padding: "0.5rem 0", textAlign: "right"}}>$3.99</td>
-                <td style={{padding: "0.5rem 0", textAlign: "right", fontWeight: 500}}>$7.98</td>
-              </tr>
-              <tr style={{borderBottom: "1px solid #e5e7eb"}}>
-                <td style={{padding: "0.5rem 0"}}>Whole Wheat Bread</td>
-                <td style={{padding: "0.5rem 0", textAlign: "right"}}>1</td>
-                <td style={{padding: "0.5rem 0", textAlign: "right"}}>$4.50</td>
-                <td style={{padding: "0.5rem 0", textAlign: "right", fontWeight: 500}}>$4.50</td>
-              </tr>
-              <tr style={{borderBottom: "1px solid #e5e7eb"}}>
-                <td style={{padding: "0.5rem 0"}}>Fresh Salmon</td>
-                <td style={{padding: "0.5rem 0", textAlign: "right"}}>0.5 kg</td>
-                <td style={{padding: "0.5rem 0", textAlign: "right"}}>$12.00</td>
-                <td style={{padding: "0.5rem 0", textAlign: "right", fontWeight: 500}}>$6.00</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Invoice with only the minimal fields populated (no description, recipes, or importance). */
+export const MinimalFields: Story = {
+  render: ({invoice}) => (
+    <WithEditInvoiceContext
+      invoice={{...invoice, description: "", isImportant: false, possibleRecipes: []}}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Invoice categorised differently to show category-dependent presentation. */
+export const DifferentCategory: Story = {
+  render: ({invoice}) => (
+    <WithEditInvoiceContext
+      invoice={{...invoice, category: 200 as typeof invoice.category}}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Invoice with extremely long description text. */
+export const LongDescription: Story = {
+  render: ({invoice}) => (
+    <WithEditInvoiceContext
+      invoice={{
+        ...invoice,
+        description:
+          "This invoice intentionally carries an extremely long description to verify that text wrapping, clamping, and ellipsis behaviour render correctly across cards, tables, and dialog headers without breaking layout or overflowing containers. The description continues to test multi-line handling and responsive text overflow strategies.",
+      }}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Invoice with zero total amount — edge case. */
+export const ZeroAmount: Story = {
+  render: ({invoice}) => (
+    <WithEditInvoiceContext
+      invoice={{
+        ...invoice,
+        paymentInformation: {
+          ...invoice.paymentInformation,
+          totalCostAmount: 0,
+          subtotalAmount: 0,
+          totalTaxAmount: 0,
+          tipAmount: 0,
+        },
+      }}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Invoice with very high amount — formatting test. */
+export const HighAmount: Story = {
+  render: ({invoice}) => (
+    <WithEditInvoiceContext
+      invoice={{
+        ...invoice,
+        paymentInformation: {
+          ...invoice.paymentInformation,
+          totalCostAmount: 99999.99,
+          subtotalAmount: 84033.61,
+          totalTaxAmount: 15966.38,
+          tipAmount: 0,
+        },
+      }}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Invoice with EUR currency. */
+export const EuroCurrency: Story = {
+  render: () => (
+    <WithEditInvoiceContext
+      invoice={storyEurInvoice}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Invoice with USD currency. */
+export const UsdCurrency: Story = {
+  render: () => (
+    <WithEditInvoiceContext
+      invoice={storyUsdInvoice}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Invoice with GBP currency. */
+export const GbpCurrency: Story = {
+  render: () => (
+    <WithEditInvoiceContext
+      invoice={storyGbpInvoice}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Invoice with tip amount. */
+export const WithTip: Story = {
+  render: () => (
+    <WithEditInvoiceContext
+      invoice={storyTipInvoice}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Invoice with cash payment type. */
+export const CashPayment: Story = {
+  render: ({invoice}) => (
+    <WithEditInvoiceContext
+      invoice={{
+        ...invoice,
+        paymentInformation: {...invoice.paymentInformation, paymentType: 100 as typeof invoice.paymentInformation.paymentType},
+      }}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Soft-deleted invoice. */
+export const SoftDeleted: Story = {
+  render: () => (
+    <WithEditInvoiceContext
+      invoice={storyDeletedInvoice}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
+  ),
+};
+
+/** Invoice shared with many users. */
+export const SharedWithMany: Story = {
+  render: () => (
+    <WithEditInvoiceContext
+      invoice={storySharedManyInvoice}
+      merchant={storyMerchant}>
+      <InvoiceCard />
+    </WithEditInvoiceContext>
   ),
 };

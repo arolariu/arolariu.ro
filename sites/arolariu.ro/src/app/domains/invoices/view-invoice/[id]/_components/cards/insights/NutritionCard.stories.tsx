@@ -1,64 +1,149 @@
+import {
+  invoicePresets,
+  storyEmptyInvoice,
+  storyEurInvoice,
+  storyHugeInvoice,
+  storyInvoice,
+  storyLowConfidenceInvoice,
+  storyManyAllergensInvoice,
+  storyProducts,
+  storyZeroTotalInvoice,
+  withEntityPreset,
+  WithViewInvoiceContext,
+} from "@/app/domains/invoices/_storybook";
+import type {Invoice, Product} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
+import {NutritionCard} from "./NutritionCard";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 /**
  * NutritionCard displays nutritional insights from grocery invoice items,
  * showing food group breakdowns, balance scores, and dietary suggestions.
- * Depends on `useInvoiceContext`.
+ * Reads the active invoice from `useInvoiceContext`.
  *
- * This story renders a static preview of the nutrition card layout.
+ * These stories mount the real component through `WithViewInvoiceContext`.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/Insights/NutritionCard",
+  title: "arolariu.ro/IMS/Insights/Products/NutritionCard",
+  component: NutritionCard,
   parameters: {
     layout: "centered",
   },
-} satisfies Meta;
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
-/** Preview of the nutrition insights card. */
-export const Preview: Story = {
-  render: () => (
-    <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "#fff", boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)"}}>
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
-        <h3 style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.125rem", fontWeight: 600}}>🥗 Nutrition Insights</h3>
-      </div>
-      <div style={{display: "flex", flexDirection: "column", gap: "1rem", padding: "1rem"}}>
-        <div style={{display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.75rem"}}>
-          {[
-            {name: "Dairy", icon: "🥛", items: 3, pct: 25},
-            {name: "Fruits", icon: "🍎", items: 4, pct: 30},
-            {name: "Meat", icon: "🥩", items: 2, pct: 20},
-            {name: "Grains", icon: "🌾", items: 3, pct: 25},
-          ].map((group) => (
-            <div
-              key={group.name}
-              style={{borderRadius: "0.375rem", border: "1px solid #e5e7eb", padding: "0.75rem"}}>
-              <div style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
-                <span>{group.icon}</span>
-                <span style={{fontSize: "0.875rem", fontWeight: 500}}>{group.name}</span>
-              </div>
-              <p style={{fontSize: "0.75rem", color: "#6b7280"}}>{group.items} items</p>
-              <div
-                style={{
-                  marginTop: "0.25rem",
-                  height: "0.375rem",
-                  width: "100%",
-                  overflow: "hidden",
-                  borderRadius: "0.25rem",
-                  backgroundColor: "#e5e7eb",
-                }}>
-                <div style={{height: "100%", borderRadius: "0.25rem", backgroundColor: "#22c55e", width: `${String(group.pct)}%`}} />
-              </div>
-            </div>
-          ))}
-        </div>
-        <div style={{borderRadius: "0.375rem", backgroundColor: "#f0fdf4", padding: "0.75rem", textAlign: "center"}}>
-          <p style={{fontSize: "0.875rem", fontWeight: 500, color: "#15803d"}}>Balance Score: Good</p>
-          <p style={{fontSize: "0.75rem", color: "#6b7280"}}>Your grocery selection is well-balanced</p>
-        </div>
-      </div>
-    </div>
+/** Nutrition insights for a full grocery basket. */
+export const Default: Story = {
+  render: ({invoice}) => (
+    <WithViewInvoiceContext invoice={invoice}>
+      <NutritionCard />
+    </WithViewInvoiceContext>
   ),
+};
+
+/** Nutrition insights for a small basket with only a couple of items. */
+export const FewItems: Story = {
+  render: ({invoice}) => {
+    const twoItems: Product[] = storyProducts.slice(0, 2);
+    return (
+      <WithViewInvoiceContext invoice={{...invoice, items: twoItems}}>
+        <NutritionCard />
+      </WithViewInvoiceContext>
+    );
+  },
+};
+
+/** Nutrition insights for an empty basket (no items). */
+export const Empty: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyEmptyInvoice}>
+      <NutritionCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Nutrition insights for a huge grocery basket with 120+ items. */
+export const HugeBasket: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyHugeInvoice}>
+      <NutritionCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Nutrition insights for a single-item purchase. */
+export const SingleItem: Story = {
+  render: ({invoice}) => {
+    const oneItem: Product[] = storyProducts.slice(0, 1);
+    return (
+      <WithViewInvoiceContext invoice={{...invoice, items: oneItem}}>
+        <NutritionCard />
+      </WithViewInvoiceContext>
+    );
+  },
+};
+
+/** Nutrition insights for an invoice with many allergen-heavy items. */
+export const ManyAllergens: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyManyAllergensInvoice}>
+      <NutritionCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Nutrition insights for a low-confidence OCR extraction (smudged receipt). */
+export const LowConfidence: Story = {
+  render: () => (
+    <WithViewInvoiceContext invoice={storyLowConfidenceInvoice}>
+      <NutritionCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Nutrition insights for a EUR-denominated grocery basket. */
+export const EuroBasket: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...storyEurInvoice,
+        items: storyProducts,
+      }}>
+      <NutritionCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Nutrition insights for a zero-cost basket (free samples, promos). */
+export const ZeroCost: Story = {
+  render: () => (
+    <WithViewInvoiceContext
+      invoice={{
+        ...storyZeroTotalInvoice,
+        items: storyProducts,
+      }}>
+      <NutritionCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Nutrition insights for a mid-size balanced grocery basket. */
+export const BalancedBasket: Story = {
+  render: ({invoice}) => {
+    const balancedItems: Product[] = storyProducts.slice(0, 10);
+    return (
+      <WithViewInvoiceContext invoice={{...invoice, items: balancedItems}}>
+        <NutritionCard />
+      </WithViewInvoiceContext>
+    );
+  },
 };

@@ -1,183 +1,300 @@
+import type {CachedScan} from "@/types/scans";
 import type {Meta, StoryObj} from "@storybook/react";
-import {TbArrowRight, TbFileInvoice, TbPhoto, TbUpload} from "react-icons/tb";
+import {DialogProvider} from "../../_contexts/DialogContext";
+import {resetInvoiceStoryStores, seedInvoiceStoryStores, storyCachedImageScan, storyCachedPdfScan} from "../../_storybook";
+import ScansGrid from "./ScansGrid";
 
-/**
- * @remarks Static preview — component requires `useScans` Zustand store hook
- * which depends on server-side scan upload infrastructure and `CachedScan` state
- * unavailable in Storybook. The store requires pre-populated scan blobs from
- * Azure Blob Storage, making a real render infeasible without a mock store provider.
- */
+const thirdReadyScan = {
+  ...storyCachedImageScan,
+  id: "scan-story-third-ready-001",
+  name: "Restaurant receipt scan",
+  uploadedAt: new Date("2024-03-16T09:15:00.000Z"),
+  sizeInBytes: 187520,
+  metadata: {
+    ...storyCachedImageScan.metadata,
+    scanId: "scan-story-third-ready-001",
+    uploadedAt: new Date("2024-03-16T09:15:00.000Z"),
+  },
+  cachedAt: new Date("2024-03-16T09:30:00.000Z"),
+  status: "ready",
+} as const;
+
 const meta = {
-  title: "Invoices/ViewScans/ScansGrid",
+  title: "arolariu.ro/IMS/Components/Scan/ScansGrid",
+  component: ScansGrid,
   parameters: {
     layout: "fullscreen",
+    docs: {
+      description: {
+        component: "Renders the real scan grid using seeded Zustand scan state and Storybook-safe scan action hooks.",
+      },
+    },
   },
-} satisfies Meta;
+  decorators: [
+    (Story) => (
+      <DialogProvider>
+        <div style={{padding: "2rem"}}>
+          <Story />
+        </div>
+      </DialogProvider>
+    ),
+  ],
+} satisfies Meta<typeof ScansGrid>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Grid with scan cards. */
-export const Default: Story = {
-  render: () => (
-    <div style={{display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "1rem"}}>
-      {["Receipt-001.jpg", "Receipt-002.png", "Receipt-003.jpg", "Receipt-004.png"].map((name) => (
-        <div
-          key={name}
-          style={{position: "relative", cursor: "pointer", borderRadius: "0.75rem", border: "1px solid #e5e7eb"}}>
-          <div
-            style={{
-              position: "relative",
-              aspectRatio: "3/4",
-              overflow: "hidden",
-              borderTopLeftRadius: "0.75rem",
-              borderTopRightRadius: "0.75rem",
-              backgroundColor: "#f3f4f6",
-            }}>
-            <div style={{display: "flex", height: "100%", alignItems: "center", justifyContent: "center"}}>
-              <TbPhoto style={{height: "3rem", width: "3rem", color: "#d1d5db"}} />
-            </div>
-          </div>
-          <div style={{padding: "0.75rem"}}>
-            <p style={{fontSize: "0.875rem", fontWeight: 500}}>{name}</p>
-            <p style={{fontSize: "0.75rem", color: "#6b7280"}}>Uploaded 2 hours ago</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  ),
+export const Populated: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({
+      scans: [storyCachedImageScan, storyCachedPdfScan, thirdReadyScan],
+      selectedScans: [],
+    });
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows real scan cards for multiple ready scans (image, PDF, and additional ready scan).",
+      },
+    },
+  },
 };
 
-/** Loading skeleton state. */
-export const Loading: Story = {
-  render: () => (
-    <div style={{minHeight: "400px", padding: "1rem"}}>
-      <div style={{display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "1rem"}}>
-        {Array.from({length: 6}, (_, i) => (
-          <div
-            key={`skeleton-${String(i + 1)}`}
-            style={{height: "16rem", borderRadius: "0.75rem", backgroundColor: "#e5e7eb"}}
-          />
-        ))}
-      </div>
-    </div>
-  ),
+export const WithSelection: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({
+      scans: [storyCachedImageScan, storyCachedPdfScan, thirdReadyScan],
+      selectedScans: [storyCachedImageScan, storyCachedPdfScan],
+    });
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows the grid with pre-selected scans so selection UI is visible immediately.",
+      },
+    },
+  },
 };
 
-/** Empty state with upload CTA. */
-export const EmptyState: Story = {
-  render: () => (
-    <div style={{display: "flex", alignItems: "center", justifyContent: "center", paddingBlock: "3rem"}}>
-      <div
-        style={{
-          marginInline: "auto",
-          maxWidth: "42rem",
-          borderRadius: "0.75rem",
-          border: "1px solid #e5e7eb",
-          padding: "2rem",
-          textAlign: "center",
-        }}>
-        <div
-          style={{
-            marginInline: "auto",
-            marginBottom: "1rem",
-            display: "flex",
-            height: "4rem",
-            width: "4rem",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: "9999px",
-            backgroundColor: "#f3f4f6",
-          }}>
-          <TbPhoto style={{height: "2rem", width: "2rem", color: "#9ca3af"}} />
-        </div>
-        <h3 style={{fontSize: "1.125rem", fontWeight: 600}}>No scans yet</h3>
-        <p style={{marginTop: "0.25rem", fontSize: "0.875rem", color: "#6b7280"}}>
-          Upload receipt photos to get started with invoice processing.
-        </p>
+export const Empty: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({scans: [], selectedScans: []});
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows the production empty state after the scan store has hydrated.",
+      },
+    },
+  },
+};
 
-        <div style={{marginTop: "1.5rem", display: "flex", flexDirection: "column", gap: "0.75rem"}}>
-          {[
-            {
-              step: 1,
-              icon: <TbUpload style={{height: "1rem", width: "1rem", color: "#3b82f6"}} />,
-              title: "Upload Scans",
-              desc: "Take a photo or upload an image",
-            },
-            {
-              step: 2,
-              icon: <TbPhoto style={{height: "1rem", width: "1rem", color: "#a855f7"}} />,
-              title: "Review",
-              desc: "Check extracted data",
-            },
-            {
-              step: 3,
-              icon: <TbFileInvoice style={{height: "1rem", width: "1rem", color: "#22c55e"}} />,
-              title: "Create Invoice",
-              desc: "Generate invoice from scan",
-            },
-          ].map((s) => (
-            <div
-              key={s.step}
-              style={{display: "flex", alignItems: "center", gap: "0.75rem", textAlign: "left"}}>
-              <span
-                style={{
-                  display: "flex",
-                  height: "1.5rem",
-                  width: "1.5rem",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "9999px",
-                  backgroundColor: "#dbeafe",
-                  fontSize: "0.75rem",
-                  fontWeight: 500,
-                  color: "#2563eb",
-                }}>
-                {s.step}
-              </span>
-              <div style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
-                {s.icon}
-                <div>
-                  <p style={{fontSize: "0.875rem", fontWeight: 500}}>{s.title}</p>
-                  <p style={{fontSize: "0.75rem", color: "#6b7280"}}>{s.desc}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+/** Single scan — minimal data edge case. */
+export const SingleScan: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({
+      scans: [storyCachedImageScan],
+      selectedScans: [],
+    });
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with a single scan card. Tests sparse layout rendering between empty and full states.",
+      },
+    },
+  },
+};
 
-        <div style={{marginTop: "1.5rem", display: "flex", justifyContent: "center", gap: "0.75rem"}}>
-          <button
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              borderRadius: "0.375rem",
-              backgroundColor: "#2563eb",
-              paddingInline: "1rem",
-              paddingBlock: "0.5rem",
-              fontSize: "0.875rem",
-              color: "#ffffff",
-            }}>
-            <TbUpload style={{height: "1rem", width: "1rem"}} />
-            Upload Scans
-          </button>
-          <button
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              borderRadius: "0.375rem",
-              border: "1px solid #e5e7eb",
-              paddingInline: "1rem",
-              paddingBlock: "0.5rem",
-              fontSize: "0.875rem",
-            }}>
-            Learn More
-            <TbArrowRight style={{height: "1rem", width: "1rem"}} />
-          </button>
-        </div>
-      </div>
-    </div>
-  ),
+/** Two scans — minimal viable grid. */
+export const TwoScans: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({
+      scans: [storyCachedImageScan, storyCachedPdfScan],
+      selectedScans: [],
+    });
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with two scan cards (image and PDF). Verifies layout with minimal viable data set.",
+      },
+    },
+  },
+};
+
+/** Many scans (15) — overflow grid test. */
+export const ManyScans: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    const manyScans: CachedScan[] = Array.from({length: 15}, (_, i) => ({
+      ...storyCachedImageScan,
+      id: `scan-story-many-${String(i).padStart(3, "0")}`,
+      name: `Scan ${i + 1}`,
+      uploadedAt: new Date(Date.now() - i * 3600000),
+      metadata: {
+        ...storyCachedImageScan.metadata,
+        scanId: `scan-story-many-${String(i).padStart(3, "0")}`,
+        uploadedAt: new Date(Date.now() - i * 3600000),
+      },
+    }));
+    seedInvoiceStoryStores({
+      scans: manyScans,
+      selectedScans: [],
+    });
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with 15 scan cards. Tests grid layout overflow, responsive design, and rendering performance with many items.",
+      },
+    },
+  },
+};
+
+/** Mixed scan types (images and PDFs). */
+export const MixedScanTypes: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    const mixedScans: CachedScan[] = [
+      storyCachedImageScan,
+      storyCachedPdfScan,
+      {...storyCachedImageScan, id: "scan-story-img-2", name: "Grocery receipt 2"},
+      {...storyCachedPdfScan, id: "scan-story-pdf-2", name: "Restaurant invoice"},
+      {...storyCachedImageScan, id: "scan-story-img-3", name: "Pharmacy receipt"},
+    ];
+    seedInvoiceStoryStores({
+      scans: mixedScans,
+      selectedScans: [],
+    });
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with mixed scan types (images and PDFs). Tests rendering of different scan formats in the same grid.",
+      },
+    },
+  },
+};
+
+/** All scans selected — full selection state. */
+export const AllSelected: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({
+      scans: [storyCachedImageScan, storyCachedPdfScan, thirdReadyScan],
+      selectedScans: [storyCachedImageScan, storyCachedPdfScan, thirdReadyScan],
+    });
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with all scans selected. Tests full selection UI state and select-all behavior.",
+      },
+    },
+  },
+};
+
+/** Three scans with one selected — partial selection. */
+export const PartialSelection: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({
+      scans: [storyCachedImageScan, storyCachedPdfScan, thirdReadyScan],
+      selectedScans: [storyCachedPdfScan],
+    });
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with partial selection (1 of 3 scans selected). Tests mixed selection state rendering.",
+      },
+    },
+  },
+};
+
+/** Very many scans (30) — performance and pagination test. */
+export const VeryManyScans: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    const veryManyScans: CachedScan[] = Array.from({length: 30}, (_, i) => ({
+      ...storyCachedImageScan,
+      id: `scan-story-vm-${String(i).padStart(3, "0")}`,
+      name: `Receipt ${i + 1}`,
+      uploadedAt: new Date(Date.now() - i * 3600000),
+      metadata: {
+        ...storyCachedImageScan.metadata,
+        scanId: `scan-story-vm-${String(i).padStart(3, "0")}`,
+        uploadedAt: new Date(Date.now() - i * 3600000),
+      },
+    }));
+    seedInvoiceStoryStores({
+      scans: veryManyScans,
+      selectedScans: [],
+    });
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with 30 scan cards. Tests pagination, virtualization, and rendering performance with large dataset.",
+      },
+    },
+  },
+};
+
+/** Six scans — moderate dataset. */
+export const SixScans: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    const sixScans: CachedScan[] = Array.from({length: 6}, (_, i) => ({
+      ...storyCachedImageScan,
+      id: `scan-story-six-${i}`,
+      name: `Scan ${i + 1}`,
+      uploadedAt: new Date(Date.now() - i * 3600000),
+      metadata: {
+        ...storyCachedImageScan.metadata,
+        scanId: `scan-story-six-${i}`,
+        uploadedAt: new Date(Date.now() - i * 3600000),
+      },
+    }));
+    seedInvoiceStoryStores({
+      scans: sixScans,
+      selectedScans: [],
+    });
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with six scan cards. Tests moderate grid layout and responsive design.",
+      },
+    },
+  },
+};
+
+/** All PDFs (no images). */
+export const AllPDFs: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    const pdfScans: CachedScan[] = Array.from({length: 5}, (_, i) => ({
+      ...storyCachedPdfScan,
+      id: `scan-story-pdf-${i}`,
+      name: `Invoice ${i + 1}.pdf`,
+    }));
+    seedInvoiceStoryStores({
+      scans: pdfScans,
+      selectedScans: [],
+    });
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Grid with only PDF scans. Tests PDF-specific rendering and icon display without image thumbnails.",
+      },
+    },
+  },
 };

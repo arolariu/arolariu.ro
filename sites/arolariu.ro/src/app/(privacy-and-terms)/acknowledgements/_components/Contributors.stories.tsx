@@ -7,7 +7,7 @@ import Contributors from "./Contributors";
  * package count, and description.
  */
 const meta = {
-  title: "Pages/Acknowledgements/Contributors",
+  title: "arolariu.ro/Pages/Acknowledgements/Contributors",
   component: Contributors,
   parameters: {
     layout: "fullscreen",

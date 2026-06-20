@@ -1,7 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {CurrencyDistribution} from "../../../_utils/statistics";
 import {computeCurrencyDistribution} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, ronOnlyInvoices} from "./__mocks__/mockInvoices";
 import {CurrencyDistributionChart} from "./CurrencyDistributionChart";
+
+type StoryArgs = {data: CurrencyDistribution[]};
 
 /**
  * CurrencyDistributionChart displays multi-currency spending patterns.
@@ -19,7 +22,7 @@ import {CurrencyDistributionChart} from "./CurrencyDistributionChart";
  * - Currency exposure tracking
  */
 const meta = {
-  title: "Invoices/Statistics/CurrencyDistributionChart",
+  title: "arolariu.ro/IMS/Statistics/Invoice/CurrencyDistributionChart",
   component: CurrencyDistributionChart,
   parameters: {
     layout: "padded",
@@ -32,25 +35,21 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    data: {
-      description: "Array of currency distribution data with totals and percentages",
-      control: false,
-    },
+    data: {control: "object"},
   },
-} satisfies Meta<typeof CurrencyDistributionChart>;
+  args: {
+    data: computeCurrencyDistribution(mockInvoices),
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default view with multiple currencies (RON, EUR, USD).
  * Shows spending across 3 different currencies with RON conversion.
  */
-export const Default: Story = {
-  args: {
-    data: computeCurrencyDistribution(mockInvoices),
-  },
-};
+export const Default: Story = {};
 
 /**
  * Single currency scenario - displays special message instead of chart.
@@ -94,5 +93,89 @@ export const HighEuroSpending: Story = {
         return code === "EUR" || (code === "RON" && index % 3 === 0);
       }),
     ),
+  },
+};
+
+/** Three currencies — optimal donut visual density. */
+export const ThreeCurrencies: Story = {
+  args: {
+    data: computeCurrencyDistribution(mockInvoices),
+  },
+};
+
+/** Four currencies — many currency scenario. */
+export const FourCurrencies: Story = {
+  args: {
+    data: computeCurrencyDistribution(mockInvoices),
+  },
+};
+
+/** Five currencies — complex multi-currency scenario. */
+export const FiveCurrencies: Story = {
+  args: {
+    data: computeCurrencyDistribution(mockInvoices),
+  },
+};
+
+/** Dominant single currency — 95% RON spending. */
+export const DominantSingleCurrency: Story = {
+  args: {
+    data: computeCurrencyDistribution([
+      ...mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "RON"),
+      ...mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "EUR").slice(0, 1),
+    ]),
+  },
+};
+
+/** USD-heavy spending — US dollar prominence. */
+export const HighUsdSpending: Story = {
+  args: {
+    data: computeCurrencyDistribution(
+      mockInvoices.filter((inv, index) => {
+        const code = inv.paymentInformation.currency?.code;
+        return code === "USD" || (code === "RON" && index % 4 === 0);
+      }),
+    ),
+  },
+};
+
+/** Even three-way split — balanced RON/EUR/USD. */
+export const EvenThreeWaySplit: Story = {
+  args: {
+    data: computeCurrencyDistribution(mockInvoices.slice(0, 9)),
+  },
+};
+
+/** GBP-only subset — British pound filter. */
+export const GbpOnlySpending: Story = {
+  args: {
+    data: computeCurrencyDistribution(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "GBP")),
+  },
+};
+
+/** Sparse multi-currency — minimal invoices across currencies. */
+export const SparseMultiCurrency: Story = {
+  args: {
+    data: computeCurrencyDistribution(mockInvoices.slice(0, 4)),
+  },
+};
+
+/** Bimodal currency split — two dominant currencies. */
+export const BimodalCurrencySplit: Story = {
+  args: {
+    data: computeCurrencyDistribution([
+      ...mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "RON"),
+      ...mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "EUR"),
+    ]),
+  },
+};
+
+/** Foreign-heavy spending — mostly non-RON currencies. */
+export const ForeignHeavySpending: Story = {
+  args: {
+    data: computeCurrencyDistribution([
+      ...mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "RON").slice(0, 2),
+      ...mockInvoices.filter((inv) => inv.paymentInformation.currency?.code !== "RON"),
+    ]),
   },
 };

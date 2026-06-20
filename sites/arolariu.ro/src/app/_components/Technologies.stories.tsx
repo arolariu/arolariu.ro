@@ -10,7 +10,7 @@ import TechnologiesSection from "./Technologies";
  * viewport-triggered entrance transitions.
  */
 const meta = {
-  title: "Pages/Home/Technologies",
+  title: "arolariu.ro/Pages/Home/Technologies",
   component: TechnologiesSection,
   parameters: {
     layout: "fullscreen",

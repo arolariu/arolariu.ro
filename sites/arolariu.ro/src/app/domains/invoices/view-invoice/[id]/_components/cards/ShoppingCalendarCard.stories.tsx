@@ -1,156 +1,315 @@
+import {
+  WithViewInvoiceContext,
+  resetInvoiceStoryStores,
+  seedInvoiceStoryStores,
+  storyInvoice,
+  storyInvoices,
+} from "@/app/domains/invoices/_storybook";
 import type {Meta, StoryObj} from "@storybook/react";
+import {ShoppingCalendarCard} from "./ShoppingCalendarCard";
 
 /**
  * ShoppingCalendarCard shows a calendar heat map of spending by day with
- * month statistics and shopping pattern insights. Depends on `useInvoiceContext`
- * and `useInvoicesStore`.
+ * month statistics and shopping pattern insights.
  *
- * This story renders a static preview of the shopping calendar card.
+ * @remarks
+ * The real component depends on `useInvoiceContext` (for the focused invoice)
+ * and `useInvoicesStore` (for the cached invoices that build the heat map).
+ * Stories mount the real component inside `WithViewInvoiceContext` and seed the
+ * Zustand store so the calendar renders real spending intensity.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/Cards/ShoppingCalendar",
+  title: "arolariu.ro/IMS/Cards/Invoice/ShoppingCalendar",
+  component: ShoppingCalendarCard,
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "Calendar heat map of spending by day, with month totals and shopping-pattern insights derived from the cached invoices in the Zustand store.",
+      },
+    },
   },
-} satisfies Meta;
+  tags: ["autodocs"],
+} satisfies Meta<typeof ShoppingCalendarCard>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Preview of the shopping calendar with heat map legend and stats. */
-export const Preview: Story = {
+/**
+ * Default view seeded with all story invoices, so the calendar heat map shows
+ * spending across several days of the focused invoice's month.
+ */
+export const Default: Story = {
+  decorators: [
+    (Story) => {
+      seedInvoiceStoryStores({invoices: storyInvoices});
+      return <Story />;
+    },
+  ],
   render: () => (
-    <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "#fff", boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)"}}>
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
-        <h3 style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.125rem", fontWeight: 600}}>
-          📅 Shopping Calendar
-          <span
-            style={{color: "#9ca3af"}}
-            title='Based on cached invoices'>
-            ℹ️
-          </span>
-        </h3>
-      </div>
-      <div style={{display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem", padding: "1rem"}}>
-        {/* Calendar placeholder */}
-        <div
-          style={{
-            display: "grid",
-            width: "100%",
-            gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
-            gap: "0.25rem",
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            padding: "0.75rem",
-          }}>
-          {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
-            <div
-              key={`header-${String(i)}`}
-              style={{
-                paddingTop: "0.25rem",
-                paddingBottom: "0.25rem",
-                textAlign: "center",
-                fontSize: "0.75rem",
-                fontWeight: 500,
-                color: "#6b7280",
-              }}>
-              {day}
-            </div>
-          ))}
-          {Array.from({length: 31}, (_, i) => {
-            const intensity = [0, 0, 1, 0, 2, 0, 0, 0, 3, 0, 0, 1, 0, 0, 4, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 3, 0, 0, 0, 0, 2];
-            const bgStyles = [
-              {backgroundColor: "transparent"},
-              {backgroundColor: "#dcfce7"},
-              {backgroundColor: "#bbf7d0"},
-              {backgroundColor: "#4ade80"},
-              {backgroundColor: "#16a34a", color: "#fff"},
-            ];
-            return (
-              <div
-                key={`day-${String(i)}`}
-                style={{
-                  display: "flex",
-                  height: "2rem",
-                  width: "2rem",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "0.25rem",
-                  fontSize: "0.75rem",
-                  ...bgStyles[intensity[i]!],
-                }}>
-                {i + 1}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Legend */}
-        <div style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "#6b7280"}}>
-          <span>Less</span>
-          <div style={{display: "flex", gap: "0.125rem"}}>
-            <div style={{height: "0.75rem", width: "0.75rem", borderRadius: "0.25rem", backgroundColor: "#e5e7eb"}} />
-            <div style={{height: "0.75rem", width: "0.75rem", borderRadius: "0.25rem", backgroundColor: "#bbf7d0"}} />
-            <div style={{height: "0.75rem", width: "0.75rem", borderRadius: "0.25rem", backgroundColor: "#4ade80"}} />
-            <div style={{height: "0.75rem", width: "0.75rem", borderRadius: "0.25rem", backgroundColor: "#16a34a"}} />
-          </div>
-          <span>More</span>
-        </div>
-
-        <hr style={{width: "100%"}} />
-
-        {/* Stats */}
-        <div style={{display: "grid", width: "100%", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.75rem"}}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              borderRadius: "0.375rem",
-              border: "1px solid #e5e7eb",
-              padding: "0.75rem",
-            }}>
-            <span style={{color: "#9ca3af"}}>🛒</span>
-            <div>
-              <p style={{fontSize: "0.75rem", color: "#6b7280"}}>Month Total</p>
-              <p style={{fontSize: "0.875rem", fontWeight: 600}}>$485.30</p>
-            </div>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              borderRadius: "0.375rem",
-              border: "1px solid #e5e7eb",
-              padding: "0.75rem",
-            }}>
-            <span style={{color: "#9ca3af"}}>📅</span>
-            <div>
-              <p style={{fontSize: "0.75rem", color: "#6b7280"}}>Shopping Days</p>
-              <p style={{fontSize: "0.875rem", fontWeight: 600}}>8</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Insight */}
-        <div
-          style={{
-            display: "flex",
-            width: "100%",
-            alignItems: "center",
-            gap: "0.5rem",
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            padding: "0.75rem",
-            fontSize: "0.875rem",
-          }}>
-          <span style={{color: "#9ca3af"}}>📈</span>
-          <p>
-            You shop every <strong>4 days</strong> on average, spending <strong>$60.66</strong> per trip.
-          </p>
-        </div>
-      </div>
-    </div>
+    <WithViewInvoiceContext invoice={storyInvoice}>
+      <ShoppingCalendarCard />
+    </WithViewInvoiceContext>
   ),
+};
+
+/**
+ * The store holds only the focused invoice, so the heat map highlights a single
+ * shopping day and the tooltip notes it is based on the current invoice only.
+ */
+export const CurrentInvoiceOnly: Story = {
+  decorators: [
+    (Story) => {
+      seedInvoiceStoryStores({invoices: [storyInvoice]});
+      return <Story />;
+    },
+  ],
+  render: () => (
+    <WithViewInvoiceContext invoice={storyInvoice}>
+      <ShoppingCalendarCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/**
+ * The store is empty (hydrated but with no invoices); the component falls back
+ * to computing patterns from just the focused invoice.
+ */
+export const EmptyStore: Story = {
+  decorators: [
+    (Story) => {
+      resetInvoiceStoryStores();
+      return <Story />;
+    },
+  ],
+  render: () => (
+    <WithViewInvoiceContext invoice={storyInvoice}>
+      <ShoppingCalendarCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** Many invoices spread across the month — active heat map. */
+export const DenseCalendar: Story = {
+  decorators: [
+    (Story) => {
+      const denseInvoices = Array.from({length: 25}, (_, i) => ({
+        ...storyInvoice,
+        id: `invoice-dense-${i}`,
+        paymentInformation: {
+          ...storyInvoice.paymentInformation,
+          transactionDate: new Date(2024, 2, (i % 28) + 1),
+          totalCostAmount: Number((20 + i * 5 + Math.random() * 30).toFixed(2)),
+        },
+      }));
+      seedInvoiceStoryStores({invoices: denseInvoices});
+      return <Story />;
+    },
+  ],
+  render: () => (
+    <WithViewInvoiceContext invoice={storyInvoice}>
+      <ShoppingCalendarCard />
+    </WithViewInvoiceContext>
+  ),
+};
+
+/** First invoice of the month — sparse calendar. */
+export const FirstInvoice: Story = {
+  decorators: [
+    (Story) => {
+      const firstInvoice = {
+        ...storyInvoice,
+        paymentInformation: {
+          ...storyInvoice.paymentInformation,
+          transactionDate: new Date(2024, 2, 1),
+        },
+      };
+      seedInvoiceStoryStores({invoices: [firstInvoice]});
+      return <Story />;
+    },
+  ],
+  render: () => {
+    const firstInvoice = {
+      ...storyInvoice,
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(2024, 2, 1),
+      },
+    };
+    return (
+      <WithViewInvoiceContext invoice={firstInvoice}>
+        <ShoppingCalendarCard />
+      </WithViewInvoiceContext>
+    );
+  },
+};
+
+/** Last day of month — edge-case calendar rendering. */
+export const LastDayOfMonth: Story = {
+  decorators: [
+    (Story) => {
+      const lastDayInvoice = {
+        ...storyInvoice,
+        paymentInformation: {
+          ...storyInvoice.paymentInformation,
+          transactionDate: new Date(2024, 2, 31),
+        },
+      };
+      seedInvoiceStoryStores({invoices: [lastDayInvoice]});
+      return <Story />;
+    },
+  ],
+  render: () => {
+    const lastDayInvoice = {
+      ...storyInvoice,
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(2024, 2, 31),
+      },
+    };
+    return (
+      <WithViewInvoiceContext invoice={lastDayInvoice}>
+        <ShoppingCalendarCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {description: {story: "Invoice on the last day of the month (March 31) to test month-end edge cases."}},
+  },
+};
+
+/** Mid-month cluster — several invoices in one week. */
+export const MidMonthCluster: Story = {
+  decorators: [
+    (Story) => {
+      const clusterInvoices = Array.from({length: 7}, (_, i) => ({
+        ...storyInvoice,
+        id: `invoice-cluster-${i}`,
+        paymentInformation: {
+          ...storyInvoice.paymentInformation,
+          transactionDate: new Date(2024, 2, 15 + i),
+          totalCostAmount: Number((30 + i * 10).toFixed(2)),
+        },
+      }));
+      seedInvoiceStoryStores({invoices: clusterInvoices});
+      return <Story />;
+    },
+  ],
+  render: () => (
+    <WithViewInvoiceContext invoice={storyInvoice}>
+      <ShoppingCalendarCard />
+    </WithViewInvoiceContext>
+  ),
+  parameters: {
+    docs: {description: {story: "Seven consecutive days with invoices (mid-month cluster) to show concentrated spending."}},
+  },
+};
+
+/** February — 28-day month. */
+export const FebruaryMonth: Story = {
+  decorators: [
+    (Story) => {
+      const febInvoices = Array.from({length: 5}, (_, i) => ({
+        ...storyInvoice,
+        id: `invoice-feb-${i}`,
+        paymentInformation: {
+          ...storyInvoice.paymentInformation,
+          transactionDate: new Date(2024, 1, i * 5 + 3),
+          totalCostAmount: Number((40 + i * 15).toFixed(2)),
+        },
+      }));
+      seedInvoiceStoryStores({invoices: febInvoices});
+      return <Story />;
+    },
+  ],
+  render: () => {
+    const febInvoice = {
+      ...storyInvoice,
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(2024, 1, 15),
+      },
+    };
+    return (
+      <WithViewInvoiceContext invoice={febInvoice}>
+        <ShoppingCalendarCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {description: {story: "Calendar for February (28 days in 2024 leap year) to test month length handling."}},
+  },
+};
+
+/** December — year-end month. */
+export const DecemberMonth: Story = {
+  decorators: [
+    (Story) => {
+      const decInvoices = Array.from({length: 8}, (_, i) => ({
+        ...storyInvoice,
+        id: `invoice-dec-${i}`,
+        paymentInformation: {
+          ...storyInvoice.paymentInformation,
+          transactionDate: new Date(2024, 11, i * 3 + 2),
+          totalCostAmount: Number((60 + i * 20).toFixed(2)),
+        },
+      }));
+      seedInvoiceStoryStores({invoices: decInvoices});
+      return <Story />;
+    },
+  ],
+  render: () => {
+    const decInvoice = {
+      ...storyInvoice,
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(2024, 11, 20),
+      },
+    };
+    return (
+      <WithViewInvoiceContext invoice={decInvoice}>
+        <ShoppingCalendarCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {description: {story: "Calendar for December to test year-end month display."}},
+  },
+};
+
+/** Same day multiple invoices. */
+export const SameDayMultiple: Story = {
+  decorators: [
+    (Story) => {
+      const sameDayInvoices = Array.from({length: 4}, (_, i) => ({
+        ...storyInvoice,
+        id: `invoice-same-${i}`,
+        paymentInformation: {
+          ...storyInvoice.paymentInformation,
+          transactionDate: new Date(2024, 2, 15, 10 + i, 0, 0),
+          totalCostAmount: Number((25 + i * 10).toFixed(2)),
+        },
+      }));
+      seedInvoiceStoryStores({invoices: sameDayInvoices});
+      return <Story />;
+    },
+  ],
+  render: () => {
+    const sameDayInvoice = {
+      ...storyInvoice,
+      paymentInformation: {
+        ...storyInvoice.paymentInformation,
+        transactionDate: new Date(2024, 2, 15, 12, 0, 0),
+      },
+    };
+    return (
+      <WithViewInvoiceContext invoice={sameDayInvoice}>
+        <ShoppingCalendarCard />
+      </WithViewInvoiceContext>
+    );
+  },
+  parameters: {
+    docs: {description: {story: "Four invoices on the same day to test same-day aggregation and heat intensity."}},
+  },
 };

@@ -1,7 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {MerchantVisitPattern} from "../../../_utils/statistics";
 import {computeMerchantVisitFrequency} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {MerchantVisitChart} from "./MerchantVisitChart";
+
+type StoryArgs = {data: MerchantVisitPattern[]; currency: string; topN: number};
 
 /**
  * MerchantVisitChart displays visit patterns and shopping behavior per merchant.
@@ -20,7 +23,7 @@ import {MerchantVisitChart} from "./MerchantVisitChart";
  * - Analyze basket size trends
  */
 const meta = {
-  title: "Invoices/Statistics/MerchantVisitChart",
+  title: "arolariu.ro/IMS/Statistics/Merchant/MerchantVisitChart",
   component: MerchantVisitChart,
   parameters: {
     layout: "padded",
@@ -33,35 +36,25 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    data: {
-      description: "Array of merchant visit pattern data sorted by total visits",
-      control: false,
-    },
-    currency: {
-      description: "Currency code for display",
-      control: "text",
-    },
-    topN: {
-      description: "Number of merchants to display (default: 6)",
-      control: "number",
-    },
+    data: {control: "object"},
+    currency: {control: "text"},
+    topN: {control: "number"},
   },
-} satisfies Meta<typeof MerchantVisitChart>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-/**
- * Default view showing top 6 merchants.
- * Displays visit patterns for most frequented stores.
- */
-export const Default: Story = {
   args: {
     data: computeMerchantVisitFrequency(mockInvoices),
     currency: "lei",
     topN: 6,
   },
-};
+} satisfies Meta<StoryArgs>;
+
+export default meta;
+type Story = StoryObj<StoryArgs>;
+
+/**
+ * Default view showing top 6 merchants.
+ * Displays visit patterns for most frequented stores.
+ */
+export const Default: Story = {};
 
 /**
  * Empty state - no merchant data.
@@ -196,5 +189,104 @@ export const AllMerchants: Story = {
     data: computeMerchantVisitFrequency(mockInvoices),
     currency: "lei",
     topN: 20,
+  },
+};
+
+/** Two merchants — minimal visit pattern grid. */
+export const TwoMerchants: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices),
+    currency: "lei",
+    topN: 2,
+  },
+};
+
+/** Five merchants — compact grid view. */
+export const FiveMerchants: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices),
+    currency: "lei",
+    topN: 5,
+  },
+};
+
+/** Six merchants — optimal 2x3 grid. */
+export const SixMerchants: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices),
+    currency: "lei",
+    topN: 6,
+  },
+};
+
+/** Seven merchants — extended visit analysis. */
+export const SevenMerchants: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices),
+    currency: "lei",
+    topN: 7,
+  },
+};
+
+/** Eight merchants — 2x4 grid layout. */
+export const EightMerchants: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices),
+    currency: "lei",
+    topN: 8,
+  },
+};
+
+/** RON currency visit patterns — lei display. */
+export const RonCurrencyVisits: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "RON")),
+    currency: "lei",
+    topN: 6,
+  },
+};
+
+/** USD currency visit patterns — dollar display. */
+export const UsdCurrencyVisits: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "USD")),
+    currency: "$",
+    topN: 6,
+  },
+};
+
+/** Sparse visit data — minimal merchant interactions. */
+export const SparseVisitData: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices.slice(0, 4)),
+    currency: "lei",
+    topN: 6,
+  },
+};
+
+/** GBP currency visit patterns — British pound display. */
+export const GbpCurrencyVisits: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "GBP")),
+    currency: "£",
+    topN: 6,
+  },
+};
+
+/** Ten merchants — dense grid layout. */
+export const TenMerchants: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices),
+    currency: "lei",
+    topN: 10,
+  },
+};
+
+/** Twelve merchants — comprehensive visit grid. */
+export const TwelveMerchants: Story = {
+  args: {
+    data: computeMerchantVisitFrequency(mockInvoices),
+    currency: "lei",
+    topN: 12,
   },
 };

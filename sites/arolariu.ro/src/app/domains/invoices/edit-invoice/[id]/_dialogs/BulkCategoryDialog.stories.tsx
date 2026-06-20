@@ -1,0 +1,210 @@
+import type {Invoice, Product} from "@/types/invoices";
+import type {Meta, StoryObj} from "@storybook/react";
+import {
+  invoicePresets,
+  OpenDialogButton,
+  playOpenDialog,
+  storyEmptyInvoice,
+  storyHugeInvoice,
+  storyInvoice,
+  storyManyAllergensInvoice,
+  storyProducts,
+  withEntityPreset,
+} from "../../../_storybook";
+import BulkCategoryDialog from "./BulkCategoryDialog";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
+
+/**
+ * BulkCategoryDialog allows users to change the category of multiple products at once.
+ *
+ * @remarks
+ * This story mounts the real BulkCategoryDialog component with OpenDialogButton
+ * harness, opening the dialog automatically on mount with selected products payload.
+ * Shows category selection dropdown and progress tracking during save.
+ */
+const meta = {
+  title: "arolariu.ro/IMS/Dialogs/Products/BulkCategory",
+  component: BulkCategoryDialog,
+  parameters: {
+    layout: "centered",
+    docs: {
+      description: {
+        component:
+          "BulkCategoryDialog enables batch category reassignment for multiple products within an invoice. "
+          + "The dialog displays a preview list of selected products (up to 5, with 'and X more' for larger selections), "
+          + "a category selection dropdown with all ProductCategory enum values, and real-time progress tracking during save. "
+          + "Updates are applied sequentially via individual updateInvoiceProduct calls with error collection and summary reporting.",
+      },
+    },
+  },
+  tags: ["autodocs"],
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+} satisfies Meta<StoryArgs>;
+
+export default meta;
+type Story = StoryObj<StoryArgs>;
+
+/**
+ * Shows bulk category dialog with a few selected products.
+ *
+ * @remarks
+ * Displays first three products selected for category reassignment.
+ */
+export const FewProducts: Story = {
+  play: playOpenDialog,
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates the bulk category dialog with three products selected: Zuzu Milk, Whole Wheat Bread, and Free Range Eggs. "
+          + "Shows the product preview list displaying all three items, and the category dropdown with all available ProductCategory options. "
+          + "This scenario represents a typical small batch update use case.",
+      },
+    },
+  },
+  render: ({invoice}) => {
+    // Select first three products
+    const selectedProducts = storyProducts.slice(0, 3);
+    const selectedIndices = [0, 1, 2];
+
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__BULK_CATEGORY'
+        mode='edit'
+        payload={{invoice, selectedProducts, selectedIndices}}>
+        <BulkCategoryDialog />
+      </OpenDialogButton>
+    );
+  },
+};
+
+/**
+ * Shows bulk category dialog with many selected products.
+ *
+ * @remarks
+ * Displays all story invoice products selected, demonstrating the "and X more" preview.
+ */
+export const ManyProducts: Story = {
+  play: playOpenDialog,
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates the bulk category dialog with all four story products selected (Milk, Bread, Eggs, Apples). "
+          + "Since the preview limit is 5 products, all items are shown in the list. This scenario would show the 'and X more' "
+          + "message if more than 5 products were selected, representing large batch update operations.",
+      },
+    },
+  },
+  render: ({invoice}) => {
+    // Select all products
+    const selectedProducts = storyProducts;
+    const selectedIndices = storyProducts.map((_, index) => index);
+
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__BULK_CATEGORY'
+        mode='edit'
+        payload={{invoice, selectedProducts, selectedIndices}}>
+        <BulkCategoryDialog />
+      </OpenDialogButton>
+    );
+  },
+};
+
+/** Bulk category dialog with a single product selected. */
+export const SingleProduct: Story = {
+  play: playOpenDialog,
+  render: ({invoice}) => {
+    const selectedProducts: Product[] = storyProducts.slice(0, 1);
+    const selectedIndices = [0];
+
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__BULK_CATEGORY'
+        mode='edit'
+        payload={{invoice, selectedProducts, selectedIndices}}>
+        <BulkCategoryDialog />
+      </OpenDialogButton>
+    );
+  },
+};
+
+/** Bulk category dialog with exactly 5 products (boundary test). */
+export const FiveProducts: Story = {
+  play: playOpenDialog,
+  render: ({invoice}) => {
+    // Create 5 products for boundary testing (4 fixtures + 1 repeat), all typed as Product.
+    const selectedProducts: Product[] = [...storyProducts, ...storyProducts.slice(0, 1)];
+    const selectedIndices = [0, 1, 2, 3, 4];
+
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__BULK_CATEGORY'
+        mode='edit'
+        payload={{invoice, selectedProducts, selectedIndices}}>
+        <BulkCategoryDialog />
+      </OpenDialogButton>
+    );
+  },
+};
+
+/** Bulk category dialog on empty invoice with synthetic products. */
+export const EmptyInvoice: Story = {
+  play: playOpenDialog,
+  render: () => {
+    const selectedProducts: Product[] = storyProducts.slice(0, 2);
+    const selectedIndices = [0, 1];
+
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__BULK_CATEGORY'
+        mode='edit'
+        payload={{invoice: storyEmptyInvoice, selectedProducts, selectedIndices}}>
+        <BulkCategoryDialog />
+      </OpenDialogButton>
+    );
+  },
+};
+
+/** Bulk category dialog on huge invoice (many products selected). */
+export const HugeInvoiceProducts: Story = {
+  play: playOpenDialog,
+  render: () => {
+    const selectedProducts: Product[] = storyHugeInvoice.items.slice(0, 10);
+    const selectedIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__BULK_CATEGORY'
+        mode='edit'
+        payload={{invoice: storyHugeInvoice, selectedProducts, selectedIndices}}>
+        <BulkCategoryDialog />
+      </OpenDialogButton>
+    );
+  },
+};
+
+/** Bulk category dialog with products from invoice with many allergens. */
+export const AllergicProducts: Story = {
+  play: playOpenDialog,
+  render: () => {
+    const selectedProducts: Product[] = storyManyAllergensInvoice.items.slice(0, 3);
+    const selectedIndices = [0, 1, 2];
+
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__BULK_CATEGORY'
+        mode='edit'
+        payload={{invoice: storyManyAllergensInvoice, selectedProducts, selectedIndices}}>
+        <BulkCategoryDialog />
+      </OpenDialogButton>
+    );
+  },
+};

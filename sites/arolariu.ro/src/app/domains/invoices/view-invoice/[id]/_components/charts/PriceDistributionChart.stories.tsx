@@ -1,6 +1,11 @@
+import {faker} from "@faker-js/faker";
 import type {Meta, StoryObj} from "@storybook/react";
 import type {PriceRange} from "../../_utils/analytics";
 import {PriceDistributionChart} from "./PriceDistributionChart";
+
+faker.seed(42);
+
+type StoryArgs = {data: PriceRange[]; currency: string};
 
 const mockPriceRanges: PriceRange[] = [
   {range: "Under 10", count: 5, fill: "var(--ac-chart-1)"},
@@ -15,23 +20,26 @@ const mockPriceRanges: PriceRange[] = [
  * Uses Recharts BarChart with color-coded Cell components.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/Charts/PriceDistributionChart",
+  title: "arolariu.ro/IMS/Charts/Products/PriceDistributionChart",
   component: PriceDistributionChart,
   parameters: {
     layout: "centered",
   },
-} satisfies Meta<typeof PriceDistributionChart>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-/** Default with 4 price ranges in RON. */
-export const Default: Story = {
+  argTypes: {
+    data: {control: "object"},
+    currency: {control: "text"},
+  },
   args: {
     data: mockPriceRanges,
     currency: "RON",
   },
-};
+} satisfies Meta<StoryArgs>;
+
+export default meta;
+type Story = StoryObj<StoryArgs>;
+
+/** Default with 4 price ranges in RON. */
+export const Default: Story = {};
 
 /** All items in a single price range. */
 export const SingleRange: Story = {
@@ -94,5 +102,126 @@ export const HighVolume: Story = {
       {range: "200+", count: 1, fill: "var(--ac-chart-2)"},
     ],
     currency: "RON",
+  },
+};
+
+/** Two data points — minimal distribution for comparison. */
+export const TwoRanges: Story = {
+  args: {
+    data: [
+      {range: "Under 10", count: 8, fill: "var(--ac-chart-1)"},
+      {range: "50+", count: 2, fill: "var(--ac-chart-4)"},
+    ],
+    currency: "RON",
+  },
+};
+
+/** Three ranges — balanced distribution view. */
+export const ThreeRanges: Story = {
+  args: {
+    data: mockPriceRanges.slice(0, 3),
+    currency: "RON",
+  },
+};
+
+/** All items in highest range — premium products scenario. */
+export const AllHighRange: Story = {
+  args: {
+    data: [{range: "100+", count: 25, fill: "var(--ac-chart-5)"}],
+    currency: "EUR",
+  },
+};
+
+/** Flat distribution — equal counts across all ranges. */
+export const FlatDistribution: Story = {
+  args: {
+    data: [
+      {range: "Under 10", count: 10, fill: "var(--ac-chart-1)"},
+      {range: "10-25", count: 10, fill: "var(--ac-chart-2)"},
+      {range: "25-50", count: 10, fill: "var(--ac-chart-3)"},
+      {range: "50-100", count: 10, fill: "var(--ac-chart-4)"},
+      {range: "100+", count: 10, fill: "var(--ac-chart-5)"},
+    ],
+    currency: "RON",
+  },
+};
+
+/** Skewed expensive — most items are high-priced. */
+export const SkewedExpensive: Story = {
+  args: {
+    data: [
+      {range: "Under 10", count: 1, fill: "var(--ac-chart-1)"},
+      {range: "25-50", count: 3, fill: "var(--ac-chart-3)"},
+      {range: "50-100", count: 12, fill: "var(--ac-chart-4)"},
+      {range: "100+", count: 18, fill: "var(--ac-chart-5)"},
+    ],
+    currency: "USD",
+  },
+};
+
+/** GBP currency with varied distribution. */
+export const GbpCurrency: Story = {
+  args: {
+    data: [
+      {range: "Under 5", count: 8, fill: "var(--ac-chart-1)"},
+      {range: "5-15", count: 12, fill: "var(--ac-chart-2)"},
+      {range: "15-30", count: 6, fill: "var(--ac-chart-3)"},
+      {range: "30+", count: 4, fill: "var(--ac-chart-4)"},
+    ],
+    currency: "GBP",
+  },
+};
+
+/** Ultra-fine granularity — 20+ narrow price ranges. */
+export const UltraFineRanges: Story = {
+  args: {
+    data: Array.from({length: 20}, (_, i) => ({
+      range: `${i * 5}-${(i + 1) * 5}`,
+      count: faker.number.int({min: 1, max: 8}),
+      fill: `var(--ac-chart-${(i % 5) + 1})`,
+    })),
+    currency: "RON",
+  },
+};
+
+/** Zero counts in middle ranges — bimodal distribution. */
+export const BimodalDistribution: Story = {
+  args: {
+    data: [
+      {range: "Under 10", count: 15, fill: "var(--ac-chart-1)"},
+      {range: "10-25", count: 0, fill: "var(--ac-chart-2)"},
+      {range: "25-50", count: 0, fill: "var(--ac-chart-3)"},
+      {range: "50-75", count: 0, fill: "var(--ac-chart-4)"},
+      {range: "75+", count: 12, fill: "var(--ac-chart-5)"},
+    ],
+    currency: "EUR",
+  },
+};
+
+/** Single dominant range — 90%+ items in one bucket. */
+export const SingleDominantRange: Story = {
+  args: {
+    data: [
+      {range: "Under 10", count: 2, fill: "var(--ac-chart-1)"},
+      {range: "10-25", count: 48, fill: "var(--ac-chart-2)"},
+      {range: "25-50", count: 1, fill: "var(--ac-chart-3)"},
+      {range: "50+", count: 1, fill: "var(--ac-chart-4)"},
+    ],
+    currency: "RON",
+  },
+};
+
+/** Long-tail distribution — many small counts, few large. */
+export const LongTailDistribution: Story = {
+  args: {
+    data: [
+      {range: "Under 5", count: 25, fill: "var(--ac-chart-1)"},
+      {range: "5-10", count: 12, fill: "var(--ac-chart-2)"},
+      {range: "10-15", count: 6, fill: "var(--ac-chart-3)"},
+      {range: "15-25", count: 3, fill: "var(--ac-chart-4)"},
+      {range: "25-50", count: 2, fill: "var(--ac-chart-5)"},
+      {range: "50+", count: 1, fill: "var(--ac-chart-1)"},
+    ],
+    currency: "USD",
   },
 };

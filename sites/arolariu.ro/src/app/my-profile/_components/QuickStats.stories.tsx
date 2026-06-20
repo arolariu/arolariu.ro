@@ -8,7 +8,7 @@ import {QuickStats} from "./QuickStats";
  * Uses the `Profile.stats` i18n namespace.
  */
 const meta = {
-  title: "Pages/Profile/QuickStats",
+  title: "arolariu.ro/Pages/Profile/QuickStats",
   component: QuickStats,
   parameters: {
     layout: "fullscreen",

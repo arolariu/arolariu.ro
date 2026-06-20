@@ -1,221 +1,221 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import {useEffect} from "react";
+import {createStoryFile, WithScanUploadContext} from "../../_storybook";
+import {useScanUpload} from "../_context/ScanUploadContext";
+import UploadPreview from "./UploadPreview";
 
 /**
  * UploadPreview displays a grid of pending file uploads with status indicators,
- * progress bars, and remove buttons. Depends on `useScanUpload`.
+ * progress bars, and remove buttons.
  *
- * This story renders static previews of various upload states.
+ * @remarks Component depends on `useScanUpload` hook from ScanUploadContext
+ * for managing upload state, progress tracking, file rotation, and removal.
+ * Stories use WithScanUploadContext provider to supply the required context.
  */
 const meta = {
-  title: "Invoices/UploadScans/UploadPreview",
+  title: "arolariu.ro/IMS/Components/Scan/UploadPreview",
+  component: UploadPreview,
+  tags: ["autodocs"],
   parameters: {
-    layout: "centered",
+    layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "Grid of pending file uploads showing scan cards with status badges (pending, uploading, completed, failed), progress bars, thumbnails, and action buttons for remove and rotate. Paginates uploads with different page sizes for mobile (7) and desktop (50). Real component depends on `useScanUpload` hook for state management.",
+      },
+    },
   },
-} satisfies Meta;
+  decorators: [
+    (Story) => (
+      <WithScanUploadContext>
+        <Story />
+      </WithScanUploadContext>
+    ),
+  ],
+} satisfies Meta<typeof UploadPreview>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Mixed upload states — pending, uploading, completed, failed. */
-export const MixedStates: Story = {
-  render: () => (
-    <div>
-      <div style={{marginBottom: "1rem"}}>
-        <h2 style={{fontSize: "1.125rem", fontWeight: 600}}>Pending Uploads (4)</h2>
-      </div>
-      <div style={{display: "grid", gap: "1rem", gridTemplateColumns: "repeat(4, 1fr)"}}>
-        {/* Pending */}
-        <div style={{overflow: "hidden", borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white"}}>
-          <div style={{position: "relative", aspectRatio: "4/3", backgroundColor: "#f3f4f6"}}>
-            <img
-              src='https://picsum.photos/seed/upload1/400/300'
-              alt='Pending upload'
-              style={{height: "100%", width: "100%", objectFit: "cover"}}
-            />
-            <div style={{position: "absolute", top: "0.5rem", right: "0.5rem"}}>
-              <span
-                style={{
-                  borderRadius: "9999px",
-                  backgroundColor: "rgba(107,114,128,0.8)",
-                  paddingInline: "0.5rem",
-                  paddingBlock: "0.125rem",
-                  fontSize: "0.75rem",
-                  color: "white",
-                }}>
-                Pending
-              </span>
-            </div>
-            <button
-              type='button'
-              style={{
-                position: "absolute",
-                top: "0.5rem",
-                left: "0.5rem",
-                borderRadius: "9999px",
-                backgroundColor: "rgba(0,0,0,0.5)",
-                padding: "0.25rem",
-                color: "white",
-              }}>
-              🗑
-            </button>
-          </div>
-          <div style={{padding: "0.5rem"}}>
-            <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>
-              receipt-01.jpg
-            </p>
-            <p style={{fontSize: "0.75rem", color: "#6b7280"}}>1.2 MB</p>
-          </div>
-        </div>
+/**
+ * Harness component that seeds files into the upload context before rendering UploadPreview.
+ */
+function UploadPreviewWithFiles(): React.JSX.Element {
+  const {addFiles} = useScanUpload();
 
-        {/* Uploading */}
-        <div style={{overflow: "hidden", borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white"}}>
-          <div style={{position: "relative", aspectRatio: "4/3", backgroundColor: "#f3f4f6"}}>
-            <img
-              src='https://picsum.photos/seed/upload2/400/300'
-              alt='Uploading scan'
-              style={{height: "100%", width: "100%", objectFit: "cover"}}
-            />
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "rgba(59,130,246,0.3)",
-              }}>
-              <span style={{fontSize: "1.5rem"}}>⏳</span>
-            </div>
-            <div style={{position: "absolute", top: "0.5rem", right: "0.5rem"}}>
-              <span
-                style={{
-                  borderRadius: "9999px",
-                  backgroundColor: "rgba(59,130,246,0.8)",
-                  paddingInline: "0.5rem",
-                  paddingBlock: "0.125rem",
-                  fontSize: "0.75rem",
-                  color: "white",
-                }}>
-                Uploading
-              </span>
-            </div>
-          </div>
-          <div style={{padding: "0.5rem"}}>
-            <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>
-              receipt-02.png
-            </p>
-            <p style={{fontSize: "0.75rem", color: "#6b7280"}}>2.5 MB</p>
-            <div
-              style={{
-                marginTop: "0.25rem",
-                height: "0.375rem",
-                width: "100%",
-                overflow: "hidden",
-                borderRadius: "0.25rem",
-                backgroundColor: "#e5e7eb",
-              }}>
-              <div style={{height: "100%", backgroundColor: "#3b82f6", width: "65%"}} />
-            </div>
-            <p style={{fontSize: "0.75rem", color: "#6b7280"}}>65%</p>
-          </div>
-        </div>
+  useEffect(() => {
+    const mockFiles = [
+      createStoryFile("grocery-receipt-2024-03-15.jpg", "image/jpeg", 1024 * 240),
+      createStoryFile("restaurant-bill-2024-03-14.jpg", "image/jpeg", 1024 * 180),
+      createStoryFile("invoice-2024-03-13.pdf", "application/pdf", 1024 * 500),
+      createStoryFile("pharmacy-receipt.jpg", "image/jpeg", 1024 * 120),
+    ];
 
-        {/* Completed */}
-        <div style={{overflow: "hidden", borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white"}}>
-          <div style={{position: "relative", aspectRatio: "4/3", backgroundColor: "#f3f4f6"}}>
-            <img
-              src='https://picsum.photos/seed/upload3/400/300'
-              alt='Completed upload'
-              style={{height: "100%", width: "100%", objectFit: "cover"}}
-            />
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "rgba(34,197,94,0.3)",
-              }}>
-              <span style={{fontSize: "1.5rem"}}>✅</span>
-            </div>
-            <div style={{position: "absolute", top: "0.5rem", right: "0.5rem"}}>
-              <span
-                style={{
-                  borderRadius: "9999px",
-                  backgroundColor: "rgba(34,197,94,0.8)",
-                  paddingInline: "0.5rem",
-                  paddingBlock: "0.125rem",
-                  fontSize: "0.75rem",
-                  color: "white",
-                }}>
-                Completed
-              </span>
-            </div>
-          </div>
-          <div style={{padding: "0.5rem"}}>
-            <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>
-              receipt-03.jpg
-            </p>
-            <p style={{fontSize: "0.75rem", color: "#6b7280"}}>800 KB</p>
-          </div>
-        </div>
+    void addFiles(mockFiles, "input");
+  }, [addFiles]);
 
-        {/* Failed */}
-        <div style={{overflow: "hidden", borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white"}}>
-          <div style={{position: "relative", aspectRatio: "4/3", backgroundColor: "#f3f4f6"}}>
-            <img
-              src='https://picsum.photos/seed/upload4/400/300'
-              alt='Failed upload'
-              style={{height: "100%", width: "100%", objectFit: "cover"}}
-            />
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "rgba(239,68,68,0.3)",
-              }}>
-              <span style={{fontSize: "1.5rem"}}>❌</span>
-            </div>
-            <div style={{position: "absolute", top: "0.5rem", right: "0.5rem"}}>
-              <span
-                style={{
-                  borderRadius: "9999px",
-                  backgroundColor: "rgba(239,68,68,0.8)",
-                  paddingInline: "0.5rem",
-                  paddingBlock: "0.125rem",
-                  fontSize: "0.75rem",
-                  color: "white",
-                }}>
-                Failed
-              </span>
-            </div>
-            <button
-              type='button'
-              style={{
-                position: "absolute",
-                top: "0.5rem",
-                left: "0.5rem",
-                borderRadius: "9999px",
-                backgroundColor: "rgba(0,0,0,0.5)",
-                padding: "0.25rem",
-                color: "white",
-              }}>
-              🗑
-            </button>
-          </div>
-          <div style={{padding: "0.5rem"}}>
-            <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>
-              invoice.pdf
-            </p>
-            <p style={{fontSize: "0.75rem", color: "#6b7280"}}>5.1 MB</p>
-            <p style={{fontSize: "0.75rem", color: "#ef4444"}}>Upload failed. Please try again.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  ),
+  return <UploadPreview />;
+}
+
+/**
+ * Upload preview with pending files seeded via context.
+ * Shows 4 mock scans ready for upload with real ScanCard components.
+ */
+export const WithPendingFiles: Story = {
+  render: () => <UploadPreviewWithFiles />,
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Upload preview grid showing 4 pending files: two JPEG receipts, one PDF invoice, and one pharmacy receipt. Files are seeded via `addFiles()` from the real ScanUploadContext. Each card shows thumbnail, file size, and remove/rotate actions.",
+      },
+    },
+  },
+};
+
+/**
+ * Empty state — no uploads pending.
+ * Real component returns null when pendingUploads array is empty.
+ */
+export const EmptyState: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "No pending uploads in the real ScanUploadContext; UploadPreview intentionally renders nothing.",
+      },
+    },
+  },
+};
+
+/** Harness for seeding single file upload. */
+function UploadPreviewWithSingleFile(): React.JSX.Element {
+  const {addFiles} = useScanUpload();
+
+  useEffect(() => {
+    const mockFiles = [createStoryFile("receipt.jpg", "image/jpeg", 1024 * 150)];
+    void addFiles(mockFiles, "input");
+  }, [addFiles]);
+
+  return <UploadPreview />;
+}
+
+/** Single file upload — minimal viable upload preview. */
+export const SingleFile: Story = {
+  render: () => <UploadPreviewWithSingleFile />,
+  parameters: {
+    docs: {
+      description: {
+        story: "Upload preview with single file pending. Tests sparse layout rendering between empty and multi-file states.",
+      },
+    },
+  },
+};
+
+/** Harness for seeding many file uploads (10 files). */
+function UploadPreviewWithManyFiles(): React.JSX.Element {
+  const {addFiles} = useScanUpload();
+
+  useEffect(() => {
+    const mockFiles = Array.from({length: 10}, (_, i) => createStoryFile(`receipt-${i + 1}.jpg`, "image/jpeg", 1024 * (120 + i * 10)));
+    void addFiles(mockFiles, "input");
+  }, [addFiles]);
+
+  return <UploadPreview />;
+}
+
+/** Many files (10) — bulk upload test. */
+export const ManyFiles: Story = {
+  render: () => <UploadPreviewWithManyFiles />,
+  parameters: {
+    docs: {
+      description: {
+        story: "Upload preview with 10 pending files. Tests grid layout, pagination, and rendering performance with bulk uploads.",
+      },
+    },
+  },
+};
+
+/** Harness for seeding mixed file types (images and PDFs). */
+function UploadPreviewWithMixedTypes(): React.JSX.Element {
+  const {addFiles} = useScanUpload();
+
+  useEffect(() => {
+    const mockFiles = [
+      createStoryFile("receipt-1.jpg", "image/jpeg", 1024 * 200),
+      createStoryFile("invoice-1.pdf", "application/pdf", 1024 * 600),
+      createStoryFile("receipt-2.jpg", "image/jpeg", 1024 * 180),
+      createStoryFile("invoice-2.pdf", "application/pdf", 1024 * 550),
+      createStoryFile("receipt-3.jpg", "image/jpeg", 1024 * 160),
+    ];
+    void addFiles(mockFiles, "input");
+  }, [addFiles]);
+
+  return <UploadPreview />;
+}
+
+/** Mixed file types (images and PDFs). */
+export const MixedFileTypes: Story = {
+  render: () => <UploadPreviewWithMixedTypes />,
+  parameters: {
+    docs: {
+      description: {
+        story: "Upload preview with mixed file types (JPEGs and PDFs). Tests rendering of different file format cards in the same grid.",
+      },
+    },
+  },
+};
+
+/** Harness for seeding two files. */
+function UploadPreviewWithTwoFiles(): React.JSX.Element {
+  const {addFiles} = useScanUpload();
+
+  useEffect(() => {
+    const mockFiles = [
+      createStoryFile("grocery-receipt.jpg", "image/jpeg", 1024 * 220),
+      createStoryFile("restaurant-bill.pdf", "application/pdf", 1024 * 480),
+    ];
+    void addFiles(mockFiles, "input");
+  }, [addFiles]);
+
+  return <UploadPreview />;
+}
+
+/** Two files — minimal multi-file upload. */
+export const TwoFiles: Story = {
+  render: () => <UploadPreviewWithTwoFiles />,
+  parameters: {
+    docs: {
+      description: {
+        story: "Upload preview with two files (one image, one PDF). Tests minimal multi-file layout rendering.",
+      },
+    },
+  },
+};
+
+/** Harness for seeding three files. */
+function UploadPreviewWithThreeFiles(): React.JSX.Element {
+  const {addFiles} = useScanUpload();
+
+  useEffect(() => {
+    const mockFiles = [
+      createStoryFile("scan-1.jpg", "image/jpeg", 1024 * 195),
+      createStoryFile("scan-2.jpg", "image/jpeg", 1024 * 210),
+      createStoryFile("scan-3.pdf", "application/pdf", 1024 * 530),
+    ];
+    void addFiles(mockFiles, "input");
+  }, [addFiles]);
+
+  return <UploadPreview />;
+}
+
+/** Three files — small batch upload. */
+export const ThreeFiles: Story = {
+  render: () => <UploadPreviewWithThreeFiles />,
+  parameters: {
+    docs: {
+      description: {
+        story: "Upload preview with three files. Tests small batch layout and grid responsiveness.",
+      },
+    },
+  },
 };

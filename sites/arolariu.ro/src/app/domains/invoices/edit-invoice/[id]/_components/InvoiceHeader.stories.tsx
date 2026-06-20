@@ -1,171 +1,122 @@
+import {storyInvoice, WithEditInvoiceContext} from "@/app/domains/invoices/_storybook";
 import type {Meta, StoryObj} from "@storybook/react";
+import {useEffect} from "react";
+import {useEditInvoiceContext} from "../_context/EditInvoiceContext";
+import InvoiceHeader from "./InvoiceHeader";
 
-/**
- * InvoiceHeader (edit) renders the editable invoice header with inline name
- * editing, save, discard, print, and delete controls. Depends on
- * `useEditInvoiceContext` and `useDialog`.
- *
- * This story renders a static preview of the header layout.
- */
+function InvoiceHeaderWithPendingName(): React.JSX.Element {
+  const {setName} = useEditInvoiceContext();
+
+  useEffect(() => {
+    setName("Updated grocery receipt");
+  }, [setName]);
+
+  return <InvoiceHeader />;
+}
+
+const invoiceWithoutItems = {
+  ...storyInvoice,
+  id: "invoice-story-header-analysis",
+  name: "Receipt awaiting analysis",
+  items: [],
+};
+
 const meta = {
-  title: "Invoices/EditInvoice/InvoiceHeader",
+  title: "arolariu.ro/IMS/Components/Invoice/EditInvoiceHeader",
+  component: InvoiceHeader,
+  decorators: [
+    (Story) => (
+      <WithEditInvoiceContext>
+        <Story />
+      </WithEditInvoiceContext>
+    ),
+  ],
   parameters: {
     layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "Mounts the real editable invoice header with EditInvoiceContext and DialogContext so save, discard, print, delete, and analysis actions render through production hooks.",
+      },
+    },
   },
-} satisfies Meta;
+  tags: ["autodocs"],
+} satisfies Meta<typeof InvoiceHeader>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Preview with no pending changes. */
 export const NoChanges: Story = {
-  render: () => (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "0.75rem",
-        borderBottom: "1px solid #e5e7eb",
-        backgroundColor: "#ffffff",
-        paddingLeft: "1.5rem",
-        paddingRight: "1.5rem",
-        paddingTop: "1rem",
-        paddingBottom: "1rem",
-      }}>
-      <div>
-        <input
-          type='text'
-          defaultValue='Weekly Grocery Shopping'
-          style={{
-            width: "100%",
-            border: "none",
-            backgroundColor: "transparent",
-            fontSize: "1.875rem",
-            fontWeight: "700",
-            letterSpacing: "-0.025em",
-          }}
-          readOnly
-        />
-      </div>
-      <div style={{display: "flex", gap: "0.5rem"}}>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            paddingLeft: "0.75rem",
-            paddingRight: "0.75rem",
-            paddingTop: "0.375rem",
-            paddingBottom: "0.375rem",
-            fontSize: "0.875rem",
-          }}>
-          🖨 Print
-        </button>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            backgroundColor: "#dc2626",
-            paddingLeft: "0.75rem",
-            paddingRight: "0.75rem",
-            paddingTop: "0.375rem",
-            paddingBottom: "0.375rem",
-            fontSize: "0.875rem",
-            color: "#ffffff",
-          }}>
-          🗑 Delete
-        </button>
-      </div>
-    </div>
-  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Default edit header with no pending changes; save and discard controls are hidden while print and delete remain available.",
+      },
+    },
+  },
 };
 
-/** Preview with pending changes (save/discard buttons visible). */
-export const WithPendingChanges: Story = {
-  render: () => (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "0.75rem",
-        borderBottom: "1px solid #e5e7eb",
-        backgroundColor: "#ffffff",
-        paddingLeft: "1.5rem",
-        paddingRight: "1.5rem",
-        paddingTop: "1rem",
-        paddingBottom: "1rem",
-      }}>
-      <div>
-        <input
-          type='text'
-          defaultValue='Weekly Grocery Shopping (edited)'
-          style={{
-            width: "100%",
-            border: "none",
-            backgroundColor: "transparent",
-            fontSize: "1.875rem",
-            fontWeight: "700",
-            letterSpacing: "-0.025em",
-          }}
-          readOnly
-        />
-      </div>
-      <div style={{display: "flex", gap: "0.5rem"}}>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            backgroundColor: "#2563eb",
-            paddingLeft: "0.75rem",
-            paddingRight: "0.75rem",
-            paddingTop: "0.375rem",
-            paddingBottom: "0.375rem",
-            fontSize: "0.875rem",
-            color: "#ffffff",
-          }}>
-          💾 Save
-        </button>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            paddingLeft: "0.75rem",
-            paddingRight: "0.75rem",
-            paddingTop: "0.375rem",
-            paddingBottom: "0.375rem",
-            fontSize: "0.875rem",
-          }}>
-          ✕ Discard
-        </button>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            paddingLeft: "0.75rem",
-            paddingRight: "0.75rem",
-            paddingTop: "0.375rem",
-            paddingBottom: "0.375rem",
-            fontSize: "0.875rem",
-          }}>
-          🖨 Print
-        </button>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            backgroundColor: "#dc2626",
-            paddingLeft: "0.75rem",
-            paddingRight: "0.75rem",
-            paddingTop: "0.375rem",
-            paddingBottom: "0.375rem",
-            fontSize: "0.875rem",
-            color: "#ffffff",
-          }}>
-          🗑 Delete
-        </button>
-      </div>
-    </div>
-  ),
+export const PendingNameChange: Story = {
+  render: () => <InvoiceHeaderWithPendingName />,
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Header after a pending invoice-name change is written through the real EditInvoiceContext, showing save and discard controls.",
+      },
+    },
+  },
+};
+
+export const AwaitingAnalysis: Story = {
+  decorators: [
+    (Story) => (
+      <WithEditInvoiceContext invoice={invoiceWithoutItems}>
+        <Story />
+      </WithEditInvoiceContext>
+    ),
+  ],
+  parameters: {
+    docs: {
+      description: {
+        story: "Header for an invoice without line items, which exposes the real analyze-with-AI action.",
+      },
+    },
+  },
+};
+
+/** Invoice with many updates — frequently modified. */
+export const FrequentlyUpdated: Story = {
+  decorators: [
+    (Story) => (
+      <WithEditInvoiceContext invoice={{...storyInvoice, numberOfUpdates: 15}}>
+        <Story />
+      </WithEditInvoiceContext>
+    ),
+  ],
+  parameters: {
+    docs: {
+      description: {
+        story: "Header for an invoice with many updates. Tests update count display and modification indicators.",
+      },
+    },
+  },
+};
+
+/** Important invoice — flagged header. */
+export const ImportantInvoice: Story = {
+  decorators: [
+    (Story) => (
+      <WithEditInvoiceContext invoice={{...storyInvoice, isImportant: true}}>
+        <Story />
+      </WithEditInvoiceContext>
+    ),
+  ],
+  parameters: {
+    docs: {
+      description: {
+        story: "Header for an invoice marked as important. Tests important flag rendering in edit mode.",
+      },
+    },
+  },
 };

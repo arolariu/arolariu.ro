@@ -1,7 +1,11 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {Invoice, Product} from "../../../../../../../types/invoices";
+import type {AllergenFrequency} from "../../../_utils/statistics";
 import {computeAllergenFrequency} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {AllergenSummaryChart} from "./AllergenSummaryChart";
+
+type StoryArgs = {data: AllergenFrequency[]};
 
 /**
  * AllergenSummaryChart displays allergen frequency across products.
@@ -19,7 +23,7 @@ import {AllergenSummaryChart} from "./AllergenSummaryChart";
  * - Product safety awareness
  */
 const meta = {
-  title: "Invoices/Statistics/AllergenSummaryChart",
+  title: "arolariu.ro/IMS/Statistics/Products/AllergenSummaryChart",
   component: AllergenSummaryChart,
   parameters: {
     layout: "padded",
@@ -32,25 +36,21 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    data: {
-      description: "Array of allergen frequencies sorted by product count",
-      control: false,
-    },
+    data: {control: "object"},
   },
-} satisfies Meta<typeof AllergenSummaryChart>;
+  args: {
+    data: computeAllergenFrequency(mockInvoices),
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default view with diverse allergens.
  * Shows common allergens found across all products (gluten, lactose, etc.).
  */
-export const Default: Story = {
-  args: {
-    data: computeAllergenFrequency(mockInvoices),
-  },
-};
+export const Default: Story = {};
 
 /**
  * Empty state - no allergens detected.
@@ -78,7 +78,9 @@ export const SingleInvoice: Story = {
  */
 export const HighWarningLevels: Story = {
   args: {
-    data: computeAllergenFrequency(mockInvoices.filter((inv) => inv.items.some((item) => item.detectedAllergens.length > 0))),
+    data: computeAllergenFrequency(
+      mockInvoices.filter((inv: Invoice) => inv.items.some((item: Product) => item.detectedAllergens.length > 0)),
+    ),
   },
 };
 
@@ -89,7 +91,9 @@ export const HighWarningLevels: Story = {
 export const GlutenFocused: Story = {
   args: {
     data: computeAllergenFrequency(
-      mockInvoices.filter((inv) => inv.items.some((item) => item.detectedAllergens.some((a) => a.name.toLowerCase().includes("gluten")))),
+      mockInvoices.filter((inv: Invoice) =>
+        inv.items.some((item: Product) => item.detectedAllergens.some((a: {name: string}) => a.name.toLowerCase().includes("gluten"))),
+      ),
     ),
   },
 };
@@ -101,7 +105,9 @@ export const GlutenFocused: Story = {
 export const DairyFocused: Story = {
   args: {
     data: computeAllergenFrequency(
-      mockInvoices.filter((inv) => inv.items.some((item) => item.detectedAllergens.some((a) => a.name.toLowerCase().includes("lactose")))),
+      mockInvoices.filter((inv: Invoice) =>
+        inv.items.some((item: Product) => item.detectedAllergens.some((a: {name: string}) => a.name.toLowerCase().includes("lactose"))),
+      ),
     ),
   },
 };
@@ -123,5 +129,111 @@ export const FewAllergens: Story = {
 export const MediumWarnings: Story = {
   args: {
     data: computeAllergenFrequency(mockInvoices.slice(2, 8)),
+  },
+};
+
+/** Many allergens — high volume of 15+ distinct allergen types. */
+export const ManyAllergens: Story = {
+  args: {
+    data: computeAllergenFrequency(mockInvoices),
+  },
+};
+
+/** Single allergen type — minimal warning card. */
+export const SingleAllergen: Story = {
+  args: {
+    data: computeAllergenFrequency(
+      mockInvoices.filter((inv: Invoice) => inv.items.some((item: Product) => item.detectedAllergens.length > 0)),
+    ).slice(0, 1),
+  },
+};
+
+/** Two allergen types — minimal comparison view. */
+export const TwoAllergens: Story = {
+  args: {
+    data: computeAllergenFrequency(
+      mockInvoices.filter((inv: Invoice) => inv.items.some((item: Product) => item.detectedAllergens.length > 0)),
+    ).slice(0, 2),
+  },
+};
+
+/** Three allergen types — balanced warning card grid. */
+export const ThreeAllergens: Story = {
+  args: {
+    data: computeAllergenFrequency(
+      mockInvoices.filter((inv: Invoice) => inv.items.some((item: Product) => item.detectedAllergens.length > 0)),
+    ).slice(0, 3),
+  },
+};
+
+/** Four allergen types — compact warning overview. */
+export const FourAllergens: Story = {
+  args: {
+    data: computeAllergenFrequency(
+      mockInvoices.filter((inv: Invoice) => inv.items.some((item: Product) => item.detectedAllergens.length > 0)),
+    ).slice(0, 4),
+  },
+};
+
+/** All low-frequency allergens — all blue warning cards. */
+export const AllLowFrequency: Story = {
+  args: {
+    data: computeAllergenFrequency(mockInvoices.slice(5, 15)),
+  },
+};
+
+/** Dense allergen data — 20+ distinct allergens across many products. */
+export const DenseAllergenData: Story = {
+  args: {
+    data: computeAllergenFrequency(mockInvoices),
+  },
+};
+
+/** Soy-heavy products — soy allergen prominence test. */
+export const SoyFocused: Story = {
+  args: {
+    data: computeAllergenFrequency(
+      mockInvoices.filter((inv: Invoice) =>
+        inv.items.some((item: Product) => item.detectedAllergens.some((a: {name: string}) => a.name.toLowerCase().includes("soy"))),
+      ),
+    ),
+  },
+};
+
+/** Nut allergen products — tree nut allergen filter. */
+export const NutAllergens: Story = {
+  args: {
+    data: computeAllergenFrequency(
+      mockInvoices.filter((inv: Invoice) =>
+        inv.items.some((item: Product) =>
+          item.detectedAllergens.some(
+            (a: {name: string}) =>
+              a.name.toLowerCase().includes("nut") || a.name.toLowerCase().includes("almond") || a.name.toLowerCase().includes("peanut"),
+          ),
+        ),
+      ),
+    ),
+  },
+};
+
+/** Shellfish allergen focus — seafood allergen tracking. */
+export const ShellfishFocused: Story = {
+  args: {
+    data: computeAllergenFrequency(
+      mockInvoices.filter((inv: Invoice) =>
+        inv.items.some((item: Product) =>
+          item.detectedAllergens.some(
+            (a: {name: string}) => a.name.toLowerCase().includes("shellfish") || a.name.toLowerCase().includes("seafood"),
+          ),
+        ),
+      ),
+    ),
+  },
+};
+
+/** Mixed allergen levels — diverse warning severity. */
+export const MixedAllergenLevels: Story = {
+  args: {
+    data: computeAllergenFrequency(mockInvoices),
   },
 };

@@ -7,7 +7,7 @@ import Faq from "./Faq";
  * animated entrance effects. Uses the `About.Hub.faq` i18n namespace.
  */
 const meta = {
-  title: "Pages/About/Faq",
+  title: "arolariu.ro/Pages/About/Faq",
   component: Faq,
   parameters: {
     layout: "fullscreen",

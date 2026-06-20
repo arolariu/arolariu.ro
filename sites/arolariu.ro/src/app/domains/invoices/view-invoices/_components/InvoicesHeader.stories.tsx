@@ -1,95 +1,42 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import {WithInvoiceDialogs} from "../../_storybook";
+import InvoicesHeader from "./InvoicesHeader";
 
 /**
  * InvoicesHeader renders the header for the invoices list page with title,
  * description, and action buttons (import, export, print, new invoice).
  * Depends on `useDialog`.
- *
- * This story renders a static preview of the invoices header.
  */
 const meta = {
-  title: "Invoices/ViewInvoices/InvoicesHeader",
+  title: "arolariu.ro/IMS/Components/Invoice/InvoicesHeader",
+  component: InvoicesHeader,
+  decorators: [(Story) => <WithInvoiceDialogs><Story /></WithInvoiceDialogs>],
   parameters: {
     layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "Header for invoices listing page displaying page title, description, and action buttons (Import Scans, Export All, Print All, New Invoice). Uses DialogContext for modal orchestration.",
+      },
+    },
   },
-} satisfies Meta;
+  tags: ["autodocs"],
+} satisfies Meta<typeof InvoicesHeader>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Default invoices header with all action buttons. */
-export const Preview: Story = {
-  render: () => (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: "1rem",
-        borderBottom: "1px solid #e5e7eb",
-        backgroundColor: "#ffffff",
-        padding: "1rem 1.5rem",
-      }}>
-      <div>
-        <h1 style={{fontSize: "1.5rem", fontWeight: 700, letterSpacing: "-0.025em"}}>My Invoices</h1>
-        <p style={{fontSize: "0.875rem", color: "#6b7280"}}>View and manage all your invoices</p>
-      </div>
-      <div style={{display: "flex", gap: "0.5rem"}}>
-        <button
-          type='button'
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.25rem",
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            padding: "0.375rem 0.75rem",
-            fontSize: "0.875rem",
-          }}>
-          📤 Import
-        </button>
-        <button
-          type='button'
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.25rem",
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            padding: "0.375rem 0.75rem",
-            fontSize: "0.875rem",
-          }}>
-          📥 Export
-        </button>
-        <button
-          type='button'
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.25rem",
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            padding: "0.375rem 0.75rem",
-            fontSize: "0.875rem",
-          }}>
-          🖨 Print
-        </button>
-        <button
-          type='button'
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.25rem",
-            borderRadius: "0.375rem",
-            backgroundColor: "#2563eb",
-            padding: "0.375rem 0.75rem",
-            fontSize: "0.875rem",
-            color: "#ffffff",
-          }}>
-          ➕ New Invoice
-        </button>
-      </div>
-    </div>
-  ),
+/**
+ * Default invoices header with all action buttons enabled.
+ * Dialog buttons dispatch DialogContext state through WithInvoiceDialogs; dialog content is covered by dialog-specific stories.
+ */
+export const Default: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Interactive header rendering with all action buttons enabled. Import and export actions dispatch dialog state through DialogContext; dialog content is covered by dedicated dialog stories.",
+      },
+    },
+  },
 };

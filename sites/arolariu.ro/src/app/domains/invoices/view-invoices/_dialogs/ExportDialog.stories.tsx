@@ -1,117 +1,150 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {TbDownload, TbFileSpreadsheet, TbFileText, TbJson} from "react-icons/tb";
+import {useEffect} from "react";
+import {
+  OpenDialogButton,
+  playOpenDialog,
+  resetInvoiceStoryStores,
+  seedInvoiceStoryStores,
+  storyInvoice,
+  storyInvoices,
+  storyManyInvoices,
+} from "../../_storybook";
+import ExportDialog from "./ExportDialog";
 
 /**
- * Static visual preview of the ExportDialog component.
+ * Export dialog for exporting invoice data in various formats.
  *
- * The actual component depends on `useDialog` and `useInvoicesStore`,
- * so this story renders a faithful HTML replica of the export form
- * with format selection and options checkboxes.
+ * @remarks
+ * **Features:**
+ * - Format selection: CSV, JSON, PDF
+ * - Include options: metadata, merchant, products
+ * - Format-specific options (CSV delimiter, JSON pretty print)
+ * - File size estimate
+ * - Custom filename input
+ * - Copy to clipboard for JSON format
+ *
+ * **Dialog Context:**
+ * Uses `VIEW_INVOICES__EXPORT` dialog with mode `view`.
+ * Exports selected invoices from store, or all invoices if none selected.
  */
 const meta = {
-  title: "Invoices/ViewInvoices/Dialogs/ExportDialog",
+  title: "arolariu.ro/IMS/Dialogs/Invoice/ExportList",
+  component: ExportDialog,
   parameters: {
     layout: "centered",
   },
-} satisfies Meta;
+  decorators: [
+    (Story) => {
+      resetInvoiceStoryStores();
+      return <Story />;
+    },
+  ],
+} satisfies Meta<typeof ExportDialog>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Default export dialog with CSV selected. */
-export const Default: Story = {
-  render: () => (
-    <div
-      style={{
-        borderRadius: "0.75rem",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "#ffffff",
-        boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)",
-      }}>
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1.5rem"}}>
-        <h2 style={{fontSize: "1.125rem", fontWeight: 600}}>Export Invoices</h2>
-        <p style={{marginTop: "0.25rem", fontSize: "0.875rem", color: "#6b7280"}}>Export 5 invoices in your preferred format.</p>
-      </div>
+/**
+ * React harness component that seeds invoice stores on mount.
+ *
+ * @param props - Component props.
+ * @param props.selected - Whether to seed selected invoices (true) or none (false).
+ * @returns Opened export dialog with seeded store state.
+ */
+function ExportDialogHarness({selected}: Readonly<{selected: boolean}>): React.JSX.Element {
+  useEffect(() => {
+    seedInvoiceStoryStores({
+      invoices: storyInvoices,
+      selectedInvoices: selected ? storyInvoices.slice(0, 2) : [],
+    });
+  }, [selected]);
 
-      <div style={{display: "flex", flexDirection: "column", gap: "1.25rem", padding: "1.5rem"}}>
-        {/* Format selection */}
-        <div>
-          <h3 style={{marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 600}}>Export Format</h3>
-          <div style={{display: "flex", flexDirection: "column", gap: "0.5rem"}}>
-            {[
-              {
-                value: "csv",
-                icon: <TbFileSpreadsheet style={{height: "1rem", width: "1rem", color: "#16a34a"}} />,
-                label: "CSV",
-                selected: true,
-              },
-              {value: "json", icon: <TbJson style={{height: "1rem", width: "1rem", color: "#2563eb"}} />, label: "JSON", selected: false},
-              {value: "pdf", icon: <TbFileText style={{height: "1rem", width: "1rem", color: "#dc2626"}} />, label: "PDF", selected: false},
-            ].map((format) => (
-              <label
-                key={format.value}
-                style={{display: "flex", alignItems: "center", gap: "0.75rem", fontSize: "0.875rem"}}>
-                <input
-                  type='radio'
-                  name='format'
-                  checked={format.selected}
-                  readOnly
-                  style={{height: "1rem", width: "1rem"}}
-                />
-                <span style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
-                  {format.icon}
-                  {format.label}
-                </span>
-              </label>
-            ))}
-          </div>
-        </div>
+  return (
+    <OpenDialogButton
+      dialog='VIEW_INVOICES__EXPORT'
+      mode='view'>
+      <ExportDialog />
+    </OpenDialogButton>
+  );
+}
 
-        {/* Options */}
-        <div>
-          <h3 style={{marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 600}}>Include in Export</h3>
-          <div style={{display: "flex", flexDirection: "column", gap: "0.5rem"}}>
-            {[
-              {label: "Include Metadata", checked: false},
-              {label: "Include Products", checked: true},
-              {label: "Include Merchant", checked: false},
-              {label: "Include Headers", checked: true},
-            ].map((opt) => (
-              <label
-                key={opt.label}
-                style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem"}}>
-                <input
-                  type='checkbox'
-                  checked={opt.checked}
-                  readOnly
-                  style={{height: "1rem", width: "1rem", borderRadius: "0.25rem", border: "1px solid #e5e7eb"}}
-                />
-                {opt.label}
-              </label>
-            ))}
-          </div>
-        </div>
-      </div>
+/**
+ * Export dialog with all invoices (none selected).
+ *
+ * @remarks
+ * Seeds store with all story invoices and no selected invoices.
+ * Dialog displays count of all invoices to be exported.
+ */
+export const AllInvoices: Story = {
+  play: playOpenDialog,
+  render: () => <ExportDialogHarness selected={false} />,
+};
 
-      <div style={{display: "flex", justifyContent: "flex-end", gap: "0.5rem", borderTop: "1px solid #e5e7eb", padding: "1rem"}}>
-        <button style={{borderRadius: "0.375rem", border: "1px solid #e5e7eb", padding: "0.5rem 1rem", fontSize: "0.875rem"}}>
-          Cancel
-        </button>
-        <button
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            borderRadius: "0.375rem",
-            backgroundColor: "#111827",
-            padding: "0.5rem 1rem",
-            fontSize: "0.875rem",
-            color: "#ffffff",
-          }}>
-          <TbDownload style={{height: "1rem", width: "1rem"}} />
-          Export
-        </button>
-      </div>
-    </div>
-  ),
+/**
+ * Export dialog with selected invoices only.
+ *
+ * @remarks
+ * Seeds store with selected invoices (first two from story fixtures).
+ * Dialog displays count of selected invoices to be exported.
+ */
+export const SelectedInvoices: Story = {
+  play: playOpenDialog,
+  render: () => <ExportDialogHarness selected={true} />,
+};
+
+/** Export dialog with no invoices (empty state). */
+export const NoInvoices: Story = {
+  play: playOpenDialog,
+  render: () => {
+    resetInvoiceStoryStores();
+    return (
+      <OpenDialogButton
+        dialog='VIEW_INVOICES__EXPORT'
+        mode='view'>
+        <ExportDialog />
+      </OpenDialogButton>
+    );
+  },
+};
+
+/** Export dialog with many selected invoices. */
+export const ManySelected: Story = {
+  play: playOpenDialog,
+  render: () => {
+    useEffect(() => {
+      seedInvoiceStoryStores({
+        invoices: storyManyInvoices,
+        selectedInvoices: storyManyInvoices.slice(0, 10),
+      });
+    }, []);
+
+    return (
+      <OpenDialogButton
+        dialog='VIEW_INVOICES__EXPORT'
+        mode='view'>
+        <ExportDialog />
+      </OpenDialogButton>
+    );
+  },
+};
+
+/** Export dialog with single invoice selected. */
+export const SingleSelected: Story = {
+  play: playOpenDialog,
+  render: () => {
+    useEffect(() => {
+      seedInvoiceStoryStores({
+        invoices: storyInvoices,
+        selectedInvoices: [storyInvoices[0] ?? storyInvoice],
+      });
+    }, []);
+
+    return (
+      <OpenDialogButton
+        dialog='VIEW_INVOICES__EXPORT'
+        mode='view'>
+        <ExportDialog />
+      </OpenDialogButton>
+    );
+  },
 };

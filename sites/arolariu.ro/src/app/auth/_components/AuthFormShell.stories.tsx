@@ -6,7 +6,7 @@ import AuthFormShell from "./AuthFormShell";
  * kicker text, secondary prompt with link, form slot (children), and footer.
  */
 const meta = {
-  title: "Pages/Auth/AuthFormShell",
+  title: "arolariu.ro/Pages/Auth/AuthFormShell",
   component: AuthFormShell,
   parameters: {
     layout: "centered",

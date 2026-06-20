@@ -1,7 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {TopProduct} from "../../../_utils/statistics";
 import {computeTopProducts} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {TopProductsChart} from "./TopProductsChart";
+
+type StoryArgs = {data: TopProduct[]; currency: string};
 
 /**
  * TopProductsChart displays most purchased products in leaderboard format.
@@ -19,7 +22,7 @@ import {TopProductsChart} from "./TopProductsChart";
  * - Shopping habit analysis
  */
 const meta = {
-  title: "Invoices/Statistics/TopProductsChart",
+  title: "arolariu.ro/IMS/Statistics/Products/TopProductsChart",
   component: TopProductsChart,
   parameters: {
     layout: "padded",
@@ -32,30 +35,23 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    data: {
-      description: "Array of top products sorted by total spending",
-      control: false,
-    },
-    currency: {
-      description: "Currency code for display (always RON for normalized data)",
-      control: "text",
-    },
+    data: {control: "object"},
+    currency: {control: "text"},
   },
-} satisfies Meta<typeof TopProductsChart>;
+  args: {
+    data: computeTopProducts(mockInvoices),
+    currency: "lei",
+  },
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
 /**
  * Default view showing top 10 products.
  * Displays most purchased items across all invoices.
  */
-export const Default: Story = {
-  args: {
-    data: computeTopProducts(mockInvoices),
-    currency: "lei",
-  },
-};
+export const Default: Story = {};
 
 /**
  * Empty state - no products available.
@@ -133,5 +129,147 @@ export const EuroCurrency: Story = {
   args: {
     data: computeTopProducts(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "EUR")),
     currency: "€",
+  },
+};
+
+/** Two products — minimal leaderboard for comparison. */
+export const TwoProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices, 2),
+    currency: "lei",
+  },
+};
+
+/** Many products — high volume top 30 leaderboard. */
+export const ManyProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices, 30),
+    currency: "lei",
+  },
+};
+
+/** Long product names — test table layout with lengthy names. */
+export const LongProductNames: Story = {
+  args: {
+    data: [
+      {
+        name: "Organic Free-Range Grass-Fed Whole Milk Premium Quality 1L Bottle",
+        totalQuantity: 12,
+        totalSpent: 145.5,
+        purchaseCount: 8,
+        averagePrice: 12.13,
+      },
+      {
+        name: "Artisan Multi-Grain Sourdough Bread Loaf With Seeds and Nuts",
+        totalQuantity: 8,
+        totalSpent: 98.4,
+        purchaseCount: 5,
+        averagePrice: 12.3,
+      },
+      {
+        name: "Premium Wild-Caught Atlantic Salmon Fillet Fresh Daily",
+        totalQuantity: 3.5,
+        totalSpent: 189.0,
+        purchaseCount: 4,
+        averagePrice: 54.0,
+      },
+    ],
+    currency: "lei",
+  },
+};
+
+/** Four products — compact leaderboard view. */
+export const FourProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices, 4),
+    currency: "lei",
+  },
+};
+
+/** Five products — optimal table density. */
+export const FiveProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices, 5),
+    currency: "lei",
+  },
+};
+
+/** Six products — extended podium view. */
+export const SixProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices, 6),
+    currency: "lei",
+  },
+};
+
+/** Seven products — full leaderboard. */
+export const SevenProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices, 7),
+    currency: "lei",
+  },
+};
+
+/** RON currency products — lei display. */
+export const RonCurrencyProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "RON")),
+    currency: "lei",
+  },
+};
+
+/** USD currency products — dollar display. */
+export const UsdCurrencyProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "USD")),
+    currency: "$",
+  },
+};
+
+/** Dense product dataset — 40+ products. */
+export const DenseProductDataset: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices, 40),
+    currency: "lei",
+  },
+};
+
+/** EUR currency products — Euro display. */
+export const EurCurrencyProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "EUR")),
+    currency: "€",
+  },
+};
+
+/** GBP currency products — British pound display. */
+export const GbpCurrencyProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "GBP")),
+    currency: "£",
+  },
+};
+
+/** Single product dominance — one product overwhelms others. */
+export const SingleProductDominance: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices, 10),
+    currency: "lei",
+  },
+};
+
+/** Bimodal product spending — two dominant products. */
+export const BimodalProductSpending: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices, 8),
+    currency: "lei",
+  },
+};
+
+/** Long-tail product distribution — many small spenders. */
+export const LongTailProducts: Story = {
+  args: {
+    data: computeTopProducts(mockInvoices, 15),
+    currency: "lei",
   },
 };

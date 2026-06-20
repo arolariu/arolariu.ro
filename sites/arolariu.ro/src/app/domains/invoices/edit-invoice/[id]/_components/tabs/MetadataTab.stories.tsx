@@ -1,134 +1,145 @@
+import {DialogProvider} from "@/app/domains/invoices/_contexts/DialogContext";
 import type {Meta, StoryObj} from "@storybook/react";
+import MetadataTab from "./MetadataTab";
+
+type StoryArgs = {metadata: Record<string, string>};
 
 /**
  * MetadataTab displays key-value metadata pairs for an invoice with
  * add, edit, and delete capabilities. Depends on `useDialog`.
- *
- * This story renders a static preview of the metadata tab layout.
  */
 const meta = {
-  title: "Invoices/EditInvoice/Tabs/MetadataTab",
+  title: "arolariu.ro/IMS/Tabs/Invoice/MetadataTab",
+  component: MetadataTab,
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "Displays custom metadata key-value pairs for an invoice in responsive card grid layout. "
+          + "Edit and delete action buttons are currently disabled. Add action may be available. "
+          + "Shows empty state when no metadata exists. Mounted with real component wrapped in DialogProvider decorator.",
+      },
+    },
   },
-} satisfies Meta;
+  argTypes: {
+    metadata: {control: "object"},
+  },
+  args: {
+    metadata: {
+      store_id: "KFL-2024-BUC",
+      receipt_number: "INV-2024-001234",
+      cashier: "Station 3",
+      loyalty_points: "150",
+      payment_method: "VISA-4242",
+    },
+  },
+  decorators: [
+    (Story) => (
+      <DialogProvider>
+        <div style={{minWidth: "600px"}}>
+          <Story />
+        </div>
+      </DialogProvider>
+    ),
+  ],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
-/** Preview of metadata tab with sample key-value pairs. */
+/** Metadata tab with sample key-value pairs. */
 export const WithMetadata: Story = {
-  render: () => (
-    <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "#ffffff"}}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderBottom: "1px solid #e5e7eb",
-          padding: "1rem",
-        }}>
-        <div>
-          <h3 style={{fontSize: "1.125rem", fontWeight: "600"}}>Custom Metadata</h3>
-          <p style={{fontSize: "0.875rem", color: "#6b7280"}}>Additional key-value pairs for this invoice</p>
-        </div>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            paddingLeft: "0.75rem",
-            paddingRight: "0.75rem",
-            paddingTop: "0.375rem",
-            paddingBottom: "0.375rem",
-            fontSize: "0.875rem",
-          }}>
-          ➕ Add
-        </button>
-      </div>
-      <div>
-        {[
-          {key: "store_id", value: "KFL-2024-BUC"},
-          {key: "receipt_number", value: "INV-2024-001234"},
-          {key: "cashier", value: "Station 3"},
-        ].map((item) => (
-          <div
-            key={item.key}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              paddingLeft: "1rem",
-              paddingRight: "1rem",
-              paddingTop: "0.75rem",
-              paddingBottom: "0.75rem",
-            }}>
-            <div>
-              <span
-                style={{
-                  borderRadius: "0.375rem",
-                  backgroundColor: "#f3f4f6",
-                  paddingLeft: "0.5rem",
-                  paddingRight: "0.5rem",
-                  paddingTop: "0.125rem",
-                  paddingBottom: "0.125rem",
-                  fontFamily: "monospace",
-                  fontSize: "0.75rem",
-                }}>
-                {item.key}
-              </span>
-              <span style={{marginLeft: "0.75rem", fontSize: "0.875rem"}}>{item.value}</span>
-            </div>
-            <div style={{display: "flex", gap: "0.25rem"}}>
-              <button
-                type='button'
-                style={{borderRadius: "0.25rem", padding: "0.25rem", color: "#9ca3af"}}>
-                ✏️
-              </button>
-              <button
-                type='button'
-                style={{borderRadius: "0.25rem", padding: "0.25rem", color: "#9ca3af"}}>
-                🗑
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Metadata tab populated with five sample key-value pairs including store ID, receipt number, cashier, "
+          + "loyalty points, and payment method. Demonstrates card grid layout with disabled action buttons for each entry.",
+      },
+    },
+  },
 };
 
-/** Empty metadata tab. */
+/** Empty metadata tab showing empty state. */
 export const Empty: Story = {
-  render: () => (
-    <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "#ffffff"}}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderBottom: "1px solid #e5e7eb",
-          padding: "1rem",
-        }}>
-        <div>
-          <h3 style={{fontSize: "1.125rem", fontWeight: "600"}}>Custom Metadata</h3>
-          <p style={{fontSize: "0.875rem", color: "#6b7280"}}>No custom metadata has been added yet</p>
-        </div>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            paddingLeft: "0.75rem",
-            paddingRight: "0.75rem",
-            paddingTop: "0.375rem",
-            paddingBottom: "0.375rem",
-            fontSize: "0.875rem",
-          }}>
-          ➕ Add
-        </button>
-      </div>
-      <div style={{padding: "2rem", textAlign: "center", fontSize: "0.875rem", color: "#6b7280"}}>No metadata entries.</div>
-    </div>
-  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Empty state when no metadata exists for the invoice. Shows placeholder message and add button.",
+      },
+    },
+  },
+  args: {
+    metadata: {},
+  },
+};
+
+/** Metadata tab with just two entries to test minimal content rendering. */
+export const FewEntries: Story = {
+  args: {
+    metadata: {
+      invoice_type: "Receipt",
+      tax_id: "RO12345678",
+    },
+  },
+};
+
+/** Metadata tab with many entries to test grid layout and scrolling behavior. */
+export const ManyEntries: Story = {
+  args: {
+    metadata: {
+      store_id: "KFL-2024-BUC",
+      receipt_number: "INV-2024-001234",
+      cashier: "Station 3",
+      loyalty_points: "150",
+      payment_method: "VISA-4242",
+      transaction_id: "TXN-20240618-ABC123",
+      register_number: "POS-07",
+      shift_id: "SHIFT-MORNING-01",
+      employee_id: "EMP-9876",
+      tax_rate: "19%",
+      discount_code: "SUMMER2024",
+      customer_group: "Premium",
+    },
+  },
+};
+
+/** Metadata tab with very long key and value strings to test text wrapping and ellipsis. */
+export const LongKeysAndValues: Story = {
+  args: {
+    metadata: {
+      very_long_metadata_key_name_that_tests_wrapping_behavior:
+        "This is an extremely long metadata value string that should test the component's ability to handle text wrapping, truncation, or overflow scenarios in the UI layout without breaking the design system constraints",
+      promotional_campaign_identifier: "MEGA_SUPER_SUMMER_SALE_2024_LOYALTY_REWARDS_CAMPAIGN_EXTENDED_EDITION",
+      short: "ok",
+    },
+  },
+};
+
+/** Metadata tab with special characters and Unicode to test encoding and display handling. */
+export const SpecialCharacters: Story = {
+  args: {
+    metadata: {
+      customer_note: "Preț special: 50% reducere! ✓",
+      location: "București, Sector 1, Str. Universității Nr. 13",
+      tags: "#promoție #vară2024 @client-premium",
+      email: "customer@exemplu.ro",
+      symbols: "€ $ £ ¥ © ® ™ • ← → ↑ ↓",
+    },
+  },
+};
+
+/** Metadata tab with numeric values, dates, and mixed data types as strings. */
+export const MixedDataTypes: Story = {
+  args: {
+    metadata: {
+      total_items: "42",
+      invoice_date: "2024-06-18T22:49:56+03:00",
+      expiry_date: "2024-12-31",
+      discount_percent: "15.5",
+      vat_included: "true",
+      reference_url: "https://merchant.example.com/invoice/123456",
+    },
+  },
 };

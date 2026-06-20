@@ -10,7 +10,7 @@ import FeaturesSection from "./Features";
  * link directs users to `/about`.
  */
 const meta = {
-  title: "Pages/Home/Features",
+  title: "arolariu.ro/Pages/Home/Features",
   component: FeaturesSection,
   parameters: {
     layout: "fullscreen",

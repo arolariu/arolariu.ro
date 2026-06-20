@@ -6,9 +6,14 @@ import {usePaginationWithSearch} from "./usePagination";
  * The `usePaginationWithSearch` hook provides pagination state and controls
  * with integrated search filtering. This story renders a demo UI that
  * showcases pagination behavior with mock data.
+ *
+ * INTENTIONAL EXCEPTION (no standalone UI component): this is a custom-hook demo.
+ * The story mounts a thin `PaginationDemo` that exercises the REAL
+ * `usePaginationWithSearch` hook; there is no real UI component to mount directly.
+ * Do not flag in real-mount audits.
  */
 const meta = {
-  title: "Site/usePagination",
+  title: "arolariu.ro/Site/usePagination",
   parameters: {
     layout: "centered",
   },

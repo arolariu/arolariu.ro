@@ -9,7 +9,7 @@ import Experience from "./Experience";
  * Uses the `sections.about.author.Experiences` i18n namespace.
  */
 const meta = {
-  title: "Pages/About/TheAuthor/Experience",
+  title: "arolariu.ro/Pages/About/TheAuthor/Experience",
   component: Experience,
   parameters: {
     layout: "fullscreen",

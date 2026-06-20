@@ -1,85 +1,131 @@
+import type {Invoice} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
-import {TbAlertTriangle, TbTrash} from "react-icons/tb";
+import {invoicePresets, OpenDialogButton, playOpenDialog, storyInvoice, storyInvoicePdfScan, withEntityPreset} from "../../../_storybook";
+import RemoveScanDialog from "./RemoveScanDialog";
+
+type StoryArgs = {invoice: Invoice; invoicePreset: "standard" | "public"};
 
 /**
- * Static visual preview of the RemoveScanDialog component.
+ * RemoveScanDialog allows users to remove a scan from an invoice.
  *
- * @remarks Static preview — component imports "use server" action (detachScanFromInvoice
- * from `@/app/domains/invoices/_actions/invoices/scans/detachScanFromInvoice`) that cannot be bundled by
- * Storybook's Vite/Rollup. Also depends on `useDialog` context. This story renders
- * a faithful HTML replica of the scan removal confirmation dialog with image preview.
+ * @remarks
+ * This story mounts the real RemoveScanDialog component with OpenDialogButton
+ * harness, opening the dialog automatically on mount with a story invoice and scan payload.
  */
 const meta = {
-  title: "Invoices/EditInvoice/Dialogs/RemoveScanDialog",
+  title: "arolariu.ro/IMS/Dialogs/Scan/RemoveScan",
+  component: RemoveScanDialog,
   parameters: {
     layout: "centered",
   },
-} satisfies Meta;
+  tags: ["autodocs"],
+  argTypes: {
+    invoicePreset: {control: "select", options: ["standard", "public"]},
+    invoice: {control: "object"},
+  },
+  args: {invoicePreset: "standard", invoice: storyInvoice},
+  decorators: [withEntityPreset("invoicePreset", "invoice", invoicePresets)],
+} satisfies Meta<StoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<StoryArgs>;
 
-/** Default remove scan confirmation dialog. */
+/**
+ * Default remove scan confirmation dialog.
+ */
 export const Default: Story = {
-  render: () => (
-    <div
-      style={{
-        borderRadius: "0.75rem",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "#fff",
-        boxShadow: "0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1)",
-      }}>
-      {/* Header */}
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1.5rem"}}>
-        <h2 style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.125rem", fontWeight: 600}}>
-          <TbAlertTriangle style={{height: "1.25rem", width: "1.25rem", color: "#ef4444"}} />
-          Remove Scan
-        </h2>
-        <p style={{marginTop: "0.25rem", fontSize: "0.875rem", color: "#6b7280"}}>Remove scan 2 of 3 from this invoice.</p>
-      </div>
+  play: playOpenDialog,
+  render: ({invoice}) => {
+    if (!invoice.scans || invoice.scans.length === 0) {
+      throw new Error("RemoveScanDialog story requires at least one invoice scan fixture.");
+    }
+    const firstScan = invoice.scans[0];
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__REMOVE_SCAN'
+        mode='delete'
+        payload={{invoice, scan: firstScan, scanIndex: 0}}>
+        <RemoveScanDialog />
+      </OpenDialogButton>
+    );
+  },
+};
 
-      <div style={{padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem"}}>
-        {/* Scan Preview */}
-        <div style={{overflow: "hidden", borderRadius: "0.5rem", border: "1px solid #e5e7eb"}}>
-          <div style={{display: "flex", aspectRatio: "4/3", alignItems: "center", justifyContent: "center", backgroundColor: "#f3f4f6"}}>
-            <img
-              src='https://picsum.photos/seed/removescan/400/300'
-              alt='Scan to remove'
-              style={{height: "100%", width: "100%", objectFit: "cover"}}
-            />
-          </div>
-        </div>
-        <p style={{textAlign: "center", fontSize: "0.75rem", color: "#6b7280"}}>Scan 2 of 3</p>
-      </div>
+/**
+ * Remove-scan confirmation for a PDF document scan.
+ */
+export const PdfScan: Story = {
+  play: playOpenDialog,
+  render: ({invoice}) => {
+    const invoiceWithPdf = {...invoice, scans: [storyInvoicePdfScan]};
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__REMOVE_SCAN'
+        mode='delete'
+        payload={{invoice: invoiceWithPdf, scan: storyInvoicePdfScan, scanIndex: 0}}>
+        <RemoveScanDialog />
+      </OpenDialogButton>
+    );
+  },
+};
 
-      {/* Footer */}
-      <div style={{display: "flex", justifyContent: "flex-end", gap: "0.5rem", borderTop: "1px solid #e5e7eb", padding: "1rem"}}>
-        <button
-          style={{
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            paddingInline: "1rem",
-            paddingBlock: "0.5rem",
-            fontSize: "0.875rem",
-          }}>
-          Cancel
-        </button>
-        <button
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            borderRadius: "0.375rem",
-            backgroundColor: "#dc2626",
-            paddingInline: "1rem",
-            paddingBlock: "0.5rem",
-            fontSize: "0.875rem",
-            color: "#fff",
-          }}>
-          <TbTrash style={{height: "1rem", width: "1rem"}} />
-          Remove
-        </button>
-      </div>
-    </div>
-  ),
+/** Remove scan dialog for the last remaining scan on an invoice. */
+export const LastScan: Story = {
+  play: playOpenDialog,
+  render: ({invoice}) => {
+    const firstScan = invoice.scans[0];
+    if (!firstScan) {
+      throw new Error("RemoveScanDialog story requires at least one scan");
+    }
+    const invoiceWithOneScan = {...invoice, scans: [firstScan]};
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__REMOVE_SCAN'
+        mode='delete'
+        payload={{invoice: invoiceWithOneScan, scan: firstScan, scanIndex: 0}}>
+        <RemoveScanDialog />
+      </OpenDialogButton>
+    );
+  },
+};
+
+/** Remove scan dialog for a middle scan in multi-scan invoice. */
+export const MiddleScan: Story = {
+  play: playOpenDialog,
+  render: ({invoice}) => {
+    const middleIndex = Math.floor(invoice.scans.length / 2);
+    const middleScan = invoice.scans[middleIndex];
+    if (!middleScan) {
+      throw new Error("RemoveScanDialog story requires multiple scans");
+    }
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__REMOVE_SCAN'
+        mode='delete'
+        payload={{invoice, scan: middleScan, scanIndex: middleIndex}}>
+        <RemoveScanDialog />
+      </OpenDialogButton>
+    );
+  },
+};
+
+/** Remove scan dialog for invoice with many scans. */
+export const ManyScans: Story = {
+  play: playOpenDialog,
+  render: ({invoice}) => {
+    const manyScans = [...invoice.scans, ...invoice.scans, ...invoice.scans];
+    const invoiceWithMany = {...invoice, scans: manyScans};
+    const firstScan = manyScans[0];
+    if (!firstScan) {
+      throw new Error("RemoveScanDialog story requires scans");
+    }
+    return (
+      <OpenDialogButton
+        dialog='EDIT_INVOICE__REMOVE_SCAN'
+        mode='delete'
+        payload={{invoice: invoiceWithMany, scan: firstScan, scanIndex: 0}}>
+        <RemoveScanDialog />
+      </OpenDialogButton>
+    );
+  },
 };

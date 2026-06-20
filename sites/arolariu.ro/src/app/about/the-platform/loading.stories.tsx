@@ -7,7 +7,7 @@ import Loading from "./loading";
  * Hero, Features, Architecture, TechStack (with stats), Timeline, and CTA.
  */
 const meta = {
-  title: "Pages/About/ThePlatform/Loading",
+  title: "arolariu.ro/Pages/About/ThePlatform/Loading",
   component: Loading,
   parameters: {
     layout: "fullscreen",

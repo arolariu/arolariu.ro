@@ -35,7 +35,7 @@ const mockPackages: NodePackagesJSON = {
  * Uses the `Acknowledgements.packagesScreen` i18n namespace.
  */
 const meta = {
-  title: "Pages/Acknowledgements/PackagesScreen",
+  title: "arolariu.ro/Pages/Acknowledgements/PackagesScreen",
   component: PackagesScreen,
   parameters: {
     layout: "fullscreen",

@@ -15,17 +15,26 @@ import {
 /**
  * Static visual preview of the DialogContainer component.
  *
- * @remarks Static preview — component transitively imports "use server" actions
- * via DeleteInvoiceDialog (deleteInvoice), ShareInvoiceDialog (patchInvoice),
- * AddScanDialog (attachScanToInvoice, createScan), AnalyzeDialog (analyzeInvoice),
- * and RemoveScanDialog (detachScanFromInvoice) that cannot be bundled by Storybook's
- * Vite/Rollup. This story shows a schematic overview of all dialog types
- * the container can render.
+ * INTENTIONAL EXCEPTION (registry container): DialogContainer is a thin registry that
+ * renders whichever invoice/scan dialog is currently active in `useDialogs` context —
+ * it renders nothing on its own. Each concrete dialog it can render is covered by its
+ * own real-mount story (see IMS/Dialogs/*), so this registry keeps a schematic preview
+ * rather than duplicating those. Do not flag in real-mount audits.
  */
 const meta = {
-  title: "Invoices/Dialogs/DialogContainer",
+  title: "arolariu.ro/IMS/Dialogs/Container",
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "**Static Preview:** Manages visibility of invoice-related dialogs via `useDialogs` context. Conditionally renders the active dialog " +
+          "based on current dialog type from context state. Returns `null` when no dialog is open. " +
+          "**Blocker:** Storybook mocks cover the common invoice and scan action modules, but the full container also reaches CreateInvoiceDialog, " +
+          "which imports the unmocked server action `createInvoiceFromScans` from `view-scans/_actions/createInvoiceFromScans`. " +
+          "This static schematic documents representative dialog registrations; individual dialog stories cover concrete mounted dialog content.",
+      },
+    },
   },
 } satisfies Meta;
 
@@ -128,8 +137,16 @@ const dialogTypes = [
   },
 ];
 
-/** Overview of all dialog types managed by the container. */
+/** Overview of representative dialog types managed by the container. */
 export const Default: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Displays a schematic grid showing representative dialog types from the container, organized by category (analysis, items, merchant, metadata, scans, recipes, sharing, deletion). This is intentionally not an exhaustive registry.",
+      },
+    },
+  },
   render: () => (
     <div
       style={{
@@ -141,7 +158,7 @@ export const Default: Story = {
       <div style={{borderBottom: "1px solid #e5e7eb", padding: "1.5rem"}}>
         <h2 style={{fontSize: "1.125rem", fontWeight: "600"}}>Dialog Container</h2>
         <p style={{marginTop: "0.25rem", fontSize: "0.875rem", color: "#6b7280"}}>
-          Manages visibility of all invoice-related dialogs via{" "}
+          Shows representative invoice dialog registrations via{" "}
           <code
             style={{
               borderRadius: "0.25rem",

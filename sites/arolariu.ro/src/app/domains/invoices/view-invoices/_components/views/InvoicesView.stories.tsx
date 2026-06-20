@@ -1,152 +1,199 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {TbCards, TbCategory, TbClock, TbFilter, TbSearch, TbTable} from "react-icons/tb";
+import {
+  resetInvoiceStoryStores,
+  seedInvoiceStoryStores,
+  storyDeletedInvoice,
+  storyEurInvoice,
+  storyGbpInvoice,
+  storyInvoices,
+  storyLongNameInvoice,
+  storyManyInvoices,
+  storyUsdInvoice,
+  WithInvoiceDialogs,
+} from "../../../_storybook";
+import RenderInvoicesView from "./InvoicesView";
 
 /**
- * Static visual preview of the InvoicesView component.
- *
- * @remarks Static preview — component imports `usePaginationWithSearch` from the `@/hooks`
- * barrel which transitively pulls in "use server" actions (fetchInvoice, fetchMerchant, etc.)
- * that cannot be bundled by Storybook's Vite/Rollup. This story renders a faithful HTML
- * replica of the toolbar and placeholder content area.
+ * InvoicesView renders a filterable and sortable list of invoices with table/grid toggle.
+ * Depends on `useDialog`, Next.js navigation hooks, and `usePaginationWithSearch`.
  */
 const meta = {
-  title: "Invoices/ViewInvoices/Views/InvoicesView",
+  title: "arolariu.ro/IMS/Views/InvoicesView",
+  component: RenderInvoicesView,
+  tags: ["autodocs"],
+  decorators: [
+    (Story) => (
+      <WithInvoiceDialogs>
+        <div style={{padding: "2rem"}}>
+          <Story />
+        </div>
+      </WithInvoiceDialogs>
+    ),
+  ],
   parameters: {
     layout: "fullscreen",
+    docs: {
+      description: {
+        component:
+          "Mounts the real invoice list view with the invoice dialog provider, seeded invoice stores, filters, and table/grid switching behavior.",
+      },
+    },
   },
-} satisfies Meta;
+} satisfies Meta<typeof RenderInvoicesView>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Default invoices view with search toolbar and table placeholder. */
+/** Default invoices view with filter toolbar and table (interactive). */
 export const Default: Story = {
-  render: () => (
-    <div style={{display: "flex", flexDirection: "column", gap: "1rem"}}>
-      {/* Toolbar */}
-      <div style={{display: "flex", flexDirection: "column", gap: "0.75rem"}}>
-        <div style={{position: "relative"}}>
-          <TbSearch
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: "0.75rem",
-              height: "1rem",
-              width: "1rem",
-              transform: "translateY(-50%)",
-              color: "#9ca3af",
-            }}
-          />
-          <input
-            type='text'
-            placeholder='Search invoices...'
-            style={{
-              width: "100%",
-              borderRadius: "0.375rem",
-              border: "1px solid #e5e7eb",
-              backgroundColor: "transparent",
-              padding: "0.5rem 0.75rem 0.5rem 2.25rem",
-              fontSize: "0.875rem",
-              outline: "none",
-            }}
-            readOnly
-          />
-        </div>
-        <div style={{display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem"}}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.25rem",
-              borderRadius: "0.375rem",
-              border: "1px solid #e5e7eb",
-              padding: "0.375rem 0.75rem",
-              fontSize: "0.875rem",
-            }}>
-            <TbCategory style={{height: "1rem", width: "1rem", color: "#6b7280"}} />
-            <span>Category</span>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.25rem",
-              borderRadius: "0.375rem",
-              border: "1px solid #e5e7eb",
-              padding: "0.375rem 0.75rem",
-              fontSize: "0.875rem",
-            }}>
-            <TbClock style={{height: "1rem", width: "1rem", color: "#6b7280"}} />
-            <span>Time of Day</span>
-          </div>
-          <button style={{borderRadius: "0.375rem", border: "1px solid #e5e7eb", padding: "0.375rem 0.5rem"}}>
-            <TbFilter style={{height: "1rem", width: "1rem", color: "#6b7280"}} />
-          </button>
-          <div style={{marginLeft: "auto", display: "flex"}}>
-            <button
-              style={{
-                borderTopLeftRadius: "0.375rem",
-                borderBottomLeftRadius: "0.375rem",
-                backgroundColor: "#111827",
-                padding: "0.375rem 0.5rem",
-                color: "#ffffff",
-              }}>
-              <TbTable style={{height: "1rem", width: "1rem"}} />
-            </button>
-            <button
-              style={{
-                borderTopRightRadius: "0.375rem",
-                borderBottomRightRadius: "0.375rem",
-                border: "1px solid #e5e7eb",
-                padding: "0.375rem 0.5rem",
-              }}>
-              <TbCards style={{height: "1rem", width: "1rem"}} />
-            </button>
-          </div>
-        </div>
-      </div>
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores();
+  },
+  args: {
+    invoices: storyInvoices,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Interactive invoice list view populated with the deterministic invoice fixtures and seeded invoice store.",
+      },
+    },
+  },
+};
 
-      {/* Table placeholder */}
-      <div style={{borderRadius: "0.375rem", border: "1px solid #e5e7eb"}}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(5, 1fr)",
-            borderBottom: "1px solid #e5e7eb",
-            backgroundColor: "#f9fafb",
-            padding: "0.625rem 1rem",
-            fontSize: "0.75rem",
-            fontWeight: 500,
-            color: "#6b7280",
-          }}>
-          <span>Merchant</span>
-          <span>Date</span>
-          <span>Category</span>
-          <span>Total</span>
-          <span>Status</span>
-        </div>
-        {[
-          {merchant: "Lidl", date: "Jan 15", category: "Groceries", total: "$45.80", status: "Analyzed"},
-          {merchant: "Amazon", date: "Jan 12", category: "Electronics", total: "$129.99", status: "Pending"},
-          {merchant: "Starbucks", date: "Jan 10", category: "Dining", total: "$8.50", status: "Analyzed"},
-        ].map((row) => (
-          <div
-            key={row.merchant}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(5, 1fr)",
-              borderBottom: "1px solid #e5e7eb",
-              padding: "0.75rem 1rem",
-              fontSize: "0.875rem",
-            }}>
-            <span style={{fontWeight: 500}}>{row.merchant}</span>
-            <span style={{color: "#6b7280"}}>{row.date}</span>
-            <span>{row.category}</span>
-            <span>{row.total}</span>
-            <span style={{color: row.status === "Analyzed" ? "#16a34a" : "#ca8a04"}}>{row.status}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  ),
+/** Empty state — no invoices available. */
+export const EmptyState: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+  },
+  args: {
+    invoices: [],
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Empty invoice list state with no invoices and a reset store.",
+      },
+    },
+  },
+};
+
+/** Sparse list with a single invoice. */
+export const FewInvoices: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyInvoices.slice(0, 1)});
+  },
+  args: {
+    invoices: storyInvoices.slice(0, 1),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice list view populated with a single invoice to show the sparse-list layout between the empty and full states.",
+      },
+    },
+  },
+};
+
+/** Many invoices (60) — overflow and pagination test. */
+export const ManyInvoices: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyManyInvoices});
+  },
+  args: {
+    invoices: storyManyInvoices,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Invoice list view populated with 60 invoices. Tests pagination, overflow, filtering, and rendering performance with large data sets.",
+      },
+    },
+  },
+};
+
+/** Long invoice name — text truncation test. */
+export const LongInvoiceName: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: [storyLongNameInvoice]});
+  },
+  args: {
+    invoices: [storyLongNameInvoice],
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Invoice list view with an invoice having an extremely long name. Tests text truncation, ellipsis, and tooltip behavior in both table and grid views.",
+      },
+    },
+  },
+};
+
+/** Two invoices — minimal viable list. */
+export const TwoInvoices: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyInvoices.slice(0, 2)});
+  },
+  args: {
+    invoices: storyInvoices.slice(0, 2),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Invoice list view with two invoices. Tests minimal viable data set rendering and view switching.",
+      },
+    },
+  },
+};
+
+/** Multi-currency invoices (EUR, USD, GBP). */
+export const MultiCurrency: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: [storyEurInvoice, storyUsdInvoice, storyGbpInvoice]});
+  },
+  args: {
+    invoices: [storyEurInvoice, storyUsdInvoice, storyGbpInvoice],
+  },
+};
+
+/** With soft-deleted invoice. */
+export const WithSoftDeleted: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: [...storyInvoices, storyDeletedInvoice]});
+  },
+  args: {
+    invoices: [...storyInvoices, storyDeletedInvoice],
+  },
+};
+
+/** Huge data set (120 invoices). */
+export const HugeDataset: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    const hugeSet = [...storyManyInvoices, ...storyManyInvoices];
+    seedInvoiceStoryStores({invoices: hugeSet});
+  },
+  args: {
+    invoices: [...storyManyInvoices, ...storyManyInvoices],
+  },
+};
+
+/** Five invoices — small data set. */
+export const FiveInvoices: Story = {
+  beforeEach: () => {
+    resetInvoiceStoryStores();
+    seedInvoiceStoryStores({invoices: storyInvoices.slice(0, 5)});
+  },
+  args: {
+    invoices: storyInvoices.slice(0, 5),
+  },
 };

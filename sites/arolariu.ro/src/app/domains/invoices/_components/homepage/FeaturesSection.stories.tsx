@@ -8,7 +8,7 @@ import FeaturesSection from "./FeaturesSection";
  * Uses the `Invoices.Homepage` i18n namespace.
  */
 const meta = {
-  title: "Invoices/Homepage/FeaturesSection",
+  title: "arolariu.ro/IMS/Sections/FeaturesSection",
   component: FeaturesSection,
   parameters: {
     layout: "fullscreen",
@@ -29,5 +29,35 @@ export const Authenticated: Story = {
 export const Unauthenticated: Story = {
   args: {
     isAuthenticated: false,
+  },
+};
+
+/** Authenticated state in dark mode. */
+export const AuthenticatedDark: Story = {
+  args: {
+    isAuthenticated: true,
+  },
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Unauthenticated state in dark mode. */
+export const UnauthenticatedDark: Story = {
+  args: {
+    isAuthenticated: false,
+  },
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Authenticated state with mobile viewport. */
+export const Mobile: Story = {
+  args: {
+    isAuthenticated: true,
+  },
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
   },
 };

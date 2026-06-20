@@ -1,51 +1,88 @@
+import {
+  OpenDialogButton,
+  playOpenDialog,
+  storyImageScanUrl,
+  storyImageScanUrlSecondary,
+  storyImageScanUrlWide,
+} from "@/app/domains/invoices/_storybook";
 import type {Meta, StoryObj} from "@storybook/react";
+import ImageDialog from "./ImageDialog";
 
 /**
- * Static visual preview of the ImageDialog component.
- *
- * The actual component depends on `useDialog` context with a payload URL,
- * so this story renders a faithful HTML replica of the full-width dialog
- * with a receipt image placeholder.
+ * ImageDialog shows a full-size scan image. It reads its string image-URL payload
+ * from `useDialog("EDIT_INVOICE__IMAGE")`. Mounts the real dialog via the
+ * OpenDialogButton harness, opening it on mount.
  */
 const meta = {
-  title: "Invoices/EditInvoice/Dialogs/ImageDialog",
-  parameters: {
-    layout: "centered",
-  },
-} satisfies Meta;
+  title: "arolariu.ro/IMS/Dialogs/Scan/Image",
+  component: ImageDialog,
+  parameters: {layout: "centered"},
+} satisfies Meta<typeof ImageDialog>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Default image dialog with receipt placeholder. */
+/** Image dialog opened with a sample scan image URL. */
 export const Default: Story = {
+  play: playOpenDialog,
   render: () => (
-    <div
-      style={{
-        borderRadius: "0.75rem",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "#fff",
-        boxShadow: "0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1)",
-      }}>
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1.5rem"}}>
-        <h2 style={{fontSize: "1.125rem", fontWeight: 600}}>Receipt Image</h2>
-      </div>
-      <div
-        style={{
-          position: "relative",
-          display: "flex",
-          aspectRatio: "3/4",
-          maxHeight: "500px",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "#f9fafb",
-        }}>
-        <img
-          src='https://picsum.photos/seed/imagedialog/600/800'
-          alt='Receipt scan preview'
-          style={{height: "100%", width: "100%", objectFit: "contain"}}
-        />
-      </div>
-    </div>
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__IMAGE'
+      mode='view'
+      payload={storyImageScanUrl}>
+      <ImageDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Image dialog with a different image URL. */
+export const SecondaryImage: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__IMAGE'
+      mode='view'
+      payload={storyImageScanUrlSecondary}>
+      <ImageDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Image dialog with wide-format scan image. */
+export const WideImage: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__IMAGE'
+      mode='view'
+      payload={storyImageScanUrlWide}>
+      <ImageDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Image dialog with primary scan image URL. */
+export const PrimaryScanImage: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__IMAGE'
+      mode='view'
+      payload={storyImageScanUrl}>
+      <ImageDialog />
+    </OpenDialogButton>
+  ),
+};
+
+/** Image dialog with alternate scan variation. */
+export const AlternateScan: Story = {
+  play: playOpenDialog,
+  render: () => (
+    <OpenDialogButton
+      dialog='EDIT_INVOICE__IMAGE'
+      mode='view'
+      payload={storyImageScanUrlSecondary}>
+      <ImageDialog />
+    </OpenDialogButton>
   ),
 };

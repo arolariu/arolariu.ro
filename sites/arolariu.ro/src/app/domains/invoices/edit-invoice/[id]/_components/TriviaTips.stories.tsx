@@ -8,7 +8,7 @@ import TriviaTipsCard from "./TriviaTips";
  * the invoice total amount.
  */
 const meta = {
-  title: "Invoices/EditInvoice/TriviaTips",
+  title: "arolariu.ro/IMS/Components/Invoice/TriviaTips",
   component: TriviaTipsCard,
   parameters: {
     layout: "centered",

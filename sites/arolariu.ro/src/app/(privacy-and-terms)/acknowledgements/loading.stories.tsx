@@ -9,7 +9,7 @@ import Loading from "./loading";
  * This is a "use client" skeleton that uses UI components but no translations.
  */
 const meta = {
-  title: "Pages/Acknowledgements/Loading",
+  title: "arolariu.ro/Pages/Acknowledgements/Loading",
   component: Loading,
   parameters: {
     layout: "fullscreen",
