@@ -198,7 +198,7 @@
     "next": "16.2.6",
     "node-html-parser": "7.1.0",
     "nx": "22.7.5",
-    "piscina": "5.1.4",
+    "piscina": "5.2.0",
     "playwright": "1.60.0",
     "postcss": "8.5.15",
     "prettier-plugin-organize-imports": "4.3.0",
