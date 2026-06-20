@@ -210,10 +210,10 @@
       },
       "OpenAI": {
         "type": "Transitive",
-        "resolved": "2.7.0",
-        "contentHash": "zodE/lrDzSUxgFzuHP+fiR56VBQZyy3H7le8VH9fiuB8SCgs7YSKpK/pwSpYZln3HVX6RyPDuALIOVPQMhnRFQ==",
+        "resolved": "2.9.1",
+        "contentHash": "KPTFYEt1EhrPeIZXGBE+DlutFEpMo/RspqSdUJ3p6pMqsw3NeGJcIja/K0He1j9KyRq8ASfzBgp2biWbNUGnFA==",
         "dependencies": {
-          "System.ClientModel": "1.8.1"
+          "System.ClientModel": "1.9.0"
         }
       },
       "OpenTelemetry.Api.ProviderBuilderExtensions": {
@@ -365,20 +365,20 @@
           "OpenTelemetry.Instrumentation.AspNetCore": "[1.15.2, )",
           "OpenTelemetry.Instrumentation.EntityFrameworkCore": "[1.15.1-beta.1, )",
           "OpenTelemetry.Instrumentation.Http": "[1.15.1, )",
-          "Swashbuckle.AspNetCore": "[10.2.1, )",
-          "Swashbuckle.AspNetCore.Annotations": "[10.2.1, )",
-          "Swashbuckle.AspNetCore.Swagger": "[10.2.1, )",
-          "Swashbuckle.AspNetCore.SwaggerGen": "[10.2.1, )",
-          "Swashbuckle.AspNetCore.SwaggerUI": "[10.2.1, )"
+          "Swashbuckle.AspNetCore": "[10.2.2, )",
+          "Swashbuckle.AspNetCore.Annotations": "[10.2.2, )",
+          "Swashbuckle.AspNetCore.Swagger": "[10.2.2, )",
+          "Swashbuckle.AspNetCore.SwaggerGen": "[10.2.2, )",
+          "Swashbuckle.AspNetCore.SwaggerUI": "[10.2.2, )"
         }
       },
       "arolariu.backend.domain.invoices": {
         "type": "Project",
         "dependencies": {
           "Azure.AI.DocumentIntelligence": "[1.0.0, )",
-          "Azure.AI.OpenAI": "[2.7.0-beta.2, )",
+          "Azure.AI.OpenAI": "[2.9.0-beta.1, )",
           "Azure.AI.OpenAI.Assistants": "[1.0.0-beta.4, )",
-          "Azure.AI.Translation.Text": "[1.0.0, )",
+          "Azure.AI.Translation.Text": "[2.0.0, )",
           "Azure.Storage.Blobs": "[12.29.0, )",
           "Microsoft.Azure.Cosmos": "[3.61.0, )",
           "Microsoft.Extensions.Azure": "[1.14.0, )",
@@ -398,12 +398,12 @@
       },
       "Azure.AI.OpenAI": {
         "type": "CentralTransitive",
-        "requested": "[2.7.0-beta.2, )",
-        "resolved": "2.7.0-beta.2",
-        "contentHash": "HeiOYWoxubHyCPL33hgbGSh1KaDRCofJiyFtaEO86A8RLTZSfoPZx2DosiDZMLCqraOfTSWYaWS0FLxbVHFWzQ==",
+        "requested": "[2.9.0-beta.1, )",
+        "resolved": "2.9.0-beta.1",
+        "contentHash": "CgIYDuCSOFx+yPuCdK7iz71OW2envfVeIE/YoNYK+mhr6bxgIJV6jfBF+mV9aHDQ6KVQjeSL6OZ7x90XrvsoRg==",
         "dependencies": {
-          "Azure.Core": "1.50.0",
-          "OpenAI": "2.7.0"
+          "Azure.Core": "1.51.1",
+          "OpenAI": "2.9.1"
         }
       },
       "Azure.AI.OpenAI.Assistants": {
@@ -418,12 +418,11 @@
       },
       "Azure.AI.Translation.Text": {
         "type": "CentralTransitive",
-        "requested": "[1.0.0, )",
-        "resolved": "1.0.0",
-        "contentHash": "1NuUYXydLzlJH8NXuq3SIBvCJ1VDSXJym0BA24bFWkLMDluYQaS4pwmrVyEfTqFmqO1fqzAxP87RMqH+zWdr4Q==",
+        "requested": "[2.0.0, )",
+        "resolved": "2.0.0",
+        "contentHash": "v0U87B7PkjvxppAVWSMZSDshTB1uPBR6nPcdGWrhzUW/v9RG5sP7QdjxJtyJtHVzrUmY9lM8Y2T2mO7KAAXBpQ==",
         "dependencies": {
-          "Azure.Core": "1.39.0",
-          "System.ClientModel": "1.0.0"
+          "Azure.Core": "1.57.0"
         }
       },
       "Azure.Core": {
@@ -702,48 +701,48 @@
       },
       "Swashbuckle.AspNetCore": {
         "type": "CentralTransitive",
-        "requested": "[10.2.1, )",
-        "resolved": "10.2.1",
-        "contentHash": "SDU6akgCV/H4jFMRfyJ0mgO5jWOuuAqekvEThXg8c/LjnfNz5Nkaz+RUpeTVJKWIRX4wDKC/6R3ogJ4AsRE32A==",
+        "requested": "[10.2.2, )",
+        "resolved": "10.2.2",
+        "contentHash": "vgXTCFRbRlfCJHE9zAhgd1QJR4AEoEuYm+i7E4xeqa/WNI77JHnNG21/NXdnK5tgpJeQ7pzp/vNYvTpMZDEd1A==",
         "dependencies": {
           "Microsoft.Extensions.ApiDescription.Server": "10.0.0",
-          "Swashbuckle.AspNetCore.Swagger": "10.2.1",
-          "Swashbuckle.AspNetCore.SwaggerGen": "10.2.1",
-          "Swashbuckle.AspNetCore.SwaggerUI": "10.2.1"
+          "Swashbuckle.AspNetCore.Swagger": "10.2.2",
+          "Swashbuckle.AspNetCore.SwaggerGen": "10.2.2",
+          "Swashbuckle.AspNetCore.SwaggerUI": "10.2.2"
         }
       },
       "Swashbuckle.AspNetCore.Annotations": {
         "type": "CentralTransitive",
-        "requested": "[10.2.1, )",
-        "resolved": "10.2.1",
-        "contentHash": "8kAobMGuvJz6ST6C31VfNdiCMoZ67qijaR6Id5DDLz5NbIAKvDACoq2QGNJv8sOFW8orAy5iCQmRp1Tf0Om7Tg==",
+        "requested": "[10.2.2, )",
+        "resolved": "10.2.2",
+        "contentHash": "flZjXaiYu6hrZfHf7ngZHVyycfof1Fv3DRHjs6bdgkALEqo2beoUY2LavjsTXvFRw9WCBISXMQuVT5gpisqyEw==",
         "dependencies": {
-          "Swashbuckle.AspNetCore.SwaggerGen": "10.2.1"
+          "Swashbuckle.AspNetCore.SwaggerGen": "10.2.2"
         }
       },
       "Swashbuckle.AspNetCore.Swagger": {
         "type": "CentralTransitive",
-        "requested": "[10.2.1, )",
-        "resolved": "10.2.1",
-        "contentHash": "ej4inPhiWCq+0utG8yaKhIhE8M3k3R/qRaGhpgDZB+O/s+o62/zRMO1Cn2CtQccsrqPE9PYnzCp6hQGYGpJOyQ==",
+        "requested": "[10.2.2, )",
+        "resolved": "10.2.2",
+        "contentHash": "XftCYHVoKpi1PO4FjZN4LqFgvcSJPAojTOBCokkEcJLitfAYbaLya1i1XjirnNd7pykK9Nedk3IANyGLVDbYSQ==",
         "dependencies": {
           "Microsoft.OpenApi": "2.7.5"
         }
       },
       "Swashbuckle.AspNetCore.SwaggerGen": {
         "type": "CentralTransitive",
-        "requested": "[10.2.1, )",
-        "resolved": "10.2.1",
-        "contentHash": "JYX6i/y0xEtQWH/hZyfcage1/ldwww83ueD/gBc34uSnMwyvRLUsOpYcxlliFFxFbZMrY6t+R9ENqolE7zTEOg==",
+        "requested": "[10.2.2, )",
+        "resolved": "10.2.2",
+        "contentHash": "c0iLanVdOSs0JSmd3Oj8HObTgTsTP4UecynmaFrVTvX+76hnyLciA6Vb1oetmVjdQTpRJUzJlx/H19p8bLjVlg==",
         "dependencies": {
-          "Swashbuckle.AspNetCore.Swagger": "10.2.1"
+          "Swashbuckle.AspNetCore.Swagger": "10.2.2"
         }
       },
       "Swashbuckle.AspNetCore.SwaggerUI": {
         "type": "CentralTransitive",
-        "requested": "[10.2.1, )",
-        "resolved": "10.2.1",
-        "contentHash": "vzB8ZAGqXus3fdareJ9GHctaRP9ZL+wW9x8U7s1Y+BWprInFvSg6rpD9VhANNpwXA8fUHqu5Agjl/+hHG1BCQA=="
+        "requested": "[10.2.2, )",
+        "resolved": "10.2.2",
+        "contentHash": "DVpnuuBQxh95eo+2gQ/HXxrl91Fhe9JIWUW0KxiTV+nLFoJTCyUaJsKpB7kdowDHDk3qnGqF3sZaGrCmAhWCwg=="
       }
     }
   }

@@ -47,9 +47,9 @@
     <PackageVersion Include="Azure.Storage.Blobs" Version="12.29.0" />
   </ItemGroup>
   <ItemGroup Label="Azure AI Packages">
-    <PackageVersion Include="Azure.AI.OpenAI" Version="2.7.0-beta.2" />
+    <PackageVersion Include="Azure.AI.OpenAI" Version="2.9.0-beta.1" />
     <PackageVersion Include="Azure.AI.OpenAI.Assistants" Version="1.0.0-beta.4" />
-    <PackageVersion Include="Azure.AI.Translation.Text" Version="1.0.0" />
+    <PackageVersion Include="Azure.AI.Translation.Text" Version="2.0.0" />
   </ItemGroup>
   <ItemGroup Label="Azure Cognitive Services Packages">
     <PackageVersion Include="Microsoft.Azure.CognitiveServices.Vision.ComputerVision" Version="7.0.1" />
@@ -82,11 +82,11 @@
     <PackageVersion Include="Microsoft.ApplicationInsights.DependencyCollector" Version="2.23.0" />
   </ItemGroup>
   <ItemGroup Label="Swagger and OpenAPI Packages">
-    <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.1" />
-    <PackageVersion Include="Swashbuckle.AspNetCore.Annotations" Version="10.2.1" />
-    <PackageVersion Include="Swashbuckle.AspNetCore.Swagger" Version="10.2.1" />
-    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.2.1" />
-    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.2.1" />
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.2" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.Annotations" Version="10.2.2" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.Swagger" Version="10.2.2" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.2.2" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.2.2" />
   </ItemGroup>
   <ItemGroup Label="Authentication and Security Packages">
     <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.19.1" />
