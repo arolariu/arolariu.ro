@@ -100,7 +100,7 @@ const COMMON_ALLERGENS: ReadonlyArray<string> = [
  * @see {@link updateProduct} - Server action for persisting changes
  * @see {@link Allergen} - Allergen type definition
  */
-export default function AllergenDialog(): React.JSX.Element {
+export default function AllergenDialog(): React.JSX.Element | null {
   const t = useTranslations();
   const {
     currentDialog: {payload},

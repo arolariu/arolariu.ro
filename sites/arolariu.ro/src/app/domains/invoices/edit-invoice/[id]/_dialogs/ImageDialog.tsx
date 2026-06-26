@@ -39,7 +39,7 @@ import styles from "./ImageDialog.module.scss";
  * @see {@link ImageCard} - Parent component that opens this dialog
  * @see {@link useDialog} - Dialog state management hook
  */
-export default function ImageDialog(): React.JSX.Element {
+export default function ImageDialog(): React.JSX.Element | null {
   const t = useTranslations();
   const {
     currentDialog: {payload},

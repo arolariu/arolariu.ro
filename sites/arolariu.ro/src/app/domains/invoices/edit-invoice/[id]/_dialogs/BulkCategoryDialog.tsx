@@ -82,7 +82,7 @@ import styles from "./BulkCategoryDialog.module.scss";
  * @see {@link updateProduct} - Server action for persisting changes
  * @see {@link ProductCategory} - Product category enum
  */
-export default function BulkCategoryDialog(): React.JSX.Element {
+export default function BulkCategoryDialog(): React.JSX.Element | null {
   const t = useTranslations();
   const router = useRouter();
   const {
