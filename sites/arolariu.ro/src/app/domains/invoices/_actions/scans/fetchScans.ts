@@ -131,8 +131,8 @@ export async function fetchScans({includeArchived = false}: ServerActionInputTyp
 
             scans.push(scan);
           }
-        } catch (metadataError) {
-          logWithTrace("warn", "Skipping scan with invalid blob metadata", {blobName: blob.name, error: String(metadataError)}, "server");
+        } catch (blobProcessingError) {
+          logWithTrace("warn", "Skipping scan due to processing error", {blobName: blob.name, error: String(blobProcessingError)}, "server");
         }
       }
       addSpanEvent("azure.blob.list.complete");
