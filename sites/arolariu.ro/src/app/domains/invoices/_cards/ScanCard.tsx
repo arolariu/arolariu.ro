@@ -257,7 +257,7 @@ export default function ScanCard({
             <div
               className={styles["fileNameContainer"]}
               role='presentation'
-              onDoubleClick={rename?.onStart}>
+              onDoubleClick={handleRenameStart}>
               <motion.p
                 className={styles["fileName"]}
                 title={title}>

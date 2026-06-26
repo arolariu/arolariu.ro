@@ -62,7 +62,7 @@ export function useRecipeDelete(invoice: Invoice): Readonly<HookOutputType> {
         setIsDeleting(false);
       }
     },
-    [invoice, removeRecipeClientSide],
+    [invoice.id, invoice.possibleRecipes, removeRecipeClientSide],
   );
 
   return {isDeleting, removeRecipeCallback} as const;

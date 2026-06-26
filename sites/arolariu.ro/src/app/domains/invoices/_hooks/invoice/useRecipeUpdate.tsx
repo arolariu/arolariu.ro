@@ -62,7 +62,7 @@ export function useRecipeUpdate(invoice: Invoice): Readonly<HookOutputType> {
         setIsUpdating(false);
       }
     },
-    [invoice, updateRecipeClientSide],
+    [invoice.id, invoice.possibleRecipes, updateRecipeClientSide],
   );
 
   return {isUpdating, updateRecipeCallback} as const;

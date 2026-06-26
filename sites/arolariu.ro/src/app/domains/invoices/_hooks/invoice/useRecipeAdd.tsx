@@ -63,7 +63,7 @@ export function useRecipeAdd(invoice: Invoice): Readonly<HookOutputType> {
         setIsAdding(false);
       }
     },
-    [invoice, addRecipeClientSide],
+    [invoice.id, invoice.possibleRecipes, addRecipeClientSide],
   );
 
   return {isAdding, addRecipeCallback} as const;
