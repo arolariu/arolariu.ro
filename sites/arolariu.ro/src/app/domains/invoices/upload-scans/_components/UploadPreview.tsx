@@ -179,9 +179,9 @@ export default function UploadPreview(): React.JSX.Element | null {
         <div className={styles["pagination"]}>
           <Button
             variant='outline'
-              size='sm'
-              onClick={handlePreviousPage}
-              disabled={currentPage === 1}>
+            size='sm'
+            onClick={handlePreviousPage}
+            disabled={currentPage === 1}>
             <TbChevronLeft />
             {t((m) => m.pages.invoices.uploadScans.preview.pagination.previous)}
           </Button>
@@ -194,9 +194,9 @@ export default function UploadPreview(): React.JSX.Element | null {
           </span>
           <Button
             variant='outline'
-              size='sm'
-              onClick={handleNextPage}
-              disabled={currentPage >= totalPages}>
+            size='sm'
+            onClick={handleNextPage}
+            disabled={currentPage >= totalPages}>
             {t((m) => m.pages.invoices.uploadScans.preview.pagination.next)}
             <TbChevronRight />
           </Button>

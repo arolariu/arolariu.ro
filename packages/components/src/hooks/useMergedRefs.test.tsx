@@ -112,4 +112,29 @@ describe("useMergedRefs", () => {
     const element = document.createElement("div");
     expect(() => result.current(element)).not.toThrow();
   });
+
+  it("keeps the callback stable when the ref inputs are stable", () => {
+    const ref = React.createRef<HTMLDivElement>();
+    const {rerender, result} = renderHook(() => useMergedRefs(ref));
+    const firstCallback = result.current;
+
+    rerender();
+
+    expect(result.current).toBe(firstCallback);
+  });
+
+  it("syncs the current node when the ref inputs change", () => {
+    const firstRef = React.createRef<HTMLDivElement>();
+    const secondRef = React.createRef<HTMLDivElement>();
+    const {rerender, result} = renderHook(({ref}) => useMergedRefs(ref), {
+      initialProps: {ref: firstRef},
+    });
+    const element = document.createElement("div");
+
+    result.current(element);
+    rerender({ref: secondRef});
+
+    expect(firstRef.current).toBe(null);
+    expect(secondRef.current).toBe(element);
+  });
 });

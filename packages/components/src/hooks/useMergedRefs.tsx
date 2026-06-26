@@ -19,6 +19,21 @@ function setRef<T>(ref: React.Ref<T> | undefined, value: T | null): void {
 }
 
 /**
+ * Checks whether two ref lists contain the same refs in the same order.
+ *
+ * @typeParam T - The type of the referenced element.
+ * @param previousRefs - The previously registered refs.
+ * @param nextRefs - The refs from the latest render.
+ * @returns Whether both ref lists are equivalent.
+ */
+function areRefsEqual<T>(
+  previousRefs: ReadonlyArray<React.Ref<T> | undefined>,
+  nextRefs: ReadonlyArray<React.Ref<T> | undefined>,
+): boolean {
+  return previousRefs.length === nextRefs.length && previousRefs.every((ref, index) => ref === nextRefs[index]);
+}
+
+/**
  * Merges multiple refs into a single callback ref.
  *
  * @remarks
@@ -43,17 +58,33 @@ function setRef<T>(ref: React.Ref<T> | undefined, value: T | null): void {
  * ```
  */
 export function useMergedRefs<T>(...refs: Array<React.Ref<T> | undefined>): React.RefCallback<T> {
-  // Capture the current rest-parameter array so useCallback can reference a named dep.
-  // useMemo itself re-runs whenever the array identity changes (every render for rest params),
-  // but the dependency list is now an array literal, satisfying react-hooks/use-memo.
-  const refsKey = React.useMemo(() => refs, [refs]);
+  const refsRef = React.useRef<ReadonlyArray<React.Ref<T> | undefined>>(refs);
+  const nodeRef = React.useRef<T | null>(null);
 
-  return React.useCallback(
-    (node: T | null): void => {
-      for (const ref of refsKey) {
-        setRef(ref, node);
+  React.useLayoutEffect(() => {
+    const previousRefs = refsRef.current;
+    refsRef.current = refs;
+
+    if (nodeRef.current === null || areRefsEqual(previousRefs, refs)) {
+      return;
+    }
+
+    for (const ref of previousRefs) {
+      if (!refs.includes(ref)) {
+        setRef(ref, null);
       }
-    },
-    [refsKey],
-  );
+    }
+
+    for (const ref of refs) {
+      setRef(ref, nodeRef.current);
+    }
+  });
+
+  return React.useCallback((node: T | null): void => {
+    nodeRef.current = node;
+
+    for (const ref of refsRef.current) {
+      setRef(ref, node);
+    }
+  }, []);
 }
