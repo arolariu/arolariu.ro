@@ -45,7 +45,7 @@ type TooltipPayloadItem = {
 
 type CustomTooltipProps = {
   readonly active?: boolean;
-  readonly payload?: TooltipPayloadItem[];
+  readonly payload?: ReadonlyArray<TooltipPayloadItem>;
   readonly currency: string;
   readonly getMerchantName: (id: string) => string;
 };
@@ -113,7 +113,7 @@ export function MerchantLeaderboard({data, currency, merchantNamesById = EMPTY_M
     }) => (
       <CustomTooltip
         active={active}
-        payload={payload as TooltipPayloadItem[]}
+        payload={payload}
         currency={currency}
         getMerchantName={getMerchantName}
       />
