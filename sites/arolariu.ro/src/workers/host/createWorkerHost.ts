@@ -125,6 +125,14 @@ export type WorkerHost<TApi> = Readonly<{
 }>;
 
 /**
+ * True when `Worker` is defined in the current environment (i.e., not SSR).
+ * Defined at module scope because it captures no host-local state.
+ */
+function isWorkerAvailable(): boolean {
+  return typeof (globalThis as {Worker?: unknown}).Worker !== "undefined";
+}
+
+/**
  * Build a typed {@link WorkerHost}.
  *
  * @typeParam TApi - The typed API exposed by the worker.
@@ -213,11 +221,6 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions): WorkerHos
 
   // Initial wiring.
   attachLifecycleSubscription();
-
-  /** True when `Worker` is defined in this environment (i.e., not SSR). */
-  function isWorkerAvailable(): boolean {
-    return typeof (globalThis as {Worker?: unknown}).Worker !== "undefined";
-  }
 
   /** Mode for {@link tearDownWorker}. */
   type TeardownMode = "lazy-reboot" | "dispose" | "crash";
@@ -310,6 +313,41 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions): WorkerHos
     tearDownWorker("crash");
   }
 
+  /**
+   * Thin listener wired to the worker's `error` event. Delegates to
+   * `handleCrash` so the host state machine transitions correctly.
+   * Defined at host scope (not inside `performBoot`) so it is not
+   * redefined on every boot attempt.
+   */
+  const onError = (): void => {
+    handleCrash();
+  };
+
+  /**
+   * Forward sink for non-`ready` events. The handshake helper invokes
+   * this for both pre-bootstrap defensive forwards and post-bootstrap
+   * steady-state events; both `opts.onEvent` and the telemetry bridge
+   * see the event so behavior parity with the previous inline listener
+   * is preserved.
+   *
+   * Defined at host scope (not inside `performBoot`) so it is not
+   * redefined on every boot attempt.
+   */
+  const forwardEvent = (ev: WorkerEvent): void => {
+    opts.onEvent?.(ev);
+    // Fan out to host-scope `subscribeToEvents` listeners. Wrapped in a
+    // try/catch so a misbehaving listener can't poison sibling listeners
+    // or the telemetry bridge.
+    for (const listener of eventListeners) {
+      try {
+        listener(ev);
+      } catch {
+        // ignore listener errors
+      }
+    }
+    bridge.ingestEvent(ev);
+  };
+
   /** Perform the bootstrap handshake. Sets `worker` and `proxy` on success. */
   async function performBoot(): Promise<void> {
     if (!isWorkerAvailable()) {
@@ -322,22 +360,20 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions): WorkerHos
     // stranded in `starting`. We transition to `dead` and rethrow so
     // callers see a deterministic failure and can recover via restart()
     // or construct a fresh host.
-    let w: Worker;
-    try {
-      w = opts.load();
-      worker = w;
-    } catch (error) {
-      lifecycle.crash();
-      throw error;
-    }
+    const w: Worker = (() => {
+      try {
+        return opts.load();
+      } catch (loadError) {
+        lifecycle.crash();
+        throw loadError;
+      }
+    })();
+    worker = w;
 
     // Listen for unexpected `error` events on the worker. This is wired
     // BEFORE the bootstrap handshake is constructed so an `error` event
     // arriving during boot still triggers `handleCrash()` instead of being
     // silently dropped.
-    const onError = (): void => {
-      handleCrash();
-    };
     w.addEventListener("error", onError);
     const onMessageError = (e: MessageEvent): void => {
       // SPEC: WHATWG HTML §10.2.4 — fired when structured-clone deserialization
@@ -358,50 +394,31 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions): WorkerHos
     // I1: Track the listeners so teardown can remove them.
     currentListeners = {worker: w, onError, onMessageError};
 
-    // Forward sink for non-`ready` events. The handshake helper invokes
-    // this for both pre-bootstrap defensive forwards and post-bootstrap
-    // steady-state events; both `opts.onEvent` and the telemetry bridge
-    // see the event so behavior parity with the previous inline listener
-    // is preserved.
-    const forwardEvent = (ev: WorkerEvent): void => {
-      opts.onEvent?.(ev);
-      // Fan out to host-scope `subscribeToEvents` listeners. Wrapped in a
-      // try/catch so a misbehaving listener can't poison sibling listeners
-      // or the telemetry bridge.
-      for (const listener of eventListeners) {
-        try {
-          listener(ev);
-        } catch {
-          // ignore listener errors
-        }
-      }
-      bridge.ingestEvent(ev);
-    };
-
     // BOOT-HANDSHAKE: All channel construction, port lifetimes, the boot
     // promise, the bootstrap timeout, and listener-mode swap are owned by
     // `createBootHandshake`. Synchronous failures (validation, postMessage
     // throw) propagate as exceptions; the helper has already rejected its
     // own `ready` promise and closed its ports before throwing. We still
     // need to clean up the host-level error listener and lifecycle.
-    let handshake: BootHandshake;
-    try {
-      handshake = createBootHandshake({
-        worker: w,
-        capabilities,
-        onEvent: forwardEvent,
-        bootstrapTimeoutMs: BOOTSTRAP_TIMEOUT_MS,
-      });
-    } catch (error) {
-      // Synchronous failure path (validation or postMessage throw). The
-      // handshake has already closed its ports; we still must drop the
-      // error listener, terminate the worker, and crash the lifecycle so
-      // the host transitions to `dead` deterministically rather than
-      // sitting in `starting`.
-      tearDownWorker("crash");
-      lifecycle.crash();
-      throw error;
-    }
+    const handshake: BootHandshake = (() => {
+      try {
+        return createBootHandshake({
+          worker: w,
+          capabilities,
+          onEvent: forwardEvent,
+          bootstrapTimeoutMs: BOOTSTRAP_TIMEOUT_MS,
+        });
+      } catch (bootError) {
+        // Synchronous failure path (validation or postMessage throw). The
+        // handshake has already closed its ports; we still must drop the
+        // error listener, terminate the worker, and crash the lifecycle so
+        // the host transitions to `dead` deterministically rather than
+        // sitting in `starting`.
+        tearDownWorker("crash");
+        lifecycle.crash();
+        throw bootError;
+      }
+    })();
     currentBoot = handshake;
 
     try {

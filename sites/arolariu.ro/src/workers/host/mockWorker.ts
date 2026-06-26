@@ -31,6 +31,9 @@
 
 import {expose, type ExposeOptions} from "../runtime/exposeWorker";
 
+/** No-op function used as the initial value of resolveTerminated before the Promise is created. */
+const noop = (): void => undefined;
+
 export type CreateMockWorkerOptions<TApi extends Record<string, unknown>> = Readonly<{
   /** The api the mock worker will expose, identical to what a real worker would expose. */
   api: TApi;
@@ -57,7 +60,7 @@ export function createMockWorker<TApi extends Record<string, unknown>>(options: 
   let errorHandler: ((event: ErrorEvent) => void) | null = null;
   let messageErrorHandler: ((event: MessageEvent) => void) | null = null;
   let terminated = false;
-  let resolveTerminated: () => void = () => {};
+  let resolveTerminated: () => void = noop;
   const whenTerminated = new Promise<void>((resolve) => {
     resolveTerminated = resolve;
   });
