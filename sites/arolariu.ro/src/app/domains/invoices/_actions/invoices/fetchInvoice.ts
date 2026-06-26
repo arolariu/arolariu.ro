@@ -115,12 +115,15 @@ export async function fetchInvoice({invoiceId}: ServerActionInputType): ServerAc
       const errorText = await response.text();
       const internalMessage = `API error fetching invoice: ${response.status} ${response.statusText} - ${errorText}`;
       logWithTrace("warn", internalMessage, {invoiceId, errorText}, "server");
-      const userMessage =
-        response.status === 404
-          ? "Invoice not found or you don't have access to it."
-          : response.status === 403
-            ? "You are not authorized to view this invoice."
-            : "An error occurred while fetching the invoice. Please try again.";
+      const userMessage = (() => {
+        if (response.status === 404) {
+          return "Invoice not found or you don't have access to it.";
+        }
+        if (response.status === 403) {
+          return "You are not authorized to view this invoice.";
+        }
+        return "An error occurred while fetching the invoice. Please try again.";
+      })();
       return createErrorResult(new Error(internalMessage), userMessage);
     } catch (error: unknown) {
       addSpanEvent("bff.request.fetch-invoice.error");

@@ -105,36 +105,34 @@ export async function fetchScans({includeArchived = false}: ServerActionInputTyp
       });
 
       for (const blob of blobs) {
-        let scanMetadata;
         try {
-          scanMetadata = readBlobMetadata(blob.metadata ?? {});
+          const scanMetadata = readBlobMetadata(blob.metadata ?? {});
+
+          const shouldInclude = includeArchived
+            ? scanMetadata.status !== ScanStatus.ATTACHED
+            : scanMetadata.status === ScanStatus.READY || scanMetadata.status === ScanStatus.DETACHED;
+
+          if (shouldInclude) {
+            const blobFileName = blob.name.split("/").pop();
+            const displayName = scanMetadata.displayName ?? blobFileName ?? "Unknown";
+
+            const scan: Scan = {
+              id: scanMetadata.scanId,
+              userIdentifier: scanMetadata.ownerId,
+              name: displayName,
+              blobUrl: blob.url,
+              mimeType: blob.contentType,
+              sizeInBytes: blob.contentLength,
+              scanType: mimeTypeToScanType(blob.contentType),
+              uploadedAt: scanMetadata.uploadedAt,
+              status: scanMetadata.status,
+              metadata: scanMetadata,
+            };
+
+            scans.push(scan);
+          }
         } catch (metadataError) {
           logWithTrace("warn", "Skipping scan with invalid blob metadata", {blobName: blob.name, error: String(metadataError)}, "server");
-          continue;
-        }
-
-        const shouldInclude = includeArchived
-          ? scanMetadata.status !== ScanStatus.ATTACHED
-          : scanMetadata.status === ScanStatus.READY || scanMetadata.status === ScanStatus.DETACHED;
-
-        if (shouldInclude) {
-          const blobFileName = blob.name.split("/").pop();
-          const displayName = scanMetadata.displayName ?? blobFileName ?? "Unknown";
-
-          const scan: Scan = {
-            id: scanMetadata.scanId,
-            userIdentifier: scanMetadata.ownerId,
-            name: displayName,
-            blobUrl: blob.url,
-            mimeType: blob.contentType,
-            sizeInBytes: blob.contentLength,
-            scanType: mimeTypeToScanType(blob.contentType),
-            uploadedAt: scanMetadata.uploadedAt,
-            status: scanMetadata.status,
-            metadata: scanMetadata,
-          };
-
-          scans.push(scan);
         }
       }
       addSpanEvent("azure.blob.list.complete");

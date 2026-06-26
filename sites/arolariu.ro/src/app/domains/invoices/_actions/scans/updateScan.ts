@@ -123,11 +123,14 @@ export async function updateScan({
 
       // Remove specified keys
       for (const key of metadataRemove) {
-        if (key === ScanMetadataKey.SCAN_ID || key === ScanMetadataKey.OWNER_ID || key === ScanMetadataKey.UPLOADED_AT || key === ScanMetadataKey.UPLOADED_BY) {
-          // Skip immutable fields
-          continue;
+        const isImmutableKey =
+          key === ScanMetadataKey.SCAN_ID ||
+          key === ScanMetadataKey.OWNER_ID ||
+          key === ScanMetadataKey.UPLOADED_AT ||
+          key === ScanMetadataKey.UPLOADED_BY;
+        if (!isImmutableKey) {
+          delete patchedMetadata[key];
         }
-        delete patchedMetadata[key];
       }
 
       // Add/update specified fields
@@ -156,15 +159,15 @@ export async function updateScan({
       addSpanEvent("azure.blob.update.start");
       logWithTrace("info", "Updating scan in Azure Blob Storage", {blobName: blobObject.name}, "server");
 
-      let content: Uint8Array | undefined;
-      let contentType: string | undefined;
-
-      if (scanObject) {
-        const updatedFile = await convertBase64ToBlob(scanObject.base64Data);
-        const arrayBuffer = await updatedFile.arrayBuffer();
-        content = new Uint8Array(arrayBuffer);
-        contentType = scanObject.mediaType;
-      }
+      const contentType = scanObject?.mediaType;
+      const content: Uint8Array | undefined = await (async () => {
+        if (!scanObject) {
+          return;
+        }
+        const blob = await convertBase64ToBlob(scanObject.base64Data);
+        const buffer = await blob.arrayBuffer();
+        return new Uint8Array(buffer);
+      })();
 
       const updatedBlob = await updateBlobObject({
         storageEndpoint,

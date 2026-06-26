@@ -125,12 +125,15 @@ export async function attachScanToInvoice({invoiceId, payload}: ServerActionInpu
       addSpanEvent("bff.request.attach-scan.error");
       const errorText = await response.text();
       const internalMessage = `Failed to attach invoice scan: ${response.status} ${response.statusText}`;
-      const userMessage =
-        response.status === 404
-          ? "Invoice not found. Please refresh and try again."
-          : response.status === 400
-            ? "Invalid scan data. Please check the scan details and try again."
-            : "An unexpected error occurred while attaching the scan. Please try again.";
+      const userMessage = (() => {
+        if (response.status === 404) {
+          return "Invoice not found. Please refresh and try again.";
+        }
+        if (response.status === 400) {
+          return "Invalid scan data. Please check the scan details and try again.";
+        }
+        return "An unexpected error occurred while attaching the scan. Please try again.";
+      })();
       logWithTrace("error", internalMessage, {invoiceId, errorText}, "server");
       return createErrorResult(new Error(internalMessage), userMessage);
     } catch (error: unknown) {

@@ -212,14 +212,18 @@ export async function detachScanFromInvoice({invoiceId, scanLocation}: ServerAct
       const errorText = await response.text();
       const internalMessage = `Failed to delete invoice scan: ${response.status} ${response.statusText}`;
       logWithTrace("warn", internalMessage, {invoiceId, scanLocation, errorText}, "server");
-      const userMessage =
-        response.status === 400
-          ? "Cannot delete the scan. The request was invalid."
-          : response.status === 404
-            ? "The specified scan was not found."
-            : response.status === 403
-              ? "You do not have permission to delete this scan."
-              : "Failed to delete the scan. Please try again.";
+      const userMessage = (() => {
+        if (response.status === 400) {
+          return "Cannot delete the scan. The request was invalid.";
+        }
+        if (response.status === 404) {
+          return "The specified scan was not found.";
+        }
+        if (response.status === 403) {
+          return "You do not have permission to delete this scan.";
+        }
+        return "Failed to delete the scan. Please try again.";
+      })();
       return createErrorResult(new Error(internalMessage), userMessage);
     } catch (error: unknown) {
       addSpanEvent("bff.request.delete-scan.error");
