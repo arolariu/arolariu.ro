@@ -7,8 +7,7 @@
 
 import {Button, Card, CardContent, Checkbox, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Input} from "@arolariu/components";
 import {motion} from "motion/react";
-import type {ReactNode} from "react";
-import {useCallback} from "react";
+import {type ReactNode, useCallback} from "react";
 import {TbCheck, TbDotsVertical, TbPencil, TbX} from "react-icons/tb";
 import {ScanMediaPreview, type ScanMediaKind} from "./ScanMediaPreview";
 import styles from "./ScanCard.module.scss";
@@ -65,6 +64,30 @@ type Props = Readonly<{
   error?: string;
 }>;
 
+type ActionItemProps = Readonly<{
+  action: ScanCardAction;
+  isLocked: boolean;
+}>;
+
+/**
+ * Renders a single dropdown action item with a stable handle* callback.
+ */
+function ActionItem({action, isLocked}: ActionItemProps): React.JSX.Element {
+  const handleSelect = useCallback((): void => {
+    action.onSelect();
+  }, [action]);
+
+  return (
+    <DropdownMenuItem
+      onClick={handleSelect}
+      disabled={isLocked || action.disabled}
+      className={action.destructive ? styles["deleteMenuItem"] : undefined}>
+      {action.icon}
+      {action.label}
+    </DropdownMenuItem>
+  );
+}
+
 /**
  * Renders a shared scan card with caller-controlled actions.
  *
@@ -112,11 +135,39 @@ export default function ScanCard({
     [rename],
   );
 
+  const handleSelectionToggle = useCallback((): void => {
+    selection?.onToggle();
+  }, [selection]);
+
+  const handleRenameInputBlur = useCallback((): void => {
+    rename?.onCancel();
+  }, [rename]);
+
+  const handleRenameCommit = useCallback((): void => {
+    rename?.onCommit();
+  }, [rename]);
+
+  const handleRenameCancel = useCallback((): void => {
+    rename?.onCancel();
+  }, [rename]);
+
+  const handleRenameStart = useCallback((): void => {
+    rename?.onStart?.();
+  }, [rename]);
+
+  const handleMediaPreviewActivate = useCallback((): void => {
+    media.onPreviewActivate?.();
+  }, [media]);
+
   return (
     <Card className={`${styles["card"]} ${isSelected ? styles["cardSelected"] : ""}`}>
       <CardContent className={styles["cardContentFlush"]}>
         <ScanMediaPreview
-          {...media}
+          src={media.src}
+          mediaKind={media.mediaKind}
+          alt={media.alt}
+          loading={media.loading}
+          onPreviewActivate={media.onPreviewActivate ? handleMediaPreviewActivate : undefined}
           topLeftOverlay={
             selection ? (
               <div
@@ -126,7 +177,7 @@ export default function ScanCard({
                 <Checkbox
                   checked={selection.checked}
                   nativeButton
-                  onCheckedChange={selection.onToggle}
+                  onCheckedChange={handleSelectionToggle}
                   aria-label={selection.label}
                   className={styles["checkbox"]}
                 />
@@ -155,14 +206,11 @@ export default function ScanCard({
                   />
                   <DropdownMenuContent align='end'>
                     {actions.map((action) => (
-                      <DropdownMenuItem
+                      <ActionItem
                         key={action.key}
-                        onClick={action.onSelect}
-                        disabled={isLocked || action.disabled}
-                        className={action.destructive ? styles["deleteMenuItem"] : undefined}>
-                        {action.icon}
-                        {action.label}
-                      </DropdownMenuItem>
+                        action={action}
+                        isLocked={isLocked}
+                      />
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -182,7 +230,7 @@ export default function ScanCard({
                 value={rename.value}
                 onChange={handleRenameChange}
                 onKeyDown={handleRenameKeyDown}
-                onBlur={rename.onCancel}
+                onBlur={handleRenameInputBlur}
                 placeholder={rename.placeholder}
                 className={styles["renameInput"]}
               />
@@ -191,7 +239,7 @@ export default function ScanCard({
                   size='sm'
                   variant='ghost'
                   aria-label='Save rename'
-                  onMouseDown={rename.onCommit}
+                  onMouseDown={handleRenameCommit}
                   className={styles["renameSaveButton"]}>
                   <TbCheck className={styles["renameIcon"]} />
                 </Button>
@@ -199,7 +247,7 @@ export default function ScanCard({
                   size='sm'
                   variant='ghost'
                   aria-label='Cancel rename'
-                  onMouseDown={rename.onCancel}
+                  onMouseDown={handleRenameCancel}
                   className={styles["renameCancelButton"]}>
                   <TbX className={styles["renameIcon"]} />
                 </Button>
@@ -220,7 +268,7 @@ export default function ScanCard({
                   size='sm'
                   variant='ghost'
                   aria-label='Rename scan'
-                  onClick={rename.onStart}
+                  onClick={handleRenameStart}
                   disabled={isLocked}
                   className={styles["editButton"]}>
                   <TbPencil className={styles["editIcon"]} />

@@ -3,8 +3,7 @@
  * @module app/domains/invoices/_utils/metadataUtilities
  */
 
-import {ScanDocumentKind, ScanDocumentRole, ScanMetadataKey, ScanMetadataStatus} from "@/types/scans";
-import type {ScanMetadata} from "@/types/scans";
+import {type ScanMetadata, ScanDocumentKind, ScanDocumentRole, ScanMetadataKey, ScanMetadataStatus} from "@/types/scans";
 
 /**
  * Serializes typed scan metadata into provider-neutral blob metadata.
@@ -117,7 +116,7 @@ export function readBlobMetadata(metadata: Readonly<Record<string, string | unde
   }
   const uploadedAt = new Date(uploadedAtValue);
   if (Number.isNaN(uploadedAt.getTime())) {
-    throw new Error(`Invalid blob metadata date: ${ScanMetadataKey.UPLOADED_AT}`);
+    throw new TypeError(`Invalid blob metadata date: ${ScanMetadataKey.UPLOADED_AT}`);
   }
 
   const uploadedBy = metadata[ScanMetadataKey.UPLOADED_BY];

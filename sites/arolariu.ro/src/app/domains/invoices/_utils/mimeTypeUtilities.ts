@@ -42,10 +42,8 @@ import {
 	isExtensionInSet,
 	normalizeMimeTypeWithAliases,
 } from "@/lib/utils.generic";
-import type {InvoiceScanType} from "@/types/invoices";
-import type {ScanType} from "@/types/scans";
-import {InvoiceScanType as InvoiceScanTypeEnum} from "@/types/invoices";
-import {ScanType as ScanTypeEnum} from "@/types/scans";
+import {type InvoiceScanType, InvoiceScanType as InvoiceScanTypeEnum} from "@/types/invoices";
+import {type ScanType, ScanType as ScanTypeEnum} from "@/types/scans";
 
 /**
  * Immutable array of accepted MIME types for invoice scans in canonical form.

@@ -98,31 +98,32 @@ export default function KeyboardShortcuts({onShowHelp}: Readonly<KeyboardShortcu
     router.push("/domains/invoices/upload-scans");
   }, [router]);
 
-  /**
-   * Shortcut definitions with their handlers.
-   */
-  const shortcuts: ShortcutDef[] = [
-    {
-      key: "n",
-      ctrl: true,
-      handler: navigateToCreateInvoice,
-      description: "Create new invoice",
-    },
-    {
-      key: "u",
-      ctrl: true,
-      handler: navigateToUploadScans,
-      description: "Upload scans",
-    },
-    {
-      key: "?",
-      ctrl: false,
-      handler: onShowHelp,
-      description: "Show keyboard shortcuts help",
-    },
-  ];
-
   useEffect(() => {
+    /**
+     * Shortcut definitions with their handlers — defined inside the effect
+     * so they are not a dependency that causes re-registration on every render.
+     */
+    const shortcuts: ShortcutDef[] = [
+      {
+        key: "n",
+        ctrl: true,
+        handler: navigateToCreateInvoice,
+        description: "Create new invoice",
+      },
+      {
+        key: "u",
+        ctrl: true,
+        handler: navigateToUploadScans,
+        description: "Upload scans",
+      },
+      {
+        key: "?",
+        ctrl: false,
+        handler: onShowHelp,
+        description: "Show keyboard shortcuts help",
+      },
+    ];
+
     /**
      * Handles keydown events and triggers the appropriate shortcut handler.
      *
@@ -155,7 +156,7 @@ export default function KeyboardShortcuts({onShowHelp}: Readonly<KeyboardShortcu
     return (): void => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [shortcuts, navigateToCreateInvoice, navigateToUploadScans, onShowHelp]);
+  }, [navigateToCreateInvoice, navigateToUploadScans, onShowHelp]);
 
   // This component doesn't render anything visible
   return null;

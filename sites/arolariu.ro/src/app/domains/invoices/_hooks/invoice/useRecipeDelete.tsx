@@ -12,7 +12,6 @@
 
 import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
-import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 
 /**
@@ -47,7 +46,6 @@ type HookOutputType = Readonly<{
  * ```
  */
 export function useRecipeDelete(invoice: Invoice): Readonly<HookOutputType> {
-  const t = useTranslations();
   const removeRecipeClientSide = useInvoicesStore((state) => state.updateEntity);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -64,8 +62,8 @@ export function useRecipeDelete(invoice: Invoice): Readonly<HookOutputType> {
         setIsDeleting(false);
       }
     },
-    [invoice.id, invoice.possibleRecipes, t, removeRecipeClientSide],
+    [invoice, removeRecipeClientSide],
   );
 
-  return {isDeleting, removeRecipeCallback: removeRecipeCallback} as const;
+  return {isDeleting, removeRecipeCallback} as const;
 }

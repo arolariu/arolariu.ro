@@ -57,7 +57,12 @@ function Step({
   label: string;
 }>): React.JSX.Element {
   const config = STEP_CONFIG[step];
-  const circleClass = isCompleted ? styles["stepCompleted"] : isActive ? styles["stepActive"] : styles["stepFuture"];
+  let circleClass: string = styles["stepFuture"];
+  if (isCompleted) {
+    circleClass = styles["stepCompleted"];
+  } else if (isActive) {
+    circleClass = styles["stepActive"];
+  }
 
   return (
     <div className={styles["step"]}>

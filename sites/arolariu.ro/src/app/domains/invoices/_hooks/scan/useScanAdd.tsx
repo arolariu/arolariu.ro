@@ -100,7 +100,7 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
         });
 
         if (!success || !data) {
-          const status = error?.status == null ? "unknown" : String(error.status);
+          const status = error?.status === undefined ? "unknown" : String(error.status);
           throw new Error(t((m) => m.toasts.invoices.useScanAdd.uploadFailed, {status}));
         }
 

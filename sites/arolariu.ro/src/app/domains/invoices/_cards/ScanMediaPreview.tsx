@@ -5,8 +5,7 @@
  * @module app/domains/invoices/_cards/ScanMediaPreview
  */
 
-import type {ReactNode} from "react";
-import {useCallback} from "react";
+import {type ReactNode, useCallback} from "react";
 import {TbFileTypePdf, TbMaximize, TbPhotoOff, TbZoomIn} from "react-icons/tb";
 import styles from "./ScanMediaPreview.module.scss";
 
