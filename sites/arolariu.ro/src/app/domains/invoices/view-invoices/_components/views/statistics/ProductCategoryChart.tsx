@@ -55,7 +55,7 @@ type CustomTooltipProps = {
 };
 
 /** Empty payload placeholder used when no tooltip data is available. */
-const EMPTY_TOOLTIP_PAYLOAD: TooltipPayloadItem[] = [];
+const EMPTY_TOOLTIP_PAYLOAD: ReadonlyArray<TooltipPayloadItem> = [];
 
 /**
  * Custom tooltip for the product category chart.
@@ -119,7 +119,13 @@ export function ProductCategoryChart({data, currency}: Props): React.JSX.Element
    * Must be defined before any early returns to satisfy rules-of-hooks.
    */
   const renderTooltip = useCallback(
-    ({active = false, payload = EMPTY_TOOLTIP_PAYLOAD}: {readonly active?: boolean; readonly payload?: readonly unknown[]}) => (
+    ({
+      active = false,
+      payload = EMPTY_TOOLTIP_PAYLOAD,
+    }: {
+      readonly active?: boolean;
+      readonly payload?: ReadonlyArray<TooltipPayloadItem>;
+    }) => (
       <CustomTooltip
         active={active}
         payload={payload as CustomTooltipProps["payload"]}

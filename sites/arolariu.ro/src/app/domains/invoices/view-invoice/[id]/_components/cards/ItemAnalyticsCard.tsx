@@ -461,81 +461,86 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                       const {confidence} = item.metadata;
                       const confidenceVariant = getConfidenceVariant(confidence);
                       const confidenceSymbol = getConfidenceSymbol(confidence);
-                      const confidenceLevel = getConfidenceLevel(confidence, confidenceLevelHigh, confidenceLevelMedium, confidenceLevelLow);
+                      const confidenceLevel = getConfidenceLevel(
+                        confidence,
+                        confidenceLevelHigh,
+                        confidenceLevelMedium,
+                        confidenceLevelLow,
+                      );
 
                       return (
-                      <TableRow key={item.productCode ?? item.name}>
-                        <TableCell>
-                          <div className={styles["itemCell"]}>
-                            <div className={styles["itemNameRow"]}>
-                              <div className={styles["itemName"]}>{item.name}</div>
-                              {/* OCR Confidence Indicator - New DI v4.0 field */}
-                              {confidence > 0 && (
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Badge
-                                      variant={confidenceVariant}
-                                      className={styles["confidenceBadge"]}
-                                      aria-label={t((m) => m.pages.invoices.viewInvoice.itemAnalytics.confidence.ariaLabel, {
-                                        level: confidenceLevel,
-                                        percent: (confidence * 100).toFixed(0),
-                                      })}>
-                                      {confidenceSymbol}
-                                    </Badge>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p className={styles["confidenceTooltip"]}>
-                                      {t((m) => m.pages.invoices.viewInvoice.itemAnalytics.confidence.label)}:{" "}
-                                      {(confidence * 100).toFixed(0)}%
-                                    </p>
-                                    {confidence < 0.7 && (
-                                      <p className={styles["confidenceWarning"]}>
-                                        {t((m) => m.pages.invoices.viewInvoice.itemAnalytics.confidence.lowWarning)}
-                                      </p>
-                                    )}
-                                  </TooltipContent>
-                                </Tooltip>
-                              )}
-                            </div>
-                            {item.detectedAllergens.length > 0 && (
-                              <div className={styles["allergenList"]}>
-                                {item.detectedAllergens.map((allergen) => (
-                                  <Tooltip key={allergen.name}>
+                        <TableRow key={item.productCode ?? item.name}>
+                          <TableCell>
+                            <div className={styles["itemCell"]}>
+                              <div className={styles["itemNameRow"]}>
+                                <div className={styles["itemName"]}>{item.name}</div>
+                                {/* OCR Confidence Indicator - New DI v4.0 field */}
+                                {confidence > 0 && (
+                                  <Tooltip>
                                     <TooltipTrigger>
                                       <Badge
-                                        variant='destructive'
-                                        className={styles["allergenBadge"]}>
-                                        <TbAlertTriangle className={styles["allergenIcon"]} />
-                                        {allergen.name}
+                                        variant={confidenceVariant}
+                                        className={styles["confidenceBadge"]}
+                                        aria-label={t((m) => m.pages.invoices.viewInvoice.itemAnalytics.confidence.ariaLabel, {
+                                          level: confidenceLevel,
+                                          percent: (confidence * 100).toFixed(0),
+                                        })}>
+                                        {confidenceSymbol}
                                       </Badge>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      <p className={styles["allergenDescription"]}>{allergen.description}</p>
-                                      {allergen.learnMoreAddress ? (
-                                        <a
-                                          href={allergen.learnMoreAddress}
-                                          target='_blank'
-                                          rel='noopener noreferrer'
-                                          className={styles["allergenLink"]}>
-                                          Learn more →
-                                        </a>
-                                      ) : null}
+                                      <p className={styles["confidenceTooltip"]}>
+                                        {t((m) => m.pages.invoices.viewInvoice.itemAnalytics.confidence.label)}:{" "}
+                                        {(confidence * 100).toFixed(0)}%
+                                      </p>
+                                      {confidence < 0.7 && (
+                                        <p className={styles["confidenceWarning"]}>
+                                          {t((m) => m.pages.invoices.viewInvoice.itemAnalytics.confidence.lowWarning)}
+                                        </p>
+                                      )}
                                     </TooltipContent>
                                   </Tooltip>
-                                ))}
+                                )}
                               </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={categoryColors[item.category]}>{getCategoryName(item.category)}</Badge>
-                        </TableCell>
-                        <TableCell>{item.price.toFixed(2)}</TableCell>
-                        <TableCell>
-                          {item.quantity} {item.quantityUnit}
-                        </TableCell>
-                        <TableCell>{item.totalPrice.toFixed(2)}</TableCell>
-                      </TableRow>
+                              {item.detectedAllergens.length > 0 && (
+                                <div className={styles["allergenList"]}>
+                                  {item.detectedAllergens.map((allergen) => (
+                                    <Tooltip key={allergen.name}>
+                                      <TooltipTrigger>
+                                        <Badge
+                                          variant='destructive'
+                                          className={styles["allergenBadge"]}>
+                                          <TbAlertTriangle className={styles["allergenIcon"]} />
+                                          {allergen.name}
+                                        </Badge>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p className={styles["allergenDescription"]}>{allergen.description}</p>
+                                        {allergen.learnMoreAddress ? (
+                                          <a
+                                            href={allergen.learnMoreAddress}
+                                            target='_blank'
+                                            rel='noopener noreferrer'
+                                            className={styles["allergenLink"]}>
+                                            Learn more →
+                                          </a>
+                                        ) : null}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={categoryColors[item.category]}>{getCategoryName(item.category)}</Badge>
+                          </TableCell>
+                          <TableCell>{item.price.toFixed(2)}</TableCell>
+                          <TableCell>
+                            {item.quantity} {item.quantityUnit}
+                          </TableCell>
+                          <TableCell>{item.totalPrice.toFixed(2)}</TableCell>
+                        </TableRow>
                       );
                     })}
                   </TableBody>

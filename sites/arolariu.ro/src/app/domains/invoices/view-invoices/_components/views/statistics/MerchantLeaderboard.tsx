@@ -104,7 +104,13 @@ export function MerchantLeaderboard({data, currency, merchantNamesById = EMPTY_M
    * own context (`currency`, `getMerchantName`).
    */
   const renderTooltip = useCallback(
-    ({active = false, payload = EMPTY_TOOLTIP_PAYLOAD}: {readonly active?: boolean; readonly payload?: ReadonlyArray<TooltipPayloadItem>}) => (
+    ({
+      active = false,
+      payload = EMPTY_TOOLTIP_PAYLOAD,
+    }: {
+      readonly active?: boolean;
+      readonly payload?: ReadonlyArray<TooltipPayloadItem>;
+    }) => (
       <CustomTooltip
         active={active}
         payload={payload as TooltipPayloadItem[]}
