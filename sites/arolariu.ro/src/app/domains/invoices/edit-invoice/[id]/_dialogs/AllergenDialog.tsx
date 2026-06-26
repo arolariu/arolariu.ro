@@ -263,7 +263,7 @@ export default function AllergenDialog(): React.JSX.Element {
   }, [invoice, product, productIndex, allergens, close, t]);
 
   if (!invoice || !product || productIndex === undefined) {
-    return <></>;
+    return null;
   }
 
   return (

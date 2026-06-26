@@ -1,6 +1,6 @@
 "use client";
 
-import type {MessageSelector} from "next-intl-selector";
+import {type MessageSelector, useTranslations} from "next-intl-selector";
 
 import {formatCurrency} from "@/lib/utils.generic";
 import {Invoice, InvoiceCategory, Merchant} from "@/types/invoices";
@@ -20,7 +20,6 @@ import {
   useLocalStorage,
 } from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo} from "react";
 import {TbAlertCircle, TbArrowRight, TbBulb, TbCheck, TbPercentage, TbPigMoney, TbSparkles, TbThumbUp, TbX} from "react-icons/tb";
 import styles from "./TriviaTips.module.scss";
@@ -46,7 +45,7 @@ type ContextTip = {
   /** Selector for the action button */
   readonly actionSelector: MessageSelector;
   /** Action handler function */
-  readonly action: () => void;
+  readonly handleAction: () => void;
   /** Icon component */
   readonly icon: React.JSX.Element;
 };
@@ -177,7 +176,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
         id: "noItems",
         messageSelector: (m) => m.pages.invoices.editInvoice.triviaTips.contextTips.noItems,
         actionSelector: (m) => m.pages.invoices.editInvoice.triviaTips.contextActions.analyze,
-        action: () => {
+        handleAction: () => {
           // TODO: Open AnalyzeDialog when connected to island
           console.log("Open AnalyzeDialog");
         },
@@ -191,7 +190,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
         id: "noDescription",
         messageSelector: (m) => m.pages.invoices.editInvoice.triviaTips.contextTips.noDescription,
         actionSelector: (m) => m.pages.invoices.editInvoice.triviaTips.contextActions.addDescription,
-        action: () => {
+        handleAction: () => {
           // Focus description field
           const descriptionInput = document.querySelector<HTMLTextAreaElement>('textarea[name="description"]');
           descriptionInput?.focus();
@@ -207,7 +206,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
         id: "noCategory",
         messageSelector: (m) => m.pages.invoices.editInvoice.triviaTips.contextTips.noCategory,
         actionSelector: (m) => m.pages.invoices.editInvoice.triviaTips.contextActions.setCategory,
-        action: () => {
+        handleAction: () => {
           // Focus category select
           const categorySelect = document.querySelector<HTMLButtonElement>('button[role="combobox"]');
           categorySelect?.focus();
@@ -223,7 +222,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
         id: "noRecipes",
         messageSelector: (m) => m.pages.invoices.editInvoice.triviaTips.contextTips.noRecipes,
         actionSelector: (m) => m.pages.invoices.editInvoice.triviaTips.contextActions.analyze,
-        action: () => {
+        handleAction: () => {
           // TODO: Open AnalyzeDialog when connected to island
           console.log("Open AnalyzeDialog");
         },
@@ -240,7 +239,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
   /** Dismisses a context tip and persists to localStorage. */
   const dismissTip = useCallback((tipId: string): void => {
     setDismissedTips((prev) => [...prev, tipId]);
-  }, []);
+  }, [setDismissedTips]);
 
   /**
    * Factory: returns a stable dismiss handler for a specific tip.
@@ -334,7 +333,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
                     <Button
                       variant='ghost'
                       size='sm'
-                      onClick={tip.action}
+                      onClick={tip.handleAction}
                       className={styles["contextTipAction"]}>
                       {t(tip.actionSelector)}
                     </Button>

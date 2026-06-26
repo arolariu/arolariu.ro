@@ -134,7 +134,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
     if (editingCell) editInputRef.current?.focus();
   }, [editingCell]);
   const [editValues, setEditValues] = useState<Record<string, string>>({});
-  const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
+  const [selectedIndices, setSelectedIndices] = useState<Set<number>>(() => new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<SortField>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
@@ -157,28 +157,22 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
     }
 
     return filteredItems.toSorted((a, b) => {
-      let comparison = 0;
+      const multiplier = sortDirection === "asc" ? 1 : -1;
 
       switch (sortField) {
         case "name":
-          comparison = a.name.localeCompare(b.name);
-          break;
+          return a.name.localeCompare(b.name) * multiplier;
         case "price":
-          comparison = a.price - b.price;
-          break;
+          return (a.price - b.price) * multiplier;
         case "quantity":
-          comparison = a.quantity - b.quantity;
-          break;
+          return (a.quantity - b.quantity) * multiplier;
         case "category":
-          comparison = a.category - b.category;
-          break;
+          return (a.category - b.category) * multiplier;
         default: {
           const _exhaustive: never = sortField;
           throw new Error(`Unhandled sortField: ${String(_exhaustive)}`);
         }
       }
-
-      return sortDirection === "asc" ? comparison : -comparison;
     });
   }, [filteredItems, sortField, sortDirection]);
 
@@ -342,7 +336,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
     const itemsToDelete = Array.from(selectedIndices)
       .map((idx) => sortedItems[idx])
-      .filter((item): item is NonNullable<typeof item> => Boolean(item));
+      .filter(Boolean);
 
     setLocalItems((prev) => prev.filter((item) => !itemsToDelete.includes(item)));
 
@@ -491,7 +485,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
     const selectedProducts = Array.from(selectedIndices)
       .map((idx) => sortedItems[idx])
-      .filter((item): item is NonNullable<typeof item> => Boolean(item));
+      .filter(Boolean);
 
     // Map selected indices from sorted view to actual localItems indices
     const actualIndices = selectedProducts.map((product) => localItems.indexOf(product));
@@ -693,7 +687,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
               const isEditing = editingCell?.rowIndex === index;
               const isSelected = selectedIndices.has(index);
               const {isSoftDeleted, isEdited} = item.metadata;
-              const {detectedAllergens} = item;
+              const {detectedAllergens, quantity, quantityUnit, price} = item;
               const hasAllergens = detectedAllergens.length > 0;
               const indicatorClass = getProductIndicatorClass(item);
 
@@ -746,7 +740,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                       ) : (
                         <>
                           <span>{item.name}</span>
-                          {isEdited && !isSoftDeleted && (
+                          {Boolean(isEdited && !isSoftDeleted) && (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger
@@ -775,13 +769,13 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                                       className={styles["allergenBadge"]}>
                                       <TbFlask className={styles["allergenIcon"]} />
                                       {t((m) => m.pages.invoices.editInvoice.itemsTable.indicators.allergens, {
-                                        count: item.detectedAllergens.length,
+                                        count: detectedAllergens.length,
                                       })}
                                     </Badge>
                                   }
                                 />
                                 <TooltipContent>
-                                  <p>{item.detectedAllergens.map((a) => a.name).join(", ")}</p>
+                                  <p>{detectedAllergens.map((a) => a.name).join(", ")}</p>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
@@ -808,7 +802,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                         className={styles["editInput"]}
                       />
                     ) : (
-                      `${item.quantity} ${item.quantityUnit}`
+                      `${quantity} ${quantityUnit}`
                     )}
                   </td>
                   <td
@@ -820,7 +814,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                         type='number'
                         step='0.01'
                         value={editValues[`${index}-price`] ?? ""}
-                        onChange={(e) => handleEditChange(index, "price", e.target.value)}
+                        onChange={createEditChangeHandler(index, "price")}
                         onBlur={handleSaveEdit}
                         onKeyDown={handleEditKeyDown}
                         aria-label={t((m) => m.pages.invoices.editInvoice.itemsTable.editing.fieldLabel, {
@@ -830,11 +824,11 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                         className={styles["editInput"]}
                       />
                     ) : (
-                      formatCurrency(item.price, {currencyCode: invoice.paymentInformation.currency.code, locale})
+                      formatCurrency(price, {currencyCode: invoice.paymentInformation.currency.code, locale})
                     )}
                   </td>
                   <td className={`${styles["tableCellRightBold"]} ${isSoftDeleted ? styles["strikethrough"] : ""}`}>
-                    {formatCurrency(item.price * item.quantity, {currencyCode: invoice.paymentInformation.currency.code, locale})}
+                    {formatCurrency(price * quantity, {currencyCode: invoice.paymentInformation.currency.code, locale})}
                   </td>
                   <td className={styles["tableCellActions"]}>
                     <div className={styles["actionButtons"]}>

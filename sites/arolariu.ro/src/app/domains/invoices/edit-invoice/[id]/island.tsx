@@ -17,6 +17,21 @@ import RecipesTab from "./_components/tabs/RecipesTab";
 import {EditInvoiceContextProvider} from "./_context/EditInvoiceContext";
 import styles from "./island.module.scss";
 
+/**
+ * Scrolls to the first incomplete product in the items table.
+ *
+ * @remarks
+ * Module-scope function (no captured component state) — scrolls the browser
+ * viewport to the invoice items section when the guided-edit banner's
+ * "Review All" action is triggered.
+ */
+function handleReviewAll(): void {
+  const itemsSection = document.querySelector('[data-section="invoice-items"]');
+  if (itemsSection) {
+    itemsSection.scrollIntoView({behavior: "smooth", block: "start"});
+  }
+}
+
 type Props = Readonly<{
   readonly invoice: Invoice;
   readonly merchant: Merchant | null;
@@ -87,17 +102,6 @@ export default function RenderEditInvoiceScreen(props: Readonly<Props>): React.J
       opacity: 1,
       transition: {type: "spring", stiffness: 300, damping: 24},
     },
-  };
-
-  /**
-   * Scrolls to the first incomplete product in the items table.
-   */
-  const handleReviewAll = (): void => {
-    // Find the items table section
-    const itemsSection = document.querySelector('[data-section="invoice-items"]');
-    if (itemsSection) {
-      itemsSection.scrollIntoView({behavior: "smooth", block: "start"});
-    }
   };
 
   return (

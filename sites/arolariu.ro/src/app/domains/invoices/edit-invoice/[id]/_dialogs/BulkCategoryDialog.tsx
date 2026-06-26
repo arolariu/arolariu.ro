@@ -220,7 +220,7 @@ export default function BulkCategoryDialog(): React.JSX.Element {
   }, [invoice, selectedProducts, selectedIndices, selectedCategory, close, router, t]);
 
   if (!invoice || selectedProducts.length === 0 || selectedIndices.length === 0) {
-    return <></>;
+    return null;
   }
 
   return (

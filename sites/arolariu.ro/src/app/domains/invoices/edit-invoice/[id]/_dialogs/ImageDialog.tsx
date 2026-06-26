@@ -49,8 +49,7 @@ export default function ImageDialog(): React.JSX.Element {
 
   const image: string | null = payload;
 
-  if (!image) return <></>;
-
+  if (!image) return null;
   return (
     <Dialog
       open={isOpen}
