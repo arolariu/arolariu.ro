@@ -42,6 +42,8 @@ function areRefsEqual<T>(
  * imperative operations. All provided refs will receive the same element instance.
  *
  * Supports all ref types: callback refs, mutable ref objects, and `null`/`undefined`.
+ * Inline callback refs create a new function identity on every render; wrap them
+ * in `useCallback` before passing them here to avoid repeated ref synchronization.
  *
  * @typeParam T - The type of the element being referenced.
  * @param refs - Variadic refs to merge. Can include callback refs, ref objects, or undefined.

@@ -137,4 +137,19 @@ describe("useMergedRefs", () => {
     expect(firstRef.current).toBe(null);
     expect(secondRef.current).toBe(element);
   });
+
+  it("clears removed callback refs when the ref inputs change", () => {
+    const removedCallbackRef = vi.fn();
+    const keptRef = React.createRef<HTMLDivElement>();
+    const {rerender, result} = renderHook(({refs}) => useMergedRefs(...refs), {
+      initialProps: {refs: [removedCallbackRef, keptRef] as const},
+    });
+    const element = document.createElement("div");
+
+    result.current(element);
+    rerender({refs: [keptRef] as const});
+
+    expect(removedCallbackRef).toHaveBeenLastCalledWith(null);
+    expect(keptRef.current).toBe(element);
+  });
 });
