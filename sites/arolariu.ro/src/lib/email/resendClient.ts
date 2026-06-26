@@ -1,3 +1,4 @@
+// eslint-disable-next-line n/no-extraneous-import -- server-only is a Next.js build-time marker
 import "server-only";
 
 import {Resend} from "resend";

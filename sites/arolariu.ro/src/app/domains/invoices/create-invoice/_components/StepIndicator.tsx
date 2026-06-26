@@ -1,6 +1,6 @@
 "use client";
 
-import {selectorFromPath} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 
 /**
  * @fileoverview Step indicator component for the create invoice wizard.
@@ -14,7 +14,6 @@ import {selectorFromPath} from "next-intl-selector";
  * - Connecting lines between steps
  */
 
-import {useTranslations} from "next-intl-selector";
 import {TbCheck, TbFileInvoice, TbPhoto, TbReceipt} from "react-icons/tb";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./StepIndicator.module.scss";

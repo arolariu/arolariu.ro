@@ -3,6 +3,7 @@
  * @module lib/email/emailService
  */
 
+// eslint-disable-next-line n/no-extraneous-import -- server-only is a Next.js build-time marker
 import "server-only";
 
 import type {ReactElement} from "react";

@@ -1,13 +1,12 @@
 "use client";
 
-import {selectorFromPath} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 
 import {useInvoicesStore} from "@/stores/invoicesStore";
 import {useMerchantsStore} from "@/stores/merchantsStore";
 import {useScansStore} from "@/stores/scansStore";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, Progress} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl-selector";
 import {TbBuilding, TbCloud, TbFileInvoice, TbScan} from "react-icons/tb";
 import {formatStorageSize} from "../_utils/helpers";
 import type {UserStatistics} from "../_utils/types";

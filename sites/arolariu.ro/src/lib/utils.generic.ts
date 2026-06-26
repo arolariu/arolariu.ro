@@ -262,6 +262,11 @@ export function formatCurrency(possibleAmount: number, options: FormatCurrencyOp
 }
 
 /**
+ * Union type for values that can be safely converted to a Date.
+ */
+type DateLike = Date | string | null | undefined;
+
+/**
  * Safely converts any date-like value to a Date object.
  *
  * @remarks
@@ -278,7 +283,7 @@ export function formatCurrency(possibleAmount: number, options: FormatCurrencyOp
  * toSafeDate(null);                    // Date(0) — epoch
  * ```
  */
-export function toSafeDate(value: Date | string | null | undefined): Date {
+export function toSafeDate(value: DateLike): Date {
   if (value instanceof Date) return value;
   if (typeof value === "string" && value.length > 0) {
     const parsed = new Date(value);
@@ -324,7 +329,7 @@ export interface FormatDateOptions extends Partial<Intl.DateTimeFormatOptions> {
  * formatDate(new Date(), { dateStyle: "full" }); // "Thursday, October 12, 2023"
  * ```
  */
-export function formatDate(possibleDate: string | Date | null | undefined, options: FormatDateOptions): string {
+export function formatDate(possibleDate: DateLike, options: FormatDateOptions): string {
   const date: Date = toSafeDate(possibleDate);
   if (date.getTime() === 0) return "";
 
@@ -457,7 +462,7 @@ export function formatFileSize(bytes: number): string {
  * // "15.01.2024, 10:30"
  * ```
  */
-export function formatDateTime(date: Date | string | null | undefined, locale = "en-US", options?: Intl.DateTimeFormatOptions): string {
+export function formatDateTime(date: DateLike, locale = "en-US", options?: Intl.DateTimeFormatOptions): string {
   const dateObj = toSafeDate(date);
   if (dateObj.getTime() === 0) return "";
 
@@ -494,7 +499,16 @@ export function formatDateTime(date: Date | string | null | undefined, locale = 
  * formatRelativeTime("2024-01-01T00:00:00Z");              // "6 months ago"
  * ```
  */
-export function formatRelativeTime(date: Date | string | null | undefined): string {
+
+/**
+ * Returns a pluralized relative-time segment: `"N unit(s) suffix"`.
+ * Extracted to keep `formatRelativeTime` below the cognitive-complexity threshold.
+ */
+function formatUnit(count: number, unit: string, suffix: string): string {
+  return `${count} ${unit}${count === 1 ? "" : "s"} ${suffix}`;
+}
+
+export function formatRelativeTime(date: DateLike): string {
   const dateObj = toSafeDate(date);
   if (dateObj.getTime() === 0) return "";
 
@@ -511,11 +525,11 @@ export function formatRelativeTime(date: Date | string | null | undefined): stri
   const suffix = isFuture ? "from now" : "ago";
 
   if (diffSecs < 60) return isFuture ? "in less than a minute" : "just now";
-  if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? "" : "s"} ${suffix}`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? "" : "s"} ${suffix}`;
-  if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? "" : "s"} ${suffix}`;
-  if (diffWeeks < 5) return `${diffWeeks} week${diffWeeks === 1 ? "" : "s"} ${suffix}`;
-  return `${diffMonths} month${diffMonths === 1 ? "" : "s"} ${suffix}`;
+  if (diffMins < 60) return formatUnit(diffMins, "minute", suffix);
+  if (diffHours < 24) return formatUnit(diffHours, "hour", suffix);
+  if (diffDays < 7) return formatUnit(diffDays, "day", suffix);
+  if (diffWeeks < 5) return formatUnit(diffWeeks, "week", suffix);
+  return formatUnit(diffMonths, "month", suffix);
 }
 
 // #endregion

@@ -14,8 +14,7 @@
 
 import {useScansStore} from "@/stores";
 import {InvoiceAnalysisOptions, InvoiceCategory, PaymentType} from "@/types/invoices";
-import type {CachedScan} from "@/types/scans";
-import {ScanMetadataKey, ScanMetadataStatus, ScanStatus} from "@/types/scans";
+import {type CachedScan, ScanMetadataKey, ScanMetadataStatus, ScanStatus} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {useRouter} from "next/navigation";
 import {createContext, useCallback, useContext, useMemo, useState, type ReactNode} from "react";
@@ -101,13 +100,13 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
   const [isCreating, setIsCreating] = useState(false);
 
   // Invoice details state
-  const [invoiceDetails, setInvoiceDetails] = useState<InvoiceDetails>({
+  const [invoiceDetails, setInvoiceDetails] = useState<InvoiceDetails>(() => ({
     name: "",
     category: InvoiceCategory.NOT_DEFINED,
     paymentType: PaymentType.Unknown,
     transactionDate: new Date(),
     description: "",
-  });
+  }));
 
   // Step navigation
   const goToStep = useCallback((step: WizardStep) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import {selectorFromPath} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 
 /**
  * @fileoverview Review step component for final confirmation before invoice creation.
@@ -17,7 +17,6 @@ import {InvoiceCategory, PaymentType} from "@/types/invoices";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Spinner} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useFormatter} from "next-intl";
-import {useTranslations} from "next-intl-selector";
 import {TbCalendar, TbCategory, TbCreditCard, TbFileDescription, TbFileInvoice, TbFileTypePdf, TbPhoto, TbSparkles} from "react-icons/tb";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./ReviewStep.module.scss";

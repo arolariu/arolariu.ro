@@ -1,11 +1,10 @@
 "use client";
 
-import {selectorFromPath} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 
 import {usePreferencesStore} from "@/stores/preferencesStore";
 import type {User} from "@clerk/nextjs/server";
 import {AnimatePresence, motion} from "motion/react";
-import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo, useState} from "react";
 import {TbBell, TbBrain, TbChartBar, TbDatabase, TbPalette, TbShield, TbUser} from "react-icons/tb";
 
