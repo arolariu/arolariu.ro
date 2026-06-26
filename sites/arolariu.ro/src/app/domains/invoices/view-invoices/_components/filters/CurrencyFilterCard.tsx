@@ -17,7 +17,7 @@ type Props = Readonly<{
  * Currency chip card for invoice filters.
  *
  * @param props - Current filters, available currency codes, and filter updater.
- * @returns The rendered currency card, or an empty fragment when no options exist.
+ * @returns The rendered currency card, or `null` when no options exist.
  */
 export function CurrencyFilterCard({filters, availableCurrencies, onFiltersChange}: Readonly<Props>): React.JSX.Element | null {
   const t = useTranslations();

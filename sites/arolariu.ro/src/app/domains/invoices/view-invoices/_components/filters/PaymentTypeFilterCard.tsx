@@ -19,7 +19,7 @@ type Props = Readonly<{
  * Payment-type chip card for invoice filters.
  *
  * @param props - Current filters, available payment types, label formatter, and filter updater.
- * @returns The rendered payment-type card, or an empty fragment when no options exist.
+ * @returns The rendered payment-type card, or `null` when no options exist.
  */
 export function PaymentTypeFilterCard({
   filters,

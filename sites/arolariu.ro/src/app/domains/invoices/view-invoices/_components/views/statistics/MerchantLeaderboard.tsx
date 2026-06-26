@@ -31,7 +31,7 @@ import styles from "./MerchantLeaderboard.module.scss";
 const EMPTY_MERCHANT_NAMES: Readonly<Record<string, string>> = {};
 
 /** Stable empty payload for the renderTooltip callback. */
-const EMPTY_TOOLTIP_PAYLOAD: readonly unknown[] = [];
+const EMPTY_TOOLTIP_PAYLOAD: ReadonlyArray<TooltipPayloadItem> = [];
 
 type Props = {
   readonly data: MerchantAggregate[];
@@ -104,10 +104,10 @@ export function MerchantLeaderboard({data, currency, merchantNamesById = EMPTY_M
    * own context (`currency`, `getMerchantName`).
    */
   const renderTooltip = useCallback(
-    ({active = false, payload = EMPTY_TOOLTIP_PAYLOAD}: {readonly active?: boolean; readonly payload?: readonly unknown[]}) => (
+    ({active = false, payload = EMPTY_TOOLTIP_PAYLOAD}: {readonly active?: boolean; readonly payload?: ReadonlyArray<TooltipPayloadItem>}) => (
       <CustomTooltip
         active={active}
-        payload={payload as TooltipPayloadItem[] | undefined}
+        payload={payload as TooltipPayloadItem[]}
         currency={currency}
         getMerchantName={getMerchantName}
       />

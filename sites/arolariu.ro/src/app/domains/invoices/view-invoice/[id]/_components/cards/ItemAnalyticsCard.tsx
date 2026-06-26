@@ -536,7 +536,8 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                         </TableCell>
                         <TableCell>{item.totalPrice.toFixed(2)}</TableCell>
                       </TableRow>
-                    ); })}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </TooltipProvider>
