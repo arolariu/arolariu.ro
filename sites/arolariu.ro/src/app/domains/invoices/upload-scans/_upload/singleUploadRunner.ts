@@ -108,12 +108,12 @@ async function runSingleAttempt(
       callbacks.onProgress({uploadId: upload.id, status, progress: 70, attempts: attempt});
 
       if (uploadResponse.ok) {
-        const {metadata} = targetResult.data;
+        const {metadata, blobUrl} = targetResult.data;
         const scan = {
           id: metadata.scanId,
           userIdentifier: metadata.ownerId,
           name: upload.name,
-          blobUrl: targetResult.data.blobUrl,
+          blobUrl,
           mimeType: upload.mimeType,
           sizeInBytes: upload.size,
           scanType: mimeTypeToScanType(upload.mimeType),
@@ -127,7 +127,7 @@ async function runSingleAttempt(
           uploadId: upload.id,
           attempts: attempt,
           scan,
-          blobUrl: targetResult.data.blobUrl,
+          blobUrl,
         };
       }
     } catch {

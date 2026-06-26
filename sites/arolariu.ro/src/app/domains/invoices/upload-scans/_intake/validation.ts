@@ -105,9 +105,8 @@ export function validateUploadFiles(files: Iterable<File>): UploadBatchValidatio
  */
 export function extractFilesFromDataTransferItems(items: DataTransferItemList): File[] {
   const files: File[] = [];
-  for (let index = 0; index < items.length; index += 1) {
-    const item = items[index];
-    if (item?.kind === "file") {
+  for (const item of Array.from(items)) {
+    if (item.kind === "file") {
       const file = item.getAsFile();
       if (file) {
         files.push(file);

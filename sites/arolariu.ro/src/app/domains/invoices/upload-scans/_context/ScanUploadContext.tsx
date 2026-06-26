@@ -75,8 +75,9 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
   const {dispatchProgress} = useUploadProgressEvents(dispatch);
 
   useEffect(() => {
+    const timers = removalTimersRef.current;
     return () => {
-      for (const timerId of removalTimersRef.current) {
+      for (const timerId of timers) {
         globalThis.clearTimeout(timerId);
       }
     };
@@ -96,6 +97,8 @@ export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>):
             break;
           case "unsupported-extension":
             toast.error(t((m) => m.pages.invoices.uploadScans.errors.unsupportedExtension, {name: invalid.file.name}));
+            break;
+          default:
             break;
         }
       }

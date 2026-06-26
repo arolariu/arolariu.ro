@@ -86,6 +86,16 @@ export default function UploadPreview(): React.JSX.Element | null {
     [renameFile, renameValue],
   );
 
+  /** Moves pagination to the previous page. */
+  const handlePreviousPage = useCallback((): void => {
+    setCurrentPage(currentPage - 1);
+  }, [currentPage, setCurrentPage]);
+
+  /** Moves pagination to the next page. */
+  const handleNextPage = useCallback((): void => {
+    setCurrentPage(currentPage + 1);
+  }, [currentPage, setCurrentPage]);
+
   if (pendingUploads.length === 0) {
     return null;
   }
@@ -169,11 +179,9 @@ export default function UploadPreview(): React.JSX.Element | null {
         <div className={styles["pagination"]}>
           <Button
             variant='outline'
-            size='sm'
-            onClick={() => {
-              setCurrentPage(currentPage - 1);
-            }}
-            disabled={currentPage === 1}>
+              size='sm'
+              onClick={handlePreviousPage}
+              disabled={currentPage === 1}>
             <TbChevronLeft />
             {t((m) => m.pages.invoices.uploadScans.preview.pagination.previous)}
           </Button>
@@ -186,11 +194,9 @@ export default function UploadPreview(): React.JSX.Element | null {
           </span>
           <Button
             variant='outline'
-            size='sm'
-            onClick={() => {
-              setCurrentPage(currentPage + 1);
-            }}
-            disabled={currentPage >= totalPages}>
+              size='sm'
+              onClick={handleNextPage}
+              disabled={currentPage >= totalPages}>
             {t((m) => m.pages.invoices.uploadScans.preview.pagination.next)}
             <TbChevronRight />
           </Button>

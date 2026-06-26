@@ -69,8 +69,6 @@ export function usePostUploadPrompt({
 
       return () => clearTimeout(timer);
     }
-
-    return;
   }, [clearCompletedBatch, completedBatch, pendingUploadCount, totalCompleted]);
 
   const dismissPrompt = useCallback((): void => {

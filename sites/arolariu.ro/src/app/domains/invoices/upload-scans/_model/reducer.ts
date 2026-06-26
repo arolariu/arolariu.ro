@@ -64,5 +64,7 @@ export function uploadReducer(state: UploadState, event: UploadEvent): UploadSta
       return handleCompletedBatchCleared(state, event);
     case "scanUpload.session.statsReset":
       return handleSessionStatsReset(state, event);
+    default:
+      return state;
   }
 }

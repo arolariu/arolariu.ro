@@ -37,8 +37,9 @@ function updateUpload(uploads: readonly PendingUpload[], uploadId: string, updat
  * @returns Upload fields without the optional error property.
  */
 function removeError(upload: PendingUpload): Omit<PendingUpload, "error"> {
-  const {error: _error, ...uploadWithoutError} = upload;
-  return uploadWithoutError;
+  const mutableCopy = {...upload};
+  delete mutableCopy.error;
+  return mutableCopy;
 }
 
 /** Handles accepted files entering the local queue. */

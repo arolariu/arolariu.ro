@@ -36,7 +36,7 @@ export function isUploadableUpload(upload: PendingUpload): boolean {
  * @returns Removable uploads in queue order.
  */
 export function selectRemovableUploads(state: UploadState): PendingUpload[] {
-  return state.pendingUploads.filter(isRemovableUpload);
+  return state.pendingUploads.filter((upload) => isRemovableUpload(upload));
 }
 
 /**
@@ -46,5 +46,5 @@ export function selectRemovableUploads(state: UploadState): PendingUpload[] {
  * @returns Idle and failed uploads in queue order.
  */
 export function selectUploadableItems(state: UploadState): PendingUpload[] {
-  return state.pendingUploads.filter(isUploadableUpload);
+  return state.pendingUploads.filter((upload) => isUploadableUpload(upload));
 }
