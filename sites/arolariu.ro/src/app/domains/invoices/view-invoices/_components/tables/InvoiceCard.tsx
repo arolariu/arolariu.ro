@@ -30,6 +30,7 @@ import {
 import {useLocale} from "next-intl";
 import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
+import {useCallback} from "react";
 import {TbBuildingStore, TbCalendar, TbEye} from "react-icons/tb";
 import {ScanMediaPreview, type ScanMediaKind} from "../../../_cards/ScanMediaPreview";
 import styles from "./InvoiceCard.module.scss";
@@ -69,13 +70,17 @@ export function InvoiceCard({invoice, isSelected, loading, onToggleSelection}: R
   const scans = invoice.scans.length > 0 ? invoice.scans : [undefined];
   const hasMultipleScans = invoice.scans.length > 1;
 
+  const handleToggleSelection = useCallback(() => {
+    onToggleSelection(invoice.id);
+  }, [onToggleSelection, invoice.id]);
+
   return (
     <div className={styles["cardWrapper"]}>
       <div className={styles["checkboxOverlay"]}>
         <Checkbox
           nativeButton
           checked={isSelected}
-          onCheckedChange={() => onToggleSelection(invoice.id)}
+          onCheckedChange={handleToggleSelection}
           aria-label={t((m) => m.pages.invoices.viewInvoices.tableView.aria.selectInvoice, {name: invoice.name})}
           className={styles["frostedCheckbox"]}
         />

@@ -27,6 +27,12 @@ import {TbChartBar} from "react-icons/tb";
 import type {MerchantAggregate} from "../../../_utils/statistics";
 import styles from "./MerchantLeaderboard.module.scss";
 
+/** Stable empty default for optional merchantNamesById prop. */
+const EMPTY_MERCHANT_NAMES: Readonly<Record<string, string>> = {};
+
+/** Stable empty payload for the renderTooltip callback. */
+const EMPTY_TOOLTIP_PAYLOAD: readonly unknown[] = [];
+
 type Props = {
   readonly data: MerchantAggregate[];
   readonly currency: string;
@@ -74,14 +80,14 @@ function CustomTooltip({active, payload, currency, getMerchantName}: Readonly<Cu
  * @param currency - Currency code for display
  * @returns Horizontal bar chart component
  */
-export function MerchantLeaderboard({data, currency, merchantNamesById}: Props): React.JSX.Element {
+export function MerchantLeaderboard({data, currency, merchantNamesById = EMPTY_MERCHANT_NAMES}: Props): React.JSX.Element {
   const t = useTranslations();
   const getMerchantById = useMerchantsStore((state) => state.getEntityById);
 
   // Create a function to get merchant name or fallback to ID
   const getMerchantName = useCallback(
     (id: string): string => {
-      const storyMerchantName = merchantNamesById?.[id];
+      const storyMerchantName = merchantNamesById[id];
       if (storyMerchantName) {
         return storyMerchantName;
       }
@@ -98,10 +104,10 @@ export function MerchantLeaderboard({data, currency, merchantNamesById}: Props):
    * own context (`currency`, `getMerchantName`).
    */
   const renderTooltip = useCallback(
-    (props: {active?: boolean; payload?: readonly unknown[]}) => (
+    ({active = false, payload = EMPTY_TOOLTIP_PAYLOAD}: {readonly active?: boolean; readonly payload?: readonly unknown[]}) => (
       <CustomTooltip
-        active={props.active}
-        payload={props.payload as TooltipPayloadItem[] | undefined}
+        active={active}
+        payload={payload as TooltipPayloadItem[] | undefined}
         currency={currency}
         getMerchantName={getMerchantName}
       />

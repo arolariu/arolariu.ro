@@ -47,11 +47,11 @@ function calculateHistoricalAverage(invoices: ReadonlyArray<Invoice>): Record<Pr
       if (item.metadata.isSoftDeleted) {
         // Skip soft-deleted items
       } else {
-        const {category} = item;
+        const {category, totalPrice} = item;
         if (!historicalAvg[category]) {
           historicalAvg[category] = {total: 0, count: 0};
         }
-        historicalAvg[category].total += item.totalPrice ?? 0;
+        historicalAvg[category].total += totalPrice ?? 0;
         historicalAvg[category].count += 1;
       }
     }
@@ -188,7 +188,8 @@ export function SeasonalInsightsCard(): React.JSX.Element {
 
   // Calculate real seasonal spending data
   const seasonalData = useMemo(() => {
-    const currentDate = toSafeDate(invoice.paymentInformation.transactionDate);
+    const {transactionDate, totalCostAmount, currency: paymentCurrency} = invoice.paymentInformation;
+    const currentDate = toSafeDate(transactionDate);
     const currentMonth = currentDate.getMonth();
 
     // Find invoices from the same month (any year), excluding the current invoice
@@ -210,8 +211,8 @@ export function SeasonalInsightsCard(): React.JSX.Element {
     // Current invoice amount in RON
     const currentYear = currentDate.getFullYear();
     const currentAmount = toRON(
-      invoice.paymentInformation.totalCostAmount,
-      invoice.paymentInformation.currency?.code ?? "RON",
+      totalCostAmount,
+      paymentCurrency?.code ?? "RON",
       currentYear,
     );
 

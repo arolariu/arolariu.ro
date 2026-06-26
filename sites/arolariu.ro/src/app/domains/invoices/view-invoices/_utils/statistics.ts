@@ -42,8 +42,7 @@ import {formatDate, toSafeDate} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
 import {getTransactionYear, toRON} from "../../../../../lib/currency";
 import {getProductCategoryLabel} from "../../_utils/labelUtilities";
-
-export {getProductCategoryLabel};
+export {getProductCategoryLabel} from "../../_utils/labelUtilities";
 
 /**
  * Empty GUID constant used to filter invalid merchant references.
@@ -808,6 +807,23 @@ export function computePriceDistribution(invoices: ReadonlyArray<Invoice>): Pric
 }
 
 /**
+ * Maps an hour-of-day (0-23) to the corresponding time-of-day segment name.
+ *
+ * @param hour - Hour integer (0-23)
+ * @returns One of "Morning" | "Afternoon" | "Evening" | "Night"
+ *
+ * @remarks
+ * Extracted to module scope to avoid a `let`/if-else block inside `computeTimeOfDay`
+ * that would otherwise trigger the `init-declarations` lint rule.
+ */
+function getTimeSegment(hour: number): "Morning" | "Afternoon" | "Evening" | "Night" {
+  if (hour >= 6 && hour < 12) return "Morning";
+  if (hour >= 12 && hour < 17) return "Afternoon";
+  if (hour >= 17 && hour < 21) return "Evening";
+  return "Night";
+}
+
+/**
  * Computes spending by time-of-day segments.
  *
  * @param invoices - Array of invoices to analyze
@@ -848,8 +864,7 @@ export function computeTimeOfDay(invoices: ReadonlyArray<Invoice>): TimeOfDaySeg
     const hour = date.getHours();
     const amount = getAmountInRON(invoice);
 
-    const segment: keyof typeof segments =
-      hour >= 6 && hour < 12 ? "Morning" : hour >= 12 && hour < 17 ? "Afternoon" : hour >= 17 && hour < 21 ? "Evening" : "Night";
+    const segment = getTimeSegment(hour);
 
     segments[segment].invoiceCount++;
     segments[segment].totalAmount += amount;

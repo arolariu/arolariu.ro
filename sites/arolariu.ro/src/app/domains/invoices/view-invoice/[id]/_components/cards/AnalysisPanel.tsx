@@ -67,7 +67,7 @@ type AnalysisOption = Readonly<{
  *
  * @returns The AnalysisPanel component.
  */
-export function AnalysisPanel(): React.JSX.Element {
+export function AnalysisPanel(): React.JSX.Element | null {
   const t = useTranslations();
   const locale = useLocale();
   const {invoice} = useInvoiceContext();
@@ -217,7 +217,7 @@ export function AnalysisPanel(): React.JSX.Element {
   );
 
   // Hide the entire card when analysis is complete (items exist)
-  if (invoice.items.length > 0) return <></>;
+  if (invoice.items.length > 0) return null;
 
   return (
     <Card className={styles["card"]}>

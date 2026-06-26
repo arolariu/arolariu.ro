@@ -21,7 +21,7 @@ type Props = Readonly<{
  * @param props - Current filters, available categories, label formatter, and filter updater.
  * @returns The rendered category card, or an empty fragment when no options exist.
  */
-export function CategoryFilterCard({filters, availableCategories, getCategoryLabel, onFiltersChange}: Readonly<Props>): React.JSX.Element {
+export function CategoryFilterCard({filters, availableCategories, getCategoryLabel, onFiltersChange}: Readonly<Props>): React.JSX.Element | null {
   const t = useTranslations();
   const isCategoryActive = filters.categories.length > 0;
 
@@ -40,7 +40,7 @@ export function CategoryFilterCard({filters, availableCategories, getCategoryLab
     [filters.categories, onFiltersChange],
   );
 
-  if (availableCategories.length === 0) return <></>;
+  if (availableCategories.length === 0) return null;
 
   return (
     <FilterCardFrame

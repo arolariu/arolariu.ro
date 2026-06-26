@@ -113,6 +113,22 @@ function CustomTooltip({
 export function ProductCategoryChart({data, currency}: Props): React.JSX.Element {
   const t = useTranslations();
 
+  /**
+   * Factory: returns a stable tooltip render function with currency context.
+   * Wraps the CustomTooltip component to inject the currency prop.
+   * Must be defined before any early returns to satisfy rules-of-hooks.
+   */
+  const renderTooltip = useCallback(
+    ({active = false, payload = EMPTY_TOOLTIP_PAYLOAD}: {readonly active?: boolean; readonly payload?: readonly unknown[]}) => (
+      <CustomTooltip
+        active={active}
+        payload={payload as CustomTooltipProps["payload"]}
+        currency={currency}
+      />
+    ),
+    [currency],
+  );
+
   // Empty state
   if (data.length === 0) {
     return (
@@ -139,21 +155,6 @@ export function ProductCategoryChart({data, currency}: Props): React.JSX.Element
       color: `var(--ac-chart-${(index % 5) + 1})`,
     };
   }
-
-  /**
-   * Factory: returns a stable tooltip render function with currency context.
-   * Wraps the CustomTooltip component to inject the currency prop.
-   */
-  const renderTooltip = useCallback(
-    ({active, payload}: {active?: boolean; payload?: readonly unknown[]}) => (
-      <CustomTooltip
-        active={active}
-        payload={payload as CustomTooltipProps["payload"]}
-        currency={currency}
-      />
-    ),
-    [currency],
-  );
 
   const coloredData = data.map((item, index) => ({
     ...item,

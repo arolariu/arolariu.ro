@@ -19,7 +19,7 @@ type Props = Readonly<{
  * @param props - Current filters, available currency codes, and filter updater.
  * @returns The rendered currency card, or an empty fragment when no options exist.
  */
-export function CurrencyFilterCard({filters, availableCurrencies, onFiltersChange}: Readonly<Props>): React.JSX.Element {
+export function CurrencyFilterCard({filters, availableCurrencies, onFiltersChange}: Readonly<Props>): React.JSX.Element | null {
   const t = useTranslations();
   const isCurrencyActive = filters.currencies.length > 0;
 
@@ -40,7 +40,7 @@ export function CurrencyFilterCard({filters, availableCurrencies, onFiltersChang
     [filters.currencies, onFiltersChange],
   );
 
-  if (availableCurrencies.length === 0) return <></>;
+  if (availableCurrencies.length === 0) return null;
 
   return (
     <FilterCardFrame

@@ -139,7 +139,7 @@ import styles from "./island.module.scss";
  * @see RFC 1005 - State management (Zustand patterns)
  * @see RFC 2001 - Domain-Driven Design (invoices bounded context)
  */
-export default function RenderViewInvoicesScreen(): React.JSX.Element {
+export default function RenderViewInvoicesScreen(): React.JSX.Element | null {
   const {invoices, isLoading, isError} = useInvoices();
   const t = useTranslations();
 
@@ -163,7 +163,7 @@ export default function RenderViewInvoicesScreen(): React.JSX.Element {
 
   // TODO: treat isError case with error message and retry button instead of empty fragment
   if (isError) {
-    return <></>;
+    return null;
   }
 
   return (

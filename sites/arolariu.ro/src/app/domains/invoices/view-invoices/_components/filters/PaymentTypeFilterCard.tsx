@@ -26,7 +26,7 @@ export function PaymentTypeFilterCard({
   availablePaymentTypes,
   getPaymentTypeLabel,
   onFiltersChange,
-}: Readonly<Props>): React.JSX.Element {
+}: Readonly<Props>): React.JSX.Element | null {
   const t = useTranslations();
   const isPaymentActive = filters.paymentTypes.length > 0;
 
@@ -45,7 +45,7 @@ export function PaymentTypeFilterCard({
     [filters.paymentTypes, onFiltersChange],
   );
 
-  if (availablePaymentTypes.length === 0) return <></>;
+  if (availablePaymentTypes.length === 0) return null;
 
   return (
     <FilterCardFrame

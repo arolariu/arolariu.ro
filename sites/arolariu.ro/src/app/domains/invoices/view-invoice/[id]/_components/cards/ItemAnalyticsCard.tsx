@@ -111,6 +111,70 @@ const categoryColors: Record<number, "default" | "secondary" | "outline" | "dest
   [ProductCategory.OTHER]: "secondary",
 };
 
+/** Minimal interface for sortable item fields used by the sort comparator. */
+type SortableItem = {
+  readonly name: string;
+  readonly category: number;
+  readonly totalPrice: number;
+  readonly quantity: number;
+};
+
+/**
+ * Pure comparator for two sortable items based on the active sort field.
+ * Extracted to module scope to avoid a mutable `let` variable inside the useMemo callback.
+ */
+function resolveSortComparison(a: SortableItem, b: SortableItem, sortField: SortField, locale: string): number {
+  switch (sortField) {
+    case "name":
+      return a.name.localeCompare(b.name, locale);
+    case "category":
+      return a.category - b.category;
+    case "price":
+      return a.totalPrice - b.totalPrice;
+    case "quantity":
+      return a.quantity - b.quantity;
+    default: {
+      const _exhaustive: never = sortField;
+      throw new Error(`Unhandled sortField: ${String(_exhaustive)}`);
+    }
+  }
+}
+
+/**
+ * Returns the Badge variant for a given OCR confidence score.
+ * Extracted to module scope to avoid nested ternaries inside the render map.
+ */
+function getConfidenceVariant(confidence: number): "default" | "secondary" | "destructive" {
+  if (confidence >= 0.9) return "default";
+  if (confidence >= 0.7) return "secondary";
+  return "destructive";
+}
+
+/**
+ * Returns the confidence symbol character for a given OCR confidence score.
+ * Extracted to module scope to avoid nested ternaries inside the render map.
+ */
+function getConfidenceSymbol(confidence: number): string {
+  if (confidence >= 0.9) return "✓";
+  if (confidence >= 0.7) return "~";
+  return "!";
+}
+
+/**
+ * Selects the pre-translated confidence level label from the three candidates.
+ * Extracted to module scope to avoid nested ternaries inside the render map.
+ *
+ * @param confidence - OCR confidence value between 0 and 1
+ * @param high - Pre-translated "high" label
+ * @param medium - Pre-translated "medium" label
+ * @param low - Pre-translated "low" label
+ */
+function getConfidenceLevel(confidence: number, high: string, medium: string, low: string): string {
+  if (confidence >= 0.9) return high;
+  if (confidence >= 0.7) return medium;
+  return low;
+}
+
 /**
  * Enhanced item-level analytics card with interactive table, search, and sorting.
  *
@@ -179,27 +243,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
    */
   const sortedItems = useMemo(() => {
     return filteredItems.toSorted((a, b) => {
-      let comparison = 0;
-
-      switch (sortField) {
-        case "name":
-          comparison = a.name.localeCompare(b.name, locale);
-          break;
-        case "category":
-          comparison = a.category - b.category;
-          break;
-        case "price":
-          comparison = a.totalPrice - b.totalPrice;
-          break;
-        case "quantity":
-          comparison = a.quantity - b.quantity;
-          break;
-        default: {
-          const _exhaustive: never = sortField;
-          throw new Error(`Unhandled sortField: ${String(_exhaustive)}`);
-        }
-      }
-
+      const comparison = resolveSortComparison(a, b, sortField, locale);
       return sortDirection === "asc" ? comparison : -comparison;
     });
   }, [filteredItems, sortField, sortDirection, locale]);
@@ -332,6 +376,12 @@ export function ItemAnalyticsCard(): React.JSX.Element {
     );
   }
 
+  // Pre-translate confidence level labels once per render so the map callback
+  // can use getConfidenceLevel() without nested ternaries.
+  const confidenceLevelHigh = t((m) => m.pages.invoices.viewInvoice.itemAnalytics.confidence.high);
+  const confidenceLevelMedium = t((m) => m.pages.invoices.viewInvoice.itemAnalytics.confidence.medium);
+  const confidenceLevelLow = t((m) => m.pages.invoices.viewInvoice.itemAnalytics.confidence.low);
+
   return (
     <motion.div
       initial={{opacity: 0, y: 20}}
@@ -406,43 +456,39 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sortedItems.map((item) => (
+                    {sortedItems.map((item) => {
+                      // Extract confidence-based values using module-scope helpers to avoid nested ternaries
+                      const {confidence} = item.metadata;
+                      const confidenceVariant = getConfidenceVariant(confidence);
+                      const confidenceSymbol = getConfidenceSymbol(confidence);
+                      const confidenceLevel = getConfidenceLevel(confidence, confidenceLevelHigh, confidenceLevelMedium, confidenceLevelLow);
+
+                      return (
                       <TableRow key={item.productCode ?? item.name}>
                         <TableCell>
                           <div className={styles["itemCell"]}>
                             <div className={styles["itemNameRow"]}>
                               <div className={styles["itemName"]}>{item.name}</div>
                               {/* OCR Confidence Indicator - New DI v4.0 field */}
-                              {item.metadata.confidence > 0 && (
+                              {confidence > 0 && (
                                 <Tooltip>
                                   <TooltipTrigger>
                                     <Badge
-                                      variant={
-                                        item.metadata.confidence >= 0.9
-                                          ? "default"
-                                          : item.metadata.confidence >= 0.7
-                                            ? "secondary"
-                                            : "destructive"
-                                      }
+                                      variant={confidenceVariant}
                                       className={styles["confidenceBadge"]}
                                       aria-label={t((m) => m.pages.invoices.viewInvoice.itemAnalytics.confidence.ariaLabel, {
-                                        level:
-                                          item.metadata.confidence >= 0.9
-                                            ? t((m) => m.pages.invoices.viewInvoice.itemAnalytics.confidence.high)
-                                            : item.metadata.confidence >= 0.7
-                                              ? t((m) => m.pages.invoices.viewInvoice.itemAnalytics.confidence.medium)
-                                              : t((m) => m.pages.invoices.viewInvoice.itemAnalytics.confidence.low),
-                                        percent: (item.metadata.confidence * 100).toFixed(0),
+                                        level: confidenceLevel,
+                                        percent: (confidence * 100).toFixed(0),
                                       })}>
-                                      {item.metadata.confidence >= 0.9 ? "✓" : item.metadata.confidence >= 0.7 ? "~" : "!"}
+                                      {confidenceSymbol}
                                     </Badge>
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p className={styles["confidenceTooltip"]}>
                                       {t((m) => m.pages.invoices.viewInvoice.itemAnalytics.confidence.label)}:{" "}
-                                      {(item.metadata.confidence * 100).toFixed(0)}%
+                                      {(confidence * 100).toFixed(0)}%
                                     </p>
-                                    {item.metadata.confidence < 0.7 && (
+                                    {confidence < 0.7 && (
                                       <p className={styles["confidenceWarning"]}>
                                         {t((m) => m.pages.invoices.viewInvoice.itemAnalytics.confidence.lowWarning)}
                                       </p>
@@ -490,7 +536,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                         </TableCell>
                         <TableCell>{item.totalPrice.toFixed(2)}</TableCell>
                       </TableRow>
-                    ))}
+                    ); })}
                   </TableBody>
                 </Table>
               </TooltipProvider>
