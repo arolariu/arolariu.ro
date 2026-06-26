@@ -476,6 +476,14 @@ export function formatDateTime(date: DateLike, locale = "en-US", options?: Intl.
 }
 
 /**
+ * Returns a pluralized relative-time segment: `"N unit(s) suffix"`.
+ * Extracted to keep `formatRelativeTime` below the cognitive-complexity threshold.
+ */
+function formatUnit(count: number, unit: string, suffix: string): string {
+  return `${count} ${unit}${count === 1 ? "" : "s"} ${suffix}`;
+}
+
+/**
  * Formats a date as a human-readable relative time string.
  *
  * @remarks
@@ -499,15 +507,6 @@ export function formatDateTime(date: DateLike, locale = "en-US", options?: Intl.
  * formatRelativeTime("2024-01-01T00:00:00Z");              // "6 months ago"
  * ```
  */
-
-/**
- * Returns a pluralized relative-time segment: `"N unit(s) suffix"`.
- * Extracted to keep `formatRelativeTime` below the cognitive-complexity threshold.
- */
-function formatUnit(count: number, unit: string, suffix: string): string {
-  return `${count} ${unit}${count === 1 ? "" : "s"} ${suffix}`;
-}
-
 export function formatRelativeTime(date: DateLike): string {
   const dateObj = toSafeDate(date);
   if (dateObj.getTime() === 0) return "";
