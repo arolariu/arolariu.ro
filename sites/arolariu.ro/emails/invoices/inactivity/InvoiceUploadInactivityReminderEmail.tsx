@@ -110,10 +110,12 @@ const InvoiceUploadInactivityReminderEmail = defineEmailTemplate<Props>({
     const effectiveInvoicesUrl = invoicesUrl ?? `${BRAND.url}/domains/invoices/view-invoices`;
     const dayKey = String(daysWithoutUpload) as "3" | "7" | "14" | "30";
 
+    const headingText = t(selectorFromPath(`emails.invoiceInactivity.heading.${dayKey}`));
+
     return (
       <EmailLayout
         locale={locale}
-        title={`${BRAND.name} | ${t(selectorFromPath(`emails.invoiceInactivity.heading.${dayKey}`))}`}
+        title={`${BRAND.name} | ${headingText}`}
         preview={t(selectorFromPath("emails.invoiceInactivity.preview"), {name, days: daysWithoutUpload})}
         badge={t(selectorFromPath(`emails.invoiceInactivity.badge.${dayKey}`))}
         heading={t(selectorFromPath(`emails.invoiceInactivity.heading.${dayKey}`))}

@@ -1,10 +1,9 @@
 "use client";
 
-import {selectorFromPath} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "@arolariu/components/accordion";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl-selector";
 import {useRef} from "react";
 import {TbQuestionMark} from "react-icons/tb";
 import styles from "./Faq.module.scss";

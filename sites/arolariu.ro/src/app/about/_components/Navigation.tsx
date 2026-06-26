@@ -1,10 +1,9 @@
 "use client";
 
-import {selectorFromPath} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 
 import {Badge, Button, Card, CardContent, CardFooter, CardHeader} from "@arolariu/components";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl-selector";
 import Image from "next/image";
 import Link from "next/link";
 import {useRef} from "react";
@@ -55,75 +54,82 @@ export default function Navigation(): React.JSX.Element {
 
         {/* Navigation cards */}
         <div className={styles["grid"]}>
-          {navigationItems.map((item, index) => (
-            <motion.div
-              key={item.key}
-              initial={{opacity: 0, x: index === 0 ? -30 : 30}}
-              animate={isInView ? {opacity: 1, x: 0} : {}}
-              transition={{delay: 0.3 + index * 0.15, duration: 0.5}}>
-              <Card className={styles["card"]}>
-                <CardHeader className={styles["cardHeader"]}>
-                  {/* Image container */}
-                  <div className={styles["imageWrapper"]}>
-                    <Image
-                      src={item.image}
-                      alt={t(selectorFromPath(`pages.about.hub.navigation.${item.key}.title`))}
-                      width={120}
-                      height={120}
-                      className={styles["image"]}
-                    />
-                  </div>
-                </CardHeader>
-
-                <CardContent className={styles["cardContent"]}>
-                  <div className={styles["cardContentInner"]}>
-                    <div className={styles["cardTextCenter"]}>
-                      <h3 className={styles["cardTitle"]}>
-                        {t(selectorFromPath(`pages.about.hub.navigation.${`${item.key}.title` as "platform.title"}`))}
-                      </h3>
-                      <p className={styles["cardSubtitle"]}>
-                        {t(selectorFromPath(`pages.about.hub.navigation.${`${item.key}.subtitle` as "platform.subtitle"}`))}
-                      </p>
+          {navigationItems.map((item, index) => {
+            const itemTitleKey = `${item.key}.title` as "platform.title";
+            const itemSubtitleKey = `${item.key}.subtitle` as "platform.subtitle";
+            return (
+              <motion.div
+                key={item.key}
+                initial={{opacity: 0, x: index === 0 ? -30 : 30}}
+                animate={isInView ? {opacity: 1, x: 0} : {}}
+                transition={{delay: 0.3 + index * 0.15, duration: 0.5}}>
+                <Card className={styles["card"]}>
+                  <CardHeader className={styles["cardHeader"]}>
+                    {/* Image container */}
+                    <div className={styles["imageWrapper"]}>
+                      <Image
+                        src={item.image}
+                        alt={t(selectorFromPath(`pages.about.hub.navigation.${item.key}.title`))}
+                        width={120}
+                        height={120}
+                        className={styles["image"]}
+                      />
                     </div>
+                  </CardHeader>
 
-                    {/* Feature list */}
-                    <ul className={styles["featureList"]}>
-                      {([0, 1, 2] as const).map((featureIndex) => (
-                        <li
-                          key={featureIndex}
-                          className={styles["featureItem"]}>
-                          <Badge
-                            variant='secondary'
-                            className={styles["featureBadge"]}>
-                            <TbCheck className={styles["featureIcon"]} />
-                          </Badge>
-                          <span>
-                            {t(
-                              selectorFromPath(
-                                `About.Hub.navigation.${`${item.key}.features.${featureIndex}` as `platform.features.${typeof featureIndex}`}`,
-                              ),
-                            )}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </CardContent>
+                  <CardContent className={styles["cardContent"]}>
+                    <div className={styles["cardContentInner"]}>
+                      <div className={styles["cardTextCenter"]}>
+                        <h3 className={styles["cardTitle"]}>
+                          {t(selectorFromPath(`pages.about.hub.navigation.${itemTitleKey}`))}
+                        </h3>
+                        <p className={styles["cardSubtitle"]}>
+                          {t(selectorFromPath(`pages.about.hub.navigation.${itemSubtitleKey}`))}
+                        </p>
+                      </div>
 
-                <CardFooter className={styles["cardFooter"]}>
-                  <Button
-                    asChild
-                    className={styles["ctaButton"]}
-                    size='lg'>
-                    <Link href={item.href}>
-                      {t(selectorFromPath(`pages.about.hub.navigation.${item.key}.cta`))}
-                      <TbArrowRight className={styles["ctaIcon"]} />
-                    </Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            </motion.div>
-          ))}
+                      {/* Feature list */}
+                      <ul className={styles["featureList"]}>
+                        {([0, 1, 2] as const).map((featureIndex) => {
+                          const featureKey = `${item.key}.features.${featureIndex}` as `platform.features.${typeof featureIndex}`;
+                          return (
+                            <li
+                              key={featureIndex}
+                              className={styles["featureItem"]}>
+                              <Badge
+                                variant='secondary'
+                                className={styles["featureBadge"]}>
+                                <TbCheck className={styles["featureIcon"]} />
+                              </Badge>
+                              <span>
+                                {t(
+                                  selectorFromPath(
+                                    `About.Hub.navigation.${featureKey}`,
+                                  ),
+                                )}
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  </CardContent>
+
+                  <CardFooter className={styles["cardFooter"]}>
+                    <Button
+                      asChild
+                      className={styles["ctaButton"]}
+                      size='lg'>
+                      <Link href={item.href}>
+                        {t(selectorFromPath(`pages.about.hub.navigation.${item.key}.cta`))}
+                        <TbArrowRight className={styles["ctaIcon"]} />
+                      </Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </section>

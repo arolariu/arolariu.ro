@@ -112,7 +112,7 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
       heading={t(selectorFromPath("emails.incompleteInvoice.heading"))}
       primaryCta={{href: editInvoiceUrl, label: t(selectorFromPath("emails.incompleteInvoice.primaryCta"))}}
       secondaryCta={reanalyzeUrl ? {href: reanalyzeUrl, label: t(selectorFromPath("emails.incompleteInvoice.secondaryCta"))} : null}
-      showUnsubscribe={true}
+      showUnsubscribe
       unsubscribeUrl={`${BRAND.url}/unsubscribe`}
       managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
       <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.incompleteInvoice.greeting"), {name})}</Text>

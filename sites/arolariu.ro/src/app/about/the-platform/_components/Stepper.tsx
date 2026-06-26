@@ -1,10 +1,9 @@
 "use client";
 
-import {selectorFromPath} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 
 import {Badge} from "@arolariu/components/badge";
 import {AnimatePresence, motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl-selector";
 import {useCallback, useRef, useState} from "react";
 import {TbBrandReact, TbCalendar, TbCheck, TbCloud, TbCode, TbFileInvoice, TbRocket, TbServer, TbSparkles, TbTools} from "react-icons/tb";
 import styles from "./Stepper.module.scss";
@@ -91,7 +90,7 @@ export default function Stepper(): React.JSX.Element {
                     variant='outline'
                     className={styles["dateBadge"]}>
                     <TbCalendar className={styles["dateIcon"]} />
-                    {t(selectorFromPath(`sections.about.platform.timeline.${`events.${event.id}.date`}`))}
+                    {t(selectorFromPath(`sections.about.platform.timeline.events.${event.id}.date`))}
                   </Badge>
 
                   <button
@@ -100,17 +99,17 @@ export default function Stepper(): React.JSX.Element {
                     className={styles["stepButton"]}
                     onClick={handleStepClick}>
                     <h3 className={styles["stepTitle"]}>
-                      {t(selectorFromPath(`sections.about.platform.timeline.${`events.${event.id}.title`}`))}
+                      {t(selectorFromPath(`sections.about.platform.timeline.events.${event.id}.title`))}
                     </h3>
                   </button>
 
                   <p className={styles["stepDescription"]}>
-                    {t(selectorFromPath(`sections.about.platform.timeline.${`events.${event.id}.description`}`))}
+                    {t(selectorFromPath(`sections.about.platform.timeline.events.${event.id}.description`))}
                   </p>
 
                   {/* Tags */}
                   <div className={styles["tags"]}>
-                    {t(selectorFromPath(`sections.about.platform.timeline.${`events.${event.id}.tags`}`))
+                    {t(selectorFromPath(`sections.about.platform.timeline.events.${event.id}.tags`))
                       .split(",")
                       .map((tag) => (
                         <Badge
@@ -133,7 +132,7 @@ export default function Stepper(): React.JSX.Element {
                         className={styles["expandable"]}>
                         <h4 className={styles["detailsTitle"]}>{t((m) => m.sections.about.platform.timeline.keyAchievements)}</h4>
                         <ul className={styles["detailsList"]}>
-                          {t(selectorFromPath(`sections.about.platform.timeline.${`events.${event.id}.details`}`))
+                          {t(selectorFromPath(`sections.about.platform.timeline.events.${event.id}.details`))
                             .split(",")
                             .map((detail) => (
                               <motion.li

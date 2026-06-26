@@ -1,5 +1,3 @@
-import "server-only";
-
 import type {EmailTemplate} from "./_lib/defineEmailTemplate";
 
 import WelcomeEmail from "./accounts/WelcomeEmail";

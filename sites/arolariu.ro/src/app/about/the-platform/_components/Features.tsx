@@ -1,12 +1,11 @@
 "use client";
 
-import {selectorFromPath} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 
 import {Badge} from "@arolariu/components/badge";
 import {Button} from "@arolariu/components/button";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components/card";
 import {AnimatePresence, motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {useRef, useState} from "react";
 import {
@@ -157,16 +156,16 @@ export default function Features(): React.JSX.Element {
                     </motion.div>
                   </div>
                   <CardTitle className={styles["cardTitle"]}>
-                    {t(selectorFromPath(`sections.about.platform.features.${`items.${feature.id}.title`}`))}
+                    {t(selectorFromPath(`sections.about.platform.features.items.${feature.id}.title`))}
                   </CardTitle>
                   <CardDescription className={styles["cardDescription"]}>
-                    {t(selectorFromPath(`sections.about.platform.features.${`items.${feature.id}.description`}`))}
+                    {t(selectorFromPath(`sections.about.platform.features.items.${feature.id}.description`))}
                   </CardDescription>
                 </CardHeader>
 
                 <CardContent className={styles["cardContent"]}>
                   <div className={styles["tags"]}>
-                    {t(selectorFromPath(`sections.about.platform.features.${`items.${feature.id}.tags`}`))
+                    {t(selectorFromPath(`sections.about.platform.features.items.${feature.id}.tags`))
                       .split(",")
                       .map((tag) => (
                         <Badge
@@ -215,20 +214,20 @@ export default function Features(): React.JSX.Element {
                   <h3
                     id={`feature-modal-title-${selectedFeature.id}`}
                     className={styles["modalTitle"]}>
-                    {t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.title`}`))}
+                    {t(selectorFromPath(`sections.about.platform.features.items.${selectedFeature.id}.title`))}
                   </h3>
                   <p className={styles["modalSubtitle"]}>
-                    {t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.description`}`))}
+                    {t(selectorFromPath(`sections.about.platform.features.items.${selectedFeature.id}.description`))}
                   </p>
                 </div>
               </div>
 
               <p className={styles["modalDescription"]}>
-                {t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.longDescription`}`))}
+                {t(selectorFromPath(`sections.about.platform.features.items.${selectedFeature.id}.longDescription`))}
               </p>
 
               <div className={styles["modalTags"]}>
-                {t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.tags`}`))
+                {t(selectorFromPath(`sections.about.platform.features.items.${selectedFeature.id}.tags`))
                   .split(",")
                   .map((tag) => (
                     <Badge

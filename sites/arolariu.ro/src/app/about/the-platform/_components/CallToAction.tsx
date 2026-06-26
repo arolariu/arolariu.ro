@@ -1,11 +1,10 @@
 "use client";
 
-import {selectorFromPath} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 
 import {BackgroundBeams} from "@arolariu/components/background-beams";
 import {Button} from "@arolariu/components/button";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {useRef} from "react";
 import {TbArrowRight, TbBrandGithub, TbMail, TbRocket, TbUser} from "react-icons/tb";
@@ -198,10 +197,10 @@ export default function CallToAction(): React.JSX.Element {
                 whileHover={{scale: 1.05, transition: {duration: 0.2}}}>
                 <div className={`${styles["trustAccent"]} ${styles[trustAccentClassMap[trustId]]}`} />
                 <h3 className={styles["trustTitle"]}>
-                  {t(selectorFromPath(`sections.about.platform.callToAction.${`trust.${trustId}.title`}`))}
+                  {t(selectorFromPath(`sections.about.platform.callToAction.trust.${trustId}.title`))}
                 </h3>
                 <p className={styles["trustDescription"]}>
-                  {t(selectorFromPath(`sections.about.platform.callToAction.${`trust.${trustId}.description`}`))}
+                  {t(selectorFromPath(`sections.about.platform.callToAction.trust.${trustId}.description`))}
                 </p>
               </motion.div>
             ))}
