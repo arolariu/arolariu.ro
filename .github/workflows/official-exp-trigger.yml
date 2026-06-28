@@ -80,7 +80,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: 📝 Display workflow context
         run: |
@@ -148,7 +148,7 @@ jobs:
     environment: ${{ inputs.environment || 'production' }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: 📝 Display build context
         run: |
