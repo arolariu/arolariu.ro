@@ -206,7 +206,7 @@
     "postcss": "8.5.15",
     "prettier-plugin-organize-imports": "4.3.0",
     "prettier-plugin-svelte": "4.1.1",
-    "prettier": "3.8.4",
+    "prettier": "3.9.1",
     "prism-react-renderer": "2.4.1",
     "raw-loader": "4.0.2",
     "react-day-picker": "9.14.0",
