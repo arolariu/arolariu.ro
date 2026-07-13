@@ -156,7 +156,7 @@
     "@testing-library/svelte": "5.4.2",
     "@types/eslint-plugin-jsx-a11y": "6.10.1",
     "@types/eslint": "9.6.1",
-    "@types/node": "24.12.4",
+    "@types/node": "24.13.3",
     "@types/react-dom": "19.2.3",
     "@types/react": "19.2.17",
     "@types/three": "0.185.0",
@@ -232,14 +232,14 @@
     "typedoc-plugin-markdown": "4.12.0",
     "typedoc": "0.28.19",
     "typescript-eslint": "8.62.0",
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "uuid": "14.0.1",
     "vite": "8.1.0",
     "vitest": "4.1.9",
     "zustand": "5.0.14"
   },
   "overrides": {
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "webpackbar": "7.0.0",
     "eslint-plugin-react-hooks": {
       "zod-validation-error": "^4.0.2"
