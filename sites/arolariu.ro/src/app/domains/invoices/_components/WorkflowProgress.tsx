@@ -57,11 +57,11 @@ function Step({
   label: string;
 }>): React.JSX.Element {
   const config = STEP_CONFIG[step];
-  let circleClass: string = styles["stepFuture"];
+  let circleClass = styles["stepFuture"] ?? "";
   if (isCompleted) {
-    circleClass = styles["stepCompleted"];
+    circleClass = styles["stepCompleted"] ?? "";
   } else if (isActive) {
-    circleClass = styles["stepActive"];
+    circleClass = styles["stepActive"] ?? "";
   }
 
   return (

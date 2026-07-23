@@ -97,7 +97,6 @@
   "chat.promptFiles": true,
   "chat.renderRelatedFiles": false,
   "chat.sendElementsToChat.attachCSS": true,
-  "chat.sendElementsToChat.attachImages": true,
   "chat.sendElementsToChat.enabled": true,
   "chat.setup.signInDialogVariant": "default",
   "chat.todoListTool.enabled": true,
@@ -828,5 +827,6 @@
   "zenMode.silentNotifications": true,
   "[scss]": {
     "editor.defaultFormatter": "vscode.css-language-features"
-  }
+  },
+  "workbench.browser.sendElementsToChat.attachImages": true
 }
