@@ -232,14 +232,14 @@
     "typedoc-plugin-markdown": "4.12.0",
     "typedoc": "0.28.20",
     "typescript-eslint": "8.65.0",
-    "typescript": "7.0.2",
+    "typescript": "6.0.3",
     "uuid": "14.0.1",
     "vite": "8.1.5",
     "vitest": "4.1.10",
     "zustand": "5.0.14"
   },
   "overrides": {
-    "typescript": "7.0.2",
+    "typescript": "6.0.3",
     "webpackbar": "7.0.0",
     "eslint-plugin-react-hooks": {
       "zod-validation-error": "^4.0.2"
