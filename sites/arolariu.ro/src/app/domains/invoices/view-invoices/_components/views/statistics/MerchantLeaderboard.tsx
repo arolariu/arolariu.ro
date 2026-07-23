@@ -40,7 +40,7 @@ type Props = {
 };
 
 type TooltipPayloadItem = {
-  payload: MerchantAggregate;
+  readonly payload?: MerchantAggregate;
 };
 
 type CustomTooltipProps = {
@@ -59,6 +59,7 @@ function CustomTooltip({active, payload, currency, getMerchantName}: Readonly<Cu
   const [firstItem] = payload;
   if (!firstItem) return null;
   const data = firstItem.payload;
+  if (!data) return null;
 
   return (
     <div className={styles["tooltip"]}>
@@ -96,29 +97,6 @@ export function MerchantLeaderboard({data, currency, merchantNamesById = EMPTY_M
       return merchant?.name ?? t((m) => m.cards.invoices.statistics.merchantLeaderboard.unknownMerchant);
     },
     [getMerchantById, merchantNamesById, t],
-  );
-
-  /**
-   * Render-prop adapter for Recharts' ChartTooltip. Recharts injects
-   * `active` and `payload` at hover time; we spread those in and add our
-   * own context (`currency`, `getMerchantName`).
-   */
-  const renderTooltip = useCallback(
-    ({
-      active = false,
-      payload = EMPTY_TOOLTIP_PAYLOAD,
-    }: {
-      readonly active?: boolean;
-      readonly payload?: ReadonlyArray<TooltipPayloadItem>;
-    }) => (
-      <CustomTooltip
-        active={active}
-        payload={payload}
-        currency={currency}
-        getMerchantName={getMerchantName}
-      />
-    ),
-    [currency, getMerchantName],
   );
 
   const chartConfig = {
@@ -193,7 +171,15 @@ export function MerchantLeaderboard({data, currency, merchantNamesById = EMPTY_M
                 width={80}
                 interval={0}
               />
-              <ChartTooltip content={renderTooltip} />
+              <ChartTooltip
+                content={
+                  <CustomTooltip
+                    payload={EMPTY_TOOLTIP_PAYLOAD}
+                    currency={currency}
+                    getMerchantName={getMerchantName}
+                  />
+                }
+              />
               <Bar
                 dataKey='totalSpend'
                 fill='var(--ac-chart-2)'

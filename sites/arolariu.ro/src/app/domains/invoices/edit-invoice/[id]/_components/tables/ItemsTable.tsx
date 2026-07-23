@@ -46,6 +46,16 @@ type Props = {
 const EMPTY_ITEM_ROW_KEYS = ["empty-item-row-1", "empty-item-row-2", "empty-item-row-3", "empty-item-row-4", "empty-item-row-5"] as const;
 
 /**
+ * Narrows optional sorted-table entries after selection indices are resolved.
+ *
+ * @param product - Product read from the current sorted table snapshot.
+ * @returns Whether the resolved entry points to an existing product.
+ */
+function isSelectedProduct(product: Product | undefined): product is Product {
+  return product !== undefined;
+}
+
+/**
  * Tracks which cell is currently being edited.
  */
 type EditingCell = {
@@ -336,7 +346,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
     const itemsToDelete = Array.from(selectedIndices)
       .map((idx) => sortedItems[idx])
-      .filter(Boolean);
+      .filter(isSelectedProduct);
 
     setLocalItems((prev) => prev.filter((item) => !itemsToDelete.includes(item)));
 
@@ -485,7 +495,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
     const selectedProducts = Array.from(selectedIndices)
       .map((idx) => sortedItems[idx])
-      .filter(Boolean);
+      .filter(isSelectedProduct);
 
     // Map selected indices from sorted view to actual localItems indices
     const actualIndices = selectedProducts.map((product) => localItems.indexOf(product));

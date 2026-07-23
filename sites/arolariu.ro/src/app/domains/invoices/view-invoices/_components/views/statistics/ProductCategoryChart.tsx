@@ -35,7 +35,6 @@ import {
   YAxis,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import {useCallback} from "react";
 import type {ProductCategorySpending} from "../../../_utils/statistics";
 import styles from "./ProductCategoryChart.module.scss";
 
@@ -45,7 +44,7 @@ type Props = {
 };
 
 type TooltipPayloadItem = {
-  payload: ProductCategorySpending & {fill: string};
+  readonly payload?: ProductCategorySpending & {fill: string};
 };
 
 type CustomTooltipProps = {
@@ -74,6 +73,7 @@ function CustomTooltip({
   const [firstItem] = payload;
   if (!firstItem) return null;
   const data = firstItem.payload;
+  if (!data) return null;
 
   return (
     <div className={styles["tooltip"]}>
@@ -112,28 +112,6 @@ function CustomTooltip({
  */
 export function ProductCategoryChart({data, currency}: Props): React.JSX.Element {
   const t = useTranslations();
-
-  /**
-   * Factory: returns a stable tooltip render function with currency context.
-   * Wraps the CustomTooltip component to inject the currency prop.
-   * Must be defined before any early returns to satisfy rules-of-hooks.
-   */
-  const renderTooltip = useCallback(
-    ({
-      active = false,
-      payload = EMPTY_TOOLTIP_PAYLOAD,
-    }: {
-      readonly active?: boolean;
-      readonly payload?: ReadonlyArray<TooltipPayloadItem>;
-    }) => (
-      <CustomTooltip
-        active={active}
-        payload={payload}
-        currency={currency}
-      />
-    ),
-    [currency],
-  );
 
   // Empty state
   if (data.length === 0) {
@@ -200,7 +178,14 @@ export function ProductCategoryChart({data, currency}: Props): React.JSX.Element
                 axisLine={false}
                 width={110}
               />
-              <ChartTooltip content={renderTooltip} />
+              <ChartTooltip
+                content={
+                  <CustomTooltip
+                    payload={EMPTY_TOOLTIP_PAYLOAD}
+                    currency={currency}
+                  />
+                }
+              />
               <Bar
                 dataKey='totalSpent'
                 radius={[0, 4, 4, 0]}
