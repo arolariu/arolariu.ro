@@ -88,13 +88,13 @@ export default function UploadPreview(): React.JSX.Element | null {
 
   /** Moves pagination to the previous page. */
   const handlePreviousPage = useCallback((): void => {
-    setCurrentPage(currentPage - 1);
-  }, [currentPage, setCurrentPage]);
+    setCurrentPage((page) => page - 1);
+  }, [setCurrentPage]);
 
   /** Moves pagination to the next page. */
   const handleNextPage = useCallback((): void => {
-    setCurrentPage(currentPage + 1);
-  }, [currentPage, setCurrentPage]);
+    setCurrentPage((page) => page + 1);
+  }, [setCurrentPage]);
 
   if (pendingUploads.length === 0) {
     return null;
