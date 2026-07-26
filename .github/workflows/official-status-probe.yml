@@ -43,7 +43,7 @@ jobs:
       GIT_COMMITTER_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
     steps:
       - name: 🛫 Checkout main (site code + scripts)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: main
 

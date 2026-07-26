@@ -117,7 +117,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: 📝 Display workflow context
         run: |
@@ -237,7 +237,7 @@ jobs:
           retention-days: 7
 
       - name: 💬 Create PR Comment
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         if: github.event_name == 'push' && github.ref == 'refs/heads/preview'
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -259,7 +259,7 @@ jobs:
             await runUnitTestAction();
 
       - name: ☂️ Uploading code coverage report to CodeCov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           directory: "sites/arolariu.ro/code-cov"
@@ -272,7 +272,7 @@ jobs:
     environment: ${{ inputs.environment || 'development'}}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: 📋 Display build context
         run: |
