@@ -130,7 +130,7 @@ Toolchain caches (`~/.npm`, `~/.nuget/packages`, pip) are delegated entirely to 
 
 | Toolchain | Action | `cache-dependency-path` |
 |-----------|--------|------------------------|
-| Node.js (npm download cache) | `actions/setup-node@v7` | `package-lock.json` |
+| Node.js (npm download cache) | `actions/setup-node@v7` | `package-lock.json`, `.github/scripts/package-lock.json` |
 | .NET (NuGet) | `actions/setup-dotnet@v6` | `**/packages.lock.json` |
 | Python (pip) | `actions/setup-python@v7` | `sites/exp.arolariu.ro/requirements*.txt` |
 

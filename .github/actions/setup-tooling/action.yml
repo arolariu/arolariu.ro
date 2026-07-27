@@ -96,7 +96,16 @@ runs:
         registry-url: ${{ inputs.node-registry-url }}
         # An empty string disables the built-in cache.
         cache: ${{ inputs.cache == 'true' && 'npm' || '' }}
-        cache-dependency-path: package-lock.json
+        # Both lock files, because both feed the same `~/.npm` store:
+        # `setup-workspace` installs the root workspaces AND `.github/scripts`,
+        # which has its own lock file. Keying on the root file alone means a
+        # change to the scripts lock file leaves the key untouched — the stale
+        # cache is restored, `npm ci` re-downloads the new packages, and
+        # because the restore was a hit nothing is written back. Those
+        # downloads would then repeat on every subsequent run.
+        cache-dependency-path: |
+          package-lock.json
+          .github/scripts/package-lock.json
 
     - name: 📦 Setting up .NET v${{ inputs.dotnet-version }}...
       id: dotnet

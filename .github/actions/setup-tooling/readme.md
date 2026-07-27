@@ -64,10 +64,12 @@ Caching is delegated entirely to each `actions/setup-*` action:
 
 | Toolchain | Cached | Keyed on |
 |-----------|--------|----------|
-| Node.js | `~/.npm` | `package-lock.json` |
+| Node.js | `~/.npm` | `package-lock.json` + `.github/scripts/package-lock.json` |
 | .NET | `~/.nuget/packages` | `**/packages.lock.json` (6 files) |
 | Python | pip HTTP cache | `sites/exp.arolariu.ro/requirements*.txt` |
 
 These caches are **not** scoped per workflow. Every workflow shares one cache per ecosystem, rather than each maintaining its own copy against the repository's 10 GB budget.
+
+The Node entry lists both lock files because both feed the same `~/.npm` store — [`setup-workspace`](../setup-workspace/readme.md) installs the root workspaces *and* `.github/scripts`, which is a separate package with its own lock file. Keying on the root file alone would let a scripts-only dependency change go unnoticed: the key would not move, the stale cache would be restored, `npm ci` would re-download the new packages, and because the restore was a hit nothing would be written back — repeating that download on every later run.
 
 > **Do not remove the `packages.lock.json` files.** `actions/setup-dotnet` fails when caching is enabled and no lock file is found.
