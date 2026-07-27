@@ -61,7 +61,7 @@ describe("emailService.sendEmail", () => {
     });
 
     expect(mockRender).toHaveBeenCalledTimes(1);
-    expect(mockRender).toHaveBeenCalledWith(reactEl);
+    expect(mockRender).toHaveBeenCalledWith(reactEl, {pretty: false});
     expect(mockSend).toHaveBeenCalledTimes(1);
     const [payload, options] = mockSend.mock.calls[0]!;
     expect(payload.from).toMatch(/AROLARIU\.RO/);

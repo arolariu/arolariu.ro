@@ -4,35 +4,6 @@
 @use '../../../../../styles/abstracts' as *;
 
 // ===========================================
-// SCAN THUMBNAIL
-// ===========================================
-.thumbnail {
-  position: relative;
-  height: space(12);
-  width: space(12);
-  flex-shrink: 0;
-  overflow: hidden;
-  border-radius: radius('lg');
-  border: 1px solid color('border');
-  background-color: color('muted');
-}
-
-.thumbnailPdfPlaceholder {
-  @include flex-center;
-  height: 100%;
-}
-
-.thumbnailPdfIcon {
-  height: space(6);
-  width: space(6);
-  color: color('destructive');
-}
-
-.thumbnailImage {
-  object-fit: cover;
-}
-
-// ===========================================
 // PROCESS STEP
 // ===========================================
 .processStep {
@@ -117,22 +88,28 @@
   @include text-muted;
 }
 
-.scansPreviewGrid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: space(2);
+.scansCarousel {
+  position: relative;
+  // Reserve horizontal room so the inset navigation controls do not overlap
+  // the scan cards within the dialog bounds.
+  padding-inline: space(8);
 }
 
-.scansPreviewOverflow {
-  @include flex-center;
-  height: space(12);
-  width: space(12);
-  border-radius: radius('lg');
-  border: 1px dashed color('border');
-  background-color: color('muted');
-  font-size: font-size('xs');
-  font-weight: font-weight('medium');
-  color: color('muted-foreground');
+// Pull the navigation controls inside the carousel (the library positions them
+// outside by default, which would overflow the dialog).
+.scansCarousel .scansCarouselPrev[data-orientation='horizontal'] {
+  left: space(1);
+}
+
+.scansCarousel .scansCarouselNext[data-orientation='horizontal'] {
+  right: space(1);
+}
+
+// Hide a navigation control entirely once there are no more scans to reach in
+// that direction (the library disables the button at each end of the carousel).
+.scansCarousel .scansCarouselPrev:disabled,
+.scansCarousel .scansCarouselNext:disabled {
+  display: none;
 }
 
 // ===========================================

@@ -4,15 +4,19 @@
  */
 
 import type {ServerActionResult} from "@/lib/utils.server";
+import {ScanStatus, type Scan} from "@/types/scans";
 import {InvoiceScanType} from "@/types/invoices";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {invokeHookCallback} from "../../../../../../tests/helpers";
 import {useScanAdd} from "./useScanAdd";
 
+vi.mock("../../_actions/scans", () => ({
+  createScan: vi.fn(),
+}));
+
 vi.mock("../../_actions/invoices", () => ({
-  createInvoiceScan: vi.fn(),
-  attachInvoiceScan: vi.fn(),
+  attachScanToInvoice: vi.fn(),
 }));
 
 vi.mock("@arolariu/components", () => ({
@@ -55,11 +59,12 @@ vi.mock("next-intl-selector", () => ({
   ),
 }));
 
-const {createInvoiceScan, attachInvoiceScan} = await import("../../_actions/invoices");
+const {createScan} = await import("../../_actions/scans");
+const {attachScanToInvoice} = await import("../../_actions/invoices");
 const {toast} = await import("@arolariu/components");
 
-const mockCreateInvoiceScan = vi.mocked(createInvoiceScan);
-const mockAttachInvoiceScan = vi.mocked(attachInvoiceScan);
+const mockCreateScan = vi.mocked(createScan);
+const mockAttachScanToInvoice = vi.mocked(attachScanToInvoice);
 const mockToast = vi.mocked(toast);
 
 function dispatchStoredListener(listener: EventListenerOrEventListenerObject | undefined, event: Event): void {
@@ -93,9 +98,37 @@ function stubFileReader(mode: "load" | "error", result = "data:image/png;base64,
 describe("useScanAdd", () => {
   const invoiceId = "11111111-1111-4111-8111-111111111111";
   const scanBlobUrl = "https://storage.test/invoices/scans/user-1/scan.png";
-  const uploadSuccess: Awaited<ServerActionResult<{status: number; blobUrl: string}>> = {
+  const uploadSuccess: Awaited<
+    ServerActionResult<{
+      status: number;
+      scan: Scan;
+    }>
+  > = {
     success: true,
-    data: {status: 201, blobUrl: scanBlobUrl},
+    data: {
+      status: 201,
+      scan: {
+        id: "99999999-9999-4999-8999-999999999999",
+        userIdentifier: "user-1",
+        name: "receipt.png",
+        blobUrl: scanBlobUrl,
+        mimeType: "image/png",
+        sizeInBytes: 1024,
+        scanType: "PNG",
+        uploadedAt: new Date("2024-01-01T00:00:00Z"),
+        status: ScanStatus.READY,
+        metadata: {
+          scanId: "99999999-9999-4999-8999-999999999999",
+          ownerId: "user-1",
+          displayName: "receipt.png",
+          documentKind: "receipt",
+          documentRole: "primary",
+          status: "ready",
+          uploadedAt: new Date("2024-01-01T00:00:00Z"),
+          uploadedBy: "user-1",
+        },
+      },
+    },
   };
   const attachSuccess: Awaited<ServerActionResult<void>> = {success: true, data: undefined};
   const addArgs = {
@@ -108,11 +141,8 @@ describe("useScanAdd", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     stubFileReader("load");
-    vi.stubGlobal("crypto", {
-      randomUUID: vi.fn(() => "99999999-9999-4999-8999-999999999999"),
-    });
-    mockCreateInvoiceScan.mockResolvedValue(uploadSuccess);
-    mockAttachInvoiceScan.mockResolvedValue(attachSuccess);
+    mockCreateScan.mockResolvedValue(uploadSuccess);
+    mockAttachScanToInvoice.mockResolvedValue(attachSuccess);
   });
 
   afterEach(() => {
@@ -136,66 +166,62 @@ describe("useScanAdd", () => {
 
       await invokeHookCallback(hookResult, (current) => current.addScanCallback(addArgs));
 
-      expect(mockCreateInvoiceScan).toHaveBeenCalledWith({
-        base64Data: "data:image/png;base64,c2Nhbi1kYXRh",
-        blobName: "user-1/11111111-1111-4111-8111-111111111111/99999999-9999-4999-8999-999999999999.png",
-        metadata: {
-          invoiceId,
-          uploadedAt: expect.any(String),
-        },
-      });
-      expect(mockAttachInvoiceScan).toHaveBeenCalledWith({
+      const createScanCall = mockCreateScan.mock.calls[0]?.[0];
+      expect(createScanCall?.base64Data).toBe("data:image/png;base64,c2Nhbi1kYXRh");
+      expect(createScanCall?.fileName).toBe("receipt.png");
+      expect(createScanCall?.mimeType).toBe("image/png");
+
+      const attachCall = mockAttachScanToInvoice.mock.calls[0]?.[0];
+      expect(attachCall).toMatchObject({
         invoiceId,
         payload: {
           type: InvoiceScanType.PNG,
           location: scanBlobUrl,
           additionalMetadata: {
-            originalFileName: "receipt.png",
-            uploadedAt: expect.any(String),
+            sourceScanId: "99999999-9999-4999-8999-999999999999",
+            sourceOwnerId: "user-1",
+            displayName: "receipt.png",
+            documentKind: "receipt",
+            documentRole: "supplement",
+            attachedBy: "user-1",
+            attachedTo: invoiceId,
           },
         },
       });
+      expect(attachCall?.payload.additionalMetadata["attachedAt"]).toBeDefined();
       expect(mockToast.success).toHaveBeenCalledWith("Scan added successfully");
       expect(result.current.isAdding).toBe(false);
     });
 
-    it("defaults to jpg extension when the file name has no extension", async () => {
+    it("defaults to octet-stream MIME type when the file has no type", async () => {
       const hookResult = renderHook(() => useScanAdd(invoiceId));
 
       await invokeHookCallback(hookResult, (current) =>
         current.addScanCallback({
           ...addArgs,
-          fileName: "receipt",
+          file: new Blob(["scan"], {type: ""}),
         }),
       );
 
-      expect(mockCreateInvoiceScan).toHaveBeenCalledWith(
+      expect(mockCreateScan).toHaveBeenCalledWith(
         expect.objectContaining({
-          blobName: "user-1/11111111-1111-4111-8111-111111111111/99999999-9999-4999-8999-999999999999.jpg",
-        }),
-      );
-    });
-
-    it("defaults to jpg extension when the file name ends with a dot", async () => {
-      const hookResult = renderHook(() => useScanAdd(invoiceId));
-
-      await invokeHookCallback(hookResult, (current) =>
-        current.addScanCallback({
-          ...addArgs,
-          fileName: "receipt.",
-        }),
-      );
-
-      expect(mockCreateInvoiceScan).toHaveBeenCalledWith(
-        expect.objectContaining({
-          blobName: "user-1/11111111-1111-4111-8111-111111111111/99999999-9999-4999-8999-999999999999.jpg",
+          mimeType: "application/octet-stream",
         }),
       );
     });
 
     it("sets isAdding true while upload is pending", async () => {
-      let resolveUpload: ((value: Awaited<ServerActionResult<{status: number; blobUrl: string}>>) => void) | undefined;
-      mockCreateInvoiceScan.mockReturnValue(
+      let resolveUpload:
+        | ((
+            value: Awaited<
+              ServerActionResult<{
+                status: number;
+                scan: Scan;
+              }>
+            >,
+          ) => void)
+        | undefined;
+      mockCreateScan.mockReturnValue(
         new Promise((resolve) => {
           resolveUpload = resolve;
         }),
@@ -212,7 +238,7 @@ describe("useScanAdd", () => {
       });
 
       await act(async () => {
-        resolveUpload?.({success: true, data: {status: 201, blobUrl: scanBlobUrl}});
+        resolveUpload?.(uploadSuccess);
         await pendingAdd;
       });
 
@@ -222,7 +248,7 @@ describe("useScanAdd", () => {
 
   describe("error handling", () => {
     it("throws and skips attachment when upload returns an error result", async () => {
-      mockCreateInvoiceScan.mockResolvedValue({
+      mockCreateScan.mockResolvedValue({
         success: false,
         error: {code: "SERVER_ERROR", message: "Upload failed", status: 500},
       });
@@ -232,7 +258,7 @@ describe("useScanAdd", () => {
         "Upload failed with status 500",
       );
 
-      expect(mockAttachInvoiceScan).not.toHaveBeenCalled();
+      expect(mockAttachScanToInvoice).not.toHaveBeenCalled();
       expect(mockToast.error).toHaveBeenCalledWith("Failed to add scan", {
         description: "Upload failed with status 500",
       });
@@ -240,7 +266,7 @@ describe("useScanAdd", () => {
     });
 
     it("throws when upload returns invalid data without status", async () => {
-      mockCreateInvoiceScan.mockResolvedValue({
+      mockCreateScan.mockResolvedValue({
         success: false,
         error: {code: "SERVER_ERROR", message: "Invalid response"},
       });
@@ -250,11 +276,11 @@ describe("useScanAdd", () => {
         "Upload failed with status unknown",
       );
 
-      expect(mockAttachInvoiceScan).not.toHaveBeenCalled();
+      expect(mockAttachScanToInvoice).not.toHaveBeenCalled();
     });
 
     it("uses unknown upload status when the error result has no status", async () => {
-      mockCreateInvoiceScan.mockResolvedValue({
+      mockCreateScan.mockResolvedValue({
         success: false,
         error: {code: "SERVER_ERROR", message: "Upload failed"},
       });
@@ -264,7 +290,7 @@ describe("useScanAdd", () => {
         "Upload failed with status unknown",
       );
 
-      expect(mockAttachInvoiceScan).not.toHaveBeenCalled();
+      expect(mockAttachScanToInvoice).not.toHaveBeenCalled();
     });
 
     it("surfaces FileReader errors and resets loading state", async () => {
@@ -273,7 +299,7 @@ describe("useScanAdd", () => {
 
       await expect(invokeHookCallback(hookResult, (current) => current.addScanCallback(addArgs))).rejects.toThrow("read failed");
 
-      expect(mockCreateInvoiceScan).not.toHaveBeenCalled();
+      expect(mockCreateScan).not.toHaveBeenCalled();
       expect(mockToast.error).toHaveBeenCalledWith("Failed to add scan", {
         description: "read failed",
       });
@@ -281,7 +307,7 @@ describe("useScanAdd", () => {
     });
 
     it("surfaces non-Error failures from attachment", async () => {
-      mockAttachInvoiceScan.mockRejectedValue("attach failed");
+      mockAttachScanToInvoice.mockRejectedValue("attach failed");
       const hookResult = renderHook(() => useScanAdd(invoiceId));
       const {result} = hookResult;
 

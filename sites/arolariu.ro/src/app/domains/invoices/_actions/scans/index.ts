@@ -3,27 +3,32 @@
  * @module app/domains/invoices/_actions/scans
  *
  * @remarks
- * This module centralizes the standalone scan lifecycle used by the invoices
- * domain before scans become invoice attachments.
+ * This module centralizes CRUD operations for standalone scans (user-uploaded
+ * blobs before they become invoice attachments) and upload preparation helpers.
  *
- * **Exported Actions:**
- * - `deleteScan` permanently removes standalone scan blobs from Azure Storage.
+ * **CRUD Actions:**
+ * - `createScan` uploads and registers a new scan via server-side processing.
  * - `fetchScans` lists the authenticated user's unused standalone scans.
- * - `generateUploadSasUrl` creates short-lived direct-upload URLs.
- * - `markScansAsUsed` archives scans after conversion to invoices.
- * - `registerScan` records metadata after a direct client-to-Azure upload.
- * - `updateScan` replaces scan blob content in place.
- * - `uploadScan` aliases `createScan` for legacy import compatibility.
+ * - `updateScan` replaces an existing scan's blob content in place.
+ * - `deleteScan` permanently removes a standalone scan blob from Azure Storage.
  *
+ * **Upload Preparation:**
+ * - `createScanUploadTarget` generates a SAS URL and metadata headers for
+ *   direct client-to-Azure blob uploads (eliminates base64 overhead and
+ *   server bottleneck).
+ *
+ * @see {@link createScan} - Server-side fallback upload path.
  * @see {@link fetchScans} - Lists standalone scans for the current user.
- * @see {@link generateUploadSasUrl} - Starts the direct upload workflow.
- * @see {@link registerScan} - Completes the direct upload workflow.
+ * @see {@link updateScan} - Updates an existing scan's content.
+ * @see {@link deleteScan} - Removes a scan permanently.
+ * @see {@link createScanUploadTarget} - Prepares direct upload with metadata.
  */
 
-export {createScan as uploadScan} from "./createScan";
-export {deleteScan} from "./deleteScan";
-export {fetchScans} from "./fetchScans";
-export {generateUploadSasUrl} from "./generateSasUrl";
-export {markScansAsUsed} from "./markScansAsUsed";
-export {registerScan} from "./registerScan";
-export {updateScan} from "./updateScan";
+export { createScanUploadTarget } from "./createScanUploadTarget";
+
+// #region CRUD operations for standalone scans (not yet attached to invoices)
+export { createScan } from "./createScan";
+export { deleteScan } from "./deleteScan";
+export { fetchScans } from "./fetchScans";
+export { updateScan } from "./updateScan";
+// #endregion

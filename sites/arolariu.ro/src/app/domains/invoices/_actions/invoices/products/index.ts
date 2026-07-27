@@ -44,6 +44,6 @@
  * @see {@link updateInvoiceProduct} - Modify existing line items in an invoice
  */
 
-export {addInvoiceProduct} from "./addInvoiceProduct";
-export {deleteInvoiceProduct} from "./deleteInvoiceProduct";
-export {updateInvoiceProduct} from "./updateInvoiceProduct";
+export { addInvoiceProduct } from "./addInvoiceProduct";
+export { deleteInvoiceProduct } from "./deleteInvoiceProduct";
+export { updateInvoiceProduct } from "./updateInvoiceProduct";

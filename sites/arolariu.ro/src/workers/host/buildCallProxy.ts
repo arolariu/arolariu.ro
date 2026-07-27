@@ -16,6 +16,9 @@ import {raceWithSignal} from "./raceWithSignal";
 import type {TelemetryBridge} from "./telemetryBridge";
 import {WorkerError, WorkerTimeoutError} from "./workerErrors";
 
+/** No-op callback used to suppress unhandled-rejection noise on race losers. */
+const noop = (): void => undefined;
+
 export type CallProxyDeps<TApi> = Readonly<{
   inFlight: InFlightRegistry;
   bridge: TelemetryBridge;
@@ -67,7 +70,7 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
         // `Promise.race` — the loser still settles asynchronously after the
         // race completes. Applies to `crashPromise`, `wrapped`, and
         // `bodyPromise` below.
-        crashPromise.catch((): void => {});
+        crashPromise.catch(noop);
 
         const body = async (): Promise<unknown> => {
           await deps.ensureReady();
@@ -106,7 +109,7 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
             });
 
             if (timeoutPromise) {
-              wrapped.catch((): void => {});
+              wrapped.catch(noop);
               return await Promise.race([wrapped, timeoutPromise]);
             }
             return await wrapped;
@@ -117,7 +120,7 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
         };
 
         const bodyPromise = body();
-        bodyPromise.catch((): void => {});
+        bodyPromise.catch(noop);
         return Promise.race([bodyPromise, crashPromise]).finally(() => {
           removeFromInFlight?.();
         });

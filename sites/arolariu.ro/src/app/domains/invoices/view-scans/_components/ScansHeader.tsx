@@ -5,6 +5,7 @@
  * @module app/domains/invoices/view-scans/_components/ScansHeader
  */
 
+import {formatRelativeTime} from "@/lib/utils.generic";
 import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
@@ -13,22 +14,6 @@ import {useCallback} from "react";
 import {TbFileInvoice, TbInfoCircle, TbRefresh, TbUpload} from "react-icons/tb";
 import {useScans} from "../_hooks/useScans";
 import styles from "./ScansHeader.module.scss";
-
-/**
- * Formats a date as a relative time string.
- */
-function formatRelativeTime(date: Date): string {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60_000);
-
-  if (diffMins < 1) return "just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d ago`;
-}
 
 /**
  * Header component showing scan count and sync button.

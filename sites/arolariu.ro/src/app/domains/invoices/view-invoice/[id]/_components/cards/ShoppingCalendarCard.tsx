@@ -1,6 +1,6 @@
 "use client";
 
-import {formatCurrency, toSafeDate} from "@/lib/utils.generic";
+import {formatCurrency, formatDate, toSafeDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
 import type {Currency} from "@/types/DDD";
 import {
@@ -54,6 +54,13 @@ type CalendarDataContextType = {
 };
 
 const CalendarDataContext = createContext<CalendarDataContextType | null>(null);
+
+const CALENDAR_DATE_KEY_FORMAT_OPTIONS = {
+  locale: "en-CA",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+} as const;
 
 function useCalendarData(): CalendarDataContextType {
   const context = use(CalendarDataContext);
@@ -146,11 +153,6 @@ function DayTooltipContent(props: DayTooltipContentProps): React.JSX.Element {
   );
 }
 
-/** Checks if two dates are the same day */
-function isSameDay(date1: Date, date2: Date): boolean {
-  return date1.getDate() === date2.getDate() && date1.getMonth() === date2.getMonth() && date1.getFullYear() === date2.getFullYear();
-}
-
 /** Custom day button component that renders spending data from context */
 function CustomDayButton({
   day,
@@ -168,7 +170,8 @@ function CustomDayButton({
   const historicalData = isCurrentMonth ? historicalByDay[dayNum] : undefined;
   const amount = data?.amount ?? 0;
   const count = data?.count ?? 0;
-  const isCurrentInvoiceDate = isSameDay(date, transactionDate);
+  const isCurrentInvoiceDate =
+    formatDate(date, CALENDAR_DATE_KEY_FORMAT_OPTIONS) === formatDate(transactionDate, CALENDAR_DATE_KEY_FORMAT_OPTIONS);
   const intensityClassSuffix = getSpendingIntensityClass(amount, maxDayAmount);
   const intensityClass = intensityClassSuffix ? styles[intensityClassSuffix] : "";
   const highlightClass = isCurrentInvoiceDate ? styles["dayButtonHighlight"] : "";

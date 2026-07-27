@@ -71,7 +71,7 @@ export function useScanDelete(scan: CachedScan): Readonly<HookOutputType> {
   const deleteScanCallback = useCallback(async (): Promise<void> => {
     setIsDeleting(true);
     try {
-      const result = await removeScanServerSide({blobUrl: scan.blobUrl});
+      const result = await removeScanServerSide({scanId: scan.id});
       if (result.success) {
         removeScanClientSide(scan.id);
         toast.success(t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.success));
@@ -84,7 +84,7 @@ export function useScanDelete(scan: CachedScan): Readonly<HookOutputType> {
     } finally {
       setIsDeleting(false);
     }
-  }, [scan.blobUrl, scan.id, removeScanClientSide, t]);
+  }, [scan.id, removeScanClientSide, t]);
 
-  return {isDeleting, deleteScanCallback};
+  return {isDeleting, deleteScanCallback} as const;
 }

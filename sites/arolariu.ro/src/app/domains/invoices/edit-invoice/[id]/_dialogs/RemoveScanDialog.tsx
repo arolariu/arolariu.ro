@@ -1,13 +1,13 @@
 "use client";
 
-import type {Invoice, InvoiceScan} from "@/types/invoices";
+import {type Invoice, type InvoiceScan, InvoiceScanType} from "@/types/invoices";
 import {Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import Image from "next/image";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbAlertTriangle, TbLoader2, TbTrash} from "react-icons/tb";
-import {deleteInvoiceScan} from "../../../_actions/invoices";
+import {detachScanFromInvoice} from "../../../_actions/invoices";
+import ScanCard from "../../../_cards/ScanCard";
 import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./RemoveScanDialog.module.scss";
 
@@ -26,7 +26,7 @@ import styles from "./RemoveScanDialog.module.scss";
  *
  * @returns Dialog component for removing invoice scans
  *
- * @see {@link deleteInvoiceScan} - Server action for scan removal
+ * @see {@link detachScanFromInvoice} - Server action for scan removal
  */
 export default function RemoveScanDialog(): React.JSX.Element {
   const t = useTranslations();
@@ -63,7 +63,7 @@ export default function RemoveScanDialog(): React.JSX.Element {
 
     setIsDeleting(true);
     try {
-      await deleteInvoiceScan({
+      await detachScanFromInvoice({
         invoiceId: invoice.id,
         scanLocation: scan.location,
       });
@@ -122,18 +122,14 @@ export default function RemoveScanDialog(): React.JSX.Element {
 
         {scan ? (
           <div className={styles["previewSection"]}>
-            <div className={styles["previewImage"]}>
-              <Image
-                src={scan.location}
-                alt={t((m) => m.dialogs.invoices.removeScanDialog.scanAlt, {index: String(currentScanNumber)})}
-                width={400}
-                height={300}
-                className={styles["scanPreviewImage"]}
-              />
-            </div>
-            <p className={styles["previewCaption"]}>
-              {t((m) => m.dialogs.invoices.removeScanDialog.scanCaption, {index: String(currentScanNumber)})}
-            </p>
+            <ScanCard
+              media={{
+                src: scan.location,
+                mediaKind: scan.scanType === InvoiceScanType.PDF ? "pdf" : "image",
+                alt: t((m) => m.dialogs.invoices.removeScanDialog.scanAlt, {index: String(currentScanNumber)}),
+              }}
+              title={t((m) => m.dialogs.invoices.removeScanDialog.scanCaption, {index: String(currentScanNumber)})}
+            />
           </div>
         ) : null}
 

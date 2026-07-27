@@ -1,11 +1,10 @@
 "use client";
 
-import {selectorFromPath} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 
 import {Badge} from "@arolariu/components/badge";
 import {Card, CardContent} from "@arolariu/components/card";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl-selector";
 import {useRef, useState} from "react";
 import {TbApi, TbBrandAzure, TbCloudComputing, TbDatabase, TbDeviceDesktop, TbLock, TbServer, TbWorldWww} from "react-icons/tb";
 import styles from "./Architecture.module.scss";
@@ -118,17 +117,17 @@ export default function Architecture(): React.JSX.Element {
                       </motion.div>
                       <div>
                         <h3 className={styles["layerName"]}>
-                          {t(selectorFromPath(`sections.about.platform.architecture.${`layers.${layer.id}.name`}`))}
+                          {t(selectorFromPath(`sections.about.platform.architecture.layers.${layer.id}.name`))}
                         </h3>
                         <p className={styles["layerDescription"]}>
-                          {t(selectorFromPath(`sections.about.platform.architecture.${`layers.${layer.id}.description`}`))}
+                          {t(selectorFromPath(`sections.about.platform.architecture.layers.${layer.id}.description`))}
                         </p>
                       </div>
                     </div>
 
                     {/* Technologies */}
                     <div className={styles["technologies"]}>
-                      {t(selectorFromPath(`sections.about.platform.architecture.${`layers.${layer.id}.technologies`}`))
+                      {t(selectorFromPath(`sections.about.platform.architecture.layers.${layer.id}.technologies`))
                         .split(",")
                         .map((tech, techIndex) => (
                           <motion.div

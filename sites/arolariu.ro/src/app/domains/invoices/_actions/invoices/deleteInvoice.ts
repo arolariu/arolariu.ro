@@ -118,12 +118,15 @@ export async function deleteInvoice({invoiceId}: ServerActionInputType): ServerA
       const errorText = await response.text();
       const internalMessage = `Failed to delete invoice: ${response.status} ${response.statusText}`;
       logWithTrace("warn", internalMessage, {invoiceId, errorText}, "server");
-      const userMessage =
-        response.status === 404
-          ? "The invoice was not found. It may have already been deleted."
-          : response.status === 403
-            ? "You do not have permission to delete this invoice."
-            : "An unexpected error occurred while deleting the invoice.";
+      const userMessage = (() => {
+        if (response.status === 404) {
+          return "The invoice was not found. It may have already been deleted.";
+        }
+        if (response.status === 403) {
+          return "You do not have permission to delete this invoice.";
+        }
+        return "An unexpected error occurred while deleting the invoice.";
+      })();
       return createErrorResult(new Error(internalMessage), userMessage);
     } catch (error: unknown) {
       addSpanEvent("bff.request.delete-invoice.error");

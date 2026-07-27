@@ -194,70 +194,70 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
           </Alert>
         )}
 
-        <div>
-          <h3 className={styles["sharedTitle"]}>{t((m) => m.cards.invoices.sharingCard.sharedWith)}</h3>
-          {sharedUsers.length > 0 ? (
-            <div className={styles["sharedList"]}>
-              {sharedUsers.map((userId, index) => (
-                <motion.div
-                  key={userId}
-                  className={styles["sharedUserRow"]}
-                  initial={{opacity: 0, x: -20}}
-                  animate={{opacity: 1, x: 0}}
-                  transition={{delay: index * 0.1}}
-                  whileHover={{x: 5}}>
-                  <div className={styles["sharedUserAvatar"]}>
-                    <TbUser className={styles["sharedUserIcon"]} />
-                  </div>
-                  <span className={styles["sharedUserName"]}>{t((m) => m.cards.invoices.sharingCard.userWithId, {id: userId})}</span>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger
-                        render={
-                          <Button
-                            variant='ghost'
-                            className={styles["removeAccessButton"]}
-                            onClick={handleRemoveAccess}>
-                            <TbDeselect className={styles["icon4"]} />
-                          </Button>
-                        }
-                      />
-                      <TooltipContent>
-                        <p>{t((m) => m.cards.invoices.sharingCard.tooltips.removeAccess)}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <p className={styles["emptyShared"]}>
-              {isInvoicePublic
-                ? t((m) => m.cards.invoices.sharingCard.emptyShared.public)
-                : t((m) => m.cards.invoices.sharingCard.emptyShared.private)}
-            </p>
-          )}
-        </div>
+        {!isInvoicePublic && (
+          <div>
+            <h3 className={styles["sharedTitle"]}>{t((m) => m.cards.invoices.sharingCard.sharedWith)}</h3>
+            {sharedUsers.length > 0 ? (
+              <div className={styles["sharedList"]}>
+                {sharedUsers.map((userId, index) => (
+                  <motion.div
+                    key={userId}
+                    className={styles["sharedUserRow"]}
+                    initial={{opacity: 0, x: -20}}
+                    animate={{opacity: 1, x: 0}}
+                    transition={{delay: index * 0.1}}
+                    whileHover={{x: 5}}>
+                    <div className={styles["sharedUserAvatar"]}>
+                      <TbUser className={styles["sharedUserIcon"]} />
+                    </div>
+                    <span className={styles["sharedUserName"]}>{t((m) => m.cards.invoices.sharingCard.userWithId, {id: userId})}</span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              variant='ghost'
+                              className={styles["removeAccessButton"]}
+                              onClick={handleRemoveAccess}>
+                              <TbDeselect className={styles["icon4"]} />
+                            </Button>
+                          }
+                        />
+                        <TooltipContent>
+                          <p>{t((m) => m.cards.invoices.sharingCard.tooltips.removeAccess)}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <p className={styles["emptyShared"]}>{t((m) => m.cards.invoices.sharingCard.emptyShared.private)}</p>
+            )}
+          </div>
+        )}
       </CardContent>
       <CardFooter className={styles["cardFooter"]}>
         <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant='outline'
-                  className={styles["fullWidthButton"]}
-                  onClick={open}>
-                  <TbShare2 className={styles["buttonIcon"]} />
-                  <span>{t((m) => m.cards.invoices.sharingCard.buttons.shareInvoice)}</span>
-                  <TbArrowRight className={styles["arrowIcon"]} />
-                </Button>
-              }
-            />
-            <TooltipContent>
-              <p>{t((m) => m.cards.invoices.sharingCard.tooltips.shareInvoice)}</p>
-            </TooltipContent>
-          </Tooltip>
+          {!isInvoicePublic && (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant='outline'
+                    className={styles["fullWidthButton"]}
+                    onClick={open}>
+                    <TbShare2 className={styles["buttonIcon"]} />
+                    <span>{t((m) => m.cards.invoices.sharingCard.buttons.shareInvoice)}</span>
+                    <TbArrowRight className={styles["arrowIcon"]} />
+                  </Button>
+                }
+              />
+              <TooltipContent>
+                <p>{t((m) => m.cards.invoices.sharingCard.tooltips.shareInvoice)}</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
 
           {Boolean(isInvoicePublic) && (
             <Tooltip>

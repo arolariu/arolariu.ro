@@ -22,6 +22,8 @@
  * @see {@link InvoiceScan} for scans attached to invoices
  */
 
+import type {ScanMetadata} from "./ScanMetadata";
+
 /**
  * Represents the document format type of a standalone scan.
  *
@@ -31,7 +33,7 @@
  * OCR strategies and preprocessing steps.
  *
  * **Supported Formats:**
- * - Image formats (JPEG, PNG): Direct OCR processing
+ * - Image formats (JPEG, PNG, BMP, TIFF, HEIF, HEIC): Direct OCR processing
  * - PDF: Multi-page document extraction with embedded text detection
  * - OTHER: Fallback processing with format detection
  *
@@ -48,6 +50,14 @@ export const ScanType = {
   JPEG: "JPEG",
   /** PNG image format */
   PNG: "PNG",
+  /** BMP image format */
+  BMP: "BMP",
+  /** TIFF image format */
+  TIFF: "TIFF",
+  /** HEIF image format */
+  HEIF: "HEIF",
+  /** HEIC image format */
+  HEIC: "HEIC",
   /** PDF document format */
   PDF: "PDF",
   /** Other or unsupported format */
@@ -63,7 +73,7 @@ export type ScanType = (typeof ScanType)[keyof typeof ScanType];
  *
  * **State Transitions:**
  * ```
- * UPLOADING → READY → PROCESSING → ARCHIVED
+ * UPLOADING → READY → ATTACHED → DETACHED → ARCHIVED
  *     ↓
  *   FAILED
  * ```
@@ -71,6 +81,8 @@ export type ScanType = (typeof ScanType)[keyof typeof ScanType];
  * **UI Implications:**
  * - `UPLOADING`: Show progress indicator
  * - `READY`: Available for selection and invoice creation
+ * - `ATTACHED`: Associated with an invoice entity
+ * - `DETACHED`: Previously attached, now dissociated
  * - `PROCESSING`: Being used to create an invoice (show spinner)
  * - `ARCHIVED`: Invoice created, scan no longer shown in active view
  * - `FAILED`: Show error state with retry option
@@ -87,6 +99,10 @@ export const ScanStatus = {
   UPLOADING: "uploading",
   /** Uploaded to Azure, available for use */
   READY: "ready",
+  /** Associated with an invoice entity */
+  ATTACHED: "attached",
+  /** Previously attached, now dissociated */
+  DETACHED: "detached",
   /** Upload failed */
   FAILED: "failed",
   /** Being used to create an invoice */
@@ -188,10 +204,10 @@ export interface Scan {
   status: ScanStatus;
 
   /**
-   * Additional metadata stored with the blob.
-   * Can include OCR hints, original dimensions, etc.
+   * Canonical typed metadata stored with the blob.
+   * Contains lifecycle tracking, document classification, and ownership information.
    */
-  metadata: Record<string, string>;
+  metadata: ScanMetadata;
 }
 
 /**

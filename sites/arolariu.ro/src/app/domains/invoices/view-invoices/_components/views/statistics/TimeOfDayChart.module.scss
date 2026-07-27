@@ -34,7 +34,12 @@
 }
 
 .chartContainer {
+  // Explicit width disables the library `.container` `aspect-ratio: 16/9`, which
+  // (combined with the fixed height) would otherwise derive a ~498px width that
+  // overflows the card on narrow screens.
+  width: 100%;
   height: 280px;
+  min-width: 0;
 }
 
 // ===========================================

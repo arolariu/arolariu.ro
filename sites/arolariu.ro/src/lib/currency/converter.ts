@@ -199,7 +199,14 @@ export function toRONDetailed(amount: number, currencyCode: string, year: number
  * ```
  */
 export function getTransactionYear(transactionDate: Date | string | undefined | null, fallbackDate?: Date | string): number {
-  const date = transactionDate ? new Date(transactionDate) : fallbackDate ? new Date(fallbackDate) : new Date();
+  /** Resolves the effective date from the available inputs. */
+  const resolveDate = (): Date => {
+    if (transactionDate) return new Date(transactionDate);
+    if (fallbackDate) return new Date(fallbackDate);
+    return new Date();
+  };
+
+  const date: Date = resolveDate();
   const year = date.getFullYear();
 
   // Sanity check: if year is unreasonable, use current year

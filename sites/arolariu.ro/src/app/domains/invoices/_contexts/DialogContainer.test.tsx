@@ -207,7 +207,10 @@ vi.mock("../view-invoice/[id]/_dialogs/ExportDialog", () => ({
 
 // Import the component after mocks are set up
 import DialogContainer from "./DialogContainer";
-import type {DialogMode, DialogType} from "./DialogContext";
+import type {useDialogs} from "./DialogContext";
+
+type DialogType = ReturnType<typeof useDialogs>["currentDialog"]["type"];
+type DialogMode = ReturnType<typeof useDialogs>["currentDialog"]["mode"];
 
 // ============================================================================
 // Helper Functions

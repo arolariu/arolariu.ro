@@ -3,6 +3,37 @@
 import * as React from "react";
 
 /**
+ * Assigns a value to a single ref, supporting callback refs, ref objects, and `undefined`.
+ *
+ * @typeParam T - The type of the referenced element.
+ * @param ref - The ref to update.
+ * @param value - The element instance (or `null`) to assign.
+ */
+function setRef<T>(ref: React.Ref<T> | undefined, value: T | null): void {
+  if (!ref) return;
+  if (typeof ref === "function") {
+    ref(value);
+  } else {
+    (ref as React.RefObject<T | null>).current = value;
+  }
+}
+
+/**
+ * Checks whether two ref lists contain the same refs in the same order.
+ *
+ * @typeParam T - The type of the referenced element.
+ * @param previousRefs - The previously registered refs.
+ * @param nextRefs - The refs from the latest render.
+ * @returns Whether both ref lists are equivalent.
+ */
+function areRefsEqual<T>(
+  previousRefs: ReadonlyArray<React.Ref<T> | undefined>,
+  nextRefs: ReadonlyArray<React.Ref<T> | undefined>,
+): boolean {
+  return previousRefs.length === nextRefs.length && previousRefs.every((ref, index) => ref === nextRefs[index]);
+}
+
+/**
  * Merges multiple refs into a single callback ref.
  *
  * @remarks
@@ -11,9 +42,11 @@ import * as React from "react";
  * imperative operations. All provided refs will receive the same element instance.
  *
  * Supports all ref types: callback refs, mutable ref objects, and `null`/`undefined`.
+ * Inline callback refs create a new function identity on every render; wrap them
+ * in `useCallback` before passing them here to avoid repeated ref synchronization.
  *
  * @typeParam T - The type of the element being referenced.
- * @param refs - An array of refs to merge. Can include callback refs, ref objects, or undefined.
+ * @param refs - Variadic refs to merge. Can include callback refs, ref objects, or undefined.
  * @returns A callback ref that updates all provided refs.
  *
  * @example
@@ -27,19 +60,33 @@ import * as React from "react";
  * ```
  */
 export function useMergedRefs<T>(...refs: Array<React.Ref<T> | undefined>): React.RefCallback<T> {
-  return React.useCallback(
-    (element: T | null) => {
-      for (const ref of refs) {
-        if (ref) {
-          if (typeof ref === "function") {
-            ref(element);
-          } else {
-            (ref as React.RefObject<T | null>).current = element;
-          }
-        }
+  const refsRef = React.useRef<ReadonlyArray<React.Ref<T> | undefined>>(refs);
+  const nodeRef = React.useRef<T | null>(null);
+
+  React.useLayoutEffect(() => {
+    const previousRefs = refsRef.current;
+    refsRef.current = refs;
+
+    if (nodeRef.current === null || areRefsEqual(previousRefs, refs)) {
+      return;
+    }
+
+    for (const ref of previousRefs) {
+      if (!refs.includes(ref)) {
+        setRef(ref, null);
       }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    refs,
-  );
+    }
+
+    for (const ref of refs) {
+      setRef(ref, nodeRef.current);
+    }
+  });
+
+  return React.useCallback((node: T | null): void => {
+    nodeRef.current = node;
+
+    for (const ref of refsRef.current) {
+      setRef(ref, node);
+    }
+  }, []);
 }

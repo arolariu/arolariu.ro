@@ -34,5 +34,5 @@
  * @see {@link deleteInvoiceMetadata} - Remove metadata keys from an invoice
  */
 
-export {addInvoiceMetadata} from "./addInvoiceMetadata";
-export {deleteInvoiceMetadata} from "./deleteInvoiceMetadata";
+export { addInvoiceMetadata } from "./addInvoiceMetadata";
+export { deleteInvoiceMetadata } from "./deleteInvoiceMetadata";

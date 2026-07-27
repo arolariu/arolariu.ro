@@ -116,8 +116,7 @@ export function useInvoice({invoiceIdentifier}: HookInputType): HookOutputType {
     };
 
     fetchInvoiceForUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- upsertInvoice is a stable function
-  }, [invoiceIdentifier]);
+  }, [invoiceIdentifier, upsertInvoice]);
 
   // Loading is true only until hydration completes (shows stale data while fetching fresh)
   const isLoading = !hasHydrated;

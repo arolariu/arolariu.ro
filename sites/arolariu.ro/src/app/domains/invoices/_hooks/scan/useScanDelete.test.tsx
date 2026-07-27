@@ -107,7 +107,7 @@ describe("useScanDelete", () => {
 
     await invokeHookCallback(hookResult, (current) => current.deleteScanCallback());
 
-    expect(mockDeleteScan).toHaveBeenCalledWith({blobUrl: testScan.blobUrl});
+    expect(mockDeleteScan).toHaveBeenCalledWith({scanId: testScan.id});
     expect(mockRemoveScan).toHaveBeenCalledWith(testScan.id);
     expect(mockToast.success).toHaveBeenCalledWith("Scan deleted");
     expect(result.current.isDeleting).toBe(false);

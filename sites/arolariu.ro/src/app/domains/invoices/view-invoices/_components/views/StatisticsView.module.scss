@@ -60,17 +60,20 @@
 // ===========================================
 .twoColumnGrid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: space(6);
 
   @include respond-to('lg') {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   & > * {
     display: flex;
     flex-direction: column;
     height: 100%;
+    // Allow the column/item to shrink below the chart's intrinsic width so the
+    // recharts responsive container doesn't overflow the viewport on mobile.
+    min-width: 0;
   }
 }
 

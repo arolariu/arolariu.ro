@@ -1,10 +1,9 @@
 "use client";
 
-import {selectorFromPath} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 
 import {Card, CardContent} from "@arolariu/components/card";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl-selector";
 import {useRef} from "react";
 import {TbBulb, TbHeart, TbTargetArrow} from "react-icons/tb";
 import styles from "./Mission.module.scss";

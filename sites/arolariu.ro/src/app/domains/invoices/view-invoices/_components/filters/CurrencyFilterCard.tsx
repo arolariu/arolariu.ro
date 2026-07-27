@@ -7,19 +7,19 @@ import type {FilterState} from "../../_hooks/useInvoiceFilters";
 import styles from "./DynamicChipFilterCard.module.scss";
 import {FilterCardFrame} from "./FilterCardFrame";
 
-type Props = {
+type Props = Readonly<{
   readonly filters: FilterState;
   readonly availableCurrencies: ReadonlyArray<string>;
   readonly onFiltersChange: (filters: Partial<FilterState>) => void;
-};
+}>;
 
 /**
  * Currency chip card for invoice filters.
  *
  * @param props - Current filters, available currency codes, and filter updater.
- * @returns The rendered currency card, or an empty fragment when no options exist.
+ * @returns The rendered currency card, or `null` when no options exist.
  */
-export function CurrencyFilterCard({filters, availableCurrencies, onFiltersChange}: Readonly<Props>): React.JSX.Element {
+export function CurrencyFilterCard({filters, availableCurrencies, onFiltersChange}: Readonly<Props>): React.JSX.Element | null {
   const t = useTranslations();
   const isCurrencyActive = filters.currencies.length > 0;
 
@@ -40,7 +40,7 @@ export function CurrencyFilterCard({filters, availableCurrencies, onFiltersChang
     [filters.currencies, onFiltersChange],
   );
 
-  if (availableCurrencies.length === 0) return <></>;
+  if (availableCurrencies.length === 0) return null;
 
   return (
     <FilterCardFrame

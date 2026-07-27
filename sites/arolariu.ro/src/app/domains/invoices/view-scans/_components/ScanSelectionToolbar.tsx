@@ -53,7 +53,7 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
   const handleDeleteSelected = useCallback(async () => {
     setIsDeleting(true);
     try {
-      const results = await Promise.allSettled(selectedScans.map((scan) => deleteScan({blobUrl: scan.blobUrl})));
+      const results = await Promise.allSettled(selectedScans.map((scan) => deleteScan({scanId: scan.id})));
 
       const succeeded = results.filter((r) => r.status === "fulfilled" && r.value.success).length;
       const failed = results.length - succeeded;

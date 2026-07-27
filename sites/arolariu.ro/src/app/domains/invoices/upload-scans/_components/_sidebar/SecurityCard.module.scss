@@ -1,0 +1,45 @@
+@use '../../../../../../styles/abstracts' as abstracts;
+
+.securityCard {
+  border-color: abstracts.color-alpha('success', 0.35);
+  background-color: abstracts.color-alpha('success', 0.1);
+
+  @include abstracts.dark {
+    border-color: abstracts.color-alpha('success', 0.35);
+    background-color: abstracts.color-alpha('success', 0.1);
+  }
+}
+
+.sidebarCardContent {
+  padding: abstracts.space(4);
+
+  // Compact padding on mobile
+  @include abstracts.respond-below('md') {
+    padding: abstracts.space(3);
+  }
+}
+
+.securityContent {
+  display: flex;
+  align-items: flex-start;
+  gap: abstracts.space(3);
+}
+
+.securityIcon {
+  margin-top: abstracts.space(0.5);
+  height: abstracts.space(5);
+  width: abstracts.space(5);
+  flex-shrink: 0;
+  color: abstracts.color('success');
+}
+
+.securityTitle {
+  font-weight: abstracts.font-weight('semibold');
+  color: abstracts.color('success');
+}
+
+.securityDescription {
+  margin-top: abstracts.space(1);
+  font-size: abstracts.font-size('sm');
+  color: abstracts.color('success');
+}

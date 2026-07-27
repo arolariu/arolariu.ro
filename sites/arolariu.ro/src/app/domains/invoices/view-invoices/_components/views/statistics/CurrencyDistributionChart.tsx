@@ -122,7 +122,7 @@ function SingleCurrencyMessage({currency}: {readonly currency: CurrencyDistribut
  * @param data - Array of currency distribution data
  * @returns Currency distribution chart JSX element
  */
-export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
+export function CurrencyDistributionChart({data}: Props): React.JSX.Element | null {
   const t = useTranslations();
   const [showRON, setShowRON] = useState(false);
 
@@ -134,7 +134,7 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
   // Handle single currency scenario
   if (data.length === 1) {
     const [currency] = data;
-    if (!currency) return <></>;
+    if (!currency) return null;
     return (
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
@@ -152,7 +152,7 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
 
   // Handle empty state
   if (data.length === 0) {
-    return <></>;
+    return null;
   }
 
   return (

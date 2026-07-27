@@ -12,7 +12,10 @@
 }
 
 .tableWrapper {
-  overflow-x: auto;
+  // `overflow: visible` lets the bar tooltips overflow above the first row
+  // without being clipped (an `overflow-x: auto` wrapper coerces overflow-y
+  // to `auto`, which would crop tall first-row tooltips).
+  overflow: visible;
   width: 100%;
 }
 
@@ -41,12 +44,13 @@
   width: 30%;
 }
 
-.headerTotal {
-  width: 20%;
-}
-
 .headerTrend {
   width: 50%;
+}
+
+.headerTotal {
+  width: 20%;
+  text-align: right;
 }
 
 .row {
@@ -54,7 +58,6 @@
 
   &:hover {
     background-color: var(--ac-accent);
-    opacity: 0.5;
   }
 }
 
@@ -73,6 +76,7 @@
 .cellTotal {
   font-weight: 600;
   color: var(--ac-foreground);
+  text-align: right;
 }
 
 .totalAmount {
@@ -90,19 +94,78 @@
   gap: 0.25rem;
   height: 48px;
   margin-bottom: 0.25rem;
+
+  // Dim only the bars that are NOT being hovered, so the hovered bar keeps
+  // full opacity and its tooltip is never affected.
+  &:hover .bar:not(:hover):not(:focus-visible) .barFill {
+    opacity: 0.3;
+  }
 }
 
 .bar {
+  position: relative;
   flex: 1;
   display: flex;
   align-items: flex-end;
   height: 100%;
   cursor: pointer;
-  transition: opacity 0.15s ease;
 
-  &:hover {
-    opacity: 0.7;
+  &:hover .barTooltip,
+  &:focus-visible .barTooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -0.5rem);
   }
+}
+
+.barTooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  z-index: 10;
+  transform: translate(-50%, 0);
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: max-content;
+  padding: 0.375rem 0.625rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--ac-border);
+  background: var(--ac-popover);
+  color: var(--ac-popover-foreground);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease,
+    visibility 0.15s ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 0.3125rem solid transparent;
+    border-top-color: var(--ac-popover);
+  }
+}
+
+.barTooltipMonth {
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ac-muted-foreground);
+}
+
+.barTooltipAmount {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--ac-foreground);
 }
 
 .barFill {
@@ -110,7 +173,9 @@
   background: linear-gradient(180deg, var(--ac-chart-2) 0%, var(--ac-chart-2) 70%);
   border-radius: 2px 2px 0 0;
   min-height: 2px;
-  transition: background-color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .monthLabels {

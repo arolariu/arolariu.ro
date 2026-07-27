@@ -31,6 +31,7 @@
 import {formatAmount, formatDate} from "@/lib/utils.generic";
 import type {Invoice, Merchant} from "@/types/invoices";
 import {Document, Page, StyleSheet, Text, View} from "@react-pdf/renderer";
+import {getInvoiceCategoryLabel, getPaymentTypeLabel, getProductCategoryLabel} from "../../../../_utils/labelUtilities";
 
 /**
  * PDF stylesheet with professional design.
@@ -208,42 +209,6 @@ const styles = StyleSheet.create({
   },
 });
 
-/** Maps a numeric product category code to its human-readable display label. */
-function getProductCategoryLabel(category: number): string {
-  switch (category) {
-    case 100:
-      return "Baked Goods";
-    case 200:
-      return "Groceries";
-    case 300:
-      return "Dairy";
-    case 400:
-      return "Meat";
-    case 500:
-      return "Fish";
-    case 600:
-      return "Fruits";
-    case 700:
-      return "Vegetables";
-    case 800:
-      return "Beverages";
-    case 900:
-      return "Alcoholic Beverages";
-    case 1000:
-      return "Tobacco";
-    case 1100:
-      return "Cleaning Supplies";
-    case 1200:
-      return "Personal Care";
-    case 1300:
-      return "Medicine";
-    case 9999:
-      return "Other";
-    default:
-      return "Not Defined";
-  }
-}
-
 /**
  * Props for the InvoicePDF component.
  *
@@ -331,45 +296,6 @@ export function InvoicePDF({invoice, merchant}: Readonly<InvoicePDFProps>): Reac
     return `${invoice.paymentInformation.currency.symbol}${formatAmount(amount)}`;
   };
 
-  // Get payment method label
-  const getPaymentMethodLabel = (): string => {
-    const {paymentType} = invoice.paymentInformation;
-    switch (paymentType) {
-      case 100:
-        return "Cash";
-      case 200:
-        return "Card";
-      case 300:
-        return "Transfer";
-      case 400:
-        return "Mobile Payment";
-      case 500:
-        return "Voucher";
-      case 9999:
-        return "Other";
-      default:
-        return "Unknown";
-    }
-  };
-
-  // Get category label
-  const getCategoryLabel = (): string => {
-    switch (invoice.category) {
-      case 100:
-        return "Grocery";
-      case 200:
-        return "Fast Food";
-      case 300:
-        return "Home Cleaning";
-      case 400:
-        return "Car & Auto";
-      case 9999:
-        return "Other";
-      default:
-        return "Not Defined";
-    }
-  };
-
   return (
     <Document>
       {/* Page 1 - Invoice Overview */}
@@ -401,7 +327,7 @@ export function InvoicePDF({invoice, merchant}: Readonly<InvoicePDFProps>): Reac
 
           <View style={styles.infoRow}>
             <Text style={styles.label}>Category:</Text>
-            <Text style={styles.value}>{getCategoryLabel()}</Text>
+            <Text style={styles.value}>{getInvoiceCategoryLabel(invoice.category)}</Text>
           </View>
 
           <View style={styles.infoRow}>
@@ -492,7 +418,7 @@ export function InvoicePDF({invoice, merchant}: Readonly<InvoicePDFProps>): Reac
 
           <View style={styles.infoRow}>
             <Text style={styles.label}>Payment Method:</Text>
-            <Text style={styles.value}>{getPaymentMethodLabel()}</Text>
+            <Text style={styles.value}>{getPaymentTypeLabel(invoice.paymentInformation.paymentType)}</Text>
           </View>
         </View>
 
@@ -542,7 +468,9 @@ export function InvoicePDF({invoice, merchant}: Readonly<InvoicePDFProps>): Reac
                     <Text style={styles.allergens}>Allergens: {product.detectedAllergens.map((a) => a.name).join(", ")}</Text>
                   ) : null}
                 </View>
-                <Text style={[styles.tableCell, styles.tableCellCategory]}>{getProductCategoryLabel(product.category)}</Text>
+                <Text style={[styles.tableCell, styles.tableCellCategory]}>
+                  {getProductCategoryLabel(product.category, {notDefinedLabel: "Not Defined", unknownLabel: "Not Defined"})}
+                </Text>
                 <Text style={[styles.tableCell, styles.tableCellQty]}>{product.quantity}</Text>
                 <Text style={[styles.tableCell, styles.tableCellUnit]}>{product.quantityUnit || "pcs"}</Text>
                 <Text style={[styles.tableCell, styles.tableCellPrice]}>{formatCurrencyValue(product.price)}</Text>

@@ -85,8 +85,8 @@ export default function ItemsDialog(): React.JSX.Element {
   });
 
   useEffect(() => {
-    setEditableItems(invoice.items);
-  }, [invoice]);
+    setEditableItems(items);
+  }, [items]);
 
   const handleSaveChanges = useCallback(() => {
     // TODO: Implement save functionality

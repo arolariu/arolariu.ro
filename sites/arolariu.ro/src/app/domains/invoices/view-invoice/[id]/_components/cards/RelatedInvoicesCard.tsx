@@ -1,6 +1,5 @@
 "use client";
 
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Related Invoices card displaying similar invoices in a horizontal carousel.
  * @module domains/invoices/view-invoice/[id]/components/cards/RelatedInvoicesCard
@@ -32,7 +31,7 @@ import {useInvoicesStore} from "@/stores";
 import {InvoiceCategory, type Invoice} from "@/types/invoices";
 import {Badge, Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {useMemo} from "react";
 import {TbArrowRight, TbCalendar, TbReceipt, TbTag} from "react-icons/tb";

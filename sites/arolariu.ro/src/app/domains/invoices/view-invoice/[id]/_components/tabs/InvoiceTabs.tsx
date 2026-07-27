@@ -1,65 +1,21 @@
 "use client";
 
-import {formatEnum} from "@/lib/utils.generic";
-import {RecipeComplexity} from "@/types/invoices";
-import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
+import {Card, CardContent, CardHeader, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import {TbChefHat, TbClock, TbExternalLink, TbInfoCircle, TbToolsKitchen2} from "react-icons/tb";
+import {TbChefHat, TbInfoCircle} from "react-icons/tb";
+import MetadataTab from "../../../../edit-invoice/[id]/_components/tabs/MetadataTab";
+import RecipeCard from "../../../../edit-invoice/[id]/_cards/RecipeCard";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./InvoiceTabs.module.scss";
-
-/**
- * Returns the badge variant for a recipe complexity level.
- *
- * @param complexity - The recipe complexity enum value
- * @returns Badge variant matching the complexity level
- */
-function getComplexityVariant(complexity: RecipeComplexity): "default" | "secondary" | "destructive" | "outline" {
-  switch (complexity) {
-    case RecipeComplexity.Easy:
-      return "secondary";
-    case RecipeComplexity.Normal:
-      return "default";
-    case RecipeComplexity.Hard:
-      return "destructive";
-    default:
-      return "outline";
-  }
-}
-
-/**
- * Returns the emoji icon for a recipe complexity level.
- *
- * @param complexity - The recipe complexity enum value
- * @returns Emoji representing the complexity
- */
-function getComplexityEmoji(complexity: RecipeComplexity): string {
-  switch (complexity) {
-    case RecipeComplexity.Easy:
-      return "🟢";
-    case RecipeComplexity.Normal:
-      return "🟡";
-    case RecipeComplexity.Hard:
-      return "🔴";
-    default:
-      return "⚪";
-  }
-}
 
 /**
  * Invoice tabs component displaying possible recipes and additional metadata.
  *
  * @remarks
  * Renders two tabs:
- * - **Possible Recipes**: AI-generated recipe suggestions with full details
+ * - **Possible Recipes**: AI-generated recipe suggestions rendered with the
+ *   shared {@link RecipeCard} component
  * - **Additional Info**: Invoice metadata key-value pairs
- *
- * **Recipe Features**:
- * - Full recipe cards with name, description, complexity badge
- * - Time breakdown (preparation + cooking)
- * - Ingredients list from invoice products
- * - Instructions display
- * - External recipe link (if available)
  *
  * @returns Invoice tabs component with recipe and metadata display
  */
@@ -94,97 +50,12 @@ export function InvoiceTabs(): React.JSX.Element {
             className={styles["tabsContent"]}>
             {invoice.possibleRecipes.length > 0 ? (
               <div className={styles["recipesGrid"]}>
-                {invoice.possibleRecipes.map((recipe) => {
-                  const hasValidReference =
-                    recipe.referenceForMoreDetails
-                    && recipe.referenceForMoreDetails !== "https://arolariu.ro"
-                    && recipe.referenceForMoreDetails !== "";
-
-                  return (
-                    <Card
-                      key={recipe.name}
-                      className={styles["recipeCard"]}>
-                      <CardHeader className={styles["recipeCardHeader"]}>
-                        <div className={styles["recipeHeader"]}>
-                          <CardTitle className={styles["recipeTitle"]}>{recipe.name}</CardTitle>
-                          <Badge variant={getComplexityVariant(recipe.complexity)}>
-                            {getComplexityEmoji(recipe.complexity)} {formatEnum(RecipeComplexity, recipe.complexity)}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className={styles["recipeBody"]}>
-                        <p className={styles["recipeDescription"]}>{recipe.description}</p>
-
-                        {/* Time Information */}
-                        <div className={styles["recipeDetails"]}>
-                          <div className={styles["recipeDetailItem"]}>
-                            <TbClock className={styles["tabIcon"]} />
-                            <span>
-                              {t((m) => m.pages.invoices.viewInvoice.invoiceTabs.recipe.duration, {
-                                minutes: String(recipe.approximateTotalDuration),
-                              })}
-                            </span>
-                          </div>
-                          {recipe.preparationTime > 0 && recipe.cookingTime > 0 && (
-                            <div className={styles["recipeDetailMuted"]}>
-                              {t((m) => m.pages.invoices.viewInvoice.invoiceTabs.recipe.prepCook, {
-                                prep: String(recipe.preparationTime),
-                                cook: String(recipe.cookingTime),
-                              })}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Ingredients List */}
-                        {recipe.ingredients.length > 0 && (
-                          <div className={styles["ingredientsSection"]}>
-                            <div className={styles["ingredientsHeader"]}>
-                              <TbToolsKitchen2 className={styles["sectionIcon"]} />
-                              <h4 className={styles["sectionTitle"]}>
-                                {t((m) => m.pages.invoices.viewInvoice.invoiceTabs.recipe.ingredients)}
-                              </h4>
-                            </div>
-                            <ul className={styles["ingredientsList"]}>
-                              {recipe.ingredients.map((ingredient) => (
-                                <li
-                                  key={ingredient}
-                                  className={styles["ingredientItem"]}>
-                                  {ingredient}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {/* Instructions */}
-                        {recipe.instructions ? (
-                          <div className={styles["instructionsSection"]}>
-                            <h4 className={styles["sectionTitle"]}>
-                              {t((m) => m.pages.invoices.viewInvoice.invoiceTabs.recipe.instructions)}
-                            </h4>
-                            <p className={styles["instructionsText"]}>{recipe.instructions}</p>
-                          </div>
-                        ) : null}
-
-                        {/* External Link */}
-                        {hasValidReference ? (
-                          <Button
-                            variant='link'
-                            className={styles["recipeLink"]}
-                            asChild>
-                            <a
-                              href={recipe.referenceForMoreDetails}
-                              target='_blank'
-                              rel='noopener noreferrer'>
-                              {t((m) => m.pages.invoices.viewInvoice.invoiceTabs.recipe.viewRecipe)}
-                              <TbExternalLink className={styles["externalLinkIcon"]} />
-                            </a>
-                          </Button>
-                        ) : null}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                {invoice.possibleRecipes.map((recipe) => (
+                  <RecipeCard
+                    key={recipe.name}
+                    recipe={recipe}
+                  />
+                ))}
               </div>
             ) : (
               <div className={styles["emptyState"]}>
@@ -196,23 +67,7 @@ export function InvoiceTabs(): React.JSX.Element {
           <TabsContent
             value='info'
             className={styles["tabsContent"]}>
-            {Object.keys(invoice.additionalMetadata).length > 0 ? (
-              <dl className={styles["metadataList"]}>
-                {Object.entries(invoice.additionalMetadata).map(([key, value]) => (
-                  <div
-                    key={key}
-                    className={styles["metadataItem"]}>
-                    <dt className={styles["metadataKey"]}>{key}</dt>
-                    <dd className={styles["metadataValue"]}>{value}</dd>
-                  </div>
-                ))}
-              </dl>
-            ) : (
-              <div className={styles["emptyState"]}>
-                <TbInfoCircle className={styles["emptyIcon"]} />
-                <p className={styles["emptyStateText"]}>{t((m) => m.pages.invoices.viewInvoice.invoiceTabs.empty.additionalInfo)}</p>
-              </div>
-            )}
+            <MetadataTab metadata={invoice.additionalMetadata} />
           </TabsContent>
         </CardContent>
       </Tabs>

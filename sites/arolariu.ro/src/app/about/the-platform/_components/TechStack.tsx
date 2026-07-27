@@ -1,13 +1,12 @@
 "use client";
 
-import {selectorFromPath} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 
 import {Badge} from "@arolariu/components/badge";
 import {Card, CardContent} from "@arolariu/components/card";
 import {CountingNumber} from "@arolariu/components/counting-number";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components/tabs";
 import {AnimatePresence, motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl-selector";
 import {useRef, useState} from "react";
 import {
   TbBrandAzure,
@@ -220,7 +219,7 @@ export default function TechStack(): React.JSX.Element {
                   className={activeTab === category.id ? styles["tabTriggerActive"] : styles["tabTrigger"]}>
                   <category.icon className={styles["tabIcon"]} />
                   <span className={styles["tabLabel"]}>
-                    {t(selectorFromPath(`sections.about.platform.techStack.${`categories.${category.id}.name`}`))}
+                    {t(selectorFromPath(`sections.about.platform.techStack.categories.${category.id}.name`))}
                   </span>
                   {activeTab === category.id && (
                     <motion.span
@@ -247,7 +246,7 @@ export default function TechStack(): React.JSX.Element {
                   transition={{duration: 0.3}}>
                   {/* Category Description */}
                   <div className={styles["categoryDescription"]}>
-                    <p>{t(selectorFromPath(`sections.about.platform.techStack.${`categories.${category.id}.description`}`))}</p>
+                    <p>{t(selectorFromPath(`sections.about.platform.techStack.categories.${category.id}.description`))}</p>
                   </div>
 
                   {/* Technologies Grid */}
@@ -284,7 +283,7 @@ export default function TechStack(): React.JSX.Element {
                             {/* Content */}
                             <div className={styles["techInfo"]}>
                               <div className={styles["techName"]}>
-                                <h3>{t(selectorFromPath(`sections.about.platform.techStack.${`technologies.${tech.id}.name`}`))}</h3>
+                                <h3>{t(selectorFromPath(`sections.about.platform.techStack.technologies.${tech.id}.name`))}</h3>
                                 {tech.version !== undefined && (
                                   <Badge
                                     variant='secondary'
@@ -294,7 +293,7 @@ export default function TechStack(): React.JSX.Element {
                                 )}
                               </div>
                               <p className={styles["techDescription"]}>
-                                {t(selectorFromPath(`sections.about.platform.techStack.${`technologies.${tech.id}.description`}`))}
+                                {t(selectorFromPath(`sections.about.platform.techStack.technologies.${tech.id}.description`))}
                               </p>
                             </div>
                           </CardContent>

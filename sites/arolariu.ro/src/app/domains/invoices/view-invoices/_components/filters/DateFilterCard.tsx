@@ -1,11 +1,9 @@
 "use client";
 
-import {selectorFromPath} from "next-intl-selector";
-
 import {formatDate} from "@/lib/utils.generic";
 import {Button, Calendar, Popover, PopoverContent, PopoverTrigger} from "@arolariu/components";
 import {useLocale} from "next-intl";
-import {useTranslations} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 import {useCallback, useMemo} from "react";
 import {TbCalendar} from "react-icons/tb";
 import type {FilterState} from "../../_hooks/useInvoiceFilters";
@@ -13,22 +11,22 @@ import {computePresetRange, deriveActivePreset, type DatePresetKey} from "../../
 import styles from "./DateFilterCard.module.scss";
 import {FilterCardFrame} from "./FilterCardFrame";
 
-type Props = {
+type Props = Readonly<{
   readonly filters: FilterState;
   readonly onFiltersChange: (filters: Partial<FilterState>) => void;
-};
+}>;
 
 const DATE_PRESETS = ["30d", "90d", "ytd", "all"] as const satisfies ReadonlyArray<DatePresetKey>;
 
+const DATE_INPUT_FORMAT_OPTIONS = {
+  locale: "en-CA",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+} as const;
+
 function getDatePresetLabelKey(preset: DatePresetKey): string {
   return preset === "30d" || preset === "90d" ? `value${preset}` : preset;
-}
-
-function formatLocalDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 }
 
 /**
@@ -59,14 +57,14 @@ export function DateFilterCard({filters, onFiltersChange}: Readonly<Props>): Rea
 
   const handleDateFromChange = useCallback(
     (date: Date | undefined) => {
-      onFiltersChange({dateFrom: date ? formatLocalDate(date) : null});
+      onFiltersChange({dateFrom: date ? formatDate(date, DATE_INPUT_FORMAT_OPTIONS) : null});
     },
     [onFiltersChange],
   );
 
   const handleDateToChange = useCallback(
     (date: Date | undefined) => {
-      onFiltersChange({dateTo: date ? formatLocalDate(date) : null});
+      onFiltersChange({dateTo: date ? formatDate(date, DATE_INPUT_FORMAT_OPTIONS) : null});
     },
     [onFiltersChange],
   );

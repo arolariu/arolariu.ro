@@ -10,7 +10,7 @@
  * then later select and convert them into invoices.
  *
  * **Architecture Pattern**: Direct Azure SDK integration (NOT REST API).
- * Unlike other scan actions (`attachInvoiceScan`, `deleteInvoiceScan`), this action
+ * Unlike other scan actions (`attachScanToInvoice`, `detachScanFromInvoice`), this action
  * bypasses the backend REST API and uses the Azure Storage SDK directly for optimal
  * upload performance and streaming support.
  *
@@ -31,7 +31,7 @@
  * 3. This action uploads to Azure Blob Storage with READY status
  * 4. User views scans via `/view-scans` route (list by userIdentifier metadata)
  * 5. User selects scan(s) to convert into invoice(s) via AI enrichment
- * 6. `attachInvoiceScan` action links scan to invoice entity
+ * 6. `attachScanToInvoice` action links scan to invoice entity
  *
  * **ID Generation**: Uses UUIDv7-like format (timestamp-based) for:
  * - Chronological ordering in blob listings
@@ -56,17 +56,19 @@
  * }
  * ```
  *
- * @see {@link attachInvoiceScan} - Links scan to invoice (uses REST API)
- * @see {@link deleteInvoiceScan} - Removes scan (uses REST API)
+ * @see {@link attachScanToInvoice} - Links scan to invoice (uses REST API)
+ * @see {@link detachScanFromInvoice} - Removes scan (uses REST API)
  * @see {@link fetchScans} - Retrieves user's scans
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
+import {uploadBlobObject} from "@/lib/azure/storageClient";
 import {convertBase64ToBlob, createErrorResult, type ServerActionResult} from "@/lib/utils.server";
-import {type Scan, ScanStatus, ScanType} from "@/types/scans";
+import {type Scan, ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, ScanStatus} from "@/types/scans";
+import {deriveBlobExtension, mimeTypeToScanType} from "../../_utils/mimeTypeUtilities";
+import {writeBlobMetadata} from "../../_utils/metadataUtilities";
 
 /**
  * Input parameters for uploading a standalone scan.
@@ -96,42 +98,6 @@ type ServerActionOutputType = ServerActionResult<
   }>
 >;
 
-/**
- * Maps MIME type to ScanType enum for type classification.
- *
- * @remarks
- * Normalizes common MIME type variations (e.g., "image/jpg" → "image/jpeg").
- * Unsupported types are classified as ScanType.OTHER.
- *
- * **Supported Types**:
- * - JPEG: image/jpeg, image/jpg
- * - PNG: image/png
- * - PDF: application/pdf
- * - OTHER: All other types (stored but may fail downstream processing)
- *
- * @param mimeType - The MIME type string (case-insensitive)
- * @returns Corresponding ScanType enum value
- *
- * @example
- * ```typescript
- * mimeTypeToScanType("image/jpeg") // ScanType.JPEG
- * mimeTypeToScanType("application/pdf") // ScanType.PDF
- * mimeTypeToScanType("text/plain") // ScanType.OTHER
- * ```
- */
-function mimeTypeToScanType(mimeType: string): ScanType {
-  switch (mimeType.toLowerCase()) {
-    case "image/jpeg":
-    case "image/jpg":
-      return ScanType.JPEG;
-    case "image/png":
-      return ScanType.PNG;
-    case "application/pdf":
-      return ScanType.PDF;
-    default:
-      return ScanType.OTHER;
-  }
-}
 
 /**
  * Generates a UUIDv7-like identifier using timestamp + random bytes.
@@ -167,15 +133,6 @@ function generateScanId(): string {
   return `${timestamp.slice(0, 8)}-${timestamp.slice(8, 12)}-7${random.slice(0, 3)}-${random.slice(3, 7)}-${random.slice(7, 19)}`;
 }
 
-function getFileExtension(fileName: string): string {
-  const lastDotIndex = fileName.lastIndexOf(".");
-
-  if (lastDotIndex < 0 || lastDotIndex === fileName.length - 1) {
-    return "bin";
-  }
-
-  return fileName.slice(lastDotIndex + 1);
-}
 
 /**
  * Uploads a standalone scan to Azure Blob Storage for later invoice conversion.
@@ -233,7 +190,7 @@ export async function createScan({base64Data, fileName, mimeType}: ServerActionI
       addSpanEvent("scan.id.generate");
       const scanId = generateScanId();
       const timestamp = Date.now();
-      const extension = getFileExtension(fileName);
+      const extension = deriveBlobExtension(fileName);
       const blobName = `scans/${userIdentifier}/${scanId}_${timestamp}.${extension}`;
 
       // Step 3. Prepare for blob upload
@@ -244,57 +201,53 @@ export async function createScan({base64Data, fileName, mimeType}: ServerActionI
       addSpanEvent("azure.blob.create.start");
       logWithTrace("info", "Creating scan in Azure Blob Storage", {blobName}, "server");
 
-      const storageClient = await createBlobClient(storageEndpoint);
-      const containerClient = storageClient.getContainerClient(containerName);
-      const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-
       const originalFile = await convertBase64ToBlob(base64Data);
       const arrayBuffer = await originalFile.arrayBuffer();
+      const content = new Uint8Array(arrayBuffer);
 
-      const uploadedAt = new Date().toISOString();
-      const blobMetadata = {
-        userIdentifier,
+      const uploadedAt = new Date();
+      const scanMetadata = {
         scanId,
+        ownerId: userIdentifier,
+        displayName: fileName,
+        documentKind: ScanDocumentKind.RECEIPT,
+        documentRole: ScanDocumentRole.PRIMARY,
+        status: ScanMetadataStatus.READY,
         uploadedAt,
-        originalFileName: fileName,
-        status: ScanStatus.READY,
-      };
+        uploadedBy: userIdentifier,
+      } as const;
+      const blobMetadata = writeBlobMetadata(scanMetadata);
 
-      const blobUploadResponse = await blockBlobClient.uploadData(arrayBuffer, {
-        blobHTTPHeaders: {
-          blobContentType: mimeType,
-        },
+      const blobObject = await uploadBlobObject({
+        storageEndpoint,
+        containerName,
+        blobName,
+        content,
+        contentType: mimeType,
         metadata: blobMetadata,
       });
       addSpanEvent("azure.blob.upload.complete");
 
-      if (blobUploadResponse._response.status === 201) {
-        logWithTrace("info", "Successfully created scan in Azure", {scanId}, "server");
-      } else {
-        addSpanEvent("azure.blob.create.error");
-        logWithTrace("error", "Error creating blob in Azure Storage", {status: blobUploadResponse._response.status}, "server");
-      }
+      logWithTrace("info", "Successfully created scan in Azure", {scanId}, "server");
 
       // Step 5. Construct and return the Scan entity
       const scan: Scan = {
         id: scanId,
         userIdentifier,
         name: fileName,
-        blobUrl: rewriteAzuriteUrl(blockBlobClient.url),
+        blobUrl: blobObject.url,
         mimeType,
         sizeInBytes: originalFile.size,
         scanType: mimeTypeToScanType(mimeType),
-        uploadedAt: new Date(uploadedAt),
+        uploadedAt,
         status: ScanStatus.READY,
-        metadata: {
-          originalFileName: fileName,
-        },
+        metadata: scanMetadata,
       };
 
       return {
         success: true,
         data: {
-          status: blobUploadResponse._response.status,
+          status: 201,
           scan,
         },
       } as const;

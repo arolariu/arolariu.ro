@@ -35,7 +35,6 @@ import {
   YAxis,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import {useCallback} from "react";
 import type {ProductCategorySpending} from "../../../_utils/statistics";
 import styles from "./ProductCategoryChart.module.scss";
 
@@ -45,17 +44,17 @@ type Props = {
 };
 
 type TooltipPayloadItem = {
-  payload: ProductCategorySpending & {fill: string};
+  readonly payload?: ProductCategorySpending & {fill: string};
 };
 
 type CustomTooltipProps = {
   readonly active?: boolean;
-  readonly payload?: TooltipPayloadItem[];
+  readonly payload?: ReadonlyArray<TooltipPayloadItem>;
   readonly currency: string;
 };
 
 /** Empty payload placeholder used when no tooltip data is available. */
-const EMPTY_TOOLTIP_PAYLOAD: TooltipPayloadItem[] = [];
+const EMPTY_TOOLTIP_PAYLOAD: ReadonlyArray<TooltipPayloadItem> = [];
 
 /**
  * Custom tooltip for the product category chart.
@@ -74,6 +73,7 @@ function CustomTooltip({
   const [firstItem] = payload;
   if (!firstItem) return null;
   const data = firstItem.payload;
+  if (!data) return null;
 
   return (
     <div className={styles["tooltip"]}>
@@ -140,21 +140,6 @@ export function ProductCategoryChart({data, currency}: Props): React.JSX.Element
     };
   }
 
-  /**
-   * Factory: returns a stable tooltip render function with currency context.
-   * Wraps the CustomTooltip component to inject the currency prop.
-   */
-  const renderTooltip = useCallback(
-    ({active, payload}: {active?: boolean; payload?: readonly unknown[]}) => (
-      <CustomTooltip
-        active={active}
-        payload={payload as CustomTooltipProps["payload"]}
-        currency={currency}
-      />
-    ),
-    [currency],
-  );
-
   const coloredData = data.map((item, index) => ({
     ...item,
     fill: `var(--ac-chart-${(index % 5) + 1})`,
@@ -193,10 +178,18 @@ export function ProductCategoryChart({data, currency}: Props): React.JSX.Element
                 axisLine={false}
                 width={110}
               />
-              <ChartTooltip content={renderTooltip} />
+              <ChartTooltip
+                content={
+                  <CustomTooltip
+                    payload={EMPTY_TOOLTIP_PAYLOAD}
+                    currency={currency}
+                  />
+                }
+              />
               <Bar
                 dataKey='totalSpent'
                 radius={[0, 4, 4, 0]}
+                className={styles["bar"]}
               />
             </BarChart>
           </ResponsiveContainer>

@@ -9,7 +9,7 @@
  * It orchestrates the initial invoice entity creation with an attached scan.
  *
  * **Typical Workflow**:
- * 1. Upload scan via {@link createInvoiceScan}
+ * 1. Upload scan via {@link createScan} (from `@/app/domains/invoices/_actions/scans`)
  * 2. Create invoice with scan URL via this action
  * 3. Optionally trigger analysis via {@link analyzeInvoice}
  *
@@ -17,7 +17,7 @@
  * - `initialScan`: First scan attachment (uploaded to Azure Blob)
  * - `metadata`: Must include `isImportant` and `requiresAnalysis` flags
  *
- * @see {@link createInvoiceScan} for uploading scans first
+ * @see {@link createScan} for uploading scans first (from `@/app/domains/invoices/_actions/scans`)
  * @see {@link CreateInvoiceDtoPayload} for full payload structure
  */
 

@@ -1,6 +1,5 @@
 "use client";
 
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Mobile bottom navigation bar for the invoices domain.
  * @module app/domains/invoices/_components/MobileBottomNav
@@ -13,7 +12,7 @@ import {selectorFromPath} from "next-intl-selector";
  * @see {@link https://nextjs.org/docs/app/api-reference/functions/use-pathname}
  */
 
-import {useTranslations} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {usePathname} from "next/navigation";
 import {TbCamera, TbFileInvoice, TbHome, TbUser} from "react-icons/tb";

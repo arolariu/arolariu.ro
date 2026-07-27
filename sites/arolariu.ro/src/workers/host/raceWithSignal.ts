@@ -10,6 +10,9 @@
  * solely for runtimes whose polyfills diverge from spec.
  */
 
+/** No-op callback used to suppress unhandled-rejection noise on race losers. */
+const noop = (): void => undefined;
+
 export async function raceWithSignal<T>(body: Promise<T>, signal?: AbortSignal): Promise<T> {
   if (!signal) return body;
 
@@ -27,8 +30,8 @@ export async function raceWithSignal<T>(body: Promise<T>, signal?: AbortSignal):
   });
 
   // Suppress unhandled-rejection noise on whichever side loses the race.
-  body.catch((): void => {});
-  abortPromise.catch((): void => {});
+  body.catch(noop);
+  abortPromise.catch(noop);
 
   try {
     return await Promise.race([body, abortPromise]);

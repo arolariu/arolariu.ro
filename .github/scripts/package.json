@@ -15,7 +15,7 @@
   "dependencies": {
     "@actions/artifact": "6.2.1",
     "@actions/attest": "3.2.0",
-    "@actions/cache": "6.0.1",
+    "@actions/cache": "6.2.0",
     "@actions/core": "3.0.1",
     "@actions/exec": "3.0.0",
     "@actions/github": "9.1.1",
@@ -23,13 +23,13 @@
     "@actions/http-client": "4.0.1",
     "@actions/io": "3.0.2",
     "@actions/tool-cache": "4.0.0",
-    "fast-xml-parser": "5.8.0",
-    "pretty-bytes": "7.1.0"
+    "fast-xml-parser": "5.10.1",
+    "pretty-bytes": "7.1.1"
   },
   "devDependencies": {
     "@types/node": "24.12.4",
-    "@vitest/ui": "4.1.8",
+    "@vitest/ui": "4.1.10",
     "typescript": "6.0.3",
-    "vitest": "4.1.8"
+    "vitest": "4.1.10"
   }
 }

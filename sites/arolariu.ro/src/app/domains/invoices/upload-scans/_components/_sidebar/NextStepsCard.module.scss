@@ -1,0 +1,48 @@
+@use '../../../../../../styles/abstracts' as abstracts;
+
+.nextStepsCard {
+  border-color: abstracts.color-alpha('primary', 0.35);
+  background-color: abstracts.color-alpha('primary', 0.1);
+
+  @include abstracts.dark {
+    border-color: abstracts.color-alpha('primary', 0.35);
+    background-color: abstracts.color-alpha('primary', 0.1);
+  }
+}
+
+.sidebarCardContent {
+  padding: abstracts.space(4);
+
+  // Compact padding on mobile
+  @include abstracts.respond-below('md') {
+    padding: abstracts.space(3);
+  }
+}
+
+.nextStepsTitle {
+  margin-bottom: abstracts.space(2);
+  font-weight: abstracts.font-weight('semibold');
+  color: abstracts.color('primary');
+}
+
+.nextStepsDescription {
+  margin-bottom: abstracts.space(4);
+  font-size: abstracts.font-size('sm');
+  color: abstracts.color('primary');
+}
+
+.nextStepsButton {
+  width: 100%;
+  @include abstracts.gradient-bg();
+  color: white;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.arrowIcon {
+  @include abstracts.icon-size(abstracts.space(4));
+  margin-left: abstracts.space(2);
+  color: abstracts.color('foreground');
+}

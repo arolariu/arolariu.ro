@@ -19,9 +19,11 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
+import {listBlobObjects} from "@/lib/azure/storageClient";
 import {createErrorResult, type ServerActionResult} from "@/lib/utils.server";
-import {type Scan, ScanStatus, ScanType} from "@/types/scans";
+import {type Scan, ScanStatus} from "@/types/scans";
+import {mimeTypeToScanType} from "../../_utils/mimeTypeUtilities";
+import {readBlobMetadata} from "../../_utils/metadataUtilities";
 
 /**
  * Input parameters for fetching scans.
@@ -36,30 +38,6 @@ type ServerActionInputType = Readonly<{
  */
 type ServerActionOutputType = ServerActionResult<ReadonlyArray<Scan>>;
 
-/**
- * Maps MIME type strings to scan classification values.
- *
- * @remarks
- * Handles the MIME types emitted by browser file inputs and Azure Blob Storage
- * metadata. Unknown types remain listable as `ScanType.OTHER` so the UI can
- * still show unsupported uploads instead of dropping them.
- *
- * @param mimeType - MIME type to normalize, such as `image/jpeg` or `application/pdf`.
- * @returns The scan type used by invoice scan UI and downstream processing.
- */
-function mimeTypeToScanType(mimeType: string): ScanType {
-  switch (mimeType.toLowerCase()) {
-    case "image/jpeg":
-    case "image/jpg":
-      return ScanType.JPEG;
-    case "image/png":
-      return ScanType.PNG;
-    case "application/pdf":
-      return ScanType.PDF;
-    default:
-      return ScanType.OTHER;
-  }
-}
 
 /**
  * Fetches all scans belonging to a user from Azure Blob Storage.
@@ -111,9 +89,6 @@ export async function fetchScans({includeArchived = false}: ServerActionInputTyp
       addSpanEvent("azure.storage.connect.start");
       const containerName = "invoices";
       const storageEndpoint = await fetchConfigurationValue("Endpoints:Storage:Blob");
-
-      const storageClient = await createBlobClient(storageEndpoint);
-      const containerClient = storageClient.getContainerClient(containerName);
       addSpanEvent("azure.storage.connect.complete");
 
       // Step 3. List blobs with user prefix
@@ -122,57 +97,42 @@ export async function fetchScans({includeArchived = false}: ServerActionInputTyp
       const prefix = `scans/${userIdentifier}/`;
       const scans: Scan[] = [];
 
-      for await (const blob of containerClient.listBlobsFlat({
+      const blobs = await listBlobObjects({
+        storageEndpoint,
+        containerName,
         prefix,
         includeMetadata: true,
-      })) {
-        const metadata = blob.metadata ?? {};
+      });
 
-        // Support both camelCase and lowercase keys for backward compatibility
-        // Older scans might have lowercase keys from buggy registerScan
-        const scanId = metadata["scanId"] ?? metadata["scanid"];
+      for (const blob of blobs) {
+        try {
+          const scanMetadata = readBlobMetadata(blob.metadata ?? {});
 
-        // Skip scans that have been used by invoices
-        if (metadata["usedByInvoice"] !== "true" && scanId) {
-          // Parse status from metadata (case-insensitive)
-          const statusString = metadata["status"] ?? ScanStatus.READY;
-          const status = Object.values(ScanStatus).includes(statusString as ScanStatus) ? (statusString as ScanStatus) : ScanStatus.READY;
+          const shouldInclude = includeArchived
+            ? scanMetadata.status !== ScanStatus.ATTACHED
+            : scanMetadata.status === ScanStatus.READY || scanMetadata.status === ScanStatus.DETACHED;
 
-          // Only include non-archived scans (or all scans if includeArchived is true)
-          if (includeArchived || status !== ScanStatus.ARCHIVED) {
-            // Construct blob URL
-            const blobUrl = rewriteAzuriteUrl(containerClient.getBlockBlobClient(blob.name).url);
-
-            // Parse upload timestamp (support both camelCase and lowercase)
-            const uploadedAtString = metadata["uploadedAt"] ?? metadata["uploadedat"];
-            const uploadedAt = uploadedAtString ? new Date(uploadedAtString) : (blob.properties.createdOn ?? new Date());
-
-            // Determine MIME type
-            const mimeType = blob.properties.contentType ?? "application/octet-stream";
-
-            // Get original filename (support both camelCase and lowercase)
-            const originalFileName = metadata["originalFileName"] ?? metadata["originalfilename"];
+          if (shouldInclude) {
             const blobFileName = blob.name.split("/").pop();
-            const displayName = originalFileName ?? (blobFileName ? blobFileName : "Unknown");
+            const displayName = scanMetadata.displayName ?? blobFileName ?? "Unknown";
 
             const scan: Scan = {
-              id: scanId,
-              userIdentifier: metadata["userIdentifier"] ?? metadata["useridentifier"] ?? userIdentifier,
+              id: scanMetadata.scanId,
+              userIdentifier: scanMetadata.ownerId,
               name: displayName,
-              blobUrl,
-              mimeType,
-              sizeInBytes: blob.properties.contentLength ?? 0,
-              scanType: mimeTypeToScanType(mimeType),
-              uploadedAt,
-              status,
-              metadata: {
-                originalFileName: originalFileName ?? "",
-                ...metadata,
-              },
+              blobUrl: blob.url,
+              mimeType: blob.contentType,
+              sizeInBytes: blob.contentLength,
+              scanType: mimeTypeToScanType(blob.contentType),
+              uploadedAt: scanMetadata.uploadedAt,
+              status: scanMetadata.status,
+              metadata: scanMetadata,
             };
 
             scans.push(scan);
           }
+        } catch (blobProcessingError) {
+          logWithTrace("warn", "Skipping scan due to processing error", {blobName: blob.name, error: String(blobProcessingError)}, "server");
         }
       }
       addSpanEvent("azure.blob.list.complete");

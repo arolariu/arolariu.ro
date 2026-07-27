@@ -12,7 +12,6 @@
 
 import {useInvoicesStore} from "@/stores";
 import type {Invoice, Recipe} from "@/types/invoices";
-import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 
 /**
@@ -48,7 +47,6 @@ type HookOutputType = Readonly<{
  * ```
  */
 export function useRecipeAdd(invoice: Invoice): Readonly<HookOutputType> {
-  const t = useTranslations();
   const addRecipeClientSide = useInvoicesStore((state) => state.updateEntity);
   const [isAdding, setIsAdding] = useState(false);
 
@@ -56,7 +54,7 @@ export function useRecipeAdd(invoice: Invoice): Readonly<HookOutputType> {
     async (recipe: Recipe): Promise<Invoice> => {
       setIsAdding(true);
       try {
-        // TODO: add server side mudation
+        // TODO: add server side mutation and handle errors with toasts
         const updatedRecipes = [...invoice.possibleRecipes, recipe];
         const updatedInvoice = {...invoice, possibleRecipes: updatedRecipes};
         addRecipeClientSide(invoice.id, {possibleRecipes: updatedRecipes});
@@ -65,8 +63,8 @@ export function useRecipeAdd(invoice: Invoice): Readonly<HookOutputType> {
         setIsAdding(false);
       }
     },
-    [invoice.id, invoice.possibleRecipes, t, addRecipeClientSide],
+    [invoice.id, invoice.possibleRecipes, addRecipeClientSide],
   );
 
-  return {isAdding, addRecipeCallback};
+  return {isAdding, addRecipeCallback} as const;
 }

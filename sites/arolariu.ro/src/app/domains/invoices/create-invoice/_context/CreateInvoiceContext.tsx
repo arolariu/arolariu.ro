@@ -13,13 +13,14 @@
  */
 
 import {useScansStore} from "@/stores";
-import {InvoiceAnalysisOptions, InvoiceCategory, InvoiceScanType, PaymentType} from "@/types/invoices";
-import type {CachedScan} from "@/types/scans";
-import {ScanStatus} from "@/types/scans";
+import {InvoiceAnalysisOptions, InvoiceCategory, PaymentType} from "@/types/invoices";
+import {type CachedScan, ScanMetadataKey, ScanMetadataStatus, ScanStatus} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {useRouter} from "next/navigation";
 import {createContext, useCallback, useContext, useMemo, useState, type ReactNode} from "react";
 import {analyzeInvoice, createInvoice} from "../../_actions/invoices";
+import {updateScan} from "../../_actions/scans";
+import {scanTypeToInvoiceScanType} from "../../_utils/mimeTypeUtilities";
 
 /**
  * Wizard step type definition.
@@ -99,13 +100,13 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
   const [isCreating, setIsCreating] = useState(false);
 
   // Invoice details state
-  const [invoiceDetails, setInvoiceDetails] = useState<InvoiceDetails>({
+  const [invoiceDetails, setInvoiceDetails] = useState<InvoiceDetails>(() => ({
     name: "",
     category: InvoiceCategory.NOT_DEFINED,
     paymentType: PaymentType.Unknown,
     transactionDate: new Date(),
     description: "",
-  });
+  }));
 
   // Step navigation
   const goToStep = useCallback((step: WizardStep) => {
@@ -192,22 +193,8 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
         throw new Error("No scans selected");
       }
 
-      // Map scan type to InvoiceScanType enum
-      let scanType: InvoiceScanType;
-      switch (firstScan.scanType) {
-        case "JPEG":
-          scanType = InvoiceScanType.JPEG;
-          break;
-        case "PNG":
-          scanType = InvoiceScanType.PNG;
-          break;
-        case "PDF":
-          scanType = InvoiceScanType.PDF;
-          break;
-        default:
-          scanType = InvoiceScanType.UNKNOWN;
-          break;
-      }
+      // Derive the invoice scan type through the centralized MIME utility.
+      const scanType = scanTypeToInvoiceScanType(firstScan.scanType);
 
       // Create invoice with first scan and ALL invoice details in metadata
       // Note: All form fields (name, category, paymentType, transactionDate, description)
@@ -237,9 +224,31 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
         throw new Error(error?.message ?? "Invoice creation failed");
       }
 
-      // Mark scans as used
+      // Mark scans as used in local store (immediate UI update)
       const scanIds = selectedScans.map((s) => s.id);
       markScansAsUsedByInvoice(scanIds, invoice.id);
+
+      // Persist attachment metadata to blob storage (fire-and-forget)
+      for (const scan of selectedScans) {
+        updateScan({
+          scanId: scan.id,
+          metadataAdd: {
+            status: ScanMetadataStatus.ATTACHED,
+            attachedAt: new Date(),
+            attachedBy: invoice.userIdentifier,
+            attachedTo: invoice.id,
+          },
+          metadataRemove: [
+            ScanMetadataKey.DETACHED_AT,
+            ScanMetadataKey.DETACHED_BY,
+            ScanMetadataKey.DETACHED_FROM,
+            ScanMetadataKey.ARCHIVED_AT,
+            ScanMetadataKey.ARCHIVED_BY,
+          ],
+        }).catch((error) => {
+          console.warn("Failed to persist scan attachment metadata (non-critical):", error);
+        });
+      }
 
       toast.success(`Invoice "${invoiceDetails.name}" has been created successfully.`);
 

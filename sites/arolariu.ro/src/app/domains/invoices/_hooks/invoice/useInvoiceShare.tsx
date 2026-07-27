@@ -274,5 +274,5 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
     }
   }
 
-  return {isSharing, shareInvoiceCallback};
+  return {isSharing, shareInvoiceCallback} as const;
 }

@@ -54,41 +54,18 @@
   }
 }
 
-.leftColumn {
-  display: none;
-
-  > * + * {
-    margin-top: space(6);
-  }
-
-  @include respond-to('lg') {
-    display: block;
-    grid-column: span 3;
-  }
-
-  // Narrower left column on xl screens to balance wider center
-  @include respond-to('xl') {
-    grid-column: span 2;
-  }
-}
-
-.leftColumnSticky {
-  position: sticky;
-  top: space(6);
-}
-
 .centerColumn {
   > * + * {
     margin-top: space(6);
   }
 
   @include respond-to('lg') {
-    grid-column: span 6;
+    grid-column: span 9;
   }
 
-  // Wider center column on xl screens
+  // Center column spans the space previously shared with the left column on xl
   @include respond-to('xl') {
-    grid-column: span 7;
+    grid-column: span 9;
   }
 }
 
@@ -97,12 +74,6 @@
 }
 
 .mobileHealthScore {
-  @include respond-to('lg') {
-    display: none;
-  }
-}
-
-.mobileTimeline {
   @include respond-to('lg') {
     display: none;
   }
@@ -220,15 +191,6 @@
     grid-template-columns: 1fr !important;
   }
 
-  // Hide left column (timeline) in print
-  .leftColumn {
-    display: none !important;
-  }
-
-  .leftColumnSticky {
-    position: static !important;
-  }
-
   // Make center column full width
   .centerColumn {
     width: 100% !important;
@@ -246,11 +208,6 @@
 
   // Hide mobile health score
   .mobileHealthScore {
-    display: none !important;
-  }
-
-  // Hide mobile timeline
-  .mobileTimeline {
     display: none !important;
   }
 

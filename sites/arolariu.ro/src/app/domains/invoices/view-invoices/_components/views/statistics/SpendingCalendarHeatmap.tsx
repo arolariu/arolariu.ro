@@ -1,21 +1,21 @@
 "use client";
 
 /**
- * @fileoverview Spending Calendar Heatmap - GitHub-style daily spending visualization.
+ * @fileoverview Spending Calendar Heatmap - yearly spending calendar visualization.
  * @module app/domains/invoices/view-invoices/_components/views/statistics/SpendingCalendarHeatmap
  *
  * @remarks
- * This component displays a calendar heatmap showing daily spending intensity
- * over the last 3 months. Each day is represented as a colored square where:
+ * This component displays a full year as twelve traditional month calendars,
+ * where each numbered day is shaded by its spending intensity:
  * - Grey indicates no spending
  * - Green (light to dark) indicates low to high spending intensity
  *
  * **Features:**
  * - Interactive tooltips showing date, amount, and invoice count
- * - Month navigation with arrow buttons
- * - Responsive design with horizontal scroll on mobile
+ * - Year navigation with arrow buttons
+ * - Twelve numbered month grids (Jan→Dec) laid out as a responsive grid
  * - Color scale based on spending percentiles
- * - Day-of-week labels and month labels
+ * - Day-of-week column headers per month
  *
  * **Color Scale:**
  * Uses the `--success` CSS variable (green: `hsl(142 71% 35%)`) with opacity levels:
@@ -52,12 +52,18 @@ type Props = {
 
 type DayCell = {
   date: string;
+  dayNumber: number;
   amount: number;
   invoiceCount: number;
   level: number;
 };
 
 type WeekRow = DayCell[];
+
+type MonthGrid = {
+  monthLabel: string;
+  weeks: WeekRow[];
+};
 
 /**
  * Gets color class based on spending intensity level (0-4).
@@ -115,47 +121,30 @@ function formatDate(dateStr: string, locale: string): string {
 }
 
 /**
- * Generates a 3-month calendar grid of spending data.
+ * Builds the Mon→Sun week rows for a single month.
  *
- * @param data - Array of daily spending data
- * @param monthOffset - Number of months to offset from current month (0 = current)
- * @returns Array of week rows, each containing 7 day cells
+ * @param year - Calendar year
+ * @param month - Zero-based month index (0 = January)
+ * @param dataMap - Lookup of daily spending keyed by `YYYY-MM-DD`
+ * @param maxSpending - Maximum daily spend across the year, used for intensity levels
+ * @returns The month label and its week rows
  */
-function generateCalendarGrid(data: DailySpending[], monthOffset: number): {weeks: WeekRow[]; monthLabel: string} {
-  const now = new Date();
-  const targetMonth = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
-  const year = targetMonth.getFullYear();
-  const month = targetMonth.getMonth();
-
-  // Get first and last day of the target month
+function buildMonthGrid(year: number, month: number, dataMap: Map<string, DailySpending>, maxSpending: number): MonthGrid {
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
 
-  // Calculate max spending for level calculation
-  const maxSpending = Math.max(...data.map((d) => d.amount), 0);
+  const emptyCell = (): DayCell => ({date: "", dayNumber: 0, amount: 0, invoiceCount: 0, level: 0});
 
-  // Create a map for quick lookup
-  const dataMap = new Map<string, DailySpending>();
-  for (const item of data) {
-    dataMap.set(item.date, item);
-  }
-
-  // Build weeks array
   const weeks: WeekRow[] = [];
   let currentWeek: DayCell[] = [];
 
-  // Add padding for days before the first day of month
-  const firstDayOfWeek = firstDay.getDay();
+  // Pad days before the first of the month so weeks line up Mon→Sun.
+  // `getDay()` is 0=Sun..6=Sat; shift so Monday becomes the first column.
+  const firstDayOfWeek = (firstDay.getDay() + 6) % 7;
   for (let i = 0; i < firstDayOfWeek; i++) {
-    currentWeek.push({
-      date: "",
-      amount: 0,
-      invoiceCount: 0,
-      level: 0,
-    });
+    currentWeek.push(emptyCell());
   }
 
-  // Add all days in the month
   for (let day = 1; day <= lastDay.getDate(); day++) {
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     const dayData = dataMap.get(dateStr);
@@ -163,36 +152,51 @@ function generateCalendarGrid(data: DailySpending[], monthOffset: number): {week
     const invoiceCount = dayData?.invoiceCount ?? 0;
     const level = calculateLevel(amount, maxSpending);
 
-    currentWeek.push({
-      date: dateStr,
-      amount,
-      invoiceCount,
-      level,
-    });
+    currentWeek.push({date: dateStr, dayNumber: day, amount, invoiceCount, level});
 
-    // If week is complete (Sunday), push to weeks array
     if (currentWeek.length === 7) {
       weeks.push(currentWeek);
       currentWeek = [];
     }
   }
 
-  // Add padding for remaining days in last week
   while (currentWeek.length > 0 && currentWeek.length < 7) {
-    currentWeek.push({
-      date: "",
-      amount: 0,
-      invoiceCount: 0,
-      level: 0,
-    });
+    currentWeek.push(emptyCell());
   }
   if (currentWeek.length === 7) {
     weeks.push(currentWeek);
   }
 
-  const monthLabel = formatDateGeneric(targetMonth, {locale: "en", month: "long", year: "numeric"});
+  const monthLabel = formatDateGeneric(firstDay, {locale: "en", month: "long"});
 
-  return {weeks, monthLabel};
+  return {monthLabel, weeks};
+}
+
+/**
+ * Generates the twelve month grids for a full year of spending data.
+ *
+ * @param data - Array of daily spending data
+ * @param yearOffset - Number of years to offset from the current year (0 = current)
+ * @returns The twelve month grids and the year label
+ */
+function generateYearGrid(data: DailySpending[], yearOffset: number): {months: MonthGrid[]; periodLabel: string} {
+  const now = new Date();
+  const targetYear = now.getFullYear() - yearOffset;
+
+  // Calculate max spending across the whole year for consistent level shading.
+  const maxSpending = Math.max(...data.map((d) => d.amount), 0);
+
+  const dataMap = new Map<string, DailySpending>();
+  for (const item of data) {
+    dataMap.set(item.date, item);
+  }
+
+  const months: MonthGrid[] = [];
+  for (let month = 0; month < 12; month++) {
+    months.push(buildMonthGrid(targetYear, month, dataMap, maxSpending));
+  }
+
+  return {months, periodLabel: String(targetYear)};
 }
 
 /**
@@ -208,13 +212,16 @@ function DayCell({day, currency, locale}: Readonly<{day: DayCell; currency: stri
   return (
     <TooltipProvider delayDuration={100}>
       <Tooltip>
-        <TooltipTrigger asChild>
-          <div
-            className={`${styles["dayCell"]} ${getColorClass(day.level)}`}
-            role='gridcell'
-            aria-label={`${formatDate(day.date, locale)}: ${formatAmount(day.amount)} ${currency}`}
-          />
-        </TooltipTrigger>
+        <TooltipTrigger
+          render={
+            <div
+              className={`${styles["dayCell"]} ${getColorClass(day.level)}`}
+              role='gridcell'
+              aria-label={`${formatDate(day.date, locale)}: ${formatAmount(day.amount)} ${currency}`}>
+              <span className={styles["dayNumber"]}>{day.dayNumber}</span>
+            </div>
+          }
+        />
         <TooltipContent className={styles["tooltipContent"]}>
           <div className={styles["tooltipDate"]}>{formatDate(day.date, locale)}</div>
           {day.amount > 0 ? (
@@ -236,13 +243,12 @@ function DayCell({day, currency, locale}: Readonly<{day: DayCell; currency: stri
 }
 
 /**
- * Renders a GitHub-style calendar heatmap showing daily spending intensity.
+ * Renders a yearly spending calendar as twelve month grids.
  *
  * @remarks
- * This component provides a visual overview of spending patterns across days.
- * Users can navigate between months to see historical data. The heatmap uses
- * a color scale to indicate spending intensity, making it easy to spot
- * high-spending days at a glance.
+ * This component provides a visual overview of spending patterns across a full
+ * year. Users can navigate between years to see historical data. Each day cell
+ * is shaded by spending intensity, making high-spending days easy to spot.
  *
  * **Accessibility:**
  * - Semantic HTML with proper ARIA labels
@@ -255,33 +261,33 @@ function DayCell({day, currency, locale}: Readonly<{day: DayCell; currency: stri
  *
  * @param data - Array of daily spending data
  * @param currency - Currency code for display
- * @returns Calendar heatmap JSX element
+ * @returns Yearly calendar JSX element
  */
 export default function SpendingCalendarHeatmap({data, currency}: Props): React.JSX.Element {
   const t = useTranslations();
   const locale = useLocale();
-  const [monthOffset, setMonthOffset] = useState(0);
+  const [yearOffset, setYearOffset] = useState(0);
 
-  const {weeks, monthLabel} = useMemo(() => generateCalendarGrid(data, monthOffset), [data, monthOffset]);
+  const {months, periodLabel} = useMemo(() => generateYearGrid(data, yearOffset), [data, yearOffset]);
 
   const dayLabels = [
-    t((m) => m.cards.invoices.statistics.calendarHeatmap.days.sun),
     t((m) => m.cards.invoices.statistics.calendarHeatmap.days.mon),
     t((m) => m.cards.invoices.statistics.calendarHeatmap.days.tue),
     t((m) => m.cards.invoices.statistics.calendarHeatmap.days.wed),
     t((m) => m.cards.invoices.statistics.calendarHeatmap.days.thu),
     t((m) => m.cards.invoices.statistics.calendarHeatmap.days.fri),
     t((m) => m.cards.invoices.statistics.calendarHeatmap.days.sat),
+    t((m) => m.cards.invoices.statistics.calendarHeatmap.days.sun),
   ];
 
-  /** Navigates to the previous month in the heatmap. */
-  const handlePreviousMonth = useCallback((): void => {
-    setMonthOffset((prev) => prev + 1);
+  /** Navigates to the previous year in the calendar. */
+  const handlePreviousYear = useCallback((): void => {
+    setYearOffset((prev) => prev + 1);
   }, []);
 
-  /** Navigates to the next month in the heatmap (bounded at current month). */
-  const handleNextMonth = useCallback((): void => {
-    setMonthOffset((prev) => Math.max(0, prev - 1));
+  /** Navigates to the next year in the calendar (bounded at the current year). */
+  const handleNextYear = useCallback((): void => {
+    setYearOffset((prev) => Math.max(0, prev - 1));
   }, []);
 
   return (
@@ -296,17 +302,17 @@ export default function SpendingCalendarHeatmap({data, currency}: Props): React.
           </div>
           <div className={styles["navigationButtons"]}>
             <button
-              onClick={handlePreviousMonth}
+              onClick={handlePreviousYear}
               className={styles["navButton"]}
               aria-label={t((m) => m.cards.invoices.statistics.calendarHeatmap.navigation.previous)}
               type='button'>
               <TbChevronLeft size={20} />
             </button>
-            <span className={styles["monthLabel"]}>{monthLabel}</span>
+            <span className={styles["monthLabel"]}>{periodLabel}</span>
             <button
-              onClick={handleNextMonth}
+              onClick={handleNextYear}
               className={styles["navButton"]}
-              disabled={monthOffset === 0}
+              disabled={yearOffset === 0}
               aria-label={t((m) => m.cards.invoices.statistics.calendarHeatmap.navigation.next)}
               type='button'>
               <TbChevronRight size={20} />
@@ -315,40 +321,52 @@ export default function SpendingCalendarHeatmap({data, currency}: Props): React.
         </div>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
-        <div
-          className={styles["calendarContainer"]}
-          role='grid'
-          aria-label={t((m) => m.cards.invoices.statistics.calendarHeatmap.aria.calendarGrid)}>
-          {/* Day of week labels */}
-          <div className={styles["dayLabelsColumn"]}>
-            <div className={styles["dayLabelEmpty"]} />
-            {dayLabels.map((label) => (
+        <div className={styles["yearGrid"]}>
+          {months.map((month) => (
+            <section
+              key={month.monthLabel}
+              className={styles["monthCard"]}
+              aria-label={month.monthLabel}>
+              <h3 className={styles["monthTitle"]}>{month.monthLabel}</h3>
               <div
-                key={label}
-                className={styles["dayLabel"]}>
-                {label}
-              </div>
-            ))}
-          </div>
+                className={styles["calendarContainer"]}
+                role='grid'
+                aria-label={month.monthLabel}>
+                {/* Day of week header row */}
+                <div
+                  className={styles["weekdayHeader"]}
+                  role='row'>
+                  {dayLabels.map((label) => (
+                    <div
+                      key={label}
+                      className={styles["weekdayLabel"]}
+                      role='columnheader'>
+                      {label.charAt(0)}
+                    </div>
+                  ))}
+                </div>
 
-          {/* Calendar grid */}
-          <div className={styles["weeksContainer"]}>
-            {weeks.map((week, weekIdx) => (
-              <div
-                key={`week-${weekIdx}`}
-                className={styles["weekRow"]}
-                role='row'>
-                {week.map((day) => (
-                  <DayCell
-                    key={day.date ? day.date : `empty-${weekIdx}-${week.indexOf(day)}`}
-                    day={day}
-                    currency={currency}
-                    locale={locale}
-                  />
-                ))}
+                {/* Calendar weeks */}
+                <div className={styles["weeksContainer"]}>
+                  {month.weeks.map((week, weekIdx) => (
+                    <div
+                      key={`${month.monthLabel}-week-${weekIdx}`}
+                      className={styles["weekRow"]}
+                      role='row'>
+                      {week.map((day) => (
+                        <DayCell
+                          key={day.date ? day.date : `${month.monthLabel}-empty-${weekIdx}-${week.indexOf(day)}`}
+                          day={day}
+                          currency={currency}
+                          locale={locale}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
+            </section>
+          ))}
         </div>
 
         {/* Legend */}

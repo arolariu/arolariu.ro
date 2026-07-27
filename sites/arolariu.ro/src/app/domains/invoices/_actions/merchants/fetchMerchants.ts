@@ -220,12 +220,15 @@ export async function fetchMerchants(_params?: ServerActionInputType): ServerAct
       const errorText = await response.text();
       const internalMessage = `Failed to fetch merchants: ${response.status} ${response.statusText} - ${errorText}`;
       logWithTrace("error", "API error fetching merchants", {status: response.status, errorText}, "server");
-      const userMessage =
-        response.status === 404
-          ? "No merchants found"
-          : response.status >= 500
-            ? "A server error occurred. Please try again later."
-            : "Failed to fetch merchants. Please refresh the page or contact support.";
+      const userMessage = (() => {
+        if (response.status === 404) {
+          return "No merchants found";
+        }
+        if (response.status >= 500) {
+          return "A server error occurred. Please try again later.";
+        }
+        return "Failed to fetch merchants. Please refresh the page or contact support.";
+      })();
       return createErrorResult(new Error(internalMessage), userMessage);
     } catch (error: unknown) {
       addSpanEvent("bff.request.fetch-merchants.error");

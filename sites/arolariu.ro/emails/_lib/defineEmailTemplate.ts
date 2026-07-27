@@ -164,7 +164,10 @@ export function defineEmailTemplate<P>(config: EmailTemplateConfig<P>): EmailTem
     // already exposes the resolved locale separately as `ctx.locale`. Keeping
     // locale on `ctx.props` would diverge from the documented contract and
     // tempt templates into reading `props.locale` (typed as missing).
-    const {locale: _locale, ...propsWithoutLocale} = props as P & {readonly locale?: EmailLocale};
+    // IIFE form used intentionally: `_l` is a function parameter, not a variable
+    // declaration, so `sonarjs/no-unused-vars` does not flag it — unlike a
+    // `const {locale: _locale, ...rest} = ...` destructuring statement.
+    const propsWithoutLocale = (({locale: _l, ...rest}) => rest as P)(props as P & {readonly locale?: EmailLocale});
     return config.render({locale, t, props: propsWithoutLocale as P});
   };
 

@@ -1,7 +1,5 @@
 "use client";
 
-import {selectorFromPath} from "next-intl-selector";
-
 /**
  * @fileoverview Dialog displaying available keyboard shortcuts for the invoice management system.
  * @module app/domains/invoices/_components/ShortcutsHelpDialog
@@ -22,7 +20,8 @@ import {
   Kbd,
   KbdGroup,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
+import {useCallback} from "react";
 import {TbKeyboard} from "react-icons/tb";
 import styles from "./ShortcutsHelpDialog.module.scss";
 
@@ -91,6 +90,16 @@ export default function ShortcutsHelpDialog({open, onClose}: Readonly<ShortcutsH
   const modifierKey = isMac ? "⌘" : "Ctrl";
 
   /**
+   * Handles dialog open-state changes and closes the dialog when dismissed.
+   */
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean): void => {
+      if (!nextOpen) onClose();
+    },
+    [onClose],
+  );
+
+  /**
    * List of keyboard shortcuts to display in the dialog.
    */
   const shortcuts: ShortcutItem[] = [
@@ -103,7 +112,7 @@ export default function ShortcutsHelpDialog({open, onClose}: Readonly<ShortcutsH
   return (
     <Dialog
       open={open}
-      onOpenChange={(nextOpen: boolean) => !nextOpen && onClose()}>
+      onOpenChange={handleOpenChange}>
       <DialogContent className={styles["dialog"]}>
         <DialogHeader className={styles["header"]}>
           <div className={styles["titleRow"]}>

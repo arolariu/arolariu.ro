@@ -61,7 +61,7 @@ import {createContext, use, useMemo, useState, type ReactNode} from "react";
  * @see {@link DialogPayloads} - Compile-time payload registry
  * @see {@link DialogContainer} - Switch expression mapping types to components
  */
-export type DialogType = Readonly<
+type DialogType = Readonly<
   | "EDIT_INVOICE__ANALYSIS"
   | "EDIT_INVOICE__IMAGE"
   | "EDIT_INVOICE__ADD_SCAN"
@@ -110,7 +110,7 @@ export type DialogType = Readonly<
  *
  * **Default**: The `useDialog` hook defaults to `"view"` mode when not specified.
  */
-export type DialogMode = Readonly<"view" | "add" | "edit" | "delete" | "share"> | null;
+type DialogMode = Readonly<"view" | "add" | "edit" | "delete" | "share"> | null;
 
 /**
  * Compile-time registry mapping each DialogType to its expected payload shape.
@@ -145,7 +145,7 @@ export type DialogMode = Readonly<"view" | "add" | "edit" | "delete" | "share"> 
  * openDialog("EDIT_INVOICE__ITEMS", "edit", {merchant});
  * ```
  */
-export type DialogPayloads = {
+type DialogPayloads = {
   EDIT_INVOICE__ANALYSIS: {invoice: Invoice};
   EDIT_INVOICE__IMAGE: string;
   EDIT_INVOICE__ADD_SCAN: {invoice: Invoice};

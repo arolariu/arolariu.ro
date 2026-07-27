@@ -8,20 +8,20 @@ import type {FilterState} from "../../_hooks/useInvoiceFilters";
 import styles from "./DynamicChipFilterCard.module.scss";
 import {FilterCardFrame} from "./FilterCardFrame";
 
-type Props = {
+type Props = Readonly<{
   readonly filters: FilterState;
   readonly availableCategories: ReadonlyArray<InvoiceCategory>;
   readonly getCategoryLabel: (category: InvoiceCategory) => string;
   readonly onFiltersChange: (filters: Partial<FilterState>) => void;
-};
+}>;
 
 /**
  * Category chip card for invoice filters.
  *
  * @param props - Current filters, available categories, label formatter, and filter updater.
- * @returns The rendered category card, or an empty fragment when no options exist.
+ * @returns The rendered category card, or `null` when no options exist.
  */
-export function CategoryFilterCard({filters, availableCategories, getCategoryLabel, onFiltersChange}: Readonly<Props>): React.JSX.Element {
+export function CategoryFilterCard({filters, availableCategories, getCategoryLabel, onFiltersChange}: Readonly<Props>): React.JSX.Element | null {
   const t = useTranslations();
   const isCategoryActive = filters.categories.length > 0;
 
@@ -40,7 +40,7 @@ export function CategoryFilterCard({filters, availableCategories, getCategoryLab
     [filters.categories, onFiltersChange],
   );
 
-  if (availableCategories.length === 0) return <></>;
+  if (availableCategories.length === 0) return null;
 
   return (
     <FilterCardFrame

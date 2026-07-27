@@ -1,11 +1,10 @@
 "use client";
 
-import {selectorFromPath} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 
 import {Avatar, AvatarFallback} from "@arolariu/components/avatar";
 import {Card, CardContent} from "@arolariu/components/card";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl-selector";
 import {useRef} from "react";
 import {TbPackage} from "react-icons/tb";
 import styles from "./Contributors.module.scss";

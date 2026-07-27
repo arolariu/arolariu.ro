@@ -138,8 +138,7 @@ export function useInvoices(_void?: HookInputType): HookOutputType {
     };
 
     fetchInvoicesForUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- setInvoices is a stable function
-  }, []);
+  }, [setInvoices]);
 
   // Loading is true only until hydration completes (shows stale data while fetching fresh)
   const isLoading = !hasHydrated;

@@ -40,10 +40,20 @@
 }
 
 .chartContainer {
+  // Explicit width disables the library `.container` `aspect-ratio: 16/9` so the
+  // chart follows the card width instead of overflowing it.
+  width: 100%;
+  min-width: 0;
   height: 300px;
 
   @include respond-to('md') {
     height: 350px;
+  }
+}
+
+.bar {
+  :global(.recharts-bar-rectangle) {
+    cursor: pointer;
   }
 }
 

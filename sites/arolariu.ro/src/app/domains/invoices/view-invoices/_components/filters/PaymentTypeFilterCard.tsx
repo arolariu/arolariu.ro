@@ -8,25 +8,25 @@ import type {FilterState} from "../../_hooks/useInvoiceFilters";
 import styles from "./DynamicChipFilterCard.module.scss";
 import {FilterCardFrame} from "./FilterCardFrame";
 
-type Props = {
+type Props = Readonly<{
   readonly filters: FilterState;
   readonly availablePaymentTypes: ReadonlyArray<PaymentType>;
   readonly getPaymentTypeLabel: (paymentType: PaymentType) => string;
   readonly onFiltersChange: (filters: Partial<FilterState>) => void;
-};
+}>;
 
 /**
  * Payment-type chip card for invoice filters.
  *
  * @param props - Current filters, available payment types, label formatter, and filter updater.
- * @returns The rendered payment-type card, or an empty fragment when no options exist.
+ * @returns The rendered payment-type card, or `null` when no options exist.
  */
 export function PaymentTypeFilterCard({
   filters,
   availablePaymentTypes,
   getPaymentTypeLabel,
   onFiltersChange,
-}: Readonly<Props>): React.JSX.Element {
+}: Readonly<Props>): React.JSX.Element | null {
   const t = useTranslations();
   const isPaymentActive = filters.paymentTypes.length > 0;
 
@@ -45,7 +45,7 @@ export function PaymentTypeFilterCard({
     [filters.paymentTypes, onFiltersChange],
   );
 
-  if (availablePaymentTypes.length === 0) return <></>;
+  if (availablePaymentTypes.length === 0) return null;
 
   return (
     <FilterCardFrame

@@ -3,36 +3,27 @@
  * @module app/domains/invoices/_actions/invoices/scans
  *
  * @remarks
- * This module provides a centralized export point for all invoice scan (document/image)
+ * This module provides a centralized export point for invoice scan (document/image)
  * management server actions. It enables cleaner imports throughout the application
  * by allowing direct imports from the scans directory rather than individual files.
  *
  * **Exported Actions:**
- * - `createInvoiceScan` - Uploads invoice scans to Azure Blob Storage
- * - `attachInvoiceScan` - Adds scan references to existing invoices
- * - `deleteInvoiceScan` - Removes scan references from invoices and lets backend cleanup handle the blob lifecycle
+ * - `attachScanToInvoice` - Adds scan references to existing invoices
+ * - `detachScanFromInvoice` - Removes scan references from invoices and lets backend cleanup handle the blob lifecycle
  *
  * **Usage Pattern:**
  * Instead of importing from individual files:
  * ```typescript
- * import { createInvoiceScan } from "@/app/domains/invoices/_actions/invoices/scans/createInvoiceScan";
+ * import { attachScanToInvoice } from "@/app/domains/invoices/_actions/invoices/scans/attachScanToInvoice";
  * ```
  *
  * Import from the barrel:
  * ```typescript
- * import { createInvoiceScan, attachInvoiceScan, deleteInvoiceScan } from "@/app/domains/invoices/_actions/invoices/scans";
+ * import { attachScanToInvoice, detachScanFromInvoice } from "@/app/domains/invoices/_actions/invoices/scans";
  * ```
  *
- * **Architecture Patterns:**
- * These actions follow two distinct patterns:
- *
- * **Azure SDK Direct (createInvoiceScan):**
- * - Uses Azure Blob Storage SDK directly
- * - No JWT authentication (Azure credential singleton)
- * - Direct upload to Azure (no backend API)
- * - No cache revalidation (storage operation)
- *
- * **REST API (attachInvoiceScan, deleteInvoiceScan):**
+ * **Architecture Pattern:**
+ * These actions follow the REST API pattern:
  * - Server-side execution with JWT authentication
  * - GUID validation for invoice identifiers
  * - OpenTelemetry instrumentation
@@ -40,9 +31,9 @@
  * - Automatic Next.js cache revalidation
  *
  * **Typical Workflow:**
- * 1. **Upload**: `createInvoiceScan` uploads file to Azure Blob Storage → returns blob URL
- * 2. **Attach**: `attachInvoiceScan` adds blob URL reference to invoice entity
- * 3. **Delete**: `deleteInvoiceScan` removes reference (blob marked for async cleanup)
+ * 1. **Upload**: Use `createScan` from `@/app/domains/invoices/_actions/scans` to upload file to Azure Blob Storage → returns scan entity
+ * 2. **Attach**: `attachScanToInvoice` adds scan blob URL reference to invoice entity
+ * 3. **Delete**: `detachScanFromInvoice` removes reference (blob marked for async cleanup)
  *
  * **Business Constraints:**
  * - Invoices must retain at least one scan (deletion fails for last scan)
@@ -53,11 +44,9 @@
  * - Images: JPEG, PNG, WebP, HEIC
  * - Documents: PDF
  *
- * @see {@link createInvoiceScan} - Upload invoice scans to Azure Blob Storage
- * @see {@link attachInvoiceScan} - Add scan references to existing invoices
- * @see {@link deleteInvoiceScan} - Remove scan references from invoices
+ * @see {@link attachScanToInvoice} - Add scan references to existing invoices
+ * @see {@link detachScanFromInvoice} - Remove scan references from invoices
  */
 
-export {attachInvoiceScan} from "./attachInvoiceScan";
-export {createInvoiceScan} from "./createInvoiceScan";
-export {deleteInvoiceScan} from "./deleteInvoiceScan";
+export { attachScanToInvoice } from "./attachScanToInvoice";
+export { detachScanFromInvoice } from "./detachScanFromInvoice";

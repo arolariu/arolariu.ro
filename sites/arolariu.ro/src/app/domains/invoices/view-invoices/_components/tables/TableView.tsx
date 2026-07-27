@@ -117,6 +117,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
     [onSort],
   );
 
+  // Early return with empty state when no invoices are present, to avoid rendering the table structure.
   if (invoices.length === 0) {
     return (
       <EmptyState

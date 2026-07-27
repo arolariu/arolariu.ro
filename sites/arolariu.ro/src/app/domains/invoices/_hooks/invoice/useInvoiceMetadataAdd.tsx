@@ -95,7 +95,7 @@ export function useInvoiceMetadataAdd(invoice: Invoice): Readonly<HookOutputType
         additionalMetadata: {...invoice.additionalMetadata, [key]: value},
       };
     },
-    [invoice.id, invoice.additionalMetadata, addInvoiceMedataClientSide],
+    [invoice, addInvoiceMedataClientSide],
   );
 
   /**

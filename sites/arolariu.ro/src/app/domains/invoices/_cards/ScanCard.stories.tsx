@@ -1,193 +1,203 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import {TbLink, TbRotateClockwise, TbTrash} from "react-icons/tb";
+import ScanCard from "./ScanCard";
 
-/**
- * ScanCard displays an individual scan with preview, selection checkbox,
- * file info, and delete action. Depends on `useScansStore` and `deleteScan`.
- *
- * This story renders a static preview of the scan card.
- */
 const meta = {
   title: "Invoices/Shared/ScanCard",
-  parameters: {
-    layout: "centered",
-  },
-} satisfies Meta;
+  component: ScanCard,
+  parameters: {layout: "centered"},
+} satisfies Meta<typeof ScanCard>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Image scan card with file details. */
 export const ImageScan: Story = {
-  render: () => (
-    <div
-      style={{
-        overflow: "hidden",
-        borderRadius: "0.5rem",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "white",
-        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-      }}>
-      <div style={{position: "relative", aspectRatio: "4/3", backgroundColor: "#f3f4f6"}}>
-        <img
-          src='https://picsum.photos/seed/scancard/400/300'
-          alt='receipt.jpg scan'
-          style={{height: "100%", width: "100%", objectFit: "cover"}}
-        />
-        <div style={{position: "absolute", top: "0.5rem", right: "0.5rem"}}>
-          <input
-            type='checkbox'
-            style={{height: "1.25rem", width: "1.25rem"}}
-          />
-        </div>
-        <div style={{position: "absolute", top: "0.5rem", left: "0.5rem"}}>
-          <button
-            type='button'
-            style={{
-              borderRadius: "9999px",
-              backgroundColor: "rgba(255,255,255,0.8)",
-              padding: "0.25rem",
-              fontSize: "0.75rem",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-            }}>
-            ⋮
-          </button>
-        </div>
-      </div>
-      <div style={{padding: "0.75rem"}}>
-        <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>
-          grocery-receipt-2025-01.jpg
-        </p>
-        <div style={{display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#6b7280"}}>
-          <span>1.2 MB</span>
-          <span>Jan 15, 2025</span>
-        </div>
-      </div>
-    </div>
-  ),
+  args: {
+    media: {
+      src: "https://picsum.photos/seed/scancard/400/300",
+      mediaKind: "image",
+      alt: "grocery receipt scan",
+    },
+    title: "grocery-receipt-2026-06.jpg",
+    metadataItems: ["1.2 MB", "Jun 8, 2026"],
+    actions: [
+      {key: "rotate", label: "Rotate", icon: <TbRotateClockwise />, onSelect: () => undefined},
+      {key: "delete", label: "Delete", icon: <TbTrash />, onSelect: () => undefined, destructive: true},
+    ],
+  },
 };
 
-/** PDF scan card. */
 export const PdfScan: Story = {
-  render: () => (
-    <div
-      style={{
-        overflow: "hidden",
-        borderRadius: "0.5rem",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "white",
-        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-      }}>
+  args: {
+    media: {
+      src: "https://example.com/invoice.pdf",
+      mediaKind: "pdf",
+      alt: "invoice PDF scan",
+    },
+    title: "invoice-scan.pdf",
+    metadataItems: ["3.4 MB", "Jun 8, 2026"],
+  },
+};
+
+export const Selected: Story = {
+  args: {
+    media: {
+      src: "https://picsum.photos/seed/selected-scan/400/300",
+      mediaKind: "image",
+      alt: "selected scan",
+    },
+    title: "selected-receipt.jpg",
+    metadataItems: ["800 KB", "Jun 7, 2026"],
+    isSelected: true,
+    selection: {
+      checked: true,
+      onToggle: () => undefined,
+      label: "Select scan",
+    },
+    actions: [
+      {key: "delete", label: "Delete", icon: <TbTrash />, onSelect: () => undefined, destructive: true},
+    ],
+  },
+};
+
+export const Renaming: Story = {
+  args: {
+    media: {
+      src: "https://picsum.photos/seed/rename-scan/400/300",
+      mediaKind: "image",
+      alt: "scan being renamed",
+    },
+    title: "old-name.jpg",
+    metadataItems: ["1.5 MB", "Jun 6, 2026"],
+    rename: {
+      value: "new-receipt-name.jpg",
+      isEditing: true,
+      onChange: () => undefined,
+      onCommit: () => undefined,
+      onCancel: () => undefined,
+      placeholder: "Enter new name",
+    },
+  },
+};
+
+export const Uploading: Story = {
+  args: {
+    media: {
+      src: "https://picsum.photos/seed/uploading-scan/400/300",
+      mediaKind: "image",
+      alt: "uploading receipt scan",
+    },
+    title: "uploading-receipt.jpg",
+    isLocked: true,
+    statusBadge: (
+      <span
+        style={{
+          borderRadius: "9999px",
+          backgroundColor: "rgba(59, 130, 246, 0.9)",
+          padding: "0.25rem 0.75rem",
+          fontSize: "0.75rem",
+          fontWeight: 500,
+          color: "white",
+        }}>
+        Uploading
+      </span>
+    ),
+    progress: {value: 70, label: "70%"},
+  },
+};
+
+export const UploadError: Story = {
+  args: {
+    media: {
+      src: "https://picsum.photos/seed/error-scan/400/300",
+      mediaKind: "image",
+      alt: "failed upload scan",
+    },
+    title: "failed-receipt.jpg",
+    metadataItems: ["2.1 MB"],
+    isLocked: true,
+    statusBadge: (
+      <span
+        style={{
+          borderRadius: "9999px",
+          backgroundColor: "rgba(239, 68, 68, 0.9)",
+          padding: "0.25rem 0.75rem",
+          fontSize: "0.75rem",
+          fontWeight: 500,
+          color: "white",
+        }}>
+        Failed
+      </span>
+    ),
+    error: "Upload failed: Network error",
+  },
+};
+
+export const LinkedToInvoice: Story = {
+  args: {
+    media: {
+      src: "https://picsum.photos/seed/linked-scan/400/300",
+      mediaKind: "image",
+      alt: "scan linked to invoice",
+    },
+    title: "invoice-attachment.jpg",
+    metadataItems: ["950 KB", "Jun 5, 2026"],
+    linkedBadge: (
       <div
         style={{
-          position: "relative",
           display: "flex",
-          aspectRatio: "4/3",
           alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "#fef2f2",
+          gap: "0.25rem",
+          borderRadius: "9999px",
+          backgroundColor: "rgba(59, 130, 246, 0.9)",
+          padding: "0.25rem 0.75rem",
+          fontSize: "0.75rem",
+          fontWeight: 500,
+          color: "white",
         }}>
-        <span style={{fontSize: "2.25rem", color: "#f87171"}}>📄</span>
-        <div style={{position: "absolute", top: "0.5rem", right: "0.5rem"}}>
-          <input
-            type='checkbox'
-            style={{height: "1.25rem", width: "1.25rem"}}
-          />
-        </div>
+        <TbLink style={{height: "0.75rem", width: "0.75rem"}} />
+        Linked
       </div>
-      <div style={{padding: "0.75rem"}}>
-        <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>
-          invoice-scan.pdf
-        </p>
-        <div style={{display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#6b7280"}}>
-          <span>3.4 MB</span>
-          <span>Jan 10, 2025</span>
-        </div>
-      </div>
-    </div>
-  ),
+    ),
+    actions: [
+      {key: "delete", label: "Delete", icon: <TbTrash />, onSelect: () => undefined, destructive: true},
+    ],
+  },
 };
 
-/** Selected scan card with ring highlight. */
-export const Selected: Story = {
-  render: () => (
-    <div
-      style={{
-        overflow: "hidden",
-        borderRadius: "0.5rem",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "white",
-        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-        outline: "2px solid #a855f7",
-        outlineOffset: "2px",
-      }}>
-      <div style={{position: "relative", aspectRatio: "4/3", backgroundColor: "#f3f4f6"}}>
-        <img
-          src='https://picsum.photos/seed/scancard2/400/300'
-          alt='selected.jpg scan'
-          style={{height: "100%", width: "100%", objectFit: "cover"}}
+export const ProcessingOverlay: Story = {
+  args: {
+    media: {
+      src: "https://picsum.photos/seed/processing-scan/400/300",
+      mediaKind: "image",
+      alt: "scan being processed",
+    },
+    title: "processing-receipt.jpg",
+    metadataItems: ["1.8 MB", "Jun 4, 2026"],
+    isLocked: true,
+    centerOverlay: (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "0.5rem",
+          backgroundColor: "rgba(255, 255, 255, 0.95)",
+          padding: "1.5rem",
+          borderRadius: "0.5rem",
+        }}>
+        <div
+          style={{
+            height: "2rem",
+            width: "2rem",
+            border: "3px solid #e5e7eb",
+            borderTopColor: "#3b82f6",
+            borderRadius: "9999px",
+            animation: "spin 0.8s linear infinite",
+          }}
         />
-        <div style={{position: "absolute", top: "0.5rem", right: "0.5rem"}}>
-          <input
-            type='checkbox'
-            checked
-            readOnly
-            style={{height: "1.25rem", width: "1.25rem", accentColor: "#a855f7"}}
-          />
-        </div>
+        <span style={{fontSize: "0.875rem", fontWeight: 500}}>Processing...</span>
       </div>
-      <div style={{padding: "0.75rem"}}>
-        <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>
-          selected-scan.jpg
-        </p>
-        <div style={{display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#6b7280"}}>
-          <span>800 KB</span>
-          <span>Jan 12, 2025</span>
-        </div>
-      </div>
-    </div>
-  ),
-};
-
-/** Scan linked to an invoice. */
-export const LinkedToInvoice: Story = {
-  render: () => (
-    <div
-      style={{
-        overflow: "hidden",
-        borderRadius: "0.5rem",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "white",
-        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-      }}>
-      <div style={{position: "relative", aspectRatio: "4/3", backgroundColor: "#f3f4f6"}}>
-        <img
-          src='https://picsum.photos/seed/scancard3/400/300'
-          alt='linked.jpg scan'
-          style={{height: "100%", width: "100%", objectFit: "cover"}}
-        />
-        <div style={{position: "absolute", bottom: "0.5rem", left: "0.5rem"}}>
-          <span
-            style={{
-              borderRadius: "9999px",
-              backgroundColor: "#dbeafe",
-              paddingInline: "0.5rem",
-              paddingBlock: "0.125rem",
-              fontSize: "0.75rem",
-              color: "#1e40af",
-            }}>
-            🔗 Linked
-          </span>
-        </div>
-      </div>
-      <div style={{padding: "0.75rem"}}>
-        <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>
-          linked-receipt.jpg
-        </p>
-        <div style={{display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#6b7280"}}>
-          <span>950 KB</span>
-          <span>Jan 8, 2025</span>
-        </div>
-      </div>
-    </div>
-  ),
+    ),
+  },
 };

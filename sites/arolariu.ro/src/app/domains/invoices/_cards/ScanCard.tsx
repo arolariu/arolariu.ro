@@ -1,284 +1,253 @@
 "use client";
 
 /**
- * @fileoverview Individual scan card component with selection support (shared).
+ * @fileoverview Controlled shared scan card for uploaded and pending scans.
  * @module app/domains/invoices/_cards/ScanCard
  */
 
-import {formatDate} from "@/lib/utils.generic";
-import type {CachedScan} from "@/types/scans";
-import {
-  Button,
-  Card,
-  CardContent,
-  Checkbox,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  Input,
-} from "@arolariu/components";
+import {Button, Card, CardContent, Checkbox, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Input} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl-selector";
-import {useCallback, useEffect} from "react";
-import {
-  TbCheck,
-  TbDotsVertical,
-  TbFileTypePdf,
-  TbLink,
-  TbMaximize,
-  TbPencil,
-  TbRotate,
-  TbRotateClockwise,
-  TbTrash,
-  TbX,
-  TbZoomIn,
-} from "react-icons/tb";
-import {useDialogs} from "../_contexts/DialogContext";
-import {useScanRename, useScanRotation} from "../_hooks/scan";
+import {type ReactNode, useCallback} from "react";
+import {TbCheck, TbDotsVertical, TbPencil, TbX} from "react-icons/tb";
+import {ScanMediaPreview, type ScanMediaKind} from "./ScanMediaPreview";
 import styles from "./ScanCard.module.scss";
 
-type ScanCardProps = {
-  scan: CachedScan;
-  isSelected: boolean;
-  onToggleSelect: () => void;
-};
+type ScanCardAction = Readonly<{
+  key: string;
+  label: string;
+  icon?: ReactNode;
+  onSelect: () => void;
+  disabled?: boolean;
+  destructive?: boolean;
+}>;
+
+type RenameState = Readonly<{
+  value: string;
+  isEditing: boolean;
+  onStart?: () => void;
+  onChange: (value: string) => void;
+  onCommit: () => void;
+  onCancel: () => void;
+  placeholder: string;
+}>;
+
+type SelectionState = Readonly<{
+  checked: boolean;
+  onToggle: () => void;
+  label: string;
+}>;
+
+type ProgressState = Readonly<{
+  value: number;
+  label: string;
+}>;
+
+type Props = Readonly<{
+  media: Readonly<{
+    src: string;
+    mediaKind: ScanMediaKind;
+    alt: string;
+    loading?: "eager" | "lazy";
+    onPreviewActivate?: () => void;
+  }>;
+  title: string;
+  metadataItems?: readonly string[];
+  isSelected?: boolean;
+  isLocked?: boolean;
+  selection?: SelectionState;
+  rename?: RenameState;
+  actions?: readonly ScanCardAction[];
+  statusBadge?: ReactNode;
+  linkedBadge?: ReactNode;
+  centerOverlay?: ReactNode;
+  progress?: ProgressState;
+  error?: string;
+}>;
+
+type ActionItemProps = Readonly<{
+  action: ScanCardAction;
+  isLocked: boolean;
+}>;
 
 /**
- * Formats file size in human-readable format.
+ * Renders a single dropdown action item with a stable handle* callback.
  */
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+function ActionItem({action, isLocked}: ActionItemProps): React.JSX.Element {
+  const handleSelect = useCallback((): void => {
+    action.onSelect();
+  }, [action]);
+
+  return (
+    <DropdownMenuItem
+      onClick={handleSelect}
+      disabled={isLocked || action.disabled}
+      className={action.destructive ? styles["deleteMenuItem"] : undefined}>
+      {action.icon}
+      {action.label}
+    </DropdownMenuItem>
+  );
 }
 
 /**
- * Individual scan card with selection checkbox, inline rename, and preview.
+ * Renders a shared scan card with caller-controlled actions.
+ *
+ * @param props - Scan card props.
+ * @returns The rendered scan card.
  */
-export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<ScanCardProps>): React.JSX.Element {
-  const t = useTranslations();
-  const {openDialog} = useDialogs();
-
-  const rename = useScanRename(scan);
-  const rotation = useScanRotation(scan);
-
-  const isUsedByInvoice = scan.metadata?.["usedByInvoice"] === "true";
-
-  // Focus input when entering rename mode
-  useEffect(() => {
-    if (rename.isEditing && rename.inputRef.current) {
-      rename.inputRef.current.focus();
-      rename.inputRef.current.select();
-    }
-  }, [rename.isEditing, rename.inputRef]);
+export default function ScanCard({
+  media,
+  title,
+  metadataItems = [],
+  isSelected = false,
+  isLocked = false,
+  selection,
+  rename,
+  actions = [],
+  statusBadge,
+  linkedBadge,
+  centerOverlay,
+  progress,
+  error,
+}: Readonly<Props>): React.JSX.Element {
+  const handleStopPropagation = useCallback((event: React.SyntheticEvent): void => {
+    event.stopPropagation();
+  }, []);
 
   const handleRenameKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>): void => {
+      if (!rename) {
+        return;
+      }
+
       if (event.key === "Enter") {
-        rename.commit();
+        rename.onCommit();
       } else if (event.key === "Escape") {
-        rename.cancel();
+        rename.onCancel();
       }
     },
     [rename],
   );
 
-  const handleOpenPreview = useCallback((): void => {
-    openDialog("SHARED__SCAN_PREVIEW", "view", {scan});
-  }, [openDialog, scan]);
-
-  const handleOpenDeleteDialog = useCallback((): void => {
-    openDialog("SHARED__SCAN_DELETE", "delete", {scan});
-  }, [openDialog, scan]);
-
-  /** Opens the preview dialog when Enter or Space is pressed. */
-  const handlePreviewKeyDown = useCallback(
-    (e: React.KeyboardEvent): void => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        handleOpenPreview();
-      }
-    },
-    [handleOpenPreview],
-  );
-
-  /** Stops event propagation to prevent triggering parent click handlers. */
-  const handleStopPropagation = useCallback((e: React.SyntheticEvent): void => {
-    e.stopPropagation();
-  }, []);
-
-  /** Updates the scan name input field as the user types. */
-  const handleNameChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>): void => {
-      rename.change(e.target.value);
+  const handleRenameChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>): void => {
+      rename?.onChange(event.target.value);
     },
     [rename],
   );
 
-  // Guard against incomplete scan data
-  if (!scan.blobUrl && !scan.name) {
-    return (
-      <Card className={styles["card"]}>
-        <CardContent className={styles["cardContentFlush"]}>
-          <div className={styles["previewArea"]}>
-            <div className={styles["pdfPlaceholder"]}>{/* Empty placeholder */}</div>
-          </div>
-          <div className={styles["fileInfo"]}>
-            <div className={styles["fileName"]}>{t((m) => m.pages.invoices.viewScans.scanCard.loading)}</div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const handleSelectionToggle = useCallback((): void => {
+    selection?.onToggle();
+  }, [selection]);
+
+  const handleRenameInputBlur = useCallback((): void => {
+    rename?.onCancel();
+  }, [rename]);
+
+  const handleRenameCommit = useCallback((): void => {
+    rename?.onCommit();
+  }, [rename]);
+
+  const handleRenameCancel = useCallback((): void => {
+    rename?.onCancel();
+  }, [rename]);
+
+  const handleRenameStart = useCallback((): void => {
+    rename?.onStart?.();
+  }, [rename]);
+
+  const handleMediaPreviewActivate = useCallback((): void => {
+    media.onPreviewActivate?.();
+  }, [media]);
 
   return (
     <Card className={`${styles["card"]} ${isSelected ? styles["cardSelected"] : ""}`}>
       <CardContent className={styles["cardContentFlush"]}>
-        {/* Preview */}
-        <div
-          className={styles["previewArea"]}
-          onClick={handleOpenPreview}
-          role='button'
-          tabIndex={0}
-          onKeyDown={handlePreviewKeyDown}>
-          {scan.mimeType === "application/pdf" ? (
-            <div className={styles["pdfPlaceholder"]}>
-              <TbFileTypePdf className={styles["pdfIcon"]} />
-            </div>
-          ) : (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element -- plain <img> chosen over next/image; see spec 2026-05-21-view-scans-deferred-mount-design.md */}
-              <img
-                src={scan.blobUrl}
-                alt={scan.name}
-                className={styles["imagePreview"]}
-                loading='lazy'
-                decoding='async'
-              />
-              {/* Preview overlay icon for images - use zoom icon */}
-              <div className={styles["previewOverlay"]}>
-                <TbZoomIn className={styles["previewIcon"]} />
+        <ScanMediaPreview
+          src={media.src}
+          mediaKind={media.mediaKind}
+          alt={media.alt}
+          loading={media.loading}
+          onPreviewActivate={media.onPreviewActivate ? handleMediaPreviewActivate : undefined}
+          topLeftOverlay={
+            selection ? (
+              <div
+                role='presentation'
+                onClick={handleStopPropagation}
+                onKeyDown={handleStopPropagation}>
+                <Checkbox
+                  checked={selection.checked}
+                  nativeButton
+                  onCheckedChange={handleSelectionToggle}
+                  aria-label={selection.label}
+                  className={styles["checkbox"]}
+                />
               </div>
-            </>
-          )}
-
-          {/* Preview overlay for PDFs */}
-          {scan.mimeType === "application/pdf" && (
-            <div className={styles["previewOverlay"]}>
-              <TbMaximize className={styles["previewIcon"]} />
-            </div>
-          )}
-
-          {/* Selection checkbox */}
-          <div
-            className={styles["checkboxPosition"]}
-            role='presentation'
-            onClick={handleStopPropagation}
-            onKeyDown={handleStopPropagation}>
-            <Checkbox
-              checked={isSelected}
-              nativeButton
-              onCheckedChange={onToggleSelect}
-              className={styles["checkbox"]}
-            />
-          </div>
-
-          {/* Actions menu */}
-          <div
-            className={styles["actionsPosition"]}
-            role='presentation'
-            onClick={handleStopPropagation}
-            onKeyDown={handleStopPropagation}>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    variant='ghost'
-                    size='icon'
-                    className={styles["actionsButton"]}>
-                    <TbDotsVertical className={styles["menuIcon"]} />
-                  </Button>
-                }
-              />
-              <DropdownMenuContent align='end'>
-                <DropdownMenuItem onClick={rename.start}>
-                  <TbPencil className={styles["trashIcon"]} />
-                  {t((m) => m.pages.invoices.viewScans.scanCard.actions.rename)}
-                </DropdownMenuItem>
-                {scan.mimeType !== "application/pdf" && (
-                  <>
-                    <DropdownMenuItem
-                      onClick={() => rotation.rotateScanCallback("cw")}
-                      disabled={rotation.isRotating}>
-                      <TbRotateClockwise className={styles["trashIcon"]} />
-                      {t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateCW)}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => rotation.rotateScanCallback("ccw")}
-                      disabled={rotation.isRotating}>
-                      <TbRotate className={styles["trashIcon"]} />
-                      {t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateCCW)}
-                    </DropdownMenuItem>
-                  </>
-                )}
-                <DropdownMenuItem
-                  className={styles["deleteMenuItem"]}
-                  onClick={handleOpenDeleteDialog}>
-                  <TbTrash className={styles["trashIcon"]} />
-                  {t((m) => m.pages.invoices.viewScans.scanCard.actions.delete)}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          {/* Used by invoice badge */}
-          {isUsedByInvoice ? (
-            <div className={styles["linkedBadgePosition"]}>
-              <div className={styles["linkedBadge"]}>
-                <TbLink className={styles["linkedIcon"]} />
-                {t((m) => m.pages.invoices.viewScans.scanCard.linked)}
+            ) : undefined
+          }
+          topRightOverlay={statusBadge}
+          bottomLeftOverlay={linkedBadge}
+          bottomRightOverlay={
+            actions.length > 0 ? (
+              <div
+                role='presentation'
+                onClick={handleStopPropagation}
+                onKeyDown={handleStopPropagation}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        aria-label='Open scan actions'
+                        className={styles["actionsButton"]}>
+                        <TbDotsVertical className={styles["menuIcon"]} />
+                      </Button>
+                    }
+                  />
+                  <DropdownMenuContent align='end'>
+                    {actions.map((action) => (
+                      <ActionItem
+                        key={action.key}
+                        action={action}
+                        isLocked={isLocked}
+                      />
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-            </div>
-          ) : null}
+            ) : undefined
+          }
+          centerOverlay={centerOverlay}
+        />
 
-          {/* Rotating overlay */}
-          {rotation.isRotating ? (
-            <div className={styles["rotatingOverlay"]}>
-              <div className={styles["rotatingSpinner"]} />
-              <span className={styles["rotatingText"]}>{t((m) => m.pages.invoices.viewScans.scanCard.actions.rotating)}</span>
-            </div>
-          ) : null}
-        </div>
-
-        {/* File info */}
         <div className={styles["fileInfo"]}>
-          {rename.isEditing ? (
+          {rename?.isEditing ? (
             <motion.div
               initial={{opacity: 0, y: -5}}
               animate={{opacity: 1, y: 0}}
               className={styles["renameContainer"]}>
               <Input
-                ref={rename.inputRef}
                 value={rename.value}
-                onChange={handleNameChange}
+                onChange={handleRenameChange}
                 onKeyDown={handleRenameKeyDown}
-                onBlur={rename.cancel}
-                placeholder={t((m) => m.pages.invoices.viewScans.scanCard.renamePlaceholder)}
+                onBlur={handleRenameInputBlur}
+                placeholder={rename.placeholder}
                 className={styles["renameInput"]}
               />
               <div className={styles["renameActions"]}>
                 <Button
                   size='sm'
                   variant='ghost'
-                  onMouseDown={() => rename.commit()}
+                  aria-label='Save rename'
+                  onMouseDown={handleRenameCommit}
                   className={styles["renameSaveButton"]}>
                   <TbCheck className={styles["renameIcon"]} />
                 </Button>
                 <Button
                   size='sm'
                   variant='ghost'
-                  onMouseDown={rename.cancel}
+                  aria-label='Cancel rename'
+                  onMouseDown={handleRenameCancel}
                   className={styles["renameCancelButton"]}>
                   <TbX className={styles["renameIcon"]} />
                 </Button>
@@ -288,27 +257,47 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             <div
               className={styles["fileNameContainer"]}
               role='presentation'
-              onDoubleClick={rename.start}>
+              onDoubleClick={handleRenameStart}>
               <motion.p
                 className={styles["fileName"]}
-                title={scan.name}
-                animate={rename.justRenamed ? {scale: [1, 1.05, 1]} : {}}
-                transition={{duration: 0.3}}>
-                {scan.name}
+                title={title}>
+                {title}
               </motion.p>
-              <Button
-                size='sm'
-                variant='ghost'
-                onClick={rename.start}
-                className={styles["editButton"]}>
-                <TbPencil className={styles["editIcon"]} />
-              </Button>
+              {rename?.onStart ? (
+                <Button
+                  size='sm'
+                  variant='ghost'
+                  aria-label='Rename scan'
+                  onClick={handleRenameStart}
+                  disabled={isLocked}
+                  className={styles["editButton"]}>
+                  <TbPencil className={styles["editIcon"]} />
+                </Button>
+              ) : null}
             </div>
           )}
-          <div className={styles["fileMeta"]}>
-            <span>{formatFileSize(scan.sizeInBytes)}</span>
-            <span>{formatDate(scan.uploadedAt, {locale: "en-US", month: "short", day: "numeric", year: "numeric"})}</span>
-          </div>
+
+          {metadataItems.length > 0 ? (
+            <div className={styles["fileMeta"]}>
+              {metadataItems.map((item) => (
+                <span key={item}>{item}</span>
+              ))}
+            </div>
+          ) : null}
+
+          {progress ? (
+            <>
+              <div className={styles["progressTrack"]}>
+                <div
+                  className={styles["progressFill"]}
+                  style={{width: `${Math.max(0, Math.min(progress.value, 100))}%`}}
+                />
+              </div>
+              <p className={styles["fileSize"]}>{progress.label}</p>
+            </>
+          ) : null}
+
+          {error ? <p className={styles["fileError"]}>{error}</p> : null}
         </div>
       </CardContent>
     </Card>

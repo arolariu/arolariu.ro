@@ -5,10 +5,15 @@
  * @module app/domains/invoices/view-scans/_dialogs/CreateInvoiceDialog
  */
 
+import {formatDate, formatFileSize} from "@/lib/utils.generic";
 import {useInvoicesStore, useScansStore} from "@/stores";
-import type {CachedScan} from "@/types/scans";
 import {
   Button,
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -23,7 +28,6 @@ import {
 } from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
-import Image from "next/image";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {
@@ -32,47 +36,19 @@ import {
   TbArrowRight,
   TbCheck,
   TbFileInvoice,
-  TbFileTypePdf,
   TbLoader2,
   TbPhoto,
   TbSparkles,
   TbStack2,
   TbX,
 } from "react-icons/tb";
+import ScanCard from "../../_cards/ScanCard";
 import {useDialog} from "../../_contexts/DialogContext";
 import {createInvoiceFromScans} from "../_actions/createInvoiceFromScans";
 import styles from "./CreateInvoiceDialog.module.scss";
 
 type CreationMode = "single" | "batch";
 type CreationStep = "select" | "creating" | "complete";
-
-/** Formats file size in human-readable format */
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-/** Mini scan preview thumbnail */
-function ScanThumbnail({scan}: Readonly<{scan: CachedScan}>): React.JSX.Element {
-  return (
-    <div className={styles["thumbnail"]}>
-      {scan.mimeType === "application/pdf" ? (
-        <div className={styles["thumbnailPdfPlaceholder"]}>
-          <TbFileTypePdf className={styles["thumbnailPdfIcon"]} />
-        </div>
-      ) : (
-        <Image
-          src={scan.blobUrl}
-          alt={scan.name}
-          fill
-          className={styles["thumbnailImage"]}
-          unoptimized
-        />
-      )}
-    </div>
-  );
-}
 
 /** Process step indicator */
 function ProcessStep({
@@ -275,15 +251,34 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
             {formatFileSize(totalSize)} {t((m) => m.dialogs.invoices.createInvoiceDialog.totalSize)}
           </span>
         </div>
-        <div className={styles["scansPreviewGrid"]}>
-          {selectedScans.slice(0, 6).map((scan) => (
-            <ScanThumbnail
-              key={scan.id}
-              scan={scan}
-            />
-          ))}
-          {selectedScans.length > 6 ? <div className={styles["scansPreviewOverflow"]}>+{selectedScans.length - 6}</div> : null}
-        </div>
+        <Carousel
+          opts={{align: "start"}}
+          className={styles["scansCarousel"]}>
+          <CarouselContent>
+            {selectedScans.map((scan) => (
+              <CarouselItem key={scan.id}>
+                <ScanCard
+                  media={{
+                    src: scan.blobUrl,
+                    mediaKind: scan.mimeType === "application/pdf" ? "pdf" : "image",
+                    alt: scan.name,
+                  }}
+                  title={scan.name}
+                  metadataItems={[
+                    formatFileSize(scan.sizeInBytes),
+                    formatDate(scan.uploadedAt, {locale: "en-US", month: "short", day: "numeric", year: "numeric"}),
+                  ]}
+                />
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          {selectedScans.length > 1 ? (
+            <>
+              <CarouselPrevious className={styles["scansCarouselPrev"]} />
+              <CarouselNext className={styles["scansCarouselNext"]} />
+            </>
+          ) : null}
+        </Carousel>
       </div>
 
       {/* Mode Selection for multiple scans */}

@@ -146,8 +146,7 @@ export function useMerchants(_void?: HookInputType): HookOutputType {
     };
 
     fetchMerchantsForUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- setMerchants is a stable function
-  }, []);
+  }, [setMerchants]);
 
   // Loading is true only until hydration completes (shows stale data while fetching fresh)
   const isLoading = !hasHydrated;

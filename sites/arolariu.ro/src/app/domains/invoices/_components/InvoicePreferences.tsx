@@ -92,6 +92,56 @@ export default function InvoicePreferences(): React.JSX.Element {
     [setPreferences],
   );
 
+  /**
+   * Handles changes to the default view mode select.
+   */
+  const handleDefaultViewModeChange = useCallback(
+    (value: string): void => {
+      updatePreference("defaultViewMode", value as "table" | "grid");
+    },
+    [updatePreference],
+  );
+
+  /**
+   * Handles changes to the default sort-by select.
+   */
+  const handleDefaultSortByChange = useCallback(
+    (value: string): void => {
+      updatePreference("defaultSortBy", value);
+    },
+    [updatePreference],
+  );
+
+  /**
+   * Handles changes to the page size select.
+   */
+  const handleDefaultPageSizeChange = useCallback(
+    (value: string): void => {
+      updatePreference("defaultPageSize", Number.parseInt(value, 10));
+    },
+    [updatePreference],
+  );
+
+  /**
+   * Handles changes to the currency select.
+   */
+  const handleCurrencyChange = useCallback(
+    (value: string): void => {
+      updatePreference("currency", value);
+    },
+    [updatePreference],
+  );
+
+  /**
+   * Handles changes to the show-statistics-on-home checkbox.
+   */
+  const handleShowStatisticsChange = useCallback(
+    (checked: boolean | "indeterminate"): void => {
+      updatePreference("showStatisticsOnHome", checked === true);
+    },
+    [updatePreference],
+  );
+
   return (
     <Card className={styles["card"]}>
       <CardHeader>
@@ -112,7 +162,7 @@ export default function InvoicePreferences(): React.JSX.Element {
           </Label>
           <Select
             value={preferences.defaultViewMode}
-            onValueChange={(value) => updatePreference("defaultViewMode", value as "table" | "grid")}>
+            onValueChange={handleDefaultViewModeChange}>
             <SelectTrigger
               id='defaultViewMode'
               className={styles["select"]}>
@@ -133,7 +183,7 @@ export default function InvoicePreferences(): React.JSX.Element {
           </Label>
           <Select
             value={preferences.defaultSortBy}
-            onValueChange={(value) => updatePreference("defaultSortBy", value)}>
+            onValueChange={handleDefaultSortByChange}>
             <SelectTrigger
               id='defaultSortBy'
               className={styles["select"]}>
@@ -157,7 +207,7 @@ export default function InvoicePreferences(): React.JSX.Element {
           </Label>
           <Select
             value={preferences.defaultPageSize.toString()}
-            onValueChange={(value) => updatePreference("defaultPageSize", Number.parseInt(value, 10))}>
+            onValueChange={handleDefaultPageSizeChange}>
             <SelectTrigger
               id='defaultPageSize'
               className={styles["select"]}>
@@ -180,7 +230,7 @@ export default function InvoicePreferences(): React.JSX.Element {
           </Label>
           <Select
             value={preferences.currency}
-            onValueChange={(value) => updatePreference("currency", value)}>
+            onValueChange={handleCurrencyChange}>
             <SelectTrigger
               id='currency'
               className={styles["select"]}>
@@ -200,7 +250,7 @@ export default function InvoicePreferences(): React.JSX.Element {
             <Checkbox
               id='showStatisticsOnHome'
               checked={preferences.showStatisticsOnHome}
-              onCheckedChange={(checked) => updatePreference("showStatisticsOnHome", checked === true)}
+              onCheckedChange={handleShowStatisticsChange}
             />
             <Label
               htmlFor='showStatisticsOnHome'

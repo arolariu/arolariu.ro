@@ -3,7 +3,10 @@
  * @module sites/arolariu.ro/src/lib/utils.generic
  */
 
-import {v4, v5} from "uuid";
+import { v4, v5 } from "uuid";
+
+
+// #region Environment-Derived Constants
 
 /* v8 ignore start - Environment variables evaluated at module load time cannot be unit tested */
 
@@ -11,7 +14,7 @@ import {v4, v5} from "uuid";
  * The environment in which the site is running.
  *
  * @remarks
- * **Source**: `process.env.SITE_ENV`
+ * **Source**: `process.env.SITE_ENV` environment variable injected at build time.
  *
  * **Usage**: Used to determine feature flags, logging levels, and API endpoints.
  *
@@ -23,7 +26,7 @@ export const SITE_ENV = process.env["SITE_ENV"] ?? "";
  * The base URL of the site.
  *
  * @remarks
- * **Source**: `process.env.SITE_URL`
+ * **Source**: `process.env.SITE_URL` environment variable injected at build time.
  *
  * **Usage**: Used for generating absolute URLs for SEO, OpenGraph, and redirects.
  *
@@ -35,7 +38,7 @@ export const SITE_URL = process.env["SITE_URL"] ?? "";
  * The name of the site.
  *
  * @remarks
- * **Source**: `process.env.SITE_NAME`
+ * **Source**: `process.env.SITE_NAME` environment variable injected at build time.
  *
  * **Usage**: Used for page titles, metadata, and branding.
  *
@@ -47,7 +50,7 @@ export const SITE_NAME = process.env["SITE_NAME"] ?? "";
  * The commit SHA of the current build.
  *
  * @remarks
- * **Source**: `process.env.COMMIT_SHA`
+ * **Source**: `process.env.COMMIT_SHA` environment variable injected at build time from CI/CD pipeline.
  *
  * **Usage**: Used for Sentry releases, telemetry, and debugging version issues.
  *
@@ -59,7 +62,7 @@ export const COMMIT_SHA = process.env["COMMIT_SHA"] ?? "";
  * The timestamp of the current build.
  *
  * @remarks
- * **Source**: `process.env.TIMESTAMP`
+ * **Source**: `process.env.TIMESTAMP` environment variable injected at build time from CI/CD pipeline, typically as an ISO 8601 string.
  *
  * **Usage**: Displayed in the footer or debug info to indicate build age.
  *
@@ -69,9 +72,11 @@ export const TIMESTAMP = process.env["TIMESTAMP"] ?? "";
 
 /* v8 ignore stop */
 
-// ============================================================================
-// Sharing Constants
-// ============================================================================
+
+// #endregion
+
+
+// #region Sentinel GUIDs and GUID Validation
 
 /**
  * The maximum possible GUID value (all 9s).
@@ -199,6 +204,11 @@ export function generateGuid(seed?: string | Uint8Array): Readonly<string> {
   }
 }
 
+// #endregion
+
+
+// #region Format Conversion Utilities (dates, enums, amounts, etc.)
+
 /**
  * Configuration options for currency formatting.
  *
@@ -251,7 +261,10 @@ export function formatCurrency(possibleAmount: number, options: FormatCurrencyOp
   return value;
 }
 
-// #region Date & Number Utilities (Phase 9 — centralized formatting)
+/**
+ * Union type for values that can be safely converted to a Date.
+ */
+type DateLike = Date | string | null | undefined;
 
 /**
  * Safely converts any date-like value to a Date object.
@@ -270,7 +283,7 @@ export function formatCurrency(possibleAmount: number, options: FormatCurrencyOp
  * toSafeDate(null);                    // Date(0) — epoch
  * ```
  */
-export function toSafeDate(value: Date | string | null | undefined): Date {
+export function toSafeDate(value: DateLike): Date {
   if (value instanceof Date) return value;
   if (typeof value === "string" && value.length > 0) {
     const parsed = new Date(value);
@@ -316,7 +329,7 @@ export interface FormatDateOptions extends Partial<Intl.DateTimeFormatOptions> {
  * formatDate(new Date(), { dateStyle: "full" }); // "Thursday, October 12, 2023"
  * ```
  */
-export function formatDate(possibleDate: string | Date | null | undefined, options: FormatDateOptions): string {
+export function formatDate(possibleDate: DateLike, options: FormatDateOptions): string {
   const date: Date = toSafeDate(possibleDate);
   if (date.getTime() === 0) return "";
 
@@ -324,7 +337,7 @@ export function formatDate(possibleDate: string | Date | null | undefined, optio
   // because Intl.DateTimeFormat throws if dateStyle is mixed with individual fields.
   const hasIndividualFields = options.year ?? options.month ?? options.day ?? options.weekday ?? options.era;
   const formatOptions: Intl.DateTimeFormatOptions = {
-    ...(hasIndividualFields ? {} : {dateStyle: "short" as const}),
+    ...(hasIndividualFields ? {} : { dateStyle: "short" as const }),
     ...options,
   };
 
@@ -406,6 +419,29 @@ export function formatAmount(amount: number, locale = "en-US", decimals = 2): st
 }
 
 /**
+ * Formats a byte count as a human-readable file size.
+ *
+ * @remarks
+ * Keeps scan, upload, and document size displays consistent across client and server code.
+ *
+ * @param bytes - The number of bytes to format.
+ * @returns A formatted size using B, KB, or MB units.
+ *
+ * @example
+ * ```typescript
+ * formatFileSize(512);          // "512 B"
+ * formatFileSize(1536);         // "1.5 KB"
+ * formatFileSize(1048576);      // "1.0 MB"
+ * ```
+ */
+export function formatFileSize(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) return "0 B";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${formatAmount(bytes / 1024, "en-US", 1)} KB`;
+  return `${formatAmount(bytes / (1024 * 1024), "en-US", 1)} MB`;
+}
+
+/**
  * Formats a date with both date and time components.
  *
  * @remarks
@@ -426,7 +462,7 @@ export function formatAmount(amount: number, locale = "en-US", decimals = 2): st
  * // "15.01.2024, 10:30"
  * ```
  */
-export function formatDateTime(date: Date | string | null | undefined, locale = "en-US", options?: Intl.DateTimeFormatOptions): string {
+export function formatDateTime(date: DateLike, locale = "en-US", options?: Intl.DateTimeFormatOptions): string {
   const dateObj = toSafeDate(date);
   if (dateObj.getTime() === 0) return "";
 
@@ -437,6 +473,14 @@ export function formatDateTime(date: Date | string | null | undefined, locale = 
   };
 
   return new Intl.DateTimeFormat(locale, formatOptions).format(dateObj);
+}
+
+/**
+ * Returns a pluralized relative-time segment: `"N unit(s) suffix"`.
+ * Extracted to keep `formatRelativeTime` below the cognitive-complexity threshold.
+ */
+function formatUnit(count: number, unit: string, suffix: string): string {
+  return `${count} ${unit}${count === 1 ? "" : "s"} ${suffix}`;
 }
 
 /**
@@ -463,7 +507,7 @@ export function formatDateTime(date: Date | string | null | undefined, locale = 
  * formatRelativeTime("2024-01-01T00:00:00Z");              // "6 months ago"
  * ```
  */
-export function formatRelativeTime(date: Date | string | null | undefined): string {
+export function formatRelativeTime(date: DateLike): string {
   const dateObj = toSafeDate(date);
   if (dateObj.getTime() === 0) return "";
 
@@ -480,11 +524,205 @@ export function formatRelativeTime(date: Date | string | null | undefined): stri
   const suffix = isFuture ? "from now" : "ago";
 
   if (diffSecs < 60) return isFuture ? "in less than a minute" : "just now";
-  if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? "" : "s"} ${suffix}`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? "" : "s"} ${suffix}`;
-  if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? "" : "s"} ${suffix}`;
-  if (diffWeeks < 5) return `${diffWeeks} week${diffWeeks === 1 ? "" : "s"} ${suffix}`;
-  return `${diffMonths} month${diffMonths === 1 ? "" : "s"} ${suffix}`;
+  if (diffMins < 60) return formatUnit(diffMins, "minute", suffix);
+  if (diffHours < 24) return formatUnit(diffHours, "hour", suffix);
+  if (diffDays < 7) return formatUnit(diffDays, "day", suffix);
+  if (diffWeeks < 5) return formatUnit(diffWeeks, "week", suffix);
+  return formatUnit(diffMonths, "month", suffix);
+}
+
+// #endregion
+
+
+// #region MIME Type and File Extension Utilities
+
+/**
+ * Helper function to check if a value exists in a collection (array or set).
+ *
+ * @param collection - The collection to search in (array or set).
+ * @param value - The value to check for.
+ * @returns True if the value exists in the collection, false otherwise.
+ */
+function containsString(collection: ReadonlySet<string> | readonly string[], value: string): boolean {
+  if ("has" in collection) {
+    return collection.has(value);
+  }
+
+  return collection.includes(value);
+}
+
+/**
+ * Normalizes a MIME type string by trimming whitespace and converting to lowercase.
+ *
+ * @remarks
+ * **Behavior:**
+ * - Trims leading and trailing whitespace
+ * - Converts to lowercase
+ * - Returns null for empty or whitespace-only strings
+ *
+ * @param mimeType - The MIME type string to normalize.
+ * @returns Normalized MIME type string, or null if invalid.
+ *
+ * @example
+ * ```typescript
+ * normalizeMimeType(" IMAGE/JPEG "); // "image/jpeg"
+ * normalizeMimeType("   ");           // null
+ * ```
+ */
+export function normalizeMimeType(mimeType: string): string | null {
+  const trimmed = mimeType.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+  return trimmed.toLowerCase();
+}
+
+/**
+ * Normalizes a MIME type and validates it against supported types with alias resolution.
+ *
+ * @remarks
+ * **Behavior:**
+ * - Normalizes the MIME type (trim + lowercase)
+ * - Applies alias mapping if the normalized type is in the aliases
+ * - Returns the canonical MIME type only if it exists in the supported collection
+ * - Returns null if the MIME type is invalid or not supported
+ *
+ * @param mimeType - The MIME type string to normalize and validate.
+ * @param aliases - Map of MIME type aliases to canonical types.
+ * @param supportedMimeTypes - Collection of supported MIME types (array or set).
+ * @returns Canonical MIME type if supported, null otherwise.
+ *
+ * @example
+ * ```typescript
+ * normalizeMimeTypeWithAliases(" image/JPG ", {"image/jpg": "image/jpeg"}, ["image/jpeg"]);
+ * // "image/jpeg"
+ *
+ * normalizeMimeTypeWithAliases("image/gif", {}, ["image/jpeg"]);
+ * // null (not in supported list)
+ * ```
+ */
+export function normalizeMimeTypeWithAliases(
+  mimeType: string,
+  aliases: Readonly<Record<string, string>>,
+  supportedMimeTypes: ReadonlySet<string> | readonly string[],
+): string | null {
+  const normalized = normalizeMimeType(mimeType);
+  if (!normalized) {
+    return null;
+  }
+
+  // Apply alias mapping
+  const canonical = aliases[normalized] ?? normalized;
+
+  // Check if canonical type is in supported collection
+  if (!containsString(supportedMimeTypes, canonical)) {
+    return null;
+  }
+
+  return canonical;
+}
+
+/**
+ * Extracts the file extension from a filename.
+ *
+ * @remarks
+ * **Behavior:**
+ * - Extracts extension after the last dot
+ * - Converts to lowercase
+ * - Returns null if no extension or trailing dot
+ *
+ * @param fileName - The filename to extract extension from.
+ * @returns Lowercase file extension without dot, or null if no extension.
+ *
+ * @example
+ * ```typescript
+ * extractFileExtension("receipt.final.JPG"); // "jpg"
+ * extractFileExtension("receipt");           // null
+ * extractFileExtension("receipt.");          // null
+ * ```
+ */
+export function extractFileExtension(fileName: string): string | null {
+  const lastDotIndex = fileName.lastIndexOf(".");
+  if (lastDotIndex === -1 || lastDotIndex === fileName.length - 1) {
+    return null;
+  }
+  return fileName.slice(lastDotIndex + 1).toLowerCase();
+}
+
+/**
+ * Derives a file extension from a filename, with fallback to "bin".
+ *
+ * @remarks
+ * **Behavior:**
+ * - Uses `extractFileExtension` internally
+ * - Returns "bin" if no extension is found
+ *
+ * @param fileName - The filename to derive extension from.
+ * @returns Lowercase file extension without dot, or "bin" as fallback.
+ *
+ * @example
+ * ```typescript
+ * deriveBlobExtension("receipt");     // "bin"
+ * deriveBlobExtension("scan.TIFF");   // "tiff"
+ * ```
+ */
+export function deriveBlobExtension(fileName: string): string {
+  return extractFileExtension(fileName) ?? "bin";
+}
+
+/**
+ * Gets the canonical MIME type for a file extension from a mapping.
+ *
+ * @remarks
+ * **Behavior:**
+ * - Strips leading dot from extension
+ * - Converts to lowercase
+ * - Looks up in provided mapping
+ * - Returns null if not found
+ *
+ * @param extension - The file extension (with or without leading dot).
+ * @param extensionToMimeType - Map of extensions to MIME types.
+ * @returns Canonical MIME type if found, null otherwise.
+ *
+ * @example
+ * ```typescript
+ * getCanonicalMimeTypeForExtension(".JPG", {jpg: "image/jpeg"}); // "image/jpeg"
+ * getCanonicalMimeTypeForExtension("txt", {jpg: "image/jpeg"});  // null
+ * ```
+ */
+export function getCanonicalMimeTypeForExtension(
+  extension: string,
+  extensionToMimeType: Readonly<Record<string, string>>,
+): string | null {
+  const normalized = extension.startsWith(".") ? extension.slice(1).toLowerCase() : extension.toLowerCase();
+  return extensionToMimeType[normalized] ?? null;
+}
+
+/**
+ * Checks if a file extension exists in a collection of supported extensions.
+ *
+ * @remarks
+ * **Behavior:**
+ * - Strips leading dot from extension
+ * - Converts to lowercase
+ * - Checks if exists in provided collection (array or set)
+ *
+ * @param extension - The file extension to check (with or without leading dot).
+ * @param supportedExtensions - Collection of supported extensions (array or set).
+ * @returns True if extension is in the collection, false otherwise.
+ *
+ * @example
+ * ```typescript
+ * isExtensionInSet(".PDF", ["pdf"]); // true
+ * isExtensionInSet("gif", ["pdf"]);  // false
+ * ```
+ */
+export function isExtensionInSet(
+  extension: string,
+  supportedExtensions: ReadonlySet<string> | readonly string[],
+): boolean {
+  const normalized = extension.startsWith(".") ? extension.slice(1).toLowerCase() : extension.toLowerCase();
+  return containsString(supportedExtensions, normalized);
 }
 
 // #endregion

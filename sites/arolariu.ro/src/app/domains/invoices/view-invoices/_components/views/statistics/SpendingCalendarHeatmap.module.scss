@@ -7,12 +7,16 @@
 // LAYOUT
 // ===========================================
 .card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
   background: color('card');
   border: 1px solid color('border');
   border-radius: space(2);
 }
 
 .cardHeader {
+  flex-shrink: 0;
   padding: space(6);
   padding-bottom: space(4);
 }
@@ -38,7 +42,44 @@
 }
 
 .cardContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   padding: 0 space(6) space(6);
+}
+
+// ===========================================
+// YEAR GRID (12 months)
+// ===========================================
+.yearGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: space(4);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.monthCard {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+  padding: space(3);
+  border: 1px solid color('border');
+  border-radius: space(2);
+}
+
+.monthTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+  text-align: center;
 }
 
 // ===========================================
@@ -92,58 +133,69 @@
 // ===========================================
 .calendarContainer {
   display: flex;
-  gap: space(2);
-  overflow-x: auto;
-  padding: space(2) 0;
-}
-
-.dayLabelsColumn {
-  display: flex;
   flex-direction: column;
   gap: space(1);
-  padding-right: space(2);
 }
 
-.dayLabelEmpty {
-  height: 12px;
-  margin-bottom: space(1);
-}
-
-.dayLabel {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
-  height: 12px;
+.weekdayHeader {
   display: flex;
-  align-items: center;
-  margin-bottom: space(1);
+  gap: space(1);
+}
+
+.weekdayLabel {
+  flex: 1;
+  min-width: 0;
+  font-size: font-size('xs');
+  font-weight: font-weight('medium');
+  color: color('muted-foreground');
+  text-align: center;
 }
 
 .weeksContainer {
   display: flex;
+  flex-direction: column;
   gap: space(1);
 }
 
 .weekRow {
   display: flex;
-  flex-direction: column;
   gap: space(1);
+  min-width: 0;
 }
 
 // ===========================================
 // DAY CELLS
 // ===========================================
 .dayCell {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
+  flex: 1;
+  // Square day cells, each large enough to show its date number.
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: space(1);
   cursor: pointer;
   transition: transform 0.2s ease, opacity 0.2s ease;
 
   &:hover:not(.dayCellEmpty) {
-    transform: scale(1.2);
+    transform: scale(1.1);
     outline: 2px solid color('ring');
-    outline-offset: 2px;
+    outline-offset: 1px;
   }
+}
+
+// Neutralize the TooltipTrigger's `max-width: max-content` (which collapses the
+// empty cell to 0) with a more specific selector so cells can stretch to fill.
+.weekRow .dayCell {
+  max-width: none;
+}
+
+.dayNumber {
+  font-size: 0.625rem;
+  font-weight: font-weight('medium');
+  line-height: 1;
+  color: color('foreground');
 }
 
 .dayCellEmpty {
@@ -219,6 +271,7 @@
 // LEGEND
 // ===========================================
 .legend {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;

@@ -60,5 +60,5 @@ export function useProductRemove(invoice: Invoice): Readonly<HookOutputType> {
     [invoice.id, invoice.items, removeProductClientSide],
   );
 
-  return {isRemoving, removeProductCallback};
+  return {isRemoving, removeProductCallback} as const;
 }

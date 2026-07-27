@@ -16,10 +16,30 @@
  * Tracked as a follow-up to the data-layer consolidation plan.
  */
 
-import {type CachedScan, ScanStatus} from "@/types/scans";
+import {type CachedScan, type ScanMetadata, ScanStatus} from "@/types/scans";
 import {create} from "zustand";
 import {devtools, persist} from "zustand/middleware";
 import {createIndexedDBStorage} from "./storage/indexedDBStorage";
+
+/**
+ * Returns a shallow copy of the given {@link ScanMetadata} with the specified keys removed.
+ *
+ * @remarks
+ * Used by `archiveScans` and `markScansAsUsedByInvoice` to strip stale lineage fields
+ * (e.g. `attachedAt`, `detachedFrom`) before writing the new lifecycle state, preventing
+ * stale attachment or detachment data from leaking into the updated metadata record.
+ *
+ * Kept at module scope per `unicorn/consistent-function-scoping`.
+ *
+ * @param meta - Source metadata object to filter.
+ * @param keys - Array of {@link ScanMetadata} keys to omit from the result.
+ * @returns A new {@link ScanMetadata}-compatible object without the specified keys.
+ */
+function omitMetadataKeys(meta: ScanMetadata, keys: ReadonlyArray<keyof ScanMetadata>): ScanMetadata {
+  return Object.fromEntries(
+    (Object.entries(meta) as Array<[keyof ScanMetadata, unknown]>).filter(([k]) => !keys.includes(k)),
+  ) as ScanMetadata;
+}
 
 /**
  * Scan store persisted state type.
@@ -286,7 +306,31 @@ const createScansSlice = (set: (partial: Partial<ScansStore> | ((state: ScansSto
     set((state) => {
       const idSet = new Set(scanIds);
       return {
-        scans: state.scans.map((s) => (idSet.has(s.id) ? {...s, status: ScanStatus.ARCHIVED} : s)),
+        scans: state.scans.map((s) =>
+          idSet.has(s.id)
+            ? {
+                ...s,
+                metadata: (() => {
+                  const base = omitMetadataKeys(s.metadata, [
+                    "attachedAt",
+                    "attachedBy",
+                    "attachedTo",
+                    "detachedAt",
+                    "detachedBy",
+                    "detachedFrom",
+                  ]);
+
+                  return {
+                    ...base,
+                    status: ScanStatus.ARCHIVED,
+                    archivedAt: new Date(),
+                    archivedBy: s.userIdentifier,
+                  };
+                })(),
+                status: ScanStatus.ARCHIVED,
+              }
+            : s,
+        ),
         selectedScans: state.selectedScans.filter((s) => !idSet.has(s.id)),
       };
     }),
@@ -320,12 +364,24 @@ const createScansSlice = (set: (partial: Partial<ScansStore> | ((state: ScansSto
           idSet.has(s.id)
             ? {
                 ...s,
-                metadata: {
-                  ...s.metadata,
-                  usedByInvoice: "true",
-                  invoiceId,
-                  invoiceCreatedAt: timestamp,
-                },
+                metadata: (() => {
+                  const base = omitMetadataKeys(s.metadata, [
+                    "detachedAt",
+                    "detachedBy",
+                    "detachedFrom",
+                    "archivedAt",
+                    "archivedBy",
+                  ]);
+
+                  return {
+                    ...base,
+                    status: ScanStatus.ATTACHED,
+                    attachedAt: new Date(timestamp),
+                    attachedBy: s.userIdentifier,
+                    attachedTo: invoiceId,
+                  };
+                })(),
+                status: ScanStatus.ATTACHED,
               }
             : s,
         ),

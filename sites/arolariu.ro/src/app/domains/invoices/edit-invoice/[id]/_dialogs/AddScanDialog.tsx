@@ -19,7 +19,7 @@ import {
 } from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
-import {useCallback, useState} from "react";
+import {useCallback, useMemo, useState} from "react";
 import {useDropzone} from "react-dropzone";
 import {TbCloudUpload, TbFile, TbLoader2, TbUpload, TbX} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
@@ -39,14 +39,14 @@ function getDropzoneClassName(isAdding: boolean, isDragReject: boolean, isDragAc
  *
  * @remarks
  * **Workflow**:
- * 1. User selects an image file (JPEG, PNG, WebP, HEIC, or PDF)
+ * 1. User selects an image or PDF file (JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, or PDF)
  * 2. File is converted to base64 and uploaded to Azure Blob Storage
  * 3. Blob URL is attached to the invoice via API
  * 4. Page refreshes to show the new scan
  *
  * **File Validation**:
  * - Maximum size: 10MB
- * - Supported formats: JPEG, PNG, WebP, HEIC, PDF
+ * - Supported formats: JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF
  *
  * @returns Dialog component for adding invoice scans
  *
@@ -68,12 +68,33 @@ export default function AddScanDialog(): React.JSX.Element {
   const [scanType, setScanType] = useState<InvoiceScanType>(InvoiceScanType.JPEG);
   const {isAdding, addScanCallback} = useScanAdd(invoice?.id ?? "");
 
+  // Maps each scan-type value to its localized label so the Select trigger
+  // renders the human-readable label instead of the raw enum number.
+  const scanTypeItems = useMemo<Record<string, string>>(
+    () => ({
+      [String(InvoiceScanType.JPEG)]: t((m) => m.dialogs.invoices.addScanDialog.scanType.jpeg),
+      [String(InvoiceScanType.PNG)]: t((m) => m.dialogs.invoices.addScanDialog.scanType.png),
+      [String(InvoiceScanType.PDF)]: t((m) => m.dialogs.invoices.addScanDialog.scanType.pdf),
+      [String(InvoiceScanType.BMP)]: t((m) => m.dialogs.invoices.addScanDialog.scanType.bmp),
+      [String(InvoiceScanType.TIFF)]: t((m) => m.dialogs.invoices.addScanDialog.scanType.tiff),
+      [String(InvoiceScanType.HEIF)]: t((m) => m.dialogs.invoices.addScanDialog.scanType.heif),
+      [String(InvoiceScanType.HEIC)]: t((m) => m.dialogs.invoices.addScanDialog.scanType.heic),
+      [String(InvoiceScanType.OTHER)]: t((m) => m.dialogs.invoices.addScanDialog.scanType.other),
+    }),
+    [t],
+  );
+
   const detectScanType = useCallback((fileName: string): InvoiceScanType => {
     const extension = fileName.split(".").pop()?.toLowerCase();
     const typeMap: Record<string, InvoiceScanType> = {
       jpg: InvoiceScanType.JPEG,
       jpeg: InvoiceScanType.JPEG,
       png: InvoiceScanType.PNG,
+      bmp: InvoiceScanType.BMP,
+      tif: InvoiceScanType.TIFF,
+      tiff: InvoiceScanType.TIFF,
+      heif: InvoiceScanType.HEIF,
+      heic: InvoiceScanType.HEIC,
       pdf: InvoiceScanType.PDF,
     };
     return extension && typeMap[extension] ? typeMap[extension] : InvoiceScanType.OTHER;
@@ -107,6 +128,10 @@ export default function AddScanDialog(): React.JSX.Element {
     accept: {
       "image/jpeg": [".jpg", ".jpeg"],
       "image/png": [".png"],
+      "image/bmp": [".bmp"],
+      "image/tiff": [".tif", ".tiff"],
+      "image/heif": [".heif"],
+      "image/heic": [".heic"],
       "application/pdf": [".pdf"],
     },
     maxFiles: 1,
@@ -210,6 +235,7 @@ export default function AddScanDialog(): React.JSX.Element {
               <Select
                 value={String(scanType)}
                 onValueChange={handleScanTypeChange}
+                items={scanTypeItems}
                 disabled={isAdding}>
                 <SelectTrigger id='scan-type'>
                   <SelectValue placeholder={t((m) => m.dialogs.invoices.addScanDialog.scanType.placeholder)} />
@@ -218,6 +244,10 @@ export default function AddScanDialog(): React.JSX.Element {
                   <SelectItem value={String(InvoiceScanType.JPEG)}>{t((m) => m.dialogs.invoices.addScanDialog.scanType.jpeg)}</SelectItem>
                   <SelectItem value={String(InvoiceScanType.PNG)}>{t((m) => m.dialogs.invoices.addScanDialog.scanType.png)}</SelectItem>
                   <SelectItem value={String(InvoiceScanType.PDF)}>{t((m) => m.dialogs.invoices.addScanDialog.scanType.pdf)}</SelectItem>
+                  <SelectItem value={String(InvoiceScanType.BMP)}>{t((m) => m.dialogs.invoices.addScanDialog.scanType.bmp)}</SelectItem>
+                  <SelectItem value={String(InvoiceScanType.TIFF)}>{t((m) => m.dialogs.invoices.addScanDialog.scanType.tiff)}</SelectItem>
+                  <SelectItem value={String(InvoiceScanType.HEIF)}>{t((m) => m.dialogs.invoices.addScanDialog.scanType.heif)}</SelectItem>
+                  <SelectItem value={String(InvoiceScanType.HEIC)}>{t((m) => m.dialogs.invoices.addScanDialog.scanType.heic)}</SelectItem>
                   <SelectItem value={String(InvoiceScanType.OTHER)}>{t((m) => m.dialogs.invoices.addScanDialog.scanType.other)}</SelectItem>
                 </SelectContent>
               </Select>

@@ -69,6 +69,88 @@ describe("extractBase64FromBlob", () => {
 
     expect(result).toBe(mockBase64);
   });
+
+  it("rejects when FileReader emits an error with details", async () => {
+    const originalFileReader = globalThis.FileReader;
+
+    class FailingFileReader {
+      public readonly error = new Error("read failed");
+      private errorListener: (() => void) | null = null;
+
+      public addEventListener(type: "load" | "error", listener: () => void): void {
+        if (type === "error") {
+          this.errorListener = listener;
+        }
+      }
+
+      public readAsDataURL(): void {
+        this.errorListener?.();
+      }
+    }
+
+    vi.stubGlobal("FileReader", FailingFileReader);
+
+    try {
+      await expect(extractBase64FromBlob(new Blob(["hello"], {type: "text/plain"}))).rejects.toThrow("read failed");
+    } finally {
+      vi.stubGlobal("FileReader", originalFileReader);
+    }
+  });
+
+  it("rejects with a fallback error when FileReader emits an error without details", async () => {
+    const originalFileReader = globalThis.FileReader;
+
+    class FailingFileReaderWithoutError {
+      public readonly error = null;
+      private errorListener: (() => void) | null = null;
+
+      public addEventListener(type: "load" | "error", listener: () => void): void {
+        if (type === "error") {
+          this.errorListener = listener;
+        }
+      }
+
+      public readAsDataURL(): void {
+        this.errorListener?.();
+      }
+    }
+
+    vi.stubGlobal("FileReader", FailingFileReaderWithoutError);
+
+    try {
+      await expect(extractBase64FromBlob(new Blob(["hello"], {type: "text/plain"}))).rejects.toThrow("Unable to read file");
+    } finally {
+      vi.stubGlobal("FileReader", originalFileReader);
+    }
+  });
+
+  it("rejects when FileReader load result is not a string", async () => {
+    const originalFileReader = globalThis.FileReader;
+
+    class NonStringFileReader {
+      public readonly result = new ArrayBuffer(0);
+      public readonly error = null;
+      private loadListener: (() => void) | null = null;
+
+      public addEventListener(type: "load" | "error", listener: () => void): void {
+        if (type === "load") {
+          this.loadListener = listener;
+        }
+      }
+
+      public readAsDataURL(): void {
+        this.loadListener?.();
+      }
+    }
+
+    vi.stubGlobal("FileReader", NonStringFileReader);
+
+    try {
+      await expect(extractBase64FromBlob(new Blob(["hello"], {type: "text/plain"}))).rejects.toThrow("Unable to read blob as base64");
+    } finally {
+      vi.stubGlobal("FileReader", originalFileReader);
+    }
+  });
 });
 
 describe("isBrowserStorageAvailable", () => {

@@ -22,11 +22,13 @@
  */
 
 import {useEditInvoiceContext} from "@/app/domains/invoices/edit-invoice/[id]/_context/EditInvoiceContext";
+import {formatRelativeTime} from "@/lib/utils.generic";
 import {InvoiceCategory} from "@/types/invoices";
 import {Badge} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useMemo} from "react";
 import {TbCalendar, TbCheck, TbCircleDot, TbClock, TbFileText, TbTag, TbWallet} from "react-icons/tb";
+import {getInvoiceCategoryLabel} from "../../../_utils/labelUtilities";
 import styles from "./ChangeHistory.module.scss";
 
 /**
@@ -47,38 +49,15 @@ interface ChangeHistoryItem {
   readonly icon: React.ReactNode;
 }
 
-/**
- * Formats a timestamp as relative time (e.g., "Just now", "2 minutes ago").
- */
-function formatRelativeTime(date: Date): string {
-  const now = Date.now();
-  const diff = now - date.getTime();
-  const seconds = Math.floor(diff / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-
-  if (seconds < 10) return "Just now";
-  if (seconds < 60) return `${seconds}s ago`;
-  if (minutes < 60) return `${minutes}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return `${days}d ago`;
-}
-
-/**
- * Gets the display name for an invoice category.
- */
-function getCategoryName(category: InvoiceCategory): string {
-  const categoryNames: Partial<Record<InvoiceCategory, string>> = {
-    [InvoiceCategory.NOT_DEFINED]: "Uncategorized",
-    [InvoiceCategory.GROCERY]: "Grocery",
+const CHANGE_HISTORY_CATEGORY_LABEL_OPTIONS = {
+  labels: {
     [InvoiceCategory.FAST_FOOD]: "Dining",
     [InvoiceCategory.HOME_CLEANING]: "Home",
     [InvoiceCategory.CAR_AUTO]: "Auto",
-    [InvoiceCategory.OTHER]: "Other",
-  };
-  return categoryNames[category] ?? "Unknown";
-}
+  },
+  notDefinedLabel: "Uncategorized",
+  unknownLabel: "Unknown",
+} as const;
 
 /**
  * Change history timeline component showing invoice modifications.
@@ -114,8 +93,8 @@ export default function ChangeHistory(): React.JSX.Element {
     }
 
     if (pendingChanges.category) {
-      const oldCategory = getCategoryName(invoice.category);
-      const newCategory = getCategoryName(pendingChanges.category);
+      const oldCategory = getInvoiceCategoryLabel(invoice.category, CHANGE_HISTORY_CATEGORY_LABEL_OPTIONS);
+      const newCategory = getInvoiceCategoryLabel(pendingChanges.category, CHANGE_HISTORY_CATEGORY_LABEL_OPTIONS);
       items.push({
         id: "pending-category",
         type: "pending",

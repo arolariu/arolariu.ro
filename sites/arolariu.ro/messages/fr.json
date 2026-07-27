@@ -441,10 +441,10 @@
           "visitReference": "Visiter la référence"
         },
         "complexity": {
-          "easy": "Facile",
-          "hard": "Difficile",
-          "normal": "Normal",
-          "unknown": "Inconnu"
+          "easy": "Complexité facile",
+          "hard": "Complexité difficile",
+          "normal": "Complexité normale",
+          "unknown": "Complexité inconnue"
         },
         "dropdown": {
           "delete": "Supprimer",
@@ -830,16 +830,20 @@
         "dropzone": {
           "dragAndDrop": "Glissez-déposez un fichier ici",
           "dropHere": "Déposez le fichier ici...",
-          "formats": "JPEG, PNG, PDF (max 10 Mo)",
+          "formats": "JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF (max 10 Mo)",
           "orClickBrowse": "ou cliquez pour parcourir"
         },
         "scanType": {
+          "bmp": "Image BMP",
+          "heic": "Image HEIC",
+          "heif": "Image HEIF",
           "jpeg": "Image JPEG",
           "label": "Type de scan",
           "other": "Autre",
           "pdf": "Document PDF",
           "placeholder": "Sélectionnez le type de scan",
-          "png": "Image PNG"
+          "png": "Image PNG",
+          "tiff": "Image TIFF"
         },
         "title": "Ajouter un nouveau scan",
         "toasts": {
@@ -2943,7 +2947,8 @@
         },
         "errors": {
           "tooLarge": "Fichier trop volumineux : {name} (max 10 Mo)",
-          "unsupportedType": "Type de fichier non pris en charge : {type}"
+          "unsupportedType": "Type de fichier non pris en charge : {type}",
+          "unsupportedExtension": "Extension de fichier non prise en charge : {name}"
         },
         "header": {
           "description": "Téléchargez des images de reçus ou des PDF. Créez des factures à partir de ceux-ci plus tard.",
@@ -2983,7 +2988,7 @@
           "formats": {
             "documentExtensions": ".pdf",
             "documents": "Documents",
-            "imageExtensions": ".jpg, .jpeg, .png",
+            "imageExtensions": ".jpg, .jpeg, .png, .bmp, .tif, .tiff, .heif, .heic",
             "images": "Images",
             "maxSize": "Taille maximale du fichier : 10 Mo par fichier",
             "title": "Formats Pris en Charge"
@@ -3032,13 +3037,13 @@
           "compact": {
             "dropActive": "Déposez les fichiers pour les ajouter",
             "dropInactive": "Glissez des fichiers ici ou cliquez pour parcourir",
-            "subtitle": "JPG, PNG, PDF jusqu'à 10 Mo"
+            "subtitle": "JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF jusqu'à 10 Mo"
           },
           "empty": {
             "chooseFiles": "Choisir des fichiers",
             "dropActive": "Déposez les fichiers pour les téléverser",
             "dropInactive": "Cliquez ou glissez des fichiers pour les téléverser",
-            "formats": "Formats pris en charge : JPG, PNG, PDF (10 Mo max chacun)",
+            "formats": "Formats pris en charge : JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF (10 Mo max chacun)",
             "note": "Vous pouvez sélectionner plusieurs fichiers.",
             "pasteHint": "Astuce : vous pouvez aussi coller une image depuis le presse-papiers (Ctrl+V).",
             "title": "Glissez-déposez vos fichiers ici"
@@ -3046,7 +3051,17 @@
           "tooltips": {
             "clearAll": "Supprimer tous les téléversements en attente",
             "uploadScans": "Démarrer le téléversement de tous les scans en attente"
-          }
+          },
+          "dragCount": "{count, plural, one {# fichier} other {# fichiers}}"
+        },
+        "toast": {
+          "allFilesCleared": "Tous les fichiers ont été effacés",
+          "filesAdded": "{count, plural, one {# fichier ajouté à la file d'attente} other {# fichiers ajoutés à la file d'attente}}",
+          "noFilesToUpload": "Aucun fichier à téléverser",
+          "rotateFailed": "Échec de la rotation du téléversement",
+          "rotateUnavailable": "Impossible de faire pivoter ce téléversement car le fichier d'origine n'est pas disponible",
+          "uploadFailed": "{count, plural, one {Échec du téléversement de # scan} other {Échec du téléversement de # scans}}",
+          "uploadSucceeded": "{count, plural, one {# scan téléversé} other {# scans téléversés}}"
         }
       },
       "viewInvoice": {
@@ -3218,11 +3233,6 @@
             "possibleRecipes": "Recettes possibles"
           }
         },
-        "invoiceTimeline": {
-          "eventCount": "{count, plural, one {# événement} other {# événements}}",
-          "subtitle": "Historique complet des actions et modifications",
-          "title": "Chronologie de la facture"
-        },
         "itemAnalytics": {
           "columns": {
             "category": "Catégorie",
@@ -3350,23 +3360,6 @@
             "andMore": "et {count} de plus…",
             "currentInvoice": "Facture actuelle"
           }
-        },
-        "timelineSharedWithList": {
-          "actions": {
-            "manageSharing": "Gérer le partage",
-            "sendEmail": "Envoyer un e-mail"
-          },
-          "aria": {
-            "sendEmail": "Envoyer un e-mail à {user}"
-          },
-          "header": {
-            "publicBadge": "Public",
-            "title": "Partagée avec"
-          },
-          "publicAccess": {
-            "description": "Cette facture est accessible publiquement. Toute personne disposant du lien peut la voir, y compris les invités sans compte.",
-            "title": "Accès public activé"
-          }
         }
       },
       "viewInvoices": {
@@ -3430,7 +3423,8 @@
           "itemCount": "{count, plural, one {# article} other {# articles}}",
           "tooltips": {
             "viewDetails": "Voir les détails"
-          }
+          },
+          "unknownMerchant": "Commerçant inconnu"
         },
         "invoicesHeader": {
           "actions": {
@@ -3611,7 +3605,8 @@
           "preview": "Aperçu du scan",
           "previewTitle": "Aperçu du scan",
           "rename": "Renommer le scan",
-          "renamePlaceholder": "Entrez le nouveau nom"
+          "renamePlaceholder": "Entrez le nouveau nom",
+          "select": "Sélectionner {name}"
         },
         "sidebar": {
           "howTo": {

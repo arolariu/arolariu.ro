@@ -177,6 +177,7 @@ export default function FilterBar({
   return (
     <div className={styles["container"]}>
       <div className={styles["topBar"]}>
+        {/* Search input with icon */}
         <div className={styles["searchWrapper"]}>
           <TbSearch className={styles["searchIcon"]} />
           <Input
@@ -187,6 +188,7 @@ export default function FilterBar({
           />
         </div>
 
+        {/* Filter sheet trigger for mobile view OR Filter button for desktop view */}
         {isMobile ? (
           <Sheet
             open={isFilterOpen}
@@ -261,6 +263,7 @@ export default function FilterBar({
           </Button>
         )}
 
+        {/* Clear filters button (visible on desktop) */}
         {activeFilterCount > 0 && !isMobile && (
           <Button
             variant='ghost'
@@ -272,6 +275,7 @@ export default function FilterBar({
           </Button>
         )}
 
+        {/* View mode toggle */}
         <div className={styles["viewToggle"]}>
           <TooltipProvider>
             <Tooltip>

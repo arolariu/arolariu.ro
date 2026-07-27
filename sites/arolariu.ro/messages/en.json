@@ -441,10 +441,10 @@
           "visitReference": "Visit Reference"
         },
         "complexity": {
-          "easy": "Easy",
-          "hard": "Hard",
-          "normal": "Normal",
-          "unknown": "Unknown"
+          "easy": "Easy Complexity",
+          "hard": "Hard Complexity",
+          "normal": "Normal Complexity",
+          "unknown": "Unknown Complexity"
         },
         "dropdown": {
           "delete": "Delete",
@@ -830,16 +830,20 @@
         "dropzone": {
           "dragAndDrop": "Drag & drop a file here",
           "dropHere": "Drop the file here...",
-          "formats": "JPEG, PNG, PDF (max 10MB)",
+          "formats": "JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF (max 10MB)",
           "orClickBrowse": "or click to browse"
         },
         "scanType": {
+          "bmp": "BMP image",
+          "heic": "HEIC image",
+          "heif": "HEIF image",
           "jpeg": "JPEG image",
           "label": "Scan type",
           "other": "Other",
           "pdf": "PDF document",
           "placeholder": "Select scan type",
-          "png": "PNG image"
+          "png": "PNG image",
+          "tiff": "TIFF image"
         },
         "title": "Add new scan",
         "toasts": {
@@ -2943,6 +2947,7 @@
         },
         "errors": {
           "tooLarge": "File too large: {name} (max 10MB)",
+          "unsupportedExtension": "Unsupported file extension: {name}",
           "unsupportedType": "Unsupported file type: {type}"
         },
         "header": {
@@ -2983,7 +2988,7 @@
           "formats": {
             "documentExtensions": ".pdf",
             "documents": "Documents",
-            "imageExtensions": ".jpg, .jpeg, .png",
+            "imageExtensions": ".jpg, .jpeg, .png, .bmp, .tif, .tiff, .heif, .heic",
             "images": "Images",
             "maxSize": "Maximum file size: 10MB per file",
             "title": "Supported Formats"
@@ -3015,6 +3020,15 @@
         },
         "subtitle": "Upload receipt images or PDFs. Create invoices from them later.",
         "title": "Upload Scans",
+        "toast": {
+          "allFilesCleared": "All files cleared",
+          "filesAdded": "{count, plural, one {Added # file to the upload queue} other {Added # files to the upload queue}}",
+          "noFilesToUpload": "No files to upload",
+          "rotateFailed": "Failed to rotate upload",
+          "rotateUnavailable": "Cannot rotate this upload because the original file is unavailable",
+          "uploadFailed": "{count, plural, one {Failed to upload # scan} other {Failed to upload # scans}}",
+          "uploadSucceeded": "{count, plural, one {Uploaded # scan} other {Uploaded # scans}}"
+        },
         "upload": {
           "browse": "Browse files",
           "dropzone": "Drag and drop your receipt images or PDFs here",
@@ -3032,13 +3046,14 @@
           "compact": {
             "dropActive": "Drop files to add them",
             "dropInactive": "Drag files here or click to browse",
-            "subtitle": "JPG, PNG, PDF up to 10MB"
+            "subtitle": "JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF up to 10MB"
           },
+          "dragCount": "{count, plural, one {# file} other {# files}}",
           "empty": {
             "chooseFiles": "Choose Files",
             "dropActive": "Drop files to upload",
             "dropInactive": "Click or drag files to upload",
-            "formats": "Supported formats: JPG, PNG, PDF (max 10MB each)",
+            "formats": "Supported formats: JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF (max 10MB each)",
             "note": "You can select multiple files.",
             "pasteHint": "Tip: you can also paste an image from your clipboard (Ctrl+V).",
             "title": "Drag and drop your files here"
@@ -3218,11 +3233,6 @@
             "possibleRecipes": "Possible Recipes"
           }
         },
-        "invoiceTimeline": {
-          "eventCount": "{count, plural, one {# event} other {# events}}",
-          "subtitle": "Complete history of actions and changes",
-          "title": "Invoice Timeline"
-        },
         "itemAnalytics": {
           "columns": {
             "category": "Category",
@@ -3350,23 +3360,6 @@
             "andMore": "and {count} more...",
             "currentInvoice": "Current Invoice"
           }
-        },
-        "timelineSharedWithList": {
-          "actions": {
-            "manageSharing": "Manage Sharing",
-            "sendEmail": "Send email"
-          },
-          "aria": {
-            "sendEmail": "Send email to {user}"
-          },
-          "header": {
-            "publicBadge": "Public",
-            "title": "Shared With"
-          },
-          "publicAccess": {
-            "description": "This invoice is publicly accessible. Anyone with the link can view it, including guests without an account.",
-            "title": "Public Access Enabled"
-          }
         }
       },
       "viewInvoices": {
@@ -3430,7 +3423,8 @@
           "itemCount": "{count, plural, one {# item} other {# items}}",
           "tooltips": {
             "viewDetails": "View Details"
-          }
+          },
+          "unknownMerchant": "Unknown merchant"
         },
         "invoicesHeader": {
           "actions": {
@@ -3611,7 +3605,8 @@
           "preview": "Preview scan",
           "previewTitle": "Scan Preview",
           "rename": "Rename scan",
-          "renamePlaceholder": "Enter new name"
+          "renamePlaceholder": "Enter new name",
+          "select": "Select {name}"
         },
         "sidebar": {
           "howTo": {

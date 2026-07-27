@@ -139,21 +139,6 @@
   }
 }
 
-.thumbnailMore {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: abstracts.space(40);
-  height: abstracts.space(48);
-  border-radius: abstracts.radius('md');
-  background-color: abstracts.color('muted');
-  color: abstracts.color('muted-foreground');
-  font-size: abstracts.font-size('lg');
-  font-weight: abstracts.font-weight('semibold');
-  border: 2px solid abstracts.color('border');
-  @include abstracts.shadow('md');
-}
-
 // ===========================================
 // SUBTITLE
 // ===========================================
@@ -217,11 +202,6 @@
   }
 
   .thumbnail {
-    width: abstracts.space(32);
-    height: abstracts.space(40);
-  }
-
-  .thumbnailMore {
     width: abstracts.space(32);
     height: abstracts.space(40);
   }

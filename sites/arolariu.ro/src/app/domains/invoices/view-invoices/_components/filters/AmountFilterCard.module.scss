@@ -26,8 +26,12 @@
 }
 
 .amountInput {
-  padding-left: space(8);
-  width: 100%;
+  // Double the class selector to outrank the library `.input` padding shorthand
+  // so the icon doesn't overlap the placeholder text.
+  &.amountInput {
+    padding: space(1) space(3) space(1) space(8);
+    width: 100%;
+  }
 }
 
 .amountPresetRow {

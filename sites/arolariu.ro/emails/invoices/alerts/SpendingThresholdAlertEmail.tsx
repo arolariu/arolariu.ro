@@ -145,7 +145,7 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
         heading={t(selectorFromPath("emails.spendingAlert.heading"), {percent: thresholdPercent})}
         primaryCta={{href: effectiveDashboardUrl, label: t(selectorFromPath("emails.spendingAlert.ctaPrimary"))}}
         secondaryCta={null}
-        showUnsubscribe={true}
+        showUnsubscribe
         unsubscribeUrl={`${BRAND.url}/unsubscribe`}
         managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
         <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.spendingAlert.greeting"), {name})}</Text>

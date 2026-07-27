@@ -1,256 +1,100 @@
 "use client";
 
 /**
- * @fileoverview Preview component for pending scan uploads.
+ * @fileoverview Preview grid for pending scan uploads.
  * @module app/domains/invoices/upload-scans/_components/UploadPreview
  *
  * @remarks
- * Displays a grid of pending uploads with status indicators.
+ * Uses the shared pagination + mobile-detection hooks and a status descriptor map
+ * instead of bespoke state and repeated status ternaries.
  */
 
-import {Badge, Button, Card, CardContent, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
+import {usePaginationWithSearch} from "@/hooks/usePagination";
+import {formatFileSize} from "@/lib/utils.generic";
+import {Badge, Button, useIsMobile} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import Image from "next/image";
 import {useCallback, useEffect, useState} from "react";
-import {TbCheck, TbChevronLeft, TbChevronRight, TbFileTypePdf, TbLoader2, TbTrash, TbX} from "react-icons/tb";
+import {TbCheck, TbChevronLeft, TbChevronRight, TbLoader2, TbRotate, TbRotateClockwise, TbTrash, TbX} from "react-icons/tb";
+import ScanCard from "../../_cards/ScanCard";
 import {StaggerContainer, StaggerItem} from "../../_components/StaggerContainer";
 import {useScanUpload} from "../_context/ScanUploadContext";
-import type {PendingUploadStatus} from "../_utils/uploadTypes";
+import type {PendingUpload} from "../_types";
+import {describeUploadStatus, type UploadStatusDescriptor} from "./statusDescriptors";
 import styles from "./UploadPreview.module.scss";
 
-/**
- * Formats file size in human-readable format.
- */
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-/**
- * Represents a file pending upload for the card component
- */
-interface PendingUploadCardProps {
-  id: string;
-  name: string;
-  mimeType: string;
-  size: number;
-  preview: string;
-  status: PendingUploadStatus;
-  progress: number;
-  attempts: number;
-  error?: string;
-  onRemove: (ids: string[]) => void;
-}
-
-/**
- * Individual upload card component to avoid inline function binding.
- */
-function UploadCard({
-  id,
-  name,
-  mimeType,
-  size,
-  preview,
-  status,
-  progress,
-  attempts,
-  error,
-  onRemove,
-}: Readonly<PendingUploadCardProps>): React.JSX.Element {
-  const t = useTranslations();
-  const handleRemove = useCallback(() => {
-    onRemove([id]);
-  }, [onRemove, id]);
-
-  return (
-    <Card className={styles["card"]}>
-      <CardContent className={styles["cardContentFlush"]}>
-        {/* Preview */}
-        <div className={styles["previewArea"]}>
-          {mimeType === "application/pdf" ? (
-            <div className={styles["pdfPlaceholder"]}>
-              <TbFileTypePdf className={styles["pdfIcon"]} />
-            </div>
-          ) : preview ? (
-            <Image
-              src={preview}
-              alt={name}
-              fill
-              className={styles["imagePreview"]}
-              unoptimized
-            />
-          ) : (
-            <div className={styles["pdfPlaceholder"]}>
-              <TbFileTypePdf className={styles["pdfIcon"]} />
-            </div>
-          )}
-
-          {/* Status overlay */}
-          {(status === "uploading" || status === "retrying") && (
-            <div className={`${styles["statusOverlay"]} ${styles["overlayUploading"]}`}>
-              <TbLoader2 className={`${styles["statusIcon"]} ${styles["spinIcon"]}`} />
-            </div>
-          )}
-          {status === "completed" && (
-            <div className={`${styles["statusOverlay"]} ${styles["overlayCompleted"]}`}>
-              <TbCheck className={styles["statusIcon"]} />
-            </div>
-          )}
-          {status === "failed" && (
-            <div className={`${styles["statusOverlay"]} ${styles["overlayFailed"]}`}>
-              <TbX className={styles["statusIcon"]} />
-            </div>
-          )}
-
-          {/* Status badge */}
-          <div className={styles["badgePosition"]}>
-            {status === "idle" && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <Badge
-                        variant='secondary'
-                        className={styles["badgePending"]}>
-                        {t((m) => m.pages.invoices.uploadScans.preview.status.pending)}
-                      </Badge>
-                    }
-                  />
-                  <TooltipContent side='top'>{t((m) => m.pages.invoices.uploadScans.preview.pendingTooltip)}</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-            {status === "uploading" && (
-              <Badge
-                variant='secondary'
-                className={styles["badgeUploading"]}>
-                {t((m) => m.pages.invoices.uploadScans.preview.status.uploading)}
-              </Badge>
-            )}
-            {status === "retrying" && (
-              <Badge
-                variant='secondary'
-                className={styles["badgeRetrying"]}>
-                {t((m) => m.pages.invoices.uploadScans.preview.status.retrying)}
-              </Badge>
-            )}
-            {status === "completed" && (
-              <Badge
-                variant='secondary'
-                className={styles["badgeCompleted"]}>
-                {t((m) => m.pages.invoices.uploadScans.preview.status.completed)}
-              </Badge>
-            )}
-            {status === "failed" && (
-              <Badge
-                variant='secondary'
-                className={styles["badgeFailed"]}>
-                {t((m) => m.pages.invoices.uploadScans.preview.status.failed)}
-              </Badge>
-            )}
-          </div>
-
-          {/* Remove button */}
-          {(status === "idle" || status === "failed") && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      className={styles["removeButton"]}
-                      onClick={handleRemove}>
-                      <TbTrash className={styles["removeIcon"]} />
-                    </Button>
-                  }
-                />
-                <TooltipContent side='right'>{t((m) => m.pages.invoices.uploadScans.preview.removeTooltip)}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-        </div>
-
-        {/* File info */}
-        <div className={styles["fileInfo"]}>
-          <p
-            className={styles["fileName"]}
-            title={name}>
-            {name}
-          </p>
-          <p className={styles["fileSize"]}>{formatFileSize(size)}</p>
-          {(status === "uploading" || status === "retrying") && (
-            <>
-              <div className={styles["progressTrack"]}>
-                <div
-                  className={styles["progressFill"]}
-                  style={{width: `${Math.max(0, Math.min(progress, 100))}%`}}
-                />
-              </div>
-              <p className={styles["fileSize"]}>{progress}%</p>
-            </>
-          )}
-          {status === "retrying" ? (
-            <p className={styles["fileError"]}>
-              {t((m) => m.pages.invoices.uploadScans.preview.retryAttempt, {attempt: String(attempts)})}
-            </p>
-          ) : null}
-          {error ? <p className={styles["fileError"]}>{error}</p> : null}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-/** Number of scans to display per page on mobile devices */
+/** Number of scans to display per page on mobile devices. */
 const MOBILE_PAGE_SIZE = 7;
 
-/** Number of scans to display per page on desktop devices */
+/** Number of scans to display per page on desktop devices. */
 const DESKTOP_PAGE_SIZE = 50;
 
 /**
  * Preview component for pending scan uploads.
- * Displays a grid of files with status indicators.
- * Paginates uploads with different page sizes for mobile (7) and desktop (50).
+ * Paginates uploads (7 on mobile, 50 on desktop) and renders status via descriptors.
  */
 export default function UploadPreview(): React.JSX.Element | null {
   const t = useTranslations();
-  const {pendingUploads, removeFiles} = useScanUpload();
-  const [page, setPage] = useState(0);
+  const {pendingUploads, removeFiles, renameFile, rotateFile} = useScanUpload();
+  const isMobile = useIsMobile();
+  const [editingUploadId, setEditingUploadId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
 
-  // Detect mobile viewport
-  const [isMobile, setIsMobile] = useState(false);
+  const {paginatedItems, currentPage, setCurrentPage, totalPages, setPageSize} = usePaginationWithSearch<PendingUpload>({
+    items: pendingUploads,
+    initialPageSize: isMobile ? MOBILE_PAGE_SIZE : DESKTOP_PAGE_SIZE,
+  });
+
   useEffect(() => {
-    const checkMobile = (): void => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+    setPageSize(isMobile ? MOBILE_PAGE_SIZE : DESKTOP_PAGE_SIZE);
+  }, [isMobile, setPageSize]);
+
+  const statusBadgeLabels: Record<UploadStatusDescriptor["badgeStatusKey"], string> = {
+    pending: t((m) => m.pages.invoices.uploadScans.preview.status.pending),
+    uploading: t((m) => m.pages.invoices.uploadScans.preview.status.uploading),
+    retrying: t((m) => m.pages.invoices.uploadScans.preview.status.retrying),
+    completed: t((m) => m.pages.invoices.uploadScans.preview.status.completed),
+    failed: t((m) => m.pages.invoices.uploadScans.preview.status.failed),
+  };
+
+  const overlayNodes: Record<"spinner" | "success" | "error", React.ReactNode> = {
+    spinner: <TbLoader2 aria-label={t((m) => m.pages.invoices.uploadScans.preview.status.uploading)} />,
+    success: <TbCheck aria-label={t((m) => m.pages.invoices.uploadScans.preview.status.completed)} />,
+    error: <TbX aria-label={t((m) => m.pages.invoices.uploadScans.preview.status.failed)} />,
+  };
+
+  /** Starts rename mode for an upload. */
+  const startRename = useCallback((upload: PendingUpload): void => {
+    setEditingUploadId(upload.id);
+    setRenameValue(upload.name);
   }, []);
 
-  // Calculate pagination
-  const pageSize = isMobile ? MOBILE_PAGE_SIZE : DESKTOP_PAGE_SIZE;
-  const totalPages = Math.ceil(pendingUploads.length / pageSize);
-  const currentPageUploads = pendingUploads.slice(page * pageSize, (page + 1) * pageSize);
-
-  // Adjust page if current page becomes empty after removal
-  useEffect(() => {
-    if (page > 0 && currentPageUploads.length === 0 && pendingUploads.length > 0) {
-      setPage((p) => Math.max(0, p - 1));
-    }
-  }, [page, currentPageUploads.length, pendingUploads.length]);
-
-  /** Navigates to the previous page of uploads. */
-  const handlePreviousPage = useCallback(() => {
-    setPage((p) => Math.max(0, p - 1));
+  /** Cancels rename mode and resets draft. */
+  const cancelRename = useCallback((upload: PendingUpload): void => {
+    setEditingUploadId(null);
+    setRenameValue(upload.name);
   }, []);
 
-  /** Navigates to the next page of uploads. */
-  const handleNextPage = useCallback(() => {
-    setPage((p) => Math.min(totalPages - 1, p + 1));
-  }, [totalPages]);
+  /** Commits rename if changed, then exits rename mode. */
+  const commitRename = useCallback(
+    (upload: PendingUpload): void => {
+      const trimmedValue = renameValue.trim();
+      if (trimmedValue && trimmedValue !== upload.name) {
+        renameFile(upload.id, trimmedValue);
+      }
+      setEditingUploadId(null);
+    },
+    [renameFile, renameValue],
+  );
+
+  /** Moves pagination to the previous page. */
+  const handlePreviousPage = useCallback((): void => {
+    setCurrentPage(currentPage - 1);
+  }, [currentPage, setCurrentPage]);
+
+  /** Moves pagination to the next page. */
+  const handleNextPage = useCallback((): void => {
+    setCurrentPage(currentPage + 1);
+  }, [currentPage, setCurrentPage]);
 
   if (pendingUploads.length === 0) {
     return null;
@@ -265,22 +109,70 @@ export default function UploadPreview(): React.JSX.Element | null {
       <StaggerContainer
         className={styles["grid"]}
         staggerDelay={0.05}>
-        {currentPageUploads.map((upload) => (
-          <StaggerItem key={upload.id}>
-            <UploadCard
-              id={upload.id}
-              name={upload.name}
-              mimeType={upload.mimeType}
-              size={upload.size}
-              preview={upload.preview}
-              status={upload.status}
-              progress={upload.progress}
-              attempts={upload.attempts}
-              error={upload.error}
-              onRemove={removeFiles}
-            />
-          </StaggerItem>
-        ))}
+        {paginatedItems.map((upload) => {
+          const descriptor = describeUploadStatus(upload.status);
+          const isPdf = upload.mimeType === "application/pdf";
+          const isEditing = editingUploadId === upload.id;
+
+          return (
+            <StaggerItem key={upload.id}>
+              <ScanCard
+                media={{src: upload.preview || upload.blobUrl || "", mediaKind: isPdf ? "pdf" : "image", alt: upload.name}}
+                title={upload.name}
+                metadataItems={[formatFileSize(upload.size)]}
+                isLocked={descriptor.isLocked}
+                rename={{
+                  value: isEditing ? renameValue : upload.name,
+                  isEditing,
+                  onStart: () => {
+                    startRename(upload);
+                  },
+                  onChange: setRenameValue,
+                  onCommit: () => {
+                    commitRename(upload);
+                  },
+                  onCancel: () => {
+                    cancelRename(upload);
+                  },
+                  placeholder: t((m) => m.pages.invoices.viewScans.scanCard.renamePlaceholder),
+                }}
+                statusBadge={<Badge variant='secondary'>{statusBadgeLabels[descriptor.badgeStatusKey]}</Badge>}
+                progress={descriptor.showProgress ? {value: upload.progress, label: `${upload.progress}%`} : undefined}
+                error={
+                  upload.status === "retrying"
+                    ? t((m) => m.pages.invoices.uploadScans.preview.retryAttempt, {attempt: String(upload.attempts)})
+                    : upload.error
+                }
+                actions={[
+                  {
+                    key: "rotate-cw",
+                    label: t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateCW),
+                    icon: <TbRotateClockwise />,
+                    onSelect: () => void rotateFile(upload.id, "cw"),
+                    disabled: isPdf,
+                  },
+                  {
+                    key: "rotate-ccw",
+                    label: t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateCCW),
+                    icon: <TbRotate />,
+                    onSelect: () => void rotateFile(upload.id, "ccw"),
+                    disabled: isPdf,
+                  },
+                  {
+                    key: "remove",
+                    label: t((m) => m.pages.invoices.uploadScans.preview.removeTooltip),
+                    icon: <TbTrash />,
+                    onSelect: () => {
+                      removeFiles([upload.id]);
+                    },
+                    destructive: true,
+                  },
+                ]}
+                centerOverlay={descriptor.overlay ? overlayNodes[descriptor.overlay] : undefined}
+              />
+            </StaggerItem>
+          );
+        })}
       </StaggerContainer>
 
       {totalPages > 1 && (
@@ -289,13 +181,13 @@ export default function UploadPreview(): React.JSX.Element | null {
             variant='outline'
             size='sm'
             onClick={handlePreviousPage}
-            disabled={page === 0}>
+            disabled={currentPage === 1}>
             <TbChevronLeft />
             {t((m) => m.pages.invoices.uploadScans.preview.pagination.previous)}
           </Button>
           <span className={styles["paginationInfo"]}>
             {t((m) => m.pages.invoices.uploadScans.preview.pagination.pageInfo, {
-              current: String(page + 1),
+              current: String(currentPage),
               total: String(totalPages),
               count: String(pendingUploads.length),
             })}
@@ -304,7 +196,7 @@ export default function UploadPreview(): React.JSX.Element | null {
             variant='outline'
             size='sm'
             onClick={handleNextPage}
-            disabled={page >= totalPages - 1}>
+            disabled={currentPage >= totalPages}>
             {t((m) => m.pages.invoices.uploadScans.preview.pagination.next)}
             <TbChevronRight />
           </Button>

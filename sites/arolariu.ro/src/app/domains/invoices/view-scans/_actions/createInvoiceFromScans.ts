@@ -27,11 +27,11 @@ import {
   type CreateInvoiceScanDtoPayload,
   type Invoice,
   InvoiceAnalysisOptions,
-  InvoiceScanType,
 } from "@/types/invoices";
-import {type Scan, ScanType} from "@/types/scans";
+import {type Scan, ScanMetadataStatus, ScanMetadataKey} from "@/types/scans";
 import {analyzeInvoice} from "../../_actions/invoices";
-import {markScansAsUsed} from "../../_actions/scans";
+import {updateScan} from "../../_actions/scans";
+import {scanTypeToInvoiceScanType} from "../../_utils/mimeTypeUtilities";
 
 /**
  * Input parameters for creating invoices from scans.
@@ -62,32 +62,6 @@ type CreateInvoiceFromScansOutput = Promise<
 >;
 
 /**
- * Maps ScanType to InvoiceScanType enum.
- */
-function scanTypeToInvoiceScanType(scanType: ScanType): InvoiceScanType {
-  switch (scanType) {
-    case ScanType.JPEG:
-      return InvoiceScanType.JPEG;
-    case ScanType.PNG:
-      return InvoiceScanType.PNG;
-    case ScanType.PDF:
-      return InvoiceScanType.PDF;
-    default:
-      return InvoiceScanType.OTHER;
-  }
-}
-
-/**
- * Extracts blob name from scan's blob URL.
- * E.g., "https://...blob.core.windows.net/invoices/scans/userId/scanId.jpg" → "scans/userId/scanId.jpg"
- */
-function extractBlobNameFromScan(scan: Scan): string {
-  const urlParts = scan.blobUrl.split("/");
-  // Take last 3 parts: scans/userId/scanId.jpg
-  return urlParts.slice(-3).join("/");
-}
-
-/**
  * Creates a single invoice from a scan.
  */
 async function createSingleInvoice(scan: Scan, userIdentifier: string, authToken: string): Promise<Invoice> {
@@ -96,7 +70,13 @@ async function createSingleInvoice(scan: Scan, userIdentifier: string, authToken
     initialScan: {
       scanType: scanTypeToInvoiceScanType(scan.scanType),
       location: scan.blobUrl,
-      metadata: {},
+      metadata: {
+        sourceScanId: scan.metadata.scanId,
+        sourceOwnerId: scan.metadata.ownerId,
+        documentKind: scan.metadata.documentKind,
+        documentRole: scan.metadata.documentRole,
+        uploadedAt: scan.metadata.uploadedAt.toISOString(),
+      },
     },
     metadata: {
       isImportant: "false",
@@ -137,7 +117,10 @@ async function attachScanToInvoice(invoiceId: string, scan: Scan, authToken: str
     type: scanTypeToInvoiceScanType(scan.scanType),
     location: scan.blobUrl,
     additionalMetadata: {
-      sourceScanId: scan.id,
+      sourceScanId: scan.metadata.scanId,
+      sourceOwnerId: scan.metadata.ownerId,
+      documentKind: scan.metadata.documentKind,
+      documentRole: scan.metadata.documentRole,
       attachedAt: new Date().toISOString(),
     },
   };
@@ -191,25 +174,48 @@ async function createInvoicesInSingleMode(scans: ReadonlyArray<Scan>, userIdenti
   const invoices: Invoice[] = [];
   const convertedScanIds: string[] = [];
   const errors: Array<{scanId: string; error: string}> = [];
+  const scanToInvoiceMap = new Map<string, Invoice>();
 
   for (const scan of scans) {
     const result = await processSingleScan(scan, userIdentifier, authToken);
     if (result.success) {
       invoices.push(result.invoice);
       convertedScanIds.push(scan.id);
+      scanToInvoiceMap.set(scan.id, result.invoice);
     } else {
       errors.push({scanId: scan.id, error: result.error});
     }
   }
 
-  // Mark successfully converted scans as used (best-effort)
+  // Mark successfully converted scans as attached (best-effort)
   if (convertedScanIds.length > 0) {
     const convertedSet = new Set(convertedScanIds);
-    const blobNames = scans.filter((s) => convertedSet.has(s.id)).map((s) => extractBlobNameFromScan(s));
+    const convertedScans = scans.filter((s) => convertedSet.has(s.id));
 
-    markScansAsUsed({blobNames}).catch((error) => {
-      console.warn("Failed to mark scans as used (non-critical):", error);
-    });
+    // Each scan was converted to its own invoice, mark with explicit mapping
+    for (const scan of convertedScans) {
+      const invoice = scanToInvoiceMap.get(scan.id);
+      if (invoice) {
+        updateScan({
+          scanId: scan.id,
+          metadataAdd: {
+            status: ScanMetadataStatus.ATTACHED,
+            attachedAt: new Date(),
+            attachedBy: userIdentifier,
+            attachedTo: invoice.id,
+          },
+          metadataRemove: [
+            ScanMetadataKey.DETACHED_AT,
+            ScanMetadataKey.DETACHED_BY,
+            ScanMetadataKey.DETACHED_FROM,
+            ScanMetadataKey.ARCHIVED_AT,
+            ScanMetadataKey.ARCHIVED_BY,
+          ],
+        }).catch((error) => {
+          console.warn("Failed to mark scan as attached (non-critical):", error);
+        });
+      }
+    }
   }
 
   addSpanEvent("bff.invoices.create.single.complete");
@@ -272,13 +278,30 @@ async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, userIdentif
       "server",
     );
 
-    // Mark successfully converted scans as used (best-effort)
+    // Mark successfully converted scans as attached (best-effort)
     const allConvertedSet = new Set([firstScan.id, ...convertedScanIds]);
-    const blobNames = scans.filter((s) => allConvertedSet.has(s.id)).map((s) => extractBlobNameFromScan(s));
+    const convertedScans = scans.filter((s) => allConvertedSet.has(s.id));
 
-    markScansAsUsed({blobNames}).catch((error) => {
-      console.warn("Failed to mark scans as used (non-critical):", error);
-    });
+    for (const scan of convertedScans) {
+      updateScan({
+        scanId: scan.id,
+        metadataAdd: {
+          status: ScanMetadataStatus.ATTACHED,
+          attachedAt: new Date(),
+          attachedBy: userIdentifier,
+          attachedTo: invoice.id,
+        },
+        metadataRemove: [
+          ScanMetadataKey.DETACHED_AT,
+          ScanMetadataKey.DETACHED_BY,
+          ScanMetadataKey.DETACHED_FROM,
+          ScanMetadataKey.ARCHIVED_AT,
+          ScanMetadataKey.ARCHIVED_BY,
+        ],
+      }).catch((error) => {
+        console.warn("Failed to mark scan as attached (non-critical):", error);
+      });
+    }
 
     // Fire-and-forget auto-analysis after successful batch creation
     analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {

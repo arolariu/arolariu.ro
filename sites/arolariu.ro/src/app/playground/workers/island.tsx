@@ -100,7 +100,7 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
     [],
   );
   const host = useWorker(factory);
-  const {state} = host;
+  const {state, api, restart, capabilities} = host;
 
   useWorkerEvent(host, (e) => {
     setLogs((prev) => {
@@ -129,23 +129,25 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
   const onEcho = useCallback(
     (): Promise<void> =>
       runCall("echo", async () => {
-        const v = echoInputRef.current?.value ?? "";
-        return host.api.echo(v);
+        const {current} = echoInputRef;
+        const v = current?.value ?? "";
+        return api.echo(v);
       }),
-    [host.api, runCall],
+    [api, runCall],
   );
 
   /** Calls the worker's ping handler (instant round-trip). */
-  const onPing = useCallback((): Promise<void> => runCall("ping", () => host.api.ping()), [host.api, runCall]);
+  const onPing = useCallback((): Promise<void> => runCall("ping", () => api.ping()), [api, runCall]);
 
   /**
    * Starts a 10-second sleep operation in the worker.
    * Creates a new AbortController so the operation can be cancelled via onAbortSleep.
    */
   const onSleep10s = useCallback(async (): Promise<void> => {
-    sleepAcRef.current = new AbortController();
-    await runCall("sleep", () => host.api.sleep(10_000, sleepAcRef.current!.signal));
-  }, [host.api, runCall]);
+    const ac = new AbortController();
+    sleepAcRef.current = ac;
+    await runCall("sleep", () => api.sleep(10_000, ac.signal));
+  }, [api, runCall]);
 
   /** Aborts the currently running sleep operation by signaling the AbortController. */
   const onAbortSleep = useCallback((): void => {
@@ -153,10 +155,10 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
   }, []);
 
   /** Calls the worker's crash handler (throws an unhandled error to terminate the worker). */
-  const onCrash = useCallback((): Promise<void> => runCall("crash", () => host.api.crash()), [host.api, runCall]);
+  const onCrash = useCallback((): Promise<void> => runCall("crash", () => api.crash()), [api, runCall]);
 
   /** Restarts the worker host (disposes and recreates the worker instance). */
-  const onRestart = useCallback((): Promise<void> => runCall("restart", () => host.restart()), [host, runCall]);
+  const onRestart = useCallback((): Promise<void> => runCall("restart", () => restart()), [restart, runCall]);
 
   /**
    * Queries the worker's runtime capabilities (platform, SharedArrayBuffer support, etc.).
@@ -165,20 +167,20 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
   const onCapabilities = useCallback(
     (): Promise<void> =>
       runCall("reportCapabilities", async () => {
-        const c = await host.api.reportCapabilities();
+        const c = await api.reportCapabilities();
         setCaps(c);
         return c;
       }),
-    [host.api, runCall],
+    [api, runCall],
   );
 
   /** Calls the worker's emitEvents handler to generate 5 test events. */
-  const onEmitEvents = useCallback((): Promise<void> => runCall("emitEvents", () => host.api.emitEvents(5)), [host.api, runCall]);
+  const onEmitEvents = useCallback((): Promise<void> => runCall("emitEvents", () => api.emitEvents(5)), [api, runCall]);
 
   /** Calls the worker's throwError handler (triggers a handler-level error for testing error paths). */
   const onThrowHandlerError = useCallback(
-    (): Promise<void> => runCall("throwError", () => host.api.throwError("playground-demo")),
-    [host.api, runCall],
+    (): Promise<void> => runCall("throwError", () => api.throwError("playground-demo")),
+    [api, runCall],
   );
 
   /**
@@ -192,13 +194,14 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
       load: () => new Worker(new URL("playground.worker.ts", import.meta.url), {type: "module"}),
       defaultCallTimeoutMs: 100,
     });
+    const {api: transientApi, dispose: transientDispose} = transient;
     try {
-      await transient.api.sleep(5_000);
+      await transientApi.sleep(5000);
       setCallState({status: "success", method: "timeoutSlow", result: "no timeout (unexpected)"});
     } catch (error) {
       setCallState({status: "error", method: "timeoutSlow", error: asError(error)});
     } finally {
-      void transient.dispose();
+      void transientDispose();
     }
   }, []);
 
@@ -209,11 +212,11 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
   const onProbeWindow = useCallback(
     (): Promise<void> =>
       runCall("whatIsWindow", async () => {
-        const result = await host.api.whatIsWindow();
+        const result = await api.whatIsWindow();
         setWindowProbe(result);
         return result;
       }),
-    [host.api, runCall],
+    [api, runCall],
   );
 
   /** Clears the event log display. */
@@ -222,8 +225,11 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
   const isPending = callState.status === "pending";
   const errorCategory = callState.status === "error" ? classifyError(callState.error) : null;
   const stateLabel = callState.status;
-  const stateBadgeVariant: "default" | "secondary" | "destructive" =
-    state === "ready" ? "default" : state === "dead" || state === "disposed" ? "destructive" : "secondary";
+  let stateBadgeVariant: "default" | "secondary" | "destructive" = "secondary";
+  if (state === "ready") stateBadgeVariant = "default";
+  else if (state === "dead" || state === "disposed") stateBadgeVariant = "destructive";
+  const logSuffix = logs.length === 1 ? "y" : "ies";
+  const logCountLabel = logs.length === 0 ? "No events yet." : `${logs.length} entr${logSuffix}.`;
 
   return (
     <div
@@ -253,7 +259,7 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
           <Badge
             data-testid='coi'
             variant='outline'>
-            {String(host.capabilities.crossOriginIsolated)}
+            {String(capabilities.crossOriginIsolated)}
           </Badge>
         </CardContent>
       </Card>
@@ -477,7 +483,7 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
         <CardHeader>
           <CardTitle>Event log</CardTitle>
           <CardDescription>
-            {logs.length === 0 ? "No events yet." : `${logs.length} entr${logs.length === 1 ? "y" : "ies"}.`}
+            {logCountLabel}
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-2'>

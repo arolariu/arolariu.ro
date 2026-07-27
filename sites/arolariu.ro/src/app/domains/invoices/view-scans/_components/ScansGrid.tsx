@@ -5,16 +5,20 @@
  * @module app/domains/invoices/view-scans/_components/ScansGrid
  */
 
+import {formatDate, formatFileSize} from "@/lib/utils.generic";
 import type {CachedScan} from "@/types/scans";
+import {ScanStatus} from "@/types/scans";
 import {Button, useIsMobile} from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useEffect, useState} from "react";
-import {TbCamera, TbChevronLeft, TbChevronRight} from "react-icons/tb";
+import {TbCamera, TbChevronLeft, TbChevronRight, TbLink, TbRotate, TbRotateClockwise, TbTrash} from "react-icons/tb";
 import ScanCard from "../../_cards/ScanCard";
 import {CardShimmer} from "../../_cards/ScanCard.shimmers";
 import DeferredMount from "../../_components/DeferredMount";
 import EmptyState from "../../_components/EmptyState";
+import {useDialogs} from "../../_contexts/DialogContext";
+import {useScanRename, useScanRotation} from "../../_hooks/scan";
 import {useScans} from "../_hooks/useScans";
 import styles from "./ScansGrid.module.scss";
 
@@ -34,18 +38,94 @@ type ScanCardWrapperProps = {
 };
 
 /**
- * Wrapper component to provide memoized toggle callback.
+ * Wrapper component to adapt CachedScan to controlled ScanCard API.
  */
 function ScanCardWrapper({scan, isSelected, onToggleSelection}: Readonly<ScanCardWrapperProps>): React.JSX.Element {
+  const t = useTranslations();
+  const {openDialog} = useDialogs();
+  const rename = useScanRename(scan);
+  const rotation = useScanRotation(scan);
+  const isUsedByInvoice = scan.metadata.status === ScanStatus.ATTACHED && Boolean(scan.metadata.attachedTo);
+
   const handleToggle = useCallback(() => {
     onToggleSelection(scan);
   }, [scan, onToggleSelection]);
 
+  const handleOpenPreview = useCallback((): void => {
+    openDialog("SHARED__SCAN_PREVIEW", "view", {scan});
+  }, [openDialog, scan]);
+
+  const handleOpenDeleteDialog = useCallback((): void => {
+    openDialog("SHARED__SCAN_DELETE", "delete", {scan});
+  }, [openDialog, scan]);
+
   return (
     <ScanCard
-      scan={scan}
+      media={{
+        src: scan.blobUrl,
+        mediaKind: scan.mimeType === "application/pdf" ? "pdf" : "image",
+        alt: scan.name,
+        onPreviewActivate: handleOpenPreview,
+      }}
+      title={scan.name}
+      metadataItems={[
+        formatFileSize(scan.sizeInBytes),
+        formatDate(scan.uploadedAt, {locale: "en-US", month: "short", day: "numeric", year: "numeric"}),
+      ]}
       isSelected={isSelected}
-      onToggleSelect={handleToggle}
+      selection={{
+        checked: isSelected,
+        onToggle: handleToggle,
+        label: t((m) => m.pages.invoices.viewScans.scanCard.select, {name: scan.name}),
+      }}
+      rename={{
+        value: rename.value,
+        isEditing: rename.isEditing,
+        onStart: rename.start,
+        onChange: rename.change,
+        onCommit: () => void rename.commit(),
+        onCancel: rename.cancel,
+        placeholder: t((m) => m.pages.invoices.viewScans.scanCard.renamePlaceholder),
+      }}
+      linkedBadge={
+        isUsedByInvoice ? (
+          <div className={styles["linkedBadge"]}>
+            <TbLink className={styles["linkedIcon"]} />
+            {t((m) => m.pages.invoices.viewScans.scanCard.linked)}
+          </div>
+        ) : undefined
+      }
+      centerOverlay={
+        rotation.isRotating ? (
+          <div className={styles["rotatingOverlay"]}>
+            <div className={styles["rotatingSpinner"]} />
+            <span className={styles["rotatingText"]}>{t((m) => m.pages.invoices.viewScans.scanCard.actions.rotating)}</span>
+          </div>
+        ) : undefined
+      }
+      actions={[
+        {
+          key: "rotate-cw",
+          label: t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateCW),
+          icon: <TbRotateClockwise className={styles["menuIcon"]} />,
+          onSelect: () => void rotation.rotateScanCallback("cw"),
+          disabled: scan.mimeType === "application/pdf" || rotation.isRotating,
+        },
+        {
+          key: "rotate-ccw",
+          label: t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateCCW),
+          icon: <TbRotate className={styles["menuIcon"]} />,
+          onSelect: () => void rotation.rotateScanCallback("ccw"),
+          disabled: scan.mimeType === "application/pdf" || rotation.isRotating,
+        },
+        {
+          key: "delete",
+          label: t((m) => m.pages.invoices.viewScans.scanCard.actions.delete),
+          icon: <TbTrash className={styles["menuIcon"]} />,
+          onSelect: handleOpenDeleteDialog,
+          destructive: true,
+        },
+      ]}
     />
   );
 }

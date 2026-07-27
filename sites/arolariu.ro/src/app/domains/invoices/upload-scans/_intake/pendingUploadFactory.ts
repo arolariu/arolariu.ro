@@ -1,0 +1,32 @@
+/**
+ * @fileoverview Pending upload factory for scan upload files.
+ * @module app/domains/invoices/upload-scans/_intake/pendingUploadFactory
+ *
+ * @remarks
+ * The factory is the only file-intake helper that creates object URLs. Cleanup
+ * remains the responsibility of the provider lifecycle hook.
+ */
+
+import type {PendingUpload} from "../_types";
+import {resolveValidatedScanMimeType} from "./validation";
+
+/**
+ * Creates a route-scoped pending upload from a validated file.
+ *
+ * @param file - Validated browser file.
+ * @param uploadId - Client-side queue identifier.
+ * @returns Pending upload ready to enter reducer state.
+ */
+export function createPendingUpload(file: File, uploadId: string): PendingUpload {
+  return {
+    id: uploadId,
+    name: file.name,
+    file,
+    mimeType: resolveValidatedScanMimeType(file),
+    size: file.size,
+    preview: URL.createObjectURL(file),
+    status: "idle",
+    progress: 0,
+    attempts: 0,
+  };
+}
