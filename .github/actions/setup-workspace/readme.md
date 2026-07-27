@@ -75,15 +75,25 @@ requested while its toolchain is disabled:
 
 | Requires | Dependent inputs |
 |----------|------------------|
-| `node: 'true'` | `install-node-deps`, `install-scripts-deps`, `install-playwright`, `run-generate`, `run-build-components` |
+| `node: 'true'` | `install-node-deps`, `install-scripts-deps` |
+| `install-node-deps: 'true'` | `install-playwright`, `run-generate`, `run-build-components` |
 | `dotnet: 'true'` | `install-dotnet-deps` |
 | `python: 'true'` | `install-python-deps` |
 
-This exists because a disabled toolchain does **not** produce an obvious
-failure on its own. `npm`, `dotnet`, and `python` are all preinstalled on
-GitHub-hosted runners, so without the guard the dependent step would quietly
-run against whatever version the image happens to ship instead of the version
-this action pins — and you would only notice via a confusing downstream error.
+Two reasons this exists.
+
+A **disabled toolchain** does not produce an obvious failure on its own.
+`npm`, `dotnet`, and `python` are all preinstalled on GitHub-hosted runners,
+so without the guard the dependent step would quietly run against whatever
+version the image happens to ship instead of the version this action pins —
+and you would only notice via a confusing downstream error.
+
+**`install-node-deps` gates both the cache restore and `npm ci`,** so with it
+disabled the root `node_modules` tree is absent entirely. `npm run generate`
+and `npm run build:components` would fail outright, and `npx playwright` would
+silently fetch a floating version rather than the one the lock file pins.
+`install-scripts-deps` is deliberately *not* in that group: it installs
+`.github/scripts` independently and does not need the root tree.
 
 ## Outputs
 

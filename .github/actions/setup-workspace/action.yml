@@ -173,13 +173,21 @@ runs:
           fi
         }
 
+        # Toolchain prerequisites.
         require "$NODE" node "$INSTALL_NODE_DEPS" install-node-deps
         require "$NODE" node "$INSTALL_SCRIPTS_DEPS" install-scripts-deps
-        require "$NODE" node "$INSTALL_PLAYWRIGHT" install-playwright
-        require "$NODE" node "$RUN_GENERATE" run-generate
-        require "$NODE" node "$RUN_BUILD_COMPONENTS" run-build-components
         require "$DOTNET" dotnet "$INSTALL_DOTNET_DEPS" install-dotnet-deps
         require "$PYTHON" python "$INSTALL_PYTHON_DEPS" install-python-deps
+
+        # These three consume the root `node_modules` tree. `install-node-deps`
+        # gates BOTH the cache restore and `npm ci`, so with it disabled the
+        # tree is absent entirely — `npm run …` would fail outright, and
+        # `npx playwright` would silently fetch a floating version instead of
+        # the one pinned by the lock file. `install-node-deps` in turn
+        # requires `node`, so that prerequisite is covered transitively.
+        require "$INSTALL_NODE_DEPS" install-node-deps "$INSTALL_PLAYWRIGHT" install-playwright
+        require "$INSTALL_NODE_DEPS" install-node-deps "$RUN_GENERATE" run-generate
+        require "$INSTALL_NODE_DEPS" install-node-deps "$RUN_BUILD_COMPONENTS" run-build-components
 
         if [ ${#errors[@]} -gt 0 ]; then
           printf '%s\n' "${errors[@]}"
