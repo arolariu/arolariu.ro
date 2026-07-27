@@ -9,11 +9,17 @@ Configuration proxy and feature flag service for the arolariu.ro platform.
 ## Commands
 
 ```bash
-python -m ruff check .      # Lint (Ruff)
+python -m ruff check .       # Lint (Ruff)
 python -m pytest -q          # Run tests
-pip install -r requirements-dev.txt   # Install deps (dev: adds pytest, pytest-cov, ruff, bandit, pydoc-markdown)
-pip install -r requirements.txt       # Install runtime deps only
 uvicorn main:app --reload    # Dev server
+```
+
+Installing dependencies — pick **one**, not both. `requirements-dev.txt`
+starts with `-r requirements.txt`, so it is a superset:
+
+```bash
+pip install -r requirements-dev.txt   # Development: runtime + pytest, pytest-cov, ruff, bandit, pydoc-markdown
+pip install -r requirements.txt       # Runtime only (what the Docker image installs)
 ```
 
 ## API Endpoints
