@@ -144,6 +144,51 @@ runs:
       shell: bash
       run: echo "start_time=$(date +%s)" >> "$GITHUB_OUTPUT"
 
+    # Runs BEFORE the toolchains are installed so a contradictory call fails
+    # in seconds rather than after a full SDK provision. Without this guard a
+    # disabled toolchain does not fail loudly: `npm`, `dotnet` and `python`
+    # all exist on the GitHub-hosted images, so the dependent step would
+    # silently run against whatever version the runner happens to ship
+    # instead of the version this action pins.
+    - name: 🔎 Validate input combinations
+      shell: bash
+      env:
+        NODE: ${{ inputs.node }}
+        DOTNET: ${{ inputs.dotnet }}
+        PYTHON: ${{ inputs.python }}
+        INSTALL_NODE_DEPS: ${{ inputs.install-node-deps }}
+        INSTALL_SCRIPTS_DEPS: ${{ inputs.install-scripts-deps }}
+        INSTALL_DOTNET_DEPS: ${{ inputs.install-dotnet-deps }}
+        INSTALL_PYTHON_DEPS: ${{ inputs.install-python-deps }}
+        INSTALL_PLAYWRIGHT: ${{ inputs.install-playwright }}
+        RUN_GENERATE: ${{ inputs.run-generate }}
+        RUN_BUILD_COMPONENTS: ${{ inputs.run-build-components }}
+      run: |
+        errors=()
+
+        # require <toolchain-value> <toolchain-name> <dependent-value> <dependent-name>
+        require() {
+          if [ "$3" = "true" ] && [ "$1" != "true" ]; then
+            errors+=("  - '$4: true' requires '$2: true' (currently '$2: $1')")
+          fi
+        }
+
+        require "$NODE" node "$INSTALL_NODE_DEPS" install-node-deps
+        require "$NODE" node "$INSTALL_SCRIPTS_DEPS" install-scripts-deps
+        require "$NODE" node "$INSTALL_PLAYWRIGHT" install-playwright
+        require "$NODE" node "$RUN_GENERATE" run-generate
+        require "$NODE" node "$RUN_BUILD_COMPONENTS" run-build-components
+        require "$DOTNET" dotnet "$INSTALL_DOTNET_DEPS" install-dotnet-deps
+        require "$PYTHON" python "$INSTALL_PYTHON_DEPS" install-python-deps
+
+        if [ ${#errors[@]} -gt 0 ]; then
+          printf '%s\n' "${errors[@]}"
+          echo "::error::setup-workspace received contradictory inputs (see above). A disabled toolchain still resolves to the runner's preinstalled version, so the dependent step would run against an unpinned toolchain instead of failing."
+          exit 1
+        fi
+
+        echo "✅ Input combination is consistent"
+
     - name: 🧰 Install toolchains
       id: tooling
       uses: ./.github/actions/setup-tooling

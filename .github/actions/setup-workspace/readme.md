@@ -68,6 +68,23 @@ Use [`setup-tooling`](../setup-tooling/readme.md) directly when a job needs only
 | `generate-args` | `/e /a /g /i` | — |
 | `run-build-components` | `false` | `npm run build:components` |
 
+### Input validation
+
+The action fails fast, before installing anything, when a dependent task is
+requested while its toolchain is disabled:
+
+| Requires | Dependent inputs |
+|----------|------------------|
+| `node: 'true'` | `install-node-deps`, `install-scripts-deps`, `install-playwright`, `run-generate`, `run-build-components` |
+| `dotnet: 'true'` | `install-dotnet-deps` |
+| `python: 'true'` | `install-python-deps` |
+
+This exists because a disabled toolchain does **not** produce an obvious
+failure on its own. `npm`, `dotnet`, and `python` are all preinstalled on
+GitHub-hosted runners, so without the guard the dependent step would quietly
+run against whatever version the image happens to ship instead of the version
+this action pins — and you would only notice via a confusing downstream error.
+
 ## Outputs
 
 | Output | Description |
