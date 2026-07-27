@@ -932,8 +932,10 @@ Use emoji prefix + descriptive action:
 ### Internal Documentation
 
 - **RFC 0001**: `docs/rfc/0001-github-actions-workflows.md` - Architecture decisions
-- **Composite Action**: `.github/actions/setup-workspace/action.yml` - Implementation
-- **Composite Action README**: `.github/actions/setup-workspace/README.md` - Usage guide
+- **Composite Action (setup-tooling)**: `.github/actions/setup-tooling/action.yml` - Toolchain installation
+- **Composite Action README (setup-tooling)**: `.github/actions/setup-tooling/readme.md` - Usage guide
+- **Composite Action (setup-workspace)**: `.github/actions/setup-workspace/action.yml` - Repository bootstrap
+- **Composite Action README (setup-workspace)**: `.github/actions/setup-workspace/readme.md` - Usage guide
 
 ### External Resources
 

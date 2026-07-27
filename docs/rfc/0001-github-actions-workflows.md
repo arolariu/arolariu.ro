@@ -124,58 +124,69 @@ Use `setup-tooling` when a job needs only a binary. Use `setup-workspace` for ev
 
 **Philosophy:** Hash-based exact matching, no fallback keys
 
-#### **Node.js Caching**
-```yaml
-Cache Key: {os}-node-{workflow}-{hash(package-lock.json)}
-Example: linux-node-website-a3f9b2c1d4e5...
-```
+#### **Toolchain Caches (setup-tooling)**
 
-**Behavior:**
+Toolchain caches (`~/.npm`, `~/.nuget/packages`, pip) are delegated entirely to each `actions/setup-*` action's built-in mechanism. The `setup-tooling` action configures each with a `cache-dependency-path` pointing at the relevant lock file:
+
+| Toolchain | Action | `cache-dependency-path` |
+|-----------|--------|------------------------|
+| Node.js (npm download cache) | `actions/setup-node@v7` | `package-lock.json` |
+| .NET (NuGet) | `actions/setup-dotnet@v6` | `**/packages.lock.json` |
+| Python (pip) | `actions/setup-python@v7` | `sites/exp.arolariu.ro/requirements*.txt` |
+
+The exact key strings are generated internally by each `setup-*` action; no per-workflow segment is added.
+
+#### **Workspace Caches (setup-workspace)**
+
+Workspace caches use explicit `actions/cache@v5` steps. The keys below are copied verbatim from `setup-workspace/action.yml`:
+
+**node_modules:**
+```yaml
+key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+```
+Example: `linux-node-modules-a3f9b2c1d4e5...`
+
+**Playwright browser bundle (`~/.cache/ms-playwright`):**
+```yaml
+key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+```
+Example: `linux-playwright-b7e4c9a2f1d8...`
+
+**Behavior (both caches):**
 - **Cache hit**: When `package-lock.json` hasn't changed
 - **Cache miss**: When `package-lock.json` changes (due to package updates)
 - **No fallback**: Ensures fresh installation when dependencies change
-
-#### **.NET Caching**
-```yaml
-Cache Key: {os}-dotnet-{workflow}-{hash(*.csproj, *.slnx, packages.lock.json)}
-Example: linux-dotnet-api-b7e4c9a2f1d8...
-```
-
-**Behavior:**
-- **Cache hit**: When project files and lock files haven't changed
-- **Cache miss**: When any .csproj, .slnx, or packages.lock.json changes
-- **No fallback**: Ensures fresh restoration when dependencies change
 
 #### **Why No Fallback Keys?**
 
 **Problem with fallback keys:**
 ```yaml
 # DANGEROUS (old approach)
-key: linux-node-website-{hash}
+key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
 restore-keys: |
-  linux-node-website-
+  linux-node-modules-
   linux-node-
 ```
 
 **Scenario that fails:**
-1. Dev pushes feature → Cache created: `linux-node-website-hash123`
+1. Dev pushes feature → Cache created: `linux-node-modules-hash123`
 2. 3 days later, dev updates `package.json` (version bump)
 3. BUT doesn't regenerate `package-lock.json` (edge case)
 4. Workflow runs → Primary key misses
-5. Fallback `linux-node-website-` hits old cache! ❌
+5. Fallback `linux-node-modules-` hits old cache! ❌
 6. Build fails with incompatible dependencies ❌
 
 **Solution (current approach):**
 ```yaml
 # SAFE (current approach)
-key: linux-node-website-{hash}
+key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
 # NO restore-keys
 ```
 
 **Benefits:**
 - ✅ No stale cache reuse when lock files are out of sync
 - ✅ Forces fresh installation when dependencies change
-- ✅ Prevents cache pollution between workflows
+- ✅ All workflows share one cache entry per lock-file state (no per-workflow copies)
 - ✅ Clear: cache hit = exact match, cache miss = fresh install
 
 **Trade-off:**
@@ -467,7 +478,7 @@ The composite action provides clear visual feedback:
 **Current Approach:**
 - Hash-based keys prevent cache poisoning
 - No cross-workflow cache sharing via fallback keys
-- Workflow-scoped prefixes for isolation
+- Shared un-prefixed keys — all workflows use one cache entry per lock-file state; no fallback restore keys prevent stale-dependency propagation
 
 **Benefits:**
 - Malicious cached dependencies cannot spread between workflows
