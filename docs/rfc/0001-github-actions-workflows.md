@@ -117,7 +117,7 @@ Use `setup-tooling` when a job needs only a binary. Use `setup-workspace` for ev
 | Cache | Owner | Key |
 |-------|-------|-----|
 | `~/.npm`, `~/.nuget/packages`, pip | `setup-tooling` (built-in) | lock-file hashes |
-| `node_modules` | `setup-workspace` | `<os>-node-modules-<hash(package-lock.json)>` |
+| `node_modules` | `setup-workspace` | `<os>-node-modules-<node-version>-<hash(package-lock.json)>` |
 | `~/.cache/ms-playwright` | `setup-workspace` | `<os>-playwright-<hash(package-lock.json)>` |
 
 ### 3.2 Caching Strategy
@@ -142,9 +142,14 @@ Workspace caches use explicit `actions/cache@v5` steps. The keys below are copie
 
 **node_modules:**
 ```yaml
-key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}
 ```
-Example: `linux-node-modules-a3f9b2c1d4e5...`
+Example: `linux-node-modules-24-a3f9b2c1d4e5...`
+
+The Node version is part of the key because `node_modules` can contain
+natively-compiled addons whose ABI is tied to the runtime. A cache hit skips
+`npm ci`, so nothing would rebuild them — bumping Node must invalidate the
+cache rather than restore binaries built for the previous runtime.
 
 **Playwright browser bundle (`~/.cache/ms-playwright`):**
 ```yaml
@@ -152,8 +157,12 @@ key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
 ```
 Example: `linux-playwright-b7e4c9a2f1d8...`
 
+The Playwright key omits the Node version deliberately: the cached artifacts
+are browser binaries, not Node addons, and the Playwright version that governs
+them is already pinned by the lock file.
+
 **Behavior (both caches):**
-- **Cache hit**: When `package-lock.json` hasn't changed
+- **Cache hit**: When `package-lock.json` hasn't changed (and, for `node_modules`, the Node version is unchanged)
 - **Cache miss**: When `package-lock.json` changes (due to package updates)
 - **No fallback**: Ensures fresh installation when dependencies change
 
@@ -161,25 +170,28 @@ Example: `linux-playwright-b7e4c9a2f1d8...`
 
 **Problem with fallback keys:**
 ```yaml
-# DANGEROUS (old approach)
-key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+# DANGEROUS (what we deliberately do NOT do)
+key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}
 restore-keys: |
+  linux-node-modules-24-
   linux-node-modules-
-  linux-node-
 ```
 
+Note the key itself is the current one — the hazard below comes entirely from
+the `restore-keys` stanza, not from the key format.
+
 **Scenario that fails:**
-1. Dev pushes feature → Cache created: `linux-node-modules-hash123`
+1. Dev pushes feature → Cache created: `linux-node-modules-24-hash123`
 2. 3 days later, dev updates `package.json` (version bump)
 3. BUT doesn't regenerate `package-lock.json` (edge case)
 4. Workflow runs → Primary key misses
-5. Fallback `linux-node-modules-` hits old cache! ❌
+5. Fallback `linux-node-modules-24-` hits old cache! ❌
 6. Build fails with incompatible dependencies ❌
 
 **Solution (current approach):**
 ```yaml
 # SAFE (current approach)
-key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}
 # NO restore-keys
 ```
 
@@ -383,16 +395,17 @@ Trigger: PR
 
 **Node.js (node_modules):**
 ```yaml
-key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}
 ```
 
 **Components:**
 - `${{ runner.os }}`: OS-specific (linux, windows, macos)
+- `${{ inputs.node-version }}`: guards against restoring native addons built for a different Node ABI
 - `${{ hashFiles('package-lock.json') }}`: SHA-256 hash of the root `package-lock.json`
 
 **Example:**
 ```
-linux-node-modules-7f3e9a2c1b5d4...
+linux-node-modules-24-7f3e9a2c1b5d4...
 ```
 
 ### 6.2 Progress Indicators

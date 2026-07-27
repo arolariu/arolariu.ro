@@ -179,7 +179,7 @@ Full input tables: [`setup-tooling`](../actions/setup-tooling/readme.md), [`setu
 | Cache | Owner | Key |
 |-------|-------|-----|
 | `~/.npm`, `~/.nuget/packages`, pip | `setup-tooling` (built-in) | lock-file hashes |
-| `node_modules` | `setup-workspace` | `<os>-node-modules-<hash(package-lock.json)>` |
+| `node_modules` | `setup-workspace` | `<os>-node-modules-<node-version>-<hash(package-lock.json)>` |
 | `~/.cache/ms-playwright` | `setup-workspace` | `<os>-playwright-<hash(package-lock.json)>` |
 
 There is **no** per-workflow cache prefix and there are **no** fallback restore keys. Every workflow shares one entry per cache.
@@ -841,7 +841,7 @@ env:
 ```yaml
 - name: 🔍 Debug cache
   run: |
-    echo "Cache key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}"
+    echo "Cache key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}"
     echo "Lock file hash: $(sha256sum package-lock.json)"
 ```
 

@@ -173,7 +173,11 @@ runs:
           node_modules
           packages/*/node_modules
           sites/*/node_modules
-        key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+        # The Node major version is part of the key because `node_modules`
+        # can hold natively-compiled addons whose ABI is tied to the runtime
+        # (this tree pulls in `sharp`). On a cache hit `npm ci` is skipped, so
+        # nothing would rebuild them — a Node bump must invalidate the cache.
+        key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}
 
     - name: 📥 Install npm dependencies
       if: inputs.install-node-deps == 'true' && steps.cache-node-modules.outputs.cache-hit != 'true'

@@ -83,7 +83,7 @@ Use [`setup-tooling`](../setup-tooling/readme.md) directly when a job needs only
 | Cache | Owner | Key |
 |-------|-------|-----|
 | `~/.npm`, `~/.nuget/packages`, pip | `setup-tooling` (built-in) | lock-file hashes |
-| `node_modules`, `packages/*/node_modules`, `sites/*/node_modules` | this action | `<os>-node-modules-<hash(package-lock.json)>` |
+| `node_modules`, `packages/*/node_modules`, `sites/*/node_modules` | this action | `<os>-node-modules-<node-version>-<hash(package-lock.json)>` |
 | `~/.cache/ms-playwright` | this action | `<os>-playwright-<hash(package-lock.json)>` |
 
 Both of this action's caches are keyed on the lock-file hash **alone** — there is no per-workflow prefix. One shared entry each, rather than every workflow writing its own multi-hundred-megabyte copy against the repository's 10 GB budget.
