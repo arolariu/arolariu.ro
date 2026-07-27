@@ -121,8 +121,7 @@ jobs:
           echo "Restoring the API graph root and installing DefaultDocumentation.Console + pydoc-markdown..."
           START_TIME=$(date +%s)
           dotnet restore sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj
-          dotnet tool install --global DefaultDocumentation.Console --version 1.2.4 || dotnet tool update --global DefaultDocumentation.Console --version 1.2.4
-          echo "${HOME}/.dotnet/tools" >> $GITHUB_PATH
+          dotnet tool restore
           python -m pip install --upgrade pip
           python -m pip install -r sites/exp.arolariu.ro/requirements-dev.txt
           END_TIME=$(date +%s)

@@ -10,6 +10,7 @@ import {
   findDotnetBuildRoots,
   assertExpectedDocumentationTiers,
   getDefaultDocumentationArgs,
+  getDefaultDocumentationCommand,
 } from './docs-assemble';
 
 describe('syncProse', () => {
@@ -254,5 +255,22 @@ describe('DefaultDocumentation arguments', () => {
       'Internal',
       'Private',
     ]);
+  });
+});
+
+describe('DefaultDocumentation invocation', () => {
+  it('invokes the tool through the dotnet driver, not a bare PATH executable', () => {
+    const {command, args} = getDefaultDocumentationCommand('api.dll', 'out');
+
+    // Local tools declared in .config/dotnet-tools.json are resolved by the
+    // dotnet driver and are never placed on PATH.
+    expect(command).toBe('dotnet');
+    expect(args[0]).toBe('defaultdocumentation');
+  });
+
+  it('forwards the full generator argument list after the tool name', () => {
+    const {args} = getDefaultDocumentationCommand('api.dll', 'out');
+
+    expect(args.slice(1)).toEqual(getDefaultDocumentationArgs('api.dll', 'out'));
   });
 });
