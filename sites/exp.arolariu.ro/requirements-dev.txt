@@ -2,5 +2,5 @@
 # Install locally: pip install -r requirements-dev.txt
 -r requirements.txt
 pytest==9.1.1
-ruff==0.15.18
+ruff==0.16.0
 pydoc-markdown==4.8.2
