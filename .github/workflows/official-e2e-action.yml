@@ -55,12 +55,8 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v7
 
-      - name: 🚀 Setup workspace
-        uses: ./.github/actions/setup-workspace
-        with:
-          cache-key-prefix: "e2e"
-          dotnet-version: ""
-          node-version: "24"
+      - name: 🧰 Setup tooling
+        uses: ./.github/actions/setup-tooling
 
       - name: 🔍 Resolve run inputs
         id: resolve
@@ -120,10 +116,6 @@ jobs:
 
       - name: 🚀 Setup workspace
         uses: ./.github/actions/setup-workspace
-        with:
-          cache-key-prefix: "e2e"
-          dotnet-version: ""
-          node-version: "24"
 
       - name: 🌡️ Backend health check
         if: matrix.target == 'backend'
@@ -240,13 +232,8 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v7
 
-      - name: 🚀 Setup workspace
-        uses: ./.github/actions/setup-workspace
-        with:
-          cache-key-prefix: "e2e"
-          dotnet-version: ""
-          install-node-dependencies: "false"
-          node-version: "24"
+      - name: 🧰 Setup tooling
+        uses: ./.github/actions/setup-tooling
 
       - name: 📥 Download E2E artifacts
         uses: actions/download-artifact@v8
