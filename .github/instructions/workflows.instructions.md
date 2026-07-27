@@ -58,7 +58,7 @@ This document provides guidelines for developing and maintaining GitHub Actions 
 | `official-components-publish.yml` | Publish npm package | Tag push, Manual | Publish |
 
 **Key Patterns:**
-- Use `setup-workspace` composite action for all workspace setup
+- Use `setup-tooling` for binaries, `setup-workspace` for full workspace setup
 - OIDC for Azure authentication - NO long-lived secrets
 - Hash-based caching only - NO fallback keys (intentional)
 - Progress emojis: 📥 🔐 🚀 🏗️ 🧪 ✅ ⚠️
@@ -120,135 +120,69 @@ official-api-trigger.yml
 
 ---
 
-## Composite Action: setup-workspace
+## Composite Actions
 
-**Location:** `.github/actions/setup-workspace/action.yml`
+Two composite actions live under `.github/actions/`. All workflows MUST use them; hand-rolled `actions/setup-node`, `actions/setup-dotnet`, and `actions/setup-python` steps are prohibited.
 
-All workflows MUST use this composite action for workspace setup. It ensures consistency across all CI/CD pipelines.
+| Action | Responsibility |
+|--------|----------------|
+| `setup-tooling` | Installs Node.js / .NET / Python. Repo-agnostic. Caching is delegated to each `setup-*` action's built-in mechanism |
+| `setup-workspace` | Invokes `setup-tooling`, then bootstraps the repo: `npm ci`, `dotnet restore`, `pip install`, Playwright, `npm run generate`, `npm run build:components` |
 
-### Inputs
+Use `setup-tooling` when a job needs only a binary. Use `setup-workspace` for everything else.
 
-```yaml
-inputs:
-  node-version:
-    description: 'Node.js version'
-    required: false
-    default: '24'
-  dotnet-version:
-    description: '.NET SDK version'
-    required: false
-    default: '10.0.x'
-  cache-key-prefix:
-    description: 'Prefix for cache keys (workflow scope)'
-    required: false
-    default: 'default'
-  setup-azure:
-    description: 'Configure Azure CLI'
-    required: false
-    default: 'false'
-  playwright:
-    description: 'Install Playwright browsers'
-    required: false
-    default: 'false'
-  generate:
-    description: 'Run npm run generate (GraphQL, i18n, env)'
-    required: false
-    default: 'false'
-```
+### Input naming scheme
 
-### Outputs
+| Group | Pattern | Examples |
+|-------|---------|----------|
+| Toolchain | bare tool noun, `<tool>-version` | `node`, `dotnet`, `python-version` |
+| Dependency install | `install-<target>-deps`, `<target>-deps-path` | `install-node-deps`, `dotnet-deps-path` |
+| Tool install | `install-<tool>`, `<tool>-<qualifier>` | `install-playwright`, `playwright-browsers` |
+| Workspace task | `run-<task>`, `<task>-args` | `run-generate`, `generate-args` |
+| Outputs | `<tool>-cache-hit` | `node-cache-hit`, `playwright-cache-hit` |
+
+All inputs are strings. `dotnet` and `python` default to `false` — opt in explicitly. Never gate a toolchain by passing an empty version string.
+
+### Usage examples
 
 ```yaml
-outputs:
-  node-cache-hit:
-    description: 'Whether Node.js dependencies were restored from cache'
-  dotnet-cache-hit:
-    description: 'Whether .NET packages were restored from cache'
-```
+# Node.js + npm ci (the default)
+- name: 📦 Setup workspace
+  uses: ./.github/actions/setup-workspace
 
-### Usage Examples
-
-**Website workflow (full setup):**
-```yaml
-- name: 🚀 Setup workspace
+# .NET tests
+- name: 📦 Setup workspace
   uses: ./.github/actions/setup-workspace
   with:
-    node-version: '24'
-    cache-key-prefix: 'website'
-    setup-azure: 'true'
-    playwright: 'true'
-    generate: 'true'
-```
+    node: 'false'
+    install-node-deps: 'false'
+    dotnet: 'true'
+    install-dotnet-deps: 'true'
 
-**API workflow (.NET only):**
-```yaml
-- name: 🚀 Setup workspace
+# Website build
+- name: 📦 Setup workspace
   uses: ./.github/actions/setup-workspace
   with:
-    node-version: ''  # Skip Node.js
-    dotnet-version: '10.0.x'
-    cache-key-prefix: 'api'
-    setup-azure: 'true'
+    install-playwright: 'true'
+    run-generate: 'true'
+    run-build-components: 'true'
+
+# Binary only — no repository bootstrap
+- name: 🧰 Setup tooling
+  uses: ./.github/actions/setup-tooling
 ```
 
-**Hygiene workflow (Node.js only):**
-```yaml
-- name: 🚀 Setup workspace
-  uses: ./.github/actions/setup-workspace
-  with:
-    node-version: '24'
-    dotnet-version: ''  # Skip .NET
-    cache-key-prefix: 'hygiene'
-```
+Full input tables: [`setup-tooling`](../actions/setup-tooling/readme.md), [`setup-workspace`](../actions/setup-workspace/readme.md).
 
----
+### Caching
 
-## Caching Strategy
+| Cache | Owner | Key |
+|-------|-------|-----|
+| `~/.npm`, `~/.nuget/packages`, pip | `setup-tooling` (built-in) | lock-file hashes |
+| `node_modules` | `setup-workspace` | `<os>-node-modules-<hash(package-lock.json)>` |
+| `~/.cache/ms-playwright` | `setup-workspace` | `<os>-playwright-<hash(package-lock.json)>` |
 
-### Philosophy: Hash-Based Only, NO Fallback Keys
-
-**This is intentional and documented in RFC 0001.**
-
-```yaml
-# ✅ CORRECT: Hash-based exact match only
-key: ${{ runner.os }}-node-${{ inputs.cache-key-prefix }}-${{ hashFiles('**/package-lock.json') }}
-# NO restore-keys!
-
-# ❌ WRONG: Fallback keys enable stale cache issues
-restore-keys: |
-  ${{ runner.os }}-node-${{ inputs.cache-key-prefix }}-
-  ${{ runner.os }}-node-
-```
-
-### Why No Fallback Keys?
-
-From RFC 0001:
-> "The 'restore-keys' approach that most projects use can cause stale dependency issues. When a developer adds a new package but the workflow uses a fallback cache from before that package was added, the build might fail or behave unexpectedly."
-
-**Cache Invalidation Scenarios:**
-| Scenario | Lock File | Cache Result | Outcome |
-|----------|-----------|--------------|---------|
-| No dependency changes | Unchanged | HIT ✅ | Fast build |
-| New package added | Changed | MISS → Fresh install | Correct deps |
-| Package version bump | Changed | MISS → Fresh install | Correct deps |
-| Only code changes | Unchanged | HIT ✅ | Fast build |
-
-### Cache Key Structure
-
-```yaml
-# Node.js cache key
-${{ runner.os }}-node-${{ inputs.cache-key-prefix }}-${{ hashFiles('**/package-lock.json') }}
-# Example: linux-node-website-7f3e9a2c1b5d4...
-
-# .NET cache key  
-${{ runner.os }}-dotnet-${{ inputs.cache-key-prefix }}-${{ hashFiles('**/*.csproj') }}
-# Example: linux-dotnet-api-a1b2c3d4e5f6...
-```
-
-**Key Components:**
-- `runner.os`: OS isolation (linux, windows, macos)
-- `cache-key-prefix`: Workflow isolation (website, api, hygiene)
-- `hashFiles()`: Content-based invalidation
+There is **no** per-workflow cache prefix and there are **no** fallback restore keys. Every workflow shares one entry per cache.
 
 ---
 
@@ -497,7 +431,6 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache-key-prefix: 'workflow-name'
 
       - name: 🏗️ Build
         run: npm run build
@@ -908,7 +841,7 @@ env:
 ```yaml
 - name: 🔍 Debug cache
   run: |
-    echo "Cache key: ${{ runner.os }}-node-${{ inputs.cache-key-prefix }}-${{ hashFiles('**/package-lock.json') }}"
+    echo "Cache key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}"
     echo "Lock file hash: $(sha256sum package-lock.json)"
 ```
 

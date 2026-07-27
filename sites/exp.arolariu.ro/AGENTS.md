@@ -11,7 +11,8 @@ Configuration proxy and feature flag service for the arolariu.ro platform.
 ```bash
 python -m ruff check .      # Lint (Ruff)
 python -m pytest -q          # Run tests
-pip install -r requirements.txt  # Install deps
+pip install -r requirements-dev.txt   # Install deps (dev: adds pytest, pytest-cov, ruff, bandit, pydoc-markdown)
+pip install -r requirements.txt       # Install runtime deps only
 uvicorn main:app --reload    # Dev server
 ```
 

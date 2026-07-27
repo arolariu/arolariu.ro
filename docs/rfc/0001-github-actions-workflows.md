@@ -3,13 +3,13 @@
 - **Status**: Implemented
 - **Date**: 2025-10-22
 - **Authors**: arolariu
-- **Related Components**: `.github/workflows/`, `.github/actions/setup-workspace`
+- **Related Components**: `.github/workflows/`, `.github/actions/setup-tooling`, `.github/actions/setup-workspace`
 
 ---
 
 ## Abstract
 
-This RFC documents the comprehensive DevOps architecture for the arolariu.ro monorepo using GitHub Actions. The system implements a structured approach to CI/CD with distinct workflow patterns: **build-release workflows** for staged deployments with validation gates, and **trigger workflows** for direct build-and-deploy operations. All workflows leverage a centralized composite action (`setup-workspace`) for consistent environment setup, intelligent caching, and enhanced developer experience.
+This RFC documents the comprehensive DevOps architecture for the arolariu.ro monorepo using GitHub Actions. The system implements a structured approach to CI/CD with distinct workflow patterns: **build-release workflows** for staged deployments with validation gates, and **trigger workflows** for direct build-and-deploy operations. All workflows leverage two centralized composite actions — `setup-tooling` for language toolchains and `setup-workspace` for repository bootstrap — giving consistent environment setup, shared un-prefixed caching, and a single place to change a toolchain version.
 
 ---
 
@@ -101,39 +101,24 @@ Trigger (push/PR) → Lint → Format → Test → Report
 
 ## 3. Technical Design
 
-### 3.1 Composite Action: `setup-workspace`
+### 3.1 Composite Actions: setup-tooling and setup-workspace
 
 **Purpose:** Centralized environment setup for all workflows
 
-**Location:** `.github/actions/setup-workspace/`
+**Location:** `.github/actions/setup-tooling/`, `.github/actions/setup-workspace/`
 
-**Features:**
-- Node.js setup with version control
-- .NET setup with version control
-- Intelligent dependency caching (hash-based, no fallback)
-- Playwright browser installation
-- GraphQL artifact generation
-- Progress indicators with emojis
+| Action | Responsibility |
+|--------|----------------|
+| `setup-tooling` | Installs Node.js / .NET / Python. Repo-agnostic. Caching is delegated to each `setup-*` action's built-in mechanism |
+| `setup-workspace` | Invokes `setup-tooling`, then bootstraps the repo: `npm ci`, `dotnet restore`, `pip install`, Playwright, `npm run generate`, `npm run build:components` |
 
-**Inputs:**
-```yaml
-inputs:
-  node-version:                    # Node.js version (default: '24')
-  dotnet-version:                  # .NET version (default: '10.x')
-  install-node-dependencies:       # Toggle npm install (default: 'true')
-  install-dotnet-dependencies:     # Toggle dotnet restore (default: 'true')
-  cache-key-prefix:                # Workflow-specific cache key (e.g., 'website', 'api')
-  working-directory:               # Custom directory for npm commands (default: '.')
-  playwright:                      # Install Playwright browsers (default: 'false')
-  generate:                        # Run npm run generate (default: 'false')
-```
+Use `setup-tooling` when a job needs only a binary. Use `setup-workspace` for everything else.
 
-**Outputs:**
-```yaml
-outputs:
-  node-cache-hit:      # Whether Node.js cache was hit (true/false)
-  dotnet-cache-hit:    # Whether .NET cache was hit (true/false)
-```
+| Cache | Owner | Key |
+|-------|-------|-----|
+| `~/.npm`, `~/.nuget/packages`, pip | `setup-tooling` (built-in) | lock-file hashes |
+| `node_modules` | `setup-workspace` | `<os>-node-modules-<hash(package-lock.json)>` |
+| `~/.cache/ms-playwright` | `setup-workspace` | `<os>-playwright-<hash(package-lock.json)>` |
 
 ### 3.2 Caching Strategy
 
@@ -240,7 +225,6 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: '24'
-          cache-key-prefix: 'workflow-name'
           # ... other inputs
       
       - name: 🏗️ Build
@@ -386,21 +370,18 @@ Trigger: PR
 
 ### 6.1 Cache Key Generation
 
-**Node.js:**
+**Node.js (node_modules):**
 ```yaml
-key: ${{ runner.os }}-node-${{ inputs.cache-key-prefix }}-${{ hashFiles('**/package-lock.json') }}
+key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
 ```
 
 **Components:**
 - `${{ runner.os }}`: OS-specific (linux, windows, macos)
-- `${{ inputs.cache-key-prefix }}`: Workflow identifier (website, api, hygiene, etc.)
-- `${{ hashFiles('**/package-lock.json') }}`: SHA-256 hash of all package-lock.json files
+- `${{ hashFiles('package-lock.json') }}`: SHA-256 hash of the root `package-lock.json`
 
 **Example:**
 ```
-linux-node-website-7f3e9a2c1b5d4...
-linux-node-api-a1b2c3d4e5f6...
-linux-node-hygiene-9e8d7c6b5a4...
+linux-node-modules-7f3e9a2c1b5d4...
 ```
 
 ### 6.2 Progress Indicators
@@ -440,9 +421,7 @@ The composite action provides clear visual feedback:
 - name: 🚀 Setup workspace
   uses: ./.github/actions/setup-workspace
   with:
-    node-version: '24'
-    generate: 'true'  # Generates GraphQL types, schemas, etc.
-    cache-key-prefix: 'website'
+    run-generate: 'true'  # Generates GraphQL types, schemas, etc.
 
 - name: 🏗️ Build website
   run: npm run build  # Can now use generated GraphQL types
@@ -535,7 +514,8 @@ The composite action provides clear visual feedback:
 ## 10. Related Documentation
 
 ### 10.1 Internal Documentation
-- `.github/actions/setup-workspace/README.md` - Composite action usage guide
+- `.github/actions/setup-tooling/readme.md` - setup-tooling usage guide
+- `.github/actions/setup-workspace/readme.md` - setup-workspace usage guide
 - `.github/instructions/workflows.instructions.md` - Workflow development guidelines
 
 ### 10.2 External References
