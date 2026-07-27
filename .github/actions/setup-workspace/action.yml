@@ -2,210 +2,262 @@
 # Setup Workspace (Composite Action)
 #
 # Summary:
-# - Bootstraps the monorepo CI environment (Node.js + optional .NET)
-# - Adds dependency caching (npm + NuGet) to speed up workflows
-# - Optionally installs Playwright browsers and generates repo artifacts
+# - Installs toolchains via `setup-tooling`, then bootstraps the
+#   monorepo: dependency installs, Playwright browsers, code
+#   generation, and the shared component build.
 #
 # Remarks:
-# - This action is intentionally “one stop” for workflows so callers can
-#   standardize cache keys, dependency installs, and artifact generation.
-# - Behavior is controlled entirely via inputs; leaving `dotnet-version` empty
-#   skips all .NET setup/restore steps.
-# - All commands run relative to `inputs.working-directory`.
+# - Toolchain caching belongs to `setup-tooling` (built-in caches).
+#   This action caches only what it produces itself: `node_modules`
+#   and the Playwright browser bundle.
+# - Both caches are keyed on the lock-file hash ALONE. They are not
+#   scoped per workflow, so all workflows share one entry each rather
+#   than each writing its own multi-hundred-megabyte copy.
+# - Inputs are never interpolated directly into `run:` blocks; they
+#   are passed through `env:` to avoid script injection.
 #+#+#+#+############################################################
 
 name: "Setup Workspace"
-description: "Sets up Node.js and .NET with optimized caching for the monorepo workspace"
+description: "Installs toolchains via setup-tooling, then bootstraps the arolariu.ro monorepo."
 author: "arolariu.ro"
 
 inputs:
-  # Node.js version to install via actions/setup-node.
+  # ── Toolchain (forwarded verbatim to setup-tooling) ──────────────
+  node:
+    description: "Whether to install Node.js."
+    required: false
+    default: "true"
+
   node-version:
-    description: "Node.js version to use"
+    description: "Node.js version to install."
     required: false
     default: "24"
 
-  # .NET SDK version to install via actions/setup-dotnet.
-  # Set to an empty string to disable .NET steps entirely.
-  dotnet-version:
-    description: ".NET version to use (leave empty to skip .NET setup)"
+  node-registry-url:
+    description: "npm registry URL to configure for publishing."
     required: false
-    default: "10"
+    default: ""
 
-  # When true, runs `npm ci` if the npm cache was not a hit.
-  install-node-dependencies:
-    description: "Whether to install npm dependencies"
-    required: false
-    default: "true"
-
-  # When true (and .NET is enabled), runs `dotnet restore` if the NuGet cache
-  # was not a hit.
-  install-dotnet-dependencies:
-    description: "Whether to install .NET dependencies"
-    required: false
-    default: "true"
-
-  # When true, runs the monorepo generators. Intended for CI workflows that
-  # require generated artifacts to exist before build/test.
-  generate:
-    description: "Whether to run npm run generate command"
+  dotnet:
+    description: "Whether to install the .NET SDK."
     required: false
     default: "false"
 
-  # Workflow-specific prefix for cache keys.
-  # Use this to avoid cross-workflow cache invalidation when necessary.
-  cache-key-prefix:
-    description: "Prefix for cache key to allow per-workflow customization"
+  dotnet-version:
+    description: ".NET SDK version to install."
     required: false
-    default: "default"
+    default: "10.0.x"
 
-  # Relative to repository root; used for both npm and dotnet commands.
-  working-directory:
-    description: "Working directory for npm  and dotnet commands (relative to repository root)"
+  python:
+    description: "Whether to install Python."
     required: false
-    default: "."
+    default: "false"
 
-  # When true, installs Playwright Chromium + OS dependencies.
-  playwright:
-    description: "Whether to install the Playwright browsers and dependencies"
+  python-version:
+    description: "Python version to install."
+    required: false
+    default: "3.12"
+
+  # ── Dependency installation ──────────────────────────────────────
+  install-node-deps:
+    description: "Whether to run `npm ci` at the repository root."
+    required: false
+    default: "true"
+
+  install-scripts-deps:
+    description: "Whether to run `npm ci` inside `.github/scripts`."
+    required: false
+    default: "false"
+
+  install-dotnet-deps:
+    description: "Whether to run `dotnet restore`."
+    required: false
+    default: "false"
+
+  dotnet-deps-path:
+    description: "Solution or project passed to `dotnet restore`."
+    required: false
+    default: "arolariu.slnx"
+
+  install-python-deps:
+    description: "Whether to install Python requirements with pip."
+    required: false
+    default: "false"
+
+  python-deps-path:
+    description: "Requirements file passed to `pip install -r`."
+    required: false
+    default: "sites/exp.arolariu.ro/requirements-dev.txt"
+
+  install-playwright:
+    description: "Whether to install Playwright browsers and OS dependencies."
+    required: false
+    default: "false"
+
+  playwright-browsers:
+    description: "Space-separated Playwright browsers to install."
+    required: false
+    default: "chromium"
+
+  # ── Workspace tasks ──────────────────────────────────────────────
+  run-generate:
+    description: "Whether to run the monorepo generators."
+    required: false
+    default: "false"
+
+  generate-args:
+    description: "Flags passed to `npm run generate`."
+    required: false
+    default: "/e /a /g /i"
+
+  run-build-components:
+    description: "Whether to build the @arolariu/components package."
     required: false
     default: "false"
 
 outputs:
-  # Exposes whether the Node.js cache matched the current lockfile hash.
   node-cache-hit:
-    description: "Whether there was a cache hit for Node.js dependencies"
-    value: ${{ steps.cache-node.outputs.cache-hit }}
+    description: "Whether the npm download cache was restored."
+    value: ${{ steps.tooling.outputs.node-cache-hit }}
 
-  # Exposes whether the NuGet cache matched the current project/sln inputs.
   dotnet-cache-hit:
-    description: "Whether there was a cache hit for .NET packages"
-    value: ${{ steps.cache-dotnet.outputs.cache-hit }}
+    description: "Whether the NuGet package cache was restored."
+    value: ${{ steps.tooling.outputs.dotnet-cache-hit }}
+
+  python-cache-hit:
+    description: "Whether the pip cache was restored."
+    value: ${{ steps.tooling.outputs.python-cache-hit }}
+
+  node-modules-cache-hit:
+    description: "Whether node_modules was restored from cache."
+    value: ${{ steps.cache-node-modules.outputs.cache-hit }}
+
+  playwright-cache-hit:
+    description: "Whether the Playwright browser bundle was restored from cache."
+    value: ${{ steps.cache-playwright.outputs.cache-hit }}
 
 runs:
   using: "composite"
   steps:
-    # ─────────────────────────────────────────────────────────────────
-    # Phase 1: Initialize and record start time
-    # ─────────────────────────────────────────────────────────────────
     - name: 🚀 Initialize workspace setup
       id: init
       shell: bash
-      run: |
-        echo "start_time=$(date +%s)" >> $GITHUB_OUTPUT
-        echo "::group::📋 Setup Configuration"
-        echo "  Node.js:    ${{ inputs.node-version }}"
-        echo "  .NET:       ${{ inputs.dotnet-version || 'disabled' }}"
-        echo "  Playwright: ${{ inputs.playwright }}"
-        echo "  Generate:   ${{ inputs.generate }}"
-        echo "  Cache key:  ${{ inputs.cache-key-prefix }}"
-        echo "::endgroup::"
+      run: echo "start_time=$(date +%s)" >> "$GITHUB_OUTPUT"
 
-    # ─────────────────────────────────────────────────────────────────
-    # Phase 2: SDK Setup (Node.js + .NET)
-    # ─────────────────────────────────────────────────────────────────
-    - name: 📦 Setting up Node.js v${{ inputs.node-version }}...
-      uses: actions/setup-node@v6
+    - name: 🧰 Install toolchains
+      id: tooling
+      uses: ./.github/actions/setup-tooling
       with:
+        node: ${{ inputs.node }}
         node-version: ${{ inputs.node-version }}
+        node-registry-url: ${{ inputs.node-registry-url }}
+        dotnet: ${{ inputs.dotnet }}
+        dotnet-version: ${{ inputs.dotnet-version }}
+        python: ${{ inputs.python }}
+        python-version: ${{ inputs.python-version }}
 
-    - name: 💾 Caching Node.js dependencies...
-      id: cache-node
+    - name: 💾 Restoring node_modules...
+      id: cache-node-modules
+      if: inputs.install-node-deps == 'true'
       uses: actions/cache@v5
       with:
-        # Cache both root and workspace node_modules to support Nx workspaces.
-        # Trade-off: broader paths can increase cache size but reduce CI time.
+        # `~/.npm` is intentionally absent: setup-node already owns it.
         path: |
           node_modules
-          ~/.npm
           **/node_modules
-        key: ${{ runner.os }}-node-${{ inputs.cache-key-prefix }}-${{ hashFiles('**/package-lock.json') }}
-
-    - name: 📦 Setting up .NET v${{ inputs.dotnet-version }}...
-      if: inputs.dotnet-version != ''
-      uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: ${{ inputs.dotnet-version }}
-
-    - name: 💾 Caching .NET packages...
-      id: cache-dotnet
-      if: inputs.dotnet-version != ''
-      uses: actions/cache@v5
-      with:
-        # Cache NuGet global packages and the dotnet SDK cache locations.
-        path: |
-          ~/.nuget/packages
-          ~/.dotnet
-        key: ${{ runner.os }}-dotnet-${{ inputs.cache-key-prefix }}-${{ hashFiles('**/*.csproj', '**/*.slnx', '**/packages.lock.json') }}
+        key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
 
     - name: 📥 Install npm dependencies
-      if: inputs.install-node-dependencies == 'true'
+      if: inputs.install-node-deps == 'true' && steps.cache-node-modules.outputs.cache-hit != 'true'
       shell: bash
-      working-directory: ${{ inputs.working-directory }}
       run: |
-        if [ "${{ steps.cache-node.outputs.cache-hit }}" != "true" ]; then
-          echo "::group::📦 Installing Node.js dependencies..."
-          npm install --prefer-offline --no-audit
-          echo "::endgroup::"
-          echo "✅ Dependencies installed successfully"
-        else
-          echo "✅ Using cached Node.js dependencies"
-        fi
+        echo "::group::📦 npm ci (root)"
+        npm ci --prefer-offline --no-audit --no-fund
+        echo "::endgroup::"
+
+    - name: 📥 Install .github/scripts dependencies
+      if: inputs.install-scripts-deps == 'true'
+      shell: bash
+      working-directory: .github/scripts
+      run: |
+        echo "::group::📦 npm ci (.github/scripts)"
+        npm ci --prefer-offline --no-audit --no-fund
+        echo "::endgroup::"
 
     - name: 📥 Restore .NET dependencies
-      if: inputs.dotnet-version != '' && inputs.install-dotnet-dependencies == 'true'
+      if: inputs.install-dotnet-deps == 'true'
       shell: bash
-      working-directory: ${{ inputs.working-directory }}
+      env:
+        DOTNET_DEPS_PATH: ${{ inputs.dotnet-deps-path }}
       run: |
-        if [ "${{ steps.cache-dotnet.outputs.cache-hit }}" != "true" ]; then
-          echo "::group::📦 Restoring .NET dependencies..."
-          dotnet restore arolariu.slnx
-          echo "::endgroup::"
-          echo "✅ .NET dependencies restored successfully"
-        else
-          echo "✅ Using cached .NET dependencies"
-        fi
+        echo "::group::📦 dotnet restore"
+        dotnet restore "${DOTNET_DEPS_PATH}"
+        echo "::endgroup::"
+
+    - name: 📥 Install Python dependencies
+      if: inputs.install-python-deps == 'true'
+      shell: bash
+      env:
+        PYTHON_DEPS_PATH: ${{ inputs.python-deps-path }}
+      run: |
+        echo "::group::📦 pip install"
+        python -m pip install --upgrade pip
+        python -m pip install -r "${PYTHON_DEPS_PATH}"
+        echo "::endgroup::"
+
+    - name: 💾 Restoring Playwright browsers...
+      id: cache-playwright
+      if: inputs.install-playwright == 'true'
+      uses: actions/cache@v5
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
 
     - name: 🎭 Install Playwright browsers
-      if: inputs.playwright == 'true'
+      if: inputs.install-playwright == 'true'
       shell: bash
-      working-directory: ${{ inputs.working-directory }}
+      env:
+        PLAYWRIGHT_BROWSERS: ${{ inputs.playwright-browsers }}
+        PLAYWRIGHT_CACHE_HIT: ${{ steps.cache-playwright.outputs.cache-hit }}
       run: |
-        echo "::group::🎭 Installing Playwright browsers..."
-        npx playwright install chromium --with-deps
+        echo "::group::🎭 Playwright"
+        if [ "${PLAYWRIGHT_CACHE_HIT}" = "true" ]; then
+          # Browsers are cached, but OS-level shared libraries are not
+          # part of the cached directory and must be installed anyway.
+          npx playwright install-deps ${PLAYWRIGHT_BROWSERS}
+        else
+          npx playwright install ${PLAYWRIGHT_BROWSERS} --with-deps
+        fi
         echo "::endgroup::"
-        echo "✅ Playwright browsers installed"
 
-    - name: 🔨 Generate artifacts (GraphQL schemas, types, etc.)
-      if: inputs.generate == 'true'
+    - name: 🔨 Generate artifacts (env, acknowledgements, GraphQL, i18n)
+      if: inputs.run-generate == 'true'
       shell: bash
-      working-directory: ${{ inputs.working-directory }}
+      env:
+        GENERATE_ARGS: ${{ inputs.generate-args }}
       run: |
-        echo "::group::🔨 Generating artifacts..."
-        npm run generate /e /a /g /i
+        echo "::group::🔨 npm run generate"
+        npm run generate ${GENERATE_ARGS}
+        echo "::endgroup::"
+
+    - name: 🔨 Build the @arolariu/components package
+      if: inputs.run-build-components == 'true'
+      shell: bash
+      run: |
+        echo "::group::🔨 npm run build:components"
         npm run build:components
         echo "::endgroup::"
-        echo "✅ Artifacts generated successfully"
 
-    # ─────────────────────────────────────────────────────────────────
-    # Phase 7: Summary and Timing
-    # ─────────────────────────────────────────────────────────────────
     - name: ✨ Workspace setup complete
-      id: timing
       shell: bash
+      env:
+        START_TIME: ${{ steps.init.outputs.start_time }}
+        NODE_MODULES_CACHE: ${{ steps.cache-node-modules.outputs.cache-hit == 'true' && 'HIT' || (inputs.install-node-deps != 'true' && 'SKIPPED' || 'MISS') }}
+        PLAYWRIGHT_CACHE: ${{ steps.cache-playwright.outputs.cache-hit == 'true' && 'HIT' || (inputs.install-playwright != 'true' && 'SKIPPED' || 'MISS') }}
       run: |
-        END=$(date +%s)
-        DURATION=$((END - ${{ steps.init.outputs.start_time }}))
-        echo "duration=${DURATION}" >> $GITHUB_OUTPUT
-
-        echo ""
-        echo "┌──────────────────────────────────────────────────────────┐"
-        echo "│  ✅ Workspace Setup Complete                             │"
-        echo "├──────────────────────────────────────────────────────────┤"
-        printf "│  ⏱️  Total time: %3ds                                    │\n" $DURATION
-        echo "├──────────────────────────────────────────────────────────┤"
-        echo "│  Cache Status:                                           │"
-        printf "│    • Node.js:    %-40s│\n" "${{ steps.cache-node.outputs.cache-hit == 'true' && '✅ HIT' || '❌ MISS' }}"
-        printf "│    • .NET:       %-40s│\n" "${{ steps.cache-dotnet.outputs.cache-hit == 'true' && '✅ HIT' || (inputs.dotnet-version == '' && '⏭️  SKIPPED' || '❌ MISS') }}"
-        printf "│    • Playwright: %-40s│\n" "${{ steps.cache-playwright.outputs.cache-hit == 'true' && '✅ HIT' || (inputs.playwright != 'true' && '⏭️  SKIPPED' || '❌ MISS') }}"
-        echo "└──────────────────────────────────────────────────────────┘"
+        DURATION=$(( $(date +%s) - START_TIME ))
+        echo "::group::✨ Workspace setup complete"
+        echo "  Duration:     ${DURATION}s"
+        echo "  node_modules: ${NODE_MODULES_CACHE}"
+        echo "  Playwright:   ${PLAYWRIGHT_CACHE}"
+        echo "::endgroup::"
