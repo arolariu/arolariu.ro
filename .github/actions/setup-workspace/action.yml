@@ -162,9 +162,17 @@ runs:
       uses: actions/cache@v5
       with:
         # `~/.npm` is intentionally absent: setup-node already owns it.
+        #
+        # Paths mirror the npm workspaces declared in the root package.json
+        # (`packages/*`, `sites/*`), which are exactly what the root lockfile
+        # governs. A blanket `**/node_modules` would also sweep in
+        # `.github/scripts/node_modules` — a package with its OWN lockfile —
+        # making the cache contents depend on which job happened to populate
+        # it, and restoring a tree the scripts install then deletes anyway.
         path: |
           node_modules
-          **/node_modules
+          packages/*/node_modules
+          sites/*/node_modules
         key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
 
     - name: 📥 Install npm dependencies
@@ -221,12 +229,16 @@ runs:
         PLAYWRIGHT_CACHE_HIT: ${{ steps.cache-playwright.outputs.cache-hit }}
       run: |
         echo "::group::🎭 Playwright"
+        # Split the space-separated browser list into an array rather than
+        # relying on unquoted word-splitting, so the value cannot be glob
+        # expanded against the working directory.
+        read -ra browsers <<< "${PLAYWRIGHT_BROWSERS}"
         if [ "${PLAYWRIGHT_CACHE_HIT}" = "true" ]; then
           # Browsers are cached, but OS-level shared libraries are not
           # part of the cached directory and must be installed anyway.
-          npx playwright install-deps ${PLAYWRIGHT_BROWSERS}
+          npx playwright install-deps "${browsers[@]}"
         else
-          npx playwright install ${PLAYWRIGHT_BROWSERS} --with-deps
+          npx playwright install "${browsers[@]}" --with-deps
         fi
         echo "::endgroup::"
 
@@ -237,7 +249,10 @@ runs:
         GENERATE_ARGS: ${{ inputs.generate-args }}
       run: |
         echo "::group::🔨 npm run generate"
-        npm run generate ${GENERATE_ARGS}
+        # Same reasoning as the Playwright step: split deliberately into an
+        # array instead of letting the shell word-split and glob the value.
+        read -ra generate_args <<< "${GENERATE_ARGS}"
+        npm run generate "${generate_args[@]}"
         echo "::endgroup::"
 
     - name: 🔨 Build the @arolariu/components package
