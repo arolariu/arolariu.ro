@@ -30,10 +30,10 @@
     "@types/node": "*",
     "jsdom": "*",
     "sass": "*",
+    "svelte": "*",
     "svelte-adapter-azure-swa": "*",
     "svelte-check": "*",
-    "svelte": "*",
-    "tsx": "*",
+    "tsx": "4.23.1",
     "typescript": "*",
     "vite": "*",
     "vitest": "*"
