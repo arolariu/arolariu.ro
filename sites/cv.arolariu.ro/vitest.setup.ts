@@ -21,37 +21,47 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+// localStorage must be installed at MODULE scope, not inside `beforeEach`.
+// Vitest runs setup files before importing the test file, but `beforeEach`
+// hooks only fire after that import has completed. Modules that touch
+// localStorage during evaluation — e.g. src/hooks/useTheme.svelte.ts, which
+// instantiates its ThemeState singleton at import time — would otherwise throw
+// "Cannot read properties of undefined (reading 'getItem')" and the entire test
+// file would fail to collect. happy-dom does not supply localStorage itself.
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+
+  return {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, value: string) => {
+      store[key] = value.toString();
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
+    get length() {
+      return Object.keys(store).length;
+    },
+    key: (index: number) => {
+      const keys = Object.keys(store);
+      return keys[index] || null;
+    },
+  };
+})();
+
+Object.defineProperty(globalThis, "localStorage", {
+  value: localStorageMock,
+  writable: true,
+  configurable: true,
+});
+
 // Mock browser APIs
 beforeEach(() => {
-  // Mock localStorage
-  const localStorageMock = (() => {
-    let store: Record<string, string> = {};
-
-    return {
-      getItem: (key: string) => store[key] || null,
-      setItem: (key: string, value: string) => {
-        store[key] = value.toString();
-      },
-      removeItem: (key: string) => {
-        delete store[key];
-      },
-      clear: () => {
-        store = {};
-      },
-      get length() {
-        return Object.keys(store).length;
-      },
-      key: (index: number) => {
-        const keys = Object.keys(store);
-        return keys[index] || null;
-      },
-    };
-  })();
-
-  Object.defineProperty(globalThis, "localStorage", {
-    value: localStorageMock,
-    writable: true,
-  });
+  // Reset persisted state between tests (the mock itself stays installed).
+  localStorageMock.clear();
 
   // Mock IntersectionObserver
   const IntersectionObserverMock = vi.fn(() => ({
