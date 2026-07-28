@@ -109,10 +109,10 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          dotnet-version: '10'
-          install-node-dependencies: 'false'
-          install-dotnet-dependencies: 'true'
-          cache-key-prefix: 'api'
+          node: 'false'
+          install-node-deps: 'false'
+          dotnet: 'true'
+          install-dotnet-deps: 'true'
 
       - name: 🧪 Running unit tests...
         working-directory: .
@@ -184,14 +184,6 @@ jobs:
           echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "└────────────────────────────────────────────────────────────┘"
           echo "::endgroup::"
-
-      - name: 📦 Setup workspace
-        uses: ./.github/actions/setup-workspace
-        with:
-          dotnet-version: '10.x'
-          install-node-dependencies: 'false'
-          install-dotnet-dependencies: 'false'
-          cache-key-prefix: 'api'
 
       - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@v3

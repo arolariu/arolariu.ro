@@ -1,147 +1,122 @@
 # Setup Workspace Action
 
-A composite GitHub Action that sets up the Node.js and .NET development environment with optimized caching for the arolariu.ro monorepo.
+Installs language toolchains via [`setup-tooling`](../setup-tooling/readme.md), then bootstraps the arolariu.ro monorepo: dependency installs, Playwright browsers, code generation, and the shared component build.
 
-## Features
-
-- ✅ Sets up Node.js with configurable version
-- ✅ Sets up .NET with configurable version (optional)
-- ✅ Intelligent caching for npm and NuGet packages
-- ✅ Automatic dependency installation
-- ✅ Optional Azure setup integration
-- ✅ Optional Playwright browser installation
-- ✅ Customizable cache keys per workflow
+Use [`setup-tooling`](../setup-tooling/readme.md) directly when a job needs only a binary and no repository bootstrap.
 
 ## Usage
 
-### Basic Node.js Setup
-
 ```yaml
-- name: Setup workspace
-  uses: ./.github/actions/setup-workspace
+# Node.js + npm ci (the default)
+- uses: ./.github/actions/setup-workspace
+
+# .NET tests
+- uses: ./.github/actions/setup-workspace
   with:
-    node-version: '24'
-```
+    node: "false"
+    dotnet: "true"
+    install-dotnet-deps: "true"
 
-### With .NET Support
-
-```yaml
-- name: Setup workspace
-  uses: ./.github/actions/setup-workspace
+# Website build: generation, component library, Playwright
+- uses: ./.github/actions/setup-workspace
   with:
-    node-version: '24'
-    dotnet-version: '10.x'
-```
+    install-playwright: "true"
+    run-generate: "true"
+    run-build-components: "true"
 
-### With Azure and Playwright
-
-```yaml
-- name: Setup workspace
-  uses: ./.github/actions/setup-workspace
+# Python checks
+- uses: ./.github/actions/setup-workspace
   with:
-    node-version: '24'
-    playwright: 'true'
-    generate: 'true'
-    cache-key-prefix: 'website-build'
-```
-
-### Custom Working Directory
-
-```yaml
-- name: Setup workspace
-  uses: ./.github/actions/setup-workspace
-  with:
-    node-version: '24'
-    working-directory: './sites/arolariu.ro'
-    cache-key-prefix: 'website'
+    node: "false"
+    install-node-deps: "false"
+    python: "true"
+    install-python-deps: "true"
 ```
 
 ## Inputs
 
-| Input | Description | Required | Default |
-|-------|-------------|----------|---------|
-| `node-version` | Node.js version to use | No | `24` |
-| `dotnet-version` | .NET version to use (leave empty to skip) | No | `10.x` |
-| `install-node-dependencies` | Whether to install npm dependencies | No | `true` |
-| `install-dotnet-dependencies` | Whether to restore .NET dependencies | No | `true` |
-| `cache-key-prefix` | Prefix for cache key customization | No | `default` |
-| `working-directory` | Working directory for npm commands | No | `.` |
-| `playwright` | Whether to install Playwright browsers | No | `false` |
-| `generate` | Whether to run `npm run generate` for GraphQL schemas and artifacts | No | `false` |
+### Toolchain — forwarded to `setup-tooling`
+
+| Input | Default |
+|-------|---------|
+| `node` | `true` |
+| `node-version` | `24` |
+| `node-registry-url` | `""` |
+| `dotnet` | `false` |
+| `dotnet-version` | `10.0.x` |
+| `python` | `false` |
+| `python-version` | `3.12` |
+
+### Dependency installation
+
+| Input | Default | Runs |
+|-------|---------|------|
+| `install-node-deps` | `true` | `npm ci` at the repository root |
+| `install-scripts-deps` | `false` | `npm ci` inside `.github/scripts` |
+| `install-dotnet-deps` | `false` | `dotnet restore <dotnet-deps-path>` |
+| `dotnet-deps-path` | `arolariu.slnx` | — |
+| `install-python-deps` | `false` | `pip install --upgrade pip` then `pip install -r <python-deps-path>` |
+| `python-deps-path` | `sites/exp.arolariu.ro/requirements-dev.txt` | — |
+| `install-playwright` | `false` | `npx playwright install <browsers> --with-deps` |
+| `playwright-browsers` | `chromium` | — |
+
+### Workspace tasks
+
+| Input | Default | Runs |
+|-------|---------|------|
+| `run-generate` | `false` | `npm run generate <generate-args>` |
+| `generate-args` | `/e /a /g /i` | — |
+| `run-build-components` | `false` | `npm run build:components` |
+
+### Input validation
+
+The action fails fast, before installing anything, when a dependent task is
+requested while its toolchain is disabled:
+
+| Requires | Dependent inputs |
+|----------|------------------|
+| `node: 'true'` | `install-node-deps`, `install-scripts-deps` |
+| `install-node-deps: 'true'` | `install-playwright`, `run-generate`, `run-build-components` |
+| `dotnet: 'true'` | `install-dotnet-deps` |
+| `python: 'true'` | `install-python-deps` |
+
+Two reasons this exists.
+
+A **disabled toolchain** does not produce an obvious failure on its own.
+`npm`, `dotnet`, and `python` are all preinstalled on GitHub-hosted runners,
+so without the guard the dependent step would quietly run against whatever
+version the image happens to ship instead of the version this action pins —
+and you would only notice via a confusing downstream error.
+
+**`install-node-deps` gates both the cache restore and `npm ci`,** so with it
+disabled the root `node_modules` tree is absent entirely. `npm run generate`
+and `npm run build:components` would fail outright, and `npx playwright` would
+silently fetch a floating version rather than the one the lock file pins.
+`install-scripts-deps` is deliberately *not* in that group: it installs
+`.github/scripts` independently and does not need the root tree.
 
 ## Outputs
 
 | Output | Description |
 |--------|-------------|
-| `node-cache-hit` | Whether there was a cache hit for Node.js dependencies |
-| `dotnet-cache-hit` | Whether there was a cache hit for .NET packages |
+| `node-cache-hit` | npm download cache restored |
+| `dotnet-cache-hit` | NuGet package cache restored |
+| `python-cache-hit` | pip cache restored |
+| `node-modules-cache-hit` | `node_modules` restored from cache |
+| `playwright-cache-hit` | Playwright browser bundle restored from cache |
 
-## Cache Strategy
+## Caching model
 
-The action uses hash-based exact matching for cache keys (no fallback keys):
+| Cache | Owner | Key |
+|-------|-------|-----|
+| `~/.npm`, `~/.nuget/packages`, pip | `setup-tooling` (built-in) | lock-file hashes |
+| `node_modules`, `packages/*/node_modules`, `sites/*/node_modules` | this action | `<os>-node-modules-<node-version>-<hash(package-lock.json)>` |
+| `~/.cache/ms-playwright` | this action | `<os>-playwright-<hash(package-lock.json)>` |
 
-### Node.js Cache
-```
-Key: {os}-node-{prefix}-{hash(package-lock.json)}
-```
+Neither of this action's caches carries a per-workflow prefix — one shared entry each, rather than every workflow writing its own multi-hundred-megabyte copy against the repository's 10 GB budget. Neither uses fallback restore keys.
 
-### .NET Cache
-```
-Key: {os}-dotnet-{prefix}-{hash(*.csproj, *.slnx, packages.lock.json)}
-```
+The two keys are not identical in shape. The Playwright key is the lock-file hash alone, since the cached artifacts are browser binaries and the Playwright version governing them is already pinned by the lock file. The `node_modules` key **also includes the Node version**: a cache hit skips `npm ci`, and the tree can contain natively-compiled addons (this repo pulls in `sharp`) whose ABI is tied to the runtime — so a Node bump must invalidate the cache rather than restore binaries built for the previous version.
 
-**Why no fallback keys?**
+The cached `node_modules` paths mirror the npm workspaces declared in the root `package.json` (`packages/*`, `sites/*`) — precisely what the root lock file governs. `.github/scripts` is deliberately excluded: it has its own lock file and its own install step (`install-scripts-deps`), so folding it into a cache keyed on the root lock file would make the cache's contents depend on which job populated it first.
 
-Fallback keys can cause cache pollution when lock files are out of sync with package files. The hash-based approach ensures:
-- ✅ Cache hit only when dependencies are exactly the same
-- ✅ Fresh installation when any dependency changes
-- ✅ No risk of using stale cached dependencies
-- ✅ Clear behavior: exact match = cache hit, no match = fresh install
-
-**When does cache invalidate?**
-- a) No version bumps → Lock file unchanged → **Cache HIT**
-- b) Version bump with regenerated lock file → Hash changes → **Cache MISS** → Fresh install ✅
-- c) Only version bumps → Lock file regenerated → **Cache MISS** → Fresh install ✅
-
-**Important**: Cache keys are scoped to workflows via the prefix to prevent cache pollution. When dependencies are updated, the hash-based primary key ensures fresh installations rather than using potentially incompatible caches.
-
-## Examples from Repository Workflows
-
-### Website Build Workflow
-```yaml
-- name: Setup workspace
-  uses: ./.github/actions/setup-workspace
-  with:
-    node-version: '24'
-    playwright: 'true'
-    cache-key-prefix: 'website'
-```
-
-### API Build Workflow
-```yaml
-- name: Setup workspace
-  uses: ./.github/actions/setup-workspace
-  with:
-    node-version: '24'
-    dotnet-version: '10.x'
-    install-node-dependencies: 'false'
-    install-dotnet-dependencies: 'true'
-    cache-key-prefix: 'api'
-```
-
-### Hygiene Check Workflow
-```yaml
-- name: Setup workspace
-  uses: ./.github/actions/setup-workspace
-  with:
-    node-version: '24'
-    cache-key-prefix: 'hygiene'
-```
-
-## Benefits
-
-1. **Consistency**: All workflows use the same setup logic
-2. **Performance**: Intelligent caching reduces build times
-3. **Maintainability**: Single source of truth for setup steps
-4. **Flexibility**: Customizable for different workflow needs
-5. **DRY Principle**: Eliminates code duplication across workflows
+`npm ci` is used rather than `npm install`: it is the correct CI primitive and cannot mutate `package-lock.json`. It is skipped only when the `node_modules` cache hits — that is, on an exact lock-file match **and** an unchanged Node version.

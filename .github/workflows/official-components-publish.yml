@@ -107,8 +107,6 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
-          dotnet-version: ""
-          cache-key-prefix: "components"
 
       - name: 📋 Extract package information
         id: package-info
@@ -208,19 +206,16 @@ jobs:
           echo "└────────────────────────────────────────────────────────────┘"
           echo "::endgroup::"
 
-      - name: 📦 Setup Node.js with npm registry
-        uses: actions/setup-node@v7
+      - name: 📦 Setup workspace
+        uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
-          registry-url: "https://registry.npmjs.org"
+          node-registry-url: "https://registry.npmjs.org"
 
-      # Ensure npm CLI is new enough for trusted publishing (11.5.1+)
+      # Ensure npm CLI is new enough for trusted publishing (11.5.1+).
+      # Kept in the workflow: this is publish-specific, not workspace bootstrap.
       - name: 🔄 Update npm to latest
         run: npm install -g npm@latest
-
-      - name: 📥 Install dependencies
-        run: npm ci
-        working-directory: .
 
       - name: 🏗️ Build package
         run: npm run build

@@ -42,9 +42,10 @@ const DOTNET_TFM = 'net10.0';
  * Commands that, on Windows, ship as `.cmd` shims rather than real
  * `.exe` binaries. `spawn` can't locate those without either the
  * explicit `.cmd` extension or `shell: true`, so we reserve
- * `shell: true` exclusively for this set. Everything else (dotnet,
- * python, DefaultDocumentation) is a real executable on PATH and
- * runs faster + safer without cmd.exe in between.
+ * `shell: true` exclusively for this set. Everything else (`dotnet`,
+ * `python`) is a real executable on PATH and runs faster + safer
+ * without cmd.exe in between. DefaultDocumentation is no longer
+ * spawned directly — it is a local tool invoked through `dotnet`.
  */
 const NPM_FAMILY_COMMANDS = new Set(['npm', 'npx', 'node']);
 
@@ -337,6 +338,29 @@ export function getDefaultDocumentationArgs(dll: string, outDir: string): readon
 }
 
 /**
+ * Build the full command + arguments for invoking DefaultDocumentation.
+ *
+ * @remarks
+ * `DefaultDocumentation.Console` is declared as a **local** tool in
+ * `.config/dotnet-tools.json` and restored with `dotnet tool restore`.
+ * Local tools are resolved by the dotnet driver and are never placed on
+ * `PATH`, so they must be invoked as `dotnet <command>`. The command name
+ * is LOWERCASE (`defaultdocumentation`) — NuGet registers tool commands in
+ * lower case regardless of the package name's casing, and Linux file
+ * systems enforce that strictly.
+ *
+ * @param dll - Absolute path to the compiled assembly.
+ * @param outDir - Absolute output directory for generated markdown.
+ * @returns The command and arguments to spawn.
+ */
+export function getDefaultDocumentationCommand(
+  dll: string,
+  outDir: string,
+): {readonly command: string; readonly args: readonly string[]} {
+  return {command: 'dotnet', args: ['defaultdocumentation', ...getDefaultDocumentationArgs(dll, outDir)]};
+}
+
+/**
  * Discover every `.csproj` under `api.arolariu.ro/src/`, build the
  * minimum set of graph roots with one `dotnet build` call each (so
  * MSBuild covers the whole graph via ProjectReference transitivity),
@@ -355,20 +379,10 @@ async function runDotnetInternals(): Promise<string> {
     const outDir = join(DOTNET_INTERNALS_DIR, proj.assemblyName);
     mkdirSync(outDir, {recursive: true});
     const dll = join(API_ROOT, proj.binRelative, `${proj.assemblyName}.dll`);
-    // DefaultDocumentation.Console is installed globally (via `dotnet tool
-    // install --global`) — see sites/docs.arolariu.ro/README.md for the
-    // one-time local setup command. The invocable name is LOWERCASE
-    // (`defaultdocumentation`) — NuGet registers tool commands in lower
-    // case regardless of the package name's casing, and Linux file
-    // systems enforce that strictly. Windows' case-insensitive file
-    // system masks a PascalCase call here, so a mixed-case spelling
-    // silently works locally and only breaks on Linux CI.
-    log += await runCommand(
-      'defaultdocumentation',
-      getDefaultDocumentationArgs(dll, outDir),
-      API_ROOT,
-      {buffered: true},
-    );
+    // DefaultDocumentation.Console is declared as a **local** tool in
+    // `.config/dotnet-tools.json` and restored with `dotnet tool restore`.
+    const {command, args} = getDefaultDocumentationCommand(dll, outDir);
+    log += await runCommand(command, args, API_ROOT, {buffered: true});
   }
   assertNonEmpty(DOTNET_INTERNALS_DIR, 'defaultdocumentation');
   return log;

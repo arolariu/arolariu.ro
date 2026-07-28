@@ -96,9 +96,6 @@ jobs:
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
-        with:
-          node-version: '24'
-          cache-key-prefix: 'cv'
 
       - name: 🧪 Running unit tests...
         working-directory: './sites/cv.arolariu.ro'
@@ -143,9 +140,6 @@ jobs:
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
-        with:
-          node-version: '24'
-          cache-key-prefix: 'cv'
 
       - name: 📦 Prepare and build...
         working-directory: './sites/cv.arolariu.ro'

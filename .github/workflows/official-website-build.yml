@@ -147,10 +147,9 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          node-version: '24'
-          playwright: 'true'
-          generate: 'true'
-          cache-key-prefix: 'website'
+          install-playwright: 'true'
+          run-generate: 'true'
+          run-build-components: 'true'
 
       - name: 🧬 TypeScript type-check (tsgo)
         working-directory: './sites/arolariu.ro'
@@ -306,9 +305,8 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          node-version: '24'
-          generate: 'true'
-          cache-key-prefix: 'website'
+          run-generate: 'true'
+          run-build-components: 'true'
 
       - name: 🔒 Performing auth against private Azure Container Registry...
         working-directory: '.'
