@@ -10,9 +10,7 @@
         "command": "npm run build",
         "cwd": "packages/components"
       },
-      "outputs": [
-        "{projectRoot}/dist"
-      ]
+      "outputs": ["{projectRoot}/dist"]
     },
     "dev": {
       "executor": "nx:run-commands",
@@ -34,9 +32,5 @@
       }
     }
   },
-  "tags": [
-    "domain:frontend",
-    "scope:components",
-    "type:lib"
-  ]
+  "tags": ["domain:frontend", "scope:components", "type:lib"]
 }

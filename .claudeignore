@@ -1,23 +1,51 @@
+# =============================================================================
+# .claudeignore — exclude noise from Claude Code context
+# =============================================================================
+# Keep in sync with .copilotignore (same intent, different tool).
+
+# --- Build artifacts & caches ---
 node_modules/
 .git/
-*.tsbuildinfo
-coverage/
-artifacts/
-TestResults/
-logs/
-.nx/
 dist/
 build/
-.next/
 out/
-obj/
+_site/
 bin/
+obj/
+.next/
+.nx/
 .svelte-kit/
+.docusaurus/
+.vs/
 storybook-static/
-playwright-report/
-test-results/
+coverage/
 code-cov/
+test-results/
+TestResults/
+playwright-report/
+artifacts/
+logs/
+temp/
+tmp/
 __generated__/
-package-lock.json
+*.tsbuildinfo
+
+# --- Agent working artifacts ---
+.superpowers/
+docs/superpowers/
+.impeccable/
+.worktrees/
+
+# --- Python runtime artifacts ---
+__pycache__/
+.venv/
+.ruff_cache/
+*.pyc
+
+# --- Secrets & environment files ---
 .env
 .env.*
+!.env.example
+
+# --- Generated & lock files ---
+package-lock.json

@@ -98,7 +98,6 @@ type ServerActionOutputType = ServerActionResult<
   }>
 >;
 
-
 /**
  * Generates a UUIDv7-like identifier using timestamp + random bytes.
  *
@@ -132,7 +131,6 @@ function generateScanId(): string {
     .join("");
   return `${timestamp.slice(0, 8)}-${timestamp.slice(8, 12)}-7${random.slice(0, 3)}-${random.slice(3, 7)}-${random.slice(7, 19)}`;
 }
-
 
 /**
  * Uploads a standalone scan to Azure Blob Storage for later invoice conversion.

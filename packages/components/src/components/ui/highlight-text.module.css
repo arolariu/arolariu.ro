@@ -10,5 +10,9 @@
 
 :global(.dark) .highlight,
 :global([data-theme="dark"]) .highlight {
-  background-image: linear-gradient(90deg, color-mix(in oklch, var(--ac-primary), white 35%) 0%, color-mix(in oklch, #a855f7, white 15%) 100%);
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in oklch, var(--ac-primary), white 35%) 0%,
+    color-mix(in oklch, #a855f7, white 15%) 100%
+  );
 }

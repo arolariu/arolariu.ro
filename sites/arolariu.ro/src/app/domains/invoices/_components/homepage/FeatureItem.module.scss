@@ -1,4 +1,4 @@
-@use '../../../../../styles/abstracts' as abstracts;
+@use "../../../../../styles/abstracts" as abstracts;
 
 .featureItem {
   display: flex;
@@ -11,19 +11,19 @@
   height: 2.5rem;
   width: 2.5rem;
   flex-shrink: 0;
-  border-radius: abstracts.radius('lg');
-  background-color: abstracts.color('primary');
-  color: abstracts.color('primary-foreground');
+  border-radius: abstracts.radius("lg");
+  background-color: abstracts.color("primary");
+  color: abstracts.color("primary-foreground");
 
   @include abstracts.dark {
-    background-color: abstracts.color-alpha('primary', 0.5);
-    color: abstracts.color('primary');
+    background-color: abstracts.color-alpha("primary", 0.5);
+    color: abstracts.color("primary");
   }
 }
 
 .featureTitle {
-  font-weight: abstracts.font-weight('semibold');
-  color: abstracts.color('muted-foreground');
+  font-weight: abstracts.font-weight("semibold");
+  color: abstracts.color("muted-foreground");
 
   @include abstracts.dark {
     color: white;
@@ -31,12 +31,11 @@
 }
 
 .featureDescription {
-  font-size: abstracts.font-size('sm');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("sm");
+  color: abstracts.color("muted-foreground");
 }
 
 .featureIcon {
   @include abstracts.icon-size(abstracts.space(5));
-  color: abstracts.color('primary-foreground');
+  color: abstracts.color("primary-foreground");
 }
-

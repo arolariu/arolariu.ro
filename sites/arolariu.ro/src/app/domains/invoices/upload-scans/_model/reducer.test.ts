@@ -403,7 +403,15 @@ describe("uploadReducer", () => {
   });
 
   it("ignores scanUpload.item.progressChanged for an already completed upload", () => {
-    const completed = createUpload({id: "u1", status: "completed", progress: 100, attempts: 1, file: null, preview: "", blobUrl: "https://storage/u1.jpg"});
+    const completed = createUpload({
+      id: "u1",
+      status: "completed",
+      progress: 100,
+      attempts: 1,
+      file: null,
+      preview: "",
+      blobUrl: "https://storage/u1.jpg",
+    });
     const state = {...initialUploadState, pendingUploads: [completed]};
 
     const next = uploadReducer(

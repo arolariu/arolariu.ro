@@ -38,14 +38,14 @@
 /// @see base/_globals.scss — `--footer-bg` CSS variable
 /// @see themes/_presets.scss — preset overrides for `--footer-bg`
 /// ===========================================
-@use '../abstracts' as *;
+@use "../abstracts" as *;
 
 // Main footer wrapper
 // Original: bg-footer-bg relative bottom-0 w-full print:hidden
 .footer {
   display: block;
   position: relative;
-  z-index: z('content');
+  z-index: z("content");
   bottom: 0;
   width: 100%;
   background-color: hsl(var(--footer-bg));
@@ -78,7 +78,7 @@
   margin-top: -1.25rem; // -mt-5
   color: hsl(var(--footer-bg));
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     height: 4rem; // sm:h-16
     margin-top: -2.5rem; // sm:-mt-10
   }
@@ -93,19 +93,19 @@
   max-width: none; // No max-width constraint
   margin: 0; // No centering margins (match production)
   padding-top: 3rem; // pt-12
-  color: color('primary-foreground');
+  color: color("primary-foreground");
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     padding-left: 3rem;
     padding-right: 3rem;
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     padding-left: 2rem;
     padding-right: 2rem;
   }
 
-  @include respond-to('xl') {
+  @include respond-to("xl") {
     padding-left: 4rem;
     padding-right: 4rem;
   }
@@ -118,24 +118,24 @@
   gap: 2rem; // gap-8 for mobile
   margin-bottom: 2rem; // mb-8
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     column-gap: 2rem;
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     column-gap: 2rem;
   }
 
-  @include respond-to('xl') {
+  @include respond-to("xl") {
     column-gap: 4rem;
   }
 
-  @include respond-to('2xl') {
+  @include respond-to("2xl") {
     column-gap: 6rem;
   }
 }
@@ -144,17 +144,17 @@
 // Original: md:col-span-1 lg:col-span-2
 .footer__brand-section {
   // Center content on small screens
-  @include respond-below('md') {
+  @include respond-below("md") {
     display: flex;
     flex-direction: column;
     align-items: center;
   }
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-column: span 1;
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-column: span 2;
   }
 }
@@ -165,11 +165,13 @@
   display: inline-flex;
   align-items: center;
   transform: scale(1);
-  transition: transform 300ms ease-in-out, color 300ms ease-in-out;
+  transition:
+    transform 300ms ease-in-out,
+    color 300ms ease-in-out;
 
   &:hover {
     transform: scale(1.1);
-    color: color('primary-foreground');
+    color: color("primary-foreground");
   }
 }
 
@@ -187,10 +189,10 @@
   font-weight: 700; // font-bold
   text-transform: uppercase;
   letter-spacing: 0.025em; // tracking-wide
-  color: color('primary-foreground');
+  color: color("primary-foreground");
 
   &:hover {
-    color: color('primary-foreground');
+    color: color("primary-foreground");
   }
 }
 
@@ -203,7 +205,7 @@
   text-align: left; // Default: left aligned
 
   // Mobile only: centered with padding
-  @include respond-below('md') {
+  @include respond-below("md") {
     padding-left: 1rem;
     padding-right: 1rem;
     text-align: center;
@@ -213,12 +215,12 @@
 // RichText prose styling
 // Original: prose 2xsm:text-center text-pretty text-white md:text-start
 .footer__rich-text {
-  color: color('primary-foreground');
+  color: color("primary-foreground");
   text-wrap: pretty;
   text-align: left; // Default: left aligned
 
   // Mobile only: centered
-  @include respond-below('md') {
+  @include respond-below("md") {
     text-align: center;
   }
 }
@@ -232,25 +234,25 @@
   text-align: left; // Default: left aligned
 
   // Mobile/tablet: column layout, centered
-  @include respond-below('lg') {
+  @include respond-below("lg") {
     flex-direction: column;
     text-align: center;
   }
 
   // Responsive gaps between nav columns
-  @include respond-to('md') {
+  @include respond-to("md") {
     gap: 2rem;
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     gap: 4rem;
   }
 
-  @include respond-to('xl') {
+  @include respond-to("xl") {
     gap: 5rem;
   }
 
-  @include respond-to('2xl') {
+  @include respond-to("2xl") {
     gap: 6rem;
   }
 }
@@ -260,12 +262,12 @@
 .footer__nav-title {
   font-weight: 600; // font-semibold
   letter-spacing: 0.025em; // tracking-wide
-  color: color('primary-foreground');
+  color: color("primary-foreground");
   cursor: default;
   transition: color 300ms ease-in-out;
 
   &:hover {
-    color: color('primary-foreground');
+    color: color("primary-foreground");
   }
 }
 
@@ -285,15 +287,17 @@
 // Navigation link
 // Original: text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300
 .footer__nav-link {
-  color: color('primary-foreground');
-  transition: color 300ms ease-in-out, text-decoration-color 300ms ease-in-out;
+  color: color("primary-foreground");
+  transition:
+    color 300ms ease-in-out,
+    text-decoration-color 300ms ease-in-out;
   text-decoration: underline;
-  text-decoration-color: color-alpha('primary-foreground', 0.6);
+  text-decoration-color: color-alpha("primary-foreground", 0.6);
   text-underline-offset: 0.15em;
 
   &:hover {
-    color: color('primary-foreground');
-    text-decoration-color: color('primary-foreground');
+    color: color("primary-foreground");
+    text-decoration-color: color("primary-foreground");
   }
 
   code {
@@ -314,7 +318,7 @@
   justify-content: space-between;
   width: 100%; // Ensure full width for space-between to work
   gap: 2rem; // gap-8
-  border-top: 1px solid color-alpha('primary-foreground', 0.35);
+  border-top: 1px solid color-alpha("primary-foreground", 0.35);
   padding-top: 1.25rem; // py-5
   padding-bottom: 1.25rem;
 }
@@ -327,7 +331,7 @@
   margin: 0; // Default: no margin
 
   // Mobile only: centered
-  @include respond-below('md') {
+  @include respond-below("md") {
     text-align: center;
     margin-left: auto;
     margin-right: auto;
@@ -343,15 +347,15 @@
 // Source code link
 // Original: text-yellow-500 italic
 .footer__source-link {
-  color: color('primary-foreground');
+  color: color("primary-foreground");
   font-style: italic;
   text-decoration: underline;
-  text-decoration-color: color-alpha('primary-foreground', 0.6);
+  text-decoration-color: color-alpha("primary-foreground", 0.6);
   text-underline-offset: 0.15em;
 
   &:hover {
-    color: color('primary-foreground');
-    text-decoration-color: color('primary-foreground');
+    color: color("primary-foreground");
+    text-decoration-color: color("primary-foreground");
   }
 }
 
@@ -366,7 +370,7 @@
   margin: 0; // Default: no margin (pushed right by parent's justify-between)
 
   // Mobile only: center the social icons
-  @include respond-below('md') {
+  @include respond-below("md") {
     margin-left: auto;
     margin-right: auto;
   }
@@ -377,11 +381,13 @@
 .footer__social-icon {
   height: 1.75rem; // h-7
   width: 1.75rem; // w-7
-  color: color('primary-foreground');
-  transition: color 300ms ease-in-out, opacity 300ms ease-in-out;
+  color: color("primary-foreground");
+  transition:
+    color 300ms ease-in-out,
+    opacity 300ms ease-in-out;
 
   &:hover {
-    color: color('primary-foreground');
+    color: color("primary-foreground");
     opacity: 0.82;
   }
 }
@@ -390,10 +396,10 @@
 .footer__build-info {
   width: 100%;
   font-size: 0.875rem;
-  color: color('primary-foreground');
+  color: color("primary-foreground");
   text-align: end;
 
-  @include respond-below('md') {
+  @include respond-below("md") {
     text-align: center;
   }
 }
@@ -404,7 +410,7 @@
 // text in light mode, light bg + dark text in dark mode).
 .footer__build-tooltip {
   cursor: help;
-  color: color('primary-foreground');
+  color: color("primary-foreground");
 }
 
 // Inside the Radix tooltip portal, let the code inherit the tooltip's
@@ -417,12 +423,12 @@
 // Commit SHA link
 .footer__commit-link {
   font-style: italic;
-  color: color('primary-foreground');
+  color: color("primary-foreground");
   text-decoration: underline;
-  text-decoration-color: color-alpha('primary-foreground', 0.6);
+  text-decoration-color: color-alpha("primary-foreground", 0.6);
   text-underline-offset: 0.15em;
 
   &:hover {
-    text-decoration-color: color('primary-foreground');
+    text-decoration-color: color("primary-foreground");
   }
 }

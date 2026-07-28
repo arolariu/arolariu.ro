@@ -1,4 +1,4 @@
-@use '../../../../../../styles/abstracts' as *;
+@use "../../../../../../styles/abstracts" as *;
 
 .presetRow {
   display: flex;
@@ -8,32 +8,32 @@
 }
 
 .presetButton {
-  background-color: color('background');
-  border: 1px solid color('border');
-  border-radius: radius('md');
+  background-color: color("background");
+  border: 1px solid color("border");
+  border-radius: radius("md");
   padding: space(1) space(2.5);
-  font-size: font-size('xs');
-  color: color('foreground');
+  font-size: font-size("xs");
+  color: color("foreground");
   cursor: pointer;
   @include transition((background-color, border-color));
 
-  @include respond-below('md') {
+  @include respond-below("md") {
     min-height: space(11);
     flex: 1;
   }
 
   &:hover {
-    background-color: color('muted');
+    background-color: color("muted");
   }
 }
 
 .presetButtonActive {
-  background-color: color('primary');
-  color: color('primary-foreground');
-  border-color: color('primary');
+  background-color: color("primary");
+  color: color("primary-foreground");
+  border-color: color("primary");
 
   &:hover {
-    background-color: color('primary');
+    background-color: color("primary");
     opacity: 0.9;
   }
 }
@@ -43,7 +43,7 @@
   flex-direction: column;
   gap: space(2);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     flex-direction: row;
   }
 }
@@ -59,7 +59,7 @@
 
 .dateIcon {
   @include icon-size(space(4));
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .calendarPopover {

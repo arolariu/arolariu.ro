@@ -14,7 +14,9 @@
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
   outline: none;
   cursor: pointer;
-  transition: border-color var(--ac-transition-fast), box-shadow var(--ac-transition-fast);
+  transition:
+    border-color var(--ac-transition-fast),
+    box-shadow var(--ac-transition-fast);
 }
 
 .trigger:focus-visible {
@@ -57,7 +59,9 @@
   color: var(--ac-popover-foreground);
   box-shadow: 0 16px 40px -16px rgb(0 0 0 / 0.35);
   transform-origin: var(--transform-origin);
-  transition: opacity var(--ac-transition-normal), transform var(--ac-transition-normal);
+  transition:
+    opacity var(--ac-transition-normal),
+    transform var(--ac-transition-normal);
 }
 
 .popup[data-starting-style],

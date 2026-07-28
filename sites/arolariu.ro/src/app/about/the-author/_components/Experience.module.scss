@@ -1,13 +1,13 @@
 // ===========================================
 // THE AUTHOR - EXPERIENCE COMPONENT
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 .section {
-  background-color: color-alpha('muted', 0.3);
+  background-color: color-alpha("muted", 0.3);
   padding: space(20) space(4);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     padding-left: space(8);
     padding-right: space(8);
   }
@@ -29,11 +29,11 @@
   position: relative;
   display: inline-block;
   margin-bottom: space(4);
-  font-size: font-size('3xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("3xl");
+  font-weight: font-weight("bold");
 
-  @include respond-to('md') {
-    font-size: font-size('4xl');
+  @include respond-to("md") {
+    font-size: font-size("4xl");
   }
 }
 
@@ -41,7 +41,7 @@
   margin-left: auto;
   margin-right: auto;
   max-width: 42rem;
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 // Grid layout
@@ -49,7 +49,7 @@
   display: grid;
   gap: space(8);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: 1fr 2fr;
   }
 }
@@ -65,7 +65,7 @@
   bottom: 0;
   left: 2rem;
   width: 1px;
-  background-color: color-alpha('border', 0.5);
+  background-color: color-alpha("border", 0.5);
 }
 
 .timelineItem {
@@ -105,24 +105,24 @@
 .timelineIcon {
   position: absolute;
   left: 0;
-  z-index: z('content');
+  z-index: z("content");
   display: flex;
   align-items: center;
   justify-content: center;
   width: 4rem;
   height: 4rem;
-  border-radius: radius('full');
+  border-radius: radius("full");
   @include transition(background-color);
 }
 
 .timelineIconActive {
   composes: timelineIcon;
-  background-color: color-alpha('primary', 0.2);
+  background-color: color-alpha("primary", 0.2);
 }
 
 .timelineIconInactive {
   composes: timelineIcon;
-  background-color: color('muted');
+  background-color: color("muted");
 }
 
 // Inner icon circle
@@ -132,7 +132,7 @@
   justify-content: center;
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .timelineIconInnerActive {
@@ -143,8 +143,8 @@
 
 .timelineIconInnerInactive {
   composes: timelineIconInner;
-  background-color: color('background');
-  color: color('foreground');
+  background-color: color("background");
+  color: color("foreground");
 }
 
 .timelineIconSvg {
@@ -158,26 +158,26 @@
 }
 
 .timelineCompany {
-  font-size: font-size('xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("xl");
+  font-weight: font-weight("bold");
   @include transition(text-shadow);
 }
 
 .timelineCompanyActive {
   composes: timelineCompany;
-  text-shadow: 0 0 20px color-alpha('primary', 0.5);
+  text-shadow: 0 0 20px color-alpha("primary", 0.5);
 }
 
 .timelineRole {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .timelineMeta {
   display: flex;
   align-items: center;
   margin-top: space(1);
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
 }
 
 .timelineMetaIcon {
@@ -200,11 +200,11 @@
   left: 0;
   width: 100%;
   overflow: hidden;
-  border-radius: radius('xl');
-  border: 1px solid color-alpha('border', 0.5);
-  background-color: color('card');
+  border-radius: radius("xl");
+  border: 1px solid color-alpha("border", 0.5);
+  background-color: color("card");
   padding: space(6);
-  @include shadow('lg');
+  @include shadow("lg");
 }
 
 .cardActive {
@@ -242,26 +242,26 @@
 }
 
 .cardTitle {
-  font-size: font-size('2xl');
-  font-weight: font-weight('bold');
-  text-shadow: 0 0 20px color-alpha('primary', 0.5);
+  font-size: font-size("2xl");
+  font-weight: font-weight("bold");
+  text-shadow: 0 0 20px color-alpha("primary", 0.5);
 }
 
 .cardMeta {
   display: flex;
   align-items: center;
   margin-top: space(1);
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .cardCompany {
   composes: cardMeta;
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .cardLocation {
   composes: cardMeta;
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 }
 
 .cardMetaIcon {
@@ -277,8 +277,8 @@
   justify-content: center;
   width: 4rem;
   height: 4rem;
-  border-radius: radius('lg');
-  background-color: color('background');
+  border-radius: radius("lg");
+  background-color: color("background");
 }
 
 .logoInner {
@@ -287,22 +287,22 @@
   justify-content: center;
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: radius('full');
-  background-color: color('background');
-  color: color('muted-foreground');
+  border-radius: radius("full");
+  background-color: color("background");
+  color: color("muted-foreground");
   @include transition(color);
 }
 
 .logoIcon {
   width: 2.5rem;
   height: 2.5rem;
-  color: color('foreground');
+  color: color("foreground");
 }
 
 // Card description
 .cardDescription {
   margin-bottom: space(6);
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 // Card sections
@@ -312,8 +312,8 @@
 
 .cardSectionTitle {
   margin-bottom: space(3);
-  font-size: font-size('lg');
-  font-weight: font-weight('semibold');
+  font-size: font-size("lg");
+  font-weight: font-weight("semibold");
 }
 
 // List
@@ -337,7 +337,7 @@
   flex-shrink: 0;
   width: 1rem;
   height: 1rem;
-  color: color('primary');
+  color: color("primary");
 }
 
 // Skills
@@ -348,11 +348,11 @@
 }
 
 .skillBadge {
-  font-weight: font-weight('normal');
+  font-weight: font-weight("normal");
   @include transition((background-color, color));
 
   &:hover {
-    background: linear-gradient(to right, color('link'), color('tertiary'), color('secondary'));
+    background: linear-gradient(to right, color("link"), color("tertiary"), color("secondary"));
     color: white;
   }
 }

@@ -232,9 +232,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                 <AlertDescription>
                   <p className={styles["impactIntro"]}>{t((m) => m.dialogs.invoices.deleteInvoiceDialog.impact.intro)}</p>
                   <ul className={styles["impactList"]}>
-                    <li className={styles["impactItem"]}>
-                      {t((m) => m.dialogs.invoices.deleteInvoiceDialog.impact.invoiceRecord)}
-                    </li>
+                    <li className={styles["impactItem"]}>{t((m) => m.dialogs.invoices.deleteInvoiceDialog.impact.invoiceRecord)}</li>
                     {scanCount > 0 && (
                       <li className={styles["impactItem"]}>
                         {t((m) => m.dialogs.invoices.deleteInvoiceDialog.impact.uploadedScans, {count: String(scanCount)})}

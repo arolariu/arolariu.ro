@@ -1,7 +1,7 @@
 // ===========================================
 // IMPORT DIALOG STYLES
 // ===========================================
-@use '../../../../../styles/abstracts' as *;
+@use "../../../../../styles/abstracts" as *;
 
 // ===========================================
 // DROPZONE
@@ -9,7 +9,7 @@
 .dropzone {
   margin-top: space(4);
   cursor: pointer;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
   border: 2px dashed;
   padding: space(6);
   @include transition((border-color, background-color, box-shadow));
@@ -17,16 +17,16 @@
 }
 
 .dropzoneActive {
-  border-color: color('primary');
-  background-color: color-alpha('primary', 0.1);
+  border-color: color("primary");
+  background-color: color-alpha("primary", 0.1);
 }
 
 .dropzoneIdle {
-  border-color: color-alpha('muted-foreground', 0.25);
+  border-color: color-alpha("muted-foreground", 0.25);
 
   &:hover {
-    border-color: color-alpha('primary', 0.5);
-    background-color: color-alpha('muted', 0.5);
+    border-color: color-alpha("primary", 0.5);
+    background-color: color-alpha("muted", 0.5);
   }
 }
 
@@ -40,23 +40,23 @@
 }
 
 .uploadIconWrapper {
-  background-color: color-alpha('primary', 0.1);
-  border-radius: radius('full');
+  background-color: color-alpha("primary", 0.1);
+  border-radius: radius("full");
   padding: space(3);
 }
 
 .uploadIcon {
   height: 1.5rem;
   width: 1.5rem;
-  color: color('primary');
+  color: color("primary");
 }
 
 .dropzoneTitle {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .dropzoneSubtitle {
-  @include text-muted('sm');
+  @include text-muted("sm");
 }
 
 .dropzoneHint {
@@ -73,8 +73,8 @@
 }
 
 .fileListTitle {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .fileList {
@@ -88,9 +88,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-radius: radius('md');
+  border-radius: radius("md");
   padding: space(2);
-  background-color: color-alpha('muted', 0.5);
+  background-color: color-alpha("muted", 0.5);
 }
 
 .fileInfo {
@@ -105,7 +105,7 @@
 .fileName {
   max-width: 300px;
   @include truncate;
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 }
 
 // ===========================================
@@ -116,22 +116,22 @@
 // ===========================================
 .fileIconBlue {
   @include icon-size(space(5));
-  color: color('primary');
+  color: color("primary");
 }
 
 .fileIconRed {
   @include icon-size(space(5));
-  color: color('destructive');
+  color: color("destructive");
 }
 
 .fileIconGreen {
   @include icon-size(space(5));
-  color: color('success');
+  color: color("success");
 }
 
 .fileIconGray {
   @include icon-size(space(5));
-  color: color('foreground');
+  color: color("foreground");
 }
 
 .statusIcon {
@@ -141,10 +141,10 @@
 .statusSuccess {
   display: flex;
   align-items: center;
-  border-radius: radius('md');
+  border-radius: radius("md");
   padding: space(2);
   @include gradient-bg();
-  color: color('success');
+  color: color("success");
 
   & > * + * {
     margin-left: space(2);
@@ -155,7 +155,7 @@
 // DIALOG & TABS
 // ===========================================
 .dialogContent {
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     max-width: 525px;
   }
 }
@@ -173,10 +173,10 @@
 .statusError {
   display: flex;
   align-items: center;
-  border-radius: radius('md');
+  border-radius: radius("md");
   padding: space(2);
   @include gradient-bg();
-  color: color('destructive');
+  color: color("destructive");
 
   & > * + * {
     margin-left: space(2);

@@ -38,7 +38,6 @@ type ServerActionInputType = Readonly<{
  */
 type ServerActionOutputType = ServerActionResult<ReadonlyArray<Scan>>;
 
-
 /**
  * Fetches all scans belonging to a user from Azure Blob Storage.
  *
@@ -132,7 +131,12 @@ export async function fetchScans({includeArchived = false}: ServerActionInputTyp
             scans.push(scan);
           }
         } catch (blobProcessingError) {
-          logWithTrace("warn", "Skipping scan due to processing error", {blobName: blob.name, error: String(blobProcessingError)}, "server");
+          logWithTrace(
+            "warn",
+            "Skipping scan due to processing error",
+            {blobName: blob.name, error: String(blobProcessingError)},
+            "server",
+          );
         }
       }
       addSpanEvent("azure.blob.list.complete");

@@ -1,7 +1,7 @@
 // ===========================================
 // ENHANCED LEGAL ARTICLES STYLES
 // ===========================================
-@use '../../../styles/abstracts' as *;
+@use "../../../styles/abstracts" as *;
 
 // ===========================================
 // ARTICLE STYLES
@@ -16,9 +16,9 @@
 // TITLE STYLES
 // ===========================================
 .articleTitle {
-  font-size: font-size('2xl');
-  font-weight: font-weight('black');
-  letter-spacing: letter-spacing('widest');
+  font-size: font-size("2xl");
+  font-weight: font-weight("black");
+  letter-spacing: letter-spacing("widest");
   text-decoration: underline;
 }
 

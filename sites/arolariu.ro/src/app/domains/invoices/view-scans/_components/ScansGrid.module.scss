@@ -1,7 +1,7 @@
 // ===========================================
 // SCANS GRID COMPONENT STYLES
 // ===========================================
-@use '../../../../../styles/abstracts' as *;
+@use "../../../../../styles/abstracts" as *;
 
 // ===========================================
 // LOADING SKELETON GRID
@@ -17,38 +17,37 @@
   @include grid(1, space(4));
 
   // 2-column layout on small screens
-  @include respond-below('sm') {
+  @include respond-below("sm") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: space(3);
   }
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   // More spacious on xl
-  @include respond-to('xl') {
+  @include respond-to("xl") {
     gap: space(6);
   }
 }
 
 .skeletonItem {
   aspect-ratio: 4 / 3;
-  border-radius: radius('lg');
-  background-color: color('border');
+  border-radius: radius("lg");
+  background-color: color("border");
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 
   @include dark {
-    background-color: color('foreground');
+    background-color: color("foreground");
   }
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;
@@ -64,7 +63,7 @@
 // ===========================================
 .emptyIcon {
   @include icon-size(space(12));
-  color: color('primary');
+  color: color("primary");
 }
 
 // ===========================================
@@ -87,10 +86,10 @@
   height: space(10);
   width: space(10);
   flex-shrink: 0;
-  border-radius: radius('full');
+  border-radius: radius("full");
   @include gradient-bg();
-  font-size: font-size('sm');
-  font-weight: font-weight('bold');
+  font-size: font-size("sm");
+  font-weight: font-weight("bold");
   color: white;
 }
 
@@ -106,8 +105,8 @@
 }
 
 .emptyStepTitle {
-  font-weight: font-weight('medium');
-  color: color('foreground');
+  font-weight: font-weight("medium");
+  color: color("foreground");
 
   @include dark {
     color: white;
@@ -115,8 +114,8 @@
 }
 
 .emptyStepDescription {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
 }
 
 // ===========================================
@@ -127,7 +126,7 @@
   align-items: center;
   gap: space(4);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     flex-direction: row;
     justify-content: center;
   }
@@ -138,17 +137,17 @@
 // ===========================================
 .iconAccent {
   @include icon-size(space(4));
-  color: color('primary');
+  color: color("primary");
 }
 
 .iconPurple {
   @include icon-size(space(4));
-  color: color('primary');
+  color: color("primary");
 }
 
 .iconGreen {
   @include icon-size(space(4));
-  color: color('success');
+  color: color("success");
 }
 
 .iconUploadLg {
@@ -169,21 +168,21 @@
   min-height: 38rem; // Ensure the section is tall enough to accommodate at least 2 rows of scan cards
 
   // 2-column layout on small screens (not 3)
-  @include respond-below('sm') {
+  @include respond-below("sm") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: space(3);
   }
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   // More spacious on xl
-  @include respond-to('xl') {
+  @include respond-to("xl") {
     gap: space(6);
   }
 }
@@ -223,7 +222,7 @@
 
 .pageInfo {
   font-size: 0.875rem;
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 // ===========================================
@@ -236,11 +235,11 @@
   align-items: center;
   gap: space(1);
   padding: space(1) space(2);
-  border-radius: radius('md');
-  background-color: color('primary');
+  border-radius: radius("md");
+  background-color: color("primary");
   color: white;
-  font-size: font-size('xs');
-  font-weight: font-weight('medium');
+  font-size: font-size("xs");
+  font-weight: font-weight("medium");
 }
 
 .linkedIcon {
@@ -253,7 +252,7 @@
   @include flex-center;
   gap: space(2);
   padding: space(4);
-  border-radius: radius('md');
+  border-radius: radius("md");
   background-color: rgba(0, 0, 0, 0.75);
   color: white;
 }
@@ -262,13 +261,13 @@
   @include icon-size(space(8));
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
-  border-radius: radius('full');
+  border-radius: radius("full");
   animation: spin 1s linear infinite;
 }
 
 .rotatingText {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 @keyframes spin {

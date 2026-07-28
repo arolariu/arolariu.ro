@@ -8,7 +8,9 @@
   padding: 1.5rem;
   background: var(--cv-color-white);
   color: var(--cv-color-black);
-  transition: background-color var(--cv-transition-slow), color var(--cv-transition-slow);
+  transition:
+    background-color var(--cv-transition-slow),
+    color var(--cv-transition-slow);
 }
 
 :global(.dark) .shell {
@@ -82,7 +84,9 @@
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color var(--cv-transition-slow), transform var(--cv-transition-slow);
+  transition:
+    background-color var(--cv-transition-slow),
+    transform var(--cv-transition-slow);
 
   &:hover {
     background: var(--cv-color-blue-700);
@@ -112,7 +116,9 @@
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color var(--cv-transition-slow), transform var(--cv-transition-slow);
+  transition:
+    background-color var(--cv-transition-slow),
+    transform var(--cv-transition-slow);
 
   &:hover {
     background: var(--cv-color-gray-100);

@@ -1,4 +1,4 @@
-@use '../../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../../styles/abstracts" as *;
 
 .expenseType {
   display: flex;
@@ -7,8 +7,8 @@
 }
 
 .expenseTypeLabel {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .detailsGrid {
@@ -19,8 +19,8 @@
   display: flex;
   align-items: center;
   gap: space(2);
-  border-radius: radius('lg');
-  border: 1px solid color('border');
+  border-radius: radius("lg");
+  border: 1px solid color("border");
   padding: space(2.5);
 }
 
@@ -29,13 +29,13 @@
 }
 
 .detailValue {
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
 }
 
 .detailValueMuted {
-  @include text-muted('sm');
-  font-weight: font-weight('semibold');
+  @include text-muted("sm");
+  font-weight: font-weight("semibold");
 }
 
 .chartSection {
@@ -43,8 +43,8 @@
 }
 
 .chartTitle {
-  @include text-muted('sm');
-  font-weight: font-weight('medium');
+  @include text-muted("sm");
+  font-weight: font-weight("medium");
 }
 
 .statsGrid {
@@ -52,9 +52,9 @@
 }
 
 .statCard {
-  background-color: color('card');
-  border-radius: radius('lg');
-  border: 1px solid color('border');
+  background-color: color("card");
+  border-radius: radius("lg");
+  border: 1px solid color("border");
   padding: space(2.5);
   text-align: center;
 }
@@ -64,8 +64,8 @@
 }
 
 .statValue {
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
 }
 
 .statSub {
@@ -79,12 +79,12 @@
 }
 
 .remindersTitle {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .remindersList {
-  @include text-muted('sm');
+  @include text-muted("sm");
 
   @include spaced-children(space(1));
 }
@@ -96,30 +96,30 @@
 }
 
 .reminderBullet {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .tipBox {
   display: flex;
   align-items: flex-start;
   gap: space(2);
-  border-radius: radius('lg');
-  border: 1px solid color-alpha('success', 0.3);
-  background-color: color-alpha('success', 0.1);
+  border-radius: radius("lg");
+  border: 1px solid color-alpha("success", 0.3);
+  background-color: color-alpha("success", 0.1);
   padding: space(3);
 
   @include dark {
-    border-color: color('success');
+    border-color: color("success");
   }
 }
 
 .tipTitle {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .tipDescription {
-  @include text-muted('sm');
+  @include text-muted("sm");
 }
 
 .ctaButtons {
@@ -128,19 +128,19 @@
 }
 
 .statValueRed {
-  color: color('destructive');
+  color: color("destructive");
 }
 
 .titleRow {
   display: flex;
   align-items: center;
   gap: space(2);
-  font-size: font-size('lg');
+  font-size: font-size("lg");
 }
 
 .titleIcon {
   @include icon-size(space(5));
-  color: color('info');
+  color: color("info");
 }
 
 .contentSpaced {
@@ -149,27 +149,27 @@
 
 .iconAmber {
   @include icon-size(space(4));
-  color: color('warning');
+  color: color("warning");
 }
 
 .iconGreen {
   @include icon-size(space(4));
-  color: color('success');
+  color: color("success");
 }
 
 .iconRed {
   @include icon-size(space(4));
-  color: color('destructive');
+  color: color("destructive");
 }
 
 .iconBlue {
   @include icon-size(space(4));
-  color: color('info');
+  color: color("info");
 }
 
 .iconGray {
   @include icon-size(space(4));
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .chartWrapper {
@@ -187,5 +187,5 @@
   @include icon-size(space(4));
   flex-shrink: 0;
   margin-top: space(0.5);
-  color: color('success');
+  color: color("success");
 }

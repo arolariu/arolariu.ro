@@ -1,4 +1,4 @@
-@use '../../../../../../styles/abstracts' as *;
+@use "../../../../../../styles/abstracts" as *;
 
 .body {
   & > * + * {
@@ -14,8 +14,8 @@
 }
 
 .sectionHeading {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .starRow {
@@ -26,14 +26,14 @@
 .starActive {
   width: space(8);
   height: space(8);
-  fill: color('primary');
-  color: color('primary');
+  fill: color("primary");
+  color: color("primary");
 }
 
 .starInactive {
   width: space(8);
   height: space(8);
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .featuresWrap {
@@ -50,7 +50,7 @@
 }
 
 .dialogContent {
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     max-width: 32rem;
   }
 }

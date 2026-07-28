@@ -57,9 +57,13 @@
   border-radius: var(--ac-radius-lg);
   background-color: var(--ac-background);
   color: var(--ac-foreground);
-  box-shadow: 0 10px 30px -5px rgb(0 0 0 / 0.1), 0 4px 10px -5px rgb(0 0 0 / 0.04);
+  box-shadow:
+    0 10px 30px -5px rgb(0 0 0 / 0.1),
+    0 4px 10px -5px rgb(0 0 0 / 0.04);
   transform: translate(-50%, -50%);
-  transition: opacity var(--ac-transition-normal), transform var(--ac-transition-normal);
+  transition:
+    opacity var(--ac-transition-normal),
+    transform var(--ac-transition-normal);
 
   &[data-starting-style],
   &[data-ending-style] {
@@ -161,7 +165,9 @@
   cursor: pointer;
   user-select: none;
   outline: none;
-  transition: background-color var(--ac-transition-fast), color var(--ac-transition-fast);
+  transition:
+    background-color var(--ac-transition-fast),
+    color var(--ac-transition-fast);
 }
 
 .item[data-selected="true"] {

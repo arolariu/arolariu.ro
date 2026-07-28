@@ -1,4 +1,4 @@
-@use '../../../../styles/abstracts' as abstracts;
+@use "../../../../styles/abstracts" as abstracts;
 
 // ===========================================
 // UPLOAD SCREEN LAYOUT
@@ -8,7 +8,7 @@
   max-width: 80rem; // max-w-7xl
 
   // Bottom padding for mobile nav
-  @include abstracts.respond-below('md') {
+  @include abstracts.respond-below("md") {
     padding-bottom: abstracts.space(20);
   }
 }
@@ -18,17 +18,17 @@
   gap: abstracts.space(8);
 
   // Stack upload area and sidebar vertically on mobile
-  @include abstracts.respond-below('md') {
+  @include abstracts.respond-below("md") {
     grid-template-columns: 1fr;
     gap: abstracts.space(6);
   }
 
-  @include abstracts.respond-to('lg') {
+  @include abstracts.respond-to("lg") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   // More spacious layout on xl
-  @include abstracts.respond-to('xl') {
+  @include abstracts.respond-to("xl") {
     gap: abstracts.space(10);
   }
 }

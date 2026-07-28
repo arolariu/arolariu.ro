@@ -1,7 +1,7 @@
 // ===========================================
 // HOME PAGE - HERO COMPONENT
 // ===========================================
-@use '../../styles/abstracts' as *;
+@use "../../styles/abstracts" as *;
 
 .section {
   position: relative;
@@ -19,7 +19,7 @@
   gap: space(12);
   padding: 0 space(4);
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(2, 1fr);
   }
 }
@@ -27,31 +27,31 @@
 // Left side content
 .content {
   position: relative;
-  z-index: z('content');
+  z-index: z("content");
 }
 
 .title {
   margin-top: space(6);
-  font-size: font-size('4xl');
-  font-weight: font-weight('normal');
+  font-size: font-size("4xl");
+  font-weight: font-weight("normal");
   color: white;
   text-align: center;
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     margin-top: space(10);
-    font-size: font-size('5xl');
+    font-size: font-size("5xl");
   }
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     text-align: left;
   }
 
-  @include respond-to('lg') {
-    font-size: font-size('6xl');
+  @include respond-to("lg") {
+    font-size: font-size("6xl");
   }
 
-  @include respond-to('xl') {
-    font-size: font-size('8xl');
+  @include respond-to("xl") {
+    font-size: font-size("8xl");
   }
 }
 
@@ -65,15 +65,15 @@
 .subtitle {
   margin-top: space(4);
   max-width: 32rem;
-  font-size: font-size('xl');
-  color: color('muted-foreground');
+  font-size: font-size("xl");
+  color: color("muted-foreground");
   text-align: center;
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     text-align: left;
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     max-width: 42rem;
   }
 }
@@ -88,7 +88,7 @@
   margin-left: auto;
   margin-right: auto;
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     margin-left: 0;
     margin-right: 0;
   }
@@ -97,7 +97,7 @@
 .ctaGlow {
   position: absolute;
   inset: -1px;
-  border-radius: radius('full');
+  border-radius: radius("full");
   @include gradient-bg();
   @include transition(box-shadow);
 }
@@ -106,7 +106,7 @@
   position: relative;
   display: inline-flex;
   padding: space(3) space(8);
-  border-radius: radius('full');
+  border-radius: radius("full");
   border: 1px solid transparent;
   background-color: black;
   color: white;
@@ -125,7 +125,7 @@
   display: block;
   text-align: center;
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     text-align: left;
   }
 }
@@ -149,13 +149,13 @@
 
 // Animated orbs
 .orbPrimary {
-  @include orb(10rem, 48px, color-alpha('primary', 0.2));
+  @include orb(10rem, 48px, color-alpha("primary", 0.2));
   top: -5rem;
   left: -5rem;
 }
 
 .orbPurple {
-  @include orb(10rem, 48px, color-alpha('tertiary', 0.2));
+  @include orb(10rem, 48px, color-alpha("tertiary", 0.2));
   bottom: -5rem;
   right: -5rem;
 }
@@ -164,7 +164,7 @@
 .techSphereWrapper {
   display: none;
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     display: block;
   }
 }
@@ -174,7 +174,7 @@
   display: block;
   width: 100%;
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     display: none;
   }
 }
@@ -189,5 +189,5 @@
 }
 
 .mobileOrb {
-  @include orb(8rem, 24px, color-alpha('primary', 0.2));
+  @include orb(8rem, 24px, color-alpha("primary", 0.2));
 }

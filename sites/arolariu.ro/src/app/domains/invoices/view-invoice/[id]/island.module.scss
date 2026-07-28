@@ -1,16 +1,16 @@
-@use '../../../../../styles/abstracts' as *;
+@use "../../../../../styles/abstracts" as *;
 
 .container {
   @include container(95rem); // ~1520px instead of default 1280px
   padding-inline: space(4);
   padding-block: space(8);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     padding-block: space(12);
   }
 
   // Bottom padding for mobile nav
-  @include respond-below('md') {
+  @include respond-below("md") {
     padding-inline: space(3);
     padding-bottom: space(20);
   }
@@ -20,22 +20,22 @@
   margin-bottom: space(8);
 
   // Reduce margin on mobile and add sticky positioning
-  @include respond-below('md') {
+  @include respond-below("md") {
     margin-bottom: space(4);
   }
 }
 
 .stickyHeader {
   // Sticky header on mobile: Invoice name stays visible while scrolling
-  @include respond-below('md') {
+  @include respond-below("md") {
     position: sticky;
     top: 0;
-    z-index: z('sticky');
-    background-color: color('background');
+    z-index: z("sticky");
+    background-color: color("background");
     padding-block: space(2);
     margin-inline: calc(-1 * space(3));
     padding-inline: space(3);
-    box-shadow: 0 2px 4px color-alpha('foreground', 0.05);
+    box-shadow: 0 2px 4px color-alpha("foreground", 0.05);
   }
 }
 
@@ -45,11 +45,11 @@
   gap: space(6);
 
   // Single column stack below lg
-  @include respond-below('lg') {
+  @include respond-below("lg") {
     grid-template-columns: 1fr;
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(12, minmax(0, 1fr));
   }
 }
@@ -59,12 +59,12 @@
     margin-top: space(6);
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-column: span 9;
   }
 
   // Center column spans the space previously shared with the left column on xl
-  @include respond-to('xl') {
+  @include respond-to("xl") {
     grid-column: span 9;
   }
 }
@@ -74,7 +74,7 @@
 }
 
 .mobileHealthScore {
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     display: none;
   }
 }
@@ -84,19 +84,19 @@
     margin-top: space(6);
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-column: span 3;
   }
 
   // Right column also narrower on xl
-  @include respond-to('xl') {
+  @include respond-to("xl") {
     grid-column: span 3;
   }
 
   // Collapsible-ready sections: Add visual separators on mobile
-  @include respond-below('md') {
+  @include respond-below("md") {
     > * {
-      border-bottom: 1px solid color('border');
+      border-bottom: 1px solid color("border");
       padding-bottom: space(4);
 
       &:last-child {
@@ -112,11 +112,11 @@
 
 // Swipeable receipt image area on mobile
 .receiptArea {
-  @include respond-below('md') {
+  @include respond-below("md") {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scroll-snap-type: x mandatory;
-    
+
     // Hide scrollbar for cleaner look
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -129,7 +129,7 @@
 
   // Webkit scrollbar hiding (separate from the respond-below block)
   &::-webkit-scrollbar {
-    @include respond-below('md') {
+    @include respond-below("md") {
       display: none;
     }
   }
@@ -138,9 +138,9 @@
 .analyticsSection {
   margin-top: space(8);
   padding-top: space(8);
-  border-top: 1px solid color('border');
+  border-top: 1px solid color("border");
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     margin-top: space(12);
     padding-top: space(12);
   }
@@ -151,23 +151,23 @@
   align-items: center;
   gap: space(3);
   padding: space(4);
-  border-radius: radius('md');
-  background-color: color-alpha('muted', 0.5);
-  border: 1px solid color('border');
+  border-radius: radius("md");
+  background-color: color-alpha("muted", 0.5);
+  border: 1px solid color("border");
 }
 
 .healthScoreBar {
   flex: 1;
   height: 6px;
   border-radius: 3px;
-  background-color: color('muted');
+  background-color: color("muted");
   overflow: hidden;
 }
 
 .healthScoreFill {
   height: 100%;
   border-radius: 3px;
-  background-color: color('primary');
+  background-color: color("primary");
   @include transition(width);
 }
 

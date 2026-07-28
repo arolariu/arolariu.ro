@@ -1,27 +1,53 @@
 # =============================================================================
-# .copilotignore — Exclude noise from GitHub Copilot CLI context
+# .copilotignore — exclude noise from GitHub Copilot CLI context
 # =============================================================================
-# Reduces context pollution by hiding build artifacts, generated files,
-# secrets, and large non-code assets from AI analysis.
+# Keep in sync with .claudeignore (same intent, different tool) and with the
+# "transient artifacts" block of .gitignore.
 
 # --- Build artifacts & caches ---
-**/node_modules/
-**/dist/
-**/.next/
-**/build/
-**/.turbo/
-**/.cache/
+node_modules/
+dist/
+build/
+out/
+_site/
+bin/
+obj/
+.next/
+.nx/
+.svelte-kit/
+.docusaurus/
+.turbo/
+.cache/
+.vs/
 storybook-static/
-artifacts/
 coverage/
 code-cov/
+test-results/
 TestResults/
-**/bin/
-**/obj/
+playwright-report/
+artifacts/
+logs/
+temp/
+tmp/
+__generated__/
+*.tsbuildinfo
+
+# --- Agent working artifacts ---
+.superpowers/
+docs/superpowers/
+.impeccable/
+.worktrees/
+
+# --- Python runtime artifacts ---
+__pycache__/
+.venv/
+.ruff_cache/
+*.pyc
 
 # --- Secrets & environment files ---
 .env
 .env.*
+!.env.example
 *.key
 *.pem
 *.p12
@@ -31,22 +57,20 @@ TestResults/
 
 # --- Generated & lock files ---
 package-lock.json
-tsconfig.tsbuildinfo
-nul
 
 # --- Large assets & non-code ---
 readme/
-logs/
-**/*.png
-**/*.jpg
-**/*.jpeg
-**/*.gif
-**/*.svg
-**/*.ico
-**/*.woff
-**/*.woff2
-**/*.ttf
-**/*.eot
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+*.pdf
+*.woff
+*.woff2
+*.ttf
+*.eot
 
 # --- IDE & tool configuration ---
 .vscode/

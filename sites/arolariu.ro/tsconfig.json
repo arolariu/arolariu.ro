@@ -7,20 +7,9 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "plugins": [{ "name": "next" }],
-    "types": [
-      "@types/node",
-      "@types/react",
-      "@types/react-dom"
-    ]
+    "plugins": [{"name": "next"}],
+    "types": ["@types/node", "@types/react", "@types/react-dom"]
   },
-  "exclude": [
-    "node_modules",
-    ".storybook"
-  ],
-  "include": [
-    "**/*.d.ts",
-    "**/*.ts",
-    "**/*.tsx"
-  ]
+  "exclude": ["node_modules", ".storybook"],
+  "include": ["**/*.d.ts", "**/*.ts", "**/*.tsx"]
 }

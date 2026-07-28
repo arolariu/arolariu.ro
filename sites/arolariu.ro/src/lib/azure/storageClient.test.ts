@@ -419,10 +419,7 @@ describe("storageClient", () => {
           etag: '"etag-123"',
         });
 
-        expect(mockSetMetadata).toHaveBeenCalledWith(
-          {status: "processed"},
-          {conditions: {ifMatch: '"etag-123"'}},
-        );
+        expect(mockSetMetadata).toHaveBeenCalledWith({status: "processed"}, {conditions: {ifMatch: '"etag-123"'}});
         expect(result.metadata["status"]).toBe("processed");
       } finally {
         if (original !== undefined) process.env["AZURE_CLIENT_ID"] = original;

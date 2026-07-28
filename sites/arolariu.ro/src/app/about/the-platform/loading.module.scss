@@ -2,7 +2,7 @@
 // THE PLATFORM LOADING SKELETON STYLES
 // Mirrors page.tsx + component layout 1:1
 // ===========================================
-@use '../../../styles/abstracts' as *;
+@use "../../../styles/abstracts" as *;
 
 // ===========================================
 // PAGE WRAPPER
@@ -10,8 +10,8 @@
 .page {
   position: relative;
   min-height: 100vh;
-  background-color: color('background');
-  color: color('foreground');
+  background-color: color("background");
+  color: color("foreground");
 }
 
 .inner {
@@ -34,15 +34,15 @@
 .heroBadge {
   height: 2rem;
   width: 10rem;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .heroTitle {
   height: 4rem;
   width: 24rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     height: 5rem;
     width: 32rem;
   }
@@ -51,9 +51,9 @@
 .heroSubtitle {
   height: 1.5rem;
   width: 20rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     width: 28rem;
   }
 }
@@ -68,7 +68,7 @@
 .heroPill {
   height: 2rem;
   width: 8rem;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .heroButtons {
@@ -81,7 +81,7 @@
 .heroButton {
   height: 3.5rem;
   width: 12rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 // ===========================================
@@ -90,7 +90,7 @@
 .section {
   padding: space(24) space(4);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     padding-left: space(8);
     padding-right: space(8);
   }
@@ -111,19 +111,19 @@
 .sectionBadge {
   height: 1.5rem;
   width: 8rem;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .sectionTitle {
   height: 2.5rem;
   width: 16rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 .sectionSubtitle {
   height: 1.25rem;
   width: 24rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 // ===========================================
@@ -133,11 +133,11 @@
   display: grid;
   gap: space(6);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(3, 1fr);
 
     > :first-child {
@@ -149,14 +149,14 @@
 
 .featureCard {
   height: 12rem;
-  border-radius: radius('xl');
+  border-radius: radius("xl");
 }
 
 .featureCardHero {
   height: 12rem;
-  border-radius: radius('xl');
+  border-radius: radius("xl");
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     height: 100%;
   }
 }
@@ -168,18 +168,18 @@
   display: grid;
   gap: space(6);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(4, 1fr);
   }
 }
 
 .architectureCard {
   height: 10rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 // ===========================================
@@ -190,25 +190,25 @@
   width: 100%;
   max-width: 36rem;
   margin: 0 auto space(12);
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 .techGrid {
   display: grid;
   gap: space(4);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
 .techCard {
   height: 6rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 .statsGrid {
@@ -216,18 +216,18 @@
   gap: space(6);
   margin-top: space(20);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(4, 1fr);
   }
 }
 
 .statCard {
   height: 10rem;
-  border-radius: radius('xl');
+  border-radius: radius("xl");
 }
 
 // ===========================================
@@ -251,14 +251,14 @@
 .timelineCircle {
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: radius('full');
+  border-radius: radius("full");
   flex-shrink: 0;
 }
 
 .timelineCard {
   height: 8rem;
   width: 100%;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 // ===========================================
@@ -275,9 +275,9 @@
 .ctaTitle {
   height: 3rem;
   width: 20rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     width: 28rem;
   }
 }
@@ -285,7 +285,7 @@
 .ctaSubtitle {
   height: 1.5rem;
   width: 24rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 .ctaButtons {
@@ -298,5 +298,5 @@
 .ctaButton {
   height: 3.5rem;
   width: 12rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }

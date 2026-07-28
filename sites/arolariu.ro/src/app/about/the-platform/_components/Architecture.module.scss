@@ -1,7 +1,7 @@
 // ===========================================
 // THE PLATFORM - ARCHITECTURE COMPONENT
 // ===========================================
-@use '../../../../styles/abstracts' as abstracts;
+@use "../../../../styles/abstracts" as abstracts;
 
 .section {
   position: relative;
@@ -12,7 +12,7 @@
 .bgLayer {
   position: absolute;
   inset: 0;
-  z-index: abstracts.z('behind');
+  z-index: abstracts.z("behind");
 }
 
 .bgGradient {
@@ -41,30 +41,30 @@
 .badge {
   margin-bottom: abstracts.space(4);
   padding: abstracts.space(1) abstracts.space(4);
-  font-size: abstracts.font-size('sm');
+  font-size: abstracts.font-size("sm");
 }
 
 .title {
   margin-bottom: abstracts.space(6);
-  font-size: abstracts.font-size('4xl');
-  font-weight: abstracts.font-weight('bold');
-  letter-spacing: letter-spacing('tight');
+  font-size: abstracts.font-size("4xl");
+  font-weight: abstracts.font-weight("bold");
+  letter-spacing: letter-spacing("tight");
 
-  @include abstracts.respond-to('md') {
-    font-size: abstracts.font-size('5xl');
+  @include abstracts.respond-to("md") {
+    font-size: abstracts.font-size("5xl");
   }
 }
 
 .titleHighlight {
-  color: abstracts.color('primary');
+  color: abstracts.color("primary");
 }
 
 .description {
-  font-size: abstracts.font-size('lg');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("lg");
+  color: abstracts.color("muted-foreground");
 
-  @include abstracts.respond-to('md') {
-    font-size: abstracts.font-size('xl');
+  @include abstracts.respond-to("md") {
+    font-size: abstracts.font-size("xl");
   }
 }
 
@@ -82,11 +82,11 @@
   display: grid;
   gap: abstracts.space(10);
 
-  @include abstracts.respond-to('sm') {
+  @include abstracts.respond-to("sm") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include abstracts.respond-to('lg') {
+  @include abstracts.respond-to("lg") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
@@ -105,20 +105,20 @@
   overflow: hidden;
   @include abstracts.transition((border-color, box-shadow, transform));
 
-  @include abstracts.respond-to('lg') {
+  @include abstracts.respond-to("lg") {
     height: 23rem;
   }
 
   &:hover {
-    border-color: abstracts.color-alpha('primary', 0.3);
+    border-color: abstracts.color-alpha("primary", 0.3);
   }
 }
 
 .layerCardActive {
   composes: layerCard;
-  border-color: abstracts.color('primary');
+  border-color: abstracts.color("primary");
   transform: scale(1.05);
-  @include abstracts.shadow('lg');
+  @include abstracts.shadow("lg");
 }
 
 .layerGradient {
@@ -153,7 +153,7 @@
   width: 3rem;
   height: 3rem;
   aspect-ratio: 1 / 1;
-  border-radius: abstracts.radius('md');
+  border-radius: abstracts.radius("md");
   @include abstracts.transition(transform);
 
   .layerCard:hover & {
@@ -164,16 +164,16 @@
 .layerIcon {
   width: 1.5rem;
   height: 1.5rem;
-  color: abstracts.color('primary');
+  color: abstracts.color("primary");
 }
 
 .layerName {
-  font-weight: abstracts.font-weight('bold');
+  font-weight: abstracts.font-weight("bold");
 }
 
 .layerDescription {
-  font-size: abstracts.font-size('sm');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("sm");
+  color: abstracts.color("muted-foreground");
 }
 
 // Technologies
@@ -186,7 +186,7 @@
 }
 
 .techBadge {
-  font-size: abstracts.font-size('xs');
+  font-size: abstracts.font-size("xs");
 }
 
 // Animated border
@@ -206,33 +206,33 @@
 
 // Layer icon wrapper background variants
 .gradientBlueCyan {
-  background-color: abstracts.color-alpha('primary', 0.1);
+  background-color: abstracts.color-alpha("primary", 0.1);
 }
 
 .gradientGreenEmerald {
-  background-color: abstracts.color-alpha('primary', 0.1);
+  background-color: abstracts.color-alpha("primary", 0.1);
 }
 
 .gradientPurpleViolet {
-  background-color: abstracts.color-alpha('primary', 0.1);
+  background-color: abstracts.color-alpha("primary", 0.1);
 }
 
 .gradientOrangeAmber {
-  background-color: abstracts.color-alpha('primary', 0.1);
+  background-color: abstracts.color-alpha("primary", 0.1);
 }
 
 .gradientRedPink {
-  background-color: abstracts.color-alpha('primary', 0.1);
+  background-color: abstracts.color-alpha("primary", 0.1);
 }
 
 .gradientIndigoBlue {
-  background-color: abstracts.color-alpha('primary', 0.1);
+  background-color: abstracts.color-alpha("primary", 0.1);
 }
 
 .gradientCyanTeal {
-  background-color: abstracts.color-alpha('primary', 0.1);
+  background-color: abstracts.color-alpha("primary", 0.1);
 }
 
 .gradientSlateZinc {
-  background-color: abstracts.color-alpha('primary', 0.1);
+  background-color: abstracts.color-alpha("primary", 0.1);
 }

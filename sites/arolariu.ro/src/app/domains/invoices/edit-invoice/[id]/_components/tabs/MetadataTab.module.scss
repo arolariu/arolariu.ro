@@ -1,11 +1,11 @@
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 .metadataGrid {
   display: grid;
   grid-template-columns: 1fr;
   gap: space(4);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     grid-template-columns: repeat(2, 1fr);
   }
 }
@@ -17,21 +17,21 @@
   & > * + * {
     margin-top: space(1);
   }
-  border-radius: radius('md');
-  border: 1px solid color('border');
+  border-radius: radius("md");
+  border: 1px solid color("border");
   padding: space(3);
   @include transition(colors);
 
   &:hover {
-    border-color: color-alpha('primary', 0.5);
-    background-color: color-alpha('muted', 0.5);
+    border-color: color-alpha("primary", 0.5);
+    background-color: color-alpha("muted", 0.5);
   }
 }
 
 .fieldLabel {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .fieldHeader {
@@ -41,14 +41,14 @@
 }
 
 .fieldKey {
-  font-weight: font-weight('semibold');
-  font-size: font-size('sm');
-  color: color('foreground');
+  font-weight: font-weight("semibold");
+  font-size: font-size("sm");
+  color: color("foreground");
 }
 
 .fieldValue {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
 }
 
 .editButton {
@@ -90,7 +90,7 @@
 
 .readonlyBadge {
   margin-left: space(2);
-  font-size: font-size('xs');
+  font-size: font-size("xs");
 }
 
 .editIconButton {
@@ -111,10 +111,10 @@
 }
 
 .deleteMenuItem {
-  color: color('destructive');
+  color: color("destructive");
 
   &:focus {
-    color: color('destructive');
+    color: color("destructive");
   }
 }
 
@@ -124,6 +124,6 @@
 }
 
 .emptyText {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   margin-bottom: space(4);
 }

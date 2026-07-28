@@ -365,13 +365,7 @@ const createScansSlice = (set: (partial: Partial<ScansStore> | ((state: ScansSto
             ? {
                 ...s,
                 metadata: (() => {
-                  const base = omitMetadataKeys(s.metadata, [
-                    "detachedAt",
-                    "detachedBy",
-                    "detachedFrom",
-                    "archivedAt",
-                    "archivedBy",
-                  ]);
+                  const base = omitMetadataKeys(s.metadata, ["detachedAt", "detachedBy", "detachedFrom", "archivedAt", "archivedBy"]);
 
                   return {
                     ...base,

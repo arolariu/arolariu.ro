@@ -1,4 +1,4 @@
-@use '../../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../../styles/abstracts" as *;
 
 .scoreSection {
   @include spaced-children(space(2));
@@ -11,8 +11,8 @@
 }
 
 .scoreLabel {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .compositionSection {
@@ -20,9 +20,9 @@
 }
 
 .compositionTitle {
-  @include text-muted('sm');
-  font-weight: font-weight('medium');
-  letter-spacing: letter-spacing('wide');
+  @include text-muted("sm");
+  font-weight: font-weight("medium");
+  letter-spacing: letter-spacing("wide");
   text-transform: uppercase;
 }
 
@@ -39,15 +39,15 @@
 .compositionLabel {
   width: space(24);
   flex-shrink: 0;
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 }
 
 .progressTrack {
   height: space(2);
   flex: 1;
   overflow: hidden;
-  border-radius: radius('full');
-  background-color: color('muted');
+  border-radius: radius("full");
+  background-color: color("muted");
 }
 
 .progressBar {
@@ -58,7 +58,7 @@
 .compositionPct {
   width: space(10);
   text-align: right;
-  @include text-muted('sm');
+  @include text-muted("sm");
 }
 
 .foodGroupsGrid {
@@ -66,9 +66,9 @@
 }
 
 .foodGroupCard {
-  background-color: color('card');
-  border-radius: radius('lg');
-  border: 1px solid color('border');
+  background-color: color("card");
+  border-radius: radius("lg");
+  border: 1px solid color("border");
   padding: space(3);
   text-align: center;
 }
@@ -84,8 +84,8 @@
 }
 
 .foodGroupCount {
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
 }
 
 .foodGroupAmount {
@@ -103,8 +103,8 @@
 }
 
 .allergensTitle {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .allergensList {
@@ -117,21 +117,21 @@
   display: flex;
   align-items: flex-start;
   gap: space(2);
-  border-radius: radius('lg');
-  background-color: color-alpha('muted', 0.5);
+  border-radius: radius("lg");
+  background-color: color-alpha("muted", 0.5);
   padding: space(3);
 }
 
 .suggestionText {
-  @include text-muted('sm');
+  @include text-muted("sm");
 }
 
 .progressGreen {
-  background-color: color('success');
+  background-color: color("success");
 }
 
 .progressAmber {
-  background-color: color('warning');
+  background-color: color("warning");
 }
 
 .progressBlue {
@@ -139,31 +139,31 @@
 }
 
 .scoreGreen {
-  color: color('success');
+  color: color("success");
 }
 
 .scoreEmerald {
-  color: color('primary');
+  color: color("primary");
 }
 
 .scoreYellow {
-  color: color('warning');
+  color: color("warning");
 }
 
 .scoreRed {
-  color: color('destructive');
+  color: color("destructive");
 }
 
 .titleRow {
   display: flex;
   align-items: center;
   gap: space(2);
-  font-size: font-size('lg');
+  font-size: font-size("lg");
 }
 
 .titleIcon {
   @include icon-size(space(5));
-  color: color('success');
+  color: color("success");
 }
 
 .contentSpaced {
@@ -172,22 +172,22 @@
 
 .iconRed {
   @include icon-size(space(5));
-  color: color('destructive');
+  color: color("destructive");
 }
 
 .iconGreen {
   @include icon-size(space(5));
-  color: color('success');
+  color: color("success");
 }
 
 .iconAmber {
   @include icon-size(space(5));
-  color: color('warning');
+  color: color("warning");
 }
 
 .iconWheat {
   @include icon-size(space(5));
-  color: color('warning');
+  color: color("warning");
 }
 
 .iconCompositionShrink {
@@ -202,19 +202,19 @@
 
 .iconAllergenAmber {
   @include icon-size(space(4));
-  color: color('warning');
+  color: color("warning");
 }
 
 .iconBulb {
   @include icon-size(space(4));
   flex-shrink: 0;
   margin-top: space(0.5);
-  color: color('warning');
+  color: color("warning");
 }
 
 .iconBlue {
   @include icon-size(space(5));
-  color: color('info');
+  color: color("info");
 }
 
 .cardHeader {
@@ -232,17 +232,17 @@
 .iconCompositionGreen {
   @include icon-size(space(4));
   flex-shrink: 0;
-  color: color('success');
+  color: color("success");
 }
 
 .iconCompositionAmber {
   @include icon-size(space(4));
   flex-shrink: 0;
-  color: color('warning');
+  color: color("warning");
 }
 
 .iconCompositionBlue {
   @include icon-size(space(4));
   flex-shrink: 0;
-  color: color('info');
+  color: color("info");
 }

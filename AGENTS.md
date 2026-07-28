@@ -26,11 +26,11 @@ instruction/agent files reference this section by name.
 | npm | >=11 | `package.json` engines |
 | .NET SDK | 10.0 | `sites/api.arolariu.ro/Directory.Build.props` |
 | C# | 14 | implied by .NET 10 (`<LangVersion>latest</LangVersion>` in `sites/api.arolariu.ro/Directory.Build.props`) |
-| Next.js | 16.2.4 | `package.json` |
-| React | 19.2.5 | `package.json` |
+| Next.js | 16.2.12 | `package.json` |
+| React | 19.2.8 | `package.json` |
 | TypeScript | 6.0.3 | `package.json` devDependencies |
-| SvelteKit | 2.58.0 | `package.json` |
-| Nx | 22.7.0 | `package.json` devDependencies |
+| SvelteKit | 2.70.1 | `package.json` |
+| Nx | 23.1.0 | `package.json` devDependencies |
 
 When a version changes: edit this table; do NOT edit prose mentions in
 instruction/agent files unless they still drift after this change.

@@ -1,18 +1,18 @@
-@use '../../../../../../styles/abstracts' as abstracts;
+@use "../../../../../../styles/abstracts" as abstracts;
 
 .sidebarCardContent {
   padding: abstracts.space(4);
 
   // Compact padding on mobile
-  @include abstracts.respond-below('md') {
+  @include abstracts.respond-below("md") {
     padding: abstracts.space(3);
   }
 }
 
 .sidebarTitle {
   margin-bottom: abstracts.space(4);
-  font-weight: abstracts.font-weight('semibold');
-  color: abstracts.color('muted-foreground');
+  font-weight: abstracts.font-weight("semibold");
+  color: abstracts.color("muted-foreground");
 
   @include abstracts.dark {
     color: white;
@@ -29,7 +29,7 @@
   gap: abstracts.space(2);
 
   // Compact on mobile
-  @include abstracts.respond-below('md') {
+  @include abstracts.respond-below("md") {
     gap: abstracts.space(1.5);
   }
 }
@@ -39,10 +39,10 @@
   height: abstracts.space(4);
   width: abstracts.space(4);
   flex-shrink: 0;
-  color: abstracts.color('success');
+  color: abstracts.color("success");
 }
 
 .tipText {
-  font-size: abstracts.font-size('sm');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("sm");
+  color: abstracts.color("muted-foreground");
 }

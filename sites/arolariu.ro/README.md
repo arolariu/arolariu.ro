@@ -1,12 +1,15 @@
 # Welcome to the front-end service.
 
-You've landed on the front-end service of the arolariu.ro platform. This service is responsible for serving the front-end of the website, which is built using the [Next.JS v16](https://nextjs.org/) React-based framework.
+You've landed on the front-end service of the arolariu.ro platform. This service is responsible for serving the front-end of the website,
+which is built using the [Next.JS v16](https://nextjs.org/) React-based framework.
 
-The front-end service provides a modern and responsive user interface for the arolariu.ro platform. The front-end service is built using TypeScript and integrates with the back-end service to provide a seamless user experience.
+The front-end service provides a modern and responsive user interface for the arolariu.ro platform. The front-end service is built using
+TypeScript and integrates with the back-end service to provide a seamless user experience.
 
 ## Development
 
-The front-end service is built using the Next.JS framework, which provides a powerful and flexible platform for building modern web applications. The front-end service is written in TypeScript and uses the following technologies:
+The front-end service is built using the Next.JS framework, which provides a powerful and flexible platform for building modern web
+applications. The front-end service is written in TypeScript and uses the following technologies:
 
 - **React**: A JavaScript library for building user interfaces.
 - **Next.JS**: A React-based framework for building modern web applications.
@@ -27,15 +30,20 @@ The front-end service is built using the Next.JS framework, which provides a pow
 - **Microsoft Clarity**: A platform for visualizing user behavior on web applications.
 - **Google Analytics**: A platform for tracking user interactions on web applications.
 
-etc... please see the `package.json` file for a full list of dependencies. Additionally, the front-end service is integrated with the following services:
+etc... please see the `package.json` file for a full list of dependencies. Additionally, the front-end service is integrated with the
+following services:
 
-- **api.arolariu.ro**: The back-end service provides the API endpoints for the front-end service. The front-end service also acts as a backend-for-frontend (BFF) service, aggregating data from multiple sources and providing a unified API for the client(s).
+- **api.arolariu.ro**: The back-end service provides the API endpoints for the front-end service. The front-end service also acts as a
+  backend-for-frontend (BFF) service, aggregating data from multiple sources and providing a unified API for the client(s).
 
-- **cdn.arolariu.ro**: The content delivery network (CDN) service provides a scalable and reliable platform for delivering web content to users around the world. The CDN service caches static assets and serves them from edge locations close to the user's location.
+- **cdn.arolariu.ro**: The content delivery network (CDN) service provides a scalable and reliable platform for delivering web content to
+  users around the world. The CDN service caches static assets and serves them from edge locations close to the user's location.
 
-- **obs.arolariu.ro**: The monitoring service provides real-time monitoring and alerting for the front-end service. The monitoring service collects metrics, logs, and traces from the front-end service and provides insights into the performance and availability of the service.
+- **obs.arolariu.ro**: The monitoring service provides real-time monitoring and alerting for the front-end service. The monitoring service
+  collects metrics, logs, and traces from the front-end service and provides insights into the performance and availability of the service.
 
-- **auth.arolariu.ro**: The authentication service provides user authentication and authorization for the front-end service. The authentication service integrates with external identity providers and provides a secure and seamless login experience for users.
+- **auth.arolariu.ro**: The authentication service provides user authentication and authorization for the front-end service. The
+  authentication service integrates with external identity providers and provides a secure and seamless login experience for users.
 
 <br/>
 <br/>
@@ -46,8 +54,9 @@ etc... please see the `package.json` file for a full list of dependencies. Addit
 In order to start the front-end service on your local machine, you need to follow the steps below:
 
 ### Step 1. Installing Node.js
-To start the front-end service on your local machine, you need to have [Node.js](https://nodejs.org/en/) v20.x+ installed.
-You can check if you have Node.js installed by running the following command:
+
+To start the front-end service on your local machine, you need to have [Node.js](https://nodejs.org/en/) v20.x+ installed. You can check if
+you have Node.js installed by running the following command:
 
 ```bash
 # Input:
@@ -57,11 +66,13 @@ node -v
 v21.6.1
 ```
 
-If you don't have Node.js installed, you can download it from the official website [here](https://nodejs.org/en/). Please make sure to download the latest LTS version (Version 20+).
+If you don't have Node.js installed, you can download it from the official website [here](https://nodejs.org/en/). Please make sure to
+download the latest LTS version (Version 20+).
 
 ### Step 2. Installing Git for Version Control
 
-To clone the repository and start the front-end service, you need to have [Git](https://git-scm.com/) installed on your local machine. You can check if you have Git installed by running the following command:
+To clone the repository and start the front-end service, you need to have [Git](https://git-scm.com/) installed on your local machine. You
+can check if you have Git installed by running the following command:
 
 ```bash
 # Input:
@@ -107,7 +118,6 @@ added 123 packages, and audited 124 packages in 3s
 found 0 vulnerabilities
 ```
 
-
 ### Step 5. Starting the Development Server
 
 To start the development server, run the following command:
@@ -131,7 +141,8 @@ You can now access the front-end service by navigating to [http://localhost:3000
 
 ## Deployment
 
-The front-end service is automatically deployed to the production environment when changes are pushed to the `main` branch. The deployment process is managed by the CI/CD pipeline, which builds and deploys the front-end service to the production environment.
+The front-end service is automatically deployed to the production environment when changes are pushed to the `main` branch. The deployment
+process is managed by the CI/CD pipeline, which builds and deploys the front-end service to the production environment.
 
 The CI/CD pipeline is built using GitHub Actions and is configured to run the following steps:
 
@@ -141,12 +152,14 @@ The CI/CD pipeline is built using GitHub Actions and is configured to run the fo
 
 3. **Deploy**: The pipeline deploys the front-end service to the production environment.
 
-The deployment process is triggered automatically when changes are pushed to the `main` branch. You can monitor the deployment process in the GitHub Actions tab of the repository.
-
+The deployment process is triggered automatically when changes are pushed to the `main` branch. You can monitor the deployment process in
+the GitHub Actions tab of the repository.
 
 ## Monitoring
 
-The front-end service is monitored using the Azure Monitor platform, which provides real-time monitoring and alerting for the service. The monitoring platform collects metrics, logs, and traces from the front-end service and provides insights into the performance and availability of the service.
+The front-end service is monitored using the Azure Monitor platform, which provides real-time monitoring and alerting for the service. The
+monitoring platform collects metrics, logs, and traces from the front-end service and provides insights into the performance and
+availability of the service.
 
 The monitoring platform is integrated with the following services:
 
@@ -156,7 +169,7 @@ The monitoring platform is integrated with the following services:
 
 - **Google Analytics**: A platform for tracking user interactions on web applications.
 
-The monitoring platform provides real-time insights into the performance and availability of the front-end service. 
+The monitoring platform provides real-time insights into the performance and availability of the front-end service.
 
 As an administrator, you can access the monitoring platform by navigating to the following URL:
 
@@ -164,7 +177,9 @@ As an administrator, you can access the monitoring platform by navigating to the
   <center> <a href="https://obs.arolariu.ro">obs.arolariu.ro</a> </center>
 </div>
 
-On the above platform you'll encountered a Grafana dashboard that provides real-time insights into the performance and availability of the front-end service. The dashboard includes metrics such as response time, error rate, and availability, as well as logs and traces from the front-end service.
+On the above platform you'll encountered a Grafana dashboard that provides real-time insights into the performance and availability of the
+front-end service. The dashboard includes metrics such as response time, error rate, and availability, as well as logs and traces from the
+front-end service.
 
 ### OpenTelemetry runtime
 
@@ -184,10 +199,12 @@ The frontend service includes a Newman/Postman collection for live route and API
 Location: `postman-collection.json`
 
 Environment profiles:
+
 - `postman-environment.local.json`
 - `postman-environment.production.json`
 
 Coverage includes:
+
 - Public routes (home/about/domains/legal/auth)
 - Protected route behavior (redirect/auth indicators)
 - Static assets and SEO/PWA endpoints
@@ -197,11 +214,13 @@ Coverage includes:
 ### Running Tests
 
 #### Using npm script:
+
 ```bash
 npm run test:e2e:frontend
 ```
 
 #### Using Newman directly:
+
 ```bash
 newman run sites/arolariu.ro/postman-collection.json \
   --environment sites/arolariu.ro/postman-environment.production.json
@@ -210,6 +229,7 @@ newman run sites/arolariu.ro/postman-collection.json \
 ### Collection Variables
 
 The collection uses the following variables:
+
 - `baseUrl`: Constructed as `{{baseProtocol}}://{{baseHost}}`
 - `baseHost`: `arolariu.ro` (production) or your local host
 - `baseProtocol`: `https` (production) or `http` (local)
@@ -225,6 +245,7 @@ E2E_TEST_AUTH_TOKEN="jwt-token" npm run test:e2e:frontend
 ```
 
 Optional runtime controls:
+
 - `E2E_TEST_ENVIRONMENT=local|production` (default: `production`)
 - `NEWMAN_STRICT_MODE=true|false` (default: `false`)
 - `NEWMAN_REPORT_DIR=<path>` (default: `e2e-logs`)
@@ -233,4 +254,5 @@ Optional runtime controls:
 
 ## Support
 
-If you encounter any issues or have any questions, please feel free to reach out to the development team at [admin@arolariu.ro](mailto:admin@arolariu.ro). We are here to help you with any questions or concerns you may have.
+If you encounter any issues or have any questions, please feel free to reach out to the development team at
+[admin@arolariu.ro](mailto:admin@arolariu.ro). We are here to help you with any questions or concerns you may have.

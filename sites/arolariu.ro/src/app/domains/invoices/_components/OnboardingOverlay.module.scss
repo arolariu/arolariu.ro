@@ -7,7 +7,7 @@
 /// @module app/domains/invoices/_components/OnboardingOverlay
 /// @author arolariu
 /// ===========================================
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 // ===========================================
 // OVERLAY CONTAINER
@@ -16,12 +16,12 @@
 .overlay {
   position: fixed;
   inset: 0;
-  z-index: z('modal');
+  z-index: z("modal");
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: color-alpha('background', 0.85);
-  @include backdrop-blur(blur-size('lg'));
+  background-color: color-alpha("background", 0.85);
+  @include backdrop-blur(blur-size("lg"));
 }
 
 // ===========================================
@@ -34,12 +34,12 @@
   width: 90%;
   padding: space(8);
   text-align: center;
-  background-color: color('card');
-  border: 1px solid color('border');
-  border-radius: radius('xl');
-  @include shadow('xl');
+  background-color: color("card");
+  border: 1px solid color("border");
+  border-radius: radius("xl");
+  @include shadow("xl");
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     padding: space(10);
     max-width: 520px;
   }
@@ -69,7 +69,7 @@
   margin-bottom: space(8);
   overflow: hidden;
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     min-height: 360px;
   }
 }
@@ -89,11 +89,11 @@
   width: 120px;
   height: 120px;
   margin: 0 auto space(6);
-  background: linear-gradient(135deg, color('primary'), color('accent'));
-  border-radius: radius('full');
-  @include shadow('md');
+  background: linear-gradient(135deg, color("primary"), color("accent"));
+  border-radius: radius("full");
+  @include shadow("md");
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     width: 140px;
     height: 140px;
   }
@@ -102,9 +102,9 @@
 .stepIcon {
   width: 64px;
   height: 64px;
-  color: color('primary-foreground');
+  color: color("primary-foreground");
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     width: 72px;
     height: 72px;
   }
@@ -117,7 +117,7 @@
 .stepIndicator {
   font-size: 0.875rem;
   font-weight: 500;
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   margin-bottom: space(3);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -126,23 +126,23 @@
 .stepTitle {
   font-size: 1.75rem;
   font-weight: 700;
-  color: color('foreground');
+  color: color("foreground");
   margin-bottom: space(4);
   line-height: 1.2;
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     font-size: 2rem;
   }
 }
 
 .stepDescription {
   font-size: 1rem;
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   line-height: 1.6;
   max-width: 400px;
   margin: 0 auto;
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     font-size: 1.125rem;
   }
 }
@@ -170,30 +170,30 @@
 .dot {
   width: 8px;
   height: 8px;
-  border-radius: radius('full');
-  background-color: color('muted');
+  border-radius: radius("full");
+  background-color: color("muted");
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
   padding: 0;
 
   &:hover {
-    background-color: color('muted-foreground');
+    background-color: color("muted-foreground");
     transform: scale(1.2);
   }
 
   &:focus-visible {
-    outline: 2px solid color('ring');
+    outline: 2px solid color("ring");
     outline-offset: 2px;
   }
 }
 
 .dotActive {
   width: 24px;
-  background-color: color('primary');
+  background-color: color("primary");
 
   &:hover {
-    background-color: color('primary');
+    background-color: color("primary");
   }
 }
 
@@ -214,11 +214,11 @@
   gap: space(2);
   cursor: pointer;
   font-size: 0.875rem;
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   transition: color 0.2s ease;
 
   &:hover {
-    color: color('foreground');
+    color: color("foreground");
   }
 }
 
@@ -226,11 +226,11 @@
   width: 16px;
   height: 16px;
   cursor: pointer;
-  accent-color: color('primary');
-  border-radius: radius('sm');
+  accent-color: color("primary");
+  border-radius: radius("sm");
 
   &:focus-visible {
-    outline: 2px solid color('ring');
+    outline: 2px solid color("ring");
     outline-offset: 2px;
   }
 }
@@ -260,14 +260,14 @@
 
 .card {
   @include dark {
-    background-color: color('card');
-    border-color: color('border');
+    background-color: color("card");
+    border-color: color("border");
   }
 }
 
 .overlay {
   @include dark {
-    background-color: color-alpha('background', 0.9);
+    background-color: color-alpha("background", 0.9);
   }
 }
 
@@ -292,6 +292,6 @@
 // Ensure focus states are visible
 .header button:focus-visible,
 .navigation button:focus-visible {
-  outline: 2px solid color('ring');
+  outline: 2px solid color("ring");
   outline-offset: 2px;
 }

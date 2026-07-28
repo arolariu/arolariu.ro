@@ -1,14 +1,14 @@
 // ===========================================
 // ALLERGEN SUMMARY CHART STYLES
 // ===========================================
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 // ===========================================
 // LAYOUT
 // ===========================================
 .card {
-  background: color('card');
-  border: 1px solid color('border');
+  background: color("card");
+  border: 1px solid color("border");
   border-radius: space(2);
 }
 
@@ -18,14 +18,14 @@
 }
 
 .cardTitle {
-  font-size: font-size('xl');
-  font-weight: font-weight('bold');
-  color: color('foreground');
+  font-size: font-size("xl");
+  font-weight: font-weight("bold");
+  color: color("foreground");
 }
 
 .cardDescription {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
   margin-top: space(1);
 }
 
@@ -46,7 +46,7 @@
   padding: space(4);
   border-radius: space(2);
   border: 2px solid;
-  background: color('card');
+  background: color("card");
   transition: all 0.2s;
 
   &:hover {
@@ -55,11 +55,11 @@
   }
 
   &.high {
-    border-color: color('destructive');
+    border-color: color("destructive");
     background: rgba(var(--color-destructive-rgb), 0.05);
 
     .allergenIcon {
-      color: color('destructive');
+      color: color("destructive");
       background: rgba(var(--color-destructive-rgb), 0.1);
     }
   }
@@ -75,11 +75,11 @@
   }
 
   &.low {
-    border-color: color('primary');
+    border-color: color("primary");
     background: rgba(var(--color-primary-rgb), 0.05);
 
     .allergenIcon {
-      color: color('primary');
+      color: color("primary");
       background: rgba(var(--color-primary-rgb), 0.1);
     }
   }
@@ -111,18 +111,18 @@
 }
 
 .allergenName {
-  font-size: font-size('base');
-  font-weight: font-weight('semibold');
+  font-size: font-size("base");
+  font-weight: font-weight("semibold");
   margin-bottom: space(1);
-  color: color('foreground');
+  color: color("foreground");
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .allergenDescription {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -137,7 +137,7 @@
   display: flex;
   gap: space(4);
   padding-top: space(3);
-  border-top: 1px solid color('border');
+  border-top: 1px solid color("border");
 }
 
 .statItem {
@@ -148,15 +148,15 @@
 }
 
 .statValue {
-  font-size: font-size('xl');
-  font-weight: font-weight('bold');
-  color: color('foreground');
+  font-size: font-size("xl");
+  font-weight: font-weight("bold");
+  color: color("foreground");
   font-variant-numeric: tabular-nums;
 }
 
 .statLabel {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -178,17 +178,17 @@
   height: 64px;
   border-radius: 50%;
   background: rgba(var(--color-primary-rgb), 0.1);
-  color: color('primary');
+  color: color("primary");
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: font-size('3xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("3xl");
+  font-weight: font-weight("bold");
 }
 
 .emptyText {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
   text-align: center;
   max-width: 300px;
 }
@@ -196,7 +196,7 @@
 // ===========================================
 // RESPONSIVE
 // ===========================================
-@include respond-to('sm') {
+@include respond-to("sm") {
   .allergenGrid {
     grid-template-columns: 1fr;
   }
@@ -206,18 +206,18 @@
   }
 
   .allergenName {
-    font-size: font-size('sm');
+    font-size: font-size("sm");
   }
 
   .allergenDescription {
-    font-size: font-size('xs');
+    font-size: font-size("xs");
   }
 
   .statValue {
-    font-size: font-size('base');
+    font-size: font-size("base");
   }
 
   .statLabel {
-    font-size: font-size('xs');
+    font-size: font-size("xs");
   }
 }

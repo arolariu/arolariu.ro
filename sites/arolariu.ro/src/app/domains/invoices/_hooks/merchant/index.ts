@@ -20,6 +20,6 @@
  */
 
 // #region Hooks for Merchant queries (fetch single/multiple)
-export { useMerchant } from "./useMerchant";
-export { useMerchants } from "./useMerchants";
+export {useMerchant} from "./useMerchant";
+export {useMerchants} from "./useMerchants";
 // #endregion

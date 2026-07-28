@@ -1,14 +1,14 @@
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 .recipesGrid {
   display: grid;
   gap: space(4);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
@@ -57,7 +57,7 @@
 }
 
 .emptyStateText {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   margin-top: space(2);
 }
 
@@ -65,7 +65,7 @@
   transition: box-shadow 300ms;
 
   &:hover {
-    @include shadow('md');
+    @include shadow("md");
   }
 }
 
@@ -102,5 +102,5 @@
 .emptyIcon {
   height: space(12);
   width: space(12);
-  color: color-alpha('muted-foreground', 0.5);
+  color: color-alpha("muted-foreground", 0.5);
 }

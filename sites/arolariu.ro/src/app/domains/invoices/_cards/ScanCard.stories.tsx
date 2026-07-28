@@ -54,9 +54,7 @@ export const Selected: Story = {
       onToggle: () => undefined,
       label: "Select scan",
     },
-    actions: [
-      {key: "delete", label: "Delete", icon: <TbTrash />, onSelect: () => undefined, destructive: true},
-    ],
+    actions: [{key: "delete", label: "Delete", icon: <TbTrash />, onSelect: () => undefined, destructive: true}],
   },
 };
 
@@ -159,9 +157,7 @@ export const LinkedToInvoice: Story = {
         Linked
       </div>
     ),
-    actions: [
-      {key: "delete", label: "Delete", icon: <TbTrash />, onSelect: () => undefined, destructive: true},
-    ],
+    actions: [{key: "delete", label: "Delete", icon: <TbTrash />, onSelect: () => undefined, destructive: true}],
   },
 };
 

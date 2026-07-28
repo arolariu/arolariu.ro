@@ -23,7 +23,17 @@ vi.mock("@arolariu/components", () => ({
 }));
 
 function upload(id: string): PendingUpload {
-  return {id, name: `${id}.jpg`, file: null, mimeType: "image/jpeg", size: 4, preview: `blob:${id}`, status: "idle", progress: 0, attempts: 0};
+  return {
+    id,
+    name: `${id}.jpg`,
+    file: null,
+    mimeType: "image/jpeg",
+    size: 4,
+    preview: `blob:${id}`,
+    status: "idle",
+    progress: 0,
+    attempts: 0,
+  };
 }
 
 describe("UploadPreview", () => {

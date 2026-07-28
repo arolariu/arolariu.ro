@@ -1,9 +1,9 @@
-@use '../../../../../../styles/abstracts' as *;
+@use "../../../../../../styles/abstracts" as *;
 
 .completenessSection {
-  border-radius: radius('md');
-  border: 1px solid color('border');
-  background-color: color-alpha('muted', 0.3);
+  border-radius: radius("md");
+  border: 1px solid color("border");
+  background-color: color-alpha("muted", 0.3);
   padding: space(3);
 }
 
@@ -15,15 +15,15 @@
 }
 
 .completenessLabel {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
-  color: color('foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
+  color: color("foreground");
 }
 
 .completenessScore {
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
+  color: color("muted-foreground");
 }
 
 .completenessProgress {
@@ -35,9 +35,9 @@
   display: flex;
   align-items: center;
   gap: space(1.5);
-  color: color('success');
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  color: color("success");
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .completeIcon {
@@ -52,21 +52,21 @@
 }
 
 .contextTipCard {
-  border-radius: radius('md');
-  border: 1px solid color-alpha('primary', 0.3);
-  background-color: color-alpha('primary', 0.05);
+  border-radius: radius("md");
+  border: 1px solid color-alpha("primary", 0.3);
+  background-color: color-alpha("primary", 0.05);
   padding: space(3);
   display: flex;
   align-items: center;
   gap: space(3);
 
   &:hover {
-    background-color: color-alpha('primary', 0.1);
+    background-color: color-alpha("primary", 0.1);
   }
 }
 
 .contextTipIcon {
-  color: color('primary');
+  color: color("primary");
   display: flex;
   align-items: center;
   justify-content: center;
@@ -86,23 +86,23 @@
 }
 
 .contextTipMessage {
-  font-size: font-size('sm');
-  color: color('foreground');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  color: color("foreground");
+  font-weight: font-weight("medium");
 }
 
 .contextTipAction {
-  font-size: font-size('xs');
-  color: color('primary');
-  font-weight: font-weight('medium');
+  font-size: font-size("xs");
+  color: color("primary");
+  font-weight: font-weight("medium");
 }
 
 .dismissButton {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   padding: space(1);
 
   &:hover {
-    color: color('foreground');
+    color: color("foreground");
   }
 }
 
@@ -112,9 +112,9 @@
 }
 
 .savingsBanner {
-  border-radius: radius('md');
-  border: 1px solid color-alpha('primary', 0.2);
-  background-color: color-alpha('primary', 0.1);
+  border-radius: radius("md");
+  border: 1px solid color-alpha("primary", 0.2);
+  background-color: color-alpha("primary", 0.1);
   padding: space(3);
 }
 
@@ -125,19 +125,19 @@
 }
 
 .savingsLabel {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .savingsAmount {
-  font-size: font-size('lg');
-  font-weight: font-weight('bold');
+  font-size: font-size("lg");
+  font-weight: font-weight("bold");
 }
 
 .savingsHint {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   margin-top: space(1);
-  font-size: font-size('xs');
+  font-size: font-size("xs");
 }
 
 .tipsList {
@@ -147,13 +147,13 @@
 }
 
 .tipCard {
-  border-radius: radius('md');
-  border: 1px solid color('border');
+  border-radius: radius("md");
+  border: 1px solid color("border");
   padding: space(3);
 
   &:hover {
-    border-color: color-alpha('primary', 0.5);
-    background-color: color-alpha('muted', 0.5);
+    border-color: color-alpha("primary", 0.5);
+    background-color: color-alpha("muted", 0.5);
   }
 }
 
@@ -164,10 +164,10 @@
 }
 
 .tipIconWrapper {
-  background-color: color-alpha('primary', 0.1);
-  color: color('primary');
+  background-color: color-alpha("primary", 0.1);
+  color: color("primary");
   margin-top: space(0.5);
-  border-radius: radius('md');
+  border-radius: radius("md");
   padding: space(1.5);
 }
 
@@ -187,22 +187,22 @@
 }
 
 .tipTitle {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .tipSavings {
   display: flex;
   align-items: center;
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
-  color: color('success');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
+  color: color("success");
 }
 
 .tipDescription {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   margin-top: space(1);
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 }
 
 .moreButton {
@@ -218,11 +218,11 @@
 }
 
 .disclaimer {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   display: flex;
   align-items: center;
   gap: space(2);
-  font-size: font-size('xs');
+  font-size: font-size("xs");
 }
 
 .cardHeader {
@@ -232,11 +232,11 @@
 .cardTitle {
   display: flex;
   align-items: center;
-  font-size: font-size('lg');
+  font-size: font-size("lg");
 }
 
 .sparklesIcon {
-  color: color('primary');
+  color: color("primary");
   margin-right: space(2);
   width: space(5);
   height: space(5);
@@ -250,7 +250,7 @@
 
 .difficultyBadge {
   margin-top: space(1);
-  font-size: font-size('xs');
+  font-size: font-size("xs");
 }
 
 .thumbIcon {

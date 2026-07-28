@@ -1,15 +1,15 @@
 // ===========================================
 // SPENDING OVER TIME CHART STYLES
 // ===========================================
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 // ===========================================
 // LAYOUT
 // ===========================================
 .card {
   width: 100%;
-  background: color('card');
-  border: 1px solid color('border');
+  background: color("card");
+  border: 1px solid color("border");
   border-radius: space(2);
 }
 
@@ -19,14 +19,14 @@
 }
 
 .cardTitle {
-  font-size: font-size('xl');
-  font-weight: font-weight('bold');
-  color: color('foreground');
+  font-size: font-size("xl");
+  font-weight: font-weight("bold");
+  color: color("foreground");
 }
 
 .cardDescription {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
   margin-top: space(1);
 }
 
@@ -38,7 +38,7 @@
   width: 100%;
   height: 300px;
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     height: 350px;
   }
 
@@ -57,8 +57,8 @@
 // TOOLTIP
 // ===========================================
 .tooltip {
-  background: color('popover');
-  border: 1px solid color('border');
+  background: color("popover");
+  border: 1px solid color("border");
   border-radius: space(2);
   padding: space(3);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -66,29 +66,29 @@
 }
 
 .tooltipMonth {
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
-  color: color('foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
+  color: color("foreground");
   margin-bottom: space(1);
 }
 
 .tooltipAmount {
-  font-size: font-size('base');
-  font-weight: font-weight('bold');
-  color: color('primary');
+  font-size: font-size("base");
+  font-weight: font-weight("bold");
+  color: color("primary");
   margin-bottom: space(0.5);
 }
 
 .tooltipCount {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
 }
 
 .tooltipInvoices {
   list-style: none;
   padding: 0;
   margin: space(2) 0 0;
-  border-top: 1px solid color('border');
+  border-top: 1px solid color("border");
   padding-top: space(2);
   max-height: 200px;
   overflow-y: auto;
@@ -96,11 +96,11 @@
 
 .tooltipInvoiceItem {
   padding: space(1) 0;
-  font-size: font-size('xs');
+  font-size: font-size("xs");
 }
 
 .tooltipInvoiceLink {
-  color: color('primary');
+  color: color("primary");
   text-decoration: none;
   display: block;
 
@@ -110,8 +110,8 @@
 }
 
 .tooltipMore {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
   font-style: italic;
   padding-top: space(1);
 }

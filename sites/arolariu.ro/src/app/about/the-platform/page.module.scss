@@ -1,11 +1,11 @@
 // ABOUT — THE PLATFORM PAGE
-@use '../../../styles/abstracts' as abstracts;
+@use "../../../styles/abstracts" as abstracts;
 
 .platformPage {
   position: relative;
   min-height: 100vh;
-  background-color: abstracts.color('background');
-  color: abstracts.color('foreground');
+  background-color: abstracts.color("background");
+  color: abstracts.color("foreground");
 }
 
 .platformMain {

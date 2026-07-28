@@ -1,4 +1,4 @@
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 .container {
   display: flex;
@@ -22,43 +22,43 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: font-size('sm');
+  font-size: font-size("sm");
   transition: all 0.3s ease;
 }
 
 .stepActive {
-  background-color: color('primary');
-  color: color('primary-foreground');
+  background-color: color("primary");
+  color: color("primary-foreground");
 }
 
 .stepCompleted {
-  background-color: color('primary');
-  color: color('primary-foreground');
+  background-color: color("primary");
+  color: color("primary-foreground");
 }
 
 .stepFuture {
-  background-color: color('muted');
-  color: color('muted-foreground');
+  background-color: color("muted");
+  color: color("muted-foreground");
 }
 
 .stepLabel {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
   transition: opacity 0.3s ease;
 }
 
 .connector {
   width: space(12);
   height: 2px;
-  background-color: color('border');
+  background-color: color("border");
   transition: background-color 0.3s ease;
 }
 
 .connectorCompleted {
-  background-color: color('primary');
+  background-color: color("primary");
 }
 
-@include respond-below('sm') {
+@include respond-below("sm") {
   .stepLabel {
     display: none;
   }

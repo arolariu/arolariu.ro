@@ -18,7 +18,7 @@ npm install react react-dom @base-ui/react motion
 import "@arolariu/components/styles";
 
 // Components auto-load their CSS when imported
-import { Button, Card } from "@arolariu/components";
+import {Button, Card} from "@arolariu/components";
 ```
 
 `@arolariu/components/styles` provides design tokens only. Component CSS is loaded automatically when components are imported.
@@ -33,21 +33,19 @@ No utility CSS framework is required as a peer dependency in v1.0.0.
 ### Useful Subpath Imports
 
 ```tsx
-import { Button } from "@arolariu/components/button";
-import { useIsMobile } from "@arolariu/components/useIsMobile";
-import { cn } from "@arolariu/components/utilities";
-import { hexToHsl } from "@arolariu/components/color-conversion-utilities";
+import {Button} from "@arolariu/components/button";
+import {useIsMobile} from "@arolariu/components/useIsMobile";
+import {cn} from "@arolariu/components/utilities";
+import {hexToHsl} from "@arolariu/components/color-conversion-utilities";
 ```
 
 ### Composition with the `render` Prop
 
 ```tsx
-import { Button } from "@arolariu/components";
+import {Button} from "@arolariu/components";
 
 // Use render prop instead of asChild
-<Button render={<a href="/dashboard" />}>
-  Go to Dashboard
-</Button>
+<Button render={<a href='/dashboard' />}>Go to Dashboard</Button>;
 ```
 
 ```css
@@ -65,15 +63,9 @@ import { Button } from "@arolariu/components";
 ### Simple Card Layout
 
 ```tsx
-import { Badge } from "@arolariu/components/badge";
-import { Button } from "@arolariu/components/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@arolariu/components/card";
+import {Badge} from "@arolariu/components/badge";
+import {Button} from "@arolariu/components/button";
+import {Card, CardContent, CardFooter, CardHeader, CardTitle} from "@arolariu/components/card";
 import styles from "./product-card.module.css";
 
 export function ProductCard() {
@@ -82,7 +74,7 @@ export function ProductCard() {
       <CardHeader>
         <div className={styles.headerRow}>
           <CardTitle>Premium Plan</CardTitle>
-          <Badge variant="secondary">Popular</Badge>
+          <Badge variant='secondary'>Popular</Badge>
         </div>
       </CardHeader>
       <CardContent className={styles.content}>
@@ -145,26 +137,10 @@ export function ProductCard() {
 ### Dashboard Layout with Sidebar
 
 ```tsx
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@arolariu/components/avatar";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@arolariu/components/card";
-import { Progress } from "@arolariu/components/progress";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-} from "@arolariu/components/sidebar";
+import {Avatar, AvatarFallback, AvatarImage} from "@arolariu/components/avatar";
+import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components/card";
+import {Progress} from "@arolariu/components/progress";
+import {Sidebar, SidebarContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider} from "@arolariu/components/sidebar";
 import styles from "./dashboard.module.css";
 
 export function Dashboard() {
@@ -208,11 +184,11 @@ export function Dashboard() {
               <CardContent>
                 <div className={styles.avatarRow}>
                   <Avatar className={styles.avatar}>
-                    <AvatarImage src="/avatar1.jpg" />
+                    <AvatarImage src='/avatar1.jpg' />
                     <AvatarFallback>JD</AvatarFallback>
                   </Avatar>
                   <Avatar className={styles.avatar}>
-                    <AvatarImage src="/avatar2.jpg" />
+                    <AvatarImage src='/avatar2.jpg' />
                     <AvatarFallback>SM</AvatarFallback>
                   </Avatar>
                   <Avatar className={styles.avatar}>
@@ -236,20 +212,14 @@ export function Dashboard() {
 ### Complete Login Form
 
 ```tsx
-import { useState } from "react";
+import {useState} from "react";
 
-import { Alert, AlertDescription } from "@arolariu/components/alert";
-import { Button } from "@arolariu/components/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@arolariu/components/card";
-import { Checkbox } from "@arolariu/components/checkbox";
-import { Input } from "@arolariu/components/input";
-import { Label } from "@arolariu/components/label";
+import {Alert, AlertDescription} from "@arolariu/components/alert";
+import {Button} from "@arolariu/components/button";
+import {Card, CardContent, CardFooter, CardHeader, CardTitle} from "@arolariu/components/card";
+import {Checkbox} from "@arolariu/components/checkbox";
+import {Input} from "@arolariu/components/input";
+import {Label} from "@arolariu/components/label";
 import styles from "./login-form.module.css";
 
 export function LoginForm() {
@@ -283,17 +253,17 @@ export function LoginForm() {
         <form onSubmit={handleSubmit}>
           <CardContent className={styles.content}>
             {error ? (
-              <Alert variant="destructive">
+              <Alert variant='destructive'>
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             ) : null}
 
             <div className={styles.field}>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor='email'>Email</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
+                id='email'
+                type='email'
+                placeholder='you@example.com'
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 required
@@ -301,10 +271,10 @@ export function LoginForm() {
             </div>
 
             <div className={styles.field}>
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor='password'>Password</Label>
               <Input
-                id="password"
-                type="password"
+                id='password'
+                type='password'
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required
@@ -313,26 +283,24 @@ export function LoginForm() {
 
             <div className={styles.checkboxRow}>
               <Checkbox
-                id="remember"
+                id='remember'
                 checked={rememberMe}
                 onCheckedChange={setRememberMe}
               />
-              <Label htmlFor="remember">Remember me</Label>
+              <Label htmlFor='remember'>Remember me</Label>
             </div>
           </CardContent>
 
           <CardFooter className={styles.footer}>
             <Button
-              type="submit"
+              type='submit'
               className={styles.submitButton}
-              disabled={loading}
-            >
+              disabled={loading}>
               {loading ? "Signing in..." : "Sign In"}
             </Button>
             <a
               className={styles.link}
-              href="/forgot-password"
-            >
+              href='/forgot-password'>
               Forgot your password?
             </a>
           </CardFooter>
@@ -346,29 +314,15 @@ export function LoginForm() {
 ### Advanced Form with Validation
 
 ```tsx
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import {zodResolver} from "@hookform/resolvers/zod";
+import {useForm} from "react-hook-form";
 import * as z from "zod";
 
-import { Button } from "@arolariu/components/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@arolariu/components/form";
-import { Input } from "@arolariu/components/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@arolariu/components/select";
-import { Textarea } from "@arolariu/components/textarea";
+import {Button} from "@arolariu/components/button";
+import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage} from "@arolariu/components/form";
+import {Input} from "@arolariu/components/input";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@arolariu/components/select";
+import {Textarea} from "@arolariu/components/textarea";
 import styles from "./profile-form.module.css";
 
 const formSchema = z.object({
@@ -399,18 +353,17 @@ export function ProfileForm() {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className={styles.form}
-      >
+        className={styles.form}>
         <div className={styles.twoColumnGrid}>
           <FormField
             control={form.control}
-            name="firstName"
-            render={({ field }) => (
+            name='firstName'
+            render={({field}) => (
               <FormItem>
                 <FormLabel>First Name</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="John"
+                    placeholder='John'
                     {...field}
                   />
                 </FormControl>
@@ -421,13 +374,13 @@ export function ProfileForm() {
 
           <FormField
             control={form.control}
-            name="lastName"
-            render={({ field }) => (
+            name='lastName'
+            render={({field}) => (
               <FormItem>
                 <FormLabel>Last Name</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="Doe"
+                    placeholder='Doe'
                     {...field}
                   />
                 </FormControl>
@@ -439,19 +392,17 @@ export function ProfileForm() {
 
         <FormField
           control={form.control}
-          name="email"
-          render={({ field }) => (
+          name='email'
+          render={({field}) => (
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
                 <Input
-                  placeholder="john.doe@example.com"
+                  placeholder='john.doe@example.com'
                   {...field}
                 />
               </FormControl>
-              <FormDescription>
-                We&apos;ll never share your email with anyone else.
-              </FormDescription>
+              <FormDescription>We&apos;ll never share your email with anyone else.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -459,23 +410,22 @@ export function ProfileForm() {
 
         <FormField
           control={form.control}
-          name="role"
-          render={({ field }) => (
+          name='role'
+          render={({field}) => (
             <FormItem>
               <FormLabel>Role</FormLabel>
               <Select
                 defaultValue={field.value}
-                onValueChange={field.onChange}
-              >
+                onValueChange={field.onChange}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a role" />
+                    <SelectValue placeholder='Select a role' />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="developer">Developer</SelectItem>
-                  <SelectItem value="designer">Designer</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value='developer'>Developer</SelectItem>
+                  <SelectItem value='designer'>Designer</SelectItem>
+                  <SelectItem value='manager'>Manager</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -485,13 +435,13 @@ export function ProfileForm() {
 
         <FormField
           control={form.control}
-          name="bio"
-          render={({ field }) => (
+          name='bio'
+          render={({field}) => (
             <FormItem>
               <FormLabel>Bio</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Tell us about yourself"
+                  placeholder='Tell us about yourself'
                   className={styles.textarea}
                   {...field}
                 />
@@ -501,7 +451,7 @@ export function ProfileForm() {
           )}
         />
 
-        <Button type="submit">Save Profile</Button>
+        <Button type='submit'>Save Profile</Button>
       </form>
     </Form>
   );
@@ -515,25 +465,11 @@ export function ProfileForm() {
 ### Responsive Header Navigation
 
 ```tsx
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@arolariu/components/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@arolariu/components/dropdown-menu";
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-} from "@arolariu/components/navigation-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@arolariu/components/sheet";
-import { LogOut, MenuIcon, Settings, User } from "lucide-react";
+import {Avatar, AvatarFallback, AvatarImage} from "@arolariu/components/avatar";
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@arolariu/components/dropdown-menu";
+import {NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList} from "@arolariu/components/navigation-menu";
+import {Sheet, SheetContent, SheetTrigger} from "@arolariu/components/sheet";
+import {LogOut, MenuIcon, Settings, User} from "lucide-react";
 import styles from "./app-header.module.css";
 
 export function AppHeader() {
@@ -543,21 +479,20 @@ export function AppHeader() {
         <div className={styles.desktopArea}>
           <a
             className={styles.brandLink}
-            href="/"
-          >
+            href='/'>
             <span className={styles.brandName}>MyApp</span>
           </a>
 
           <NavigationMenu>
             <NavigationMenuList>
               <NavigationMenuItem>
-                <NavigationMenuLink href="/dashboard">Dashboard</NavigationMenuLink>
+                <NavigationMenuLink href='/dashboard'>Dashboard</NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <NavigationMenuLink href="/projects">Projects</NavigationMenuLink>
+                <NavigationMenuLink href='/projects'>Projects</NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <NavigationMenuLink href="/analytics">Analytics</NavigationMenuLink>
+                <NavigationMenuLink href='/analytics'>Analytics</NavigationMenuLink>
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
@@ -565,15 +500,19 @@ export function AppHeader() {
 
         <Sheet>
           <SheetTrigger
-            render={<button type="button" className={styles.mobileMenuButton} />}
-          >
+            render={
+              <button
+                type='button'
+                className={styles.mobileMenuButton}
+              />
+            }>
             <MenuIcon />
           </SheetTrigger>
-          <SheetContent side="left">
+          <SheetContent side='left'>
             <nav className={styles.mobileNav}>
-              <a href="/dashboard">Dashboard</a>
-              <a href="/projects">Projects</a>
-              <a href="/analytics">Analytics</a>
+              <a href='/dashboard'>Dashboard</a>
+              <a href='/projects'>Projects</a>
+              <a href='/analytics'>Analytics</a>
             </nav>
           </SheetContent>
         </Sheet>
@@ -581,17 +520,21 @@ export function AppHeader() {
         <div className={styles.actions}>
           <DropdownMenu>
             <DropdownMenuTrigger
-              render={<button type="button" className={styles.avatarButton} />}
-            >
+              render={
+                <button
+                  type='button'
+                  className={styles.avatarButton}
+                />
+              }>
               <Avatar>
                 <AvatarImage
-                  src="/avatars/01.png"
-                  alt="User"
+                  src='/avatars/01.png'
+                  alt='User'
                 />
                 <AvatarFallback>JD</AvatarFallback>
               </Avatar>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align='end'>
               <DropdownMenuItem>
                 <User />
                 <span>Profile</span>
@@ -620,23 +563,10 @@ export function AppHeader() {
 ### Interactive Data Table
 
 ```tsx
-import { Badge } from "@arolariu/components/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@arolariu/components/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@arolariu/components/table";
-import { Edit, Eye, MoreHorizontal, Trash } from "lucide-react";
+import {Badge} from "@arolariu/components/badge";
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@arolariu/components/dropdown-menu";
+import {Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow} from "@arolariu/components/table";
+import {Edit, Eye, MoreHorizontal, Trash} from "lucide-react";
 import styles from "./users-table.module.css";
 
 interface User {
@@ -712,11 +642,15 @@ export function UsersTable() {
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger
-                      render={<button type="button" className={styles.iconButton} />}
-                    >
+                      render={
+                        <button
+                          type='button'
+                          className={styles.iconButton}
+                        />
+                      }>
                       <MoreHorizontal />
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align='end'>
                       <DropdownMenuItem>
                         <Eye />
                         View
@@ -760,21 +694,19 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@arolariu/components/alert-dialog";
-import { Trash } from "lucide-react";
+import {Trash} from "lucide-react";
 import styles from "./delete-confirmation.module.css";
 
-export function DeleteConfirmation({
-  itemName,
-  onConfirm,
-}: {
-  itemName: string;
-  onConfirm: () => void;
-}) {
+export function DeleteConfirmation({itemName, onConfirm}: {itemName: string; onConfirm: () => void}) {
   return (
     <AlertDialog>
       <AlertDialogTrigger
-        render={<button type="button" className={styles.triggerButton} />}
-      >
+        render={
+          <button
+            type='button'
+            className={styles.triggerButton}
+          />
+        }>
         <Trash />
         Delete
       </AlertDialogTrigger>
@@ -782,18 +714,12 @@ export function DeleteConfirmation({
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete
-            {" "}
-            {itemName}
-            {" "}
-            and remove all associated data from our servers.
+            This action cannot be undone. This will permanently delete {itemName} and remove all associated data from our servers.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>
-            Yes, delete it
-          </AlertDialogAction>
+          <AlertDialogAction onClick={onConfirm}>Yes, delete it</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -804,7 +730,7 @@ export function DeleteConfirmation({
 ### Settings Modal
 
 ```tsx
-import { Button } from "@arolariu/components/button";
+import {Button} from "@arolariu/components/button";
 import {
   Dialog,
   DialogContent,
@@ -814,134 +740,122 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@arolariu/components/dialog";
-import { Input } from "@arolariu/components/input";
-import { Label } from "@arolariu/components/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@arolariu/components/select";
-import { Switch } from "@arolariu/components/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@arolariu/components/tabs";
-import { Settings } from "lucide-react";
+import {Input} from "@arolariu/components/input";
+import {Label} from "@arolariu/components/label";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@arolariu/components/select";
+import {Switch} from "@arolariu/components/switch";
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components/tabs";
+import {Settings} from "lucide-react";
 import styles from "./settings-dialog.module.css";
 
 export function SettingsDialog() {
   return (
     <Dialog>
       <DialogTrigger
-        render={<button type="button" className={styles.trigger} />}
-      >
+        render={
+          <button
+            type='button'
+            className={styles.trigger}
+          />
+        }>
         <Settings />
         Settings
       </DialogTrigger>
       <DialogContent className={styles.dialogContent}>
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
-          <DialogDescription>
-            Manage your account settings and preferences.
-          </DialogDescription>
+          <DialogDescription>Manage your account settings and preferences.</DialogDescription>
         </DialogHeader>
 
         <Tabs
-          defaultValue="general"
-          className={styles.tabs}
-        >
+          defaultValue='general'
+          className={styles.tabs}>
           <TabsList className={styles.tabsList}>
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsTrigger value='general'>General</TabsTrigger>
+            <TabsTrigger value='notifications'>Notifications</TabsTrigger>
+            <TabsTrigger value='security'>Security</TabsTrigger>
           </TabsList>
 
           <TabsContent
-            value="general"
-            className={styles.panel}
-          >
+            value='general'
+            className={styles.panel}>
             <div className={styles.field}>
-              <Label htmlFor="name">Display Name</Label>
+              <Label htmlFor='name'>Display Name</Label>
               <Input
-                id="name"
-                defaultValue="John Doe"
+                id='name'
+                defaultValue='John Doe'
               />
             </div>
             <div className={styles.field}>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor='email'>Email</Label>
               <Input
-                id="email"
-                defaultValue="john@example.com"
+                id='email'
+                defaultValue='john@example.com'
               />
             </div>
             <div className={styles.field}>
-              <Label htmlFor="timezone">Timezone</Label>
-              <Select defaultValue="utc">
+              <Label htmlFor='timezone'>Timezone</Label>
+              <Select defaultValue='utc'>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="utc">UTC</SelectItem>
-                  <SelectItem value="est">Eastern Time</SelectItem>
-                  <SelectItem value="pst">Pacific Time</SelectItem>
+                  <SelectItem value='utc'>UTC</SelectItem>
+                  <SelectItem value='est'>Eastern Time</SelectItem>
+                  <SelectItem value='pst'>Pacific Time</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </TabsContent>
 
           <TabsContent
-            value="notifications"
-            className={styles.panel}
-          >
+            value='notifications'
+            className={styles.panel}>
             <div className={styles.switchRow}>
               <div className={styles.switchText}>
                 <Label>Email Notifications</Label>
-                <div className={styles.mutedText}>
-                  Receive emails about your account activity.
-                </div>
+                <div className={styles.mutedText}>Receive emails about your account activity.</div>
               </div>
               <Switch />
             </div>
             <div className={styles.switchRow}>
               <div className={styles.switchText}>
                 <Label>Push Notifications</Label>
-                <div className={styles.mutedText}>
-                  Receive push notifications on your devices.
-                </div>
+                <div className={styles.mutedText}>Receive push notifications on your devices.</div>
               </div>
               <Switch />
             </div>
           </TabsContent>
 
           <TabsContent
-            value="security"
-            className={styles.panel}
-          >
+            value='security'
+            className={styles.panel}>
             <div className={styles.field}>
-              <Label htmlFor="current-password">Current Password</Label>
+              <Label htmlFor='current-password'>Current Password</Label>
               <Input
-                id="current-password"
-                type="password"
+                id='current-password'
+                type='password'
               />
             </div>
             <div className={styles.field}>
-              <Label htmlFor="new-password">New Password</Label>
+              <Label htmlFor='new-password'>New Password</Label>
               <Input
-                id="new-password"
-                type="password"
+                id='new-password'
+                type='password'
               />
             </div>
             <div className={styles.field}>
-              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Label htmlFor='confirm-password'>Confirm Password</Label>
               <Input
-                id="confirm-password"
-                type="password"
+                id='confirm-password'
+                type='password'
               />
             </div>
           </TabsContent>
         </Tabs>
 
         <DialogFooter>
-          <Button variant="outline">Cancel</Button>
+          <Button variant='outline'>Cancel</Button>
           <Button>Save Changes</Button>
         </DialogFooter>
       </DialogContent>
@@ -982,16 +896,15 @@ export function SettingsDialog() {
 ```
 
 ```tsx
-import { Button } from "@arolariu/components/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@arolariu/components/card";
+import {Button} from "@arolariu/components/button";
+import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components/card";
 import styles from "./app-theme.module.css";
 
 export function ThemePreview() {
   return (
     <section
       className={styles.themeScope}
-      data-theme="dark"
-    >
+      data-theme='dark'>
       <Card>
         <CardHeader>
           <CardTitle>Custom theme scope</CardTitle>
@@ -1031,54 +944,48 @@ export function ThemePreview() {
 ### Mobile-Optimized Form
 
 ```tsx
-import { Button } from "@arolariu/components/button";
-import { Input } from "@arolariu/components/input";
-import { Label } from "@arolariu/components/label";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@arolariu/components/sheet";
-import { Textarea } from "@arolariu/components/textarea";
-import { Plus } from "lucide-react";
+import {Button} from "@arolariu/components/button";
+import {Input} from "@arolariu/components/input";
+import {Label} from "@arolariu/components/label";
+import {Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger} from "@arolariu/components/sheet";
+import {Textarea} from "@arolariu/components/textarea";
+import {Plus} from "lucide-react";
 import styles from "./mobile-add-form.module.css";
 
 export function MobileAddForm() {
   return (
     <Sheet>
       <SheetTrigger
-        render={<button type="button" className={styles.fab} />}
-      >
+        render={
+          <button
+            type='button'
+            className={styles.fab}
+          />
+        }>
         <Plus />
       </SheetTrigger>
       <SheetContent
-        side="bottom"
-        className={styles.sheetContent}
-      >
+        side='bottom'
+        className={styles.sheetContent}>
         <SheetHeader>
           <SheetTitle>Add New Item</SheetTitle>
-          <SheetDescription>
-            Fill out the form below to add a new item to your collection.
-          </SheetDescription>
+          <SheetDescription>Fill out the form below to add a new item to your collection.</SheetDescription>
         </SheetHeader>
 
         <div className={styles.formStack}>
           <div className={styles.field}>
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor='title'>Title</Label>
             <Input
-              id="title"
-              placeholder="Enter title"
+              id='title'
+              placeholder='Enter title'
             />
           </div>
 
           <div className={styles.field}>
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor='description'>Description</Label>
             <Textarea
-              id="description"
-              placeholder="Enter description"
+              id='description'
+              placeholder='Enter description'
               className={styles.textarea}
             />
           </div>
@@ -1086,9 +993,8 @@ export function MobileAddForm() {
           <div className={styles.actionRow}>
             <Button className={styles.flexButton}>Save</Button>
             <Button
-              variant="outline"
-              className={styles.flexButton}
-            >
+              variant='outline'
+              className={styles.flexButton}>
               Cancel
             </Button>
           </div>
@@ -1107,11 +1013,11 @@ export function MobileAddForm() {
 
 ```tsx
 // ✅ Import only what you need for optimal bundle size
-import { Button } from "@arolariu/components/button";
-import { Card } from "@arolariu/components/card";
+import {Button} from "@arolariu/components/button";
+import {Card} from "@arolariu/components/card";
 
 // ❌ Avoid barrel imports when bundle size matters
-import { Button, Card } from "@arolariu/components";
+import {Button, Card} from "@arolariu/components";
 ```
 
 ### Accessibility Best Practices
@@ -1163,7 +1069,8 @@ Ready to build something amazing? **[🚀 Start with our Quick Start Guide](./RE
 
 ## 🎓 Pattern Recipes
 
-> **Real-world patterns ready to copy, paste, and customize.** These recipes demonstrate common UI patterns using @arolariu/components with best practices for forms, data, modals, and error handling.
+> **Real-world patterns ready to copy, paste, and customize.** These recipes demonstrate common UI patterns using @arolariu/components with
+> best practices for forms, data, modals, and error handling.
 
 ### Recipe 1: Login Form with Validation
 
@@ -1176,23 +1083,9 @@ import * as z from "zod";
 
 import {Alert, AlertDescription} from "@arolariu/components/alert";
 import {Button} from "@arolariu/components/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@arolariu/components/card";
+import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@arolariu/components/card";
 import {Checkbox} from "@arolariu/components/checkbox";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@arolariu/components/form";
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@arolariu/components/form";
 import {Input} from "@arolariu/components/input";
 import {toast} from "@arolariu/components/sonner";
 import styles from "./login-form.module.css";
@@ -1239,33 +1132,29 @@ export function LoginForm() {
       <Card className={styles.card}>
         <CardHeader className={styles.header}>
           <CardTitle>Welcome Back</CardTitle>
-          <CardDescription>
-            Sign in to your account to continue
-          </CardDescription>
+          <CardDescription>Sign in to your account to continue</CardDescription>
         </CardHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardContent className={styles.content}>
               {form.formState.errors.root ? (
-                <Alert variant="destructive">
-                  <AlertDescription>
-                    {form.formState.errors.root.message}
-                  </AlertDescription>
+                <Alert variant='destructive'>
+                  <AlertDescription>{form.formState.errors.root.message}</AlertDescription>
                 </Alert>
               ) : null}
 
               <FormField
                 control={form.control}
-                name="email"
+                name='email'
                 render={({field}) => (
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input
-                        type="email"
-                        placeholder="you@example.com"
-                        autoComplete="email"
+                        type='email'
+                        placeholder='you@example.com'
+                        autoComplete='email'
                         {...field}
                       />
                     </FormControl>
@@ -1276,15 +1165,15 @@ export function LoginForm() {
 
               <FormField
                 control={form.control}
-                name="password"
+                name='password'
                 render={({field}) => (
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
                       <Input
-                        type="password"
-                        placeholder="••••••••"
-                        autoComplete="current-password"
+                        type='password'
+                        placeholder='••••••••'
+                        autoComplete='current-password'
                         {...field}
                       />
                     </FormControl>
@@ -1295,7 +1184,7 @@ export function LoginForm() {
 
               <FormField
                 control={form.control}
-                name="rememberMe"
+                name='rememberMe'
                 render={({field}) => (
                   <FormItem className={styles.checkboxItem}>
                     <FormControl>
@@ -1304,9 +1193,7 @@ export function LoginForm() {
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    <FormLabel className={styles.checkboxLabel}>
-                      Remember me for 30 days
-                    </FormLabel>
+                    <FormLabel className={styles.checkboxLabel}>Remember me for 30 days</FormLabel>
                   </FormItem>
                 )}
               />
@@ -1314,18 +1201,21 @@ export function LoginForm() {
 
             <CardFooter className={styles.footer}>
               <Button
-                type="submit"
+                type='submit'
                 className={styles.submitButton}
-                disabled={form.formState.isSubmitting}
-              >
+                disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "Signing in..." : "Sign In"}
               </Button>
 
               <div className={styles.links}>
-                <a href="/forgot-password" className={styles.link}>
+                <a
+                  href='/forgot-password'
+                  className={styles.link}>
                   Forgot password?
                 </a>
-                <a href="/signup" className={styles.link}>
+                <a
+                  href='/signup'
+                  className={styles.link}>
                   Create account
                 </a>
               </div>
@@ -1430,14 +1320,7 @@ import {
   DropdownMenuTrigger,
 } from "@arolariu/components/dropdown-menu";
 import {Input} from "@arolariu/components/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@arolariu/components/table";
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@arolariu/components/table";
 import {toast} from "@arolariu/components/sonner";
 import styles from "./data-table.module.css";
 
@@ -1487,10 +1370,9 @@ export function DataTableWithSorting() {
     columnHelper.accessor("name", {
       header: ({column}) => (
         <button
-          type="button"
+          type='button'
           className={styles.sortButton}
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
           Name
           <ArrowUpDown className={styles.sortIcon} />
         </button>
@@ -1504,31 +1386,22 @@ export function DataTableWithSorting() {
       header: "Role",
       cell: (info) => {
         const role = info.getValue();
-        return (
-          <Badge variant={role === "admin" ? "default" : "secondary"}>
-            {role}
-          </Badge>
-        );
+        return <Badge variant={role === "admin" ? "default" : "secondary"}>{role}</Badge>;
       },
     }),
     columnHelper.accessor("status", {
       header: "Status",
       cell: (info) => {
         const status = info.getValue();
-        return (
-          <Badge variant={status === "active" ? "default" : "outline"}>
-            {status}
-          </Badge>
-        );
+        return <Badge variant={status === "active" ? "default" : "outline"}>{status}</Badge>;
       },
     }),
     columnHelper.accessor("createdAt", {
       header: ({column}) => (
         <button
-          type="button"
+          type='button'
           className={styles.sortButton}
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
           Created At
           <ArrowUpDown className={styles.sortIcon} />
         </button>
@@ -1539,26 +1412,27 @@ export function DataTableWithSorting() {
       id: "actions",
       cell: ({row}) => (
         <DropdownMenu>
-          <DropdownMenuTrigger render={<button type="button" className={styles.iconButton} />}>
+          <DropdownMenuTrigger
+            render={
+              <button
+                type='button'
+                className={styles.iconButton}
+              />
+            }>
             <MoreHorizontal />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align='end'>
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
               onClick={() => {
                 navigator.clipboard.writeText(row.original.id);
                 toast.success("User ID copied to clipboard");
-              }}
-            >
+              }}>
               Copy ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => toast.info(`Viewing user: ${row.original.name}`)}>
-              View details
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => toast.info(`Editing user: ${row.original.name}`)}>
-              Edit user
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => toast.info(`Viewing user: ${row.original.name}`)}>View details</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => toast.info(`Editing user: ${row.original.name}`)}>Edit user</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -1588,7 +1462,7 @@ export function DataTableWithSorting() {
     <div className={styles.container}>
       <div className={styles.toolbar}>
         <Input
-          placeholder="Search users..."
+          placeholder='Search users...'
           value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}
           className={styles.searchInput}
@@ -1602,9 +1476,7 @@ export function DataTableWithSorting() {
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
               </TableRow>
@@ -1615,15 +1487,15 @@ export function DataTableWithSorting() {
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
+                    <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className={styles.emptyCell}>
+                <TableCell
+                  colSpan={columns.length}
+                  className={styles.emptyCell}>
                   No results found.
                 </TableCell>
               </TableRow>
@@ -1638,20 +1510,18 @@ export function DataTableWithSorting() {
         </div>
         <div className={styles.paginationButtons}>
           <Button
-            variant="outline"
-            size="sm"
+            variant='outline'
+            size='sm'
             onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
+            disabled={!table.getCanPreviousPage()}>
             <ChevronLeft />
             Previous
           </Button>
           <Button
-            variant="outline"
-            size="sm"
+            variant='outline'
+            size='sm'
             onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
+            disabled={!table.getCanNextPage()}>
             Next
             <ChevronRight />
           </Button>
@@ -1766,23 +1636,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@arolariu/components/dialog";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@arolariu/components/form";
+import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage} from "@arolariu/components/form";
 import {Input} from "@arolariu/components/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@arolariu/components/select";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@arolariu/components/select";
 import {Textarea} from "@arolariu/components/textarea";
 import {toast} from "@arolariu/components/sonner";
 import styles from "./modal-form.module.css";
@@ -1828,7 +1684,9 @@ export function CreateProjectModal() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={setOpen}>
       <DialogTrigger render={<Button />}>
         <Plus />
         Create Project
@@ -1837,25 +1695,26 @@ export function CreateProjectModal() {
       <DialogContent className={styles.content}>
         <DialogHeader>
           <DialogTitle>Create New Project</DialogTitle>
-          <DialogDescription>
-            Fill in the details below to create a new project. Click save when you're done.
-          </DialogDescription>
+          <DialogDescription>Fill in the details below to create a new project. Click save when you're done.</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className={styles.form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className={styles.form}>
             <FormField
               control={form.control}
-              name="name"
+              name='name'
               render={({field}) => (
                 <FormItem>
                   <FormLabel>Project Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="My Awesome Project" {...field} />
+                    <Input
+                      placeholder='My Awesome Project'
+                      {...field}
+                    />
                   </FormControl>
-                  <FormDescription>
-                    Choose a unique name for your project.
-                  </FormDescription>
+                  <FormDescription>Choose a unique name for your project.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -1863,21 +1722,23 @@ export function CreateProjectModal() {
 
             <FormField
               control={form.control}
-              name="category"
+              name='category'
               render={({field}) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
+                        <SelectValue placeholder='Select a category' />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="web">Web Application</SelectItem>
-                      <SelectItem value="mobile">Mobile App</SelectItem>
-                      <SelectItem value="desktop">Desktop Application</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value='web'>Web Application</SelectItem>
+                      <SelectItem value='mobile'>Mobile App</SelectItem>
+                      <SelectItem value='desktop'>Desktop Application</SelectItem>
+                      <SelectItem value='other'>Other</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -1887,12 +1748,16 @@ export function CreateProjectModal() {
 
             <FormField
               control={form.control}
-              name="budget"
+              name='budget'
               render={({field}) => (
                 <FormItem>
                   <FormLabel>Budget (USD)</FormLabel>
                   <FormControl>
-                    <Input type="text" placeholder="10000" {...field} />
+                    <Input
+                      type='text'
+                      placeholder='10000'
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -1901,13 +1766,13 @@ export function CreateProjectModal() {
 
             <FormField
               control={form.control}
-              name="description"
+              name='description'
               render={({field}) => (
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Describe your project..."
+                      placeholder='Describe your project...'
                       className={styles.textarea}
                       {...field}
                     />
@@ -1919,13 +1784,14 @@ export function CreateProjectModal() {
 
             <DialogFooter>
               <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-              >
+                type='button'
+                variant='outline'
+                onClick={() => setOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
+              <Button
+                type='submit'
+                disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "Creating..." : "Create Project"}
               </Button>
             </DialogFooter>
@@ -2026,11 +1892,9 @@ export function ToastDemo() {
         <CheckCircle2 className={styles.customIcon} />
         <div className={styles.customContent}>
           <div className={styles.customTitle}>Custom Toast</div>
-          <div className={styles.customDescription}>
-            This is a fully customized toast notification.
-          </div>
+          <div className={styles.customDescription}>This is a fully customized toast notification.</div>
         </div>
-      </div>
+      </div>,
     );
   };
 
@@ -2045,7 +1909,10 @@ export function ToastDemo() {
 
   return (
     <>
-      <Toaster position="top-right" richColors />
+      <Toaster
+        position='top-right'
+        richColors
+      />
 
       <div className={styles.container}>
         <Card>
@@ -2056,19 +1923,27 @@ export function ToastDemo() {
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>Basic Toasts</h3>
               <div className={styles.buttonGroup}>
-                <Button onClick={showSuccess} variant="default">
+                <Button
+                  onClick={showSuccess}
+                  variant='default'>
                   <CheckCircle2 />
                   Success Toast
                 </Button>
-                <Button onClick={showError} variant="destructive">
+                <Button
+                  onClick={showError}
+                  variant='destructive'>
                   <XCircle />
                   Error Toast
                 </Button>
-                <Button onClick={showInfo} variant="outline">
+                <Button
+                  onClick={showInfo}
+                  variant='outline'>
                   <Info />
                   Info Toast
                 </Button>
-                <Button onClick={showWarning} variant="outline">
+                <Button
+                  onClick={showWarning}
+                  variant='outline'>
                   Warning Toast
                 </Button>
               </div>
@@ -2077,17 +1952,25 @@ export function ToastDemo() {
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>Advanced Toasts</h3>
               <div className={styles.buttonGroup}>
-                <Button onClick={showWithAction} variant="secondary">
+                <Button
+                  onClick={showWithAction}
+                  variant='secondary'>
                   Toast with Action
                 </Button>
-                <Button onClick={showWithDescription} variant="secondary">
+                <Button
+                  onClick={showWithDescription}
+                  variant='secondary'>
                   Toast with Description
                 </Button>
-                <Button onClick={showPromiseToast} variant="secondary">
+                <Button
+                  onClick={showPromiseToast}
+                  variant='secondary'>
                   <Loader2 />
                   Promise Toast
                 </Button>
-                <Button onClick={showLoadingToast} variant="secondary">
+                <Button
+                  onClick={showLoadingToast}
+                  variant='secondary'>
                   Loading Toast
                 </Button>
               </div>
@@ -2095,7 +1978,9 @@ export function ToastDemo() {
 
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>Custom Toast</h3>
-              <Button onClick={showCustomToast} variant="outline">
+              <Button
+                onClick={showCustomToast}
+                variant='outline'>
                 Show Custom Toast
               </Button>
             </div>
@@ -2178,20 +2063,10 @@ export function ToastDemo() {
 **Responsive sidebar with keyboard navigation and active states.**
 
 ```tsx
-import {
-  ChevronDown,
-  FileText,
-  Home,
-  Settings,
-  Users,
-} from "lucide-react";
+import {ChevronDown, FileText, Home, Settings, Users} from "lucide-react";
 import {useState} from "react";
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@arolariu/components/collapsible";
+import {Collapsible, CollapsibleContent, CollapsibleTrigger} from "@arolariu/components/collapsible";
 import {
   Sidebar,
   SidebarContent,
@@ -2259,7 +2134,9 @@ export function AppSidebar() {
 
                     if (item.submenu) {
                       return (
-                        <Collapsible key={item.title} defaultOpen={isActive}>
+                        <Collapsible
+                          key={item.title}
+                          defaultOpen={isActive}>
                           <SidebarMenuItem>
                             <CollapsibleTrigger asChild>
                               <SidebarMenuButton isActive={isActive}>
@@ -2274,8 +2151,7 @@ export function AppSidebar() {
                                   <SidebarMenuSubItem key={subitem.title}>
                                     <SidebarMenuSubButton
                                       isActive={activeItem === subitem.url}
-                                      onClick={() => setActiveItem(subitem.url)}
-                                    >
+                                      onClick={() => setActiveItem(subitem.url)}>
                                       {subitem.title}
                                     </SidebarMenuSubButton>
                                   </SidebarMenuSubItem>
@@ -2291,8 +2167,7 @@ export function AppSidebar() {
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
                           isActive={isActive}
-                          onClick={() => setActiveItem(item.url)}
-                        >
+                          onClick={() => setActiveItem(item.url)}>
                           <item.icon />
                           <span>{item.title}</span>
                         </SidebarMenuButton>
@@ -2368,16 +2243,7 @@ export function AppSidebar() {
 **Fully accessible dropdown menu with keyboard shortcuts.**
 
 ```tsx
-import {
-  Copy,
-  Download,
-  Edit,
-  LogOut,
-  MoreVertical,
-  Share2,
-  Trash2,
-  User,
-} from "lucide-react";
+import {Copy, Download, Edit, LogOut, MoreVertical, Share2, Trash2, User} from "lucide-react";
 
 import {Button} from "@arolariu/components/button";
 import {
@@ -2401,12 +2267,14 @@ export function AccessibleDropdownMenu() {
   return (
     <div className={styles.container}>
       <DropdownMenu>
-        <DropdownMenuTrigger render={<Button variant="outline" />}>
+        <DropdownMenuTrigger render={<Button variant='outline' />}>
           <MoreVertical />
           Actions
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="end" className={styles.content}>
+        <DropdownMenuContent
+          align='end'
+          className={styles.content}>
           <DropdownMenuLabel>My Account</DropdownMenuLabel>
 
           <DropdownMenuSeparator />
@@ -2451,8 +2319,7 @@ export function AccessibleDropdownMenu() {
 
           <DropdownMenuItem
             onClick={() => handleAction("Delete")}
-            className={styles.dangerItem}
-          >
+            className={styles.dangerItem}>
             <Trash2 />
             <span>Delete</span>
             <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
@@ -2471,10 +2338,18 @@ export function AccessibleDropdownMenu() {
       <div className={styles.instructions}>
         <p className={styles.instructionTitle}>Keyboard Navigation:</p>
         <ul className={styles.instructionList}>
-          <li><kbd>Enter</kbd> or <kbd>Space</kbd> - Open menu</li>
-          <li><kbd>↑</kbd> <kbd>↓</kbd> - Navigate items</li>
-          <li><kbd>Enter</kbd> - Select item</li>
-          <li><kbd>Esc</kbd> - Close menu</li>
+          <li>
+            <kbd>Enter</kbd> or <kbd>Space</kbd> - Open menu
+          </li>
+          <li>
+            <kbd>↑</kbd> <kbd>↓</kbd> - Navigate items
+          </li>
+          <li>
+            <kbd>Enter</kbd> - Select item
+          </li>
+          <li>
+            <kbd>Esc</kbd> - Close menu
+          </li>
         </ul>
       </div>
     </div>
@@ -2544,11 +2419,7 @@ import {useState} from "react";
 
 import {Button} from "@arolariu/components/button";
 import {Calendar} from "@arolariu/components/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@arolariu/components/popover";
+import {Popover, PopoverContent, PopoverTrigger} from "@arolariu/components/popover";
 import {cn} from "@arolariu/components/utilities";
 import styles from "./date-picker.module.css";
 
@@ -2560,13 +2431,21 @@ export function DatePicker() {
       <div className={styles.field}>
         <label className={styles.label}>Select Date</label>
         <Popover>
-          <PopoverTrigger render={<Button variant="outline" className={styles.trigger} />}>
+          <PopoverTrigger
+            render={
+              <Button
+                variant='outline'
+                className={styles.trigger}
+              />
+            }>
             <CalendarIcon className={styles.icon} />
             {date ? format(date, "PPP") : <span>Pick a date</span>}
           </PopoverTrigger>
-          <PopoverContent align="start" className={styles.popoverContent}>
+          <PopoverContent
+            align='start'
+            className={styles.popoverContent}>
             <Calendar
-              mode="single"
+              mode='single'
               selected={date}
               onSelect={setDate}
               initialFocus
@@ -2589,7 +2468,13 @@ export function DateRangePicker() {
       <div className={styles.field}>
         <label className={styles.label}>Select Date Range</label>
         <Popover>
-          <PopoverTrigger render={<Button variant="outline" className={styles.trigger} />}>
+          <PopoverTrigger
+            render={
+              <Button
+                variant='outline'
+                className={styles.trigger}
+              />
+            }>
             <CalendarIcon className={styles.icon} />
             {dateRange.from ? (
               dateRange.to ? (
@@ -2603,9 +2488,11 @@ export function DateRangePicker() {
               <span>Pick a date range</span>
             )}
           </PopoverTrigger>
-          <PopoverContent align="start" className={styles.popoverContent}>
+          <PopoverContent
+            align='start'
+            className={styles.popoverContent}>
             <Calendar
-              mode="range"
+              mode='range'
               selected={dateRange}
               onSelect={(range) =>
                 setDateRange({
@@ -2743,7 +2630,7 @@ export function FileUploadArea() {
             return {...upload, progress: newProgress, status: newStatus};
           }
           return upload;
-        })
+        }),
       );
     }, 300);
   };
@@ -2763,17 +2650,14 @@ export function FileUploadArea() {
             className={`${styles.dropZone} ${isDragging ? styles.dropZoneActive : ""}`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
+            onDrop={handleDrop}>
             <Upload className={styles.uploadIcon} />
             <div className={styles.dropZoneText}>
               <p className={styles.dropZoneTitle}>Drop files here or click to upload</p>
-              <p className={styles.dropZoneSubtitle}>
-                Supports: Images, PDFs, Documents (Max 10MB)
-              </p>
+              <p className={styles.dropZoneSubtitle}>Supports: Images, PDFs, Documents (Max 10MB)</p>
             </div>
             <input
-              type="file"
+              type='file'
               multiple
               className={styles.fileInput}
               onChange={handleFileInput}
@@ -2783,26 +2667,28 @@ export function FileUploadArea() {
           {uploads.length > 0 ? (
             <div className={styles.uploadList}>
               {uploads.map((upload) => (
-                <div key={upload.id} className={styles.uploadItem}>
+                <div
+                  key={upload.id}
+                  className={styles.uploadItem}>
                   <div className={styles.uploadInfo}>
                     <div className={styles.uploadName}>{upload.file.name}</div>
-                    <div className={styles.uploadSize}>
-                      {(upload.file.size / 1024 / 1024).toFixed(2)} MB
-                    </div>
+                    <div className={styles.uploadSize}>{(upload.file.size / 1024 / 1024).toFixed(2)} MB</div>
                   </div>
 
                   <div className={styles.uploadProgress}>
-                    <Progress value={upload.progress} className={styles.progressBar} />
+                    <Progress
+                      value={upload.progress}
+                      className={styles.progressBar}
+                    />
                     <span className={styles.uploadPercent}>{upload.progress}%</span>
                   </div>
 
                   {upload.status === "complete" ? (
                     <Button
-                      variant="ghost"
-                      size="icon"
+                      variant='ghost'
+                      size='icon'
                       onClick={() => removeUpload(upload.id)}
-                      className={styles.removeButton}
-                    >
+                      className={styles.removeButton}>
                       <X />
                     </Button>
                   ) : null}
@@ -2953,23 +2839,9 @@ import * as z from "zod";
 
 import {Button} from "@arolariu/components/button";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components/card";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@arolariu/components/form";
+import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage} from "@arolariu/components/form";
 import {Input} from "@arolariu/components/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@arolariu/components/select";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@arolariu/components/select";
 import {Switch} from "@arolariu/components/switch";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components/tabs";
 import {Textarea} from "@arolariu/components/textarea";
@@ -3039,44 +2911,44 @@ export function SettingsPage() {
     <div className={styles.container}>
       <div className={styles.header}>
         <h1 className={styles.title}>Settings</h1>
-        <p className={styles.subtitle}>
-          Manage your account settings and preferences.
-        </p>
+        <p className={styles.subtitle}>Manage your account settings and preferences.</p>
       </div>
 
-      <Tabs defaultValue="profile" className={styles.tabs}>
+      <Tabs
+        defaultValue='profile'
+        className={styles.tabs}>
         <TabsList>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="appearance">Appearance</TabsTrigger>
+          <TabsTrigger value='profile'>Profile</TabsTrigger>
+          <TabsTrigger value='notifications'>Notifications</TabsTrigger>
+          <TabsTrigger value='appearance'>Appearance</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="profile" className={styles.tabContent}>
+        <TabsContent
+          value='profile'
+          className={styles.tabContent}>
           <Card>
             <CardHeader>
               <CardTitle>Profile Information</CardTitle>
-              <CardDescription>
-                Update your profile details and public information.
-              </CardDescription>
+              <CardDescription>Update your profile details and public information.</CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...profileForm}>
                 <form
                   onSubmit={profileForm.handleSubmit(onProfileSubmit)}
-                  className={styles.form}
-                >
+                  className={styles.form}>
                   <FormField
                     control={profileForm.control}
-                    name="username"
+                    name='username'
                     render={({field}) => (
                       <FormItem>
                         <FormLabel>Username</FormLabel>
                         <FormControl>
-                          <Input placeholder="johndoe" {...field} />
+                          <Input
+                            placeholder='johndoe'
+                            {...field}
+                          />
                         </FormControl>
-                        <FormDescription>
-                          This is your public display name.
-                        </FormDescription>
+                        <FormDescription>This is your public display name.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -3084,16 +2956,18 @@ export function SettingsPage() {
 
                   <FormField
                     control={profileForm.control}
-                    name="email"
+                    name='email'
                     render={({field}) => (
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="john@example.com" {...field} />
+                          <Input
+                            type='email'
+                            placeholder='john@example.com'
+                            {...field}
+                          />
                         </FormControl>
-                        <FormDescription>
-                          Your email address for account notifications.
-                        </FormDescription>
+                        <FormDescription>Your email address for account notifications.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -3101,56 +2975,51 @@ export function SettingsPage() {
 
                   <FormField
                     control={profileForm.control}
-                    name="bio"
+                    name='bio'
                     render={({field}) => (
                       <FormItem>
                         <FormLabel>Bio</FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder="Tell us about yourself..."
+                            placeholder='Tell us about yourself...'
                             className={styles.textarea}
                             {...field}
                           />
                         </FormControl>
-                        <FormDescription>
-                          Brief description for your profile. Max 500 characters.
-                        </FormDescription>
+                        <FormDescription>Brief description for your profile. Max 500 characters.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
 
-                  <Button type="submit">Save Changes</Button>
+                  <Button type='submit'>Save Changes</Button>
                 </form>
               </Form>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="notifications" className={styles.tabContent}>
+        <TabsContent
+          value='notifications'
+          className={styles.tabContent}>
           <Card>
             <CardHeader>
               <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription>
-                Choose how you want to receive notifications.
-              </CardDescription>
+              <CardDescription>Choose how you want to receive notifications.</CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...notificationForm}>
                 <form
                   onSubmit={notificationForm.handleSubmit(onNotificationSubmit)}
-                  className={styles.form}
-                >
+                  className={styles.form}>
                   <FormField
                     control={notificationForm.control}
-                    name="emailNotifications"
+                    name='emailNotifications'
                     render={({field}) => (
                       <FormItem className={styles.switchItem}>
                         <div className={styles.switchContent}>
                           <FormLabel>Email Notifications</FormLabel>
-                          <FormDescription>
-                            Receive email updates about your account activity.
-                          </FormDescription>
+                          <FormDescription>Receive email updates about your account activity.</FormDescription>
                         </div>
                         <FormControl>
                           <Switch
@@ -3164,14 +3033,12 @@ export function SettingsPage() {
 
                   <FormField
                     control={notificationForm.control}
-                    name="pushNotifications"
+                    name='pushNotifications'
                     render={({field}) => (
                       <FormItem className={styles.switchItem}>
                         <div className={styles.switchContent}>
                           <FormLabel>Push Notifications</FormLabel>
-                          <FormDescription>
-                            Get push notifications on your devices.
-                          </FormDescription>
+                          <FormDescription>Get push notifications on your devices.</FormDescription>
                         </div>
                         <FormControl>
                           <Switch
@@ -3185,14 +3052,12 @@ export function SettingsPage() {
 
                   <FormField
                     control={notificationForm.control}
-                    name="weeklyDigest"
+                    name='weeklyDigest'
                     render={({field}) => (
                       <FormItem className={styles.switchItem}>
                         <div className={styles.switchContent}>
                           <FormLabel>Weekly Digest</FormLabel>
-                          <FormDescription>
-                            Receive a weekly summary of your activity.
-                          </FormDescription>
+                          <FormDescription>Receive a weekly summary of your activity.</FormDescription>
                         </div>
                         <FormControl>
                           <Switch
@@ -3204,51 +3069,47 @@ export function SettingsPage() {
                     )}
                   />
 
-                  <Button type="submit">Save Preferences</Button>
+                  <Button type='submit'>Save Preferences</Button>
                 </form>
               </Form>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="appearance" className={styles.tabContent}>
+        <TabsContent
+          value='appearance'
+          className={styles.tabContent}>
           <Card>
             <CardHeader>
               <CardTitle>Appearance Settings</CardTitle>
-              <CardDescription>
-                Customize how the application looks and feels.
-              </CardDescription>
+              <CardDescription>Customize how the application looks and feels.</CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...appearanceForm}>
                 <form
                   onSubmit={appearanceForm.handleSubmit(onAppearanceSubmit)}
-                  className={styles.form}
-                >
+                  className={styles.form}>
                   <FormField
                     control={appearanceForm.control}
-                    name="theme"
+                    name='theme'
                     render={({field}) => (
                       <FormItem>
                         <FormLabel>Theme</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
+                          defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a theme" />
+                              <SelectValue placeholder='Select a theme' />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="light">Light</SelectItem>
-                            <SelectItem value="dark">Dark</SelectItem>
-                            <SelectItem value="system">System</SelectItem>
+                            <SelectItem value='light'>Light</SelectItem>
+                            <SelectItem value='dark'>Dark</SelectItem>
+                            <SelectItem value='system'>System</SelectItem>
                           </SelectContent>
                         </Select>
-                        <FormDescription>
-                          Choose your preferred color scheme.
-                        </FormDescription>
+                        <FormDescription>Choose your preferred color scheme.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -3256,35 +3117,32 @@ export function SettingsPage() {
 
                   <FormField
                     control={appearanceForm.control}
-                    name="language"
+                    name='language'
                     render={({field}) => (
                       <FormItem>
                         <FormLabel>Language</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
+                          defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a language" />
+                              <SelectValue placeholder='Select a language' />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="en">English</SelectItem>
-                            <SelectItem value="es">Español</SelectItem>
-                            <SelectItem value="fr">Français</SelectItem>
-                            <SelectItem value="de">Deutsch</SelectItem>
+                            <SelectItem value='en'>English</SelectItem>
+                            <SelectItem value='es'>Español</SelectItem>
+                            <SelectItem value='fr'>Français</SelectItem>
+                            <SelectItem value='de'>Deutsch</SelectItem>
                           </SelectContent>
                         </Select>
-                        <FormDescription>
-                          Select your preferred language.
-                        </FormDescription>
+                        <FormDescription>Select your preferred language.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
 
-                  <Button type="submit">Save Settings</Button>
+                  <Button type='submit'>Save Settings</Button>
                 </form>
               </Form>
             </CardContent>
@@ -3428,17 +3286,16 @@ function ProfileSkeleton() {
 // Error fallback
 function ProfileError({error, reset}: {error: Error; reset: () => void}) {
   return (
-    <Alert variant="destructive">
+    <Alert variant='destructive'>
       <AlertTriangle />
       <AlertTitle>Error Loading Profile</AlertTitle>
       <AlertDescription className={styles.errorDescription}>
         {error.message}
         <Button
-          variant="outline"
-          size="sm"
+          variant='outline'
+          size='sm'
           onClick={reset}
-          className={styles.retryButton}
-        >
+          className={styles.retryButton}>
           <RefreshCw />
           Retry
         </Button>
@@ -3451,9 +3308,7 @@ export function ErrorHandlingDemo() {
   const handleAPIError = async () => {
     try {
       // Simulate API call that fails
-      await new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("API request failed")), 1000)
-      );
+      await new Promise((_, reject) => setTimeout(() => reject(new Error("API request failed")), 1000));
     } catch (error) {
       toast.error("Failed to load data. Please try again.", {
         action: {
@@ -3478,9 +3333,7 @@ export function ErrorHandlingDemo() {
     <div className={styles.container}>
       <div className={styles.header}>
         <h1 className={styles.title}>Error Handling Patterns</h1>
-        <p className={styles.subtitle}>
-          Comprehensive error handling with boundaries and toast notifications.
-        </p>
+        <p className={styles.subtitle}>Comprehensive error handling with boundaries and toast notifications.</p>
       </div>
 
       <div className={styles.grid}>
@@ -3489,9 +3342,13 @@ export function ErrorHandlingDemo() {
           <h2 className={styles.sectionTitle}>1. AsyncBoundary (Suspense + ErrorBoundary)</h2>
           <AsyncBoundary
             suspenseFallback={<ProfileSkeleton />}
-            errorFallback={({error, reset}) => <ProfileError error={error} reset={reset} />}
-          >
-            <UserProfile userId="123" />
+            errorFallback={({error, reset}) => (
+              <ProfileError
+                error={error}
+                reset={reset}
+              />
+            )}>
+            <UserProfile userId='123' />
           </AsyncBoundary>
         </div>
 
@@ -3500,13 +3357,19 @@ export function ErrorHandlingDemo() {
           <h2 className={styles.sectionTitle}>2. Toast Notifications for Errors</h2>
           <Card>
             <CardContent className={styles.buttonGroup}>
-              <Button onClick={handleAPIError} variant="destructive">
+              <Button
+                onClick={handleAPIError}
+                variant='destructive'>
                 Trigger API Error
               </Button>
-              <Button onClick={handleValidationError} variant="destructive">
+              <Button
+                onClick={handleValidationError}
+                variant='destructive'>
                 Trigger Validation Error
               </Button>
-              <Button onClick={handleNetworkError} variant="destructive">
+              <Button
+                onClick={handleNetworkError}
+                variant='destructive'>
                 Trigger Network Error
               </Button>
             </CardContent>
@@ -3516,17 +3379,16 @@ export function ErrorHandlingDemo() {
         {/* Pattern 3: Inline error display */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>3. Inline Error Display</h2>
-          <Alert variant="destructive">
+          <Alert variant='destructive'>
             <AlertTriangle />
             <AlertTitle>Authentication Error</AlertTitle>
             <AlertDescription>
               Your session has expired. Please log in again to continue.
               <Button
-                variant="outline"
-                size="sm"
+                variant='outline'
+                size='sm'
                 className={styles.loginButton}
-                onClick={() => toast.info("Redirecting to login...")}
-              >
+                onClick={() => toast.info("Redirecting to login...")}>
                 Log In
               </Button>
             </AlertDescription>
@@ -3552,7 +3414,7 @@ function use<T>(promise: Promise<T>): T {
       (reason) => {
         (promise as any).status = "rejected";
         (promise as any).reason = reason;
-      }
+      },
     );
   }
 }

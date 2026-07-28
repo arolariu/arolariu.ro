@@ -482,9 +482,7 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
       <Card data-testid='event-log-section'>
         <CardHeader>
           <CardTitle>Event log</CardTitle>
-          <CardDescription>
-            {logCountLabel}
-          </CardDescription>
+          <CardDescription>{logCountLabel}</CardDescription>
         </CardHeader>
         <CardContent className='space-y-2'>
           <Button

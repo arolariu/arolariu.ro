@@ -10,9 +10,7 @@
         "command": "npm run build",
         "cwd": "sites/cv.arolariu.ro"
       },
-      "outputs": [
-        "{projectRoot}/build"
-      ]
+      "outputs": ["{projectRoot}/build"]
     },
     "dev": {
       "executor": "nx:run-commands",
@@ -69,9 +67,5 @@
       }
     }
   },
-  "tags": [
-    "domain:frontend",
-    "scope:cv",
-    "type:app"
-  ]
+  "tags": ["domain:frontend", "scope:cv", "type:app"]
 }

@@ -11,7 +11,10 @@
   font-weight: 500;
   cursor: pointer;
   outline: none;
-  transition: background-color var(--ac-transition-fast), color var(--ac-transition-fast), border-color var(--ac-transition-fast);
+  transition:
+    background-color var(--ac-transition-fast),
+    color var(--ac-transition-fast),
+    border-color var(--ac-transition-fast);
 }
 
 .root:focus-visible {

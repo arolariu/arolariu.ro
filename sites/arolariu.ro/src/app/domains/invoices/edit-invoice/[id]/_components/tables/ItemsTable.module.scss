@@ -1,4 +1,4 @@
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 .headerRow {
   margin-bottom: space(2);
@@ -8,8 +8,8 @@
 }
 
 .itemsLabel {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .headerActions {
@@ -39,7 +39,7 @@
   left: space(3);
   width: 1rem;
   height: 1rem;
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   pointer-events: none;
 }
 
@@ -53,14 +53,14 @@
   align-items: center;
   gap: space(2);
   padding: space(2) space(3);
-  background-color: color('muted');
-  border-radius: radius('md');
+  background-color: color("muted");
+  border-radius: radius("md");
 }
 
 .bulkToolbarText {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
+  color: color("muted-foreground");
 }
 
 .deleteButton {
@@ -76,18 +76,18 @@
 
 .tableWrapper {
   overflow: hidden;
-  border-radius: radius('md');
-  border: 1px solid color('border');
+  border-radius: radius("md");
+  border: 1px solid color("border");
 }
 
 .tableHeader {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   padding: space(3) space(4);
   text-align: left;
-  font-size: font-size('xs');
-  font-weight: font-weight('medium');
+  font-size: font-size("xs");
+  font-weight: font-weight("medium");
   text-transform: uppercase;
-  letter-spacing: letter-spacing('wider');
+  letter-spacing: letter-spacing("wider");
 }
 
 .tableHeaderCheckbox {
@@ -102,7 +102,7 @@
   user-select: none;
 
   &:hover {
-    color: color('foreground');
+    color: color("foreground");
   }
 }
 
@@ -119,36 +119,36 @@
 .sortIndicator {
   display: inline-block;
   margin-left: space(1);
-  font-size: font-size('xs');
+  font-size: font-size("xs");
 }
 
 .tableRow {
   position: relative;
 
   &:hover {
-    background-color: color-alpha('muted', 0.5);
+    background-color: color-alpha("muted", 0.5);
   }
 }
 
 .rowIndicatorIncomplete {
-  border-left: 4px solid color('warning');
+  border-left: 4px solid color("warning");
 }
 
 .rowIndicatorLowConfidence {
-  border-left: 4px solid color('destructive');
+  border-left: 4px solid color("destructive");
 }
 
 .tableRowSelected {
-  background-color: color-alpha('primary', 0.1);
+  background-color: color-alpha("primary", 0.1);
 
   &:hover {
-    background-color: color-alpha('primary', 0.15);
+    background-color: color-alpha("primary", 0.15);
   }
 }
 
 .tableCell {
   padding: space(3) space(4);
-  font-size: font-size('sm');
+  font-size: font-size("sm");
   white-space: nowrap;
 }
 
@@ -162,16 +162,16 @@
   transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: color-alpha('accent', 0.1);
+    background-color: color-alpha("accent", 0.1);
   }
 }
 
 .editInput {
   width: 100%;
   padding: space(1) space(2);
-  font-size: font-size('sm');
-  border: 1px solid color('primary');
-  border-radius: radius('sm');
+  font-size: font-size("sm");
+  border: 1px solid color("primary");
+  border-radius: radius("sm");
 }
 
 .tableCellRight {
@@ -181,7 +181,7 @@
 
 .tableCellRightBold {
   composes: tableCellRight;
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .selectCheckbox {
@@ -195,16 +195,16 @@
 .footerLabel {
   padding: space(3) space(4);
   text-align: right;
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .addItemRow {
-  background-color: color('popover');
+  background-color: color("popover");
   display: flex;
   align-items: center;
   justify-content: center;
-  border-top: 1px solid color('border');
+  border-top: 1px solid color("border");
   padding: space(3);
 }
 
@@ -220,17 +220,17 @@
 }
 
 .paginationBar {
-  background-color: color('popover');
+  background-color: color("popover");
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-top: 1px solid color('border');
+  border-top: 1px solid color("border");
   padding: space(4);
 }
 
 .paginationInfo {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
 }
 
 .paginationControls {
@@ -240,8 +240,8 @@
 }
 
 .paginationText {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .editButton {
@@ -261,11 +261,11 @@
 }
 
 .mutedRow {
-  background-color: color-alpha('muted', 0.5);
+  background-color: color-alpha("muted", 0.5);
 }
 
 .tableBody {
-  background-color: color('popover');
+  background-color: color("popover");
 }
 
 .cursorPointer {
@@ -291,7 +291,7 @@
 }
 
 .issueBadge {
-  font-size: font-size('xs');
+  font-size: font-size("xs");
   padding: space(0.5) space(1.5);
   cursor: help;
 }
@@ -299,16 +299,16 @@
 // New styles for enhanced product management
 .tableRowSoftDeleted {
   opacity: 0.5;
-  background-color: color-alpha('muted', 0.3);
+  background-color: color-alpha("muted", 0.3);
 
   &:hover {
-    background-color: color-alpha('muted', 0.4);
+    background-color: color-alpha("muted", 0.4);
   }
 }
 
 .strikethrough {
   text-decoration: line-through;
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .cellWithIndicators {
@@ -322,9 +322,9 @@
   display: flex;
   align-items: center;
   gap: space(1);
-  font-size: font-size('xs');
+  font-size: font-size("xs");
   padding: space(0.5) space(1.5);
-  border: 1px solid color('primary');
+  border: 1px solid color("primary");
   cursor: help;
 }
 
@@ -337,9 +337,9 @@
   display: flex;
   align-items: center;
   gap: space(1);
-  font-size: font-size('xs');
+  font-size: font-size("xs");
   padding: space(0.5) space(1.5);
-  background-color: color-alpha('warning', 0.2);
+  background-color: color-alpha("warning", 0.2);
   cursor: help;
 }
 
@@ -416,4 +416,3 @@
     flex-direction: column;
   }
 }
-

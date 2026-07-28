@@ -34,14 +34,14 @@
 ///
 /// @see abstracts/_mixins.scss — `shadow`, `gradient-bg`, `transition` mixins
 /// ===========================================
-@use '../abstracts' as *;
+@use "../abstracts" as *;
 
 .card {
-  border-radius: radius('xl');
+  border-radius: radius("xl");
   border: 1px solid hsl(var(--border));
   background-color: hsl(var(--card));
   color: hsl(var(--card-foreground));
-  @include shadow('md');
+  @include shadow("md");
   overflow: hidden;
 
   // Card header section
@@ -54,15 +54,15 @@
 
   // Card title
   &__title {
-    font-size: font-size('2xl');
-    font-weight: font-weight('semibold');
+    font-size: font-size("2xl");
+    font-weight: font-weight("semibold");
     line-height: 1;
-    letter-spacing: letter-spacing('tight');
+    letter-spacing: letter-spacing("tight");
   }
 
   // Card description/subtitle
   &__description {
-    font-size: font-size('sm');
+    font-size: font-size("sm");
     color: hsl(var(--muted-foreground));
   }
 
@@ -112,7 +112,7 @@
 
     &:hover {
       border-color: hsl(var(--link) / 0.3);
-      @include shadow('xl');
+      @include shadow("xl");
     }
 
     &:active {
@@ -127,11 +127,11 @@
 
   // Elevated card (more shadow, no border)
   &--elevated {
-    @include shadow('lg');
+    @include shadow("lg");
     border: none;
 
     &:hover {
-      @include shadow('xl');
+      @include shadow("xl");
       transform: translateY(-2px);
     }
   }
@@ -141,7 +141,7 @@
     position: relative;
 
     &::before {
-      content: '';
+      content: "";
       position: absolute;
       inset: 0;
       @include gradient-bg();
@@ -205,7 +205,7 @@
       flex: 1;
     }
 
-    @include respond-below('md') {
+    @include respond-below("md") {
       flex-direction: column;
 
       .card__image {
@@ -221,18 +221,18 @@
     border: none;
 
     &::before {
-      content: '';
+      content: "";
       position: absolute;
       inset: 0;
-      border-radius: radius('xl');
+      border-radius: radius("xl");
       padding: 2px;
       @include gradient-bg();
       -webkit-mask:
-        linear-gradient(static-color('white'), static-color('white')) content-box,
-        linear-gradient(static-color('white'), static-color('white'));
+        linear-gradient(static-color("white"), static-color("white")) content-box,
+        linear-gradient(static-color("white"), static-color("white"));
       mask:
-        linear-gradient(static-color('white'), static-color('white')) content-box,
-        linear-gradient(static-color('white'), static-color('white'));
+        linear-gradient(static-color("white"), static-color("white")) content-box,
+        linear-gradient(static-color("white"), static-color("white"));
       -webkit-mask-composite: xor;
       mask-composite: exclude;
     }
@@ -254,36 +254,36 @@
   gap: space(6);
 
   // Responsive columns
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  @include respond-to('xl') {
+  @include respond-to("xl") {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   // Variant: 2 columns max
   &--cols-2 {
-    @include respond-to('sm') {
+    @include respond-to("sm") {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    @include respond-to('lg') {
+    @include respond-to("lg") {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
   // Variant: 3 columns max
   &--cols-3 {
-    @include respond-to('lg') {
+    @include respond-to("lg") {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
-    @include respond-to('xl') {
+    @include respond-to("xl") {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }

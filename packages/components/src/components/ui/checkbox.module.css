@@ -11,7 +11,9 @@
   color: currentcolor;
   cursor: pointer;
   outline: none;
-  transition: background-color var(--ac-transition-fast), border-color var(--ac-transition-fast);
+  transition:
+    background-color var(--ac-transition-fast),
+    border-color var(--ac-transition-fast);
 
   &:focus-visible {
     outline: 2px solid var(--ac-ring);

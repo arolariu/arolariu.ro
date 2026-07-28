@@ -2,7 +2,8 @@
 
 > **Breaking changes from Radix UI + Tailwind to Base UI + CSS Modules**
 
-This guide helps you migrate from **@arolariu/components v0.x** (Radix UI + Tailwind CSS) to **v1.0** (Base UI + CSS Modules). The 1.0 release is a complete architectural rewrite with breaking changes in primitives, styling, composition, and design tokens.
+This guide helps you migrate from **@arolariu/components v0.x** (Radix UI + Tailwind CSS) to **v1.0** (Base UI + CSS Modules). The 1.0
+release is a complete architectural rewrite with breaking changes in primitives, styling, composition, and design tokens.
 
 ---
 
@@ -30,16 +31,16 @@ This guide helps you migrate from **@arolariu/components v0.x** (Radix UI + Tail
 
 ### What Changed?
 
-| Aspect | v0.x | v1.0 |
-|--------|------|------|
-| **Primitives** | Radix UI (`@radix-ui/react-*`) | Base UI (`@base-ui/react`) |
-| **Styling** | Tailwind CSS utility classes | CSS Modules (`.module.css`) |
-| **Composition** | `asChild` prop | `render` prop (Base UI pattern) |
-| **Design Tokens** | `--ui-*` CSS variables | `--ac-*` OKLCH color space |
-| **Variants** | CVA (class-variance-authority) | CSS Module class maps |
-| **Toast** | `sonner` package | Base UI Toast-backed |
-| **Command** | `cmdk` package | Native implementation |
-| **Drawer** | `vaul` package | Base UI Drawer |
+| Aspect            | v0.x                           | v1.0                            |
+| ----------------- | ------------------------------ | ------------------------------- |
+| **Primitives**    | Radix UI (`@radix-ui/react-*`) | Base UI (`@base-ui/react`)      |
+| **Styling**       | Tailwind CSS utility classes   | CSS Modules (`.module.css`)     |
+| **Composition**   | `asChild` prop                 | `render` prop (Base UI pattern) |
+| **Design Tokens** | `--ui-*` CSS variables         | `--ac-*` OKLCH color space      |
+| **Variants**      | CVA (class-variance-authority) | CSS Module class maps           |
+| **Toast**         | `sonner` package               | Base UI Toast-backed            |
+| **Command**       | `cmdk` package                 | Native implementation           |
+| **Drawer**        | `vaul` package                 | Base UI Drawer                  |
 
 ### Why Migrate?
 
@@ -56,13 +57,15 @@ This guide helps you migrate from **@arolariu/components v0.x** (Radix UI + Tail
 ### 1. Primitive Library Migration
 
 **Before (v0.x):**
+
 ```tsx
 import * as Dialog from "@radix-ui/react-dialog";
 ```
 
 **After (v1.0):**
+
 ```tsx
-import { Dialog } from "@base-ui/react/dialog";
+import {Dialog} from "@base-ui/react/dialog";
 ```
 
 **Impact:** All components now use `@base-ui/react` instead of 25+ separate `@radix-ui/react-*` packages.
@@ -72,13 +75,13 @@ import { Dialog } from "@base-ui/react/dialog";
 ### 2. Styling Migration
 
 **Before (v0.x):**
+
 ```tsx
-<Button className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2">
-  Click Me
-</Button>
+<Button className='bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2'>Click Me</Button>
 ```
 
 **After (v1.0):**
+
 ```tsx
 import styles from "./my-app.module.css";
 
@@ -105,17 +108,17 @@ import styles from "./my-app.module.css";
 ### 3. Composition Pattern Migration
 
 **Before (v0.x):**
+
 ```tsx
 <Button asChild>
-  <a href="/dashboard">Go to Dashboard</a>
+  <a href='/dashboard'>Go to Dashboard</a>
 </Button>
 ```
 
 **After (v1.0):**
+
 ```tsx
-<Button render={<a href="/dashboard" />}>
-  Go to Dashboard
-</Button>
+<Button render={<a href='/dashboard' />}>Go to Dashboard</Button>
 ```
 
 **Impact:** `asChild` still works as a backward-compatibility shim, but `render` is preferred.
@@ -125,6 +128,7 @@ import styles from "./my-app.module.css";
 ### 4. Design Token Migration
 
 **Before (v0.x):**
+
 ```css
 :root {
   --ui-primary: 210 100% 50%;
@@ -134,6 +138,7 @@ import styles from "./my-app.module.css";
 ```
 
 **After (v1.0):**
+
 ```css
 :root {
   --ac-primary: oklch(0.6 0.2 250);
@@ -149,19 +154,21 @@ import styles from "./my-app.module.css";
 ### 5. Variant Helper Migration
 
 **Before (v0.x):**
-```tsx
-import { buttonVariants } from "@arolariu/components/button";
-import { cva } from "class-variance-authority";
 
-const variants = buttonVariants({ variant: "destructive", size: "lg" });
+```tsx
+import {buttonVariants} from "@arolariu/components/button";
+import {cva} from "class-variance-authority";
+
+const variants = buttonVariants({variant: "destructive", size: "lg"});
 // Returns: "bg-destructive text-destructive-foreground hover:bg-destructive/90 h-11 px-8"
 ```
 
 **After (v1.0):**
-```tsx
-import { buttonVariants } from "@arolariu/components/button";
 
-const variants = buttonVariants({ variant: "destructive", size: "lg" });
+```tsx
+import {buttonVariants} from "@arolariu/components/button";
+
+const variants = buttonVariants({variant: "destructive", size: "lg"});
 // Returns: "destructive sizeLg" (CSS Module class names)
 ```
 
@@ -172,6 +179,7 @@ const variants = buttonVariants({ variant: "destructive", size: "lg" });
 ### 6. Removed Dependencies
 
 **Before (v0.x):**
+
 ```json
 {
   "dependencies": {
@@ -188,6 +196,7 @@ const variants = buttonVariants({ variant: "destructive", size: "lg" });
 ```
 
 **After (v1.0):**
+
 ```json
 {
   "dependencies": {
@@ -216,6 +225,7 @@ npm install react@^19.0.0 react-dom@^19.0.0 @base-ui/react@^0.0.1 motion@^11.0.0
 ```
 
 **Optional Dependencies (if using specific features):**
+
 ```bash
 # For forms with validation
 npm install react-hook-form @hookform/resolvers zod
@@ -237,11 +247,12 @@ npm uninstall @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/rea
 ```
 
 **Search and replace** in your codebase:
+
 ```tsx
 // Find all direct Radix UI imports
 import * as Dialog from "@radix-ui/react-dialog";
 // Replace with Base UI imports
-import { Dialog } from "@base-ui/react/dialog";
+import {Dialog} from "@base-ui/react/dialog";
 ```
 
 ---
@@ -249,26 +260,29 @@ import { Dialog } from "@base-ui/react/dialog";
 ### 3. Update Imports
 
 **Before (v0.x):**
+
 ```tsx
 import "@arolariu/components/dist/index.css"; // Old path
-import { Button } from "@arolariu/components";
+import {Button} from "@arolariu/components";
 ```
 
 **After (v1.0):**
+
 ```tsx
 import "@arolariu/components/styles"; // New path (design tokens only)
-import { Button } from "@arolariu/components/button"; // Subpath imports preferred
+import {Button} from "@arolariu/components/button"; // Subpath imports preferred
 ```
 
 **Bulk import update:**
+
 ```tsx
 // Still works but not recommended for tree-shaking
-import { Button, Card, Dialog } from "@arolariu/components";
+import {Button, Card, Dialog} from "@arolariu/components";
 
 // Preferred: subpath imports
-import { Button } from "@arolariu/components/button";
-import { Card, CardHeader, CardContent } from "@arolariu/components/card";
-import { Dialog, DialogTrigger, DialogContent } from "@arolariu/components/dialog";
+import {Button} from "@arolariu/components/button";
+import {Card, CardHeader, CardContent} from "@arolariu/components/card";
+import {Dialog, DialogTrigger, DialogContent} from "@arolariu/components/dialog";
 ```
 
 ---
@@ -276,21 +290,23 @@ import { Dialog, DialogTrigger, DialogContent } from "@arolariu/components/dialo
 ### 4. Migrate from Tailwind to CSS Modules
 
 **Before (v0.x): Tailwind utility classes**
+
 ```tsx
-<Card className="w-96 p-6 bg-card text-card-foreground shadow-lg">
-  <h2 className="text-xl font-bold mb-4">Title</h2>
-  <p className="text-sm text-muted-foreground">Description</p>
+<Card className='w-96 p-6 bg-card text-card-foreground shadow-lg'>
+  <h2 className='text-xl font-bold mb-4'>Title</h2>
+  <p className='text-sm text-muted-foreground'>Description</p>
 </Card>
 ```
 
 **After (v1.0): CSS Modules**
+
 ```tsx
 import styles from "./my-card.module.css";
 
 <Card className={styles.card}>
   <h2 className={styles.title}>Title</h2>
   <p className={styles.description}>Description</p>
-</Card>
+</Card>;
 ```
 
 ```css
@@ -322,6 +338,7 @@ import styles from "./my-card.module.css";
 ### 5. Replace `asChild` with `render`
 
 **Before (v0.x):**
+
 ```tsx
 import { Button } from "@arolariu/components/button";
 
@@ -335,6 +352,7 @@ import { Button } from "@arolariu/components/button";
 ```
 
 **After (v1.0):**
+
 ```tsx
 import { Button } from "@arolariu/components/button";
 import { Dialog, DialogTrigger } from "@arolariu/components/dialog";
@@ -364,6 +382,7 @@ grep -r "--ui-" ./styles
 **Step 2: Rename tokens**
 
 **Before (v0.x):**
+
 ```css
 :root {
   --ui-primary: 210 100% 50%;
@@ -379,6 +398,7 @@ grep -r "--ui-" ./styles
 ```
 
 **After (v1.0):**
+
 ```css
 :root {
   --ac-primary: oklch(0.6 0.2 250);
@@ -399,7 +419,7 @@ grep -r "--ui-" ./styles
 Use the color conversion utilities:
 
 ```tsx
-import { convertHexToOklchString } from "@arolariu/components/color-conversion-utilities";
+import {convertHexToOklchString} from "@arolariu/components/color-conversion-utilities";
 
 // Convert existing colors
 const oklch = convertHexToOklchString("#3b82f6");
@@ -408,44 +428,44 @@ console.log(oklch); // "oklch(0.6 0.2 250)"
 
 **Common token mappings:**
 
-| v0.x | v1.0 | Description |
-|------|------|-------------|
-| `--ui-primary` | `--ac-primary` | Primary brand color |
-| `--ui-radius` | `--ac-radius-md` | Border radius (medium) |
-| `--ui-spacing-4` | `--ac-spacing-md` | Spacing scale |
-| `--ui-foreground` | `--ac-foreground` | Main text color |
-| `--ui-muted` | `--ac-muted` | Muted background |
+| v0.x              | v1.0              | Description            |
+| ----------------- | ----------------- | ---------------------- |
+| `--ui-primary`    | `--ac-primary`    | Primary brand color    |
+| `--ui-radius`     | `--ac-radius-md`  | Border radius (medium) |
+| `--ui-spacing-4`  | `--ac-spacing-md` | Spacing scale          |
+| `--ui-foreground` | `--ac-foreground` | Main text color        |
+| `--ui-muted`      | `--ac-muted`      | Muted background       |
 
 ---
 
 ### 7. Migrate Variant Helpers
 
 **Before (v0.x): CVA-based variants**
-```tsx
-import { buttonVariants } from "@arolariu/components/button";
 
-const className = buttonVariants({ variant: "outline", size: "lg" });
+```tsx
+import {buttonVariants} from "@arolariu/components/button";
+
+const className = buttonVariants({variant: "outline", size: "lg"});
 // Returns Tailwind classes: "border border-input bg-background hover:bg-accent h-11 px-8"
 
-<a className={className}>Link as Button</a>
+<a className={className}>Link as Button</a>;
 ```
 
 **After (v1.0): CSS Module class maps**
+
 ```tsx
-import { buttonVariants } from "@arolariu/components/button";
-import { cn } from "@arolariu/components/utilities";
+import {buttonVariants} from "@arolariu/components/button";
+import {cn} from "@arolariu/components/utilities";
 import styles from "./my-link.module.css";
 
-const className = cn(
-  buttonVariants({ variant: "outline", size: "lg" }),
-  styles.myLink
-);
+const className = cn(buttonVariants({variant: "outline", size: "lg"}), styles.myLink);
 // Returns CSS Module classes: "outline sizeLg myLink"
 
-<a className={className}>Link as Button</a>
+<a className={className}>Link as Button</a>;
 ```
 
 **CSS Module:**
+
 ```css
 /* my-link.module.css */
 .myLink {
@@ -459,8 +479,9 @@ const className = cn(
 ### 8. Update Toast Usage
 
 **Before (v0.x): Sonner toast**
+
 ```tsx
-import { toast } from "sonner";
+import {toast} from "sonner";
 
 toast.success("Success!");
 toast.error("Error!");
@@ -472,8 +493,9 @@ toast.promise(promise, {
 ```
 
 **After (v1.0): Base UI Toast-backed implementation**
+
 ```tsx
-import { toast } from "@arolariu/components/sonner";
+import {toast} from "@arolariu/components/sonner";
 
 // API is identical, but implementation uses Base UI
 toast.success("Success!");
@@ -486,11 +508,12 @@ toast.promise(promise, {
 ```
 
 **Setup:**
+
 ```tsx
-import { Toaster } from "@arolariu/components/sonner";
+import {Toaster} from "@arolariu/components/sonner";
 
 // Add once in app root
-<Toaster />
+<Toaster />;
 ```
 
 **Impact:** No API changes, but the underlying implementation is now Base UI-backed.
@@ -500,42 +523,30 @@ import { Toaster } from "@arolariu/components/sonner";
 ### 9. Update Command Palette
 
 **Before (v0.x): cmdk package**
+
 ```tsx
-import {
-  Command,
-  CommandInput,
-  CommandList,
-  CommandItem,
-} from "@arolariu/components/command";
+import {Command, CommandInput, CommandList, CommandItem} from "@arolariu/components/command";
 
 <Command>
-  <CommandInput placeholder="Search..." />
+  <CommandInput placeholder='Search...' />
   <CommandList>
-    <CommandItem onSelect={() => console.log("Selected")}>
-      Option 1
-    </CommandItem>
+    <CommandItem onSelect={() => console.log("Selected")}>Option 1</CommandItem>
   </CommandList>
-</Command>
+</Command>;
 ```
 
 **After (v1.0): Native implementation**
+
 ```tsx
-import {
-  Command,
-  CommandInput,
-  CommandList,
-  CommandItem,
-} from "@arolariu/components/command";
+import {Command, CommandInput, CommandList, CommandItem} from "@arolariu/components/command";
 
 // API is identical, but implementation is package-native
 <Command>
-  <CommandInput placeholder="Search..." />
+  <CommandInput placeholder='Search...' />
   <CommandList>
-    <CommandItem onSelect={() => console.log("Selected")}>
-      Option 1
-    </CommandItem>
+    <CommandItem onSelect={() => console.log("Selected")}>Option 1</CommandItem>
   </CommandList>
-</Command>
+</Command>;
 ```
 
 **Impact:** No API changes, but the underlying implementation is now Base UI-aligned.
@@ -545,8 +556,9 @@ import {
 ### 10. Update DropDrawer
 
 **Before (v0.x): vaul package**
+
 ```tsx
-import { DropDrawer } from "@arolariu/components/dropdrawer";
+import {DropDrawer} from "@arolariu/components/dropdrawer";
 
 <DropDrawer>
   <DropDrawer.Trigger>Open Drawer</DropDrawer.Trigger>
@@ -554,17 +566,13 @@ import { DropDrawer } from "@arolariu/components/dropdrawer";
     <DropDrawer.Title>Drawer Title</DropDrawer.Title>
     <p>Content here</p>
   </DropDrawer.Content>
-</DropDrawer>
+</DropDrawer>;
 ```
 
 **After (v1.0): Base UI Drawer foundation**
+
 ```tsx
-import {
-  DropDrawer,
-  DropDrawerTrigger,
-  DropDrawerContent,
-  DropDrawerTitle,
-} from "@arolariu/components/dropdrawer";
+import {DropDrawer, DropDrawerTrigger, DropDrawerContent, DropDrawerTitle} from "@arolariu/components/dropdrawer";
 
 <DropDrawer>
   <DropDrawerTrigger>Open Drawer</DropDrawerTrigger>
@@ -572,7 +580,7 @@ import {
     <DropDrawerTitle>Drawer Title</DropDrawerTitle>
     <p>Content here</p>
   </DropDrawerContent>
-</DropDrawer>
+</DropDrawer>;
 ```
 
 **Impact:** API is similar, but imports may need to be updated to use compound components.
@@ -584,15 +592,23 @@ import {
 ### Button
 
 **Before (v0.x):**
+
 ```tsx
-<Button variant="destructive" size="lg" asChild>
-  <a href="/delete">Delete</a>
+<Button
+  variant='destructive'
+  size='lg'
+  asChild>
+  <a href='/delete'>Delete</a>
 </Button>
 ```
 
 **After (v1.0):**
+
 ```tsx
-<Button variant="destructive" size="lg" render={<a href="/delete" />}>
+<Button
+  variant='destructive'
+  size='lg'
+  render={<a href='/delete' />}>
   Delete
 </Button>
 ```
@@ -602,12 +618,13 @@ import {
 ### Dialog
 
 **Before (v0.x):**
+
 ```tsx
 <Dialog>
   <DialogTrigger asChild>
     <Button>Open</Button>
   </DialogTrigger>
-  <DialogContent className="max-w-md">
+  <DialogContent className='max-w-md'>
     <DialogHeader>
       <DialogTitle>Title</DialogTitle>
     </DialogHeader>
@@ -619,13 +636,12 @@ import {
 ```
 
 **After (v1.0):**
+
 ```tsx
 import styles from "./my-dialog.module.css";
 
 <Dialog>
-  <DialogTrigger render={<Button />}>
-    Open
-  </DialogTrigger>
+  <DialogTrigger render={<Button />}>Open</DialogTrigger>
   <DialogContent className={styles.content}>
     <DialogHeader>
       <DialogTitle>Title</DialogTitle>
@@ -634,7 +650,7 @@ import styles from "./my-dialog.module.css";
       <Button>Confirm</Button>
     </DialogFooter>
   </DialogContent>
-</Dialog>
+</Dialog>;
 ```
 
 ```css
@@ -649,15 +665,20 @@ import styles from "./my-dialog.module.css";
 ### Form
 
 **Before (v0.x):**
+
 ```tsx
 <FormField
   control={form.control}
-  name="email"
-  render={({ field }) => (
+  name='email'
+  render={({field}) => (
     <FormItem>
       <FormLabel>Email</FormLabel>
       <FormControl>
-        <Input {...field} type="email" className="w-full" />
+        <Input
+          {...field}
+          type='email'
+          className='w-full'
+        />
       </FormControl>
       <FormMessage />
     </FormItem>
@@ -666,22 +687,27 @@ import styles from "./my-dialog.module.css";
 ```
 
 **After (v1.0):**
+
 ```tsx
 import styles from "./my-form.module.css";
 
 <FormField
   control={form.control}
-  name="email"
-  render={({ field }) => (
+  name='email'
+  render={({field}) => (
     <FormItem>
       <FormLabel>Email</FormLabel>
       <FormControl>
-        <Input {...field} type="email" className={styles.input} />
+        <Input
+          {...field}
+          type='email'
+          className={styles.input}
+        />
       </FormControl>
       <FormMessage />
     </FormItem>
   )}
-/>
+/>;
 ```
 
 ```css
@@ -696,17 +722,18 @@ import styles from "./my-form.module.css";
 ### Table
 
 **Before (v0.x):**
+
 ```tsx
-<Table className="w-full">
+<Table className='w-full'>
   <TableHeader>
     <TableRow>
-      <TableHead className="w-[100px]">ID</TableHead>
+      <TableHead className='w-[100px]'>ID</TableHead>
       <TableHead>Name</TableHead>
     </TableRow>
   </TableHeader>
   <TableBody>
     <TableRow>
-      <TableCell className="font-medium">001</TableCell>
+      <TableCell className='font-medium'>001</TableCell>
       <TableCell>John Doe</TableCell>
     </TableRow>
   </TableBody>
@@ -714,6 +741,7 @@ import styles from "./my-form.module.css";
 ```
 
 **After (v1.0):**
+
 ```tsx
 import styles from "./my-table.module.css";
 
@@ -730,7 +758,7 @@ import styles from "./my-table.module.css";
       <TableCell>John Doe</TableCell>
     </TableRow>
   </TableBody>
-</Table>
+</Table>;
 ```
 
 ```css
@@ -753,31 +781,33 @@ import styles from "./my-table.module.css";
 ### Select
 
 **Before (v0.x):**
+
 ```tsx
 <Select>
-  <SelectTrigger className="w-[180px]">
-    <SelectValue placeholder="Select option" />
+  <SelectTrigger className='w-[180px]'>
+    <SelectValue placeholder='Select option' />
   </SelectTrigger>
   <SelectContent>
-    <SelectItem value="option1">Option 1</SelectItem>
-    <SelectItem value="option2">Option 2</SelectItem>
+    <SelectItem value='option1'>Option 1</SelectItem>
+    <SelectItem value='option2'>Option 2</SelectItem>
   </SelectContent>
 </Select>
 ```
 
 **After (v1.0):**
+
 ```tsx
 import styles from "./my-select.module.css";
 
 <Select>
   <SelectTrigger className={styles.trigger}>
-    <SelectValue placeholder="Select option" />
+    <SelectValue placeholder='Select option' />
   </SelectTrigger>
   <SelectContent>
-    <SelectItem value="option1">Option 1</SelectItem>
-    <SelectItem value="option2">Option 2</SelectItem>
+    <SelectItem value='option1'>Option 1</SelectItem>
+    <SelectItem value='option2'>Option 2</SelectItem>
   </SelectContent>
-</Select>
+</Select>;
 ```
 
 ```css
@@ -796,6 +826,7 @@ import styles from "./my-select.module.css";
 **Cause:** Missing design token import.
 
 **Solution:**
+
 ```tsx
 // Add this once in your app entry point
 import "@arolariu/components/styles";
@@ -808,10 +839,11 @@ import "@arolariu/components/styles";
 **Cause:** Components no longer use Tailwind internally in v1.0.
 
 **Solution:** Use CSS Modules instead:
+
 ```tsx
 import styles from "./my-styles.module.css";
 
-<Button className={styles.myButton}>Click</Button>
+<Button className={styles.myButton}>Click</Button>;
 ```
 
 ---
@@ -821,6 +853,7 @@ import styles from "./my-styles.module.css";
 **Cause:** `asChild` is deprecated in v1.0. It works as a backward-compatibility shim but may have edge cases.
 
 **Solution:** Migrate to `render` prop:
+
 ```tsx
 // Old
 <Button asChild>
@@ -840,14 +873,12 @@ import styles from "./my-styles.module.css";
 **Cause:** Variant helpers now return CSS Module class names, not Tailwind utilities.
 
 **Solution:** Use `cn()` to merge classes:
-```tsx
-import { buttonVariants } from "@arolariu/components/button";
-import { cn } from "@arolariu/components/utilities";
 
-const className = cn(
-  buttonVariants({ variant: "outline" }),
-  "my-custom-class"
-);
+```tsx
+import {buttonVariants} from "@arolariu/components/button";
+import {cn} from "@arolariu/components/utilities";
+
+const className = cn(buttonVariants({variant: "outline"}), "my-custom-class");
 ```
 
 ---
@@ -857,6 +888,7 @@ const className = cn(
 **Cause:** Dark mode selector changed in v1.0.
 
 **Solution:** Use `.dark` class or `[data-theme="dark"]` attribute:
+
 ```tsx
 // Option 1: Class-based
 <html className="dark">
@@ -872,12 +904,13 @@ const className = cn(
 **Cause:** v1.0 uses namespace types (`Component.Props`, `Component.State`).
 
 **Solution:** Update type imports:
+
 ```tsx
 // Old
-import { ButtonProps } from "@arolariu/components/button";
+import {ButtonProps} from "@arolariu/components/button";
 
 // New
-import { Button } from "@arolariu/components/button";
+import {Button} from "@arolariu/components/button";
 type ButtonProps = Button.Props;
 ```
 
@@ -888,6 +921,7 @@ type ButtonProps = Button.Props;
 **Cause:** Some components were renamed or removed.
 
 **Solution:** Check the [CHANGELOG.md](./CHANGELOG.md) for component renames. New components in v1.0:
+
 - `NumberField`
 - `Meter`
 - `Toolbar`
@@ -904,6 +938,7 @@ type ButtonProps = Button.Props;
 **Next.js:** Built-in support, no config needed.
 
 **Vite:**
+
 ```ts
 // vite.config.ts
 export default {
@@ -916,6 +951,7 @@ export default {
 ```
 
 **Webpack:**
+
 ```js
 // webpack.config.js
 module.exports = {

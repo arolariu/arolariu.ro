@@ -2,39 +2,49 @@
 // SETTINGS DATA STYLES
 // Scoped to SettingsData.tsx only
 // ===========================================
-@use '../../../styles/abstracts' as *;
-@use 'settings-shared' as settings;
+@use "../../../styles/abstracts" as *;
+@use "settings-shared" as settings;
 
-.section { @include settings.settings-section; }
-.header  { @include settings.settings-header; }
-.grid    { @include settings.settings-grid; }
-.toggleRow     { @include settings.settings-toggle-row; }
-.toggleLabel   { @include settings.settings-toggle-label; }
+.section {
+  @include settings.settings-section;
+}
+.header {
+  @include settings.settings-header;
+}
+.grid {
+  @include settings.settings-grid;
+}
+.toggleRow {
+  @include settings.settings-toggle-row;
+}
+.toggleLabel {
+  @include settings.settings-toggle-label;
+}
 
 // ===========================================
 // DATA-SPECIFIC
 // ===========================================
 .retentionHint {
   margin-top: space(2);
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
 }
 
 .exportHint {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
   text-align: center;
 }
 
 .dangerCard {
   @include settings.settings-card-full;
-  border-color: color-alpha('destructive', 0.5);
+  border-color: color-alpha("destructive", 0.5);
 }
 
 .dangerRow {
   @include flex-between;
-  border-radius: radius('lg');
-  border: 1px dashed color('border');
+  border-radius: radius("lg");
+  border: 1px dashed color("border");
   padding: space(4);
 }
 
@@ -42,24 +52,36 @@
   display: block;
 
   p:first-child {
-    font-weight: font-weight('medium');
+    font-weight: font-weight("medium");
   }
 
   p:last-child {
-    font-size: font-size('xs');
-    color: color('muted-foreground');
+    font-size: font-size("xs");
+    color: color("muted-foreground");
   }
 }
 
 // ===========================================
 // LIBRARY COMPONENT CLASSES
 // ===========================================
-.cardHeaderPb { @include settings.settings-card-header-flex; }
-.cardTitleBase { @include settings.settings-card-title-base; }
-.cardContentSpaced { @include settings.settings-card-content-spaced; }
-.selectCursor { @include settings.settings-select-cursor; }
-.buttonFullCursor { @include settings.settings-button-full-cursor; }
-.iconSm { @include settings.settings-icon-sm; }
+.cardHeaderPb {
+  @include settings.settings-card-header-flex;
+}
+.cardTitleBase {
+  @include settings.settings-card-title-base;
+}
+.cardContentSpaced {
+  @include settings.settings-card-content-spaced;
+}
+.selectCursor {
+  @include settings.settings-select-cursor;
+}
+.buttonFullCursor {
+  @include settings.settings-button-full-cursor;
+}
+.iconSm {
+  @include settings.settings-icon-sm;
+}
 
 // ===========================================
 // DATA-SPECIFIC UTILITIES
@@ -82,13 +104,13 @@
 }
 
 .dangerCardBorder {
-  border-color: color-alpha('destructive', 0.5);
+  border-color: color-alpha("destructive", 0.5);
 }
 
 .dangerTitle {
-  color: color('destructive');
+  color: color("destructive");
   display: flex;
   align-items: center;
   gap: space(2);
-  font-size: font-size('base');
+  font-size: font-size("base");
 }

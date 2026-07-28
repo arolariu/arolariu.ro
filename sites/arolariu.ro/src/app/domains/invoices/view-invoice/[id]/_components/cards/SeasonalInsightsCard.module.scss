@@ -1,4 +1,4 @@
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 .monthSection {
   & > * + * {
@@ -10,23 +10,23 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 }
 
 .monthLabel {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .monthValue {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .monthMeta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  color: color("muted-foreground");
+  font-size: font-size("xs");
 }
 
 .insightsList {
@@ -39,24 +39,24 @@
   display: flex;
   align-items: flex-start;
   gap: space(3);
-  border-radius: radius('lg');
+  border-radius: radius("lg");
   border: 1px solid;
   padding: space(3);
 }
 
 .insightWarning {
-  border-color: color-alpha('warning', 0.3);
-  background-color: color-alpha('warning', 0.05);
+  border-color: color-alpha("warning", 0.3);
+  background-color: color-alpha("warning", 0.05);
 }
 
 .insightSuccess {
-  border-color: color-alpha('success', 0.3);
-  background-color: color-alpha('success', 0.05);
+  border-color: color-alpha("success", 0.3);
+  background-color: color-alpha("success", 0.05);
 }
 
 .insightInfo {
-  border-color: color('border');
-  background-color: color-alpha('muted', 0.3);
+  border-color: color("border");
+  background-color: color-alpha("muted", 0.3);
 }
 
 .insightIconWrapper {
@@ -64,15 +64,15 @@
 }
 
 .insightIconWarning {
-  color: color('warning');
+  color: color("warning");
 }
 
 .insightIconSuccess {
-  color: color('success');
+  color: color("success");
 }
 
 .insightIconInfo {
-  color: color('foreground');
+  color: color("foreground");
 }
 
 .insightContent {
@@ -81,26 +81,26 @@
 }
 
 .insightTitle {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
-  line-height: line-height('tight');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
+  line-height: line-height("tight");
 }
 
 .insightDescription {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  color: color("muted-foreground");
+  font-size: font-size("xs");
 }
 
 .titleRow {
   display: flex;
   align-items: center;
   gap: space(2);
-  font-size: font-size('lg');
+  font-size: font-size("lg");
 }
 
 .titleIcon {
   @include icon-size(space(4));
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .contentSpaced {

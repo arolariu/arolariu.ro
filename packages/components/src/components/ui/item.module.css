@@ -18,7 +18,10 @@
   color: var(--ac-foreground);
   font-size: var(--ac-text-sm);
   outline: none;
-  transition: border-color var(--ac-transition-fast), background-color var(--ac-transition-fast), box-shadow var(--ac-transition-fast);
+  transition:
+    border-color var(--ac-transition-fast),
+    background-color var(--ac-transition-fast),
+    box-shadow var(--ac-transition-fast);
 }
 
 .item a {

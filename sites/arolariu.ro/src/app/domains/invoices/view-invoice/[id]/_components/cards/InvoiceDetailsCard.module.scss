@@ -1,4 +1,4 @@
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 .headerRow {
   display: flex;
@@ -26,17 +26,17 @@
   display: flex;
   align-items: center;
   gap: space(2);
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
 }
 
 .infoLabelPlain {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
 }
 
 .infoValue {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .helpTrigger {
@@ -44,13 +44,13 @@
 }
 
 .infoValueHelp {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
   cursor: help;
 }
 
 .totalAmount {
-  font-size: font-size('lg');
-  font-weight: font-weight('semibold');
+  font-size: font-size("lg");
+  font-weight: font-weight("semibold");
 }
 
 .itemsSection {
@@ -60,12 +60,12 @@
 }
 
 .itemsTitle {
-  font-weight: font-weight('semibold');
+  font-weight: font-weight("semibold");
 }
 
 .tableContainer {
-  border-radius: radius('md');
-  border: 1px solid color('border');
+  border-radius: radius("md");
+  border: 1px solid color("border");
 
   th:first-child {
     width: 40%;
@@ -77,11 +77,11 @@
   }
 
   tbody td:last-child {
-    font-weight: font-weight('medium');
+    font-weight: font-weight("medium");
   }
 
   tfoot td:last-child {
-    font-weight: font-weight('semibold');
+    font-weight: font-weight("semibold");
   }
 }
 
@@ -93,8 +93,8 @@
 
 .heartIcon {
   @include icon-size(space(4));
-  color: color('destructive');
-  fill: color('destructive');
+  color: color("destructive");
+  fill: color("destructive");
 }
 
 .contentSpaced {
@@ -116,7 +116,7 @@
 }
 
 .itemName {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .allergenList {
@@ -132,8 +132,8 @@
 }
 
 .paginationText {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
 }
 
 .paginationButtons {
@@ -148,8 +148,8 @@
 }
 
 .sectionTitle {
-  font-weight: font-weight('semibold');
-  font-size: font-size('base');
+  font-weight: font-weight("semibold");
+  font-size: font-size("base");
 }
 
 .paymentsList {
@@ -163,12 +163,12 @@
   align-items: center;
   justify-content: space-between;
   padding: space(2) space(3);
-  border-radius: radius('md');
-  background-color: color('muted');
+  border-radius: radius("md");
+  background-color: color("muted");
 }
 
 .paymentAmount {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .taxSection {
@@ -188,8 +188,8 @@
   flex-direction: column;
   gap: space(1);
   padding: space(2) space(3);
-  border-radius: radius('md');
-  background-color: color('muted');
+  border-radius: radius("md");
+  background-color: color("muted");
 }
 
 .taxInfo {
@@ -199,26 +199,26 @@
 }
 
 .taxDescription {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .taxRate {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
 }
 
 .taxAmounts {
   display: flex;
   gap: space(4);
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 }
 
 .taxNetAmount {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .taxAmount {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 // ===========================================

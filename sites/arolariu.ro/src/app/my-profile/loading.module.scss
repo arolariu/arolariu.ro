@@ -2,7 +2,7 @@
 // MY-PROFILE LOADING SKELETON STYLES
 // Scoped to loading.tsx only
 // ===========================================
-@use '../../styles/abstracts' as *;
+@use "../../styles/abstracts" as *;
 
 // ===========================================
 // PAGE CONTAINER (mirrors .page in island.module.scss)
@@ -12,7 +12,7 @@
   padding-top: space(8);
   padding-bottom: space(24);
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     padding-bottom: space(8);
   }
 }
@@ -25,30 +25,30 @@
   gap: space(4);
   margin-bottom: space(8);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 // mirrors .bentoProfileCard
 .profileCard {
-  border: 1px solid color('border');
-  border-radius: radius('xl');
+  border: 1px solid color("border");
+  border-radius: radius("xl");
   padding: space(6);
   overflow: hidden;
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-column: span 2;
   }
 }
 
 .profileBanner {
   height: 8rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
   margin-bottom: space(4);
 }
 
@@ -57,7 +57,7 @@
   flex-direction: column;
   gap: space(4);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     flex-direction: row;
     align-items: flex-end;
   }
@@ -66,7 +66,7 @@
 .avatarSkeleton {
   width: 6rem;
   height: 6rem;
-  border-radius: radius('full');
+  border-radius: radius("full");
   flex-shrink: 0;
 }
 
@@ -96,8 +96,8 @@
 
 // mirrors .bentoStatsCard
 .statsCard {
-  border: 1px solid color('border');
-  border-radius: radius('xl');
+  border: 1px solid color("border");
+  border-radius: radius("xl");
   padding: space(6);
   @include flex-column-center;
   gap: space(2);
@@ -117,7 +117,7 @@
   flex-direction: column;
   gap: space(6);
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     flex-direction: row;
   }
 }
@@ -128,20 +128,20 @@
 .sidebarSkeleton {
   display: none;
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     @include flex-column;
     width: 16rem;
     flex-shrink: 0;
     gap: space(1);
     padding: space(3);
-    border: 1px solid color('border');
-    border-radius: radius('xl');
+    border: 1px solid color("border");
+    border-radius: radius("xl");
   }
 }
 
 .sidebarPill {
   height: 2.5rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 // ===========================================
@@ -150,11 +150,11 @@
 .contentSkeleton {
   flex: 1;
   min-width: 0;
-  border: 1px solid color('border');
-  border-radius: radius('xl');
+  border: 1px solid color("border");
+  border-radius: radius("xl");
   padding: space(4);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     padding: space(6);
   }
 }
@@ -171,24 +171,24 @@
   @include grid(1, space(4));
   margin-bottom: space(6);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 .statCardSkeleton {
   height: 7rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 // Storage card at bottom (mirrors QuickStats storage Card)
 .storageCardSkeleton {
   height: 6rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 // ===========================================
@@ -199,15 +199,15 @@
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: z('fixed');
+  z-index: z("fixed");
   display: flex;
   justify-content: space-around;
-  border-top: 1px solid color('border');
-  background-color: color('background');
+  border-top: 1px solid color("border");
+  background-color: color("background");
   padding: space(2) space(1);
   padding-bottom: calc(space(2) + env(safe-area-inset-bottom, 0px));
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     display: none;
   }
 }

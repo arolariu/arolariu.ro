@@ -1,8 +1,8 @@
-@use '../../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../../styles/abstracts" as *;
 
 .sectionTitle {
-  @include text-muted('sm');
-  font-weight: font-weight('medium');
+  @include text-muted("sm");
+  font-weight: font-weight("medium");
 }
 
 .suppliesList {
@@ -17,7 +17,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 }
 
 .supplyName {
@@ -27,14 +27,14 @@
 }
 
 .supplyDays {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .progressTrack {
   height: space(2);
   overflow: hidden;
-  border-radius: radius('full');
-  background-color: color('muted');
+  border-radius: radius("full");
+  background-color: color("muted");
 }
 
 .progressBar {
@@ -43,15 +43,15 @@
 }
 
 .progressGreen {
-  background-color: color('success');
+  background-color: color("success");
 }
 
 .progressYellow {
-  background-color: color('warning');
+  background-color: color("warning");
 }
 
 .progressRed {
-  background-color: color('destructive');
+  background-color: color("destructive");
 }
 
 .ecoSection {
@@ -71,8 +71,8 @@
 }
 
 .ecoLabelText {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .ecoStars {
@@ -82,7 +82,7 @@
 }
 
 .ecoList {
-  @include text-muted('sm');
+  @include text-muted("sm");
   padding-left: space(6);
 
   @include spaced-children(space(1));
@@ -95,46 +95,46 @@
 }
 
 .ecoBullet {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .ecoTipBullet {
-  color: color('success');
+  color: color("success");
 }
 
 .ecoTipText {
-  color: color('success');
+  color: color("success");
 }
 
 .bulkBox {
   display: flex;
   align-items: flex-start;
   gap: space(2);
-  border-radius: radius('lg');
-  border: 1px solid color('border');
-  background-color: color-alpha('muted', 0.3);
+  border-radius: radius("lg");
+  border: 1px solid color("border");
+  background-color: color-alpha("muted", 0.3);
   padding: space(3);
 }
 
 .bulkTitle {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .bulkDescription {
-  @include text-muted('sm');
+  @include text-muted("sm");
 }
 
 .titleRow {
   display: flex;
   align-items: center;
   gap: space(2);
-  font-size: font-size('lg');
+  font-size: font-size("lg");
 }
 
 .titleIcon {
   @include icon-size(space(5));
-  color: color('success');
+  color: color("success");
 }
 
 .contentSpaced {
@@ -143,43 +143,43 @@
 
 .iconBlue {
   @include icon-size(space(4));
-  color: color('info');
+  color: color("info");
 }
 
 .iconCyan {
   @include icon-size(space(4));
-  color: color('info');
+  color: color("info");
 }
 
 .iconGray {
   @include icon-size(space(4));
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .iconGreen {
   @include icon-size(space(4));
-  color: color('success');
+  color: color("success");
 }
 
 .starActive {
   @include icon-size(space(4));
-  color: color('success');
-  fill: color('success');
+  color: color("success");
+  fill: color("success");
 }
 
 .starInactive {
   @include icon-size(space(4));
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .leafIcon {
   @include icon-size(space(4));
-  color: color('success');
+  color: color("success");
 }
 
 .packageIcon {
   @include icon-size(space(4));
   flex-shrink: 0;
   margin-top: space(0.5);
-  color: color('info');
+  color: color("info");
 }

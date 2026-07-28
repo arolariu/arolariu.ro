@@ -1,4 +1,4 @@
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 .infoRow {
   display: flex;
@@ -13,12 +13,12 @@
 }
 
 .infoText {
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 }
 
 .websiteLink {
-  color: color('primary');
-  font-size: font-size('sm');
+  color: color("primary");
+  font-size: font-size("sm");
   text-underline-offset: 4px;
 
   &:hover {
@@ -32,14 +32,14 @@
 
 .iconMuted {
   @include icon-size(space(4));
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .iconMutedTop {
   @include icon-size(space(4));
   flex-shrink: 0;
   margin-top: space(0.5);
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 /* Section Headers */
@@ -56,9 +56,9 @@
 }
 
 .sectionTitle {
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
-  color: color('foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
+  color: color("foreground");
 }
 
 /* Sparkline Chart Container */
@@ -66,8 +66,8 @@
   width: 100%;
   height: 100px;
   margin-top: space(2);
-  border-radius: border-radius('md');
-  background: color-alpha('muted', 0.2);
+  border-radius: border-radius("md");
+  background: color-alpha("muted", 0.2);
   padding: space(2);
 }
 
@@ -86,31 +86,31 @@
   flex: 1 1 0;
   min-width: 80px;
   padding: space(2);
-  border-radius: border-radius('md');
-  background: color-alpha('muted', 0.3);
-  border: 1px solid color('border');
-  transition: all duration('normal') ease-out;
+  border-radius: border-radius("md");
+  background: color-alpha("muted", 0.3);
+  border: 1px solid color("border");
+  transition: all duration("normal") ease-out;
 
   &:hover {
-    background: color-alpha('muted', 0.5);
+    background: color-alpha("muted", 0.5);
     transform: translateY(-2px);
   }
 }
 
 .statIcon {
   @include icon-size(space(5));
-  color: color('primary');
+  color: color("primary");
 }
 
 .statValue {
-  font-size: font-size('lg');
-  font-weight: font-weight('bold');
-  color: color('foreground');
+  font-size: font-size("lg");
+  font-weight: font-weight("bold");
+  color: color("foreground");
 }
 
 .statLabel {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
   text-align: center;
 }
 
@@ -119,16 +119,16 @@
   display: flex;
   width: 100%;
   height: space(6);
-  border-radius: border-radius('md');
+  border-radius: border-radius("md");
   overflow: hidden;
-  background: color-alpha('muted', 0.2);
+  background: color-alpha("muted", 0.2);
 }
 
 .categorySegment {
   height: 100%;
   background: linear-gradient(135deg, var(--ac-chart-1) 0%, var(--ac-chart-2) 100%);
-  border-right: 1px solid color('background');
-  transition: all duration('normal') ease-out;
+  border-right: 1px solid color("background");
+  transition: all duration("normal") ease-out;
 
   &:hover {
     opacity: 0.8;
@@ -150,16 +150,16 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
 }
 
 .categoryLabelText {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .categoryLabelCount {
-  color: color('foreground');
+  color: color("foreground");
 }
 
 /* Buttons */
@@ -175,4 +175,3 @@
 .fullWidth {
   width: 100%;
 }
-

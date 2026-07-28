@@ -93,7 +93,6 @@ function generateScanId(): string {
   return `${timestamp.slice(0, 8)}-${timestamp.slice(8, 12)}-7${random.slice(0, 3)}-${random.slice(3, 7)}-${random.slice(7, 19)}`;
 }
 
-
 /**
  * Creates a blob upload target with prepared metadata for direct client uploads.
  *

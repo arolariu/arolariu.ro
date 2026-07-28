@@ -1,4 +1,4 @@
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 .budgetSection {
   & > * + * {
@@ -10,29 +10,29 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 }
 
 .budgetLabel {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .budgetValue {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .budgetMeta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  color: color("muted-foreground");
+  font-size: font-size("xs");
 }
 
 .impactBox {
-  border: 1px solid color('border');
-  background-color: color-alpha('muted', 0.3);
-  border-radius: radius('lg');
+  border: 1px solid color("border");
+  background-color: color-alpha("muted", 0.3);
+  border-radius: radius("lg");
   padding: space(3);
 
   & > * + * {
@@ -41,19 +41,19 @@
 }
 
 .impactLabel {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  color: color("muted-foreground");
+  font-size: font-size("xs");
 }
 
 .impactPercent {
-  font-size: font-size('2xl');
-  font-weight: font-weight('semibold');
+  font-size: font-size("2xl");
+  font-weight: font-weight("semibold");
   font-variant-numeric: tabular-nums;
 }
 
 .impactDescription {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  color: color("muted-foreground");
+  font-size: font-size("xs");
 }
 
 .statsGrid {
@@ -67,31 +67,31 @@
 }
 
 .statLabel {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  color: color("muted-foreground");
+  font-size: font-size("xs");
 }
 
 .statValue {
-  font-size: font-size('lg');
-  font-weight: font-weight('semibold');
+  font-size: font-size("lg");
+  font-weight: font-weight("semibold");
   font-variant-numeric: tabular-nums;
 }
 
 .overBudgetText {
-  color: color('destructive');
+  color: color("destructive");
 }
 
 .overBudgetLabel {
-  color: color('destructive');
-  font-size: font-size('xs');
+  color: color("destructive");
+  font-size: font-size("xs");
 }
 
 .dailyAllowanceBox {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border: 1px solid color('border');
-  border-radius: radius('lg');
+  border: 1px solid color("border");
+  border-radius: radius("lg");
   padding: space(3);
 }
 
@@ -102,25 +102,25 @@
 }
 
 .dailyAllowanceLabel {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  color: color("muted-foreground");
+  font-size: font-size("xs");
 }
 
 .dailyAllowanceValue {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .titleRow {
   display: flex;
   align-items: center;
   gap: space(2);
-  font-size: font-size('lg');
+  font-size: font-size("lg");
 }
 
 .titleIcon {
   @include icon-size(space(4));
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .contentSpaced {
@@ -129,15 +129,15 @@
 
 .trendIconUp {
   @include icon-size(space(5));
-  color: color('success');
+  color: color("success");
 }
 
 .trendIconNeutral {
   @include icon-size(space(5));
-  color: color('warning');
+  color: color("warning");
 }
 
 .trendIconDown {
   @include icon-size(space(5));
-  color: color('destructive');
+  color: color("destructive");
 }

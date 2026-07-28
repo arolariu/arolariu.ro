@@ -1,4 +1,4 @@
-@use '../../../../../../styles/abstracts' as *;
+@use "../../../../../../styles/abstracts" as *;
 
 .headerRow {
   display: flex;
@@ -11,16 +11,16 @@
   grid-template-columns: 1fr;
   gap: space(4);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 .detailLabel {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   margin-bottom: space(1);
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .dateRow {
@@ -39,8 +39,8 @@
 }
 
 .totalAmount {
-  font-size: font-size('lg');
-  font-weight: font-weight('semibold');
+  font-size: font-size("lg");
+  font-weight: font-weight("semibold");
 }
 
 .timePicker {
@@ -58,21 +58,21 @@
 }
 
 .timeLabel {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  color: color("muted-foreground");
+  font-size: font-size("xs");
 }
 
 .timeSeparator {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   margin-top: space(5);
-  font-size: font-size('lg');
-  font-weight: font-weight('medium');
+  font-size: font-size("lg");
+  font-weight: font-weight("medium");
 }
 
 .timeUtc {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   margin-top: space(5);
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 }
 
 .card {
@@ -96,17 +96,17 @@
 }
 
 .heartIcon {
-  color: color('destructive');
+  color: color("destructive");
   &:hover {
-    color: color('destructive');
+    color: color("destructive");
   }
 }
 
 .heartIconFilled {
-  color: color('destructive');
-  fill: color('destructive');
+  color: color("destructive");
+  fill: color("destructive");
   &:hover {
-    color: color('destructive');
+    color: color("destructive");
   }
 }
 
@@ -122,7 +122,7 @@
 }
 
 .mutedIcon {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   margin-right: space(2);
   width: space(4);
   height: space(4);
@@ -132,7 +132,7 @@
   width: 16rem;
   justify-content: flex-start;
   text-align: left;
-  font-weight: font-weight('normal');
+  font-weight: font-weight("normal");
 }
 
 .popoverContent {
@@ -142,8 +142,8 @@
 
 .calendar {
   width: 16rem;
-  border-radius: radius('md');
-  border: 1px solid color('border');
+  border-radius: radius("md");
+  border: 1px solid color("border");
   --cell-size: 2.5rem;
 }
 

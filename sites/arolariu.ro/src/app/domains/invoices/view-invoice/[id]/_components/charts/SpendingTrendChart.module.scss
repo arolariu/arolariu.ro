@@ -1,27 +1,27 @@
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 .tooltip {
-  background-color: color('background');
-  border-radius: radius('lg');
-  border: 1px solid color('border');
+  background-color: color("background");
+  border-radius: radius("lg");
+  border: 1px solid color("border");
   padding: space(2) space(3);
   pointer-events: auto;
-  @include shadow('md');
+  @include shadow("md");
 }
 
 .tooltipName {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .tooltipDate {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  color: color("muted-foreground");
+  font-size: font-size("xs");
 }
 
 .tooltipAmount {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
   margin-top: space(1);
 }
 
@@ -33,7 +33,7 @@
   list-style: none;
   padding: 0;
   margin: space(2) 0 0;
-  border-top: 1px solid color('border');
+  border-top: 1px solid color("border");
   padding-top: space(2);
   max-height: 200px;
   overflow-y: auto;
@@ -41,11 +41,11 @@
 
 .tooltipInvoiceItem {
   padding: space(1) 0;
-  font-size: font-size('xs');
+  font-size: font-size("xs");
 }
 
 .tooltipInvoiceLink {
-  color: color('primary');
+  color: color("primary");
   text-decoration: none;
 
   &:hover {
@@ -54,8 +54,8 @@
 }
 
 .tooltipMore {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
   font-style: italic;
   padding-top: space(1);
 }
@@ -65,7 +65,7 @@
   @include transition(box-shadow);
 
   &:hover {
-    @include shadow('md');
+    @include shadow("md");
   }
 }
 
@@ -74,11 +74,11 @@
 }
 
 .cardTitle {
-  font-size: font-size('base');
+  font-size: font-size("base");
 }
 
 .cardDescription {
-  font-size: font-size('xs');
+  font-size: font-size("xs");
 }
 
 .cardContent {

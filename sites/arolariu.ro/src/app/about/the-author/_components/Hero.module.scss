@@ -1,7 +1,7 @@
 // ===========================================
 // THE AUTHOR - HERO COMPONENT
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 .section {
   position: relative;
@@ -14,7 +14,7 @@
 }
 
 .content {
-  z-index: z('content');
+  z-index: z("content");
   margin-left: auto;
   margin-right: auto;
   max-width: 56rem;
@@ -34,14 +34,14 @@
   margin: 0 auto space(6);
   width: 8rem;
   height: 8rem;
-  border-radius: radius('full');
-  border: 4px solid color-alpha('primary', 0.2);
+  border-radius: radius("full");
+  border: 4px solid color-alpha("primary", 0.2);
   overflow: hidden;
   box-shadow:
-    0 0 20px color-alpha('primary', 0.3),
-    0 0 40px color-alpha('primary', 0.2);
+    0 0 20px color-alpha("primary", 0.3),
+    0 0 40px color-alpha("primary", 0.2);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     width: 10rem;
     height: 10rem;
   }
@@ -51,19 +51,19 @@
 .titleWrapper {
   text-align: center;
   justify-content: center;
-  font-size: font-size('3xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("3xl");
+  font-weight: font-weight("bold");
 
-  @include respond-to('sm') {
-    font-size: font-size('4xl');
+  @include respond-to("sm") {
+    font-size: font-size("4xl");
   }
 
-  @include respond-to('md') {
-    font-size: font-size('5xl');
+  @include respond-to("md") {
+    font-size: font-size("5xl");
   }
 
-  @include respond-to('lg') {
-    font-size: font-size('6xl');
+  @include respond-to("lg") {
+    font-size: font-size("6xl");
   }
 
   // Override TypewriterTextSmooth internal text sizing
@@ -82,7 +82,7 @@
 .gradientWord {
   display: inline-block;
   text-align: center;
-  color: color('primary');
+  color: color("primary");
 }
 
 // Image object-fit
@@ -98,9 +98,9 @@
 // Subtitle
 .subtitle {
   max-width: 42rem;
-  font-size: font-size('lg');
+  font-size: font-size("lg");
 
-  @include respond-to('md') {
-    font-size: font-size('xl');
+  @include respond-to("md") {
+    font-size: font-size("xl");
   }
 }

@@ -2,7 +2,7 @@
 // AUTH PAGE - LOADING SKELETON STYLES
 // Scoped to /auth/loading.tsx only
 // ===========================================
-@use '../../styles/abstracts' as *;
+@use "../../styles/abstracts" as *;
 
 .loadingSection {
   position: relative;
@@ -12,12 +12,12 @@
   margin-right: auto;
   padding: space(10) space(4);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     padding-left: space(6);
     padding-right: space(6);
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     padding: space(14) space(8);
   }
 }
@@ -46,11 +46,11 @@
   width: 20rem;
   max-width: 100%;
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     height: 4rem;
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     height: 5rem;
   }
 }
@@ -83,11 +83,11 @@
   display: grid;
   gap: space(8);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     gap: space(10);
   }
 }
@@ -95,10 +95,10 @@
 .loadingCard {
   position: relative;
   overflow: hidden;
-  border-radius: radius('xl');
-  border: 1px solid color-alpha('border', 0.5);
+  border-radius: radius("xl");
+  border: 1px solid color-alpha("border", 0.5);
   padding: space(6);
-  background-color: color-alpha('card', 0.5);
+  background-color: color-alpha("card", 0.5);
 }
 
 .loadingCardHeader {
@@ -159,7 +159,7 @@
 .skBadge {
   height: space(8);
   width: 8rem;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .skTextFull {
@@ -177,19 +177,19 @@
 .skTrustPillSm {
   height: 1.75rem;
   width: 6rem;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .skTrustPillMd {
   height: 1.75rem;
   width: 7rem;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .skTrustPillXs {
   height: 1.75rem;
   width: 5rem;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .skDivider {
@@ -200,7 +200,7 @@
 .skIcon {
   height: 3rem;
   width: 3rem;
-  border-radius: radius('xl');
+  border-radius: radius("xl");
 }
 
 .skStepLabel {
@@ -211,9 +211,9 @@
 .skIllustration {
   height: 12rem;
   width: 12rem;
-  border-radius: radius('2xl');
+  border-radius: radius("2xl");
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     height: 14rem;
     width: 14rem;
   }
@@ -255,7 +255,7 @@
 .skDot {
   height: 0.5rem;
   width: 0.5rem;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .skBulletFull {
@@ -281,7 +281,7 @@
 .skCtaBtn {
   height: 3rem;
   width: 100%;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 .skCtaText48 {

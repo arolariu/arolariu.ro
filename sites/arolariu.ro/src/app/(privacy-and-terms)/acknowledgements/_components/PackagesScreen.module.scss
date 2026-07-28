@@ -1,7 +1,7 @@
 // ===========================================
 // PACKAGES SCREEN COMPONENT STYLES
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 // ===========================================
 // CONTAINER
@@ -10,7 +10,7 @@
   @include container(80rem);
   padding-top: space(10);
   padding-bottom: space(10);
-  color: color('foreground');
+  color: color("foreground");
 }
 
 // ===========================================
@@ -42,7 +42,7 @@
   margin-left: auto;
   margin-right: auto;
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     flex-direction: row;
   }
 }
@@ -83,11 +83,11 @@
 }
 
 .productionBanner {
-  background-color: color('primary');
+  background-color: color("primary");
   color: white;
   text-align: center;
-  font-size: font-size('xs');
-  font-weight: font-weight('bold');
+  font-size: font-size("xs");
+  font-weight: font-weight("bold");
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: space(1) 0;
@@ -95,11 +95,11 @@
 }
 
 .developmentBanner {
-  background-color: color('secondary');
-  color: color('secondary-foreground');
+  background-color: color("secondary");
+  color: color("secondary-foreground");
   text-align: center;
-  font-size: font-size('xs');
-  font-weight: font-weight('bold');
+  font-size: font-size("xs");
+  font-weight: font-weight("bold");
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: space(1) 0;
@@ -123,15 +123,15 @@
   display: grid;
   gap: space(6);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     grid-template-columns: repeat(1, minmax(0, 1fr));
   }
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
@@ -143,14 +143,14 @@
 }
 
 .cardTitle {
-  font-size: font-size('xl');
+  font-size: font-size("xl");
 }
 
 .versionBadge {
   padding: space(1) space(2);
-  font-size: font-size('xs');
-  border-radius: radius('full');
-  background-color: color('muted');
+  font-size: font-size("xs");
+  border-radius: radius("full");
+  background-color: color("muted");
 }
 
 .badgeContainer {
@@ -176,12 +176,12 @@
 .detailRow {
   display: flex;
   align-items: center;
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 }
 
 .detailLabel {
   margin-right: space(2);
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .cardActions {
@@ -194,11 +194,11 @@
 .websiteLink {
   display: flex;
   align-items: center;
-  @include text-muted('sm');
+  @include text-muted("sm");
   @include transition(color);
 
   &:hover {
-    color: color('link');
+    color: color("link");
   }
 }
 
@@ -212,15 +212,15 @@
 // TABLE VIEW
 // ===========================================
 .tableContainer {
-  border-radius: radius('md');
-  border: 1px solid color('border');
-  color: color('foreground');
+  border-radius: radius("md");
+  border: 1px solid color("border");
+  color: color("foreground");
 }
 
 .hiddenMd {
   display: none;
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     display: table-cell;
   }
 }
@@ -228,7 +228,7 @@
 .hiddenLg {
   display: none;
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     display: table-cell;
   }
 }
@@ -236,7 +236,7 @@
 .hiddenXl {
   display: none;
 
-  @include respond-to('xl') {
+  @include respond-to("xl") {
     display: table-cell;
   }
 }
@@ -244,13 +244,13 @@
 .hiddenSm {
   display: none;
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     display: table-cell;
   }
 }
 
 .packageName {
-  font-weight: font-weight('bold');
+  font-weight: font-weight("bold");
 }
 
 .descriptionText {
@@ -267,11 +267,11 @@
 
 .tableLink {
   padding: space(2);
-  border-radius: radius('md');
+  border-radius: radius("md");
   @include transition(background-color);
 
   &:hover {
-    background-color: color('muted');
+    background-color: color("muted");
   }
 }
 
@@ -290,11 +290,11 @@
   margin-left: auto;
   margin-right: auto;
   margin-bottom: space(4);
-  color: color('foreground');
+  color: color("foreground");
 }
 
 .emptyText {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 // ===========================================
@@ -322,26 +322,26 @@
 }
 
 .footerTitle {
-  font-size: font-size('xl');
-  font-weight: font-weight('semibold');
+  font-size: font-size("xl");
+  font-weight: font-weight("semibold");
 }
 
 .footerDescription {
   max-width: 42rem;
   margin-left: auto;
   margin-right: auto;
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 // ===========================================
 // DIALOG
 // ===========================================
 .dialogContent {
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     max-width: 425px;
   }
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     max-width: 600px;
   }
 }

@@ -1,27 +1,27 @@
-@use '../../../../../../styles/abstracts' as *;
+@use "../../../../../../styles/abstracts" as *;
 
 .previewSection {
   padding-block: space(4);
 }
 
 .warningBox {
-  background-color: color-alpha('destructive', 0.1);
-  color: color('destructive');
-  border-radius: radius('md');
+  background-color: color-alpha("destructive", 0.1);
+  color: color("destructive");
+  border-radius: radius("md");
   padding: space(3);
 }
 
 .warningTitle {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .warningText {
-  font-size: font-size('xs');
+  font-size: font-size("xs");
 }
 
 .dialogContent {
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     max-width: 28rem;
   }
 }
@@ -33,7 +33,7 @@
 }
 
 .alertIcon {
-  color: color('destructive');
+  color: color("destructive");
   width: space(5);
   height: space(5);
 }

@@ -2,16 +2,30 @@
 // SETTINGS AI STYLES
 // Scoped to SettingsAI.tsx only
 // ===========================================
-@use '../../../styles/abstracts' as *;
-@use 'settings-shared' as settings;
+@use "../../../styles/abstracts" as *;
+@use "settings-shared" as settings;
 
-.section { @include settings.settings-section; }
-.header  { @include settings.settings-header; }
-.grid    { @include settings.settings-grid; }
-.fullWidthCard { @include settings.settings-card-full; }
-.toggleRow     { @include settings.settings-toggle-row; }
-.toggleLabel   { @include settings.settings-toggle-label; }
-.infoBox       { @include settings.settings-info-box; }
+.section {
+  @include settings.settings-section;
+}
+.header {
+  @include settings.settings-header;
+}
+.grid {
+  @include settings.settings-grid;
+}
+.fullWidthCard {
+  @include settings.settings-card-full;
+}
+.toggleRow {
+  @include settings.settings-toggle-row;
+}
+.toggleLabel {
+  @include settings.settings-toggle-label;
+}
+.infoBox {
+  @include settings.settings-info-box;
+}
 
 // ===========================================
 // AI-SPECIFIC
@@ -21,19 +35,19 @@
 }
 
 .modelName {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .modelDescription {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
 }
 
 .behaviorHint {
   margin-top: space(2);
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
 }
 
 .modelItem {
@@ -45,10 +59,24 @@
 // ===========================================
 // LIBRARY COMPONENT CLASSES
 // ===========================================
-.cardHeaderPb { @include settings.settings-card-header-flex; }
-.cardTitleBase { @include settings.settings-card-title-base; }
-.cardContentSpaced { @include settings.settings-card-content-spaced; }
-.selectCursor { @include settings.settings-select-cursor; }
-.sliderCursor { @include settings.settings-slider-cursor; }
-.badgeXs { @include settings.settings-badge-xs; }
-.iconSm { @include settings.settings-icon-sm; }
+.cardHeaderPb {
+  @include settings.settings-card-header-flex;
+}
+.cardTitleBase {
+  @include settings.settings-card-title-base;
+}
+.cardContentSpaced {
+  @include settings.settings-card-content-spaced;
+}
+.selectCursor {
+  @include settings.settings-select-cursor;
+}
+.sliderCursor {
+  @include settings.settings-slider-cursor;
+}
+.badgeXs {
+  @include settings.settings-badge-xs;
+}
+.iconSm {
+  @include settings.settings-icon-sm;
+}

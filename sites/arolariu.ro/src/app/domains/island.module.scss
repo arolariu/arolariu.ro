@@ -1,7 +1,7 @@
 // ===========================================
 // DOMAINS ISLAND COMPONENT STYLES
 // ===========================================
-@use '../../styles/abstracts' as *;
+@use "../../styles/abstracts" as *;
 
 // ===========================================
 // LAYOUT
@@ -22,8 +22,8 @@
 .progressTrack {
   height: 0.25rem;
   overflow: hidden;
-  border-radius: radius('md');
-  background-color: color('muted');
+  border-radius: radius("md");
+  background-color: color("muted");
 }
 
 .progressFill {
@@ -39,7 +39,7 @@
   padding-top: space(6);
   padding-bottom: space(6);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     flex-direction: row;
   }
 }
@@ -47,8 +47,8 @@
 .title {
   margin-bottom: space(2);
   text-align: center;
-  font-size: font-size('5xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("5xl");
+  font-weight: font-weight("bold");
   @include gradient-bg();
   -webkit-background-clip: text;
   background-clip: text;
@@ -56,7 +56,7 @@
   align-self: center;
   justify-self: center;
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     margin-bottom: 0;
     width: 40%;
   }
@@ -64,18 +64,18 @@
 
 .subtitleArticle {
   padding-left: 0;
-  line-height: line-height('relaxed');
+  line-height: line-height("relaxed");
 
-  @include respond-to('2xsm') {
+  @include respond-to("2xsm") {
     margin-top: space(8);
   }
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     width: 60%;
     padding-left: space(10);
   }
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     margin-top: 0;
   }
 }
@@ -89,13 +89,13 @@
   flex-wrap: wrap;
   gap: space(4);
 
-  @include respond-to('2xsm') {
+  @include respond-to("2xsm") {
     align-items: center;
     justify-content: center;
     justify-items: center;
   }
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     align-items: baseline;
     justify-content: normal;
     justify-items: start;
@@ -106,10 +106,10 @@
   max-width: 20rem;
   margin-bottom: space(6);
   padding: space(4);
-  border: 1px solid color('border');
-  border-radius: radius('xl');
+  border: 1px solid color("border");
+  border-radius: radius("xl");
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     margin-bottom: 0;
   }
 }
@@ -117,7 +117,7 @@
 .imageContainer {
   height: 16rem;
   overflow: hidden;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 .cardImage {
@@ -130,18 +130,18 @@
 .cardTitle {
   margin-top: space(5);
   text-align: center;
-  font-size: font-size('xl');
-  font-weight: font-weight('medium');
+  font-size: font-size("xl");
+  font-weight: font-weight("medium");
 
   @include dark {
-    color: color('border');
+    color: color("border");
   }
 }
 
 .cardDescription {
   margin-top: space(2);
-  font-size: font-size('base');
-  line-height: line-height('relaxed');
+  font-size: font-size("base");
+  line-height: line-height("relaxed");
   font-style: italic;
 }
 
@@ -149,7 +149,7 @@
   display: inline-flex;
   align-items: center;
   margin-top: space(3);
-  color: color('primary');
+  color: color("primary");
 }
 
 .ctaIcon {

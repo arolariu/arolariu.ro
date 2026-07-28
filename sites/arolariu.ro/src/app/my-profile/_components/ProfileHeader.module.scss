@@ -2,16 +2,16 @@
 // PROFILE HEADER STYLES
 // Scoped to ProfileHeader.tsx only
 // ===========================================
-@use '../../../styles/abstracts' as *;
+@use "../../../styles/abstracts" as *;
 
 .headerRow {
   display: flex;
   align-items: center;
   gap: space(3);
   padding: space(3) space(4);
-  background-color: color('card');
-  border: 1px solid color('border');
-  border-radius: radius('lg');
+  background-color: color("card");
+  border: 1px solid color("border");
+  border-radius: radius("lg");
   margin-bottom: space(4);
 }
 
@@ -22,8 +22,8 @@
 }
 
 .avatarFallback {
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
 }
 
 .nameBlock {
@@ -32,17 +32,17 @@
 }
 
 .name {
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
-  color: color('foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
+  color: color("foreground");
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .email {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -73,8 +73,8 @@
 }
 
 .sheetNote {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
 }
 
 .manageButton {

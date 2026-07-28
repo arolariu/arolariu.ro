@@ -1,7 +1,7 @@
 // ===========================================
 // INVOICES HEADER STYLES
 // ===========================================
-@use '../../../../../styles/abstracts' as *;
+@use "../../../../../styles/abstracts" as *;
 
 // ===========================================
 // LAYOUT
@@ -13,7 +13,7 @@
   justify-content: space-between;
   gap: space(4);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     flex-direction: row;
     align-items: center;
   }
@@ -27,13 +27,13 @@
 // TEXT
 // ===========================================
 .title {
-  font-size: font-size('3xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("3xl");
+  font-weight: font-weight("bold");
   letter-spacing: -0.025em;
 }
 
 .description {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   margin-top: space(1);
 }
 
@@ -57,7 +57,7 @@
 .buttonLabel {
   display: none;
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     display: inline;
   }
 }

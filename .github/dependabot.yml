@@ -10,22 +10,24 @@
 #   - Grouping: Related packages are grouped to reduce PR noise
 #
 # Monorepo Structure:
-#   /                        - Root (Nx, ESLint, Prettier, Vitest, Playwright)
-#   /packages/components     - Shared React component library (RSLib, Storybook)
-#   /sites/arolariu.ro       - Next.js 16 website (frontend)
-#   /sites/api.arolariu.ro   - .NET 10 backend API (NuGet)
-#   /sites/cv.arolariu.ro    - SvelteKit CV site
-#   /sites/docs.arolariu.ro  - DocFX documentation (no npm)
-#   /infra/containers        - Docker container definitions
-#   /.github/scripts         - GitHub Actions toolkit scripts
-#   /.github/workflows       - GitHub Actions workflows
+#   /                          - Root (Nx, ESLint, Prettier, Vitest, Playwright)
+#   /packages/components       - Shared React component library (Base UI, RSLib, Storybook)
+#   /sites/arolariu.ro         - Next.js 16 website (frontend)
+#   /sites/api.arolariu.ro     - .NET 10 backend API (NuGet)
+#   /sites/cv.arolariu.ro      - SvelteKit CV site
+#   /sites/status.arolariu.ro  - SvelteKit status page
+#   /sites/docs.arolariu.ro    - Docusaurus documentation site (npm)
+#   /sites/exp.arolariu.ro     - Python FastAPI service (pip)
+#   /infra/containers          - Docker container definitions
+#   /.github/scripts           - GitHub Actions toolkit scripts
+#   /.github/workflows         - GitHub Actions workflows
 #
 # Schedule:
 #   Sunday    - GitHub Actions
-#   Monday    - Root npm dependencies
+#   Monday    - Root npm dependencies + Docusaurus docs site
 #   Tuesday   - Frontend (Next.js) + Components library
-#   Wednesday - CV site (SvelteKit)
-#   Thursday  - Backend (.NET/NuGet)
+#   Wednesday - SvelteKit sites (CV + status)
+#   Thursday  - Backend (.NET/NuGet) + exp (pip)
 #   Friday    - Docker images + CI scripts
 #
 # Documentation:
@@ -108,8 +110,8 @@ updates:
           - "eslint"
           - "eslint-*"
           - "@eslint/*"
+          - "typescript-eslint"
           - "@typescript-eslint/*"
-          - "@stylistic/*"
         update-types:
           - "minor"
           - "major"
@@ -118,7 +120,7 @@ updates:
         patterns:
           - "prettier"
           - "prettier-*"
-          - "@trivago/*"
+          - "@prettier/*"
         update-types:
           - "minor"
           - "major"
@@ -191,10 +193,10 @@ updates:
         update-types:
           - "minor"
           - "major"
-      # Radix UI primitives (shadcn/ui foundation)
-      radix:
+      # Base UI primitives (component library foundation)
+      base-ui:
         patterns:
-          - "@radix-ui/*"
+          - "@base-ui/*"
         update-types:
           - "minor"
           - "major"
@@ -212,12 +214,10 @@ updates:
         update-types:
           - "minor"
           - "major"
-      # Forms: react-hook-form + zod validation
+      # Forms: react-hook-form
       forms:
         patterns:
           - "react-hook-form"
-          - "zod"
-          - "@hookform/*"
         update-types:
           - "minor"
           - "major"
@@ -225,7 +225,7 @@ updates:
       i18n:
         patterns:
           - "next-intl"
-          - "@formatjs/*"
+          - "next-intl-*"
         update-types:
           - "minor"
           - "major"
@@ -279,8 +279,8 @@ updates:
       storybook:
         patterns:
           - "storybook"
+          - "storybook-*"
           - "@storybook/*"
-          - "@chromatic-com/*"
         update-types:
           - "minor"
           - "major"
@@ -292,12 +292,12 @@ updates:
         update-types:
           - "minor"
           - "major"
-      # UI utilities (CVA, clsx)
+      # UI foundation and utilities
       ui-utils:
         patterns:
-          - "@radix-ui/*"
-          - "class-variance-authority"
+          - "@base-ui/*"
           - "clsx"
+          - "lucide-react"
         update-types:
           - "minor"
           - "major"
@@ -393,13 +393,147 @@ updates:
         update-types:
           - "minor"
           - "major"
-      # Testing: xUnit, FluentAssertions, Coverlet
+      # Testing: xUnit, Moq, Coverlet
       testing:
         patterns:
           - "xunit*"
           - "Moq*"
-          - "FluentAssertions*"
           - "coverlet*"
+        update-types:
+          - "minor"
+          - "major"
+
+  # ===========================================================================
+  # STATUS PAGE - SVELTEKIT
+  # ===========================================================================
+  # Status/uptime page built with SvelteKit + Azure SWA adapter
+  - package-ecosystem: "npm"
+    directory: "/sites/status.arolariu.ro"
+    target-branch: "preview"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "07:00"
+      timezone: "Europe/Bucharest"
+    commit-message:
+      prefix: "chore(status)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "status-page"
+      - "automated"
+    assignees:
+      - "arolariu"
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    ignore:
+      # Only update minors and majors, not patches
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+    groups:
+      # SvelteKit framework and adapters
+      svelte:
+        patterns:
+          - "svelte"
+          - "@sveltejs/*"
+          - "svelte-*"
+        update-types:
+          - "minor"
+          - "major"
+
+  # ===========================================================================
+  # DOCUMENTATION SITE - DOCUSAURUS
+  # ===========================================================================
+  # Docusaurus 3 documentation site with local search and Mermaid diagrams
+  - package-ecosystem: "npm"
+    directory: "/sites/docs.arolariu.ro"
+    target-branch: "preview"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "07:00"
+      timezone: "Europe/Bucharest"
+    commit-message:
+      prefix: "chore(docs)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "documentation"
+      - "automated"
+    assignees:
+      - "arolariu"
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    ignore:
+      # Only update minors and majors, not patches
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
+    groups:
+      # Docusaurus core, presets and themes
+      docusaurus:
+        patterns:
+          - "@docusaurus/*"
+          - "@easyops-cn/*"
+          - "@mdx-js/*"
+        update-types:
+          - "minor"
+          - "major"
+      # Diagrams and typography
+      docs-assets:
+        patterns:
+          - "@mermaid-js/*"
+          - "@fontsource/*"
+        update-types:
+          - "minor"
+          - "major"
+
+  # ===========================================================================
+  # EXPERIMENTAL SERVICE - PYTHON / FASTAPI
+  # ===========================================================================
+  # FastAPI config service: requirements.txt + requirements-dev.txt
+  - package-ecosystem: "pip"
+    directory: "/sites/exp.arolariu.ro"
+    target-branch: "preview"
+    schedule:
+      interval: "weekly"
+      day: "thursday"
+      time: "07:00"
+      timezone: "Europe/Bucharest"
+    commit-message:
+      prefix: "chore(exp)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "python"
+      - "exp"
+      - "automated"
+    assignees:
+      - "arolariu"
+    open-pull-requests-limit: 5
+    ignore:
+      # Only update minors and majors, not patches
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
+    groups:
+      # FastAPI web stack
+      fastapi:
+        patterns:
+          - "fastapi*"
+          - "uvicorn*"
+          - "pydantic*"
+          - "starlette*"
+        update-types:
+          - "minor"
+          - "major"
+      # Linting and testing toolchain
+      python-dev-tools:
+        patterns:
+          - "ruff"
+          - "pytest*"
         update-types:
           - "minor"
           - "major"
@@ -493,6 +627,34 @@ updates:
         update-types: ["version-update:semver-patch"]
       - dependency-name: "node"
         update-types: ["version-update:semver-major"]
+
+  # ===========================================================================
+  # DOCKER IMAGES - EXP DOCKERFILE
+  # ===========================================================================
+  # Standalone Dockerfile in sites/exp.arolariu.ro (built with that dir as context)
+  - package-ecosystem: "docker"
+    directory: "/sites/exp.arolariu.ro"
+    target-branch: "preview"
+    schedule:
+      interval: "weekly"
+      day: "friday"
+      time: "07:30"
+      timezone: "Europe/Bucharest"
+    commit-message:
+      prefix: "chore(docker-exp)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "exp"
+      - "automated"
+    assignees:
+      - "arolariu"
+    open-pull-requests-limit: 2
+    ignore:
+      # Only update minors and majors, not patches
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
 
   # ===========================================================================
   # GITHUB ACTIONS CI SCRIPTS

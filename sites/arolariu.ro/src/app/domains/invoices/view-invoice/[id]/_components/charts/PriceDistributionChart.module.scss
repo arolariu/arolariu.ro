@@ -1,20 +1,20 @@
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 .tooltip {
-  background-color: color('background');
-  border-radius: radius('lg');
-  border: 1px solid color('border');
+  background-color: color("background");
+  border-radius: radius("lg");
+  border: 1px solid color("border");
   padding: space(2) space(3);
-  @include shadow('md');
+  @include shadow("md");
 }
 
 .tooltipRange {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .tooltipCount {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
 }
 
 .card {
@@ -22,7 +22,7 @@
   @include transition(box-shadow);
 
   &:hover {
-    @include shadow('md');
+    @include shadow("md");
   }
 }
 
@@ -31,11 +31,11 @@
 }
 
 .cardTitle {
-  font-size: font-size('base');
+  font-size: font-size("base");
 }
 
 .cardDescription {
-  font-size: font-size('xs');
+  font-size: font-size("xs");
 }
 
 .cardContent {

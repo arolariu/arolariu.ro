@@ -24,11 +24,11 @@
  * @see {@link createScanUploadTarget} - Prepares direct upload with metadata.
  */
 
-export { createScanUploadTarget } from "./createScanUploadTarget";
+export {createScanUploadTarget} from "./createScanUploadTarget";
 
 // #region CRUD operations for standalone scans (not yet attached to invoices)
-export { createScan } from "./createScan";
-export { deleteScan } from "./deleteScan";
-export { fetchScans } from "./fetchScans";
-export { updateScan } from "./updateScan";
+export {createScan} from "./createScan";
+export {deleteScan} from "./deleteScan";
+export {fetchScans} from "./fetchScans";
+export {updateScan} from "./updateScan";
 // #endregion

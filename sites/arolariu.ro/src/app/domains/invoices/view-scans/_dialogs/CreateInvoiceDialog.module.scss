@@ -1,7 +1,7 @@
 // ===========================================
 // CREATE INVOICE DIALOG STYLES
 // ===========================================
-@use '../../../../../styles/abstracts' as *;
+@use "../../../../../styles/abstracts" as *;
 
 // ===========================================
 // PROCESS STEP
@@ -22,25 +22,25 @@
   height: space(8);
   width: space(8);
   flex-shrink: 0;
-  border-radius: radius('full');
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  border-radius: radius("full");
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
   @include transition((background-color, color));
 }
 
 .stepCircleDefault {
-  background-color: color('muted');
-  color: color('muted-foreground');
+  background-color: color("muted");
+  color: color("muted-foreground");
 }
 
 .stepCircleActive {
   @include gradient-bg();
-  color: color('primary-foreground');
+  color: color("primary-foreground");
 }
 
 .stepCircleComplete {
-  background-color: color('success');
-  color: color('success-foreground');
+  background-color: color("success");
+  color: color("success-foreground");
 }
 
 .stepContent {
@@ -48,9 +48,9 @@
 }
 
 .stepTitle {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
-  color: color('foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
+  color: color("foreground");
 }
 
 .stepDescription {
@@ -67,9 +67,9 @@
 // ===========================================
 .scansPreviewBox {
   margin-top: space(4);
-  border-radius: radius('lg');
-  border: 1px solid color('border');
-  background-color: color-alpha('muted', 0.35);
+  border-radius: radius("lg");
+  border: 1px solid color("border");
+  background-color: color-alpha("muted", 0.35);
   padding: space(4);
 }
 
@@ -79,9 +79,9 @@
 }
 
 .scansPreviewLabel {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
-  color: color('foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
+  color: color("foreground");
 }
 
 .scansPreviewSize {
@@ -97,11 +97,11 @@
 
 // Pull the navigation controls inside the carousel (the library positions them
 // outside by default, which would overflow the dialog).
-.scansCarousel .scansCarouselPrev[data-orientation='horizontal'] {
+.scansCarousel .scansCarouselPrev[data-orientation="horizontal"] {
   left: space(1);
 }
 
-.scansCarousel .scansCarouselNext[data-orientation='horizontal'] {
+.scansCarousel .scansCarouselNext[data-orientation="horizontal"] {
   right: space(1);
 }
 
@@ -121,29 +121,29 @@
 
 .modeLabel {
   margin-bottom: space(3);
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
+  color: color("muted-foreground");
 }
 
 .modeOption {
   display: flex;
   align-items: flex-start;
   gap: space(3);
-  border-radius: radius('lg');
-  border: 1px solid color('border');
+  border-radius: radius("lg");
+  border: 1px solid color("border");
   padding: space(4);
   cursor: pointer;
   @include transition((border-color, background-color, color));
 
   &:hover {
-    border-color: color-alpha('primary', 0.35);
+    border-color: color-alpha("primary", 0.35);
   }
 }
 
 .modeOptionSelected {
-  border-color: color-alpha('primary', 0.45);
-  background-color: color-alpha('primary', 0.1);
+  border-color: color-alpha("primary", 0.45);
+  background-color: color-alpha("primary", 0.1);
 }
 
 .modeOptionBatch {
@@ -156,7 +156,7 @@
 
 .modeOptionDescription {
   margin-top: space(1);
-  @include text-muted('sm');
+  @include text-muted("sm");
 }
 
 // ===========================================
@@ -164,9 +164,9 @@
 // ===========================================
 .singleScanBanner {
   margin-top: space(4);
-  border-radius: radius('lg');
-  border: 1px solid color-alpha('info', 0.35);
-  background-color: color-alpha('info', 0.1);
+  border-radius: radius("lg");
+  border: 1px solid color-alpha("info", 0.35);
+  background-color: color-alpha("info", 0.1);
   padding: space(4);
 }
 
@@ -181,18 +181,18 @@
   height: space(5);
   width: space(5);
   flex-shrink: 0;
-  color: color('info');
+  color: color("info");
 }
 
 .singleScanBannerTitle {
-  font-weight: font-weight('medium');
-  color: color('foreground');
+  font-weight: font-weight("medium");
+  color: color("foreground");
 }
 
 .singleScanBannerDescription {
   margin-top: space(1);
-  font-size: font-size('sm');
-  color: color('info');
+  font-size: font-size("sm");
+  color: color("info");
 }
 
 // ===========================================
@@ -219,14 +219,14 @@
   margin-bottom: space(4);
   height: space(16);
   width: space(16);
-  border-radius: radius('full');
-  background-color: color-alpha('primary', 0.15);
+  border-radius: radius("full");
+  background-color: color-alpha("primary", 0.15);
 }
 
 .creatingSpinIcon {
   height: space(8);
   width: space(8);
-  color: color('primary');
+  color: color("primary");
   animation: spin 1s linear infinite;
 }
 
@@ -240,14 +240,14 @@
 }
 
 .creatingTitle {
-  font-size: font-size('lg');
-  font-weight: font-weight('semibold');
-  color: color('foreground');
+  font-size: font-size("lg");
+  font-weight: font-weight("semibold");
+  color: color("foreground");
 }
 
 .creatingDescription {
   margin-top: space(1);
-  @include text-muted('sm');
+  @include text-muted("sm");
 }
 
 .progressSection {
@@ -280,38 +280,38 @@
   margin-bottom: space(4);
   height: space(16);
   width: space(16);
-  border-radius: radius('full');
-  background-color: color-alpha('success', 0.18);
+  border-radius: radius("full");
+  background-color: color-alpha("success", 0.18);
 }
 
 .completeCheckIcon {
   height: space(8);
   width: space(8);
-  color: color('success');
+  color: color("success");
 }
 
 .completeTitle {
-  font-size: font-size('lg');
-  font-weight: font-weight('semibold');
-  color: color('foreground');
+  font-size: font-size("lg");
+  font-weight: font-weight("semibold");
+  color: color("foreground");
 }
 
 .completeDescription {
   margin-top: space(1);
-  @include text-muted('sm');
+  @include text-muted("sm");
 }
 
 .completeNextSteps {
   margin-top: space(6);
-  border-radius: radius('lg');
-  border: 1px solid color-alpha('success', 0.35);
-  background-color: color-alpha('success', 0.1);
+  border-radius: radius("lg");
+  border: 1px solid color-alpha("success", 0.35);
+  background-color: color-alpha("success", 0.1);
   padding: space(4);
 }
 
 .completeNextStepsText {
-  font-size: font-size('sm');
-  color: color('success');
+  font-size: font-size("sm");
+  color: color("success");
 }
 
 .completeFooter {
@@ -324,17 +324,17 @@
 // ===========================================
 .dialogTitleIcon {
   @include icon-size(space(5));
-  color: color('primary');
+  color: color("primary");
 }
 
 .modePurpleIcon {
   @include icon-size(space(4));
-  color: color('primary');
+  color: color("primary");
 }
 
 .modeBlueIcon {
   @include icon-size(space(4));
-  color: color('primary');
+  color: color("primary");
 }
 
 .arrowRightIcon {
@@ -360,7 +360,7 @@
   cursor: pointer;
   align-items: center;
   gap: space(2);
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .createButton {
@@ -377,7 +377,7 @@
 }
 
 .completeButton {
-  background-color: color('success');
+  background-color: color("success");
   color: white;
 
   &:hover {
@@ -395,7 +395,7 @@
 }
 
 .dialogContent {
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     max-width: 32rem;
   }
 }
@@ -404,51 +404,51 @@
 // ERROR STATES
 // ===========================================
 .completeIconCircleError {
-  background-color: color-alpha('destructive', 0.18) !important;
+  background-color: color-alpha("destructive", 0.18) !important;
 }
 
 .completeErrorIcon {
   height: space(8);
   width: space(8);
-  color: color('destructive');
+  color: color("destructive");
 }
 
 .completeTitleError {
-  color: color('destructive') !important;
+  color: color("destructive") !important;
 }
 
 .completeIconCircleWarning {
-  background-color: color-alpha('warning', 0.18) !important;
+  background-color: color-alpha("warning", 0.18) !important;
 }
 
 .completeWarningIcon {
   height: space(8);
   width: space(8);
-  color: color('warning');
+  color: color("warning");
 }
 
 .completeTitleWarning {
-  color: color('warning') !important;
+  color: color("warning") !important;
 }
 
 .completeErrorsList {
   margin-top: space(6);
-  border-radius: radius('lg');
-  border: 1px solid color('border');
-  background-color: color('muted');
+  border-radius: radius("lg");
+  border: 1px solid color("border");
+  background-color: color("muted");
   padding: space(4);
   text-align: left;
 
   @include dark {
-    background-color: color('foreground');
+    background-color: color("foreground");
   }
 }
 
 .completeErrorsListTitle {
   margin-bottom: space(3);
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
-  color: color('foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
+  color: color("foreground");
 }
 
 .completeErrorItem {
@@ -456,14 +456,14 @@
   align-items: flex-start;
   gap: space(3);
   padding: space(2);
-  border-radius: radius('md');
+  border-radius: radius("md");
 
   &:not(:last-child) {
     margin-bottom: space(2);
   }
 
   @include dark {
-    background-color: color-alpha('background', 0.5);
+    background-color: color-alpha("background", 0.5);
   }
 }
 
@@ -472,18 +472,18 @@
   width: space(5);
   flex-shrink: 0;
   margin-top: space(0.5);
-  color: color('destructive');
+  color: color("destructive");
 }
 
 .completeErrorItemScanName {
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
-  color: color('foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
+  color: color("foreground");
   margin-bottom: space(1);
 }
 
 .completeErrorItemText {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
   word-break: break-word;
 }

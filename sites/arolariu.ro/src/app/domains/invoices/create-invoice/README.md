@@ -2,7 +2,8 @@
 
 ## Overview
 
-A complete 3-step wizard for creating invoices from uploaded scans. This route implements a client-side island pattern with server-side authentication and metadata generation.
+A complete 3-step wizard for creating invoices from uploaded scans. This route implements a client-side island pattern with server-side
+authentication and metadata generation.
 
 ## Location
 
@@ -50,6 +51,7 @@ create-invoice/
 ## Wizard Flow
 
 ### Step 1: Select Scans
+
 - Display grid of available READY scans from Zustand store
 - Multi-select with checkbox overlay
 - "Select All" / "Clear Selection" actions
@@ -57,6 +59,7 @@ create-invoice/
 - Validation: At least 1 scan must be selected
 
 ### Step 2: Invoice Details
+
 - **Invoice Name** (required) - Auto-suggested from first scan's filename
 - **Category** - Dropdown with InvoiceCategory enum options
 - **Payment Type** - Dropdown with PaymentType enum options
@@ -65,6 +68,7 @@ create-invoice/
 - Validation: Name must not be empty
 
 ### Step 3: Review & Create
+
 - Summary card showing:
   - Selected scans as thumbnails
   - All invoice details
@@ -128,7 +132,7 @@ import type {CachedScan} from "@/types/scans";
 ### SCSS Modules Pattern
 
 ```scss
-@use '../../../../../styles/abstracts' as *;
+@use "../../../../../styles/abstracts" as *;
 
 .container {
   @include flex-column;
@@ -137,6 +141,7 @@ import type {CachedScan} from "@/types/scans";
 ```
 
 Key features:
+
 - Mobile-first responsive design
 - Dark mode compatible via `color()` function
 - Consistent spacing with `space()` function
@@ -148,15 +153,16 @@ Step transitions use Motion (Framer Motion):
 
 ```typescript
 const stepVariants: Variants = {
-  enter: { x: 50, opacity: 0 },
-  center: { x: 0, opacity: 1 },
-  exit: { x: -50, opacity: 0 },
+  enter: {x: 50, opacity: 0},
+  center: {x: 0, opacity: 1},
+  exit: {x: -50, opacity: 0},
 };
 ```
 
 ## Empty States
 
 When no READY scans available:
+
 - Shows friendly empty state card
 - Links to Upload Scans page
 - Links to View Scans page
@@ -360,16 +366,19 @@ Add to `messages/en.json` and `messages/ro.json`:
 ## Troubleshooting
 
 ### "No scans available"
+
 - User hasn't uploaded any scans yet
 - Scans are not in READY status
 - IndexedDB not hydrated yet
 
 ### Create button doesn't work
+
 - Check network tab for failed API calls
 - Verify server action is accessible
 - Check console for JavaScript errors
 
 ### Types not recognized
+
 - Run `npm run generate` to regenerate types
 - Check imports are correct
 - Verify TypeScript version is up-to-date
@@ -377,6 +386,7 @@ Add to `messages/en.json` and `messages/ro.json`:
 ## Documentation Standards
 
 All functions include:
+
 - JSDoc comments with `@param` and `@returns`
 - `@remarks` for implementation details
 - Type annotations for all parameters

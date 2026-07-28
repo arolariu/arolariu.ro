@@ -102,10 +102,11 @@
         // Backend support
         "ms-dotnettools.csdevkit",
         "ms-dotnettools.csharp",
+        "ms-dotnettools.vscodeintellicode-csharp",
+        "microsoft-aspire.aspire-vscode",
         "ms-python.python",
         "ms-python.vscode-pylance",
         "ms-python.debugpy",
-        "ms-python.black-formatter",
         "charliermarsh.ruff",
         "humao.rest-client",
 
@@ -116,6 +117,7 @@
         // Docs & misc
         "redhat.vscode-yaml",
         "bierner.markdown-mermaid",
+        "streetsidesoftware.code-spell-checker",
 
         // Backlog grooming and task tracking
         "gruntfuggly.todo-tree",

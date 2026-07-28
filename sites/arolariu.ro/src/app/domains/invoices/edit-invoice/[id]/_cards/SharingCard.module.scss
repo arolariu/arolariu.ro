@@ -1,4 +1,4 @@
-@use '../../../../../../styles/abstracts' as *;
+@use "../../../../../../styles/abstracts" as *;
 
 .ownerRow {
   display: flex;
@@ -6,23 +6,23 @@
 }
 
 .ownerAvatar {
-  background-color: color-alpha('primary', 0.1);
+  background-color: color-alpha("primary", 0.1);
   margin-right: space(3);
   display: flex;
   width: space(10);
   height: space(10);
   align-items: center;
   justify-content: center;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .ownerName {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .ownerUsername {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
 }
 
 .manageArea {
@@ -34,8 +34,8 @@
 
 .sharedTitle {
   margin-bottom: space(2);
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .sharedList {
@@ -50,27 +50,27 @@
 }
 
 .sharedUserAvatar {
-  background-color: color('muted');
+  background-color: color("muted");
   margin-right: space(2);
   display: flex;
   width: space(8);
   height: space(8);
   align-items: center;
   justify-content: center;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .sharedUserName {
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 }
 
 .emptyShared {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
 }
 
 .ownerImage {
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .sharedUserIcon {
@@ -92,7 +92,7 @@
 }
 
 .primaryIcon {
-  color: color('primary');
+  color: color("primary");
   width: space(5);
   height: space(5);
 }
@@ -138,7 +138,7 @@
 }
 
 .publicAlertDescription {
-  font-size: font-size('xs');
+  font-size: font-size("xs");
   color: rgb(194, 65, 12);
 
   :global(.dark) & {

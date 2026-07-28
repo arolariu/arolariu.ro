@@ -57,26 +57,26 @@ type UploadEventBase<TType extends ScanUploadEventType> = Readonly<{
 
 /** Rich discriminated union of every reducer-handled upload event. */
 export type UploadEvent =
-  | (UploadEventBase<"scanUpload.queue.filesAccepted"> &
-      Readonly<{
+  | (UploadEventBase<"scanUpload.queue.filesAccepted">
+      & Readonly<{
         /** Prepared pending uploads accepted into the queue. */
         uploads: readonly PendingUpload[];
       }>)
-  | (UploadEventBase<"scanUpload.queue.itemRemoved"> &
-      Readonly<{
+  | (UploadEventBase<"scanUpload.queue.itemRemoved">
+      & Readonly<{
         /** Queue item identifiers requested for removal. */
         ids: readonly string[];
       }>)
   | UploadEventBase<"scanUpload.queue.removableItemsCleared">
-  | (UploadEventBase<"scanUpload.queue.itemRenamed"> &
-      Readonly<{
+  | (UploadEventBase<"scanUpload.queue.itemRenamed">
+      & Readonly<{
         /** Queue item identifier to rename. */
         id: string;
         /** New display name. */
         name: string;
       }>)
-  | (UploadEventBase<"scanUpload.queue.itemRotated"> &
-      Readonly<{
+  | (UploadEventBase<"scanUpload.queue.itemRotated">
+      & Readonly<{
         /** Queue item identifier to update with rotated media. */
         id: string;
         /** Rotated browser file that will be uploaded later. */
@@ -91,8 +91,8 @@ export type UploadEvent =
   | UploadEventBase<"scanUpload.batch.requested">
   | UploadEventBase<"scanUpload.batch.started">
   | UploadEventBase<"scanUpload.batch.finished">
-  | (UploadEventBase<"scanUpload.item.progressChanged"> &
-      Readonly<{
+  | (UploadEventBase<"scanUpload.item.progressChanged">
+      & Readonly<{
         /** Upload item identifier. */
         uploadId: string;
         /** Lifecycle status to display while progress changes. */
@@ -106,8 +106,8 @@ export type UploadEvent =
         /** Optional uploaded blob URL. */
         blobUrl?: string;
       }>)
-  | (UploadEventBase<"scanUpload.item.uploadSucceeded"> &
-      Readonly<{
+  | (UploadEventBase<"scanUpload.item.uploadSucceeded">
+      & Readonly<{
         /** Upload item identifier. */
         uploadId: string;
         /** Successful one-based attempt number. */
@@ -117,8 +117,8 @@ export type UploadEvent =
         /** Completion data consumed by the post-upload prompt. */
         completion: UploadCompletionSummary;
       }>)
-  | (UploadEventBase<"scanUpload.item.uploadFailed"> &
-      Readonly<{
+  | (UploadEventBase<"scanUpload.item.uploadFailed">
+      & Readonly<{
         /** Upload item identifier. */
         uploadId: string;
         /** Final attempted attempt count. */
@@ -128,8 +128,8 @@ export type UploadEvent =
         /** User-visible failure message. */
         error: string;
       }>)
-  | (UploadEventBase<"scanUpload.preview.completedItemHidden"> &
-      Readonly<{
+  | (UploadEventBase<"scanUpload.preview.completedItemHidden">
+      & Readonly<{
         /** Completed upload item identifier to hide from the queue. */
         uploadId: string;
       }>)

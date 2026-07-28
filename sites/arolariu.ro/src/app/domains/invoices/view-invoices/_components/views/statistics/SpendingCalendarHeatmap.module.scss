@@ -1,7 +1,7 @@
 // ===========================================
 // SPENDING CALENDAR HEATMAP STYLES
 // ===========================================
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 // ===========================================
 // LAYOUT
@@ -10,8 +10,8 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  background: color('card');
-  border: 1px solid color('border');
+  background: color("card");
+  border: 1px solid color("border");
   border-radius: space(2);
 }
 
@@ -30,14 +30,14 @@
 }
 
 .cardTitle {
-  font-size: font-size('xl');
-  font-weight: font-weight('bold');
-  color: color('foreground');
+  font-size: font-size("xl");
+  font-weight: font-weight("bold");
+  color: color("foreground");
 }
 
 .cardDescription {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
   margin-top: space(1);
 }
 
@@ -57,11 +57,11 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: space(4);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
@@ -71,14 +71,14 @@
   flex-direction: column;
   gap: space(2);
   padding: space(3);
-  border: 1px solid color('border');
+  border: 1px solid color("border");
   border-radius: space(2);
 }
 
 .monthTitle {
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
-  color: color('foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
+  color: color("foreground");
   text-align: center;
 }
 
@@ -97,16 +97,16 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: color('background');
-  border: 1px solid color('border');
+  background: color("background");
+  border: 1px solid color("border");
   border-radius: space(1);
-  color: color('foreground');
+  color: color("foreground");
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover:not(:disabled) {
-    background: color('accent');
-    border-color: color('accent');
+    background: color("accent");
+    border-color: color("accent");
   }
 
   &:disabled {
@@ -115,15 +115,15 @@
   }
 
   &:focus-visible {
-    outline: 2px solid color('ring');
+    outline: 2px solid color("ring");
     outline-offset: 2px;
   }
 }
 
 .monthLabel {
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
-  color: color('foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
+  color: color("foreground");
   min-width: 120px;
   text-align: center;
 }
@@ -145,9 +145,9 @@
 .weekdayLabel {
   flex: 1;
   min-width: 0;
-  font-size: font-size('xs');
-  font-weight: font-weight('medium');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  font-weight: font-weight("medium");
+  color: color("muted-foreground");
   text-align: center;
 }
 
@@ -176,11 +176,13 @@
   justify-content: center;
   border-radius: space(1);
   cursor: pointer;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
 
   &:hover:not(.dayCellEmpty) {
     transform: scale(1.1);
-    outline: 2px solid color('ring');
+    outline: 2px solid color("ring");
     outline-offset: 1px;
   }
 }
@@ -193,9 +195,9 @@
 
 .dayNumber {
   font-size: 0.625rem;
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
   line-height: 1;
-  color: color('foreground');
+  color: color("foreground");
 }
 
 .dayCellEmpty {
@@ -207,27 +209,27 @@
 // COLOR LEVELS
 // ===========================================
 .levelEmpty {
-  background: color('muted');
+  background: color("muted");
   opacity: 0.3;
 }
 
 .level1 {
-  background: color('success');
+  background: color("success");
   opacity: 0.3;
 }
 
 .level2 {
-  background: color('success');
+  background: color("success");
   opacity: 0.5;
 }
 
 .level3 {
-  background: color('success');
+  background: color("success");
   opacity: 0.75;
 }
 
 .level4 {
-  background: color('success');
+  background: color("success");
   opacity: 1;
 }
 
@@ -235,35 +237,35 @@
 // TOOLTIP
 // ===========================================
 .tooltipContent {
-  background: color('popover');
-  border: 1px solid color('border');
+  background: color("popover");
+  border: 1px solid color("border");
   border-radius: space(2);
   padding: space(3);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .tooltipDate {
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
-  color: color('foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
+  color: color("foreground");
   margin-bottom: space(2);
 }
 
 .tooltipAmount {
-  font-size: font-size('base');
-  font-weight: font-weight('bold');
-  color: color('primary');
+  font-size: font-size("base");
+  font-weight: font-weight("bold");
+  color: color("primary");
   margin-bottom: space(1);
 }
 
 .tooltipInvoices {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
 }
 
 .tooltipNoSpending {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
   font-style: italic;
 }
 
@@ -278,12 +280,12 @@
   gap: space(2);
   margin-top: space(4);
   padding-top: space(4);
-  border-top: 1px solid color('border');
+  border-top: 1px solid color("border");
 }
 
 .legendLabel {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
 }
 
 .legendColors {
@@ -318,7 +320,7 @@
   .calendarContainer {
     overflow-x: scroll;
     scrollbar-width: thin;
-    scrollbar-color: color('muted') transparent;
+    scrollbar-color: color("muted") transparent;
 
     &::-webkit-scrollbar {
       height: 6px;
@@ -329,7 +331,7 @@
     }
 
     &::-webkit-scrollbar-thumb {
-      background: color('muted');
+      background: color("muted");
       border-radius: 3px;
     }
   }
@@ -339,13 +341,13 @@
 // ACCESSIBILITY
 // ===========================================
 .dayCell:focus-visible {
-  outline: 2px solid color('ring');
+  outline: 2px solid color("ring");
   outline-offset: 2px;
   transform: scale(1.2);
 }
 
 .navButton:focus-visible {
-  outline: 2px solid color('ring');
+  outline: 2px solid color("ring");
   outline-offset: 2px;
 }
 

@@ -36,7 +36,8 @@ const ROOT_SHARED_FILES = new Set([
   "eslint.config.ts",
   "vitest.config.ts",
   "nx.json",
-  "prettier.config.ts",
+  ".prettierrc",
+  ".prettierignore",
 ]);
 
 const JS_SHARED_FILES = new Set([
@@ -46,7 +47,8 @@ const JS_SHARED_FILES = new Set([
   "eslint.config.ts",
   "vitest.config.ts",
   "nx.json",
-  "prettier.config.ts",
+  ".prettierrc",
+  ".prettierignore",
 ]);
 
 const BACKEND_SHARED_EXTENSIONS = new Set([".slnx", ".props", ".targets"]);

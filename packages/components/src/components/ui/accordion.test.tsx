@@ -126,22 +126,28 @@ describe("Accordion", () => {
     expect(firstTrigger).toHaveAttribute("aria-expanded", "true");
   });
 
-  it("moves focus between accordion triggers with ArrowDown and ArrowUp", async () => {
-    // Arrange — Base UI Accordion implements the ARIA Disclosure Navigation pattern
-    // with roving focus: ArrowDown advances to the next header, ArrowUp retreats.
+  it("keeps every accordion trigger in the natural tab sequence", async () => {
+    // Arrange — Base UI removed roving focus from the Accordion following the W3C APG
+    // update (w3c/aria-practices#3434). Arrow keys deliberately do NOT move focus between
+    // headers; every trigger stays in the tab sequence instead, which is why each one
+    // renders with tabindex="0". See the `orientation` state on Accordion.Trigger, which
+    // Base UI documents as deprecated and "no longer affects keyboard focus behavior".
     const user = userEvent.setup();
     const {firstTrigger, secondTrigger} = renderAccordion();
 
     firstTrigger.focus();
 
-    // Act — ArrowDown should move focus to the second trigger
-    await user.keyboard("{ArrowDown}");
+    // Assert — both headers are reachable by Tab rather than by arrow keys
+    expect(firstTrigger).toHaveFocus();
+
+    // Act — Tab should advance to the second trigger
+    await user.tab();
 
     // Assert
     expect(secondTrigger).toHaveFocus();
 
-    // Act — ArrowUp should move focus back to the first trigger
-    await user.keyboard("{ArrowUp}");
+    // Act — Shift+Tab should retreat to the first trigger
+    await user.tab({shift: true});
 
     // Assert
     expect(firstTrigger).toHaveFocus();

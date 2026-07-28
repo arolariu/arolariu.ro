@@ -1,7 +1,7 @@
 // ===========================================
 // SHARE INVOICE DIALOG STYLES
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 // ===========================================
 // SELECTION MODE
@@ -11,7 +11,7 @@
 }
 
 .selectionDescription {
-  @include text-muted('sm');
+  @include text-muted("sm");
 }
 
 .selectionGrid {
@@ -38,22 +38,22 @@
   height: 3rem;
   width: 3rem;
   flex-shrink: 0;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .iconCircleOrange {
-  background-color: color-alpha('primary', 0.1);
+  background-color: color-alpha("primary", 0.1);
 
   @include dark {
-    background-color: color-alpha('primary', 0.2);
+    background-color: color-alpha("primary", 0.2);
   }
 }
 
 .iconCircleGreen {
-  background-color: color-alpha('secondary', 0.1);
+  background-color: color-alpha("secondary", 0.1);
 
   @include dark {
-    background-color: color-alpha('secondary', 0.2);
+    background-color: color-alpha("secondary", 0.2);
   }
 }
 
@@ -68,12 +68,12 @@
 // ===========================================
 .globeIcon {
   @include icon-size(1.5rem);
-  color: color('primary');
+  color: color("primary");
 }
 
 .lockIcon {
   @include icon-size(1.5rem);
-  color: color('success');
+  color: color("success");
 }
 
 .alertIcon {
@@ -84,7 +84,7 @@
 // COMPONENT OVERRIDES
 // ===========================================
 .dialogContent {
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     max-width: 28rem;
   }
 }
@@ -94,37 +94,37 @@
   @include transition((border-color, background-color));
 
   &:hover {
-    border-color: color('primary');
-    background-color: color-alpha('accent', 0.5);
+    border-color: color("primary");
+    background-color: color-alpha("accent", 0.5);
   }
 }
 
 .cardTitleBase {
-  font-size: font-size('base');
+  font-size: font-size("base");
 }
 
 .cardDescSm {
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 }
 
 .alertMt {
   margin-top: space(4);
-  background-color: color-alpha('warning', 0.1);
-  border-color: color-alpha('warning', 0.35);
-  color: color('warning-foreground');
+  background-color: color-alpha("warning", 0.1);
+  border-color: color-alpha("warning", 0.35);
+  color: color("warning-foreground");
 
   .alertIcon {
-    color: color('warning');
+    color: color("warning");
   }
 
   @include dark {
-    background-color: color-alpha('warning', 0.18);
-    border-color: color-alpha('warning', 0.45);
+    background-color: color-alpha("warning", 0.18);
+    border-color: color-alpha("warning", 0.45);
   }
 }
 
 .alertDescXs {
-  font-size: font-size('xs');
+  font-size: font-size("xs");
 }
 
 .buttonFull {
@@ -135,7 +135,7 @@
 // LIBRARY COMPONENT CLASSES
 // ===========================================
 .dialogContentMd {
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     max-width: 28rem;
   }
 }
@@ -145,7 +145,7 @@
   @include transition((color, background-color));
 
   &:hover {
-    border-color: color('primary');
-    background-color: color-alpha('accent', 0.5);
+    border-color: color("primary");
+    background-color: color-alpha("accent", 0.5);
   }
 }

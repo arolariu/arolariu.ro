@@ -65,8 +65,7 @@ export function InvoiceCard({invoice, isSelected, loading, onToggleSelection}: R
   const locale = useLocale();
   const t = useTranslations();
   const getMerchantById = useMerchantsStore((state) => state.getEntityById);
-  const merchantName =
-    getMerchantById(invoice.merchantReference)?.name ?? t((m) => m.pages.invoices.viewInvoices.gridView.unknownMerchant);
+  const merchantName = getMerchantById(invoice.merchantReference)?.name ?? t((m) => m.pages.invoices.viewInvoices.gridView.unknownMerchant);
   const scans = invoice.scans.length > 0 ? invoice.scans : [undefined];
   const hasMultipleScans = invoice.scans.length > 1;
 

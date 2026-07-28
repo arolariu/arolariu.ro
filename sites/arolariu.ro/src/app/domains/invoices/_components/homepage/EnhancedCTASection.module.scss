@@ -1,15 +1,15 @@
-@use '../../../../../styles/abstracts' as abstracts;
+@use "../../../../../styles/abstracts" as abstracts;
 
 .ctaSection {
   position: relative;
   overflow: hidden;
   padding: abstracts.space(20) abstracts.space(4);
 
-  @include abstracts.respond-to('sm') {
+  @include abstracts.respond-to("sm") {
     padding-inline: abstracts.space(6);
   }
 
-  @include abstracts.respond-to('lg') {
+  @include abstracts.respond-to("lg") {
     padding-inline: abstracts.space(8);
   }
 }
@@ -35,26 +35,26 @@
 
 .ctaTitle {
   margin-bottom: abstracts.space(4);
-  font-size: abstracts.font-size('3xl');
-  font-weight: abstracts.font-weight('bold');
-  color: abstracts.color('foreground');
+  font-size: abstracts.font-size("3xl");
+  font-weight: abstracts.font-weight("bold");
+  color: abstracts.color("foreground");
 
-  @include abstracts.respond-to('sm') {
-    font-size: abstracts.font-size('4xl');
+  @include abstracts.respond-to("sm") {
+    font-size: abstracts.font-size("4xl");
   }
 
-  @include abstracts.respond-to('lg') {
-    font-size: abstracts.font-size('5xl');
+  @include abstracts.respond-to("lg") {
+    font-size: abstracts.font-size("5xl");
   }
 }
 
 .ctaDescription {
   margin-bottom: abstracts.space(8);
-  font-size: abstracts.font-size('lg');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("lg");
+  color: abstracts.color("muted-foreground");
 
-  @include abstracts.respond-to('sm') {
-    font-size: abstracts.font-size('xl');
+  @include abstracts.respond-to("sm") {
+    font-size: abstracts.font-size("xl");
   }
 }
 
@@ -62,7 +62,7 @@
   @include abstracts.flex-column-center;
   gap: abstracts.space(4);
 
-  @include abstracts.respond-to('sm') {
+  @include abstracts.respond-to("sm") {
     flex-direction: row;
     justify-content: center;
   }
@@ -75,8 +75,8 @@
   align-items: center;
   justify-content: center;
   gap: abstracts.space(6);
-  font-size: abstracts.font-size('sm');
-  color: abstracts.color('foreground');
+  font-size: abstracts.font-size("sm");
+  color: abstracts.color("foreground");
 }
 
 .ctaBadge {
@@ -91,8 +91,8 @@
   left: 2.5rem;
   height: 8rem;
   width: 8rem;
-  border-radius: abstracts.radius('full');
-  background-color: abstracts.color-alpha('muted-foreground', 0.1);
+  border-radius: abstracts.radius("full");
+  background-color: abstracts.color-alpha("muted-foreground", 0.1);
   filter: blur(1.5rem);
 }
 
@@ -102,8 +102,8 @@
   bottom: 2.5rem;
   height: 10rem;
   width: 10rem;
-  border-radius: abstracts.radius('full');
-  background-color: abstracts.color-alpha('muted-foreground', 0.1);
+  border-radius: abstracts.radius("full");
+  background-color: abstracts.color-alpha("muted-foreground", 0.1);
   filter: blur(1.5rem);
 }
 
@@ -114,14 +114,14 @@
   height: 15rem;
   width: 15rem;
   transform: translate(-50%, -50%);
-  border-radius: abstracts.radius('full');
-  background-color: abstracts.color-alpha('muted-foreground', 0.05);
+  border-radius: abstracts.radius("full");
+  background-color: abstracts.color-alpha("muted-foreground", 0.05);
   filter: blur(3rem);
 }
 
 .sparklesIcon {
   @include abstracts.icon-size(3rem);
-  color: abstracts.color('primary');
+  color: abstracts.color("primary");
 }
 
 .ctaUploadIcon {
@@ -139,16 +139,16 @@
 
 .badgeIcon {
   @include abstracts.icon-size(abstracts.space(4));
-  color: abstracts.color('foreground');
+  color: abstracts.color("foreground");
 }
 
 // ===========================================
 // CTA BUTTON OVERRIDES
 // ===========================================
 .ctaPrimaryBtn {
-  background-color: abstracts.color('primary');
+  background-color: abstracts.color("primary");
   padding-inline: abstracts.space(8);
-  color: abstracts.color('primary-foreground');
+  color: abstracts.color("primary-foreground");
 
   &:hover {
     opacity: 0.9;
@@ -156,21 +156,21 @@
 }
 
 .ctaSecondaryBtn {
-  border-color: abstracts.color-alpha('border', 0.5);
-  background-color: abstracts.color-alpha('muted', 0.2);
+  border-color: abstracts.color-alpha("border", 0.5);
+  background-color: abstracts.color-alpha("muted", 0.2);
   padding-inline: abstracts.space(8);
-  color: abstracts.color('foreground');
+  color: abstracts.color("foreground");
   @include abstracts.backdrop-blur(4px);
 
   &:hover {
-    background-color: abstracts.color-alpha('muted', 0.4);
+    background-color: abstracts.color-alpha("muted", 0.4);
   }
 }
 
 // ===========================================
 // MOBILE RESPONSIVE OVERRIDES
 // ===========================================
-@include abstracts.respond-below('sm') {
+@include abstracts.respond-below("sm") {
   .orbTopLeft {
     display: none;
   }

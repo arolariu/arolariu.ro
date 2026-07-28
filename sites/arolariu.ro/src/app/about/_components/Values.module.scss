@@ -1,7 +1,7 @@
 // ===========================================
 // ABOUT HUB - VALUES COMPONENT
 // ===========================================
-@use '../../../styles/abstracts' as *;
+@use "../../../styles/abstracts" as *;
 
 .section {
   position: relative;
@@ -24,11 +24,11 @@
 .title {
   display: inline-block;
   margin-bottom: space(4);
-  font-size: font-size('3xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("3xl");
+  font-weight: font-weight("bold");
 
-  @include respond-to('sm') {
-    font-size: font-size('4xl');
+  @include respond-to("sm") {
+    font-size: font-size("4xl");
   }
 }
 
@@ -36,8 +36,8 @@
   margin-left: auto;
   margin-right: auto;
   max-width: 42rem;
-  font-size: font-size('lg');
-  color: color('muted-foreground');
+  font-size: font-size("lg");
+  color: color("muted-foreground");
 }
 
 // Values grid
@@ -45,11 +45,11 @@
   display: grid;
   gap: space(6);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
@@ -57,15 +57,15 @@
 // Value card
 .card {
   height: 100%;
-  border-radius: radius('lg');
-  border: 1px solid color('border');
-  background-color: color('card');
+  border-radius: radius("lg");
+  border: 1px solid color("border");
+  background-color: color("card");
   @include transition((transform, border-color, box-shadow));
 
   &:hover {
     transform: translateY(-4px);
-    border-color: color-alpha('primary', 0.3);
-    @include shadow('lg');
+    border-color: color-alpha("primary", 0.3);
+    @include shadow("lg");
   }
 }
 
@@ -83,7 +83,7 @@
 // Icon with background
 .iconWrapper {
   padding: space(3);
-  border-radius: radius('xl');
+  border-radius: radius("xl");
   @include transition(transform);
 
   .card:hover & {
@@ -99,66 +99,66 @@
 // Icon color variants
 .iconBlue {
   composes: iconWrapper;
-  background-color: color-alpha('primary', 0.1);
+  background-color: color-alpha("primary", 0.1);
 
   .icon {
-    color: color('primary');
+    color: color("primary");
   }
 }
 
 .iconAmber {
   composes: iconWrapper;
-  background-color: color-alpha('destructive', 0.1);
+  background-color: color-alpha("destructive", 0.1);
 
   .icon {
-    color: color('warning');
+    color: color("warning");
   }
 }
 
 .iconGreen {
   composes: iconWrapper;
-  background-color: color-alpha('success', 0.1);
+  background-color: color-alpha("success", 0.1);
 
   .icon {
-    color: color('success');
+    color: color("success");
   }
 }
 
 .iconPurple {
   composes: iconWrapper;
-  background-color: color-alpha('primary', 0.1);
+  background-color: color-alpha("primary", 0.1);
 
   .icon {
-    color: color('primary');
+    color: color("primary");
   }
 }
 
 .iconPink {
   composes: iconWrapper;
-  background-color: color-alpha('destructive', 0.1);
+  background-color: color-alpha("destructive", 0.1);
 
   .icon {
-    color: color('primary');
+    color: color("primary");
   }
 }
 
 .iconCyan {
   composes: iconWrapper;
-  background-color: color-alpha('primary', 0.1);
+  background-color: color-alpha("primary", 0.1);
 
   .icon {
-    color: color('primary');
+    color: color("primary");
   }
 }
 
 // Card text
 .cardTitle {
-  font-size: font-size('lg');
-  font-weight: font-weight('semibold');
+  font-size: font-size("lg");
+  font-weight: font-weight("semibold");
 }
 
 .cardDescription {
-  font-size: font-size('sm');
-  line-height: line-height('relaxed');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  line-height: line-height("relaxed");
+  color: color("muted-foreground");
 }

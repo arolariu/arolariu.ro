@@ -4,22 +4,54 @@
 /// Curated semantic color helpers that remain in active usage.
 /// ===========================================
 
-.text-foreground { color: hsl(var(--foreground)); }
-.text-primary { color: hsl(var(--primary)); }
-.text-primary-foreground { color: hsl(var(--primary-foreground)); }
-.text-destructive { color: hsl(var(--destructive)); }
+.text-foreground {
+  color: hsl(var(--foreground));
+}
+.text-primary {
+  color: hsl(var(--primary));
+}
+.text-primary-foreground {
+  color: hsl(var(--primary-foreground));
+}
+.text-destructive {
+  color: hsl(var(--destructive));
+}
 
-.bg-background { background-color: hsl(var(--background)); }
-.bg-primary { background-color: hsl(var(--primary)); }
-.bg-secondary { background-color: hsl(var(--secondary)); }
-.bg-muted { background-color: hsl(var(--muted)); }
-.bg-accent { background-color: hsl(var(--accent)); }
-.bg-destructive { background-color: hsl(var(--destructive)); }
-.bg-popover { background-color: hsl(var(--popover)); }
-.bg-transparent { background-color: transparent; }
+.bg-background {
+  background-color: hsl(var(--background));
+}
+.bg-primary {
+  background-color: hsl(var(--primary));
+}
+.bg-secondary {
+  background-color: hsl(var(--secondary));
+}
+.bg-muted {
+  background-color: hsl(var(--muted));
+}
+.bg-accent {
+  background-color: hsl(var(--accent));
+}
+.bg-destructive {
+  background-color: hsl(var(--destructive));
+}
+.bg-popover {
+  background-color: hsl(var(--popover));
+}
+.bg-transparent {
+  background-color: transparent;
+}
 
-.border-primary { border-color: hsl(var(--primary)); }
-.border-destructive { border-color: hsl(var(--destructive)); }
+.border-primary {
+  border-color: hsl(var(--primary));
+}
+.border-destructive {
+  border-color: hsl(var(--destructive));
+}
 
-.opacity-90 { opacity: 0.9; }
-.opacity-100 { opacity: 1; }
+.opacity-90 {
+  opacity: 0.9;
+}
+.opacity-100 {
+  opacity: 1;
+}

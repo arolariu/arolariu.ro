@@ -29,9 +29,7 @@ const validBlobMetadata: Readonly<Record<string, string>> = {
   uploadedBy: "user-123",
 };
 
-function createBlobMetadata(
-  overrides: Readonly<Record<string, string | undefined>> = {},
-): Readonly<Record<string, string | undefined>> {
+function createBlobMetadata(overrides: Readonly<Record<string, string | undefined>> = {}): Readonly<Record<string, string | undefined>> {
   return {
     ...validBlobMetadata,
     ...overrides,

@@ -38,9 +38,9 @@
 /// @see {hook} useThemePreset — sets `data-theme-preset` attribute
 /// ===========================================
 
-@use 'sass:map';
-@use 'sass:string';
-@use '../abstracts/config' as config;
+@use "sass:map";
+@use "sass:string";
+@use "../abstracts/config" as config;
 
 // ===========================================
 // PRESET DEFINITIONS
@@ -48,128 +48,128 @@
 
 $theme-presets: (
   // ---- Midnight: Deep indigo and blue ----
-  'midnight': (
-    'light': (
-      '--primary': '243 84% 58%',
-      '--primary-foreground': '0 0% 100%',
-      '--ring': '243 84% 58%',
-      '--secondary': '276 90% 56%',
-      '--tertiary': '208 88% 43%',
-      '--surface-elevated': '236 58% 24%',
+  "midnight": (
+      "light": (
+        "--primary": "243 84% 58%",
+        "--primary-foreground": "0 0% 100%",
+        "--ring": "243 84% 58%",
+        "--secondary": "276 90% 56%",
+        "--tertiary": "208 88% 43%",
+        "--surface-elevated": "236 58% 24%",
+      ),
+      "dark": (
+        "--primary": "241 88% 68%",
+        "--primary-foreground": "0 0% 0%",
+        "--ring": "241 88% 68%",
+        "--secondary": "276 94% 82%",
+        "--tertiary": "208 90% 74%",
+        "--surface-elevated": "236 58% 18%",
+      ),
     ),
-    'dark': (
-      '--primary': '241 88% 68%',
-      '--primary-foreground': '0 0% 0%',
-      '--ring': '241 88% 68%',
-      '--secondary': '276 94% 82%',
-      '--tertiary': '208 90% 74%',
-      '--surface-elevated': '236 58% 18%',
-    ),
-  ),
 
   // ---- Ocean: Sky, cyan, and teal ----
   // Contrast-hardened cyan triad for accessible links and state text.
-  'ocean': (
-    'light': (
-      '--primary': '199 96% 35%',
-      '--primary-foreground': '0 0% 100%',
-      '--ring': '199 96% 35%',
-      '--secondary': '168 94% 27%',
-      '--tertiary': '220 95% 50%',
-      '--surface-elevated': '200 86% 18%',
+  "ocean": (
+      "light": (
+        "--primary": "199 96% 35%",
+        "--primary-foreground": "0 0% 100%",
+        "--ring": "199 96% 35%",
+        "--secondary": "168 94% 27%",
+        "--tertiary": "220 95% 50%",
+        "--surface-elevated": "200 86% 18%",
+      ),
+      "dark": (
+        "--primary": "199 98% 62%",
+        "--primary-foreground": "0 0% 0%",
+        "--ring": "199 98% 62%",
+        "--secondary": "168 94% 76%",
+        "--tertiary": "220 94% 70%",
+        "--surface-elevated": "200 86% 16%",
+      ),
     ),
-    'dark': (
-      '--primary': '199 98% 62%',
-      '--primary-foreground': '0 0% 0%',
-      '--ring': '199 98% 62%',
-      '--secondary': '168 94% 76%',
-      '--tertiary': '220 94% 70%',
-      '--surface-elevated': '200 86% 16%',
-    ),
-  ),
 
   // ---- Sunset: Orange, red, and pink ----
   // Contrast-hardened warm triad for stronger role separation.
-  'sunset': (
-    'light': (
-      '--primary': '24 98% 39%',
-      '--primary-foreground': '0 0% 100%',
-      '--ring': '24 98% 39%',
-      '--secondary': '338 92% 46%',
-      '--tertiary': '8 90% 44%',
-      '--surface-elevated': '8 80% 22%',
+  "sunset": (
+      "light": (
+        "--primary": "24 98% 39%",
+        "--primary-foreground": "0 0% 100%",
+        "--ring": "24 98% 39%",
+        "--secondary": "338 92% 46%",
+        "--tertiary": "8 90% 44%",
+        "--surface-elevated": "8 80% 22%",
+      ),
+      "dark": (
+        "--primary": "24 98% 68%",
+        "--primary-foreground": "0 0% 0%",
+        "--ring": "24 98% 68%",
+        "--secondary": "338 92% 78%",
+        "--tertiary": "8 90% 72%",
+        "--surface-elevated": "8 80% 18%",
+      ),
     ),
-    'dark': (
-      '--primary': '24 98% 68%',
-      '--primary-foreground': '0 0% 0%',
-      '--ring': '24 98% 68%',
-      '--secondary': '338 92% 78%',
-      '--tertiary': '8 90% 72%',
-      '--surface-elevated': '8 80% 18%',
-    ),
-  ),
 
   // ---- Forest: Green, emerald, and teal ----
   // Contrast-hardened green triad with deeper light-mode accents.
-  'forest': (
-    'light': (
-      '--primary': '142 78% 30%',
-      '--primary-foreground': '0 0% 100%',
-      '--ring': '142 78% 30%',
-      '--secondary': '168 90% 27%',
-      '--tertiary': '118 84% 29%',
-      '--surface-elevated': '154 72% 18%',
+  "forest": (
+      "light": (
+        "--primary": "142 78% 30%",
+        "--primary-foreground": "0 0% 100%",
+        "--ring": "142 78% 30%",
+        "--secondary": "168 90% 27%",
+        "--tertiary": "118 84% 29%",
+        "--surface-elevated": "154 72% 18%",
+      ),
+      "dark": (
+        "--primary": "142 88% 64%",
+        "--primary-foreground": "0 0% 0%",
+        "--ring": "142 88% 64%",
+        "--secondary": "168 90% 76%",
+        "--tertiary": "118 84% 70%",
+        "--surface-elevated": "154 72% 16%",
+      ),
     ),
-    'dark': (
-      '--primary': '142 88% 64%',
-      '--primary-foreground': '0 0% 0%',
-      '--ring': '142 88% 64%',
-      '--secondary': '168 90% 76%',
-      '--tertiary': '118 84% 70%',
-      '--surface-elevated': '154 72% 16%',
-    ),
-  ),
 
   // ---- Rose: Rose, pink, and fuchsia ----
   // Contrast-hardened rose triad with darker light-mode accents.
-  'rose': (
-    'light': (
-      '--primary': '350 92% 46%',
-      '--primary-foreground': '0 0% 100%',
-      '--ring': '350 92% 46%',
-      '--secondary': '286 94% 48%',
-      '--tertiary': '330 90% 44%',
-      '--surface-elevated': '330 68% 20%',
+  "rose": (
+      "light": (
+        "--primary": "350 92% 46%",
+        "--primary-foreground": "0 0% 100%",
+        "--ring": "350 92% 46%",
+        "--secondary": "286 94% 48%",
+        "--tertiary": "330 90% 44%",
+        "--surface-elevated": "330 68% 20%",
+      ),
+      "dark": (
+        "--primary": "336 92% 70%",
+        "--primary-foreground": "0 0% 0%",
+        "--ring": "336 92% 70%",
+        "--secondary": "286 94% 80%",
+        "--tertiary": "356 92% 74%",
+        "--surface-elevated": "330 68% 18%",
+      ),
     ),
-    'dark': (
-      '--primary': '336 92% 70%',
-      '--primary-foreground': '0 0% 0%',
-      '--ring': '336 92% 70%',
-      '--secondary': '286 94% 80%',
-      '--tertiary': '356 92% 74%',
-      '--surface-elevated': '330 68% 18%',
-    ),
-  ),
 
   // ---- Monochrome: Grayscale ----
-  'monochrome': (
-    'light': (
-      '--primary': '0 0% 26%',
-      '--primary-foreground': '0 0% 100%',
-      '--ring': '0 0% 26%',
-      '--secondary': '0 0% 40%',
-      '--tertiary': '0 0% 34%',
-      '--surface-elevated': '0 0% 20%',
-    ),
-    'dark': (
-      '--primary': '0 0% 74%',
-      '--primary-foreground': '0 0% 0%',
-      '--ring': '0 0% 74%',
-      '--secondary': '0 0% 88%',
-      '--tertiary': '0 0% 80%',
-      '--surface-elevated': '0 0% 16%',
-    ),
-  ),
+  "monochrome": (
+      "light": (
+        "--primary": "0 0% 26%",
+        "--primary-foreground": "0 0% 100%",
+        "--ring": "0 0% 26%",
+        "--secondary": "0 0% 40%",
+        "--tertiary": "0 0% 34%",
+        "--surface-elevated": "0 0% 20%",
+      ),
+      "dark": (
+        "--primary": "0 0% 74%",
+        "--primary-foreground": "0 0% 0%",
+        "--ring": "0 0% 74%",
+        "--secondary": "0 0% 88%",
+        "--tertiary": "0 0% 80%",
+        "--surface-elevated": "0 0% 16%",
+      ),
+    )
 );
 
 // ===========================================
@@ -180,34 +180,34 @@ $theme-presets: (
 // for each preset in the map.
 
 @function prefixed-token-var($raw-css-var) {
-  @if config.$css-prefix == '' {
+  @if config.$css-prefix == "" {
     @return $raw-css-var;
   }
 
-  @return '--#{config.$css-prefix}-#{string.slice($raw-css-var, 3)}';
+  @return "--#{config.$css-prefix}-#{string.slice($raw-css-var, 3)}";
 }
 
 @each $name, $modes in $theme-presets {
-  $light: map.get($modes, 'light');
-  $dark: map.get($modes, 'dark');
+  $light: map.get($modes, "light");
+  $dark: map.get($modes, "dark");
 
   // Light mode overrides
-  [data-theme-preset='#{$name}'] {
+  [data-theme-preset="#{$name}"] {
     @each $prop, $value in $light {
       #{$prop}: #{$value};
 
-      @if config.$css-prefix != '' {
+      @if config.$css-prefix != "" {
         #{prefixed-token-var($prop)}: #{$value};
       }
     }
   }
 
   // Dark mode overrides (when .dark class is also present)
-  [data-theme-preset='#{$name}'].dark {
+  [data-theme-preset="#{$name}"].dark {
     @each $prop, $value in $dark {
       #{$prop}: #{$value};
 
-      @if config.$css-prefix != '' {
+      @if config.$css-prefix != "" {
         #{prefixed-token-var($prop)}: #{$value};
       }
     }

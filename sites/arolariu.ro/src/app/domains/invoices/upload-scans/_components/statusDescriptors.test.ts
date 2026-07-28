@@ -12,12 +12,22 @@ describe("describeUploadStatus", () => {
   });
 
   it("locks and shows progress + spinner while uploading and retrying", () => {
-    expect(describeUploadStatus("uploading")).toEqual({badgeStatusKey: "uploading", isLocked: true, showProgress: true, overlay: "spinner"});
+    expect(describeUploadStatus("uploading")).toEqual({
+      badgeStatusKey: "uploading",
+      isLocked: true,
+      showProgress: true,
+      overlay: "spinner",
+    });
     expect(describeUploadStatus("retrying")).toEqual({badgeStatusKey: "retrying", isLocked: true, showProgress: true, overlay: "spinner"});
   });
 
   it("locks completed with a success overlay and no progress", () => {
-    expect(describeUploadStatus("completed")).toEqual({badgeStatusKey: "completed", isLocked: true, showProgress: false, overlay: "success"});
+    expect(describeUploadStatus("completed")).toEqual({
+      badgeStatusKey: "completed",
+      isLocked: true,
+      showProgress: false,
+      overlay: "success",
+    });
   });
 
   it("leaves failed unlocked with an error overlay", () => {

@@ -2,7 +2,8 @@
 
 > **Stay updated with the latest improvements, features, and fixes!**
 
-All notable changes to **@arolariu/components** are documented here following [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+All notable changes to **@arolariu/components** are documented here following [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
+format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
@@ -12,26 +13,36 @@ All notable changes to **@arolariu/components** are documented here following [K
 
 **🧹 Internal — Code quality**
 
-- 🎯 **0 ESLint errors / 0 warnings**: resolved all 95 findings (92 errors + 3 warnings) across 25 files in `packages/components` without adding any new in-source `eslint-disable` comments.
+- 🎯 **0 ESLint errors / 0 warnings**: resolved all 95 findings (92 errors + 3 warnings) across 25 files in `packages/components` without
+  adding any new in-source `eslint-disable` comments.
 
 **🪝 Hooks hardening**
 
-- 🧷 **`useClipboard`**: fixed a race condition between concurrent `copy()` calls by extracting timeout scheduling into a synchronous helper. Removed `console.error` noise (errors are already exposed via the returned `error` state).
-- 🔒 **`useLocalStorage`**: removed `console.error` calls from non-fatal fallback paths (JSON parse failures already return the initial value). Modernized type-narrowing (`instanceof Function` → `typeof === "function"`).
-- 👁️ **`useIntersectionObserver`**: destructured `threshold`/`root`/`rootMargin` into stable locals so React's exhaustive-deps lint passes cleanly.
-- 🏷️ **`useInterval` & `useTimeout`**: renamed internal `savedCallback` ref to `savedCallbackRef` to match the project's ref-naming convention.
-- 🔗 **`useMergedRefs`**: replaced React-19-deprecated `MutableRefObject` with `RefObject` (whose `.current` is now writable). Restructured loop to avoid `continue`.
+- 🧷 **`useClipboard`**: fixed a race condition between concurrent `copy()` calls by extracting timeout scheduling into a synchronous
+  helper. Removed `console.error` noise (errors are already exposed via the returned `error` state).
+- 🔒 **`useLocalStorage`**: removed `console.error` calls from non-fatal fallback paths (JSON parse failures already return the initial
+  value). Modernized type-narrowing (`instanceof Function` → `typeof === "function"`).
+- 👁️ **`useIntersectionObserver`**: destructured `threshold`/`root`/`rootMargin` into stable locals so React's exhaustive-deps lint passes
+  cleanly.
+- 🏷️ **`useInterval` & `useTimeout`**: renamed internal `savedCallback` ref to `savedCallbackRef` to match the project's ref-naming
+  convention.
+- 🔗 **`useMergedRefs`**: replaced React-19-deprecated `MutableRefObject` with `RefObject` (whose `.current` is now writable). Restructured
+  loop to avoid `continue`.
 - 🔁 **`useControllableState`**: inverted negated condition for clarity.
 
 **🧩 Components**
 
-- 🏹 **forwardRef refactor**: converted 33 `React.forwardRef(function Name(...))` patterns to arrow-callback form across 13 components (`alert-dialog`, `avatar`, `calendar`, `checkbox-group`, `dropdrawer`, `meter`, `navigation-menu`, `progress`, `scratcher`, `separator`, `toast`, `toggle-group`, `toolbar`). Display names preserved.
-- 🔄 **`combobox`**: migrated internal `<PopoverTrigger asChild>` usage to the modern `render` prop, matching the established pattern in `alert-dialog`, `drawer`, `dropdown-menu`.
+- 🏹 **forwardRef refactor**: converted 33 `React.forwardRef(function Name(...))` patterns to arrow-callback form across 13 components
+  (`alert-dialog`, `avatar`, `calendar`, `checkbox-group`, `dropdrawer`, `meter`, `navigation-menu`, `progress`, `scratcher`, `separator`,
+  `toast`, `toggle-group`, `toolbar`). Display names preserved.
+- 🔄 **`combobox`**: migrated internal `<PopoverTrigger asChild>` usage to the modern `render` prop, matching the established pattern in
+  `alert-dialog`, `drawer`, `dropdown-menu`.
 - 📅 **`calendar`**: consolidated `react-day-picker` import.
 
 **⚙️ Tooling**
 
-- 🛠️ **ESLint config**: scoped `unicorn/prefer-export-from` and `n/no-unsupported-features/node-builtins` to `off` for `packages/components/**` (the package is browser-only; the import-then-export pattern is required for RSLib dist generation per v2.0.0).
+- 🛠️ **ESLint config**: scoped `unicorn/prefer-export-from` and `n/no-unsupported-features/node-builtins` to `off` for
+  `packages/components/**` (the package is browser-only; the import-then-export pattern is required for RSLib dist generation per v2.0.0).
 
 **📚 Migration Guide**
 
@@ -43,17 +54,23 @@ No public API changes. Drop-in replacement for 2.1.x.
 
 **⬆️ Dependency Updates**
 
-- 🎯 **Base UI upgraded to v1.4**: Bumped `@base-ui/react` peer dependency from `^1.3` to `^1.4` ([v1.4.0 release notes](https://github.com/mui/base-ui/releases/tag/v1.4.0)).
+- 🎯 **Base UI upgraded to v1.4**: Bumped `@base-ui/react` peer dependency from `^1.3` to `^1.4`
+  ([v1.4.0 release notes](https://github.com/mui/base-ui/releases/tag/v1.4.0)).
 
 **🔧 Base UI 1.4 Highlights** (no breaking changes for consumers of `@arolariu/components`)
 
-- 🛠️ **General**: More accurate `render` prop warnings; fix for circular JSON `TypeError`; `form` prop exposed on hidden inputs; `suppressHydrationWarning` added to hidden inputs; improved outside-press dismissal in shared shadow roots; `Positioner` now correctly repositions to a different trigger when reopened with `keepMounted`; full-width anchored `modal` popups now lock scroll on touch input.
+- 🛠️ **General**: More accurate `render` prop warnings; fix for circular JSON `TypeError`; `form` prop exposed on hidden inputs;
+  `suppressHydrationWarning` added to hidden inputs; improved outside-press dismissal in shared shadow roots; `Positioner` now correctly
+  repositions to a different trigger when reopened with `keepMounted`; full-width anchored `modal` popups now lock scroll on touch input.
 - 🪟 **Alert Dialog / Dialog**: Fixed detached trigger HMR with recreated handles.
-- 🔎 **Autocomplete / Combobox**: Initial live region announcements fixed; iOS viewport settling fix; scroll-lock no longer triggered by controlled value re-renders; browser autofill works with object values when autofill uses the label; item taps no longer blur the input; rendered chips respected for keyboard navigation; clicks in `Chips` / `InputGroup` areas now focus the input or open the popup.
+- 🔎 **Autocomplete / Combobox**: Initial live region announcements fixed; iOS viewport settling fix; scroll-lock no longer triggered by
+  controlled value re-renders; browser autofill works with object values when autofill uses the label; item taps no longer blur the input;
+  rendered chips respected for keyboard navigation; clicks in `Chips` / `InputGroup` areas now focus the input or open the popup.
 - 🖼️ **Avatar**: No more flash when the image is cached.
 - ☑️ **Checkbox**: Uncontrolled default initialization fixed; input state changes prevented in `readOnly` mode.
 - 📂 **Collapsible**: Open state fixed when `keepMounted` has no transitions.
-- 🧾 **Drawer**: Touch scroll fixed in portaled popups; nested swipe cancel state fixed; interrupted swipe dismiss cleanup fixed; warning added when a popup is missing `Viewport`; dialogs no longer affect nested drawer stack.
+- 🧾 **Drawer**: Touch scroll fixed in portaled popups; nested swipe cancel state fixed; interrupted swipe dismiss cleanup fixed; warning
+  added when a popup is missing `Viewport`; dialogs no longer affect nested drawer stack.
 - 🏷️ **Field**: Form error matching in `<Field.Error>` fixed.
 - 📋 **Menu**: `SubmenuTrigger` now respects disabled state from `render`; dialog focus preserved on pointer leave.
 - 🧭 **Navigation Menu**: Invalid `aria-orientation` removed; generic `Value` typing added; initial trigger switch size fix.
@@ -70,13 +87,18 @@ No public API changes. Drop-in replacement for 2.1.x.
   - `minSize`, `maxSize`, `collapsedSize` also accept string values (`"20%"`, `"0%"`, etc.)
   - Type `ImperativePanelGroupHandle` renamed to `GroupImperativeHandle`
   - Type `ImperativePanelHandle` renamed to `PanelImperativeHandle`
-  - `ResizablePanelGroup` is now a function component (was `ForwardRefExoticComponent`); use the new `useGroupRef()` hook from `react-resizable-panels` for imperative access
-- 📁 **Toast module renamed**: Internal module file renamed from `sonner` to `toast` to reflect the Base UI Toast implementation adopted in v1.0.0. Exported names (`Toaster`, `toast`, `Toast`) are unchanged.
+  - `ResizablePanelGroup` is now a function component (was `ForwardRefExoticComponent`); use the new `useGroupRef()` hook from
+    `react-resizable-panels` for imperative access
+- 📁 **Toast module renamed**: Internal module file renamed from `sonner` to `toast` to reflect the Base UI Toast implementation adopted in
+  v1.0.0. Exported names (`Toaster`, `toast`, `Toast`) are unchanged.
 
 **🔧 Improvements**
 
-- 🔗 **Fixed rslib bundler compatibility**: Converted all direct re-export statements (`export ... from "external-package"`) to import-then-export pattern across 6 component files (calendar, chart, form, input-otp, resizable, toast). This ensures types and values are properly included in the `/dist/` output.
-- 📖 **Storybook stories and tests**: Added comprehensive test suites and story variants for all components (1300+ tests, 439+ story variants)
+- 🔗 **Fixed rslib bundler compatibility**: Converted all direct re-export statements (`export ... from "external-package"`) to
+  import-then-export pattern across 6 component files (calendar, chart, form, input-otp, resizable, toast). This ensures types and values
+  are properly included in the `/dist/` output.
+- 📖 **Storybook stories and tests**: Added comprehensive test suites and story variants for all components (1300+ tests, 439+ story
+  variants)
 
 **📚 Migration Guide**
 
@@ -96,8 +118,10 @@ No public API changes. Drop-in replacement for 2.1.x.
 
 **✨ New Features**
 
-- 🪝 **13 new utility hooks**: `useControllableState`, `useEventCallback`, `useMergedRefs`, `useId`, `useOnClickOutside`, `usePrevious`, `useTimeout`, `useDebounce`, `useThrottle`, `useLocalStorage`, `useClipboard`, `useIntersectionObserver`, `useInterval`
-- 🔍 **Combobox compound component**: searchable dropdown composing Command + Popover + Button with single/multi select, keyboard navigation, and async loading support
+- 🪝 **13 new utility hooks**: `useControllableState`, `useEventCallback`, `useMergedRefs`, `useId`, `useOnClickOutside`, `usePrevious`,
+  `useTimeout`, `useDebounce`, `useThrottle`, `useLocalStorage`, `useClipboard`, `useIntersectionObserver`, `useInterval`
+- 🔍 **Combobox compound component**: searchable dropdown composing Command + Popover + Button with single/multi select, keyboard
+  navigation, and async loading support
 - 🎬 **Storybook 10 with RSBuild**: full design system documentation with `storybook-react-rsbuild` + `storybook-addon-rslib` integration
 - 📖 **439 story variants** across 84 components with component-specific states (disabled, error, loading, sizes, custom content)
 - 📄 **MDX documentation pages**: Welcome, Getting Started, and Design Principles
@@ -118,7 +142,8 @@ No public API changes. Drop-in replacement for 2.1.x.
 - 🛡️ **Error boundaries**: `ErrorBoundary` (class component with retry), `AsyncBoundary` (Suspense + ErrorBoundary)
 - 🆕 **New components**: `CopyButton`, `Stepper`, `Timeline`
 - 🏗️ **RSC compatibility**: removed unnecessary `"use client"` from 9 presentational components
-- 📦 **Dependency audit**: calendar migrated from deprecated `table` to `month_grid`, carousel axis/orientation fix, all third-party wrapper types exported
+- 📦 **Dependency audit**: calendar migrated from deprecated `table` to `month_grid`, carousel axis/orientation fix, all third-party wrapper
+  types exported
 
 **🐛 Bug Fixes**
 
@@ -150,32 +175,47 @@ No public API changes. Drop-in replacement for 2.1.x.
 ---
 
 ### [1.0.0](https://www.npmjs.com/package/@arolariu/components/v/1.0.0) - 2026-03-13
+
 **💥 Breaking Changes**
-- 🔄 **Migrated component primitives from Radix UI to Base UI** using the consolidated `@base-ui/react` package instead of 25+ `@radix-ui/react-*` packages.
-- 🎨 **Migrated styling from Tailwind CSS to CSS Modules**. The component library no longer depends on Tailwind utility classes for internal styling.
-- 🧩 **Variant helper functions remain available**: `badgeVariants`, `buttonVariants`, and `buttonGroupVariants` still exist in the public API, but now use CSS Module class-name maps instead of CVA.
-- 🌈 **Renamed design tokens to the `--ac-*` namespace**. CSS custom properties are now prefixed consistently, for example `--ac-primary` and `--ac-radius-md`.
-- 🔁 **Shifted composition toward Base UI's `render` prop**. `asChild` still works as a backward-compatibility shim, but `render` is now the preferred API for new code.
-- 🔔 **Migrated the toast system from `sonner` to a Base UI Toast-backed implementation** while preserving the existing `Toaster` and `toast` exports.
+
+- 🔄 **Migrated component primitives from Radix UI to Base UI** using the consolidated `@base-ui/react` package instead of 25+
+  `@radix-ui/react-*` packages.
+- 🎨 **Migrated styling from Tailwind CSS to CSS Modules**. The component library no longer depends on Tailwind utility classes for internal
+  styling.
+- 🧩 **Variant helper functions remain available**: `badgeVariants`, `buttonVariants`, and `buttonGroupVariants` still exist in the public
+  API, but now use CSS Module class-name maps instead of CVA.
+- 🌈 **Renamed design tokens to the `--ac-*` namespace**. CSS custom properties are now prefixed consistently, for example `--ac-primary`
+  and `--ac-radius-md`.
+- 🔁 **Shifted composition toward Base UI's `render` prop**. `asChild` still works as a backward-compatibility shim, but `render` is now the
+  preferred API for new code.
+- 🔔 **Migrated the toast system from `sonner` to a Base UI Toast-backed implementation** while preserving the existing `Toaster` and
+  `toast` exports.
 - ⌨️ **Migrated the command palette away from `cmdk`** to a package-native implementation aligned with the new Base UI architecture.
 - 🗂️ **Migrated `DropDrawer` away from `vaul`** to the Base UI Drawer foundation.
-- 🧹 **Removed legacy dependencies**: `@radix-ui/*`, `tailwind-merge`, `class-variance-authority`, `tailwindcss-animate`, `vaul`, `sonner`, and `cmdk`.
+- 🧹 **Removed legacy dependencies**: `@radix-ui/*`, `tailwind-merge`, `class-variance-authority`, `tailwindcss-animate`, `vaul`, `sonner`,
+  and `cmdk`.
 
 **✨ New Features & Improvements**
+
 - 🆕 **New components introduced in the 1.0.0 architecture**: `NumberField`, `Meter`, `Toolbar`, and `CheckboxGroup`.
 - 🧠 **Simplified class merging**: `cn()` now uses `clsx` only.
 - 🌙 **Documented dark mode activation** with either a `.dark` class or a `[data-theme="dark"]` attribute.
 - 🏗️ **Retained the RSLib build pipeline** for ESM output, typings, and source maps.
-- 🔧 **All 32 Base UI wrappers use `useRender` + `mergeProps`** — canonical Base UI composition pattern for proper event handler merging and ref forwarding.
-- 🏷️ **TypeScript namespace types** — 31 components export `Component.Props` / `Component.State` namespaces for enterprise-grade type consumption.
+- 🔧 **All 32 Base UI wrappers use `useRender` + `mergeProps`** — canonical Base UI composition pattern for proper event handler merging and
+  ref forwarding.
+- 🏷️ **TypeScript namespace types** — 31 components export `Component.Props` / `Component.State` namespaces for enterprise-grade type
+  consumption.
 - 📦 **Re-exported Base UI utilities**: `CSPProvider`, `DirectionProvider`, `mergeProps`, `useRender` for consumer convenience.
-- 📝 **Enterprise-grade JSDoc** on all 71 components — every exported function has `@remarks`, `@example`, `@see`; every prop has `/** description @default */`.
+- 📝 **Enterprise-grade JSDoc** on all 71 components — every exported function has `@remarks`, `@example`, `@see`; every prop has
+  `/** description @default */`.
 - 🪪 **`displayName`** set on all exported components for React DevTools and error stack traces.
 - 🧪 **53 Vitest test files** covering all 71 components with smoke, ref, className, interaction, and accessibility tests.
 - 📦 **Test files excluded from npm publish** — `*.test.*`, `*.spec.*`, `*.stories.*` stripped from published package.
 
 ### [0.5.0](https://www.npmjs.com/package/@arolariu/components/v/0.5.0) - 2026-01-16
+
 **✨ New Features & Improvements**
+
 - 🔄 **Renamed `gradient-utils` to `color-conversion-utilities`** with more descriptive function names:
   - `hexToHsl` → `convertHexToHslString`
   - `hslToHex` → `convertHslToHexString`
@@ -186,25 +226,34 @@ No public API changes. Drop-in replacement for 2.1.x.
 - 📚 **Legacy aliases maintained** for backwards compatibility (deprecated)
 
 ### [0.4.2](https://www.npmjs.com/package/@arolariu/components/v/0.4.2) - 2025-12-18
+
 **✨ New Features & Improvements**
+
 - 🆕 **New Component: `CardAction`** - A component for adding actions to cards.
 
 ### [0.4.1](https://www.npmjs.com/package/@arolariu/components/v/0.4.1) - 2025-12-08
+
 **🔧 Bug Fixes & Maintenance**
+
 - ⬆️ **Recharts V3** Upgraded chart.tsx to use Rechars v3.5
 
 ### [0.4.0](https://www.npmjs.com/package/@arolariu/components/v/0.4.0) - 2025-12-05
+
 **✨ New Features & Improvements**
+
 - 🔒 Switched to Trusted Publishing workflow for attestation of package.
 - Removed storybook stories for now, will re-introduce at a later date.
 
 ### [0.3.1](https://www.npmjs.com/package/@arolariu/components/v/0.3.1) - 2025-11-11
+
 **🔧 Bug Fixes & Maintenance**
+
 - 🐛 **Linting** Migrated from deprecated ElementRef to ComponentRef.
 
 ### [0.3.0](https://www.npmjs.com/package/@arolariu/components/v/0.3.0) - 2025-11-10
 
 **✨ New Features & Improvements**
+
 - 🆕 **New Component: `ButtonGroup`** - A group of buttons that behave as a single unit.
 - 🆕 **New Component: `EmptyState`** - A component to display an empty state with a message and illustration.
 - 🆕 **New Component: `Field`** - A component for form fields.
@@ -216,6 +265,7 @@ No public API changes. Drop-in replacement for 2.1.x.
 ### [0.2.0](https://www.npmjs.com/package/@arolariu/components/v/0.2.0) - 2025-10-01
 
 **✨ New Features & Improvements**
+
 - ⚙️ **Migrated tooling to monorepo-based NPM+NX** for better package management and development experience.
 - ⬆️ **Updated rslib/rsbuild** core packages to latest versions.
 

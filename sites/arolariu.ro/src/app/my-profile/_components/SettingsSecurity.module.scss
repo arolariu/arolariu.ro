@@ -2,22 +2,34 @@
 // SETTINGS SECURITY STYLES
 // Scoped to SettingsSecurity.tsx only
 // ===========================================
-@use '../../../styles/abstracts' as *;
-@use 'settings-shared' as settings;
+@use "../../../styles/abstracts" as *;
+@use "settings-shared" as settings;
 
-.section { @include settings.settings-section; }
-.header  { @include settings.settings-header; }
-.grid    { @include settings.settings-grid; }
-.fullWidthCard { @include settings.settings-card-full; }
-.toggleRow     { @include settings.settings-toggle-row; }
-.toggleLabel   { @include settings.settings-toggle-label; }
+.section {
+  @include settings.settings-section;
+}
+.header {
+  @include settings.settings-header;
+}
+.grid {
+  @include settings.settings-grid;
+}
+.fullWidthCard {
+  @include settings.settings-card-full;
+}
+.toggleRow {
+  @include settings.settings-toggle-row;
+}
+.toggleLabel {
+  @include settings.settings-toggle-label;
+}
 
 // ===========================================
 // SECURITY-SPECIFIC
 // ===========================================
 .clerkNote {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
   text-align: center;
 }
 
@@ -29,9 +41,9 @@
     display: flex;
     align-items: center;
     gap: space(2);
-    font-size: font-size('sm');
-    font-weight: font-weight('medium');
-    color: color('success');
+    font-size: font-size("sm");
+    font-weight: font-weight("medium");
+    color: color("success");
   }
 
   svg {
@@ -47,8 +59,8 @@
 
 .deviceItem {
   @include flex-between;
-  border-radius: radius('lg');
-  border: 1px solid color('border');
+  border-radius: radius("lg");
+  border: 1px solid color("border");
   padding: space(3);
 }
 
@@ -56,12 +68,12 @@
   display: block;
 
   p:first-child {
-    font-weight: font-weight('medium');
+    font-weight: font-weight("medium");
   }
 
   p:last-child {
-    font-size: font-size('xs');
-    color: color('muted-foreground');
+    font-size: font-size("xs");
+    color: color("muted-foreground");
   }
 }
 
@@ -77,20 +89,32 @@
   text-align: center;
 
   p {
-    font-size: font-size('sm');
-    color: color('muted-foreground');
+    font-size: font-size("sm");
+    color: color("muted-foreground");
   }
 }
 
 // ===========================================
 // LIBRARY COMPONENT CLASSES
 // ===========================================
-.cardHeaderPb { @include settings.settings-card-header-flex; }
-.cardTitleBase { @include settings.settings-card-title-base; }
-.cardContentSpaced { @include settings.settings-card-content-spaced; }
-.buttonFullCursor { @include settings.settings-button-full-cursor; }
-.labelCursor { @include settings.settings-label-cursor; }
-.iconSm { @include settings.settings-icon-sm; }
+.cardHeaderPb {
+  @include settings.settings-card-header-flex;
+}
+.cardTitleBase {
+  @include settings.settings-card-title-base;
+}
+.cardContentSpaced {
+  @include settings.settings-card-content-spaced;
+}
+.buttonFullCursor {
+  @include settings.settings-button-full-cursor;
+}
+.labelCursor {
+  @include settings.settings-label-cursor;
+}
+.iconSm {
+  @include settings.settings-icon-sm;
+}
 
 // ===========================================
 // SECURITY-SPECIFIC UTILITIES
@@ -100,4 +124,6 @@
   cursor: pointer;
 }
 
-.selectCursor { @include settings.settings-select-cursor; }
+.selectCursor {
+  @include settings.settings-select-cursor;
+}

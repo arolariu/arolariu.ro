@@ -269,7 +269,9 @@
     transform: translateY(-2px);
 
     :global(.dark) & {
-      box-shadow: 0 10px 15px -3px rgb(59 130 246 / 0.4), 0 4px 6px -4px rgb(59 130 246 / 0.1);
+      box-shadow:
+        0 10px 15px -3px rgb(59 130 246 / 0.4),
+        0 4px 6px -4px rgb(59 130 246 / 0.1);
     }
   }
 
@@ -284,7 +286,9 @@
 
   &:hover {
     background: var(--cv-color-blue-700);
-    box-shadow: 0 10px 15px -3px rgb(59 130 246 / 0.25), 0 4px 6px -4px rgb(59 130 246 / 0.1);
+    box-shadow:
+      0 10px 15px -3px rgb(59 130 246 / 0.25),
+      0 4px 6px -4px rgb(59 130 246 / 0.1);
   }
 
   :global(.dark) & {
