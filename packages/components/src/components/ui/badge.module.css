@@ -7,7 +7,9 @@
   font-weight: 600;
   line-height: 1.6;
   white-space: nowrap;
-  transition: background-color var(--ac-transition-fast), color var(--ac-transition-fast);
+  transition:
+    background-color var(--ac-transition-fast),
+    color var(--ac-transition-fast);
 
   & svg {
     pointer-events: none;

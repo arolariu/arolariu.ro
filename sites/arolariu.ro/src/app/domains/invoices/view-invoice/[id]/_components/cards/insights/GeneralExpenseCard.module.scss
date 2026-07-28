@@ -1,23 +1,23 @@
-@use '../../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../../styles/abstracts" as *;
 
 .sectionTitle {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .sectionTitleWithIcon {
   display: flex;
   align-items: center;
   gap: space(2);
-  color: color('foreground');
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  color: color("foreground");
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .detectedBox {
-  border-radius: radius('lg');
-  border: 1px solid color('border');
+  border-radius: radius("lg");
+  border: 1px solid color("border");
   padding: space(3);
 }
 
@@ -35,7 +35,7 @@
 }
 
 .detectedName {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .detectedActions {
@@ -59,24 +59,24 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 }
 
 .nearLimitText {
-  font-weight: font-weight('medium');
-  color: color('destructive');
+  font-weight: font-weight("medium");
+  color: color("destructive");
 }
 
 .budgetMutedText {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .alertText {
   display: flex;
   align-items: center;
   gap: space(1);
-  font-size: font-size('xs');
-  color: color('warning');
+  font-size: font-size("xs");
+  color: color("warning");
 }
 
 .checkboxRow {
@@ -95,8 +95,8 @@
   display: flex;
   align-items: center;
   gap: space(1);
-  font-size: font-size('sm');
-  color: color('success');
+  font-size: font-size("sm");
+  color: color("success");
 }
 
 .pastHeader {
@@ -106,13 +106,13 @@
 }
 
 .pastTitle {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .pastList {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
 
   & > * + * {
     margin-top: space(1.5);
@@ -126,7 +126,7 @@
 }
 
 .pastBullet {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .ctaButtons {
@@ -138,12 +138,12 @@
   display: flex;
   align-items: center;
   gap: space(2);
-  font-size: font-size('lg');
+  font-size: font-size("lg");
 }
 
 .titleIcon {
   @include icon-size(space(5));
-  color: color('info');
+  color: color("info");
 }
 
 .contentSpaced {
@@ -160,12 +160,12 @@
 
 .iconIndigo {
   @include icon-size(space(4));
-  color: color('info');
+  color: color("info");
 }
 
 .iconGray {
   @include icon-size(space(4));
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .briefcaseIcon {

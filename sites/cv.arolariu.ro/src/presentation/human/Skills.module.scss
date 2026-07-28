@@ -191,40 +191,28 @@
 
 /* === Accent backgrounds (only on hero + lg tiles) === */
 .accentPrimary {
-  background:
-    radial-gradient(circle at 30% 20%, rgb(96 165 250 / 0.06), transparent 60%),
-    var(--cv-color-white);
+  background: radial-gradient(circle at 30% 20%, rgb(96 165 250 / 0.06), transparent 60%), var(--cv-color-white);
   border-color: rgb(96 165 250 / 0.25);
 
   :global(.dark) & {
-    background:
-      radial-gradient(circle at 30% 20%, rgb(96 165 250 / 0.18), transparent 60%),
-      var(--cv-color-gray-900);
+    background: radial-gradient(circle at 30% 20%, rgb(96 165 250 / 0.18), transparent 60%), var(--cv-color-gray-900);
   }
 }
 
 .accentSecondary {
-  background:
-    radial-gradient(circle at 70% 80%, rgb(167 139 250 / 0.06), transparent 60%),
-    var(--cv-color-white);
+  background: radial-gradient(circle at 70% 80%, rgb(167 139 250 / 0.06), transparent 60%), var(--cv-color-white);
   border-color: rgb(167 139 250 / 0.22);
 
   :global(.dark) & {
-    background:
-      radial-gradient(circle at 70% 80%, rgb(167 139 250 / 0.18), transparent 60%),
-      var(--cv-color-gray-900);
+    background: radial-gradient(circle at 70% 80%, rgb(167 139 250 / 0.18), transparent 60%), var(--cv-color-gray-900);
   }
 }
 
 .accentSuccess {
-  background:
-    radial-gradient(circle at 30% 70%, rgb(52 211 153 / 0.06), transparent 60%),
-    var(--cv-color-white);
+  background: radial-gradient(circle at 30% 70%, rgb(52 211 153 / 0.06), transparent 60%), var(--cv-color-white);
   border-color: rgb(52 211 153 / 0.22);
 
   :global(.dark) & {
-    background:
-      radial-gradient(circle at 30% 70%, rgb(52 211 153 / 0.15), transparent 60%),
-      var(--cv-color-gray-900);
+    background: radial-gradient(circle at 30% 70%, rgb(52 211 153 / 0.15), transparent 60%), var(--cv-color-gray-900);
   }
 }

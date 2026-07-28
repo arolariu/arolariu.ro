@@ -1,14 +1,14 @@
 // ===========================================
 // SCANS HEADER COMPONENT STYLES
 // ===========================================
-@use '../../../../../styles/abstracts' as *;
+@use "../../../../../styles/abstracts" as *;
 
 .header {
   margin-bottom: space(8);
   @include flex-column;
   gap: space(4);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
@@ -22,12 +22,12 @@
 }
 
 .headerTitle {
-  font-size: font-size('2xl');
-  font-weight: font-weight('bold');
-  color: color('foreground');
+  font-size: font-size("2xl");
+  font-weight: font-weight("bold");
+  color: color("foreground");
 
-  @include respond-to('lg') {
-    font-size: font-size('3xl');
+  @include respond-to("lg") {
+    font-size: font-size("3xl");
   }
 
   @include dark {
@@ -36,8 +36,8 @@
 }
 
 .lastSynced {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
 }
 
 .headerActions {
@@ -48,13 +48,13 @@
 .hiddenMobile {
   display: none;
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     display: inline;
   }
 }
 
 .visibleMobile {
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     display: none;
   }
 }
@@ -64,18 +64,18 @@
 // ===========================================
 .infoIcon {
   @include icon-size(space(5));
-  color: color('foreground');
+  color: color("foreground");
 }
 
 .actionIcon {
   @include icon-size(space(4));
-  color: color('foreground');
+  color: color("foreground");
 }
 
 .syncIcon {
   height: space(4);
   width: space(4);
-  color: color('foreground');
+  color: color("foreground");
 }
 
 .syncIconSpinning {
@@ -99,18 +99,18 @@
   margin-top: space(0.5);
   height: space(6);
   width: space(6);
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   cursor: help;
 
   &:hover {
-    color: color('foreground');
+    color: color("foreground");
   }
 
   @include dark {
-    color: color('muted-foreground');
+    color: color("muted-foreground");
 
     &:hover {
-      color: color('foreground');
+      color: color("foreground");
     }
   }
 }
@@ -123,13 +123,13 @@
   display: flex;
   align-items: center;
   gap: space(2);
-  background-color: color-alpha('primary', 0.1);
-  color: color('primary');
+  background-color: color-alpha("primary", 0.1);
+  color: color("primary");
 
   &:hover,
   &:hover:not([data-disabled]) {
-    background-color: color-alpha('primary', 0.18);
-    color: color('primary');
+    background-color: color-alpha("primary", 0.18);
+    color: color("primary");
   }
 }
 

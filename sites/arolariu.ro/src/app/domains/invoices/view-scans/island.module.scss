@@ -1,4 +1,4 @@
-@use '../../../../styles/abstracts' as abstracts;
+@use "../../../../styles/abstracts" as abstracts;
 
 // ===========================================
 // QUICK TIP
@@ -14,20 +14,20 @@
   height: abstracts.space(8);
   width: abstracts.space(8);
   flex-shrink: 0;
-  border-radius: abstracts.radius('lg');
-  background-color: abstracts.color('primary');
-  color: abstracts.color('primary-foreground');
+  border-radius: abstracts.radius("lg");
+  background-color: abstracts.color("primary");
+  color: abstracts.color("primary-foreground");
 
   @include abstracts.dark {
-    background-color: abstracts.color-alpha('primary', 0.5);
-    color: abstracts.color('primary');
+    background-color: abstracts.color-alpha("primary", 0.5);
+    color: abstracts.color("primary");
   }
 }
 
 .quickTipTitle {
-  font-size: abstracts.font-size('sm');
-  font-weight: abstracts.font-weight('medium');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("sm");
+  font-weight: abstracts.font-weight("medium");
+  color: abstracts.color("muted-foreground");
 
   @include abstracts.dark {
     color: white;
@@ -35,8 +35,8 @@
 }
 
 .quickTipDescription {
-  font-size: abstracts.font-size('xs');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("xs");
+  color: abstracts.color("muted-foreground");
 }
 
 // ===========================================
@@ -47,20 +47,20 @@
 }
 
 .statsCardValue {
-  font-size: abstracts.font-size('2xl');
-  font-weight: abstracts.font-weight('bold');
+  font-size: abstracts.font-size("2xl");
+  font-weight: abstracts.font-weight("bold");
 }
 
 .statsCardValueDefault {
-  color: abstracts.color('foreground');
+  color: abstracts.color("foreground");
 }
 
 .statsCardValueGreen {
-  color: abstracts.color('success');
+  color: abstracts.color("success");
 }
 
 .statsCardValuePurple {
-  color: abstracts.color('primary');
+  color: abstracts.color("primary");
 }
 
 // ===========================================
@@ -68,12 +68,12 @@
 // ===========================================
 .tipIcon {
   @include abstracts.icon-size(abstracts.space(4));
-  color: abstracts.color('foreground');
+  color: abstracts.color("foreground");
 }
 
 .statsCardLabel {
-  font-size: abstracts.font-size('xs');
-  color: abstracts.color-alpha('foreground', 0.7);
+  font-size: abstracts.font-size("xs");
+  color: abstracts.color-alpha("foreground", 0.7);
 }
 
 // ===========================================
@@ -81,14 +81,14 @@
 // ===========================================
 .scanStatsBar {
   margin-bottom: abstracts.space(6);
-  border-radius: abstracts.radius('lg');
-  border: 1px solid abstracts.color-alpha('secondary', 0.2);
-  background-color: abstracts.color-alpha('secondary', 0.1);
+  border-radius: abstracts.radius("lg");
+  border: 1px solid abstracts.color-alpha("secondary", 0.2);
+  background-color: abstracts.color-alpha("secondary", 0.1);
   padding: abstracts.space(4);
 
   @include abstracts.dark {
-    border-color: abstracts.color-alpha('secondary', 0.35);
-    background-color: abstracts.color-alpha('secondary', 0.15);
+    border-color: abstracts.color-alpha("secondary", 0.35);
+    background-color: abstracts.color-alpha("secondary", 0.15);
   }
 }
 
@@ -107,20 +107,20 @@
 }
 
 .selectHint {
-  font-size: abstracts.font-size('sm');
-  color: abstracts.color-alpha('foreground', 0.7);
+  font-size: abstracts.font-size("sm");
+  color: abstracts.color-alpha("foreground", 0.7);
 }
 
 .hiddenMobile {
   display: none;
 
-  @include abstracts.respond-to('sm') {
+  @include abstracts.respond-to("sm") {
     display: inline;
   }
 }
 
 .visibleMobile {
-  @include abstracts.respond-to('sm') {
+  @include abstracts.respond-to("sm") {
     display: none;
   }
 }
@@ -132,7 +132,7 @@
   @include abstracts.spaced-children(abstracts.space(6));
 
   // Hide sidebar tips on tablet and below
-  @include abstracts.respond-below('md') {
+  @include abstracts.respond-below("md") {
     display: none;
   }
 }
@@ -147,7 +147,7 @@
   gap: abstracts.space(2);
 
   // Only show on mobile
-  @include abstracts.respond-to('md') {
+  @include abstracts.respond-to("md") {
     display: none;
   }
 }
@@ -169,8 +169,8 @@
 
 .sidebarTitle {
   margin-bottom: abstracts.space(4);
-  font-weight: abstracts.font-weight('semibold');
-  color: abstracts.color('muted-foreground');
+  font-weight: abstracts.font-weight("semibold");
+  color: abstracts.color("muted-foreground");
 
   @include abstracts.dark {
     color: white;
@@ -194,24 +194,24 @@
   @include abstracts.flex-center;
   height: abstracts.space(10);
   width: abstracts.space(10);
-  border-radius: abstracts.radius('full');
-  background-color: abstracts.color('primary');
+  border-radius: abstracts.radius("full");
+  background-color: abstracts.color("primary");
 }
 
 .selectionIcon {
   height: abstracts.space(5);
   width: abstracts.space(5);
-  color: abstracts.color('primary-foreground');
+  color: abstracts.color("primary-foreground");
 }
 
 .selectionTitle {
-  font-weight: abstracts.font-weight('semibold');
-  color: abstracts.color('foreground');
+  font-weight: abstracts.font-weight("semibold");
+  color: abstracts.color("foreground");
 }
 
 .selectionDescription {
-  font-size: abstracts.font-size('sm');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("sm");
+  color: abstracts.color("muted-foreground");
 }
 
 // ===========================================
@@ -228,21 +228,21 @@
   height: abstracts.space(10);
   width: abstracts.space(10);
   flex-shrink: 0;
-  border-radius: abstracts.radius('lg');
-  background-color: abstracts.color('primary');
+  border-radius: abstracts.radius("lg");
+  background-color: abstracts.color("primary");
 
   @include abstracts.dark {
-    background-color: abstracts.color-alpha('primary', 0.5);
+    background-color: abstracts.color-alpha("primary", 0.5);
   }
 }
 
 .quickUploadIcon {
   height: abstracts.space(5);
   width: abstracts.space(5);
-  color: abstracts.color('primary-foreground');
+  color: abstracts.color("primary-foreground");
 
   @include abstracts.dark {
-    color: abstracts.color('primary');
+    color: abstracts.color("primary");
   }
 }
 
@@ -251,9 +251,9 @@
 }
 
 .quickUploadTitle {
-  font-size: abstracts.font-size('sm');
-  font-weight: abstracts.font-weight('medium');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("sm");
+  font-weight: abstracts.font-weight("medium");
+  color: abstracts.color("muted-foreground");
 
   @include abstracts.dark {
     color: white;
@@ -261,8 +261,8 @@
 }
 
 .quickUploadDescription {
-  font-size: abstracts.font-size('xs');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("xs");
+  color: abstracts.color("muted-foreground");
 }
 
 // ===========================================
@@ -277,7 +277,7 @@
   min-height: calc(100vh - 8rem);
 
   // Bottom padding for mobile nav
-  @include abstracts.respond-below('md') {
+  @include abstracts.respond-below("md") {
     padding-bottom: abstracts.space(20);
   }
 }
@@ -290,19 +290,19 @@
   display: inline-flex;
   align-items: center;
   gap: abstracts.space(1);
-  font-size: abstracts.font-size('sm');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("sm");
+  color: abstracts.color("muted-foreground");
   @include abstracts.transition(color);
 
   &:hover {
-    color: abstracts.color('muted-foreground');
+    color: abstracts.color("muted-foreground");
   }
 }
 
 .breadcrumbIcon {
   height: abstracts.space(4);
   width: abstracts.space(4);
-  color: abstracts.color('foreground');
+  color: abstracts.color("foreground");
 }
 
 // ===========================================
@@ -313,25 +313,25 @@
   gap: abstracts.space(8);
 
   // Single column on mobile
-  @include abstracts.respond-below('md') {
+  @include abstracts.respond-below("md") {
     grid-template-columns: 1fr;
     gap: abstracts.space(6);
   }
 }
 
 .contentGridWithSidebar {
-  @include abstracts.respond-to('lg') {
+  @include abstracts.respond-to("lg") {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   // More spacious layout on xl
-  @include abstracts.respond-to('xl') {
+  @include abstracts.respond-to("xl") {
     gap: abstracts.space(10);
   }
 }
 
 .mainAreaWithSidebar {
-  @include abstracts.respond-to('lg') {
+  @include abstracts.respond-to("lg") {
     grid-column: span 3;
   }
 }
@@ -348,11 +348,11 @@
 }
 
 .selectionCard {
-  border-color: abstracts.color-alpha('primary', 0.35);
-  background-color: abstracts.color-alpha('primary', 0.1);
+  border-color: abstracts.color-alpha("primary", 0.35);
+  background-color: abstracts.color-alpha("primary", 0.1);
 
   @include abstracts.dark {
-    border-color: abstracts.color-alpha('primary', 0.35);
-    background-color: abstracts.color-alpha('primary', 0.1);
+    border-color: abstracts.color-alpha("primary", 0.35);
+    background-color: abstracts.color-alpha("primary", 0.1);
   }
 }

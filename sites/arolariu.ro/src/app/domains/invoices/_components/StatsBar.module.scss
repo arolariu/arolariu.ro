@@ -1,7 +1,7 @@
 // ===========================================
 // UNIFIED STATS BAR COMPONENT STYLES
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 .container {
   display: flex;
@@ -9,8 +9,8 @@
   justify-content: space-between;
   gap: space(6);
   padding: space(3) space(4);
-  border-radius: radius('lg');
-  background-color: color-alpha('muted', 0.3);
+  border-radius: radius("lg");
+  background-color: color-alpha("muted", 0.3);
   flex-wrap: wrap;
 }
 
@@ -28,13 +28,13 @@
 }
 
 .statValue {
-  font-size: font-size('2xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("2xl");
+  font-weight: font-weight("bold");
 }
 
 .statLabel {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
 }
 
 .actions {
@@ -46,25 +46,25 @@
 // COLOR VARIANTS
 // ===========================================
 .default {
-  color: color('foreground');
+  color: color("foreground");
 }
 
 .green {
-  color: color('success');
+  color: color("success");
 }
 
 .amber {
-  color: color('warning');
+  color: color("warning");
 }
 
 .blue {
-  color: color('info');
+  color: color("info");
 }
 
 .red {
-  color: color('destructive');
+  color: color("destructive");
 }
 
 .purple {
-  color: color('primary');
+  color: color("primary");
 }

@@ -1,14 +1,14 @@
 // ===========================================
 // TOP PRODUCTS CHART STYLES
 // ===========================================
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 // ===========================================
 // LAYOUT
 // ===========================================
 .card {
-  background: color('card');
-  border: 1px solid color('border');
+  background: color("card");
+  border: 1px solid color("border");
   border-radius: space(2);
 }
 
@@ -18,14 +18,14 @@
 }
 
 .cardTitle {
-  font-size: font-size('xl');
-  font-weight: font-weight('bold');
-  color: color('foreground');
+  font-size: font-size("xl");
+  font-weight: font-weight("bold");
+  color: color("foreground");
 }
 
 .cardDescription {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
   margin-top: space(1);
 }
 
@@ -39,36 +39,36 @@
 .tableWrapper {
   overflow-x: auto;
   border-radius: space(2);
-  border: 1px solid color('border');
+  border: 1px solid color("border");
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 
   thead {
-    background: color('muted');
-    border-bottom: 1px solid color('border');
+    background: color("muted");
+    border-bottom: 1px solid color("border");
   }
 
   th {
     padding: space(3) space(4);
     text-align: left;
-    font-weight: font-weight('semibold');
-    font-size: font-size('xs');
+    font-weight: font-weight("semibold");
+    font-size: font-size("xs");
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: color('muted-foreground');
+    color: color("muted-foreground");
     white-space: nowrap;
   }
 
   tbody tr {
-    border-bottom: 1px solid color('border');
+    border-bottom: 1px solid color("border");
     transition: background-color 0.2s;
 
     &:hover {
-      background: color('muted');
+      background: color("muted");
       opacity: 0.5;
     }
 
@@ -111,7 +111,7 @@
 }
 
 .cellProduct {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .cellQuantity,
@@ -123,7 +123,7 @@
 .cellSpent,
 .cellAverage {
   text-align: right;
-  font-weight: font-weight('semibold');
+  font-weight: font-weight("semibold");
   font-variant-numeric: tabular-nums;
 }
 
@@ -145,7 +145,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  font-weight: font-weight('bold');
+  font-weight: font-weight("bold");
 
   &.gold {
     background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
@@ -170,10 +170,10 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: color('muted');
-  color: color('muted-foreground');
-  font-weight: font-weight('semibold');
-  font-size: font-size('sm');
+  background: color("muted");
+  color: color("muted-foreground");
+  font-weight: font-weight("semibold");
+  font-size: font-size("sm");
 }
 
 // ===========================================
@@ -187,17 +187,17 @@
 }
 
 .emptyText {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
   text-align: center;
 }
 
 // ===========================================
 // RESPONSIVE
 // ===========================================
-@include respond-to('sm') {
+@include respond-to("sm") {
   .table {
-    font-size: font-size('xs');
+    font-size: font-size("xs");
 
     th,
     td {
@@ -222,6 +222,6 @@
   .rankNumber {
     width: 28px;
     height: 28px;
-    font-size: font-size('xs');
+    font-size: font-size("xs");
   }
 }

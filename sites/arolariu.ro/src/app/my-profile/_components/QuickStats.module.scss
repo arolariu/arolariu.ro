@@ -2,8 +2,8 @@
 // QUICK STATS STYLES
 // Scoped to QuickStats.tsx only
 // ===========================================
-@use '../../../styles/abstracts' as *;
-@use 'settings-shared' as settings;
+@use "../../../styles/abstracts" as *;
+@use "settings-shared" as settings;
 
 .section {
   @include settings.settings-section;
@@ -19,11 +19,11 @@
 .grid {
   @include grid(1, space(4));
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
@@ -33,13 +33,13 @@
 }
 
 .statValue {
-  font-size: font-size('2xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("2xl");
+  font-weight: font-weight("bold");
 }
 
 .statDescription {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
 }
 
 .cardIcon {
@@ -58,14 +58,14 @@
 }
 
 .storageSize {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
 }
 
 .storageHint {
   margin-top: space(2);
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
 }
 
 // ===========================================

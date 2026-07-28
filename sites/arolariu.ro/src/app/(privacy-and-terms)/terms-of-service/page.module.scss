@@ -1,7 +1,7 @@
 // ===========================================
 // TERMS OF SERVICE PAGE STYLES
 // ===========================================
-@use '../../../styles/abstracts' as *;
+@use "../../../styles/abstracts" as *;
 
 // ===========================================
 // MAIN LAYOUT
@@ -24,18 +24,18 @@
 }
 
 .pageTitle {
-  color: color('primary');
-  font-size: font-size('3xl');
-  font-weight: font-weight('black');
+  color: color("primary");
+  font-size: font-size("3xl");
+  font-weight: font-weight("black");
 }
 
 // ===========================================
 // FOOTER SECTION
 // ===========================================
 .footerSection {
-  color: color('primary');
+  color: color("primary");
   padding-top: space(8);
-  font-size: font-size('3xl');
-  font-weight: font-weight('black');
+  font-size: font-size("3xl");
+  font-weight: font-weight("black");
   font-style: italic;
 }

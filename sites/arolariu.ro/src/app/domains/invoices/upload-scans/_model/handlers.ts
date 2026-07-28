@@ -26,7 +26,11 @@ type UploadEventHandler<TType extends UploadEvent["type"]> = (state: UploadState
  * @param update - Mapping function for the matched upload.
  * @returns Updated queue.
  */
-function updateUpload(uploads: readonly PendingUpload[], uploadId: string, update: (upload: PendingUpload) => PendingUpload): PendingUpload[] {
+function updateUpload(
+  uploads: readonly PendingUpload[],
+  uploadId: string,
+  update: (upload: PendingUpload) => PendingUpload,
+): PendingUpload[] {
   return uploads.map((upload) => (upload.id === uploadId ? update(upload) : upload));
 }
 
@@ -70,7 +74,9 @@ export const handleRemovableItemsCleared: UploadEventHandler<"scanUpload.queue.r
 /** Handles renaming an idle or failed queue item. */
 export const handleQueueItemRenamed: UploadEventHandler<"scanUpload.queue.itemRenamed"> = (state, event) => ({
   ...state,
-  pendingUploads: updateUpload(state.pendingUploads, event.id, (upload) => (isRemovableUpload(upload) ? {...upload, name: event.name} : upload)),
+  pendingUploads: updateUpload(state.pendingUploads, event.id, (upload) =>
+    isRemovableUpload(upload) ? {...upload, name: event.name} : upload,
+  ),
 });
 
 /** Handles replacing an idle or failed upload with locally rotated media. */

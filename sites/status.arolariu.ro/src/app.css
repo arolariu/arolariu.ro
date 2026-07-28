@@ -37,13 +37,13 @@
   --font-body: var(--font-mono);
 
   /* Fluid type scale — dense, monospaced */
-  --fs-xs: clamp(0.6875rem, 0.66rem + 0.15vw, 0.75rem);   /* 11–12 */
-  --fs-sm: clamp(0.75rem, 0.72rem + 0.15vw, 0.8125rem);   /* 12–13 */
-  --fs-body: clamp(0.8125rem, 0.78rem + 0.2vw, 0.9375rem);/* 13–15 */
-  --fs-lg: clamp(0.9375rem, 0.9rem + 0.25vw, 1.0625rem);  /* 15–17 */
-  --fs-h2: clamp(1rem, 0.95rem + 0.3vw, 1.125rem);        /* 16–18 */
-  --fs-h1: clamp(1.375rem, 1rem + 1.6vw, 2.25rem);        /* 22–36 — mono wordmark */
-  --fs-hero: clamp(1.875rem, 1.2rem + 3vw, 3.5rem);       /* 30–56 — mono hero digits */
+  --fs-xs: clamp(0.6875rem, 0.66rem + 0.15vw, 0.75rem); /* 11–12 */
+  --fs-sm: clamp(0.75rem, 0.72rem + 0.15vw, 0.8125rem); /* 12–13 */
+  --fs-body: clamp(0.8125rem, 0.78rem + 0.2vw, 0.9375rem); /* 13–15 */
+  --fs-lg: clamp(0.9375rem, 0.9rem + 0.25vw, 1.0625rem); /* 15–17 */
+  --fs-h2: clamp(1rem, 0.95rem + 0.3vw, 1.125rem); /* 16–18 */
+  --fs-h1: clamp(1.375rem, 1rem + 1.6vw, 2.25rem); /* 22–36 — mono wordmark */
+  --fs-hero: clamp(1.875rem, 1.2rem + 3vw, 3.5rem); /* 30–56 — mono hero digits */
 
   /* Fluid spacing */
   --sp-2xs: clamp(2px, 0.15vw + 1px, 4px);
@@ -106,7 +106,8 @@
   --shadow-tooltip: 0 10px 32px rgba(21, 16, 10, 0.16), 0 0 0 1px rgba(21, 16, 10, 0.06);
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   background: var(--bg);
@@ -134,35 +135,26 @@ body::before {
   pointer-events: none;
   opacity: 0.35;
   z-index: 0;
-  background-image:
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent 2px,
-      rgba(255, 255, 255, 0.012) 2px,
-      rgba(255, 255, 255, 0.012) 3px
-    );
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 2px,
+    rgba(255, 255, 255, 0.012) 2px,
+    rgba(255, 255, 255, 0.012) 3px
+  );
 }
 :root[data-theme="light"] body::before {
   opacity: 1;
   background-image:
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent 2px,
-      rgba(21, 16, 10, 0.025) 2px,
-      rgba(21, 16, 10, 0.025) 3px
-    ),
-    repeating-linear-gradient(
-      to right,
-      transparent 0,
-      transparent 48px,
-      rgba(21, 16, 10, 0.03) 48px,
-      rgba(21, 16, 10, 0.03) 49px
-    );
+    repeating-linear-gradient(to bottom, transparent 0, transparent 2px, rgba(21, 16, 10, 0.025) 2px, rgba(21, 16, 10, 0.025) 3px),
+    repeating-linear-gradient(to right, transparent 0, transparent 48px, rgba(21, 16, 10, 0.03) 48px, rgba(21, 16, 10, 0.03) 49px);
 }
 
-main, .page { position: relative; z-index: 1; }
+main,
+.page {
+  position: relative;
+  z-index: 1;
+}
 
 /* Mono helper (explicit) */
 .mono {
@@ -181,33 +173,60 @@ main, .page { position: relative; z-index: 1; }
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes dotPulse {
-  0%, 100% { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
-  50%      { box-shadow: 0 0 0 4px transparent; opacity: 0.7; }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 currentColor;
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 4px transparent;
+    opacity: 0.7;
+  }
 }
 
 /* Page-load reveal — terminal line-print feel */
 @keyframes consolePrint {
-  from { opacity: 0; transform: translateX(-4px); }
-  to   { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* Cursor blink for the prompt symbol */
 @keyframes blink {
-  0%, 49%   { opacity: 1; }
-  50%, 100% { opacity: 0.2; }
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.2;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -236,5 +255,7 @@ main, .page { position: relative; z-index: 1; }
 }
 
 @container statusPage (max-width: 480px) {
-  :global(h1) { font-size: clamp(1.125rem, 0.9rem + 1.5vw, 1.5rem); }
+  :global(h1) {
+    font-size: clamp(1.125rem, 0.9rem + 1.5vw, 1.5rem);
+  }
 }

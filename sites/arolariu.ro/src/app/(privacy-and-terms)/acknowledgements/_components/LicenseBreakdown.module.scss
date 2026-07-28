@@ -1,7 +1,7 @@
 // ===========================================
 // LICENSE BREAKDOWN COMPONENT STYLES
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 // ===========================================
 // SECTION
@@ -28,8 +28,8 @@
 
 .title {
   margin-bottom: space(4);
-  font-size: font-size('3xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("3xl");
+  font-weight: font-weight("bold");
 }
 
 .titleGradient {
@@ -46,7 +46,7 @@
   display: grid;
   gap: space(6);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -56,11 +56,11 @@
 // ===========================================
 .licenseCard {
   height: 100%;
-  @include transition(all, 'moderate');
+  @include transition(all, "moderate");
 
   &:hover {
     transform: translateY(-0.25rem);
-    border-color: color-alpha('primary', 0.3);
+    border-color: color-alpha("primary", 0.3);
   }
 }
 
@@ -80,8 +80,8 @@
 
 .iconWrapper {
   padding: space(3);
-  border-radius: radius('full');
-  background-color: color-alpha('secondary', 0.15);
+  border-radius: radius("full");
+  background-color: color-alpha("secondary", 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -90,7 +90,7 @@
 .icon {
   height: 1.5rem;
   width: 1.5rem;
-  color: color('secondary-foreground');
+  color: color("secondary-foreground");
 }
 
 .licenseInfo {
@@ -99,12 +99,12 @@
 }
 
 .licenseName {
-  font-weight: font-weight('semibold');
+  font-weight: font-weight("semibold");
 }
 
 .packageCount {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
 }
 
 // ===========================================
@@ -114,31 +114,31 @@
   height: 0.75rem;
   margin-bottom: space(3);
   overflow: hidden;
-  border-radius: radius('full');
-  background-color: color('muted');
+  border-radius: radius("full");
+  background-color: color("muted");
 }
 
 .progressFillCyan {
   height: 100%;
-  border-radius: radius('full');
+  border-radius: radius("full");
   @include gradient-bg();
 }
 
 .progressFillOrange {
   height: 100%;
-  border-radius: radius('full');
+  border-radius: radius("full");
   @include gradient-bg();
 }
 
 .progressFillGpl {
   height: 100%;
-  border-radius: radius('full');
+  border-radius: radius("full");
   @include gradient-bg();
 }
 
 .progressFillOther {
   height: 100%;
-  border-radius: radius('full');
+  border-radius: radius("full");
   @include gradient-bg();
 }
 
@@ -152,11 +152,11 @@
 }
 
 .description {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
 }
 
 .percentage {
-  font-size: font-size('lg');
-  font-weight: font-weight('bold');
+  font-size: font-size("lg");
+  font-weight: font-weight("bold");
 }

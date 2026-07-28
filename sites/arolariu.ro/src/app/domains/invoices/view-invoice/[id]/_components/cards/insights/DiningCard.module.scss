@@ -1,8 +1,8 @@
-@use '../../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../../styles/abstracts" as *;
 
 .sectionTitle {
-  @include text-muted('sm');
-  font-weight: font-weight('medium');
+  @include text-muted("sm");
+  font-weight: font-weight("medium");
 }
 
 .nutritionGrid {
@@ -13,8 +13,8 @@
   display: flex;
   align-items: center;
   gap: space(2);
-  border-radius: radius('lg');
-  border: 1px solid color('border');
+  border-radius: radius("lg");
+  border: 1px solid color("border");
   padding: space(2);
 }
 
@@ -23,8 +23,8 @@
 }
 
 .nutritionValue {
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
 }
 
 .habitsGrid {
@@ -32,9 +32,9 @@
 }
 
 .habitCard {
-  background-color: color('card');
-  border-radius: radius('lg');
-  border: 1px solid color('border');
+  background-color: color("card");
+  border-radius: radius("lg");
+  border: 1px solid color("border");
   padding: space(3);
   text-align: center;
 }
@@ -44,8 +44,8 @@
 }
 
 .habitValue {
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
 }
 
 .habitSub {
@@ -59,8 +59,8 @@
 }
 
 .swapsTitle {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .swapsList {
@@ -71,68 +71,68 @@
   display: flex;
   align-items: flex-start;
   gap: space(2);
-  @include text-muted('sm');
+  @include text-muted("sm");
 }
 
 .swapBullet {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .swapSaving {
-  font-weight: font-weight('medium');
-  color: color('success');
+  font-weight: font-weight("medium");
+  color: color("success");
 }
 
 .challengeBox {
   display: flex;
   align-items: flex-start;
   gap: space(3);
-  border-radius: radius('lg');
-  border: 1px solid color-alpha('primary', 0.3);
+  border-radius: radius("lg");
+  border: 1px solid color-alpha("primary", 0.3);
   @include gradient-bg();
   padding: space(3);
 
   @include dark {
-    border-color: color-alpha('primary', 1);
+    border-color: color-alpha("primary", 1);
   }
 }
 
 .challengeTitle {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .challengeDescription {
-  @include text-muted('sm');
+  @include text-muted("sm");
 }
 
 .challengeHighlight {
-  font-weight: font-weight('semibold');
-  color: color('primary');
+  font-weight: font-weight("semibold");
+  color: color("primary");
 }
 
 .sodiumWarning {
-  color: color('destructive');
+  color: color("destructive");
 }
 
 .spendDiffRed {
-  color: color('destructive');
+  color: color("destructive");
 }
 
 .spendDiffGreen {
-  color: color('success');
+  color: color("success");
 }
 
 .titleRow {
   display: flex;
   align-items: center;
   gap: space(2);
-  font-size: font-size('lg');
+  font-size: font-size("lg");
 }
 
 .titleIcon {
   @include icon-size(space(5));
-  color: color('warning');
+  color: color("warning");
 }
 
 .contentSpaced {
@@ -145,27 +145,27 @@
 
 .iconOrange {
   @include icon-size(space(4));
-  color: color('warning');
+  color: color("warning");
 }
 
 .iconRed {
   @include icon-size(space(4));
-  color: color('destructive');
+  color: color("destructive");
 }
 
 .iconAmber {
   @include icon-size(space(4));
-  color: color('warning');
+  color: color("warning");
 }
 
 .iconBlue {
   @include icon-size(space(4));
-  color: color('info');
+  color: color("info");
 }
 
 .iconGreen {
   @include icon-size(space(4));
-  color: color('success');
+  color: color("success");
 }
 
 .habitIconWrapper {
@@ -178,5 +178,5 @@
   @include icon-size(space(5));
   flex-shrink: 0;
   margin-top: space(0.5);
-  color: color('accent-primary');
+  color: color("accent-primary");
 }

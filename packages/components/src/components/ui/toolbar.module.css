@@ -50,7 +50,10 @@
   text-decoration: none;
   white-space: nowrap;
   outline: none;
-  transition: background-color var(--ac-transition-fast), color var(--ac-transition-fast), box-shadow var(--ac-transition-fast);
+  transition:
+    background-color var(--ac-transition-fast),
+    color var(--ac-transition-fast),
+    box-shadow var(--ac-transition-fast);
 
   &:focus-visible {
     background-color: var(--ac-accent);

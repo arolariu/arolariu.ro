@@ -1,4 +1,4 @@
-@use '../../../../../../styles/abstracts' as *;
+@use "../../../../../../styles/abstracts" as *;
 
 .merchantInfo {
   display: flex;
@@ -6,23 +6,23 @@
 }
 
 .merchantIcon {
-  background-color: color-alpha('primary', 0.1);
+  background-color: color-alpha("primary", 0.1);
   margin-right: space(3);
   display: flex;
   width: space(10);
   height: space(10);
   align-items: center;
   justify-content: center;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .merchantName {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .merchantAddress {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
 }
 
 .actions {
@@ -47,7 +47,7 @@
 }
 
 .primaryIcon {
-  color: color('primary');
+  color: color("primary");
   width: space(5);
   height: space(5);
 }

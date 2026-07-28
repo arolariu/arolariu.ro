@@ -8,7 +8,7 @@
 // across mobile, tablet, and desktop breakpoints.
 // ===========================================
 
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 // ===========================================
 // PAGE WRAPPER (matches page.module.scss .pageMain)
@@ -19,7 +19,7 @@
   padding-block: space(24);
   min-height: calc(200vh - 64px);
 
-  @include respond-below('md') {
+  @include respond-below("md") {
     min-height: 250vh;
     padding-bottom: calc(space(16) + env(safe-area-inset-bottom, 0px));
   }
@@ -41,7 +41,7 @@
   height: space(10);
   width: min(28rem, 90%);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     height: space(12);
   }
 }
@@ -75,7 +75,7 @@
   justify-content: space-between;
   gap: space(4);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     flex-direction: row;
     align-items: center;
   }
@@ -109,7 +109,7 @@
   height: space(9);
   width: space(10);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     width: space(24);
   }
 }
@@ -118,7 +118,7 @@
   height: space(9);
   width: space(10);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     width: 7.5rem;
   }
 }
@@ -133,7 +133,7 @@
   width: 100%;
   max-width: 28rem;
 
-  @include respond-below('md') {
+  @include respond-below("md") {
     max-width: 100%;
   }
 }
@@ -151,7 +151,7 @@
   flex-direction: column;
   gap: space(3);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     flex-direction: row;
     align-items: center;
   }
@@ -183,8 +183,8 @@
 // ===========================================
 .tableWrapper {
   overflow: hidden;
-  border-radius: radius('lg');
-  border: 1px solid color('border');
+  border-radius: radius("lg");
+  border: 1px solid color("border");
 }
 
 .tableHeaderRow,
@@ -196,19 +196,19 @@
   // checkbox | invoice | category | date | amount | actions
   grid-template-columns: space(8) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) space(20);
 
-  @include respond-below('md') {
+  @include respond-below("md") {
     // collapse some columns on small screens to mirror responsive table behavior
     grid-template-columns: space(6) minmax(0, 1fr) minmax(0, 1fr) space(16);
   }
 }
 
 .tableHeaderRow {
-  background-color: color-alpha('foreground', 0.04);
-  border-bottom: 1px solid color('border');
+  background-color: color-alpha("foreground", 0.04);
+  border-bottom: 1px solid color("border");
 }
 
 .tableBodyRow {
-  border-bottom: 1px solid color('border');
+  border-bottom: 1px solid color("border");
 
   &:last-child {
     border-bottom: none;
@@ -226,17 +226,17 @@
 .cellPill {
   height: space(6);
   width: 6rem;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .cellActions {
   height: space(8);
   width: 100%;
-  border-radius: radius('md');
+  border-radius: radius("md");
 }
 
 .cellHidden {
-  @include respond-below('md') {
+  @include respond-below("md") {
     display: none;
   }
 }
@@ -244,5 +244,5 @@
 .checkboxSkeleton {
   height: space(4);
   width: space(4);
-  border-radius: radius('sm');
+  border-radius: radius("sm");
 }

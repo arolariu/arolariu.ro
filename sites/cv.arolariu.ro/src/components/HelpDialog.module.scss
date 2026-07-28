@@ -118,7 +118,9 @@
   background: transparent;
   color: var(--cv-color-gray-500);
   cursor: pointer;
-  transition: color var(--cv-transition-base), background-color var(--cv-transition-base);
+  transition:
+    color var(--cv-transition-base),
+    background-color var(--cv-transition-base);
 }
 
 .closeButton:hover {
@@ -153,7 +155,9 @@
   cursor: pointer;
   font-size: 0.875rem;
   font-weight: 500;
-  transition: color var(--cv-transition-base), border-color var(--cv-transition-base);
+  transition:
+    color var(--cv-transition-base),
+    border-color var(--cv-transition-base);
 }
 
 .tabActive {
@@ -554,7 +558,9 @@
   border: 1px solid var(--cv-color-gray-200);
   border-radius: var(--cv-radius-xl);
   padding: 1rem;
-  transition: border-color var(--cv-transition-base), box-shadow var(--cv-transition-base);
+  transition:
+    border-color var(--cv-transition-base),
+    box-shadow var(--cv-transition-base);
 }
 
 .featureCard:hover {
@@ -626,7 +632,9 @@
   color: var(--cv-color-white);
   cursor: pointer;
   font-weight: 500;
-  transition: box-shadow var(--cv-transition-base), filter var(--cv-transition-base);
+  transition:
+    box-shadow var(--cv-transition-base),
+    filter var(--cv-transition-base);
 }
 
 .footerButton:hover {

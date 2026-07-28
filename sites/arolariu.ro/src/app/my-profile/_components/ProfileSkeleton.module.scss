@@ -2,7 +2,7 @@
 // PROFILE SKELETON STYLES
 // Scoped to ProfileSkeleton.tsx only
 // ===========================================
-@use '../../../styles/abstracts' as *;
+@use "../../../styles/abstracts" as *;
 
 .wrapper {
   @include flex-column;
@@ -26,7 +26,7 @@
   @include flex-column;
   gap: space(4);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     flex-direction: row;
     align-items: flex-end;
   }
@@ -57,7 +57,7 @@
   flex-direction: column;
   gap: space(6);
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     flex-direction: row;
   }
 }
@@ -65,20 +65,20 @@
 .sidebarSkeleton {
   display: none;
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     @include flex-column;
     width: 16rem;
     flex-shrink: 0;
     gap: space(2);
     padding: space(3);
-    border: 1px solid color('border');
-    border-radius: radius('xl');
+    border: 1px solid color("border");
+    border-radius: radius("xl");
   }
 }
 
 .sidebarPill {
   height: 2.5rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 .contentArea {
@@ -95,7 +95,7 @@
 .contentGrid {
   @include grid(1, space(6));
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

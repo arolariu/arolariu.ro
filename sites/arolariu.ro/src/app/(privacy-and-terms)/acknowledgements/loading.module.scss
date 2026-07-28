@@ -1,7 +1,7 @@
 // ===========================================
 // LOADING SKELETON STYLES
 // ===========================================
-@use '../../../styles/abstracts' as *;
+@use "../../../styles/abstracts" as *;
 
 // ===========================================
 // CONTAINER
@@ -51,7 +51,7 @@
   margin-left: auto;
   margin-right: auto;
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     flex-direction: row;
   }
 }
@@ -70,11 +70,11 @@
   display: grid;
   gap: space(6);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
@@ -124,14 +124,14 @@
 // TABLE VIEW
 // ===========================================
 .tableBorder {
-  border-radius: radius('md');
-  border: 1px solid color('border');
+  border-radius: radius("md");
+  border: 1px solid color("border");
 }
 
 .hiddenMd {
   display: none;
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     display: table-cell;
   }
 }
@@ -218,13 +218,13 @@
 .skelVersionBadge {
   height: 1.25rem;
   width: 4rem;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .skelLicenseBadge {
   height: 1.25rem;
   width: 6rem;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 // Card description lines
@@ -301,7 +301,7 @@
 .skelTableBadge {
   height: 1.25rem;
   width: 6rem;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .skelActionBtn {
@@ -313,7 +313,7 @@
   height: 2rem;
   width: 2rem;
   margin: 0 auto;
-  border-radius: radius('md');
+  border-radius: radius("md");
 }
 
 // Footer

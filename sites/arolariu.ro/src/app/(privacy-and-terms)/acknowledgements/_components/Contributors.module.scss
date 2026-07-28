@@ -1,7 +1,7 @@
 // ===========================================
 // CONTRIBUTORS COMPONENT STYLES
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 // ===========================================
 // SECTION
@@ -10,7 +10,7 @@
   position: relative;
   width: 100%;
   padding: space(16) space(4);
-  background-color: color('muted');
+  background-color: color("muted");
 }
 
 .container {
@@ -29,19 +29,19 @@
 
 .title {
   margin-bottom: space(4);
-  font-size: font-size('3xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("3xl");
+  font-weight: font-weight("bold");
 }
 
 .titleGradient {
-  color: color('foreground');
+  color: color("foreground");
 }
 
 .subtitle {
   max-width: 42rem;
   margin-left: auto;
   margin-right: auto;
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 // ===========================================
@@ -51,11 +51,11 @@
   display: grid;
   gap: space(6);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
@@ -65,12 +65,12 @@
 // ===========================================
 .contributorCard {
   height: 100%;
-  @include transition(all, 'moderate');
+  @include transition(all, "moderate");
 
   &:hover {
     transform: translateY(-0.25rem);
-    border-color: color-alpha('primary', 0.3);
-    @include shadow('lg');
+    border-color: color-alpha("primary", 0.3);
+    @include shadow("lg");
   }
 }
 
@@ -91,40 +91,40 @@
 }
 
 .avatarFallback {
-  font-size: font-size('lg');
-  font-weight: font-weight('bold');
-  color: color('primary');
+  font-size: font-size("lg");
+  font-weight: font-weight("bold");
+  color: color("primary");
 }
 
 // Gradient variants for avatars
 .gradientCyanBlue {
-  background-color: color-alpha('primary', 0.1);
+  background-color: color-alpha("primary", 0.1);
 }
 
 .gradientBluePurple {
-  background-color: color-alpha('primary', 0.1);
+  background-color: color-alpha("primary", 0.1);
 }
 
 .gradientPurplePink {
-  background-color: color-alpha('primary', 0.1);
+  background-color: color-alpha("primary", 0.1);
 }
 
 .gradientAmberOrange {
-  background-color: color-alpha('primary', 0.1);
+  background-color: color-alpha("primary", 0.1);
 }
 
 .contributorName {
   margin-bottom: space(1);
-  font-weight: font-weight('semibold');
+  font-weight: font-weight("semibold");
 }
 
 .packageCount {
   @include flex-center;
   gap: space(1);
   margin-bottom: space(2);
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
-  color: color('primary');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
+  color: color("primary");
 }
 
 .packageIcon {
@@ -133,6 +133,6 @@
 }
 
 .description {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
 }

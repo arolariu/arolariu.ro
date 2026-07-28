@@ -1,10 +1,10 @@
-@use '../../../../../../styles/abstracts' as abstracts;
+@use "../../../../../../styles/abstracts" as abstracts;
 
 .sidebar {
   @include abstracts.spaced-children(abstracts.space(6));
 
   // Compact spacing on mobile
-  @include abstracts.respond-below('md') {
+  @include abstracts.respond-below("md") {
     @include abstracts.spaced-children(abstracts.space(4));
   }
 }

@@ -14,9 +14,11 @@
 
 **Modern • Accessible • Production Ready**
 
-_A comprehensive collection of 71+ beautifully crafted React components built on [Base UI](https://base-ui.com/) primitives, styled with CSS Modules, and designed for modern applications that demand both beauty and performance._
+_A comprehensive collection of 71+ beautifully crafted React components built on [Base UI](https://base-ui.com/) primitives, styled with CSS
+Modules, and designed for modern applications that demand both beauty and performance._
 
-[🚀 Get Started](#-quick-start) • [📖 Documentation](#-component-catalog) • 🎨 Storybook demos (Coming soon) • [💡 Examples](#-usage-examples) • [🤝 Contributing](#-contributing)
+[🚀 Get Started](#-quick-start) • [📖 Documentation](#-component-catalog) • 🎨 Storybook demos (Coming soon) •
+[💡 Examples](#-usage-examples) • [🤝 Contributing](#-contributing)
 
 </div>
 
@@ -53,13 +55,8 @@ npm install react react-dom @base-ui/react motion react-hook-form recharts
 ### Basic Setup
 
 ```tsx
-import { Button } from "@arolariu/components/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@arolariu/components/card";
+import {Button} from "@arolariu/components/button";
+import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components/card";
 import styles from "./app-shell.module.css";
 
 export default function MyApp() {
@@ -95,7 +92,7 @@ export default function MyApp() {
 import "@arolariu/components/styles";
 
 // Components auto-load their CSS when imported
-import { Button, Card } from "@arolariu/components";
+import {Button, Card} from "@arolariu/components";
 ```
 
 `@arolariu/components/styles` provides design tokens only. Component CSS is loaded automatically when you import components.
@@ -175,16 +172,16 @@ Explore our collection of **71+ components** organized by category.
 
 ### 🎛️ Form Controls
 
-| Component        | Description                               | Import                               |
-| ---------------- | ----------------------------------------- | ------------------------------------ |
-| **Form**         | Form validation and management            | `@arolariu/components/form`          |
-| **Field**        | Form field layout primitives              | `@arolariu/components/field`         |
-| **InputOTP**     | One-time password input fields            | `@arolariu/components/input-otp`     |
-| **InputGroup**   | Grouped text inputs and actions           | `@arolariu/components/input-group`   |
-| **RadioGroup**   | Single-choice option groups               | `@arolariu/components/radio-group`   |
-| **Switch**       | Toggle switches for binary options        | `@arolariu/components/switch`        |
-| **Textarea**     | Multi-line text input areas               | `@arolariu/components/textarea`      |
-| **ToggleGroup**  | Coordinated toggle button groups          | `@arolariu/components/toggle-group`  |
+| Component       | Description                        | Import                              |
+| --------------- | ---------------------------------- | ----------------------------------- |
+| **Form**        | Form validation and management     | `@arolariu/components/form`         |
+| **Field**       | Form field layout primitives       | `@arolariu/components/field`        |
+| **InputOTP**    | One-time password input fields     | `@arolariu/components/input-otp`    |
+| **InputGroup**  | Grouped text inputs and actions    | `@arolariu/components/input-group`  |
+| **RadioGroup**  | Single-choice option groups        | `@arolariu/components/radio-group`  |
+| **Switch**      | Toggle switches for binary options | `@arolariu/components/switch`       |
+| **Textarea**    | Multi-line text input areas        | `@arolariu/components/textarea`     |
+| **ToggleGroup** | Coordinated toggle button groups   | `@arolariu/components/toggle-group` |
 
 ### 💬 Feedback & Status
 
@@ -256,10 +253,10 @@ Explore our collection of **71+ components** organized by category.
 ### Common Import Paths
 
 ```tsx
-import { Button } from "@arolariu/components/button";
-import { useIsMobile } from "@arolariu/components/useIsMobile";
-import { cn } from "@arolariu/components/utilities";
-import { hexToHsl } from "@arolariu/components/color-conversion-utilities";
+import {Button} from "@arolariu/components/button";
+import {useIsMobile} from "@arolariu/components/useIsMobile";
+import {cn} from "@arolariu/components/utilities";
+import {hexToHsl} from "@arolariu/components/color-conversion-utilities";
 ```
 
 ---
@@ -269,20 +266,14 @@ import { hexToHsl } from "@arolariu/components/color-conversion-utilities";
 ### Building a Login Form
 
 ```tsx
-import { useState } from "react";
+import {useState} from "react";
 
-import { Alert, AlertDescription } from "@arolariu/components/alert";
-import { Button } from "@arolariu/components/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@arolariu/components/card";
-import { Checkbox } from "@arolariu/components/checkbox";
-import { Input } from "@arolariu/components/input";
-import { Label } from "@arolariu/components/label";
+import {Alert, AlertDescription} from "@arolariu/components/alert";
+import {Button} from "@arolariu/components/button";
+import {Card, CardContent, CardFooter, CardHeader, CardTitle} from "@arolariu/components/card";
+import {Checkbox} from "@arolariu/components/checkbox";
+import {Input} from "@arolariu/components/input";
+import {Label} from "@arolariu/components/label";
 import styles from "./login-form.module.css";
 
 export function LoginForm() {
@@ -299,27 +290,27 @@ export function LoginForm() {
         </CardHeader>
         <CardContent className={styles.content}>
           {error ? (
-            <Alert variant="destructive">
+            <Alert variant='destructive'>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           ) : null}
 
           <div className={styles.field}>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor='email'>Email</Label>
             <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
+              id='email'
+              type='email'
+              placeholder='you@example.com'
               value={email}
               onChange={(event) => setEmail(event.target.value)}
             />
           </div>
 
           <div className={styles.field}>
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor='password'>Password</Label>
             <Input
-              id="password"
-              type="password"
+              id='password'
+              type='password'
               value={password}
               onChange={(event) => setPassword(event.target.value)}
             />
@@ -327,11 +318,11 @@ export function LoginForm() {
 
           <div className={styles.checkboxRow}>
             <Checkbox
-              id="remember"
+              id='remember'
               checked={rememberMe}
               onCheckedChange={setRememberMe}
             />
-            <Label htmlFor="remember">Remember me</Label>
+            <Label htmlFor='remember'>Remember me</Label>
           </div>
         </CardContent>
         <CardFooter>
@@ -346,14 +337,9 @@ export function LoginForm() {
 ### Data Dashboard
 
 ```tsx
-import { Badge } from "@arolariu/components/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@arolariu/components/card";
-import { Progress } from "@arolariu/components/progress";
+import {Badge} from "@arolariu/components/badge";
+import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components/card";
+import {Progress} from "@arolariu/components/progress";
 import styles from "./dashboard.module.css";
 
 export function Dashboard() {
@@ -362,7 +348,7 @@ export function Dashboard() {
       <Card>
         <CardHeader>
           <CardTitle className={styles.titleRow}>
-            Sales <Badge variant="secondary">+12%</Badge>
+            Sales <Badge variant='secondary'>+12%</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className={styles.stack}>
@@ -388,14 +374,9 @@ export function Dashboard() {
 ### Interactive Navigation
 
 ```tsx
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-} from "@arolariu/components/navigation-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@arolariu/components/sheet";
-import { MenuIcon } from "lucide-react";
+import {NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList} from "@arolariu/components/navigation-menu";
+import {Sheet, SheetContent, SheetTrigger} from "@arolariu/components/sheet";
+import {MenuIcon} from "lucide-react";
 import styles from "./app-header.module.css";
 
 export function AppHeader() {
@@ -407,22 +388,28 @@ export function AppHeader() {
         <NavigationMenu className={styles.desktopNav}>
           <NavigationMenuList>
             <NavigationMenuItem>
-              <NavigationMenuLink href="/">Home</NavigationMenuLink>
+              <NavigationMenuLink href='/'>Home</NavigationMenuLink>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <NavigationMenuLink href="/about">About</NavigationMenuLink>
+              <NavigationMenuLink href='/about'>About</NavigationMenuLink>
             </NavigationMenuItem>
           </NavigationMenuList>
         </NavigationMenu>
 
         <Sheet>
-          <SheetTrigger render={<button type="button" className={styles.mobileTrigger} />}>
+          <SheetTrigger
+            render={
+              <button
+                type='button'
+                className={styles.mobileTrigger}
+              />
+            }>
             <MenuIcon />
           </SheetTrigger>
           <SheetContent>
             <nav className={styles.mobileNav}>
-              <a href="/">Home</a>
-              <a href="/about">About</a>
+              <a href='/'>Home</a>
+              <a href='/about'>About</a>
             </nav>
           </SheetContent>
         </Sheet>
@@ -442,11 +429,11 @@ export function AppHeader() {
 
 ```tsx
 // ✅ Optimal: import only what you need
-import { Button } from "@arolariu/components/button";
-import { Card } from "@arolariu/components/card";
+import {Button} from "@arolariu/components/button";
+import {Card} from "@arolariu/components/card";
 
 // ❌ Avoid when bundle size matters
-import { Button, Card } from "@arolariu/components";
+import {Button, Card} from "@arolariu/components";
 ```
 
 **Bundle Impact**
@@ -460,25 +447,19 @@ import { Button, Card } from "@arolariu/components";
 Full TypeScript support with intelligent autocomplete.
 
 ```tsx
-import { Button, type ButtonProps } from "@arolariu/components/button";
-import { cn } from "@arolariu/components/utilities";
+import {Button, type ButtonProps} from "@arolariu/components/button";
+import {cn} from "@arolariu/components/utilities";
 import styles from "./custom-button.module.css";
 
 interface CustomButtonProps extends ButtonProps {
   icon?: React.ReactNode;
 }
 
-export function CustomButton({
-  icon,
-  children,
-  className,
-  ...props
-}: CustomButtonProps) {
+export function CustomButton({icon, children, className, ...props}: CustomButtonProps) {
   return (
     <Button
       className={cn(styles.customButton, className)}
-      {...props}
-    >
+      {...props}>
       {icon ? <span className={styles.icon}>{icon}</span> : null}
       <span>{children}</span>
     </Button>
@@ -492,8 +473,8 @@ Compatible with **Next.js**, **Remix**, and other SSR frameworks.
 
 ```tsx
 // app/page.tsx
-import { Button } from "@arolariu/components/button";
-import { Card, CardContent } from "@arolariu/components/card";
+import {Button} from "@arolariu/components/button";
+import {Card, CardContent} from "@arolariu/components/card";
 
 export default function HomePage() {
   return (
@@ -521,7 +502,7 @@ Built around **OKLCH CSS custom properties** and **CSS Modules**.
 ```
 
 ```tsx
-import { Button } from "@arolariu/components/button";
+import {Button} from "@arolariu/components/button";
 import styles from "./theme-overrides.module.css";
 
 export function ThemedExample() {
@@ -549,7 +530,7 @@ export function ThemedExample() {
 ### Browser DevTools Integration
 
 ```tsx
-import { Button } from "@arolariu/components/button";
+import {Button} from "@arolariu/components/button";
 
 function MyComponent() {
   return <Button onClick={() => console.log("Clicked!")}>Debug Me</Button>;
@@ -572,7 +553,8 @@ Inspect generated class names, Base UI data attributes, and source-mapped module
 | 🦊 **Firefox**     | 88+ (2021+) |
 | 🧭 **Safari**      | 14+ (2020+) |
 
-**Why modern browsers?** The library uses modern ESM output, CSS custom properties, and contemporary platform APIs for smaller bundles and better performance.
+**Why modern browsers?** The library uses modern ESM output, CSS custom properties, and contemporary platform APIs for smaller bundles and
+better performance.
 
 ---
 
@@ -647,7 +629,8 @@ Core runtime dependencies include:
 - **lucide-react** - Icon set
 - **motion** - Animation library
 - **react-hook-form** and **zod** - Forms and validation helpers
-- **embla-carousel-react**, **recharts**, **react-day-picker**, **input-otp**, **react-resizable-panels**, **shiki** - Specialized UI integrations
+- **embla-carousel-react**, **recharts**, **react-day-picker**, **input-otp**, **react-resizable-panels**, **shiki** - Specialized UI
+  integrations
 
 Removed from the 1.0.0 architecture:
 
@@ -719,7 +702,8 @@ If **@arolariu/components** helps you build better UIs, please consider giving i
 
 [![GitHub stars](https://img.shields.io/github/stars/arolariu/arolariu.ro?style=social)](https://github.com/arolariu/arolariu.ro)
 
-**[⭐ Star on GitHub](https://github.com/arolariu/arolariu.ro)** • **[📖 View Component Catalog](#-component-catalog)** • **[🐛 Report Issues](https://github.com/arolariu/arolariu.ro/issues)**
+**[⭐ Star on GitHub](https://github.com/arolariu/arolariu.ro)** • **[📖 View Component Catalog](#-component-catalog)** •
+**[🐛 Report Issues](https://github.com/arolariu/arolariu.ro/issues)**
 
 ---
 

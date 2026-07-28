@@ -2,7 +2,7 @@
 // SIGN-IN PAGE - ISLAND STYLES
 // Scoped to /auth/sign-in/island.tsx only
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 // ===========================================
 // ISLAND LAYOUT
@@ -15,7 +15,7 @@
   gap: space(10);
   width: 100%;
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -29,7 +29,7 @@
 .columnReverse {
   order: 2;
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     order: 1;
   }
 }
@@ -37,7 +37,7 @@
 .columnForward {
   order: 1;
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     order: 2;
   }
 }
@@ -57,22 +57,22 @@
   width: 100%;
   max-width: 28rem;
   overflow: hidden;
-  border-radius: radius('2xl');
-  border: 1px solid color-alpha('border', 0.5);
+  border-radius: radius("2xl");
+  border: 1px solid color-alpha("border", 0.5);
   padding: space(3);
-  background-color: color-alpha('card', 0.6);
+  background-color: color-alpha("card", 0.6);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  @include shadow('2xl');
+  @include shadow("2xl");
   @include transition((border-color, box-shadow));
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     padding: space(4);
   }
 
   &:hover {
-    border-color: color-alpha('primary', 0.3);
-    box-shadow: 0 25px 50px -12px color-alpha('primary', 0.1);
+    border-color: color-alpha("primary", 0.3);
+    box-shadow: 0 25px 50px -12px color-alpha("primary", 0.1);
   }
 }
 
@@ -81,18 +81,17 @@
 // ===========================================
 .glow {
   position: absolute;
-  border-radius: radius('full');
+  border-radius: radius("full");
   filter: blur(24px);
   pointer-events: none;
 }
 
 .glowBackground {
   inset: -1rem;
-  border-radius: radius('3xl');
+  border-radius: radius("3xl");
   opacity: 0.4;
-  background-color: color-alpha('primary', 0.2);
+  background-color: color-alpha("primary", 0.2);
 }
-
 
 // ===========================================
 // CLERK SKELETON LOADING
@@ -119,19 +118,19 @@
 .clerkSkeletonLogo {
   width: 3rem;
   height: 3rem;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .clerkSkeletonTitle {
   width: 70%;
   height: 1.75rem;
-  border-radius: radius('md');
+  border-radius: radius("md");
 }
 
 .clerkSkeletonSubtitle {
   width: 85%;
   height: 1rem;
-  border-radius: radius('md');
+  border-radius: radius("md");
 }
 
 .clerkSkeletonSocial {
@@ -144,26 +143,26 @@
 .clerkSkeletonSocialButton {
   width: 4.5rem;
   height: 2.5rem;
-  border-radius: radius('md');
+  border-radius: radius("md");
 }
 
 .clerkSkeletonDivider {
   width: 100%;
   height: 1rem;
-  border-radius: radius('md');
+  border-radius: radius("md");
   margin: space(2) 0;
 }
 
 .clerkSkeletonInput {
   width: 100%;
   height: 2.75rem;
-  border-radius: radius('md');
+  border-radius: radius("md");
 }
 
 .clerkSkeletonButton {
   width: 100%;
   height: 2.75rem;
-  border-radius: radius('md');
+  border-radius: radius("md");
   margin-top: space(2);
 }
 
@@ -177,7 +176,7 @@
 .clerkSkeletonFooterText {
   width: 60%;
   height: 1rem;
-  border-radius: radius('md');
+  border-radius: radius("md");
 }
 
 .clerkShimmer {

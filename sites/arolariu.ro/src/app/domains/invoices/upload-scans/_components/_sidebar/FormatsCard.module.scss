@@ -1,18 +1,18 @@
-@use '../../../../../../styles/abstracts' as abstracts;
+@use "../../../../../../styles/abstracts" as abstracts;
 
 .sidebarCardContent {
   padding: abstracts.space(4);
 
   // Compact padding on mobile
-  @include abstracts.respond-below('md') {
+  @include abstracts.respond-below("md") {
     padding: abstracts.space(3);
   }
 }
 
 .sidebarTitle {
   margin-bottom: abstracts.space(4);
-  font-weight: abstracts.font-weight('semibold');
-  color: abstracts.color('muted-foreground');
+  font-weight: abstracts.font-weight("semibold");
+  color: abstracts.color("muted-foreground");
 
   @include abstracts.dark {
     color: white;
@@ -27,12 +27,12 @@
   display: flex;
   align-items: center;
   gap: abstracts.space(3);
-  border-radius: abstracts.radius('lg');
+  border-radius: abstracts.radius("lg");
   padding: abstracts.space(3);
-  background-color: abstracts.color('muted');
+  background-color: abstracts.color("muted");
 
   // Compact info cards on mobile
-  @include abstracts.respond-below('md') {
+  @include abstracts.respond-below("md") {
     gap: abstracts.space(2);
     padding: abstracts.space(2);
   }
@@ -43,21 +43,21 @@
   height: abstracts.space(10);
   width: abstracts.space(10);
   flex-shrink: 0;
-  border-radius: abstracts.radius('lg');
-  background-color: abstracts.color('background');
-  @include abstracts.shadow('sm');
+  border-radius: abstracts.radius("lg");
+  background-color: abstracts.color("background");
+  @include abstracts.shadow("sm");
 
   // Smaller on mobile
-  @include abstracts.respond-below('md') {
+  @include abstracts.respond-below("md") {
     height: abstracts.space(8);
     width: abstracts.space(8);
   }
 }
 
 .fileTypeLabel {
-  font-size: abstracts.font-size('sm');
-  font-weight: abstracts.font-weight('medium');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("sm");
+  font-weight: abstracts.font-weight("medium");
+  color: abstracts.color("muted-foreground");
 
   @include abstracts.dark {
     color: white;
@@ -65,22 +65,22 @@
 }
 
 .fileTypeExtensions {
-  font-size: abstracts.font-size('xs');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("xs");
+  color: abstracts.color("muted-foreground");
 }
 
 .fileTypeIconAccent {
   @include abstracts.icon-size(abstracts.space(5));
-  color: abstracts.color('primary');
+  color: abstracts.color("primary");
 }
 
 .fileTypeIconRed {
   @include abstracts.icon-size(abstracts.space(5));
-  color: abstracts.color('destructive');
+  color: abstracts.color("destructive");
 }
 
 .maxSizeNote {
   margin-top: abstracts.space(3);
-  font-size: abstracts.font-size('xs');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("xs");
+  color: abstracts.color("muted-foreground");
 }

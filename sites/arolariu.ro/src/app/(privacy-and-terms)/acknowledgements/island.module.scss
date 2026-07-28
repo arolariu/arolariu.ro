@@ -1,7 +1,7 @@
 // ===========================================
 // ACKNOWLEDGEMENTS ISLAND STYLES
 // ===========================================
-@use '../../../styles/abstracts' as *;
+@use "../../../styles/abstracts" as *;
 
 // ===========================================
 // MAIN LAYOUT
@@ -28,18 +28,18 @@
 }
 
 .packagesTitle {
-  font-size: font-size('3xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("3xl");
+  font-weight: font-weight("bold");
   margin-bottom: space(4);
 }
 
 .packagesTitleGradient {
-  color: color('primary');
+  color: color("primary");
 }
 
 .packagesSubtitle {
-  color: color('muted-foreground');
-  font-size: font-size('lg');
+  color: color("muted-foreground");
+  font-size: font-size("lg");
   max-width: 42rem;
   margin-left: auto;
   margin-right: auto;

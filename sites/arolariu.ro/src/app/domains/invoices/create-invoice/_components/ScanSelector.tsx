@@ -135,7 +135,7 @@ export default function ScanSelector(): React.JSX.Element {
             {paginatedScans.map((scan) => {
               const isSelected = selectedScans.some((s) => s.id === scan.id);
               const handleToggle = createToggleScanHandler(scan);
-              
+
               return (
                 <ScanCard
                   key={scan.id}

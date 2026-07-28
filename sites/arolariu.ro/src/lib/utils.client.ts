@@ -9,7 +9,7 @@
 // eslint-disable-next-line n/no-extraneous-import -- client-only is a Next.js build-time marker, not a runtime import
 import "client-only";
 
-import type { BrowserInformation } from "@/types";
+import type {BrowserInformation} from "@/types";
 
 /**
  * Reads a browser `Blob` as a Base64 data URL.
@@ -35,13 +35,12 @@ export async function extractBase64FromBlob(blob: Blob): Promise<string> {
           reject(new Error("Unable to read blob as base64"));
         }
       },
-      { once: true },
+      {once: true},
     );
-    reader.addEventListener("error", () => reject(reader.error ?? new Error("Unable to read file")), { once: true });
+    reader.addEventListener("error", () => reject(reader.error ?? new Error("Unable to read file")), {once: true});
     reader.readAsDataURL(blob);
   });
 }
-
 
 // #region Browser API Functions (storage, navigator, screen)
 
@@ -78,7 +77,7 @@ export function isBrowserStorageAvailable(type: "localStorage" | "sessionStorage
  * @returns The user's browser navigation information.
  */
 export function retrieveNavigatorInformation(): Readonly<BrowserInformation["navigationInformation"]> {
-  const { userAgent, language, languages, cookieEnabled, doNotTrack, hardwareConcurrency, maxTouchPoints } = globalThis.navigator;
+  const {userAgent, language, languages, cookieEnabled, doNotTrack, hardwareConcurrency, maxTouchPoints} = globalThis.navigator;
   return {
     userAgent,
     language,
@@ -95,7 +94,7 @@ export function retrieveNavigatorInformation(): Readonly<BrowserInformation["nav
  * @returns The user's browser screen information.
  */
 export function retrieveScreenInformation(): Readonly<BrowserInformation["screenInformation"]> {
-  const { width, height, availWidth, availHeight, colorDepth, pixelDepth } = globalThis.screen;
+  const {width, height, availWidth, availHeight, colorDepth, pixelDepth} = globalThis.screen;
   return {
     width,
     height,

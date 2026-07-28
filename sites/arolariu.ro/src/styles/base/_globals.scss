@@ -8,58 +8,54 @@
 /// @author arolariu
 /// ===========================================
 
-@use '../abstracts/config' as config;
+@use "../abstracts/config" as config;
 
 $prefixed-color-vars: (
   // Surfaces and content
-  'background',
-  'foreground',
-  'surface',
-  'surface-elevated',
-  'inverse-surface',
-  'inverse-foreground',
-  'card',
-  'card-foreground',
-  'popover',
-  'popover-foreground',
-
+  "background",
+  "foreground",
+  "surface",
+  "surface-elevated",
+  "inverse-surface",
+  "inverse-foreground",
+  "card",
+  "card-foreground",
+  "popover",
+  "popover-foreground",
   // Brand and intent
-  'primary',
-  'primary-foreground',
-  'secondary',
-  'secondary-foreground',
-  'tertiary',
-  'tertiary-foreground',
-
+  "primary",
+  "primary-foreground",
+  "secondary",
+  "secondary-foreground",
+  "tertiary",
+  "tertiary-foreground",
   // Semantic support
-  'muted',
-  'muted-foreground',
-  'accent',
-  'accent-foreground',
-  'destructive',
-  'destructive-foreground',
-  'success',
-  'success-foreground',
-  'warning',
-  'warning-foreground',
-  'info',
-  'info-foreground',
-
+  "muted",
+  "muted-foreground",
+  "accent",
+  "accent-foreground",
+  "destructive",
+  "destructive-foreground",
+  "success",
+  "success-foreground",
+  "warning",
+  "warning-foreground",
+  "info",
+  "info-foreground",
   // Borders and focus
-  'border',
-  'border-strong',
-  'input',
-  'ring',
-
+  "border",
+  "border-strong",
+  "input",
+  "ring",
   // Utility aliases
-  'link',
-  'link-foreground',
-  'accent-primary',
-  'footer-bg',
+  "link",
+  "link-foreground",
+  "accent-primary",
+  "footer-bg"
 );
 
 @mixin emit-prefixed-color-vars {
-  @if config.$css-prefix != '' {
+  @if config.$css-prefix != "" {
     @each $token in $prefixed-color-vars {
       --#{config.$css-prefix}-#{$token}: var(--#{$token});
     }

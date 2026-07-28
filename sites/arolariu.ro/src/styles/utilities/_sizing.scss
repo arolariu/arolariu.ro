@@ -3,42 +3,109 @@
 /// ===========================================
 /// Curated sizing and shape helpers that are still actively used.
 /// ===========================================
-@use '../abstracts' as *;
+@use "../abstracts" as *;
 
-.w-full { width: 100%; }
-.w-auto { width: auto; }
-.w-1\/2 { width: 50%; }
-.w-3\/4 { width: 75%; }
-.w-4\/5 { width: 80%; }
+.w-full {
+  width: 100%;
+}
+.w-auto {
+  width: auto;
+}
+.w-1\/2 {
+  width: 50%;
+}
+.w-3\/4 {
+  width: 75%;
+}
+.w-4\/5 {
+  width: 80%;
+}
 
-.h-full { height: 100%; }
-.h-auto { height: auto; }
+.h-full {
+  height: 100%;
+}
+.h-auto {
+  height: auto;
+}
 
-.min-w-full { min-width: 100%; }
-.max-w-full { max-width: 100%; }
-.max-w-xs { max-width: 20rem; }
-.max-w-md { max-width: 28rem; }
-.max-w-lg { max-width: 32rem; }
-.max-w-xl { max-width: 36rem; }
-.max-w-2xl { max-width: 42rem; }
-.max-w-3xl { max-width: 48rem; }
-.max-w-4xl { max-width: 56rem; }
-.max-w-6xl { max-width: 72rem; }
-.max-w-7xl { max-width: 80rem; }
+.min-w-full {
+  min-width: 100%;
+}
+.max-w-full {
+  max-width: 100%;
+}
+.max-w-xs {
+  max-width: 20rem;
+}
+.max-w-md {
+  max-width: 28rem;
+}
+.max-w-lg {
+  max-width: 32rem;
+}
+.max-w-xl {
+  max-width: 36rem;
+}
+.max-w-2xl {
+  max-width: 42rem;
+}
+.max-w-3xl {
+  max-width: 48rem;
+}
+.max-w-4xl {
+  max-width: 56rem;
+}
+.max-w-6xl {
+  max-width: 72rem;
+}
+.max-w-7xl {
+  max-width: 80rem;
+}
 
-.text-left { text-align: left; }
-.text-center { text-align: center; }
-.text-right { text-align: right; }
-.truncate { @include truncate; }
-.whitespace-nowrap { white-space: nowrap; }
+.text-left {
+  text-align: left;
+}
+.text-center {
+  text-align: center;
+}
+.text-right {
+  text-align: right;
+}
+.truncate {
+  @include truncate;
+}
+.whitespace-nowrap {
+  white-space: nowrap;
+}
 
-.rounded-md { border-radius: radius('md'); }
-.rounded-lg { border-radius: radius('lg'); }
-.rounded-xl { border-radius: radius('xl'); }
-.rounded-2xl { border-radius: radius('2xl'); }
-.rounded-full { border-radius: radius('full'); }
+.rounded-md {
+  border-radius: radius("md");
+}
+.rounded-lg {
+  border-radius: radius("lg");
+}
+.rounded-xl {
+  border-radius: radius("xl");
+}
+.rounded-2xl {
+  border-radius: radius("2xl");
+}
+.rounded-full {
+  border-radius: radius("full");
+}
 
-.border { border-width: 1px; border-style: solid; }
-.border-0 { border-width: 0; }
-.border-2 { border-width: 2px; border-style: solid; }
-.border-t { border-top-width: 1px; border-top-style: solid; }
+.border {
+  border-width: 1px;
+  border-style: solid;
+}
+.border-0 {
+  border-width: 0;
+}
+.border-2 {
+  border-width: 2px;
+  border-style: solid;
+}
+.border-t {
+  border-top-width: 1px;
+  border-top-style: solid;
+}

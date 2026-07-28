@@ -1,7 +1,7 @@
 // ===========================================
 // MESSAGE LIST STYLES
 // ===========================================
-@use '../../../../../styles/abstracts' as *;
+@use "../../../../../styles/abstracts" as *;
 
 // ===========================================
 // CONTAINER
@@ -19,16 +19,16 @@
   display: flex;
   align-items: flex-start;
   gap: space(3);
-  border-radius: radius('lg');
+  border-radius: radius("lg");
   padding: space(3);
 }
 
 .messageUser {
-  background-color: color-alpha('muted', 0.5);
+  background-color: color-alpha("muted", 0.5);
 }
 
 .messageAssistant {
-  background-color: color-alpha('primary', 0.05);
+  background-color: color-alpha("primary", 0.05);
 }
 
 // ===========================================
@@ -49,26 +49,26 @@
 }
 
 .messageSender {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .messageTimestamp {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  color: color("muted-foreground");
+  font-size: font-size("xs");
 }
 
 .messageContent {
   // prose-like styles
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 }
 
 .messageLine {
   margin-block: space(1);
-  color: color('foreground');
+  color: color("foreground");
 
   @include dark {
-    color: color('background');
+    color: color("background");
   }
 }
 
@@ -78,13 +78,13 @@
 .robotIcon {
   width: space(4);
   height: space(4);
-  color: color('primary');
+  color: color("primary");
 }
 
 .userIcon {
   width: space(4);
   height: space(4);
-  color: color('secondary-foreground');
+  color: color("secondary-foreground");
 }
 
 // ===========================================
@@ -96,9 +96,9 @@
 }
 
 .avatarFallbackAssistant {
-  background-color: color-alpha('primary', 0.1);
+  background-color: color-alpha("primary", 0.1);
 }
 
 .avatarFallbackUser {
-  background-color: color-alpha('secondary', 0.1);
+  background-color: color-alpha("secondary", 0.1);
 }

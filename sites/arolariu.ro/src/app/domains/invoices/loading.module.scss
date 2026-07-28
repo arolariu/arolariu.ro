@@ -1,7 +1,7 @@
 // ===========================================
 // INVOICE DOMAIN LOADING STYLES
 // ===========================================
-@use '../../../styles/abstracts' as *;
+@use "../../../styles/abstracts" as *;
 
 // ===========================================
 // LAYOUT
@@ -26,12 +26,12 @@
   object-fit: fill;
   object-position: center;
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     margin-inline: auto;
     height: 100%;
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     height: 50%;
   }
 }
@@ -40,7 +40,7 @@
   margin-top: space(2);
   width: 100%;
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     width: 66.666%;
   }
 }
@@ -51,7 +51,7 @@
   height: 2.5rem;
   width: 75%;
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     height: 3rem;
   }
 }
@@ -85,7 +85,7 @@
   justify-content: center;
   gap: space(4);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     flex-direction: row;
   }
 }
@@ -98,19 +98,19 @@
   justify-content: center;
   padding-top: space(16);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     flex-direction: row;
   }
 }
 
 .stepsTimeline {
-  @include respond-to('md') {
+  @include respond-to("md") {
     width: 50%;
     padding-block: space(6);
     padding-right: space(10);
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     width: 40%;
   }
 }
@@ -135,7 +135,7 @@
   pointer-events: none;
   height: 100%;
   width: 0.25rem;
-  background-color: color('border');
+  background-color: color("border");
 }
 
 .stepContent {
@@ -151,22 +151,22 @@
 .ctaButton {
   height: 2.75rem;
   width: 10rem;
-  border-radius: radius('md');
+  border-radius: radius("md");
 }
 
 .ctaButtonSmall {
   height: 2.75rem;
   width: 8rem;
-  border-radius: radius('md');
+  border-radius: radius("md");
 }
 
 .stepCircle {
   position: relative;
-  z-index: z('content');
+  z-index: z("content");
   height: space(10);
   width: space(10);
   flex-shrink: 0;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .stepTitle {

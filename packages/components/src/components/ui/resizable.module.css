@@ -28,7 +28,9 @@
 }
 
 .handle:focus-visible {
-  box-shadow: 0 0 0 1px var(--ac-ring), 0 0 0 2px var(--ac-background);
+  box-shadow:
+    0 0 0 1px var(--ac-ring),
+    0 0 0 2px var(--ac-background);
 }
 
 .handle[data-panel-group-direction="vertical"] {

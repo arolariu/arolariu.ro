@@ -1,7 +1,7 @@
 // ===========================================
 // ABOUT HUB - STATS COMPONENT
 // ===========================================
-@use '../../../styles/abstracts' as abstracts;
+@use "../../../styles/abstracts" as abstracts;
 
 .section {
   position: relative;
@@ -24,11 +24,11 @@
 .title {
   display: inline-block;
   margin-bottom: abstracts.space(4);
-  font-size: abstracts.font-size('3xl');
-  font-weight: abstracts.font-weight('bold');
+  font-size: abstracts.font-size("3xl");
+  font-weight: abstracts.font-weight("bold");
 
-  @include abstracts.respond-to('sm') {
-    font-size: abstracts.font-size('4xl');
+  @include abstracts.respond-to("sm") {
+    font-size: abstracts.font-size("4xl");
   }
 }
 
@@ -36,8 +36,8 @@
   margin-left: auto;
   margin-right: auto;
   max-width: 42rem;
-  font-size: abstracts.font-size('lg');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("lg");
+  color: abstracts.color("muted-foreground");
 }
 
 // Stats grid
@@ -45,11 +45,11 @@
   display: grid;
   gap: abstracts.space(6);
 
-  @include abstracts.respond-to('sm') {
+  @include abstracts.respond-to("sm") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include abstracts.respond-to('lg') {
+  @include abstracts.respond-to("lg") {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
@@ -59,15 +59,15 @@
   position: relative;
   height: 100%;
   overflow: hidden;
-  border-radius: abstracts.radius('lg');
-  border: 1px solid abstracts.color('border');
-  background-color: abstracts.color('card');
+  border-radius: abstracts.radius("lg");
+  border: 1px solid abstracts.color("border");
+  background-color: abstracts.color("card");
   @include abstracts.transition((transform, border-color, box-shadow));
 
   &:hover {
     transform: translateY(-4px);
-    border-color: abstracts.color-alpha('primary', 0.3);
-    @include abstracts.shadow('lg');
+    border-color: abstracts.color-alpha("primary", 0.3);
+    @include abstracts.shadow("lg");
   }
 }
 
@@ -98,13 +98,13 @@
 
 .iconInner {
   padding: abstracts.space(3);
-  border-radius: abstracts.radius('xl');
+  border-radius: abstracts.radius("xl");
 }
 
 .icon {
   width: 1.5rem;
   height: 1.5rem;
-  color: abstracts.color('primary');
+  color: abstracts.color("primary");
 }
 
 // Subtle tinted icon backgrounds (formerly gradient variants)
@@ -112,14 +112,14 @@
 .gradientPurple,
 .gradientAmber,
 .gradientGreen {
-  background-color: abstracts.color-alpha('primary', 0.1);
+  background-color: abstracts.color-alpha("primary", 0.1);
 }
 
 // Stat value with gradient text
 .value {
   margin-bottom: abstracts.space(2);
-  font-size: abstracts.font-size('4xl');
-  font-weight: abstracts.font-weight('bold');
+  font-size: abstracts.font-size("4xl");
+  font-weight: abstracts.font-weight("bold");
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -127,32 +127,32 @@
 
 .valueBlue {
   composes: value;
-  background-color: abstracts.color('primary');
+  background-color: abstracts.color("primary");
 }
 
 .valuePurple {
   composes: value;
-  background-color: abstracts.color('primary');
+  background-color: abstracts.color("primary");
 }
 
 .valueAmber {
   composes: value;
-  background-color: abstracts.color('primary');
+  background-color: abstracts.color("primary");
 }
 
 .valueGreen {
   composes: value;
-  background-color: abstracts.color('primary');
+  background-color: abstracts.color("primary");
 }
 
 // Labels
 .label {
   margin-bottom: abstracts.space(1);
-  font-size: abstracts.font-size('lg');
-  font-weight: abstracts.font-weight('semibold');
+  font-size: abstracts.font-size("lg");
+  font-weight: abstracts.font-weight("semibold");
 }
 
 .description {
-  font-size: abstracts.font-size('sm');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("sm");
+  color: abstracts.color("muted-foreground");
 }

@@ -237,9 +237,12 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
    * Dismiss a context tip and persist to localStorage.
    */
   /** Dismisses a context tip and persists to localStorage. */
-  const dismissTip = useCallback((tipId: string): void => {
-    setDismissedTips((prev) => [...prev, tipId]);
-  }, [setDismissedTips]);
+  const dismissTip = useCallback(
+    (tipId: string): void => {
+      setDismissedTips((prev) => [...prev, tipId]);
+    },
+    [setDismissedTips],
+  );
 
   /**
    * Factory: returns a stable dismiss handler for a specific tip.

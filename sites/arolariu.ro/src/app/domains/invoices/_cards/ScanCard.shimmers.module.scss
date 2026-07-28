@@ -9,7 +9,7 @@
 // Colocated with ScanCard.shimmers.tsx so the shimmer is a fully
 // self-contained component (markup + styles in the same folder).
 
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 .skeletonCard {
   display: flex;
@@ -20,7 +20,7 @@
 .skeletonImage {
   aspect-ratio: 4 / 3;
   width: 100%;
-  border-radius: radius('md');
+  border-radius: radius("md");
 }
 
 .skeletonInfo {
@@ -33,11 +33,11 @@
 .skeletonName {
   height: space(4);
   width: 70%;
-  border-radius: radius('sm');
+  border-radius: radius("sm");
 }
 
 .skeletonMeta {
   height: space(3);
   width: 50%;
-  border-radius: radius('sm');
+  border-radius: radius("sm");
 }

@@ -1,4 +1,4 @@
-@use '../../../../../../styles/abstracts' as abstracts;
+@use "../../../../../../styles/abstracts" as abstracts;
 
 .breadcrumb {
   margin-bottom: abstracts.space(6);
@@ -8,17 +8,17 @@
   display: inline-flex;
   align-items: center;
   gap: abstracts.space(1);
-  font-size: abstracts.font-size('sm');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("sm");
+  color: abstracts.color("muted-foreground");
   @include abstracts.transition(color);
 
   &:hover {
-    color: abstracts.color('muted-foreground');
+    color: abstracts.color("muted-foreground");
   }
 }
 
 .breadcrumbIcon {
   height: abstracts.space(4);
   width: abstracts.space(4);
-  color: abstracts.color('foreground');
+  color: abstracts.color("foreground");
 }

@@ -36,11 +36,11 @@
  */
 
 import {
-	deriveBlobExtension as deriveGenericBlobExtension,
-	extractFileExtension as extractGenericFileExtension,
-	getCanonicalMimeTypeForExtension,
-	isExtensionInSet,
-	normalizeMimeTypeWithAliases,
+  deriveBlobExtension as deriveGenericBlobExtension,
+  extractFileExtension as extractGenericFileExtension,
+  getCanonicalMimeTypeForExtension,
+  isExtensionInSet,
+  normalizeMimeTypeWithAliases,
 } from "@/lib/utils.generic";
 import {type InvoiceScanType, InvoiceScanType as InvoiceScanTypeEnum} from "@/types/invoices";
 import {type ScanType, ScanType as ScanTypeEnum} from "@/types/scans";
@@ -70,13 +70,13 @@ import {type ScanType, ScanType as ScanTypeEnum} from "@/types/scans";
  * ```
  */
 export const ACCEPTED_SCAN_MIME_TYPES = [
-	"image/jpeg",
-	"image/png",
-	"image/bmp",
-	"image/tiff",
-	"image/heif",
-	"image/heic",
-	"application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/bmp",
+  "image/tiff",
+  "image/heif",
+  "image/heic",
+  "application/pdf",
 ] as const;
 
 /**
@@ -104,17 +104,7 @@ export const ACCEPTED_SCAN_MIME_TYPES = [
  * }
  * ```
  */
-export const ACCEPTED_SCAN_FILE_EXTENSIONS = [
-	"jpg",
-	"jpeg",
-	"png",
-	"bmp",
-	"tif",
-	"tiff",
-	"heif",
-	"heic",
-	"pdf",
-] as const;
+export const ACCEPTED_SCAN_FILE_EXTENSIONS = ["jpg", "jpeg", "png", "bmp", "tif", "tiff", "heif", "heic", "pdf"] as const;
 
 /**
  * Internal Set for efficient MIME type lookups.
@@ -145,11 +135,11 @@ const _ACCEPTED_SCAN_FILE_EXTENSIONS_SET = new Set<string>(ACCEPTED_SCAN_FILE_EX
  * @internal
  */
 const MIME_TYPE_ALIASES: Readonly<Record<string, string>> = {
-	"image/jpg": "image/jpeg",
-	"image/pjpeg": "image/jpeg",
-	"image/tif": "image/tiff",
-	"image/x-tiff": "image/tiff",
-	"image/x-ms-bmp": "image/bmp",
+  "image/jpg": "image/jpeg",
+  "image/pjpeg": "image/jpeg",
+  "image/tif": "image/tiff",
+  "image/x-tiff": "image/tiff",
+  "image/x-ms-bmp": "image/bmp",
 };
 
 /**
@@ -162,15 +152,15 @@ const MIME_TYPE_ALIASES: Readonly<Record<string, string>> = {
  * @internal
  */
 const EXTENSION_TO_MIME: Readonly<Record<string, string>> = {
-	jpg: "image/jpeg",
-	jpeg: "image/jpeg",
-	png: "image/png",
-	bmp: "image/bmp",
-	tif: "image/tiff",
-	tiff: "image/tiff",
-	heif: "image/heif",
-	heic: "image/heic",
-	pdf: "application/pdf",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  bmp: "image/bmp",
+  tif: "image/tiff",
+  tiff: "image/tiff",
+  heif: "image/heif",
+  heic: "image/heic",
+  pdf: "application/pdf",
 };
 
 /**
@@ -183,13 +173,13 @@ const EXTENSION_TO_MIME: Readonly<Record<string, string>> = {
  * @internal
  */
 const MIME_TO_SCAN_TYPE: Readonly<Record<string, ScanType>> = {
-	"image/jpeg": ScanTypeEnum.JPEG,
-	"image/png": ScanTypeEnum.PNG,
-	"image/bmp": ScanTypeEnum.BMP,
-	"image/tiff": ScanTypeEnum.TIFF,
-	"image/heif": ScanTypeEnum.HEIF,
-	"image/heic": ScanTypeEnum.HEIC,
-	"application/pdf": ScanTypeEnum.PDF,
+  "image/jpeg": ScanTypeEnum.JPEG,
+  "image/png": ScanTypeEnum.PNG,
+  "image/bmp": ScanTypeEnum.BMP,
+  "image/tiff": ScanTypeEnum.TIFF,
+  "image/heif": ScanTypeEnum.HEIF,
+  "image/heic": ScanTypeEnum.HEIC,
+  "application/pdf": ScanTypeEnum.PDF,
 };
 
 /**
@@ -203,13 +193,13 @@ const MIME_TO_SCAN_TYPE: Readonly<Record<string, ScanType>> = {
  * @internal
  */
 const MIME_TO_INVOICE_SCAN_TYPE: Readonly<Record<string, InvoiceScanType>> = {
-	"image/jpeg": InvoiceScanTypeEnum.JPEG,
-	"image/png": InvoiceScanTypeEnum.PNG,
-	"image/bmp": InvoiceScanTypeEnum.BMP,
-	"image/tiff": InvoiceScanTypeEnum.TIFF,
-	"image/heif": InvoiceScanTypeEnum.HEIF,
-	"image/heic": InvoiceScanTypeEnum.HEIC,
-	"application/pdf": InvoiceScanTypeEnum.PDF,
+  "image/jpeg": InvoiceScanTypeEnum.JPEG,
+  "image/png": InvoiceScanTypeEnum.PNG,
+  "image/bmp": InvoiceScanTypeEnum.BMP,
+  "image/tiff": InvoiceScanTypeEnum.TIFF,
+  "image/heif": InvoiceScanTypeEnum.HEIF,
+  "image/heic": InvoiceScanTypeEnum.HEIC,
+  "application/pdf": InvoiceScanTypeEnum.PDF,
 };
 
 /**
@@ -222,14 +212,14 @@ const MIME_TO_INVOICE_SCAN_TYPE: Readonly<Record<string, InvoiceScanType>> = {
  * @internal
  */
 const SCAN_TYPE_TO_INVOICE_SCAN_TYPE: Readonly<Record<string, InvoiceScanType>> = {
-	[ScanTypeEnum.JPEG]: InvoiceScanTypeEnum.JPEG,
-	[ScanTypeEnum.PNG]: InvoiceScanTypeEnum.PNG,
-	[ScanTypeEnum.BMP]: InvoiceScanTypeEnum.BMP,
-	[ScanTypeEnum.TIFF]: InvoiceScanTypeEnum.TIFF,
-	[ScanTypeEnum.HEIF]: InvoiceScanTypeEnum.HEIF,
-	[ScanTypeEnum.HEIC]: InvoiceScanTypeEnum.HEIC,
-	[ScanTypeEnum.PDF]: InvoiceScanTypeEnum.PDF,
-	[ScanTypeEnum.OTHER]: InvoiceScanTypeEnum.UNKNOWN,
+  [ScanTypeEnum.JPEG]: InvoiceScanTypeEnum.JPEG,
+  [ScanTypeEnum.PNG]: InvoiceScanTypeEnum.PNG,
+  [ScanTypeEnum.BMP]: InvoiceScanTypeEnum.BMP,
+  [ScanTypeEnum.TIFF]: InvoiceScanTypeEnum.TIFF,
+  [ScanTypeEnum.HEIF]: InvoiceScanTypeEnum.HEIF,
+  [ScanTypeEnum.HEIC]: InvoiceScanTypeEnum.HEIC,
+  [ScanTypeEnum.PDF]: InvoiceScanTypeEnum.PDF,
+  [ScanTypeEnum.OTHER]: InvoiceScanTypeEnum.UNKNOWN,
 };
 
 /**
@@ -260,7 +250,7 @@ const SCAN_TYPE_TO_INVOICE_SCAN_TYPE: Readonly<Record<string, InvoiceScanType>> 
  * ```
  */
 export function normalizeScanMimeType(mimeType: string): string | null {
-	return normalizeMimeTypeWithAliases(mimeType, MIME_TYPE_ALIASES, _ACCEPTED_SCAN_MIME_TYPES_SET);
+  return normalizeMimeTypeWithAliases(mimeType, MIME_TYPE_ALIASES, _ACCEPTED_SCAN_MIME_TYPES_SET);
 }
 
 /**
@@ -290,7 +280,7 @@ export function normalizeScanMimeType(mimeType: string): string | null {
  * ```
  */
 export function extractFileExtension(fileName: string): string | null {
-	return extractGenericFileExtension(fileName);
+  return extractGenericFileExtension(fileName);
 }
 
 /**
@@ -315,7 +305,7 @@ export function extractFileExtension(fileName: string): string | null {
  * ```
  */
 export function deriveBlobExtension(fileName: string): string {
-	return deriveGenericBlobExtension(fileName);
+  return deriveGenericBlobExtension(fileName);
 }
 
 /**
@@ -345,10 +335,10 @@ export function deriveBlobExtension(fileName: string): string {
  * ```
  */
 export function mimeTypeToScanType(mimeType: string): ScanType {
-	const normalized = normalizeScanMimeType(mimeType);
-	if (!normalized) return ScanTypeEnum.OTHER;
+  const normalized = normalizeScanMimeType(mimeType);
+  if (!normalized) return ScanTypeEnum.OTHER;
 
-	return MIME_TO_SCAN_TYPE[normalized] ?? ScanTypeEnum.OTHER;
+  return MIME_TO_SCAN_TYPE[normalized] ?? ScanTypeEnum.OTHER;
 }
 
 /**
@@ -378,10 +368,10 @@ export function mimeTypeToScanType(mimeType: string): ScanType {
  * ```
  */
 export function mimeTypeToInvoiceScanType(mimeType: string): InvoiceScanType {
-	const normalized = normalizeScanMimeType(mimeType);
-	if (!normalized) return InvoiceScanTypeEnum.UNKNOWN;
+  const normalized = normalizeScanMimeType(mimeType);
+  if (!normalized) return InvoiceScanTypeEnum.UNKNOWN;
 
-	return MIME_TO_INVOICE_SCAN_TYPE[normalized] ?? InvoiceScanTypeEnum.UNKNOWN;
+  return MIME_TO_INVOICE_SCAN_TYPE[normalized] ?? InvoiceScanTypeEnum.UNKNOWN;
 }
 
 /**
@@ -407,7 +397,7 @@ export function mimeTypeToInvoiceScanType(mimeType: string): InvoiceScanType {
  * ```
  */
 export function scanTypeToInvoiceScanType(scanType: ScanType): InvoiceScanType {
-	return SCAN_TYPE_TO_INVOICE_SCAN_TYPE[scanType] ?? InvoiceScanTypeEnum.UNKNOWN;
+  return SCAN_TYPE_TO_INVOICE_SCAN_TYPE[scanType] ?? InvoiceScanTypeEnum.UNKNOWN;
 }
 
 /**
@@ -436,7 +426,7 @@ export function scanTypeToInvoiceScanType(scanType: ScanType): InvoiceScanType {
  * ```
  */
 export function getMimeTypeForExtension(extension: string): string | null {
-	return getCanonicalMimeTypeForExtension(extension, EXTENSION_TO_MIME);
+  return getCanonicalMimeTypeForExtension(extension, EXTENSION_TO_MIME);
 }
 
 /**
@@ -461,7 +451,7 @@ export function getMimeTypeForExtension(extension: string): string | null {
  * ```
  */
 export function isSupportedScanMimeType(mimeType: string): boolean {
-	return normalizeScanMimeType(mimeType) !== null;
+  return normalizeScanMimeType(mimeType) !== null;
 }
 
 /**
@@ -486,5 +476,5 @@ export function isSupportedScanMimeType(mimeType: string): boolean {
  * ```
  */
 export function isSupportedScanExtension(extension: string): boolean {
-	return isExtensionInSet(extension, _ACCEPTED_SCAN_FILE_EXTENSIONS_SET);
+  return isExtensionInSet(extension, _ACCEPTED_SCAN_FILE_EXTENSIONS_SET);
 }

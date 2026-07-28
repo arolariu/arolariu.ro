@@ -1,6 +1,7 @@
 # CV — Alexandru‑Razvan Olariu (Svelte 5)
 
-Production-ready Svelte 5 codebase powering the personal CV of Alexandru‑Razvan Olariu, focused on simplicity, speed, and clean content presentation.
+Production-ready Svelte 5 codebase powering the personal CV of Alexandru‑Razvan Olariu, focused on simplicity, speed, and clean content
+presentation.
 
 - Live site: https://cv.arolariu.ro
 - Monorepo path: sites/cv.arolariu.ro
@@ -84,6 +85,7 @@ CV live checks are implemented with a dedicated Postman/Newman collection.
   - `postman-environment.production.json`
 
 Coverage includes:
+
 - Public routes: `/`, `/human`, `/json`, `/pdf`
 - JSON API contract: `/rest/json`, `format=minimal`, `format=resume`
 - Section contract: `/rest/json?section={{sectionName}}` and unknown-section 404
@@ -96,13 +98,15 @@ npm run test:e2e:cv
 ```
 
 Optional controls:
+
 - `E2E_TEST_ENVIRONMENT=local|production` (default: `production`)
 - `NEWMAN_STRICT_MODE=true|false` (default: `false`)
 - `NEWMAN_REPORT_DIR=<path>` (default: `e2e-logs`)
 
 ## Contributing
 
-This repository contains multiple applications; please keep changes scoped to sites/cv.arolariu.ro when editing the CV. Follow the existing formatting and commit conventions.
+This repository contains multiple applications; please keep changes scoped to sites/cv.arolariu.ro when editing the CV. Follow the existing
+formatting and commit conventions.
 
 ## Author
 

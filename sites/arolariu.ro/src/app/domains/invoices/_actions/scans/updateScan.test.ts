@@ -89,7 +89,7 @@ describe("updateScan", () => {
         containerName: "invoices",
         prefix: "scans/user-123/",
         predicate: expect.any(Function),
-      })
+      }),
     );
 
     // Verify updateBlobObject was called with metadata only
@@ -104,7 +104,7 @@ describe("updateScan", () => {
           displayName: "updated-receipt.jpg",
           lastModifiedBy: "user-123",
         }),
-      })
+      }),
     );
   });
 
@@ -153,7 +153,7 @@ describe("updateScan", () => {
       expect.objectContaining({
         content: expect.any(Uint8Array),
         contentType: "image/jpeg",
-      })
+      }),
     );
   });
 
@@ -223,7 +223,7 @@ describe("updateScan", () => {
       url: "https://storage.test/invoices/scans/user-456/scan_456.jpg",
       metadata: {
         scanId: "scan-456",
-        ownerId: "user-456",  // Different owner
+        ownerId: "user-456", // Different owner
         displayName: "receipt.jpg",
         documentKind: "receipt",
         documentRole: "primary",

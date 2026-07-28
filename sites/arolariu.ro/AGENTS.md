@@ -22,14 +22,14 @@ npm run generate           # Generate env, i18n, GraphQL types
 
 ## Key Directories
 
-| Path | Purpose |
-|------|---------|
-| `src/app/` | App Router pages (RSC by default) |
-| `src/stores/` | Zustand stores (invoices, merchants, scans, preferences) |
-| `src/hooks/` | Custom hooks (useInvoice, useMerchants, etc.) |
-| `src/lib/actions/` | Server Actions |
-| `src/types/` | TypeScript type definitions |
-| `messages/` | i18n translations (en.json, ro.json, fr.json) |
+| Path               | Purpose                                                  |
+| ------------------ | -------------------------------------------------------- |
+| `src/app/`         | App Router pages (RSC by default)                        |
+| `src/stores/`      | Zustand stores (invoices, merchants, scans, preferences) |
+| `src/hooks/`       | Custom hooks (useInvoice, useMerchants, etc.)            |
+| `src/lib/actions/` | Server Actions                                           |
+| `src/types/`       | TypeScript type definitions                              |
+| `messages/`        | i18n translations (en.json, ro.json, fr.json)            |
 
 ## Rules
 
@@ -42,4 +42,5 @@ npm run generate           # Generate env, i18n, GraphQL types
 
 ## RFCs
 
-Consult before architectural changes: 1001 (observability), 1002 (JSDoc), 1003 (i18n), 1004 (metadata/SEO), 1005 (Zustand), 1006 (component library), 1007 (patterns), 1008 (SCSS)
+Consult before architectural changes: 1001 (observability), 1002 (JSDoc), 1003 (i18n), 1004 (metadata/SEO), 1005 (Zustand), 1006 (component
+library), 1007 (patterns), 1008 (SCSS)

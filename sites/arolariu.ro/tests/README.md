@@ -4,15 +4,15 @@
 
 ## Quick Reference
 
-| What | Command |
-|------|---------|
-| Run all tests | `npm run test:website` |
-| Run one file | `npx vitest run src/lib/utils.generic.test.ts` |
-| Watch mode | `npx vitest --project=website` |
+| What             | Command                                                                                                                                                              |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Run all tests    | `npm run test:website`                                                                                                                                               |
+| Run one file     | `npx vitest run src/lib/utils.generic.test.ts`                                                                                                                       |
+| Watch mode       | `npx vitest --project=website`                                                                                                                                       |
 | Website coverage | `npx vitest run sites\arolariu.ro\src sites\arolariu.ro\emails --config sites\arolariu.ro\vitest.config.ts --coverage.enabled=true --coverage.reporter=text-summary` |
 
-**Test files are colocated with source code** — place `foo.test.ts` next to `foo.ts`.
-Use `.test.ts(x)` suffix for Vitest. `.spec.ts(x)` is reserved for Playwright E2E.
+**Test files are colocated with source code** — place `foo.test.ts` next to `foo.ts`. Use `.test.ts(x)` suffix for Vitest. `.spec.ts(x)` is
+reserved for Playwright E2E.
 
 ---
 
@@ -41,8 +41,8 @@ Use `.test.ts(x)` suffix for Vitest. `.spec.ts(x)` is reserved for Playwright E2
 2. **Global mocks** (vitest.setup.ts): `vi.mock("next/navigation", ...)` applied to all tests
 3. **Per-test mocks** (test file): `vi.mock("resend", ...)` applied to that test only
 
-If a module has a stub, the stub IS the module — no `vi.mock()` needed in vitest.setup.ts.
-Tests should not inline-mock aliased stubs just to set return values; import the stubbed export and configure it with `vi.mocked(...)` instead.
+If a module has a stub, the stub IS the module — no `vi.mock()` needed in vitest.setup.ts. Tests should not inline-mock aliased stubs just
+to set return values; import the stubbed export and configure it with `vi.mocked(...)` instead.
 
 ---
 
@@ -51,21 +51,22 @@ Tests should not inline-mock aliased stubs just to set return values; import the
 **Location**: `tests/stubs/`
 
 Stubs are for modules that **cannot be imported** in happy-dom because they:
+
 - Import `server-only` (Next.js build-time marker)
 - Import heavy Node.js SDKs (@azure/monitor-opentelemetry-exporter, etc.)
 - Use Node.js-only APIs not available in happy-dom
 
 ### Stubbed Modules
 
-| Stub File | Replaces | Why |
-|-----------|----------|-----|
-| `server-only.ts` | `server-only` | No-op (build marker) |
-| `instrumentation.server.ts` | `@/instrumentation.server` | OTel SDKs crash in happy-dom |
-| `lib/config/configProxy.ts` | `@/lib/config/configProxy` | Imports server-only + Azure credentials |
-| `lib/utils.server.ts` | `@/lib/utils.server` | Imports server-only + jose |
-| `lib/azure/storageClient.ts` | `@/lib/azure/storageClient` | Imports server-only + Azure Blob SDK |
-| `lib/actions/storage/fetchConfig.ts` | `@/lib/actions/storage/fetchConfig` | Server action |
-| `lib/actions/user/fetchUser.ts` | `@/lib/actions/user/fetchUser` | Server action (Clerk + JWT) |
+| Stub File                            | Replaces                            | Why                                     |
+| ------------------------------------ | ----------------------------------- | --------------------------------------- |
+| `server-only.ts`                     | `server-only`                       | No-op (build marker)                    |
+| `instrumentation.server.ts`          | `@/instrumentation.server`          | OTel SDKs crash in happy-dom            |
+| `lib/config/configProxy.ts`          | `@/lib/config/configProxy`          | Imports server-only + Azure credentials |
+| `lib/utils.server.ts`                | `@/lib/utils.server`                | Imports server-only + jose              |
+| `lib/azure/storageClient.ts`         | `@/lib/azure/storageClient`         | Imports server-only + Azure Blob SDK    |
+| `lib/actions/storage/fetchConfig.ts` | `@/lib/actions/storage/fetchConfig` | Server action                           |
+| `lib/actions/user/fetchUser.ts`      | `@/lib/actions/user/fetchUser`      | Server action (Clerk + JWT)             |
 
 ### Key: `vi.fn(impl)` vs `vi.fn()`
 
@@ -79,8 +80,7 @@ export const fetchApiUrl = vi.fn();
 // After mockRestore(): fetchApiUrl returns undefined (as expected) ✅
 ```
 
-Use `vi.fn(impl)` for passthrough behavior (withSpan, rewriteAzuriteUrl).
-Use `vi.fn()` for functions whose return value tests must control.
+Use `vi.fn(impl)` for passthrough behavior (withSpan, rewriteAzuriteUrl). Use `vi.fn()` for functions whose return value tests must control.
 
 ### Configuring stubbed exports
 
@@ -104,13 +104,13 @@ beforeEach(() => {
 
 These apply to ALL test files automatically:
 
-| Module | Mock Behavior |
-|--------|---------------|
-| `next/navigation` | useRouter returns push/replace/back fns, usePathname returns "/" |
-| `next-intl` | useTranslations returns key passthrough, useLocale returns "en" |
-| `@clerk/nextjs` | useUser/useAuth return unauthenticated state |
-| `@opentelemetry/*` | Empty or try-import with fallback |
-| `@azure/*` | Empty constructors to prevent CJS resolution crashes |
+| Module             | Mock Behavior                                                    |
+| ------------------ | ---------------------------------------------------------------- |
+| `next/navigation`  | useRouter returns push/replace/back fns, usePathname returns "/" |
+| `next-intl`        | useTranslations returns key passthrough, useLocale returns "en"  |
+| `@clerk/nextjs`    | useUser/useAuth return unauthenticated state                     |
+| `@opentelemetry/*` | Empty or try-import with fallback                                |
+| `@azure/*`         | Empty constructors to prevent CJS resolution crashes             |
 
 ### Overriding global mocks in a test
 
@@ -132,12 +132,10 @@ beforeEach(() => {
 
 ## Tier 3: Per-Test Mocks
 
-Per-test mocks should isolate true boundaries only: network calls, Clerk/auth,
-Next runtime APIs, SDK clients, browser APIs, timers, and server-only modules
-that cannot load under happy-dom. Do not mock deterministic internal helpers
-such as `@/lib/utils.generic`; import them directly and assert their real
-outputs. If an internal server module imports runtime-only dependencies, prefer
-a shared stub in `tests/stubs/` over an inline test-specific fake.
+Per-test mocks should isolate true boundaries only: network calls, Clerk/auth, Next runtime APIs, SDK clients, browser APIs, timers, and
+server-only modules that cannot load under happy-dom. Do not mock deterministic internal helpers such as `@/lib/utils.generic`; import them
+directly and assert their real outputs. If an internal server module imports runtime-only dependencies, prefer a shared stub in
+`tests/stubs/` over an inline test-specific fake.
 
 ### Pattern A: Simple auto-mock + vi.mocked()
 
@@ -220,7 +218,7 @@ Wraps components with NextIntlClientProvider (currently a passthrough mock):
 import {renderWithProviders, screen} from "@tests/helpers";
 
 it("renders title", () => {
-  renderWithProviders(<MyComponent title="Hello" />);
+  renderWithProviders(<MyComponent title='Hello' />);
   expect(screen.getByText("Hello")).toBeInTheDocument();
 });
 ```
@@ -229,11 +227,16 @@ it("renders title", () => {
 
 ## Speed and Flake Guardrails
 
-- Prefer awaiting public hook callbacks inside `act` and then asserting the settled state directly. Use `invokeHookCallback()` from the shared `tests/helpers` barrel for callback hooks that already return a promise.
-- Use `waitFor` when the code under test schedules work independently of the awaited action, such as `useEffect` fetches, debounced work, timers, or browser API callbacks.
-- Do not wrap an already-awaited hook callback with an extra `waitFor` just to assert that `isSaving`, `isDeleting`, or similar flags returned to `false`.
-- Keep `await import(...)` only when the test intentionally controls module evaluation order with `vi.doMock`, `vi.unmock`, `vi.resetModules`, or environment mutation before import.
-- Measure before optimizing. Runtime-only refactors should include before/after timing for the changed files or explain why a hotspot was intentionally left alone.
+- Prefer awaiting public hook callbacks inside `act` and then asserting the settled state directly. Use `invokeHookCallback()` from the
+  shared `tests/helpers` barrel for callback hooks that already return a promise.
+- Use `waitFor` when the code under test schedules work independently of the awaited action, such as `useEffect` fetches, debounced work,
+  timers, or browser API callbacks.
+- Do not wrap an already-awaited hook callback with an extra `waitFor` just to assert that `isSaving`, `isDeleting`, or similar flags
+  returned to `false`.
+- Keep `await import(...)` only when the test intentionally controls module evaluation order with `vi.doMock`, `vi.unmock`,
+  `vi.resetModules`, or environment mutation before import.
+- Measure before optimizing. Runtime-only refactors should include before/after timing for the changed files or explain why a hotspot was
+  intentionally left alone.
 
 ---
 
@@ -241,8 +244,8 @@ it("renders title", () => {
 
 ### `restoreMocks: true` in base config
 
-The root `vitest.config.ts` sets `mockReset: true`, `clearMocks: true`, `restoreMocks: true`.
-This means between tests:
+The root `vitest.config.ts` sets `mockReset: true`, `clearMocks: true`, `restoreMocks: true`. This means between tests:
+
 - All `mockImplementation()` calls are stripped
 - All `mockReturnValue()` / `mockResolvedValue()` calls are cleared
 - `vi.fn(impl)` reverts to `impl` (the "original")
@@ -252,8 +255,7 @@ This means between tests:
 
 ### `vi.hoisted()` is synchronous
 
-You cannot `await import()` inside `vi.hoisted()`. Only use it to create mock
-objects (`vi.fn()`, plain objects, class constructors).
+You cannot `await import()` inside `vi.hoisted()`. Only use it to create mock objects (`vi.fn()`, plain objects, class constructors).
 
 ### Import order in test files
 
@@ -274,6 +276,7 @@ objects (`vi.fn()`, plain objects, class constructors).
 Thresholds (enforced in CI): **90%** for statements, branches, functions, and lines.
 
 Excluded from coverage:
+
 - `instrumentation.server.ts`, `instrumentation.ts` (OTel bootstrap)
 - `.next/` (build artifacts)
 - `tests/` (test infrastructure)

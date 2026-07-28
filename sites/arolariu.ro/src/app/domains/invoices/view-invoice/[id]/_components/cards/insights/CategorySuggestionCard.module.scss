@@ -1,8 +1,8 @@
-@use '../../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../../styles/abstracts" as *;
 
 .description {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
 }
 
 .mainGrid {
@@ -16,8 +16,8 @@
 }
 
 .moreLabel {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
 }
 
 .moreGrid {
@@ -25,8 +25,8 @@
 }
 
 .gamificationBox {
-  border-radius: radius('lg');
-  border: 1px solid color-alpha('warning', 0.3);
+  border-radius: radius("lg");
+  border: 1px solid color-alpha("warning", 0.3);
   @include gradient-bg();
   padding: space(3);
 
@@ -35,7 +35,7 @@
   }
 
   @include dark {
-    border-color: color('warning');
+    border-color: color("warning");
   }
 }
 
@@ -46,8 +46,8 @@
 }
 
 .gamificationLabel {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .gamificationProgress {
@@ -57,26 +57,26 @@
 }
 
 .gamificationCount {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .categoryLabel {
-  font-size: font-size('xs');
-  font-weight: font-weight('medium');
+  font-size: font-size("xs");
+  font-weight: font-weight("medium");
 }
 
 .titleRow {
   display: flex;
   align-items: center;
   gap: space(2);
-  font-size: font-size('lg');
+  font-size: font-size("lg");
 }
 
 .titleIcon {
   @include icon-size(space(5));
-  color: color('warning');
+  color: color("warning");
 }
 
 .contentSpaced {
@@ -89,39 +89,39 @@
   align-items: center;
   justify-content: center;
   gap: space(1);
-  border-radius: radius('lg');
-  border: 1px solid color('border');
+  border-radius: radius("lg");
+  border: 1px solid color("border");
   padding: space(3);
   @include transition(all);
 }
 
 .mainCategoryButtonSelected {
-  border-color: color('primary');
-  background-color: color-alpha('primary', 0.1);
-  outline: 2px solid color-alpha('primary', 0.2);
+  border-color: color("primary");
+  background-color: color-alpha("primary", 0.1);
+  outline: 2px solid color-alpha("primary", 0.2);
 }
 
 .extendedCategoryButton {
   display: flex;
   align-items: center;
   gap: space(2);
-  border-radius: radius('lg');
-  border: 1px solid color('border');
+  border-radius: radius("lg");
+  border: 1px solid color("border");
   padding: space(2);
-  font-size: font-size('sm');
+  font-size: font-size("sm");
   @include transition(all);
 
   &:hover {
-    background-color: color('muted');
+    background-color: color("muted");
   }
 }
 
 .extendedCategoryButtonSelected {
-  border-color: color('primary');
-  background-color: color-alpha('primary', 0.1);
+  border-color: color("primary");
+  background-color: color-alpha("primary", 0.1);
 }
 
 .gamificationGiftIcon {
   @include icon-size(space(4));
-  color: color('warning');
+  color: color("warning");
 }

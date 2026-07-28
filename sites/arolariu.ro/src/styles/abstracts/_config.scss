@@ -63,7 +63,7 @@ $enable-css-layers: true !default;
 /// All generated CSS variables use this prefix: `--aro-{token}`.
 /// @type String
 /// @group config
-$css-prefix: 'aro' !default;
+$css-prefix: "aro" !default;
 
 /// Base font size for rem calculations (browser default).
 /// @type Length

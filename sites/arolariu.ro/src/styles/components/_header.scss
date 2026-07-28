@@ -22,11 +22,11 @@
 ///
 /// @see components/_navigation.scss — desktop and mobile nav inside header
 /// ===========================================
-@use '../abstracts' as *;
+@use "../abstracts" as *;
 
 .header {
   position: relative;
-  z-index: z('sticky');
+  z-index: z("sticky");
 
   @if $enable-print-styles {
     @media print {
@@ -50,11 +50,11 @@
   top: 0;
   left: 0;
   right: 0;
-  z-index: z('fixed');
+  z-index: z("fixed");
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     position: relative;
-    z-index: z('sticky');
+    z-index: z("sticky");
   }
 }
 
@@ -69,31 +69,31 @@
   display: flex;
   align-items: center;
   margin-left: space(2);
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
   @include transition(color);
 
   &:hover {
-    color: color('link');
+    color: color("link");
   }
 }
 
 .header__logo {
   display: none;
   border-radius: 9999px;
-  box-shadow: 0 0 0 2px color('ring');
+  box-shadow: 0 0 0 2px color("ring");
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     display: block;
   }
 }
 
 .header__title {
   margin-left: space(3);
-  font-size: font-size('xl');
+  font-size: font-size("xl");
   color: hsl(var(--foreground)); // Ensure black/white text, not link color
 
   &:hover {
-    color: color('link');
+    color: color("link");
   }
 }
 

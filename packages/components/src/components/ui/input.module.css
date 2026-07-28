@@ -11,7 +11,9 @@
   line-height: 1.5;
   color: var(--ac-foreground);
   outline: none;
-  transition: border-color var(--ac-transition-fast), box-shadow var(--ac-transition-fast);
+  transition:
+    border-color var(--ac-transition-fast),
+    box-shadow var(--ac-transition-fast);
 
   &::placeholder {
     color: var(--ac-muted-foreground);

@@ -2,7 +2,9 @@
   display: grid;
   grid-template-rows: 0fr;
   overflow: hidden;
-  transition: grid-template-rows var(--ac-transition-normal), opacity var(--ac-transition-normal);
+  transition:
+    grid-template-rows var(--ac-transition-normal),
+    opacity var(--ac-transition-normal);
   opacity: 0;
 }
 

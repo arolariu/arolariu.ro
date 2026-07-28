@@ -1,7 +1,7 @@
 // ===========================================
 // GENERATIVE VIEW STYLES
 // ===========================================
-@use '../../../../../../styles/abstracts' as *;
+@use "../../../../../../styles/abstracts" as *;
 
 // ===========================================
 // LAYOUT
@@ -20,13 +20,13 @@
 }
 
 .title {
-  font-size: font-size('2xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("2xl");
+  font-weight: font-weight("bold");
   letter-spacing: -0.025em;
 }
 
 .subtitle {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 // ===========================================
@@ -37,8 +37,8 @@
   flex-direction: column;
   height: 600px;
   overflow: hidden;
-  border-radius: radius('lg');
-  border: 1px solid color('border');
+  border-radius: radius("lg");
+  border: 1px solid color("border");
 }
 
 .chatMessages {
@@ -48,7 +48,7 @@
 }
 
 .chatInput {
-  border-top: 1px solid color('border');
+  border-top: 1px solid color("border");
   padding: space(4);
 }
 
@@ -67,8 +67,8 @@
 }
 
 .settingsLabel {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .checkboxRow {
@@ -111,8 +111,8 @@
 }
 
 .checkboxLabel {
-  font-size: font-size('sm');
-  font-weight: font-weight('normal');
+  font-size: font-size("sm");
+  font-weight: font-weight("normal");
 }
 
 .saveButton {

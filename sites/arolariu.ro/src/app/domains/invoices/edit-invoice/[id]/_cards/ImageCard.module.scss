@@ -1,4 +1,4 @@
-@use '../../../../../../styles/abstracts' as *;
+@use "../../../../../../styles/abstracts" as *;
 
 .zoomContainer {
   position: relative;
@@ -48,7 +48,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: color-alpha('background', 0.8);
+  background-color: color-alpha("background", 0.8);
   opacity: 0;
   @include transition(opacity);
 
@@ -78,7 +78,7 @@
 }
 
 .cardTitle {
-  font-size: font-size('lg');
+  font-size: font-size("lg");
 }
 
 .cardContent {
@@ -92,8 +92,8 @@
   width: 100%;
   cursor: pointer;
   overflow: hidden;
-  border-radius: radius('md');
-  border: 1px solid color('border');
+  border-radius: radius("md");
+  border: 1px solid color("border");
   padding: 0;
 }
 
@@ -146,11 +146,11 @@
 }
 
 .removeButton {
-  color: color('destructive');
+  color: color("destructive");
   flex: 1;
   cursor: pointer;
   &:hover {
-    background-color: color('destructive');
+    background-color: color("destructive");
     color: white;
   }
 }

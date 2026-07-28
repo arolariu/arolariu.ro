@@ -32,7 +32,9 @@
   background-color: var(--ac-background);
   color: var(--ac-foreground);
   box-shadow: 0 -16px 40px -16px rgb(0 0 0 / 0.35);
-  transition: transform var(--ac-transition-normal), opacity var(--ac-transition-normal);
+  transition:
+    transform var(--ac-transition-normal),
+    opacity var(--ac-transition-normal);
 }
 
 .popup[data-starting-style],

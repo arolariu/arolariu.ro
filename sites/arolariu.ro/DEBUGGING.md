@@ -18,6 +18,7 @@ npm run dev:debug
 ```
 
 All dev commands automatically:
+
 - ✅ Enable Node.js inspector on port 9229
 - ✅ Generate full source maps (client & server)
 - ✅ Disable minification and optimization
@@ -39,22 +40,27 @@ const isDebugBuild = process.env["NODE_ENV"] === "development";
 When running `npm run dev`, the following are **automatically enabled**:
 
 #### ✅ Source Maps
+
 - `serverSourceMaps: true` - Server-side source maps
 - `turbopackSourceMaps: true` - Turbopack source maps
 - `enablePrerenderSourceMaps: true` - Prerendered page source maps
 
 #### ✅ No Minification
+
 - `turbopackMinify: false` - Turbopack keeps code readable
 - `serverMinification: false` - Server code stays unminified
 - `optimizeServerReact: false` - React code stays unoptimized
 
 #### ✅ No Tree Shaking
+
 - `turbopackTreeShaking: false` - All imports preserved for debugging
 
 #### ✅ Full Console Logs
+
 - `removeConsole: false` - All console statements preserved
 
 #### ✅ Debug Logging
+
 - `logging.fetches.fullUrl: true` - Full URL logging for fetch requests
 
 ## 🐛 Debugging Methods
@@ -62,6 +68,7 @@ When running `npm run dev`, the following are **automatically enabled**:
 ### Method 1: VS Code Integrated Debugging (Recommended)
 
 #### Server-Side Debugging
+
 1. Press `Ctrl+Shift+D` (Windows/Linux) or `⇧+⌘+D` (macOS)
 2. Select **"Next.js: Debug Server-Side"** from dropdown
 3. Press `F5` to start
@@ -69,6 +76,7 @@ When running `npm run dev`, the following are **automatically enabled**:
 5. Debugger will pause at breakpoints automatically
 
 #### Client-Side Debugging
+
 1. Press `Ctrl+Shift+D`
 2. Select **"Next.js: Debug Client-Side"**
 3. Press `F5`
@@ -76,6 +84,7 @@ When running `npm run dev`, the following are **automatically enabled**:
 5. Set breakpoints in client components
 
 #### Full-Stack Debugging
+
 1. Select **"Next.js: Debug Full Stack"**
 2. Press `F5`
 3. Debug both server AND client simultaneously
@@ -84,6 +93,7 @@ When running `npm run dev`, the following are **automatically enabled**:
 ### Method 2: Chrome DevTools
 
 #### Server-Side Code
+
 1. Run `npm run dev`
 2. You'll see: `Debugger listening on ws://127.0.0.1:9229/...`
 3. Open Chrome and navigate to `chrome://inspect`
@@ -93,11 +103,13 @@ When running `npm run dev`, the following are **automatically enabled**:
 7. Go to **Sources** tab
 
 **Finding files:**
+
 - Press `Ctrl+P` (Windows/Linux) or `⌘+P` (macOS)
 - Source files have paths like: `webpack://{app-name}/./src/...`
 - Search for your filename (e.g., `page.tsx`)
 
 #### Client-Side Code
+
 1. Run `npm run dev`
 2. Open `https://localhost:3000` in Chrome
 3. Press `F12` or `Ctrl+Shift+J` to open DevTools
@@ -108,6 +120,7 @@ When running `npm run dev`, the following are **automatically enabled**:
 ### Method 3: Firefox DevTools
 
 #### Server-Side Code
+
 1. Run `npm run dev`
 2. Open Firefox and go to `about:debugging`
 3. Click **"This Firefox"** in left sidebar
@@ -115,6 +128,7 @@ When running `npm run dev`, the following are **automatically enabled**:
 5. Click **"Inspect"** → **"Debugger"** tab
 
 #### Client-Side Code
+
 1. Open `https://localhost:3000` in Firefox
 2. Press `F12` or `Ctrl+Shift+I`
 3. Go to **Debugger** tab
@@ -159,6 +173,7 @@ Debugger Maps Back to Original Code
 ## 🔍 Debugging Common Scenarios
 
 ### Server Components
+
 ```typescript
 // src/app/page.tsx
 export default async function Page() {
@@ -166,10 +181,12 @@ export default async function Page() {
   return <div>{data}</div>;
 }
 ```
+
 - Use VS Code "Debug Server-Side" or Chrome DevTools (server inspector)
 - Breakpoint will hit during SSR/RSC rendering
 
 ### Client Components
+
 ```typescript
 "use client";
 
@@ -180,10 +197,12 @@ export function MyComponent() {
   return <button onClick={handleClick}>Click</button>;
 }
 ```
+
 - Use VS Code "Debug Client-Side" or browser DevTools
 - Breakpoint hits on user interaction
 
 ### Server Actions
+
 ```typescript
 "use server";
 
@@ -192,10 +211,12 @@ export async function myAction(formData: FormData) {
   // Process data
 }
 ```
+
 - Use server-side debugging methods
 - Breakpoint hits when action is called from client
 
 ### API Routes
+
 ```typescript
 // src/app/api/hello/route.ts
 export async function GET(request: Request) {
@@ -203,6 +224,7 @@ export async function GET(request: Request) {
   return Response.json(data);
 }
 ```
+
 - Use server-side debugging
 - Breakpoint hits when API endpoint is called
 
@@ -211,13 +233,16 @@ export async function GET(request: Request) {
 ### Issue: Breakpoints Not Hitting
 
 **Solution:**
+
 1. Verify `isDebugBuild` is `true`:
+
    ```bash
    npm run dev
    # Check console output for ">>> isDebugBuild ✅"
    ```
 
 2. Check `NODE_ENV`:
+
    ```bash
    # Should be "development"
    echo $env:NODE_ENV  # PowerShell
@@ -228,6 +253,7 @@ export async function GET(request: Request) {
 ### Issue: Code is Minified in Debugger
 
 **Solution:**
+
 - Ensure you're running `npm run dev` (not `npm run build`)
 - Check `next.config.ts` has:
   - `turbopackMinify: false` in development
@@ -236,12 +262,15 @@ export async function GET(request: Request) {
 ### Issue: Source Maps Not Loading
 
 **Solution:**
+
 1. Clear Next.js cache:
+
    ```bash
    npm run clean
    ```
 
 2. Delete `.next` folder:
+
    ```bash
    Remove-Item -Recurse -Force .next
    ```
@@ -256,6 +285,7 @@ export async function GET(request: Request) {
 **Cause:** External dependencies may not have source maps
 
 **Solution:**
+
 - This is normal for `node_modules` packages
 - Your own code should still have source maps
 - Use `skipFiles: ["<node_internals>/**", "node_modules/**"]` in launch config
@@ -263,6 +293,7 @@ export async function GET(request: Request) {
 ### Issue: Debugger Attaching Slowly
 
 **Solution:**
+
 1. Reduce debug scope by using `skipFiles` in `.vscode/launch.json`
 2. Close unused browser tabs consuming debug ports
 3. Ensure only one instance of dev server is running
@@ -271,13 +302,13 @@ export async function GET(request: Request) {
 
 Development mode optimizations are **intentionally disabled** for debugging:
 
-| Feature | Production | Development | Reason |
-|---------|-----------|-------------|---------|
-| Minification | ✅ On | ❌ Off | Readable code |
-| Tree Shaking | ✅ On | ❌ Off | Preserve imports |
-| Source Maps | ❌ Off | ✅ On | Map to source |
-| React Optimization | ✅ On | ❌ Off | Preserve hooks |
-| Server Minification | ✅ On | ❌ Off | Readable server logs |
+| Feature             | Production | Development | Reason               |
+| ------------------- | ---------- | ----------- | -------------------- |
+| Minification        | ✅ On      | ❌ Off      | Readable code        |
+| Tree Shaking        | ✅ On      | ❌ Off      | Preserve imports     |
+| Source Maps         | ❌ Off     | ✅ On       | Map to source        |
+| React Optimization  | ✅ On      | ❌ Off      | Preserve hooks       |
+| Server Minification | ✅ On      | ❌ Off      | Readable server logs |
 
 **Startup time in dev:** ~3-5 seconds longer due to source map generation
 
@@ -286,6 +317,7 @@ Development mode optimizations are **intentionally disabled** for debugging:
 ## 🎓 Best Practices
 
 ### 1. Use Breakpoints Over Console Logs
+
 ```typescript
 // ❌ Less effective
 console.log(data);
@@ -295,21 +327,25 @@ const result = processData(data); // Set breakpoint here, inspect variables
 ```
 
 ### 2. Leverage Conditional Breakpoints
+
 - Right-click breakpoint → Edit Breakpoint
 - Add condition: `count > 10`
 - Breakpoint only hits when condition is true
 
 ### 3. Use Logpoints
+
 - Right-click line number → Add Logpoint
 - Enter message: `User ID: {userId}`
 - Non-blocking logging without `console.log`
 
 ### 4. Debug React Components with React DevTools
+
 - Install [React Developer Tools](https://react.dev/learn/react-developer-tools)
 - Inspect component props, state, and hooks
 - Profile component re-renders
 
 ### 5. Network Debugging
+
 - Use browser DevTools Network tab
 - Filter by domain: `arolariu.ro`
 - Inspect API calls, headers, timing
@@ -339,16 +375,19 @@ NODE_ENV=development
 ## 🚀 Quick Reference
 
 ### Start Debugging (VS Code)
+
 ```
 Ctrl+Shift+D → Select config → F5
 ```
 
 ### Set Breakpoint
+
 ```
 Click line number gutter (red dot appears)
 ```
 
 ### Step Through Code
+
 ```
 F10 - Step Over
 F11 - Step Into
@@ -357,6 +396,7 @@ F5 - Continue
 ```
 
 ### Inspect Variables
+
 ```
 Hover over variable → Tooltip shows value
 OR
@@ -364,6 +404,7 @@ View "Variables" panel in Debug sidebar
 ```
 
 ### Debug Console
+
 ```
 Ctrl+Shift+Y (evaluate expressions while paused)
 ```

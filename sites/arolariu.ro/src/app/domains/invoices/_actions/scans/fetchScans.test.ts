@@ -249,7 +249,7 @@ describe("fetchScans", () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data).toHaveLength(2);
-      expect(result.data.some(s => s.status === ScanStatus.ARCHIVED)).toBe(true);
+      expect(result.data.some((s) => s.status === ScanStatus.ARCHIVED)).toBe(true);
     }
   });
 
@@ -298,7 +298,7 @@ describe("fetchScans", () => {
       {
         name: "scans/user-123/scan2.jpg",
         url: "https://storage.test/invoices/scans/user-123/scan2.jpg",
-        metadata: {},  // Invalid metadata - missing required fields
+        metadata: {}, // Invalid metadata - missing required fields
         contentType: "image/jpeg",
         contentLength: 2048,
         createdOn: new Date("2024-01-02T00:00:00.000Z"),
@@ -312,7 +312,7 @@ describe("fetchScans", () => {
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data).toHaveLength(1);  // Only valid scan returned
+      expect(result.data).toHaveLength(1); // Only valid scan returned
       expect(result.data[0]?.id).toBe("scan1");
     }
   });

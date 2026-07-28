@@ -4,13 +4,8 @@
   "compilerOptions": {
     "noEmit": true
   },
-  "files": [
-    "src/types/globals.d.ts"
-  ],
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx"
-  ],
+  "files": ["src/types/globals.d.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": [
     "**/*.d.ts",
     "**/*.spec.*",

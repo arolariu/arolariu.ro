@@ -21,17 +21,17 @@
 ///
 /// @see base/_globals.scss — semantic CSS variables (--success, --warning, etc.)
 /// ===========================================
-@use '../abstracts' as *;
+@use "../abstracts" as *;
 
 .badge {
   display: inline-flex;
   align-items: center;
   gap: space(1);
   padding: space(0.5) space(2);
-  border-radius: radius('full');
-  font-size: font-size('xs');
-  font-weight: font-weight('medium');
-  line-height: line-height('normal');
+  border-radius: radius("full");
+  font-size: font-size("xs");
+  font-weight: font-weight("medium");
+  line-height: line-height("normal");
   white-space: nowrap;
   border: 1px solid transparent;
   @include transition((background-color, color, border-color));
@@ -78,19 +78,19 @@
   // ==========================================
   &--sm {
     padding: 0 space(1.5);
-    font-size: font-size('xs');
+    font-size: font-size("xs");
   }
 
   &--lg {
     padding: space(1) space(3);
-    font-size: font-size('sm');
+    font-size: font-size("sm");
   }
 
   // ==========================================
   // ICON INSIDE BADGE
   // ==========================================
   &__icon {
-    width: 0.875rem;  // 14px
+    width: 0.875rem; // 14px
     height: 0.875rem;
     flex-shrink: 0;
   }

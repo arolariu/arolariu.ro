@@ -1,17 +1,17 @@
-@use '../../../../../styles/abstracts' as abstracts;
+@use "../../../../../styles/abstracts" as abstracts;
 
 .workflowCard {
   position: relative;
   height: 100%;
   overflow: hidden;
-  border: 2px solid abstracts.color('border');
-  border-radius: abstracts.radius('xl');
-  background-color: abstracts.color('card');
+  border: 2px solid abstracts.color("border");
+  border-radius: abstracts.radius("xl");
+  background-color: abstracts.color("card");
   @include abstracts.transition((border-color, box-shadow));
 
   &:hover {
-    border-color: abstracts.color-alpha('primary', 0.3);
-    @include abstracts.shadow('lg');
+    border-color: abstracts.color-alpha("primary", 0.3);
+    @include abstracts.shadow("lg");
   }
 }
 
@@ -22,11 +22,11 @@
   @include abstracts.flex-center;
   height: 4rem;
   width: 4rem;
-  border-radius: abstracts.radius('full');
-  font-size: abstracts.font-size('2xl');
-  font-weight: abstracts.font-weight('bold');
-  background-color: abstracts.color('primary');
-  color: abstracts.color('primary-foreground');
+  border-radius: abstracts.radius("full");
+  font-size: abstracts.font-size("2xl");
+  font-weight: abstracts.font-weight("bold");
+  background-color: abstracts.color("primary");
+  color: abstracts.color("primary-foreground");
   opacity: 0.2;
   @include abstracts.transition(opacity);
 }
@@ -36,26 +36,26 @@
   margin-bottom: abstracts.space(3);
   height: 3rem;
   width: 3rem;
-  border-radius: abstracts.radius('xl');
-  background-color: abstracts.color-alpha('secondary', 0.1);
-  color: abstracts.color('secondary');
-  @include abstracts.shadow('md');
+  border-radius: abstracts.radius("xl");
+  background-color: abstracts.color-alpha("secondary", 0.1);
+  color: abstracts.color("secondary");
+  @include abstracts.shadow("md");
 }
 
 .workflowIcon {
   @include abstracts.icon-size(1.5rem);
-  color: abstracts.color('secondary');
+  color: abstracts.color("secondary");
 }
 
 .stepButton {
   width: 100%;
-  background-color: abstracts.color('primary');
-  color: abstracts.color('primary-foreground');
+  background-color: abstracts.color("primary");
+  color: abstracts.color("primary-foreground");
   @include abstracts.transition(transform);
 
   &:hover {
     transform: scale(1.02);
-    background-color: abstracts.color-alpha('primary', 0.9);
+    background-color: abstracts.color-alpha("primary", 0.9);
   }
 }
 
@@ -78,11 +78,11 @@
 }
 
 .cardTitleXl {
-  font-size: abstracts.font-size('xl');
+  font-size: abstracts.font-size("xl");
 }
 
 .cardDescBase {
-  font-size: abstracts.font-size('base');
+  font-size: abstracts.font-size("base");
 }
 
 .cardContentCompact {

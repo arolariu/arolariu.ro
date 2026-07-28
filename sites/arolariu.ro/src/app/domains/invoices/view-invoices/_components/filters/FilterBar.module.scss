@@ -1,4 +1,4 @@
-@use '../../../../../../styles/abstracts' as *;
+@use "../../../../../../styles/abstracts" as *;
 
 .container {
   display: flex;
@@ -17,7 +17,7 @@
   align-items: center;
   gap: space(3);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     flex-wrap: nowrap;
   }
 }
@@ -27,14 +27,14 @@
   flex: 1;
   min-width: 200px;
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     min-width: 300px;
   }
 
-  @include respond-below('md') {
+  @include respond-below("md") {
     position: sticky;
     top: 0;
-    background-color: color('background');
+    background-color: color("background");
     padding-block: space(2);
     margin-inline: calc(-1 * space(2));
     padding-inline: space(2);
@@ -47,7 +47,7 @@
   left: space(3);
   transform: translateY(-50%);
   @include icon-size(space(4));
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   pointer-events: none;
 }
 
@@ -76,7 +76,7 @@
   height: 18px;
   min-width: 18px;
   font-size: 0.75rem;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .clearFiltersButton,
@@ -93,14 +93,14 @@
 
 .viewToggle {
   display: flex;
-  border-radius: radius('md');
-  border: 1px solid color('border');
+  border-radius: radius("md");
+  border: 1px solid color("border");
 }
 
 .viewButtonLeft {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
-  border-right: 1px solid color('border');
+  border-right: 1px solid color("border");
 }
 
 .viewButtonRight {
@@ -124,8 +124,8 @@
 .inlineFilterPanel {
   margin-top: space(3);
   padding: space(4);
-  background-color: color('card');
-  border: 1px solid color('border');
+  background-color: color("card");
+  border: 1px solid color("border");
   border-radius: space(2);
 }
 
@@ -136,14 +136,14 @@
   justify-content: space-between;
   margin-bottom: space(4);
   padding-bottom: space(3);
-  border-bottom: 1px solid color('border');
+  border-bottom: 1px solid color("border");
 }
 
 .inlineFilterTitle,
 .sheetTitle {
   font-size: 1rem;
   font-weight: 600;
-  color: color('foreground');
+  color: color("foreground");
 }
 
 .inlineFilterActions {
@@ -157,7 +157,7 @@
   grid-template-columns: 1fr 1fr;
   gap: space(3);
 
-  @include respond-below('md') {
+  @include respond-below("md") {
     grid-template-columns: 1fr;
     gap: space(3);
   }
@@ -171,8 +171,8 @@
 .mobileShowResultsBar {
   position: sticky;
   bottom: 0;
-  background-color: color('background');
-  border-top: 1px solid color('border');
+  background-color: color("background");
+  border-top: 1px solid color("border");
   padding: space(3);
   padding-bottom: calc(#{space(3)} + env(safe-area-inset-bottom, 0));
 }
@@ -180,16 +180,16 @@
 .mobileShowResultsButton {
   width: 100%;
   min-height: space(12);
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
 }
 
 .panelHeaderActiveBadge {
-  background-color: color-alpha('primary', 0.1);
-  color: color('primary');
-  border-radius: radius('full');
+  background-color: color-alpha("primary", 0.1);
+  color: color("primary");
+  border-radius: radius("full");
   padding: space(0.5) space(2);
-  font-size: font-size('xs');
-  font-weight: font-weight('medium');
+  font-size: font-size("xs");
+  font-weight: font-weight("medium");
   margin-left: space(2);
 }

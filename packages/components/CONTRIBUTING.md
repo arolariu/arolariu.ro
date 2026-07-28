@@ -2,9 +2,11 @@
 
 Thank you for contributing to the component library.
 
-This package is built around a **Base UI + CSS Modules** architecture. The goal is to keep components accessible, composable, well-typed, and easy to maintain across the monorepo.
+This package is built around a **Base UI + CSS Modules** architecture. The goal is to keep components accessible, composable, well-typed,
+and easy to maintain across the monorepo.
 
-If you are adding or updating a component, this document is the source of truth for how component code in `packages/components` should be authored.
+If you are adding or updating a component, this document is the source of truth for how component code in `packages/components` should be
+authored.
 
 ---
 
@@ -124,7 +126,8 @@ Public props and state types should be explicit, exported when needed, and docum
 
 ### 4. Preserve Composition
 
-Components should support Base UI's composition model through `render` where appropriate. When wrapping a Base UI primitive, the wrapper should preserve the primitive's semantics and state exposure.
+Components should support Base UI's composition model through `render` where appropriate. When wrapping a Base UI primitive, the wrapper
+should preserve the primitive's semantics and state exposure.
 
 ---
 
@@ -171,7 +174,8 @@ export namespace Component {
 
 ### Wrapping an Existing Base UI Primitive
 
-When a Base UI primitive already provides behavior, wrap it instead of recreating it. In that case, follow the pattern used in files such as:
+When a Base UI primitive already provides behavior, wrap it instead of recreating it. In that case, follow the pattern used in files such
+as:
 
 - `src/components/ui/input.tsx`
 - `src/components/ui/switch.tsx`
@@ -186,7 +190,8 @@ That usually means:
 
 ### Backward Compatibility
 
-Some components still carry compatibility shims from older APIs, such as `asChild` support in `src/components/ui/button.tsx`. Do not add compatibility props unless they are required for an existing public contract.
+Some components still carry compatibility shims from older APIs, such as `asChild` support in `src/components/ui/button.tsx`. Do not add
+compatibility props unless they are required for an existing public contract.
 
 For new components, prefer the Base UI `render` model first.
 
@@ -206,7 +211,7 @@ At minimum:
 
 ### Recommended Pattern
 
-```tsx
+````tsx
 /**
  * Serializable state exposed to Base UI render callbacks.
  */
@@ -235,7 +240,7 @@ export interface ComponentProps extends useRender.ComponentProps<"div", Componen
 function Component(props: Readonly<Component.Props>): React.ReactElement {
   // implementation
 }
-```
+````
 
 Avoid documentation that only restates the symbol name.
 

@@ -9,7 +9,7 @@
 
 // eslint-disable-next-line n/no-extraneous-import -- server-only is a Next.js build-time marker, not a runtime import
 import "server-only";
-import { DefaultAzureCredential, type TokenCredential } from "@azure/identity";
+import {DefaultAzureCredential, type TokenCredential} from "@azure/identity";
 
 let cachedCredential: TokenCredential | null = null;
 
@@ -24,7 +24,7 @@ export function getAzureCredential(): TokenCredential {
   if (!cachedCredential) {
     try {
       const clientId = process.env["AZURE_CLIENT_ID"];
-      cachedCredential = clientId ? new DefaultAzureCredential({ managedIdentityClientId: clientId }) : new DefaultAzureCredential();
+      cachedCredential = clientId ? new DefaultAzureCredential({managedIdentityClientId: clientId}) : new DefaultAzureCredential();
     } catch (error: unknown) {
       throw new Error("Azure credential initialization failed. Ensure AZURE_CLIENT_ID is set or Azure CLI is authenticated.", {
         cause: error,

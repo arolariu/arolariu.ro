@@ -18,7 +18,7 @@
 ///
 /// @see abstracts/_mixins.scss — `gradient-bg`, `focus-ring`, `transition` mixins
 /// ===========================================
-@use '../abstracts' as *;
+@use "../abstracts" as *;
 
 // Gradient filled button
 .btn-gradient {
@@ -28,9 +28,9 @@
   @include gradient-bg();
   color: white;
   padding: space(2) space(4);
-  border-radius: radius('md');
-  font-weight: font-weight('medium');
-  font-size: font-size('sm');
+  border-radius: radius("md");
+  font-weight: font-weight("medium");
+  font-size: font-size("sm");
   border: none;
   cursor: pointer;
   @include transition((opacity, transform));
@@ -52,12 +52,12 @@
   // Size variants
   &--sm {
     padding: space(1.5) space(3);
-    font-size: font-size('xs');
+    font-size: font-size("xs");
   }
 
   &--lg {
     padding: space(3) space(6);
-    font-size: font-size('base');
+    font-size: font-size("base");
   }
 }
 
@@ -70,9 +70,9 @@
   background: transparent;
   color: hsl(var(--foreground));
   padding: space(2) space(4);
-  border-radius: radius('md');
-  font-weight: font-weight('medium');
-  font-size: font-size('sm');
+  border-radius: radius("md");
+  font-weight: font-weight("medium");
+  font-size: font-size("sm");
   border: none;
   cursor: pointer;
   @include transition((color, background-color));
@@ -82,18 +82,18 @@
   // NOTE: -webkit-mask/-webkit-mask-composite are intentional — mask-composite
   // syntax differs between -webkit- and standard; autoprefixer cannot auto-add.
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     inset: 0;
-    border-radius: radius('md');
+    border-radius: radius("md");
     padding: 2px;
     @include gradient-bg();
     -webkit-mask:
-      linear-gradient(static-color('white'), static-color('white')) content-box,
-      linear-gradient(static-color('white'), static-color('white'));
+      linear-gradient(static-color("white"), static-color("white")) content-box,
+      linear-gradient(static-color("white"), static-color("white"));
     mask:
-      linear-gradient(static-color('white'), static-color('white')) content-box,
-      linear-gradient(static-color('white'), static-color('white'));
+      linear-gradient(static-color("white"), static-color("white")) content-box,
+      linear-gradient(static-color("white"), static-color("white"));
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;
@@ -121,7 +121,7 @@
   width: 2.5rem;
   height: 2.5rem;
   padding: 0;
-  border-radius: radius('md');
+  border-radius: radius("md");
   background-color: transparent;
   color: hsl(var(--foreground));
   border: 1px solid hsl(var(--border));
@@ -146,7 +146,7 @@
 
     // Expand touch target to 44px without changing visual size
     &::after {
-      content: '';
+      content: "";
       position: absolute;
       inset: -0.375rem; // expand 6px each side: 32 + 12 = 44px
     }
@@ -176,7 +176,7 @@
   background: none;
   border: none;
   color: hsl(var(--link));
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
   text-decoration: underline;
   text-underline-offset: 4px;
   cursor: pointer;
@@ -189,6 +189,6 @@
   &:focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
-    border-radius: radius('sm');
+    border-radius: radius("sm");
   }
 }

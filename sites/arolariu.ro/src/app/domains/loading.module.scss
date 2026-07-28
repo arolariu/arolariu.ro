@@ -1,7 +1,7 @@
 // ===========================================
 // DOMAINS LOADING SKELETON STYLES
 // ===========================================
-@use '../../styles/abstracts' as *;
+@use "../../styles/abstracts" as *;
 
 // ===========================================
 // LAYOUT
@@ -22,8 +22,8 @@
 .progressTrack {
   height: 0.25rem;
   overflow: hidden;
-  border-radius: radius('md');
-  background-color: color('muted');
+  border-radius: radius("md");
+  background-color: color("muted");
 }
 
 .titleRow {
@@ -33,7 +33,7 @@
   padding-top: space(6);
   padding-bottom: space(6);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     flex-direction: row;
   }
 }
@@ -41,7 +41,7 @@
 .titleSkeleton {
   margin-bottom: space(2);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     margin-bottom: 0;
     width: 40%;
   }
@@ -54,16 +54,16 @@
     margin-top: space(2);
   }
 
-  @include respond-to('2xsm') {
+  @include respond-to("2xsm") {
     margin-top: space(8);
   }
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     width: 60%;
     padding-left: space(10);
   }
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     margin-top: 0;
   }
 }
@@ -77,13 +77,13 @@
   flex-wrap: wrap;
   gap: space(4);
 
-  @include respond-to('2xsm') {
+  @include respond-to("2xsm") {
     align-items: center;
     justify-content: center;
     justify-items: center;
   }
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     align-items: baseline;
     justify-content: normal;
     justify-items: start;
@@ -95,10 +95,10 @@
   max-width: 20rem;
   margin-bottom: space(6);
   padding: space(4);
-  border: 1px solid color('border');
-  border-radius: radius('xl');
+  border: 1px solid color("border");
+  border-radius: radius("xl");
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     margin-bottom: 0;
   }
 }
@@ -117,7 +117,7 @@
   height: 16rem;
   width: 100%;
   overflow: hidden;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 .cardContent {

@@ -1,52 +1,52 @@
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 .tooltipBorder {
-  border-top: 1px solid color('border');
+  border-top: 1px solid color("border");
   padding-top: space(1);
 }
 
 .invoiceName {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   @include truncate;
 }
 
 .invoiceLink {
   display: block;
-  color: color('primary');
+  color: color("primary");
   text-decoration: none;
   @include truncate;
   @include transition(color);
 
   &:hover {
-    color: color('primary');
+    color: color("primary");
     text-decoration: underline;
   }
 
   &:focus-visible {
-    outline: 2px solid color('ring');
+    outline: 2px solid color("ring");
     outline-offset: 2px;
-    border-radius: radius('sm');
+    border-radius: radius("sm");
   }
 }
 
 .moreText {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .historicalRow {
   display: flex;
   align-items: center;
   gap: space(1);
-  border-top: 1px solid color('border');
+  border-top: 1px solid color("border");
   padding-top: space(1);
 }
 
 .tooltipLabel {
-  font-weight: font-weight('semibold');
+  font-weight: font-weight("semibold");
 }
 
 .tooltipCount {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .legend {
@@ -65,27 +65,27 @@
 .legendBlock {
   height: space(3);
   width: space(3);
-  border-radius: radius('sm');
+  border-radius: radius("sm");
 }
 
 .legendBlock1 {
-  background-color: color-alpha('primary', 0.2);
+  background-color: color-alpha("primary", 0.2);
 }
 
 .legendBlock2 {
-  background-color: color-alpha('primary', 0.4);
+  background-color: color-alpha("primary", 0.4);
 }
 
 .legendBlock3 {
-  background-color: color-alpha('primary', 0.6);
+  background-color: color-alpha("primary", 0.6);
 }
 
 .legendBlock4 {
-  background-color: color-alpha('primary', 0.8);
+  background-color: color-alpha("primary", 0.8);
 }
 
 .legendBlock5 {
-  background-color: color('primary');
+  background-color: color("primary");
 }
 
 .statsGrid {
@@ -93,15 +93,15 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: space(3);
   width: 100%;
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 }
 
 .statBox {
   display: flex;
   align-items: center;
   gap: space(2);
-  border: 1px solid color('border');
-  border-radius: radius('lg');
+  border: 1px solid color("border");
+  border-radius: radius("lg");
   padding: space(2);
 }
 
@@ -110,7 +110,7 @@
 }
 
 .statValue {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .insightBox {
@@ -118,8 +118,8 @@
   align-items: center;
   gap: space(2);
   width: 100%;
-  border: 1px solid color('border');
-  border-radius: radius('lg');
+  border: 1px solid color("border");
+  border-radius: radius("lg");
   padding: space(3);
 }
 
@@ -128,16 +128,16 @@
 }
 
 .insightHighlight {
-  color: color('foreground');
-  font-weight: font-weight('medium');
+  color: color("foreground");
+  font-weight: font-weight("medium");
 }
 
 .colorRed {
-  color: color('destructive');
+  color: color("destructive");
 }
 
 .colorGreen {
-  color: color('success');
+  color: color("success");
 }
 
 .iconXs {
@@ -148,17 +148,17 @@
   display: flex;
   align-items: center;
   gap: space(2);
-  font-size: font-size('lg');
+  font-size: font-size("lg");
 }
 
 .titleIcon {
   @include icon-size(space(4));
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .infoIcon {
   @include icon-size(space(4));
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   cursor: help;
 }
 
@@ -171,7 +171,6 @@
 }
 
 .dayButton {
-
   // Days with spending are wrapped in a Tooltip trigger, which adds the library
   // `.trigger-GlwNv7 { max-width: max-content }`. The doubled-class selector
   // outranks it so marked cells stay full-width squares like the unmarked ones.
@@ -184,82 +183,82 @@
   aspect-ratio: 1;
   box-sizing: border-box;
   padding: 0;
-  font-weight: font-weight('normal');
+  font-weight: font-weight("normal");
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: radius('md');
+  border-radius: radius("md");
   position: relative;
   @include transition(all);
 }
 
 .dayButtonHighlight {
-  background-color: color('primary');
-  color: color('primary-foreground');
-  font-weight: font-weight('semibold');
+  background-color: color("primary");
+  color: color("primary-foreground");
+  font-weight: font-weight("semibold");
 
   &:hover {
-    background-color: color('primary');
-    color: color('primary-foreground');
+    background-color: color("primary");
+    color: color("primary-foreground");
     opacity: 0.9;
   }
 }
 
 // Intensity classes for spending heatmap
 .intensity1 {
-  background-color: color-alpha('primary', 0.2);
-  color: color('foreground');
+  background-color: color-alpha("primary", 0.2);
+  color: color("foreground");
 
   &:hover {
-    background-color: color-alpha('primary', 0.3);
+    background-color: color-alpha("primary", 0.3);
   }
 }
 
 .intensity2 {
-  background-color: color-alpha('primary', 0.4);
-  color: color('foreground');
+  background-color: color-alpha("primary", 0.4);
+  color: color("foreground");
 
   &:hover {
-    background-color: color-alpha('primary', 0.5);
+    background-color: color-alpha("primary", 0.5);
   }
 }
 
 .intensity3 {
-  background-color: color-alpha('primary', 0.6);
-  color: color('primary-foreground');
+  background-color: color-alpha("primary", 0.6);
+  color: color("primary-foreground");
 
   &:hover {
-    background-color: color-alpha('primary', 0.7);
+    background-color: color-alpha("primary", 0.7);
   }
 }
 
 .intensity4 {
-  background-color: color-alpha('primary', 0.8);
-  color: color('primary-foreground');
+  background-color: color-alpha("primary", 0.8);
+  color: color("primary-foreground");
 
   &:hover {
-    background-color: color-alpha('primary', 0.9);
+    background-color: color-alpha("primary", 0.9);
   }
 }
 
 .intensity5 {
-  background-color: color('primary');
-  color: color('primary-foreground');
+  background-color: color("primary");
+  color: color("primary-foreground");
 
   &:hover {
-    background-color: color-alpha('primary', 0.9);
+    background-color: color-alpha("primary", 0.9);
   }
 }
 
 .iconMutedShrink {
   @include icon-size(space(4));
   flex-shrink: 0;
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .calendar {
-  border-radius: radius('md');
-  border: 1px solid color('border');
+  border-radius: radius("md");
+  border: 1px solid color("border");
 
   // Breathing room around each heatmap day cell (without touching the library's
   // `width: 100%` that keeps the seven day columns evenly distributed).
@@ -280,7 +279,7 @@
   @include transition(box-shadow);
 
   &:hover {
-    @include shadow('md');
+    @include shadow("md");
   }
 }
 
@@ -289,12 +288,12 @@
 }
 
 .tooltipXs {
-  font-size: font-size('xs');
+  font-size: font-size("xs");
 }
 
 .dayTooltip {
   max-width: 20rem;
-  font-size: font-size('xs');
+  font-size: font-size("xs");
   pointer-events: auto;
 
   & > * + * {

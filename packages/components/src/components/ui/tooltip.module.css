@@ -22,7 +22,9 @@
   line-height: 1.5;
   box-shadow: 0 2px 8px rgb(0 0 0 / 0.12);
   transform-origin: var(--transform-origin);
-  transition: opacity var(--ac-transition-fast), transform var(--ac-transition-fast);
+  transition:
+    opacity var(--ac-transition-fast),
+    transform var(--ac-transition-fast);
 
   /* Force all descendants (e.g. <code>, <strong>) to inherit the
      tooltip's inverted color scheme so consumer styles don't bleed in. */

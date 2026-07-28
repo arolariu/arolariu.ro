@@ -1,7 +1,7 @@
 // ===========================================
 // VIEW INVOICES PAGE STYLES
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 // ===========================================
 // LAYOUT
@@ -13,7 +13,7 @@
   min-height: calc(200vh - 64px); // 64px is typical header height
 
   // Ensure enough scroll room for dialogs on mobile
-  @include respond-below('md') {
+  @include respond-below("md") {
     min-height: 250vh;
     padding-bottom: calc(space(16) + env(safe-area-inset-bottom, 0px));
   }
@@ -40,20 +40,20 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  font-size: font-size('2xl');
-  font-weight: font-weight('medium');
+  font-size: font-size("2xl");
+  font-weight: font-weight("medium");
 
-  @include respond-to('sm') {
-    font-size: font-size('3xl');
+  @include respond-to("sm") {
+    font-size: font-size("3xl");
   }
 }
 
 .subtitleArticle {
   margin-inline: auto;
-  font-size: font-size('base');
-  line-height: line-height('relaxed');
+  font-size: font-size("base");
+  line-height: line-height("relaxed");
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     width: 66.666%;
   }
 }

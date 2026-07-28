@@ -2,7 +2,7 @@
 // EULA COMPONENT STYLES
 // Scoped to /app/EULA.tsx
 // ===========================================
-@use '../styles/abstracts' as *;
+@use "../styles/abstracts" as *;
 
 // ===========================================
 // LAYOUT
@@ -20,7 +20,7 @@
 // ===========================================
 .card {
   border-width: 2px;
-  @include shadow('lg');
+  @include shadow("lg");
 }
 
 // ===========================================
@@ -41,20 +41,20 @@
 .shieldIconSvg {
   width: 3rem;
   height: 3rem;
-  color: color('primary');
+  color: color("primary");
 }
 
 .title {
-  font-size: font-size('2xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("2xl");
+  font-weight: font-weight("bold");
 
-  @include respond-to('md') {
-    font-size: font-size('3xl');
+  @include respond-to("md") {
+    font-size: font-size("3xl");
   }
 }
 
 .subtitle {
-  font-size: font-size('base');
+  font-size: font-size("base");
 }
 
 // ===========================================
@@ -76,8 +76,8 @@
   display: flex;
   align-items: center;
   gap: space(2);
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
   white-space: nowrap;
   cursor: pointer;
 }
@@ -95,12 +95,12 @@
   width: 1rem;
   height: 1rem;
   pointer-events: none;
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   @include transition(color);
 
   // Hover effect linked to wrapper
   .selectWrapper:hover & {
-    color: color('foreground');
+    color: color("foreground");
   }
 }
 
@@ -109,19 +109,19 @@
   cursor: pointer;
   appearance: none;
   padding: space(2) space(8) space(2) space(3);
-  font-size: font-size('sm');
-  border: 1px solid color('border');
-  border-radius: radius('md');
-  background-color: color('background');
-  color: color('foreground');
+  font-size: font-size("sm");
+  border: 1px solid color("border");
+  border-radius: radius("md");
+  background-color: color("background");
+  color: color("foreground");
   @include transition(border-color);
 
   &:hover {
-    border-color: color-alpha('primary', 0.5);
+    border-color: color-alpha("primary", 0.5);
   }
 
   &:focus-visible {
-    outline: 2px solid color('ring');
+    outline: 2px solid color("ring");
     outline-offset: 2px;
   }
 }
@@ -130,7 +130,7 @@
   width: 1rem;
   height: 1rem;
   flex-shrink: 0;
-  color: color('foreground');
+  color: color("foreground");
 }
 
 // ===========================================
@@ -146,7 +146,7 @@
   padding-left: space(4);
   padding-right: space(4);
   text-align: center;
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 // ===========================================
@@ -157,7 +157,7 @@
   grid-template-columns: 1fr;
   gap: space(4);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -167,7 +167,7 @@
   @include transition(border-color);
 
   &:hover {
-    border-color: color('link');
+    border-color: color("link");
   }
 }
 
@@ -184,12 +184,12 @@
 .policyIcon {
   width: 1.25rem;
   height: 1.25rem;
-  color: color('primary');
+  color: color("primary");
 }
 
 .policyCardContent {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
 }
 
 .policyButton {
@@ -205,7 +205,7 @@
   max-width: 90vw;
   overflow-y: scroll;
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     max-height: 75vh;
     max-width: 75vw;
   }
@@ -242,25 +242,25 @@
   display: flex;
   align-items: center;
   gap: space(2);
-  font-size: font-size('lg');
-  font-weight: font-weight('medium');
+  font-size: font-size("lg");
+  font-weight: font-weight("medium");
 }
 
 .cookiesSubtitle {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
 }
 
 .cookieIcon {
   width: 1.25rem;
   height: 1.25rem;
-  color: color('primary');
+  color: color("primary");
 }
 
 .accordion {
   width: 100%;
 
-  > :global([data-orientation='vertical']) {
+  > :global([data-orientation="vertical"]) {
     padding-top: space(2);
     padding-bottom: space(2);
   }
@@ -276,21 +276,21 @@
   display: flex;
   align-items: center;
   gap: space(2);
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 }
 
 .accordionIcon {
   width: 1rem;
   height: 1rem;
   flex-shrink: 0;
-  color: color('primary');
+  color: color("primary");
 }
 
 .badgeRequired {
   margin-left: space(2);
-  background: color('muted');
-  color: color('muted-foreground');
-  border: 1px solid color('border');
+  background: color("muted");
+  color: color("muted-foreground");
+  border: 1px solid color("border");
 }
 
 .badgeOptional {
@@ -305,8 +305,8 @@
 }
 
 .accordionDescription {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
 }
 
 .switchRow {
@@ -316,19 +316,19 @@
 
   // Ensure the Switch toggle track has visible background colors
   // (library data-attribute style variants may not be emitted in all contexts)
-  button[role='switch'] {
+  button[role="switch"] {
     flex-shrink: 0;
-    background-color: color('input');
+    background-color: color("input");
 
-    &[data-state='checked'] {
+    &[data-state="checked"] {
       @include gradient-bg();
     }
   }
 }
 
 .switchLabel {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 // ===========================================
@@ -347,11 +347,11 @@
 .acceptButton {
   width: 100%;
   cursor: pointer;
-  background: color('primary');
-  color: color('primary-foreground');
+  background: color("primary");
+  color: color("primary-foreground");
 
   &:hover {
-    background: color-alpha('primary', 0.9);
+    background: color-alpha("primary", 0.9);
   }
 }
 
@@ -359,13 +359,13 @@
   margin-right: space(2);
   width: 1rem;
   height: 1rem;
-  color: color('primary-foreground');
+  color: color("primary-foreground");
 }
 
 .footerNote {
   text-align: center;
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
 }
 
 // ===========================================
@@ -375,7 +375,7 @@
 .shimmerCircle {
   width: 3rem;
   height: 3rem;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .shimmerTitle {
@@ -383,44 +383,44 @@
   height: 1rem;
   margin-left: auto;
   margin-right: auto;
-  border-radius: radius('md');
+  border-radius: radius("md");
 }
 
 .shimmerTabs {
   width: 100%;
   height: 2.5rem;
-  border-radius: radius('md');
+  border-radius: radius("md");
 }
 
 .shimmerContentBlock {
   height: 4rem;
-  border-radius: radius('md');
+  border-radius: radius("md");
 }
 
 .shimmerPolicyCard {
   height: 12rem;
-  border-radius: radius('md');
+  border-radius: radius("md");
 }
 
 .shimmerSeparator {
   height: 0.25rem;
-  border-radius: radius('md');
+  border-radius: radius("md");
 }
 
 .shimmerCookiesHeader {
   height: 2rem;
-  border-radius: radius('md');
+  border-radius: radius("md");
 }
 
 .shimmerAccordionItem {
   height: 6rem;
-  border-radius: radius('md');
+  border-radius: radius("md");
 }
 
 .shimmerButton {
   width: 100%;
   height: 3rem;
-  border-radius: radius('md');
+  border-radius: radius("md");
 }
 
 .shimmerFooterNote {
@@ -428,5 +428,5 @@
   height: 1rem;
   margin-left: auto;
   margin-right: auto;
-  border-radius: radius('md');
+  border-radius: radius("md");
 }

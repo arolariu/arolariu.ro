@@ -2,7 +2,7 @@
 // AUTH FORM SHELL
 // Wrapper for authentication form with kicker, secondary link, and footer
 // ===========================================
-@use '../../../styles/abstracts' as *;
+@use "../../../styles/abstracts" as *;
 
 .shell {
   width: 100%;
@@ -16,19 +16,19 @@
 }
 
 .kicker {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
 }
 
 .secondary {
   margin-top: space(2);
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
 }
 
 .secondaryLink {
-  color: color('primary');
-  font-weight: font-weight('medium');
+  color: color("primary");
+  font-weight: font-weight("medium");
   text-underline-offset: 4px;
   @include transition(color);
 
@@ -38,6 +38,6 @@
 }
 
 .footer {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
 }

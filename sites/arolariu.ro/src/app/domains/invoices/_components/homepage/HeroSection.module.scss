@@ -1,15 +1,15 @@
-@use '../../../../../styles/abstracts' as abstracts;
+@use "../../../../../styles/abstracts" as abstracts;
 
 .heroSection {
   position: relative;
   overflow: hidden;
   padding: abstracts.space(16) abstracts.space(4);
 
-  @include abstracts.respond-to('sm') {
+  @include abstracts.respond-to("sm") {
     padding-inline: abstracts.space(6);
   }
 
-  @include abstracts.respond-to('lg') {
+  @include abstracts.respond-to("lg") {
     padding-inline: abstracts.space(8);
   }
 }
@@ -23,7 +23,7 @@
   @include abstracts.flex-column-center;
   gap: abstracts.space(12);
 
-  @include abstracts.respond-to('lg') {
+  @include abstracts.respond-to("lg") {
     flex-direction: row;
     gap: abstracts.space(16);
   }
@@ -33,23 +33,23 @@
   flex: 1;
   text-align: center;
 
-  @include abstracts.respond-to('lg') {
+  @include abstracts.respond-to("lg") {
     text-align: left;
   }
 }
 
 .heroTitle {
   margin-bottom: abstracts.space(6);
-  font-size: abstracts.font-size('4xl');
-  font-weight: abstracts.font-weight('bold');
+  font-size: abstracts.font-size("4xl");
+  font-weight: abstracts.font-weight("bold");
   letter-spacing: -0.025em;
-  color: abstracts.color('muted-foreground');
+  color: abstracts.color("muted-foreground");
 
-  @include abstracts.respond-to('sm') {
-    font-size: abstracts.font-size('5xl');
+  @include abstracts.respond-to("sm") {
+    font-size: abstracts.font-size("5xl");
   }
 
-  @include abstracts.respond-to('lg') {
+  @include abstracts.respond-to("lg") {
     font-size: 3.75rem;
   }
 
@@ -68,11 +68,11 @@
 .heroDescription {
   margin-bottom: abstracts.space(8);
   max-width: 42rem;
-  font-size: abstracts.font-size('lg');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("lg");
+  color: abstracts.color("muted-foreground");
 
-  @include abstracts.respond-to('lg') {
-    font-size: abstracts.font-size('xl');
+  @include abstracts.respond-to("lg") {
+    font-size: abstracts.font-size("xl");
   }
 }
 
@@ -80,12 +80,12 @@
   @include abstracts.flex-column-center;
   gap: abstracts.space(4);
 
-  @include abstracts.respond-to('sm') {
+  @include abstracts.respond-to("sm") {
     flex-direction: row;
     justify-content: center;
   }
 
-  @include abstracts.respond-to('lg') {
+  @include abstracts.respond-to("lg") {
     justify-content: flex-start;
   }
 }
@@ -99,7 +99,7 @@
   width: 100%;
   max-width: 28rem;
 
-  @include abstracts.respond-to('lg') {
+  @include abstracts.respond-to("lg") {
     max-width: 32rem;
   }
 }
@@ -122,4 +122,3 @@
     opacity: 0.9;
   }
 }
-

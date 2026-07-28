@@ -1,7 +1,7 @@
 // ===========================================
 // INVOICE DETAILS FORM STYLES
 // ===========================================
-@use '../../../../../styles/abstracts' as *;
+@use "../../../../../styles/abstracts" as *;
 
 .container {
   @include flex-column;
@@ -14,15 +14,15 @@
 }
 
 .title {
-  font-size: font-size('2xl');
-  font-weight: font-weight('semibold');
-  color: color('foreground');
+  font-size: font-size("2xl");
+  font-weight: font-weight("semibold");
+  color: color("foreground");
   margin: 0;
 }
 
 .subtitle {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
   margin: 0;
 }
 
@@ -66,15 +66,15 @@
 }
 
 .thumbnailTitle {
-  font-size: font-size('lg');
-  font-weight: font-weight('medium');
-  color: color('foreground');
+  font-size: font-size("lg");
+  font-weight: font-weight("medium");
+  color: color("foreground");
   margin: 0;
 }
 
 .scanName {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
   word-break: break-all;
 }
 
@@ -82,9 +82,9 @@
   position: relative;
   width: 100%;
   aspect-ratio: 3 / 4;
-  border-radius: border-radius('md');
+  border-radius: border-radius("md");
   overflow: hidden;
-  background-color: color('muted');
+  background-color: color("muted");
   display: flex;
   align-items: center;
   justify-content: center;
@@ -105,14 +105,14 @@
 }
 
 .pdfIcon {
-  font-size: font-size('5xl');
-  color: color('muted-foreground');
+  font-size: font-size("5xl");
+  color: color("muted-foreground");
 }
 
 .pdfLabel {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
+  color: color("muted-foreground");
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -121,7 +121,7 @@
 .formCard {
   flex: 1;
   width: 100%;
-  
+
   @media (min-width: 768px) {
     max-width: 600px;
   }
@@ -139,8 +139,8 @@
 }
 
 .fieldHint {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
   margin: 0;
 }
 
@@ -152,7 +152,7 @@
 }
 
 .calendarIcon {
-  font-size: font-size('lg');
+  font-size: font-size("lg");
 }
 
 .calendarPopover {

@@ -94,9 +94,7 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/",
-              "host": [
-                "{{baseUrl}}"
-              ],
+              "host": ["{{baseUrl}}"],
               "path": []
             }
           },
@@ -127,12 +125,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/human",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "human"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["human"]
             }
           },
           "event": [
@@ -162,12 +156,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/json",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "json"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["json"]
             }
           }
         },
@@ -184,12 +174,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/pdf",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "pdf"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["pdf"]
             }
           }
         }
@@ -211,13 +197,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/rest/json",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "json"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "json"]
             }
           },
           "event": [
@@ -250,13 +231,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/rest/json?format=minimal",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "json"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "json"],
               "query": [
                 {
                   "key": "format",
@@ -295,13 +271,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/rest/json?format=resume",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "json"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "json"],
               "query": [
                 {
                   "key": "format",
@@ -339,13 +310,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/rest/json?section={{sectionName}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "json"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "json"],
               "query": [
                 {
                   "key": "section",
@@ -384,13 +350,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/rest/json?section=unknown-section",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "json"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "json"],
               "query": [
                 {
                   "key": "section",
@@ -435,13 +396,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/rest/json",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "json"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "json"]
             }
           },
           "event": [
@@ -478,13 +434,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/rest/json",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "json"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "json"]
             }
           },
           "event": [

@@ -3,23 +3,45 @@
 /// ===========================================
 /// Curated display/visibility helpers actively used by the website.
 /// ===========================================
-@use '../abstracts' as *;
+@use "../abstracts" as *;
 
-.block { display: block; }
-.inline-block { display: inline-block; }
-.inline { display: inline; }
-.inline-flex { display: inline-flex; }
-.hidden { display: none; }
+.block {
+  display: block;
+}
+.inline-block {
+  display: inline-block;
+}
+.inline {
+  display: inline;
+}
+.inline-flex {
+  display: inline-flex;
+}
+.hidden {
+  display: none;
+}
 
-.visible { visibility: visible; }
+.visible {
+  visibility: visible;
+}
 
-.overflow-hidden { overflow: hidden; }
-.overflow-y-auto { overflow-y: auto; }
+.overflow-hidden {
+  overflow: hidden;
+}
+.overflow-y-auto {
+  overflow-y: auto;
+}
 
-.object-cover { object-fit: cover; }
+.object-cover {
+  object-fit: cover;
+}
 
-.cursor-pointer { cursor: pointer; }
-.cursor-default { cursor: default; }
+.cursor-pointer {
+  cursor: pointer;
+}
+.cursor-default {
+  cursor: default;
+}
 
 .sr-only {
   @include visually-hidden;
@@ -29,6 +51,8 @@
   // Reserve utility: hides elements when printing.
   // Not currently referenced in TSX but retained for future print-mode use.
   @media print {
-    .print-hidden { display: none; }
+    .print-hidden {
+      display: none;
+    }
   }
 }

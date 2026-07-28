@@ -1,7 +1,7 @@
 // ===========================================
 // UPLOAD PREVIEW COMPONENT STYLES
 // ===========================================
-@use '../../../../../styles/abstracts' as *;
+@use "../../../../../styles/abstracts" as *;
 
 // ===========================================
 // PREVIEW CONTAINER
@@ -16,9 +16,9 @@
 }
 
 .title {
-  font-size: font-size('xl');
-  font-weight: font-weight('semibold');
-  color: color('foreground');
+  font-size: font-size("xl");
+  font-weight: font-weight("semibold");
+  color: color("foreground");
 
   @include dark {
     color: white;
@@ -28,15 +28,15 @@
 .grid {
   @include grid(1, space(4));
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  @include respond-to('xl') {
+  @include respond-to("xl") {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
@@ -52,11 +52,11 @@
 }
 
 .paginationInfo {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
+  color: color("muted-foreground");
 
   @include dark {
-    color: color('muted');
+    color: color("muted");
   }
 }

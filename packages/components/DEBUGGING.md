@@ -166,7 +166,7 @@ Create `.vscode/launch.json`:
 
 ```tsx
 // 1. Check component import
-import { Button } from "@arolariu/components/button";
+import {Button} from "@arolariu/components/button";
 
 // 2. Verify required package styles are loaded once
 import "@arolariu/components/styles";
@@ -179,14 +179,10 @@ import "@arolariu/components/styles";
 
 ```tsx
 import "@arolariu/components/styles";
-import { Button } from "@arolariu/components/button";
+import {Button} from "@arolariu/components/button";
 
 export function MyComponent() {
-  return (
-    <Button onClick={() => console.log("Clicked!")}>
-      My Button
-    </Button>
-  );
+  return <Button onClick={() => console.log("Clicked!")}>My Button</Button>;
 }
 ```
 
@@ -230,19 +226,20 @@ export function MyComponent() {
 
 **Cause**
 
-Base UI field-aware labels expect the matching field context. In this package, the standalone `Label` component is independent and should be used when you do not need Base UI field context.
+Base UI field-aware labels expect the matching field context. In this package, the standalone `Label` component is independent and should be
+used when you do not need Base UI field context.
 
 **Solution**
 
 ```tsx
-import { Input } from "@arolariu/components/input";
-import { Label } from "@arolariu/components/label";
+import {Input} from "@arolariu/components/input";
+import {Label} from "@arolariu/components/label";
 
 export function StandaloneField() {
   return (
     <>
-      <Label htmlFor="email">Email</Label>
-      <Input id="email" />
+      <Label htmlFor='email'>Email</Label>
+      <Input id='email' />
     </>
   );
 }
@@ -263,17 +260,17 @@ Base UI button-like primitives assume a native `<button>` unless told otherwise.
 
 **Solution**
 
-When rendering a non-button element, ensure `nativeButton={false}` is set on the underlying primitive. The package already handles this for some compatibility shims such as `Button asChild`.
+When rendering a non-button element, ensure `nativeButton={false}` is set on the underlying primitive. The package already handles this for
+some compatibility shims such as `Button asChild`.
 
 ```tsx
-import { BaseButton } from "@base-ui/react/button";
+import {BaseButton} from "@base-ui/react/button";
 
 export function DocsLink() {
   return (
     <BaseButton
       nativeButton={false}
-      render={<a href="/docs" />}
-    >
+      render={<a href='/docs' />}>
       Documentation
     </BaseButton>
   );
@@ -298,14 +295,12 @@ If you build your own wrapper around Base UI directly, set `nativeButton={false}
 Prefer `render` for new code:
 
 ```tsx
-import { Dialog, DialogContent, DialogTrigger } from "@arolariu/components/dialog";
+import {Dialog, DialogContent, DialogTrigger} from "@arolariu/components/dialog";
 
 export function Example() {
   return (
     <Dialog>
-      <DialogTrigger render={<button type="button" />}>
-        Open dialog
-      </DialogTrigger>
+      <DialogTrigger render={<button type='button' />}>Open dialog</DialogTrigger>
       <DialogContent>Dialog content</DialogContent>
     </Dialog>
   );
@@ -325,7 +320,7 @@ Use `asChild` only when maintaining older consumers.
 **Debugging Steps**
 
 ```tsx
-import { Button } from "@arolariu/components/button";
+import {Button} from "@arolariu/components/button";
 
 // 1. Hover over the component in your IDE to inspect the prop type
 type ButtonProps = React.ComponentProps<typeof Button>;
@@ -353,27 +348,27 @@ npx webpack-bundle-analyzer build/static/js/*.js
 Install the **Import Cost** VS Code extension to see real-time import sizes:
 
 ```tsx
-import { Button } from "@arolariu/components/button";
-import { Dialog } from "@arolariu/components/dialog";
-import { ChartContainer } from "@arolariu/components/chart";
+import {Button} from "@arolariu/components/button";
+import {Dialog} from "@arolariu/components/dialog";
+import {ChartContainer} from "@arolariu/components/chart";
 ```
 
 ### Tree Shaking Verification
 
 ```tsx
 // ✅ Good: tree-shakeable imports
-import { Button } from "@arolariu/components/button";
-import { Card } from "@arolariu/components/card";
+import {Button} from "@arolariu/components/button";
+import {Card} from "@arolariu/components/card";
 
 // ❌ Avoid: imports the entire library surface
-import { Button, Card } from "@arolariu/components";
+import {Button, Card} from "@arolariu/components";
 ```
 
 ### Performance Monitoring
 
 ```tsx
-import { Profiler } from "react";
-import { Button } from "@arolariu/components/button";
+import {Profiler} from "react";
+import {Button} from "@arolariu/components/button";
 
 function onRenderCallback(id, phase, actualDuration) {
   console.log(`${id} ${phase} took ${actualDuration}ms`);
@@ -382,9 +377,8 @@ function onRenderCallback(id, phase, actualDuration) {
 function App() {
   return (
     <Profiler
-      id="Button"
-      onRender={onRenderCallback}
-    >
+      id='Button'
+      onRender={onRenderCallback}>
       <Button>Click me</Button>
     </Profiler>
   );
@@ -396,7 +390,7 @@ function App() {
 ### Component Metadata
 
 ```tsx
-import { Button } from "@arolariu/components/button";
+import {Button} from "@arolariu/components/button";
 
 console.log(Button.displayName); // "Button"
 console.log(Button.$$typeof); // Symbol(react.forward_ref)
@@ -405,7 +399,7 @@ console.log(Button.$$typeof); // Symbol(react.forward_ref)
 ### State Attribute Inspection
 
 ```tsx
-import { Checkbox } from "@arolariu/components/checkbox";
+import {Checkbox} from "@arolariu/components/checkbox";
 
 export function Example() {
   return <Checkbox checked />;
@@ -420,8 +414,8 @@ export function Example() {
 ### Props Validation
 
 ```tsx
-import { Button } from "@arolariu/components/button";
-import type { ButtonProps } from "@arolariu/components/button";
+import {Button} from "@arolariu/components/button";
+import type {ButtonProps} from "@arolariu/components/button";
 
 const buttonProps: ButtonProps = {
   variant: "default",
@@ -444,7 +438,7 @@ npm run build
 ### Production Optimization Check
 
 ```tsx
-import { Button } from "@arolariu/components/button";
+import {Button} from "@arolariu/components/button";
 
 // Verify only Button-related code is pulled into the bundle
 // with your framework's analyzer or browser network tooling.

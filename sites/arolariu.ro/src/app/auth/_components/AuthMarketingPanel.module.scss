@@ -2,7 +2,7 @@
 // AUTH MARKETING PANEL
 // Marketing content panel with illustration and features
 // ===========================================
-@use '../../../styles/abstracts' as *;
+@use "../../../styles/abstracts" as *;
 
 .panel {
   position: relative;
@@ -12,7 +12,7 @@
   gap: space(8);
   text-align: center;
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     align-items: flex-start;
     text-align: left;
   }
@@ -25,12 +25,12 @@
   transform: translateX(-50%);
   width: 16rem;
   height: 16rem;
-  border-radius: radius('full');
-  background-color: color-alpha('primary', 0.1);
+  border-radius: radius("full");
+  background-color: color-alpha("primary", 0.1);
   filter: blur(48px);
   pointer-events: none;
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     left: -5rem;
     transform: none;
   }
@@ -48,26 +48,26 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  font-size: font-size('3xl');
-  font-weight: font-weight('bold');
-  letter-spacing: letter-spacing('tight');
+  font-size: font-size("3xl");
+  font-weight: font-weight("bold");
+  letter-spacing: letter-spacing("tight");
 
-  @include respond-to('sm') {
-    font-size: font-size('4xl');
+  @include respond-to("sm") {
+    font-size: font-size("4xl");
   }
 
-  @include respond-to('lg') {
-    font-size: font-size('5xl');
+  @include respond-to("lg") {
+    font-size: font-size("5xl");
   }
 }
 
 .subtitle {
-  font-size: font-size('base');
-  line-height: line-height('relaxed');
-  color: color('muted-foreground');
+  font-size: font-size("base");
+  line-height: line-height("relaxed");
+  color: color("muted-foreground");
 
-  @include respond-to('sm') {
-    font-size: font-size('lg');
+  @include respond-to("sm") {
+    font-size: font-size("lg");
   }
 }
 
@@ -83,10 +83,10 @@
   width: 100%;
   max-width: 28rem;
   overflow: hidden;
-  border-radius: radius('2xl');
-  border: 1px solid color-alpha('border', 0.5);
+  border-radius: radius("2xl");
+  border: 1px solid color-alpha("border", 0.5);
   padding: space(6);
-  background-color: color-alpha('card', 0.4);
+  background-color: color-alpha("card", 0.4);
   @include backdrop-blur(4px);
 }
 
@@ -96,8 +96,8 @@
   left: -5rem;
   width: 14rem;
   height: 14rem;
-  border-radius: radius('full');
-  background-color: color-alpha('primary', 0.15);
+  border-radius: radius("full");
+  background-color: color-alpha("primary", 0.15);
   filter: blur(48px);
   pointer-events: none;
 }
@@ -108,8 +108,8 @@
   right: -5rem;
   width: 14rem;
   height: 14rem;
-  border-radius: radius('full');
-  background-color: color-alpha('secondary', 0.15);
+  border-radius: radius("full");
+  background-color: color-alpha("secondary", 0.15);
   filter: blur(48px);
   pointer-events: none;
 }
@@ -126,7 +126,7 @@
   object-fit: contain;
   @include image-drop-shadow;
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     width: 14rem;
     height: 14rem;
   }

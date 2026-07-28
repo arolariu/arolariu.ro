@@ -1,21 +1,21 @@
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 .card {
   @include transition(box-shadow);
 
   &:hover {
-    @include shadow('md');
+    @include shadow("md");
   }
 }
 
 .cardTitle {
-  font-size: font-size('lg');
-  font-weight: font-weight('semibold');
+  font-size: font-size("lg");
+  font-weight: font-weight("semibold");
 }
 
 .cardDescription {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
 }
 
 .cardContent {
@@ -42,63 +42,63 @@
 }
 
 .progressTrack {
-  stroke: color('muted');
+  stroke: color("muted");
   opacity: 0.2;
 }
 
 .progressIndicator {
-  @include transition(stroke-dashoffset, 'slow');
+  @include transition(stroke-dashoffset, "slow");
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 
   &.success {
-    stroke: color('success');
+    stroke: color("success");
   }
 
   &.warning {
-    stroke: color('warning');
+    stroke: color("warning");
   }
 
   &.error {
-    stroke: color('destructive');
+    stroke: color("destructive");
   }
 }
 
 .progressText {
-  font-size: font-size('2xl');
-  font-weight: font-weight('bold');
-  fill: color('foreground');
+  font-size: font-size("2xl");
+  font-weight: font-weight("bold");
+  fill: color("foreground");
 }
 
 // Status Label
 .statusLabel {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
   padding: space(1) space(3);
-  border-radius: radius('full');
+  border-radius: radius("full");
   text-transform: uppercase;
   letter-spacing: 0.05em;
 
   &.success {
-    background-color: color-alpha('success', 0.1);
-    color: color('success');
+    background-color: color-alpha("success", 0.1);
+    color: color("success");
   }
 
   &.warning {
-    background-color: color-alpha('warning', 0.1);
-    color: color('warning');
+    background-color: color-alpha("warning", 0.1);
+    color: color("warning");
   }
 
   &.error {
-    background-color: color-alpha('destructive', 0.1);
-    color: color('destructive');
+    background-color: color-alpha("destructive", 0.1);
+    color: color("destructive");
   }
 }
 
 // Score breakdown
 .scoreBreakdown {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
+  font-weight: font-weight("medium");
 }
 
 // Suggestions Container
@@ -106,9 +106,9 @@
   width: 100%;
   margin-top: space(4);
   padding: space(3);
-  border-radius: radius('md');
-  background-color: color-alpha('warning', 0.05);
-  border: 1px solid color-alpha('warning', 0.2);
+  border-radius: radius("md");
+  background-color: color-alpha("warning", 0.05);
+  border: 1px solid color-alpha("warning", 0.2);
 }
 
 .suggestionsHeader {
@@ -119,9 +119,9 @@
 }
 
 .suggestionsTitle {
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
-  color: color('foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
+  color: color("foreground");
 }
 
 .dismissButton {
@@ -144,26 +144,26 @@
   align-items: flex-start;
   gap: space(2);
   padding: space(2);
-  border-radius: radius('sm');
-  background-color: color('background');
+  border-radius: radius("sm");
+  background-color: color("background");
   @include transition(background-color);
 
   &:hover {
-    background-color: color('muted');
+    background-color: color("muted");
   }
 }
 
 .suggestionIcon {
   @include icon-size(space(5));
-  color: color('warning');
+  color: color("warning");
   flex-shrink: 0;
   margin-top: space(0.5);
 }
 
 .suggestionText {
   flex: 1;
-  font-size: font-size('sm');
-  color: color('foreground');
+  font-size: font-size("sm");
+  color: color("foreground");
   line-height: 1.5;
 }
 
@@ -205,11 +205,11 @@
   align-items: center;
   gap: space(3);
   padding: space(2);
-  border-radius: radius('md');
+  border-radius: radius("md");
   @include transition(background-color);
 
   &:hover {
-    background-color: color('muted');
+    background-color: color("muted");
   }
 }
 
@@ -226,7 +226,7 @@
 }
 
 .missingIcon {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   @include icon-size(space(5));
 }
 
@@ -239,25 +239,25 @@
 }
 
 .achievedText {
-  color: color('foreground');
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  color: color("foreground");
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .missingText {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
 }
 
 .factorDetail {
-  font-weight: font-weight('normal');
+  font-weight: font-weight("normal");
   opacity: 0.8;
 }
 
 .factorPoints {
-  font-size: font-size('xs');
-  font-weight: font-weight('semibold');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  font-weight: font-weight("semibold");
+  color: color("muted-foreground");
   min-width: 2rem;
   text-align: right;
 }

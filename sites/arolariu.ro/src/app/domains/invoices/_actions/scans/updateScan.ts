@@ -58,19 +58,13 @@ type ServerActionOutputType = ServerActionResult<
   }>
 >;
 
-
 /**
  * Updates scan blob content and/or metadata by scanId.
  *
  * @param input - Update parameters with scanId, optional content, and metadata patch
  * @returns A result object containing the updated scan entity on success
  */
-export async function updateScan({
-  scanId,
-  scanObject,
-  metadataAdd,
-  metadataRemove = [],
-}: ServerActionInputType): ServerActionOutputType {
+export async function updateScan({scanId, scanObject, metadataAdd, metadataRemove = []}: ServerActionInputType): ServerActionOutputType {
   console.info(">>> Executing server action {{updateScan}}, with scanId:", scanId);
 
   return withSpan("api.actions.scans.updateScan", async () => {
@@ -124,10 +118,10 @@ export async function updateScan({
       // Remove specified keys
       for (const key of metadataRemove) {
         const isImmutableKey =
-          key === ScanMetadataKey.SCAN_ID ||
-          key === ScanMetadataKey.OWNER_ID ||
-          key === ScanMetadataKey.UPLOADED_AT ||
-          key === ScanMetadataKey.UPLOADED_BY;
+          key === ScanMetadataKey.SCAN_ID
+          || key === ScanMetadataKey.OWNER_ID
+          || key === ScanMetadataKey.UPLOADED_AT
+          || key === ScanMetadataKey.UPLOADED_BY;
         if (!isImmutableKey) {
           delete patchedMetadata[key];
         }

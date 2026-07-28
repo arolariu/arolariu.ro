@@ -2,7 +2,7 @@
 // THE AUTHOR LOADING SKELETON STYLES
 // Mirrors page.tsx + component layout 1:1
 // ===========================================
-@use '../../../styles/abstracts' as *;
+@use "../../../styles/abstracts" as *;
 
 // ===========================================
 // PAGE WRAPPER
@@ -10,8 +10,8 @@
 .page {
   position: relative;
   min-height: 100vh;
-  background-color: color('background');
-  color: color('foreground');
+  background-color: color("background");
+  color: color("foreground");
 }
 
 .inner {
@@ -33,9 +33,9 @@
 .heroAvatar {
   width: 8rem;
   height: 8rem;
-  border-radius: radius('full');
+  border-radius: radius("full");
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     width: 10rem;
     height: 10rem;
   }
@@ -44,9 +44,9 @@
 .heroTitle {
   height: 3rem;
   width: 20rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     height: 4rem;
     width: 28rem;
   }
@@ -55,9 +55,9 @@
 .heroSubtitle {
   height: 1.5rem;
   width: 16rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     width: 24rem;
   }
 }
@@ -68,7 +68,7 @@
 .section {
   padding: space(20) space(4);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     padding-left: space(8);
     padding-right: space(8);
   }
@@ -76,7 +76,7 @@
 
 .sectionMuted {
   composes: section;
-  background-color: color-alpha('muted', 0.3);
+  background-color: color-alpha("muted", 0.3);
 }
 
 .sectionContainer {
@@ -94,26 +94,26 @@
 .sectionTitle {
   height: 2.5rem;
   width: 14rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 .sectionSubtitle {
   height: 1.25rem;
   width: 20rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 // ===========================================
 // BIOGRAPHY
 // ===========================================
 .biographyCard {
-  border-radius: radius('xl');
-  border: 1px solid color-alpha('border', 0.5);
+  border-radius: radius("xl");
+  border: 1px solid color-alpha("border", 0.5);
   padding: space(6);
   @include flex-column;
   gap: space(4);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     padding: space(8);
   }
 }
@@ -121,7 +121,7 @@
 .biographyLine {
   height: 3rem;
   width: 100%;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 // ===========================================
@@ -131,18 +131,18 @@
   display: grid;
   gap: space(6);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
 .competencyCard {
   height: 10rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 // ===========================================
@@ -152,7 +152,7 @@
   display: grid;
   gap: space(8);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: 1fr 2fr;
   }
 }
@@ -171,7 +171,7 @@
 .timelineCircle {
   width: 3rem;
   height: 3rem;
-  border-radius: radius('full');
+  border-radius: radius("full");
   flex-shrink: 0;
 }
 
@@ -184,18 +184,18 @@
 .timelineLine1 {
   height: 1.25rem;
   width: 80%;
-  border-radius: radius('md');
+  border-radius: radius("md");
 }
 
 .timelineLine2 {
   height: 1rem;
   width: 60%;
-  border-radius: radius('md');
+  border-radius: radius("md");
 }
 
 .experienceCardSkeleton {
   height: 24rem;
-  border-radius: radius('xl');
+  border-radius: radius("xl");
 }
 
 // ===========================================
@@ -205,14 +205,14 @@
   display: grid;
   gap: space(6);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 .educationCard {
   height: 16rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 // ===========================================
@@ -222,14 +222,14 @@
   display: grid;
   gap: space(6);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 .certificationCard {
   height: 18rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 // ===========================================
@@ -239,18 +239,18 @@
   display: grid;
   gap: space(6);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
 .perspectiveCard {
   height: 12rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }
 
 // ===========================================
@@ -260,12 +260,12 @@
   display: grid;
   gap: space(8);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 .contactCard {
   height: 20rem;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
 }

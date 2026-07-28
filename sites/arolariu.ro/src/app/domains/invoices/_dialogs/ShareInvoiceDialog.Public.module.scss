@@ -1,7 +1,7 @@
 // ===========================================
 // SHARE INVOICE DIALOG PUBLIC STYLES
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 // ===========================================
 // SHARED
@@ -37,32 +37,32 @@
 }
 
 .qrWrapper {
-  border-radius: radius('lg');
-  border: 1px solid color('border');
+  border-radius: radius("lg");
+  border: 1px solid color("border");
   background-color: white;
   padding: space(4);
-  @include shadow('sm');
+  @include shadow("sm");
 }
 
 .qrHint {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   text-align: center;
-  font-size: font-size('xs');
+  font-size: font-size("xs");
 }
 
 // ===========================================
 // REVOKE SECTION
 // ===========================================
 .revokeSection {
-  border-top: 1px solid color('border');
+  border-top: 1px solid color("border");
   padding-top: space(4);
 }
 
 .revokeHint {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   margin-top: space(2);
   text-align: center;
-  font-size: font-size('xs');
+  font-size: font-size("xs");
 }
 
 // ===========================================
@@ -79,11 +79,11 @@
 
 .globeAlertIcon {
   @include icon-size(space(4));
-  color: color('primary');
+  color: color("primary");
 }
 
 .qrCode {
-  border-radius: radius('md');
+  border-radius: radius("md");
 }
 
 .backIcon {
@@ -118,8 +118,8 @@
 
 .inputMono {
   flex: 1;
-  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
-  font-size: font-size('xs');
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: font-size("xs");
 }
 
 .buttonFull {
@@ -132,22 +132,22 @@
 }
 
 .alertWarning {
-  border-color: color-alpha('warning', 0.5);
-  background-color: color-alpha('warning', 0.08);
-  color: color('warning-foreground');
+  border-color: color-alpha("warning", 0.5);
+  background-color: color-alpha("warning", 0.08);
+  color: color("warning-foreground");
 
   @include dark {
-    background-color: color-alpha('warning', 0.1);
+    background-color: color-alpha("warning", 0.1);
   }
 }
 
 .alertWarningTitle {
-  color: color('warning');
+  color: color("warning");
 }
 
 .alertWarningDescription {
-  font-size: font-size('xs');
-  color: color-alpha('warning', 0.85);
+  font-size: font-size("xs");
+  color: color-alpha("warning", 0.85);
 }
 
 // ===========================================
@@ -173,7 +173,7 @@
 
 .inputMonoXs {
   flex: 1;
-  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   font-size: 0.75rem;
 }
 

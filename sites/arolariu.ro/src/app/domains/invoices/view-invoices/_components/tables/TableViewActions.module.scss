@@ -1,7 +1,7 @@
 // ===========================================
 // TABLE VIEW ACTIONS STYLES
 // ===========================================
-@use '../../../../../../styles/abstracts' as *;
+@use "../../../../../../styles/abstracts" as *;
 
 // ===========================================
 // ICON STYLES
@@ -30,7 +30,7 @@
   cursor: pointer;
 
   &:hover {
-    color: color('accent-foreground');
+    color: color("accent-foreground");
   }
 }
 
@@ -38,7 +38,7 @@
   height: space(8);
   width: space(8);
   aspect-ratio: 1;
-  background-color: color-alpha('background', 0.8);
+  background-color: color-alpha("background", 0.8);
 
   @media print {
     display: none;
@@ -64,7 +64,7 @@
   &.menuItemDestructive {
     max-width: none;
     cursor: pointer;
-    color: color('destructive');
+    color: color("destructive");
   }
 }
 

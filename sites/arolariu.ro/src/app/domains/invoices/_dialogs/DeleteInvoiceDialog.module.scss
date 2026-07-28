@@ -1,7 +1,7 @@
 // ===========================================
 // DELETE INVOICE DIALOG STYLES
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 // ===========================================
 // DELETING STATE
@@ -15,22 +15,22 @@
 }
 
 .spinnerWrapper {
-  border-radius: radius('full');
+  border-radius: radius("full");
   padding: space(4);
   @include gradient-bg();
 
   @include dark {
-    background-color: color-alpha('destructive', 0.3);
+    background-color: color-alpha("destructive", 0.3);
   }
 }
 
 .deletingTitle {
-  font-weight: font-weight('medium');
-  color: color('destructive');
+  font-weight: font-weight("medium");
+  color: color("destructive");
 }
 
 .deletingDescription {
-  @include text-muted('sm');
+  @include text-muted("sm");
 }
 
 // ===========================================
@@ -44,10 +44,10 @@
 // INVOICE SUMMARY CARD
 // ===========================================
 .summaryCard {
-  border-radius: radius('lg');
-  border: 1px solid color('border');
+  border-radius: radius("lg");
+  border: 1px solid color("border");
   padding: space(4);
-  background-color: color-alpha('muted', 0.3);
+  background-color: color-alpha("muted", 0.3);
 }
 
 .summaryRow {
@@ -57,12 +57,12 @@
 }
 
 .summaryIconBox {
-  border-radius: radius('lg');
+  border-radius: radius("lg");
   padding: space(2);
-  background-color: color-alpha('secondary', 0.15);
+  background-color: color-alpha("secondary", 0.15);
 
   @include dark {
-    background-color: color-alpha('secondary', 0.25);
+    background-color: color-alpha("secondary", 0.25);
   }
 }
 
@@ -73,19 +73,19 @@
 
 .summaryName {
   @include truncate;
-  font-weight: font-weight('semibold');
+  font-weight: font-weight("semibold");
 }
 
 .summaryId {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   font-family: monospace;
-  font-size: font-size('xs');
+  font-size: font-size("xs");
 }
 
 .summaryDescription {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   margin-top: space(1);
-  font-size: font-size('sm');
+  font-size: font-size("sm");
   @include line-clamp(2);
 }
 
@@ -95,7 +95,7 @@
 .impactList {
   list-style: disc;
   padding-left: space(5);
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 }
 
 .impactItem {
@@ -116,15 +116,15 @@
 }
 
 .confirmHighlight {
-  font-weight: font-weight('semibold');
-  color: color('destructive');
+  font-weight: font-weight("semibold");
+  color: color("destructive");
 }
 
 .checkboxCard {
   display: flex;
   align-items: flex-start;
-  border-radius: radius('lg');
-  border: 1px solid color('border');
+  border-radius: radius("lg");
+  border: 1px solid color("border");
   padding: space(3);
 
   & > * + * {
@@ -149,12 +149,12 @@
 
 .spinnerIcon {
   @include icon-size(2.5rem);
-  color: color('destructive');
+  color: color("destructive");
 }
 
 .summaryIcon {
   @include icon-size(1.5rem);
-  color: color('destructive');
+  color: color("destructive");
 }
 
 .impactIcon {
@@ -190,7 +190,7 @@
 // LIBRARY COMPONENT CLASSES
 // ===========================================
 .dialogContentMaxW {
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     max-width: 32rem;
   }
 
@@ -208,24 +208,24 @@
   display: flex;
   align-items: center;
   gap: space(2);
-  color: color('destructive');
+  color: color("destructive");
 }
 
 .alertRed {
-  border-color: color-alpha('destructive', 0.3);
-  background-color: color-alpha('destructive', 0.08);
+  border-color: color-alpha("destructive", 0.3);
+  background-color: color-alpha("destructive", 0.08);
 
   @include dark {
-    border-color: color-alpha('destructive', 0.4);
-    background-color: color-alpha('destructive', 0.15);
+    border-color: color-alpha("destructive", 0.4);
+    background-color: color-alpha("destructive", 0.15);
   }
 }
 
 .inputGreen {
-  border-color: color('success');
+  border-color: color("success");
 
   &:focus-visible {
-    outline: 2px solid color('success');
+    outline: 2px solid color("success");
     outline-offset: 2px;
   }
 }
@@ -240,7 +240,7 @@
 .dialogFooterGap {
   gap: space(3);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     gap: space(2);
   }
 }

@@ -1,7 +1,7 @@
 // ===========================================
 // THE PLATFORM - CALL TO ACTION COMPONENT
 // ===========================================
-@use '../../../../styles/abstracts' as abstracts;
+@use "../../../../styles/abstracts" as abstracts;
 
 .section {
   position: relative;
@@ -13,7 +13,7 @@
 .bgLayer {
   position: absolute;
   inset: 0;
-  z-index: abstracts.z('behind');
+  z-index: abstracts.z("behind");
 }
 
 .bgGradient {
@@ -30,7 +30,7 @@
 
 .orb {
   position: absolute;
-  border-radius: abstracts.radius('full');
+  border-radius: abstracts.radius("full");
   filter: blur(48px);
 }
 
@@ -56,8 +56,9 @@
 .bgGrid {
   position: absolute;
   inset: 0;
-  background-image: linear-gradient(abstracts.color-alpha('secondary', 0.14) 1px, transparent 1px),
-    linear-gradient(90deg, abstracts.color-alpha('tertiary', 0.14) 1px, transparent 1px);
+  background-image:
+    linear-gradient(abstracts.color-alpha("secondary", 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, abstracts.color-alpha("tertiary", 0.14) 1px, transparent 1px);
   background-size: 48px 48px;
 }
 
@@ -69,7 +70,7 @@
 // Container
 .container {
   position: relative;
-  z-index: abstracts.z('content');
+  z-index: abstracts.z("content");
   margin-left: auto;
   margin-right: auto;
   padding: 0 abstracts.space(4);
@@ -85,16 +86,16 @@
 // Title
 .title {
   margin-bottom: abstracts.space(6);
-  font-size: abstracts.font-size('4xl');
-  font-weight: abstracts.font-weight('bold');
-  letter-spacing: letter-spacing('tight');
+  font-size: abstracts.font-size("4xl");
+  font-weight: abstracts.font-weight("bold");
+  letter-spacing: letter-spacing("tight");
 
-  @include abstracts.respond-to('md') {
-    font-size: abstracts.font-size('5xl');
+  @include abstracts.respond-to("md") {
+    font-size: abstracts.font-size("5xl");
   }
 
-  @include abstracts.respond-to('lg') {
-    font-size: abstracts.font-size('6xl');
+  @include abstracts.respond-to("lg") {
+    font-size: abstracts.font-size("6xl");
   }
 }
 
@@ -111,11 +112,11 @@
   margin-right: auto;
   margin-bottom: abstracts.space(10);
   max-width: 42rem;
-  font-size: abstracts.font-size('lg');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("lg");
+  color: abstracts.color("muted-foreground");
 
-  @include abstracts.respond-to('md') {
-    font-size: abstracts.font-size('xl');
+  @include abstracts.respond-to("md") {
+    font-size: abstracts.font-size("xl");
   }
 }
 
@@ -127,7 +128,7 @@
   justify-content: center;
   gap: abstracts.space(4);
 
-  @include abstracts.respond-to('sm') {
+  @include abstracts.respond-to("sm") {
     flex-direction: row;
   }
 }
@@ -140,8 +141,8 @@
   height: 3.5rem;
   padding: 0 abstracts.space(8);
   overflow: hidden;
-  font-size: abstracts.font-size('lg');
-  font-weight: abstracts.font-weight('semibold');
+  font-size: abstracts.font-size("lg");
+  font-weight: abstracts.font-weight("semibold");
   cursor: pointer;
 }
 
@@ -185,11 +186,11 @@
   display: flex;
   align-items: center;
   gap: abstracts.space(2);
-  color: abstracts.color('muted-foreground');
+  color: abstracts.color("muted-foreground");
   @include abstracts.transition(color);
 
   &:hover {
-    color: abstracts.color('link');
+    color: abstracts.color("link");
   }
 }
 
@@ -199,7 +200,7 @@
 }
 
 .linkDivider {
-  color: abstracts.color-alpha('muted-foreground', 0.3);
+  color: abstracts.color-alpha("muted-foreground", 0.3);
 }
 
 // Trust indicators
@@ -208,15 +209,15 @@
   gap: abstracts.space(8);
   margin-top: abstracts.space(16);
 
-  @include abstracts.respond-to('sm') {
+  @include abstracts.respond-to("sm") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 .trustCard {
   padding: abstracts.space(6);
-  border-radius: abstracts.radius('xl');
-  background-color: abstracts.color-alpha('muted', 0.3);
+  border-radius: abstracts.radius("xl");
+  background-color: abstracts.color-alpha("muted", 0.3);
   @include abstracts.backdrop-blur;
   @include abstracts.transition(transform);
 
@@ -229,29 +230,29 @@
   margin-bottom: abstracts.space(3);
   height: 4px;
   width: 3rem;
-  border-radius: abstracts.radius('full');
+  border-radius: abstracts.radius("full");
 }
 
 .trustAccentBlue {
-  background-color: abstracts.color('primary');
+  background-color: abstracts.color("primary");
 }
 
 .trustAccentPurple {
-  background-color: abstracts.color('primary');
+  background-color: abstracts.color("primary");
 }
 
 .trustAccentOrange {
-  background-color: abstracts.color('primary');
+  background-color: abstracts.color("primary");
 }
 
 .trustTitle {
   margin-bottom: abstracts.space(2);
-  font-weight: abstracts.font-weight('semibold');
+  font-weight: abstracts.font-weight("semibold");
 }
 
 .trustDescription {
-  font-size: abstracts.font-size('sm');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("sm");
+  color: abstracts.color("muted-foreground");
 }
 
 // Footer
@@ -260,12 +261,12 @@
 }
 
 .footerText {
-  font-size: abstracts.font-size('sm');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("sm");
+  color: abstracts.color("muted-foreground");
 }
 
 .footerLink {
-  color: abstracts.color('primary');
+  color: abstracts.color("primary");
 
   &:hover {
     text-decoration: underline;

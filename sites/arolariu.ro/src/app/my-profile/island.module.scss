@@ -1,4 +1,4 @@
-@use '../../styles/abstracts' as *;
+@use "../../styles/abstracts" as *;
 
 .page {
   @include container(87.5rem);
@@ -11,7 +11,7 @@
   flex-direction: column;
   gap: space(6);
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     flex-direction: row;
     align-items: flex-start;
   }
@@ -20,7 +20,7 @@
 .sidebar {
   display: none;
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     display: flex;
     flex-direction: column;
     position: sticky;
@@ -30,10 +30,10 @@
     flex-shrink: 0;
     gap: space(1);
     padding: space(2);
-    border: 1px solid color('border');
-    border-radius: radius('lg');
-    background-color: color('card');
-    @include shadow('sm');
+    border: 1px solid color("border");
+    border-radius: radius("lg");
+    background-color: color("card");
+    @include shadow("sm");
   }
 }
 
@@ -44,17 +44,17 @@
   width: 100%;
   padding: space(2.5) space(3);
   border: none;
-  border-radius: radius('md');
+  border-radius: radius("md");
   background: transparent;
   cursor: pointer;
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
+  color: color("muted-foreground");
   @include transition((background-color, color));
 
   &:hover {
-    background-color: color-alpha('muted', 0.5);
-    color: color('foreground');
+    background-color: color-alpha("muted", 0.5);
+    color: color("foreground");
   }
 
   svg {
@@ -66,26 +66,26 @@
 
 .sidebarItemActive {
   composes: sidebarItem;
-  background-color: color-alpha('primary', 0.08);
-  color: color('primary');
-  font-weight: font-weight('semibold');
+  background-color: color-alpha("primary", 0.08);
+  color: color("primary");
+  font-weight: font-weight("semibold");
 
   &:hover {
-    background-color: color-alpha('primary', 0.12);
-    color: color('primary');
+    background-color: color-alpha("primary", 0.12);
+    color: color("primary");
   }
 }
 
 .content {
   flex: 1;
   min-width: 0;
-  border: 1px solid color('border');
-  border-radius: radius('lg');
+  border: 1px solid color("border");
+  border-radius: radius("lg");
   padding: space(4);
-  background-color: color('background');
-  @include shadow('sm');
+  background-color: color("background");
+  @include shadow("sm");
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     padding: space(6);
   }
 }
@@ -94,7 +94,7 @@
   width: 100%;
   margin-bottom: space(4);
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     display: none;
   }
 }
