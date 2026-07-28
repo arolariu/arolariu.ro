@@ -1,0 +1,144 @@
+#+#+#+#+############################################################
+# Setup Tooling (Composite Action)
+#
+# Summary:
+# - Installs the language toolchains used across the monorepo:
+#   Node.js, the .NET SDK, and Python.
+#
+# Remarks:
+# - Deliberately repo-agnostic: it installs binaries and nothing else.
+#   Dependency installation, code generation, and browser provisioning
+#   belong to `setup-workspace`, which wraps this action.
+# - Caching is delegated entirely to each `actions/setup-*` action's
+#   built-in mechanism. Those caches are keyed on lock-file hashes and
+#   are NOT scoped per workflow, so every workflow shares one cache per
+#   ecosystem instead of maintaining its own copy.
+# - Every toolchain except Node.js is opt-in. Installing an SDK a job
+#   never uses costs real minutes on every run.
+#+#+#+#+############################################################
+
+name: "Setup Tooling"
+description: "Installs the Node.js, .NET, and Python toolchains with built-in dependency caching."
+author: "arolariu.ro"
+
+inputs:
+  # ── Node.js ──────────────────────────────────────────────────────
+  node:
+    description: "Whether to install Node.js."
+    required: false
+    default: "true"
+
+  # Matches the root `.nvmrc` and `engines.node` in `package.json`.
+  node-version:
+    description: "Node.js version to install."
+    required: false
+    default: "24"
+
+  # Only needed by npm Trusted Publishing (OIDC); leave empty otherwise.
+  node-registry-url:
+    description: "npm registry URL to configure for publishing."
+    required: false
+    default: ""
+
+  # ── .NET ─────────────────────────────────────────────────────────
+  dotnet:
+    description: "Whether to install the .NET SDK."
+    required: false
+    default: "false"
+
+  # Matches <TargetFramework>net10.0</TargetFramework> in
+  # sites/api.arolariu.ro/Directory.Build.props.
+  dotnet-version:
+    description: ".NET SDK version to install."
+    required: false
+    default: "10.0.x"
+
+  # ── Python ───────────────────────────────────────────────────────
+  python:
+    description: "Whether to install Python."
+    required: false
+    default: "false"
+
+  # Matches requires-python in sites/exp.arolariu.ro/pyproject.toml.
+  python-version:
+    description: "Python version to install."
+    required: false
+    default: "3.12"
+
+  # ── Caching ──────────────────────────────────────────────────────
+  cache:
+    description: "Whether to enable each toolchain's built-in dependency cache."
+    required: false
+    default: "true"
+
+outputs:
+  node-cache-hit:
+    description: "Whether actions/setup-node restored the npm cache."
+    value: ${{ steps.node.outputs.cache-hit }}
+
+  dotnet-cache-hit:
+    description: "Whether actions/setup-dotnet restored the NuGet cache."
+    value: ${{ steps.dotnet.outputs.cache-hit }}
+
+  python-cache-hit:
+    description: "Whether actions/setup-python restored the pip cache."
+    value: ${{ steps.python.outputs.cache-hit }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: 📦 Setting up Node.js v${{ inputs.node-version }}...
+      id: node
+      if: inputs.node == 'true'
+      uses: actions/setup-node@v7
+      with:
+        node-version: ${{ inputs.node-version }}
+        registry-url: ${{ inputs.node-registry-url }}
+        # An empty string disables the built-in cache.
+        cache: ${{ inputs.cache == 'true' && 'npm' || '' }}
+        # Both lock files, because both feed the same `~/.npm` store:
+        # `setup-workspace` installs the root workspaces AND `.github/scripts`,
+        # which has its own lock file. Keying on the root file alone means a
+        # change to the scripts lock file leaves the key untouched — the stale
+        # cache is restored, `npm ci` re-downloads the new packages, and
+        # because the restore was a hit nothing is written back. Those
+        # downloads would then repeat on every subsequent run.
+        cache-dependency-path: |
+          package-lock.json
+          .github/scripts/package-lock.json
+
+    - name: 📦 Setting up .NET v${{ inputs.dotnet-version }}...
+      id: dotnet
+      if: inputs.dotnet == 'true'
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: ${{ inputs.dotnet-version }}
+        # Backed by the six packages.lock.json files under
+        # sites/api.arolariu.ro/{src,tests}. setup-dotnet errors when
+        # caching is on and no lock file exists, so those must stay.
+        cache: ${{ inputs.cache == 'true' }}
+        cache-dependency-path: "**/packages.lock.json"
+
+    - name: 🐍 Setting up Python v${{ inputs.python-version }}...
+      id: python
+      if: inputs.python == 'true'
+      uses: actions/setup-python@v7
+      with:
+        python-version: ${{ inputs.python-version }}
+        cache: ${{ inputs.cache == 'true' && 'pip' || '' }}
+        cache-dependency-path: sites/exp.arolariu.ro/requirements*.txt
+
+    - name: 📋 Toolchain summary
+      shell: bash
+      env:
+        NODE_SUMMARY: ${{ inputs.node == 'true' && inputs.node-version || 'skipped' }}
+        DOTNET_SUMMARY: ${{ inputs.dotnet == 'true' && inputs.dotnet-version || 'skipped' }}
+        PYTHON_SUMMARY: ${{ inputs.python == 'true' && inputs.python-version || 'skipped' }}
+        CACHE_ENABLED: ${{ inputs.cache }}
+      run: |
+        echo "::group::📋 Toolchain"
+        echo "  Node.js: ${NODE_SUMMARY}"
+        echo "  .NET:    ${DOTNET_SUMMARY}"
+        echo "  Python:  ${PYTHON_SUMMARY}"
+        echo "  Cache:   ${CACHE_ENABLED}"
+        echo "::endgroup::"

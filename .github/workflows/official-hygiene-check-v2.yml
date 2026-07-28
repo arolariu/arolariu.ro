@@ -108,20 +108,18 @@ jobs:
           fetch-depth: 0
           ref: ${{ env.HEAD_REF }}
 
+      # Toolchains, dependency installs, and the component build are all
+      # driven from the matrix. `needs-dotnet` / `needs-python` are YAML
+      # booleans; interpolation renders them as the strings 'true'/'false',
+      # which is exactly what the composite action compares against.
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache-key-prefix: 'hygiene-${{ matrix.provider.id }}-${{ github.event.pull_request.number || github.run_id }}'
-          install-node-dependencies: 'true'
-
-      - name: 📦 Install scripts deps
-        working-directory: .github/scripts
-        run: npm ci
-
-      - name: 🔨 Build components package
-        if: matrix.provider.id == 'lint' || matrix.provider.id == 'test-typescript'
-        run: npm run build:components
+          install-scripts-deps: 'true'
+          run-build-components: ${{ matrix.provider.id == 'lint' || matrix.provider.id == 'test-typescript' }}
+          dotnet: ${{ matrix.provider.needs-dotnet }}
+          python: ${{ matrix.provider.needs-python }}
 
       - name: 🔧 SvelteKit sync (generates .svelte-kit/tsconfig.json required by eslint-plugin-n)
         if: matrix.provider.id == 'lint'
@@ -129,29 +127,17 @@ jobs:
         run: npx svelte-kit sync
         continue-on-error: true
 
-      - name: 📦 Setup .NET
-        if: matrix.provider.needs-dotnet
-        uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: '10.0.x'
-
-      - name: 📦 Restore .NET projects
+      # Kept out of setup-workspace on purpose: both installs are
+      # best-effort here. A transient restore failure must not fail the
+      # hygiene provider — the provider itself reports the real result.
+      - name: 📦 Restore .NET projects (best-effort)
         if: matrix.provider.needs-dotnet
         run: dotnet restore arolariu.slnx
         continue-on-error: true
 
-      - name: 📦 Setup Python
+      - name: 📦 Install Python dev deps (best-effort)
         if: matrix.provider.needs-python
-        uses: actions/setup-python@v7
-        with:
-          python-version: '3.x'
-          cache: 'pip'
-          cache-dependency-path: sites/exp.arolariu.ro/requirements-dev.txt
-
-      - name: 📦 Install Python dev deps
-        if: matrix.provider.needs-python
-        working-directory: sites/exp.arolariu.ro
-        run: python -m pip install -q -r requirements-dev.txt
+        run: python -m pip install -q -r sites/exp.arolariu.ro/requirements-dev.txt
         continue-on-error: true
 
       - name: 🚀 Run provider (${{ matrix.provider.id }})
@@ -189,12 +175,8 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache-key-prefix: 'hygiene-gate-${{ github.event.pull_request.number || github.run_id }}'
-          install-node-dependencies: 'false'
-
-      - name: 📦 Install scripts deps
-        working-directory: .github/scripts
-        run: npm ci
+          install-node-deps: 'false'
+          install-scripts-deps: 'true'
 
       - name: 📥 Download all outcome artifacts
         uses: actions/download-artifact@v6

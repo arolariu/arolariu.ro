@@ -49,9 +49,6 @@ jobs:
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
-        with:
-          node-version: '24'
-          cache-key-prefix: 'status-probe'
 
       - name: 🌲 Prepare status-data worktree (fetch or bootstrap orphan branch)
         run: |

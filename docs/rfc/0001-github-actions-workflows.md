@@ -3,13 +3,13 @@
 - **Status**: Implemented
 - **Date**: 2025-10-22
 - **Authors**: arolariu
-- **Related Components**: `.github/workflows/`, `.github/actions/setup-workspace`
+- **Related Components**: `.github/workflows/`, `.github/actions/setup-tooling`, `.github/actions/setup-workspace`
 
 ---
 
 ## Abstract
 
-This RFC documents the comprehensive DevOps architecture for the arolariu.ro monorepo using GitHub Actions. The system implements a structured approach to CI/CD with distinct workflow patterns: **build-release workflows** for staged deployments with validation gates, and **trigger workflows** for direct build-and-deploy operations. All workflows leverage a centralized composite action (`setup-workspace`) for consistent environment setup, intelligent caching, and enhanced developer experience.
+This RFC documents the comprehensive DevOps architecture for the arolariu.ro monorepo using GitHub Actions. The system implements a structured approach to CI/CD with distinct workflow patterns: **build-release workflows** for staged deployments with validation gates, and **trigger workflows** for direct build-and-deploy operations. All workflows leverage two centralized composite actions — `setup-tooling` for language toolchains and `setup-workspace` for repository bootstrap — giving consistent environment setup, shared un-prefixed caching, and a single place to change a toolchain version.
 
 ---
 
@@ -101,96 +101,104 @@ Trigger (push/PR) → Lint → Format → Test → Report
 
 ## 3. Technical Design
 
-### 3.1 Composite Action: `setup-workspace`
+### 3.1 Composite Actions: setup-tooling and setup-workspace
 
 **Purpose:** Centralized environment setup for all workflows
 
-**Location:** `.github/actions/setup-workspace/`
+**Location:** `.github/actions/setup-tooling/`, `.github/actions/setup-workspace/`
 
-**Features:**
-- Node.js setup with version control
-- .NET setup with version control
-- Intelligent dependency caching (hash-based, no fallback)
-- Playwright browser installation
-- GraphQL artifact generation
-- Progress indicators with emojis
+| Action | Responsibility |
+|--------|----------------|
+| `setup-tooling` | Installs Node.js / .NET / Python. Repo-agnostic. Caching is delegated to each `setup-*` action's built-in mechanism |
+| `setup-workspace` | Invokes `setup-tooling`, then bootstraps the repo: `npm ci`, `dotnet restore`, `pip install`, Playwright, `npm run generate`, `npm run build:components` |
 
-**Inputs:**
-```yaml
-inputs:
-  node-version:                    # Node.js version (default: '24')
-  dotnet-version:                  # .NET version (default: '10.x')
-  install-node-dependencies:       # Toggle npm install (default: 'true')
-  install-dotnet-dependencies:     # Toggle dotnet restore (default: 'true')
-  cache-key-prefix:                # Workflow-specific cache key (e.g., 'website', 'api')
-  working-directory:               # Custom directory for npm commands (default: '.')
-  playwright:                      # Install Playwright browsers (default: 'false')
-  generate:                        # Run npm run generate (default: 'false')
-```
+Use `setup-tooling` when a job needs only a binary. Use `setup-workspace` for everything else.
 
-**Outputs:**
-```yaml
-outputs:
-  node-cache-hit:      # Whether Node.js cache was hit (true/false)
-  dotnet-cache-hit:    # Whether .NET cache was hit (true/false)
-```
+| Cache | Owner | Key |
+|-------|-------|-----|
+| `~/.npm`, `~/.nuget/packages`, pip | `setup-tooling` (built-in) | lock-file hashes |
+| `node_modules` | `setup-workspace` | `<os>-node-modules-<node-version>-<hash(package-lock.json)>` |
+| `~/.cache/ms-playwright` | `setup-workspace` | `<os>-playwright-<hash(package-lock.json)>` |
 
 ### 3.2 Caching Strategy
 
 **Philosophy:** Hash-based exact matching, no fallback keys
 
-#### **Node.js Caching**
-```yaml
-Cache Key: {os}-node-{workflow}-{hash(package-lock.json)}
-Example: linux-node-website-a3f9b2c1d4e5...
-```
+#### **Toolchain Caches (setup-tooling)**
 
-**Behavior:**
-- **Cache hit**: When `package-lock.json` hasn't changed
-- **Cache miss**: When `package-lock.json` changes (due to package updates)
+Toolchain caches (`~/.npm`, `~/.nuget/packages`, pip) are delegated entirely to each `actions/setup-*` action's built-in mechanism. The `setup-tooling` action configures each with a `cache-dependency-path` pointing at the relevant lock file:
+
+| Toolchain | Action | `cache-dependency-path` |
+|-----------|--------|------------------------|
+| Node.js (npm download cache) | `actions/setup-node@v7` | `package-lock.json`, `.github/scripts/package-lock.json` |
+| .NET (NuGet) | `actions/setup-dotnet@v6` | `**/packages.lock.json` |
+| Python (pip) | `actions/setup-python@v7` | `sites/exp.arolariu.ro/requirements*.txt` |
+
+The exact key strings are generated internally by each `setup-*` action; no per-workflow segment is added.
+
+#### **Workspace Caches (setup-workspace)**
+
+Workspace caches use explicit `actions/cache@v5` steps. The keys below are copied verbatim from `setup-workspace/action.yml`:
+
+**node_modules:**
+```yaml
+key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}
+```
+Example: `linux-node-modules-24-a3f9b2c1d4e5...`
+
+The Node version is part of the key because `node_modules` can contain
+natively-compiled addons whose ABI is tied to the runtime. A cache hit skips
+`npm ci`, so nothing would rebuild them — bumping Node must invalidate the
+cache rather than restore binaries built for the previous runtime.
+
+**Playwright browser bundle (`~/.cache/ms-playwright`):**
+```yaml
+key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+```
+Example: `linux-playwright-b7e4c9a2f1d8...`
+
+The Playwright key omits the Node version deliberately: the cached artifacts
+are browser binaries, not Node addons, and the Playwright version that governs
+them is already pinned by the lock file.
+
+**Behavior (both caches):**
+- **Cache hit**: When `package-lock.json` hasn't changed (and, for `node_modules`, the Node version is unchanged)
+- **Cache miss**: When `package-lock.json` changes (due to package updates), or — for `node_modules` — when the Node version is bumped
 - **No fallback**: Ensures fresh installation when dependencies change
-
-#### **.NET Caching**
-```yaml
-Cache Key: {os}-dotnet-{workflow}-{hash(*.csproj, *.slnx, packages.lock.json)}
-Example: linux-dotnet-api-b7e4c9a2f1d8...
-```
-
-**Behavior:**
-- **Cache hit**: When project files and lock files haven't changed
-- **Cache miss**: When any .csproj, .slnx, or packages.lock.json changes
-- **No fallback**: Ensures fresh restoration when dependencies change
 
 #### **Why No Fallback Keys?**
 
 **Problem with fallback keys:**
 ```yaml
-# DANGEROUS (old approach)
-key: linux-node-website-{hash}
+# DANGEROUS (what we deliberately do NOT do)
+key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}
 restore-keys: |
-  linux-node-website-
-  linux-node-
+  linux-node-modules-24-
+  linux-node-modules-
 ```
 
+Note the key itself is the current one — the hazard below comes entirely from
+the `restore-keys` stanza, not from the key format.
+
 **Scenario that fails:**
-1. Dev pushes feature → Cache created: `linux-node-website-hash123`
+1. Dev pushes feature → Cache created: `linux-node-modules-24-hash123`
 2. 3 days later, dev updates `package.json` (version bump)
 3. BUT doesn't regenerate `package-lock.json` (edge case)
 4. Workflow runs → Primary key misses
-5. Fallback `linux-node-website-` hits old cache! ❌
+5. Fallback `linux-node-modules-24-` hits old cache! ❌
 6. Build fails with incompatible dependencies ❌
 
 **Solution (current approach):**
 ```yaml
 # SAFE (current approach)
-key: linux-node-website-{hash}
+key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}
 # NO restore-keys
 ```
 
 **Benefits:**
 - ✅ No stale cache reuse when lock files are out of sync
 - ✅ Forces fresh installation when dependencies change
-- ✅ Prevents cache pollution between workflows
+- ✅ All workflows share one cache entry per lock-file state (no per-workflow copies)
 - ✅ Clear: cache hit = exact match, cache miss = fresh install
 
 **Trade-off:**
@@ -240,7 +248,6 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: '24'
-          cache-key-prefix: 'workflow-name'
           # ... other inputs
       
       - name: 🏗️ Build
@@ -386,21 +393,19 @@ Trigger: PR
 
 ### 6.1 Cache Key Generation
 
-**Node.js:**
+**Node.js (node_modules):**
 ```yaml
-key: ${{ runner.os }}-node-${{ inputs.cache-key-prefix }}-${{ hashFiles('**/package-lock.json') }}
+key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}
 ```
 
 **Components:**
 - `${{ runner.os }}`: OS-specific (linux, windows, macos)
-- `${{ inputs.cache-key-prefix }}`: Workflow identifier (website, api, hygiene, etc.)
-- `${{ hashFiles('**/package-lock.json') }}`: SHA-256 hash of all package-lock.json files
+- `${{ inputs.node-version }}`: guards against restoring native addons built for a different Node ABI
+- `${{ hashFiles('package-lock.json') }}`: SHA-256 hash of the root `package-lock.json`
 
 **Example:**
 ```
-linux-node-website-7f3e9a2c1b5d4...
-linux-node-api-a1b2c3d4e5f6...
-linux-node-hygiene-9e8d7c6b5a4...
+linux-node-modules-24-7f3e9a2c1b5d4...
 ```
 
 ### 6.2 Progress Indicators
@@ -440,9 +445,7 @@ The composite action provides clear visual feedback:
 - name: 🚀 Setup workspace
   uses: ./.github/actions/setup-workspace
   with:
-    node-version: '24'
-    generate: 'true'  # Generates GraphQL types, schemas, etc.
-    cache-key-prefix: 'website'
+    run-generate: 'true'  # Generates GraphQL types, schemas, etc.
 
 - name: 🏗️ Build website
   run: npm run build  # Can now use generated GraphQL types
@@ -488,7 +491,7 @@ The composite action provides clear visual feedback:
 **Current Approach:**
 - Hash-based keys prevent cache poisoning
 - No cross-workflow cache sharing via fallback keys
-- Workflow-scoped prefixes for isolation
+- Shared un-prefixed keys — all workflows use one cache entry per lock-file state; no fallback restore keys prevent stale-dependency propagation
 
 **Benefits:**
 - Malicious cached dependencies cannot spread between workflows
@@ -535,7 +538,8 @@ The composite action provides clear visual feedback:
 ## 10. Related Documentation
 
 ### 10.1 Internal Documentation
-- `.github/actions/setup-workspace/README.md` - Composite action usage guide
+- `.github/actions/setup-tooling/readme.md` - setup-tooling usage guide
+- `.github/actions/setup-workspace/readme.md` - setup-workspace usage guide
 - `.github/instructions/workflows.instructions.md` - Workflow development guidelines
 
 ### 10.2 External References

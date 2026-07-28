@@ -82,17 +82,15 @@ so MSBuild compiles the full assembly set in one pass.
 npm install                                                        # from repo root
 dotnet restore sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj
 python -m pip install -r sites/exp.arolariu.ro/requirements-dev.txt
-dotnet tool update --global DefaultDocumentation.Console --version 1.2.4
+dotnet tool restore                                                # from repo root
 ```
 
-After the global install, verify `defaultdocumentation` (lowercase —
-that's the invocable command NuGet registers regardless of the
-`DefaultDocumentation.Console` package casing) is on your `PATH`. The
-dotnet CLI places global tools at `~/.dotnet/tools` on Unix and
-`%USERPROFILE%\.dotnet\tools` on Windows — add that directory to PATH
-if it isn't already. The orchestrator spawns the lowercase name
-because Linux file systems are case-sensitive; a PascalCase spelling
-silently works on Windows and then breaks in CI.
+`DefaultDocumentation.Console` is declared as a **local** tool in
+`.config/dotnet-tools.json`, so `dotnet tool restore` is all that is
+needed — there is no global install and nothing to add to `PATH`. The
+orchestrator invokes it as `dotnet defaultdocumentation` (lowercase;
+NuGet registers tool commands in lower case regardless of the package
+name's casing, and Linux file systems enforce that strictly).
 
 **Everyday commands** (from the repo root):
 
