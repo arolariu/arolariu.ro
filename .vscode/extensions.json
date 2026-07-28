@@ -45,9 +45,14 @@
     "vitest.explorer",
     "ms-playwright.playwright",
 
-    // Python (exp.arolariu.ro FastAPI service)
+    // Python (exp.arolariu.ro FastAPI service) — ruff is the formatter/linter, not black
     "ms-python.python",
     "ms-python.vscode-pylance",
+    "ms-python.debugpy",
+    "charliermarsh.ruff",
+
+    // API / HTTP scratch files (*.http)
+    "humao.rest-client",
 
     // YAML / Markdown / spell-check
     "redhat.vscode-yaml",

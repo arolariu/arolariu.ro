@@ -1,6 +1,7 @@
 # Backend Agent Guide (api.arolariu.ro)
 
-> .NET 10.0 / C# 13 — Modular Monolith with DDD
+> .NET 10.0 / C# 14 — Modular Monolith with DDD
+> Canonical runtime versions: root `AGENTS.md` > Versions.
 
 ## Architecture — The Standard (5 layers)
 

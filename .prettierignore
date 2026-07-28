@@ -1,62 +1,57 @@
-# dotfiles and dotfolders:
-.next
-.vscode
-.env
-.env.*
-.node-version
-.gitattributes
-.prettierignore
-.prettierrc
-.editorconfig
-.gitignore
+# =============================================================================
+# .prettierignore — files Prettier must not touch
+# =============================================================================
+# Prettier 3 already reads .gitignore by default (--ignore-path defaults to
+# [.gitignore, .prettierignore]). Build output, node_modules, .next, dist,
+# obj/bin, .svelte-kit, coverage, logs, artifacts and temp dirs are therefore
+# ALREADY excluded and are deliberately NOT repeated here.
+#
+# Only two categories belong in this file:
+#   1. Tracked file types Prettier has no parser for. These must be listed,
+#      because scripts/workers/format.worker.ts globs whole directories and
+#      does not pass --ignore-unknown, so Prettier would error on them.
+#   2. Tracked files we intentionally keep hand-formatted.
 
-# Docker files:
+# --- Binary / asset formats (no Prettier parser) ---
+**/*.ico
+**/*.jpeg
+**/*.jpg
+**/*.pdf
+**/*.png
+**/*.svg
+
+# --- Text formats with no Prettier parser ---
+**/*.bicep
+**/*.csv
+**/*.esproj
+**/*.http
+**/*.pem
+**/*.sql
+**/*.tsbuildinfo
+**/*.txt
+**/*.xml
 Dockerfile
+Dockerfile.*
 
-# Test / Storybook folders:
+# --- Dotfiles with no parser (gitignore / INI / dotenv syntax) ---
+# NOTE: .env.example is deliberately re-included by .gitignore, so it reaches
+# Prettier and must be excluded here or Prettier errors with "No parser could
+# be inferred".
+**/.env
+**/.env.*
+**/.dockerignore
+**/.editorconfig
+**/.gitattributes
+**/.gitignore
+**/.node-version
+**/.npmrc
+**/.nvmrc
+**/.prettierignore
+
+# --- Generated or vendored: must stay byte-exact ---
+package-lock.json
 **/code-cov/**
 **/storybook-static/**
 
-# Svelte-based html-infused files:
-sites/cv.arolariu.ro/**/**/*.html
-
-# Package Manager lockfile:
-package-lock.json
-
-# exceptions for all directories:
-**/**/*.md
-**/**/*.ico
-**/**/*.css
-**/**/*.svg
-**/**/*.png
-**/**/*.jpg
-**/**/*.jpeg
-**/**/*.mdx
-**/**/*.pem
-**/**/*.scss
-**/**/*.http
-**/**/*.json
-**/**/*.txt
-**/**/*.xml
-**/**/*.bicep
-**/**/*.sql
-**/**/*.pdf
-**/**/*.yml
-**/**/*.tsbuildinfo
-**/**/*.csv
-
-
-# Don't format output dirs:
-**/tmp/**
-**/.svelte-kit/**
-**/node_modules/**
-**/_site/**
-**/obj/**
-**/bin/**
-**/dist/**
-**/build/**
-**/out/**
-**/output/**
-
-# Visual Studio extensibility project files (XML-based, owned by VS, not for Prettier)
-**/*.esproj
+# --- Intentionally hand-formatted ---
+sites/cv.arolariu.ro/**/*.html

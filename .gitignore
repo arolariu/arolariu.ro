@@ -1,81 +1,93 @@
-# Transient artifacts:
-**/tmp/**
+# =============================================================================
+# .gitignore — arolariu.ro monorepo
+# =============================================================================
+# Directory patterns are written as `dir/` (not `**/dir/**`) so that Git can
+# prune the whole directory during traversal. `**/dir/**` only matches the
+# files inside and forces Git — and every tool that reuses gitignore semantics
+# (Prettier, ESLint, Nx) — to walk the entire tree.
+
+# --- Transient artifacts ---
+tmp/
+temp/
 *.lscache
-.superpowers/
-docs/superpowers/**
-**/node_modules/**
-**/_site/**
-**/obj/**
-**/.svelte-kit/**
-**/bin/**
-**/dist/**
-**/build/**
-**/out/**
-**/logs/**
-**/output/**
-**/code-cov/**
-**/.nx/**
-**/.vs/**
-**/playwright-report/**
-**/storybook-static/**
-**/coverage/**
-**/test-results/**
-**/TestResults/**
-**/.auth/**
-**/.next/**
-**/**/.DS_Store
-**/*.tsbuildinfo
-**/__generated__/**
-**/_generated/**
-**/.docusaurus/**
+node_modules/
+_site/
+obj/
+bin/
+dist/
+build/
+out/
+output/
+logs/
+code-cov/
+coverage/
+test-results/
+TestResults/
+playwright-report/
+storybook-static/
+.next/
+.nx/
+.svelte-kit/
+.docusaurus/
+.auth/
+__generated__/
+_generated/
+*.tsbuildinfo
+**/.DS_Store
 sites/docs.arolariu.ro/docs/monorepo/
-**/artifacts/
 **/test-file.txt
 
-# Windows shell artifacts:
-nul
+# --- Build output named `artifacts` (anchored: `.github/scripts/helpers/artifacts/`
+#     is SOURCE code, so a blanket `artifacts/` rule must never be used here) ---
+/artifacts/
+/.github/scripts/artifacts/
 
-# Editor user settings:
-*.DotSettings.user
-
-# Merge conflict backups:
-*.orig
-
-# Exceptions:
+# --- Visual Studio: exclude contents, not the directory itself, so the
+#     re-includes below still work (Git cannot un-ignore a file inside an
+#     ignored directory) ---
+.vs/*
 !.vs/settings.vssettings
 !.vs/README.md
 
+# --- Agent working artifacts (never committed) ---
+.superpowers/
+docs/superpowers/
+.impeccable/
+.worktrees/
 
-# Claude Code local settings (user-specific auto-granted permissions):
+# --- Windows shell artifacts ---
+nul
+
+# --- Editor user settings ---
+*.DotSettings.user
 .claude/settings.local.json
 
-# Environment variables:
+# --- Merge conflict backups ---
+*.orig
+*.bak
+
+# --- Environment variables ---
 **/.env
 **/.env.*
 !**/.env.example
 
-# Python runtime artifacts:
+# --- Python runtime artifacts ---
 **/local.settings.json
-**/__pycache__/
-**/*.pyc
-**/.venv/
-**/.python_packages/
-**/*.egg-info/
+__pycache__/
+*.pyc
+.venv/
+.python_packages/
+*.egg-info/
+.ruff_cache/
 
-
-# arolariu.ro specific:
+# --- arolariu.ro website ---
 sites/arolariu.ro/certificates
 sites/arolariu.ro/messages/*.d.json.ts
 sites/arolariu.ro/licenses.json
-
-# exp local config files (may contain secrets for local development):
-sites/exp.arolariu.ro/config.json
-sites/exp.arolariu.ro/config.docker.json
-sites/exp.arolariu.ro/config.aspire.json
 sites/arolariu.ro/next-env.d.ts
 **/e2e-storage-state.json
 
-temp/
-
-# Backup files
-*.bak
+# --- exp local config (may contain secrets for local development) ---
+sites/exp.arolariu.ro/config.json
+sites/exp.arolariu.ro/config.docker.json
+sites/exp.arolariu.ro/config.aspire.json
