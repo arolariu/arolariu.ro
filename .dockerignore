@@ -1,12 +1,21 @@
 # =============================================================================
-# .dockerignore — build context for the ROOT context image (sites/arolariu.ro)
+# .dockerignore — build context for images built from the REPOSITORY ROOT
 # =============================================================================
-# sites/api.arolariu.ro and sites/exp.arolariu.ro build from their own
-# directories and have their own .dockerignore files.
+# Two build paths use the repo root as context, so this file governs both:
+#   - CI website build:  docker build -f infra/containers/Dockerfile.frontend .
+#     (.github/workflows/official-website-build.yml)
+#   - npm run containers:build -> scripts/container-runtime/image.ts, which
+#     builds frontend, backend, cv AND exp from infra/containers/Dockerfile.*
+#     with context "."
 #
-# The website Dockerfile only copies: package.json, package-lock.json,
-# tsconfig.json, vitest.config.ts, packages/components/ and sites/arolariu.ro/.
-# Everything excluded below is therefore never needed at build time.
+# CI additionally builds api and exp with their OWN directory as context
+# (see official-api-trigger.yml / official-exp-trigger.yml); those builds use
+# sites/api.arolariu.ro/.dockerignore and sites/exp.arolariu.ro/.dockerignore.
+#
+# Before excluding anything, check it is not COPYed by ANY of the four
+# infra/containers/Dockerfile.* files. Note that Docker patterns without `**`
+# match only at the context root (e.g. `*.md` and `docs/` do not affect
+# sites/api.arolariu.ro/**).
 
 # --- VCS (a few git files are re-included for build metadata) ---
 **/.git
