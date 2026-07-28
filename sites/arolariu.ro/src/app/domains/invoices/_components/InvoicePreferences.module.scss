@@ -1,7 +1,7 @@
 // ===========================================
 // INVOICE PREFERENCES COMPONENT STYLES
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 .card {
   width: 100%;
@@ -12,13 +12,13 @@
   display: flex;
   align-items: center;
   gap: space(2);
-  font-size: font-size('lg');
-  font-weight: font-weight('semibold');
+  font-size: font-size("lg");
+  font-weight: font-weight("semibold");
 }
 
 .icon {
   @include icon-size(space(5));
-  color: color('primary');
+  color: color("primary");
 }
 
 .content {
@@ -34,9 +34,9 @@
 }
 
 .label {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
-  color: color('foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
+  color: color("foreground");
 
   @include dark {
     color: white;
@@ -52,7 +52,7 @@
   flex-direction: column;
   gap: space(2);
   padding-top: space(2);
-  border-top: 1px solid color('border');
+  border-top: 1px solid color("border");
 }
 
 .checkboxWrapper {
@@ -62,9 +62,9 @@
 }
 
 .checkboxLabel {
-  font-size: font-size('sm');
-  font-weight: font-weight('normal');
-  color: color('foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("normal");
+  color: color("foreground");
   cursor: pointer;
 
   @include dark {

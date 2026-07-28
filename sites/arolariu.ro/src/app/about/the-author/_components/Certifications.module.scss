@@ -1,13 +1,13 @@
 // ===========================================
 // THE AUTHOR - CERTIFICATIONS COMPONENT
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 .section {
-  background-color: color-alpha('muted', 0.3);
+  background-color: color-alpha("muted", 0.3);
   padding: space(20) space(4);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     padding-left: space(8);
     padding-right: space(8);
   }
@@ -29,11 +29,11 @@
   position: relative;
   display: inline-block;
   margin-bottom: space(4);
-  font-size: font-size('3xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("3xl");
+  font-weight: font-weight("bold");
 
-  @include respond-to('md') {
-    font-size: font-size('4xl');
+  @include respond-to("md") {
+    font-size: font-size("4xl");
   }
 }
 
@@ -41,7 +41,7 @@
   margin-left: auto;
   margin-right: auto;
   max-width: 42rem;
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 // Grid
@@ -49,11 +49,11 @@
   display: grid;
   gap: space(8);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
@@ -68,16 +68,16 @@
   position: relative;
   height: 600px;
   overflow: hidden;
-  border-radius: radius('xl');
-  border: 1px solid color-alpha('border', 0.5);
-  background-color: color('card');
+  border-radius: radius("xl");
+  border: 1px solid color-alpha("border", 0.5);
+  background-color: color("card");
   padding: space(6);
-  @include shadow('md');
+  @include shadow("md");
   @include transition((border-color, box-shadow));
 
   &:hover {
-    border-color: color-alpha('primary', 0.3);
-    @include shadow('xl');
+    border-color: color-alpha("primary", 0.3);
+    @include shadow("xl");
   }
 }
 
@@ -92,9 +92,9 @@
 // Award icon
 .awardIconWrapper {
   padding: space(3);
-  border-radius: radius('lg');
-  background-color: color-alpha('primary', 0.1);
-  color: color('primary');
+  border-radius: radius("lg");
+  background-color: color-alpha("primary", 0.1);
+  color: color("primary");
 }
 
 .awardIcon {
@@ -104,18 +104,18 @@
 
 // Code badge
 .codeBadge {
-  border-color: color('primary');
-  color: color('primary');
+  border-color: color("primary");
+  color: color("primary");
 }
 
 // Card title
 .cardTitle {
   margin-bottom: space(2);
-  font-size: font-size('xl');
-  font-weight: font-weight('semibold');
+  font-size: font-size("xl");
+  font-weight: font-weight("semibold");
 
   .card:hover & {
-    text-shadow: 0 0 20px color-alpha('primary', 0.5);
+    text-shadow: 0 0 20px color-alpha("primary", 0.5);
   }
 }
 
@@ -124,8 +124,8 @@
   display: flex;
   align-items: center;
   margin-bottom: space(4);
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
 }
 
 .issuerSeparator {
@@ -141,8 +141,8 @@
 
 .description {
   margin-bottom: space(4);
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
 }
 
 // Skills section
@@ -152,8 +152,8 @@
 
 .skillsTitle {
   margin-bottom: space(2);
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
 }
 
 .skillsList {
@@ -172,11 +172,11 @@
   flex-shrink: 0;
   width: 1rem;
   height: 1rem;
-  color: color('primary');
+  color: color("primary");
 }
 
 .skillText {
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 }
 
 // Card footer
@@ -194,8 +194,8 @@
 .viewLink {
   display: inline-flex;
   align-items: center;
-  font-size: font-size('sm');
-  color: color('primary');
+  font-size: font-size("sm");
+  color: color("primary");
 
   &:hover {
     text-decoration: underline;
@@ -221,8 +221,8 @@
 .glowEffect {
   position: absolute;
   inset: 0;
-  z-index: z('behind');
-  border-radius: radius('xl');
-  background-color: color-alpha('primary', 0.05);
+  z-index: z("behind");
+  border-radius: radius("xl");
+  background-color: color-alpha("primary", 0.05);
   filter: blur(24px);
 }

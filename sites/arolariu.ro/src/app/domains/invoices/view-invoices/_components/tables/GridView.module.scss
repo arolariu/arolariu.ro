@@ -1,7 +1,7 @@
 // ===========================================
 // GRID VIEW STYLES
 // ===========================================
-@use '../../../../../../styles/abstracts' as *;
+@use "../../../../../../styles/abstracts" as *;
 
 // ===========================================
 // EMPTY STATE
@@ -13,13 +13,13 @@
 }
 
 .emptyMessage {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   margin-bottom: space(2);
 }
 
 .emptyIcon {
   @include icon-size(space(12));
-  color: color('primary');
+  color: color("primary");
 }
 
 // ===========================================
@@ -35,7 +35,7 @@
   @include responsive-grid(1, 2, 3, space(4));
 
   // Add extra bottom padding on mobile for nav
-  @include respond-below('md') {
+  @include respond-below("md") {
     padding-bottom: space(4);
   }
 }
@@ -48,7 +48,7 @@
   align-items: center;
   justify-content: space-between;
   padding: space(4);
-  border-top: 1px solid color('border');
+  border-top: 1px solid color("border");
   gap: space(4);
 
   @media print {
@@ -56,7 +56,7 @@
   }
 
   // Stack vertically on mobile
-  @include respond-below('md') {
+  @include respond-below("md") {
     flex-direction: column;
     align-items: stretch;
     gap: space(3);
@@ -68,14 +68,14 @@
   align-items: center;
   gap: space(2);
 
-  @include respond-below('md') {
+  @include respond-below("md") {
     justify-content: space-between;
   }
 }
 
 .pageSizeLabel {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
   white-space: nowrap;
 }
 
@@ -84,7 +84,7 @@
   width: space(20);
   cursor: pointer;
 
-  @include respond-below('md') {
+  @include respond-below("md") {
     width: space(24);
   }
 }
@@ -93,14 +93,14 @@
   display: flex;
   align-items: center;
 
-  @include respond-below('md') {
+  @include respond-below("md") {
     justify-content: center;
   }
 }
 
 .pageLabel {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
   white-space: nowrap;
 }
 
@@ -108,7 +108,7 @@
   display: flex;
   gap: space(2);
 
-  @include respond-below('md') {
+  @include respond-below("md") {
     width: 100%;
   }
 }
@@ -117,10 +117,9 @@
   cursor: pointer;
 
   // Full width on mobile
-  @include respond-below('md') {
+  @include respond-below("md") {
     flex: 1;
     min-height: space(11);
     padding: space(3);
   }
 }
-

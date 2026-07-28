@@ -40,12 +40,7 @@ type HookOutput = Readonly<{
  * @param input - Prompt trigger state and cleanup callback.
  * @returns Prompt visibility, copied completed scans, and dismiss action.
  */
-export function usePostUploadPrompt({
-  pendingUploadCount,
-  totalCompleted,
-  completedBatch,
-  clearCompletedBatch,
-}: HookInput): HookOutput {
+export function usePostUploadPrompt({pendingUploadCount, totalCompleted, completedBatch, clearCompletedBatch}: HookInput): HookOutput {
   const [isVisible, setIsVisible] = useState(false);
   const [completedScans, setCompletedScans] = useState<UploadCompletionSummary[]>([]);
   const hasPromptedRef = useRef(false);

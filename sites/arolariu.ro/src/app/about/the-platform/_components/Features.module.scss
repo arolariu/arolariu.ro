@@ -1,7 +1,7 @@
 // ===========================================
 // THE PLATFORM - FEATURES COMPONENT
 // ===========================================
-@use '../../../../styles/abstracts' as abstracts;
+@use "../../../../styles/abstracts" as abstracts;
 
 .section {
   position: relative;
@@ -27,30 +27,30 @@
 .badge {
   margin-bottom: abstracts.space(4);
   padding: abstracts.space(1) abstracts.space(4);
-  font-size: abstracts.font-size('sm');
+  font-size: abstracts.font-size("sm");
 }
 
 .title {
   margin-bottom: abstracts.space(6);
-  font-size: abstracts.font-size('4xl');
-  font-weight: abstracts.font-weight('bold');
-  letter-spacing: letter-spacing('tight');
+  font-size: abstracts.font-size("4xl");
+  font-weight: abstracts.font-weight("bold");
+  letter-spacing: letter-spacing("tight");
 
-  @include abstracts.respond-to('md') {
-    font-size: abstracts.font-size('5xl');
+  @include abstracts.respond-to("md") {
+    font-size: abstracts.font-size("5xl");
   }
 }
 
 .titleHighlight {
-  color: abstracts.color('primary');
+  color: abstracts.color("primary");
 }
 
 .description {
-  font-size: abstracts.font-size('lg');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("lg");
+  color: abstracts.color("muted-foreground");
 
-  @include abstracts.respond-to('md') {
-    font-size: abstracts.font-size('xl');
+  @include abstracts.respond-to("md") {
+    font-size: abstracts.font-size("xl");
   }
 }
 
@@ -59,11 +59,11 @@
   display: grid;
   gap: abstracts.space(6);
 
-  @include abstracts.respond-to('md') {
+  @include abstracts.respond-to("md") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include abstracts.respond-to('lg') {
+  @include abstracts.respond-to("lg") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
 
     > :first-child {
@@ -91,21 +91,21 @@
   @include abstracts.transition((border-color, box-shadow));
 
   &:hover {
-    border-color: abstracts.color('link');
+    border-color: abstracts.color("link");
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
 }
 
 .cardActive {
   composes: card;
-  border-color: abstracts.color('primary');
-  @include abstracts.shadow('lg');
+  border-color: abstracts.color("primary");
+  @include abstracts.shadow("lg");
 }
 
 .cardHero {
   composes: card;
 
-  @include abstracts.respond-to('lg') {
+  @include abstracts.respond-to("lg") {
     padding: abstracts.space(8);
   }
 }
@@ -142,7 +142,7 @@
   justify-content: center;
   width: 3.5rem;
   height: 3.5rem;
-  border-radius: abstracts.radius('xl');
+  border-radius: abstracts.radius("xl");
   @include abstracts.transition(transform);
 
   .card:hover & {
@@ -169,11 +169,11 @@
 }
 
 .cardTitle {
-  font-size: abstracts.font-size('xl');
+  font-size: abstracts.font-size("xl");
 }
 
 .cardDescription {
-  font-size: abstracts.font-size('base');
+  font-size: abstracts.font-size("base");
 }
 
 // Card content (tags)
@@ -188,19 +188,19 @@
 }
 
 .tag {
-  font-size: abstracts.font-size('xs');
+  font-size: abstracts.font-size("xs");
 }
 
 // Modal
 .modal {
   position: fixed;
   inset: 0;
-  z-index: abstracts.z('modal');
+  z-index: abstracts.z("modal");
   display: flex;
   align-items: center;
   justify-content: center;
   padding: abstracts.space(4);
-  background-color: abstracts.color-alpha('muted-foreground', 0.6);
+  background-color: abstracts.color-alpha("muted-foreground", 0.6);
   @include abstracts.backdrop-blur;
 }
 
@@ -221,9 +221,9 @@
   max-height: 80vh;
   overflow-y: auto;
   padding: abstracts.space(8);
-  border-radius: abstracts.radius('2xl');
-  background-color: abstracts.color('background');
-  @include abstracts.shadow('2xl');
+  border-radius: abstracts.radius("2xl");
+  background-color: abstracts.color("background");
+  @include abstracts.shadow("2xl");
 }
 
 .modalHeader {
@@ -239,7 +239,7 @@
   justify-content: center;
   width: 4rem;
   height: 4rem;
-  border-radius: abstracts.radius('xl');
+  border-radius: abstracts.radius("xl");
 }
 
 .modalIcon {
@@ -248,19 +248,19 @@
 }
 
 .modalTitle {
-  font-size: abstracts.font-size('2xl');
-  font-weight: abstracts.font-weight('bold');
+  font-size: abstracts.font-size("2xl");
+  font-weight: abstracts.font-weight("bold");
 }
 
 .modalSubtitle {
-  color: abstracts.color('muted-foreground');
+  color: abstracts.color("muted-foreground");
 }
 
 .modalDescription {
   margin-bottom: abstracts.space(6);
-  font-size: abstracts.font-size('lg');
-  line-height: line-height('relaxed');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("lg");
+  line-height: line-height("relaxed");
+  color: abstracts.color("muted-foreground");
 }
 
 .modalTags {
@@ -280,8 +280,8 @@
   align-items: center;
   gap: abstracts.space(2);
   padding: abstracts.space(3) abstracts.space(6);
-  border-radius: abstracts.radius('lg');
-  font-weight: abstracts.font-weight('medium');
+  border-radius: abstracts.radius("lg");
+  font-weight: abstracts.font-weight("medium");
   @include abstracts.transition(transform);
 
   &:hover {
@@ -296,31 +296,67 @@
 
 .modalClose {
   padding: abstracts.space(3) abstracts.space(6);
-  color: abstracts.color('muted-foreground');
+  color: abstracts.color("muted-foreground");
 
   &:hover {
-    color: abstracts.color('foreground');
+    color: abstracts.color("foreground");
   }
 }
 
 // Color variants for icons
-.colorBlue { color: abstracts.color('primary'); }
-.colorPurple { color: abstracts.color('primary'); }
-.colorGreen { color: abstracts.color('success'); }
-.colorOrange { color: abstracts.color('warning'); }
-.colorPink { color: abstracts.color('primary'); }
-.colorCyan { color: abstracts.color('primary'); }
-.colorRed { color: abstracts.color('destructive'); }
-.colorIndigo { color: abstracts.color('primary'); }
-.colorAmber { color: abstracts.color('warning'); }
+.colorBlue {
+  color: abstracts.color("primary");
+}
+.colorPurple {
+  color: abstracts.color("primary");
+}
+.colorGreen {
+  color: abstracts.color("success");
+}
+.colorOrange {
+  color: abstracts.color("warning");
+}
+.colorPink {
+  color: abstracts.color("primary");
+}
+.colorCyan {
+  color: abstracts.color("primary");
+}
+.colorRed {
+  color: abstracts.color("destructive");
+}
+.colorIndigo {
+  color: abstracts.color("primary");
+}
+.colorAmber {
+  color: abstracts.color("warning");
+}
 
 // Gradient variants for backgrounds
-.gradientBlue   { background-color: abstracts.color-alpha('primary', 0.1); }
-.gradientPurple { background-color: abstracts.color-alpha('primary', 0.1); }
-.gradientGreen  { background-color: abstracts.color-alpha('primary', 0.1); }
-.gradientOrange { background-color: abstracts.color-alpha('primary', 0.1); }
-.gradientPink   { background-color: abstracts.color-alpha('primary', 0.1); }
-.gradientCyan   { background-color: abstracts.color-alpha('primary', 0.1); }
-.gradientRed    { background-color: abstracts.color-alpha('primary', 0.1); }
-.gradientIndigo { background-color: abstracts.color-alpha('primary', 0.1); }
-.gradientAmber  { background-color: abstracts.color-alpha('primary', 0.1); }
+.gradientBlue {
+  background-color: abstracts.color-alpha("primary", 0.1);
+}
+.gradientPurple {
+  background-color: abstracts.color-alpha("primary", 0.1);
+}
+.gradientGreen {
+  background-color: abstracts.color-alpha("primary", 0.1);
+}
+.gradientOrange {
+  background-color: abstracts.color-alpha("primary", 0.1);
+}
+.gradientPink {
+  background-color: abstracts.color-alpha("primary", 0.1);
+}
+.gradientCyan {
+  background-color: abstracts.color-alpha("primary", 0.1);
+}
+.gradientRed {
+  background-color: abstracts.color-alpha("primary", 0.1);
+}
+.gradientIndigo {
+  background-color: abstracts.color-alpha("primary", 0.1);
+}
+.gradientAmber {
+  background-color: abstracts.color-alpha("primary", 0.1);
+}

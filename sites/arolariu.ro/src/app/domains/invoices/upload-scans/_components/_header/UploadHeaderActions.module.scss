@@ -1,4 +1,4 @@
-@use '../../../../../../styles/abstracts' as abstracts;
+@use "../../../../../../styles/abstracts" as abstracts;
 
 .headerActions {
   display: flex;
@@ -14,18 +14,18 @@
 .hiddenMobile {
   display: none;
 
-  @include abstracts.respond-to('sm') {
+  @include abstracts.respond-to("sm") {
     display: inline;
   }
 }
 
 .visibleMobile {
-  @include abstracts.respond-to('sm') {
+  @include abstracts.respond-to("sm") {
     display: none;
   }
 }
 
 .actionIcon {
   @include abstracts.icon-size(abstracts.space(4));
-  color: abstracts.color('foreground');
+  color: abstracts.color("foreground");
 }

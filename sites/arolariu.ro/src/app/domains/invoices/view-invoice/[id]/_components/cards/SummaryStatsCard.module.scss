@@ -1,4 +1,4 @@
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 .statsGrid {
   @include grid(2, space(3));
@@ -14,26 +14,26 @@
   display: flex;
   align-items: center;
   gap: space(1.5);
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .statLabelText {
-  font-size: font-size('xs');
+  font-size: font-size("xs");
 }
 
 .statValue {
-  font-size: font-size('lg');
-  font-weight: font-weight('semibold');
+  font-size: font-size("lg");
+  font-weight: font-weight("semibold");
 }
 
 .statDescription {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  color: color("muted-foreground");
+  font-size: font-size("xs");
 }
 
 .extremesSection {
   margin-top: space(4);
-  border-top: 1px solid color('border');
+  border-top: 1px solid color("border");
   padding-top: space(3);
 
   & > * + * {
@@ -54,7 +54,7 @@
 }
 
 .extremeLabelText {
-  font-size: font-size('xs');
+  font-size: font-size("xs");
 }
 
 .extremeRight {
@@ -62,13 +62,13 @@
 }
 
 .extremePrice {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .extremeName {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  color: color("muted-foreground");
+  font-size: font-size("xs");
   max-width: 100px;
   @include truncate;
 }
@@ -83,10 +83,10 @@
 
 .iconEmerald {
   @include icon-size(space(3.5));
-  color: color('success');
+  color: color("success");
 }
 
 .iconBlue {
   @include icon-size(space(3.5));
-  color: color('info');
+  color: color("info");
 }

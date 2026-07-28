@@ -5,7 +5,17 @@
  * @module app/domains/invoices/_cards/ScanCard
  */
 
-import {Button, Card, CardContent, Checkbox, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Input} from "@arolariu/components";
+import {
+  Button,
+  Card,
+  CardContent,
+  Checkbox,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  Input,
+} from "@arolariu/components";
 import {motion} from "motion/react";
 import {type ReactNode, useCallback} from "react";
 import {TbCheck, TbDotsVertical, TbPencil, TbX} from "react-icons/tb";

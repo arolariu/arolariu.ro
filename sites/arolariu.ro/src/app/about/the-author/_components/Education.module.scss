@@ -1,7 +1,7 @@
 // ===========================================
 // THE AUTHOR - EDUCATION COMPONENT
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 .section {
   margin-left: auto;
@@ -9,7 +9,7 @@
   max-width: 72rem;
   padding: space(20) space(4);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     padding-left: space(8);
     padding-right: space(8);
   }
@@ -25,11 +25,11 @@
   position: relative;
   display: inline-block;
   margin-bottom: space(4);
-  font-size: font-size('3xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("3xl");
+  font-weight: font-weight("bold");
 
-  @include respond-to('md') {
-    font-size: font-size('4xl');
+  @include respond-to("md") {
+    font-size: font-size("4xl");
   }
 }
 
@@ -37,7 +37,7 @@
   margin-left: auto;
   margin-right: auto;
   max-width: 42rem;
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 // Education list
@@ -59,7 +59,7 @@
   width: 100%;
   height: 800px;
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     height: 400px;
   }
 }
@@ -76,11 +76,11 @@
   height: 100%;
   overflow: hidden;
   border: none;
-  @include shadow('lg');
+  @include shadow("lg");
   @include transition(box-shadow);
 
   &:hover {
-    @include shadow('xl');
+    @include shadow("xl");
   }
 }
 
@@ -91,7 +91,7 @@
   height: 100%;
   width: 100%;
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: 1fr 2fr;
   }
 }
@@ -116,21 +116,21 @@
   margin-bottom: space(4);
   border: none;
   padding: 0;
-  border-radius: radius('full');
-  background-color: color-alpha('primary', 0.2);
+  border-radius: radius("full");
+  background-color: color-alpha("primary", 0.2);
   cursor: pointer;
 }
 
 .schoolIcon {
   width: 2.5rem;
   height: 2.5rem;
-  color: color('primary');
+  color: color("primary");
 }
 
 .degree {
-  font-size: font-size('xl');
-  font-weight: font-weight('bold');
-  text-shadow: 0 0 20px color-alpha('primary', 0.5);
+  font-size: font-size("xl");
+  font-weight: font-weight("bold");
+  text-shadow: 0 0 20px color-alpha("primary", 0.5);
 }
 
 .metaItem {
@@ -138,7 +138,7 @@
   align-items: center;
   justify-content: center;
   margin-top: space(1);
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .metaIcon {
@@ -158,15 +158,15 @@
   display: flex;
   align-items: center;
   margin-bottom: space(4);
-  font-size: font-size('lg');
-  font-weight: font-weight('semibold');
+  font-size: font-size("lg");
+  font-weight: font-weight("semibold");
 }
 
 .coursesIcon {
   margin-right: space(2);
   width: 1.25rem;
   height: 1.25rem;
-  color: color('primary');
+  color: color("primary");
 }
 
 // Course list
@@ -186,19 +186,19 @@
 
 .courseBullet {
   margin-right: space(2);
-  color: color('primary');
+  color: color("primary");
 }
 
 .description {
   margin-top: space(4);
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 // CTA button
 .ctaButton {
   margin-top: space(4);
   width: fit-content;
-  color: color('primary');
+  color: color("primary");
 }
 
 .ctaIcon {
@@ -222,13 +222,13 @@
 }
 
 .backTitle {
-  font-size: font-size('xl');
-  font-weight: font-weight('bold');
-  text-shadow: 0 0 20px color-alpha('primary', 0.5);
+  font-size: font-size("xl");
+  font-weight: font-weight("bold");
+  text-shadow: 0 0 20px color-alpha("primary", 0.5);
 }
 
 .backButton {
-  color: color('primary');
+  color: color("primary");
 }
 
 .backIcon {
@@ -253,16 +253,16 @@
 
 .scrollSectionTitle {
   margin-bottom: space(2);
-  font-size: font-size('lg');
-  font-weight: font-weight('semibold');
+  font-size: font-size("lg");
+  font-weight: font-weight("semibold");
 }
 
 // Glow effect
 .glowEffect {
   position: absolute;
   inset: 0;
-  z-index: z('behind');
-  border-radius: radius('xl');
-  background-color: color-alpha('primary', 0.05);
+  z-index: z("behind");
+  border-radius: radius("xl");
+  background-color: color-alpha("primary", 0.05);
   filter: blur(24px);
 }

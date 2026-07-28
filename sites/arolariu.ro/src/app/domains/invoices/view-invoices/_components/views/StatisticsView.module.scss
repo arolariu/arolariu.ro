@@ -1,7 +1,7 @@
 // ===========================================
 // STATISTICS VIEW STYLES
 // ===========================================
-@use '../../../../../../styles/abstracts' as *;
+@use "../../../../../../styles/abstracts" as *;
 
 // ===========================================
 // LAYOUT
@@ -24,7 +24,7 @@
   gap: space(4);
   margin-bottom: space(6);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     flex-direction: row;
   }
 }
@@ -35,23 +35,23 @@
 }
 
 .title {
-  font-size: font-size('3xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("3xl");
+  font-weight: font-weight("bold");
   letter-spacing: -0.025em;
-  color: color('foreground');
+  color: color("foreground");
 
-  @include respond-to('md') {
-    font-size: font-size('4xl');
+  @include respond-to("md") {
+    font-size: font-size("4xl");
   }
 }
 
 .subtitle {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   margin-top: space(2);
-  font-size: font-size('base');
+  font-size: font-size("base");
 
-  @include respond-to('md') {
-    font-size: font-size('lg');
+  @include respond-to("md") {
+    font-size: font-size("lg");
   }
 }
 
@@ -63,7 +63,7 @@
   grid-template-columns: minmax(0, 1fr);
   gap: space(6);
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -85,22 +85,22 @@
 }
 
 .sectionTitle {
-  font-size: font-size('2xl');
-  font-weight: font-weight('semibold');
-  color: color('foreground');
+  font-size: font-size("2xl");
+  font-weight: font-weight("semibold");
+  color: color("foreground");
 
-  @include respond-to('md') {
-    font-size: font-size('3xl');
+  @include respond-to("md") {
+    font-size: font-size("3xl");
   }
 }
 
 .sectionSubtitle {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   margin-top: space(1);
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 
-  @include respond-to('md') {
-    font-size: font-size('base');
+  @include respond-to("md") {
+    font-size: font-size("base");
   }
 }
 
@@ -122,29 +122,29 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: color('muted');
-  color: color('muted-foreground');
+  background: color("muted");
+  color: color("muted-foreground");
   border-radius: 50%;
   margin-bottom: space(6);
 }
 
 .emptyTitle {
-  font-size: font-size('2xl');
-  font-weight: font-weight('bold');
-  color: color('foreground');
+  font-size: font-size("2xl");
+  font-weight: font-weight("bold");
+  color: color("foreground");
   margin-bottom: space(2);
 
-  @include respond-to('md') {
-    font-size: font-size('3xl');
+  @include respond-to("md") {
+    font-size: font-size("3xl");
   }
 }
 
 .emptySubtitle {
-  font-size: font-size('base');
-  color: color('muted-foreground');
+  font-size: font-size("base");
+  color: color("muted-foreground");
   max-width: 500px;
 
-  @include respond-to('md') {
-    font-size: font-size('lg');
+  @include respond-to("md") {
+    font-size: font-size("lg");
   }
 }

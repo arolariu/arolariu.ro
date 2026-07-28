@@ -1,7 +1,7 @@
 // ===========================================
 // VIEW INVOICES ISLAND STYLES
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 // ===========================================
 // LOADING SKELETON
@@ -20,11 +20,11 @@
   display: grid;
   gap: space(4);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(3, 1fr);
   }
 }
@@ -36,7 +36,7 @@
   margin-top: space(6);
 
   // Adjust spacing on mobile
-  @include respond-below('md') {
+  @include respond-below("md") {
     margin-top: space(4);
   }
 }
@@ -71,7 +71,7 @@
   }
 
   // Full width on mobile for better touch targets
-  @include respond-below('md') {
+  @include respond-below("md") {
     max-width: 100%;
     gap: space(2);
   }
@@ -81,7 +81,7 @@
   cursor: pointer;
 
   // Larger touch target on mobile
-  @include respond-below('md') {
+  @include respond-below("md") {
     min-height: space(11);
     padding: space(3);
   }

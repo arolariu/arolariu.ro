@@ -1,7 +1,7 @@
 // ===========================================
 // STEP INDICATOR STYLES
 // ===========================================
-@use '../../../../../styles/abstracts' as *;
+@use "../../../../../styles/abstracts" as *;
 
 .container {
   display: flex;
@@ -29,78 +29,78 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background-color: color('muted');
-  color: color('muted-foreground');
-  font-size: font-size('xl');
-  font-weight: font-weight('semibold');
+  background-color: color("muted");
+  color: color("muted-foreground");
+  font-size: font-size("xl");
+  font-weight: font-weight("semibold");
   transition: all 0.3s ease;
   border: 2px solid transparent;
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     width: 56px;
     height: 56px;
   }
 }
 
 .stepCircleActive {
-  background-color: color('primary');
-  color: color('primary-foreground');
-  border-color: color('primary');
+  background-color: color("primary");
+  color: color("primary-foreground");
+  border-color: color("primary");
   box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.1);
 }
 
 .stepCircleCompleted {
-  background-color: color('primary');
+  background-color: color("primary");
   color: white;
-  border-color: color('primary');
+  border-color: color("primary");
 }
 
 .stepCheckIcon {
-  font-size: font-size('xl');
+  font-size: font-size("xl");
 }
 
 .stepLabel {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
   text-align: center;
   white-space: nowrap;
   transition: color 0.3s ease;
 
-  @include respond-below('sm') {
+  @include respond-below("sm") {
     display: none;
   }
 }
 
 .stepDescription {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
   text-align: center;
   white-space: nowrap;
   margin-top: space(0.5);
 
-  @include respond-below('sm') {
+  @include respond-below("sm") {
     display: none;
   }
 }
 
 .stepLabelActive {
-  color: color('foreground');
-  font-weight: font-weight('medium');
+  color: color("foreground");
+  font-weight: font-weight("medium");
 }
 
 .stepLine {
   width: 80px;
   height: 2px;
-  background-color: color('border');
+  background-color: color("border");
   margin-inline: space(2);
   transition: background-color 0.3s ease;
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     width: 120px;
     margin-inline: space(4);
   }
 }
 
 .stepLineCompleted {
-  background-color: color('primary');
+  background-color: color("primary");
 }

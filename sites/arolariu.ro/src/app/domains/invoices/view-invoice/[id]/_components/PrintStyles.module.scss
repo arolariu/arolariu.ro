@@ -4,7 +4,7 @@
 // This module provides comprehensive print styles for clean, professional invoice printing.
 // Hides interactive elements, optimizes layout, and ensures readability.
 
-@use '../../../../../../styles/abstracts' as *;
+@use "../../../../../../styles/abstracts" as *;
 
 @media print {
   // ===========================================

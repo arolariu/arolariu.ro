@@ -1,7 +1,7 @@
 // ===========================================
 // INVOICES VIEW STYLES
 // ===========================================
-@use '../../../../../../styles/abstracts' as *;
+@use "../../../../../../styles/abstracts" as *;
 
 // ===========================================
 // LAYOUT
@@ -10,8 +10,7 @@
   @include spaced-children;
 
   // Add bottom padding on mobile to account for MobileBottomNav
-  @include respond-below('md') {
+  @include respond-below("md") {
     padding-bottom: space(20);
   }
 }
-

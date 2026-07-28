@@ -1,4 +1,4 @@
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 .section {
   @include spaced-children(space(2));
@@ -29,7 +29,7 @@
 }
 
 .label {
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 }
 
 .positionLabel {
@@ -41,7 +41,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-top: 1px solid color('border');
+  border-top: 1px solid color("border");
   padding-top: space(2);
 }
 
@@ -54,20 +54,20 @@
 }
 
 .trendValue {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .trendAmber {
-  color: color('warning');
+  color: color("warning");
 }
 
 .trendEmerald {
-  color: color('success');
+  color: color("success");
 }
 
 .trendMuted {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .card {
@@ -80,20 +80,20 @@
 
 .trendIconAmber {
   @include icon-size(space(4));
-  color: color('warning');
+  color: color("warning");
 }
 
 .trendIconEmerald {
   @include icon-size(space(4));
-  color: color('success');
+  color: color("success");
 }
 
 .trendIconMuted {
   @include icon-size(space(4));
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .iconMuted {
   @include icon-size(space(4));
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }

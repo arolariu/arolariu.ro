@@ -1,17 +1,17 @@
 // THEME TOGGLE BUTTON
-@use '../../styles/abstracts' as *;
+@use "../../styles/abstracts" as *;
 
 .themeButton {
   position: relative;
   width: space(10);
   height: space(10);
   cursor: pointer;
-  border-radius: radius('full');
-  border: 2px solid color('foreground');
+  border-radius: radius("full");
+  border: 2px solid color("foreground");
   @include transition((background-color, border-color));
 
   &:hover {
-    background-color: color-alpha('muted', 0.5);
+    background-color: color-alpha("muted", 0.5);
   }
 }
 
@@ -24,23 +24,22 @@
 .icon {
   width: space(6);
   height: space(6);
-  color: color('foreground');
+  color: color("foreground");
 }
 
 .themeButtonPlaceholder {
   @include icon-size(space(10));
   flex-shrink: 0;
-  border-radius: radius('full');
-  background-color: color('muted');
+  border-radius: radius("full");
+  background-color: color("muted");
   animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 
   @include dark {
-    background-color: color-alpha('muted-foreground', 0.3);
+    background-color: color-alpha("muted-foreground", 0.3);
   }
 }
 
 @keyframes skeleton-pulse {
-
   0%,
   100% {
     opacity: 1;

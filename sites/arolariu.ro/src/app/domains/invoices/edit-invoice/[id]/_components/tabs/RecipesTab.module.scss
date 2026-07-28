@@ -1,11 +1,11 @@
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 .recipesGrid {
   display: grid;
   grid-template-columns: 1fr;
   gap: space(4);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(2, 1fr);
   }
 }
@@ -16,7 +16,7 @@
 }
 
 .emptyText {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   margin-bottom: space(4);
 }
 
@@ -28,7 +28,7 @@
 }
 
 .pageInfo {
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 }
 
 .headerActions {

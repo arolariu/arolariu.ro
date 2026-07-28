@@ -1,7 +1,7 @@
 // ===========================================
 // ABOUT HUB - MISSION COMPONENT
 // ===========================================
-@use '../../../styles/abstracts' as *;
+@use "../../../styles/abstracts" as *;
 
 .section {
   position: relative;
@@ -24,11 +24,11 @@
 .title {
   display: inline-block;
   margin-bottom: space(6);
-  font-size: font-size('3xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("3xl");
+  font-weight: font-weight("bold");
 
-  @include respond-to('sm') {
-    font-size: font-size('4xl');
+  @include respond-to("sm") {
+    font-size: font-size("4xl");
   }
 }
 
@@ -37,12 +37,12 @@
   margin-right: auto;
   margin-bottom: space(4);
   max-width: 36rem;
-  font-size: font-size('2xl');
-  font-weight: font-weight('semibold');
-  color: color('primary');
+  font-size: font-size("2xl");
+  font-weight: font-weight("semibold");
+  color: color("primary");
 
-  @include respond-to('sm') {
-    font-size: font-size('3xl');
+  @include respond-to("sm") {
+    font-size: font-size("3xl");
   }
 }
 
@@ -50,9 +50,9 @@
   margin-left: auto;
   margin-right: auto;
   max-width: 48rem;
-  font-size: font-size('lg');
-  line-height: line-height('relaxed');
-  color: color('muted-foreground');
+  font-size: font-size("lg");
+  line-height: line-height("relaxed");
+  color: color("muted-foreground");
 }
 
 // Pillars grid
@@ -60,7 +60,7 @@
   display: grid;
   gap: space(6);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
@@ -70,12 +70,11 @@
   position: relative;
   height: 100%;
   overflow: hidden;
-  background-color: color-alpha('card', 0.5);
+  background-color: color-alpha("card", 0.5);
   @include backdrop-blur;
-  border: 1px solid color('border');
-  border-radius: radius('lg');
+  border: 1px solid color("border");
+  border-radius: radius("lg");
   @include card-hover;
-
 }
 
 .cardGradient {
@@ -99,7 +98,7 @@
   display: inline-flex;
   margin-bottom: space(4);
   padding: space(3);
-  border-radius: radius('xl');
+  border-radius: radius("xl");
 }
 
 .icon {
@@ -124,12 +123,12 @@
 // Card text
 .cardTitle {
   margin-bottom: space(2);
-  font-size: font-size('xl');
-  font-weight: font-weight('semibold');
+  font-size: font-size("xl");
+  font-weight: font-weight("semibold");
 }
 
 .cardDescription {
-  font-size: font-size('sm');
-  line-height: line-height('relaxed');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  line-height: line-height("relaxed");
+  color: color("muted-foreground");
 }

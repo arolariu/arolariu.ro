@@ -1,7 +1,7 @@
 // ===========================================
 // SHARE INVOICE DIALOG PRIVATE STYLES
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 .body {
   @include spaced-children;
@@ -29,7 +29,7 @@
 
 .lockIcon {
   @include icon-size(space(4));
-  color: color('success');
+  color: color("success");
 }
 
 .mailIcon {

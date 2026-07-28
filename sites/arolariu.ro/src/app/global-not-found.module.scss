@@ -1,8 +1,8 @@
 // GLOBAL NOT FOUND PAGE
-@use '../styles/abstracts' as *;
+@use "../styles/abstracts" as *;
 .body {
-  background-color: color('background');
-  color: color('foreground');
+  background-color: color("background");
+  color: color("foreground");
 }
 
 // Page container (the single <main>)
@@ -12,10 +12,10 @@
   align-items: center;
   justify-content: center;
   padding: space(24) space(5);
-  font-size: font-size('xl');
+  font-size: font-size("xl");
 
-  @include respond-to('2xsm') {
-    font-size: font-size('lg');
+  @include respond-to("2xsm") {
+    font-size: font-size("lg");
   }
 }
 
@@ -33,14 +33,14 @@
   margin-left: auto;
   margin-right: auto;
   padding-bottom: space(8);
-  font-size: font-size('xl');
+  font-size: font-size("xl");
 
-  @include respond-to('2xsm') {
-    font-size: font-size('xl');
+  @include respond-to("2xsm") {
+    font-size: font-size("xl");
   }
 
-  @include respond-to('md') {
-    font-size: font-size('3xl');
+  @include respond-to("md") {
+    font-size: font-size("3xl");
   }
 }
 
@@ -57,8 +57,8 @@
 .qrTitle {
   margin: space(4) 0;
   text-align: center;
-  font-size: font-size('xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("xl");
+  font-weight: font-weight("bold");
 }
 
 // Bottom section
@@ -68,7 +68,7 @@
 
 .falsePositive {
   text-align: center;
-  font-size: font-size('xs');
+  font-size: font-size("xs");
 }
 
 // Button row
@@ -80,7 +80,7 @@
   gap: space(4);
   margin-top: space(4);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     flex-direction: row;
   }
 }
@@ -96,10 +96,10 @@
 // ensure proper contrast regardless of cascade ordering.
 .actionButtonOutline {
   composes: actionButton;
-  color: color('foreground');
+  color: color("foreground");
 }
 
 .actionButtonDefault {
   composes: actionButton;
-  color: static-color('white');
+  color: static-color("white");
 }

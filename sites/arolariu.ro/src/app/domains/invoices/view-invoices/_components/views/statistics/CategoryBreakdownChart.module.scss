@@ -1,14 +1,14 @@
 // ===========================================
 // CATEGORY BREAKDOWN CHART STYLES
 // ===========================================
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 // ===========================================
 // LAYOUT
 // ===========================================
 .card {
-  background: color('card');
-  border: 1px solid color('border');
+  background: color("card");
+  border: 1px solid color("border");
   border-radius: space(2);
   height: 100%;
   display: flex;
@@ -21,14 +21,14 @@
 }
 
 .cardTitle {
-  font-size: font-size('xl');
-  font-weight: font-weight('bold');
-  color: color('foreground');
+  font-size: font-size("xl");
+  font-weight: font-weight("bold");
+  color: color("foreground");
 }
 
 .cardDescription {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
   margin-top: space(1);
 }
 
@@ -46,7 +46,7 @@
 }
 
 .pieStroke {
-  stroke: color('background');
+  stroke: color("background");
   stroke-width: 2px;
 }
 
@@ -54,36 +54,36 @@
 // TOOLTIP
 // ===========================================
 .tooltip {
-  background: color('popover');
-  border: 1px solid color('border');
+  background: color("popover");
+  border: 1px solid color("border");
   border-radius: space(2);
   padding: space(3);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .tooltipCategory {
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
-  color: color('foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
+  color: color("foreground");
   margin-bottom: space(1);
 }
 
 .tooltipAmount {
-  font-size: font-size('base');
-  font-weight: font-weight('bold');
-  color: color('primary');
+  font-size: font-size("base");
+  font-weight: font-weight("bold");
+  color: color("primary");
   margin-bottom: space(0.5);
 }
 
 .tooltipPercentage {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
   margin-bottom: space(0.5);
 }
 
 .tooltipCount {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
 }
 
 // ===========================================
@@ -110,8 +110,8 @@
 }
 
 .legendLabel {
-  font-size: font-size('xs');
-  color: color('foreground');
+  font-size: font-size("xs");
+  color: color("foreground");
 }
 
 // ===========================================
@@ -121,17 +121,17 @@
   text-align: center;
   margin-top: space(4);
   padding-top: space(4);
-  border-top: 1px solid color('border');
+  border-top: 1px solid color("border");
 }
 
 .totalAmount {
-  font-size: font-size('2xl');
-  font-weight: font-weight('bold');
-  color: color('foreground');
+  font-size: font-size("2xl");
+  font-weight: font-weight("bold");
+  color: color("foreground");
 }
 
 .totalLabel {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
   margin-top: space(1);
 }

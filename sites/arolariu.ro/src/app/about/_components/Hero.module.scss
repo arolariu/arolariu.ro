@@ -1,7 +1,7 @@
 // ===========================================
 // ABOUT HUB - HERO COMPONENT
 // ===========================================
-@use '../../../styles/abstracts' as *;
+@use "../../../styles/abstracts" as *;
 
 .section {
   position: relative;
@@ -25,7 +25,7 @@
 
 .orb {
   position: absolute;
-  border-radius: radius('full');
+  border-radius: radius("full");
   filter: blur(64px);
 }
 
@@ -62,15 +62,16 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-image: linear-gradient(color-alpha('secondary', 0.14) 1px, transparent 1px),
-    linear-gradient(90deg, color-alpha('tertiary', 0.14) 1px, transparent 1px);
+  background-image:
+    linear-gradient(color-alpha("secondary", 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, color-alpha("tertiary", 0.14) 1px, transparent 1px);
   background-size: 50px 50px;
 }
 
 // Content wrapper
 .content {
   position: relative;
-  z-index: z('content');
+  z-index: z("content");
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -82,8 +83,8 @@
 .badge {
   margin-bottom: space(6);
   padding: space(1) space(4);
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .badgeIcon {
@@ -95,17 +96,17 @@
 // Title
 .title {
   margin-bottom: space(6);
-  font-size: font-size('5xl');
-  font-weight: font-weight('bold');
-  letter-spacing: letter-spacing('tight');
-  color: color('primary');
+  font-size: font-size("5xl");
+  font-weight: font-weight("bold");
+  letter-spacing: letter-spacing("tight");
+  color: color("primary");
 
-  @include respond-to('sm') {
-    font-size: font-size('6xl');
+  @include respond-to("sm") {
+    font-size: font-size("6xl");
   }
 
-  @include respond-to('lg') {
-    font-size: font-size('7xl');
+  @include respond-to("lg") {
+    font-size: font-size("7xl");
   }
 }
 
@@ -113,12 +114,12 @@
 .subtitle {
   margin-bottom: space(10);
   max-width: 42rem;
-  font-size: font-size('lg');
-  line-height: line-height('relaxed');
-  color: color('muted-foreground');
+  font-size: font-size("lg");
+  line-height: line-height("relaxed");
+  color: color("muted-foreground");
 
-  @include respond-to('sm') {
-    font-size: font-size('xl');
+  @include respond-to("sm") {
+    font-size: font-size("xl");
   }
 }
 
@@ -128,7 +129,7 @@
   flex-direction: column;
   gap: space(4);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     flex-direction: row;
   }
 }
@@ -160,5 +161,5 @@
 .scrollIcon {
   width: 1.5rem;
   height: 1.5rem;
-  color: color('foreground');
+  color: color("foreground");
 }

@@ -176,7 +176,13 @@ export function main(): Record<string, ExportEntry> {
   });
 
   packageJson.exports = exports;
-  fs.writeFileSync(PACKAGE_JSON_PATH, JSON.stringify(packageJson, null, 2));
+  // Serialize with CRLF + trailing newline so the generated file matches the
+  // repository convention (.editorconfig `end_of_line = crlf` /
+  // `insert_final_newline = true`, and Prettier's `endOfLine: "crlf"`).
+  // Without this, `npm run build:components` and `npm run format` would
+  // repeatedly rewrite this file against each other.
+  const serializedPackageJson = `${JSON.stringify(packageJson, null, 2).replaceAll("\n", "\r\n")}\r\n`;
+  fs.writeFileSync(PACKAGE_JSON_PATH, serializedPackageJson);
 
   // eslint-disable-next-line no-console -- build script.
   console.log(`>>> ✅ Successfully generated ${Object.keys(exports).length - 1} component exports`);

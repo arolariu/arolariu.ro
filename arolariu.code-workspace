@@ -1,19 +1,15 @@
 {
+  // Single root: the monorepo itself. Do NOT re-add `sites`, `packages`, `docs`
+  // etc. as sibling folders — they live under "." and VS Code would show every
+  // file twice.
   "folders": [
-    { "path": "." },
-    { "path": "sites" },
-    { "path": "packages" },
-    { "path": "infra" },
-    { "path": "docs" },
-    { "path": "tooling" },
-    { "path": "scripts" },
-    { "path": ".github" }
+    { "path": "." }
   ],
   "settings": {
     "dotnet.defaultSolution": "arolariu.slnx",
     "dotnet.preferCSharpExtension": true
-  },
-  "extensions": {
-    "recommendations": []
   }
+  // Extension recommendations intentionally omitted: they are maintained in
+  // .vscode/extensions.json (and mirrored in .devcontainer/devcontainer.json).
+  // Duplicating the list here would immediately drift.
 }

@@ -1,7 +1,7 @@
 // ===========================================
 // TABLE VIEW STYLES
 // ===========================================
-@use '../../../../../../styles/abstracts' as *;
+@use "../../../../../../styles/abstracts" as *;
 
 // ===========================================
 // EMPTY STATE
@@ -12,19 +12,19 @@
   padding-block: space(10);
 
   // Adjust padding on mobile
-  @include respond-below('md') {
+  @include respond-below("md") {
     padding-block: space(6);
   }
 }
 
 .emptyMessage {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   margin-bottom: space(2);
 }
 
 .emptyIcon {
   @include icon-size(space(12));
-  color: color('primary');
+  color: color("primary");
 }
 
 // ===========================================
@@ -40,17 +40,17 @@
   transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: color('muted');
+    background-color: color("muted");
   }
 
   &:focus {
-    outline: 2px solid color('primary');
+    outline: 2px solid color("primary");
     outline-offset: -2px;
   }
 }
 
 .sortArrow {
-  font-size: font-size('xs');
+  font-size: font-size("xs");
   margin-left: space(1);
   display: inline-block;
   // Reserve width for the arrow even when the column is not the active sort,
@@ -105,7 +105,7 @@
   gap: space(2);
 
   // Stack vertically on mobile for better readability
-  @include respond-below('md') {
+  @include respond-below("md") {
     flex-direction: column;
     align-items: flex-start;
     gap: space(3);
@@ -113,8 +113,8 @@
 }
 
 .footerLabel {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
 }
 
 // ===========================================
@@ -146,8 +146,8 @@
 }
 
 .frostedCheckbox {
-  background-color: color-alpha('background', 0.8);
-  @include backdrop-blur(blur-size('md'));
+  background-color: color-alpha("background", 0.8);
+  @include backdrop-blur(blur-size("md"));
 }
 
 .sortButton {
@@ -157,7 +157,7 @@
   align-items: center;
   gap: space(1);
   padding: 0;
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .actionsHeader {
@@ -168,7 +168,7 @@
   cursor: pointer;
 
   &:hover {
-    color: color('accent-foreground');
+    color: color("accent-foreground");
   }
 }
 
@@ -188,7 +188,7 @@
   cursor: pointer;
 
   // Larger touch target on mobile
-  @include respond-below('md') {
+  @include respond-below("md") {
     min-height: space(11);
     padding: space(3);
   }

@@ -1,4 +1,4 @@
-@use '../../../../../../styles/abstracts' as *;
+@use "../../../../../../styles/abstracts" as *;
 
 .body {
   & > * + * {
@@ -14,18 +14,18 @@
 }
 
 .merchantAvatar {
-  background-color: color-alpha('primary', 0.1);
+  background-color: color-alpha("primary", 0.1);
   display: flex;
   width: space(12);
   height: space(12);
   align-items: center;
   justify-content: center;
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .merchantName {
-  font-size: font-size('lg');
-  font-weight: font-weight('medium');
+  font-size: font-size("lg");
+  font-weight: font-weight("medium");
 }
 
 .detailRow {
@@ -42,15 +42,15 @@
 }
 
 .detailLabel {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .dialogContent {
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     max-width: 28rem;
   }
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     max-width: 36rem;
   }
 }
@@ -61,13 +61,13 @@
 }
 
 .buildingIcon {
-  color: color('primary');
+  color: color("primary");
   width: space(6);
   height: space(6);
 }
 
 .categoryBadge {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .labelCell {
@@ -76,7 +76,7 @@
 }
 
 .mutedIcon {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   margin-right: space(2);
   width: space(4);
   height: space(4);

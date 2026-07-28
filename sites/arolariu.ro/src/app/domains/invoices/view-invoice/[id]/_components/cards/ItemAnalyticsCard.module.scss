@@ -1,4 +1,4 @@
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 // ===========================
 // Card Layout
@@ -12,7 +12,7 @@
 
 .iconTitle {
   @include icon-size(space(5));
-  color: color('primary');
+  color: color("primary");
 }
 
 .contentSpaced {
@@ -40,7 +40,7 @@
   left: space(3);
   top: 50%;
   transform: translateY(-50%);
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   pointer-events: none;
 }
 
@@ -53,8 +53,8 @@
 // ===========================
 
 .tableContainer {
-  border-radius: radius('md');
-  border: 1px solid color('border');
+  border-radius: radius("md");
+  border: 1px solid color("border");
   overflow-x: auto;
 
   th:first-child {
@@ -79,7 +79,7 @@
   }
 
   tbody td:last-child {
-    font-weight: font-weight('medium');
+    font-weight: font-weight("medium");
   }
 }
 
@@ -92,7 +92,7 @@
   align-items: center;
   gap: space(1);
   cursor: pointer;
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
   background: none;
   border: none;
   padding: 0;
@@ -101,13 +101,13 @@
   transition: color 0.2s ease;
 
   &:hover {
-    color: color('primary');
+    color: color("primary");
   }
 
   &:focus-visible {
-    outline: 2px solid color('ring');
+    outline: 2px solid color("ring");
     outline-offset: 2px;
-    border-radius: radius('sm');
+    border-radius: radius("sm");
   }
 }
 
@@ -132,23 +132,23 @@
 }
 
 .itemName {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .confidenceBadge {
-  font-size: font-size('xs');
+  font-size: font-size("xs");
   padding: space(0.5) space(1.5);
   cursor: help;
 }
 
 .confidenceTooltip {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
   margin-bottom: space(1);
 }
 
 .confidenceWarning {
-  color: color('destructive');
-  font-size: font-size('xs');
+  color: color("destructive");
+  font-size: font-size("xs");
   margin-top: space(1);
 }
 
@@ -162,7 +162,7 @@
   display: flex;
   align-items: center;
   gap: space(1);
-  font-size: font-size('xs');
+  font-size: font-size("xs");
 }
 
 .allergenIcon {
@@ -175,12 +175,12 @@
 }
 
 .allergenLink {
-  color: color('primary');
+  color: color("primary");
   text-decoration: underline;
-  font-size: font-size('sm');
+  font-size: font-size("sm");
 
   &:hover {
-    color: color('primary-foreground');
+    color: color("primary-foreground");
   }
 }
 
@@ -193,30 +193,30 @@
   align-items: center;
   justify-content: space-between;
   padding: space(4);
-  border-top: 2px solid color('border');
-  background-color: color('muted');
-  border-radius: radius('md');
+  border-top: 2px solid color("border");
+  background-color: color("muted");
+  border-radius: radius("md");
 }
 
 .totalLabel {
-  font-weight: font-weight('bold');
-  font-size: font-size('lg');
+  font-weight: font-weight("bold");
+  font-size: font-size("lg");
 }
 
 .totalValues {
   display: flex;
   align-items: center;
   gap: space(8);
-  font-weight: font-weight('bold');
-  font-size: font-size('lg');
+  font-weight: font-weight("bold");
+  font-size: font-size("lg");
 }
 
 .totalQuantity {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .totalPrice {
-  color: color('primary');
+  color: color("primary");
 }
 
 // ===========================
@@ -226,14 +226,14 @@
 .summarySection {
   margin-top: space(4);
   padding-top: space(4);
-  border-top: 1px solid color('border');
+  border-top: 1px solid color("border");
 }
 
 .summaryTitle {
-  font-weight: font-weight('semibold');
-  font-size: font-size('base');
+  font-weight: font-weight("semibold");
+  font-size: font-size("base");
   margin-bottom: space(3);
-  color: color('foreground');
+  color: color("foreground");
 }
 
 .summaryList {
@@ -244,13 +244,13 @@
 
 .summaryItem {
   padding: space(1) 0;
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
   line-height: 1.6;
 
   strong {
-    color: color('foreground');
-    font-weight: font-weight('medium');
+    color: color("foreground");
+    font-weight: font-weight("medium");
   }
 }
 
@@ -269,21 +269,21 @@
 
 .emptyIcon {
   @include icon-size(space(16));
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   margin-bottom: space(4);
   opacity: 0.5;
 }
 
 .emptyTitle {
-  font-size: font-size('lg');
-  font-weight: font-weight('semibold');
-  color: color('foreground');
+  font-size: font-size("lg");
+  font-weight: font-weight("semibold");
+  color: color("foreground");
   margin-bottom: space(2);
 }
 
 .emptySubtitle {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
   max-width: 400px;
 }
 

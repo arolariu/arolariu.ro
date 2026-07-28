@@ -35,7 +35,7 @@ describe("createScan", () => {
     mockLogWithTrace.mockImplementation(() => undefined);
     mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-123"}));
     mockFetchConfigurationValue.mockResolvedValue("https://storage.test");
-    
+
     // Mock uploadBlobObject to return a BlobObject
     mockUploadBlobObject.mockResolvedValue({
       name: "scans/user-123/scan_123.jpg",
@@ -64,7 +64,7 @@ describe("createScan", () => {
       expect(result.data.scan.status).toBe(ScanStatus.READY);
       expect(result.data.scan.blobUrl).toContain("scans/user-123");
     }
-    
+
     // Verify uploadBlobObject was called with correct parameters
     expect(mockUploadBlobObject).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -76,7 +76,7 @@ describe("createScan", () => {
           ownerId: "user-123",
           status: "ready",
         }),
-      })
+      }),
     );
   });
 
@@ -197,7 +197,7 @@ describe("createScan", () => {
     });
 
     expect(result.success).toBe(true);
-    
+
     // Verify metadata was passed correctly to uploadBlobObject
     const uploadCall = mockUploadBlobObject.mock.calls[0]?.[0];
     expect(uploadCall?.metadata).toMatchObject({

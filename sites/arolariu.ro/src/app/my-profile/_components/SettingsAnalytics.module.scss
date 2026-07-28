@@ -2,32 +2,60 @@
 // SETTINGS ANALYTICS STYLES
 // Scoped to SettingsAnalytics.tsx only
 // ===========================================
-@use '../../../styles/abstracts' as *;
-@use 'settings-shared' as settings;
+@use "../../../styles/abstracts" as *;
+@use "settings-shared" as settings;
 
-.section { @include settings.settings-section; }
-.header  { @include settings.settings-header; }
-.grid    { @include settings.settings-grid; }
-.fullWidthCard { @include settings.settings-card-full; }
-.toggleRow     { @include settings.settings-toggle-row; }
-.toggleLabel   { @include settings.settings-toggle-label; }
-.infoBox       { @include settings.settings-info-box; }
+.section {
+  @include settings.settings-section;
+}
+.header {
+  @include settings.settings-header;
+}
+.grid {
+  @include settings.settings-grid;
+}
+.fullWidthCard {
+  @include settings.settings-card-full;
+}
+.toggleRow {
+  @include settings.settings-toggle-row;
+}
+.toggleLabel {
+  @include settings.settings-toggle-label;
+}
+.infoBox {
+  @include settings.settings-info-box;
+}
 
 // ===========================================
 // ANALYTICS-SPECIFIC
 // ===========================================
 .dataUsageInfo {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
 }
 
 // ===========================================
 // LIBRARY COMPONENT CLASSES
 // ===========================================
-.cardHeaderPb { @include settings.settings-card-header-flex; }
-.cardTitleBase { @include settings.settings-card-title-base; }
-.cardContentSpaced { @include settings.settings-card-content-spaced; }
-.selectCursor { @include settings.settings-select-cursor; }
-.iconSm { @include settings.settings-icon-sm; }
-.buttonFullCursor { @include settings.settings-button-full-cursor; }
-.labelCursor { @include settings.settings-label-cursor; }
+.cardHeaderPb {
+  @include settings.settings-card-header-flex;
+}
+.cardTitleBase {
+  @include settings.settings-card-title-base;
+}
+.cardContentSpaced {
+  @include settings.settings-card-content-spaced;
+}
+.selectCursor {
+  @include settings.settings-select-cursor;
+}
+.iconSm {
+  @include settings.settings-icon-sm;
+}
+.buttonFullCursor {
+  @include settings.settings-button-full-cursor;
+}
+.labelCursor {
+  @include settings.settings-label-cursor;
+}

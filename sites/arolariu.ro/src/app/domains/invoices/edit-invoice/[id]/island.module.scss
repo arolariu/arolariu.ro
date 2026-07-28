@@ -1,11 +1,11 @@
-@use '../../../../../styles/abstracts' as *;
+@use "../../../../../styles/abstracts" as *;
 
 .section {
   @include container;
   padding-block: space(12);
 
   // Bottom padding for mobile nav
-  @include respond-below('md') {
+  @include respond-below("md") {
     padding-bottom: space(20);
   }
 }
@@ -16,16 +16,16 @@
   gap: space(6);
 
   // Single column, full width cards on mobile
-  @include respond-below('md') {
+  @include respond-below("md") {
     grid-template-columns: 1fr;
   }
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(3, 1fr);
   }
 
   // More spacious layout on xl
-  @include respond-to('xl') {
+  @include respond-to("xl") {
     gap: space(8);
   }
 }
@@ -36,18 +36,18 @@
   }
 
   // Tighter spacing on mobile
-  @include respond-below('md') {
+  @include respond-below("md") {
     & > * + * {
       margin-top: space(4);
     }
   }
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-column: span 2;
   }
 
   // More spacing on xl screens
-  @include respond-to('xl') {
+  @include respond-to("xl") {
     & > * + * {
       margin-top: space(8);
     }
@@ -60,7 +60,7 @@
   }
 
   // Tighter spacing on mobile, full width cards
-  @include respond-below('md') {
+  @include respond-below("md") {
     & > * + * {
       margin-top: space(4);
     }
@@ -73,7 +73,7 @@
   grid-template-columns: repeat(2, 1fr);
 
   // Mobile: Ensure proper touch targets
-  @include respond-below('md') {
+  @include respond-below("md") {
     gap: space(2);
   }
 }
@@ -92,7 +92,7 @@
   margin-top: space(4);
 
   // Reduce spacing on mobile
-  @include respond-below('md') {
+  @include respond-below("md") {
     margin-top: space(3);
   }
 }
@@ -103,11 +103,11 @@
   position: static;
 
   // Mobile: fixed floating button above mobile nav
-  @include respond-below('md') {
+  @include respond-below("md") {
     position: fixed;
     bottom: space(16); // above mobile nav
     right: space(4);
-    z-index: z('sticky');
+    z-index: z("sticky");
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 }

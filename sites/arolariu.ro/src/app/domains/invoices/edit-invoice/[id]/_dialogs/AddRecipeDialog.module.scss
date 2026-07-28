@@ -1,4 +1,4 @@
-@use '../../../../../../styles/abstracts' as *;
+@use "../../../../../../styles/abstracts" as *;
 
 .formBody {
   & > * + * {
@@ -54,10 +54,10 @@
 }
 
 .dialogContent {
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     max-width: 28rem;
   }
-  @include respond-to('md') {
+  @include respond-to("md") {
     max-width: 32rem;
   }
 }
@@ -67,7 +67,7 @@
   align-items: center;
   justify-content: space-between;
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     justify-content: space-between;
   }
 }
@@ -79,7 +79,7 @@
 }
 
 .mutedIcon {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   margin-right: space(2);
   width: space(4);
   height: space(4);

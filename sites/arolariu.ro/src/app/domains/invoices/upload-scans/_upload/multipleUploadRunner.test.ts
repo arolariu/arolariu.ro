@@ -78,7 +78,9 @@ describe("uploadPendingScanMultiple", () => {
   it("returns partial success and failure results without fail-fast behavior", async () => {
     const uploads = [createUpload("success-1"), createUpload("failed-1"), createUpload("success-2")];
     const uploadOne = vi
-      .fn<(upload: PendingUpload, dependencies: UploadRunnerDependencies, callbacks: UploadRunnerCallbacks) => Promise<UploadRunnerResult>>()
+      .fn<
+        (upload: PendingUpload, dependencies: UploadRunnerDependencies, callbacks: UploadRunnerCallbacks) => Promise<UploadRunnerResult>
+      >()
       .mockResolvedValueOnce(createResult("success-1", true))
       .mockResolvedValueOnce(createResult("failed-1", false))
       .mockResolvedValueOnce(createResult("success-2", true));

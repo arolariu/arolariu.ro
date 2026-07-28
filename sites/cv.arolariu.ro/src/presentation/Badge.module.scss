@@ -4,7 +4,10 @@
   border-radius: var(--cv-radius-full);
   font-weight: 500;
   user-select: none;
-  transition: color var(--cv-transition-base), background-color var(--cv-transition-base), border-color var(--cv-transition-base);
+  transition:
+    color var(--cv-transition-base),
+    background-color var(--cv-transition-base),
+    border-color var(--cv-transition-base);
 }
 
 .sm {

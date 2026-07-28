@@ -1,11 +1,11 @@
-@use '../../../../../../styles/abstracts' as *;
+@use "../../../../../../styles/abstracts" as *;
 
 .categoryChips {
   display: flex;
   flex-wrap: wrap;
   gap: space(2);
 
-  @include respond-below('md') {
+  @include respond-below("md") {
     flex-wrap: nowrap;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -35,10 +35,10 @@
   font: inherit;
   cursor: pointer;
   color: inherit;
-  border-radius: radius('full');
+  border-radius: radius("full");
 
   &:focus-visible {
-    outline: 2px solid color('primary');
+    outline: 2px solid color("primary");
     outline-offset: 2px;
   }
 }

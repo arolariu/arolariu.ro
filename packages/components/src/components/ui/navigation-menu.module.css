@@ -28,7 +28,9 @@
   font-weight: 500;
   outline: none;
   cursor: pointer;
-  transition: background-color var(--ac-transition-fast), color var(--ac-transition-fast);
+  transition:
+    background-color var(--ac-transition-fast),
+    color var(--ac-transition-fast);
 }
 
 .trigger:hover,
@@ -91,7 +93,9 @@
 .viewport {
   width: min(100vw - 2rem, var(--ac-nav-content-width, 20rem));
   height: var(--ac-nav-content-height);
-  transition: width var(--ac-transition-normal), height var(--ac-transition-normal);
+  transition:
+    width var(--ac-transition-normal),
+    height var(--ac-transition-normal);
 }
 
 .indicator {

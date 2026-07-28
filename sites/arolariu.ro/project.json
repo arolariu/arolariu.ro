@@ -10,12 +10,8 @@
         "command": "npm run build",
         "cwd": "sites/arolariu.ro"
       },
-      "outputs": [
-        "{projectRoot}/.next"
-      ],
-      "dependsOn": [
-        "components:build"
-      ]
+      "outputs": ["{projectRoot}/.next"],
+      "dependsOn": ["components:build"]
     },
     "build:storybook": {
       "executor": "nx:run-commands",
@@ -30,9 +26,7 @@
         "command": "npm run dev",
         "cwd": "sites/arolariu.ro"
       },
-      "dependsOn": [
-        "components:build"
-      ]
+      "dependsOn": ["components:build"]
     },
     "start": {
       "executor": "nx:run-commands",
@@ -70,9 +64,5 @@
       }
     }
   },
-  "tags": [
-    "domain:frontend",
-    "scope:website",
-    "type:app"
-  ]
+  "tags": ["domain:frontend", "scope:website", "type:app"]
 }

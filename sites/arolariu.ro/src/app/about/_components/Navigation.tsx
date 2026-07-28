@@ -80,12 +80,8 @@ export default function Navigation(): React.JSX.Element {
                   <CardContent className={styles["cardContent"]}>
                     <div className={styles["cardContentInner"]}>
                       <div className={styles["cardTextCenter"]}>
-                        <h3 className={styles["cardTitle"]}>
-                          {t(selectorFromPath(`pages.about.hub.navigation.${itemTitleKey}`))}
-                        </h3>
-                        <p className={styles["cardSubtitle"]}>
-                          {t(selectorFromPath(`pages.about.hub.navigation.${itemSubtitleKey}`))}
-                        </p>
+                        <h3 className={styles["cardTitle"]}>{t(selectorFromPath(`pages.about.hub.navigation.${itemTitleKey}`))}</h3>
+                        <p className={styles["cardSubtitle"]}>{t(selectorFromPath(`pages.about.hub.navigation.${itemSubtitleKey}`))}</p>
                       </div>
 
                       {/* Feature list */}
@@ -101,13 +97,7 @@ export default function Navigation(): React.JSX.Element {
                                 className={styles["featureBadge"]}>
                                 <TbCheck className={styles["featureIcon"]} />
                               </Badge>
-                              <span>
-                                {t(
-                                  selectorFromPath(
-                                    `About.Hub.navigation.${featureKey}`,
-                                  ),
-                                )}
-                              </span>
+                              <span>{t(selectorFromPath(`About.Hub.navigation.${featureKey}`))}</span>
                             </li>
                           );
                         })}

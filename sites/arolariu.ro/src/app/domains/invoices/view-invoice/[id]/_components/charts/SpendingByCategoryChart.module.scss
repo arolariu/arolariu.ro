@@ -1,25 +1,25 @@
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 .tooltip {
-  background-color: color('background');
-  border-radius: radius('lg');
-  border: 1px solid color('border');
+  background-color: color("background");
+  border-radius: radius("lg");
+  border: 1px solid color("border");
   padding: space(2) space(3);
-  @include shadow('md');
+  @include shadow("md");
 }
 
 .tooltipCategory {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .tooltipAmount {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  color: color("muted-foreground");
+  font-size: font-size("sm");
 }
 
 .tooltipCount {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  color: color("muted-foreground");
+  font-size: font-size("xs");
 }
 
 .legendContainer {
@@ -39,12 +39,12 @@
 .legendDot {
   height: space(2.5);
   width: space(2.5);
-  border-radius: radius('full');
+  border-radius: radius("full");
 }
 
 .legendLabel {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  color: color("muted-foreground");
+  font-size: font-size("xs");
 }
 
 .totalSection {
@@ -53,13 +53,13 @@
 }
 
 .totalAmount {
-  font-size: font-size('xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("xl");
+  font-weight: font-weight("bold");
 }
 
 .totalLabel {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  color: color("muted-foreground");
+  font-size: font-size("xs");
 }
 
 .card {
@@ -67,7 +67,7 @@
   @include transition(box-shadow);
 
   &:hover {
-    @include shadow('md');
+    @include shadow("md");
   }
 }
 
@@ -76,11 +76,11 @@
 }
 
 .cardTitle {
-  font-size: font-size('base');
+  font-size: font-size("base");
 }
 
 .cardDescription {
-  font-size: font-size('xs');
+  font-size: font-size("xs");
 }
 
 .cardContent {
@@ -93,6 +93,6 @@
 }
 
 .pieStroke {
-  stroke: color('background');
+  stroke: color("background");
   stroke-width: 2;
 }

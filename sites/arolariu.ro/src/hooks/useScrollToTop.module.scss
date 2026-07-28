@@ -1,21 +1,21 @@
 // SCROLL-TO-TOP BUTTON
-@use '../styles/abstracts' as *;
+@use "../styles/abstracts" as *;
 
 .scrollButton {
   position: fixed;
   right: space(8);
   bottom: space(8);
-  z-index: z('toast');
+  z-index: z("toast");
   padding: space(3);
-  border-radius: radius('full');
+  border-radius: radius("full");
   @include gradient-bg();
-  color: static-color('white');
+  color: static-color("white");
   cursor: pointer;
-  @include shadow('lg');
+  @include shadow("lg");
   @include transition((background-color, color));
 
   &:hover {
-    background-color: color-alpha('primary', 0.9);
+    background-color: color-alpha("primary", 0.9);
   }
 }
 

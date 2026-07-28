@@ -57,7 +57,9 @@
   overflow: hidden;
   color: var(--ac-muted-foreground);
   font-size: var(--ac-text-sm);
-  transition: grid-template-rows var(--ac-transition-normal), opacity var(--ac-transition-normal);
+  transition:
+    grid-template-rows var(--ac-transition-normal),
+    opacity var(--ac-transition-normal);
 
   &[data-starting-style],
   &[data-ending-style] {

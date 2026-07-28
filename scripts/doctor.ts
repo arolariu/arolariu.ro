@@ -81,7 +81,7 @@ const MIN_DISK_BYTES = 1024 * 1024 * 1024; // 1 GB
 const REQUIRED_CONFIG_FILES: readonly string[] = [
   "nx.json",
   "eslint.config.ts",
-  "prettier.config.ts",
+  ".prettierrc",
   "tsconfig.json",
   "package.json",
 ];

@@ -30,7 +30,9 @@
   color: var(--ac-foreground);
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
   font-size: var(--ac-text-sm);
-  transition: box-shadow var(--ac-transition-fast), border-color var(--ac-transition-fast);
+  transition:
+    box-shadow var(--ac-transition-fast),
+    border-color var(--ac-transition-fast);
 }
 
 .slot:first-child {
@@ -89,4 +91,3 @@
     opacity: 0;
   }
 }
-

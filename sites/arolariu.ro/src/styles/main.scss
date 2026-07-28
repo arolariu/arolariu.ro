@@ -43,8 +43,8 @@
 /// @see themes/_presets.scss — named theme preset overrides
 /// @see abstracts/ — all SCSS helpers (variables, mixins, functions)
 
-@use 'sass:meta';
-@use 'abstracts' as *;
+@use "sass:meta";
+@use "abstracts" as *;
 
 @if $enable-css-layers {
   @layer base, themes, animations, utilities, components;
@@ -64,32 +64,32 @@
 // 2. BASE
 // Reset, element defaults
 // ===========================================
-@include load-system-layer('base', 'base');
+@include load-system-layer("base", "base");
 
 // ===========================================
 // 3. THEMES
 // Theme preset CSS variable overrides
 // (Base variables defined in base/_globals.scss)
 // ===========================================
-@include load-system-layer('themes', 'themes');
+@include load-system-layer("themes", "themes");
 
 // ===========================================
 // 4. ANIMATIONS
 // Keyframes and transition utilities
 // ===========================================
-@include load-system-layer('animations', 'animations');
+@include load-system-layer("animations", "animations");
 
 // ===========================================
 // 5. UTILITIES
 // Curated global helper classes (usage-backed, no legacy aliases)
 // ===========================================
-@include load-system-layer('utilities', 'utilities');
+@include load-system-layer("utilities", "utilities");
 
 // ===========================================
 // 6. COMPONENTS
 // Shared component styles (BEM)
 // ===========================================
-@include load-system-layer('components', 'components');
+@include load-system-layer("components", "components");
 
 // ===========================================
 // 7. PAGES

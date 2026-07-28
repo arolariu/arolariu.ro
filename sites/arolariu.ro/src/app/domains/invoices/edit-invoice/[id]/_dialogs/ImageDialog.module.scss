@@ -1,4 +1,4 @@
-@use '../../../../../../styles/abstracts' as *;
+@use "../../../../../../styles/abstracts" as *;
 
 .imageContainer {
   position: relative;
@@ -9,8 +9,8 @@
 .receiptImage {
   height: 100%;
   width: 100%;
-  border-radius: radius('md');
-  border: 1px solid color('border');
+  border-radius: radius("md");
+  border: 1px solid color("border");
   object-fit: cover;
 }
 

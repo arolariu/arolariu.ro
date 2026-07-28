@@ -1,14 +1,14 @@
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 .previewArea {
   position: relative;
   aspect-ratio: 4 / 3;
   overflow: hidden;
-  background-color: color('muted');
+  background-color: color("muted");
   @include transition(all);
 
   @include dark {
-    background-color: color('foreground');
+    background-color: color("foreground");
   }
 }
 
@@ -20,7 +20,7 @@
   }
 
   &:focus-visible {
-    outline: 2px solid color('primary');
+    outline: 2px solid color("primary");
     outline-offset: 2px;
   }
 }
@@ -38,7 +38,7 @@
   height: 100%;
   flex-direction: column;
   gap: space(2);
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .pdfIcon,
@@ -48,16 +48,16 @@
 }
 
 .pdfIcon {
-  color: color('destructive');
+  color: color("destructive");
 }
 
 .missingIcon {
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .placeholderLabel {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
 }
 
 .previewOverlay {
@@ -66,7 +66,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: color-alpha('background', 0.6);
+  background-color: color-alpha("background", 0.6);
   opacity: 0;
   pointer-events: none;
   @include transition(opacity);
@@ -76,7 +76,7 @@
   height: space(8);
   width: space(8);
   color: white;
-  @include shadow('lg');
+  @include shadow("lg");
 }
 
 .topLeft,

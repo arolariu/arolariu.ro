@@ -1,7 +1,7 @@
 // ===========================================
 // COMPARISON CARDS STYLES
 // ===========================================
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 // ===========================================
 // LAYOUT
@@ -11,9 +11,9 @@
 }
 
 .sectionTitle {
-  font-size: font-size('2xl');
-  font-weight: font-weight('bold');
-  color: color('foreground');
+  font-size: font-size("2xl");
+  font-weight: font-weight("bold");
+  color: color("foreground");
   margin-bottom: space(4);
 }
 
@@ -22,14 +22,14 @@
   grid-template-columns: 1fr;
   gap: space(4);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
 .card {
-  background: color('card');
-  border: 1px solid color('border');
+  background: color("card");
+  border: 1px solid color("border");
   border-radius: space(2);
 }
 
@@ -50,15 +50,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: color('muted');
-  color: color('muted-foreground');
+  background: color("muted");
+  color: color("muted-foreground");
   border-radius: space(2);
 }
 
 .cardTitle {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
+  color: color("muted-foreground");
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -75,9 +75,9 @@
 }
 
 .value {
-  font-size: font-size('2xl');
-  font-weight: font-weight('bold');
-  color: color('foreground');
+  font-size: font-size("2xl");
+  font-weight: font-weight("bold");
+  color: color("foreground");
   line-height: 1;
 }
 
@@ -85,8 +85,8 @@
   display: flex;
   align-items: center;
   gap: space(1);
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
   padding: space(1) space(2);
   border-radius: space(1);
 }
@@ -102,8 +102,8 @@
 }
 
 .trendNeutral {
-  background: color('muted');
-  color: color('muted-foreground');
+  background: color("muted");
+  color: color("muted-foreground");
 }
 
 .progress {

@@ -23,10 +23,6 @@
 .indicator {
   height: inherit;
   border-radius: inherit;
-  background: linear-gradient(
-    90deg,
-    color-mix(in oklch, var(--ac-primary), white 10%) 0%,
-    var(--ac-primary) 100%
-  );
+  background: linear-gradient(90deg, color-mix(in oklch, var(--ac-primary), white 10%) 0%, var(--ac-primary) 100%);
   transition: width var(--ac-transition-slow);
 }

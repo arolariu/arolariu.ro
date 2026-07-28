@@ -9,12 +9,7 @@
 // eslint-disable-next-line n/no-extraneous-import -- server-only is a Next.js build-time marker
 import "server-only";
 
-import {
-  BlobSASPermissions,
-  BlobServiceClient,
-  type BlockBlobClient,
-  generateBlobSASQueryParameters,
-} from "@azure/storage-blob";
+import {BlobSASPermissions, BlobServiceClient, type BlockBlobClient, generateBlobSASQueryParameters} from "@azure/storage-blob";
 
 /**
  * Well-known Azurite development storage connection string prefix.
@@ -398,10 +393,7 @@ export async function resolveBlobObjectByMetadata(
  * @param blobName - The blob name
  * @returns BlobObject with properties from storage
  */
-async function mapBlockBlobClientToBlobObject(
-  blockBlobClient: BlockBlobClient,
-  blobName: string,
-): Promise<BlobObject> {
+async function mapBlockBlobClientToBlobObject(blockBlobClient: BlockBlobClient, blobName: string): Promise<BlobObject> {
   const properties = await blockBlobClient.getProperties();
 
   return {

@@ -1,7 +1,7 @@
 // ===========================================
 // ABOUT HUB - CALL TO ACTION COMPONENT
 // ===========================================
-@use '../../../styles/abstracts' as *;
+@use "../../../styles/abstracts" as *;
 
 .section {
   position: relative;
@@ -19,7 +19,7 @@
 
 .orb {
   position: absolute;
-  border-radius: radius('full');
+  border-radius: radius("full");
   filter: blur(64px);
 }
 
@@ -46,8 +46,9 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-image: linear-gradient(color-alpha('secondary', 0.14) 1px, transparent 1px),
-    linear-gradient(90deg, color-alpha('tertiary', 0.14) 1px, transparent 1px);
+  background-image:
+    linear-gradient(color-alpha("secondary", 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, color-alpha("tertiary", 0.14) 1px, transparent 1px);
   background-size: 50px 50px;
 }
 
@@ -63,16 +64,16 @@
 // Title
 .title {
   margin-bottom: space(4);
-  font-size: font-size('4xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("4xl");
+  font-weight: font-weight("bold");
 
-  @include respond-to('sm') {
-    font-size: font-size('5xl');
+  @include respond-to("sm") {
+    font-size: font-size("5xl");
   }
 }
 
 .titleGradient {
-  color: color('primary');
+  color: color("primary");
 }
 
 // Subtitle
@@ -81,9 +82,9 @@
   margin-right: auto;
   margin-bottom: space(10);
   max-width: 42rem;
-  font-size: font-size('lg');
-  line-height: line-height('relaxed');
-  color: color('muted-foreground');
+  font-size: font-size("lg");
+  line-height: line-height("relaxed");
+  color: color("muted-foreground");
 }
 
 // CTA buttons
@@ -94,7 +95,7 @@
   justify-content: center;
   gap: space(4);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     flex-direction: row;
   }
 }
@@ -117,6 +118,6 @@
 // Footer text
 .footer {
   margin-top: space(12);
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
 }

@@ -9,8 +9,11 @@
   font-size: var(--ac-text-xs);
   line-height: 1.6;
   font-weight: 500;
-  transition: background-color var(--ac-transition-fast), color var(--ac-transition-fast),
-    border-color var(--ac-transition-fast), box-shadow var(--ac-transition-fast);
+  transition:
+    background-color var(--ac-transition-fast),
+    color var(--ac-transition-fast),
+    border-color var(--ac-transition-fast),
+    box-shadow var(--ac-transition-fast);
   cursor: pointer;
   user-select: none;
   outline: none;

@@ -1,4 +1,4 @@
-@use '../../../../../../styles/abstracts' as *;
+@use "../../../../../../styles/abstracts" as *;
 
 .container {
   & > * + * {
@@ -11,7 +11,7 @@
   @include flex-column;
   gap: space(4);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
@@ -25,8 +25,8 @@
 }
 
 .sectionTitleText {
-  font-size: font-size('xl');
-  font-weight: font-weight('semibold');
+  font-size: font-size("xl");
+  font-weight: font-weight("semibold");
 }
 
 .analyticsGrid {
@@ -38,21 +38,21 @@
 }
 
 .gridItemFullWidth {
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     grid-column: span 2;
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-column: span 3;
   }
 }
 
 .gridItemWide {
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     grid-column: span 1;
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-column: span 2;
   }
 }
@@ -63,7 +63,7 @@
 
 .sectionIcon {
   @include icon-size(space(5));
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 .tabsList {
@@ -71,16 +71,16 @@
   width: 100%;
   grid-template-columns: repeat(2, 1fr);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     width: auto;
   }
 }
 
 .tabsTrigger {
-  font-size: font-size('xs');
+  font-size: font-size("xs");
 
-  @include respond-to('sm') {
-    font-size: font-size('sm');
+  @include respond-to("sm") {
+    font-size: font-size("sm");
   }
 }
 
@@ -104,18 +104,18 @@
 
 .emptyIcon {
   @include icon-size(space(16));
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   opacity: 0.5;
 }
 
 .emptyTitle {
-  font-size: font-size('xl');
-  font-weight: font-weight('semibold');
-  color: color('foreground');
+  font-size: font-size("xl");
+  font-weight: font-weight("semibold");
+  color: color("foreground");
 }
 
 .emptyDescription {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
   max-width: 400px;
 }

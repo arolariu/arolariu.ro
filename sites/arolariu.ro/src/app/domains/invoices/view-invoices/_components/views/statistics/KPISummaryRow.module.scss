@@ -1,7 +1,7 @@
 // ===========================================
 // KPI SUMMARY ROW STYLES
 // ===========================================
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 // ===========================================
 // LAYOUT
@@ -17,14 +17,14 @@
     height: 100%;
   }
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(4, 1fr);
   }
 }
 
 .card {
-  background: color('card');
-  border: 1px solid color('border');
+  background: color("card");
+  border: 1px solid color("border");
   border-radius: space(2);
   transition: all 0.2s ease;
   height: 100%;
@@ -32,7 +32,7 @@
   flex-direction: column;
 
   &:hover {
-    border-color: color('primary');
+    border-color: color("primary");
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
   }
@@ -52,15 +52,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: color('primary');
-  color: color('primary-foreground');
+  background: color("primary");
+  color: color("primary-foreground");
   border-radius: 50%;
 }
 
 .cardTitle {
-  font-size: font-size('sm');
-  font-weight: font-weight('medium');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
+  color: color("muted-foreground");
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -77,9 +77,9 @@
 }
 
 .value {
-  font-size: font-size('3xl');
-  font-weight: font-weight('bold');
-  color: color('foreground');
+  font-size: font-size("3xl");
+  font-weight: font-weight("bold");
+  color: color("foreground");
   line-height: 1;
 }
 
@@ -87,8 +87,8 @@
   display: flex;
   align-items: center;
   gap: space(1);
-  font-size: font-size('xs');
-  font-weight: font-weight('semibold');
+  font-size: font-size("xs");
+  font-weight: font-weight("semibold");
   padding: space(1) space(2);
   border-radius: space(1);
 }
@@ -104,6 +104,6 @@
 }
 
 .subtitle {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
 }

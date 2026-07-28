@@ -1,13 +1,13 @@
 // ===========================================
 // THE AUTHOR - PERSPECTIVES COMPONENT
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 .section {
-  background-color: color-alpha('muted', 0.3);
+  background-color: color-alpha("muted", 0.3);
   padding: space(20) space(4);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     padding-left: space(8);
     padding-right: space(8);
   }
@@ -29,11 +29,11 @@
   position: relative;
   display: inline-block;
   margin-bottom: space(4);
-  font-size: font-size('3xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("3xl");
+  font-weight: font-weight("bold");
 
-  @include respond-to('md') {
-    font-size: font-size('4xl');
+  @include respond-to("md") {
+    font-size: font-size("4xl");
   }
 }
 
@@ -43,7 +43,7 @@
   bottom: -0.5rem;
   left: 0;
   height: 4px;
-  border-radius: radius('full');
+  border-radius: radius("full");
   @include gradient-bg();
 }
 
@@ -51,7 +51,7 @@
   margin-left: auto;
   margin-right: auto;
   max-width: 42rem;
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 // Grid
@@ -59,11 +59,11 @@
   display: grid;
   gap: space(8);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
@@ -73,12 +73,12 @@
   height: 100%;
   overflow: visible;
   border: none;
-  background-color: color('card');
-  @include shadow('lg');
+  background-color: color("card");
+  @include shadow("lg");
   @include transition(box-shadow);
 
   &:hover {
-    @include shadow('xl');
+    @include shadow("xl");
   }
 }
 
@@ -94,22 +94,22 @@
   top: -2rem;
   left: space(6);
   padding: space(4);
-  border-radius: radius('full');
+  border-radius: radius("full");
   @include gradient-bg();
-  @include shadow('lg');
+  @include shadow("lg");
 }
 
 .quoteIcon {
   width: 1.5rem;
   height: 1.5rem;
-  color: color('primary-foreground');
+  color: color("primary-foreground");
 }
 
 // Quote text
 .quote {
   margin-bottom: space(6);
   font-style: italic;
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 // Author info
@@ -120,10 +120,10 @@
 }
 
 .authorName {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 .authorPosition {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
 }

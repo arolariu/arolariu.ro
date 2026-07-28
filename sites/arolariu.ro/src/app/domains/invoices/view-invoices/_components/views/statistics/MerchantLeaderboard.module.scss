@@ -1,14 +1,14 @@
 // ===========================================
 // MERCHANT LEADERBOARD STYLES
 // ===========================================
-@use '../../../../../../../styles/abstracts' as *;
+@use "../../../../../../../styles/abstracts" as *;
 
 // ===========================================
 // LAYOUT
 // ===========================================
 .card {
-  background: color('card');
-  border: 1px solid color('border');
+  background: color("card");
+  border: 1px solid color("border");
   border-radius: space(2);
   height: 100%;
   display: flex;
@@ -21,14 +21,14 @@
 }
 
 .cardTitle {
-  font-size: font-size('xl');
-  font-weight: font-weight('bold');
-  color: color('foreground');
+  font-size: font-size("xl");
+  font-weight: font-weight("bold");
+  color: color("foreground");
 }
 
 .cardDescription {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
   margin-top: space(1);
 }
 
@@ -46,7 +46,7 @@
   min-width: 0;
   height: 300px;
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     height: 350px;
   }
 }
@@ -61,31 +61,31 @@
 // TOOLTIP
 // ===========================================
 .tooltip {
-  background: color('popover');
-  border: 1px solid color('border');
+  background: color("popover");
+  border: 1px solid color("border");
   border-radius: space(2);
   padding: space(3);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .tooltipMerchant {
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
-  color: color('foreground');
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
+  color: color("foreground");
   margin-bottom: space(1);
   word-break: break-all;
 }
 
 .tooltipAmount {
-  font-size: font-size('base');
-  font-weight: font-weight('bold');
-  color: color('primary');
+  font-size: font-size("base");
+  font-weight: font-weight("bold");
+  color: color("primary");
   margin-bottom: space(0.5);
 }
 
 .tooltipCount {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: font-size("xs");
+  color: color("muted-foreground");
 }
 
 // ===========================================
@@ -101,7 +101,7 @@
   gap: space(4);
   flex: 1;
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     min-height: 350px;
   }
 }
@@ -109,13 +109,13 @@
 .emptyIcon {
   width: 64px;
   height: 64px;
-  color: color('muted-foreground');
+  color: color("muted-foreground");
   opacity: 0.5;
 }
 
 .emptyText {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
   text-align: center;
   max-width: 300px;
 }

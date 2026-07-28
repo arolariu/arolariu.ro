@@ -68,7 +68,7 @@ describe("deleteScan", () => {
         containerName: "invoices",
         prefix: "scans/user-123/",
         predicate: expect.any(Function),
-      })
+      }),
     );
 
     // Verify deleteBlobObject was called
@@ -85,7 +85,7 @@ describe("deleteScan", () => {
       url: "https://storage.test/invoices/scans/user-456/scan_456.jpg",
       metadata: {
         scanId: "scan-456",
-        ownerId: "user-456",  // Different owner
+        ownerId: "user-456", // Different owner
         displayName: "receipt.jpg",
         documentKind: "receipt",
         documentRole: "primary",
@@ -206,7 +206,7 @@ describe("deleteScan", () => {
   it("should handle invalid metadata during resolution", async () => {
     // Mock resolveBlobObjectByMetadata to return a blob with invalid metadata
     // that will fail parsing
-    mockResolveBlobObjectByMetadata.mockResolvedValue(null);  // Not found due to invalid metadata
+    mockResolveBlobObjectByMetadata.mockResolvedValue(null); // Not found due to invalid metadata
 
     const result = await deleteScan({scanId: "scan-invalid"});
 

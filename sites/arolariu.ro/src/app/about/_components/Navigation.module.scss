@@ -1,7 +1,7 @@
 // ===========================================
 // ABOUT HUB - NAVIGATION COMPONENT
 // ===========================================
-@use '../../../styles/abstracts' as *;
+@use "../../../styles/abstracts" as *;
 
 .section {
   position: relative;
@@ -24,12 +24,12 @@
 .title {
   display: inline-block;
   margin-bottom: space(4);
-  font-size: font-size('3xl');
-  font-weight: font-weight('bold');
-  color: color('primary');
+  font-size: font-size("3xl");
+  font-weight: font-weight("bold");
+  color: color("primary");
 
-  @include respond-to('sm') {
-    font-size: font-size('4xl');
+  @include respond-to("sm") {
+    font-size: font-size("4xl");
   }
 }
 
@@ -37,8 +37,8 @@
   margin-left: auto;
   margin-right: auto;
   max-width: 42rem;
-  font-size: font-size('lg');
-  color: color('muted-foreground');
+  font-size: font-size("lg");
+  color: color("muted-foreground");
 }
 
 // Navigation cards grid
@@ -46,7 +46,7 @@
   display: grid;
   gap: space(8);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -56,16 +56,16 @@
   position: relative;
   height: 100%;
   overflow: hidden;
-  background-color: color-alpha('card', 0.5);
+  background-color: color-alpha("card", 0.5);
   @include backdrop-blur;
-  border: 1px solid color('border');
-  border-radius: radius('lg');
+  border: 1px solid color("border");
+  border-radius: radius("lg");
   @include transition((transform, border-color, box-shadow));
 
   &:hover {
     transform: translateY(-4px);
-    border-color: color-alpha('primary', 0.4);
-    @include shadow('2xl');
+    border-color: color-alpha("primary", 0.4);
+    @include shadow("2xl");
   }
 }
 
@@ -85,8 +85,8 @@
   height: 10rem;
   margin: 0 auto;
   padding: space(4);
-  border-radius: radius('2xl');
-  background-color: color-alpha('primary', 0.1);
+  border-radius: radius("2xl");
+  background-color: color-alpha("primary", 0.1);
   @include transition(transform);
 
   .card:hover & {
@@ -118,14 +118,14 @@
 
 .cardTitle {
   margin-bottom: space(2);
-  font-size: font-size('2xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("2xl");
+  font-weight: font-weight("bold");
 }
 
 .cardSubtitle {
-  font-size: font-size('sm');
-  line-height: line-height('relaxed');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  line-height: line-height("relaxed");
+  color: color("muted-foreground");
 }
 
 // Feature list
@@ -142,8 +142,8 @@
   display: flex;
   align-items: center;
   gap: space(2);
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
 }
 
 .featureBadge {

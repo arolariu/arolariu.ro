@@ -1,5 +1,5 @@
 // FORBIDDEN SCREEN (403)
-@use '../styles/abstracts' as *;
+@use "../styles/abstracts" as *;
 
 .container {
   @include container;
@@ -13,15 +13,15 @@
 .image {
   margin-bottom: space(4);
   @include icon-size(100%);
-  border-radius: radius('md');
+  border-radius: radius("md");
   object-fit: cover;
   object-position: center;
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     width: 50%;
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     width: 33.333%;
   }
 }
@@ -30,7 +30,7 @@
   width: 100%;
   text-align: center;
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     width: 66.667%;
   }
 }
@@ -38,20 +38,20 @@
 .title {
   display: inline;
   margin-bottom: space(4);
-  font-size: font-size('3xl');
-  font-weight: font-weight('medium');
-  color: color('primary');
+  font-size: font-size("3xl");
+  font-weight: font-weight("medium");
+  color: color("primary");
 
-  @include respond-to('sm') {
-    font-size: font-size('4xl');
+  @include respond-to("sm") {
+    font-size: font-size("4xl");
   }
 }
 
 .emoji {
   display: inline;
   margin-bottom: space(4);
-  font-size: font-size('4xl');
-  font-weight: font-weight('black');
+  font-size: font-size("4xl");
+  font-weight: font-weight("black");
 }
 
 .description {
@@ -68,15 +68,15 @@
 .ctaLink {
   display: inline-flex;
   padding: space(2) space(6);
-  border-radius: radius('md');
+  border-radius: radius("md");
   border: 0;
   @include gradient-bg();
-  color: static-color('white');
-  font-size: font-size('lg');
+  color: static-color("white");
+  font-size: font-size("lg");
   @include transition(background-color);
 
   &:hover {
-    background: linear-gradient(to right, color('link'), color('tertiary'), color('secondary'));
+    background: linear-gradient(to right, color("link"), color("tertiary"), color("secondary"));
   }
 
   &:focus {

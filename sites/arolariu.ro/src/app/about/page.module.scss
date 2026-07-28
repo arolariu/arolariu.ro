@@ -2,7 +2,7 @@
 // ABOUT HUB PAGE - Layout wrappers only
 // Each component owns its own .module.scss
 // ===========================================
-@use '../../styles/abstracts' as *;
+@use "../../styles/abstracts" as *;
 
 .aboutPage {
   position: relative;
@@ -11,8 +11,8 @@
   align-items: center;
   width: 100%;
   min-height: 100vh;
-  background-color: color('background');
-  color: color('foreground');
+  background-color: color("background");
+  color: color("foreground");
 }
 
 .aboutInner {

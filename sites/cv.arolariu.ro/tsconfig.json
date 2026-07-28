@@ -1,15 +1,10 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "extends": [
-    "../../tsconfig.json",
-    "./.svelte-kit/tsconfig.json"
-  ],
+  "extends": ["../../tsconfig.json", "./.svelte-kit/tsconfig.json"],
   "compilerOptions": {
     "allowArbitraryExtensions": true,
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     },
     // Reason: The two settings below override stricter defaults from the
     // root tsconfig.json because they fight the CSS Modules pattern used
@@ -21,12 +16,6 @@
     "noPropertyAccessFromIndexSignature": false,
     "noUncheckedIndexedAccess": false
   },
-  "exclude": [
-    "node_modules"
-  ],
-  "include": [
-    "**/*.d.ts",
-    "**/*.ts",
-    "**/*.svelte"
-  ]
+  "exclude": ["node_modules"],
+  "include": ["**/*.d.ts", "**/*.ts", "**/*.svelte"]
 }

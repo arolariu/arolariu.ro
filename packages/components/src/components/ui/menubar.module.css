@@ -47,7 +47,9 @@
   background-color: var(--ac-popover);
   color: var(--ac-popover-foreground);
   box-shadow: 0 16px 40px -16px rgb(0 0 0 / 0.35);
-  transition: opacity var(--ac-transition-normal), transform var(--ac-transition-normal);
+  transition:
+    opacity var(--ac-transition-normal),
+    transform var(--ac-transition-normal);
 }
 
 .content[data-starting-style],

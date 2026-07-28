@@ -1,7 +1,7 @@
 // ===========================================
 // THE PLATFORM - TECH STACK COMPONENT
 // ===========================================
-@use '../../../../styles/abstracts' as abstracts;
+@use "../../../../styles/abstracts" as abstracts;
 
 // Decorative exception policy (high-visual module):
 // - Prefer abstracts.color()/color-alpha() for semantic surfaces, text, and borders.
@@ -16,7 +16,7 @@
 .bgLayer {
   position: absolute;
   inset: 0;
-  z-index: abstracts.z('behind');
+  z-index: abstracts.z("behind");
 }
 
 .bgGradient {
@@ -43,30 +43,30 @@
 .badge {
   margin-bottom: abstracts.space(4);
   padding: abstracts.space(1) abstracts.space(4);
-  font-size: abstracts.font-size('sm');
+  font-size: abstracts.font-size("sm");
 }
 
 .title {
   margin-bottom: abstracts.space(6);
-  font-size: abstracts.font-size('4xl');
-  font-weight: abstracts.font-weight('bold');
-  letter-spacing: letter-spacing('tight');
+  font-size: abstracts.font-size("4xl");
+  font-weight: abstracts.font-weight("bold");
+  letter-spacing: letter-spacing("tight");
 
-  @include abstracts.respond-to('md') {
-    font-size: abstracts.font-size('5xl');
+  @include abstracts.respond-to("md") {
+    font-size: abstracts.font-size("5xl");
   }
 }
 
 .titleHighlight {
-  color: abstracts.color('primary');
+  color: abstracts.color("primary");
 }
 
 .description {
-  font-size: abstracts.font-size('lg');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("lg");
+  color: abstracts.color("muted-foreground");
 
-  @include abstracts.respond-to('md') {
-    font-size: abstracts.font-size('xl');
+  @include abstracts.respond-to("md") {
+    font-size: abstracts.font-size("xl");
   }
 }
 
@@ -91,11 +91,11 @@
   gap: abstracts.space(2);
   padding: abstracts.space(2);
   margin-bottom: abstracts.space(12);
-  border-radius: abstracts.radius('lg');
-  background-color: abstracts.color-alpha('muted', 0.5);
+  border-radius: abstracts.radius("lg");
+  background-color: abstracts.color-alpha("muted", 0.5);
   @include abstracts.backdrop-blur;
 
-  @include abstracts.respond-to('md') {
+  @include abstracts.respond-to("md") {
     grid-template-columns: repeat(4, 1fr);
   }
 }
@@ -107,20 +107,20 @@
   justify-content: center;
   gap: abstracts.space(2);
   padding: abstracts.space(3) abstracts.space(4);
-  border-radius: abstracts.radius('md');
+  border-radius: abstracts.radius("md");
   background: transparent;
   border: none;
   cursor: pointer;
   @include abstracts.transition(background-color);
 
   &:hover {
-    background-color: abstracts.color-alpha('background', 0.5);
+    background-color: abstracts.color-alpha("background", 0.5);
   }
 }
 
 .tabTriggerActive {
   composes: tabTrigger;
-  background-color: abstracts.color('background');
+  background-color: abstracts.color("background");
 }
 
 .tabIcon {
@@ -131,7 +131,7 @@
 .tabLabel {
   display: none;
 
-  @include abstracts.respond-to('sm') {
+  @include abstracts.respond-to("sm") {
     display: inline;
   }
 }
@@ -154,8 +154,8 @@
 .categoryDescription {
   margin-bottom: abstracts.space(8);
   text-align: center;
-  font-size: abstracts.font-size('lg');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("lg");
+  color: abstracts.color("muted-foreground");
 }
 
 // Tech grid
@@ -163,11 +163,11 @@
   display: grid;
   gap: abstracts.space(4);
 
-  @include abstracts.respond-to('sm') {
+  @include abstracts.respond-to("sm") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include abstracts.respond-to('lg') {
+  @include abstracts.respond-to("lg") {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
@@ -180,8 +180,8 @@
   @include abstracts.transition((border-color, box-shadow));
 
   &:hover {
-    border-color: abstracts.color('link');
-    @include abstracts.shadow('lg');
+    border-color: abstracts.color("link");
+    @include abstracts.shadow("lg");
   }
 }
 
@@ -208,7 +208,7 @@
   flex-shrink: 0;
   width: 3rem;
   height: 3rem;
-  border-radius: abstracts.radius('xl');
+  border-radius: abstracts.radius("xl");
   @include abstracts.transition(transform);
 
   .techCard:hover & {
@@ -219,7 +219,7 @@
 .techIcon {
   width: 1.5rem;
   height: 1.5rem;
-  color: abstracts.color('primary');
+  color: abstracts.color("primary");
 }
 
 .techInfo {
@@ -232,16 +232,16 @@
   align-items: center;
   gap: abstracts.space(2);
   margin-bottom: abstracts.space(1);
-  font-weight: abstracts.font-weight('semibold');
+  font-weight: abstracts.font-weight("semibold");
 }
 
 .techVersion {
-  font-size: abstracts.font-size('xs');
+  font-size: abstracts.font-size("xs");
 }
 
 .techDescription {
-  font-size: abstracts.font-size('sm');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("sm");
+  color: abstracts.color("muted-foreground");
 }
 
 .techCardBorder {
@@ -272,21 +272,21 @@
 
 .statsTitle {
   margin-bottom: abstracts.space(6);
-  font-size: abstracts.font-size('3xl');
-  font-weight: abstracts.font-weight('bold');
-  letter-spacing: letter-spacing('tight');
+  font-size: abstracts.font-size("3xl");
+  font-weight: abstracts.font-weight("bold");
+  letter-spacing: letter-spacing("tight");
 
-  @include abstracts.respond-to('md') {
-    font-size: abstracts.font-size('4xl');
+  @include abstracts.respond-to("md") {
+    font-size: abstracts.font-size("4xl");
   }
 }
 
 .statsDescription {
-  font-size: abstracts.font-size('lg');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("lg");
+  color: abstracts.color("muted-foreground");
 
-  @include abstracts.respond-to('md') {
-    font-size: abstracts.font-size('xl');
+  @include abstracts.respond-to("md") {
+    font-size: abstracts.font-size("xl");
   }
 }
 
@@ -298,11 +298,11 @@
   margin-right: auto;
   max-width: 72rem;
 
-  @include abstracts.respond-to('sm') {
+  @include abstracts.respond-to("sm") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include abstracts.respond-to('lg') {
+  @include abstracts.respond-to("lg") {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
@@ -315,15 +315,15 @@
   @include abstracts.transition((border-color, box-shadow));
 
   &:hover {
-    border-color: abstracts.color('link');
-    @include abstracts.shadow('lg');
+    border-color: abstracts.color("link");
+    @include abstracts.shadow("lg");
   }
 }
 
 .statCardActive {
   composes: statCard;
-  border-color: abstracts.color('primary');
-  @include abstracts.shadow('lg');
+  border-color: abstracts.color("primary");
+  @include abstracts.shadow("lg");
 }
 
 .statCardGradient {
@@ -351,7 +351,7 @@
   margin-bottom: abstracts.space(4);
   width: 3.5rem;
   height: 3.5rem;
-  border-radius: abstracts.radius('xl');
+  border-radius: abstracts.radius("xl");
   @include abstracts.transition(transform);
 
   .statCard:hover & {
@@ -359,39 +359,55 @@
   }
 }
 
-.iconBlue { background-color: abstracts.color-alpha('primary', 0.1); }
-.iconPurple { background-color: abstracts.color-alpha('primary', 0.1); }
-.iconGreen { background-color: abstracts.color-alpha('primary', 0.1); }
-.iconOrange { background-color: abstracts.color-alpha('primary', 0.1); }
-.iconPink { background-color: abstracts.color-alpha('primary', 0.1); }
-.iconIndigo { background-color: abstracts.color-alpha('primary', 0.1); }
-.iconYellow { background-color: abstracts.color-alpha('primary', 0.1); }
-.iconTeal { background-color: abstracts.color-alpha('primary', 0.1); }
+.iconBlue {
+  background-color: abstracts.color-alpha("primary", 0.1);
+}
+.iconPurple {
+  background-color: abstracts.color-alpha("primary", 0.1);
+}
+.iconGreen {
+  background-color: abstracts.color-alpha("primary", 0.1);
+}
+.iconOrange {
+  background-color: abstracts.color-alpha("primary", 0.1);
+}
+.iconPink {
+  background-color: abstracts.color-alpha("primary", 0.1);
+}
+.iconIndigo {
+  background-color: abstracts.color-alpha("primary", 0.1);
+}
+.iconYellow {
+  background-color: abstracts.color-alpha("primary", 0.1);
+}
+.iconTeal {
+  background-color: abstracts.color-alpha("primary", 0.1);
+}
 
 .statIcon {
   width: 1.75rem;
   height: 1.75rem;
-  color: abstracts.color('primary');
+  color: abstracts.color("primary");
 }
 
 // Stat value
 .statValue {
   margin-bottom: abstracts.space(2);
-  font-size: abstracts.font-size('4xl');
-  font-weight: abstracts.font-weight('bold');
-  color: abstracts.color('primary');
+  font-size: abstracts.font-size("4xl");
+  font-weight: abstracts.font-weight("bold");
+  color: abstracts.color("primary");
 }
 
 // Stat label
 .statLabel {
   margin-bottom: abstracts.space(1);
-  font-size: abstracts.font-size('lg');
-  font-weight: abstracts.font-weight('semibold');
+  font-size: abstracts.font-size("lg");
+  font-weight: abstracts.font-weight("semibold");
 }
 
 .statDescription {
-  font-size: abstracts.font-size('sm');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("sm");
+  color: abstracts.color("muted-foreground");
 }
 
 // Animated border
@@ -409,17 +425,41 @@
 }
 
 // Gradient variants for borders
-.borderBlue { background-color: abstracts.color('primary'); }
-.borderPurple { background-color: abstracts.color('primary'); }
-.borderGreen { background-color: abstracts.color('primary'); }
-.borderOrange { background-color: abstracts.color('primary'); }
-.borderPink { background-color: abstracts.color('primary'); }
-.borderIndigo { background-color: abstracts.color('primary'); }
-.borderYellow { background-color: abstracts.color('primary'); }
-.borderTeal { background-color: abstracts.color('primary'); }
+.borderBlue {
+  background-color: abstracts.color("primary");
+}
+.borderPurple {
+  background-color: abstracts.color("primary");
+}
+.borderGreen {
+  background-color: abstracts.color("primary");
+}
+.borderOrange {
+  background-color: abstracts.color("primary");
+}
+.borderPink {
+  background-color: abstracts.color("primary");
+}
+.borderIndigo {
+  background-color: abstracts.color("primary");
+}
+.borderYellow {
+  background-color: abstracts.color("primary");
+}
+.borderTeal {
+  background-color: abstracts.color("primary");
+}
 
 // Background variants for tech icon wrappers and card overlays
-.gradientBlueCyan { background-color: abstracts.color-alpha('primary', 0.1); }
-.gradientPurpleViolet { background-color: abstracts.color-alpha('primary', 0.1); }
-.gradientOrangeAmber { background-color: abstracts.color-alpha('primary', 0.1); }
-.gradientGreenEmerald { background-color: abstracts.color-alpha('primary', 0.1); }
+.gradientBlueCyan {
+  background-color: abstracts.color-alpha("primary", 0.1);
+}
+.gradientPurpleViolet {
+  background-color: abstracts.color-alpha("primary", 0.1);
+}
+.gradientOrangeAmber {
+  background-color: abstracts.color-alpha("primary", 0.1);
+}
+.gradientGreenEmerald {
+  background-color: abstracts.color-alpha("primary", 0.1);
+}

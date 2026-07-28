@@ -2,7 +2,7 @@
 // SIGN-UP PAGE - PAGE WRAPPER STYLES
 // Scoped to /auth/sign-up/page.tsx only
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 .pageSection {
   position: relative;
@@ -15,12 +15,12 @@
   margin-right: auto;
   padding: space(10) space(4);
 
-  @include respond-to('sm') {
+  @include respond-to("sm") {
     padding-left: space(6);
     padding-right: space(6);
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     padding: space(14) space(8);
   }
 }

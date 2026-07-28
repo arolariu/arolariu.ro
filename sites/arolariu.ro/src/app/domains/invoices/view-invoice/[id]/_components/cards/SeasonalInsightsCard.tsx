@@ -210,11 +210,7 @@ export function SeasonalInsightsCard(): React.JSX.Element {
 
     // Current invoice amount in RON
     const currentYear = currentDate.getFullYear();
-    const currentAmount = toRON(
-      totalCostAmount,
-      paymentCurrency?.code ?? "RON",
-      currentYear,
-    );
+    const currentAmount = toRON(totalCostAmount, paymentCurrency?.code ?? "RON", currentYear);
 
     const percentOfAverage = monthAverage > 0 ? (currentAmount / monthAverage) * 100 : 0;
 

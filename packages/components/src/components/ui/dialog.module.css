@@ -31,8 +31,12 @@
   border: 1px solid var(--ac-border);
   background-color: var(--ac-background);
   color: var(--ac-foreground);
-  box-shadow: 0 10px 30px -5px rgb(0 0 0 / 0.1), 0 4px 10px -5px rgb(0 0 0 / 0.04);
-  transition: opacity var(--ac-transition-normal), transform var(--ac-transition-normal);
+  box-shadow:
+    0 10px 30px -5px rgb(0 0 0 / 0.1),
+    0 4px 10px -5px rgb(0 0 0 / 0.04);
+  transition:
+    opacity var(--ac-transition-normal),
+    transform var(--ac-transition-normal);
   touch-action: none;
 
   &[data-starting-style],
@@ -96,7 +100,9 @@
   background: transparent;
   color: var(--ac-muted-foreground);
   cursor: pointer;
-  transition: background-color var(--ac-transition-fast), color var(--ac-transition-fast);
+  transition:
+    background-color var(--ac-transition-fast),
+    color var(--ac-transition-fast);
   outline: none;
 
   @media (hover: hover) {

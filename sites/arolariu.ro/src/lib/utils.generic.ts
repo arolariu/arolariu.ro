@@ -3,8 +3,7 @@
  * @module sites/arolariu.ro/src/lib/utils.generic
  */
 
-import { v4, v5 } from "uuid";
-
+import {v4, v5} from "uuid";
 
 // #region Environment-Derived Constants
 
@@ -72,9 +71,7 @@ export const TIMESTAMP = process.env["TIMESTAMP"] ?? "";
 
 /* v8 ignore stop */
 
-
 // #endregion
-
 
 // #region Sentinel GUIDs and GUID Validation
 
@@ -206,7 +203,6 @@ export function generateGuid(seed?: string | Uint8Array): Readonly<string> {
 
 // #endregion
 
-
 // #region Format Conversion Utilities (dates, enums, amounts, etc.)
 
 /**
@@ -337,7 +333,7 @@ export function formatDate(possibleDate: DateLike, options: FormatDateOptions): 
   // because Intl.DateTimeFormat throws if dateStyle is mixed with individual fields.
   const hasIndividualFields = options.year ?? options.month ?? options.day ?? options.weekday ?? options.era;
   const formatOptions: Intl.DateTimeFormatOptions = {
-    ...(hasIndividualFields ? {} : { dateStyle: "short" as const }),
+    ...(hasIndividualFields ? {} : {dateStyle: "short" as const}),
     ...options,
   };
 
@@ -533,7 +529,6 @@ export function formatRelativeTime(date: DateLike): string {
 
 // #endregion
 
-
 // #region MIME Type and File Extension Utilities
 
 /**
@@ -690,10 +685,7 @@ export function deriveBlobExtension(fileName: string): string {
  * getCanonicalMimeTypeForExtension("txt", {jpg: "image/jpeg"});  // null
  * ```
  */
-export function getCanonicalMimeTypeForExtension(
-  extension: string,
-  extensionToMimeType: Readonly<Record<string, string>>,
-): string | null {
+export function getCanonicalMimeTypeForExtension(extension: string, extensionToMimeType: Readonly<Record<string, string>>): string | null {
   const normalized = extension.startsWith(".") ? extension.slice(1).toLowerCase() : extension.toLowerCase();
   return extensionToMimeType[normalized] ?? null;
 }
@@ -717,10 +709,7 @@ export function getCanonicalMimeTypeForExtension(
  * isExtensionInSet("gif", ["pdf"]);  // false
  * ```
  */
-export function isExtensionInSet(
-  extension: string,
-  supportedExtensions: ReadonlySet<string> | readonly string[],
-): boolean {
+export function isExtensionInSet(extension: string, supportedExtensions: ReadonlySet<string> | readonly string[]): boolean {
   const normalized = extension.startsWith(".") ? extension.slice(1).toLowerCase() : extension.toLowerCase();
   return containsString(supportedExtensions, normalized);
 }

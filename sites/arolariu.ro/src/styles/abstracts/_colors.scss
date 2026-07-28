@@ -8,9 +8,9 @@
 /// @group tokens-colors
 /// @author arolariu
 /// ===========================================
-@use 'sass:map';
-@use 'sass:string';
-@use 'config' as config;
+@use "sass:map";
+@use "sass:string";
+@use "config" as config;
 
 // ===========================================
 // CSS VARIABLE REFERENCES
@@ -18,58 +18,58 @@
 
 $color-vars: (
   // Surface and content
-  'background': '--background',
-  'foreground': '--foreground',
-  'surface': '--surface',
-  'surface-elevated': '--surface-elevated',
-  'inverse-surface': '--inverse-surface',
-  'inverse-foreground': '--inverse-foreground',
-  'card': '--card',
-  'card-foreground': '--card-foreground',
-  'popover': '--popover',
-  'popover-foreground': '--popover-foreground',
+  "background": "--background",
+  "foreground": "--foreground",
+  "surface": "--surface",
+  "surface-elevated": "--surface-elevated",
+  "inverse-surface": "--inverse-surface",
+  "inverse-foreground": "--inverse-foreground",
+  "card": "--card",
+  "card-foreground": "--card-foreground",
+  "popover": "--popover",
+  "popover-foreground": "--popover-foreground",
 
   // Brand and intent
-  'primary': '--primary',
-  'primary-foreground': '--primary-foreground',
-  'secondary': '--secondary',
-  'secondary-foreground': '--secondary-foreground',
-  'tertiary': '--tertiary',
-  'tertiary-foreground': '--tertiary-foreground',
+  "primary": "--primary",
+  "primary-foreground": "--primary-foreground",
+  "secondary": "--secondary",
+  "secondary-foreground": "--secondary-foreground",
+  "tertiary": "--tertiary",
+  "tertiary-foreground": "--tertiary-foreground",
 
   // Semantic support
-  'muted': '--muted',
-  'muted-foreground': '--muted-foreground',
-  'accent': '--accent',
-  'accent-foreground': '--accent-foreground',
-  'destructive': '--destructive',
-  'destructive-foreground': '--destructive-foreground',
-  'success': '--success',
-  'success-foreground': '--success-foreground',
-  'warning': '--warning',
-  'warning-foreground': '--warning-foreground',
-  'info': '--info',
-  'info-foreground': '--info-foreground',
+  "muted": "--muted",
+  "muted-foreground": "--muted-foreground",
+  "accent": "--accent",
+  "accent-foreground": "--accent-foreground",
+  "destructive": "--destructive",
+  "destructive-foreground": "--destructive-foreground",
+  "success": "--success",
+  "success-foreground": "--success-foreground",
+  "warning": "--warning",
+  "warning-foreground": "--warning-foreground",
+  "info": "--info",
+  "info-foreground": "--info-foreground",
 
   // Borders and focus
-  'border': '--border',
-  'border-strong': '--border-strong',
-  'input': '--input',
-  'ring': '--ring',
+  "border": "--border",
+  "border-strong": "--border-strong",
+  "input": "--input",
+  "ring": "--ring",
 
   // Link and utility aliases
-  'link': '--link',
-  'link-foreground': '--link-foreground',
-  'accent-primary': '--accent-primary',
-  'footer-bg': '--footer-bg',
+  "link": "--link",
+  "link-foreground": "--link-foreground",
+  "accent-primary": "--accent-primary",
+  "footer-bg": "--footer-bg"
 );
 
 @function _prefixed-css-var($raw-css-var) {
-  @if config.$css-prefix == '' {
+  @if config.$css-prefix == "" {
     @return $raw-css-var;
   }
 
-  @return '--#{config.$css-prefix}-#{string.slice($raw-css-var, 3)}';
+  @return "--#{config.$css-prefix}-#{string.slice($raw-css-var, 3)}";
 }
 
 @function color($name) {
@@ -95,10 +95,10 @@ $color-vars: (
 // ===========================================
 
 $static-colors: (
-  'white': hsl(0, 0%, 100%),
-  'black': hsl(0, 0%, 0%),
-  'transparent': transparent,
-  'current': currentColor,
+  "white": hsl(0, 0%, 100%),
+  "black": hsl(0, 0%, 0%),
+  "transparent": transparent,
+  "current": currentColor,
 );
 
 @function static-color($name) {
@@ -107,4 +107,3 @@ $static-colors: (
   }
   @error "Unknown static color: #{$name}";
 }
-

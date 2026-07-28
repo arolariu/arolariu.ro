@@ -117,7 +117,9 @@
   align-items: center;
   justify-content: center;
   margin-right: 1rem;
-  transition: transform var(--cv-transition-base), box-shadow var(--cv-transition-base);
+  transition:
+    transform var(--cv-transition-base),
+    box-shadow var(--cv-transition-base);
 
   &:hover {
     transform: scale(1.05);

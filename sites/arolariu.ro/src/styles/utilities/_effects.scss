@@ -14,7 +14,7 @@
 /// @see base/_globals.scss — `--accent-primary`, `--primary` CSS variables
 /// ===========================================
 
-@use '../abstracts' as *;
+@use "../abstracts" as *;
 
 // Underline accent (theme-aware — uses primary)
 .blue-underline {

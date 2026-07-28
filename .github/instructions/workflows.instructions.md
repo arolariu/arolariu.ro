@@ -575,7 +575,7 @@ paths:
   - '**/*.jsx'
   - 'package.json'
   - 'eslint.config.ts'
-  - 'prettier.config.ts'
+  - '.prettierrc'
 ```
 
 ### Path Ignore (Alternative)

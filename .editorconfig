@@ -45,6 +45,18 @@ indent_size = 2
 [*.sh]
 end_of_line = lf
 
+# Python files (exp.arolariu.ro) — PEP 8 uses 4 spaces; line length matches
+# the `line-length = 120` set in sites/exp.arolariu.ro/pyproject.toml [tool.ruff]
+[*.py]
+indent_style = space
+indent_size = 4
+max_line_length = 120
+
+# Bicep IaC (infra/Azure/Bicep)
+[*.bicep]
+indent_style = space
+indent_size = 2
+
 # C# files
 [*.cs]
 # Organize usings

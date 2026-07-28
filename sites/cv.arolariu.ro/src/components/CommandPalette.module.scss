@@ -125,7 +125,9 @@
   padding: 0.5rem 0.75rem;
   cursor: pointer;
   text-align: left;
-  transition: color var(--cv-transition-fast), background-color var(--cv-transition-fast);
+  transition:
+    color var(--cv-transition-fast),
+    background-color var(--cv-transition-fast);
 }
 
 .commandItemSelected {

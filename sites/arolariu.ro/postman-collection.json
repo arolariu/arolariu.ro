@@ -379,9 +379,7 @@
             "url": {
               "raw": "{{baseUrl}}/",
               "host": ["{{baseUrl}}"],
-              "path": [
-                ""
-              ]
+              "path": [""]
             }
           },
           "event": [
@@ -421,10 +419,7 @@
             "url": {
               "raw": "{{baseUrl}}/api/user",
               "host": ["{{baseUrl}}"],
-              "path": [
-                "api",
-                "user"
-              ]
+              "path": ["api", "user"]
             }
           },
           "event": [
@@ -472,9 +467,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    ""
-                  ]
+                  "path": [""]
                 }
               },
               "event": [
@@ -528,9 +521,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/about",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "about"
-                  ]
+                  "path": ["about"]
                 }
               },
               "event": [
@@ -561,10 +552,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/about/the-author",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "about",
-                    "the-author"
-                  ]
+                  "path": ["about", "the-author"]
                 }
               },
               "event": [
@@ -595,10 +583,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/about/the-platform",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "about",
-                    "the-platform"
-                  ]
+                  "path": ["about", "the-platform"]
                 }
               },
               "event": [
@@ -634,9 +619,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/domains",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "domains"
-                  ]
+                  "path": ["domains"]
                 }
               },
               "event": [
@@ -667,10 +650,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/domains/invoices",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "domains",
-                    "invoices"
-                  ]
+                  "path": ["domains", "invoices"]
                 }
               },
               "event": [
@@ -706,9 +686,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/privacy-policy",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "privacy-policy"
-                  ]
+                  "path": ["privacy-policy"]
                 }
               },
               "event": [
@@ -744,9 +722,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/terms-of-service",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "terms-of-service"
-                  ]
+                  "path": ["terms-of-service"]
                 }
               },
               "event": [
@@ -782,9 +758,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/acknowledgements",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "acknowledgements"
-                  ]
+                  "path": ["acknowledgements"]
                 }
               },
               "event": [
@@ -820,9 +794,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/auth",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "auth"
-                  ]
+                  "path": ["auth"]
                 }
               },
               "event": [
@@ -853,10 +825,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/auth/sign-in",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "auth",
-                    "sign-in"
-                  ]
+                  "path": ["auth", "sign-in"]
                 }
               },
               "event": [
@@ -887,10 +856,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/auth/sign-up",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "auth",
-                    "sign-up"
-                  ]
+                  "path": ["auth", "sign-up"]
                 }
               },
               "event": [
@@ -932,9 +898,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/my-profile",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "my-profile"
-                  ]
+                  "path": ["my-profile"]
                 }
               },
               "event": [
@@ -971,11 +935,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/domains/invoices/upload-scans",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "domains",
-                    "invoices",
-                    "upload-scans"
-                  ]
+                  "path": ["domains", "invoices", "upload-scans"]
                 }
               },
               "event": [
@@ -1006,11 +966,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/domains/invoices/view-scans",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "domains",
-                    "invoices",
-                    "view-scans"
-                  ]
+                  "path": ["domains", "invoices", "view-scans"]
                 }
               },
               "event": [
@@ -1041,11 +997,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/domains/invoices/view-invoices",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "domains",
-                    "invoices",
-                    "view-invoices"
-                  ]
+                  "path": ["domains", "invoices", "view-invoices"]
                 }
               },
               "event": [
@@ -1076,12 +1028,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/domains/invoices/view-invoice/{{invoiceId}}",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "domains",
-                    "invoices",
-                    "view-invoice",
-                    "{{invoiceId}}"
-                  ]
+                  "path": ["domains", "invoices", "view-invoice", "{{invoiceId}}"]
                 }
               },
               "event": [
@@ -1113,12 +1060,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/domains/invoices/edit-invoice/{{invoiceId}}",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "domains",
-                    "invoices",
-                    "edit-invoice",
-                    "{{invoiceId}}"
-                  ]
+                  "path": ["domains", "invoices", "edit-invoice", "{{invoiceId}}"]
                 }
               },
               "event": [
@@ -1161,10 +1103,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/api/user",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "api",
-                    "user"
-                  ]
+                  "path": ["api", "user"]
                 }
               },
               "event": [
@@ -1177,24 +1116,24 @@
                       "    pm.expect(pm.response.code).to.equal(200);",
                       "});",
                       "",
-          "function decodeJwtPayload(jwt) {",
-          "    const payloadSegment = jwt.split('.')[1];",
-          "    const normalized = payloadSegment.replace(/-/g, '+').replace(/_/g, '/');",
-          "    const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);",
-          "    try {",
-          "        const decoded = typeof Buffer !== 'undefined'",
-          "            ? Buffer.from(padded, 'base64').toString('utf8')",
-          "            : atob(padded);",
-          "        return JSON.parse(decoded);",
-          "    } catch (error) {",
-          "        if (typeof pm !== 'undefined' && pm.expect && typeof pm.expect.fail === 'function') {",
-          "            pm.expect.fail('Failed to decode/parse JWT payload: ' + (error && error.message ? error.message : String(error)));",
-          "        } else {",
-          "            console.warn('[ApiUser] Failed to decode/parse JWT payload; skipping JWT claim assertions.', error);",
-          "        }",
-          "        return null;",
-          "    }",
-          "}",
+                      "function decodeJwtPayload(jwt) {",
+                      "    const payloadSegment = jwt.split('.')[1];",
+                      "    const normalized = payloadSegment.replace(/-/g, '+').replace(/_/g, '/');",
+                      "    const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);",
+                      "    try {",
+                      "        const decoded = typeof Buffer !== 'undefined'",
+                      "            ? Buffer.from(padded, 'base64').toString('utf8')",
+                      "            : atob(padded);",
+                      "        return JSON.parse(decoded);",
+                      "    } catch (error) {",
+                      "        if (typeof pm !== 'undefined' && pm.expect && typeof pm.expect.fail === 'function') {",
+                      "            pm.expect.fail('Failed to decode/parse JWT payload: ' + (error && error.message ? error.message : String(error)));",
+                      "        } else {",
+                      "            console.warn('[ApiUser] Failed to decode/parse JWT payload; skipping JWT claim assertions.', error);",
+                      "        }",
+                      "        return null;",
+                      "    }",
+                      "}",
                       "",
                       "function tryGetJwt(jsonData) {",
                       "    const jwt = typeof jsonData.userJwt === 'string' ? jsonData.userJwt.trim() : '';",
@@ -1241,14 +1180,14 @@
                       "    const jwt = tryGetJwt(jsonData);",
                       "    if (!jwt) {",
                       "        return;",
-          "    }",
-          "    const payload = decodeJwtPayload(jwt);",
-          "    if (!payload) {",
-          "        return;",
-          "    }",
-          "    ['iss', 'aud', 'iat', 'nbf', 'exp', 'sub', 'userIdentifier', 'role'].forEach(claim => {",
-          "        pm.expect(payload, `missing claim: ${claim}`).to.have.property(claim);",
-          "    });",
+                      "    }",
+                      "    const payload = decodeJwtPayload(jwt);",
+                      "    if (!payload) {",
+                      "        return;",
+                      "    }",
+                      "    ['iss', 'aud', 'iat', 'nbf', 'exp', 'sub', 'userIdentifier', 'role'].forEach(claim => {",
+                      "        pm.expect(payload, `missing claim: ${claim}`).to.have.property(claim);",
+                      "    });",
                       "    pm.expect(String(payload.iss)).to.match(/^https?:\\/\\//i);",
                       "    pm.expect(String(payload.aud)).to.match(/^https?:\\/\\//i);",
                       "    pm.expect(payload.exp).to.be.above(payload.iat);",
@@ -1273,16 +1212,16 @@
                       "    pm.expect(pm.collectionVariables.get('currentUserIdentifier')).to.equal(responseJson.userIdentifier);",
                       "    pm.expect(pm.collectionVariables.get('currentUserJwt')).to.equal(responseJson.userJwt);",
                       "    const jwt = tryGetJwt(responseJson);",
-          "    if (!jwt) {",
-          "        return;",
-          "    }",
-          "    const decodedJwt = decodeJwtPayload(jwt);",
-          "    if (!decodedJwt) {",
-          "        return;",
-          "    }",
-          "    if (responseJson.user === null && Object.prototype.hasOwnProperty.call(decodedJwt, 'role')) {",
-          "        pm.expect(String(decodedJwt.role || '').toLowerCase()).to.equal('guest');",
-          "    }",
+                      "    if (!jwt) {",
+                      "        return;",
+                      "    }",
+                      "    const decodedJwt = decodeJwtPayload(jwt);",
+                      "    if (!decodedJwt) {",
+                      "        return;",
+                      "    }",
+                      "    if (responseJson.user === null && Object.prototype.hasOwnProperty.call(decodedJwt, 'role')) {",
+                      "        pm.expect(String(decodedJwt.role || '').toLowerCase()).to.equal('guest');",
+                      "    }",
                       "});"
                     ]
                   }
@@ -1298,10 +1237,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/api/user",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "api",
-                    "user"
-                  ]
+                  "path": ["api", "user"]
                 }
               },
               "event": [
@@ -1341,11 +1277,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/api/auth/clerk",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "api",
-                    "auth",
-                    "clerk"
-                  ]
+                  "path": ["api", "auth", "clerk"]
                 }
               },
               "event": [
@@ -1390,9 +1322,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/robots.txt",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "robots.txt"
-                  ]
+                  "path": ["robots.txt"]
                 }
               },
               "event": [
@@ -1443,9 +1373,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/sitemap.xml",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "sitemap.xml"
-                  ]
+                  "path": ["sitemap.xml"]
                 }
               },
               "event": [
@@ -1508,9 +1436,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/manifest.json",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "manifest.json"
-                  ]
+                  "path": ["manifest.json"]
                 }
               },
               "event": [
@@ -1581,9 +1507,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/icon.svg",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "icon.svg"
-                  ]
+                  "path": ["icon.svg"]
                 }
               },
               "event": [
@@ -1619,9 +1543,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/favicon.ico",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "favicon.ico"
-                  ]
+                  "path": ["favicon.ico"]
                 }
               },
               "event": [
@@ -1661,9 +1583,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/humans.txt",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "humans.txt"
-                  ]
+                  "path": ["humans.txt"]
                 }
               },
               "event": [
@@ -1700,9 +1620,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/security.txt",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "security.txt"
-                  ]
+                  "path": ["security.txt"]
                 }
               },
               "event": [
@@ -1756,9 +1674,7 @@
                 "url": {
                   "raw": "{{baseUrl}}/browserconfig.xml",
                   "host": ["{{baseUrl}}"],
-                  "path": [
-                    "browserconfig.xml"
-                  ]
+                  "path": ["browserconfig.xml"]
                 }
               },
               "event": [
@@ -1805,9 +1721,7 @@
             "url": {
               "raw": "{{baseUrl}}/this-page-definitely-does-not-exist-{{$randomUUID}}",
               "host": ["{{baseUrl}}"],
-              "path": [
-                "this-page-definitely-does-not-exist-{{$randomUUID}}"
-              ]
+              "path": ["this-page-definitely-does-not-exist-{{$randomUUID}}"]
             }
           },
           "event": [
@@ -1842,10 +1756,7 @@
             "url": {
               "raw": "{{baseUrl}}/api/non-existent-endpoint-{{$randomUUID}}",
               "host": ["{{baseUrl}}"],
-              "path": [
-                "api",
-                "non-existent-endpoint-{{$randomUUID}}"
-              ]
+              "path": ["api", "non-existent-endpoint-{{$randomUUID}}"]
             }
           },
           "event": [
@@ -1880,10 +1791,7 @@
             "url": {
               "raw": "{{baseUrl}}/api/user",
               "host": ["{{baseUrl}}"],
-              "path": [
-                "api",
-                "user"
-              ]
+              "path": ["api", "user"]
             }
           },
           "event": [
@@ -1920,9 +1828,7 @@
             "url": {
               "raw": "{{baseUrl}}/",
               "host": ["{{baseUrl}}"],
-              "path": [
-                ""
-              ]
+              "path": [""]
             }
           },
           "event": [
@@ -1971,10 +1877,7 @@
             "url": {
               "raw": "{{baseUrl}}/api/user",
               "host": ["{{baseUrl}}"],
-              "path": [
-                "api",
-                "user"
-              ]
+              "path": ["api", "user"]
             }
           },
           "event": [

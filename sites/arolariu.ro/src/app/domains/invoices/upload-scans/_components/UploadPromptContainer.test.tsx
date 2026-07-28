@@ -19,10 +19,14 @@ vi.mock("../_hooks/usePostUploadPrompt", () => ({usePostUploadPrompt: vi.fn()}))
 vi.mock("./PostUploadPrompt", () => ({
   default: ({onCreateInvoice, onViewScans}: {onCreateInvoice: () => void; onViewScans: () => void}) => (
     <div>
-      <button type='button' onClick={onCreateInvoice}>
+      <button
+        type='button'
+        onClick={onCreateInvoice}>
         create
       </button>
-      <button type='button' onClick={onViewScans}>
+      <button
+        type='button'
+        onClick={onViewScans}>
         view
       </button>
     </div>

@@ -1,4 +1,4 @@
-@use '../../../../styles/abstracts' as abstracts;
+@use "../../../../styles/abstracts" as abstracts;
 
 .section {
   position: relative;
@@ -23,21 +23,21 @@
 
 .title {
   margin-bottom: abstracts.space(6);
-  font-size: abstracts.font-size('4xl');
-  font-weight: abstracts.font-weight('bold');
+  font-size: abstracts.font-size("4xl");
+  font-weight: abstracts.font-weight("bold");
 
-  @include abstracts.respond-to('md') {
-    font-size: abstracts.font-size('5xl');
+  @include abstracts.respond-to("md") {
+    font-size: abstracts.font-size("5xl");
   }
 }
 
 .titleHighlight {
-  color: abstracts.color('primary');
+  color: abstracts.color("primary");
 }
 
 .description {
-  font-size: abstracts.font-size('lg');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("lg");
+  color: abstracts.color("muted-foreground");
 }
 
 .stepper {
@@ -63,8 +63,8 @@
   justify-content: center;
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: abstracts.radius('full');
-  background-color: abstracts.color('primary');
+  border-radius: abstracts.radius("full");
+  background-color: abstracts.color("primary");
   flex-shrink: 0;
 }
 
@@ -78,7 +78,7 @@
   width: 2px;
   flex: 1;
   min-height: abstracts.space(8);
-  background-color: abstracts.color('border');
+  background-color: abstracts.color("border");
   margin-top: abstracts.space(2);
   margin-bottom: abstracts.space(2);
 }
@@ -111,19 +111,19 @@
 }
 
 .stepTitle {
-  font-size: abstracts.font-size('xl');
-  font-weight: abstracts.font-weight('semibold');
-  color: abstracts.color('foreground');
+  font-size: abstracts.font-size("xl");
+  font-weight: abstracts.font-weight("semibold");
+  color: abstracts.color("foreground");
   margin-bottom: abstracts.space(2);
   @include abstracts.transition(color);
 
   .stepButton:hover & {
-    color: abstracts.color('primary');
+    color: abstracts.color("primary");
   }
 }
 
 .stepDescription {
-  color: abstracts.color('muted-foreground');
+  color: abstracts.color("muted-foreground");
   margin-bottom: abstracts.space(3);
 }
 
@@ -135,7 +135,7 @@
 }
 
 .tag {
-  font-size: abstracts.font-size('xs');
+  font-size: abstracts.font-size("xs");
 }
 
 .expandable {
@@ -144,10 +144,10 @@
 }
 
 .detailsTitle {
-  font-size: abstracts.font-size('sm');
-  font-weight: abstracts.font-weight('semibold');
+  font-size: abstracts.font-size("sm");
+  font-weight: abstracts.font-weight("semibold");
   margin-bottom: abstracts.space(2);
-  color: abstracts.color('foreground');
+  color: abstracts.color("foreground");
 }
 
 .detailsList {
@@ -163,21 +163,21 @@
   display: flex;
   align-items: flex-start;
   gap: abstracts.space(2);
-  font-size: abstracts.font-size('sm');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("sm");
+  color: abstracts.color("muted-foreground");
 }
 
 .detailIcon {
   width: 1rem;
   height: 1rem;
-  color: abstracts.color('primary');
+  color: abstracts.color("primary");
   flex-shrink: 0;
   margin-top: 0.125rem;
 }
 
 .expandHint {
-  font-size: abstracts.font-size('sm');
-  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size("sm");
+  color: abstracts.color("muted-foreground");
   cursor: pointer;
 }
 
@@ -188,7 +188,7 @@
   gap: abstracts.space(3);
   margin-top: abstracts.space(8);
   padding-top: abstracts.space(8);
-  border-top: 1px solid abstracts.color('border');
+  border-top: 1px solid abstracts.color("border");
   text-align: center;
 }
 
@@ -198,17 +198,17 @@
   justify-content: center;
   width: 3rem;
   height: 3rem;
-  border-radius: abstracts.radius('full');
-  background-color: abstracts.color-alpha('primary', 0.1);
+  border-radius: abstracts.radius("full");
+  background-color: abstracts.color-alpha("primary", 0.1);
 }
 
 .futureIcon {
   width: 1.5rem;
   height: 1.5rem;
-  color: abstracts.color('primary');
+  color: abstracts.color("primary");
 }
 
 .futureText {
-  color: abstracts.color('muted-foreground');
-  font-size: abstracts.font-size('sm');
+  color: abstracts.color("muted-foreground");
+  font-size: abstracts.font-size("sm");
 }

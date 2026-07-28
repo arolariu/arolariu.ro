@@ -1,7 +1,7 @@
 // ===========================================
 // THE AUTHOR - CONTACT COMPONENT
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use "../../../../styles/abstracts" as *;
 
 .section {
   margin-left: auto;
@@ -9,7 +9,7 @@
   max-width: 72rem;
   padding: space(20) space(4);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     padding-left: space(8);
     padding-right: space(8);
   }
@@ -25,11 +25,11 @@
   position: relative;
   display: inline-block;
   margin-bottom: space(4);
-  font-size: font-size('3xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("3xl");
+  font-weight: font-weight("bold");
 
-  @include respond-to('md') {
-    font-size: font-size('4xl');
+  @include respond-to("md") {
+    font-size: font-size("4xl");
   }
 }
 
@@ -38,7 +38,7 @@
   margin-left: auto;
   margin-right: auto;
   max-width: 42rem;
-  color: color('muted-foreground');
+  color: color("muted-foreground");
 }
 
 // Grid
@@ -46,12 +46,12 @@
   display: grid;
   gap: space(8);
 
-  @include respond-to('md') {
+  @include respond-to("md") {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0;
   }
 
-  @include respond-to('lg') {
+  @include respond-to("lg") {
     gap: space(8);
   }
 }
@@ -62,12 +62,12 @@
   height: 100%;
   overflow: hidden;
   border: none;
-  background-color: color('card');
-  @include shadow('lg');
+  background-color: color("card");
+  @include shadow("lg");
   @include transition(box-shadow);
 
   &:hover {
-    @include shadow('xl');
+    @include shadow("xl");
   }
 }
 
@@ -83,7 +83,7 @@
 
 // Card title
 .cardTitle {
-  text-shadow: 0 0 20px color-alpha('primary', 0.5);
+  text-shadow: 0 0 20px color-alpha("primary", 0.5);
 }
 
 // Contact links container
@@ -113,7 +113,7 @@
 .linkBg {
   position: absolute;
   inset: 0;
-  border-radius: radius('lg');
+  border-radius: radius("lg");
   opacity: 0;
   @include transition(opacity);
 }
@@ -129,8 +129,8 @@
   align-items: center;
   justify-content: space-between;
   overflow: hidden;
-  border-radius: radius('lg');
-  border: 1px solid color-alpha('border', 0.5);
+  border-radius: radius("lg");
+  border: 1px solid color-alpha("border", 0.5);
   padding: space(3);
 }
 
@@ -143,12 +143,12 @@
 .linkIconWrapper {
   margin-right: space(3);
   padding: space(2);
-  border-radius: radius('full');
+  border-radius: radius("full");
   @include transition((background-color, color));
 }
 
 .linkLabel {
-  font-weight: font-weight('medium');
+  font-weight: font-weight("medium");
 }
 
 // Link actions
@@ -160,12 +160,12 @@
 
 .actionButton {
   padding: space(2);
-  border-radius: radius('full');
-  color: color('muted-foreground');
+  border-radius: radius("full");
+  color: color("muted-foreground");
   @include transition(color);
 
   &:hover {
-    color: color('link');
+    color: color("link");
   }
 }
 
@@ -186,13 +186,13 @@
 // Footer
 .linksFooter {
   padding-top: space(4);
-  border-top: 1px solid color-alpha('border', 0.3);
+  border-top: 1px solid color-alpha("border", 0.3);
 }
 
 .linksFooterText {
   display: block;
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: font-size("sm");
+  color: color("muted-foreground");
 }
 
 // Collaborate card
@@ -206,8 +206,9 @@
   position: absolute;
   inset: 0;
   opacity: 0.03;
-  background-image: linear-gradient(color-alpha('secondary', 0.25) 1px, transparent 1px),
-    linear-gradient(90deg, color-alpha('tertiary', 0.25) 1px, transparent 1px);
+  background-image:
+    linear-gradient(color-alpha("secondary", 0.25) 1px, transparent 1px),
+    linear-gradient(90deg, color-alpha("tertiary", 0.25) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
@@ -221,19 +222,19 @@
 
 .disciplineItem {
   padding: space(3);
-  border-radius: radius('lg');
-  background-color: color-alpha('primary', 0.1);
+  border-radius: radius("lg");
+  background-color: color-alpha("primary", 0.1);
   text-align: center;
   @include transition(background-color);
 
   &:hover {
-    background-color: color-alpha('primary', 0.5);
+    background-color: color-alpha("primary", 0.5);
   }
 }
 
 .disciplineText {
-  font-weight: font-weight('medium');
-  color: color('primary');
+  font-weight: font-weight("medium");
+  color: color("primary");
 }
 
 // Footer text
@@ -247,13 +248,13 @@
 }
 
 .ctaText {
-  font-size: font-size('2xl');
-  font-weight: font-weight('bold');
+  font-size: font-size("2xl");
+  font-weight: font-weight("bold");
   text-shadow:
-    0 0 20px color-alpha('primary', 0.5),
-    0 0 40px color-alpha('primary', 0.3);
+    0 0 20px color-alpha("primary", 0.5),
+    0 0 40px color-alpha("primary", 0.3);
 
-  @include respond-to('lg') {
-    font-size: font-size('5xl');
+  @include respond-to("lg") {
+    font-size: font-size("5xl");
   }
 }
