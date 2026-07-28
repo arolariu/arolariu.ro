@@ -243,6 +243,31 @@ runs:
         npm ci --prefer-offline --no-audit --no-fund
         echo "::endgroup::"
 
+    - name: 🔗 Sync SvelteKit projects (.svelte-kit)
+      if: inputs.install-node-deps == 'true'
+      shell: bash
+      run: |
+        echo "::group::🔗 svelte-kit sync"
+        # sites/{cv,status}.arolariu.ro/tsconfig.json extend
+        # ./.svelte-kit/tsconfig.json, which only exists after `svelte-kit sync`.
+        # That normally runs via each package's `prepare` script during `npm ci`,
+        # but `npm ci` is skipped on a node_modules cache hit (see above) and
+        # `.svelte-kit` is not one of the cached paths either — so it is
+        # effectively never present. Without it, any repo-wide `eslint .` (which
+        # the hygiene pipeline runs whenever a root shared config file changes)
+        # dies with "File './.svelte-kit/tsconfig.json' not found".
+        npm run prepare --workspace=sites/cv.arolariu.ro --workspace=sites/status.arolariu.ro
+
+        # The prepare scripts end in `|| echo ''`, so a genuine sync failure would
+        # otherwise pass silently and resurface as a confusing ESLint crash.
+        for project in sites/cv.arolariu.ro sites/status.arolariu.ro; do
+          if [ ! -f "${project}/.svelte-kit/tsconfig.json" ]; then
+            echo "::error::${project}/.svelte-kit/tsconfig.json was not generated; ESLint and svelte-check will fail."
+            exit 1
+          fi
+        done
+        echo "::endgroup::"
+
     - name: 📥 Install .github/scripts dependencies
       if: inputs.install-scripts-deps == 'true'
       shell: bash
