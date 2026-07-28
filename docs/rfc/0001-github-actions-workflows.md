@@ -163,7 +163,7 @@ them is already pinned by the lock file.
 
 **Behavior (both caches):**
 - **Cache hit**: When `package-lock.json` hasn't changed (and, for `node_modules`, the Node version is unchanged)
-- **Cache miss**: When `package-lock.json` changes (due to package updates)
+- **Cache miss**: When `package-lock.json` changes (due to package updates), or — for `node_modules` — when the Node version is bumped
 - **No fallback**: Ensures fresh installation when dependencies change
 
 #### **Why No Fallback Keys?**

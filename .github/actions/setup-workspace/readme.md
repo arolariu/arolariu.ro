@@ -113,8 +113,10 @@ silently fetch a floating version rather than the one the lock file pins.
 | `node_modules`, `packages/*/node_modules`, `sites/*/node_modules` | this action | `<os>-node-modules-<node-version>-<hash(package-lock.json)>` |
 | `~/.cache/ms-playwright` | this action | `<os>-playwright-<hash(package-lock.json)>` |
 
-Both of this action's caches are keyed on the lock-file hash **alone** — there is no per-workflow prefix. One shared entry each, rather than every workflow writing its own multi-hundred-megabyte copy against the repository's 10 GB budget.
+Neither of this action's caches carries a per-workflow prefix — one shared entry each, rather than every workflow writing its own multi-hundred-megabyte copy against the repository's 10 GB budget. Neither uses fallback restore keys.
+
+The two keys are not identical in shape. The Playwright key is the lock-file hash alone, since the cached artifacts are browser binaries and the Playwright version governing them is already pinned by the lock file. The `node_modules` key **also includes the Node version**: a cache hit skips `npm ci`, and the tree can contain natively-compiled addons (this repo pulls in `sharp`) whose ABI is tied to the runtime — so a Node bump must invalidate the cache rather than restore binaries built for the previous version.
 
 The cached `node_modules` paths mirror the npm workspaces declared in the root `package.json` (`packages/*`, `sites/*`) — precisely what the root lock file governs. `.github/scripts` is deliberately excluded: it has its own lock file and its own install step (`install-scripts-deps`), so folding it into a cache keyed on the root lock file would make the cache's contents depend on which job populated it first.
 
-`npm ci` is used rather than `npm install`: it is the correct CI primitive and cannot mutate `package-lock.json`. It is skipped only when the `node_modules` cache hits on an exact lock-file match.
+`npm ci` is used rather than `npm install`: it is the correct CI primitive and cannot mutate `package-lock.json`. It is skipped only when the `node_modules` cache hits — that is, on an exact lock-file match **and** an unchanged Node version.
