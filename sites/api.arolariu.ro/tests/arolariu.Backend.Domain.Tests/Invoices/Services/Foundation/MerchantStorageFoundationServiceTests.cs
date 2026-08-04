@@ -136,7 +136,7 @@ public sealed class MerchantStorageFoundationServiceTests
   /// Validates OperationCanceledException during creation is wrapped into foundation dependency exception.
   /// </summary>
   [Fact]
-  public async Task CreateMerchantObject_OperationCanceledException_ThrowsFoundationDependencyException()
+  public async Task CreateMerchantObject_OperationCanceledException_PropagatesOperationCanceledException()
   {
     // Arrange
     var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
@@ -145,8 +145,8 @@ public sealed class MerchantStorageFoundationServiceTests
         .Setup(b => b.CreateMerchantAsync(merchant))
         .ThrowsAsync(new OperationCanceledException("Operation cancelled"));
 
-    // Act & Assert
-    await Assert.ThrowsAsync<MerchantFoundationServiceDependencyException>(() =>
+    // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
+    await Assert.ThrowsAsync<OperationCanceledException>(() =>
         service.CreateMerchantObject(merchant, null));
   }
 
@@ -241,7 +241,7 @@ public sealed class MerchantStorageFoundationServiceTests
   /// Validates OperationCanceledException during read is wrapped into foundation dependency exception.
   /// </summary>
   [Fact]
-  public async Task ReadMerchantObject_OperationCanceledException_ThrowsFoundationDependencyException()
+  public async Task ReadMerchantObject_OperationCanceledException_PropagatesOperationCanceledException()
   {
     // Arrange
     var merchantId = Guid.NewGuid();
@@ -250,8 +250,8 @@ public sealed class MerchantStorageFoundationServiceTests
         .Setup(b => b.ReadMerchantAsync(merchantId, null))
         .ThrowsAsync(new OperationCanceledException("Cancelled"));
 
-    // Act & Assert
-    await Assert.ThrowsAsync<MerchantFoundationServiceDependencyException>(() =>
+    // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
+    await Assert.ThrowsAsync<OperationCanceledException>(() =>
         service.ReadMerchantObject(merchantId, null));
   }
 
@@ -326,7 +326,7 @@ public sealed class MerchantStorageFoundationServiceTests
   /// Validates OperationCanceledException during bulk read is wrapped appropriately.
   /// </summary>
   [Fact]
-  public async Task ReadAllMerchantObjects_OperationCanceledException_ThrowsFoundationDependencyException()
+  public async Task ReadAllMerchantObjects_OperationCanceledException_PropagatesOperationCanceledException()
   {
     // Arrange
     var parentCompanyId = Guid.NewGuid();
@@ -335,8 +335,8 @@ public sealed class MerchantStorageFoundationServiceTests
         .Setup(b => b.ReadMerchantsAsync(parentCompanyId))
         .ThrowsAsync(new OperationCanceledException("Query timeout"));
 
-    // Act & Assert
-    await Assert.ThrowsAsync<MerchantFoundationServiceDependencyException>(() =>
+    // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
+    await Assert.ThrowsAsync<OperationCanceledException>(() =>
         service.ReadAllMerchantObjects(parentCompanyId));
   }
 
@@ -559,7 +559,7 @@ public sealed class MerchantStorageFoundationServiceTests
   /// Validates OperationCanceledException during delete is wrapped into foundation dependency exception.
   /// </summary>
   [Fact]
-  public async Task DeleteMerchantObject_OperationCanceledException_ThrowsFoundationDependencyException()
+  public async Task DeleteMerchantObject_OperationCanceledException_PropagatesOperationCanceledException()
   {
     // Arrange
     var merchantId = Guid.NewGuid();
@@ -569,8 +569,8 @@ public sealed class MerchantStorageFoundationServiceTests
         .Setup(b => b.DeleteMerchantAsync(merchantId, parentCompanyId))
         .ThrowsAsync(new OperationCanceledException("Cancelled"));
 
-    // Act & Assert
-    await Assert.ThrowsAsync<MerchantFoundationServiceDependencyException>(() =>
+    // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
+    await Assert.ThrowsAsync<OperationCanceledException>(() =>
         service.DeleteMerchantObject(merchantId, parentCompanyId));
   }
 

@@ -752,7 +752,7 @@ public sealed class MerchantOrchestrationServiceExtendedTests
   /// Validates OperationCanceledException is wrapped correctly.
   /// </summary>
   [Fact]
-  public async Task UpdateMerchantObject_OperationCanceledException_ThrowsOrchestrationServiceException()
+  public async Task UpdateMerchantObject_OperationCanceledException_PropagatesOperationCanceledException()
   {
     // Arrange
     var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
@@ -762,8 +762,8 @@ public sealed class MerchantOrchestrationServiceExtendedTests
         .Setup(s => s.UpdateMerchantObject(merchant, merchantId, null))
         .ThrowsAsync(new OperationCanceledException("Cancelled"));
 
-    // Act & Assert
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(() =>
+    // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
+    await Assert.ThrowsAsync<OperationCanceledException>(() =>
         service.UpdateMerchantObject(merchant, merchantId, null));
   }
 

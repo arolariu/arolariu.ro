@@ -120,7 +120,7 @@ public sealed class InvoiceStorageFoundationServiceTests
   /// Validates OperationCanceledException during creation is wrapped into foundation dependency exception.
   /// </summary>
   [Fact]
-  public async Task CreateInvoiceObject_OperationCanceledException_ThrowsFoundationDependencyException()
+  public async Task CreateInvoiceObject_OperationCanceledException_PropagatesOperationCanceledException()
   {
     // Arrange
     var invoice = InvoiceBuilder.CreateRandomInvoice();
@@ -129,8 +129,8 @@ public sealed class InvoiceStorageFoundationServiceTests
         .Setup(b => b.CreateInvoiceAsync(invoice))
         .ThrowsAsync(new OperationCanceledException("Operation cancelled"));
 
-    // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(() =>
+    // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
+    await Assert.ThrowsAsync<OperationCanceledException>(() =>
         service.CreateInvoiceObject(invoice, null));
   }
 
@@ -257,7 +257,7 @@ public sealed class InvoiceStorageFoundationServiceTests
   /// Validates OperationCanceledException during read is wrapped into foundation dependency exception.
   /// </summary>
   [Fact]
-  public async Task ReadInvoiceObject_OperationCanceledException_ThrowsFoundationDependencyException()
+  public async Task ReadInvoiceObject_OperationCanceledException_PropagatesOperationCanceledException()
   {
     // Arrange
     var invoiceId = Guid.NewGuid();
@@ -266,8 +266,8 @@ public sealed class InvoiceStorageFoundationServiceTests
         .Setup(b => b.ReadInvoiceAsync(invoiceId, null))
         .ThrowsAsync(new OperationCanceledException("Cancelled"));
 
-    // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(() =>
+    // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
+    await Assert.ThrowsAsync<OperationCanceledException>(() =>
         service.ReadInvoiceObject(invoiceId, null));
   }
 
@@ -342,7 +342,7 @@ public sealed class InvoiceStorageFoundationServiceTests
   /// Validates OperationCanceledException during bulk read is wrapped appropriately.
   /// </summary>
   [Fact]
-  public async Task ReadAllInvoiceObjects_OperationCanceledException_ThrowsFoundationDependencyException()
+  public async Task ReadAllInvoiceObjects_OperationCanceledException_PropagatesOperationCanceledException()
   {
     // Arrange
     var userId = Guid.NewGuid();
@@ -351,8 +351,8 @@ public sealed class InvoiceStorageFoundationServiceTests
         .Setup(b => b.ReadInvoicesAsync(userId))
         .ThrowsAsync(new OperationCanceledException("Query timeout"));
 
-    // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(() =>
+    // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
+    await Assert.ThrowsAsync<OperationCanceledException>(() =>
         service.ReadAllInvoiceObjects(userId));
   }
 
@@ -525,7 +525,7 @@ public sealed class InvoiceStorageFoundationServiceTests
   /// Validates OperationCanceledException during delete is wrapped into foundation dependency exception.
   /// </summary>
   [Fact]
-  public async Task DeleteInvoiceObject_OperationCanceledException_ThrowsFoundationDependencyException()
+  public async Task DeleteInvoiceObject_OperationCanceledException_PropagatesOperationCanceledException()
   {
     // Arrange
     var invoiceId = Guid.NewGuid();
@@ -534,8 +534,8 @@ public sealed class InvoiceStorageFoundationServiceTests
         .Setup(b => b.DeleteInvoiceAsync(invoiceId, null))
         .ThrowsAsync(new OperationCanceledException("Cancelled"));
 
-    // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(() =>
+    // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
+    await Assert.ThrowsAsync<OperationCanceledException>(() =>
         service.DeleteInvoiceObject(invoiceId, null));
   }
 

@@ -73,7 +73,7 @@ public class InvoiceAnalysisFoundationServiceExceptionsTests
       .Setup(b => b.PerformOcrAnalysisOnSingleInvoice(It.IsAny<Invoice>(), It.IsAny<AnalysisOptions>()))
       .ThrowsAsync(new OperationCanceledException());
 
-    await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(
+    await Assert.ThrowsAsync<OperationCanceledException>(
       () => _sut.AnalyzeInvoiceAsync(AnalysisOptions.CompleteAnalysis, new Invoice { id = Guid.NewGuid(), UserIdentifier = Guid.NewGuid() }));
   }
 

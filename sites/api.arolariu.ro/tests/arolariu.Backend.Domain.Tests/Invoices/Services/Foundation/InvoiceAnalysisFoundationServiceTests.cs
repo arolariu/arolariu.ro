@@ -309,8 +309,8 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .Setup(b => b.PerformOcrAnalysisOnSingleInvoice(invoice, options))
         .ThrowsAsync(new OperationCanceledException("Cancelled"));
 
-    // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(() =>
+    // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
+    await Assert.ThrowsAsync<OperationCanceledException>(() =>
         service.AnalyzeInvoiceAsync(options, invoice));
   }
 

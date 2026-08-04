@@ -528,8 +528,8 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
         .Setup(b => b.CreateInvoiceAsync(invoice))
         .ThrowsAsync(new OperationCanceledException("Operation cancelled"));
 
-    // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(() =>
+    // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
+    await Assert.ThrowsAsync<OperationCanceledException>(() =>
         service.CreateInvoiceObject(invoice, null));
   }
 

@@ -461,8 +461,8 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
         .Setup(b => b.CreateMerchantAsync(It.IsAny<Merchant>()))
         .ThrowsAsync(new OperationCanceledException("Operation cancelled"));
 
-    // Act & Assert
-    await Assert.ThrowsAsync<MerchantFoundationServiceDependencyException>(() =>
+    // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
+    await Assert.ThrowsAsync<OperationCanceledException>(() =>
         service.CreateMerchantObject(merchant, null));
   }
 
