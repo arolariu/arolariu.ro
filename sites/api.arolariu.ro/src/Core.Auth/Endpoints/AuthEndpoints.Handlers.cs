@@ -1,6 +1,10 @@
 namespace arolariu.Backend.Core.Auth.Endpoints;
 
+using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
+
+using arolariu.Backend.Common.Http;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -25,9 +29,14 @@ public static partial class AuthEndpoints
   /// A placeholder object for the request body. The presence of this parameter validates
   /// that the logout request is intentional and not accidental.
   /// </param>
+  /// <param name="httpContext">
+  /// The current <see cref="HttpContext"/>, used to build a write-scoped cancellation token
+  /// tied to application shutdown and the CRUD timeout budget.
+  /// </param>
   /// <returns>
   /// An <see cref="IResult"/> indicating the outcome of the logout operation.
-  /// Returns Ok (200) on successful logout or Unauthorized (401) for invalid requests.
+  /// Returns Ok (200) on successful logout, Unauthorized (401) for invalid requests,
+  /// 504 on timeout, or 499 on client disconnect.
   /// </returns>
   /// <remarks>
   /// This handler performs the following operations:
@@ -53,19 +62,42 @@ public static partial class AuthEndpoints
   private static async Task<IResult> LogoutRoute(
     [FromServices] SignInManager<IdentityUser> signInManager,
     [FromServices] ILoggerFactory loggerFactory,
-    [FromBody] object empty)
+    [FromBody] object empty,
+    HttpContext httpContext)
   {
+    using var writeScope = RequestCancellation.ForWrite(httpContext, RequestCancellation.CrudWriteBudget);
     var logger = loggerFactory.CreateLogger("arolariu.Backend.Core.Auth");
-    if (empty != null)
+    try
     {
-      await signInManager.SignOutAsync().ConfigureAwait(false);
-      logger.LogUserLoggedOut();
-      AuthMetrics.Logouts.Add(1);
-      return Results.Ok();
-    }
+      if (empty != null)
+      {
+        await signInManager.SignOutAsync().ConfigureAwait(false);
+        logger.LogUserLoggedOut();
+        AuthMetrics.Logouts.Add(1);
+        return Results.Ok();
+      }
 
-    logger.LogLogoutFailed();
-    AuthMetrics.LogoutFailures.Add(1);
-    return Results.Unauthorized();
+      logger.LogLogoutFailed();
+      AuthMetrics.LogoutFailures.Add(1);
+      return Results.Unauthorized();
+    }
+    catch (OperationCanceledException)
+    {
+      var isTimeout = RequestCancellation.WasTimeout(httpContext) || writeScope.IsCancellationRequested;
+      if (isTimeout)
+      {
+        Activity.Current?.SetStatus(ActivityStatusCode.Error, "Timeout");
+        return TypedResults.Problem(new ProblemDetails
+        {
+          Status = StatusCodes.Status504GatewayTimeout,
+          Title = "Operation timed out",
+          Type = ProblemTypeUris.Timeout,
+          Detail = "The operation took too long to complete. Please try again later.",
+        });
+      }
+
+      Activity.Current?.SetTag("cancellation.reason", "client_disconnect");
+      return TypedResults.StatusCode(RequestCancellation.ClientClosedRequest);
+    }
   }
 }

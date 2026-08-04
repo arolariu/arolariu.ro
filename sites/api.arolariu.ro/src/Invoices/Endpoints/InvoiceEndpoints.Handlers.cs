@@ -29,6 +29,10 @@ public static partial class InvoiceEndpoints
     IHttpContextAccessor httpContext,
     CreateInvoiceRequestDto invoiceDto)
   {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(CreateNewInvoiceAsync), ActivityKind.Server);
@@ -50,12 +54,16 @@ public static partial class InvoiceEndpoints
       activity?.SetInvoiceContext(invoice.id, invoice.UserIdentifier);
 
       await invoiceProcessingService
-        .CreateInvoice(invoice)
+        .CreateInvoice(invoice, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoice created successfully");
       var responseDto = InvoiceResponseDto.FromInvoice(invoice);
       return TypedResults.Created($"/rest/v1/invoices/{invoice.id}", responseDto);
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "create", "invoice");
     }
     catch (Exception ex)
     {
@@ -191,6 +199,10 @@ public static partial class InvoiceEndpoints
     IHttpContextAccessor httpContext
     )
   {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoicesAsync), ActivityKind.Server);
@@ -204,11 +216,15 @@ public static partial class InvoiceEndpoints
       activity?.SetUserContext(potentialUserIdentifier);
 
       await invoiceProcessingService
-        .DeleteInvoices(potentialUserIdentifier)
+        .DeleteInvoices(potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("All invoices deleted successfully");
       return TypedResults.NoContent();
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "delete", "invoice");
     }
     catch (Exception ex)
     {
@@ -224,6 +240,10 @@ public static partial class InvoiceEndpoints
     Guid id,
     UpdateInvoiceRequestDto invoicePayload)
   {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateSpecificInvoiceAsync), ActivityKind.Server);
@@ -237,7 +257,7 @@ public static partial class InvoiceEndpoints
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier)
+        .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
@@ -254,11 +274,15 @@ public static partial class InvoiceEndpoints
       }
 
       var updatedInvoice = await invoiceProcessingService
-        .UpdateInvoice(updatedInvoiceEntity, id, potentialUserIdentifier)
+        .UpdateInvoice(updatedInvoiceEntity, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoice updated successfully");
       return TypedResults.Accepted($"/rest/v1/invoices/{id}", value: InvoiceResponseDto.FromInvoice(updatedInvoice));
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "update", "invoice");
     }
     catch (Exception ex)
     {
@@ -274,6 +298,10 @@ public static partial class InvoiceEndpoints
     Guid id,
     PatchInvoiceRequestDto invoicePayload)
   {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(PatchSpecificInvoiceAsync), ActivityKind.Server);
@@ -287,7 +315,7 @@ public static partial class InvoiceEndpoints
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier)
+        .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
@@ -302,7 +330,7 @@ public static partial class InvoiceEndpoints
           newInvoice.MerchantReference != possibleInvoice.MerchantReference)
       {
         var possibleMerchant = await invoiceProcessingService
-          .ReadMerchant(newInvoice.MerchantReference)
+          .ReadMerchant(newInvoice.MerchantReference, cancellationToken: writeScope.Token)
           .ConfigureAwait(false);
         if (possibleMerchant is null)
         {
@@ -313,17 +341,21 @@ public static partial class InvoiceEndpoints
         {
           possibleMerchant.ReferencedInvoices.Add(id);
           await invoiceProcessingService
-            .UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId)
+            .UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId, cancellationToken: writeScope.Token)
             .ConfigureAwait(false);
         }
       }
 
       var updatedInvoice = await invoiceProcessingService
-        .UpdateInvoice(newInvoice, id, potentialUserIdentifier)
+        .UpdateInvoice(newInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoice patched successfully");
       return TypedResults.Accepted($"/rest/v1/invoices/{id}", value: InvoiceResponseDto.FromInvoice(updatedInvoice));
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "update", "invoice");
     }
     catch (Exception ex)
     {
@@ -338,6 +370,10 @@ public static partial class InvoiceEndpoints
     IHttpContextAccessor httpContext,
     Guid id)
   {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceAsync), ActivityKind.Server);
@@ -351,7 +387,7 @@ public static partial class InvoiceEndpoints
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier)
+        .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
@@ -360,11 +396,15 @@ public static partial class InvoiceEndpoints
       }
 
       await invoiceProcessingService
-        .DeleteInvoice(id, potentialUserIdentifier)
+        .DeleteInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoice deleted successfully");
       return TypedResults.NoContent();
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "delete", "invoice");
     }
     catch (Exception ex)
     {
@@ -380,6 +420,10 @@ public static partial class InvoiceEndpoints
     Guid id,
     CreateProductRequestDto product)
   {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(AddProductToInvoiceAsync), ActivityKind.Server);
@@ -393,7 +437,7 @@ public static partial class InvoiceEndpoints
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier)
+        .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
@@ -405,11 +449,15 @@ public static partial class InvoiceEndpoints
       activity?.SetTag("product.name", productEntity.Name);
 
       await invoiceProcessingService
-        .AddProduct(productEntity, id, potentialUserIdentifier)
+        .AddProduct(productEntity, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Product added to invoice");
       return TypedResults.Created(uri: $"/rest/v1/invoices/{id}/products", value: ProductResponseDto.FromProduct(productEntity));
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "create", "invoice");
     }
     catch (Exception ex)
     {
@@ -469,6 +517,10 @@ public static partial class InvoiceEndpoints
     Guid id,
     DeleteProductRequestDto productDto)
   {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RemoveProductFromInvoiceAsync), ActivityKind.Server);
@@ -483,7 +535,7 @@ public static partial class InvoiceEndpoints
       activity?.SetTag("product.name", productDto.ProductName);
 
       var possibleProduct = await invoiceProcessingService
-        .GetProduct(productDto.ProductName, id, potentialUserIdentifier)
+        .GetProduct(productDto.ProductName, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleProduct is null)
       {
@@ -492,11 +544,15 @@ public static partial class InvoiceEndpoints
       }
 
       await invoiceProcessingService
-        .DeleteProduct(productDto.ProductName, id, potentialUserIdentifier)
+        .DeleteProduct(productDto.ProductName, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Product removed from invoice");
       return TypedResults.NoContent();
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "delete", "invoice");
     }
     catch (Exception ex)
     {
@@ -512,6 +568,10 @@ public static partial class InvoiceEndpoints
     Guid id,
     UpdateProductRequestDto productInformation)
   {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateProductInInvoiceAsync), ActivityKind.Server);
@@ -526,7 +586,7 @@ public static partial class InvoiceEndpoints
       activity?.SetTag("product.original_name", productInformation.OriginalProductName);
 
       var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier)
+        .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
@@ -535,7 +595,7 @@ public static partial class InvoiceEndpoints
       }
 
       var possibleProduct = await invoiceProcessingService
-        .GetProduct(productInformation.OriginalProductName, id, potentialUserIdentifier)
+        .GetProduct(productInformation.OriginalProductName, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleProduct is null)
       {
@@ -544,18 +604,22 @@ public static partial class InvoiceEndpoints
       }
 
       await invoiceProcessingService
-        .DeleteProduct(possibleProduct, id, potentialUserIdentifier)
+        .DeleteProduct(possibleProduct, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       var updatedProduct = productInformation.ToProduct();
       activity?.SetTag("product.new_name", updatedProduct.Name);
 
       await invoiceProcessingService
-        .AddProduct(updatedProduct, id, potentialUserIdentifier)
+        .AddProduct(updatedProduct, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Product updated in invoice");
       return TypedResults.Accepted($"/rest/v1/invoices/{id}/products", value: ProductResponseDto.FromProduct(updatedProduct));
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "update", "invoice");
     }
     catch (Exception ex)
     {
@@ -631,6 +695,10 @@ public static partial class InvoiceEndpoints
     Guid id,
     AddMerchantToInvoiceRequestDto merchantDto)
   {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(AddMerchantToInvoiceAsync), ActivityKind.Server);
@@ -644,7 +712,7 @@ public static partial class InvoiceEndpoints
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier)
+        .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       if (possibleInvoice is null)
@@ -667,16 +735,20 @@ public static partial class InvoiceEndpoints
       merchant.ReferencedInvoices.Add(possibleInvoice.id);
 
       await invoiceProcessingService
-        .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier)
+        .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       await invoiceProcessingService
-        .CreateMerchant(merchant)
+        .CreateMerchant(merchant, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Merchant added to invoice");
       // Return MerchantResponseDto so the client can extract the merchant ID
       return TypedResults.Created(uri: $"/rest/v1/merchants/{merchant.id}", MerchantResponseDto.FromMerchant(merchant));
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "create", "merchant");
     }
     catch (Exception ex)
     {
@@ -691,6 +763,10 @@ public static partial class InvoiceEndpoints
     IHttpContextAccessor httpContext,
     Guid id)
   {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RemoveMerchantFromInvoiceAsync), ActivityKind.Server);
@@ -704,7 +780,7 @@ public static partial class InvoiceEndpoints
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier)
+        .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
@@ -721,7 +797,7 @@ public static partial class InvoiceEndpoints
       activity?.SetMerchantContext(possibleInvoice.MerchantReference);
 
       var possibleMerchant = await invoiceProcessingService
-        .ReadMerchant(possibleInvoice.MerchantReference)
+        .ReadMerchant(possibleInvoice.MerchantReference, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleMerchant is null)
       {
@@ -733,15 +809,19 @@ public static partial class InvoiceEndpoints
       possibleMerchant.ReferencedInvoices.Remove(possibleInvoice.id);
 
       await invoiceProcessingService
-        .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier)
+        .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       await invoiceProcessingService
-        .UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId)
+        .UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Merchant removed from invoice");
       return TypedResults.NoContent();
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "delete", "merchant");
     }
     catch (Exception ex)
     {
@@ -757,6 +837,10 @@ public static partial class InvoiceEndpoints
     Guid id,
     CreateInvoiceScanRequestDto invoiceScanDto)
   {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceScanAsync), ActivityKind.Server);
@@ -770,7 +854,7 @@ public static partial class InvoiceEndpoints
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier)
+        .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
@@ -784,11 +868,15 @@ public static partial class InvoiceEndpoints
       possibleInvoice.Scans.Add(convertedScan);
 
       await invoiceProcessingService
-          .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier)
+          .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
           .ConfigureAwait(false);
 
       activity?.RecordSuccess("Scan added to invoice");
       return TypedResults.Created($"/rest/v1/invoices/{id}/scans", InvoiceScanResponseDto.FromInvoiceScan(convertedScan));
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "create", "invoice");
     }
     catch (Exception ex)
     {
@@ -848,6 +936,10 @@ public static partial class InvoiceEndpoints
     Guid id,
     string scanLocationField)
   {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceScanAsync), ActivityKind.Server);
@@ -861,7 +953,7 @@ public static partial class InvoiceEndpoints
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier)
+        .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
@@ -880,7 +972,7 @@ public static partial class InvoiceEndpoints
       {
         possibleInvoice.Scans.Remove(possibleScan);
         await invoiceProcessingService
-          .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier)
+          .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
           .ConfigureAwait(false);
         activity?.RecordSuccess("Scan removed from invoice");
         return TypedResults.NoContent();
@@ -888,6 +980,10 @@ public static partial class InvoiceEndpoints
 
       activity?.SetTag("scan.found", false);
       return TypedResults.NotFound();
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "delete", "invoice");
     }
     catch (Exception ex)
     {
@@ -947,6 +1043,10 @@ public static partial class InvoiceEndpoints
     Guid id,
     PatchMetadataRequestDto invoiceMetadataPatch)
   {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(PatchInvoiceMetadataAsync), ActivityKind.Server);
@@ -960,7 +1060,7 @@ public static partial class InvoiceEndpoints
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier)
+        .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
@@ -971,12 +1071,16 @@ public static partial class InvoiceEndpoints
       invoiceMetadataPatch.ApplyTo(possibleInvoice.AdditionalMetadata);
 
       var updatedInvoice = await invoiceProcessingService
-        .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier)
+        .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.SetTag("metadata.count", updatedInvoice.AdditionalMetadata.Count);
       activity?.RecordSuccess("Metadata patched");
       return TypedResults.Accepted($"/rest/v1/invoices/{id}/metadata", updatedInvoice.AdditionalMetadata);
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "update", "invoice");
     }
     catch (Exception ex)
     {
@@ -992,6 +1096,10 @@ public static partial class InvoiceEndpoints
     Guid id,
     DeleteMetadataRequestDto metadataKeys)
   {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceMetadataAsync), ActivityKind.Server);
@@ -1006,7 +1114,7 @@ public static partial class InvoiceEndpoints
       activity?.SetTag("metadata.keys_to_delete", metadataKeys.Keys.Count());
 
       var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier)
+        .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
@@ -1020,11 +1128,15 @@ public static partial class InvoiceEndpoints
       }
 
       _ = await invoiceProcessingService
-        .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier)
+        .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Metadata keys deleted");
       return TypedResults.NoContent();
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "delete", "invoice");
     }
     catch (Exception ex)
     {
@@ -1042,6 +1154,10 @@ public static partial class InvoiceEndpoints
     IHttpContextAccessor httpContext,
     CreateMerchantRequestDto merchantDto)
   {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(CreateNewMerchantAsync), ActivityKind.Server);
@@ -1058,11 +1174,15 @@ public static partial class InvoiceEndpoints
       activity?.SetTag("merchant.name", merchant.Name);
 
       await invoiceProcessingService
-          .CreateMerchant(merchant)
+          .CreateMerchant(merchant, cancellationToken: writeScope.Token)
           .ConfigureAwait(false);
 
       activity?.RecordSuccess("Merchant created");
       return TypedResults.Created($"/rest/v1/merchants/{merchant.id}", MerchantResponseDto.FromMerchant(merchant));
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "create", "merchant");
     }
     catch (Exception ex)
     {
@@ -1167,6 +1287,10 @@ public static partial class InvoiceEndpoints
     Guid id,
     UpdateMerchantRequestDto merchantPayload)
   {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateSpecificMerchantAsync), ActivityKind.Server);
@@ -1180,7 +1304,7 @@ public static partial class InvoiceEndpoints
       activity?.SetMerchantContext(id);
 
       var possibleMerchant = await invoiceProcessingService
-        .ReadMerchant(id, merchantPayload.ParentCompanyId)
+        .ReadMerchant(id, merchantPayload.ParentCompanyId, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleMerchant is null)
       {
@@ -1192,11 +1316,15 @@ public static partial class InvoiceEndpoints
       activity?.SetTag("merchant.name", updatedMerchant.Name);
 
       await invoiceProcessingService
-        .UpdateMerchant(updatedMerchant, id, updatedMerchant.ParentCompanyId)
+        .UpdateMerchant(updatedMerchant, id, updatedMerchant.ParentCompanyId, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Merchant updated");
       return TypedResults.Accepted($"/rest/v1/merchants/{id}", MerchantResponseDto.FromMerchant(updatedMerchant));
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "update", "merchant");
     }
     catch (Exception ex)
     {
@@ -1212,6 +1340,10 @@ public static partial class InvoiceEndpoints
     Guid id,
     Guid parentCompanyId)
   {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchantAsync), ActivityKind.Server);
@@ -1226,7 +1358,7 @@ public static partial class InvoiceEndpoints
       activity?.SetTag("parent_company.id", parentCompanyId.ToString());
 
       var possibleMerchant = await invoiceProcessingService
-        .ReadMerchant(id, parentCompanyId)
+        .ReadMerchant(id, parentCompanyId, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleMerchant is null)
       {
@@ -1240,23 +1372,27 @@ public static partial class InvoiceEndpoints
       foreach (var invoiceIdentifier in possibleMerchant.ReferencedInvoices)
       {
         var possibleInvoice = await invoiceProcessingService
-          .ReadInvoice(invoiceIdentifier)
+          .ReadInvoice(invoiceIdentifier, cancellationToken: writeScope.Token)
           .ConfigureAwait(false);
         if (possibleInvoice is not null)
         {
           possibleInvoice.MerchantReference = Guid.Empty;
           await invoiceProcessingService
-            .UpdateInvoice(possibleInvoice, possibleInvoice.id)
+            .UpdateInvoice(possibleInvoice, possibleInvoice.id, cancellationToken: writeScope.Token)
             .ConfigureAwait(false);
         }
       }
 
       await invoiceProcessingService
-        .DeleteMerchant(id, parentCompanyId)
+        .DeleteMerchant(id, parentCompanyId, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Merchant deleted");
       return TypedResults.NoContent();
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "delete", "merchant");
     }
     catch (Exception ex)
     {
@@ -1332,6 +1468,10 @@ public static partial class InvoiceEndpoints
     Guid id,
     MerchantInvoicesRequestDto invoiceIdentifiers)
   {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(AddInvoiceToMerchantAsync), ActivityKind.Server);
@@ -1345,7 +1485,7 @@ public static partial class InvoiceEndpoints
       activity?.SetMerchantContext(id);
       activity?.SetTag("invoices.requested_count", invoiceIdentifiers.InvoiceIdentifiers.Count());
 
-      var possibleMerchant = await invoiceProcessingService.ReadMerchant(id).ConfigureAwait(false);
+      var possibleMerchant = await invoiceProcessingService.ReadMerchant(id, cancellationToken: writeScope.Token).ConfigureAwait(false);
       if (possibleMerchant is null)
       {
         activity?.SetTag("result.found", false);
@@ -1355,7 +1495,7 @@ public static partial class InvoiceEndpoints
       var listOfValidInvoices = new HashSet<Invoice>();
       foreach (var identifier in invoiceIdentifiers.InvoiceIdentifiers)
       {
-        var potentialInvoice = await invoiceProcessingService.ReadInvoice(identifier).ConfigureAwait(false);
+        var potentialInvoice = await invoiceProcessingService.ReadInvoice(identifier, cancellationToken: writeScope.Token).ConfigureAwait(false);
         if (potentialInvoice is not null)
         {
           listOfValidInvoices.Add(potentialInvoice);
@@ -1370,16 +1510,20 @@ public static partial class InvoiceEndpoints
         invoice.MerchantReference = possibleMerchant.id;
 
         await invoiceProcessingService
-          .UpdateInvoice(invoice, invoice.id)
+          .UpdateInvoice(invoice, invoice.id, cancellationToken: writeScope.Token)
           .ConfigureAwait(false);
       }
 
       await invoiceProcessingService
-        .UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId)
+        .UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoices added to merchant");
       return TypedResults.Accepted($"/rest/v1/merchants/{id}", MerchantResponseDto.FromMerchant(possibleMerchant));
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "update", "merchant");
     }
     catch (Exception ex)
     {
@@ -1395,6 +1539,10 @@ public static partial class InvoiceEndpoints
     Guid id,
     MerchantInvoicesRequestDto invoiceIdentifiers)
   {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RemoveInvoiceFromMerchantAsync), ActivityKind.Server);
@@ -1409,7 +1557,7 @@ public static partial class InvoiceEndpoints
       activity?.SetTag("invoices.requested_count", invoiceIdentifiers.InvoiceIdentifiers.Count());
 
       var possibleMerchant = await invoiceProcessingService
-        .ReadMerchant(id)
+        .ReadMerchant(id, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleMerchant is null)
       {
@@ -1420,7 +1568,7 @@ public static partial class InvoiceEndpoints
       var listOfInvoicesToBeRemoved = new List<Invoice>();
       foreach (var identifier in invoiceIdentifiers.InvoiceIdentifiers)
       {
-        var potentialInvoice = await invoiceProcessingService.ReadInvoice(identifier).ConfigureAwait(false);
+        var potentialInvoice = await invoiceProcessingService.ReadInvoice(identifier, cancellationToken: writeScope.Token).ConfigureAwait(false);
         if (potentialInvoice is not null)
         {
           listOfInvoicesToBeRemoved.Add(potentialInvoice);
@@ -1435,16 +1583,20 @@ public static partial class InvoiceEndpoints
         invoice.MerchantReference = Guid.Empty;
 
         await invoiceProcessingService
-          .UpdateInvoice(invoice, invoice.id)
+          .UpdateInvoice(invoice, invoice.id, cancellationToken: writeScope.Token)
           .ConfigureAwait(false);
       }
 
       await invoiceProcessingService
-        .UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId)
+        .UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoices removed from merchant");
       return TypedResults.NoContent();
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "update", "merchant");
     }
     catch (Exception ex)
     {
@@ -1525,6 +1677,10 @@ public static partial class InvoiceEndpoints
     Guid id,
     AnalyzeInvoiceRequestDto options)
   {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.AnalysisWriteBudget);
+
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceAsync), ActivityKind.Server);
@@ -1542,7 +1698,7 @@ public static partial class InvoiceEndpoints
       activity?.SetTag("analysis.mode", analysisOptions.ToString());
 
       var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier)
+        .ReadInvoice(id, potentialUserIdentifier, writeScope.Token)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
@@ -1551,11 +1707,11 @@ public static partial class InvoiceEndpoints
       }
 
       await invoiceProcessingService
-        .AnalyzeInvoice(analysisOptions, id, potentialUserIdentifier)
+        .AnalyzeInvoice(analysisOptions, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       var analyzedInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier)
+        .ReadInvoice(id, potentialUserIdentifier, writeScope.Token)
         .ConfigureAwait(false);
 
       if (analyzedInvoice is null)
@@ -1567,6 +1723,10 @@ public static partial class InvoiceEndpoints
       activity?.SetTag("result.items_count", analyzedInvoice.Items.Count);
       activity?.RecordSuccess("Invoice analyzed");
       return TypedResults.Accepted($"/rest/v1/invoices/{id}", InvoiceResponseDto.FromInvoice(analyzedInvoice));
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "analyze", "invoice");
     }
     catch (Exception ex)
     {

@@ -16,6 +16,7 @@ using arolariu.Backend.Domain.Invoices.Services.Processing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 
 using Moq;
 
@@ -164,7 +165,11 @@ public sealed class InvoiceEndpointsStatusCodeTests
     };
     var identity = new ClaimsIdentity(claims, authenticationType: "TestAuth");
     var principal = new ClaimsPrincipal(identity);
-    var httpContext = new DefaultHttpContext { User = principal };
+    var httpContext = new DefaultHttpContext
+    {
+      User = principal,
+      RequestServices = new ServiceCollection().BuildServiceProvider(),
+    };
     return new HttpContextAccessor { HttpContext = httpContext };
   }
 

@@ -12,6 +12,7 @@ using arolariu.Backend.Domain.Invoices.Services.Processing;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Timeouts;
+using Microsoft.Extensions.DependencyInjection;
 
 using Moq;
 
@@ -51,6 +52,7 @@ public sealed class EndpointCancellationTests
   private static HttpContextAccessor CreateAuthenticatedContextAccessor(DefaultHttpContext? ctx = null)
   {
     var context = ctx ?? new DefaultHttpContext();
+    context.RequestServices = new ServiceCollection().BuildServiceProvider();
     var claims = new List<Claim>
     {
       new Claim("userIdentifier", Guid.NewGuid().ToString()),
@@ -140,5 +142,79 @@ public sealed class EndpointCancellationTests
 
     var statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
     Assert.Equal(RequestCancellation.ClientClosedRequest, statusResult.StatusCode);
+  }
+
+  /// <summary>
+  /// Verifies that when the processing service throws <see cref="OperationCanceledException"/>
+  /// and no <c>IHttpRequestTimeoutFeature</c> is present (client disconnected),
+  /// <see cref="InvoiceEndpoints.CreateNewInvoiceAsync"/> returns 499.
+  /// </summary>
+  [Fact]
+  public async Task CreateNewInvoiceAsync_WhenClientDisconnects_Returns499()
+  {
+    var processing = new Mock<IInvoiceProcessingService>();
+    processing
+      .Setup(p => p.CreateInvoice(
+        It.IsAny<arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Invoice>(),
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new OperationCanceledException());
+
+    var invoiceDto = new arolariu.Backend.Domain.Invoices.DTOs.Requests.CreateInvoiceRequestDto(
+      UserIdentifier: Guid.NewGuid(),
+      InitialScan: new arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.InvoiceScan(
+        arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.ScanType.JPG,
+        new Uri("https://example.com/invoice.jpg"),
+        null),
+      Metadata: null);
+
+    // No IHttpRequestTimeoutFeature → client disconnect path.
+    var accessor = CreateAuthenticatedContextAccessor();
+
+    var result = await InvoiceEndpoints
+      .CreateNewInvoiceAsync(processing.Object, accessor, invoiceDto)
+      .ConfigureAwait(true);
+
+    var statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
+    Assert.Equal(RequestCancellation.ClientClosedRequest, statusResult.StatusCode);
+  }
+
+  /// <summary>
+  /// Verifies that when the processing service throws <see cref="OperationCanceledException"/>
+  /// and a cancelled <c>IHttpRequestTimeoutFeature</c> is installed,
+  /// <see cref="InvoiceEndpoints.CreateNewInvoiceAsync"/> returns 504 Gateway Timeout.
+  /// </summary>
+  [Fact]
+  public async Task CreateNewInvoiceAsync_WhenRequestTimesOut_Returns504()
+  {
+    var processing = new Mock<IInvoiceProcessingService>();
+    processing
+      .Setup(p => p.CreateInvoice(
+        It.IsAny<arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Invoice>(),
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new OperationCanceledException());
+
+    var invoiceDto = new arolariu.Backend.Domain.Invoices.DTOs.Requests.CreateInvoiceRequestDto(
+      UserIdentifier: Guid.NewGuid(),
+      InitialScan: new arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.InvoiceScan(
+        arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.ScanType.JPG,
+        new Uri("https://example.com/invoice.jpg"),
+        null),
+      Metadata: null);
+
+    using var timeoutFeature = new StubTimeoutFeature();
+    var context = new DefaultHttpContext();
+    context.RequestServices = new ServiceCollection().BuildServiceProvider();
+    context.Features.Set<IHttpRequestTimeoutFeature>(timeoutFeature);
+    var accessor = new HttpContextAccessor { HttpContext = context };
+
+    var result = await InvoiceEndpoints
+      .CreateNewInvoiceAsync(processing.Object, accessor, invoiceDto)
+      .ConfigureAwait(true);
+
+    // IHttpRequestTimeoutFeature present with cancelled token → server timeout.
+    var statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
+    Assert.Equal(StatusCodes.Status504GatewayTimeout, statusResult.StatusCode);
   }
 }
