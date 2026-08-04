@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Invoices.Endpoints;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -61,6 +62,7 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice to retrieve.</param>
+  /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing the retrieved invoice.</returns>
   [SwaggerOperation(
     Summary = "Retrieves a specific invoice from the system.",
@@ -81,7 +83,8 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RetrieveSpecificInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("The unique identifier of the invoice to retrieve.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice to retrieve.", Required = true)] Guid id,
+    CancellationToken cancellationToken);
   #endregion
 
   #region HTTP GET /rest/v1/invoices
@@ -90,6 +93,7 @@ public static partial class InvoiceEndpoints
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing the list of invoices.</returns>
   [SwaggerOperation(
     Summary = "Retrieves all invoices from the system.",
@@ -108,8 +112,8 @@ public static partial class InvoiceEndpoints
   [Authorize]
   internal static partial Task<IResult> RetrieveAllInvoicesAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext
-    );
+    [FromServices] IHttpContextAccessor httpContext,
+    CancellationToken cancellationToken);
   #endregion
 
   #region HTTP PUT /rest/v1/invoices/{id}
@@ -276,6 +280,7 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice from which to retrieve products.</param>
+  /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing the list of products.</returns>
   [SwaggerOperation(
     Summary = "Retrieves all products from a specific invoice in the system.",
@@ -296,7 +301,8 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RetrieveProductsFromInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
+    CancellationToken cancellationToken);
   #endregion
 
   #region HTTP DELETE /rest/v1/invoices/{id}/products
@@ -374,6 +380,7 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice from which to retrieve the merchant.</param>
+  /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing the merchant details.</returns>
   [SwaggerOperation(
     Summary = "Retrieves the merchant from an invoice in the system.",
@@ -394,7 +401,8 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RetrieveMerchantFromInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
+    CancellationToken cancellationToken);
   #endregion
 
   #region HTTP POST /rest/v1/invoices/{id}/merchant
@@ -503,6 +511,7 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice from which to retrieve scans.</param>
+  /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing the list of invoice scans.</returns>
   [SwaggerOperation(
     Summary = "Retrieves all invoice scans from the system.",
@@ -523,7 +532,8 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RetrieveInvoiceScansAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
+    CancellationToken cancellationToken);
   #endregion
 
   #region HTTP DELETE /rest/v1/invoices/{id}/scans/{scanLocationField}
@@ -565,6 +575,7 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice from which to retrieve metadata.</param>
+  /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing the invoice metadata.</returns>
   [SwaggerOperation(
     Summary = "Retrieves the metadata from a specific invoice in the system.",
@@ -585,7 +596,8 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RetrieveInvoiceMetadataAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
+    CancellationToken cancellationToken);
   #endregion
 
   #region HTTP PATCH /rest/v1/invoices/{id}/metadata
@@ -692,6 +704,7 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="parentCompanyId">The unique identifier of the parent company to filter merchants by.</param>
+  /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing a list of merchants.</returns>
   [SwaggerOperation(
     Summary = "Retrieves all merchants from the system.",
@@ -710,7 +723,8 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RetrieveAllMerchantsAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromQuery, SwaggerParameter("The parent company identifier used as a filter.", Required = true)] Guid parentCompanyId);
+    [FromQuery, SwaggerParameter("The parent company identifier used as a filter.", Required = true)] Guid parentCompanyId,
+    CancellationToken cancellationToken);
   #endregion
 
   #region HTTP GET /rest/v1/merchants/{id}
@@ -721,6 +735,7 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the merchant to retrieve.</param>
   /// <param name="parentCompanyId">The unique identifier of the parent company to validate against.</param>
+  /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing the retrieved merchant.</returns>
   [SwaggerOperation(
     Summary = "Retrieves a specific merchant from the system.",
@@ -742,7 +757,8 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
-    [FromQuery, SwaggerParameter("The parent company identifier used as a filter.", Required = false)] Guid? parentCompanyId);
+    [FromQuery, SwaggerParameter("The parent company identifier used as a filter.", Required = false)] Guid? parentCompanyId,
+    CancellationToken cancellationToken);
   #endregion
 
   #region HTTP PUT /rest/v1/merchants/{id}
@@ -816,6 +832,7 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the merchant.</param>
+  /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing a list of invoices.</returns>
   [SwaggerOperation(
     Summary = "Retrieves all invoices from a specific merchant in the system.",
@@ -836,7 +853,8 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RetrieveInvoicesFromMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
+    CancellationToken cancellationToken);
   #endregion
 
   #region HTTP PATCH /rest/v1/merchants/{id}/invoices
@@ -914,6 +932,7 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the merchant.</param>
+  /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing a list of products.</returns>
   [SwaggerOperation(
     Summary = "Retrieves all products from a specific merchant in the system.",
@@ -934,7 +953,8 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RetrieveProductsFromMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
+    CancellationToken cancellationToken);
   #endregion
   #endregion
 

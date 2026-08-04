@@ -4,16 +4,19 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Http;
 using arolariu.Backend.Common.Telemetry.Tracing;
+using arolariu.Backend.Domain.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.DTOs.Responses;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
 
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 using static arolariu.Backend.Common.GuidConstants;
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
@@ -65,7 +68,8 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> RetrieveSpecificInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    Guid id)
+    Guid id,
+    CancellationToken cancellationToken)
   {
     try
     {
@@ -94,13 +98,13 @@ public static partial class InvoiceEndpoints
       if (!isGuestUser)
       {
         possibleInvoice = await invoiceProcessingService
-          .ReadInvoice(id, potentialUserIdentifier)
+          .ReadInvoice(id, potentialUserIdentifier, cancellationToken)
           .ConfigureAwait(false);
       }
 
       // Step 2: If not found (or guest), try cross-partition read (shared/public scenario)
       possibleInvoice ??= await invoiceProcessingService
-          .ReadInvoice(id, userIdentifier: null)
+          .ReadInvoice(id, userIdentifier: null, cancellationToken)
           .ConfigureAwait(false);
 
       if (possibleInvoice is null)
@@ -134,6 +138,10 @@ public static partial class InvoiceEndpoints
       activity?.RecordSuccess("Invoice retrieved successfully");
       return TypedResults.Ok(InvoiceResponseDto.FromInvoice(possibleInvoice));
     }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, null, "read", "invoice");
+    }
     catch (Exception ex)
     {
       Activity.Current?.RecordException(ex);
@@ -144,8 +152,8 @@ public static partial class InvoiceEndpoints
 
   internal static async partial Task<IResult> RetrieveAllInvoicesAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext
-    )
+    IHttpContextAccessor httpContext,
+    CancellationToken cancellationToken)
   {
     try
     {
@@ -158,13 +166,17 @@ public static partial class InvoiceEndpoints
       activity?.SetUserContext(potentialUserIdentifier);
 
       var possibleInvoices = await invoiceProcessingService
-        .ReadInvoices(potentialUserIdentifier)
+        .ReadInvoices(potentialUserIdentifier, cancellationToken)
         .ConfigureAwait(false);
 
       activity?.SetTag("result.count", possibleInvoices?.Count() ?? 0);
       activity?.RecordSuccess();
 
       return possibleInvoices is null ? TypedResults.NotFound() : TypedResults.Ok(possibleInvoices.Select(InvoiceResponseDto.FromInvoice));
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, null, "read", "invoice");
     }
     catch (Exception ex)
     {
@@ -410,7 +422,8 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> RetrieveProductsFromInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    Guid id)
+    Guid id,
+    CancellationToken cancellationToken)
   {
     try
     {
@@ -425,7 +438,7 @@ public static partial class InvoiceEndpoints
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier)
+        .ReadInvoice(id, potentialUserIdentifier, cancellationToken)
         .ConfigureAwait(false);
 
       if (possibleInvoice is null)
@@ -437,6 +450,10 @@ public static partial class InvoiceEndpoints
       activity?.SetTag("result.count", possibleInvoice.Items.Count);
       activity?.RecordSuccess();
       return TypedResults.Ok(possibleInvoice.Items.Select(ProductResponseDto.FromProduct));
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, null, "read", "invoice");
     }
     catch (Exception ex)
     {
@@ -551,7 +568,8 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> RetrieveMerchantFromInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    Guid id)
+    Guid id,
+    CancellationToken cancellationToken)
   {
     try
     {
@@ -566,7 +584,7 @@ public static partial class InvoiceEndpoints
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier)
+        .ReadInvoice(id, potentialUserIdentifier, cancellationToken)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
@@ -583,7 +601,7 @@ public static partial class InvoiceEndpoints
       activity?.SetMerchantContext(possibleInvoice.MerchantReference);
 
       var possibleMerchant = await invoiceProcessingService
-        .ReadMerchant(possibleInvoice.MerchantReference)
+        .ReadMerchant(possibleInvoice.MerchantReference, cancellationToken: cancellationToken)
         .ConfigureAwait(false);
 
       if (possibleMerchant is null)
@@ -594,6 +612,10 @@ public static partial class InvoiceEndpoints
 
       activity?.RecordSuccess();
       return TypedResults.Ok(MerchantResponseDto.FromMerchant(possibleMerchant));
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, null, "read", "invoice");
     }
     catch (Exception ex)
     {
@@ -779,7 +801,8 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> RetrieveInvoiceScansAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    Guid id)
+    Guid id,
+    CancellationToken cancellationToken)
   {
     try
     {
@@ -794,7 +817,7 @@ public static partial class InvoiceEndpoints
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier)
+        .ReadInvoice(id, potentialUserIdentifier, cancellationToken)
         .ConfigureAwait(false);
 
       if (possibleInvoice is null)
@@ -806,6 +829,10 @@ public static partial class InvoiceEndpoints
       activity?.SetTag("result.count", possibleInvoice.Scans.Count);
       activity?.RecordSuccess();
       return TypedResults.Ok(possibleInvoice.Scans.Select(InvoiceScanResponseDto.FromInvoiceScan));
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, null, "read", "invoice");
     }
     catch (Exception ex)
     {
@@ -873,7 +900,8 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> RetrieveInvoiceMetadataAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    Guid id)
+    Guid id,
+    CancellationToken cancellationToken)
   {
     try
     {
@@ -888,7 +916,7 @@ public static partial class InvoiceEndpoints
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier)
+        .ReadInvoice(id, potentialUserIdentifier, cancellationToken)
         .ConfigureAwait(false);
 
       if (possibleInvoice is null)
@@ -900,6 +928,10 @@ public static partial class InvoiceEndpoints
       activity?.SetTag("metadata.count", possibleInvoice.AdditionalMetadata.Count);
       activity?.RecordSuccess();
       return TypedResults.Ok(value: possibleInvoice.AdditionalMetadata);
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, null, "read", "invoice");
     }
     catch (Exception ex)
     {
@@ -1043,7 +1075,8 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> RetrieveAllMerchantsAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    Guid parentCompanyId)
+    Guid parentCompanyId,
+    CancellationToken cancellationToken)
   {
     try
     {
@@ -1058,7 +1091,7 @@ public static partial class InvoiceEndpoints
       activity?.SetTag("parent_company.id", parentCompanyId.ToString());
 
       var possibleMerchants = await invoiceProcessingService
-          .ReadMerchants(parentCompanyId)
+          .ReadMerchants(parentCompanyId, cancellationToken)
           .ConfigureAwait(false);
 
       // RESTful convention: return 200 with empty array for collection endpoints, not 404
@@ -1066,6 +1099,10 @@ public static partial class InvoiceEndpoints
       activity?.SetTag("result.count", merchantDtos.Count());
       activity?.RecordSuccess();
       return TypedResults.Ok(merchantDtos);
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, null, "read", "merchant");
     }
     catch (Exception ex)
     {
@@ -1079,7 +1116,8 @@ public static partial class InvoiceEndpoints
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
     Guid id,
-    Guid? parentCompanyId)
+    Guid? parentCompanyId,
+    CancellationToken cancellationToken)
   {
     try
     {
@@ -1098,7 +1136,7 @@ public static partial class InvoiceEndpoints
       }
 
       var possibleMerchant = await invoiceProcessingService
-        .ReadMerchant(id, parentCompanyId)
+        .ReadMerchant(id, parentCompanyId, cancellationToken)
         .ConfigureAwait(false);
 
       if (possibleMerchant is null)
@@ -1110,6 +1148,10 @@ public static partial class InvoiceEndpoints
       activity?.SetTag("merchant.name", possibleMerchant.Name);
       activity?.RecordSuccess();
       return TypedResults.Ok(MerchantResponseDto.FromMerchant(possibleMerchant));
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, null, "read", "merchant");
     }
     catch (Exception ex)
     {
@@ -1227,7 +1269,8 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> RetrieveInvoicesFromMerchantAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    Guid id)
+    Guid id,
+    CancellationToken cancellationToken)
   {
     try
     {
@@ -1242,7 +1285,7 @@ public static partial class InvoiceEndpoints
       activity?.SetMerchantContext(id);
 
       var possibleMerchant = await invoiceProcessingService
-        .ReadMerchant(id)
+        .ReadMerchant(id, cancellationToken: cancellationToken)
         .ConfigureAwait(false);
       if (possibleMerchant is null)
       {
@@ -1258,7 +1301,7 @@ public static partial class InvoiceEndpoints
       foreach (var identifier in listOfInvoiceIdentifiers)
       {
         var possibleInvoice = await invoiceProcessingService
-          .ReadInvoice(identifier)
+          .ReadInvoice(identifier, cancellationToken: cancellationToken)
           .ConfigureAwait(false);
         if (possibleInvoice is not null)
         {
@@ -1270,6 +1313,10 @@ public static partial class InvoiceEndpoints
       activity?.RecordSuccess();
       // RESTful convention: return 200 with empty array for collection endpoints, not 404
       return TypedResults.Ok(listOfConcreteInvoices.Select(InvoiceResponseDto.FromInvoice));
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, null, "read", "merchant");
     }
     catch (Exception ex)
     {
@@ -1410,7 +1457,8 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> RetrieveProductsFromMerchantAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    Guid id)
+    Guid id,
+    CancellationToken cancellationToken)
   {
     try
     {
@@ -1425,7 +1473,7 @@ public static partial class InvoiceEndpoints
       activity?.SetMerchantContext(id);
 
       var possibleMerchant = await invoiceProcessingService
-        .ReadMerchant(id)
+        .ReadMerchant(id, cancellationToken: cancellationToken)
         .ConfigureAwait(false);
       if (possibleMerchant is null)
       {
@@ -1441,7 +1489,7 @@ public static partial class InvoiceEndpoints
       foreach (var identifier in listOfInvoices)
       {
         var potentialInvoice = await invoiceProcessingService
-          .ReadInvoice(identifier)
+          .ReadInvoice(identifier, cancellationToken: cancellationToken)
           .ConfigureAwait(false);
 
         if (potentialInvoice is not null)
@@ -1456,6 +1504,10 @@ public static partial class InvoiceEndpoints
       activity?.SetTag("result.count", listOfProducts.Count);
       activity?.RecordSuccess();
       return TypedResults.Ok(listOfProducts);
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, null, "read", "merchant");
     }
     catch (Exception ex)
     {
@@ -1522,6 +1574,45 @@ public static partial class InvoiceEndpoints
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
       return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
+  }
+  #endregion
+
+  #region Cancellation helpers
+  /// <summary>
+  /// Produces the response and telemetry for a cancelled request, distinguishing a server-side
+  /// timeout (a fault worth alerting on) from a client disconnect (not a fault at all).
+  /// </summary>
+  /// <param name="context">The current HTTP context.</param>
+  /// <param name="writeScope">The write scope if this was a mutation; <see langword="null"/> for reads.</param>
+  /// <param name="operation">Metric operation label, e.g. <c>"read"</c>.</param>
+  /// <param name="entity">Metric entity label, e.g. <c>"invoice"</c>.</param>
+  /// <returns>A 504 ProblemDetails result on timeout, otherwise a 499 marker result.</returns>
+  private static IResult HandleCancellation(
+    HttpContext context,
+    CancellationTokenSource? writeScope,
+    string operation,
+    string entity)
+  {
+    var isTimeout = RequestCancellation.WasTimeout(context) || writeScope?.IsCancellationRequested == true;
+
+    if (isTimeout)
+    {
+      InvoiceMetrics.RecordOperation(operation, entity, "timeout");
+      Activity.Current?.SetStatus(ActivityStatusCode.Error, "Timeout");
+      return TypedResults.Problem(new ProblemDetails
+      {
+        Status = StatusCodes.Status504GatewayTimeout,
+        Title = "Operation timed out",
+        Type = ProblemTypeUris.Timeout,
+        Detail = "The operation took too long to complete. Please try again later.",
+      });
+    }
+
+    // Client disconnected. Deliberately leave the span status Unset — this is not a fault,
+    // and marking it Error would poison error-rate SLOs with normal client behaviour.
+    InvoiceMetrics.RecordOperation(operation, entity, "canceled");
+    Activity.Current?.SetTag("cancellation.reason", "client_disconnect");
+    return TypedResults.StatusCode(RequestCancellation.ClientClosedRequest);
   }
   #endregion
 }
