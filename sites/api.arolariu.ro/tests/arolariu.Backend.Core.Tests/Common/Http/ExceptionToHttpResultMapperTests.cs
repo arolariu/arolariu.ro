@@ -147,6 +147,18 @@ public sealed class ExceptionToHttpResultMapperTests
     {
     }
   }
+  private sealed class TimeoutEx : Exception, ITimeoutException
+  {
+    public TimeoutEx(string m) : base(m) { }
+
+    public TimeoutEx()
+    {
+    }
+
+    public TimeoutEx(string message, Exception innerException) : base(message, innerException)
+    {
+    }
+  }
 
   /// <summary>Ensures each marker interface maps to its canonical HTTP status.</summary>
   [TestMethod]
@@ -262,5 +274,30 @@ public sealed class ExceptionToHttpResultMapperTests
     Assert.IsInstanceOfType<ProblemHttpResult>(result);
     var problem = (ProblemHttpResult)result;
     Assert.AreEqual(400, problem.StatusCode);
+  }
+
+  /// <summary>Timeout exceptions map to HTTP 504 Gateway Timeout with correct problem type URI.</summary>
+  [TestMethod]
+  public void ToHttpResult_TimeoutException_Returns504()
+  {
+    var result = ExceptionToHttpResultMapper.ToHttpResult(new TimeoutEx("cosmos took too long"), null);
+
+    var problem = (ProblemHttpResult)result;
+    Assert.AreEqual(504, problem.StatusCode);
+    Assert.AreEqual(ProblemTypeUris.Timeout, problem.ProblemDetails.Type);
+  }
+
+  /// <summary>504 responses never leak internal exception messages (server-side status).</summary>
+  [TestMethod]
+  public void ToHttpResult_TimeoutException_DoesNotLeakInternalMessage()
+  {
+    const string secret = "Server=tcp:internal;******";
+
+    var result = ExceptionToHttpResultMapper.ToHttpResult(new TimeoutEx(secret), null);
+
+    var problem = (ProblemHttpResult)result;
+    Assert.IsFalse(
+      problem.ProblemDetails.Detail!.Contains("hunter2", StringComparison.Ordinal),
+      "504 is a server-side status and must not echo the exception message.");
   }
 }
