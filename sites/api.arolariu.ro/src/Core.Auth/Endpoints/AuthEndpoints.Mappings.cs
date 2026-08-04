@@ -44,7 +44,8 @@ public static partial class AuthEndpoints
       .MapIdentityApi<AuthenticatedUser>()
       .WithTags(EndpointNameTag)
       .AllowAnonymous()
-      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud)
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout);
 
     router.MapPost("/auth/logout", LogoutRoute)
       .Accepts<object>("application/json")

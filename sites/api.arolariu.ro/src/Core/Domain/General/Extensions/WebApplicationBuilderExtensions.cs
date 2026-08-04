@@ -371,8 +371,6 @@ internal static class WebApplicationBuilderExtensions
   /// <returns>A task that completes when the response body has been written.</returns>
   private static async Task WriteTimeoutProblemDetailsAsync(HttpContext context)
   {
-    context.Response.ContentType = "application/problem+json";
-
     var traceId = Activity.Current?.TraceId.ToString();
     var problem = new ProblemDetails
     {
@@ -387,6 +385,8 @@ internal static class WebApplicationBuilderExtensions
       problem.Extensions["traceId"] = traceId;
     }
 
-    await context.Response.WriteAsJsonAsync(problem).ConfigureAwait(false);
+    await context.Response
+      .WriteAsJsonAsync(problem, options: null, contentType: "application/problem+json")
+      .ConfigureAwait(false);
   }
 }

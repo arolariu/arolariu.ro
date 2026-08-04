@@ -28,8 +28,12 @@ using Xunit;
 public sealed class CancellationPassthroughTests
 {
   private static InvoiceStorageFoundationService CreateStorageService(Mock<IInvoiceNoSqlBroker> broker) =>
-    new(broker.Object, new NullLoggerFactory());
+    new(broker.Object, NullLoggerFactory.Instance);
 
+  /// <summary>
+  /// Verifies that <see cref="InvoiceStorageFoundationService.ReadInvoiceObject"/> propagates
+  /// <see cref="OperationCanceledException"/> thrown by the broker without reclassifying it.
+  /// </summary>
   [Fact]
   public async Task ReadInvoiceObject_WhenBrokerCancels_PropagatesOperationCanceledException()
   {
@@ -44,6 +48,10 @@ public sealed class CancellationPassthroughTests
       () => service.ReadInvoiceObject(Guid.NewGuid(), null, CancellationToken.None)).ConfigureAwait(true);
   }
 
+  /// <summary>
+  /// Verifies that <see cref="InvoiceStorageFoundationService.ReadAllInvoiceObjects"/> propagates
+  /// <see cref="TaskCanceledException"/> thrown by the broker without reclassifying it.
+  /// </summary>
   [Fact]
   public async Task ReadAllInvoiceObjects_WhenBrokerCancels_PropagatesOperationCanceledException()
   {
@@ -59,6 +67,10 @@ public sealed class CancellationPassthroughTests
       () => service.ReadAllInvoiceObjects(Guid.NewGuid(), CancellationToken.None)).ConfigureAwait(true);
   }
 
+  /// <summary>
+  /// Verifies that <see cref="InvoiceStorageFoundationService.CreateInvoiceObject"/> propagates
+  /// <see cref="OperationCanceledException"/> thrown by the broker without reclassifying it.
+  /// </summary>
   [Fact]
   public async Task CreateInvoiceObject_WhenBrokerCancels_PropagatesOperationCanceledException()
   {
@@ -74,6 +86,10 @@ public sealed class CancellationPassthroughTests
       () => service.CreateInvoiceObject(invoice, null, CancellationToken.None)).ConfigureAwait(true);
   }
 
+  /// <summary>
+  /// Verifies that <see cref="InvoiceOrchestrationService.ReadInvoiceObject"/> propagates
+  /// <see cref="OperationCanceledException"/> thrown by a foundation service without reclassifying it.
+  /// </summary>
   [Fact]
   public async Task OrchestrationLayer_WhenFoundationCancels_PropagatesOperationCanceledException()
   {
@@ -83,12 +99,16 @@ public sealed class CancellationPassthroughTests
       .ThrowsAsync(new OperationCanceledException());
 
     var analysis = new Mock<IInvoiceAnalysisFoundationService>();
-    var service = new InvoiceOrchestrationService(analysis.Object, storage.Object, new NullLoggerFactory());
+    var service = new InvoiceOrchestrationService(analysis.Object, storage.Object, NullLoggerFactory.Instance);
 
     await Assert.ThrowsAsync<OperationCanceledException>(
       () => service.ReadInvoiceObject(Guid.NewGuid(), null, CancellationToken.None)).ConfigureAwait(true);
   }
 
+  /// <summary>
+  /// Verifies that <see cref="InvoiceProcessingService.ReadInvoice"/> propagates
+  /// <see cref="OperationCanceledException"/> through all three wrapping layers without reclassifying it.
+  /// </summary>
   [Fact]
   public async Task ProcessingLayer_WhenOrchestrationCancels_PropagatesOperationCanceledException()
   {
@@ -101,13 +121,17 @@ public sealed class CancellationPassthroughTests
     var service = new InvoiceProcessingService(
       invoiceOrchestration.Object,
       merchantOrchestration.Object,
-      new NullLoggerFactory());
+      NullLoggerFactory.Instance);
 
     // Proves the exception survives all three wrapping layers, not just the innermost one.
     await Assert.ThrowsAsync<OperationCanceledException>(
       () => service.ReadInvoice(Guid.NewGuid(), null, CancellationToken.None)).ConfigureAwait(true);
   }
 
+  /// <summary>
+  /// Verifies that <see cref="MerchantStorageFoundationService.ReadMerchantObject"/> propagates
+  /// <see cref="OperationCanceledException"/> thrown by the broker without reclassifying it.
+  /// </summary>
   [Fact]
   public async Task MerchantStorage_WhenBrokerCancels_PropagatesOperationCanceledException()
   {
@@ -116,7 +140,7 @@ public sealed class CancellationPassthroughTests
       .Setup(b => b.ReadMerchantAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new OperationCanceledException());
 
-    var service = new MerchantStorageFoundationService(broker.Object, new NullLoggerFactory());
+    var service = new MerchantStorageFoundationService(broker.Object, NullLoggerFactory.Instance);
 
     await Assert.ThrowsAsync<OperationCanceledException>(
       () => service.ReadMerchantObject(Guid.NewGuid(), null, CancellationToken.None)).ConfigureAwait(true);
