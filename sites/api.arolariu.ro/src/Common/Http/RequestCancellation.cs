@@ -58,6 +58,10 @@ public static class RequestCancellation
   /// <param name="budget">Maximum time the write may take before it is cancelled.</param>
   /// <returns>A new source the caller owns and MUST dispose.</returns>
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> is null.</exception>
+  /// <exception cref="ArgumentOutOfRangeException">
+  /// Thrown when <paramref name="budget"/> is negative or otherwise invalid for
+  /// <see cref="CancellationTokenSource.CancelAfter(TimeSpan)"/>.
+  /// </exception>
   public static CancellationTokenSource ForWrite(HttpContext context, TimeSpan budget)
   {
     ArgumentNullException.ThrowIfNull(context);
@@ -67,7 +71,16 @@ public static class RequestCancellation
       ? new CancellationTokenSource()
       : CancellationTokenSource.CreateLinkedTokenSource(lifetime.ApplicationStopping);
 
-    source.CancelAfter(budget);
+    try
+    {
+      source.CancelAfter(budget);
+    }
+    catch
+    {
+      source.Dispose();
+      throw;
+    }
+
     return source;
   }
 

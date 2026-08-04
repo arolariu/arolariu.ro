@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using arolariu.Backend.Common.Http;
 
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -31,6 +32,23 @@ public sealed class RequestCancellationTests
     public void StopApplication() => stopping.Cancel();
 
     public void Dispose() => stopping.Dispose();
+  }
+
+  private sealed class StubTimeoutFeature : IHttpRequestTimeoutFeature, IDisposable
+  {
+    private readonly CancellationTokenSource cts;
+
+    public StubTimeoutFeature(bool cancelled)
+    {
+      cts = new CancellationTokenSource();
+      if (cancelled) cts.Cancel();
+    }
+
+    public CancellationToken RequestTimeoutToken => cts.Token;
+
+    public void DisableTimeout() { }
+
+    public void Dispose() => cts.Dispose();
   }
 
   private static DefaultHttpContext CreateContext(IHostApplicationLifetime lifetime)
@@ -94,7 +112,11 @@ public sealed class RequestCancellationTests
 
     using var scope = RequestCancellation.ForWrite(context, TimeSpan.FromMilliseconds(50));
 
-    await Task.Delay(TimeSpan.FromMilliseconds(500)).ConfigureAwait(false);
+    // Poll until cancelled or the generous ceiling expires — avoids timing races on loaded CI.
+    using var ceiling = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+    while (!scope.Token.IsCancellationRequested && !ceiling.IsCancellationRequested)
+      await Task.Delay(10, CancellationToken.None).ConfigureAwait(false);
+
     Assert.IsTrue(scope.Token.IsCancellationRequested, "Writes must abort when their budget elapses.");
   }
 
@@ -108,6 +130,41 @@ public sealed class RequestCancellationTests
     Assert.IsFalse(
       RequestCancellation.WasTimeout(context),
       "Absent the timeout feature, a cancellation is a client abort.");
+  }
+
+  /// <summary>Verifies that WasTimeout returns true when the timeout feature's token is cancelled.</summary>
+  [TestMethod]
+  public void WasTimeout_WithCancelledTimeoutToken_ReturnsTrue()
+  {
+    using var lifetime = new StubLifetime();
+    var context = CreateContext(lifetime);
+    using var stub = new StubTimeoutFeature(cancelled: true);
+    context.Features.Set<IHttpRequestTimeoutFeature>(stub);
+
+    Assert.IsTrue(
+      RequestCancellation.WasTimeout(context),
+      "A cancelled RequestTimeoutToken must be classified as a server-side timeout.");
+  }
+
+  /// <summary>
+  /// Verifies that WasTimeout does not misclassify a client abort as a timeout when the
+  /// timeout feature is present but its token is NOT cancelled.
+  /// </summary>
+  [TestMethod]
+  public void WasTimeout_ClientAbortWithTimeoutFeaturePresent_ReturnsFalse()
+  {
+    using var lifetime = new StubLifetime();
+    var context = CreateContext(lifetime);
+    using var stub = new StubTimeoutFeature(cancelled: false);
+    context.Features.Set<IHttpRequestTimeoutFeature>(stub);
+
+    using var aborted = new CancellationTokenSource();
+    context.RequestAborted = aborted.Token;
+    aborted.Cancel();
+
+    Assert.IsFalse(
+      RequestCancellation.WasTimeout(context),
+      "A client abort with a non-cancelled timeout token must NOT be classified as a timeout.");
   }
 }
 
