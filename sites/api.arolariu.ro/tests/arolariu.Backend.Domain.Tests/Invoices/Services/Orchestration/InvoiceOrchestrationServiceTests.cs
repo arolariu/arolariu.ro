@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Services.Orchestration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -115,7 +116,7 @@ public sealed class InvoiceOrchestrationServiceTests
       .ReturnsAsync(originalInvoice);
 
     mockAnalysisService
-      .Setup(s => s.AnalyzeInvoiceAsync(options, originalInvoice))
+      .Setup(s => s.AnalyzeInvoiceAsync(options, originalInvoice, It.IsAny<CancellationToken>()))
       .ReturnsAsync(analyzedInvoice);
 
     mockStorageService
@@ -127,7 +128,7 @@ public sealed class InvoiceOrchestrationServiceTests
 
     // Assert
     mockStorageService.Verify(s => s.ReadInvoiceObject(invoiceId, userId), Times.Once);
-    mockAnalysisService.Verify(s => s.AnalyzeInvoiceAsync(options, originalInvoice), Times.Once);
+    mockAnalysisService.Verify(s => s.AnalyzeInvoiceAsync(options, originalInvoice, It.IsAny<CancellationToken>()), Times.Once);
     mockStorageService.Verify(s => s.UpdateInvoiceObject(analyzedInvoice, invoiceId, userId), Times.Once);
   }
 
@@ -147,7 +148,7 @@ public sealed class InvoiceOrchestrationServiceTests
   .ReturnsAsync(invoice);
 
     mockAnalysisService
-.Setup(s => s.AnalyzeInvoiceAsync(options, invoice))
+.Setup(s => s.AnalyzeInvoiceAsync(options, invoice, It.IsAny<CancellationToken>()))
       .ReturnsAsync(invoice);
 
     mockStorageService

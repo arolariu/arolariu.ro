@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Services.Orchestration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -591,7 +592,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ReturnsAsync(invoice);
 
     mockAnalysisService
-        .Setup(s => s.AnalyzeInvoiceAsync(options, invoice))
+        .Setup(s => s.AnalyzeInvoiceAsync(options, invoice, It.IsAny<CancellationToken>()))
         .ReturnsAsync(invoice);
 
     mockStorageService
@@ -602,7 +603,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
     await orchestrationService.AnalyzeInvoiceWithOptions(options, invoiceId, userId);
 
     // Assert
-    mockAnalysisService.Verify(s => s.AnalyzeInvoiceAsync(options, invoice), Times.Once);
+    mockAnalysisService.Verify(s => s.AnalyzeInvoiceAsync(options, invoice, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -621,7 +622,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ReturnsAsync(invoice);
 
     mockAnalysisService
-        .Setup(s => s.AnalyzeInvoiceAsync(options, invoice))
+        .Setup(s => s.AnalyzeInvoiceAsync(options, invoice, It.IsAny<CancellationToken>()))
         .ReturnsAsync(invoice);
 
     mockStorageService
@@ -632,7 +633,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
     await orchestrationService.AnalyzeInvoiceWithOptions(options, invoiceId, null);
 
     // Assert
-    mockAnalysisService.Verify(s => s.AnalyzeInvoiceAsync(options, invoice), Times.Once);
+    mockAnalysisService.Verify(s => s.AnalyzeInvoiceAsync(options, invoice, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -670,7 +671,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ReturnsAsync(invoice);
 
     mockAnalysisService
-        .Setup(s => s.AnalyzeInvoiceAsync(options, invoice))
+        .Setup(s => s.AnalyzeInvoiceAsync(options, invoice, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new InvalidOperationException("Analysis failed"));
 
     // Act & Assert
@@ -694,7 +695,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ReturnsAsync(invoice);
 
     mockAnalysisService
-        .Setup(s => s.AnalyzeInvoiceAsync(options, invoice))
+        .Setup(s => s.AnalyzeInvoiceAsync(options, invoice, It.IsAny<CancellationToken>()))
         .ReturnsAsync(invoice);
 
     mockStorageService

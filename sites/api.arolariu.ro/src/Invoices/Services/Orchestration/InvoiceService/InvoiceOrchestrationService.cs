@@ -52,9 +52,15 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
       .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
 
+    cancellationToken.ThrowIfCancellationRequested();
+
     Invoice analyzedInvoice = await invoiceAnalysisFoundationService
-      .AnalyzeInvoiceAsync(options, currentInvoice)
+      .AnalyzeInvoiceAsync(options, currentInvoice, cancellationToken)
       .ConfigureAwait(false);
+
+    // Last safe boundary: past this point the AI spend is already incurred, so cancelling
+    // here would waste it. Before it, abandoning costs nothing but the read.
+    cancellationToken.ThrowIfCancellationRequested();
 
     await invoiceStorageFoundationService
       .UpdateInvoiceObject(analyzedInvoice, invoiceIdentifier, userIdentifier, cancellationToken)

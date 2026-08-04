@@ -12,6 +12,7 @@ using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
+using arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Tests.Builders;
 
 using Microsoft.Extensions.Logging.Abstractions;
@@ -144,5 +145,42 @@ public sealed class CancellationPassthroughTests
 
     await Assert.ThrowsAsync<OperationCanceledException>(
       () => service.ReadMerchantObject(Guid.NewGuid(), null, CancellationToken.None)).ConfigureAwait(true);
+  }
+
+  /// <summary>
+  /// Verifies that <see cref="InvoiceOrchestrationService.AnalyzeInvoiceWithOptions"/> does not
+  /// persist the result when cancellation is requested after the analysis stage completes.
+  /// </summary>
+  [Fact]
+  public async Task AnalyzeInvoiceWithOptions_WhenCancelledAfterAnalysis_DoesNotPersistTheResult()
+  {
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    using var cts = new CancellationTokenSource();
+
+    var storage = new Mock<IInvoiceStorageFoundationService>();
+    storage
+      .Setup(s => s.ReadInvoiceObject(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+
+    var analysis = new Mock<IInvoiceAnalysisFoundationService>();
+    analysis
+      .Setup(a => a.AnalyzeInvoiceAsync(It.IsAny<AnalysisOptions>(), It.IsAny<Invoice>(), It.IsAny<CancellationToken>()))
+      .ReturnsAsync(() =>
+      {
+        // Simulate the client giving up while the AI stage was running.
+        cts.Cancel();
+        return invoice;
+      });
+
+    var service = new InvoiceOrchestrationService(analysis.Object, storage.Object, NullLoggerFactory.Instance);
+
+    await Assert.ThrowsAnyAsync<OperationCanceledException>(
+      () => service.AnalyzeInvoiceWithOptions(AnalysisOptions.CompleteAnalysis, Guid.NewGuid(), null, cts.Token))
+      .ConfigureAwait(true);
+
+    storage.Verify(
+      s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()),
+      Times.Never,
+      "The update must not run once the request was abandoned mid-pipeline.");
   }
 }
