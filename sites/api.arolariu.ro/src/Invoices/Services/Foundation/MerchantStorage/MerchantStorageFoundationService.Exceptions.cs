@@ -20,6 +20,11 @@ public partial class MerchantStorageFoundationService
     {
       await returningTaskFunction().ConfigureAwait(false);
     }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
+    }
     catch (Exception exception)
     {
       throw Classify(exception);
@@ -32,6 +37,11 @@ public partial class MerchantStorageFoundationService
     {
       return await returningMerchantFunction().ConfigureAwait(false);
     }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
+    }
     catch (Exception exception)
     {
       throw Classify(exception);
@@ -43,6 +53,11 @@ public partial class MerchantStorageFoundationService
     try
     {
       return await returningMerchantsFunction().ConfigureAwait(false);
+    }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
     }
     catch (Exception exception)
     {
@@ -65,7 +80,6 @@ public partial class MerchantStorageFoundationService
       => LogAndWrapDependencyValidation(exception),
 
     MerchantFailedStorageException
-      or OperationCanceledException
       => LogAndWrapDependency(exception),
 
     _ => LogAndWrapService(exception),

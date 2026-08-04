@@ -17,6 +17,11 @@ public partial class InvoiceAnalysisFoundationService
     {
       return await returningAnalysisFunction().ConfigureAwait(false);
     }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
+    }
     catch (Exception exception)
     {
       throw Classify(exception);
@@ -41,7 +46,6 @@ public partial class InvoiceAnalysisFoundationService
       => LogAndWrapDependencyValidation(exception),
 
     InvoiceFailedStorageException
-      or OperationCanceledException
       => LogAndWrapDependency(exception),
 
     _ => LogAndWrapService(exception),
