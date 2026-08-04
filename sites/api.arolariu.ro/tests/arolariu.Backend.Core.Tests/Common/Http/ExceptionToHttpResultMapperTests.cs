@@ -235,7 +235,15 @@ public sealed class ExceptionToHttpResultMapperTests
     Assert.IsInstanceOfType<ProblemHttpResult>(result);
     var problem = (ProblemHttpResult)result;
     var detail = problem.ProblemDetails.Detail ?? string.Empty;
-    Assert.IsFalse(detail.Contains("arolariu.Backend.Invoices", StringComparison.Ordinal));
+    Assert.IsFalse(
+      detail.Contains("arolariu.Backend.Invoices", StringComparison.Ordinal),
+      "500 must not echo Exception.Source.");
+    Assert.IsFalse(
+      detail.Contains("secret details about internal types", StringComparison.Ordinal),
+      "500 must not echo the exception message.");
+    Assert.AreEqual(
+      "An unexpected error occurred. Please try again later.",
+      detail);
   }
 
   /// <summary>When an <see cref="Activity"/> is present, its TraceId is projected as an extension.</summary>
@@ -296,8 +304,13 @@ public sealed class ExceptionToHttpResultMapperTests
     var result = ExceptionToHttpResultMapper.ToHttpResult(new TimeoutEx(secret), null);
 
     var problem = (ProblemHttpResult)result;
+    var detail = problem.ProblemDetails.Detail ?? string.Empty;
+
     Assert.IsFalse(
-      problem.ProblemDetails.Detail!.Contains("hunter2", StringComparison.Ordinal),
+      detail.Contains("Server=tcp:internal", StringComparison.Ordinal),
       "504 is a server-side status and must not echo the exception message.");
+    Assert.AreEqual(
+      "The operation took too long to complete. Please try again later.",
+      detail);
   }
 }
