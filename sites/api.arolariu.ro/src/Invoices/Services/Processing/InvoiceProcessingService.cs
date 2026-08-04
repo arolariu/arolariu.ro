@@ -426,6 +426,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
       .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
 
+    // No cancellation checkpoint: this loop only mutates an in-memory dictionary.
+    // The surrounding read/update calls carry the token and are the real cancellation points.
     foreach (var kvp in metadata)
     {
       invoice.AdditionalMetadata[kvp.Key] = kvp.Value;
@@ -447,6 +449,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
       .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
 
+    // No cancellation checkpoint: this loop only mutates an in-memory dictionary.
+    // The surrounding read/update calls carry the token and are the real cancellation points.
     foreach (var kvp in metadata)
     {
       invoice.AdditionalMetadata[kvp.Key] = kvp.Value;
@@ -482,6 +486,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
       .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
 
+    // No cancellation checkpoint: this loop only mutates an in-memory dictionary.
+    // The surrounding read/update calls carry the token and are the real cancellation points.
     foreach (var key in metadataKeys)
     {
       invoice.AdditionalMetadata.Remove(key);

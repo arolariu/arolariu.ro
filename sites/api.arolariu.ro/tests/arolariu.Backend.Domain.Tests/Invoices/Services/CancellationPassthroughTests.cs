@@ -226,4 +226,49 @@ public sealed class CancellationPassthroughTests
       Times.Never,
       "The GPT stage must not run once the caller has abandoned the request after OCR completed.");
   }
+
+  /// <summary>
+  /// Verifies that <see cref="InvoiceProcessingService.DeleteInvoices"/> stops iterating its
+  /// fan-out loop as soon as cancellation is requested, instead of deleting every remaining
+  /// invoice after the caller has already given up.
+  /// </summary>
+  [Fact]
+  public async Task DeleteInvoices_WhenCancelledMidFanOut_StopsIterating()
+  {
+    var invoices = new[]
+    {
+      InvoiceBuilder.CreateRandomInvoice(),
+      InvoiceBuilder.CreateRandomInvoice(),
+      InvoiceBuilder.CreateRandomInvoice(),
+    };
+
+    using var cts = new CancellationTokenSource();
+    var deleteCount = 0;
+
+    var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>();
+    invoiceOrchestration
+      .Setup(o => o.ReadAllInvoiceObjects(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoices);
+    invoiceOrchestration
+      .Setup(o => o.DeleteInvoiceObject(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+      .Callback(() =>
+      {
+        deleteCount++;
+#pragma warning disable CA1849 // CancelAsync is not awaitable inside a Moq callback
+        cts.Cancel(); // client gives up after the first delete
+#pragma warning restore CA1849
+      })
+      .Returns(Task.CompletedTask);
+
+    var merchantOrchestration = new Mock<IMerchantOrchestrationService>();
+    var service = new InvoiceProcessingService(
+      invoiceOrchestration.Object,
+      merchantOrchestration.Object,
+      NullLoggerFactory.Instance);
+
+    await Assert.ThrowsAnyAsync<OperationCanceledException>(
+      () => service.DeleteInvoices(Guid.NewGuid(), cts.Token)).ConfigureAwait(true);
+
+    Assert.Equal(1, deleteCount);
+  }
 }
