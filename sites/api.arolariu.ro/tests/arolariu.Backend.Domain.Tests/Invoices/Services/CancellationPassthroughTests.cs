@@ -4,6 +4,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
@@ -182,5 +184,46 @@ public sealed class CancellationPassthroughTests
       s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()),
       Times.Never,
       "The update must not run once the request was abandoned mid-pipeline.");
+  }
+
+  /// <summary>
+  /// Verifies that <see cref="InvoiceAnalysisFoundationService.AnalyzeInvoiceAsync"/> does not
+  /// invoke the GPT stage when cancellation is requested after the OCR stage completes.
+  /// This checkpoint is the load-bearing guard that prevents both expensive AI stages from
+  /// running after the caller has already given up.
+  /// </summary>
+  [Fact]
+  public async Task AnalyzeInvoiceAsync_WhenCancelledAfterOcrStage_DoesNotInvokeGptStage()
+  {
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    using var cts = new CancellationTokenSource();
+
+    var ocrBroker = new Mock<IFormRecognizerBroker>();
+    ocrBroker
+      .Setup(b => b.PerformOcrAnalysisOnSingleInvoice(It.IsAny<Invoice>(), It.IsAny<AnalysisOptions>()))
+      .Returns<Invoice, AnalysisOptions>((inv, _) =>
+      {
+        // Simulate the caller giving up while OCR was running.
+#pragma warning disable CA1849 // CancelAsync is not awaitable inside a ValueTask factory callback
+        cts.Cancel();
+#pragma warning restore CA1849
+        return ValueTask.FromResult(inv);
+      });
+
+    var classifierBroker = new Mock<IClassifierBroker>();
+
+    var service = new InvoiceAnalysisFoundationService(
+      classifierBroker.Object,
+      ocrBroker.Object,
+      NullLoggerFactory.Instance);
+
+    await Assert.ThrowsAnyAsync<OperationCanceledException>(
+      () => service.AnalyzeInvoiceAsync(AnalysisOptions.CompleteAnalysis, invoice, cts.Token))
+      .ConfigureAwait(true);
+
+    classifierBroker.Verify(
+      b => b.PerformGptAnalysisOnSingleInvoice(It.IsAny<Invoice>(), It.IsAny<AnalysisOptions>()),
+      Times.Never,
+      "The GPT stage must not run once the caller has abandoned the request after OCR completed.");
   }
 }
