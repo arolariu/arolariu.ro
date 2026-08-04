@@ -2,9 +2,11 @@ namespace arolariu.Backend.Core.Domain.General.Extensions;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Configuration;
@@ -18,6 +20,9 @@ using arolariu.Backend.Core.Domain.General.Configuration;
 using arolariu.Backend.Core.Domain.General.Services.Swagger;
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Timeouts;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -331,6 +336,23 @@ internal static class WebApplicationBuilderExtensions
     services.AddHealthChecks();
     services.AddRateLimitingPolicies();
 
+    services.AddRequestTimeouts(options =>
+    {
+      options.AddPolicy(RequestTimeoutPolicies.Crud, new RequestTimeoutPolicy
+      {
+        Timeout = RequestCancellation.CrudWriteBudget,
+        TimeoutStatusCode = StatusCodes.Status504GatewayTimeout,
+        WriteTimeoutResponse = WriteTimeoutProblemDetailsAsync,
+      });
+
+      options.AddPolicy(RequestTimeoutPolicies.Analysis, new RequestTimeoutPolicy
+      {
+        Timeout = RequestCancellation.AnalysisWriteBudget,
+        TimeoutStatusCode = StatusCodes.Status504GatewayTimeout,
+        WriteTimeoutResponse = WriteTimeoutProblemDetailsAsync,
+      });
+    });
+
     services.AddExceptionHandler<ExceptionMappingHandler>();
     services.AddProblemDetails();
 
@@ -338,5 +360,33 @@ internal static class WebApplicationBuilderExtensions
     builder.AddOTelMetering();
     builder.AddOTelTracing();
     builder.AddAuthServices();
+  }
+
+  /// <summary>
+  /// Emits an RFC 7807 ProblemDetails body for a request that exceeded its timeout policy,
+  /// matching the shape produced by <see cref="ExceptionToHttpResultMapper"/> so clients see
+  /// exactly one error contract.
+  /// </summary>
+  /// <param name="context">The timed-out request's context.</param>
+  /// <returns>A task that completes when the response body has been written.</returns>
+  private static async Task WriteTimeoutProblemDetailsAsync(HttpContext context)
+  {
+    context.Response.ContentType = "application/problem+json";
+
+    var traceId = Activity.Current?.TraceId.ToString();
+    var problem = new ProblemDetails
+    {
+      Status = StatusCodes.Status504GatewayTimeout,
+      Title = "Operation timed out",
+      Type = ProblemTypeUris.Timeout,
+      Detail = "The operation took too long to complete. Please try again later.",
+    };
+
+    if (!string.IsNullOrEmpty(traceId))
+    {
+      problem.Extensions["traceId"] = traceId;
+    }
+
+    await context.Response.WriteAsJsonAsync(problem).ConfigureAwait(false);
   }
 }

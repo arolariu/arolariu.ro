@@ -99,3 +99,13 @@ public static class RequestCancellation
     return feature?.RequestTimeoutToken.IsCancellationRequested == true;
   }
 }
+
+/// <summary>Names of the registered request-timeout policies.</summary>
+public static class RequestTimeoutPolicies
+{
+  /// <summary>Policy for ordinary CRUD endpoints (30 seconds).</summary>
+  public const string Crud = "crud";
+
+  /// <summary>Policy for the invoice analysis endpoint (300 seconds).</summary>
+  public const string Analysis = "analysis";
+}
