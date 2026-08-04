@@ -294,12 +294,11 @@ public sealed class InvoiceAnalysisFoundationServiceTests
   }
 
   /// <summary>
-  /// Validates OperationCanceledException is wrapped into foundation dependency exception,
-  /// since downstream cancellation (e.g. timeout from the OCR broker) is a transient infrastructure
-  /// concern that should surface as a 503 rather than a generic 500 per RFC 2003.
+  /// Validates that OperationCanceledException from the OCR broker propagates unchanged,
+  /// per the cancellation-passthrough contract. Cancellation is never a server fault.
   /// </summary>
   [Fact]
-  public async Task AnalyzeInvoiceAsync_OperationCanceledException_ThrowsFoundationDependencyException()
+  public async Task AnalyzeInvoiceAsync_OperationCanceledException_PropagatesOperationCanceledException()
   {
     // Arrange
     var options = AnalysisOptions.CompleteAnalysis;

@@ -65,9 +65,9 @@ public class InvoiceAnalysisFoundationServiceExceptionsTests
     Assert.IsType<InvoiceCosmosDbRateLimitException>(ex.InnerException);
   }
 
-  /// <summary>Verifies that an <see cref="OperationCanceledException"/> from the OCR broker is wrapped into an <see cref="InvoiceFoundationDependencyException"/> (transient downstream cancellation, not a generic 500).</summary>
+  /// <summary>Verifies that an <see cref="OperationCanceledException"/> from the OCR broker propagates unchanged per the cancellation-passthrough contract. Cancellation is never a server fault.</summary>
   [Fact]
-  public async Task AnalyzeInvoiceAsync_WhenBrokerThrowsOperationCanceled_ThrowsFoundationDependencyException()
+  public async Task AnalyzeInvoiceAsync_WhenBrokerThrowsOperationCanceled_PropagatesOperationCanceledException()
   {
     _formRecognizerBroker
       .Setup(b => b.PerformOcrAnalysisOnSingleInvoice(It.IsAny<Invoice>(), It.IsAny<AnalysisOptions>()))
