@@ -22,16 +22,6 @@
           "OpenAI": "2.9.1"
         }
       },
-      "Azure.AI.OpenAI.Assistants": {
-        "type": "Direct",
-        "requested": "[1.0.0-beta.4, )",
-        "resolved": "1.0.0-beta.4",
-        "contentHash": "AzHtUzNtUNS0TqMr3RNy8E2v9H/nfah4NyisMVzbeFJTieTDLOW4IVArTFF0xR/UMmfWvW5N/56zYPXR4hSelg==",
-        "dependencies": {
-          "Azure.Core": "1.39.0",
-          "System.ClientModel": "1.0.0"
-        }
-      },
       "Azure.AI.Translation.Text": {
         "type": "Direct",
         "requested": "[2.0.0, )",
@@ -73,12 +63,6 @@
           "Microsoft.Extensions.Configuration.Binder": "10.0.3",
           "Microsoft.Extensions.Logging": "10.0.3"
         }
-      },
-      "Newtonsoft.Json": {
-        "type": "Direct",
-        "requested": "[13.0.4, )",
-        "resolved": "13.0.4",
-        "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
       },
       "Azure.Storage.Common": {
         "type": "Transitive",
@@ -386,6 +370,11 @@
         "resolved": "1.0.0",
         "contentHash": "N4KeF3cpcm1PUHym1RmakkzfkEv3GRMyofVv40uXsQhCQeglr2OHNcUk2WOG51AKpGO8ynGpo9M/kFXSzghwug=="
       },
+      "Newtonsoft.Json": {
+        "type": "Transitive",
+        "resolved": "13.0.3",
+        "contentHash": "HrC5BXdl00IP9zeV+0Z848QWPAoCr9P3bDEZguI+gkLcBKAOxix/tLEAAHC+UvDNPv4a2d18lOReHMOagPa+zQ=="
+      },
       "OpenAI": {
         "type": "Transitive",
         "resolved": "2.9.1",
@@ -506,7 +495,6 @@
           "Microsoft.EntityFrameworkCore.Relational": "[10.0.10, )",
           "Microsoft.EntityFrameworkCore.SqlServer": "[10.0.10, )",
           "Microsoft.EntityFrameworkCore.Sqlite.Core": "[10.0.10, )",
-          "Newtonsoft.Json": "[13.0.4, )",
           "OpenTelemetry": "[1.17.0, )",
           "OpenTelemetry.Api": "[1.17.0, )",
           "OpenTelemetry.Exporter.Console": "[1.17.0, )",
