@@ -37,7 +37,7 @@ public interface IInvoiceAnalysisFoundationService
   /// </remarks>
   /// <param name="options">Analysis directives (which enrichment / inference steps to apply).</param>
   /// <param name="invoice">Target invoice aggregate to analyze (MUST NOT be null; MUST satisfy basic invariants).</param>
-  /// <param name="cancellationToken">Optional cancellation token, checked between the OCR and GPT stages.</param>
+  /// <param name="cancellationToken">Cancellation token, checked between the OCR and GPT stages.</param>
   /// <returns>Task producing the analyzed <see cref="Invoice"/> (never null if successful).</returns>
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="invoice"/> or <paramref name="options"/> is null.</exception>
   /// <exception cref="InvalidOperationException">Thrown when invoice state violates required preconditions for analysis.</exception>

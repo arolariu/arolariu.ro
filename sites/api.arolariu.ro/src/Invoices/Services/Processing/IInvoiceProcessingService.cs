@@ -23,7 +23,16 @@ using arolariu.Backend.Domain.Invoices.DTOs;
 ///   <item><description>Isolate performance-sensitive logic (looping, projection building, in‑memory filtering) away from orchestration layer.</description></item>
 /// </list></para>
 /// <para><b>Exclusions:</b> No direct broker calls (should be via foundation), no HTTP concerns, no UI mapping, no long‑running state persistence.</para>
-/// <para><b>Partitioning:</b> <c>userIdentifier</c> / <c>parentCompanyId</c> parameters act as tenancy / partition discriminators and MUST be propagated downstream unchanged.</para>
+/// <para><b>Partitioning:</b> <c>userIdentifier</c> / <c>parentCompanyId</c> are partition discriminators and MUST be
+/// propagated downstream unchanged. They are <b>nullable but not optional</b> — every caller states its intent explicitly:
+/// <list type="bullet">
+///   <item><description>Non-null — the caller knows the owning partition. Resolves to a point read or a partition-scoped
+///   collection read. This is the cheap path and should be preferred wherever the partition is known.</description></item>
+///   <item><description><see langword="null"/> — the caller deliberately wants a cross-partition ("greedy") query, e.g. to serve a
+///   view spanning all users. This costs materially more RU and should be a conscious choice.</description></item>
+/// </list>
+/// The fork between those two strategies lives <b>only in the broker layer</b>; every layer above simply forwards the value.
+/// That is what lets one endpoint and one business-logic path serve both the scoped and the global case.</para>
 /// <para><b>Idempotency:</b> Read operations and deletions of already non‑existent resources are idempotent; create / update operations are not inherently idempotent.</para>
 /// <para><b>Concurrency:</b> No optimistic concurrency yet; future enhancement may integrate version / ETag semantics.</para>
 /// </remarks>
@@ -42,7 +51,7 @@ public interface IInvoiceProcessingService
   /// </remarks>
   /// <param name="options">Directive flags specifying which enrichment steps to perform (MUST NOT be null).</param>
   /// <param name="identifier">Invoice identifier.</param>
-  /// <param name="userIdentifier">Optional tenant / partition context.</param>
+  /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   Task AnalyzeInvoice(AnalysisOptions options, Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken);
   #endregion

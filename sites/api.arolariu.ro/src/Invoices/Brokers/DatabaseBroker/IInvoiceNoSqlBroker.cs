@@ -66,7 +66,7 @@ public interface IInvoiceNoSqlBroker
   /// <para>Returns null when not found or soft-deleted.</para>
   /// </remarks>
   /// <param name="invoiceIdentifier">Invoice aggregate identity (GUID).</param>
-  /// <param name="userIdentifier">Optional partition key for efficient point read.</param>
+  /// <param name="userIdentifier">Partition key. Pass the owning user for a point read; pass null to search across partitions.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>The matching invoice or null.</returns>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
