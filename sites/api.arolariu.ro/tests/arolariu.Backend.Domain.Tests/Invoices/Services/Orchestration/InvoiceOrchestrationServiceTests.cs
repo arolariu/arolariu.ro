@@ -112,7 +112,7 @@ public sealed class InvoiceOrchestrationServiceTests
     var analyzedInvoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockStorageService
-      .Setup(s => s.ReadInvoiceObject(invoiceId, userId))
+      .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
       .ReturnsAsync(originalInvoice);
 
     mockAnalysisService
@@ -120,16 +120,16 @@ public sealed class InvoiceOrchestrationServiceTests
       .ReturnsAsync(analyzedInvoice);
 
     mockStorageService
-      .Setup(s => s.UpdateInvoiceObject(analyzedInvoice, invoiceId, userId))
+      .Setup(s => s.UpdateInvoiceObject(analyzedInvoice, invoiceId, userId, It.IsAny<CancellationToken>()))
       .ReturnsAsync(analyzedInvoice);
 
     // Act
-    await orchestrationService.AnalyzeInvoiceWithOptions(options, invoiceId, userId);
+    await orchestrationService.AnalyzeInvoiceWithOptions(options, invoiceId, userId, CancellationToken.None);
 
     // Assert
-    mockStorageService.Verify(s => s.ReadInvoiceObject(invoiceId, userId), Times.Once);
+    mockStorageService.Verify(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
     mockAnalysisService.Verify(s => s.AnalyzeInvoiceAsync(options, originalInvoice, It.IsAny<CancellationToken>()), Times.Once);
-    mockStorageService.Verify(s => s.UpdateInvoiceObject(analyzedInvoice, invoiceId, userId), Times.Once);
+    mockStorageService.Verify(s => s.UpdateInvoiceObject(analyzedInvoice, invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -144,7 +144,7 @@ public sealed class InvoiceOrchestrationServiceTests
     var invoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockStorageService
-      .Setup(s => s.ReadInvoiceObject(invoiceId, null))
+      .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
   .ReturnsAsync(invoice);
 
     mockAnalysisService
@@ -152,14 +152,14 @@ public sealed class InvoiceOrchestrationServiceTests
       .ReturnsAsync(invoice);
 
     mockStorageService
-      .Setup(s => s.UpdateInvoiceObject(invoice, invoiceId, null))
+      .Setup(s => s.UpdateInvoiceObject(invoice, invoiceId, null, It.IsAny<CancellationToken>()))
       .ReturnsAsync(invoice);
 
     // Act
-    await orchestrationService.AnalyzeInvoiceWithOptions(options, invoiceId, null);
+    await orchestrationService.AnalyzeInvoiceWithOptions(options, invoiceId, null, CancellationToken.None);
 
     // Assert
-    mockStorageService.Verify(s => s.ReadInvoiceObject(invoiceId, null), Times.Once);
+    mockStorageService.Verify(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -174,12 +174,12 @@ public sealed class InvoiceOrchestrationServiceTests
     var foundationException = new InvoiceFoundationValidationException(innerException);
 
     mockStorageService
-      .Setup(s => s.ReadInvoiceObject(invoiceId, null))
+      .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
    .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceOrchestrationValidationException>(() =>
-      orchestrationService.AnalyzeInvoiceWithOptions(AnalysisOptions.NoAnalysis, invoiceId, null));
+      orchestrationService.AnalyzeInvoiceWithOptions(AnalysisOptions.NoAnalysis, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -194,12 +194,12 @@ public sealed class InvoiceOrchestrationServiceTests
     var foundationException = new InvoiceFoundationDependencyException(innerException);
 
     mockStorageService
-      .Setup(s => s.ReadInvoiceObject(invoiceId, null))
+      .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
       .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceOrchestrationDependencyException>(() =>
-      orchestrationService.AnalyzeInvoiceWithOptions(AnalysisOptions.CompleteAnalysis, invoiceId, null));
+      orchestrationService.AnalyzeInvoiceWithOptions(AnalysisOptions.CompleteAnalysis, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -214,12 +214,12 @@ public sealed class InvoiceOrchestrationServiceTests
     var foundationException = new InvoiceFoundationDependencyValidationException(innerException);
 
     mockStorageService
-      .Setup(s => s.ReadInvoiceObject(invoiceId, null))
+      .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
       .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceOrchestrationDependencyValidationException>(() =>
-      orchestrationService.AnalyzeInvoiceWithOptions(AnalysisOptions.InvoiceItemsOnly, invoiceId, null));
+      orchestrationService.AnalyzeInvoiceWithOptions(AnalysisOptions.InvoiceItemsOnly, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -234,12 +234,12 @@ public sealed class InvoiceOrchestrationServiceTests
     var foundationException = new InvoiceFoundationServiceException(innerException);
 
     mockStorageService
-   .Setup(s => s.ReadInvoiceObject(invoiceId, null))
+   .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
  .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceOrchestrationServiceException>(() =>
-  orchestrationService.AnalyzeInvoiceWithOptions(AnalysisOptions.InvoiceMerchantOnly, invoiceId, null));
+  orchestrationService.AnalyzeInvoiceWithOptions(AnalysisOptions.InvoiceMerchantOnly, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -253,12 +253,12 @@ public sealed class InvoiceOrchestrationServiceTests
     var exception = new InvalidOperationException("Unexpected error");
 
     mockStorageService
-   .Setup(s => s.ReadInvoiceObject(invoiceId, null))
+   .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
       .ThrowsAsync(exception);
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceOrchestrationServiceException>(() =>
-        orchestrationService.AnalyzeInvoiceWithOptions(AnalysisOptions.CompleteAnalysis, invoiceId, null));
+        orchestrationService.AnalyzeInvoiceWithOptions(AnalysisOptions.CompleteAnalysis, invoiceId, null, CancellationToken.None));
   }
 
   #endregion
@@ -276,15 +276,15 @@ public sealed class InvoiceOrchestrationServiceTests
     var userId = Guid.NewGuid();
 
     mockStorageService
-      .Setup(s => s.CreateInvoiceObject(invoice, userId));
+      .Setup(s => s.CreateInvoiceObject(invoice, userId, It.IsAny<CancellationToken>()));
 
     // Act
-    var result = await orchestrationService.CreateInvoiceObject(invoice, userId);
+    var result = await orchestrationService.CreateInvoiceObject(invoice, userId, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
     Assert.Equal(invoice.id, result.id);
-    mockStorageService.Verify(s => s.CreateInvoiceObject(invoice, userId), Times.Once);
+    mockStorageService.Verify(s => s.CreateInvoiceObject(invoice, userId, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -297,14 +297,14 @@ public sealed class InvoiceOrchestrationServiceTests
     var invoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockStorageService
-         .Setup(s => s.CreateInvoiceObject(invoice, null));
+         .Setup(s => s.CreateInvoiceObject(invoice, null, It.IsAny<CancellationToken>()));
 
     // Act
-    var result = await orchestrationService.CreateInvoiceObject(invoice, null);
+    var result = await orchestrationService.CreateInvoiceObject(invoice, null, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
-    mockStorageService.Verify(s => s.CreateInvoiceObject(invoice, null), Times.Once);
+    mockStorageService.Verify(s => s.CreateInvoiceObject(invoice, null, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -319,12 +319,12 @@ public sealed class InvoiceOrchestrationServiceTests
     var foundationException = new InvoiceFoundationValidationException(innerException);
 
     mockStorageService
-         .Setup(s => s.CreateInvoiceObject(invoice, null))
+         .Setup(s => s.CreateInvoiceObject(invoice, null, It.IsAny<CancellationToken>()))
          .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceOrchestrationValidationException>(() =>
-      orchestrationService.CreateInvoiceObject(invoice, null));
+      orchestrationService.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -339,12 +339,12 @@ public sealed class InvoiceOrchestrationServiceTests
     var foundationException = new InvoiceFoundationDependencyException(innerException);
 
     mockStorageService
-      .Setup(s => s.CreateInvoiceObject(invoice, null))
+      .Setup(s => s.CreateInvoiceObject(invoice, null, It.IsAny<CancellationToken>()))
       .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceOrchestrationDependencyException>(() =>
-      orchestrationService.CreateInvoiceObject(invoice, null));
+      orchestrationService.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -358,12 +358,12 @@ public sealed class InvoiceOrchestrationServiceTests
     var exception = new InvalidOperationException("Unexpected failure");
 
     mockStorageService
-      .Setup(s => s.CreateInvoiceObject(invoice, null))
+      .Setup(s => s.CreateInvoiceObject(invoice, null, It.IsAny<CancellationToken>()))
   .ThrowsAsync(exception);
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceOrchestrationServiceException>(() =>
-      orchestrationService.CreateInvoiceObject(invoice, null));
+      orchestrationService.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
   #endregion
@@ -382,16 +382,16 @@ public sealed class InvoiceOrchestrationServiceTests
     var expectedInvoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockStorageService
-      .Setup(s => s.ReadInvoiceObject(invoiceId, userId))
+      .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
       .ReturnsAsync(expectedInvoice);
 
     // Act
-    var result = await orchestrationService.ReadInvoiceObject(invoiceId, userId);
+    var result = await orchestrationService.ReadInvoiceObject(invoiceId, userId, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
     Assert.Equal(expectedInvoice.id, result.id);
-    mockStorageService.Verify(s => s.ReadInvoiceObject(invoiceId, userId), Times.Once);
+    mockStorageService.Verify(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -405,15 +405,15 @@ public sealed class InvoiceOrchestrationServiceTests
     var expectedInvoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockStorageService
-      .Setup(s => s.ReadInvoiceObject(invoiceId, null))
+      .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
       .ReturnsAsync(expectedInvoice);
 
     // Act
-    var result = await orchestrationService.ReadInvoiceObject(invoiceId, null);
+    var result = await orchestrationService.ReadInvoiceObject(invoiceId, null, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
-    mockStorageService.Verify(s => s.ReadInvoiceObject(invoiceId, null), Times.Once);
+    mockStorageService.Verify(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -428,12 +428,12 @@ public sealed class InvoiceOrchestrationServiceTests
     var foundationException = new InvoiceFoundationValidationException(innerException);
 
     mockStorageService
-      .Setup(s => s.ReadInvoiceObject(invoiceId, null))
+      .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
       .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceOrchestrationValidationException>(() =>
-      orchestrationService.ReadInvoiceObject(invoiceId, null));
+      orchestrationService.ReadInvoiceObject(invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -448,12 +448,12 @@ public sealed class InvoiceOrchestrationServiceTests
     var foundationException = new InvoiceFoundationServiceException(innerException);
 
     mockStorageService
-  .Setup(s => s.ReadInvoiceObject(invoiceId, null))
+  .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
       .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceOrchestrationServiceException>(() =>
-      orchestrationService.ReadInvoiceObject(invoiceId, null));
+      orchestrationService.ReadInvoiceObject(invoiceId, null, CancellationToken.None));
   }
 
   #endregion
@@ -471,16 +471,16 @@ public sealed class InvoiceOrchestrationServiceTests
     var expectedInvoices = InvoiceBuilder.CreateMultipleRandomInvoices(5);
 
     mockStorageService
-      .Setup(s => s.ReadAllInvoiceObjects(userId))
+      .Setup(s => s.ReadAllInvoiceObjects(userId, It.IsAny<CancellationToken>()))
 .ReturnsAsync(expectedInvoices);
 
     // Act
-    var result = await orchestrationService.ReadAllInvoiceObjects(userId);
+    var result = await orchestrationService.ReadAllInvoiceObjects(userId, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
     Assert.Equal(5, result.Count());
-    mockStorageService.Verify(s => s.ReadAllInvoiceObjects(userId), Times.Once);
+    mockStorageService.Verify(s => s.ReadAllInvoiceObjects(userId, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -494,11 +494,11 @@ public sealed class InvoiceOrchestrationServiceTests
     var emptyList = new List<Invoice>();
 
     mockStorageService
-      .Setup(s => s.ReadAllInvoiceObjects(userId))
+      .Setup(s => s.ReadAllInvoiceObjects(userId, It.IsAny<CancellationToken>()))
       .ReturnsAsync(emptyList);
 
     // Act
-    var result = await orchestrationService.ReadAllInvoiceObjects(userId);
+    var result = await orchestrationService.ReadAllInvoiceObjects(userId, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -517,12 +517,12 @@ public sealed class InvoiceOrchestrationServiceTests
     var foundationException = new InvoiceFoundationDependencyException(innerException);
 
     mockStorageService
-      .Setup(s => s.ReadAllInvoiceObjects(userId))
+      .Setup(s => s.ReadAllInvoiceObjects(userId, It.IsAny<CancellationToken>()))
       .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceOrchestrationDependencyException>(() =>
-      orchestrationService.ReadAllInvoiceObjects(userId));
+      orchestrationService.ReadAllInvoiceObjects(userId, CancellationToken.None));
   }
 
   /// <summary>
@@ -536,12 +536,12 @@ public sealed class InvoiceOrchestrationServiceTests
     var exception = new InvalidOperationException("Unexpected error");
 
     mockStorageService
-      .Setup(s => s.ReadAllInvoiceObjects(userId))
+      .Setup(s => s.ReadAllInvoiceObjects(userId, It.IsAny<CancellationToken>()))
       .ThrowsAsync(exception);
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceOrchestrationServiceException>(() =>
-      orchestrationService.ReadAllInvoiceObjects(userId));
+      orchestrationService.ReadAllInvoiceObjects(userId, CancellationToken.None));
   }
 
   #endregion
@@ -560,16 +560,16 @@ public sealed class InvoiceOrchestrationServiceTests
     var updatedInvoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockStorageService
-      .Setup(s => s.UpdateInvoiceObject(updatedInvoice, invoiceId, userId))
+      .Setup(s => s.UpdateInvoiceObject(updatedInvoice, invoiceId, userId, It.IsAny<CancellationToken>()))
       .ReturnsAsync(updatedInvoice);
 
     // Act
-    var result = await orchestrationService.UpdateInvoiceObject(updatedInvoice, invoiceId, userId);
+    var result = await orchestrationService.UpdateInvoiceObject(updatedInvoice, invoiceId, userId, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
     Assert.Equal(updatedInvoice.id, result.id);
-    mockStorageService.Verify(s => s.UpdateInvoiceObject(updatedInvoice, invoiceId, userId), Times.Once);
+    mockStorageService.Verify(s => s.UpdateInvoiceObject(updatedInvoice, invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -583,15 +583,15 @@ public sealed class InvoiceOrchestrationServiceTests
     var updatedInvoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockStorageService
-      .Setup(s => s.UpdateInvoiceObject(updatedInvoice, invoiceId, null))
+      .Setup(s => s.UpdateInvoiceObject(updatedInvoice, invoiceId, null, It.IsAny<CancellationToken>()))
    .ReturnsAsync(updatedInvoice);
 
     // Act
-    var result = await orchestrationService.UpdateInvoiceObject(updatedInvoice, invoiceId, null);
+    var result = await orchestrationService.UpdateInvoiceObject(updatedInvoice, invoiceId, null, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
-    mockStorageService.Verify(s => s.UpdateInvoiceObject(updatedInvoice, invoiceId, null), Times.Once);
+    mockStorageService.Verify(s => s.UpdateInvoiceObject(updatedInvoice, invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -607,12 +607,12 @@ public sealed class InvoiceOrchestrationServiceTests
     var foundationException = new InvoiceFoundationValidationException(innerException);
 
     mockStorageService
-      .Setup(s => s.UpdateInvoiceObject(updatedInvoice, invoiceId, null))
+      .Setup(s => s.UpdateInvoiceObject(updatedInvoice, invoiceId, null, It.IsAny<CancellationToken>()))
       .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceOrchestrationValidationException>(() =>
-      orchestrationService.UpdateInvoiceObject(updatedInvoice, invoiceId, null));
+      orchestrationService.UpdateInvoiceObject(updatedInvoice, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -628,12 +628,12 @@ public sealed class InvoiceOrchestrationServiceTests
     var foundationException = new InvoiceFoundationDependencyValidationException(innerException);
 
     mockStorageService
-      .Setup(s => s.UpdateInvoiceObject(updatedInvoice, invoiceId, null))
+      .Setup(s => s.UpdateInvoiceObject(updatedInvoice, invoiceId, null, It.IsAny<CancellationToken>()))
       .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceOrchestrationDependencyValidationException>(() =>
-      orchestrationService.UpdateInvoiceObject(updatedInvoice, invoiceId, null));
+      orchestrationService.UpdateInvoiceObject(updatedInvoice, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -648,12 +648,12 @@ public sealed class InvoiceOrchestrationServiceTests
     var exception = new InvalidOperationException("Update failed");
 
     mockStorageService
-      .Setup(s => s.UpdateInvoiceObject(updatedInvoice, invoiceId, null))
+      .Setup(s => s.UpdateInvoiceObject(updatedInvoice, invoiceId, null, It.IsAny<CancellationToken>()))
       .ThrowsAsync(exception);
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceOrchestrationServiceException>(() =>
-      orchestrationService.UpdateInvoiceObject(updatedInvoice, invoiceId, null));
+      orchestrationService.UpdateInvoiceObject(updatedInvoice, invoiceId, null, CancellationToken.None));
   }
 
   #endregion
@@ -671,14 +671,14 @@ public sealed class InvoiceOrchestrationServiceTests
     var userId = Guid.NewGuid();
 
     mockStorageService
-      .Setup(s => s.DeleteInvoiceObject(invoiceId, userId))
+      .Setup(s => s.DeleteInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
   .Returns(Task.CompletedTask);
 
     // Act
-    await orchestrationService.DeleteInvoiceObject(invoiceId, userId);
+    await orchestrationService.DeleteInvoiceObject(invoiceId, userId, CancellationToken.None);
 
     // Assert
-    mockStorageService.Verify(s => s.DeleteInvoiceObject(invoiceId, userId), Times.Once);
+    mockStorageService.Verify(s => s.DeleteInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -691,14 +691,14 @@ public sealed class InvoiceOrchestrationServiceTests
     var invoiceId = Guid.NewGuid();
 
     mockStorageService
-      .Setup(s => s.DeleteInvoiceObject(invoiceId, null))
+      .Setup(s => s.DeleteInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
       .Returns(Task.CompletedTask);
 
     // Act
-    await orchestrationService.DeleteInvoiceObject(invoiceId, null);
+    await orchestrationService.DeleteInvoiceObject(invoiceId, null, CancellationToken.None);
 
     // Assert
-    mockStorageService.Verify(s => s.DeleteInvoiceObject(invoiceId, null), Times.Once);
+    mockStorageService.Verify(s => s.DeleteInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -713,12 +713,12 @@ public sealed class InvoiceOrchestrationServiceTests
     var foundationException = new InvoiceFoundationValidationException(innerException);
 
     mockStorageService
-    .Setup(s => s.DeleteInvoiceObject(invoiceId, null))
+    .Setup(s => s.DeleteInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
        .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceOrchestrationValidationException>(() =>
-      orchestrationService.DeleteInvoiceObject(invoiceId, null));
+      orchestrationService.DeleteInvoiceObject(invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -733,12 +733,12 @@ public sealed class InvoiceOrchestrationServiceTests
     var foundationException = new InvoiceFoundationDependencyException(innerException);
 
     mockStorageService
-      .Setup(s => s.DeleteInvoiceObject(invoiceId, null))
+      .Setup(s => s.DeleteInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
       .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceOrchestrationDependencyException>(() =>
-      orchestrationService.DeleteInvoiceObject(invoiceId, null));
+      orchestrationService.DeleteInvoiceObject(invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -753,12 +753,12 @@ public sealed class InvoiceOrchestrationServiceTests
     var foundationException = new InvoiceFoundationServiceException(innerException);
 
     mockStorageService
-    .Setup(s => s.DeleteInvoiceObject(invoiceId, null))
+    .Setup(s => s.DeleteInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
       .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceOrchestrationServiceException>(() =>
-      orchestrationService.DeleteInvoiceObject(invoiceId, null));
+      orchestrationService.DeleteInvoiceObject(invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -772,12 +772,12 @@ public sealed class InvoiceOrchestrationServiceTests
     var exception = new InvalidOperationException("Deletion failed");
 
     mockStorageService
-      .Setup(s => s.DeleteInvoiceObject(invoiceId, null))
+      .Setup(s => s.DeleteInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
       .ThrowsAsync(exception);
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceOrchestrationServiceException>(() =>
-      orchestrationService.DeleteInvoiceObject(invoiceId, null));
+      orchestrationService.DeleteInvoiceObject(invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -790,16 +790,16 @@ public sealed class InvoiceOrchestrationServiceTests
     var invoiceId = Guid.NewGuid();
 
     mockStorageService
-      .Setup(s => s.DeleteInvoiceObject(invoiceId, null))
+      .Setup(s => s.DeleteInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
  .Returns(Task.CompletedTask);
 
     // Act
-    await orchestrationService.DeleteInvoiceObject(invoiceId, null);
-    await orchestrationService.DeleteInvoiceObject(invoiceId, null);
-    await orchestrationService.DeleteInvoiceObject(invoiceId, null);
+    await orchestrationService.DeleteInvoiceObject(invoiceId, null, CancellationToken.None);
+    await orchestrationService.DeleteInvoiceObject(invoiceId, null, CancellationToken.None);
+    await orchestrationService.DeleteInvoiceObject(invoiceId, null, CancellationToken.None);
 
     // Assert
-    mockStorageService.Verify(s => s.DeleteInvoiceObject(invoiceId, null), Times.Exactly(3));
+    mockStorageService.Verify(s => s.DeleteInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()), Times.Exactly(3));
   }
 
   #endregion

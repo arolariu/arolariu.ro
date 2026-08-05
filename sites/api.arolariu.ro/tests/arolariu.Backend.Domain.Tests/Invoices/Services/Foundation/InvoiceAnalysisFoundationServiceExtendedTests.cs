@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Services.Foundation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
@@ -70,7 +71,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
 
     // Act & Assert
     var exception = await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.AnalyzeInvoiceAsync(options, invoice));
+        service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
     Assert.NotNull(exception.InnerException);
   }
 
@@ -94,7 +95,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.AnalyzeInvoiceAsync(options, invoice));
+        service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
   }
 
   /// <summary>
@@ -113,7 +114,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.AnalyzeInvoiceAsync(options, invoice));
+        service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
   }
 
   /// <summary>
@@ -132,7 +133,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.AnalyzeInvoiceAsync(options, invoice));
+        service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
   }
 
   /// <summary>
@@ -151,7 +152,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
 
     // Act & Assert
     var exception = await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.AnalyzeInvoiceAsync(options, invoice));
+        service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
     Assert.IsType<InvalidOperationException>(exception.InnerException);
   }
 
@@ -181,7 +182,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
         .ReturnsAsync(invoice);
 
     // Act
-    await service.AnalyzeInvoiceAsync(options, invoice);
+    await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.True(callOrder.IndexOf("OCR") < callOrder.IndexOf("GPT"));
@@ -214,7 +215,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
         .ReturnsAsync(invoice);
 
     // Act
-    await service.AnalyzeInvoiceAsync(options, invoice);
+    await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     mockFormRecognizerBroker.Verify(b => b.PerformOcrAnalysisOnSingleInvoice(invoice, options), Times.Once);
@@ -243,7 +244,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
         .ReturnsAsync(invoice);
 
     // Act
-    await service.AnalyzeInvoiceAsync(options, invoice);
+    await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     mockOpenAiBroker.Verify(b => b.PerformGptAnalysisOnSingleInvoice(invoice, options), Times.Once);
@@ -276,7 +277,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
         .ReturnsAsync(modifiedInvoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, originalInvoice);
+    var result = await service.AnalyzeInvoiceAsync(options, originalInvoice, CancellationToken.None);
 
     // Assert
   }
@@ -301,7 +302,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.Equal(6, result.NumberOfUpdates);
@@ -330,7 +331,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
         .ReturnsAsync((Invoice inv, AnalysisOptions opt) => inv);
 
     // Act
-    var tasks = invoices.Select(inv => service.AnalyzeInvoiceAsync(options, inv));
+    var tasks = invoices.Select(inv => service.AnalyzeInvoiceAsync(options, inv, CancellationToken.None));
     var results = await Task.WhenAll(tasks);
 
     // Assert
@@ -362,8 +363,8 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
         .ReturnsAsync(invoice1);
 
     // Act
-    var task1 = service.AnalyzeInvoiceAsync(options, invoice1);
-    var task2 = service.AnalyzeInvoiceAsync(options, invoice2);
+    var task1 = service.AnalyzeInvoiceAsync(options, invoice1, CancellationToken.None);
+    var task2 = service.AnalyzeInvoiceAsync(options, invoice2, CancellationToken.None);
 
     // Assert
     var result1 = await task1;
@@ -396,7 +397,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.Equal("A", result.Items.First().Name);
@@ -424,7 +425,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.Equal(longName, result.Items.First().Name);
@@ -452,7 +453,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.Equal(unicodeName, result.Items.First().Name);
@@ -480,7 +481,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.Equal(specialName, result.Items.First().Name);
@@ -507,7 +508,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.Equal("   ", result.Items.First().Name);

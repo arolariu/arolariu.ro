@@ -47,7 +47,7 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
       .ThrowsAsync(MakeCosmosException(HttpStatusCode.NotFound));
 
     await Assert.ThrowsAsync<InvoiceNotFoundException>(
-      async () => await broker.ReadInvoiceAsync(invoiceId, userId).ConfigureAwait(false));
+      async () => await broker.ReadInvoiceAsync(invoiceId, userId, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
@@ -64,7 +64,7 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
       .ThrowsAsync(MakeCosmosException(HttpStatusCode.Conflict));
 
     await Assert.ThrowsAsync<InvoiceAlreadyExistsException>(
-      async () => await broker.CreateInvoiceAsync(invoice).ConfigureAwait(false));
+      async () => await broker.CreateInvoiceAsync(invoice, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
@@ -82,7 +82,7 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
       .ThrowsAsync(MakeCosmosException((HttpStatusCode)429));
 
     await Assert.ThrowsAsync<InvoiceCosmosDbRateLimitException>(
-      async () => await broker.ReadInvoiceAsync(invoiceId, userId).ConfigureAwait(false));
+      async () => await broker.ReadInvoiceAsync(invoiceId, userId, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
@@ -100,7 +100,7 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
       .ThrowsAsync(MakeCosmosException(HttpStatusCode.ServiceUnavailable));
 
     await Assert.ThrowsAsync<InvoiceFailedStorageException>(
-      async () => await broker.ReadInvoiceAsync(invoiceId, userId).ConfigureAwait(false));
+      async () => await broker.ReadInvoiceAsync(invoiceId, userId, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
@@ -118,7 +118,7 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
       .ThrowsAsync(MakeCosmosException(HttpStatusCode.Unauthorized));
 
     await Assert.ThrowsAsync<InvoiceUnauthorizedAccessException>(
-      async () => await broker.ReadInvoiceAsync(invoiceId, userId).ConfigureAwait(false));
+      async () => await broker.ReadInvoiceAsync(invoiceId, userId, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
@@ -136,7 +136,7 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
       .ThrowsAsync(MakeCosmosException(HttpStatusCode.Forbidden));
 
     await Assert.ThrowsAsync<InvoiceForbiddenAccessException>(
-      async () => await broker.ReadInvoiceAsync(invoiceId, userId).ConfigureAwait(false));
+      async () => await broker.ReadInvoiceAsync(invoiceId, userId, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
@@ -160,6 +160,6 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
       .ReturnsAsync(responseMock.Object);
 
     await Assert.ThrowsAsync<InvoiceLockedException>(
-      async () => await broker.ReadInvoiceAsync(invoiceId, userId));
+      async () => await broker.ReadInvoiceAsync(invoiceId, userId, CancellationToken.None));
   }
 }

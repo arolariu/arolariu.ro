@@ -2,6 +2,7 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Services.Foundation;
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
@@ -94,7 +95,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -122,7 +123,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -147,7 +148,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -172,7 +173,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -199,7 +200,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -226,7 +227,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.Equal(initialUpdates + 1, result.NumberOfUpdates);
@@ -248,7 +249,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.AnalyzeInvoiceAsync(options, invoice));
+        service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
   }
 
   /// <summary>
@@ -271,7 +272,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.AnalyzeInvoiceAsync(options, invoice));
+        service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
   }
 
   /// <summary>
@@ -290,7 +291,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.AnalyzeInvoiceAsync(options, invoice));
+        service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
   }
 
   /// <summary>
@@ -310,7 +311,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
 
     // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
     await Assert.ThrowsAsync<OperationCanceledException>(() =>
-        service.AnalyzeInvoiceAsync(options, invoice));
+        service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
   }
 
   /// <summary>
@@ -332,7 +333,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -357,7 +358,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -384,7 +385,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.Equal(originalId, result.id);
@@ -410,7 +411,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);

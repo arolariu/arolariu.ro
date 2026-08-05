@@ -1,6 +1,7 @@
 namespace arolariu.Backend.Domain.Tests.Invoices.Services.Foundation;
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
@@ -46,7 +47,7 @@ public class InvoiceAnalysisFoundationServiceExceptionsTests
       .ThrowsAsync(new InvoiceIdNotSetException());
 
     var ex = await Assert.ThrowsAsync<InvoiceFoundationValidationException>(
-      () => _sut.AnalyzeInvoiceAsync(AnalysisOptions.CompleteAnalysis, new Invoice { id = Guid.NewGuid(), UserIdentifier = Guid.NewGuid() }));
+      () => _sut.AnalyzeInvoiceAsync(AnalysisOptions.CompleteAnalysis, new Invoice { id = Guid.NewGuid(), UserIdentifier = Guid.NewGuid() }, CancellationToken.None));
 
     Assert.IsType<InvoiceIdNotSetException>(ex.InnerException);
   }
@@ -60,7 +61,7 @@ public class InvoiceAnalysisFoundationServiceExceptionsTests
       .ThrowsAsync(new InvoiceCosmosDbRateLimitException(TimeSpan.FromSeconds(5), new InvalidOperationException()));
 
     var ex = await Assert.ThrowsAsync<InvoiceFoundationDependencyValidationException>(
-      () => _sut.AnalyzeInvoiceAsync(AnalysisOptions.CompleteAnalysis, new Invoice { id = Guid.NewGuid(), UserIdentifier = Guid.NewGuid() }));
+      () => _sut.AnalyzeInvoiceAsync(AnalysisOptions.CompleteAnalysis, new Invoice { id = Guid.NewGuid(), UserIdentifier = Guid.NewGuid() }, CancellationToken.None));
 
     Assert.IsType<InvoiceCosmosDbRateLimitException>(ex.InnerException);
   }
@@ -74,7 +75,7 @@ public class InvoiceAnalysisFoundationServiceExceptionsTests
       .ThrowsAsync(new OperationCanceledException());
 
     await Assert.ThrowsAsync<OperationCanceledException>(
-      () => _sut.AnalyzeInvoiceAsync(AnalysisOptions.CompleteAnalysis, new Invoice { id = Guid.NewGuid(), UserIdentifier = Guid.NewGuid() }));
+      () => _sut.AnalyzeInvoiceAsync(AnalysisOptions.CompleteAnalysis, new Invoice { id = Guid.NewGuid(), UserIdentifier = Guid.NewGuid() }, CancellationToken.None));
   }
 
   /// <summary>Verifies that an unclassified exception from the OCR broker is wrapped into an <see cref="InvoiceFoundationServiceException"/> (catch-all tier, 500).</summary>
@@ -86,7 +87,7 @@ public class InvoiceAnalysisFoundationServiceExceptionsTests
       .ThrowsAsync(new InvalidOperationException("ai model failure"));
 
     var ex = await Assert.ThrowsAsync<InvoiceFoundationServiceException>(
-      () => _sut.AnalyzeInvoiceAsync(AnalysisOptions.CompleteAnalysis, new Invoice { id = Guid.NewGuid(), UserIdentifier = Guid.NewGuid() }));
+      () => _sut.AnalyzeInvoiceAsync(AnalysisOptions.CompleteAnalysis, new Invoice { id = Guid.NewGuid(), UserIdentifier = Guid.NewGuid() }, CancellationToken.None));
 
     Assert.IsType<InvalidOperationException>(ex.InnerException);
   }

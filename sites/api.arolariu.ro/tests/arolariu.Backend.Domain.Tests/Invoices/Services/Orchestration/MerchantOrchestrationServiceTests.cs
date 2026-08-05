@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Services.Orchestration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
@@ -92,14 +93,14 @@ public sealed class MerchantOrchestrationServiceTests
     var parentCompanyId = Guid.NewGuid();
 
     mockStorageService
-        .Setup(s => s.CreateMerchantObject(merchant, parentCompanyId))
+        .Setup(s => s.CreateMerchantObject(merchant, parentCompanyId, It.IsAny<CancellationToken>()))
         .Returns(Task.CompletedTask);
 
     // Act
-    await orchestrationService.CreateMerchantObject(merchant, parentCompanyId);
+    await orchestrationService.CreateMerchantObject(merchant, parentCompanyId, CancellationToken.None);
 
     // Assert
-    mockStorageService.Verify(s => s.CreateMerchantObject(merchant, parentCompanyId), Times.Once);
+    mockStorageService.Verify(s => s.CreateMerchantObject(merchant, parentCompanyId, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -112,14 +113,14 @@ public sealed class MerchantOrchestrationServiceTests
     var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
     mockStorageService
-        .Setup(s => s.CreateMerchantObject(merchant, null))
+        .Setup(s => s.CreateMerchantObject(merchant, null, It.IsAny<CancellationToken>()))
         .Returns(Task.CompletedTask);
 
     // Act
-    await orchestrationService.CreateMerchantObject(merchant, null);
+    await orchestrationService.CreateMerchantObject(merchant, null, CancellationToken.None);
 
     // Assert
-    mockStorageService.Verify(s => s.CreateMerchantObject(merchant, null), Times.Once);
+    mockStorageService.Verify(s => s.CreateMerchantObject(merchant, null, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -134,12 +135,12 @@ public sealed class MerchantOrchestrationServiceTests
     var foundationException = new MerchantFoundationServiceValidationException(innerException);
 
     mockStorageService
-        .Setup(s => s.CreateMerchantObject(merchant, null))
+        .Setup(s => s.CreateMerchantObject(merchant, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<MerchantOrchestrationServiceValidationException>(() =>
-        orchestrationService.CreateMerchantObject(merchant, null));
+        orchestrationService.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -154,12 +155,12 @@ public sealed class MerchantOrchestrationServiceTests
     var foundationException = new MerchantFoundationServiceDependencyException(innerException);
 
     mockStorageService
-        .Setup(s => s.CreateMerchantObject(merchant, null))
+        .Setup(s => s.CreateMerchantObject(merchant, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyException>(() =>
-        orchestrationService.CreateMerchantObject(merchant, null));
+        orchestrationService.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -174,12 +175,12 @@ public sealed class MerchantOrchestrationServiceTests
     var foundationException = new MerchantFoundationServiceDependencyValidationException(innerException);
 
     mockStorageService
-        .Setup(s => s.CreateMerchantObject(merchant, null))
+        .Setup(s => s.CreateMerchantObject(merchant, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyValidationException>(() =>
-        orchestrationService.CreateMerchantObject(merchant, null));
+        orchestrationService.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -194,12 +195,12 @@ public sealed class MerchantOrchestrationServiceTests
     var foundationException = new MerchantFoundationServiceException(innerException);
 
     mockStorageService
-        .Setup(s => s.CreateMerchantObject(merchant, null))
+        .Setup(s => s.CreateMerchantObject(merchant, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(() =>
-        orchestrationService.CreateMerchantObject(merchant, null));
+        orchestrationService.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -213,12 +214,12 @@ public sealed class MerchantOrchestrationServiceTests
     var exception = new InvalidOperationException("Unexpected failure");
 
     mockStorageService
-        .Setup(s => s.CreateMerchantObject(merchant, null))
+        .Setup(s => s.CreateMerchantObject(merchant, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(exception);
 
     // Act & Assert
     await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(() =>
-        orchestrationService.CreateMerchantObject(merchant, null));
+        orchestrationService.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
   #endregion
@@ -237,16 +238,16 @@ public sealed class MerchantOrchestrationServiceTests
     var expectedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
     mockStorageService
-        .Setup(s => s.ReadMerchantObject(merchantId, parentCompanyId))
+        .Setup(s => s.ReadMerchantObject(merchantId, parentCompanyId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(expectedMerchant);
 
     // Act
-    var result = await orchestrationService.ReadMerchantObject(merchantId, parentCompanyId);
+    var result = await orchestrationService.ReadMerchantObject(merchantId, parentCompanyId, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
     Assert.Equal(expectedMerchant.id, result.id);
-    mockStorageService.Verify(s => s.ReadMerchantObject(merchantId, parentCompanyId), Times.Once);
+    mockStorageService.Verify(s => s.ReadMerchantObject(merchantId, parentCompanyId, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -260,15 +261,15 @@ public sealed class MerchantOrchestrationServiceTests
     var expectedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
     mockStorageService
-        .Setup(s => s.ReadMerchantObject(merchantId, null))
+        .Setup(s => s.ReadMerchantObject(merchantId, null, It.IsAny<CancellationToken>()))
         .ReturnsAsync(expectedMerchant);
 
     // Act
-    var result = await orchestrationService.ReadMerchantObject(merchantId, null);
+    var result = await orchestrationService.ReadMerchantObject(merchantId, null, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
-    mockStorageService.Verify(s => s.ReadMerchantObject(merchantId, null), Times.Once);
+    mockStorageService.Verify(s => s.ReadMerchantObject(merchantId, null, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -283,12 +284,12 @@ public sealed class MerchantOrchestrationServiceTests
     var foundationException = new MerchantFoundationServiceValidationException(innerException);
 
     mockStorageService
-        .Setup(s => s.ReadMerchantObject(merchantId, null))
+        .Setup(s => s.ReadMerchantObject(merchantId, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<MerchantOrchestrationServiceValidationException>(() =>
-        orchestrationService.ReadMerchantObject(merchantId, null));
+        orchestrationService.ReadMerchantObject(merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -303,12 +304,12 @@ public sealed class MerchantOrchestrationServiceTests
     var foundationException = new MerchantFoundationServiceDependencyException(innerException);
 
     mockStorageService
-        .Setup(s => s.ReadMerchantObject(merchantId, null))
+        .Setup(s => s.ReadMerchantObject(merchantId, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyException>(() =>
-        orchestrationService.ReadMerchantObject(merchantId, null));
+        orchestrationService.ReadMerchantObject(merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -323,12 +324,12 @@ public sealed class MerchantOrchestrationServiceTests
     var foundationException = new MerchantFoundationServiceException(innerException);
 
     mockStorageService
-        .Setup(s => s.ReadMerchantObject(merchantId, null))
+        .Setup(s => s.ReadMerchantObject(merchantId, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(() =>
-        orchestrationService.ReadMerchantObject(merchantId, null));
+        orchestrationService.ReadMerchantObject(merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -342,12 +343,12 @@ public sealed class MerchantOrchestrationServiceTests
     var exception = new InvalidOperationException("Unexpected error");
 
     mockStorageService
-        .Setup(s => s.ReadMerchantObject(merchantId, null))
+        .Setup(s => s.ReadMerchantObject(merchantId, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(exception);
 
     // Act & Assert
     await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(() =>
-        orchestrationService.ReadMerchantObject(merchantId, null));
+        orchestrationService.ReadMerchantObject(merchantId, null, CancellationToken.None));
   }
 
   #endregion
@@ -365,16 +366,16 @@ public sealed class MerchantOrchestrationServiceTests
     var expectedMerchants = MerchantTestDataBuilder.CreateMultipleRandomMerchants(5);
 
     mockStorageService
-        .Setup(s => s.ReadAllMerchantObjects(parentCompanyId))
+        .Setup(s => s.ReadAllMerchantObjects(parentCompanyId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(expectedMerchants);
 
     // Act
-    var result = await orchestrationService.ReadAllMerchantObjects(parentCompanyId);
+    var result = await orchestrationService.ReadAllMerchantObjects(parentCompanyId, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
     Assert.Equal(5, result.Count());
-    mockStorageService.Verify(s => s.ReadAllMerchantObjects(parentCompanyId), Times.Once);
+    mockStorageService.Verify(s => s.ReadAllMerchantObjects(parentCompanyId, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -388,11 +389,11 @@ public sealed class MerchantOrchestrationServiceTests
     var emptyList = new List<Merchant>();
 
     mockStorageService
-        .Setup(s => s.ReadAllMerchantObjects(parentCompanyId))
+        .Setup(s => s.ReadAllMerchantObjects(parentCompanyId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(emptyList);
 
     // Act
-    var result = await orchestrationService.ReadAllMerchantObjects(parentCompanyId);
+    var result = await orchestrationService.ReadAllMerchantObjects(parentCompanyId, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -411,12 +412,12 @@ public sealed class MerchantOrchestrationServiceTests
     var foundationException = new MerchantFoundationServiceDependencyException(innerException);
 
     mockStorageService
-        .Setup(s => s.ReadAllMerchantObjects(parentCompanyId))
+        .Setup(s => s.ReadAllMerchantObjects(parentCompanyId, It.IsAny<CancellationToken>()))
         .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyException>(() =>
-        orchestrationService.ReadAllMerchantObjects(parentCompanyId));
+        orchestrationService.ReadAllMerchantObjects(parentCompanyId, CancellationToken.None));
   }
 
   /// <summary>
@@ -430,12 +431,12 @@ public sealed class MerchantOrchestrationServiceTests
     var exception = new InvalidOperationException("Unexpected error");
 
     mockStorageService
-        .Setup(s => s.ReadAllMerchantObjects(parentCompanyId))
+        .Setup(s => s.ReadAllMerchantObjects(parentCompanyId, It.IsAny<CancellationToken>()))
         .ThrowsAsync(exception);
 
     // Act & Assert
     await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(() =>
-        orchestrationService.ReadAllMerchantObjects(parentCompanyId));
+        orchestrationService.ReadAllMerchantObjects(parentCompanyId, CancellationToken.None));
   }
 
   /// <summary>
@@ -450,12 +451,12 @@ public sealed class MerchantOrchestrationServiceTests
     var foundationException = new MerchantFoundationServiceValidationException(innerException);
 
     mockStorageService
-        .Setup(s => s.ReadAllMerchantObjects(parentCompanyId))
+        .Setup(s => s.ReadAllMerchantObjects(parentCompanyId, It.IsAny<CancellationToken>()))
         .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<MerchantOrchestrationServiceValidationException>(() =>
-        orchestrationService.ReadAllMerchantObjects(parentCompanyId));
+        orchestrationService.ReadAllMerchantObjects(parentCompanyId, CancellationToken.None));
   }
 
   #endregion
@@ -474,16 +475,16 @@ public sealed class MerchantOrchestrationServiceTests
     var updatedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
     mockStorageService
-        .Setup(s => s.UpdateMerchantObject(updatedMerchant, merchantId, parentCompanyId))
+        .Setup(s => s.UpdateMerchantObject(updatedMerchant, merchantId, parentCompanyId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(updatedMerchant);
 
     // Act
-    var result = await orchestrationService.UpdateMerchantObject(updatedMerchant, merchantId, parentCompanyId);
+    var result = await orchestrationService.UpdateMerchantObject(updatedMerchant, merchantId, parentCompanyId, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
     Assert.Equal(updatedMerchant.id, result.id);
-    mockStorageService.Verify(s => s.UpdateMerchantObject(updatedMerchant, merchantId, parentCompanyId), Times.Once);
+    mockStorageService.Verify(s => s.UpdateMerchantObject(updatedMerchant, merchantId, parentCompanyId, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -497,15 +498,15 @@ public sealed class MerchantOrchestrationServiceTests
     var updatedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
     mockStorageService
-        .Setup(s => s.UpdateMerchantObject(updatedMerchant, merchantId, null))
+        .Setup(s => s.UpdateMerchantObject(updatedMerchant, merchantId, null, It.IsAny<CancellationToken>()))
         .ReturnsAsync(updatedMerchant);
 
     // Act
-    var result = await orchestrationService.UpdateMerchantObject(updatedMerchant, merchantId, null);
+    var result = await orchestrationService.UpdateMerchantObject(updatedMerchant, merchantId, null, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
-    mockStorageService.Verify(s => s.UpdateMerchantObject(updatedMerchant, merchantId, null), Times.Once);
+    mockStorageService.Verify(s => s.UpdateMerchantObject(updatedMerchant, merchantId, null, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -521,12 +522,12 @@ public sealed class MerchantOrchestrationServiceTests
     var foundationException = new MerchantFoundationServiceValidationException(innerException);
 
     mockStorageService
-        .Setup(s => s.UpdateMerchantObject(updatedMerchant, merchantId, null))
+        .Setup(s => s.UpdateMerchantObject(updatedMerchant, merchantId, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<MerchantOrchestrationServiceValidationException>(() =>
-        orchestrationService.UpdateMerchantObject(updatedMerchant, merchantId, null));
+        orchestrationService.UpdateMerchantObject(updatedMerchant, merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -542,12 +543,12 @@ public sealed class MerchantOrchestrationServiceTests
     var foundationException = new MerchantFoundationServiceDependencyValidationException(innerException);
 
     mockStorageService
-        .Setup(s => s.UpdateMerchantObject(updatedMerchant, merchantId, null))
+        .Setup(s => s.UpdateMerchantObject(updatedMerchant, merchantId, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyValidationException>(() =>
-        orchestrationService.UpdateMerchantObject(updatedMerchant, merchantId, null));
+        orchestrationService.UpdateMerchantObject(updatedMerchant, merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -563,12 +564,12 @@ public sealed class MerchantOrchestrationServiceTests
     var foundationException = new MerchantFoundationServiceDependencyException(innerException);
 
     mockStorageService
-        .Setup(s => s.UpdateMerchantObject(updatedMerchant, merchantId, null))
+        .Setup(s => s.UpdateMerchantObject(updatedMerchant, merchantId, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyException>(() =>
-        orchestrationService.UpdateMerchantObject(updatedMerchant, merchantId, null));
+        orchestrationService.UpdateMerchantObject(updatedMerchant, merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -583,12 +584,12 @@ public sealed class MerchantOrchestrationServiceTests
     var exception = new InvalidOperationException("Update failed");
 
     mockStorageService
-        .Setup(s => s.UpdateMerchantObject(updatedMerchant, merchantId, null))
+        .Setup(s => s.UpdateMerchantObject(updatedMerchant, merchantId, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(exception);
 
     // Act & Assert
     await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(() =>
-        orchestrationService.UpdateMerchantObject(updatedMerchant, merchantId, null));
+        orchestrationService.UpdateMerchantObject(updatedMerchant, merchantId, null, CancellationToken.None));
   }
 
   #endregion
@@ -606,14 +607,14 @@ public sealed class MerchantOrchestrationServiceTests
     var parentCompanyId = Guid.NewGuid();
 
     mockStorageService
-        .Setup(s => s.DeleteMerchantObject(merchantId, parentCompanyId))
+        .Setup(s => s.DeleteMerchantObject(merchantId, parentCompanyId, It.IsAny<CancellationToken>()))
         .Returns(Task.CompletedTask);
 
     // Act
-    await orchestrationService.DeleteMerchantObject(merchantId, parentCompanyId);
+    await orchestrationService.DeleteMerchantObject(merchantId, parentCompanyId, CancellationToken.None);
 
     // Assert
-    mockStorageService.Verify(s => s.DeleteMerchantObject(merchantId, parentCompanyId), Times.Once);
+    mockStorageService.Verify(s => s.DeleteMerchantObject(merchantId, parentCompanyId, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -626,14 +627,14 @@ public sealed class MerchantOrchestrationServiceTests
     var merchantId = Guid.NewGuid();
 
     mockStorageService
-        .Setup(s => s.DeleteMerchantObject(merchantId, null))
+        .Setup(s => s.DeleteMerchantObject(merchantId, null, It.IsAny<CancellationToken>()))
         .Returns(Task.CompletedTask);
 
     // Act
-    await orchestrationService.DeleteMerchantObject(merchantId, null);
+    await orchestrationService.DeleteMerchantObject(merchantId, null, CancellationToken.None);
 
     // Assert
-    mockStorageService.Verify(s => s.DeleteMerchantObject(merchantId, null), Times.Once);
+    mockStorageService.Verify(s => s.DeleteMerchantObject(merchantId, null, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -648,12 +649,12 @@ public sealed class MerchantOrchestrationServiceTests
     var foundationException = new MerchantFoundationServiceValidationException(innerException);
 
     mockStorageService
-        .Setup(s => s.DeleteMerchantObject(merchantId, null))
+        .Setup(s => s.DeleteMerchantObject(merchantId, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<MerchantOrchestrationServiceValidationException>(() =>
-        orchestrationService.DeleteMerchantObject(merchantId, null));
+        orchestrationService.DeleteMerchantObject(merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -668,12 +669,12 @@ public sealed class MerchantOrchestrationServiceTests
     var foundationException = new MerchantFoundationServiceDependencyException(innerException);
 
     mockStorageService
-        .Setup(s => s.DeleteMerchantObject(merchantId, null))
+        .Setup(s => s.DeleteMerchantObject(merchantId, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyException>(() =>
-        orchestrationService.DeleteMerchantObject(merchantId, null));
+        orchestrationService.DeleteMerchantObject(merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -688,12 +689,12 @@ public sealed class MerchantOrchestrationServiceTests
     var foundationException = new MerchantFoundationServiceException(innerException);
 
     mockStorageService
-        .Setup(s => s.DeleteMerchantObject(merchantId, null))
+        .Setup(s => s.DeleteMerchantObject(merchantId, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(foundationException);
 
     // Act & Assert
     await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(() =>
-        orchestrationService.DeleteMerchantObject(merchantId, null));
+        orchestrationService.DeleteMerchantObject(merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -707,12 +708,12 @@ public sealed class MerchantOrchestrationServiceTests
     var exception = new InvalidOperationException("Deletion failed");
 
     mockStorageService
-        .Setup(s => s.DeleteMerchantObject(merchantId, null))
+        .Setup(s => s.DeleteMerchantObject(merchantId, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(exception);
 
     // Act & Assert
     await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(() =>
-        orchestrationService.DeleteMerchantObject(merchantId, null));
+        orchestrationService.DeleteMerchantObject(merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -726,16 +727,16 @@ public sealed class MerchantOrchestrationServiceTests
     var parentCompanyId = Guid.NewGuid();
 
     mockStorageService
-        .Setup(s => s.DeleteMerchantObject(merchantId, parentCompanyId))
+        .Setup(s => s.DeleteMerchantObject(merchantId, parentCompanyId, It.IsAny<CancellationToken>()))
         .Returns(Task.CompletedTask);
 
     // Act
-    await orchestrationService.DeleteMerchantObject(merchantId, parentCompanyId);
-    await orchestrationService.DeleteMerchantObject(merchantId, parentCompanyId);
-    await orchestrationService.DeleteMerchantObject(merchantId, parentCompanyId);
+    await orchestrationService.DeleteMerchantObject(merchantId, parentCompanyId, CancellationToken.None);
+    await orchestrationService.DeleteMerchantObject(merchantId, parentCompanyId, CancellationToken.None);
+    await orchestrationService.DeleteMerchantObject(merchantId, parentCompanyId, CancellationToken.None);
 
     // Assert
-    mockStorageService.Verify(s => s.DeleteMerchantObject(merchantId, parentCompanyId), Times.Exactly(3));
+    mockStorageService.Verify(s => s.DeleteMerchantObject(merchantId, parentCompanyId, It.IsAny<CancellationToken>()), Times.Exactly(3));
   }
 
   #endregion

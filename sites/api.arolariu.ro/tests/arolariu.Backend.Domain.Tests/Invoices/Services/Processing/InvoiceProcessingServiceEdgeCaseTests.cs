@@ -78,7 +78,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(invoice);
 
     // Act
-    await service.AddProduct(product, invoiceId, userId);
+    await service.AddProduct(product, invoiceId, userId, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
@@ -103,7 +103,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(invoice);
 
     // Act
-    await service.AddProduct(product, invoiceId, null);
+    await service.AddProduct(product, invoiceId, null, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);
@@ -125,7 +125,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.GetProducts(invoiceId, userId);
+    var result = await service.GetProducts(invoiceId, userId, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -147,7 +147,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.GetProducts(invoiceId, null);
+    var result = await service.GetProducts(invoiceId, null, CancellationToken.None);
 
     // Assert
     Assert.Empty(result);
@@ -172,7 +172,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.GetProduct(productName, invoiceId, userId);
+    var result = await service.GetProduct(productName, invoiceId, userId, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -201,7 +201,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(invoice);
 
     // Act
-    await service.DeleteProduct(productName, invoiceId, userId);
+    await service.DeleteProduct(productName, invoiceId, userId, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
@@ -229,7 +229,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(invoice);
 
     // Act
-    await service.DeleteProduct(product, invoiceId, userId);
+    await service.DeleteProduct(product, invoiceId, userId, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
@@ -253,7 +253,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(invoice);
 
     // Act
-    await service.AddProduct(product, Guid.Empty, null);
+    await service.AddProduct(product, Guid.Empty, null, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.ReadInvoiceObject(Guid.Empty, null, It.IsAny<CancellationToken>()), Times.Once);
@@ -283,7 +283,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(invoice);
 
     // Act
-    await service.CreateInvoiceScan(scan, invoiceId, userId);
+    await service.CreateInvoiceScan(scan, invoiceId, userId, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
@@ -305,7 +305,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.ReadInvoiceScans(invoiceId, userId);
+    var result = await service.ReadInvoiceScans(invoiceId, userId, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -331,7 +331,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(invoice);
 
     // Act
-    await service.DeleteInvoiceScan(scan, invoiceId, userId);
+    await service.DeleteInvoiceScan(scan, invoiceId, userId, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
@@ -356,7 +356,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(invoice);
 
     // Act
-    await service.CreateInvoiceScan(scan, invoiceId, null);
+    await service.CreateInvoiceScan(scan, invoiceId, null, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);
@@ -386,7 +386,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(invoice);
 
     // Act
-    await service.AddMetadataToInvoice(metadata, invoiceId, userId);
+    await service.AddMetadataToInvoice(metadata, invoiceId, userId, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
@@ -412,7 +412,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.UpdateMetadataOnInvoice(metadata, invoiceId, userId);
+    var result = await service.UpdateMetadataOnInvoice(metadata, invoiceId, userId, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -434,7 +434,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.GetMetadataFromInvoice(invoiceId, userId);
+    var result = await service.GetMetadataFromInvoice(invoiceId, userId, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -462,7 +462,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(invoice);
 
     // Act
-    await service.DeleteMetadataFromInvoice(keys, invoiceId, userId);
+    await service.DeleteMetadataFromInvoice(keys, invoiceId, userId, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
@@ -487,10 +487,10 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(invoice);
 
     // Act
-    await service.AddMetadataToInvoice(metadata, invoiceId, null);
+    await service.AddMetadataToInvoice(metadata, invoiceId, null, CancellationToken.None);
 
     // Assert
-    mockInvoiceOrchestrationService.Verify(s => s.ReadInvoiceObject(invoiceId, null), Times.Once);
+    mockInvoiceOrchestrationService.Verify(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   #endregion
@@ -512,7 +512,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .Returns(Task.CompletedTask);
 
     // Act
-    await service.CreateMerchant(merchant, parentCompanyId);
+    await service.CreateMerchant(merchant, parentCompanyId, CancellationToken.None);
 
     // Assert
     mockMerchantOrchestrationService.Verify(s => s.CreateMerchantObject(merchant, parentCompanyId, It.IsAny<CancellationToken>()), Times.Once);
@@ -532,7 +532,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .Returns(Task.CompletedTask);
 
     // Act
-    await service.CreateMerchant(merchant, null);
+    await service.CreateMerchant(merchant, null, CancellationToken.None);
 
     // Assert
     mockMerchantOrchestrationService.Verify(s => s.CreateMerchantObject(merchant, null, It.IsAny<CancellationToken>()), Times.Once);
@@ -554,7 +554,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(expectedMerchant);
 
     // Act
-    var result = await service.ReadMerchant(merchantId, parentCompanyId);
+    var result = await service.ReadMerchant(merchantId, parentCompanyId, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -576,7 +576,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(expectedMerchant);
 
     // Act
-    var result = await service.ReadMerchant(merchantId, null);
+    var result = await service.ReadMerchant(merchantId, null, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -599,7 +599,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(expectedMerchants);
 
     // Act
-    var result = await service.ReadMerchants(parentCompanyId);
+    var result = await service.ReadMerchants(parentCompanyId, CancellationToken.None);
 
     // Assert
     Assert.Equal(5, result.Count());
@@ -621,7 +621,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(merchant);
 
     // Act
-    var result = await service.UpdateMerchant(merchant, merchantId, parentCompanyId);
+    var result = await service.UpdateMerchant(merchant, merchantId, parentCompanyId, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -642,7 +642,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .Returns(Task.CompletedTask);
 
     // Act
-    await service.DeleteMerchant(merchantId, parentCompanyId);
+    await service.DeleteMerchant(merchantId, parentCompanyId, CancellationToken.None);
 
     // Assert
     mockMerchantOrchestrationService.Verify(s => s.DeleteMerchantObject(merchantId, parentCompanyId, It.IsAny<CancellationToken>()), Times.Once);
@@ -662,7 +662,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .Returns(Task.CompletedTask);
 
     // Act
-    await service.DeleteMerchant(merchantId, null);
+    await service.DeleteMerchant(merchantId, null, CancellationToken.None);
 
     // Assert
     mockMerchantOrchestrationService.Verify(s => s.DeleteMerchantObject(merchantId, null, It.IsAny<CancellationToken>()), Times.Once);
@@ -688,7 +688,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
-        service.AddProduct(product, invoiceId, null));
+        service.AddProduct(product, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -708,7 +708,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceValidationException>(() =>
-        service.DeleteProduct(productName, invoiceId, null));
+        service.DeleteProduct(productName, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -726,7 +726,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
-        service.CreateMerchant(merchant, null));
+        service.CreateMerchant(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -745,7 +745,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyValidationException>(() =>
-        service.UpdateMerchant(merchant, merchantId, null));
+        service.UpdateMerchant(merchant, merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -764,7 +764,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
-        service.CreateInvoiceScan(scan, invoiceId, null));
+        service.CreateInvoiceScan(scan, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -783,7 +783,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
-        service.UpdateMetadataOnInvoice(metadata, invoiceId, null));
+        service.UpdateMetadataOnInvoice(metadata, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -801,7 +801,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyException>(() =>
-        service.GetProducts(invoiceId, null));
+        service.GetProducts(invoiceId, null, CancellationToken.None));
   }
 
   #endregion
@@ -830,11 +830,11 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ToList();
 
     // Act
-    var tasks = products.Select(p => service.AddProduct(p, invoiceId, null));
+    var tasks = products.Select(p => service.AddProduct(p, invoiceId, null, CancellationToken.None));
     await Task.WhenAll(tasks);
 
     // Assert
-    mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, null), Times.Exactly(5));
+    mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, null, It.IsAny<CancellationToken>()), Times.Exactly(5));
   }
 
   /// <summary>
@@ -852,7 +852,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
 
     // Act
     var tasks = Enumerable.Range(0, 10)
-        .Select(_ => service.ReadMerchant(Guid.NewGuid(), null));
+        .Select(_ => service.ReadMerchant(Guid.NewGuid(), null, CancellationToken.None));
     var results = await Task.WhenAll(tasks);
 
     // Assert
@@ -874,7 +874,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
 
     // Act
     var tasks = Enumerable.Range(0, 10)
-        .Select(_ => service.GetMetadataFromInvoice(Guid.NewGuid(), null));
+        .Select(_ => service.GetMetadataFromInvoice(Guid.NewGuid(), null, CancellationToken.None));
     var results = await Task.WhenAll(tasks);
 
     // Assert
@@ -901,7 +901,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .Returns(Task.CompletedTask);
 
     // Act
-    await service.AnalyzeInvoice(options, invoiceId, userId);
+    await service.AnalyzeInvoice(options, invoiceId, userId, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
@@ -922,7 +922,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .Returns(Task.CompletedTask);
 
     // Act
-    await service.AnalyzeInvoice(options, invoiceId, null);
+    await service.AnalyzeInvoice(options, invoiceId, null, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);
@@ -944,7 +944,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyException>(() =>
-        service.AnalyzeInvoice(options, invoiceId, null));
+        service.AnalyzeInvoice(options, invoiceId, null, CancellationToken.None));
   }
 
   #endregion
@@ -966,7 +966,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .Returns(Task.CompletedTask);
 
     // Act
-    await service.DeleteInvoice(invoiceId, userId);
+    await service.DeleteInvoice(invoiceId, userId, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.DeleteInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
@@ -986,7 +986,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .Returns(Task.CompletedTask);
 
     // Act
-    await service.DeleteInvoice(invoiceId, null);
+    await service.DeleteInvoice(invoiceId, null, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.DeleteInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);

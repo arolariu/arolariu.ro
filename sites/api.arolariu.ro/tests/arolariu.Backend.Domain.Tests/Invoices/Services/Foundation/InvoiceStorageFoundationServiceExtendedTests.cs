@@ -60,14 +60,14 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var invoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockBroker
-        .Setup(b => b.CreateInvoiceAsync(invoice))
+        .Setup(b => b.CreateInvoiceAsync(invoice, It.IsAny<CancellationToken>()))
         .ReturnsAsync(invoice);
 
     // Act
-    await service.CreateInvoiceObject(invoice, Guid.Empty);
+    await service.CreateInvoiceObject(invoice, Guid.Empty, CancellationToken.None);
 
     // Assert
-    mockBroker.Verify(b => b.CreateInvoiceAsync(invoice), Times.Once);
+    mockBroker.Verify(b => b.CreateInvoiceAsync(invoice, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -80,14 +80,14 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var invoice = new Invoice { id = Guid.NewGuid(), UserIdentifier = Guid.NewGuid() };
 
     mockBroker
-        .Setup(b => b.CreateInvoiceAsync(It.IsAny<Invoice>()))
+        .Setup(b => b.CreateInvoiceAsync(It.IsAny<Invoice>(), It.IsAny<CancellationToken>()))
         .ReturnsAsync(invoice);
 
     // Act
-    await service.CreateInvoiceObject(invoice, null);
+    await service.CreateInvoiceObject(invoice, null, CancellationToken.None);
 
     // Assert
-    mockBroker.Verify(b => b.CreateInvoiceAsync(It.IsAny<Invoice>()), Times.Once);
+    mockBroker.Verify(b => b.CreateInvoiceAsync(It.IsAny<Invoice>(), It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -100,12 +100,12 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var invoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockBroker
-        .Setup(b => b.CreateInvoiceAsync(invoice))
+        .Setup(b => b.CreateInvoiceAsync(invoice, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.CreateInvoiceObject(invoice, null));
+        service.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -118,12 +118,12 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var invoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockBroker
-        .Setup(b => b.CreateInvoiceAsync(invoice))
+        .Setup(b => b.CreateInvoiceAsync(invoice, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new TimeoutException("Connection timeout"));
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.CreateInvoiceObject(invoice, null));
+        service.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -136,12 +136,12 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var invoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockBroker
-        .Setup(b => b.CreateInvoiceAsync(invoice))
+        .Setup(b => b.CreateInvoiceAsync(invoice, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new ArgumentException("Invalid argument"));
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.CreateInvoiceObject(invoice, null));
+        service.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
   #endregion
@@ -161,11 +161,11 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     expectedInvoice.UserIdentifier = userId;
 
     mockBroker
-        .Setup(b => b.ReadInvoiceAsync(invoiceId, userId))
+        .Setup(b => b.ReadInvoiceAsync(invoiceId, userId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(expectedInvoice);
 
     // Act
-    var result = await service.ReadInvoiceObject(invoiceId, userId);
+    var result = await service.ReadInvoiceObject(invoiceId, userId, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -183,11 +183,11 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var expectedInvoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockBroker
-        .Setup(b => b.ReadInvoiceAsync(invoiceId, null))
+        .Setup(b => b.ReadInvoiceAsync(invoiceId, null, It.IsAny<CancellationToken>()))
         .ReturnsAsync(expectedInvoice);
 
     // Act
-    var result = await service.ReadInvoiceObject(invoiceId, null);
+    var result = await service.ReadInvoiceObject(invoiceId, null, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -203,12 +203,12 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var invoiceId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.ReadInvoiceAsync(invoiceId, null))
+        .Setup(b => b.ReadInvoiceAsync(invoiceId, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.ReadInvoiceObject(invoiceId, null));
+        service.ReadInvoiceObject(invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -221,12 +221,12 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var invoiceId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.ReadInvoiceAsync(invoiceId, null))
+        .Setup(b => b.ReadInvoiceAsync(invoiceId, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new NotSupportedException("Not supported"));
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.ReadInvoiceObject(invoiceId, null));
+        service.ReadInvoiceObject(invoiceId, null, CancellationToken.None));
   }
 
   #endregion
@@ -243,11 +243,11 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var userId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.ReadInvoicesAsync(userId))
+        .Setup(b => b.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(new List<Invoice>());
 
     // Act
-    var result = await service.ReadAllInvoiceObjects(userId);
+    var result = await service.ReadAllInvoiceObjects(userId, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -265,11 +265,11 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var expectedInvoices = InvoiceBuilder.CreateMultipleRandomInvoices(500);
 
     mockBroker
-        .Setup(b => b.ReadInvoicesAsync(userId))
+        .Setup(b => b.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(expectedInvoices);
 
     // Act
-    var result = await service.ReadAllInvoiceObjects(userId);
+    var result = await service.ReadAllInvoiceObjects(userId, CancellationToken.None);
 
     // Assert
     Assert.Equal(500, result.Count());
@@ -286,11 +286,11 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var expectedInvoices = new List<Invoice> { InvoiceBuilder.CreateRandomInvoice() };
 
     mockBroker
-        .Setup(b => b.ReadInvoicesAsync(userId))
+        .Setup(b => b.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(expectedInvoices);
 
     // Act
-    var result = await service.ReadAllInvoiceObjects(userId);
+    var result = await service.ReadAllInvoiceObjects(userId, CancellationToken.None);
 
     // Assert
     Assert.Single(result);
@@ -306,12 +306,12 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var userId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.ReadInvoicesAsync(userId))
+        .Setup(b => b.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.ReadAllInvoiceObjects(userId));
+        service.ReadAllInvoiceObjects(userId, CancellationToken.None));
   }
 
   #endregion
@@ -329,11 +329,11 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var invoiceId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.UpdateInvoiceAsync(invoiceId, invoice))
+        .Setup(b => b.UpdateInvoiceAsync(invoiceId, invoice, It.IsAny<CancellationToken>()))
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.UpdateInvoiceObject(invoice, invoiceId, null);
+    var result = await service.UpdateInvoiceObject(invoice, invoiceId, null, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -350,12 +350,12 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var invoiceId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.UpdateInvoiceAsync(invoiceId, invoice))
+        .Setup(b => b.UpdateInvoiceAsync(invoiceId, invoice, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.UpdateInvoiceObject(invoice, invoiceId, null));
+        service.UpdateInvoiceObject(invoice, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -370,11 +370,11 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var userId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.UpdateInvoiceAsync(invoiceId, invoice))
+        .Setup(b => b.UpdateInvoiceAsync(invoiceId, invoice, It.IsAny<CancellationToken>()))
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.UpdateInvoiceObject(invoice, invoiceId, userId);
+    var result = await service.UpdateInvoiceObject(invoice, invoiceId, userId, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -394,14 +394,14 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var invoiceId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.DeleteInvoiceAsync(invoiceId, null))
+        .Setup(b => b.DeleteInvoiceAsync(invoiceId, null, It.IsAny<CancellationToken>()))
         .Returns(ValueTask.CompletedTask);
 
     // Act
-    await service.DeleteInvoiceObject(invoiceId, null);
+    await service.DeleteInvoiceObject(invoiceId, null, CancellationToken.None);
 
     // Assert
-    mockBroker.Verify(b => b.DeleteInvoiceAsync(invoiceId, null), Times.Once);
+    mockBroker.Verify(b => b.DeleteInvoiceAsync(invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -415,14 +415,14 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var userId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.DeleteInvoiceAsync(invoiceId, userId))
+        .Setup(b => b.DeleteInvoiceAsync(invoiceId, userId, It.IsAny<CancellationToken>()))
         .Returns(ValueTask.CompletedTask);
 
     // Act
-    await service.DeleteInvoiceObject(invoiceId, userId);
+    await service.DeleteInvoiceObject(invoiceId, userId, CancellationToken.None);
 
     // Assert
-    mockBroker.Verify(b => b.DeleteInvoiceAsync(invoiceId, userId), Times.Once);
+    mockBroker.Verify(b => b.DeleteInvoiceAsync(invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -435,12 +435,12 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var invoiceId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.DeleteInvoiceAsync(invoiceId, null))
+        .Setup(b => b.DeleteInvoiceAsync(invoiceId, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.DeleteInvoiceObject(invoiceId, null));
+        service.DeleteInvoiceObject(invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -453,16 +453,16 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var invoiceId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.DeleteInvoiceAsync(invoiceId, null))
+        .Setup(b => b.DeleteInvoiceAsync(invoiceId, null, It.IsAny<CancellationToken>()))
         .Returns(ValueTask.CompletedTask);
 
     // Act
-    await service.DeleteInvoiceObject(invoiceId, null);
-    await service.DeleteInvoiceObject(invoiceId, null);
-    await service.DeleteInvoiceObject(invoiceId, null);
+    await service.DeleteInvoiceObject(invoiceId, null, CancellationToken.None);
+    await service.DeleteInvoiceObject(invoiceId, null, CancellationToken.None);
+    await service.DeleteInvoiceObject(invoiceId, null, CancellationToken.None);
 
     // Assert
-    mockBroker.Verify(b => b.DeleteInvoiceAsync(invoiceId, null), Times.Exactly(3));
+    mockBroker.Verify(b => b.DeleteInvoiceAsync(invoiceId, null, It.IsAny<CancellationToken>()), Times.Exactly(3));
   }
 
   #endregion
@@ -483,7 +483,7 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
         .ReturnsAsync((Invoice inv, CancellationToken _) => inv);
 
     // Act
-    var tasks = invoices.Select(inv => service.CreateInvoiceObject(inv, null));
+    var tasks = invoices.Select(inv => service.CreateInvoiceObject(inv, null, CancellationToken.None));
     await Task.WhenAll(tasks);
 
     // Assert
@@ -500,11 +500,11 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var expectedInvoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockBroker
-        .Setup(b => b.ReadInvoiceAsync(It.IsAny<Guid>(), null))
+        .Setup(b => b.ReadInvoiceAsync(It.IsAny<Guid>(), null, It.IsAny<CancellationToken>()))
         .ReturnsAsync(expectedInvoice);
 
     // Act
-    var tasks = Enumerable.Range(0, 10).Select(_ => service.ReadInvoiceObject(Guid.NewGuid(), null));
+    var tasks = Enumerable.Range(0, 10).Select(_ => service.ReadInvoiceObject(Guid.NewGuid(), null, CancellationToken.None));
     var results = await Task.WhenAll(tasks);
 
     // Assert
@@ -525,12 +525,12 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var invoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockBroker
-        .Setup(b => b.CreateInvoiceAsync(invoice))
+        .Setup(b => b.CreateInvoiceAsync(invoice, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new OperationCanceledException("Operation cancelled"));
 
     // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
     await Assert.ThrowsAsync<OperationCanceledException>(() =>
-        service.CreateInvoiceObject(invoice, null));
+        service.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -543,12 +543,12 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var invoiceId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.ReadInvoiceAsync(invoiceId, null))
+        .Setup(b => b.ReadInvoiceAsync(invoiceId, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new ArgumentNullException("parameter", "Null reference"));
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.ReadInvoiceObject(invoiceId, null));
+        service.ReadInvoiceObject(invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -561,12 +561,12 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
     var userId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.ReadInvoicesAsync(userId))
+        .Setup(b => b.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new FormatException("Format error"));
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.ReadAllInvoiceObjects(userId));
+        service.ReadAllInvoiceObjects(userId, CancellationToken.None));
   }
 
   #endregion

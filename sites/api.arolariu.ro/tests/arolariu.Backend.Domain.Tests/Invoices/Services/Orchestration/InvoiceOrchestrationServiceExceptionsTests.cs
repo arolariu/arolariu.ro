@@ -63,7 +63,7 @@ public sealed class InvoiceOrchestrationServiceExceptionsTests
       .ThrowsAsync(new InvoiceFoundationValidationException(inner));
 
     await Assert.ThrowsAsync<InvoiceOrchestrationValidationException>(
-      () => orchestrationService.CreateInvoiceObject(invoice));
+      () => orchestrationService.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -79,7 +79,7 @@ public sealed class InvoiceOrchestrationServiceExceptionsTests
       .ThrowsAsync(new InvoiceFoundationDependencyValidationException(inner));
 
     await Assert.ThrowsAsync<InvoiceOrchestrationDependencyValidationException>(
-      () => orchestrationService.CreateInvoiceObject(invoice));
+      () => orchestrationService.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -95,7 +95,7 @@ public sealed class InvoiceOrchestrationServiceExceptionsTests
       .ThrowsAsync(new InvoiceFoundationDependencyException(inner));
 
     await Assert.ThrowsAsync<InvoiceOrchestrationDependencyException>(
-      () => orchestrationService.CreateInvoiceObject(invoice));
+      () => orchestrationService.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -111,7 +111,7 @@ public sealed class InvoiceOrchestrationServiceExceptionsTests
       .ThrowsAsync(new InvoiceFoundationServiceException(inner));
 
     await Assert.ThrowsAsync<InvoiceOrchestrationServiceException>(
-      () => orchestrationService.CreateInvoiceObject(invoice));
+      () => orchestrationService.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -126,6 +126,6 @@ public sealed class InvoiceOrchestrationServiceExceptionsTests
       .ThrowsAsync(new InvalidOperationException("unknown"));
 
     await Assert.ThrowsAsync<InvoiceOrchestrationServiceException>(
-      () => orchestrationService.CreateInvoiceObject(invoice));
+      () => orchestrationService.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 }
