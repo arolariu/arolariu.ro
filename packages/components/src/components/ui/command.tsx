@@ -356,13 +356,13 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
 
     React.useEffect(() => {
       if (selectableItems.length === 0) {
-        // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
+        // eslint-disable-next-line react-x/set-state-in-effect -- clearing active item when no selectable items remain is the effect's purpose
         setActiveItemId(null);
         return;
       }
 
       if (!activeItemId || !selectableItems.some((item) => item.id === activeItemId)) {
-        // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
+        // eslint-disable-next-line react-x/set-state-in-effect -- resetting active item to the first selectable is the effect's purpose
         setActiveItemId(selectableItems[0].id);
       }
     }, [activeItemId, selectableItems]);

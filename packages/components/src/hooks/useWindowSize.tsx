@@ -46,7 +46,7 @@ export function useWindowSize(): HookReturnType {
      *  when the component unmounts or the window is resized.
      */
     function __handleResize__() {
-      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
+      // eslint-disable-next-line react-x/set-state-in-effect -- syncing window size into state is the hook's purpose
       setWindowSize({
         width: globalThis.window.innerWidth,
         height: globalThis.window.innerHeight,
