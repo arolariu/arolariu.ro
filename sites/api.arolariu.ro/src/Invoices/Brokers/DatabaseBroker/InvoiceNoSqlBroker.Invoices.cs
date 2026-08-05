@@ -19,7 +19,7 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 public partial class InvoiceNoSqlBroker
 {
   /// <inheritdoc/>
-  public async ValueTask<Invoice> CreateInvoiceAsync(Invoice invoice, CancellationToken cancellationToken = default)
+  public async ValueTask<Invoice> CreateInvoiceAsync(Invoice invoice, CancellationToken cancellationToken)
   {
     ArgumentNullException.ThrowIfNull(invoice);
 
@@ -44,7 +44,7 @@ public partial class InvoiceNoSqlBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default)
+  public async ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceAsync));
     activity?
@@ -115,7 +115,7 @@ public partial class InvoiceNoSqlBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken = default)
+  public async ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoicesAsync));
     activity?
@@ -156,7 +156,7 @@ public partial class InvoiceNoSqlBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<Invoice> UpdateInvoiceAsync(Guid invoiceIdentifier, Invoice updatedInvoice, CancellationToken cancellationToken = default)
+  public async ValueTask<Invoice> UpdateInvoiceAsync(Guid invoiceIdentifier, Invoice updatedInvoice, CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceAsync));
     activity?
@@ -181,7 +181,7 @@ public partial class InvoiceNoSqlBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice, CancellationToken cancellationToken = default)
+  public async ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice, CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceAsync));
     activity?
@@ -208,7 +208,7 @@ public partial class InvoiceNoSqlBroker
 
 
   /// <inheritdoc/>
-  public async ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default)
+  public async ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceAsync));
     activity?
@@ -288,7 +288,7 @@ public partial class InvoiceNoSqlBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask DeleteInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken = default)
+  public async ValueTask DeleteInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoicesAsync));
     activity?

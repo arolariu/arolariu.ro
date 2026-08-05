@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Brokers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
@@ -41,11 +42,11 @@ public sealed class InvoiceBrokerExtendedTests
     // Arrange
     var invoice = InvoiceBuilder.CreateRandomInvoice();
     mockBroker
-        .Setup(b => b.CreateInvoiceAsync(invoice))
+        .Setup(b => b.CreateInvoiceAsync(invoice, It.IsAny<CancellationToken>()))
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await mockBroker.Object.CreateInvoiceAsync(invoice);
+    var result = await mockBroker.Object.CreateInvoiceAsync(invoice, CancellationToken.None);
 
     // Assert
     Assert.Same(invoice, result);
@@ -63,11 +64,11 @@ public sealed class InvoiceBrokerExtendedTests
     var expectedInvoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockBroker
-        .Setup(b => b.ReadInvoiceAsync(invoiceId, userId))
+        .Setup(b => b.ReadInvoiceAsync(invoiceId, userId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(expectedInvoice);
 
     // Act
-    var result = await mockBroker.Object.ReadInvoiceAsync(invoiceId, userId);
+    var result = await mockBroker.Object.ReadInvoiceAsync(invoiceId, userId, CancellationToken.None);
 
     // Assert
     Assert.Same(expectedInvoice, result);
@@ -84,11 +85,11 @@ public sealed class InvoiceBrokerExtendedTests
     var expectedInvoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockBroker
-        .Setup(b => b.ReadInvoiceAsync(invoiceId, null))
+        .Setup(b => b.ReadInvoiceAsync(invoiceId, null, It.IsAny<CancellationToken>()))
         .ReturnsAsync(expectedInvoice);
 
     // Act
-    var result = await mockBroker.Object.ReadInvoiceAsync(invoiceId, null);
+    var result = await mockBroker.Object.ReadInvoiceAsync(invoiceId, null, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -105,11 +106,11 @@ public sealed class InvoiceBrokerExtendedTests
     var expectedInvoices = InvoiceBuilder.CreateMultipleRandomInvoices(5);
 
     mockBroker
-        .Setup(b => b.ReadInvoicesAsync(userId))
+        .Setup(b => b.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(expectedInvoices);
 
     // Act
-    var result = await mockBroker.Object.ReadInvoicesAsync(userId);
+    var result = await mockBroker.Object.ReadInvoicesAsync(userId, CancellationToken.None);
 
     // Assert
     Assert.Equal(5, result.Count());
@@ -125,11 +126,11 @@ public sealed class InvoiceBrokerExtendedTests
     var userId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.ReadInvoicesAsync(userId))
+        .Setup(b => b.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(new List<Invoice>());
 
     // Act
-    var result = await mockBroker.Object.ReadInvoicesAsync(userId);
+    var result = await mockBroker.Object.ReadInvoicesAsync(userId, CancellationToken.None);
 
     // Assert
     Assert.Empty(result);
@@ -146,11 +147,11 @@ public sealed class InvoiceBrokerExtendedTests
     var updatedInvoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockBroker
-        .Setup(b => b.UpdateInvoiceAsync(invoiceId, updatedInvoice))
+        .Setup(b => b.UpdateInvoiceAsync(invoiceId, updatedInvoice, It.IsAny<CancellationToken>()))
         .ReturnsAsync(updatedInvoice);
 
     // Act
-    var result = await mockBroker.Object.UpdateInvoiceAsync(invoiceId, updatedInvoice);
+    var result = await mockBroker.Object.UpdateInvoiceAsync(invoiceId, updatedInvoice, CancellationToken.None);
 
     // Assert
     Assert.Same(updatedInvoice, result);
@@ -167,14 +168,14 @@ public sealed class InvoiceBrokerExtendedTests
     var userId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.DeleteInvoiceAsync(invoiceId, userId))
+        .Setup(b => b.DeleteInvoiceAsync(invoiceId, userId, It.IsAny<CancellationToken>()))
         .Returns(ValueTask.CompletedTask);
 
     // Act
-    await mockBroker.Object.DeleteInvoiceAsync(invoiceId, userId);
+    await mockBroker.Object.DeleteInvoiceAsync(invoiceId, userId, CancellationToken.None);
 
     // Assert
-    mockBroker.Verify(b => b.DeleteInvoiceAsync(invoiceId, userId), Times.Once);
+    mockBroker.Verify(b => b.DeleteInvoiceAsync(invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -187,14 +188,14 @@ public sealed class InvoiceBrokerExtendedTests
     var invoiceId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.DeleteInvoiceAsync(invoiceId, null))
+        .Setup(b => b.DeleteInvoiceAsync(invoiceId, null, It.IsAny<CancellationToken>()))
         .Returns(ValueTask.CompletedTask);
 
     // Act
-    await mockBroker.Object.DeleteInvoiceAsync(invoiceId, null);
+    await mockBroker.Object.DeleteInvoiceAsync(invoiceId, null, CancellationToken.None);
 
     // Assert
-    mockBroker.Verify(b => b.DeleteInvoiceAsync(invoiceId, null), Times.Once);
+    mockBroker.Verify(b => b.DeleteInvoiceAsync(invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -207,14 +208,14 @@ public sealed class InvoiceBrokerExtendedTests
     var userId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.DeleteInvoicesAsync(userId))
+        .Setup(b => b.DeleteInvoicesAsync(userId, It.IsAny<CancellationToken>()))
         .Returns(ValueTask.CompletedTask);
 
     // Act
-    await mockBroker.Object.DeleteInvoicesAsync(userId);
+    await mockBroker.Object.DeleteInvoicesAsync(userId, CancellationToken.None);
 
     // Assert
-    mockBroker.Verify(b => b.DeleteInvoicesAsync(userId), Times.Once);
+    mockBroker.Verify(b => b.DeleteInvoicesAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   #endregion
@@ -231,11 +232,11 @@ public sealed class InvoiceBrokerExtendedTests
     var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
     mockBroker
-        .Setup(b => b.CreateMerchantAsync(merchant))
+        .Setup(b => b.CreateMerchantAsync(merchant, It.IsAny<CancellationToken>()))
         .ReturnsAsync(merchant);
 
     // Act
-    var result = await mockBroker.Object.CreateMerchantAsync(merchant);
+    var result = await mockBroker.Object.CreateMerchantAsync(merchant, CancellationToken.None);
 
     // Assert
     Assert.Same(merchant, result);
@@ -253,11 +254,11 @@ public sealed class InvoiceBrokerExtendedTests
     var expectedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
     mockBroker
-        .Setup(b => b.ReadMerchantAsync(merchantId, parentCompanyId))
+        .Setup(b => b.ReadMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(expectedMerchant);
 
     // Act
-    var result = await mockBroker.Object.ReadMerchantAsync(merchantId, parentCompanyId);
+    var result = await mockBroker.Object.ReadMerchantAsync(merchantId, parentCompanyId, CancellationToken.None);
 
     // Assert
     Assert.Same(expectedMerchant, result);
@@ -274,11 +275,11 @@ public sealed class InvoiceBrokerExtendedTests
     var expectedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
     mockBroker
-        .Setup(b => b.ReadMerchantAsync(merchantId, null))
+        .Setup(b => b.ReadMerchantAsync(merchantId, null, It.IsAny<CancellationToken>()))
         .ReturnsAsync(expectedMerchant);
 
     // Act
-    var result = await mockBroker.Object.ReadMerchantAsync(merchantId, null);
+    var result = await mockBroker.Object.ReadMerchantAsync(merchantId, null, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -297,11 +298,11 @@ public sealed class InvoiceBrokerExtendedTests
         .ToList();
 
     mockBroker
-        .Setup(b => b.ReadMerchantsAsync(parentCompanyId))
+        .Setup(b => b.ReadMerchantsAsync(parentCompanyId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(expectedMerchants);
 
     // Act
-    var result = await mockBroker.Object.ReadMerchantsAsync(parentCompanyId);
+    var result = await mockBroker.Object.ReadMerchantsAsync(parentCompanyId, CancellationToken.None);
 
     // Assert
     Assert.Equal(10, result.Count());
@@ -317,11 +318,11 @@ public sealed class InvoiceBrokerExtendedTests
     var parentCompanyId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.ReadMerchantsAsync(parentCompanyId))
+        .Setup(b => b.ReadMerchantsAsync(parentCompanyId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(new List<Merchant>());
 
     // Act
-    var result = await mockBroker.Object.ReadMerchantsAsync(parentCompanyId);
+    var result = await mockBroker.Object.ReadMerchantsAsync(parentCompanyId, CancellationToken.None);
 
     // Assert
     Assert.Empty(result);
@@ -338,11 +339,11 @@ public sealed class InvoiceBrokerExtendedTests
     var updatedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
     mockBroker
-        .Setup(b => b.UpdateMerchantAsync(currentMerchant, updatedMerchant))
+        .Setup(b => b.UpdateMerchantAsync(currentMerchant, updatedMerchant, It.IsAny<CancellationToken>()))
         .ReturnsAsync(updatedMerchant);
 
     // Act
-    var result = await mockBroker.Object.UpdateMerchantAsync(currentMerchant, updatedMerchant);
+    var result = await mockBroker.Object.UpdateMerchantAsync(currentMerchant, updatedMerchant, CancellationToken.None);
 
     // Assert
     Assert.Same(updatedMerchant, result);
@@ -359,11 +360,11 @@ public sealed class InvoiceBrokerExtendedTests
     var updatedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
     mockBroker
-        .Setup(b => b.UpdateMerchantAsync(merchantId, updatedMerchant))
+        .Setup(b => b.UpdateMerchantAsync(merchantId, updatedMerchant, It.IsAny<CancellationToken>()))
         .ReturnsAsync(updatedMerchant);
 
     // Act
-    var result = await mockBroker.Object.UpdateMerchantAsync(merchantId, updatedMerchant);
+    var result = await mockBroker.Object.UpdateMerchantAsync(merchantId, updatedMerchant, CancellationToken.None);
 
     // Assert
     Assert.Same(updatedMerchant, result);
@@ -380,14 +381,14 @@ public sealed class InvoiceBrokerExtendedTests
     var parentCompanyId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.DeleteMerchantAsync(merchantId, parentCompanyId))
+        .Setup(b => b.DeleteMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()))
         .Returns(ValueTask.CompletedTask);
 
     // Act
-    await mockBroker.Object.DeleteMerchantAsync(merchantId, parentCompanyId);
+    await mockBroker.Object.DeleteMerchantAsync(merchantId, parentCompanyId, CancellationToken.None);
 
     // Assert
-    mockBroker.Verify(b => b.DeleteMerchantAsync(merchantId, parentCompanyId), Times.Once);
+    mockBroker.Verify(b => b.DeleteMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -400,14 +401,14 @@ public sealed class InvoiceBrokerExtendedTests
     var merchantId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.DeleteMerchantAsync(merchantId, null))
+        .Setup(b => b.DeleteMerchantAsync(merchantId, null, It.IsAny<CancellationToken>()))
         .Returns(ValueTask.CompletedTask);
 
     // Act
-    await mockBroker.Object.DeleteMerchantAsync(merchantId, null);
+    await mockBroker.Object.DeleteMerchantAsync(merchantId, null, CancellationToken.None);
 
     // Assert
-    mockBroker.Verify(b => b.DeleteMerchantAsync(merchantId, null), Times.Once);
+    mockBroker.Verify(b => b.DeleteMerchantAsync(merchantId, null, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   #endregion
@@ -425,11 +426,11 @@ public sealed class InvoiceBrokerExtendedTests
     var expectedInvoices = InvoiceBuilder.CreateMultipleRandomInvoices(1000);
 
     mockBroker
-        .Setup(b => b.ReadInvoicesAsync(userId))
+        .Setup(b => b.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(expectedInvoices);
 
     // Act
-    var result = await mockBroker.Object.ReadInvoicesAsync(userId);
+    var result = await mockBroker.Object.ReadInvoicesAsync(userId, CancellationToken.None);
 
     // Assert
     Assert.Equal(1000, result.Count());
@@ -448,11 +449,11 @@ public sealed class InvoiceBrokerExtendedTests
         .ToList();
 
     mockBroker
-        .Setup(b => b.ReadMerchantsAsync(parentCompanyId))
+        .Setup(b => b.ReadMerchantsAsync(parentCompanyId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(expectedMerchants);
 
     // Act
-    var result = await mockBroker.Object.ReadMerchantsAsync(parentCompanyId);
+    var result = await mockBroker.Object.ReadMerchantsAsync(parentCompanyId, CancellationToken.None);
 
     // Assert
     Assert.Equal(500, result.Count());
@@ -472,11 +473,11 @@ public sealed class InvoiceBrokerExtendedTests
     var expectedInvoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockBroker
-        .Setup(b => b.ReadInvoiceAsync(Guid.Empty, Guid.Empty))
+        .Setup(b => b.ReadInvoiceAsync(Guid.Empty, Guid.Empty, It.IsAny<CancellationToken>()))
         .ReturnsAsync(expectedInvoice);
 
     // Act
-    var result = await mockBroker.Object.ReadInvoiceAsync(Guid.Empty, Guid.Empty);
+    var result = await mockBroker.Object.ReadInvoiceAsync(Guid.Empty, Guid.Empty, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -493,11 +494,11 @@ public sealed class InvoiceBrokerExtendedTests
     var expectedInvoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockBroker
-        .Setup(b => b.ReadInvoiceAsync(sameId, sameId))
+        .Setup(b => b.ReadInvoiceAsync(sameId, sameId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(expectedInvoice);
 
     // Act
-    var result = await mockBroker.Object.ReadInvoiceAsync(sameId, sameId);
+    var result = await mockBroker.Object.ReadInvoiceAsync(sameId, sameId, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -513,11 +514,11 @@ public sealed class InvoiceBrokerExtendedTests
     var expectedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
     mockBroker
-        .Setup(b => b.ReadMerchantAsync(Guid.Empty, Guid.Empty))
+        .Setup(b => b.ReadMerchantAsync(Guid.Empty, Guid.Empty, It.IsAny<CancellationToken>()))
         .ReturnsAsync(expectedMerchant);
 
     // Act
-    var result = await mockBroker.Object.ReadMerchantAsync(Guid.Empty, Guid.Empty);
+    var result = await mockBroker.Object.ReadMerchantAsync(Guid.Empty, Guid.Empty, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -534,11 +535,11 @@ public sealed class InvoiceBrokerExtendedTests
     var updatedInvoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockBroker
-        .Setup(b => b.UpdateInvoiceAsync(currentInvoice, updatedInvoice))
+        .Setup(b => b.UpdateInvoiceAsync(currentInvoice, updatedInvoice, It.IsAny<CancellationToken>()))
         .ReturnsAsync(updatedInvoice);
 
     // Act
-    var result = await mockBroker.Object.UpdateInvoiceAsync(currentInvoice, updatedInvoice);
+    var result = await mockBroker.Object.UpdateInvoiceAsync(currentInvoice, updatedInvoice, CancellationToken.None);
 
     // Assert
     Assert.Same(updatedInvoice, result);
@@ -554,11 +555,11 @@ public sealed class InvoiceBrokerExtendedTests
     var invoiceId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.ReadInvoiceAsync(invoiceId, null))
+        .Setup(b => b.ReadInvoiceAsync(invoiceId, null, It.IsAny<CancellationToken>()))
         .ReturnsAsync((Invoice?)null);
 
     // Act
-    var result = await mockBroker.Object.ReadInvoiceAsync(invoiceId, null);
+    var result = await mockBroker.Object.ReadInvoiceAsync(invoiceId, null, CancellationToken.None);
 
     // Assert
     Assert.Null(result);
@@ -574,11 +575,11 @@ public sealed class InvoiceBrokerExtendedTests
     var merchantId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.ReadMerchantAsync(merchantId, null))
+        .Setup(b => b.ReadMerchantAsync(merchantId, null, It.IsAny<CancellationToken>()))
         .ReturnsAsync((Merchant?)null);
 
     // Act
-    var result = await mockBroker.Object.ReadMerchantAsync(merchantId, null);
+    var result = await mockBroker.Object.ReadMerchantAsync(merchantId, null, CancellationToken.None);
 
     // Assert
     Assert.Null(result);

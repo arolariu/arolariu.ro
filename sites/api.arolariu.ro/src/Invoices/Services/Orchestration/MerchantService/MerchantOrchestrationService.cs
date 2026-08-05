@@ -37,7 +37,7 @@ public partial class MerchantOrchestrationService : IMerchantOrchestrationServic
 
   #region Create Merchant API
   /// <inheritdoc/>
-  public async Task CreateMerchantObject(Merchant merchant, Guid? parentCompanyId = null, CancellationToken cancellationToken = default) =>
+  public async Task CreateMerchantObject(Merchant merchant, Guid? parentCompanyId, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchantObject));
@@ -49,7 +49,7 @@ public partial class MerchantOrchestrationService : IMerchantOrchestrationServic
 
   #region Delete Merchant API
   /// <inheritdoc/>
-  public async Task DeleteMerchantObject(Guid identifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default) =>
+  public async Task DeleteMerchantObject(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchantObject));
@@ -61,7 +61,7 @@ public partial class MerchantOrchestrationService : IMerchantOrchestrationServic
 
   #region Read Merchants API
   /// <inheritdoc/>
-  public async Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId, CancellationToken cancellationToken = default) =>
+  public async Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllMerchantObjects));
@@ -74,7 +74,7 @@ public partial class MerchantOrchestrationService : IMerchantOrchestrationServic
 
   #region Read Merchant API
   /// <inheritdoc/>
-  public async Task<Merchant> ReadMerchantObject(Guid identifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default) =>
+  public async Task<Merchant> ReadMerchantObject(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantObject));
@@ -87,7 +87,7 @@ public partial class MerchantOrchestrationService : IMerchantOrchestrationServic
 
   #region Update Merchant API
   /// <inheritdoc/>
-  public async Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default) =>
+  public async Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantObject));

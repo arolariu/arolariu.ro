@@ -73,7 +73,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .Returns(Task.CompletedTask);
 
     // Act
-    await processingService.AnalyzeInvoice(options, invoiceId, userId);
+    await processingService.AnalyzeInvoice(options, invoiceId, userId, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
@@ -94,7 +94,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .Returns(Task.CompletedTask);
 
     // Act
-    await processingService.AnalyzeInvoice(options, invoiceId, null);
+    await processingService.AnalyzeInvoice(options, invoiceId, null, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);
@@ -115,7 +115,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .Returns(Task.CompletedTask);
 
     // Act
-    await processingService.AnalyzeInvoice(options, invoiceId, null);
+    await processingService.AnalyzeInvoice(options, invoiceId, null, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);
@@ -136,7 +136,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .Returns(Task.CompletedTask);
 
     // Act
-    await processingService.AnalyzeInvoice(options, invoiceId, null);
+    await processingService.AnalyzeInvoice(options, invoiceId, null, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);
@@ -160,7 +160,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceValidationException>(() =>
-        processingService.AnalyzeInvoice(options, invoiceId, null));
+        processingService.AnalyzeInvoice(options, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -181,7 +181,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyValidationException>(() =>
-        processingService.AnalyzeInvoice(options, invoiceId, null));
+        processingService.AnalyzeInvoice(options, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -202,7 +202,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
-        processingService.AnalyzeInvoice(options, invoiceId, null));
+        processingService.AnalyzeInvoice(options, invoiceId, null, CancellationToken.None));
   }
 
   #endregion
@@ -223,7 +223,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .ReturnsAsync(invoice);
 
     // Act
-    await processingService.CreateInvoice(invoice, null);
+    await processingService.CreateInvoice(invoice, null, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.CreateInvoiceObject(invoice, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -246,7 +246,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceValidationException>(() =>
-        processingService.CreateInvoice(invoice, null));
+        processingService.CreateInvoice(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -266,7 +266,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyException>(() =>
-        processingService.CreateInvoice(invoice, null));
+        processingService.CreateInvoice(invoice, null, CancellationToken.None));
   }
 
   #endregion
@@ -288,7 +288,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .ReturnsAsync(expectedInvoice);
 
     // Act
-    var result = await processingService.ReadInvoice(invoiceId, null);
+    var result = await processingService.ReadInvoice(invoiceId, null, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -311,7 +311,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyException>(() =>
-        processingService.ReadInvoice(invoiceId, null));
+        processingService.ReadInvoice(invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -331,7 +331,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
-        processingService.ReadInvoice(invoiceId, null));
+        processingService.ReadInvoice(invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -349,7 +349,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
-        processingService.ReadInvoice(invoiceId, null));
+        processingService.ReadInvoice(invoiceId, null, CancellationToken.None));
   }
 
   #endregion
@@ -373,7 +373,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyException>(() =>
-        processingService.ReadInvoices(userId));
+        processingService.ReadInvoices(userId, CancellationToken.None));
   }
 
   /// <summary>
@@ -393,7 +393,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
-        processingService.ReadInvoices(userId));
+        processingService.ReadInvoices(userId, CancellationToken.None));
   }
 
   /// <summary>
@@ -411,7 +411,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .ReturnsAsync(expectedInvoices);
 
     // Act
-    var result = await processingService.ReadInvoices(userId);
+    var result = await processingService.ReadInvoices(userId, CancellationToken.None);
 
     // Assert
     Assert.Equal(100, result.Count());
@@ -436,7 +436,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .ReturnsAsync(updatedInvoice);
 
     // Act
-    var result = await processingService.UpdateInvoice(updatedInvoice, invoiceId, null);
+    var result = await processingService.UpdateInvoice(updatedInvoice, invoiceId, null, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -460,7 +460,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceValidationException>(() =>
-        processingService.UpdateInvoice(updatedInvoice, invoiceId, null));
+        processingService.UpdateInvoice(updatedInvoice, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -481,7 +481,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyException>(() =>
-        processingService.UpdateInvoice(updatedInvoice, invoiceId, null));
+        processingService.UpdateInvoice(updatedInvoice, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -500,7 +500,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
-        processingService.UpdateInvoice(updatedInvoice, invoiceId, null));
+        processingService.UpdateInvoice(updatedInvoice, invoiceId, null, CancellationToken.None));
   }
 
   #endregion
@@ -521,7 +521,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .Returns(Task.CompletedTask);
 
     // Act
-    await processingService.DeleteInvoice(invoiceId, null);
+    await processingService.DeleteInvoice(invoiceId, null, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.DeleteInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);
@@ -544,7 +544,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceValidationException>(() =>
-        processingService.DeleteInvoice(invoiceId, null));
+        processingService.DeleteInvoice(invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -564,7 +564,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyException>(() =>
-        processingService.DeleteInvoice(invoiceId, null));
+        processingService.DeleteInvoice(invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -582,7 +582,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
-        processingService.DeleteInvoice(invoiceId, null));
+        processingService.DeleteInvoice(invoiceId, null, CancellationToken.None));
   }
 
   #endregion
@@ -604,7 +604,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
-        processingService.DeleteInvoices(userId));
+        processingService.DeleteInvoices(userId, CancellationToken.None));
   }
 
   /// <summary>
@@ -627,7 +627,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
-        processingService.DeleteInvoices(userId));
+        processingService.DeleteInvoices(userId, CancellationToken.None));
   }
 
   /// <summary>
@@ -649,7 +649,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .Returns(Task.CompletedTask);
 
     // Act
-    await processingService.DeleteInvoices(userId);
+    await processingService.DeleteInvoices(userId, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.DeleteInvoiceObject(It.IsAny<Guid>(), userId, It.IsAny<CancellationToken>()), Times.Exactly(50));
@@ -679,7 +679,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .ReturnsAsync(invoice);
 
     // Act
-    await processingService.AddProduct(product, invoiceId, null);
+    await processingService.AddProduct(product, invoiceId, null, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);
@@ -701,7 +701,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
-        processingService.AddProduct(product, invoiceId, null));
+        processingService.AddProduct(product, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -721,12 +721,12 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .ReturnsAsync(invoice);
 
     mockInvoiceOrchestrationService
-        .Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId))
+        .Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new InvalidOperationException("Update failed"));
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
-        processingService.AddProduct(product, invoiceId, userId));
+        processingService.AddProduct(product, invoiceId, userId, CancellationToken.None));
   }
 
   #endregion
@@ -748,7 +748,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await processingService.GetProducts(invoiceId, null);
+    var result = await processingService.GetProducts(invoiceId, null, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -769,7 +769,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
-        processingService.GetProducts(invoiceId, null));
+        processingService.GetProducts(invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -788,7 +788,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await processingService.GetProducts(invoiceId, null);
+    var result = await processingService.GetProducts(invoiceId, null, CancellationToken.None);
 
     // Assert
     Assert.Empty(result);
@@ -814,7 +814,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await processingService.GetProduct(productPartialName, invoiceId, null);
+    var result = await processingService.GetProduct(productPartialName, invoiceId, null, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -837,7 +837,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await processingService.GetProduct("TestProductName", invoiceId, null);
+    var result = await processingService.GetProduct("TestProductName", invoiceId, null, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -858,7 +858,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
-        processingService.GetProduct("test", invoiceId, null));
+        processingService.GetProduct("test", invoiceId, null, CancellationToken.None));
   }
 
   #endregion
@@ -884,7 +884,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyValidationException>(() =>
-        processingService.CreateMerchant(merchant, null));
+        processingService.CreateMerchant(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -905,7 +905,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyException>(() =>
-        processingService.CreateMerchant(merchant, null));
+        processingService.CreateMerchant(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -924,7 +924,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .ReturnsAsync(expectedMerchant);
 
     // Act
-    var result = await processingService.ReadMerchant(merchantId, parentCompanyId);
+    var result = await processingService.ReadMerchant(merchantId, parentCompanyId, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -945,7 +945,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .ReturnsAsync(expectedMerchant);
 
     // Act
-    var result = await processingService.ReadMerchant(merchantId, null);
+    var result = await processingService.ReadMerchant(merchantId, null, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -968,7 +968,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
-        processingService.ReadMerchant(merchantId, null));
+        processingService.ReadMerchant(merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -986,7 +986,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .ReturnsAsync(updatedMerchant);
 
     // Act
-    var result = await processingService.UpdateMerchant(updatedMerchant, merchantId, null);
+    var result = await processingService.UpdateMerchant(updatedMerchant, merchantId, null, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -1010,7 +1010,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
-        processingService.UpdateMerchant(updatedMerchant, merchantId, null));
+        processingService.UpdateMerchant(updatedMerchant, merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -1028,7 +1028,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .Returns(Task.CompletedTask);
 
     // Act
-    await processingService.DeleteMerchant(merchantId, parentCompanyId);
+    await processingService.DeleteMerchant(merchantId, parentCompanyId, CancellationToken.None);
 
     // Assert
     mockMerchantOrchestrationService.Verify(s => s.DeleteMerchantObject(merchantId, parentCompanyId, It.IsAny<CancellationToken>()), Times.Once);
@@ -1048,7 +1048,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .Returns(Task.CompletedTask);
 
     // Act
-    await processingService.DeleteMerchant(merchantId, null);
+    await processingService.DeleteMerchant(merchantId, null, CancellationToken.None);
 
     // Assert
     mockMerchantOrchestrationService.Verify(s => s.DeleteMerchantObject(merchantId, null, It.IsAny<CancellationToken>()), Times.Once);

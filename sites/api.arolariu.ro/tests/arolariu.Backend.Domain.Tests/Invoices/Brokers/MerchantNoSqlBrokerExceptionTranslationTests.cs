@@ -47,7 +47,7 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
       .ThrowsAsync(MakeCosmosException(HttpStatusCode.NotFound));
 
     await Assert.ThrowsAsync<MerchantNotFoundException>(
-      async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId).ConfigureAwait(false));
+      async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
@@ -64,7 +64,7 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
       .ThrowsAsync(MakeCosmosException(HttpStatusCode.Conflict));
 
     await Assert.ThrowsAsync<MerchantAlreadyExistsException>(
-      async () => await broker.CreateMerchantAsync(merchant).ConfigureAwait(false));
+      async () => await broker.CreateMerchantAsync(merchant, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
@@ -82,7 +82,7 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
       .ThrowsAsync(MakeCosmosException((HttpStatusCode)429));
 
     await Assert.ThrowsAsync<MerchantCosmosDbRateLimitException>(
-      async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId).ConfigureAwait(false));
+      async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
@@ -100,7 +100,7 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
       .ThrowsAsync(MakeCosmosException(HttpStatusCode.ServiceUnavailable));
 
     await Assert.ThrowsAsync<MerchantFailedStorageException>(
-      async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId).ConfigureAwait(false));
+      async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
@@ -118,7 +118,7 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
       .ThrowsAsync(MakeCosmosException(HttpStatusCode.Unauthorized));
 
     await Assert.ThrowsAsync<MerchantUnauthorizedAccessException>(
-      async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId).ConfigureAwait(false));
+      async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
@@ -136,7 +136,7 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
       .ThrowsAsync(MakeCosmosException(HttpStatusCode.Forbidden));
 
     await Assert.ThrowsAsync<MerchantForbiddenAccessException>(
-      async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId).ConfigureAwait(false));
+      async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
@@ -160,6 +160,6 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
       .ReturnsAsync(responseMock.Object);
 
     await Assert.ThrowsAsync<MerchantLockedException>(
-      async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId));
+      async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId, CancellationToken.None));
   }
 }

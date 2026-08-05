@@ -1,6 +1,10 @@
 namespace arolariu.Backend.Core.Auth.Endpoints;
 
+using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
+
+using arolariu.Backend.Common.Http;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -25,9 +29,14 @@ public static partial class AuthEndpoints
   /// A placeholder object for the request body. The presence of this parameter validates
   /// that the logout request is intentional and not accidental.
   /// </param>
+  /// <param name="httpContext">
+  /// The current <see cref="HttpContext"/>, used to build a write-scoped cancellation token
+  /// tied to application shutdown and the CRUD timeout budget.
+  /// </param>
   /// <returns>
   /// An <see cref="IResult"/> indicating the outcome of the logout operation.
-  /// Returns Ok (200) on successful logout or Unauthorized (401) for invalid requests.
+  /// Returns Ok (200) on successful logout, Unauthorized (401) for invalid requests,
+  /// 504 on timeout, or 499 on client disconnect.
   /// </returns>
   /// <remarks>
   /// This handler performs the following operations:
@@ -53,9 +62,15 @@ public static partial class AuthEndpoints
   private static async Task<IResult> LogoutRoute(
     [FromServices] SignInManager<IdentityUser> signInManager,
     [FromServices] ILoggerFactory loggerFactory,
-    [FromBody] object empty)
+    [FromBody] object empty,
+    HttpContext httpContext)
   {
     var logger = loggerFactory.CreateLogger("arolariu.Backend.Core.Auth");
+
+    // No write scope here, deliberately. SignInManager.SignOutAsync() exposes no CancellationToken
+    // overload, so a scope would be created, never observed, and its catch would be unreachable.
+    // The route's "crud" request-timeout policy still bounds this endpoint: if it ever hung, the
+    // RequestTimeouts middleware produces the 504 because no handler catch intercepts it.
     if (empty != null)
     {
       await signInManager.SignOutAsync().ConfigureAwait(false);

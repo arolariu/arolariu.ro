@@ -66,7 +66,7 @@ public sealed class InvoiceProcessingServiceExceptionsTests
       .ThrowsAsync(new InvoiceOrchestrationValidationException(inner));
 
     await Assert.ThrowsAsync<InvoiceProcessingServiceValidationException>(
-      () => processingService.CreateInvoice(invoice));
+      () => processingService.CreateInvoice(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -82,7 +82,7 @@ public sealed class InvoiceProcessingServiceExceptionsTests
       .ThrowsAsync(new InvoiceOrchestrationDependencyValidationException(inner));
 
     await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyValidationException>(
-      () => processingService.CreateInvoice(invoice));
+      () => processingService.CreateInvoice(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -98,7 +98,7 @@ public sealed class InvoiceProcessingServiceExceptionsTests
       .ThrowsAsync(new InvoiceOrchestrationDependencyException(inner));
 
     await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyException>(
-      () => processingService.CreateInvoice(invoice));
+      () => processingService.CreateInvoice(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -114,7 +114,7 @@ public sealed class InvoiceProcessingServiceExceptionsTests
       .ThrowsAsync(new InvoiceOrchestrationServiceException(inner));
 
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(
-      () => processingService.CreateInvoice(invoice));
+      () => processingService.CreateInvoice(invoice, null, CancellationToken.None));
   }
 
   #endregion
@@ -133,7 +133,7 @@ public sealed class InvoiceProcessingServiceExceptionsTests
       .ThrowsAsync(new InvoiceOrchestrationValidationException(inner));
 
     await Assert.ThrowsAsync<InvoiceProcessingServiceValidationException>(
-      () => processingService.ReadInvoice(Guid.NewGuid()));
+      () => processingService.ReadInvoice(Guid.NewGuid(), null, CancellationToken.None));
   }
 
   /// <summary>
@@ -148,7 +148,7 @@ public sealed class InvoiceProcessingServiceExceptionsTests
       .ThrowsAsync(new InvoiceOrchestrationDependencyValidationException(inner));
 
     await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyValidationException>(
-      () => processingService.ReadInvoice(Guid.NewGuid()));
+      () => processingService.ReadInvoice(Guid.NewGuid(), null, CancellationToken.None));
   }
 
   /// <summary>
@@ -163,7 +163,7 @@ public sealed class InvoiceProcessingServiceExceptionsTests
       .ThrowsAsync(new InvoiceOrchestrationDependencyException(inner));
 
     await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyException>(
-      () => processingService.ReadInvoice(Guid.NewGuid()));
+      () => processingService.ReadInvoice(Guid.NewGuid(), null, CancellationToken.None));
   }
 
   /// <summary>
@@ -178,7 +178,7 @@ public sealed class InvoiceProcessingServiceExceptionsTests
       .ThrowsAsync(new InvoiceOrchestrationServiceException(inner));
 
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(
-      () => processingService.ReadInvoice(Guid.NewGuid()));
+      () => processingService.ReadInvoice(Guid.NewGuid(), null, CancellationToken.None));
   }
 
   #endregion
@@ -198,7 +198,7 @@ public sealed class InvoiceProcessingServiceExceptionsTests
       .ThrowsAsync(new InvoiceOrchestrationValidationException(inner));
 
     await Assert.ThrowsAsync<InvoiceProcessingServiceValidationException>(
-      () => processingService.UpdateInvoice(invoice, invoice.id));
+      () => processingService.UpdateInvoice(invoice, invoice.id, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -214,7 +214,7 @@ public sealed class InvoiceProcessingServiceExceptionsTests
       .ThrowsAsync(new InvoiceOrchestrationDependencyValidationException(inner));
 
     await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyValidationException>(
-      () => processingService.UpdateInvoice(invoice, invoice.id));
+      () => processingService.UpdateInvoice(invoice, invoice.id, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -230,7 +230,7 @@ public sealed class InvoiceProcessingServiceExceptionsTests
       .ThrowsAsync(new InvoiceOrchestrationDependencyException(inner));
 
     await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyException>(
-      () => processingService.UpdateInvoice(invoice, invoice.id));
+      () => processingService.UpdateInvoice(invoice, invoice.id, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -246,7 +246,7 @@ public sealed class InvoiceProcessingServiceExceptionsTests
       .ThrowsAsync(new InvoiceOrchestrationServiceException(inner));
 
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(
-      () => processingService.UpdateInvoice(invoice, invoice.id));
+      () => processingService.UpdateInvoice(invoice, invoice.id, null, CancellationToken.None));
   }
 
   #endregion
@@ -265,7 +265,7 @@ public sealed class InvoiceProcessingServiceExceptionsTests
       .ThrowsAsync(new InvoiceOrchestrationValidationException(inner));
 
     await Assert.ThrowsAsync<InvoiceProcessingServiceValidationException>(
-      () => processingService.DeleteInvoice(Guid.NewGuid()));
+      () => processingService.DeleteInvoice(Guid.NewGuid(), null, CancellationToken.None));
   }
 
   /// <summary>
@@ -280,7 +280,7 @@ public sealed class InvoiceProcessingServiceExceptionsTests
       .ThrowsAsync(new InvoiceOrchestrationDependencyValidationException(inner));
 
     await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyValidationException>(
-      () => processingService.DeleteInvoice(Guid.NewGuid()));
+      () => processingService.DeleteInvoice(Guid.NewGuid(), null, CancellationToken.None));
   }
 
   /// <summary>
@@ -295,7 +295,7 @@ public sealed class InvoiceProcessingServiceExceptionsTests
       .ThrowsAsync(new InvoiceOrchestrationDependencyException(inner));
 
     await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyException>(
-      () => processingService.DeleteInvoice(Guid.NewGuid()));
+      () => processingService.DeleteInvoice(Guid.NewGuid(), null, CancellationToken.None));
   }
 
   /// <summary>
@@ -310,7 +310,7 @@ public sealed class InvoiceProcessingServiceExceptionsTests
       .ThrowsAsync(new InvoiceOrchestrationServiceException(inner));
 
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(
-      () => processingService.DeleteInvoice(Guid.NewGuid()));
+      () => processingService.DeleteInvoice(Guid.NewGuid(), null, CancellationToken.None));
   }
 
   #endregion
@@ -329,7 +329,7 @@ public sealed class InvoiceProcessingServiceExceptionsTests
       .ThrowsAsync(new InvalidOperationException("unknown"));
 
     await Assert.ThrowsAsync<InvoiceProcessingServiceException>(
-      () => processingService.CreateInvoice(invoice));
+      () => processingService.CreateInvoice(invoice, null, CancellationToken.None));
   }
 
   #endregion

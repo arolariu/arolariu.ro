@@ -44,13 +44,13 @@ public interface IInvoiceOrchestrationService
   /// </remarks>
   /// <param name="options">Directive flags controlling which analysis / enrichment steps to perform (MUST NOT be null).</param>
   /// <param name="invoiceIdentifier">Target invoice identifier (MUST reference an existing invoice).</param>
-  /// <param name="userIdentifier">Optional tenant / partition scope (enforced for ownership isolation).</param>
-  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <param name="userIdentifier">Tenant / partition scope (enforced for ownership isolation); pass null for a cross-partition operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Asynchronous task.</returns>
   /// <exception cref="ArgumentNullException">Thrown if <paramref name="options"/> is null.</exception>
   /// <exception cref="InvalidOperationException">Thrown if invoice not found or fails pre-analysis invariants.</exception>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  Task AnalyzeInvoiceWithOptions(AnalysisOptions options, Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default);
+  Task AnalyzeInvoiceWithOptions(AnalysisOptions options, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
   #region Implements the Invoice Storage Foundation Service
   #region Create Invoice API
@@ -62,10 +62,10 @@ public interface IInvoiceOrchestrationService
   /// <para><b>Failure Modes:</b> Validation exceptions for invariant breaches; dependency / dependency validation exceptions surfaced from foundation layer and wrapped by implementation.</para>
   /// </remarks>
   /// <param name="invoice">Fully initialized invoice aggregate to persist.</param>
-  /// <param name="userIdentifier">Optional tenant / partition scope.</param>
-  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <param name="userIdentifier">Tenant / partition scope; pass null for a cross-partition operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Persisted invoice aggregate (may contain persistence-generated fields).</returns>
-  Task<Invoice> CreateInvoiceObject(Invoice invoice, Guid? userIdentifier = null, CancellationToken cancellationToken = default);
+  Task<Invoice> CreateInvoiceObject(Invoice invoice, Guid? userIdentifier, CancellationToken cancellationToken);
   #endregion
 
   #region Read Invoice API
@@ -76,10 +76,10 @@ public interface IInvoiceOrchestrationService
   /// <para><b>Behavior:</b> Delegates to foundation storage; may augment with orchestration-level caching or access policy enforcement in future.</para>
   /// </remarks>
   /// <param name="identifier">Invoice identifier.</param>
-  /// <param name="userIdentifier">Optional tenant / partition scope.</param>
-  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <param name="userIdentifier">Tenant / partition scope; pass null for a cross-partition operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Invoice instance (null or exception if not found per implementation policy).</returns>
-  Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default);
+  Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken);
   #endregion
 
   #region Read Invoices API
@@ -90,9 +90,9 @@ public interface IInvoiceOrchestrationService
   /// <para><b>Pagination:</b> Not supported yet (backlog). Implementations SHOULD avoid unbounded materialization where possible.</para>
   /// </remarks>
   /// <param name="userIdentifier">Tenant / partition scope.</param>
-  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Sequence of invoices (empty if none).</returns>
-  Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier, CancellationToken cancellationToken = default);
+  Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier, CancellationToken cancellationToken);
   #endregion
 
   #region Update Invoice API
@@ -105,10 +105,10 @@ public interface IInvoiceOrchestrationService
   /// </remarks>
   /// <param name="updatedInvoice">Proposed new invoice state.</param>
   /// <param name="invoiceIdentifier">Identifier of invoice being updated.</param>
-  /// <param name="userIdentifier">Optional tenant / partition scope.</param>
-  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <param name="userIdentifier">Tenant / partition scope; pass null for a cross-partition operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Updated invoice instance.</returns>
-  Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default);
+  Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
   #endregion
 
   #region Delete Invoice API
@@ -120,10 +120,10 @@ public interface IInvoiceOrchestrationService
   /// <para><b>Side Effects:</b> No cascading delete in orchestration layer (future: explicit cascade policy / event emission).</para>
   /// </remarks>
   /// <param name="identifier">Invoice identifier.</param>
-  /// <param name="userIdentifier">Optional tenant / partition scope.</param>
-  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <param name="userIdentifier">Tenant / partition scope; pass null for a cross-partition operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Asynchronous task.</returns>
-  Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default);
+  Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken);
   #endregion
   #endregion
 }

@@ -2,6 +2,8 @@ namespace arolariu.Backend.Core.Auth.Endpoints;
 
 using arolariu.Backend.Core.Auth.Models;
 
+using arolariu.Backend.Common.Http;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -41,14 +43,18 @@ public static partial class AuthEndpoints
     router.MapGroup("/auth")
       .MapIdentityApi<AuthenticatedUser>()
       .WithTags(EndpointNameTag)
-      .AllowAnonymous();
+      .AllowAnonymous()
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud)
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout);
 
     router.MapPost("/auth/logout", LogoutRoute)
       .Accepts<object>("application/json")
       .Produces(StatusCodes.Status200OK)
       .Produces(StatusCodes.Status401Unauthorized)
       .Produces(StatusCodes.Status500InternalServerError)
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .WithTags(EndpointNameTag)
-      .AllowAnonymous();
+      .AllowAnonymous()
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
   }
 }

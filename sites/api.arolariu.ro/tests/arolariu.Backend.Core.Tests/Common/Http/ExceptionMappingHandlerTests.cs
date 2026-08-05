@@ -11,6 +11,7 @@ using arolariu.Backend.Common.Http;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -22,15 +23,15 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class ExceptionMappingHandlerTests
 {
-  private sealed class NotFoundEx : Exception, INotFoundException
+  private sealed class NotFoundException : Exception, INotFoundException
   {
-    public NotFoundEx(string m) : base(m) { }
+    public NotFoundException(string m) : base(m) { }
 
-    public NotFoundEx()
+    public NotFoundException()
     {
     }
 
-    public NotFoundEx(string message, Exception innerException) : base(message, innerException)
+    public NotFoundException(string message, Exception innerException) : base(message, innerException)
     {
     }
   }
@@ -70,6 +71,99 @@ public sealed class ExceptionMappingHandlerTests
   }
 
   /// <summary>
+  /// A stub <see cref="IHttpRequestTimeoutFeature"/> whose token is already cancelled, used to
+  /// simulate a request that exceeded its server-side timeout policy.
+  /// </summary>
+  private sealed class CancelledTimeoutFeature : IHttpRequestTimeoutFeature, IDisposable
+  {
+    private readonly CancellationTokenSource source;
+
+    public CancelledTimeoutFeature()
+    {
+      source = new CancellationTokenSource();
+      source.Cancel();
+    }
+
+    /// <inheritdoc/>
+    public CancellationToken RequestTimeoutToken => source.Token;
+
+    /// <inheritdoc/>
+    public void DisableTimeout() { }
+
+    /// <inheritdoc/>
+    public void Dispose() => source.Dispose();
+  }
+
+  /// <summary>
+  /// Verifies that a cancellation escaping to the global handler without a timeout feature is
+  /// treated as a client disconnect: HTTP 499, and NOT recorded as an error on the span.
+  /// A client hanging up is ordinary behaviour and must not inflate error-rate SLOs.
+  /// </summary>
+  [TestMethod]
+  public async Task TryHandleAsync_ClientDisconnect_Returns499AndDoesNotMarkSpanError()
+  {
+    using var activitySource = new ActivitySource("test.cancellation");
+    using var listener = new ActivityListener
+    {
+      ShouldListenTo = _ => true,
+      Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
+    };
+    ActivitySource.AddActivityListener(listener);
+
+    using var activity = activitySource.StartActivity("request");
+    var handler = new ExceptionMappingHandler();
+    var context = CreateHttpContextWithLoggingServices();
+
+    var handled = await handler.TryHandleAsync(context, new OperationCanceledException(), CancellationToken.None);
+
+    Assert.IsTrue(handled);
+    Assert.AreEqual(499, context.Response.StatusCode);
+    Assert.AreEqual(
+      ActivityStatusCode.Unset,
+      activity!.Status,
+      "A client disconnect is not a fault; the OpenTelemetry HTTP spec requires the span status to stay Unset.");
+  }
+
+  /// <summary>
+  /// Verifies that a cancellation escaping to the global handler WITH a cancelled request-timeout
+  /// feature is treated as a server-side timeout: HTTP 504, recorded as an error on the span.
+  /// </summary>
+  [TestMethod]
+  public async Task TryHandleAsync_ServerTimeout_Returns504AndMarksSpanError()
+  {
+    using var activitySource = new ActivitySource("test.cancellation.timeout");
+    using var listener = new ActivityListener
+    {
+      ShouldListenTo = _ => true,
+      Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
+    };
+    ActivitySource.AddActivityListener(listener);
+
+    using var activity = activitySource.StartActivity("request");
+    var handler = new ExceptionMappingHandler();
+    var context = CreateHttpContextWithLoggingServices();
+    using var timeoutFeature = new CancelledTimeoutFeature();
+    context.Features.Set<IHttpRequestTimeoutFeature>(timeoutFeature);
+
+    var handled = await handler.TryHandleAsync(context, new OperationCanceledException(), CancellationToken.None);
+
+    Assert.IsTrue(handled);
+    Assert.AreEqual(504, context.Response.StatusCode);
+    Assert.AreEqual(ActivityStatusCode.Error, activity!.Status);
+
+    // The timeout path must emit the same RFC 7807 contract as the middleware path, not a bare status.
+    context.Response.Body.Seek(0, SeekOrigin.Begin);
+    using var reader = new StreamReader(context.Response.Body);
+    var body = await reader.ReadToEndAsync();
+    Assert.IsTrue(
+      body.Contains(ProblemTypeUris.Timeout, StringComparison.Ordinal),
+      $"Expected a ProblemDetails body carrying the timeout problem type, got: '{body}'.");
+    Assert.IsFalse(
+      body.Contains("hunter", StringComparison.OrdinalIgnoreCase),
+      "The 504 body must not echo internal exception text.");
+  }
+
+  /// <summary>
   /// Verifies that a classifiable exception (implementing a marker interface) is mapped
   /// to the correct HTTP status code, written as ProblemDetails, and handler returns true.
   /// </summary>
@@ -79,7 +173,7 @@ public sealed class ExceptionMappingHandlerTests
     // Arrange
     var handler = new ExceptionMappingHandler();
     var context = CreateHttpContextWithLoggingServices();
-    var exception = new NotFoundEx("Resource not found");
+    var exception = new NotFoundException("Resource not found");
 
     // Act
     var handled = await handler.TryHandleAsync(context, exception, CancellationToken.None);
@@ -186,7 +280,7 @@ public sealed class ExceptionMappingHandlerTests
     var context = CreateHttpContextWithLoggingServices();
 
     // Act
-    await handler.TryHandleAsync(context, new NotFoundEx("nope"), CancellationToken.None);
+    await handler.TryHandleAsync(context, new NotFoundException("nope"), CancellationToken.None);
 
     // Assert — read response body and confirm it carries the active trace identifier.
     var body = await ReadResponseBodyAsync(context);

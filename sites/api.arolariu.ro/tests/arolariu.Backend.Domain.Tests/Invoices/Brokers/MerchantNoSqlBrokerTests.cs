@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
@@ -69,7 +70,7 @@ public sealed partial class MerchantNoSqlBrokerTests : InvoiceNoSqlBrokerTestsBa
       .ReturnsAsync(itemResponseMock.Object);
 
     // When
-    var actualMerchant = await merchantNoSqlBroker.CreateMerchantAsync(expectedMerchant);
+    var actualMerchant = await merchantNoSqlBroker.CreateMerchantAsync(expectedMerchant, CancellationToken.None);
 
     // Then
     Assert.NotNull(actualMerchant);
@@ -94,7 +95,7 @@ public sealed partial class MerchantNoSqlBrokerTests : InvoiceNoSqlBrokerTestsBa
 
     // When & Then
     // Broker does not perform explicit null check, so NullReferenceException is thrown
-    await Assert.ThrowsAnyAsync<Exception>(() => merchantNoSqlBroker.CreateMerchantAsync(nullMerchant!).AsTask());
+    await Assert.ThrowsAnyAsync<Exception>(() => merchantNoSqlBroker.CreateMerchantAsync(nullMerchant!, CancellationToken.None).AsTask());
   }
 
   /// <summary>Validates Cosmos exception surfaces when container create fails.</summary>
@@ -114,7 +115,7 @@ It.IsAny<System.Threading.CancellationToken>()
       .ThrowsAsync(cosmosException);
 
     // When & Then
-    var exception = await Assert.ThrowsAsync<MerchantFailedStorageException>(() => merchantNoSqlBroker.CreateMerchantAsync(merchant).AsTask());
+    var exception = await Assert.ThrowsAsync<MerchantFailedStorageException>(() => merchantNoSqlBroker.CreateMerchantAsync(merchant, CancellationToken.None).AsTask());
     Assert.Same(cosmosException, exception.InnerException);
   }
 
@@ -150,7 +151,7 @@ It.IsAny<System.Threading.CancellationToken>()
       .Returns(mockFeedIterator.Object);
 
     // When
-    var actualMerchant = await merchantNoSqlBroker.ReadMerchantAsync(expectedMerchant.id);
+    var actualMerchant = await merchantNoSqlBroker.ReadMerchantAsync(expectedMerchant.id, null, CancellationToken.None);
 
     // Then
     Assert.NotNull(actualMerchant);
@@ -184,7 +185,7 @@ It.IsAny<System.Threading.CancellationToken>()
       .Returns(mockFeedIterator.Object);
 
     // When
-    var actualMerchant = await merchantNoSqlBroker.ReadMerchantAsync(merchantId);
+    var actualMerchant = await merchantNoSqlBroker.ReadMerchantAsync(merchantId, null, CancellationToken.None);
     Assert.Null(actualMerchant);
   }
 
@@ -220,7 +221,7 @@ It.IsAny<System.Threading.CancellationToken>()
       .Returns(mockFeedIterator.Object);
 
     // When
-    var actualMerchants = await merchantNoSqlBroker.ReadMerchantsAsync(parentCompanyId);
+    var actualMerchants = await merchantNoSqlBroker.ReadMerchantsAsync(parentCompanyId, CancellationToken.None);
 
     // Then
     Assert.NotNull(actualMerchants);
@@ -279,7 +280,7 @@ It.IsAny<System.Threading.CancellationToken>()
       .ReturnsAsync(itemResponseMock.Object);
 
     // When
-    var actualMerchant = await merchantNoSqlBroker.UpdateMerchantAsync(originalMerchant.id, updatedMerchant);
+    var actualMerchant = await merchantNoSqlBroker.UpdateMerchantAsync(originalMerchant.id, updatedMerchant, CancellationToken.None);
 
     // Then
     Assert.NotNull(actualMerchant);
@@ -311,7 +312,7 @@ It.IsAny<System.Threading.CancellationToken>()
       .ReturnsAsync(itemResponseMock.Object);
 
     // When
-    var actualMerchant = await merchantNoSqlBroker.UpdateMerchantAsync(originalMerchant, updatedMerchant);
+    var actualMerchant = await merchantNoSqlBroker.UpdateMerchantAsync(originalMerchant, updatedMerchant, CancellationToken.None);
 
     // Then
     Assert.NotNull(actualMerchant);
@@ -360,7 +361,7 @@ It.IsAny<System.Threading.CancellationToken>()
       .ReturnsAsync(deleteResponseMock.Object);
 
     // When
-    await merchantNoSqlBroker.DeleteMerchantAsync(expectedMerchant.id);
+    await merchantNoSqlBroker.DeleteMerchantAsync(expectedMerchant.id, null, CancellationToken.None);
   }
 
   /// <summary>Does nothing when merchant is not found.</summary>
@@ -389,7 +390,7 @@ It.IsAny<System.Threading.CancellationToken>()
       .Returns(mockFeedIterator.Object);
 
     // When
-    await merchantNoSqlBroker.DeleteMerchantAsync(merchantId);
+    await merchantNoSqlBroker.DeleteMerchantAsync(merchantId, null, CancellationToken.None);
   }
 
   #endregion

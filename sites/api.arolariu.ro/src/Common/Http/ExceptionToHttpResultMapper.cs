@@ -71,6 +71,7 @@ public static class ExceptionToHttpResultMapper
       or IRateLimitedException
       or IUnauthorizedException
       or IForbiddenException
+      or ITimeoutException
       or BadHttpRequestException;
 
   private static (int Status, string Title, string Type) SelectStatus(Exception ex) => ex switch
@@ -81,6 +82,7 @@ public static class ExceptionToHttpResultMapper
     IAlreadyExistsException => (409, "Resource conflict", ProblemTypeUris.Conflict),
     ILockedException => (423, "Resource locked", ProblemTypeUris.Locked),
     IRateLimitedException => (429, "Too many requests", ProblemTypeUris.RateLimited),
+    ITimeoutException => (504, "Operation timed out", ProblemTypeUris.Timeout),
     BadHttpRequestException badReq => (badReq.StatusCode, "Bad request", ProblemTypeUris.Validation),
     IValidationException => (400, "Validation failed", ProblemTypeUris.Validation),
     IDependencyValidationException => (400, "Dependency validation", ProblemTypeUris.Validation),
@@ -100,6 +102,7 @@ public static class ExceptionToHttpResultMapper
       case 403: return "You do not have permission to access this resource.";
       case 500: return "An unexpected error occurred. Please try again later.";
       case 503: return "A downstream service is temporarily unavailable. Please try again later.";
+      case 504: return "The operation took too long to complete. Please try again later.";
       default:
         var msg = ex.Message ?? string.Empty;
         const int max = 512;

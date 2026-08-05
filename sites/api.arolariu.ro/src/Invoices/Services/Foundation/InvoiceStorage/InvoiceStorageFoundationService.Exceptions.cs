@@ -21,6 +21,11 @@ public partial class InvoiceStorageFoundationService
     {
       await returningTaskFunction().ConfigureAwait(false);
     }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
+    }
     catch (Exception exception)
     {
       throw Classify(exception);
@@ -33,6 +38,11 @@ public partial class InvoiceStorageFoundationService
     {
       return await returningInvoiceFunction().ConfigureAwait(false);
     }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
+    }
     catch (Exception exception)
     {
       throw Classify(exception);
@@ -44,6 +54,11 @@ public partial class InvoiceStorageFoundationService
     try
     {
       return await returningInvoicesFunction().ConfigureAwait(false);
+    }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
     }
     catch (Exception exception)
     {
@@ -69,7 +84,6 @@ public partial class InvoiceStorageFoundationService
       => LogAndWrapDependencyValidation(exception),
 
     InvoiceFailedStorageException
-      or OperationCanceledException
       => LogAndWrapDependency(exception),
 
     _ => LogAndWrapService(exception),

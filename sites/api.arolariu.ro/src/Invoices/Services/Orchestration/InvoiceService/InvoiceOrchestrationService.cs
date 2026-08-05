@@ -44,7 +44,7 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 
   #region Analyze Invoice API
   /// <inheritdoc/>
-  public async Task AnalyzeInvoiceWithOptions(AnalysisOptions options, Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task AnalyzeInvoiceWithOptions(AnalysisOptions options, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceWithOptions));
@@ -52,9 +52,15 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
       .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
 
+    cancellationToken.ThrowIfCancellationRequested();
+
     Invoice analyzedInvoice = await invoiceAnalysisFoundationService
-      .AnalyzeInvoiceAsync(options, currentInvoice)
+      .AnalyzeInvoiceAsync(options, currentInvoice, cancellationToken)
       .ConfigureAwait(false);
+
+    // Last safe boundary: past this point the AI spend is already incurred, so cancelling
+    // here would waste it. Before it, abandoning costs nothing but the read.
+    cancellationToken.ThrowIfCancellationRequested();
 
     await invoiceStorageFoundationService
       .UpdateInvoiceObject(analyzedInvoice, invoiceIdentifier, userIdentifier, cancellationToken)
@@ -64,7 +70,7 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 
   #region Create Invoice API
   /// <inheritdoc/>
-  public async Task<Invoice> CreateInvoiceObject(Invoice invoice, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task<Invoice> CreateInvoiceObject(Invoice invoice, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceObject));
@@ -77,7 +83,7 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 
   #region Delete Invoice API
   /// <inheritdoc/>
-  public async Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceObject));
@@ -89,7 +95,7 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 
   #region Read Invoices API
   /// <inheritdoc/>
-  public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier, CancellationToken cancellationToken = default) =>
+  public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
@@ -102,7 +108,7 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 
   #region Read Invoice API
   /// <inheritdoc/>
-  public async Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceObject));
@@ -115,7 +121,7 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 
   #region Update Invoice API
   /// <inheritdoc/>
-  public async Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
