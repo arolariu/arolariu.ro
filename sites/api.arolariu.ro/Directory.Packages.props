@@ -50,10 +50,6 @@
     <PackageVersion Include="Azure.AI.OpenAI" Version="2.9.0-beta.1" />
     <PackageVersion Include="Azure.AI.Translation.Text" Version="2.0.0" />
   </ItemGroup>
-  <ItemGroup Label="Azure Cognitive Services Packages">
-    <PackageVersion Include="Microsoft.Azure.CognitiveServices.Vision.ComputerVision" Version="7.0.1" />
-  </ItemGroup>
-  <ItemGroup Label="Azure Cosmos DB Packages">
     <PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.62.0" />
   </ItemGroup>
   <ItemGroup Label="Health Checks Packages">
