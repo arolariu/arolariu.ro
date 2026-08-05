@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -7,7 +7,6 @@
   <ItemGroup Label="Azure AI Packages">
     <PackageReference Include="Azure.AI.DocumentIntelligence" />
     <PackageReference Include="Azure.AI.OpenAI" />
-    <PackageReference Include="Azure.AI.OpenAI.Assistants" />
     <PackageReference Include="Azure.AI.Translation.Text" />
   </ItemGroup>
 
