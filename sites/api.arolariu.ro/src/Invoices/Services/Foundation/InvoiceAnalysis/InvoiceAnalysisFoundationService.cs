@@ -36,7 +36,7 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
   }
 
   /// <inheritdoc/>
-  public async Task<Invoice> AnalyzeInvoiceAsync(AnalysisOptions options, Invoice invoice, CancellationToken cancellationToken = default) =>
+  public async Task<Invoice> AnalyzeInvoiceAsync(AnalysisOptions options, Invoice invoice, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     cancellationToken.ThrowIfCancellationRequested();

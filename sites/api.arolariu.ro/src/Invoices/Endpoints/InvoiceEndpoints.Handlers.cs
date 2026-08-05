@@ -54,7 +54,7 @@ public static partial class InvoiceEndpoints
       activity?.SetInvoiceContext(invoice.id, invoice.UserIdentifier);
 
       await invoiceProcessingService
-        .CreateInvoice(invoice, cancellationToken: writeScope.Token)
+        .CreateInvoice(invoice, null, writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoice created successfully");
@@ -330,7 +330,7 @@ public static partial class InvoiceEndpoints
           newInvoice.MerchantReference != possibleInvoice.MerchantReference)
       {
         var possibleMerchant = await invoiceProcessingService
-          .ReadMerchant(newInvoice.MerchantReference, cancellationToken: writeScope.Token)
+          .ReadMerchant(newInvoice.MerchantReference, null, writeScope.Token)
           .ConfigureAwait(false);
         if (possibleMerchant is null)
         {
@@ -665,7 +665,7 @@ public static partial class InvoiceEndpoints
       activity?.SetMerchantContext(possibleInvoice.MerchantReference);
 
       var possibleMerchant = await invoiceProcessingService
-        .ReadMerchant(possibleInvoice.MerchantReference, cancellationToken: cancellationToken)
+        .ReadMerchant(possibleInvoice.MerchantReference, null, cancellationToken)
         .ConfigureAwait(false);
 
       if (possibleMerchant is null)
@@ -739,7 +739,7 @@ public static partial class InvoiceEndpoints
         .ConfigureAwait(false);
 
       await invoiceProcessingService
-        .CreateMerchant(merchant, cancellationToken: writeScope.Token)
+        .CreateMerchant(merchant, null, writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Merchant added to invoice");
@@ -797,7 +797,7 @@ public static partial class InvoiceEndpoints
       activity?.SetMerchantContext(possibleInvoice.MerchantReference);
 
       var possibleMerchant = await invoiceProcessingService
-        .ReadMerchant(possibleInvoice.MerchantReference, cancellationToken: writeScope.Token)
+        .ReadMerchant(possibleInvoice.MerchantReference, null, writeScope.Token)
         .ConfigureAwait(false);
       if (possibleMerchant is null)
       {
@@ -1174,7 +1174,7 @@ public static partial class InvoiceEndpoints
       activity?.SetTag("merchant.name", merchant.Name);
 
       await invoiceProcessingService
-          .CreateMerchant(merchant, cancellationToken: writeScope.Token)
+          .CreateMerchant(merchant, null, writeScope.Token)
           .ConfigureAwait(false);
 
       activity?.RecordSuccess("Merchant created");
@@ -1372,13 +1372,13 @@ public static partial class InvoiceEndpoints
       foreach (var invoiceIdentifier in possibleMerchant.ReferencedInvoices)
       {
         var possibleInvoice = await invoiceProcessingService
-          .ReadInvoice(invoiceIdentifier, cancellationToken: writeScope.Token)
+          .ReadInvoice(invoiceIdentifier, null, writeScope.Token)
           .ConfigureAwait(false);
         if (possibleInvoice is not null)
         {
           possibleInvoice.MerchantReference = Guid.Empty;
           await invoiceProcessingService
-            .UpdateInvoice(possibleInvoice, possibleInvoice.id, cancellationToken: writeScope.Token)
+            .UpdateInvoice(possibleInvoice, possibleInvoice.id, null, writeScope.Token)
             .ConfigureAwait(false);
         }
       }
@@ -1421,7 +1421,7 @@ public static partial class InvoiceEndpoints
       activity?.SetMerchantContext(id);
 
       var possibleMerchant = await invoiceProcessingService
-        .ReadMerchant(id, cancellationToken: cancellationToken)
+        .ReadMerchant(id, null, cancellationToken)
         .ConfigureAwait(false);
       if (possibleMerchant is null)
       {
@@ -1437,7 +1437,7 @@ public static partial class InvoiceEndpoints
       foreach (var identifier in listOfInvoiceIdentifiers)
       {
         var possibleInvoice = await invoiceProcessingService
-          .ReadInvoice(identifier, cancellationToken: cancellationToken)
+          .ReadInvoice(identifier, null, cancellationToken)
           .ConfigureAwait(false);
         if (possibleInvoice is not null)
         {
@@ -1485,7 +1485,7 @@ public static partial class InvoiceEndpoints
       activity?.SetMerchantContext(id);
       activity?.SetTag("invoices.requested_count", invoiceIdentifiers.InvoiceIdentifiers.Count());
 
-      var possibleMerchant = await invoiceProcessingService.ReadMerchant(id, cancellationToken: writeScope.Token).ConfigureAwait(false);
+      var possibleMerchant = await invoiceProcessingService.ReadMerchant(id, null, writeScope.Token).ConfigureAwait(false);
       if (possibleMerchant is null)
       {
         activity?.SetTag("result.found", false);
@@ -1495,7 +1495,7 @@ public static partial class InvoiceEndpoints
       var listOfValidInvoices = new HashSet<Invoice>();
       foreach (var identifier in invoiceIdentifiers.InvoiceIdentifiers)
       {
-        var potentialInvoice = await invoiceProcessingService.ReadInvoice(identifier, cancellationToken: writeScope.Token).ConfigureAwait(false);
+        var potentialInvoice = await invoiceProcessingService.ReadInvoice(identifier, null, writeScope.Token).ConfigureAwait(false);
         if (potentialInvoice is not null)
         {
           listOfValidInvoices.Add(potentialInvoice);
@@ -1510,7 +1510,7 @@ public static partial class InvoiceEndpoints
         invoice.MerchantReference = possibleMerchant.id;
 
         await invoiceProcessingService
-          .UpdateInvoice(invoice, invoice.id, cancellationToken: writeScope.Token)
+          .UpdateInvoice(invoice, invoice.id, null, writeScope.Token)
           .ConfigureAwait(false);
       }
 
@@ -1557,7 +1557,7 @@ public static partial class InvoiceEndpoints
       activity?.SetTag("invoices.requested_count", invoiceIdentifiers.InvoiceIdentifiers.Count());
 
       var possibleMerchant = await invoiceProcessingService
-        .ReadMerchant(id, cancellationToken: writeScope.Token)
+        .ReadMerchant(id, null, writeScope.Token)
         .ConfigureAwait(false);
       if (possibleMerchant is null)
       {
@@ -1568,7 +1568,7 @@ public static partial class InvoiceEndpoints
       var listOfInvoicesToBeRemoved = new List<Invoice>();
       foreach (var identifier in invoiceIdentifiers.InvoiceIdentifiers)
       {
-        var potentialInvoice = await invoiceProcessingService.ReadInvoice(identifier, cancellationToken: writeScope.Token).ConfigureAwait(false);
+        var potentialInvoice = await invoiceProcessingService.ReadInvoice(identifier, null, writeScope.Token).ConfigureAwait(false);
         if (potentialInvoice is not null)
         {
           listOfInvoicesToBeRemoved.Add(potentialInvoice);
@@ -1583,7 +1583,7 @@ public static partial class InvoiceEndpoints
         invoice.MerchantReference = Guid.Empty;
 
         await invoiceProcessingService
-          .UpdateInvoice(invoice, invoice.id, cancellationToken: writeScope.Token)
+          .UpdateInvoice(invoice, invoice.id, null, writeScope.Token)
           .ConfigureAwait(false);
       }
 
@@ -1625,7 +1625,7 @@ public static partial class InvoiceEndpoints
       activity?.SetMerchantContext(id);
 
       var possibleMerchant = await invoiceProcessingService
-        .ReadMerchant(id, cancellationToken: cancellationToken)
+        .ReadMerchant(id, null, cancellationToken)
         .ConfigureAwait(false);
       if (possibleMerchant is null)
       {
@@ -1641,7 +1641,7 @@ public static partial class InvoiceEndpoints
       foreach (var identifier in listOfInvoices)
       {
         var potentialInvoice = await invoiceProcessingService
-          .ReadInvoice(identifier, cancellationToken: cancellationToken)
+          .ReadInvoice(identifier, null, cancellationToken)
           .ConfigureAwait(false);
 
         if (potentialInvoice is not null)

@@ -36,7 +36,7 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 
   #region Create Invoice Object API
   /// <inheritdoc/>
-  public async Task CreateInvoiceObject(Invoice invoice, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task CreateInvoiceObject(Invoice invoice, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceObject));
@@ -50,7 +50,7 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 
   #region Read Invoice Object API
   /// <inheritdoc/>
-  public async Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceObject));
@@ -65,7 +65,7 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 
   #region Read Invoice Objects API
   /// <inheritdoc/>
-  public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier, CancellationToken cancellationToken = default) =>
+  public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
@@ -78,7 +78,7 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 
   #region Update Invoice Object API
   /// <inheritdoc/>
-  public async Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
@@ -94,7 +94,7 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 
   #region Delete Invoice Object API
   /// <inheritdoc/>
-  public async Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceObject));

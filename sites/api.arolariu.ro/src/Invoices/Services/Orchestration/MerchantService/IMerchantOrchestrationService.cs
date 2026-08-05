@@ -18,9 +18,9 @@ public interface IMerchantOrchestrationService
   /// </summary>
   /// <param name="merchant"></param>
   /// <param name="parentCompanyId"></param>
-  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns></returns>
-  Task CreateMerchantObject(Merchant merchant, Guid? parentCompanyId = null, CancellationToken cancellationToken = default);
+  Task CreateMerchantObject(Merchant merchant, Guid? parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
   #region Read Merchant API
@@ -29,9 +29,9 @@ public interface IMerchantOrchestrationService
   /// </summary>
   /// <param name="identifier"></param>
   /// <param name="parentCompanyId"></param>
-  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns></returns>
-  Task<Merchant> ReadMerchantObject(Guid identifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default);
+  Task<Merchant> ReadMerchantObject(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
   #region Read Merchants API
@@ -39,9 +39,9 @@ public interface IMerchantOrchestrationService
   /// Reads all merchant objects.
   /// </summary>
   /// <param name="parentCompanyId"></param>
-  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns></returns>
-  Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId, CancellationToken cancellationToken = default);
+  Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
   #region Update Merchant API
@@ -51,9 +51,9 @@ public interface IMerchantOrchestrationService
   /// <param name="updatedMerchant"></param>
   /// <param name="merchantIdentifier"></param>
   /// <param name="parentCompanyId"></param>
-  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns></returns>
-  Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default);
+  Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
   #region Delete Merchant API
@@ -62,8 +62,8 @@ public interface IMerchantOrchestrationService
   /// </summary>
   /// <param name="identifier"></param>
   /// <param name="parentCompanyId"></param>
-  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns></returns>
-  Task DeleteMerchantObject(Guid identifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default);
+  Task DeleteMerchantObject(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken);
   #endregion
 }

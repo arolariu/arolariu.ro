@@ -36,12 +36,12 @@ public interface IInvoiceStorageFoundationService
   /// <para><b>Failure Modes:</b> Throws validation exception on invariant breach; throws dependency / dependency validation exceptions on broker failures or conflicts.</para>
   /// </remarks>
   /// <param name="invoice">Fully formed invoice aggregate to persist.</param>
-  /// <param name="userIdentifier">Optional partition / tenant context for the invoice (acts as partition key).</param>
-  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <param name="userIdentifier">Partition / tenant context for the invoice (acts as partition key); pass null for a cross-partition operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Asynchronous task.</returns>
   /// <exception cref="ArgumentNullException">If <paramref name="invoice"/> is null.</exception>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  Task CreateInvoiceObject(Invoice invoice, Guid? userIdentifier = null, CancellationToken cancellationToken = default);
+  Task CreateInvoiceObject(Invoice invoice, Guid? userIdentifier, CancellationToken cancellationToken);
   #endregion
 
   #region Read Invoice Object API
@@ -53,11 +53,11 @@ public interface IInvoiceStorageFoundationService
   /// <para><b>Performance:</b> Single point read; SHOULD leverage partition for optimal cost.</para>
   /// </remarks>
   /// <param name="identifier">Invoice aggregate identifier.</param>
-  /// <param name="userIdentifier">Optional partition / tenant context.</param>
-  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Invoice instance or null.</returns>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default);
+  Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken);
   #endregion
 
   #region Read Invoice Objects API
@@ -69,10 +69,10 @@ public interface IInvoiceStorageFoundationService
   /// <para><b>Soft Delete:</b> Implementations SHOULD filter out soft-deleted invoices unless a diagnostic flag is added in future.</para>
   /// </remarks>
   /// <param name="userIdentifier">Partition / tenant context.</param>
-  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Enumerable collection (empty if none).</returns>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier, CancellationToken cancellationToken = default);
+  Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier, CancellationToken cancellationToken);
   #endregion
 
   #region Update Invoice Object API
@@ -85,11 +85,11 @@ public interface IInvoiceStorageFoundationService
   /// </remarks>
   /// <param name="updatedInvoice">Proposed new aggregate state.</param>
   /// <param name="invoiceIdentifier">Identity of the invoice being updated (must match <c>updatedInvoice.id</c> if enforced).</param>
-  /// <param name="userIdentifier">Optional partition / tenant context.</param>
-  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Updated invoice instance.</returns>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default);
+  Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
   #endregion
 
   #region Delete Invoice Object API
@@ -101,10 +101,10 @@ public interface IInvoiceStorageFoundationService
   /// <para><b>Idempotency:</b> Multiple invocations with same identifier yield same terminal state (absent or marked deleted).</para>
   /// </remarks>
   /// <param name="identifier">Invoice identifier.</param>
-  /// <param name="userIdentifier">Optional partition / tenant context.</param>
-  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Asynchronous task.</returns>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default);
+  Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken);
   #endregion
 }

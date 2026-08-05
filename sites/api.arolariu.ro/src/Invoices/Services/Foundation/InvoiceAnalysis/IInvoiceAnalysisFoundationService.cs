@@ -42,5 +42,5 @@ public interface IInvoiceAnalysisFoundationService
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="invoice"/> or <paramref name="options"/> is null.</exception>
   /// <exception cref="InvalidOperationException">Thrown when invoice state violates required preconditions for analysis.</exception>
   /// <exception cref="OperationCanceledException">Thrown when cancellation is requested between analysis stages.</exception>
-  Task<Invoice> AnalyzeInvoiceAsync(AnalysisOptions options, Invoice invoice, CancellationToken cancellationToken = default);
+  Task<Invoice> AnalyzeInvoiceAsync(AnalysisOptions options, Invoice invoice, CancellationToken cancellationToken);
 }

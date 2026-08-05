@@ -20,7 +20,7 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 public partial class InvoiceNoSqlBroker
 {
   /// <inheritdoc/>
-  public async ValueTask<Merchant> CreateMerchantAsync(Merchant merchant, CancellationToken cancellationToken = default)
+  public async ValueTask<Merchant> CreateMerchantAsync(Merchant merchant, CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchantAsync));
     activity?
@@ -42,7 +42,7 @@ public partial class InvoiceNoSqlBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<Merchant?> ReadMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default)
+  public async ValueTask<Merchant?> ReadMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantAsync));
     activity?
@@ -97,7 +97,7 @@ public partial class InvoiceNoSqlBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync(Guid parentCompanyId, CancellationToken cancellationToken = default)
+  public async ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync(Guid parentCompanyId, CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantsAsync));
     activity?
@@ -137,7 +137,7 @@ public partial class InvoiceNoSqlBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<Merchant> UpdateMerchantAsync(Guid merchantIdentifier, Merchant updatedMerchant, CancellationToken cancellationToken = default)
+  public async ValueTask<Merchant> UpdateMerchantAsync(Guid merchantIdentifier, Merchant updatedMerchant, CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantAsync));
     activity?
@@ -147,7 +147,7 @@ public partial class InvoiceNoSqlBroker
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("merchants");
 
-    var merchant = await ReadMerchantAsync(merchantIdentifier, cancellationToken: cancellationToken).ConfigureAwait(false);
+    var merchant = await ReadMerchantAsync(merchantIdentifier, null, cancellationToken).ConfigureAwait(false);
     var partitionKey = new PartitionKey(merchant?.ParentCompanyId.ToString());
 
     var response = await TranslateMerchantCosmosAsync(
@@ -163,7 +163,7 @@ public partial class InvoiceNoSqlBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<Merchant> UpdateMerchantAsync(Merchant currentMerchant, Merchant updatedMerchant, CancellationToken cancellationToken = default)
+  public async ValueTask<Merchant> UpdateMerchantAsync(Merchant currentMerchant, Merchant updatedMerchant, CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantAsync));
     activity?
@@ -187,7 +187,7 @@ public partial class InvoiceNoSqlBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask DeleteMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default)
+  public async ValueTask DeleteMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchantAsync));
     activity?
