@@ -2,9 +2,11 @@ namespace arolariu.Backend.Core.Domain.General.Extensions;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Configuration;
@@ -18,6 +20,9 @@ using arolariu.Backend.Core.Domain.General.Configuration;
 using arolariu.Backend.Core.Domain.General.Services.Swagger;
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Timeouts;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -330,6 +335,23 @@ internal static class WebApplicationBuilderExtensions
     services.AddSwaggerGen(SwaggerConfigurationService.GetSwaggerGenOptions());
     services.AddHealthChecks();
     services.AddRateLimitingPolicies();
+
+    services.AddRequestTimeouts(options =>
+    {
+      options.AddPolicy(RequestTimeoutPolicies.Crud, new RequestTimeoutPolicy
+      {
+        Timeout = RequestCancellation.CrudWriteBudget,
+        TimeoutStatusCode = StatusCodes.Status504GatewayTimeout,
+        WriteTimeoutResponse = TimeoutProblemDetails.WriteAsync,
+      });
+
+      options.AddPolicy(RequestTimeoutPolicies.Analysis, new RequestTimeoutPolicy
+      {
+        Timeout = RequestCancellation.AnalysisWriteBudget,
+        TimeoutStatusCode = StatusCodes.Status504GatewayTimeout,
+        WriteTimeoutResponse = TimeoutProblemDetails.WriteAsync,
+      });
+    });
 
     services.AddExceptionHandler<ExceptionMappingHandler>();
     services.AddProblemDetails();

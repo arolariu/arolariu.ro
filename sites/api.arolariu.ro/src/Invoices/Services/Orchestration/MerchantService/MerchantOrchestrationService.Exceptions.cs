@@ -22,6 +22,11 @@ public partial class MerchantOrchestrationService
     {
       await callbackFunction().ConfigureAwait(false);
     }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
+    }
     catch (Exception exception)
     {
       throw Classify(exception);
@@ -34,6 +39,11 @@ public partial class MerchantOrchestrationService
     {
       return await callbackFunction().ConfigureAwait(false);
     }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
+    }
     catch (Exception exception)
     {
       throw Classify(exception);
@@ -45,6 +55,11 @@ public partial class MerchantOrchestrationService
     try
     {
       return await callbackFunction().ConfigureAwait(false);
+    }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
     }
     catch (Exception exception)
     {

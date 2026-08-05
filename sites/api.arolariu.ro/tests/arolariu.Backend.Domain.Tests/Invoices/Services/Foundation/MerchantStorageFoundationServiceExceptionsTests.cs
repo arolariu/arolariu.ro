@@ -39,7 +39,7 @@ public class MerchantStorageFoundationServiceExceptionsTests
       .ThrowsAsync(new MerchantNotFoundException(Guid.NewGuid()));
 
     var ex = await Assert.ThrowsAsync<MerchantFoundationServiceDependencyValidationException>(
-      () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid()));
+      () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None));
 
     Assert.IsType<MerchantNotFoundException>(ex.InnerException);
   }
@@ -53,7 +53,7 @@ public class MerchantStorageFoundationServiceExceptionsTests
     var merchant = new Merchant { id = Guid.NewGuid(), ParentCompanyId = Guid.NewGuid() };
 
     var ex = await Assert.ThrowsAsync<MerchantFoundationServiceDependencyValidationException>(
-      () => _sut.CreateMerchantObject(merchant));
+      () => _sut.CreateMerchantObject(merchant, null, CancellationToken.None));
 
     Assert.IsType<MerchantAlreadyExistsException>(ex.InnerException);
   }
@@ -66,7 +66,7 @@ public class MerchantStorageFoundationServiceExceptionsTests
       .ThrowsAsync(new MerchantUnauthorizedAccessException("unauthorized"));
 
     var ex = await Assert.ThrowsAsync<MerchantFoundationServiceDependencyValidationException>(
-      () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid()));
+      () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None));
 
     Assert.IsType<MerchantUnauthorizedAccessException>(ex.InnerException);
   }
@@ -79,7 +79,7 @@ public class MerchantStorageFoundationServiceExceptionsTests
       .ThrowsAsync(new MerchantForbiddenAccessException(Guid.NewGuid(), Guid.NewGuid()));
 
     var ex = await Assert.ThrowsAsync<MerchantFoundationServiceDependencyValidationException>(
-      () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid()));
+      () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None));
 
     Assert.IsType<MerchantForbiddenAccessException>(ex.InnerException);
   }
@@ -92,7 +92,7 @@ public class MerchantStorageFoundationServiceExceptionsTests
       .ThrowsAsync(new MerchantCosmosDbRateLimitException(TimeSpan.FromSeconds(2), new InvalidOperationException()));
 
     var ex = await Assert.ThrowsAsync<MerchantFoundationServiceDependencyValidationException>(
-      () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid()));
+      () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None));
 
     Assert.IsType<MerchantCosmosDbRateLimitException>(ex.InnerException);
   }
@@ -105,7 +105,7 @@ public class MerchantStorageFoundationServiceExceptionsTests
       .ThrowsAsync(new MerchantFailedStorageException("down"));
 
     var ex = await Assert.ThrowsAsync<MerchantFoundationServiceDependencyException>(
-      () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid()));
+      () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None));
 
     Assert.IsType<MerchantFailedStorageException>(ex.InnerException);
   }
@@ -118,6 +118,6 @@ public class MerchantStorageFoundationServiceExceptionsTests
       .ThrowsAsync(new InvalidOperationException("boom"));
 
     await Assert.ThrowsAsync<MerchantFoundationServiceException>(
-      () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid()));
+      () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None));
   }
 }

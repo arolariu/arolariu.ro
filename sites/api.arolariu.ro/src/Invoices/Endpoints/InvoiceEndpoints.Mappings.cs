@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 
 using arolariu.Backend.Common.Configuration;
+using arolariu.Backend.Common.Http;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
@@ -51,9 +52,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status415UnsupportedMediaType)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(CreateNewInvoiceAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardWrites);
+      .RequireRateLimiting(RateLimitPolicies.StandardWrites)
+      .WithName(nameof(CreateNewInvoiceAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Retrieve all invoices for the authenticated user (claims read via IHttpContextAccessor).
       .MapGet("/invoices", RetrieveAllInvoicesAsync)
@@ -63,9 +66,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(RetrieveAllInvoicesAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardReads);
+      .RequireRateLimiting(RateLimitPolicies.StandardReads)
+      .WithName(nameof(RetrieveAllInvoicesAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Delete all invoices for the authenticated user (claims read via IHttpContextAccessor).
       .MapDelete("/invoices", DeleteInvoicesAsync)
@@ -75,9 +80,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(DeleteInvoicesAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardWrites);
+      .RequireRateLimiting(RateLimitPolicies.StandardWrites)
+      .WithName(nameof(DeleteInvoicesAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Retrieve a specific invoice, given its identifier.
       .MapGet("/invoices/{id}", RetrieveSpecificInvoiceAsync)
@@ -88,9 +95,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(RetrieveSpecificInvoiceAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardReads);
+      .RequireRateLimiting(RateLimitPolicies.StandardReads)
+      .WithName(nameof(RetrieveSpecificInvoiceAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Update a specific invoice, given its identifier.
       .MapPut("/invoices/{id}", UpdateSpecificInvoiceAsync)
@@ -102,9 +111,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(UpdateSpecificInvoiceAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardWrites);
+      .RequireRateLimiting(RateLimitPolicies.StandardWrites)
+      .WithName(nameof(UpdateSpecificInvoiceAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Partially update a specific invoice, given its identifier.
       .MapPatch("/invoices/{id}", PatchSpecificInvoiceAsync)
@@ -116,9 +127,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(PatchSpecificInvoiceAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardWrites);
+      .RequireRateLimiting(RateLimitPolicies.StandardWrites)
+      .WithName(nameof(PatchSpecificInvoiceAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Delete a specific invoice, given its identifier.
       .MapDelete("/invoices/{id}", DeleteInvoiceAsync)
@@ -129,9 +142,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(DeleteInvoiceAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardWrites);
+      .RequireRateLimiting(RateLimitPolicies.StandardWrites)
+      .WithName(nameof(DeleteInvoiceAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Retrieve all products for a given invoice.
       .MapGet("/invoices/{id}/products", RetrieveProductsFromInvoiceAsync)
@@ -142,9 +157,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(RetrieveProductsFromInvoiceAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardReads);
+      .RequireRateLimiting(RateLimitPolicies.StandardReads)
+      .WithName(nameof(RetrieveProductsFromInvoiceAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Add a new product to a given invoice.
       .MapPost("/invoices/{id}/products", AddProductToInvoiceAsync)
@@ -158,9 +175,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status413PayloadTooLarge)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(AddProductToInvoiceAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardWrites);
+      .RequireRateLimiting(RateLimitPolicies.StandardWrites)
+      .WithName(nameof(AddProductToInvoiceAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Remove a product from a given invoice.
       .MapDelete("/invoices/{id}/products", RemoveProductFromInvoiceAsync)
@@ -172,9 +191,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(RemoveProductFromInvoiceAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardWrites);
+      .RequireRateLimiting(RateLimitPolicies.StandardWrites)
+      .WithName(nameof(RemoveProductFromInvoiceAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Update a product in a given invoice.
       .MapPut("/invoices/{id}/products", UpdateProductInInvoiceAsync)
@@ -186,9 +207,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(UpdateProductInInvoiceAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardWrites);
+      .RequireRateLimiting(RateLimitPolicies.StandardWrites)
+      .WithName(nameof(UpdateProductInInvoiceAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Retrieve the merchant associated with a given invoice.
       .MapGet("/invoices/{id}/merchant", RetrieveMerchantFromInvoiceAsync)
@@ -199,9 +222,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(RetrieveMerchantFromInvoiceAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardReads);
+      .RequireRateLimiting(RateLimitPolicies.StandardReads)
+      .WithName(nameof(RetrieveMerchantFromInvoiceAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Add a merchant to a given invoice.
       .MapPost("/invoices/{id}/merchant", AddMerchantToInvoiceAsync)
@@ -215,9 +240,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status413PayloadTooLarge)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(AddMerchantToInvoiceAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardWrites);
+      .RequireRateLimiting(RateLimitPolicies.StandardWrites)
+      .WithName(nameof(AddMerchantToInvoiceAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Remove the merchant from a given invoice.
       .MapDelete("/invoices/{id}/merchant", RemoveMerchantFromInvoiceAsync)
@@ -228,9 +255,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(RemoveMerchantFromInvoiceAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardWrites);
+      .RequireRateLimiting(RateLimitPolicies.StandardWrites)
+      .WithName(nameof(RemoveMerchantFromInvoiceAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Create the invoice scan for a given invoice.
       .MapPost("/invoices/{id}/scans", CreateInvoiceScanAsync)
@@ -244,9 +273,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status413PayloadTooLarge)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(CreateInvoiceScanAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardWrites);
+      .RequireRateLimiting(RateLimitPolicies.StandardWrites)
+      .WithName(nameof(CreateInvoiceScanAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Retrieve the invoice scans for a given invoice.
       .MapGet("/invoices/{id}/scans", RetrieveInvoiceScansAsync)
@@ -259,9 +290,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status413PayloadTooLarge)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(RetrieveInvoiceScansAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardReads);
+      .RequireRateLimiting(RateLimitPolicies.StandardReads)
+      .WithName(nameof(RetrieveInvoiceScansAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Delete the invoice scan for a given invoice.
       .MapDelete("/invoices/{id}/scans/{scanLocationField}", DeleteInvoiceScanAsync)
@@ -272,9 +305,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(DeleteInvoiceScanAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardWrites);
+      .RequireRateLimiting(RateLimitPolicies.StandardWrites)
+      .WithName(nameof(DeleteInvoiceScanAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Retrieve the invoice metadata for a given invoice.
       .MapGet("/invoices/{id}/metadata", RetrieveInvoiceMetadataAsync)
@@ -285,9 +320,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(RetrieveInvoiceMetadataAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardReads);
+      .RequireRateLimiting(RateLimitPolicies.StandardReads)
+      .WithName(nameof(RetrieveInvoiceMetadataAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Update the invoice metadata for a given invoice.
       .MapPatch("/invoices/{id}/metadata", PatchInvoiceMetadataAsync)
@@ -299,9 +336,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(PatchInvoiceMetadataAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardWrites);
+      .RequireRateLimiting(RateLimitPolicies.StandardWrites)
+      .WithName(nameof(PatchInvoiceMetadataAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Delete the invoice metadata for a given invoice.
       .MapDelete("/invoices/{id}/metadata", DeleteInvoiceMetadataAsync)
@@ -313,9 +352,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(DeleteInvoiceMetadataAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardWrites);
+      .RequireRateLimiting(RateLimitPolicies.StandardWrites)
+      .WithName(nameof(DeleteInvoiceMetadataAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
   }
 
   /// <summary>
@@ -340,9 +381,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(RetrieveAllMerchantsAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardReads);
+      .RequireRateLimiting(RateLimitPolicies.StandardReads)
+      .WithName(nameof(RetrieveAllMerchantsAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Create a new merchant.
       .MapPost("/merchants", CreateNewMerchantAsync)
@@ -356,9 +399,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status415UnsupportedMediaType)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(CreateNewMerchantAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardWrites);
+      .RequireRateLimiting(RateLimitPolicies.StandardWrites)
+      .WithName(nameof(CreateNewMerchantAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Retrieve a specific merchant, given its identifier.
       .MapGet("/merchants/{id}", RetrieveSpecificMerchantAsync)
@@ -369,9 +414,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(RetrieveSpecificMerchantAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardReads);
+      .RequireRateLimiting(RateLimitPolicies.StandardReads)
+      .WithName(nameof(RetrieveSpecificMerchantAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Update a specific merchant, given its identifier.
       .MapPut("/merchants/{id}", UpdateSpecificMerchantAsync)
@@ -383,9 +430,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(UpdateSpecificMerchantAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardWrites);
+      .RequireRateLimiting(RateLimitPolicies.StandardWrites)
+      .WithName(nameof(UpdateSpecificMerchantAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Delete a specific merchant, given its identifier.
       .MapDelete("/merchants/{id}", DeleteMerchantAsync)
@@ -396,9 +445,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(DeleteMerchantAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardWrites);
+      .RequireRateLimiting(RateLimitPolicies.StandardWrites)
+      .WithName(nameof(DeleteMerchantAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Retrieve all invoices associated with a given merchant.
       .MapGet("/merchants/{id}/invoices", RetrieveInvoicesFromMerchantAsync)
@@ -409,9 +460,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(RetrieveInvoicesFromMerchantAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardReads);
+      .RequireRateLimiting(RateLimitPolicies.StandardReads)
+      .WithName(nameof(RetrieveInvoicesFromMerchantAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Add invoices to a given merchant.
       .MapPatch("/merchants/{id}/invoices", AddInvoiceToMerchantAsync)
@@ -425,9 +478,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status413PayloadTooLarge)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(AddInvoiceToMerchantAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardWrites);
+      .RequireRateLimiting(RateLimitPolicies.StandardWrites)
+      .WithName(nameof(AddInvoiceToMerchantAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Remove invoices from a given merchant.
       .MapDelete("/merchants/{id}/invoices", RemoveInvoiceFromMerchantAsync)
@@ -439,9 +494,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(RemoveInvoiceFromMerchantAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardWrites);
+      .RequireRateLimiting(RateLimitPolicies.StandardWrites)
+      .WithName(nameof(RemoveInvoiceFromMerchantAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Retrieve all products associated with a given merchant.
       .MapGet("/merchants/{id}/products", RetrieveProductsFromMerchantAsync)
@@ -452,9 +509,11 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(RetrieveProductsFromMerchantAsync))
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.StandardReads);
+      .RequireRateLimiting(RateLimitPolicies.StandardReads)
+      .WithName(nameof(RetrieveProductsFromMerchantAsync))
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
   }
 
   /// <summary>
@@ -480,5 +539,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(AnalyzeInvoiceAsync))
       .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.AnalysisOperations);
+      .RequireRateLimiting(RateLimitPolicies.AnalysisOperations)
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
+      .WithRequestTimeout(RequestTimeoutPolicies.Analysis);
 }

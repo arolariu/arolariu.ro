@@ -1,5 +1,6 @@
 namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
@@ -35,10 +36,15 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
   }
 
   /// <inheritdoc/>
-  public async Task<Invoice> AnalyzeInvoiceAsync(AnalysisOptions options, Invoice invoice) =>
+  public async Task<Invoice> AnalyzeInvoiceAsync(AnalysisOptions options, Invoice invoice, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
+    cancellationToken.ThrowIfCancellationRequested();
     invoice = await PerformOcrAnalysis(invoice, options).ConfigureAwait(false);
+
+    // The OCR and GPT brokers are not cancellable (deferred by design), so an in-flight call
+    // always runs to completion. Checkpointing here bounds the damage to a single stage.
+    cancellationToken.ThrowIfCancellationRequested();
     invoice = await PerformGptAnalysis(invoice, options).ConfigureAwait(false);
 
     invoice.NumberOfUpdates++;

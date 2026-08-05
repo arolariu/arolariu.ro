@@ -35,11 +35,11 @@ public interface IMerchantStorageFoundationService
   /// <para><b>Failure Modes:</b> Throws validation exceptions on invariant breach, dependency / dependency validation exceptions on broker-level persistence failures (conflicts, connectivity, serialization).</para>
   /// </remarks>
   /// <param name="merchant">Merchant aggregate to persist (MUST NOT be null).</param>
-  /// <param name="parentCompanyId">Optional tenancy / partition discriminator.</param>
-  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <param name="parentCompanyId">Tenancy / partition discriminator; pass null for a cross-partition operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Asynchronous task.</returns>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  Task CreateMerchantObject(Merchant merchant, Guid? parentCompanyId = null, CancellationToken cancellationToken = default);
+  Task CreateMerchantObject(Merchant merchant, Guid? parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
   #region Read Merchant Object API
@@ -51,11 +51,11 @@ public interface IMerchantStorageFoundationService
   /// <para><b>Performance:</b> SHOULD use point read within partition; cross-partition read when <c>parentCompanyId</c> absent may degrade throughput.</para>
   /// </remarks>
   /// <param name="identifier">Merchant identifier.</param>
-  /// <param name="parentCompanyId">Optional partition discriminator.</param>
-  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <param name="parentCompanyId">Partition discriminator; pass null for a cross-partition operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>The merchant or null.</returns>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  Task<Merchant> ReadMerchantObject(Guid identifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default);
+  Task<Merchant> ReadMerchantObject(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
   #region Read Merchant Objects API
@@ -67,10 +67,10 @@ public interface IMerchantStorageFoundationService
   /// <para><b>Filtering:</b> Soft-deleted entities SHOULD be excluded if soft delete introduced.</para>
   /// </remarks>
   /// <param name="parentCompanyId">Partition discriminator.</param>
-  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Enumerable (empty if none).</returns>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId, CancellationToken cancellationToken = default);
+  Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
   #region Update Merchant Object API
@@ -83,11 +83,11 @@ public interface IMerchantStorageFoundationService
   /// </remarks>
   /// <param name="updatedMerchant">New merchant state.</param>
   /// <param name="merchantIdentifier">Identifier of merchant being updated.</param>
-  /// <param name="parentCompanyId">Optional partition discriminator.</param>
-  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <param name="parentCompanyId">Partition discriminator; pass null for a cross-partition operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Updated merchant.</returns>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default);
+  Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
   #region Delete Merchant Object API
@@ -99,10 +99,10 @@ public interface IMerchantStorageFoundationService
   /// <para><b>Referential Integrity:</b> This layer DOES NOT cascade / clean invoice references (belongs to orchestration / processing layers).</para>
   /// </remarks>
   /// <param name="identifier">Merchant identifier.</param>
-  /// <param name="parentCompanyId">Optional partition discriminator.</param>
-  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <param name="parentCompanyId">Partition discriminator; pass null for a cross-partition operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Asynchronous task.</returns>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  Task DeleteMerchantObject(Guid identifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default);
+  Task DeleteMerchantObject(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken);
   #endregion
 }

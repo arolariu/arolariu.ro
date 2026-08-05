@@ -77,6 +77,11 @@ public partial class InvoiceProcessingService
     {
       await callbackFunction().ConfigureAwait(false);
     }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
+    }
     catch (Exception exception)
     {
       throw Classify(exception);
@@ -88,6 +93,11 @@ public partial class InvoiceProcessingService
     try
     {
       return await callbackFunction().ConfigureAwait(false);
+    }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
     }
     catch (Exception exception)
     {
@@ -101,6 +111,11 @@ public partial class InvoiceProcessingService
     {
       return await callbackFunction().ConfigureAwait(false);
     }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
+    }
     catch (Exception exception)
     {
       throw Classify(exception);
@@ -112,6 +127,11 @@ public partial class InvoiceProcessingService
     try
     {
       return await callbackFunction().ConfigureAwait(false);
+    }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
     }
     catch (Exception exception)
     {
@@ -125,6 +145,11 @@ public partial class InvoiceProcessingService
     {
       return await callbackFunction().ConfigureAwait(false);
     }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
+    }
     catch (Exception exception)
     {
       throw Classify(exception);
@@ -136,6 +161,11 @@ public partial class InvoiceProcessingService
     try
     {
       return await callbackFunction().ConfigureAwait(false);
+    }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
     }
     catch (Exception exception)
     {
@@ -149,6 +179,11 @@ public partial class InvoiceProcessingService
     {
       return await callbackFunction().ConfigureAwait(false);
     }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
+    }
     catch (Exception exception)
     {
       throw Classify(exception);
@@ -160,6 +195,11 @@ public partial class InvoiceProcessingService
     try
     {
       return await callbackFunction().ConfigureAwait(false);
+    }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
     }
     catch (Exception exception)
     {
@@ -173,6 +213,11 @@ public partial class InvoiceProcessingService
     {
       return await callbackFunction().ConfigureAwait(false);
     }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
+    }
     catch (Exception exception)
     {
       throw Classify(exception);
@@ -184,6 +229,11 @@ public partial class InvoiceProcessingService
     try
     {
       return await callbackFunction().ConfigureAwait(false);
+    }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
     }
     catch (Exception exception)
     {

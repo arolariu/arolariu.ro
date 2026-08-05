@@ -115,6 +115,10 @@ internal static class WebApplicationExtensions
     app.UseHttpsRedirection();
     app.UseAuthServices();
 
+    // Must follow routing/auth so per-endpoint timeout policies resolve from endpoint metadata,
+    // and stay inside UseExceptionHandler so timeout faults still produce ProblemDetails.
+    app.UseRequestTimeouts();
+
     #region Middlewares
     app.UseCors("AllowAllOrigins");
     app.UseRateLimiter();

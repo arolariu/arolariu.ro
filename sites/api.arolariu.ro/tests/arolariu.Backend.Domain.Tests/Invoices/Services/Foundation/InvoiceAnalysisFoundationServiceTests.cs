@@ -2,6 +2,7 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Services.Foundation;
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
@@ -94,7 +95,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -122,7 +123,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -147,7 +148,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -172,7 +173,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -199,7 +200,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -226,7 +227,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.Equal(initialUpdates + 1, result.NumberOfUpdates);
@@ -248,7 +249,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.AnalyzeInvoiceAsync(options, invoice));
+        service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
   }
 
   /// <summary>
@@ -271,7 +272,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.AnalyzeInvoiceAsync(options, invoice));
+        service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
   }
 
   /// <summary>
@@ -290,16 +291,15 @@ public sealed class InvoiceAnalysisFoundationServiceTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.AnalyzeInvoiceAsync(options, invoice));
+        service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
   }
 
   /// <summary>
-  /// Validates OperationCanceledException is wrapped into foundation dependency exception,
-  /// since downstream cancellation (e.g. timeout from the OCR broker) is a transient infrastructure
-  /// concern that should surface as a 503 rather than a generic 500 per RFC 2003.
+  /// Validates that OperationCanceledException from the OCR broker propagates unchanged,
+  /// per the cancellation-passthrough contract. Cancellation is never a server fault.
   /// </summary>
   [Fact]
-  public async Task AnalyzeInvoiceAsync_OperationCanceledException_ThrowsFoundationDependencyException()
+  public async Task AnalyzeInvoiceAsync_OperationCanceledException_PropagatesOperationCanceledException()
   {
     // Arrange
     var options = AnalysisOptions.CompleteAnalysis;
@@ -309,9 +309,9 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .Setup(b => b.PerformOcrAnalysisOnSingleInvoice(invoice, options))
         .ThrowsAsync(new OperationCanceledException("Cancelled"));
 
-    // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(() =>
-        service.AnalyzeInvoiceAsync(options, invoice));
+    // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
+    await Assert.ThrowsAsync<OperationCanceledException>(() =>
+        service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
   }
 
   /// <summary>
@@ -333,7 +333,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -358,7 +358,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);
@@ -385,7 +385,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.Equal(originalId, result.id);
@@ -411,7 +411,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    var result = await service.AnalyzeInvoiceAsync(options, invoice);
+    var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
     Assert.NotNull(result);

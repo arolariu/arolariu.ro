@@ -48,7 +48,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Analyze Invoice API
   /// <inheritdoc/>
-  public async Task AnalyzeInvoice(AnalysisOptions options, Guid identifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task AnalyzeInvoice(AnalysisOptions options, Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoice));
@@ -75,7 +75,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Create Invoice API
   /// <inheritdoc/>
-  public async Task CreateInvoice(Invoice invoice, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task CreateInvoice(Invoice invoice, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoice));
@@ -92,7 +92,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Create Merchant API
   /// <inheritdoc/>
-  public async Task CreateMerchant(Merchant merchant, Guid? parentCompanyId = null, CancellationToken cancellationToken = default) =>
+  public async Task CreateMerchant(Merchant merchant, Guid? parentCompanyId, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchant));
@@ -109,7 +109,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Delete Invoice API
   /// <inheritdoc/>
-  public async Task DeleteInvoice(Guid identifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task DeleteInvoice(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoice));
@@ -126,7 +126,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Read Invoices API
   /// <inheritdoc/>
-  public async Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier, CancellationToken cancellationToken = default) =>
+  public async Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoices));
@@ -144,7 +144,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Read Merchants API
   /// <inheritdoc/>
-  public async Task<IEnumerable<Merchant>> ReadMerchants(Guid parentCompanyId, CancellationToken cancellationToken = default) =>
+  public async Task<IEnumerable<Merchant>> ReadMerchants(Guid parentCompanyId, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchants));
@@ -162,7 +162,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Read Invoice API
   /// <inheritdoc/>
-  public async Task<Invoice> ReadInvoice(Guid identifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task<Invoice> ReadInvoice(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoice));
@@ -180,7 +180,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Read Merchant API
   /// <inheritdoc/>
-  public async Task<Merchant> ReadMerchant(Guid identifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default) =>
+  public async Task<Merchant> ReadMerchant(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchant));
@@ -198,7 +198,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Update Invoice API
   /// <inheritdoc/>
-  public async Task<Invoice> UpdateInvoice(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task<Invoice> UpdateInvoice(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoice));
@@ -216,7 +216,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Update Merchant API
   /// <inheritdoc/>
-  public async Task<Merchant> UpdateMerchant(Merchant updatedMerchant, Guid identifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default) =>
+  public async Task<Merchant> UpdateMerchant(Merchant updatedMerchant, Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchant));
@@ -234,7 +234,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Delete Merchant API
   /// <inheritdoc/>
-  public async Task DeleteMerchant(Guid identifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default) =>
+  public async Task DeleteMerchant(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchant));
@@ -251,7 +251,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Add Product API
   /// <inheritdoc/>
-  public async Task AddProduct(Product product, Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task AddProduct(Product product, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(AddProduct));
@@ -269,7 +269,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Get Products API
   /// <inheritdoc/>
-  public async Task<IEnumerable<Product>> GetProducts(Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task<IEnumerable<Product>> GetProducts(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(GetProducts));
@@ -284,7 +284,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Get Product API
   /// <inheritdoc/>
-  public async Task<Product> GetProduct(string productName, Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task<Product> GetProduct(string productName, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(GetProduct));
@@ -303,7 +303,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Delete Product API
   /// <inheritdoc/>
-  public async Task DeleteProduct(string productName, Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task DeleteProduct(string productName, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteProduct));
@@ -326,7 +326,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   }).ConfigureAwait(false);
 
   /// <inheritdoc/>
-  public async Task DeleteProduct(Product product, Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task DeleteProduct(Product product, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteProduct));
@@ -351,7 +351,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Delete Invoices API
   /// <inheritdoc/>
-  public async Task DeleteInvoices(Guid userIdentifier, CancellationToken cancellationToken = default) =>
+  public async Task DeleteInvoices(Guid userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoices));
@@ -371,7 +371,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Create Invoice Scan API
   /// <inheritdoc/>
-  public async Task CreateInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task CreateInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceScan));
@@ -388,7 +388,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Read Invoice Scans API
   /// <inheritdoc/>
-  public async Task<IEnumerable<InvoiceScan>> ReadInvoiceScans(Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task<IEnumerable<InvoiceScan>> ReadInvoiceScans(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceScans));
@@ -401,7 +401,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Delete Invoice Scan API
   /// <inheritdoc/>
-  public async Task DeleteInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task DeleteInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceScan));
@@ -418,7 +418,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Add Invoice Metadata API
   /// <inheritdoc/>
-  public async Task AddMetadataToInvoice(IDictionary<string, object> metadata, Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task AddMetadataToInvoice(IDictionary<string, object> metadata, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(AddMetadataToInvoice));
@@ -426,6 +426,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
       .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
 
+    // No cancellation checkpoint: this loop only mutates an in-memory dictionary.
+    // The surrounding read/update calls carry the token and are the real cancellation points.
     foreach (var kvp in metadata)
     {
       invoice.AdditionalMetadata[kvp.Key] = kvp.Value;
@@ -439,7 +441,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Update Invoice Metadata API
   /// <inheritdoc/>
-  public async Task<IDictionary<string, object>> UpdateMetadataOnInvoice(IDictionary<string, object> metadata, Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task<IDictionary<string, object>> UpdateMetadataOnInvoice(IDictionary<string, object> metadata, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMetadataOnInvoice));
@@ -447,6 +449,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
       .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
 
+    // No cancellation checkpoint: this loop only mutates an in-memory dictionary.
+    // The surrounding read/update calls carry the token and are the real cancellation points.
     foreach (var kvp in metadata)
     {
       invoice.AdditionalMetadata[kvp.Key] = kvp.Value;
@@ -461,7 +465,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Get Invoice Metadata API
   /// <inheritdoc/>
-  public async Task<IDictionary<string, object>> GetMetadataFromInvoice(Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task<IDictionary<string, object>> GetMetadataFromInvoice(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(GetMetadataFromInvoice));
@@ -474,7 +478,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Delete Invoice Metadata API
   /// <inheritdoc/>
-  public async Task DeleteMetadataFromInvoice(IEnumerable<string> metadataKeys, Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
+  public async Task DeleteMetadataFromInvoice(IEnumerable<string> metadataKeys, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMetadataFromInvoice));
@@ -482,6 +486,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
       .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
 
+    // No cancellation checkpoint: this loop only mutates an in-memory dictionary.
+    // The surrounding read/update calls carry the token and are the real cancellation points.
     foreach (var key in metadataKeys)
     {
       invoice.AdditionalMetadata.Remove(key);

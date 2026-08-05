@@ -59,7 +59,7 @@ public sealed class MerchantOrchestrationServiceExceptionsTests
       .ThrowsAsync(new MerchantFoundationServiceValidationException(inner));
 
     await Assert.ThrowsAsync<MerchantOrchestrationServiceValidationException>(
-      () => orchestrationService.CreateMerchantObject(merchant));
+      () => orchestrationService.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -75,7 +75,7 @@ public sealed class MerchantOrchestrationServiceExceptionsTests
       .ThrowsAsync(new MerchantFoundationServiceDependencyValidationException(inner));
 
     await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyValidationException>(
-      () => orchestrationService.CreateMerchantObject(merchant));
+      () => orchestrationService.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -91,7 +91,7 @@ public sealed class MerchantOrchestrationServiceExceptionsTests
       .ThrowsAsync(new MerchantFoundationServiceDependencyException(inner));
 
     await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyException>(
-      () => orchestrationService.CreateMerchantObject(merchant));
+      () => orchestrationService.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -107,7 +107,7 @@ public sealed class MerchantOrchestrationServiceExceptionsTests
       .ThrowsAsync(new MerchantFoundationServiceException(inner));
 
     await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(
-      () => orchestrationService.CreateMerchantObject(merchant));
+      () => orchestrationService.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -122,6 +122,6 @@ public sealed class MerchantOrchestrationServiceExceptionsTests
       .ThrowsAsync(new InvalidOperationException("unknown"));
 
     await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(
-      () => orchestrationService.CreateMerchantObject(merchant));
+      () => orchestrationService.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 }

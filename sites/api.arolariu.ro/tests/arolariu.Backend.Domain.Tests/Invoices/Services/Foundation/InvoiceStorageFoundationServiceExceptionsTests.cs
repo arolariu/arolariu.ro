@@ -39,7 +39,7 @@ public class InvoiceStorageFoundationServiceExceptionsTests
       .ThrowsAsync(new InvoiceNotFoundException(Guid.NewGuid()));
 
     var ex = await Assert.ThrowsAsync<InvoiceFoundationDependencyValidationException>(
-      () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid()));
+      () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None));
 
     Assert.IsType<InvoiceNotFoundException>(ex.InnerException);
   }
@@ -53,7 +53,7 @@ public class InvoiceStorageFoundationServiceExceptionsTests
     var invoice = new Invoice { id = Guid.NewGuid(), UserIdentifier = Guid.NewGuid() };
 
     var ex = await Assert.ThrowsAsync<InvoiceFoundationDependencyValidationException>(
-      () => _sut.CreateInvoiceObject(invoice));
+      () => _sut.CreateInvoiceObject(invoice, null, CancellationToken.None));
 
     Assert.IsType<InvoiceAlreadyExistsException>(ex.InnerException);
   }
@@ -66,7 +66,7 @@ public class InvoiceStorageFoundationServiceExceptionsTests
       .ThrowsAsync(new InvoiceUnauthorizedAccessException("unauthorized"));
 
     var ex = await Assert.ThrowsAsync<InvoiceFoundationDependencyValidationException>(
-      () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid()));
+      () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None));
 
     Assert.IsType<InvoiceUnauthorizedAccessException>(ex.InnerException);
   }
@@ -79,7 +79,7 @@ public class InvoiceStorageFoundationServiceExceptionsTests
       .ThrowsAsync(new InvoiceForbiddenAccessException(Guid.NewGuid(), Guid.NewGuid()));
 
     var ex = await Assert.ThrowsAsync<InvoiceFoundationDependencyValidationException>(
-      () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid()));
+      () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None));
 
     Assert.IsType<InvoiceForbiddenAccessException>(ex.InnerException);
   }
@@ -92,7 +92,7 @@ public class InvoiceStorageFoundationServiceExceptionsTests
       .ThrowsAsync(new InvoiceCosmosDbRateLimitException(TimeSpan.FromSeconds(2), new InvalidOperationException()));
 
     var ex = await Assert.ThrowsAsync<InvoiceFoundationDependencyValidationException>(
-      () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid()));
+      () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None));
 
     Assert.IsType<InvoiceCosmosDbRateLimitException>(ex.InnerException);
   }
@@ -105,7 +105,7 @@ public class InvoiceStorageFoundationServiceExceptionsTests
       .ThrowsAsync(new InvoiceFailedStorageException("down"));
 
     var ex = await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(
-      () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid()));
+      () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None));
 
     Assert.IsType<InvoiceFailedStorageException>(ex.InnerException);
   }
@@ -118,6 +118,6 @@ public class InvoiceStorageFoundationServiceExceptionsTests
       .ThrowsAsync(new InvalidOperationException("boom"));
 
     await Assert.ThrowsAsync<InvoiceFoundationServiceException>(
-      () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid()));
+      () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None));
   }
 }

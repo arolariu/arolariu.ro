@@ -33,6 +33,9 @@ public static class ProblemTypeUris
   /// <summary>Problem type URI for unavailable services (HTTP 503).</summary>
   public const string ServiceUnavailable = Root + "service-unavailable";
 
+  /// <summary>Problem type URI for server-side operation timeouts (HTTP 504).</summary>
+  public const string Timeout = Root + "timeout";
+
   /// <summary>Problem type URI for unhandled internal errors (HTTP 500).</summary>
   public const string InternalServerError = Root + "internal-error";
 }

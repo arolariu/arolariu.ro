@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Invoices.Endpoints;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -46,6 +47,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload exceeds the maximum allowed size (1MB).", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> CreateNewInvoiceAsync(
@@ -61,6 +63,7 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice to retrieve.</param>
+  /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing the retrieved invoice.</returns>
   [SwaggerOperation(
     Summary = "Retrieves a specific invoice from the system.",
@@ -76,12 +79,14 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveSpecificInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("The unique identifier of the invoice to retrieve.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice to retrieve.", Required = true)] Guid id,
+    CancellationToken cancellationToken);
   #endregion
 
   #region HTTP GET /rest/v1/invoices
@@ -90,6 +95,7 @@ public static partial class InvoiceEndpoints
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing the list of invoices.</returns>
   [SwaggerOperation(
     Summary = "Retrieves all invoices from the system.",
@@ -104,12 +110,13 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status404NotFound, "No invoices were found in the system.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoices could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveAllInvoicesAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext
-    );
+    [FromServices] IHttpContextAccessor httpContext,
+    CancellationToken cancellationToken);
   #endregion
 
   #region HTTP PUT /rest/v1/invoices/{id}
@@ -135,6 +142,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> UpdateSpecificInvoiceAsync(
@@ -167,6 +175,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> PatchSpecificInvoiceAsync(
@@ -198,6 +207,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> DeleteInvoiceAsync(
@@ -227,6 +237,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status404NotFound, "No invoices were found for the user.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> DeleteInvoicesAsync(
@@ -260,6 +271,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload exceeds the maximum allowed size (1MB).", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> AddProductToInvoiceAsync(
@@ -276,6 +288,7 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice from which to retrieve products.</param>
+  /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing the list of products.</returns>
   [SwaggerOperation(
     Summary = "Retrieves all products from a specific invoice in the system.",
@@ -291,12 +304,14 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveProductsFromInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
+    CancellationToken cancellationToken);
   #endregion
 
   #region HTTP DELETE /rest/v1/invoices/{id}/products
@@ -324,6 +339,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload exceeds the maximum allowed size (1MB).", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RemoveProductFromInvoiceAsync(
@@ -358,6 +374,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload exceeds the maximum allowed size (1MB).", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> UpdateProductInInvoiceAsync(
@@ -374,6 +391,7 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice from which to retrieve the merchant.</param>
+  /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing the merchant details.</returns>
   [SwaggerOperation(
     Summary = "Retrieves the merchant from an invoice in the system.",
@@ -389,12 +407,14 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveMerchantFromInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
+    CancellationToken cancellationToken);
   #endregion
 
   #region HTTP POST /rest/v1/invoices/{id}/merchant
@@ -422,6 +442,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload exceeds the maximum allowed size (1MB).", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> AddMerchantToInvoiceAsync(
@@ -455,6 +476,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload exceeds the maximum allowed size (1MB).", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RemoveMerchantFromInvoiceAsync(
@@ -487,6 +509,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload exceeds the maximum allowed size (1MB).", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> CreateInvoiceScanAsync(
@@ -503,6 +526,7 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice from which to retrieve scans.</param>
+  /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing the list of invoice scans.</returns>
   [SwaggerOperation(
     Summary = "Retrieves all invoice scans from the system.",
@@ -518,12 +542,14 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveInvoiceScansAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
+    CancellationToken cancellationToken);
   #endregion
 
   #region HTTP DELETE /rest/v1/invoices/{id}/scans/{scanLocationField}
@@ -549,6 +575,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice scan with the specified identifier was not found.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> DeleteInvoiceScanAsync(
@@ -565,6 +592,7 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice from which to retrieve metadata.</param>
+  /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing the invoice metadata.</returns>
   [SwaggerOperation(
     Summary = "Retrieves the metadata from a specific invoice in the system.",
@@ -580,12 +608,14 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveInvoiceMetadataAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
+    CancellationToken cancellationToken);
   #endregion
 
   #region HTTP PATCH /rest/v1/invoices/{id}/metadata
@@ -611,6 +641,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> PatchInvoiceMetadataAsync(
@@ -643,6 +674,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> DeleteInvoiceMetadataAsync(
@@ -677,6 +709,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload is too large. Please reduce the size of the request.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> CreateNewMerchantAsync(
@@ -692,6 +725,7 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="parentCompanyId">The unique identifier of the parent company to filter merchants by.</param>
+  /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing a list of merchants.</returns>
   [SwaggerOperation(
     Summary = "Retrieves all merchants from the system.",
@@ -705,12 +739,14 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveAllMerchantsAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromQuery, SwaggerParameter("The parent company identifier used as a filter.", Required = true)] Guid parentCompanyId);
+    [FromQuery, SwaggerParameter("The parent company identifier used as a filter.", Required = true)] Guid parentCompanyId,
+    CancellationToken cancellationToken);
   #endregion
 
   #region HTTP GET /rest/v1/merchants/{id}
@@ -721,6 +757,7 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the merchant to retrieve.</param>
   /// <param name="parentCompanyId">The unique identifier of the parent company to validate against.</param>
+  /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing the retrieved merchant.</returns>
   [SwaggerOperation(
     Summary = "Retrieves a specific merchant from the system.",
@@ -736,13 +773,15 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant with the specified identifier was not found.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveSpecificMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
-    [FromQuery, SwaggerParameter("The parent company identifier used as a filter.", Required = false)] Guid? parentCompanyId);
+    [FromQuery, SwaggerParameter("The parent company identifier used as a filter.", Required = false)] Guid? parentCompanyId,
+    CancellationToken cancellationToken);
   #endregion
 
   #region HTTP PUT /rest/v1/merchants/{id}
@@ -768,6 +807,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant with the specified identifier was not found.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> UpdateSpecificMerchantAsync(
@@ -800,6 +840,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant with the specified identifier was not found.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> DeleteMerchantAsync(
@@ -816,6 +857,7 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the merchant.</param>
+  /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing a list of invoices.</returns>
   [SwaggerOperation(
     Summary = "Retrieves all invoices from a specific merchant in the system.",
@@ -831,12 +873,14 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant with the specified identifier was not found.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveInvoicesFromMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
+    CancellationToken cancellationToken);
   #endregion
 
   #region HTTP PATCH /rest/v1/merchants/{id}/invoices
@@ -864,6 +908,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload is too large. Please reduce the number of invoice identifiers.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> AddInvoiceToMerchantAsync(
@@ -898,6 +943,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload is too large. Please reduce the number of invoice identifiers.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RemoveInvoiceFromMerchantAsync(
@@ -914,6 +960,7 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the merchant.</param>
+  /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing a list of products.</returns>
   [SwaggerOperation(
     Summary = "Retrieves all products from a specific merchant in the system.",
@@ -929,12 +976,14 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant with the specified identifier was not found.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveProductsFromMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
+    CancellationToken cancellationToken);
   #endregion
   #endregion
 
@@ -961,6 +1010,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> AnalyzeInvoiceAsync(

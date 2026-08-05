@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Brokers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
@@ -76,7 +77,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ReturnsAsync(itemResponseMock.Object);
 
     // When
-    var actualInvoice = await invoiceNoSqlBroker.CreateInvoiceAsync(expectedInvoice);
+    var actualInvoice = await invoiceNoSqlBroker.CreateInvoiceAsync(expectedInvoice, CancellationToken.None);
 
     // Then
     Assert.NotNull(actualInvoice);
@@ -104,7 +105,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ThrowsAsync(cosmosException);
 
     // When & Then
-    var exception = await Assert.ThrowsAsync<InvoiceFailedStorageException>(() => invoiceNoSqlBroker.CreateInvoiceAsync(invoice).AsTask());
+    var exception = await Assert.ThrowsAsync<InvoiceFailedStorageException>(() => invoiceNoSqlBroker.CreateInvoiceAsync(invoice, CancellationToken.None).AsTask());
 
     Assert.NotNull(exception.InnerException);
     Assert.Contains("Creation failed", exception.InnerException.Message, StringComparison.Ordinal);
@@ -137,7 +138,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ReturnsAsync(itemResponseMock.Object);
 
     // When
-    var actualInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(expectedInvoice.id, expectedInvoice.UserIdentifier);
+    var actualInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(expectedInvoice.id, expectedInvoice.UserIdentifier, CancellationToken.None);
 
     // Then
     Assert.NotNull(actualInvoice);
@@ -176,7 +177,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .Returns(mockFeedIterator.Object);
 
     // When
-    var actualInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(expectedInvoice.id);
+    var actualInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(expectedInvoice.id, null, CancellationToken.None);
 
     // Then
     Assert.NotNull(actualInvoice);
@@ -216,7 +217,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .Returns(mockFeedIterator.Object);
 
     // When
-    var actualInvoices = await invoiceNoSqlBroker.ReadInvoicesAsync(userIdentifier);
+    var actualInvoices = await invoiceNoSqlBroker.ReadInvoicesAsync(userIdentifier, CancellationToken.None);
 
     // Then
     Assert.NotNull(actualInvoices);
@@ -258,7 +259,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .Returns(mockFeedIterator.Object);
 
     // When
-    var actualInvoices = await invoiceNoSqlBroker.ReadInvoicesAsync(userIdentifier);
+    var actualInvoices = await invoiceNoSqlBroker.ReadInvoicesAsync(userIdentifier, CancellationToken.None);
 
     // Then
     Assert.Single(actualInvoices);
@@ -294,7 +295,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .Returns(mockFeedIterator.Object);
 
     // When
-    var actualInvoices = await invoiceNoSqlBroker.ReadInvoicesAsync(userIdentifier);
+    var actualInvoices = await invoiceNoSqlBroker.ReadInvoicesAsync(userIdentifier, CancellationToken.None);
 
     // Then
     Assert.NotNull(actualInvoices);
@@ -343,7 +344,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .Returns(mockFeedIterator.Object);
 
     // When
-    var actualInvoices = await invoiceNoSqlBroker.ReadInvoicesAsync(userIdentifier);
+    var actualInvoices = await invoiceNoSqlBroker.ReadInvoicesAsync(userIdentifier, CancellationToken.None);
 
     // Then
     Assert.NotNull(actualInvoices);
@@ -377,7 +378,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
 
     // When & Then
     var exception = await Assert.ThrowsAsync<InvoiceLockedException>(
-      () => invoiceNoSqlBroker.ReadInvoiceAsync(deletedInvoice.id, deletedInvoice.UserIdentifier).AsTask());
+      () => invoiceNoSqlBroker.ReadInvoiceAsync(deletedInvoice.id, deletedInvoice.UserIdentifier, CancellationToken.None).AsTask());
 
     Assert.Contains(deletedInvoice.id.ToString(), exception.Message, StringComparison.Ordinal);
   }
@@ -413,7 +414,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
 
     // When & Then
     var exception = await Assert.ThrowsAsync<InvoiceLockedException>(
-      () => invoiceNoSqlBroker.ReadInvoiceAsync(deletedInvoice.id).AsTask());
+      () => invoiceNoSqlBroker.ReadInvoiceAsync(deletedInvoice.id, null, CancellationToken.None).AsTask());
 
     Assert.Contains(deletedInvoice.id.ToString(), exception.Message, StringComparison.Ordinal);
   }
@@ -447,7 +448,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .Returns(mockFeedIterator.Object);
 
     // When
-    var actualInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(invoiceId);
+    var actualInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(invoiceId, null, CancellationToken.None);
 
     // Then
     Assert.Null(actualInvoice);
@@ -484,7 +485,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ReturnsAsync(itemResponseMock.Object);
 
     // When
-    var actualInvoice = await invoiceNoSqlBroker.UpdateInvoiceAsync(originalInvoice.id, updatedInvoice);
+    var actualInvoice = await invoiceNoSqlBroker.UpdateInvoiceAsync(originalInvoice.id, updatedInvoice, CancellationToken.None);
 
     // Then
     Assert.NotNull(actualInvoice);
@@ -526,7 +527,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ReturnsAsync(itemResponseMock.Object);
 
     // When
-    var actualInvoice = await invoiceNoSqlBroker.UpdateInvoiceAsync(originalInvoice, updatedInvoice);
+    var actualInvoice = await invoiceNoSqlBroker.UpdateInvoiceAsync(originalInvoice, updatedInvoice, CancellationToken.None);
 
     // Then
     Assert.NotNull(actualInvoice);
@@ -554,7 +555,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
 
     // When & Then
     var exception = await Assert.ThrowsAsync<InvoiceFailedStorageException>(
-      () => invoiceNoSqlBroker.UpdateInvoiceAsync(invoice.id, invoice).AsTask());
+      () => invoiceNoSqlBroker.UpdateInvoiceAsync(invoice.id, invoice, CancellationToken.None).AsTask());
 
     Assert.NotNull(exception.InnerException);
     Assert.Contains("Update failed", exception.InnerException.Message, StringComparison.Ordinal);
@@ -596,7 +597,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ReturnsAsync(replaceResponseMock.Object);
 
     // When
-    await invoiceNoSqlBroker.DeleteInvoiceAsync(expectedInvoice.id, expectedInvoice.UserIdentifier);
+    await invoiceNoSqlBroker.DeleteInvoiceAsync(expectedInvoice.id, expectedInvoice.UserIdentifier, CancellationToken.None);
 
     // Then
     mockInvoicesContainer.Verify(container => container.ReplaceItemAsync(
@@ -648,7 +649,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ReturnsAsync(replaceResponseMock.Object);
 
     // When
-    await invoiceNoSqlBroker.DeleteInvoiceAsync(expectedInvoice.id);
+    await invoiceNoSqlBroker.DeleteInvoiceAsync(expectedInvoice.id, null, CancellationToken.None);
 
     // Then
     mockInvoicesContainer.Verify(container => container.ReplaceItemAsync(
@@ -689,7 +690,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .Returns(mockFeedIterator.Object);
 
     // When & Then - should not throw
-    await invoiceNoSqlBroker.DeleteInvoiceAsync(invoiceId);
+    await invoiceNoSqlBroker.DeleteInvoiceAsync(invoiceId, null, CancellationToken.None);
 
     mockInvoicesContainer.Verify(container => container.ReplaceItemAsync(
         It.IsAny<Invoice>(),
@@ -744,7 +745,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ReturnsAsync(replaceResponseMock.Object);
 
     // When
-    await invoiceNoSqlBroker.DeleteInvoicesAsync(userIdentifier);
+    await invoiceNoSqlBroker.DeleteInvoicesAsync(userIdentifier, CancellationToken.None);
 
     // Then
     mockInvoicesContainer.Verify(container => container.ReplaceItemAsync(
@@ -800,7 +801,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ReturnsAsync(replaceResponseMock.Object);
 
     // When
-    await invoiceNoSqlBroker.DeleteInvoicesAsync(userIdentifier);
+    await invoiceNoSqlBroker.DeleteInvoicesAsync(userIdentifier, CancellationToken.None);
 
     // Then
     Assert.NotNull(capturedInvoice);
@@ -837,7 +838,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .Returns(mockFeedIterator.Object);
 
     // When & Then - should not throw
-    await invoiceNoSqlBroker.DeleteInvoicesAsync(userIdentifier);
+    await invoiceNoSqlBroker.DeleteInvoicesAsync(userIdentifier, CancellationToken.None);
 
     mockInvoicesContainer.Verify(container => container.ReplaceItemAsync(
         It.IsAny<Invoice>(),
@@ -900,7 +901,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ReturnsAsync(replaceResponseMock.Object);
 
     // When
-    await invoiceNoSqlBroker.DeleteInvoicesAsync(userIdentifier);
+    await invoiceNoSqlBroker.DeleteInvoicesAsync(userIdentifier, CancellationToken.None);
 
     // Then
     mockInvoicesContainer.Verify(container => container.ReplaceItemAsync(

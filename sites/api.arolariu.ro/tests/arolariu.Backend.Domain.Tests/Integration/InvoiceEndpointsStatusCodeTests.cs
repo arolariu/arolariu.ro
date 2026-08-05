@@ -16,6 +16,7 @@ using arolariu.Backend.Domain.Invoices.Services.Processing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 
 using Moq;
 
@@ -164,7 +165,11 @@ public sealed class InvoiceEndpointsStatusCodeTests
     };
     var identity = new ClaimsIdentity(claims, authenticationType: "TestAuth");
     var principal = new ClaimsPrincipal(identity);
-    var httpContext = new DefaultHttpContext { User = principal };
+    var httpContext = new DefaultHttpContext
+    {
+      User = principal,
+      RequestServices = new ServiceCollection().BuildServiceProvider(),
+    };
     return new HttpContextAccessor { HttpContext = httpContext };
   }
 
@@ -217,7 +222,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     // Act
     var result = await InvoiceEndpoints
-      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
+      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid(), CancellationToken.None)
 ;
 
     // Assert
@@ -237,7 +242,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var accessor = CreateAuthenticatedContextAccessor();
 
     var result = await InvoiceEndpoints
-      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
+      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid(), CancellationToken.None)
 ;
 
     Assert.Equal(StatusCodes.Status409Conflict, GetStatusCode(result));
@@ -255,7 +260,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var accessor = CreateAuthenticatedContextAccessor();
 
     var result = await InvoiceEndpoints
-      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
+      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid(), CancellationToken.None)
 ;
 
     Assert.Equal(StatusCodes.Status423Locked, GetStatusCode(result));
@@ -278,7 +283,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     // Act
     var result = await InvoiceEndpoints
-      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
+      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid(), CancellationToken.None)
 ;
 
     // Assert
@@ -306,7 +311,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var accessor = CreateAuthenticatedContextAccessor();
 
     var result = await InvoiceEndpoints
-      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
+      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid(), CancellationToken.None)
 ;
 
     Assert.Equal(StatusCodes.Status503ServiceUnavailable, GetStatusCode(result));
@@ -329,7 +334,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     // Act
     var result = await InvoiceEndpoints
-      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
+      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid(), CancellationToken.None)
 ;
 
     // Assert
@@ -384,7 +389,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var accessor = CreateAuthenticatedContextAccessor();
 
     var result = await InvoiceEndpoints
-      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
+      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid(), CancellationToken.None)
 ;
 
     Assert.Equal(StatusCodes.Status401Unauthorized, GetStatusCode(result));
@@ -402,7 +407,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var accessor = CreateAuthenticatedContextAccessor();
 
     var result = await InvoiceEndpoints
-      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
+      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid(), CancellationToken.None)
 ;
 
     Assert.Equal(StatusCodes.Status403Forbidden, GetStatusCode(result));
@@ -428,7 +433,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var accessor = CreateAuthenticatedContextAccessor();
 
     var result = await InvoiceEndpoints
-      .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null)
+      .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null, CancellationToken.None)
 ;
 
     Assert.Equal(StatusCodes.Status404NotFound, GetStatusCode(result));
@@ -446,7 +451,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var accessor = CreateAuthenticatedContextAccessor();
 
     var result = await InvoiceEndpoints
-      .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null)
+      .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null, CancellationToken.None)
 ;
 
     Assert.Equal(StatusCodes.Status409Conflict, GetStatusCode(result));
@@ -464,7 +469,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var accessor = CreateAuthenticatedContextAccessor();
 
     var result = await InvoiceEndpoints
-      .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null)
+      .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null, CancellationToken.None)
 ;
 
     Assert.Equal(StatusCodes.Status423Locked, GetStatusCode(result));
@@ -485,7 +490,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var accessor = CreateAuthenticatedContextAccessor();
 
     var result = await InvoiceEndpoints
-      .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null)
+      .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null, CancellationToken.None)
 ;
 
     Assert.Equal(StatusCodes.Status429TooManyRequests, GetStatusCode(result));
@@ -509,7 +514,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var accessor = CreateAuthenticatedContextAccessor();
 
     var result = await InvoiceEndpoints
-      .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null)
+      .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null, CancellationToken.None)
 ;
 
     Assert.Equal(StatusCodes.Status401Unauthorized, GetStatusCode(result));
@@ -527,7 +532,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var accessor = CreateAuthenticatedContextAccessor();
 
     var result = await InvoiceEndpoints
-      .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null)
+      .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null, CancellationToken.None)
 ;
 
     Assert.Equal(StatusCodes.Status403Forbidden, GetStatusCode(result));
@@ -546,7 +551,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var accessor = CreateAuthenticatedContextAccessor();
 
     var result = await InvoiceEndpoints
-      .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null)
+      .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null, CancellationToken.None)
 ;
 
     Assert.Equal(StatusCodes.Status503ServiceUnavailable, GetStatusCode(result));
@@ -587,7 +592,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     // Act
     var result = await InvoiceEndpoints
-      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
+      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid(), CancellationToken.None)
 ;
 
     // Assert
