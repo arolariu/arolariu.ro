@@ -42,7 +42,7 @@
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.9" />
   </ItemGroup>
   <ItemGroup Label="Azure SDK Packages">
-    <PackageVersion Include="Azure.Core" Version="1.60.0" />
+    <PackageVersion Include="Azure.Core" Version="1.61.0" />
     <PackageVersion Include="Azure.Identity" Version="1.21.0" />
     <PackageVersion Include="Azure.Storage.Blobs" Version="12.29.0" />
   </ItemGroup>
@@ -89,7 +89,7 @@
     <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.2.3" />
   </ItemGroup>
   <ItemGroup Label="Authentication and Security Packages">
-    <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.21.0" />
+    <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.22.0" />
   </ItemGroup>
   <ItemGroup Label="Serialization Packages">
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
@@ -97,8 +97,8 @@
   <ItemGroup Label="Testing Frameworks">
     <PackageVersion Include="coverlet.collector" Version="10.0.1" />
     <PackageVersion Include="Moq" Version="4.20.72" />
-    <PackageVersion Include="MSTest.TestAdapter" Version="4.3.2" />
-    <PackageVersion Include="MSTest.TestFramework" Version="4.3.2" />
+    <PackageVersion Include="MSTest.TestAdapter" Version="4.3.3" />
+    <PackageVersion Include="MSTest.TestFramework" Version="4.3.3" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
   </ItemGroup>
