@@ -13,23 +13,18 @@ using Microsoft.Extensions.Hosting;
 /// why a cancellation occurred.
 /// </summary>
 /// <remarks>
-/// <para><b>Two-tier policy.</b> Reads follow <see cref="HttpContext.RequestAborted"/>, so a client
-/// that hangs up immediately frees server resources. Writes deliberately ignore client disconnect —
-/// aborting a half-finished mutation leaves the caller unable to tell whether it landed — but still
-/// honour application shutdown and an explicit budget so no operation is unbounded.</para>
+/// <para><b>Two-tier policy.</b> Reads bind <see cref="HttpContext.RequestAborted"/> directly — ASP.NET
+/// Core's Minimal API binds a handler's <see cref="CancellationToken"/> parameter to it automatically,
+/// so reads need no helper here. Writes deliberately ignore client disconnect — aborting a
+/// half-finished mutation leaves the caller unable to tell whether it landed — but still honour
+/// application shutdown and an explicit budget so no operation is unbounded. That asymmetry is why
+/// only the write tier has a factory.</para>
 /// <para><b>Classification.</b> <see cref="HttpContext.RequestAborted"/> is cancelled both by a client
 /// abort and by the request-timeout middleware, so it cannot distinguish them. The timeout feature's
 /// token is cancelled only by the timeout, which makes it the reliable discriminator.</para>
 /// </remarks>
 public static class RequestCancellation
 {
-  /// <summary>
-  /// Non-standard status code (nginx convention) meaning the client closed the connection before a
-  /// response was produced. Writing it is a no-op when the client has genuinely gone away; it exists
-  /// so logs and tests can distinguish this path from a real error.
-  /// </summary>
-  public const int ClientClosedRequest = 499;
-
   /// <summary>Budget for ordinary CRUD mutations.</summary>
   public static readonly TimeSpan CrudWriteBudget = TimeSpan.FromSeconds(30);
 
@@ -38,16 +33,6 @@ public static class RequestCancellation
   /// 5-minute network timeout configured in <c>AzureFormRecognizerBroker</c>.
   /// </summary>
   public static readonly TimeSpan AnalysisWriteBudget = TimeSpan.FromSeconds(300);
-
-  /// <summary>Returns the token a read operation should observe.</summary>
-  /// <param name="context">The current HTTP context; must not be <see langword="null"/>.</param>
-  /// <returns>The request-abort token, cancelled by client disconnect or request timeout.</returns>
-  /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> is null.</exception>
-  public static CancellationToken ForRead(HttpContext context)
-  {
-    ArgumentNullException.ThrowIfNull(context);
-    return context.RequestAborted;
-  }
 
   /// <summary>
   /// Creates the cancellation scope a write operation should observe: linked to application

@@ -21,6 +21,11 @@ using Microsoft.AspNetCore.Http;
 /// binding, routing, authentication middleware, etc.). On any caught exception it
 /// records the exception on the current <see cref="Activity"/>, maps it to a ProblemDetails
 /// result, executes the result, and returns <c>true</c> to mark the exception as handled.
+/// <para>
+/// Cancellation is the one exception to that flow: an <see cref="OperationCanceledException"/>
+/// is not a fault, so it is answered with 504 (server-side timeout) or 499 (client disconnect)
+/// without being recorded as an error on the span.
+/// </para>
 /// </remarks>
 public sealed class ExceptionMappingHandler : IExceptionHandler
 {
@@ -54,6 +59,30 @@ public sealed class ExceptionMappingHandler : IExceptionHandler
     }
 
     httpContext.Response.Clear();
+
+    // Cancellation is not a fault, so it must not be recorded as one. Per the OpenTelemetry HTTP
+    // semantic conventions, an intentionally cancelled request leaves the span status Unset rather
+    // than Error — marking it Error would poison error-rate SLOs with ordinary client behaviour.
+    // Endpoint handlers classify their own cancellations; this branch is the defense-in-depth path
+    // for cancellations thrown outside a handler's try block (model binding, middleware, or an
+    // endpoint with no local catch).
+    if (exception is OperationCanceledException)
+    {
+      var isTimeout = RequestCancellation.WasTimeout(httpContext);
+
+      if (isTimeout)
+      {
+        Activity.Current?.SetStatus(ActivityStatusCode.Error, "Timeout");
+        httpContext.Response.StatusCode = StatusCodes.Status504GatewayTimeout;
+      }
+      else
+      {
+        Activity.Current?.SetTag("cancellation.reason", "client_disconnect");
+        httpContext.Response.StatusCode = StatusCodes.Status499ClientClosedRequest;
+      }
+
+      return true;
+    }
 
     // cancellationToken is intentionally not propagated: IResult.ExecuteAsync(HttpContext) has no
     // CancellationToken overload, and HttpContext.RequestAborted already carries the request-abort

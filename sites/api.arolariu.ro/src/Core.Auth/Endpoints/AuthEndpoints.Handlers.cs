@@ -97,7 +97,7 @@ public static partial class AuthEndpoints
       }
 
       Activity.Current?.SetTag("cancellation.reason", "client_disconnect");
-      return TypedResults.StatusCode(RequestCancellation.ClientClosedRequest);
+      return TypedResults.StatusCode(StatusCodes.Status499ClientClosedRequest);
     }
   }
 }

@@ -88,7 +88,7 @@ public sealed class EndpointCancellationTests
 
     // No IHttpRequestTimeoutFeature is present, so this is a client abort — never 500/503.
     var statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
-    Assert.Equal(RequestCancellation.ClientClosedRequest, statusResult.StatusCode);
+    Assert.Equal(StatusCodes.Status499ClientClosedRequest, statusResult.StatusCode);
   }
 
   /// <summary>
@@ -141,7 +141,7 @@ public sealed class EndpointCancellationTests
       .ConfigureAwait(true);
 
     var statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
-    Assert.Equal(RequestCancellation.ClientClosedRequest, statusResult.StatusCode);
+    Assert.Equal(StatusCodes.Status499ClientClosedRequest, statusResult.StatusCode);
   }
 
   /// <summary>
@@ -176,7 +176,7 @@ public sealed class EndpointCancellationTests
       .ConfigureAwait(true);
 
     var statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
-    Assert.Equal(RequestCancellation.ClientClosedRequest, statusResult.StatusCode);
+    Assert.Equal(StatusCodes.Status499ClientClosedRequest, statusResult.StatusCode);
   }
 
   /// <summary>

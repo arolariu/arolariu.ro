@@ -1772,7 +1772,7 @@ public static partial class InvoiceEndpoints
     // and marking it Error would poison error-rate SLOs with normal client behaviour.
     InvoiceMetrics.RecordOperation(operation, entity, "canceled");
     Activity.Current?.SetTag("cancellation.reason", "client_disconnect");
-    return TypedResults.StatusCode(RequestCancellation.ClientClosedRequest);
+    return TypedResults.StatusCode(StatusCodes.Status499ClientClosedRequest);
   }
   #endregion
 }

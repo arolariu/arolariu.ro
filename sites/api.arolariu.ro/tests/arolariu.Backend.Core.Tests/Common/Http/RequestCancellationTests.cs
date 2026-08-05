@@ -58,21 +58,6 @@ public sealed class RequestCancellationTests
     return new DefaultHttpContext { RequestServices = services.BuildServiceProvider() };
   }
 
-  /// <summary>Verifies that ForRead returns the client abort token.</summary>
-  [TestMethod]
-  public void ForRead_ReturnsRequestAbortedToken()
-  {
-    using var aborted = new CancellationTokenSource();
-    using var lifetime = new StubLifetime();
-    var context = CreateContext(lifetime);
-    context.RequestAborted = aborted.Token;
-
-    var token = RequestCancellation.ForRead(context);
-
-    aborted.Cancel();
-    Assert.IsTrue(token.IsCancellationRequested, "Reads must follow the client abort signal.");
-  }
-
   /// <summary>Verifies that ForWrite ignores client disconnect.</summary>
   [TestMethod]
   public void ForWrite_IgnoresClientDisconnect()
