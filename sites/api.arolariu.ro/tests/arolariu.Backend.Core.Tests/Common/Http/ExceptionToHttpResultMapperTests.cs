@@ -19,158 +19,158 @@ public sealed class ExceptionToHttpResultMapperTests
 {
 
   [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
-  private sealed class ValidationEx : Exception, IValidationException
+  private sealed class ValidationException : Exception, IValidationException
   {
-    public ValidationEx(string m) : base(m) { }
+    public ValidationException(string m) : base(m) { }
 
-    public ValidationEx()
+    public ValidationException()
     {
     }
 
-    public ValidationEx(string message, Exception innerException) : base(message, innerException)
+    public ValidationException(string message, Exception innerException) : base(message, innerException)
     {
     }
   }
-  private sealed class NotFoundEx : Exception, INotFoundException
+  private sealed class NotFoundException : Exception, INotFoundException
   {
-    public NotFoundEx(string m) : base(m) { }
+    public NotFoundException(string m) : base(m) { }
 
-    public NotFoundEx()
+    public NotFoundException()
     {
     }
 
-    public NotFoundEx(string message, Exception innerException) : base(message, innerException)
-    {
-    }
-  }
-  [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
-  private sealed class ConflictEx : Exception, IAlreadyExistsException
-  {
-    public ConflictEx(string m) : base(m) { }
-
-    public ConflictEx()
-    {
-    }
-
-    public ConflictEx(string message, Exception innerException) : base(message, innerException)
+    public NotFoundException(string message, Exception innerException) : base(message, innerException)
     {
     }
   }
   [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
-  private sealed class LockedEx : Exception, ILockedException
+  private sealed class ConflictException : Exception, IAlreadyExistsException
   {
-    public LockedEx(string m) : base(m) { }
+    public ConflictException(string m) : base(m) { }
 
-    public LockedEx()
+    public ConflictException()
     {
     }
 
-    public LockedEx(string message, Exception innerException) : base(message, innerException)
+    public ConflictException(string message, Exception innerException) : base(message, innerException)
     {
     }
   }
-  private sealed class RateLimitEx : Exception, IRateLimitedException
+  [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
+  private sealed class LockedException : Exception, ILockedException
   {
-    public RateLimitEx(string m) : base(m) { }
+    public LockedException(string m) : base(m) { }
 
-    public RateLimitEx()
+    public LockedException()
+    {
+    }
+
+    public LockedException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
+  }
+  private sealed class RateLimitException : Exception, IRateLimitedException
+  {
+    public RateLimitException(string m) : base(m) { }
+
+    public RateLimitException()
     {
     }
 
     public TimeSpan RetryAfter { get; } = TimeSpan.Zero;
 
-    public RateLimitEx(string message, Exception innerException) : base(message, innerException)
+    public RateLimitException(string message, Exception innerException) : base(message, innerException)
     {
     }
   }
   [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
-  private sealed class UnauthorizedEx : Exception, IUnauthorizedException
+  private sealed class UnauthorizedException : Exception, IUnauthorizedException
   {
-    public UnauthorizedEx(string m) : base(m) { }
+    public UnauthorizedException(string m) : base(m) { }
 
-    public UnauthorizedEx()
+    public UnauthorizedException()
     {
     }
 
-    public UnauthorizedEx(string message, Exception innerException) : base(message, innerException)
+    public UnauthorizedException(string message, Exception innerException) : base(message, innerException)
     {
     }
   }
   [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
-  private sealed class ForbiddenEx : Exception, IForbiddenException
+  private sealed class ForbiddenException : Exception, IForbiddenException
   {
-    public ForbiddenEx(string m) : base(m) { }
+    public ForbiddenException(string m) : base(m) { }
 
-    public ForbiddenEx()
+    public ForbiddenException()
     {
     }
 
-    public ForbiddenEx(string message, Exception innerException) : base(message, innerException)
+    public ForbiddenException(string message, Exception innerException) : base(message, innerException)
     {
     }
   }
   [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
-  private sealed class DependencyEx : Exception, IDependencyException
+  private sealed class DependencyException : Exception, IDependencyException
   {
-    public DependencyEx(string m) : base(m) { }
+    public DependencyException(string m) : base(m) { }
 
-    public DependencyEx()
+    public DependencyException()
     {
     }
 
-    public DependencyEx(string message, Exception innerException) : base(message, innerException)
+    public DependencyException(string message, Exception innerException) : base(message, innerException)
     {
     }
   }
   [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via test methods")]
-  private sealed class DependencyValidationEx : Exception, IDependencyValidationException
+  private sealed class DependencyValidationException : Exception, IDependencyValidationException
   {
-    public DependencyValidationEx(string message) : base(message) { }
+    public DependencyValidationException(string message) : base(message) { }
 
-    public DependencyValidationEx()
+    public DependencyValidationException()
     {
     }
 
-    public DependencyValidationEx(string message, Exception innerException) : base(message, innerException)
+    public DependencyValidationException(string message, Exception innerException) : base(message, innerException)
     {
     }
   }
-  private sealed class ServiceEx : Exception, IServiceException
+  private sealed class ServiceException : Exception, IServiceException
   {
-    public ServiceEx(string m) : base(m) { }
+    public ServiceException(string m) : base(m) { }
 
-    public ServiceEx()
+    public ServiceException()
     {
     }
 
-    public ServiceEx(string message, Exception innerException) : base(message, innerException)
+    public ServiceException(string message, Exception innerException) : base(message, innerException)
     {
     }
   }
-  private sealed class TimeoutEx : Exception, ITimeoutException
+  private sealed class TimeoutMarkerException : Exception, ITimeoutException // Marker name avoids shadowing System.TimeoutException in this file.
   {
-    public TimeoutEx(string m) : base(m) { }
+    public TimeoutMarkerException(string m) : base(m) { }
 
-    public TimeoutEx()
+    public TimeoutMarkerException()
     {
     }
 
-    public TimeoutEx(string message, Exception innerException) : base(message, innerException)
+    public TimeoutMarkerException(string message, Exception innerException) : base(message, innerException)
     {
     }
   }
 
   /// <summary>Ensures each marker interface maps to its canonical HTTP status.</summary>
   [TestMethod]
-  [DataRow(typeof(ValidationEx), 400)]
-  [DataRow(typeof(NotFoundEx), 404)]
-  [DataRow(typeof(ConflictEx), 409)]
-  [DataRow(typeof(LockedEx), 423)]
-  [DataRow(typeof(RateLimitEx), 429)]
-  [DataRow(typeof(UnauthorizedEx), 401)]
-  [DataRow(typeof(ForbiddenEx), 403)]
-  [DataRow(typeof(DependencyEx), 503)]
-  [DataRow(typeof(ServiceEx), 500)]
+  [DataRow(typeof(ValidationException), 400)]
+  [DataRow(typeof(NotFoundException), 404)]
+  [DataRow(typeof(ConflictException), 409)]
+  [DataRow(typeof(LockedException), 423)]
+  [DataRow(typeof(RateLimitException), 429)]
+  [DataRow(typeof(UnauthorizedException), 401)]
+  [DataRow(typeof(ForbiddenException), 403)]
+  [DataRow(typeof(DependencyException), 503)]
+  [DataRow(typeof(ServiceException), 500)]
   public void ToHttpResult_MapsMarkerToStatus(Type exceptionType, int expectedStatus)
   {
     var ex = (Exception)Activator.CreateInstance(exceptionType, "boom")!;
@@ -198,7 +198,7 @@ public sealed class ExceptionToHttpResultMapperTests
   [TestMethod]
   public void ToHttpResult_InnerExceptionDrivesClassification()
   {
-    var inner = new NotFoundEx("missing");
+    var inner = new NotFoundException("missing");
     var outer = new InvalidOperationException("outer", inner);
 
     var result = ExceptionToHttpResultMapper.ToHttpResult(outer, activity: null);
@@ -212,9 +212,9 @@ public sealed class ExceptionToHttpResultMapperTests
   [TestMethod]
   public void ToHttpResult_InnermostClassifiableExceptionDrivesClassification()
   {
-    var inner = new NotFoundEx("missing");
-    var middle = new DependencyValidationEx("dependency validation", inner);
-    var outer = new ServiceEx("service failure", middle);
+    var inner = new NotFoundException("missing");
+    var middle = new DependencyValidationException("dependency validation", inner);
+    var outer = new ServiceException("service failure", middle);
 
     var result = ExceptionToHttpResultMapper.ToHttpResult(outer, activity: null);
 
@@ -228,7 +228,7 @@ public sealed class ExceptionToHttpResultMapperTests
   [TestMethod]
   public void ToHttpResult_NeverLeaksExceptionSource()
   {
-    var ex = new ServiceEx("secret details about internal types") { Source = "arolariu.Backend.Invoices" };
+    var ex = new ServiceException("secret details about internal types") { Source = "arolariu.Backend.Invoices" };
 
     var result = ExceptionToHttpResultMapper.ToHttpResult(ex, activity: null);
 
@@ -253,7 +253,7 @@ public sealed class ExceptionToHttpResultMapperTests
     using var activity = new Activity("test");
     activity.Start();
 
-    var result = ExceptionToHttpResultMapper.ToHttpResult(new ServiceEx("boom"), activity);
+    var result = ExceptionToHttpResultMapper.ToHttpResult(new ServiceException("boom"), activity);
 
     Assert.IsInstanceOfType<ProblemHttpResult>(result);
     var problem = (ProblemHttpResult)result;
@@ -264,7 +264,7 @@ public sealed class ExceptionToHttpResultMapperTests
   [TestMethod]
   public void ToHttpResult_RateLimited_IncludesRetryAfterExtension()
   {
-    var result = ExceptionToHttpResultMapper.ToHttpResult(new RateLimitEx("throttled"), activity: null);
+    var result = ExceptionToHttpResultMapper.ToHttpResult(new RateLimitException("throttled"), activity: null);
 
     Assert.IsInstanceOfType<ProblemHttpResult>(result);
     var problem = (ProblemHttpResult)result;
@@ -286,9 +286,9 @@ public sealed class ExceptionToHttpResultMapperTests
 
   /// <summary>Timeout exceptions map to HTTP 504 Gateway Timeout with correct problem type URI.</summary>
   [TestMethod]
-  public void ToHttpResult_TimeoutException_Returns504()
+  public void ToHttpResult_TimeoutMarkerExceptionception_Returns504()
   {
-    var result = ExceptionToHttpResultMapper.ToHttpResult(new TimeoutEx("cosmos took too long"), null);
+    var result = ExceptionToHttpResultMapper.ToHttpResult(new TimeoutMarkerException("cosmos took too long"), null);
 
     var problem = (ProblemHttpResult)result;
     Assert.AreEqual(504, problem.StatusCode);
@@ -297,11 +297,11 @@ public sealed class ExceptionToHttpResultMapperTests
 
   /// <summary>504 responses never leak internal exception messages (server-side status).</summary>
   [TestMethod]
-  public void ToHttpResult_TimeoutException_DoesNotLeakInternalMessage()
+  public void ToHttpResult_TimeoutMarkerExceptionception_DoesNotLeakInternalMessage()
   {
     const string secret = "Server=tcp:internal;******";
 
-    var result = ExceptionToHttpResultMapper.ToHttpResult(new TimeoutEx(secret), null);
+    var result = ExceptionToHttpResultMapper.ToHttpResult(new TimeoutMarkerException(secret), null);
 
     var problem = (ProblemHttpResult)result;
     var detail = problem.ProblemDetails.Detail ?? string.Empty;

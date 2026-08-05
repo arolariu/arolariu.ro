@@ -22,15 +22,15 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class ExceptionMappingHandlerTests
 {
-  private sealed class NotFoundEx : Exception, INotFoundException
+  private sealed class NotFoundException : Exception, INotFoundException
   {
-    public NotFoundEx(string m) : base(m) { }
+    public NotFoundException(string m) : base(m) { }
 
-    public NotFoundEx()
+    public NotFoundException()
     {
     }
 
-    public NotFoundEx(string message, Exception innerException) : base(message, innerException)
+    public NotFoundException(string message, Exception innerException) : base(message, innerException)
     {
     }
   }
@@ -79,7 +79,7 @@ public sealed class ExceptionMappingHandlerTests
     // Arrange
     var handler = new ExceptionMappingHandler();
     var context = CreateHttpContextWithLoggingServices();
-    var exception = new NotFoundEx("Resource not found");
+    var exception = new NotFoundException("Resource not found");
 
     // Act
     var handled = await handler.TryHandleAsync(context, exception, CancellationToken.None);
@@ -186,7 +186,7 @@ public sealed class ExceptionMappingHandlerTests
     var context = CreateHttpContextWithLoggingServices();
 
     // Act
-    await handler.TryHandleAsync(context, new NotFoundEx("nope"), CancellationToken.None);
+    await handler.TryHandleAsync(context, new NotFoundException("nope"), CancellationToken.None);
 
     // Assert — read response body and confirm it carries the active trace identifier.
     var body = await ReadResponseBodyAsync(context);
