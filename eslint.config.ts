@@ -8,7 +8,6 @@ import eslintPluginPromise from "eslint-plugin-promise";
 import eslintPluginReact from "eslint-plugin-react";
 import eslintPluginReactDOM from "eslint-plugin-react-dom";
 import eslintPluginReactHooks from "eslint-plugin-react-hooks";
-import eslintPluginReactHooksExtra from "eslint-plugin-react-hooks-extra";
 import eslintPluginReactNamingConvention from "eslint-plugin-react-naming-convention";
 import eslintPluginReactWebAPI from "eslint-plugin-react-web-api";
 import eslintPluginReactX from "eslint-plugin-react-x";
@@ -18,6 +17,41 @@ import eslintPluginSonarJs from "eslint-plugin-sonarjs";
 import eslintPluginUnicorn from "eslint-plugin-unicorn";
 import globals from "globals";
 import tseslint from "typescript-eslint";
+
+// Opinionated rules newly enabled by unicorn 64 -> 73 via `configs.all` (nine majors of additions)
+// that this codebase deliberately never adopted. Each is style/preference, a too-new runtime API, or a
+// false positive in our context (SSR, module-level caches, safe constant replacements). Shared across all
+// blocks so behaviour stays consistent monorepo-wide. Genuine unicorn bug-catchers are intentionally left on.
+const unicornEslint10Overrides = {
+  "unicorn/no-asterisk-prefix-in-documentation-comments": "off", // We use standard JSDoc `*`-prefixed comment blocks.
+  "unicorn/single-line-block-comment-style": "off", // We allow single-line block comments.
+  "unicorn/name-replacements": "off", // Biased; conflicts with React terms (props, ref) and our domain naming.
+  "unicorn/consistent-arrow-return-style": "off", // Arrow body style is our choice; Prettier owns formatting.
+  "unicorn/try-complexity": "off", // We don't impose a try-block complexity limit.
+  "unicorn/prefer-temporal": "off", // The Temporal API is not yet available in our Node/browser runtime targets.
+  "unicorn/no-top-level-assignment-in-function": "off", // We use module-level caches/singletons (lazy init, circuit breakers, request dedup).
+  "unicorn/no-unreadable-new-expression": "off", // Biased readability rule.
+  "unicorn/prefer-error-is-error": "off", // Error.isError is too new for our runtime targets; we use instanceof.
+  "unicorn/comment-content": "off", // We don't enforce specific wording inside comments.
+  "unicorn/consistent-boolean-name": "off", // Biased boolean-naming rule.
+  "unicorn/no-barrel-files": "off", // We deliberately use barrel/index files.
+  "unicorn/prefer-global-number-constants": "off", // We allow explicit Number.* constants.
+  "unicorn/no-unreadable-for-of-expression": "off", // Biased readability rule.
+  "unicorn/consistent-conditional-object-spread": "off", // We allow both conditional object-spread styles.
+  "unicorn/prefer-early-return": "off", // We allow nested conditionals where clearer.
+  "unicorn/prefer-hoisting-branch-code": "off", // Biased; we keep code local to its branch.
+  "unicorn/no-useless-else": "off", // We allow else after return for clarity (matches no-else-return: off).
+  "unicorn/prefer-await": "off", // We allow promise chains where appropriate.
+  "unicorn/no-unnecessary-global-this": "off", // globalThis.<x> is SSR-safe access to browser-only globals.
+  "unicorn/prefer-minimal-ternary": "off", // Biased ternary rule.
+  "unicorn/no-useless-coercion": "off", // We allow explicit coercions for clarity/robustness.
+  "unicorn/no-unsafe-string-replacement": "off", // Our replacement values are safe constant literal origins.
+  "unicorn/no-top-level-side-effects": "off", // Some modules intentionally run initialization side effects.
+  "unicorn/prefer-continue": "off", // We allow both `continue` and negated-if loop bodies.
+  "unicorn/no-declarations-before-early-exit": "off", // We allow declarations before guard returns.
+  "unicorn/prefer-uint8array-base64": "off", // Uint8Array base64 methods are too new for our runtime targets.
+  "unicorn/prefer-set-methods": "off", // We allow Set filtering via has(); Set.prototype.difference is newish.
+} satisfies Record<string, "off">;
 
 const websiteEslintConfig: Config = defineConfig({
   name: "[@arolariu/website]",
@@ -52,7 +86,6 @@ const websiteEslintConfig: Config = defineConfig({
     "react-x": eslintPluginReactX,
     // @ts-ignore - the plugin is not typed correctly.
     "react-hooks": eslintPluginReactHooks,
-    "react-hooks-extra": eslintPluginReactHooksExtra,
     "react-web-api": eslintPluginReactWebAPI,
     "react-naming-convention": eslintPluginReactNamingConvention,
     "jsx-a11y": eslintPluginJsxA11y,
@@ -69,7 +102,6 @@ const websiteEslintConfig: Config = defineConfig({
     ...eslintPlugin.configs.recommended.rules,
     ...eslintPlugin.configs.all.rules,
     ...eslintPluginReactDOM.configs.recommended.rules,
-    ...eslintPluginReactHooksExtra.configs.recommended.rules,
     ...eslintPluginReactNamingConvention.configs.recommended.rules,
     ...eslintPluginReactWebAPI.configs.recommended.rules,
     ...eslintPluginReactX.configs["recommended-type-checked"].rules,
@@ -78,6 +110,7 @@ const websiteEslintConfig: Config = defineConfig({
     ...eslintPluginReactHooks.configs.recommended.rules,
     ...eslintPluginReactHooks.configs["recommended-latest"].rules,
     ...eslintPluginUnicorn.configs.all.rules,
+    ...unicornEslint10Overrides,
     ...eslintPluginSecurity.configs.recommended.rules,
     ...eslintPluginSonarJs.configs.recommended.rules,
     ...eslintPluginJsxA11y.configs.recommended.rules,
@@ -135,12 +168,20 @@ const websiteEslintConfig: Config = defineConfig({
     "react/react-in-jsx-scope": "off", // Next.JS injects React in namespace.
     "react/forbid-component-props": "off", // We allow component props.
     "react/destructuring-assignment": "off", // Layout, RSC, RCC props are marked as props.
+
+    // eslint-plugin-react@7.37.5 rules that call ESLint APIs removed in ESLint 10 and crash at runtime; no newer plugin release exists. The spacing rules are owned by Prettier regardless.
+    "react/forward-ref-uses-ref": "off", // Calls removed context.getSourceCode().
+    "react/jsx-curly-spacing": "off", // Calls removed sourceCode.isSpaceBetweenTokens(); Prettier owns spacing.
+    "react/jsx-equals-spacing": "off", // Calls removed sourceCode.isSpaceBetweenTokens(); Prettier owns spacing.
+    "react/jsx-tag-spacing": "off", // Calls removed sourceCode.isSpaceBetweenTokens(); Prettier owns spacing.
     "react/jsx-one-expression-per-line": "off", // We use Prettier for formatting.
     "react/jsx-closing-bracket-location": "off", // We use Prettier for formatting.
     "react/function-component-definition": "off", // Sometimes we use arrow syntax.
-    "react/jsx-filename-extension": [2, {extensions: [".tsx", ".ts"]}],
+    "react/jsx-filename-extension": "off", // Rule calls context.getFilename(), removed in ESLint 10; crashes at runtime (not covered by eslint-plugin-react compat shim).
 
-    "react-hooks-extra/no-direct-set-state-in-use-effect": "off", // We allow direct setState calls in useEffect.
+    "react-x/set-state-in-effect": "off", // We allow direct setState calls in useEffect (react-hooks-extra rule absorbed into react-x@5).
+    "react-x/rules-of-hooks": "off", // Owned by eslint-plugin-react-hooks (React-team-maintained); react-x@5 duplicate.
+    "react-x/exhaustive-deps": "off", // Owned by eslint-plugin-react-hooks (React-team-maintained); react-x@5 duplicate.
 
     "n/no-missing-import": "off", // Barrel and index files are blindly caught by this rule.
     "n/no-unsupported-features/node-builtins": "off", // We use Node.js v24+ built-ins.
@@ -225,6 +266,7 @@ const cvEslintConfig: Config = defineConfig({
     ...eslintPlugin.configs.recommended.rules,
     ...eslintPlugin.configs.all.rules,
     ...eslintPluginUnicorn.configs.all.rules,
+    ...unicornEslint10Overrides,
     ...eslintPluginSecurity.configs.recommended.rules,
     ...eslintPluginSonarJs.configs.recommended.rules,
     ...eslintPluginSonarJs.configs["recommended-legacy"].rules,
@@ -307,7 +349,6 @@ const packagesEslintConfig: Config = defineConfig({
     "react-x": eslintPluginReactX,
     // @ts-ignore - the plugin is not typed correctly.
     "react-hooks": eslintPluginReactHooks,
-    "react-hooks-extra": eslintPluginReactHooksExtra,
     "react-web-api": eslintPluginReactWebAPI,
     "react-naming-convention": eslintPluginReactNamingConvention,
     "jsx-a11y": eslintPluginJsxA11y,
@@ -322,7 +363,6 @@ const packagesEslintConfig: Config = defineConfig({
     ...eslintPlugin.configs.recommended.rules,
     ...eslintPlugin.configs.all.rules,
     ...eslintPluginReactDOM.configs.recommended.rules,
-    ...eslintPluginReactHooksExtra.configs.recommended.rules,
     ...eslintPluginReactNamingConvention.configs.recommended.rules,
     ...eslintPluginReactWebAPI.configs.recommended.rules,
     ...eslintPluginReactX.configs["recommended-type-checked"].rules,
@@ -330,6 +370,7 @@ const packagesEslintConfig: Config = defineConfig({
     // @ts-ignore - the plugin is not typed correctly.
     ...eslintPluginReactHooks.configs.recommended.rules,
     ...eslintPluginUnicorn.configs.all.rules,
+    ...unicornEslint10Overrides,
     ...eslintPluginSecurity.configs.recommended.rules,
     ...eslintPluginSonarJs.configs.recommended.rules,
     ...eslintPluginJsxA11y.configs.recommended.rules,
@@ -382,7 +423,13 @@ const packagesEslintConfig: Config = defineConfig({
     "react/jsx-closing-bracket-location": "off", // We use Prettier for formatting.
     "react/function-component-definition": "off", // Sometimes we use arrow syntax.
     "react/jsx-no-constructed-context-values": "off", // Another ShadCN limitation...
-    "react/jsx-filename-extension": [2, {extensions: [".tsx", ".ts"]}],
+
+    // eslint-plugin-react@7.37.5 rules that call ESLint APIs removed in ESLint 10 and crash at runtime; no newer plugin release exists. The spacing rules are owned by Prettier regardless.
+    "react/forward-ref-uses-ref": "off", // Calls removed context.getSourceCode().
+    "react/jsx-curly-spacing": "off", // Calls removed sourceCode.isSpaceBetweenTokens(); Prettier owns spacing.
+    "react/jsx-equals-spacing": "off", // Calls removed sourceCode.isSpaceBetweenTokens(); Prettier owns spacing.
+    "react/jsx-tag-spacing": "off", // Calls removed sourceCode.isSpaceBetweenTokens(); Prettier owns spacing.
+    "react/jsx-filename-extension": "off", // Rule calls context.getFilename(), removed in ESLint 10; crashes at runtime (not covered by eslint-plugin-react compat shim).
 
     "react-hooks/refs": "off", // Another ShadCN limitation...
     "react-hooks/purity": "off", // Some hooks are not pure due to randomness (e.g. confetti).
@@ -392,9 +439,10 @@ const packagesEslintConfig: Config = defineConfig({
     "react-x/no-use-context": "off", // We use React Context API from React 18.
     "react-x/no-forward-ref": "off", // We use forwardRef where needed, from React 18.
     "react-x/no-array-index-key": "off", // Another ShadCN limitation...
-    "react-x/no-unstable-context": "off", // Another ShadCN limitation...
     "react-x/no-context-provider": "off", // We use React Context API from React 18.
     "react-x/no-unstable-context-value": "off", // Another ShadCN limitation...
+    "react-x/rules-of-hooks": "off", // Owned by eslint-plugin-react-hooks (React-team-maintained); react-x@5 duplicate.
+    "react-x/exhaustive-deps": "off", // Owned by eslint-plugin-react-hooks (React-team-maintained); react-x@5 duplicate.
 
     "n/no-unpublished-import": "off", // Packages are published; false positive.
     "n/no-missing-import": "off", // Barrel and index files are blindly caught by this rule.
@@ -467,6 +515,7 @@ const statusEslintConfig: Config = defineConfig({
     ...eslintPlugin.configs.recommended.rules,
     ...eslintPlugin.configs.all.rules,
     ...eslintPluginUnicorn.configs.all.rules,
+    ...unicornEslint10Overrides,
     ...eslintPluginSecurity.configs.recommended.rules,
     ...eslintPluginSonarJs.configs.recommended.rules,
     ...eslintPluginSonarJs.configs["recommended-legacy"].rules,
