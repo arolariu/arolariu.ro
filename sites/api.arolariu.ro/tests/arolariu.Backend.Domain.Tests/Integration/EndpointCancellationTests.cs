@@ -13,6 +13,7 @@ using arolariu.Backend.Domain.Invoices.Services.Processing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 using Moq;
 
@@ -65,6 +66,76 @@ public sealed class EndpointCancellationTests
   // ---------------------------------------------------------------------------
   // Tests
   // ---------------------------------------------------------------------------
+
+  /// <summary>
+  /// A stub <see cref="IHostApplicationLifetime"/> whose <see cref="ApplicationStopping"/> token is
+  /// already cancelled, simulating a write that begins while the host is shutting down.
+  /// </summary>
+  private sealed class StoppingLifetime : IHostApplicationLifetime, IDisposable
+  {
+    private readonly CancellationTokenSource stopping;
+
+    public StoppingLifetime()
+    {
+      stopping = new CancellationTokenSource();
+      stopping.Cancel();
+    }
+
+    /// <inheritdoc/>
+    public CancellationToken ApplicationStarted => CancellationToken.None;
+
+    /// <inheritdoc/>
+    public CancellationToken ApplicationStopping => stopping.Token;
+
+    /// <inheritdoc/>
+    public CancellationToken ApplicationStopped => CancellationToken.None;
+
+    /// <inheritdoc/>
+    public void StopApplication() { }
+
+    /// <inheritdoc/>
+    public void Dispose() => stopping.Dispose();
+  }
+
+  /// <summary>
+  /// Verifies the write-scope arm of the timeout discrimination: when the write scope itself is
+  /// cancelled (here by application shutdown) while NO request-timeout feature is present, the
+  /// endpoint must still answer 504 rather than 499.
+  /// </summary>
+  /// <remarks>
+  /// This is the <c>writeScope.IsCancellationRequested</c> disjunct of <c>HandleCancellation</c>,
+  /// which the client-disconnect and middleware-timeout tests do not reach. It is the reason the
+  /// write tier exists: a write must not be reported as a client abort when the server is the one
+  /// that gave up on it.
+  /// </remarks>
+  [Fact]
+  public async Task DeleteInvoicesAsync_WhenWriteScopeCancelled_Returns504NotClientClosed()
+  {
+    var processing = new Mock<IInvoiceProcessingService>();
+    processing
+      .Setup(p => p.DeleteInvoices(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new OperationCanceledException());
+
+    // ForWrite links IHostApplicationLifetime.ApplicationStopping, so an already-stopping host
+    // yields a scope that is cancelled from the moment it is created.
+    using var lifetime = new StoppingLifetime();
+    var services = new ServiceCollection();
+    services.AddSingleton<IHostApplicationLifetime>(lifetime);
+
+    var context = new DefaultHttpContext { RequestServices = services.BuildServiceProvider() };
+    var claims = new List<Claim> { new Claim("userIdentifier", Guid.NewGuid().ToString()) };
+    context.User = new ClaimsPrincipal(new ClaimsIdentity(claims, authenticationType: "TestAuth"));
+    var accessor = new HttpContextAccessor { HttpContext = context };
+
+    // Deliberately NO IHttpRequestTimeoutFeature — so WasTimeout() is false and only the write
+    // scope can drive the 504. If the write-scope arm regressed, this would return 499.
+    var result = await InvoiceEndpoints
+      .DeleteInvoicesAsync(processing.Object, accessor)
+      .ConfigureAwait(true);
+
+    var statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
+    Assert.Equal(StatusCodes.Status504GatewayTimeout, statusResult.StatusCode);
+  }
 
   /// <summary>
   /// Verifies that when the processing service throws <see cref="OperationCanceledException"/>

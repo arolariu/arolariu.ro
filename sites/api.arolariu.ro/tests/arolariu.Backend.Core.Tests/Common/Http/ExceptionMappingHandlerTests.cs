@@ -153,7 +153,8 @@ public sealed class ExceptionMappingHandlerTests
 
     // The timeout path must emit the same RFC 7807 contract as the middleware path, not a bare status.
     context.Response.Body.Seek(0, SeekOrigin.Begin);
-    var body = await new StreamReader(context.Response.Body).ReadToEndAsync();
+    using var reader = new StreamReader(context.Response.Body);
+    var body = await reader.ReadToEndAsync();
     Assert.IsTrue(
       body.Contains(ProblemTypeUris.Timeout, StringComparison.Ordinal),
       $"Expected a ProblemDetails body carrying the timeout problem type, got: '{body}'.");

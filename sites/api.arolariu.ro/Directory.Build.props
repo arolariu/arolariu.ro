@@ -15,23 +15,22 @@
     <SignAssembly>False</SignAssembly>
   </PropertyGroup>
 
-  <!-- Debug Configuration -->
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'"
-    Label="Debug Build Settings">
-    <WarningLevel>9999</WarningLevel>
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
-    <Deterministic>True</Deterministic>
-    <NoWarn>S1135, NU1903, NU1902</NoWarn>
-  </PropertyGroup>
+  <!--
+    Compiler strictness.
 
-  <!-- Release Configuration -->
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'"
-    Label="Release Build Settings">
+    These MUST live in an unconditional PropertyGroup. Directory.Build.props is imported by
+    Microsoft.Common.props before $(Configuration) and $(Platform) receive their defaults, so a
+    PropertyGroup guarded by Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'" evaluates
+    that expression as '|' and is silently skipped — the settings never apply and the build looks
+    strict while enforcing nothing. Debug and Release previously declared identical values, so a
+    single unconditional group is exactly equivalent to the intent, minus the failure mode.
+  -->
+  <PropertyGroup Label="Compiler Strictness">
     <WarningLevel>9999</WarningLevel>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
     <Deterministic>True</Deterministic>
+    <!-- S1135: TODO comments. NU1902/NU1903: transitive package vulnerability advisories. -->
     <NoWarn>S1135, NU1903, NU1902</NoWarn>
   </PropertyGroup>
 
