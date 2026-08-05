@@ -342,14 +342,14 @@ internal static class WebApplicationBuilderExtensions
       {
         Timeout = RequestCancellation.CrudWriteBudget,
         TimeoutStatusCode = StatusCodes.Status504GatewayTimeout,
-        WriteTimeoutResponse = WriteTimeoutProblemDetailsAsync,
+        WriteTimeoutResponse = TimeoutProblemDetails.WriteAsync,
       });
 
       options.AddPolicy(RequestTimeoutPolicies.Analysis, new RequestTimeoutPolicy
       {
         Timeout = RequestCancellation.AnalysisWriteBudget,
         TimeoutStatusCode = StatusCodes.Status504GatewayTimeout,
-        WriteTimeoutResponse = WriteTimeoutProblemDetailsAsync,
+        WriteTimeoutResponse = TimeoutProblemDetails.WriteAsync,
       });
     });
 
@@ -360,33 +360,5 @@ internal static class WebApplicationBuilderExtensions
     builder.AddOTelMetering();
     builder.AddOTelTracing();
     builder.AddAuthServices();
-  }
-
-  /// <summary>
-  /// Emits an RFC 7807 ProblemDetails body for a request that exceeded its timeout policy,
-  /// matching the shape produced by <see cref="ExceptionToHttpResultMapper"/> so clients see
-  /// exactly one error contract.
-  /// </summary>
-  /// <param name="context">The timed-out request's context.</param>
-  /// <returns>A task that completes when the response body has been written.</returns>
-  private static async Task WriteTimeoutProblemDetailsAsync(HttpContext context)
-  {
-    var traceId = Activity.Current?.TraceId.ToString();
-    var problem = new ProblemDetails
-    {
-      Status = StatusCodes.Status504GatewayTimeout,
-      Title = "Operation timed out",
-      Type = ProblemTypeUris.Timeout,
-      Detail = "The operation took too long to complete. Please try again later.",
-    };
-
-    if (!string.IsNullOrEmpty(traceId))
-    {
-      problem.Extensions["traceId"] = traceId;
-    }
-
-    await context.Response
-      .WriteAsJsonAsync(problem, options: null, contentType: "application/problem+json")
-      .ConfigureAwait(false);
   }
 }

@@ -150,6 +150,16 @@ public sealed class ExceptionMappingHandlerTests
     Assert.IsTrue(handled);
     Assert.AreEqual(504, context.Response.StatusCode);
     Assert.AreEqual(ActivityStatusCode.Error, activity!.Status);
+
+    // The timeout path must emit the same RFC 7807 contract as the middleware path, not a bare status.
+    context.Response.Body.Seek(0, SeekOrigin.Begin);
+    var body = await new StreamReader(context.Response.Body).ReadToEndAsync();
+    Assert.IsTrue(
+      body.Contains(ProblemTypeUris.Timeout, StringComparison.Ordinal),
+      $"Expected a ProblemDetails body carrying the timeout problem type, got: '{body}'.");
+    Assert.IsFalse(
+      body.Contains("hunter", StringComparison.OrdinalIgnoreCase),
+      "The 504 body must not echo internal exception text.");
   }
 
   /// <summary>

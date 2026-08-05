@@ -65,39 +65,22 @@ public static partial class AuthEndpoints
     [FromBody] object empty,
     HttpContext httpContext)
   {
-    using var writeScope = RequestCancellation.ForWrite(httpContext, RequestCancellation.CrudWriteBudget);
     var logger = loggerFactory.CreateLogger("arolariu.Backend.Core.Auth");
-    try
-    {
-      if (empty != null)
-      {
-        await signInManager.SignOutAsync().ConfigureAwait(false);
-        logger.LogUserLoggedOut();
-        AuthMetrics.Logouts.Add(1);
-        return Results.Ok();
-      }
 
-      logger.LogLogoutFailed();
-      AuthMetrics.LogoutFailures.Add(1);
-      return Results.Unauthorized();
-    }
-    catch (OperationCanceledException)
+    // No write scope here, deliberately. SignInManager.SignOutAsync() exposes no CancellationToken
+    // overload, so a scope would be created, never observed, and its catch would be unreachable.
+    // The route's "crud" request-timeout policy still bounds this endpoint: if it ever hung, the
+    // RequestTimeouts middleware produces the 504 because no handler catch intercepts it.
+    if (empty != null)
     {
-      var isTimeout = RequestCancellation.WasTimeout(httpContext) || writeScope.IsCancellationRequested;
-      if (isTimeout)
-      {
-        Activity.Current?.SetStatus(ActivityStatusCode.Error, "Timeout");
-        return TypedResults.Problem(new ProblemDetails
-        {
-          Status = StatusCodes.Status504GatewayTimeout,
-          Title = "Operation timed out",
-          Type = ProblemTypeUris.Timeout,
-          Detail = "The operation took too long to complete. Please try again later.",
-        });
-      }
-
-      Activity.Current?.SetTag("cancellation.reason", "client_disconnect");
-      return TypedResults.StatusCode(StatusCodes.Status499ClientClosedRequest);
+      await signInManager.SignOutAsync().ConfigureAwait(false);
+      logger.LogUserLoggedOut();
+      AuthMetrics.Logouts.Add(1);
+      return Results.Ok();
     }
+
+    logger.LogLogoutFailed();
+    AuthMetrics.LogoutFailures.Add(1);
+    return Results.Unauthorized();
   }
 }

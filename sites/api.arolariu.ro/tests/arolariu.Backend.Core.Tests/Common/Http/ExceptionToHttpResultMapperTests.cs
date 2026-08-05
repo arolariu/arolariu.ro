@@ -286,7 +286,7 @@ public sealed class ExceptionToHttpResultMapperTests
 
   /// <summary>Timeout exceptions map to HTTP 504 Gateway Timeout with correct problem type URI.</summary>
   [TestMethod]
-  public void ToHttpResult_TimeoutMarkerExceptionception_Returns504()
+  public void ToHttpResult_TimeoutMarkerException_Returns504()
   {
     var result = ExceptionToHttpResultMapper.ToHttpResult(new TimeoutMarkerException("cosmos took too long"), null);
 
@@ -297,7 +297,7 @@ public sealed class ExceptionToHttpResultMapperTests
 
   /// <summary>504 responses never leak internal exception messages (server-side status).</summary>
   [TestMethod]
-  public void ToHttpResult_TimeoutMarkerExceptionception_DoesNotLeakInternalMessage()
+  public void ToHttpResult_TimeoutMarkerException_DoesNotLeakInternalMessage()
   {
     const string secret = "Server=tcp:internal;******";
 

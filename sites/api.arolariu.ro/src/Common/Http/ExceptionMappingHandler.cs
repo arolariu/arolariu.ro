@@ -68,19 +68,18 @@ public sealed class ExceptionMappingHandler : IExceptionHandler
     // endpoint with no local catch).
     if (exception is OperationCanceledException)
     {
-      var isTimeout = RequestCancellation.WasTimeout(httpContext);
-
-      if (isTimeout)
+      if (RequestCancellation.WasTimeout(httpContext))
       {
         Activity.Current?.SetStatus(ActivityStatusCode.Error, "Timeout");
-        httpContext.Response.StatusCode = StatusCodes.Status504GatewayTimeout;
-      }
-      else
-      {
-        Activity.Current?.SetTag("cancellation.reason", "client_disconnect");
-        httpContext.Response.StatusCode = StatusCodes.Status499ClientClosedRequest;
+        await TimeoutProblemDetails.WriteAsync(httpContext).ConfigureAwait(false);
+        return true;
       }
 
+      // Client disconnect: the caller is gone, so a body would go nowhere. Setting the status is
+      // what matters — ASP.NET Core's hosting diagnostics log it, which is how this path stays
+      // visible without being counted as a server fault.
+      Activity.Current?.SetTag("cancellation.reason", "client_disconnect");
+      httpContext.Response.StatusCode = StatusCodes.Status499ClientClosedRequest;
       return true;
     }
 
