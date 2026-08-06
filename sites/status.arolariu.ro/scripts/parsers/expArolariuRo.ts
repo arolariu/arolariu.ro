@@ -1,13 +1,13 @@
-/**
+﻿/**
  * Parser for the FastAPI experimental service at `exp.arolariu.ro`. The
  * endpoint follows a similar `{status}` convention to the main site, with
  * one extra value: `"NotReady"` (emitted during warmup/cold-start) maps
  * to `Unhealthy` rather than `Degraded` — a NotReady instance cannot
  * serve traffic.
  */
-import type {HealthStatus, ProbeResult} from "../../src/lib/types/status";
-import type {ProbeContext, RawResponse} from "./arolariuRo";
-import {reconcileBodyVsHttp} from "./shared";
+import type {HealthStatus, ProbeResult} from "../../src/lib/types/status.ts";
+import type {ProbeContext, RawResponse} from "./arolariuRo.ts";
+import {reconcileBodyVsHttp} from "./shared.ts";
 
 /**
  * Body→HealthStatus coercion specific to `exp.arolariu.ro`:

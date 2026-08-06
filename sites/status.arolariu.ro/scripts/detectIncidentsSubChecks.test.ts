@@ -1,6 +1,6 @@
-// @vitest-environment node
+﻿// @vitest-environment node
 import {describe, expect, it} from "vitest";
-import {subCheckSignals} from "./detectIncidentsSubChecks";
+import {subCheckSignals} from "./detectIncidentsSubChecks.ts";
 
 describe("subCheckSignals", () => {
   it("returns [] when no subChecks on the probe", () => {

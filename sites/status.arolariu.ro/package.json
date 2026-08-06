@@ -18,8 +18,8 @@
     "test:watch": "vitest",
     "test:coverage": "svelte-kit sync && vitest run --coverage",
     "test:e2e": "playwright test",
-    "probe": "tsx scripts/probe.ts",
-    "probe:all": "tsx scripts/probe.ts && tsx scripts/aggregate.ts && tsx scripts/detectIncidents.ts"
+    "probe": "node scripts/probe.ts",
+    "probe:all": "node scripts/probe.ts && node scripts/aggregate.ts && node scripts/detectIncidents.ts"
   },
   "devDependencies": {
     "@playwright/test": "*",
@@ -33,7 +33,6 @@
     "svelte-adapter-azure-swa": "*",
     "svelte-check": "*",
     "svelte": "*",
-    "tsx": "*",
     "typescript": "*",
     "vite": "*",
     "vitest": "*"

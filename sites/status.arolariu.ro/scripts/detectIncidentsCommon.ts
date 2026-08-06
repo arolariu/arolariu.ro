@@ -1,4 +1,4 @@
-import type {HealthStatus, Incident, IncidentSeverity, IncidentsFile, ServiceId} from "../src/lib/types/status";
+﻿import type {HealthStatus, Incident, IncidentSeverity, IncidentsFile, ServiceId} from "../src/lib/types/status.ts";
 
 /**
  * Shared state-machine helpers for incident detection. Neither the

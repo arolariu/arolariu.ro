@@ -1,4 +1,4 @@
-import type {HealthStatus} from "../../src/lib/types/status";
+﻿import type {HealthStatus} from "../../src/lib/types/status.ts";
 
 /**
  * Reconciles a body-reported health status against the HTTP status code.
