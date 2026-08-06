@@ -48,11 +48,7 @@
   </ItemGroup>
   <ItemGroup Label="Azure AI Packages">
     <PackageVersion Include="Azure.AI.OpenAI" Version="2.9.0-beta.1" />
-    <PackageVersion Include="Azure.AI.OpenAI.Assistants" Version="1.0.0-beta.4" />
     <PackageVersion Include="Azure.AI.Translation.Text" Version="2.0.0" />
-  </ItemGroup>
-  <ItemGroup Label="Azure Cognitive Services Packages">
-    <PackageVersion Include="Microsoft.Azure.CognitiveServices.Vision.ComputerVision" Version="7.0.1" />
   </ItemGroup>
   <ItemGroup Label="Azure Cosmos DB Packages">
     <PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.62.0" />
@@ -90,9 +86,6 @@
   </ItemGroup>
   <ItemGroup Label="Authentication and Security Packages">
     <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.22.0" />
-  </ItemGroup>
-  <ItemGroup Label="Serialization Packages">
-    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
   <ItemGroup Label="Testing Frameworks">
     <PackageVersion Include="coverlet.collector" Version="10.0.1" />

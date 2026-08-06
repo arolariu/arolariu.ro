@@ -22,10 +22,7 @@
     <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
   </ItemGroup>
 
-  <ItemGroup Label="Other Dependencies">
-    <PackageReference Include="Newtonsoft.Json" />
-  </ItemGroup>
-
+  
   <ItemGroup Label="Project References">
     <ProjectReference Include="..\Common\arolariu.Backend.Common.csproj" />
   </ItemGroup>

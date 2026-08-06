@@ -68,12 +68,6 @@
           "MSTest.Analyzers": "4.3.3"
         }
       },
-      "Newtonsoft.Json": {
-        "type": "Direct",
-        "requested": "[13.0.4, )",
-        "resolved": "13.0.4",
-        "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
-      },
       "AspNetCore.HealthChecks.UI.Core": {
         "type": "Transitive",
         "resolved": "9.0.0",
@@ -556,6 +550,11 @@
         "resolved": "4.3.3",
         "contentHash": "cTcdSPIZ8WvchbC5DFmfHxrvVNZCtops+2W94le+Q+mx110Y9L9mqNVVc9flF35lFeL5GsY+rxGBylsjDk4+zg=="
       },
+      "Newtonsoft.Json": {
+        "type": "Transitive",
+        "resolved": "13.0.3",
+        "contentHash": "HrC5BXdl00IP9zeV+0Z848QWPAoCr9P3bDEZguI+gkLcBKAOxix/tLEAAHC+UvDNPv4a2d18lOReHMOagPa+zQ=="
+      },
       "OpenAI": {
         "type": "Transitive",
         "resolved": "2.9.1",
@@ -676,7 +675,6 @@
           "Microsoft.EntityFrameworkCore.Relational": "[10.0.10, )",
           "Microsoft.EntityFrameworkCore.SqlServer": "[10.0.10, )",
           "Microsoft.EntityFrameworkCore.Sqlite.Core": "[10.0.10, )",
-          "Newtonsoft.Json": "[13.0.4, )",
           "OpenTelemetry": "[1.17.0, )",
           "OpenTelemetry.Api": "[1.17.0, )",
           "OpenTelemetry.Exporter.Console": "[1.17.0, )",
@@ -707,7 +705,6 @@
           "Microsoft.Azure.Cosmos": "[3.62.0, )",
           "Microsoft.Extensions.Azure": "[1.14.0, )",
           "Microsoft.VisualStudio.Azure.Containers.Tools.Targets": "[1.23.0, )",
-          "Newtonsoft.Json": "[13.0.4, )",
           "arolariu.Backend.Common": "[1.0.0, )",
           "arolariu.Backend.Core.Auth": "[1.0.0, )",
           "arolariu.Backend.Domain.Invoices": "[1.0.0, )"
@@ -725,7 +722,6 @@
           "Microsoft.Extensions.Identity.Stores": "[10.0.10, )",
           "Microsoft.Extensions.Logging": "[10.0.10, )",
           "Microsoft.IdentityModel.JsonWebTokens": "[8.22.0, )",
-          "Newtonsoft.Json": "[13.0.4, )",
           "arolariu.Backend.Common": "[1.0.0, )"
         }
       },
@@ -734,12 +730,10 @@
         "dependencies": {
           "Azure.AI.DocumentIntelligence": "[1.0.0, )",
           "Azure.AI.OpenAI": "[2.9.0-beta.1, )",
-          "Azure.AI.OpenAI.Assistants": "[1.0.0-beta.4, )",
           "Azure.AI.Translation.Text": "[2.0.0, )",
           "Azure.Storage.Blobs": "[12.29.1, )",
           "Microsoft.Azure.Cosmos": "[3.62.0, )",
           "Microsoft.Extensions.Azure": "[1.14.0, )",
-          "Newtonsoft.Json": "[13.0.4, )",
           "arolariu.Backend.Common": "[1.0.0, )"
         }
       },
@@ -824,16 +818,6 @@
         "dependencies": {
           "Azure.Core": "1.51.1",
           "OpenAI": "2.9.1"
-        }
-      },
-      "Azure.AI.OpenAI.Assistants": {
-        "type": "CentralTransitive",
-        "requested": "[1.0.0-beta.4, )",
-        "resolved": "1.0.0-beta.4",
-        "contentHash": "AzHtUzNtUNS0TqMr3RNy8E2v9H/nfah4NyisMVzbeFJTieTDLOW4IVArTFF0xR/UMmfWvW5N/56zYPXR4hSelg==",
-        "dependencies": {
-          "Azure.Core": "1.39.0",
-          "System.ClientModel": "1.0.0"
         }
       },
       "Azure.AI.Translation.Text": {

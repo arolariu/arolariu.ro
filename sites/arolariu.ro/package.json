@@ -104,7 +104,6 @@
     "cssnano": "*",
     "fake-indexeddb": "*",
     "globals": "*",
-    "msw": "*",
     "postcss": "*",
     "raw-loader": "*",
     "sass": "*",
