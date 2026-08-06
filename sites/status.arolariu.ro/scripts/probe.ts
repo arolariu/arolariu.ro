@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Probe orchestrator. Fan out HTTP probes to every configured service on each
  * cron tick, take N samples per service with spaced delays, aggregate the
  * samples into a single `ProbeResult` per service, and append the results to
@@ -11,12 +11,12 @@ import {appendFileSync, existsSync, mkdirSync, readFileSync} from "node:fs";
 import {join} from "node:path";
 import {performance} from "node:perf_hooks";
 import {setTimeout as sleep} from "node:timers/promises";
-import type {HealthStatus, ProbeResult, ServiceId, SubCheck} from "../src/lib/types/status";
-import {parseApiArolariuRo} from "./parsers/apiArolariuRo";
-import type {ProbeContext, RawResponse} from "./parsers/arolariuRo";
-import {parseArolariuRo} from "./parsers/arolariuRo";
-import {parseCvArolariuRo} from "./parsers/cvArolariuRo";
-import {parseExpArolariuRo} from "./parsers/expArolariuRo";
+import type {HealthStatus, ProbeResult, ServiceId, SubCheck} from "../src/lib/types/status.ts";
+import {parseApiArolariuRo} from "./parsers/apiArolariuRo.ts";
+import type {ProbeContext, RawResponse} from "./parsers/arolariuRo.ts";
+import {parseArolariuRo} from "./parsers/arolariuRo.ts";
+import {parseCvArolariuRo} from "./parsers/cvArolariuRo.ts";
+import {parseExpArolariuRo} from "./parsers/expArolariuRo.ts";
 
 /**
  * Per-sample fetch timeout. Picked well above the 99th percentile for any of

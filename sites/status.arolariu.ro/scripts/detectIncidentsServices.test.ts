@@ -1,7 +1,7 @@
-// @vitest-environment node
+﻿// @vitest-environment node
 import {describe, expect, it} from "vitest";
-import type {ProbeResult} from "../src/lib/types/status";
-import {serviceSignal} from "./detectIncidentsServices";
+import type {ProbeResult} from "../src/lib/types/status.ts";
+import {serviceSignal} from "./detectIncidentsServices.ts";
 
 function mkProbe(partial: Partial<ProbeResult> & Pick<ProbeResult, "service" | "timestamp" | "overall">): ProbeResult {
   return {latencyMs: 100, httpStatus: partial.overall === "Healthy" ? 200 : 503, ...partial};

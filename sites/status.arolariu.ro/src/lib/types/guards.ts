@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Runtime type guards for the status domain model. Every network read
  * (cache or fetch) passes through one of the `isAggregateFile` /
  * `isIncidentsFile` predicates — a schema mismatch throws
@@ -23,7 +23,7 @@ import {
   type ServiceId,
   type ServiceSeries,
   type SubCheck,
-} from "./status";
+} from "./status.ts";
 
 type SubCheckCandidate = Partial<Record<keyof SubCheck, unknown>>;
 type ProbeResultCandidate = Partial<Record<keyof ProbeResult, unknown>>;

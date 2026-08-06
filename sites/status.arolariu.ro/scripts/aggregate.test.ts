@@ -1,10 +1,10 @@
-// @vitest-environment node
+﻿// @vitest-environment node
 import {mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
-import type {AggregateFile, ProbeResult} from "../src/lib/types/status";
-import {bucketStart, rebuildFine, runAggregate} from "./aggregate";
+import type {AggregateFile, ProbeResult} from "../src/lib/types/status.ts";
+import {bucketStart, rebuildFine, runAggregate} from "./aggregate.ts";
 
 describe("bucketStart", () => {
   it("rounds to 30-min boundaries", () => {

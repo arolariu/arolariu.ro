@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Incident detection pipeline. Reads raw probes, extracts per-track signals
  * (one for the main service + one per sub-check), folds them through the
  * incident state machine, and writes the merged `incidents.json`.
@@ -9,12 +9,12 @@
  */
 import {existsSync, mkdirSync, readFileSync, writeFileSync} from "node:fs";
 import {join} from "node:path";
-import {isIncidentsFile} from "../src/lib/types/guards";
-import type {Incident, IncidentsFile, ProbeResult} from "../src/lib/types/status";
-import {applyTrackSignals, type TrackSignal} from "./detectIncidentsCommon";
-import {serviceSignal} from "./detectIncidentsServices";
-import {subCheckSignals} from "./detectIncidentsSubChecks";
-import {readRawProbes} from "./rawProbes";
+import {isIncidentsFile} from "../src/lib/types/guards.ts";
+import type {Incident, IncidentsFile, ProbeResult} from "../src/lib/types/status.ts";
+import {applyTrackSignals, type TrackSignal} from "./detectIncidentsCommon.ts";
+import {serviceSignal} from "./detectIncidentsServices.ts";
+import {subCheckSignals} from "./detectIncidentsSubChecks.ts";
+import {readRawProbes} from "./rawProbes.ts";
 
 const MS_PER_DAY = 86_400_000;
 /** How long resolved incidents linger in `incidents.json` before they are pruned. */

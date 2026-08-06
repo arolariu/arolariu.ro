@@ -1,5 +1,5 @@
-import {describe, expect, it} from "vitest";
-import {reconcileBodyVsHttp} from "./shared";
+﻿import {describe, expect, it} from "vitest";
+import {reconcileBodyVsHttp} from "./shared.ts";
 
 describe("reconcileBodyVsHttp", () => {
   it("overrides Healthy body on 5xx HTTP", () => {

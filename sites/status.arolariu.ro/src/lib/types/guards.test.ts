@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest";
+﻿import {describe, expect, it} from "vitest";
 import {
   isAggregateFile,
   isBucket,
@@ -9,7 +9,7 @@ import {
   isServiceId,
   isServiceSeries,
   isSubCheck,
-} from "./guards";
+} from "./guards.ts";
 
 describe("isHealthStatus", () => {
   it("accepts Healthy, Degraded, Unhealthy", () => {

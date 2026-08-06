@@ -1,5 +1,5 @@
-import type {BucketSize, ProbeResult, ServiceId} from "../src/lib/types/status";
-import {bucketStart, worstStatus, type BucketAccumulator} from "./aggregateCommon";
+﻿import type {BucketSize, ProbeResult, ServiceId} from "../src/lib/types/status.ts";
+import {bucketStart, worstStatus, type BucketAccumulator} from "./aggregateCommon.ts";
 
 /**
  * Bucket probes by service and bucket-start timestamp, accumulating the
