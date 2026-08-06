@@ -101,7 +101,7 @@
   },
   "peerDependencies": {
     "@base-ui/react": "^1",
-    "motion": "^12",
+    "motion": "^13",
     "react-dom": "^18.2 || ^19",
     "react-hook-form": "^7",
     "react": "^18.2 || ^19",

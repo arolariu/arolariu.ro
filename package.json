@@ -192,7 +192,7 @@
     "jose": "6.2.8",
     "jsdom": "30.0.1",
     "lucide-react": "1.28.0",
-    "motion": "12.43.0",
+    "motion": "13.0.0",
     "msw": "2.15.0",
     "nanospinner": "1.2.2",
     "next-intl": "4.13.5",
