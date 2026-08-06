@@ -1,5 +1,5 @@
-import type {BucketSize, ProbeResult, ServiceId} from "../src/lib/types/status";
-import {bucketStart, type BucketAccumulator} from "./aggregateCommon";
+﻿import type {BucketSize, ProbeResult, ServiceId} from "../src/lib/types/status.ts";
+import {bucketStart, type BucketAccumulator} from "./aggregateCommon.ts";
 
 /**
  * Bucket the sub-check results out of each probe, grouped by

@@ -1,5 +1,5 @@
-import {describe, expect, it} from "vitest";
-import {parseArolariuRo} from "./arolariuRo";
+﻿import {describe, expect, it} from "vitest";
+import {parseArolariuRo} from "./arolariuRo.ts";
 
 const ctx = {timestamp: "2026-04-19T14:00:00Z", latencyMs: 142};
 

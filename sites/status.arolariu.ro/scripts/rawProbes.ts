@@ -1,6 +1,6 @@
-import {existsSync, readdirSync, readFileSync} from "node:fs";
+﻿import {existsSync, readdirSync, readFileSync} from "node:fs";
 import {join} from "node:path";
-import type {ProbeResult} from "../src/lib/types/status";
+import type {ProbeResult} from "../src/lib/types/status.ts";
 
 /**
  * Reads all probe results from `<dataDir>/raw/*.jsonl`.

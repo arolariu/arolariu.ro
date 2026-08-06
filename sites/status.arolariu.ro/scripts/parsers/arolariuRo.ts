@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Parser for the main Next.js site (`arolariu.ro`). Health is reported via
  * `/api/health` as `{status: "Healthy" | "Degraded" | "Unhealthy"}`; no
  * sub-checks are exposed.
@@ -7,8 +7,8 @@
  * because it was the first parser written — the other parsers re-import
  * them from here rather than a dedicated types module.
  */
-import type {HealthStatus, ProbeResult} from "../../src/lib/types/status";
-import {reconcileBodyVsHttp} from "./shared";
+import type {HealthStatus, ProbeResult} from "../../src/lib/types/status.ts";
+import {reconcileBodyVsHttp} from "./shared.ts";
 
 /**
  * Normalised shape of a single HTTP probe response handed to every parser.

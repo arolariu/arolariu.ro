@@ -1,14 +1,14 @@
-/**
+﻿/**
  * Parser for the .NET backend at `api.arolariu.ro`. The endpoint uses the
  * ASP.NET `AspNetCore.HealthChecks.UI` payload shape
  * (`{status, entries: {name: {status, duration, description}}}`) so this
  * parser is also responsible for unpacking sub-check entries and
  * converting .NET `TimeSpan` strings into milliseconds.
  */
-import type {HealthStatus, ProbeResult, SubCheck} from "../../src/lib/types/status";
-import {sanitizeDescription} from "../sanitize";
-import type {ProbeContext, RawResponse} from "./arolariuRo";
-import {reconcileBodyVsHttp} from "./shared";
+import type {HealthStatus, ProbeResult, SubCheck} from "../../src/lib/types/status.ts";
+import {sanitizeDescription} from "../sanitize.ts";
+import type {ProbeContext, RawResponse} from "./arolariuRo.ts";
+import {reconcileBodyVsHttp} from "./shared.ts";
 
 /** One entry in the HealthChecks-UI `entries` dictionary. */
 interface UiEntry {

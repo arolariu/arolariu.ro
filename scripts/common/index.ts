@@ -7,9 +7,84 @@
  * They are intentionally runtime-lightweight and avoid importing heavy toolchains.
  */
 
-import {createSpinner} from "nanospinner";
 import {spawn} from "node:child_process";
 import {styleText} from "node:util";
+
+// ============================================================================
+// Inline TTY-aware spinner (replaces the nanospinner package)
+// ============================================================================
+
+/**
+ * Spinner instance returned by {@link createSpinner}.
+ * Surface matches the nanospinner API used in this file.
+ */
+interface Spinner {
+  /** Begin animating the spinner in the terminal. */
+  start(): Spinner;
+  /** Update the spinner label while it is running. */
+  update(opts: {text: string}): Spinner;
+  /** Stop the spinner and print a success line. */
+  success(opts: {text: string}): void;
+  /** Stop the spinner and print an error line. */
+  error(opts: {text: string}): void;
+}
+
+/**
+ * Creates a minimal TTY-aware spinner that matches the nanospinner API surface.
+ *
+ * @param initialText - The initial label displayed next to the spinner.
+ * @returns A {@link Spinner} instance.
+ *
+ * @remarks
+ * When stdout is not a TTY (CI, pipes) the spinner is silent and only the
+ * final success/error line is printed, keeping logs clean.
+ */
+function createSpinner(initialText: string): Spinner {
+  const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+  const isTTY = Boolean(process.stdout.isTTY);
+  let text = initialText;
+  let frameIndex = 0;
+  let timer: NodeJS.Timeout | null = null;
+
+  function render(): void {
+    if (!isTTY) return;
+    process.stdout.write(`\r${styleText("cyan", frames[frameIndex]!)} ${text}`);
+    frameIndex = (frameIndex + 1) % frames.length;
+  }
+
+  function stop(): void {
+    if (timer !== null) {
+      clearInterval(timer);
+      timer = null;
+    }
+    if (isTTY) {
+      process.stdout.write("\r\x1b[K");
+    }
+  }
+
+  const spinner: Spinner = {
+    start(): Spinner {
+      if (isTTY) {
+        timer = setInterval(render, 80);
+        timer.unref();
+      }
+      return spinner;
+    },
+    update(opts: {text: string}): Spinner {
+      text = opts.text;
+      return spinner;
+    },
+    success(opts: {text: string}): void {
+      stop();
+      console.log(`${styleText("green", "✔")} ${opts.text}`);
+    },
+    error(opts: {text: string}): void {
+      stop();
+      console.log(`${styleText("red", "✖")} ${opts.text}`);
+    },
+  };
+  return spinner;
+}
 
 /**
  * Runs a command with a spinner and captures output.

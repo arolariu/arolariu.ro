@@ -1,4 +1,4 @@
-import type {Bucket, BucketSize, HealthStatus, SubCheckSummary} from "../src/lib/types/status";
+﻿import type {Bucket, BucketSize, HealthStatus, SubCheckSummary} from "../src/lib/types/status.ts";
 
 /**
  * Shared bucket/aggregation helpers used by the service-level and sub-check

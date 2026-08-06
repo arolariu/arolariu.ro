@@ -1,9 +1,9 @@
-// @vitest-environment node
+﻿// @vitest-environment node
 import {existsSync, mkdtempSync, readFileSync, rmSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {runProbe} from "./probe";
+import {runProbe} from "./probe.ts";
 
 describe("runProbe", () => {
   let dataDir: string;

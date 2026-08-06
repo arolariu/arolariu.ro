@@ -9,6 +9,51 @@ format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 🎉 Latest Releases
 
+### [2.3.0](https://www.npmjs.com/package/@arolariu/components/v/2.3.0) - 2026-08-06
+
+**💥 Breaking Changes**
+
+- ⚠️ **`motion` peer dependency widened to `^13`**: The `motion` peer range has moved from `^12` to `^13`. Consumers pinned to `motion@12` must upgrade. This ships as a **minor** bump (deviating from the library's normal SemVer policy) because the library's own API surface is unchanged, but the peer constraint is breaking for anyone who cannot move to `motion@13`. Upgrading is straightforward — the `motion/react` import path and all symbols used by this library (`AnimatePresence`, `motion`, `useAnimation`, `useAnimate`, `useInView`, `useSpring`, `useMotionValue`, `useReducedMotion`, `stagger`, and the `Transition`/`HTMLMotionProps`/`Variant`/`UseInViewOptions`/`SpringOptions` types) are unchanged in `motion@13`. See the [motion changelog](https://motion.dev/changelog) for any other migration notes relevant to your application code.
+
+- 📅 **`<Calendar>` props removed (react-day-picker v10)**: `CalendarProps` is derived via `React.ComponentProps<typeof DayPicker>`, so `react-day-picker`'s upstream removals propagate directly into this library's published types. The following props are **gone** and will produce TypeScript type errors at your call sites:
+
+  | Removed prop | Replacement |
+  |---|---|
+  | `fromDate` | `startMonth` |
+  | `fromMonth` | `startMonth` |
+  | `fromYear` | `startMonth` (pass first day of year) |
+  | `toDate` | `endMonth` |
+  | `toMonth` | `endMonth` |
+  | `toYear` | `endMonth` (pass last day of year) |
+  | `initialFocus` | `autoFocus` |
+  | `components={{Button}}` | slot removed — no replacement |
+
+  The `<Calendar>` component itself compiles correctly against `react-day-picker@10`; no implementation changes were required. Only the derived `CalendarProps` type is affected. Consumers passing any of these props must update their call sites.
+
+**⬆️ Dependency Updates**
+
+- 🎬 **`motion` peer bumped to `^13`** (see Breaking Changes above). The components themselves are implementation-only with respect to this upgrade: no exported component props, no exported types, and no animation behaviour changed. `dropdrawer.tsx` continues to import `AnimatePresence`, `motion`, and `Transition` from `motion/react` — those symbols exist unchanged in `motion@13`. The peer range is the only consumer-facing requirement.
+- 📅 **`react-day-picker` upgraded to v10** — internal dependency (not a peer). The upgrade removes deprecated calendar props from `CalendarProps` as described above.
+
+**🔧 Internal — Icon name canonicalization**
+
+- 🏷️ **lucide-react canonical names adopted** (commit `bca8ce3c6`): internal imports switched from the legacy alias names to their canonical equivalents — `MoreHorizontal` → `Ellipsis`, `ChevronDownIcon`/`ChevronLeftIcon`/`ChevronRightIcon` → `ChevronDown`/`ChevronLeft`/`ChevronRight`, `AlertCircle` → `CircleAlert`, `CheckCircle2` → `CircleCheck`. The old names remain live aliases in `lucide-react@1.28.0` (they are declared via `export { New as Old }`) — **this is not consumer-visible**: icons render identically, no props changed, and no consumer import path is affected. The renames are a purely internal housekeeping change.
+
+**📚 Migration Guide**
+
+```diff
+- <Calendar fromDate={new Date(2024, 0, 1)} toDate={new Date(2024, 11, 31)} initialFocus />
++ <Calendar startMonth={new Date(2024, 0)} endMonth={new Date(2024, 11)} autoFocus />
+```
+
+If you are on `motion@12`, upgrade before updating `@arolariu/components`:
+
+```bash
+npm install motion@^13
+```
+
+---
+
 ### [2.2.0](https://www.npmjs.com/package/@arolariu/components/v/2.2.0) - 2026-05-19
 
 **🧹 Internal — Code quality**

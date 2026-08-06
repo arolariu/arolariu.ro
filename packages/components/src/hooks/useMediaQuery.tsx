@@ -23,7 +23,7 @@ export function useMediaQuery(query: string): boolean {
       setMatches(event.matches);
     };
 
-    // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
+    // eslint-disable-next-line react-x/set-state-in-effect -- seeding state from the initial media-query match is the effect's purpose
     setMatches(mql.matches);
     mql.addEventListener("change", onChange);
 

@@ -4,11 +4,14 @@ import {act, render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
+type MotionState = {
+  buttonProps?: React.HTMLAttributes<HTMLElement> & React.SVGProps<SVGElement>;
+};
+
+const motionState = vi.hoisted<MotionState>(() => ({}));
+
 vi.mock("motion/react", async () => {
   const ReactModule = await import("react");
-  const motionState: {
-    buttonProps?: React.HTMLAttributes<HTMLElement> & React.SVGProps<SVGElement>;
-  } = {};
 
   function createMotionPrimitive<TTag extends keyof React.JSX.IntrinsicElements>(tag: TTag) {
     return ReactModule.forwardRef<Element, React.HTMLAttributes<HTMLElement> & React.SVGProps<SVGElement>>(({children, ...props}, ref) => {
@@ -41,7 +44,6 @@ vi.mock("motion/react", async () => {
   }
 
   return {
-    __motionState: motionState,
     motion: {
       button: createMotionPrimitive("button"),
       circle: createMotionPrimitive("circle"),
@@ -63,8 +65,6 @@ vi.mock("motion/react", async () => {
     useInView: vi.fn(() => true),
   };
 });
-
-import {__motionState} from "motion/react";
 
 import {RippleButton} from "./ripple-button";
 
@@ -273,7 +273,7 @@ describe("RippleButton", () => {
     const handleRippleClick = vi.fn();
     const {unmount} = render(<RippleButton onClick={handleRippleClick}>No Ref</RippleButton>);
 
-    const clickHandler = __motionState.buttonProps?.onClick as ((event: React.MouseEvent<HTMLButtonElement>) => void) | undefined;
+    const clickHandler = motionState.buttonProps?.onClick as ((event: React.MouseEvent<HTMLButtonElement>) => void) | undefined;
 
     unmount();
 

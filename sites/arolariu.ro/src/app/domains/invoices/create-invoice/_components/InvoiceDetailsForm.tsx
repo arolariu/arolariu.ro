@@ -245,7 +245,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
                     mode='single'
                     selected={invoiceDetails.transactionDate}
                     onSelect={handleTransactionDateChange}
-                    initialFocus
+                    autoFocus
                   />
                 </PopoverContent>
               </Popover>

@@ -1,5 +1,5 @@
-import {describe, expect, it} from "vitest";
-import {sanitizeDescription} from "./sanitize";
+﻿import {describe, expect, it} from "vitest";
+import {sanitizeDescription} from "./sanitize.ts";
 
 describe("sanitizeDescription", () => {
   it("returns undefined for undefined input", () => {

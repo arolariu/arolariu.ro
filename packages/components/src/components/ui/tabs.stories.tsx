@@ -1,4 +1,4 @@
-import {FileText, Home, Settings} from "lucide-react";
+import {FileText, House, Settings} from "lucide-react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "./tabs";
 
@@ -80,7 +80,7 @@ export const WithIcons: Story = {
     <Tabs defaultValue='home'>
       <TabsList>
         <TabsTrigger value='home'>
-          <Home style={{width: "16px", height: "16px", marginRight: "0.5rem"}} />
+          <House style={{width: "16px", height: "16px", marginRight: "0.5rem"}} />
           Home
         </TabsTrigger>
         <TabsTrigger value='documents'>

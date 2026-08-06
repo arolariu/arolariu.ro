@@ -26,10 +26,7 @@
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" />
   </ItemGroup>
 
-  <ItemGroup Label="Other Dependencies">
-    <PackageReference Include="Newtonsoft.Json" />
-  </ItemGroup>
-
+  
   <ItemGroup Label="Project References">
     <ProjectReference Include="..\Common\arolariu.Backend.Common.csproj" />
     <ProjectReference Include="..\Core.Auth\arolariu.Backend.Core.Auth.csproj" />
