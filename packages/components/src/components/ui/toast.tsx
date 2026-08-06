@@ -9,7 +9,7 @@
  */
 
 import {Toast} from "@base-ui/react/toast";
-import {AlertCircle, BellRing, CheckCircle2, Info, LoaderCircle, TriangleAlert, X} from "lucide-react";
+import {BellRing, CircleAlert, CircleCheck, Info, LoaderCircle, TriangleAlert, X} from "lucide-react";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
@@ -449,7 +449,7 @@ function getVariantIcon(variant: ToastVariant): React.ReactNode {
       />
     ),
     error: (
-      <AlertCircle
+      <CircleAlert
         aria-hidden='true'
         className={styles.icon}
       />
@@ -467,7 +467,7 @@ function getVariantIcon(variant: ToastVariant): React.ReactNode {
       />
     ),
     success: (
-      <CheckCircle2
+      <CircleCheck
         aria-hidden='true'
         className={styles.icon}
       />

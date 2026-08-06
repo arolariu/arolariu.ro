@@ -2,7 +2,7 @@
 
 /* eslint-disable complexity, react/no-unstable-nested-components, react-x/no-nested-component-definitions, react/prop-types */
 
-import {ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon} from "lucide-react";
+import {ChevronDown, ChevronLeft, ChevronRight} from "lucide-react";
 import * as React from "react";
 import {DayButton, DayPicker, type DateRange, type DayPickerProps, type Matcher} from "react-day-picker";
 
@@ -128,7 +128,7 @@ const Calendar = React.forwardRef<HTMLDivElement, CalendarProps>(
           Chevron: ({className: chevronClassName, orientation, ...chevronProps}) => {
             if (orientation === "left") {
               return (
-                <ChevronLeftIcon
+                <ChevronLeft
                   className={cn(styles.chevron, chevronClassName)}
                   {...chevronProps}
                 />
@@ -137,7 +137,7 @@ const Calendar = React.forwardRef<HTMLDivElement, CalendarProps>(
 
             if (orientation === "right") {
               return (
-                <ChevronRightIcon
+                <ChevronRight
                   className={cn(styles.chevron, chevronClassName)}
                   {...chevronProps}
                 />
@@ -145,7 +145,7 @@ const Calendar = React.forwardRef<HTMLDivElement, CalendarProps>(
             }
 
             return (
-              <ChevronDownIcon
+              <ChevronDown
                 className={cn(styles.chevron, chevronClassName)}
                 {...chevronProps}
               />
