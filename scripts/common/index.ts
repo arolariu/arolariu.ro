@@ -44,7 +44,7 @@ function createSpinner(initialText: string): Spinner {
   const isTTY = Boolean(process.stdout.isTTY);
   let text = initialText;
   let frameIndex = 0;
-  let timer: ReturnType<typeof setInterval> | null = null;
+  let timer: NodeJS.Timeout | null = null;
 
   function render(): void {
     if (!isTTY) return;
@@ -66,6 +66,7 @@ function createSpinner(initialText: string): Spinner {
     start(): Spinner {
       if (isTTY) {
         timer = setInterval(render, 80);
+        timer.unref();
       }
       return spinner;
     },
