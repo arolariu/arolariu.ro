@@ -1,4 +1,4 @@
-import {AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline} from "lucide-react";
+import {Bold, Italic, TextAlignCenter, TextAlignEnd, TextAlignStart, Underline} from "lucide-react";
 import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Toolbar, ToolbarButton, ToolbarGroup, ToolbarLink, ToolbarSeparator} from "./toolbar";
@@ -54,13 +54,13 @@ export const WithGroups: Story = {
       <ToolbarSeparator />
       <ToolbarGroup>
         <ToolbarButton aria-label='Align left'>
-          <AlignLeft className='h-4 w-4' />
+          <TextAlignStart className='h-4 w-4' />
         </ToolbarButton>
         <ToolbarButton aria-label='Align center'>
-          <AlignCenter className='h-4 w-4' />
+          <TextAlignCenter className='h-4 w-4' />
         </ToolbarButton>
         <ToolbarButton aria-label='Align right'>
-          <AlignRight className='h-4 w-4' />
+          <TextAlignEnd className='h-4 w-4' />
         </ToolbarButton>
       </ToolbarGroup>
     </Toolbar>
@@ -192,13 +192,13 @@ export const EditorToolbar: Story = {
         <ToolbarSeparator />
         <ToolbarGroup>
           <ToolbarButton aria-label='Align left'>
-            <AlignLeft className='h-4 w-4' />
+            <TextAlignStart className='h-4 w-4' />
           </ToolbarButton>
           <ToolbarButton aria-label='Align center'>
-            <AlignCenter className='h-4 w-4' />
+            <TextAlignCenter className='h-4 w-4' />
           </ToolbarButton>
           <ToolbarButton aria-label='Align right'>
-            <AlignRight className='h-4 w-4' />
+            <TextAlignEnd className='h-4 w-4' />
           </ToolbarButton>
         </ToolbarGroup>
       </Toolbar>

@@ -6,7 +6,7 @@ import {Drawer as BaseDrawer} from "@base-ui/react/drawer";
 import {Menu as BaseMenu} from "@base-ui/react/menu";
 import {mergeProps} from "@base-ui/react/merge-props";
 import {useRender} from "@base-ui/react/use-render";
-import {ChevronLeftIcon, ChevronRightIcon} from "lucide-react";
+import {ChevronLeft, ChevronRight} from "lucide-react";
 import {AnimatePresence, motion, type Transition} from "motion/react";
 import * as React from "react";
 
@@ -265,7 +265,7 @@ function DropdownMenuSubTrigger(
         props: mergeProps({className: cn(styles.desktopSubTrigger, inset && styles.inset, className)}, {}),
       })}>
       {children}
-      <ChevronRightIcon className={styles.chevron} />
+      <ChevronRight className={styles.chevron} />
     </BaseMenu.SubmenuTrigger>
   );
 }
@@ -621,7 +621,7 @@ const DropDrawerContent = React.forwardRef<HTMLDivElement, DropDrawerContentProp
                     aria-label={MOBILE_BACK_LABEL}
                     onClick={goBack}
                     className={styles.backButton}>
-                    <ChevronLeftIcon className={styles.chevron} />
+                    <ChevronLeft className={styles.chevron} />
                   </button>
                   <DrawerTitle>{submenuTitle || MOBILE_SUBMENU_TITLE}</DrawerTitle>
                 </div>
@@ -706,7 +706,7 @@ const DropDrawerContent = React.forwardRef<HTMLDivElement, DropDrawerContentProp
  *
  * @example
  * ```tsx
- * <DropDrawerItem icon={<ChevronRightIcon />}>Account</DropDrawerItem>
+ * <DropDrawerItem icon={<ChevronRight />}>Account</DropDrawerItem>
  * ```
  *
  * @see {@link https://base-ui.com/react/components/menu | Base UI Menu Docs}
@@ -1249,7 +1249,7 @@ function DropDrawerSubTrigger({className, inset, children, onClick, ...props}: D
         onKeyDown={handleKeyDown}
         {...(props as React.HTMLAttributes<HTMLDivElement>)}>
         <div className={styles.itemChildren}>{children}</div>
-        <ChevronRightIcon className={styles.chevron} />
+        <ChevronRight className={styles.chevron} />
       </div>
     );
   }
