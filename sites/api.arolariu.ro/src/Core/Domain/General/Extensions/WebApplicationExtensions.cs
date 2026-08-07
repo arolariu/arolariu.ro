@@ -1,19 +1,23 @@
 namespace arolariu.Backend.Core.Domain.General.Extensions;
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-
-using arolariu.Backend.Common.Configuration;
-using arolariu.Backend.Core.Auth.Modules;
-using arolariu.Backend.Core.Domain.General.Middlewares;
-using arolariu.Backend.Core.Domain.General.Services.Swagger;
-
-using HealthChecks.UI.Client;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
+
+using HealthChecks.UI.Client;
+
+using arolariu.Backend.Common.Configuration;
+using arolariu.Backend.Common.Telemetry;
+using arolariu.Backend.Common.Telemetry.Metering;
+using arolariu.Backend.Core.Auth.Modules;
+using arolariu.Backend.Core.Domain.General.Middlewares;
+using arolariu.Backend.Core.Domain.General.Services.Swagger;
 
 /// <summary>
 /// Provides extension methods for configuring the <see cref="WebApplication"/> request processing pipeline.
@@ -112,6 +116,10 @@ internal static class WebApplicationExtensions
     // writes an RFC 7807 ProblemDetails response. See RFC 2003.
     app.UseExceptionHandler();
 
+    // Must run before routing so the suppression scope covers execution of the health checks
+    // themselves, not merely endpoint dispatch. See the telemetry noise reduction spec.
+    app.UseMiddleware<HealthTelemetrySuppressionMiddleware>();
+
     app.UseHttpsRedirection();
     app.UseAuthServices();
 
@@ -130,11 +138,29 @@ internal static class WebApplicationExtensions
     app.UseSwagger(SwaggerConfigurationService.GetSwaggerOptions());
     app.UseSwaggerUI(SwaggerConfigurationService.GetSwaggerUIOptions());
     app.MapOpenApi();
-    app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse })
-       .RequireRateLimiting(RateLimitPolicies.HealthCheck);
+    app.MapHealthChecks("/health", new HealthCheckOptions
+    {
+      ResponseWriter = async (httpContext, report) =>
+      {
+        var failed = new List<string>();
+        foreach (var entry in report.Entries)
+        {
+          if (entry.Value.Status != HealthStatus.Healthy)
+          {
+            failed.Add(entry.Key);
+          }
+        }
+
+        httpContext.Items[HealthCheckMetrics.FailedChecksItemKey] = failed;
+        await UIResponseWriter.WriteHealthCheckUIResponse(httpContext, report).ConfigureAwait(false);
+      },
+    })
+       .RequireRateLimiting(RateLimitPolicies.HealthCheck)
+       .DisableHttpMetrics();
     app.MapGet("/terms", () => app.Configuration["ApplicationOptions:TermsAndConditions"]);
 
     logger.LogHealthChecksRegistered("/health");
+    logger.LogHealthTelemetrySuppression(HealthTelemetryPolicy.IsSuppressionEnabled);
     logger.LogPipelineConfigurationCompleted();
 
     return app;

@@ -22,10 +22,12 @@ from telemetry.bootstrap import (
     get_current_trace_context,
     initialize_telemetry,
     record_current_span_exception,
+    record_health_failure_metric,
     set_current_span_attributes,
     shutdown_telemetry,
     start_span,
 )
+from telemetry.health_policy import is_suppressed_path, should_suppress_telemetry
 
 logger = logging.getLogger(__name__)
 
@@ -126,17 +128,21 @@ async def attach_request_context(
     )
     trace_context = get_current_trace_context()
 
-    logger.info(
-        "request_id=%s request_id_source=%s trace_id=%s span_id=%s method=%s path=%s status=%s durationMs=%.2f",
-        request_id,
-        request_id_source,
-        trace_context.trace_id if trace_context else "0",
-        trace_context.span_id if trace_context else "0",
-        request.method,
-        request.url.path,
-        response.status_code,
-        elapsed_ms,
-    )
+    if is_suppressed_path(request.url.path) and response.status_code >= 500:
+        record_health_failure_metric(check="config")
+
+    if not should_suppress_telemetry(request.url.path):
+        logger.info(
+            "request_id=%s request_id_source=%s trace_id=%s span_id=%s method=%s path=%s status=%s durationMs=%.2f",
+            request_id,
+            request_id_source,
+            trace_context.trace_id if trace_context else "0",
+            trace_context.span_id if trace_context else "0",
+            request.method,
+            request.url.path,
+            response.status_code,
+            elapsed_ms,
+        )
     return response
 
 

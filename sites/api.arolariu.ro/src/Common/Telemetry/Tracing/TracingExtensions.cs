@@ -87,6 +87,10 @@ public static class TracingExtensions
       // Add framework instrumentation with enrichment callbacks
       tracingOptions.AddAspNetCoreInstrumentation(options =>
       {
+        // Drop health and connectivity probe spans before allocation. See RFC 2002 and
+        // docs/superpowers/specs/2026-08-07-telemetry-noise-reduction-design.md.
+        options.Filter = HealthTelemetryPolicy.ShouldRecordHttpContext;
+
         // Enrich incoming HTTP request spans with additional context
         options.EnrichWithHttpRequest = (activity, httpRequest) =>
         {
@@ -115,6 +119,9 @@ public static class TracingExtensions
 
       tracingOptions.AddHttpClientInstrumentation(options =>
       {
+        // Suppress outbound probe dependencies, e.g. ConfigProxyClient.PingAsync -> /api/ready.
+        options.FilterHttpRequestMessage = HealthTelemetryPolicy.ShouldRecordHttpRequestMessage;
+
         // Enrich outgoing HTTP client spans
         options.EnrichWithHttpRequestMessage = (activity, httpRequest) =>
         {

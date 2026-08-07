@@ -306,7 +306,7 @@ class TestTelemetryBootstrap:
             assert len(runtime.meter_provider.metric_readers) == 1
             assert isinstance(runtime.meter_provider.metric_readers[0].exporter, dependencies.ConsoleMetricExporter)
             assert len(dependencies.FastAPIInstrumentor.instrument_calls) == 1
-            expected_excluded = "/api/health,/api/ready,/admin"
+            expected_excluded = "/api/health,/api/ready"
             assert dependencies.FastAPIInstrumentor.instrument_calls[0]["excluded_urls"] == expected_excluded
         finally:
             shutdown_telemetry()
@@ -347,3 +347,14 @@ class TestTelemetryBootstrap:
             assert log_exporter.kwargs["disable_offline_storage"] is True
         finally:
             shutdown_telemetry()
+
+
+class TestHealthFailureMetric:
+    """Behaviour of the health failure counter."""
+
+    def test_record_health_failure_metric_is_safe_without_runtime(self) -> None:
+        from telemetry.bootstrap import record_health_failure_metric, reset_telemetry_state
+
+        reset_telemetry_state()
+
+        record_health_failure_metric(check="config")
