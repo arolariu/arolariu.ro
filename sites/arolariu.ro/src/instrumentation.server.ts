@@ -132,7 +132,8 @@ export type MetricName =
   | `page.${string}`
   | `component.${string}`
   | `business.${string}`
-  | `website.${string}`;
+  | `website.${string}`
+  | `arolariu.${string}`;
 
 /**
  * Standard semantic attribute keys for HTTP operations.
