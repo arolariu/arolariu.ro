@@ -1,6 +1,9 @@
 namespace arolariu.Backend.Common.Telemetry;
 
 using System;
+using System.Net.Http;
+
+using Microsoft.AspNetCore.Http;
 
 /// <summary>
 /// Central policy deciding whether OpenTelemetry signals should be suppressed for a request path.
@@ -76,6 +79,38 @@ public static class HealthTelemetryPolicy
   /// <remarks>Fails open: any unexpected condition resolves to emitting telemetry.</remarks>
   public static bool ShouldSuppress(string? path) =>
     IsSuppressionEnabled && IsSuppressedPath(path);
+
+  /// <summary>
+  /// Returns <see langword="true"/> when the request represented by <paramref name="context"/>
+  /// should be included in distributed traces.
+  /// </summary>
+  /// <param name="context">The incoming ASP.NET Core HTTP context.</param>
+  /// <returns>
+  /// <see langword="false"/> when the request targets a suppressed health probe path;
+  /// <see langword="true"/> otherwise.
+  /// </returns>
+  /// <remarks>
+  /// Intended for use as the <c>AspNetCoreTraceInstrumentationOptions.Filter</c> method group.
+  /// Fails open: a null context resolves to <see langword="true"/> (record the activity).
+  /// </remarks>
+  public static bool ShouldRecordHttpContext(HttpContext context) =>
+    !ShouldSuppress(context?.Request.Path.Value);
+
+  /// <summary>
+  /// Returns <see langword="true"/> when the outbound request represented by
+  /// <paramref name="request"/> should be included in distributed traces.
+  /// </summary>
+  /// <param name="request">The outbound <see cref="HttpRequestMessage"/>.</param>
+  /// <returns>
+  /// <see langword="false"/> when the request targets a suppressed health probe path;
+  /// <see langword="true"/> otherwise.
+  /// </returns>
+  /// <remarks>
+  /// Intended for use as the <c>HttpClientTraceInstrumentationOptions.FilterHttpRequestMessage</c>
+  /// method group. Fails open: a null request resolves to <see langword="true"/> (record the activity).
+  /// </remarks>
+  public static bool ShouldRecordHttpRequestMessage(HttpRequestMessage request) =>
+    !ShouldSuppress(request?.RequestUri?.AbsolutePath);
 
   private static string Normalize(string path)
   {

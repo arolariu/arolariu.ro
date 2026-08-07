@@ -6,14 +6,21 @@ using System.Diagnostics;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using arolariu.Backend.Common.Options;
 using arolariu.Backend.Common.Telemetry;
+using arolariu.Backend.Common.Telemetry.Tracing;
+using arolariu.Backend.Core.Tests.Shared.TestDoubles;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OpenTelemetry;
+using OpenTelemetry.Instrumentation.AspNetCore;
+using OpenTelemetry.Instrumentation.Http;
 using OpenTelemetry.Trace;
 
 /// <summary>
@@ -78,8 +85,7 @@ public sealed class HealthTraceFilterTests
           webBuilder.ConfigureServices(services =>
             services.AddOpenTelemetry().WithTracing(tracing => tracing
                 .AddAspNetCoreInstrumentation(options =>
-                  options.Filter = httpContext =>
-                    !HealthTelemetryPolicy.ShouldSuppress(httpContext.Request.Path.Value))
+                  options.Filter = HealthTelemetryPolicy.ShouldRecordHttpContext)
                 .AddProcessor(processor)));
           webBuilder.Configure(app => app.Run(context =>
           {
@@ -149,5 +155,71 @@ public sealed class HealthTraceFilterTests
     var exported = await ExportedActivitiesForAsync("/api/invoices").ConfigureAwait(false);
 
     Assert.AreEqual(1, exported.Count, "Real routes must still export telemetry.");
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Wiring tests — assert that AddOTelTracing actually installs the production
+  // filter callbacks so that removing options.Filter from TracingExtensions.cs
+  // causes these tests to fail.
+  // ──────────────────────────────────────────────────────────────────────────────
+
+  /// <summary>
+  /// Verifies that <see cref="TracingExtensions.AddOTelTracing"/> registers
+  /// <see cref="HealthTelemetryPolicy.ShouldRecordHttpContext"/> as the
+  /// <c>AspNetCoreTraceInstrumentationOptions.Filter</c> predicate, and that the
+  /// predicate correctly suppresses health paths while allowing real routes.
+  /// </summary>
+  [TestMethod]
+  public void AddOTelTracing_WiresAspNetCoreFilter()
+  {
+    var builder = WebApplication.CreateBuilder();
+    builder.Services.AddSingleton<IOptionsManager>(
+      new FakeOptionsManager(new LocalOptions()));
+    builder.AddOTelTracing();
+
+    using var provider = builder.Services.BuildServiceProvider();
+    var filter = provider
+      .GetRequiredService<IOptionsMonitor<AspNetCoreTraceInstrumentationOptions>>()
+      .Get(Options.DefaultName)
+      .Filter;
+
+    Assert.IsNotNull(filter, "AddOTelTracing must register a non-null Filter.");
+
+    var healthCtx = new DefaultHttpContext();
+    healthCtx.Request.Path = "/health";
+    Assert.IsFalse(filter(healthCtx), "Filter must suppress /health.");
+
+    var apiCtx = new DefaultHttpContext();
+    apiCtx.Request.Path = "/api/invoices";
+    Assert.IsTrue(filter(apiCtx), "Filter must allow /api/invoices.");
+  }
+
+  /// <summary>
+  /// Verifies that <see cref="TracingExtensions.AddOTelTracing"/> registers
+  /// <see cref="HealthTelemetryPolicy.ShouldRecordHttpRequestMessage"/> as the
+  /// <c>HttpClientTraceInstrumentationOptions.FilterHttpRequestMessage</c> predicate, and that
+  /// the predicate correctly suppresses outbound health probe requests.
+  /// </summary>
+  [TestMethod]
+  public void AddOTelTracing_WiresHttpClientFilter()
+  {
+    var builder = WebApplication.CreateBuilder();
+    builder.Services.AddSingleton<IOptionsManager>(
+      new FakeOptionsManager(new LocalOptions()));
+    builder.AddOTelTracing();
+
+    using var provider = builder.Services.BuildServiceProvider();
+    var filter = provider
+      .GetRequiredService<IOptionsMonitor<HttpClientTraceInstrumentationOptions>>()
+      .Get(Options.DefaultName)
+      .FilterHttpRequestMessage;
+
+    Assert.IsNotNull(filter, "AddOTelTracing must register a non-null FilterHttpRequestMessage.");
+
+    using var healthReq = new HttpRequestMessage(HttpMethod.Get, new Uri("http://localhost/api/ready"));
+    Assert.IsFalse(filter(healthReq), "Filter must suppress /api/ready.");
+
+    using var apiReq = new HttpRequestMessage(HttpMethod.Get, new Uri("http://localhost/api/invoices"));
+    Assert.IsTrue(filter(apiReq), "Filter must allow /api/invoices.");
   }
 }
