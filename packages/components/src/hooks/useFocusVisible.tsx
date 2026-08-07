@@ -61,12 +61,12 @@ export function useFocusVisible(): {
       isKeyboardRef.current = false;
     };
 
-    globalThis.document.addEventListener("keydown", onKeyDown, true);
-    globalThis.document.addEventListener("pointerdown", onPointerDown, true);
+    globalThis.document.addEventListener("keydown", onKeyDown, {capture: true});
+    globalThis.document.addEventListener("pointerdown", onPointerDown, {capture: true});
 
     return () => {
-      globalThis.document.removeEventListener("keydown", onKeyDown, true);
-      globalThis.document.removeEventListener("pointerdown", onPointerDown, true);
+      globalThis.document.removeEventListener("keydown", onKeyDown, {capture: true});
+      globalThis.document.removeEventListener("pointerdown", onPointerDown, {capture: true});
     };
   }, []);
 

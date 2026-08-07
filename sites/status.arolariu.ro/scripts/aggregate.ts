@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Aggregation pipeline. Rolls the append-only `raw/*.jsonl` probe stream
  * into three retention-sized JSON files consumed by the frontend:
  *   - `fine.json`    — 30-minute buckets, rebuilt from scratch every run (14 days).
@@ -11,14 +11,14 @@
  */
 import {existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync} from "node:fs";
 import {join} from "node:path";
-import {isAggregateFile} from "../src/lib/types/guards";
-import {SERVICE_IDS, type AggregateFile, type Bucket, type ProbeResult, type ServiceId, type ServiceSeries} from "../src/lib/types/status";
-import {bucketStart, makeBucket, type BucketAccumulator} from "./aggregateCommon";
-import {groupProbes} from "./aggregateServices";
-import {groupSubChecks} from "./aggregateSubChecks";
-import {readRawProbes} from "./rawProbes";
+import {isAggregateFile} from "../src/lib/types/guards.ts";
+import {SERVICE_IDS, type AggregateFile, type Bucket, type ProbeResult, type ServiceId, type ServiceSeries} from "../src/lib/types/status.ts";
+import {bucketStart, makeBucket, type BucketAccumulator} from "./aggregateCommon.ts";
+import {groupProbes} from "./aggregateServices.ts";
+import {groupSubChecks} from "./aggregateSubChecks.ts";
+import {readRawProbes} from "./rawProbes.ts";
 
-// Re-export so existing test imports (`from "./aggregate"`) keep working.
+// Re-export so existing test imports (`from "./aggregate.ts"`) keep working.
 export {bucketStart};
 
 const MS_PER_DAY = 86_400_000;

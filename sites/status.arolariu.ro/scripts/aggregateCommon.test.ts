@@ -1,6 +1,6 @@
-// @vitest-environment node
+﻿// @vitest-environment node
 import {describe, expect, it} from "vitest";
-import {bucketStart, mode, percentile, worstStatus} from "./aggregateCommon";
+import {bucketStart, mode, percentile, worstStatus} from "./aggregateCommon.ts";
 
 describe("bucketStart", () => {
   it("rounds to 30-min boundaries", () => {

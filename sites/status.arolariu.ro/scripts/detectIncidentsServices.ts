@@ -1,5 +1,5 @@
-import type {ProbeResult} from "../src/lib/types/status";
-import {trackKey, type TrackSignal} from "./detectIncidentsCommon";
+﻿import type {ProbeResult} from "../src/lib/types/status.ts";
+import {trackKey, type TrackSignal} from "./detectIncidentsCommon.ts";
 
 /**
  * Extract the main-service (`overall`) health signal from a probe result.

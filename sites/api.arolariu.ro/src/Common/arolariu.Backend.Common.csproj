@@ -61,10 +61,7 @@
     <PackageReference Include="Azure.Identity" />
   </ItemGroup>
 
-  <ItemGroup Label="Other Dependencies">
-    <PackageReference Include="Newtonsoft.Json" />
-  </ItemGroup>
-
+  
   <ItemGroup Label="Framework References">
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>

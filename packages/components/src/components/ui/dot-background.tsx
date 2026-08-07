@@ -76,7 +76,7 @@ const DotBackground = React.forwardRef<SVGSVGElement, DotBackgroundProps>(
         }
 
         const rect = containerRef.current.getBoundingClientRect();
-        // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect -- resize observer style update is the hook's purpose
+        // eslint-disable-next-line react-x/set-state-in-effect -- resize observer style update is the hook's purpose
         setDimensions({width: rect.width, height: rect.height});
       };
 

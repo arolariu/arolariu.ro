@@ -1,10 +1,10 @@
-// @vitest-environment node
+﻿// @vitest-environment node
 import {existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
-import type {ProbeResult} from "../src/lib/types/status";
-import {runDetectIncidents, updateIncidentState} from "./detectIncidents";
+import type {ProbeResult} from "../src/lib/types/status.ts";
+import {runDetectIncidents, updateIncidentState} from "./detectIncidents.ts";
 
 function mkProbe(service: string, ts: string, overall: "Healthy" | "Degraded" | "Unhealthy", error?: string): ProbeResult {
   const base: ProbeResult = {

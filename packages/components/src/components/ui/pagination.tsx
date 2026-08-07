@@ -2,7 +2,7 @@
 
 /* eslint-disable jsx-a11y/anchor-has-content */
 
-import {ChevronLeft, ChevronRight, MoreHorizontal} from "lucide-react";
+import {ChevronLeft, ChevronRight, Ellipsis} from "lucide-react";
 import * as React from "react";
 
 import type {ButtonProps} from "@/components/ui/button";
@@ -254,7 +254,7 @@ const PaginationEllipsis = React.forwardRef<HTMLSpanElement, PaginationEllipsisP
       aria-hidden='true'
       className={cn(styles.ellipsis, className)}
       {...props}>
-      <MoreHorizontal />
+      <Ellipsis />
       <span className={styles.srOnly}>More pages</span>
     </span>
   ),

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Parser for the SvelteKit CV site at `cv.arolariu.ro`. The site is a
  * static/SSR page with no dedicated health endpoint, so we probe the
  * root and derive health purely from the HTTP status class:
@@ -7,8 +7,8 @@
  * Redirects (2xx/3xx) count as Healthy because Azure Static Web Apps
  * canonicalises hostnames and trailing slashes via 301s.
  */
-import type {ProbeResult} from "../../src/lib/types/status";
-import type {ProbeContext, RawResponse} from "./arolariuRo";
+import type {ProbeResult} from "../../src/lib/types/status.ts";
+import type {ProbeContext, RawResponse} from "./arolariuRo.ts";
 
 /**
  * Parse a root-page fetch of `https://cv.arolariu.ro/` into a

@@ -1,6 +1,6 @@
-// @vitest-environment node
+﻿// @vitest-environment node
 import {describe, expect, it} from "vitest";
-import {buildIncidentId, toSeverity, trackKey, worstSeverity} from "./detectIncidentsCommon";
+import {buildIncidentId, toSeverity, trackKey, worstSeverity} from "./detectIncidentsCommon.ts";
 
 describe("trackKey", () => {
   it("uses the bare service id when no sub-check", () => {

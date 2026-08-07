@@ -8,7 +8,6 @@ import eslintPluginPromise from "eslint-plugin-promise";
 import eslintPluginReact from "eslint-plugin-react";
 import eslintPluginReactDOM from "eslint-plugin-react-dom";
 import eslintPluginReactHooks from "eslint-plugin-react-hooks";
-import eslintPluginReactHooksExtra from "eslint-plugin-react-hooks-extra";
 import eslintPluginReactNamingConvention from "eslint-plugin-react-naming-convention";
 import eslintPluginReactWebAPI from "eslint-plugin-react-web-api";
 import eslintPluginReactX from "eslint-plugin-react-x";
@@ -52,7 +51,6 @@ const websiteEslintConfig: Config = defineConfig({
     "react-x": eslintPluginReactX,
     // @ts-ignore - the plugin is not typed correctly.
     "react-hooks": eslintPluginReactHooks,
-    "react-hooks-extra": eslintPluginReactHooksExtra,
     "react-web-api": eslintPluginReactWebAPI,
     "react-naming-convention": eslintPluginReactNamingConvention,
     "jsx-a11y": eslintPluginJsxA11y,
@@ -69,7 +67,6 @@ const websiteEslintConfig: Config = defineConfig({
     ...eslintPlugin.configs.recommended.rules,
     ...eslintPlugin.configs.all.rules,
     ...eslintPluginReactDOM.configs.recommended.rules,
-    ...eslintPluginReactHooksExtra.configs.recommended.rules,
     ...eslintPluginReactNamingConvention.configs.recommended.rules,
     ...eslintPluginReactWebAPI.configs.recommended.rules,
     ...eslintPluginReactX.configs["recommended-type-checked"].rules,
@@ -78,6 +75,78 @@ const websiteEslintConfig: Config = defineConfig({
     ...eslintPluginReactHooks.configs.recommended.rules,
     ...eslintPluginReactHooks.configs["recommended-latest"].rules,
     ...eslintPluginUnicorn.configs.all.rules,
+    // Opinionated rules newly enabled by unicorn 64 -> 73 via `configs.all` (nine majors of additions)
+    // that this codebase deliberately never adopted. Each is style/preference, a too-new runtime API, or a
+    // false positive in our context (SSR, module-level caches, safe constant replacements).
+    "unicorn/no-asterisk-prefix-in-documentation-comments": "off", // We use standard JSDoc `*`-prefixed comment blocks.
+    "unicorn/single-line-block-comment-style": "off", // We allow single-line block comments.
+    "unicorn/name-replacements": "off", // Biased; conflicts with React terms (props, ref) and our domain naming.
+    "unicorn/consistent-arrow-return-style": "off", // Arrow body style is our choice; Prettier owns formatting.
+    "unicorn/try-complexity": "off", // We don't impose a try-block complexity limit.
+    "unicorn/prefer-temporal": "off", // The Temporal API is not yet available in our Node/browser runtime targets.
+    "unicorn/no-top-level-assignment-in-function": "off", // We use module-level caches/singletons (lazy init, circuit breakers, request dedup).
+    "unicorn/no-unreadable-new-expression": "off", // Biased readability rule.
+    "unicorn/prefer-error-is-error": "off", // Error.isError is too new for our runtime targets; we use instanceof.
+    "unicorn/comment-content": "off", // We don't enforce specific wording inside comments.
+    "unicorn/consistent-boolean-name": "off", // Biased boolean-naming rule.
+    "unicorn/no-barrel-files": "off", // We deliberately use barrel/index files.
+    "unicorn/prefer-global-number-constants": "off", // We allow explicit Number.* constants.
+    "unicorn/no-unreadable-for-of-expression": "off", // Biased readability rule.
+    "unicorn/consistent-conditional-object-spread": "off", // We allow both conditional object-spread styles.
+    "unicorn/prefer-early-return": "off", // We allow nested conditionals where clearer.
+    "unicorn/prefer-hoisting-branch-code": "off", // Biased; we keep code local to its branch.
+    "unicorn/no-useless-else": "off", // We allow else after return for clarity (matches no-else-return: off).
+    "unicorn/prefer-await": "off", // We allow promise chains where appropriate.
+    "unicorn/no-unnecessary-global-this": "off", // globalThis.<x> is SSR-safe access to browser-only globals.
+    "unicorn/prefer-minimal-ternary": "off", // Biased ternary rule.
+    "unicorn/no-useless-coercion": "off", // We allow explicit coercions for clarity/robustness.
+    "unicorn/no-unsafe-string-replacement": "off", // Our replacement values are safe constant literal origins.
+    "unicorn/no-top-level-side-effects": "off", // Some modules intentionally run initialization side effects.
+    "unicorn/prefer-continue": "off", // We allow both `continue` and negated-if loop bodies.
+    "unicorn/no-declarations-before-early-exit": "off", // We allow declarations before guard returns.
+    "unicorn/prefer-uint8array-base64": "off", // Uint8Array base64 methods are too new for our runtime targets.
+    "unicorn/prefer-set-methods": "off", // We allow Set filtering via has(); Set.prototype.difference is newish.
+
+    // Tail of the unicorn 64 -> 73 wave that only fired in files outside the initial local sample (caught by CI).
+    // Same rationale as above: each is style/preference, a v73 rename of a rule we already disable, a too-new
+    // runtime API, or a false positive in our object-method/SSR/derived-value patterns.
+    "unicorn/no-this-outside-of-class": "off", // We use `this` in object-literal methods / factory objects; flags valid non-class method patterns.
+    "unicorn/prefer-array-from-map": "off", // Style; we use spread+map / Array#map freely.
+    "unicorn/no-for-each": "off", // v73 rename of no-array-for-each (already disabled); no forEach preference.
+    "unicorn/prefer-direct-iteration": "off", // Style; we iterate via indices/entries where clearer.
+    "unicorn/prefer-simple-condition-first": "off", // Biased condition-ordering rule.
+    "unicorn/prefer-number-coercion": "off", // We allow explicit Number()/unary-plus coercions (matches no-useless-coercion off).
+    "unicorn/no-useless-template-literals": "off", // Style; owned by Prettier/preference.
+    "unicorn/prefer-split-limit": "off", // Style; String#split without a limit is acceptable.
+    "unicorn/no-computed-property-existence-check": "off", // We intentionally use computed `obj[key]` existence checks.
+    "unicorn/prefer-unicode-code-point-escapes": "off", // Style; we allow \uXXXX escapes.
+    "unicorn/prefer-type-literal-last": "off", // Biased type-member ordering; Prettier/preference owns ordering.
+    "unicorn/custom-error-definition": "off", // Biased; we define custom error classes our own way.
+    "unicorn/prefer-iterator-to-array": "off", // Style; we use spread / Array.from on iterables freely.
+    "unicorn/prefer-observer-apis": "off", // Biased; we choose event listeners vs observers per case.
+    "unicorn/no-break-in-nested-loop": "off", // We allow `break` in nested loops for clarity.
+    "unicorn/prefer-includes-over-repeated-comparisons": "off", // Style/preference.
+    "unicorn/dom-node-dataset": "off", // Style; we allow get/setAttribute over dataset.
+    "unicorn/no-unreadable-object-destructuring": "off", // Biased readability rule (matches other no-unreadable-* off).
+    "unicorn/no-unnecessary-boolean-comparison": "off", // We allow explicit boolean comparisons for clarity.
+    "unicorn/no-non-function-verb-prefix": "off", // Biased naming rule (matches prevent-abbreviations/name-replacements off).
+    "unicorn/prefer-ternary": "off", // We allow if/else over ternary (matches prefer-minimal-ternary off).
+    "unicorn/no-negated-array-predicate": "off", // Style/preference.
+    "unicorn/consistent-class-member-order": "off", // Biased ordering; Prettier/preference owns ordering.
+    "unicorn/no-unused-properties": "off", // Unreliable dead-code detection; false positives on typed shapes.
+    "unicorn/max-nested-calls": "off", // We don't impose a nested-call limit.
+    "unicorn/prefer-then-catch": "off", // Style; we allow .then/.catch chains (matches prefer-await off).
+    "unicorn/no-invalid-file-input-accept": "off", // Our `accept` value is derived from a shared extension list; rule can't statically resolve computed expressions (false positive).
+    "unicorn/prefer-else-if": "off", // We allow nested else blocks (matches no-useless-else/prefer-early-return off).
+    "unicorn/no-array-front-mutation": "off", // We intentionally use Array#shift() for bounded FIFO/trail buffers.
+    "unicorn/no-negated-condition": "off", // We allow negated conditions for guard-style checks.
+    "unicorn/explicit-length-check": "off", // .size can return a non-number; matches the package-block disable.
+    "unicorn/no-useless-undefined": "off", // We allow explicit undefined (matches no-undefined off).
+    "unicorn/prefer-logical-operator-over-ternary": "off", // Style; we allow ternaries.
+    "unicorn/no-manually-wrapped-comments": "off", // Style; we allow manually wrapped comment lines.
+    "unicorn/prefer-promise-with-resolvers": "off", // Promise.withResolvers is too new for our runtime targets (matches prefer-error-is-error/prefer-uint8array-base64 policy).
+    "unicorn/prefer-object-iterable-methods": "off", // Object.* iterable helpers are newish; too new / style.
+    "unicorn/prefer-boolean-return": "off", // Biased; we allow explicit conditional returns.
     ...eslintPluginSecurity.configs.recommended.rules,
     ...eslintPluginSonarJs.configs.recommended.rules,
     ...eslintPluginJsxA11y.configs.recommended.rules,
@@ -135,12 +204,32 @@ const websiteEslintConfig: Config = defineConfig({
     "react/react-in-jsx-scope": "off", // Next.JS injects React in namespace.
     "react/forbid-component-props": "off", // We allow component props.
     "react/destructuring-assignment": "off", // Layout, RSC, RCC props are marked as props.
+
+    // eslint-plugin-react@7.37.5 rules that call ESLint APIs removed in ESLint 10 and crash at runtime; no newer plugin release exists. The spacing rules are owned by Prettier regardless.
+    "react/forward-ref-uses-ref": "off", // Calls removed context.getSourceCode().
+    "react/jsx-curly-spacing": "off", // Calls removed sourceCode.isSpaceBetweenTokens(); Prettier owns spacing.
+    "react/jsx-equals-spacing": "off", // Calls removed sourceCode.isSpaceBetweenTokens(); Prettier owns spacing.
+    "react/jsx-tag-spacing": "off", // Calls removed sourceCode.isSpaceBetweenTokens(); Prettier owns spacing.
     "react/jsx-one-expression-per-line": "off", // We use Prettier for formatting.
     "react/jsx-closing-bracket-location": "off", // We use Prettier for formatting.
     "react/function-component-definition": "off", // Sometimes we use arrow syntax.
-    "react/jsx-filename-extension": [2, {extensions: [".tsx", ".ts"]}],
+    "react/jsx-filename-extension": "off", // Rule calls context.getFilename(), removed in ESLint 10; crashes at runtime (not covered by eslint-plugin-react compat shim).
 
-    "react-hooks-extra/no-direct-set-state-in-use-effect": "off", // We allow direct setState calls in useEffect.
+    // eslint-plugin-react-x@5 (upgraded alongside ESLint 10) enables rules that either duplicate the
+    // React-team-maintained eslint-plugin-react-hooks or restate repo-wide React decisions already accepted
+    // in individual blocks.
+    // Duplicates of eslint-plugin-react-hooks (React-team-maintained); defer to that single source per concern.
+    "react-x/rules-of-hooks": "off",
+    "react-x/exhaustive-deps": "off",
+    "react-x/purity": "off", // Duplicate of react-hooks/purity (e.g. new Date()/structuredClone during render).
+    "react-x/error-boundaries": "off", // Duplicate of react-hooks/error-boundaries.
+    // Repo-wide React decisions already accepted elsewhere (React 18 Context API, ShadCN index keys).
+    "react-x/no-use-context": "off",
+    "react-x/no-context-provider": "off",
+    "react-x/no-array-index-key": "off",
+    // New in react-x@5: false-positive on memoized component-reference selection (e.g. dynamic icon via useMemo).
+    "react-x/static-components": "off",
+    "react-x/set-state-in-effect": "off", // We allow direct setState calls in useEffect (react-hooks-extra rule absorbed into react-x@5).
 
     "n/no-missing-import": "off", // Barrel and index files are blindly caught by this rule.
     "n/no-unsupported-features/node-builtins": "off", // We use Node.js v24+ built-ins.
@@ -225,6 +314,78 @@ const cvEslintConfig: Config = defineConfig({
     ...eslintPlugin.configs.recommended.rules,
     ...eslintPlugin.configs.all.rules,
     ...eslintPluginUnicorn.configs.all.rules,
+    // Opinionated rules newly enabled by unicorn 64 -> 73 via `configs.all` (nine majors of additions)
+    // that this codebase deliberately never adopted. Each is style/preference, a too-new runtime API, or a
+    // false positive in our context (SSR, module-level caches, safe constant replacements).
+    "unicorn/no-asterisk-prefix-in-documentation-comments": "off", // We use standard JSDoc `*`-prefixed comment blocks.
+    "unicorn/single-line-block-comment-style": "off", // We allow single-line block comments.
+    "unicorn/name-replacements": "off", // Biased; conflicts with React terms (props, ref) and our domain naming.
+    "unicorn/consistent-arrow-return-style": "off", // Arrow body style is our choice; Prettier owns formatting.
+    "unicorn/try-complexity": "off", // We don't impose a try-block complexity limit.
+    "unicorn/prefer-temporal": "off", // The Temporal API is not yet available in our Node/browser runtime targets.
+    "unicorn/no-top-level-assignment-in-function": "off", // We use module-level caches/singletons (lazy init, circuit breakers, request dedup).
+    "unicorn/no-unreadable-new-expression": "off", // Biased readability rule.
+    "unicorn/prefer-error-is-error": "off", // Error.isError is too new for our runtime targets; we use instanceof.
+    "unicorn/comment-content": "off", // We don't enforce specific wording inside comments.
+    "unicorn/consistent-boolean-name": "off", // Biased boolean-naming rule.
+    "unicorn/no-barrel-files": "off", // We deliberately use barrel/index files.
+    "unicorn/prefer-global-number-constants": "off", // We allow explicit Number.* constants.
+    "unicorn/no-unreadable-for-of-expression": "off", // Biased readability rule.
+    "unicorn/consistent-conditional-object-spread": "off", // We allow both conditional object-spread styles.
+    "unicorn/prefer-early-return": "off", // We allow nested conditionals where clearer.
+    "unicorn/prefer-hoisting-branch-code": "off", // Biased; we keep code local to its branch.
+    "unicorn/no-useless-else": "off", // We allow else after return for clarity (matches no-else-return: off).
+    "unicorn/prefer-await": "off", // We allow promise chains where appropriate.
+    "unicorn/no-unnecessary-global-this": "off", // globalThis.<x> is SSR-safe access to browser-only globals.
+    "unicorn/prefer-minimal-ternary": "off", // Biased ternary rule.
+    "unicorn/no-useless-coercion": "off", // We allow explicit coercions for clarity/robustness.
+    "unicorn/no-unsafe-string-replacement": "off", // Our replacement values are safe constant literal origins.
+    "unicorn/no-top-level-side-effects": "off", // Some modules intentionally run initialization side effects.
+    "unicorn/prefer-continue": "off", // We allow both `continue` and negated-if loop bodies.
+    "unicorn/no-declarations-before-early-exit": "off", // We allow declarations before guard returns.
+    "unicorn/prefer-uint8array-base64": "off", // Uint8Array base64 methods are too new for our runtime targets.
+    "unicorn/prefer-set-methods": "off", // We allow Set filtering via has(); Set.prototype.difference is newish.
+
+    // Tail of the unicorn 64 -> 73 wave that only fired in files outside the initial local sample (caught by CI).
+    // Same rationale as above: each is style/preference, a v73 rename of a rule we already disable, a too-new
+    // runtime API, or a false positive in our object-method/SSR/derived-value patterns.
+    "unicorn/no-this-outside-of-class": "off", // We use `this` in object-literal methods / factory objects; flags valid non-class method patterns.
+    "unicorn/prefer-array-from-map": "off", // Style; we use spread+map / Array#map freely.
+    "unicorn/no-for-each": "off", // v73 rename of no-array-for-each (already disabled); no forEach preference.
+    "unicorn/prefer-direct-iteration": "off", // Style; we iterate via indices/entries where clearer.
+    "unicorn/prefer-simple-condition-first": "off", // Biased condition-ordering rule.
+    "unicorn/prefer-number-coercion": "off", // We allow explicit Number()/unary-plus coercions (matches no-useless-coercion off).
+    "unicorn/no-useless-template-literals": "off", // Style; owned by Prettier/preference.
+    "unicorn/prefer-split-limit": "off", // Style; String#split without a limit is acceptable.
+    "unicorn/no-computed-property-existence-check": "off", // We intentionally use computed `obj[key]` existence checks.
+    "unicorn/prefer-unicode-code-point-escapes": "off", // Style; we allow \uXXXX escapes.
+    "unicorn/prefer-type-literal-last": "off", // Biased type-member ordering; Prettier/preference owns ordering.
+    "unicorn/custom-error-definition": "off", // Biased; we define custom error classes our own way.
+    "unicorn/prefer-iterator-to-array": "off", // Style; we use spread / Array.from on iterables freely.
+    "unicorn/prefer-observer-apis": "off", // Biased; we choose event listeners vs observers per case.
+    "unicorn/no-break-in-nested-loop": "off", // We allow `break` in nested loops for clarity.
+    "unicorn/prefer-includes-over-repeated-comparisons": "off", // Style/preference.
+    "unicorn/dom-node-dataset": "off", // Style; we allow get/setAttribute over dataset.
+    "unicorn/no-unreadable-object-destructuring": "off", // Biased readability rule (matches other no-unreadable-* off).
+    "unicorn/no-unnecessary-boolean-comparison": "off", // We allow explicit boolean comparisons for clarity.
+    "unicorn/no-non-function-verb-prefix": "off", // Biased naming rule (matches prevent-abbreviations/name-replacements off).
+    "unicorn/prefer-ternary": "off", // We allow if/else over ternary (matches prefer-minimal-ternary off).
+    "unicorn/no-negated-array-predicate": "off", // Style/preference.
+    "unicorn/consistent-class-member-order": "off", // Biased ordering; Prettier/preference owns ordering.
+    "unicorn/no-unused-properties": "off", // Unreliable dead-code detection; false positives on typed shapes.
+    "unicorn/max-nested-calls": "off", // We don't impose a nested-call limit.
+    "unicorn/prefer-then-catch": "off", // Style; we allow .then/.catch chains (matches prefer-await off).
+    "unicorn/no-invalid-file-input-accept": "off", // Our `accept` value is derived from a shared extension list; rule can't statically resolve computed expressions (false positive).
+    "unicorn/prefer-else-if": "off", // We allow nested else blocks (matches no-useless-else/prefer-early-return off).
+    "unicorn/no-array-front-mutation": "off", // We intentionally use Array#shift() for bounded FIFO/trail buffers.
+    "unicorn/no-negated-condition": "off", // We allow negated conditions for guard-style checks.
+    "unicorn/explicit-length-check": "off", // .size can return a non-number; matches the package-block disable.
+    "unicorn/no-useless-undefined": "off", // We allow explicit undefined (matches no-undefined off).
+    "unicorn/prefer-logical-operator-over-ternary": "off", // Style; we allow ternaries.
+    "unicorn/no-manually-wrapped-comments": "off", // Style; we allow manually wrapped comment lines.
+    "unicorn/prefer-promise-with-resolvers": "off", // Promise.withResolvers is too new for our runtime targets (matches prefer-error-is-error/prefer-uint8array-base64 policy).
+    "unicorn/prefer-object-iterable-methods": "off", // Object.* iterable helpers are newish; too new / style.
+    "unicorn/prefer-boolean-return": "off", // Biased; we allow explicit conditional returns.
     ...eslintPluginSecurity.configs.recommended.rules,
     ...eslintPluginSonarJs.configs.recommended.rules,
     ...eslintPluginSonarJs.configs["recommended-legacy"].rules,
@@ -307,7 +468,6 @@ const packagesEslintConfig: Config = defineConfig({
     "react-x": eslintPluginReactX,
     // @ts-ignore - the plugin is not typed correctly.
     "react-hooks": eslintPluginReactHooks,
-    "react-hooks-extra": eslintPluginReactHooksExtra,
     "react-web-api": eslintPluginReactWebAPI,
     "react-naming-convention": eslintPluginReactNamingConvention,
     "jsx-a11y": eslintPluginJsxA11y,
@@ -322,7 +482,6 @@ const packagesEslintConfig: Config = defineConfig({
     ...eslintPlugin.configs.recommended.rules,
     ...eslintPlugin.configs.all.rules,
     ...eslintPluginReactDOM.configs.recommended.rules,
-    ...eslintPluginReactHooksExtra.configs.recommended.rules,
     ...eslintPluginReactNamingConvention.configs.recommended.rules,
     ...eslintPluginReactWebAPI.configs.recommended.rules,
     ...eslintPluginReactX.configs["recommended-type-checked"].rules,
@@ -330,6 +489,78 @@ const packagesEslintConfig: Config = defineConfig({
     // @ts-ignore - the plugin is not typed correctly.
     ...eslintPluginReactHooks.configs.recommended.rules,
     ...eslintPluginUnicorn.configs.all.rules,
+    // Opinionated rules newly enabled by unicorn 64 -> 73 via `configs.all` (nine majors of additions)
+    // that this codebase deliberately never adopted. Each is style/preference, a too-new runtime API, or a
+    // false positive in our context (SSR, module-level caches, safe constant replacements).
+    "unicorn/no-asterisk-prefix-in-documentation-comments": "off", // We use standard JSDoc `*`-prefixed comment blocks.
+    "unicorn/single-line-block-comment-style": "off", // We allow single-line block comments.
+    "unicorn/name-replacements": "off", // Biased; conflicts with React terms (props, ref) and our domain naming.
+    "unicorn/consistent-arrow-return-style": "off", // Arrow body style is our choice; Prettier owns formatting.
+    "unicorn/try-complexity": "off", // We don't impose a try-block complexity limit.
+    "unicorn/prefer-temporal": "off", // The Temporal API is not yet available in our Node/browser runtime targets.
+    "unicorn/no-top-level-assignment-in-function": "off", // We use module-level caches/singletons (lazy init, circuit breakers, request dedup).
+    "unicorn/no-unreadable-new-expression": "off", // Biased readability rule.
+    "unicorn/prefer-error-is-error": "off", // Error.isError is too new for our runtime targets; we use instanceof.
+    "unicorn/comment-content": "off", // We don't enforce specific wording inside comments.
+    "unicorn/consistent-boolean-name": "off", // Biased boolean-naming rule.
+    "unicorn/no-barrel-files": "off", // We deliberately use barrel/index files.
+    "unicorn/prefer-global-number-constants": "off", // We allow explicit Number.* constants.
+    "unicorn/no-unreadable-for-of-expression": "off", // Biased readability rule.
+    "unicorn/consistent-conditional-object-spread": "off", // We allow both conditional object-spread styles.
+    "unicorn/prefer-early-return": "off", // We allow nested conditionals where clearer.
+    "unicorn/prefer-hoisting-branch-code": "off", // Biased; we keep code local to its branch.
+    "unicorn/no-useless-else": "off", // We allow else after return for clarity (matches no-else-return: off).
+    "unicorn/prefer-await": "off", // We allow promise chains where appropriate.
+    "unicorn/no-unnecessary-global-this": "off", // globalThis.<x> is SSR-safe access to browser-only globals.
+    "unicorn/prefer-minimal-ternary": "off", // Biased ternary rule.
+    "unicorn/no-useless-coercion": "off", // We allow explicit coercions for clarity/robustness.
+    "unicorn/no-unsafe-string-replacement": "off", // Our replacement values are safe constant literal origins.
+    "unicorn/no-top-level-side-effects": "off", // Some modules intentionally run initialization side effects.
+    "unicorn/prefer-continue": "off", // We allow both `continue` and negated-if loop bodies.
+    "unicorn/no-declarations-before-early-exit": "off", // We allow declarations before guard returns.
+    "unicorn/prefer-uint8array-base64": "off", // Uint8Array base64 methods are too new for our runtime targets.
+    "unicorn/prefer-set-methods": "off", // We allow Set filtering via has(); Set.prototype.difference is newish.
+
+    // Tail of the unicorn 64 -> 73 wave that only fired in files outside the initial local sample (caught by CI).
+    // Same rationale as above: each is style/preference, a v73 rename of a rule we already disable, a too-new
+    // runtime API, or a false positive in our object-method/SSR/derived-value patterns.
+    "unicorn/no-this-outside-of-class": "off", // We use `this` in object-literal methods / factory objects; flags valid non-class method patterns.
+    "unicorn/prefer-array-from-map": "off", // Style; we use spread+map / Array#map freely.
+    "unicorn/no-for-each": "off", // v73 rename of no-array-for-each (already disabled); no forEach preference.
+    "unicorn/prefer-direct-iteration": "off", // Style; we iterate via indices/entries where clearer.
+    "unicorn/prefer-simple-condition-first": "off", // Biased condition-ordering rule.
+    "unicorn/prefer-number-coercion": "off", // We allow explicit Number()/unary-plus coercions (matches no-useless-coercion off).
+    "unicorn/no-useless-template-literals": "off", // Style; owned by Prettier/preference.
+    "unicorn/prefer-split-limit": "off", // Style; String#split without a limit is acceptable.
+    "unicorn/no-computed-property-existence-check": "off", // We intentionally use computed `obj[key]` existence checks.
+    "unicorn/prefer-unicode-code-point-escapes": "off", // Style; we allow \uXXXX escapes.
+    "unicorn/prefer-type-literal-last": "off", // Biased type-member ordering; Prettier/preference owns ordering.
+    "unicorn/custom-error-definition": "off", // Biased; we define custom error classes our own way.
+    "unicorn/prefer-iterator-to-array": "off", // Style; we use spread / Array.from on iterables freely.
+    "unicorn/prefer-observer-apis": "off", // Biased; we choose event listeners vs observers per case.
+    "unicorn/no-break-in-nested-loop": "off", // We allow `break` in nested loops for clarity.
+    "unicorn/prefer-includes-over-repeated-comparisons": "off", // Style/preference.
+    "unicorn/dom-node-dataset": "off", // Style; we allow get/setAttribute over dataset.
+    "unicorn/no-unreadable-object-destructuring": "off", // Biased readability rule (matches other no-unreadable-* off).
+    "unicorn/no-unnecessary-boolean-comparison": "off", // We allow explicit boolean comparisons for clarity.
+    "unicorn/no-non-function-verb-prefix": "off", // Biased naming rule (matches prevent-abbreviations/name-replacements off).
+    "unicorn/prefer-ternary": "off", // We allow if/else over ternary (matches prefer-minimal-ternary off).
+    "unicorn/no-negated-array-predicate": "off", // Style/preference.
+    "unicorn/consistent-class-member-order": "off", // Biased ordering; Prettier/preference owns ordering.
+    "unicorn/no-unused-properties": "off", // Unreliable dead-code detection; false positives on typed shapes.
+    "unicorn/max-nested-calls": "off", // We don't impose a nested-call limit.
+    "unicorn/prefer-then-catch": "off", // Style; we allow .then/.catch chains (matches prefer-await off).
+    "unicorn/no-invalid-file-input-accept": "off", // Our `accept` value is derived from a shared extension list; rule can't statically resolve computed expressions (false positive).
+    "unicorn/prefer-else-if": "off", // We allow nested else blocks (matches no-useless-else/prefer-early-return off).
+    "unicorn/no-array-front-mutation": "off", // We intentionally use Array#shift() for bounded FIFO/trail buffers.
+    "unicorn/no-negated-condition": "off", // We allow negated conditions for guard-style checks.
+    "unicorn/explicit-length-check": "off", // .size can return a non-number; matches the package-block disable.
+    "unicorn/no-useless-undefined": "off", // We allow explicit undefined (matches no-undefined off).
+    "unicorn/prefer-logical-operator-over-ternary": "off", // Style; we allow ternaries.
+    "unicorn/no-manually-wrapped-comments": "off", // Style; we allow manually wrapped comment lines.
+    "unicorn/prefer-promise-with-resolvers": "off", // Promise.withResolvers is too new for our runtime targets (matches prefer-error-is-error/prefer-uint8array-base64 policy).
+    "unicorn/prefer-object-iterable-methods": "off", // Object.* iterable helpers are newish; too new / style.
+    "unicorn/prefer-boolean-return": "off", // Biased; we allow explicit conditional returns.
     ...eslintPluginSecurity.configs.recommended.rules,
     ...eslintPluginSonarJs.configs.recommended.rules,
     ...eslintPluginJsxA11y.configs.recommended.rules,
@@ -382,18 +613,34 @@ const packagesEslintConfig: Config = defineConfig({
     "react/jsx-closing-bracket-location": "off", // We use Prettier for formatting.
     "react/function-component-definition": "off", // Sometimes we use arrow syntax.
     "react/jsx-no-constructed-context-values": "off", // Another ShadCN limitation...
-    "react/jsx-filename-extension": [2, {extensions: [".tsx", ".ts"]}],
+
+    // eslint-plugin-react@7.37.5 rules that call ESLint APIs removed in ESLint 10 and crash at runtime; no newer plugin release exists. The spacing rules are owned by Prettier regardless.
+    "react/forward-ref-uses-ref": "off", // Calls removed context.getSourceCode().
+    "react/jsx-curly-spacing": "off", // Calls removed sourceCode.isSpaceBetweenTokens(); Prettier owns spacing.
+    "react/jsx-equals-spacing": "off", // Calls removed sourceCode.isSpaceBetweenTokens(); Prettier owns spacing.
+    "react/jsx-tag-spacing": "off", // Calls removed sourceCode.isSpaceBetweenTokens(); Prettier owns spacing.
+    "react/jsx-filename-extension": "off", // Rule calls context.getFilename(), removed in ESLint 10; crashes at runtime (not covered by eslint-plugin-react compat shim).
 
     "react-hooks/refs": "off", // Another ShadCN limitation...
     "react-hooks/purity": "off", // Some hooks are not pure due to randomness (e.g. confetti).
     "react-hooks/immutability": "off", // Another ShadCN limitation...
     "react-hooks/preserve-manual-memoization": "off", // Another ShadCN limitation...
 
-    "react-x/no-use-context": "off", // We use React Context API from React 18.
+    // eslint-plugin-react-x@5 (upgraded alongside ESLint 10) enables rules that either duplicate the
+    // React-team-maintained eslint-plugin-react-hooks or restate repo-wide React decisions already accepted
+    // in individual blocks.
+    // Duplicates of eslint-plugin-react-hooks (React-team-maintained); defer to that single source per concern.
+    "react-x/rules-of-hooks": "off",
+    "react-x/exhaustive-deps": "off",
+    "react-x/purity": "off", // Duplicate of react-hooks/purity (e.g. new Date()/structuredClone during render).
+    "react-x/error-boundaries": "off", // Duplicate of react-hooks/error-boundaries.
+    // Repo-wide React decisions already accepted elsewhere (React 18 Context API, ShadCN index keys).
+    "react-x/no-use-context": "off",
+    "react-x/no-context-provider": "off",
+    "react-x/no-array-index-key": "off",
+    // New in react-x@5: false-positive on memoized component-reference selection (e.g. dynamic icon via useMemo).
+    "react-x/static-components": "off",
     "react-x/no-forward-ref": "off", // We use forwardRef where needed, from React 18.
-    "react-x/no-array-index-key": "off", // Another ShadCN limitation...
-    "react-x/no-unstable-context": "off", // Another ShadCN limitation...
-    "react-x/no-context-provider": "off", // We use React Context API from React 18.
     "react-x/no-unstable-context-value": "off", // Another ShadCN limitation...
 
     "n/no-unpublished-import": "off", // Packages are published; false positive.
@@ -467,6 +714,78 @@ const statusEslintConfig: Config = defineConfig({
     ...eslintPlugin.configs.recommended.rules,
     ...eslintPlugin.configs.all.rules,
     ...eslintPluginUnicorn.configs.all.rules,
+    // Opinionated rules newly enabled by unicorn 64 -> 73 via `configs.all` (nine majors of additions)
+    // that this codebase deliberately never adopted. Each is style/preference, a too-new runtime API, or a
+    // false positive in our context (SSR, module-level caches, safe constant replacements).
+    "unicorn/no-asterisk-prefix-in-documentation-comments": "off", // We use standard JSDoc `*`-prefixed comment blocks.
+    "unicorn/single-line-block-comment-style": "off", // We allow single-line block comments.
+    "unicorn/name-replacements": "off", // Biased; conflicts with React terms (props, ref) and our domain naming.
+    "unicorn/consistent-arrow-return-style": "off", // Arrow body style is our choice; Prettier owns formatting.
+    "unicorn/try-complexity": "off", // We don't impose a try-block complexity limit.
+    "unicorn/prefer-temporal": "off", // The Temporal API is not yet available in our Node/browser runtime targets.
+    "unicorn/no-top-level-assignment-in-function": "off", // We use module-level caches/singletons (lazy init, circuit breakers, request dedup).
+    "unicorn/no-unreadable-new-expression": "off", // Biased readability rule.
+    "unicorn/prefer-error-is-error": "off", // Error.isError is too new for our runtime targets; we use instanceof.
+    "unicorn/comment-content": "off", // We don't enforce specific wording inside comments.
+    "unicorn/consistent-boolean-name": "off", // Biased boolean-naming rule.
+    "unicorn/no-barrel-files": "off", // We deliberately use barrel/index files.
+    "unicorn/prefer-global-number-constants": "off", // We allow explicit Number.* constants.
+    "unicorn/no-unreadable-for-of-expression": "off", // Biased readability rule.
+    "unicorn/consistent-conditional-object-spread": "off", // We allow both conditional object-spread styles.
+    "unicorn/prefer-early-return": "off", // We allow nested conditionals where clearer.
+    "unicorn/prefer-hoisting-branch-code": "off", // Biased; we keep code local to its branch.
+    "unicorn/no-useless-else": "off", // We allow else after return for clarity (matches no-else-return: off).
+    "unicorn/prefer-await": "off", // We allow promise chains where appropriate.
+    "unicorn/no-unnecessary-global-this": "off", // globalThis.<x> is SSR-safe access to browser-only globals.
+    "unicorn/prefer-minimal-ternary": "off", // Biased ternary rule.
+    "unicorn/no-useless-coercion": "off", // We allow explicit coercions for clarity/robustness.
+    "unicorn/no-unsafe-string-replacement": "off", // Our replacement values are safe constant literal origins.
+    "unicorn/no-top-level-side-effects": "off", // Some modules intentionally run initialization side effects.
+    "unicorn/prefer-continue": "off", // We allow both `continue` and negated-if loop bodies.
+    "unicorn/no-declarations-before-early-exit": "off", // We allow declarations before guard returns.
+    "unicorn/prefer-uint8array-base64": "off", // Uint8Array base64 methods are too new for our runtime targets.
+    "unicorn/prefer-set-methods": "off", // We allow Set filtering via has(); Set.prototype.difference is newish.
+
+    // Tail of the unicorn 64 -> 73 wave that only fired in files outside the initial local sample (caught by CI).
+    // Same rationale as above: each is style/preference, a v73 rename of a rule we already disable, a too-new
+    // runtime API, or a false positive in our object-method/SSR/derived-value patterns.
+    "unicorn/no-this-outside-of-class": "off", // We use `this` in object-literal methods / factory objects; flags valid non-class method patterns.
+    "unicorn/prefer-array-from-map": "off", // Style; we use spread+map / Array#map freely.
+    "unicorn/no-for-each": "off", // v73 rename of no-array-for-each (already disabled); no forEach preference.
+    "unicorn/prefer-direct-iteration": "off", // Style; we iterate via indices/entries where clearer.
+    "unicorn/prefer-simple-condition-first": "off", // Biased condition-ordering rule.
+    "unicorn/prefer-number-coercion": "off", // We allow explicit Number()/unary-plus coercions (matches no-useless-coercion off).
+    "unicorn/no-useless-template-literals": "off", // Style; owned by Prettier/preference.
+    "unicorn/prefer-split-limit": "off", // Style; String#split without a limit is acceptable.
+    "unicorn/no-computed-property-existence-check": "off", // We intentionally use computed `obj[key]` existence checks.
+    "unicorn/prefer-unicode-code-point-escapes": "off", // Style; we allow \uXXXX escapes.
+    "unicorn/prefer-type-literal-last": "off", // Biased type-member ordering; Prettier/preference owns ordering.
+    "unicorn/custom-error-definition": "off", // Biased; we define custom error classes our own way.
+    "unicorn/prefer-iterator-to-array": "off", // Style; we use spread / Array.from on iterables freely.
+    "unicorn/prefer-observer-apis": "off", // Biased; we choose event listeners vs observers per case.
+    "unicorn/no-break-in-nested-loop": "off", // We allow `break` in nested loops for clarity.
+    "unicorn/prefer-includes-over-repeated-comparisons": "off", // Style/preference.
+    "unicorn/dom-node-dataset": "off", // Style; we allow get/setAttribute over dataset.
+    "unicorn/no-unreadable-object-destructuring": "off", // Biased readability rule (matches other no-unreadable-* off).
+    "unicorn/no-unnecessary-boolean-comparison": "off", // We allow explicit boolean comparisons for clarity.
+    "unicorn/no-non-function-verb-prefix": "off", // Biased naming rule (matches prevent-abbreviations/name-replacements off).
+    "unicorn/prefer-ternary": "off", // We allow if/else over ternary (matches prefer-minimal-ternary off).
+    "unicorn/no-negated-array-predicate": "off", // Style/preference.
+    "unicorn/consistent-class-member-order": "off", // Biased ordering; Prettier/preference owns ordering.
+    "unicorn/no-unused-properties": "off", // Unreliable dead-code detection; false positives on typed shapes.
+    "unicorn/max-nested-calls": "off", // We don't impose a nested-call limit.
+    "unicorn/prefer-then-catch": "off", // Style; we allow .then/.catch chains (matches prefer-await off).
+    "unicorn/no-invalid-file-input-accept": "off", // Our `accept` value is derived from a shared extension list; rule can't statically resolve computed expressions (false positive).
+    "unicorn/prefer-else-if": "off", // We allow nested else blocks (matches no-useless-else/prefer-early-return off).
+    "unicorn/no-array-front-mutation": "off", // We intentionally use Array#shift() for bounded FIFO/trail buffers.
+    "unicorn/no-negated-condition": "off", // We allow negated conditions for guard-style checks.
+    "unicorn/explicit-length-check": "off", // .size can return a non-number; matches the package-block disable.
+    "unicorn/no-useless-undefined": "off", // We allow explicit undefined (matches no-undefined off).
+    "unicorn/prefer-logical-operator-over-ternary": "off", // Style; we allow ternaries.
+    "unicorn/no-manually-wrapped-comments": "off", // Style; we allow manually wrapped comment lines.
+    "unicorn/prefer-promise-with-resolvers": "off", // Promise.withResolvers is too new for our runtime targets (matches prefer-error-is-error/prefer-uint8array-base64 policy).
+    "unicorn/prefer-object-iterable-methods": "off", // Object.* iterable helpers are newish; too new / style.
+    "unicorn/prefer-boolean-return": "off", // Biased; we allow explicit conditional returns.
     ...eslintPluginSecurity.configs.recommended.rules,
     ...eslintPluginSonarJs.configs.recommended.rules,
     ...eslintPluginSonarJs.configs["recommended-legacy"].rules,

@@ -523,8 +523,8 @@ let websiteLoggerProvider: LoggerProvider | null = null;
 if (logExporter !== null) {
   websiteLoggerProvider = new LoggerProvider({
     ...(serviceResource ? {resource: serviceResource} : {}),
+    processors: [new BatchLogRecordProcessor({exporter: logExporter})],
   });
-  websiteLoggerProvider.addLogRecordProcessor(new BatchLogRecordProcessor(logExporter));
 }
 
 const websiteLogger = websiteLoggerProvider?.getLogger("arolariu.website.server", process.env["COMMIT_SHA"] ?? "unknown") ?? null;

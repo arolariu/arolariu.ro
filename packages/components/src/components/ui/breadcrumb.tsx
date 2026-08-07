@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
 
-import {ChevronRight, MoreHorizontal} from "lucide-react";
+import {ChevronRight, Ellipsis} from "lucide-react";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
@@ -259,7 +259,7 @@ const BreadcrumbEllipsis = React.forwardRef<HTMLSpanElement, BreadcrumbEllipsisP
       aria-hidden='true'
       className={cn(styles.ellipsis, className)}
       {...props}>
-      <MoreHorizontal />
+      <Ellipsis />
       <span className={styles.srOnly}>More</span>
     </span>
   ),

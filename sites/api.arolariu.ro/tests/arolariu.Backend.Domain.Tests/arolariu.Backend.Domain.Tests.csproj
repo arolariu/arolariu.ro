@@ -19,10 +19,7 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup Label="Other Dependencies">
-    <PackageReference Include="Newtonsoft.Json" />
-  </ItemGroup>
-
+  
   <ItemGroup Label="Project References">
     <ProjectReference Include="..\..\src\Invoices\arolariu.Backend.Domain.Invoices.csproj" />
   </ItemGroup>
