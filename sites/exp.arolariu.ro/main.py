@@ -26,6 +26,7 @@ from telemetry.bootstrap import (
     shutdown_telemetry,
     start_span,
 )
+from telemetry.health_policy import should_suppress_telemetry
 
 logger = logging.getLogger(__name__)
 
@@ -126,17 +127,18 @@ async def attach_request_context(
     )
     trace_context = get_current_trace_context()
 
-    logger.info(
-        "request_id=%s request_id_source=%s trace_id=%s span_id=%s method=%s path=%s status=%s durationMs=%.2f",
-        request_id,
-        request_id_source,
-        trace_context.trace_id if trace_context else "0",
-        trace_context.span_id if trace_context else "0",
-        request.method,
-        request.url.path,
-        response.status_code,
-        elapsed_ms,
-    )
+    if not should_suppress_telemetry(request.url.path):
+        logger.info(
+            "request_id=%s request_id_source=%s trace_id=%s span_id=%s method=%s path=%s status=%s durationMs=%.2f",
+            request_id,
+            request_id_source,
+            trace_context.trace_id if trace_context else "0",
+            trace_context.span_id if trace_context else "0",
+            request.method,
+            request.url.path,
+            response.status_code,
+            elapsed_ms,
+        )
     return response
 
 
