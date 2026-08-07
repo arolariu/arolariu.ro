@@ -151,11 +151,6 @@ jobs:
           START_TIME=$(date +%s)
           npm run prepare
           npm run build
-          # The Azure Functions app emitted at build/server declares its own
-          # runtime dependency (@azure/functions). Oryx would normally install
-          # it, but we skip Oryx entirely below, so install it here. --prefix
-          # keeps this scoped to the function app rather than the workspace root.
-          npm install --prefix ./build/server --omit=dev
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
           echo ""
@@ -178,12 +173,6 @@ jobs:
           app_location: "./sites/cv.arolariu.ro/"
           api_location: "./sites/cv.arolariu.ro/build/server"
           output_location: "build/static"
-          # The workflow already builds the app and the function app above, so
-          # skip Oryx. Left enabled, Oryx runs `npm install` from the workspace
-          # root inside its own container, pulling every monorepo devDependency
-          # in to rebuild an artifact we have already produced.
-          skip_app_build: true
-          skip_api_build: true
 
       - name: 📊 Deployment summary
         run: |
