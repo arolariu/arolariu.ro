@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Options;
+using arolariu.Backend.Common.Telemetry;
 
 using global::Azure.Monitor.OpenTelemetry.Exporter;
 
@@ -65,6 +66,18 @@ public static class LoggingExtensions
       .GetRequiredService<IOptionsManager>()
       .GetApplicationOptions()
       .ApplicationInsightsEndpoint ?? string.Empty;
+
+    // Health probes drive the majority of hosting-diagnostics log volume and carry no
+    // diagnostic value. Scoped to the OTel provider so console logging is untouched.
+    if (HealthTelemetryPolicy.IsSuppressionEnabled)
+    {
+      builder.Logging.AddFilter<OpenTelemetryLoggerProvider>(
+        "Microsoft.AspNetCore.Hosting.Diagnostics", LogLevel.Warning);
+      builder.Logging.AddFilter<OpenTelemetryLoggerProvider>(
+        "Microsoft.AspNetCore.Routing.EndpointMiddleware", LogLevel.Warning);
+      builder.Logging.AddFilter<OpenTelemetryLoggerProvider>(
+        "Microsoft.Extensions.Diagnostics.HealthChecks", LogLevel.Warning);
+    }
 
     builder.Logging.AddOpenTelemetry(otelOptions =>
     {
