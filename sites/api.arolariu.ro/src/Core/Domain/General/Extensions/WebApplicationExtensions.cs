@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.Configuration;
+using arolariu.Backend.Common.Telemetry;
 using arolariu.Backend.Core.Auth.Modules;
 using arolariu.Backend.Core.Domain.General.Middlewares;
 using arolariu.Backend.Core.Domain.General.Services.Swagger;
@@ -135,10 +136,12 @@ internal static class WebApplicationExtensions
     app.UseSwaggerUI(SwaggerConfigurationService.GetSwaggerUIOptions());
     app.MapOpenApi();
     app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse })
-       .RequireRateLimiting(RateLimitPolicies.HealthCheck);
+       .RequireRateLimiting(RateLimitPolicies.HealthCheck)
+       .DisableHttpMetrics();
     app.MapGet("/terms", () => app.Configuration["ApplicationOptions:TermsAndConditions"]);
 
     logger.LogHealthChecksRegistered("/health");
+    logger.LogHealthTelemetrySuppression(HealthTelemetryPolicy.IsSuppressionEnabled);
     logger.LogPipelineConfigurationCompleted();
 
     return app;
