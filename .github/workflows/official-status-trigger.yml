@@ -165,6 +165,19 @@ jobs:
 
       - name: "🚀 Deploying Status website..."
         uses: Azure/static-web-apps-deploy@v1
+        env:
+          # Oryx rebuilds the app in its own container and runs `npm install`
+          # resolved against the monorepo workspace root, so it pulls in every
+          # site's devDependencies. Our root .npmrc sets engine-strict=true,
+          # which turns any engines mismatch into a hard failure.
+          #
+          # jsdom@30 requires ^22.22.2 || ^24.15.0 || >=26.0.0, and Oryx's SDK
+          # feed tops out at Node 22.22.0 and 24.13.0 with no 26.x — so no Node
+          # it can provision satisfies that range, and raising engines.node
+          # cannot fix it. jsdom is a test-only dependency that is never
+          # imported by `vite build`, so relaxing the check here is safe and
+          # scoped strictly to this container.
+          NPM_CONFIG_ENGINE_STRICT: "false"
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_STATUS_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
