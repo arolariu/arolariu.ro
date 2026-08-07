@@ -25,6 +25,7 @@ describe("healthPolicy", () => {
       ["true", true],
       ["TRUE", true],
       ["not-a-bool", true],
+      ["undefined", true],
       ["false", false],
       ["False", false],
     ])("parses %s as %s", (raw, expected) => {
@@ -36,12 +37,14 @@ describe("healthPolicy", () => {
     afterEach(() => vi.unstubAllEnvs());
 
     it("suppresses a health path when the env var is unset", () => {
-      vi.stubEnv(SUPPRESSION_ENV_VAR, undefined as unknown as string);
+      delete process.env[SUPPRESSION_ENV_VAR];
+      expect(process.env[SUPPRESSION_ENV_VAR]).toBeUndefined();
       expect(shouldSuppressTelemetry("/api/health")).toBe(true);
     });
 
     it("never suppresses a real route even when the env var is unset", () => {
-      vi.stubEnv(SUPPRESSION_ENV_VAR, undefined as unknown as string);
+      delete process.env[SUPPRESSION_ENV_VAR];
+      expect(process.env[SUPPRESSION_ENV_VAR]).toBeUndefined();
       expect(shouldSuppressTelemetry("/api/user")).toBe(false);
     });
 
