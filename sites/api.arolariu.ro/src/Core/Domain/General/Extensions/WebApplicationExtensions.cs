@@ -4,21 +4,20 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-using arolariu.Backend.Common.Configuration;
-using arolariu.Backend.Common.Telemetry;
-using arolariu.Backend.Common.Telemetry.Metering;
-
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-using arolariu.Backend.Core.Auth.Modules;
-using arolariu.Backend.Core.Domain.General.Middlewares;
-using arolariu.Backend.Core.Domain.General.Services.Swagger;
-
-using HealthChecks.UI.Client;
-
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
+
+using HealthChecks.UI.Client;
+
+using arolariu.Backend.Common.Configuration;
+using arolariu.Backend.Common.Telemetry;
+using arolariu.Backend.Common.Telemetry.Metering;
+using arolariu.Backend.Core.Auth.Modules;
+using arolariu.Backend.Core.Domain.General.Middlewares;
+using arolariu.Backend.Core.Domain.General.Services.Swagger;
 
 /// <summary>
 /// Provides extension methods for configuring the <see cref="WebApplication"/> request processing pipeline.
