@@ -1,10 +1,14 @@
 namespace arolariu.Backend.Core.Domain.General.Extensions;
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.Configuration;
 using arolariu.Backend.Common.Telemetry;
+using arolariu.Backend.Common.Telemetry.Metering;
+
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using arolariu.Backend.Core.Auth.Modules;
 using arolariu.Backend.Core.Domain.General.Middlewares;
 using arolariu.Backend.Core.Domain.General.Services.Swagger;
@@ -135,7 +139,23 @@ internal static class WebApplicationExtensions
     app.UseSwagger(SwaggerConfigurationService.GetSwaggerOptions());
     app.UseSwaggerUI(SwaggerConfigurationService.GetSwaggerUIOptions());
     app.MapOpenApi();
-    app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse })
+    app.MapHealthChecks("/health", new HealthCheckOptions
+    {
+      ResponseWriter = async (httpContext, report) =>
+      {
+        var failed = new List<string>();
+        foreach (var entry in report.Entries)
+        {
+          if (entry.Value.Status != HealthStatus.Healthy)
+          {
+            failed.Add(entry.Key);
+          }
+        }
+
+        httpContext.Items[HealthCheckMetrics.FailedChecksItemKey] = failed;
+        await UIResponseWriter.WriteHealthCheckUIResponse(httpContext, report).ConfigureAwait(false);
+      },
+    })
        .RequireRateLimiting(RateLimitPolicies.HealthCheck)
        .DisableHttpMetrics();
     app.MapGet("/terms", () => app.Configuration["ApplicationOptions:TermsAndConditions"]);

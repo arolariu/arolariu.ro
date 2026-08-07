@@ -1,8 +1,10 @@
 namespace arolariu.Backend.Core.Domain.General.Middlewares;
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using arolariu.Backend.Common.Telemetry;
+using arolariu.Backend.Common.Telemetry.Metering;
 using Microsoft.AspNetCore.Http;
 using OpenTelemetry;
 
@@ -40,6 +42,14 @@ internal sealed class HealthTelemetrySuppressionMiddleware(RequestDelegate next)
     using (SuppressInstrumentationScope.Begin())
     {
       await this.next(context).ConfigureAwait(false);
+    }
+
+    // Recorded only after the scope is disposed — inside it, the measurement could be
+    // discarded by the very mechanism that suppresses the request telemetry.
+    if (context.Items.TryGetValue(HealthCheckMetrics.FailedChecksItemKey, out var failed)
+        && failed is IEnumerable<string> failedCheckNames)
+    {
+      HealthCheckMetrics.RecordFailures(failedCheckNames);
     }
   }
 }
