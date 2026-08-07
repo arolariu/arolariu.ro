@@ -347,3 +347,14 @@ class TestTelemetryBootstrap:
             assert log_exporter.kwargs["disable_offline_storage"] is True
         finally:
             shutdown_telemetry()
+
+
+class TestHealthFailureMetric:
+    """Behaviour of the health failure counter."""
+
+    def test_record_health_failure_metric_is_safe_without_runtime(self) -> None:
+        from telemetry.bootstrap import record_health_failure_metric, reset_telemetry_state
+
+        reset_telemetry_state()
+
+        record_health_failure_metric(check="config")
