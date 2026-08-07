@@ -112,6 +112,10 @@ internal static class WebApplicationExtensions
     // writes an RFC 7807 ProblemDetails response. See RFC 2003.
     app.UseExceptionHandler();
 
+    // Must run before routing so the suppression scope covers execution of the health checks
+    // themselves, not merely endpoint dispatch. See the telemetry noise reduction spec.
+    app.UseMiddleware<HealthTelemetrySuppressionMiddleware>();
+
     app.UseHttpsRedirection();
     app.UseAuthServices();
 
