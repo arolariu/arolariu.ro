@@ -1,5 +1,5 @@
-import {describe, expect, it} from "vitest";
-import {isSuppressedPath, parseSuppressionFlag, shouldSuppressTelemetry} from "./healthPolicy";
+import {afterEach, describe, expect, it, vi} from "vitest";
+import {SUPPRESSION_ENV_VAR, isSuppressedPath, parseSuppressionFlag, shouldSuppressTelemetry} from "./healthPolicy";
 
 describe("healthPolicy", () => {
   describe("isSuppressedPath", () => {
@@ -33,12 +33,26 @@ describe("healthPolicy", () => {
   });
 
   describe("shouldSuppressTelemetry", () => {
-    it("suppresses a health path when the flag is enabled", () => {
+    afterEach(() => vi.unstubAllEnvs());
+
+    it("suppresses a health path when the env var is unset", () => {
+      vi.stubEnv(SUPPRESSION_ENV_VAR, undefined as unknown as string);
       expect(shouldSuppressTelemetry("/api/health")).toBe(true);
     });
 
-    it("never suppresses a real route", () => {
+    it("never suppresses a real route even when the env var is unset", () => {
+      vi.stubEnv(SUPPRESSION_ENV_VAR, undefined as unknown as string);
       expect(shouldSuppressTelemetry("/api/user")).toBe(false);
+    });
+
+    it("does not suppress a health path when the env var is 'false'", () => {
+      vi.stubEnv(SUPPRESSION_ENV_VAR, "false");
+      expect(shouldSuppressTelemetry("/api/health")).toBe(false);
+    });
+
+    it("suppresses a health path when the env var is an unparseable value (fail-safe)", () => {
+      vi.stubEnv(SUPPRESSION_ENV_VAR, "garbage");
+      expect(shouldSuppressTelemetry("/api/health")).toBe(true);
     });
   });
 });
