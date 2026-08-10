@@ -100,7 +100,7 @@
     "@azure/monitor-opentelemetry-exporter": "1.0.0-beta.44",
     "@azure/storage-blob": "12.33.0",
     "@base-ui/react": "1.7.0",
-    "@clerk/localizations": "4.13.10",
+    "@clerk/localizations": "4.14.1",
     "@clerk/nextjs": "7.6.5",
     "@docusaurus/core": "3.10.2",
     "@docusaurus/module-type-aliases": "3.10.2",
