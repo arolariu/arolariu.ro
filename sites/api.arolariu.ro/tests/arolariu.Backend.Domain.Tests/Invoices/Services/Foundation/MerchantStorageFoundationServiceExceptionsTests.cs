@@ -14,12 +14,13 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Moq;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Verifies that inner exceptions propagated from the Cosmos broker are classified
 /// into the proper Foundation-tier outer exceptions by the TryCatch boundary.
 /// </summary>
+[TestClass]
 public class MerchantStorageFoundationServiceExceptionsTests
 {
   private readonly Mock<IInvoiceNoSqlBroker> _broker = new();
@@ -32,92 +33,92 @@ public class MerchantStorageFoundationServiceExceptionsTests
   }
 
   /// <summary>Verifies that a <see cref="MerchantNotFoundException"/> from the broker is wrapped into a <see cref="MerchantFoundationServiceDependencyValidationException"/>.</summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantObject_WhenBrokerThrowsNotFound_ThrowsFoundationDependencyValidationException()
   {
     _broker.Setup(b => b.ReadMerchantAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new MerchantNotFoundException(Guid.NewGuid()));
 
-    var ex = await Assert.ThrowsAsync<MerchantFoundationServiceDependencyValidationException>(
+    var ex = await Assert.ThrowsExactlyAsync<MerchantFoundationServiceDependencyValidationException>(
       () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None));
 
-    Assert.IsType<MerchantNotFoundException>(ex.InnerException);
+    Assert.IsExactInstanceOfType<MerchantNotFoundException>(ex.InnerException);
   }
 
   /// <summary>Verifies that a <see cref="MerchantAlreadyExistsException"/> from the broker is wrapped into a <see cref="MerchantFoundationServiceDependencyValidationException"/>.</summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchantObject_WhenBrokerThrowsAlreadyExists_ThrowsFoundationDependencyValidationException()
   {
     _broker.Setup(b => b.CreateMerchantAsync(It.IsAny<Merchant>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new MerchantAlreadyExistsException(Guid.NewGuid()));
     var merchant = new Merchant { id = Guid.NewGuid(), ParentCompanyId = Guid.NewGuid() };
 
-    var ex = await Assert.ThrowsAsync<MerchantFoundationServiceDependencyValidationException>(
+    var ex = await Assert.ThrowsExactlyAsync<MerchantFoundationServiceDependencyValidationException>(
       () => _sut.CreateMerchantObject(merchant, null, CancellationToken.None));
 
-    Assert.IsType<MerchantAlreadyExistsException>(ex.InnerException);
+    Assert.IsExactInstanceOfType<MerchantAlreadyExistsException>(ex.InnerException);
   }
 
   /// <summary>Verifies that a <see cref="MerchantUnauthorizedAccessException"/> from the broker is wrapped into a <see cref="MerchantFoundationServiceDependencyValidationException"/> (caller-correctable 401, not 503).</summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantObject_WhenBrokerThrowsUnauthorized_ThrowsFoundationDependencyValidationException()
   {
     _broker.Setup(b => b.ReadMerchantAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new MerchantUnauthorizedAccessException("unauthorized"));
 
-    var ex = await Assert.ThrowsAsync<MerchantFoundationServiceDependencyValidationException>(
+    var ex = await Assert.ThrowsExactlyAsync<MerchantFoundationServiceDependencyValidationException>(
       () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None));
 
-    Assert.IsType<MerchantUnauthorizedAccessException>(ex.InnerException);
+    Assert.IsExactInstanceOfType<MerchantUnauthorizedAccessException>(ex.InnerException);
   }
 
   /// <summary>Verifies that a <see cref="MerchantForbiddenAccessException"/> from the broker is wrapped into a <see cref="MerchantFoundationServiceDependencyValidationException"/> (caller-correctable 403, not 503).</summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantObject_WhenBrokerThrowsForbidden_ThrowsFoundationDependencyValidationException()
   {
     _broker.Setup(b => b.ReadMerchantAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new MerchantForbiddenAccessException(Guid.NewGuid(), Guid.NewGuid()));
 
-    var ex = await Assert.ThrowsAsync<MerchantFoundationServiceDependencyValidationException>(
+    var ex = await Assert.ThrowsExactlyAsync<MerchantFoundationServiceDependencyValidationException>(
       () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None));
 
-    Assert.IsType<MerchantForbiddenAccessException>(ex.InnerException);
+    Assert.IsExactInstanceOfType<MerchantForbiddenAccessException>(ex.InnerException);
   }
 
   /// <summary>Verifies that a <see cref="MerchantCosmosDbRateLimitException"/> from the broker is wrapped into a <see cref="MerchantFoundationServiceDependencyValidationException"/> (caller-correctable 429, not 503).</summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantObject_WhenBrokerThrowsRateLimit_ThrowsFoundationDependencyValidationException()
   {
     _broker.Setup(b => b.ReadMerchantAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new MerchantCosmosDbRateLimitException(TimeSpan.FromSeconds(2), new InvalidOperationException()));
 
-    var ex = await Assert.ThrowsAsync<MerchantFoundationServiceDependencyValidationException>(
+    var ex = await Assert.ThrowsExactlyAsync<MerchantFoundationServiceDependencyValidationException>(
       () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None));
 
-    Assert.IsType<MerchantCosmosDbRateLimitException>(ex.InnerException);
+    Assert.IsExactInstanceOfType<MerchantCosmosDbRateLimitException>(ex.InnerException);
   }
 
   /// <summary>Regression guard: <see cref="MerchantFailedStorageException"/> must remain in the Dependency tier (downstream unreachable, 503).</summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantObject_WhenBrokerThrowsFailedStorage_ThrowsFoundationDependencyException()
   {
     _broker.Setup(b => b.ReadMerchantAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new MerchantFailedStorageException("down"));
 
-    var ex = await Assert.ThrowsAsync<MerchantFoundationServiceDependencyException>(
+    var ex = await Assert.ThrowsExactlyAsync<MerchantFoundationServiceDependencyException>(
       () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None));
 
-    Assert.IsType<MerchantFailedStorageException>(ex.InnerException);
+    Assert.IsExactInstanceOfType<MerchantFailedStorageException>(ex.InnerException);
   }
 
   /// <summary>Verifies that an unclassified exception from the broker is wrapped into a <see cref="MerchantFoundationServiceException"/>.</summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantObject_WhenBrokerThrowsUnknown_ThrowsFoundationServiceException()
   {
     _broker.Setup(b => b.ReadMerchantAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvalidOperationException("boom"));
 
-    await Assert.ThrowsAsync<MerchantFoundationServiceException>(
+    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(
       () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid(), CancellationToken.None));
   }
 }

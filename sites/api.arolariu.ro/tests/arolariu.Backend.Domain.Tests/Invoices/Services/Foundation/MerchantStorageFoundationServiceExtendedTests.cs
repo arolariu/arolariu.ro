@@ -16,13 +16,14 @@ using Microsoft.Extensions.Logging;
 
 using Moq;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Extended unit tests for <see cref="MerchantStorageFoundationService"/> covering additional edge cases,
 /// boundary conditions, and exception scenarios for comprehensive code coverage.
 /// Method naming follows MethodName_Condition_ExpectedResult pattern per repository standards.
 /// </summary>
+[TestClass]
 public sealed class MerchantStorageFoundationServiceExtendedTests
 {
   private readonly Mock<IInvoiceNoSqlBroker> mockBroker;
@@ -53,7 +54,7 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
   /// <summary>
   /// Validates merchant creation with empty Guid parent company.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchantObject_EmptyGuidParentCompany_CreatesSuccessfully()
   {
     // Arrange
@@ -73,7 +74,7 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
   /// <summary>
   /// Validates merchant creation with null parent company ID.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchantObject_NullParentCompanyId_CreatesSuccessfully()
   {
     // Arrange
@@ -93,7 +94,7 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
   /// <summary>
   /// Validates generic exception during creation is wrapped.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchantObject_GenericException_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -104,14 +105,14 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
         service.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates TimeoutException during creation is wrapped.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchantObject_TimeoutException_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -122,7 +123,7 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
         .ThrowsAsync(new TimeoutException("Connection timeout"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
         service.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
@@ -133,7 +134,7 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
   /// <summary>
   /// Validates merchant read with specific parent company ID.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantObject_WithParentCompanyId_ReturnsMerchant()
   {
     // Arrange
@@ -150,14 +151,14 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
     var result = await service.ReadMerchantObject(merchantId, parentCompanyId, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
-    Assert.Equal(parentCompanyId, result.ParentCompanyId);
+    Assert.IsNotNull(result);
+    Assert.AreEqual(parentCompanyId, result.ParentCompanyId);
   }
 
   /// <summary>
   /// Validates merchant read with null parent company ID.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantObject_NullParentCompanyId_ReturnsMerchant()
   {
     // Arrange
@@ -172,13 +173,13 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
     var result = await service.ReadMerchantObject(merchantId, null, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
   }
 
   /// <summary>
   /// Validates generic exception during read is wrapped.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantObject_GenericException_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -189,7 +190,7 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
         service.ReadMerchantObject(merchantId, null, CancellationToken.None));
   }
 
@@ -200,7 +201,7 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
   /// <summary>
   /// Validates bulk read returns empty collection when no merchants exist.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadAllMerchantObjects_NoMerchants_ReturnsEmptyCollection()
   {
     // Arrange
@@ -214,14 +215,14 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
     var result = await service.ReadAllMerchantObjects(parentCompanyId, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
-    Assert.Empty(result);
+    Assert.IsNotNull(result);
+    Assert.IsEmpty(result);
   }
 
   /// <summary>
   /// Validates bulk read returns large collection.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadAllMerchantObjects_LargeCollection_ReturnsAllMerchants()
   {
     // Arrange
@@ -238,13 +239,13 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
     var result = await service.ReadAllMerchantObjects(parentCompanyId, CancellationToken.None);
 
     // Assert
-    Assert.Equal(200, result.Count());
+    Assert.AreEqual(200, result.Count());
   }
 
   /// <summary>
   /// Validates bulk read with single merchant.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadAllMerchantObjects_SingleMerchant_ReturnsSingleElement()
   {
     // Arrange
@@ -259,13 +260,13 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
     var result = await service.ReadAllMerchantObjects(parentCompanyId, CancellationToken.None);
 
     // Assert
-    Assert.Single(result);
+    Assert.ContainsSingle(result);
   }
 
   /// <summary>
   /// Validates generic exception during bulk read is wrapped.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadAllMerchantObjects_GenericException_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -276,7 +277,7 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
         service.ReadAllMerchantObjects(parentCompanyId, CancellationToken.None));
   }
 
@@ -287,7 +288,7 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
   /// <summary>
   /// Validates successful merchant update.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateMerchantObject_ValidMerchant_ReturnsUpdatedMerchant()
   {
     // Arrange
@@ -307,13 +308,13 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
     var result = await service.UpdateMerchantObject(merchant, merchantId, parentCompanyId, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
   }
 
   /// <summary>
   /// Validates generic exception during update is wrapped.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateMerchantObject_GenericException_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -325,7 +326,7 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
         service.UpdateMerchantObject(merchant, merchantId, null, CancellationToken.None));
   }
 
@@ -336,7 +337,7 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
   /// <summary>
   /// Validates successful merchant deletion.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteMerchantObject_ValidIdentifier_DeletesSuccessfully()
   {
     // Arrange
@@ -357,7 +358,7 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
   /// <summary>
   /// Validates generic exception during deletion is wrapped.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteMerchantObject_GenericException_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -369,14 +370,14 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
         service.DeleteMerchantObject(merchantId, parentCompanyId, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates idempotent deletion.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteMerchantObject_MultipleCalls_ExecutesEachTime()
   {
     // Arrange
@@ -403,7 +404,7 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
   /// <summary>
   /// Validates concurrent create operations complete successfully.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchantObject_ConcurrentOperations_AllComplete()
   {
     // Arrange
@@ -426,7 +427,7 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
   /// <summary>
   /// Validates concurrent read operations complete successfully.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantObject_ConcurrentOperations_AllComplete()
   {
     // Arrange
@@ -441,7 +442,10 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
     var results = await Task.WhenAll(tasks);
 
     // Assert
-    Assert.All(results, result => Assert.NotNull(result));
+    foreach (var result in results)
+    {
+      Assert.IsNotNull(result);
+    }
   }
 
   #endregion
@@ -451,7 +455,7 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
   /// <summary>
   /// Validates handling of OperationCanceledException.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchantObject_OperationCanceledException_ThrowsFoundationDependencyException()
   {
     // Arrange
@@ -462,14 +466,14 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
         .ThrowsAsync(new OperationCanceledException("Operation cancelled"));
 
     // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
-    await Assert.ThrowsAsync<OperationCanceledException>(() =>
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(() =>
         service.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates handling of ArgumentException from broker.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchantObject_ArgumentException_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -480,14 +484,14 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
         .ThrowsAsync(new ArgumentException("Invalid argument"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
         service.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates handling of NullReferenceException.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantObject_NullReferenceException_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -498,7 +502,7 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
         .ThrowsAsync(new ArgumentNullException("parameter", "Null reference"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
         service.ReadMerchantObject(merchantId, null, CancellationToken.None));
   }
 
