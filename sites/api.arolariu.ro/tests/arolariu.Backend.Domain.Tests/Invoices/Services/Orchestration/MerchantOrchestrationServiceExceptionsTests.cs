@@ -15,12 +15,13 @@ using Microsoft.Extensions.Logging;
 
 using Moq;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Unit tests validating that <see cref="MerchantOrchestrationService"/> classifies each foundation
 /// outer exception tier to its matching orchestration outer tier (no collapse).
 /// </summary>
+[TestClass]
 public sealed class MerchantOrchestrationServiceExceptionsTests
 {
   private readonly Mock<IMerchantStorageFoundationService> mockStorageService;
@@ -49,7 +50,7 @@ public sealed class MerchantOrchestrationServiceExceptionsTests
   /// <summary>
   /// Foundation validation failures must surface as orchestration validation (no collapse into dependency-validation).
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchant_WhenFoundationThrowsValidation_ThrowsOrchestrationValidation()
   {
     var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
@@ -58,14 +59,14 @@ public sealed class MerchantOrchestrationServiceExceptionsTests
       .Setup(s => s.CreateMerchantObject(It.IsAny<Merchant>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new MerchantFoundationServiceValidationException(inner));
 
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceValidationException>(
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceValidationException>(
       () => orchestrationService.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Foundation dependency-validation failures must surface distinctly as orchestration dependency-validation.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchant_WhenFoundationThrowsDependencyValidation_ThrowsOrchestrationDependencyValidation()
   {
     var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
@@ -74,14 +75,14 @@ public sealed class MerchantOrchestrationServiceExceptionsTests
       .Setup(s => s.CreateMerchantObject(It.IsAny<Merchant>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new MerchantFoundationServiceDependencyValidationException(inner));
 
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyValidationException>(
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceDependencyValidationException>(
       () => orchestrationService.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Foundation dependency failures must surface as orchestration dependency.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchant_WhenFoundationThrowsDependency_ThrowsOrchestrationDependency()
   {
     var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
@@ -90,14 +91,14 @@ public sealed class MerchantOrchestrationServiceExceptionsTests
       .Setup(s => s.CreateMerchantObject(It.IsAny<Merchant>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new MerchantFoundationServiceDependencyException(inner));
 
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyException>(
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceDependencyException>(
       () => orchestrationService.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Foundation service failures must surface as orchestration service failures.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchant_WhenFoundationThrowsService_ThrowsOrchestrationService()
   {
     var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
@@ -106,14 +107,14 @@ public sealed class MerchantOrchestrationServiceExceptionsTests
       .Setup(s => s.CreateMerchantObject(It.IsAny<Merchant>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new MerchantFoundationServiceException(inner));
 
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceException>(
       () => orchestrationService.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Unknown exceptions from the foundation must be treated as orchestration service failures (catch-all).
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchant_WhenFoundationThrowsUnknown_ThrowsOrchestrationService()
   {
     var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
@@ -121,7 +122,7 @@ public sealed class MerchantOrchestrationServiceExceptionsTests
       .Setup(s => s.CreateMerchantObject(It.IsAny<Merchant>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvalidOperationException("unknown"));
 
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceException>(
       () => orchestrationService.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 }

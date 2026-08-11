@@ -17,13 +17,14 @@ using Microsoft.Extensions.Logging;
 
 using Moq;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Comprehensive unit tests for <see cref="MerchantOrchestrationService"/> targeting 95%+ code coverage.
 /// Tests validate orchestration logic, exception handling, telemetry integration and foundation service coordination.
 /// Method naming follows MethodName_Condition_ExpectedResult pattern per repository standards.
 /// </summary>
+[TestClass]
 public sealed class MerchantOrchestrationServiceTests
 {
   private readonly Mock<IMerchantStorageFoundationService> mockStorageService;
@@ -58,15 +59,15 @@ public sealed class MerchantOrchestrationServiceTests
   /// <summary>
   /// Verifies constructor throws ArgumentNullException when storage service is null.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Constructor_NullStorageService_ThrowsArgumentNullException() =>
-      Assert.Throws<ArgumentNullException>(() =>
+      Assert.ThrowsExactly<ArgumentNullException>(() =>
           new MerchantOrchestrationService(null!, mockLoggerFactory.Object));
 
   /// <summary>
   /// Validates successful instantiation with all valid dependencies.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Constructor_ValidDependencies_CreatesInstance()
   {
     // Arrange & Act
@@ -75,7 +76,7 @@ public sealed class MerchantOrchestrationServiceTests
         mockLoggerFactory.Object);
 
     // Assert
-    Assert.NotNull(service);
+    Assert.IsNotNull(service);
   }
 
   #endregion
@@ -85,7 +86,7 @@ public sealed class MerchantOrchestrationServiceTests
   /// <summary>
   /// Validates successful merchant creation through orchestration layer.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchantObject_ValidMerchant_CallsFoundationService()
   {
     // Arrange
@@ -106,7 +107,7 @@ public sealed class MerchantOrchestrationServiceTests
   /// <summary>
   /// Ensures creation succeeds without parent company identifier.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchantObject_NoParentCompanyId_CreatesSuccessfully()
   {
     // Arrange
@@ -126,7 +127,7 @@ public sealed class MerchantOrchestrationServiceTests
   /// <summary>
   /// Confirms foundation validation exceptions propagate as orchestration validation exceptions during creation.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchantObject_FoundationValidationException_ThrowsOrchestrationValidationException()
   {
     // Arrange
@@ -139,14 +140,14 @@ public sealed class MerchantOrchestrationServiceTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceValidationException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceValidationException>(() =>
         orchestrationService.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates foundation dependency exceptions during creation are wrapped appropriately.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchantObject_FoundationDependencyException_ThrowsOrchestrationDependencyException()
   {
     // Arrange
@@ -159,14 +160,14 @@ public sealed class MerchantOrchestrationServiceTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceDependencyException>(() =>
         orchestrationService.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates foundation dependency validation exceptions during creation are wrapped appropriately.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchantObject_FoundationDependencyValidationException_ThrowsOrchestrationDependencyValidationException()
   {
     // Arrange
@@ -179,14 +180,14 @@ public sealed class MerchantOrchestrationServiceTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyValidationException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceDependencyValidationException>(() =>
         orchestrationService.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates foundation service exceptions during creation are wrapped appropriately.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchantObject_FoundationServiceException_ThrowsOrchestrationServiceException()
   {
     // Arrange
@@ -199,14 +200,14 @@ public sealed class MerchantOrchestrationServiceTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceException>(() =>
         orchestrationService.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Ensures generic exceptions during creation are wrapped into orchestration service exceptions.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchantObject_GenericException_ThrowsOrchestrationServiceException()
   {
     // Arrange
@@ -218,7 +219,7 @@ public sealed class MerchantOrchestrationServiceTests
         .ThrowsAsync(exception);
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceException>(() =>
         orchestrationService.CreateMerchantObject(merchant, null, CancellationToken.None));
   }
 
@@ -229,7 +230,7 @@ public sealed class MerchantOrchestrationServiceTests
   /// <summary>
   /// Validates successful retrieval of single merchant by identifier.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantObject_ValidIdentifier_ReturnsMerchant()
   {
     // Arrange
@@ -245,15 +246,15 @@ public sealed class MerchantOrchestrationServiceTests
     var result = await orchestrationService.ReadMerchantObject(merchantId, parentCompanyId, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
-    Assert.Equal(expectedMerchant.id, result.id);
+    Assert.IsNotNull(result);
+    Assert.AreEqual(expectedMerchant.id, result.id);
     mockStorageService.Verify(s => s.ReadMerchantObject(merchantId, parentCompanyId, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
   /// Ensures read operation succeeds without parent company identifier.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantObject_NoParentCompanyId_ReturnsMerchant()
   {
     // Arrange
@@ -268,14 +269,14 @@ public sealed class MerchantOrchestrationServiceTests
     var result = await orchestrationService.ReadMerchantObject(merchantId, null, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
     mockStorageService.Verify(s => s.ReadMerchantObject(merchantId, null, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
   /// Confirms foundation validation exceptions during read are wrapped appropriately.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantObject_FoundationValidationException_ThrowsOrchestrationValidationException()
   {
     // Arrange
@@ -288,14 +289,14 @@ public sealed class MerchantOrchestrationServiceTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceValidationException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceValidationException>(() =>
         orchestrationService.ReadMerchantObject(merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates foundation dependency exceptions during read propagate correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantObject_FoundationDependencyException_ThrowsOrchestrationDependencyException()
   {
     // Arrange
@@ -308,14 +309,14 @@ public sealed class MerchantOrchestrationServiceTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceDependencyException>(() =>
         orchestrationService.ReadMerchantObject(merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates foundation service exceptions during read propagate correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantObject_FoundationServiceException_ThrowsOrchestrationServiceException()
   {
     // Arrange
@@ -328,14 +329,14 @@ public sealed class MerchantOrchestrationServiceTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceException>(() =>
         orchestrationService.ReadMerchantObject(merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Ensures generic exceptions during read are wrapped into orchestration service exceptions.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantObject_GenericException_ThrowsOrchestrationServiceException()
   {
     // Arrange
@@ -347,7 +348,7 @@ public sealed class MerchantOrchestrationServiceTests
         .ThrowsAsync(exception);
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceException>(() =>
         orchestrationService.ReadMerchantObject(merchantId, null, CancellationToken.None));
   }
 
@@ -358,7 +359,7 @@ public sealed class MerchantOrchestrationServiceTests
   /// <summary>
   /// Validates successful retrieval of all merchants for a parent company.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadAllMerchantObjects_WithParentCompanyId_ReturnsMerchantCollection()
   {
     // Arrange
@@ -373,15 +374,15 @@ public sealed class MerchantOrchestrationServiceTests
     var result = await orchestrationService.ReadAllMerchantObjects(parentCompanyId, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
-    Assert.Equal(5, result.Count());
+    Assert.IsNotNull(result);
+    Assert.AreEqual(5, result.Count());
     mockStorageService.Verify(s => s.ReadAllMerchantObjects(parentCompanyId, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
   /// Validates empty collection is returned when no merchants exist.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadAllMerchantObjects_NoMerchants_ReturnsEmptyCollection()
   {
     // Arrange
@@ -396,14 +397,14 @@ public sealed class MerchantOrchestrationServiceTests
     var result = await orchestrationService.ReadAllMerchantObjects(parentCompanyId, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
-    Assert.Empty(result);
+    Assert.IsNotNull(result);
+    Assert.IsEmpty(result);
   }
 
   /// <summary>
   /// Confirms foundation dependency exceptions during bulk read are wrapped appropriately.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadAllMerchantObjects_FoundationDependencyException_ThrowsOrchestrationDependencyException()
   {
     // Arrange
@@ -416,14 +417,14 @@ public sealed class MerchantOrchestrationServiceTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceDependencyException>(() =>
         orchestrationService.ReadAllMerchantObjects(parentCompanyId, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates generic exceptions during bulk read propagate as orchestration service exceptions.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadAllMerchantObjects_GenericException_ThrowsOrchestrationServiceException()
   {
     // Arrange
@@ -435,14 +436,14 @@ public sealed class MerchantOrchestrationServiceTests
         .ThrowsAsync(exception);
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceException>(() =>
         orchestrationService.ReadAllMerchantObjects(parentCompanyId, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates foundation validation exceptions during bulk read are wrapped appropriately.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadAllMerchantObjects_FoundationValidationException_ThrowsOrchestrationValidationException()
   {
     // Arrange
@@ -455,7 +456,7 @@ public sealed class MerchantOrchestrationServiceTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceValidationException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceValidationException>(() =>
         orchestrationService.ReadAllMerchantObjects(parentCompanyId, CancellationToken.None));
   }
 
@@ -466,7 +467,7 @@ public sealed class MerchantOrchestrationServiceTests
   /// <summary>
   /// Validates successful merchant update through orchestration layer.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateMerchantObject_ValidUpdate_ReturnsUpdatedMerchant()
   {
     // Arrange
@@ -482,15 +483,15 @@ public sealed class MerchantOrchestrationServiceTests
     var result = await orchestrationService.UpdateMerchantObject(updatedMerchant, merchantId, parentCompanyId, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
-    Assert.Equal(updatedMerchant.id, result.id);
+    Assert.IsNotNull(result);
+    Assert.AreEqual(updatedMerchant.id, result.id);
     mockStorageService.Verify(s => s.UpdateMerchantObject(updatedMerchant, merchantId, parentCompanyId, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
   /// Ensures update succeeds without parent company identifier.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateMerchantObject_NoParentCompanyId_UpdatesSuccessfully()
   {
     // Arrange
@@ -505,14 +506,14 @@ public sealed class MerchantOrchestrationServiceTests
     var result = await orchestrationService.UpdateMerchantObject(updatedMerchant, merchantId, null, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
     mockStorageService.Verify(s => s.UpdateMerchantObject(updatedMerchant, merchantId, null, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
   /// Confirms foundation validation exceptions during update are wrapped appropriately.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateMerchantObject_FoundationValidationException_ThrowsOrchestrationValidationException()
   {
     // Arrange
@@ -526,14 +527,14 @@ public sealed class MerchantOrchestrationServiceTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceValidationException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceValidationException>(() =>
         orchestrationService.UpdateMerchantObject(updatedMerchant, merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates foundation dependency validation exceptions during update propagate correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateMerchantObject_FoundationDependencyValidationException_ThrowsOrchestrationDependencyValidationException()
   {
     // Arrange
@@ -547,14 +548,14 @@ public sealed class MerchantOrchestrationServiceTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyValidationException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceDependencyValidationException>(() =>
         orchestrationService.UpdateMerchantObject(updatedMerchant, merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates foundation dependency exceptions during update propagate correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateMerchantObject_FoundationDependencyException_ThrowsOrchestrationDependencyException()
   {
     // Arrange
@@ -568,14 +569,14 @@ public sealed class MerchantOrchestrationServiceTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceDependencyException>(() =>
         orchestrationService.UpdateMerchantObject(updatedMerchant, merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Ensures generic exceptions during update are wrapped into orchestration service exceptions.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateMerchantObject_GenericException_ThrowsOrchestrationServiceException()
   {
     // Arrange
@@ -588,7 +589,7 @@ public sealed class MerchantOrchestrationServiceTests
         .ThrowsAsync(exception);
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceException>(() =>
         orchestrationService.UpdateMerchantObject(updatedMerchant, merchantId, null, CancellationToken.None));
   }
 
@@ -599,7 +600,7 @@ public sealed class MerchantOrchestrationServiceTests
   /// <summary>
   /// Validates successful merchant deletion through orchestration layer.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteMerchantObject_ValidIdentifiers_DeletesSuccessfully()
   {
     // Arrange
@@ -620,7 +621,7 @@ public sealed class MerchantOrchestrationServiceTests
   /// <summary>
   /// Ensures deletion succeeds without parent company identifier.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteMerchantObject_NoParentCompanyId_DeletesSuccessfully()
   {
     // Arrange
@@ -640,7 +641,7 @@ public sealed class MerchantOrchestrationServiceTests
   /// <summary>
   /// Confirms foundation validation exceptions during delete are wrapped appropriately.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteMerchantObject_FoundationValidationException_ThrowsOrchestrationValidationException()
   {
     // Arrange
@@ -653,14 +654,14 @@ public sealed class MerchantOrchestrationServiceTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceValidationException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceValidationException>(() =>
         orchestrationService.DeleteMerchantObject(merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates foundation dependency exceptions during delete propagate correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteMerchantObject_FoundationDependencyException_ThrowsOrchestrationDependencyException()
   {
     // Arrange
@@ -673,14 +674,14 @@ public sealed class MerchantOrchestrationServiceTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceDependencyException>(() =>
         orchestrationService.DeleteMerchantObject(merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Ensures foundation service exceptions during delete are wrapped appropriately.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteMerchantObject_FoundationServiceException_ThrowsOrchestrationServiceException()
   {
     // Arrange
@@ -693,14 +694,14 @@ public sealed class MerchantOrchestrationServiceTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceException>(() =>
         orchestrationService.DeleteMerchantObject(merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates generic exceptions during delete are wrapped into orchestration service exceptions.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteMerchantObject_GenericException_ThrowsOrchestrationServiceException()
   {
     // Arrange
@@ -712,14 +713,14 @@ public sealed class MerchantOrchestrationServiceTests
         .ThrowsAsync(exception);
 
     // Act & Assert
-    await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<MerchantOrchestrationServiceException>(() =>
         orchestrationService.DeleteMerchantObject(merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates idempotency of delete operation (repeated calls succeed).
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteMerchantObject_IdempotentCalls_SucceedMultipleTimes()
   {
     // Arrange
