@@ -29,23 +29,40 @@ internal sealed class HealthTelemetrySuppressionMiddleware(RequestDelegate next)
   /// <param name="context">The current <see cref="HttpContext"/>.</param>
   /// <returns>A task representing the asynchronous pipeline execution.</returns>
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> is null.</exception>
+  /// <remarks>
+  /// The failure counter is recorded for every health request, whether or not suppression is
+  /// active. Only the instrumentation scope is conditional. This mirrors the exp service, where
+  /// the counter is guarded by <c>is_suppressed_path</c> rather than <c>should_suppress_telemetry</c>.
+  /// </remarks>
   public async Task InvokeAsync(HttpContext context)
   {
     ArgumentNullException.ThrowIfNull(context);
 
-    if (!HealthTelemetryPolicy.ShouldSuppress(context.Request.Path.Value))
+    if (!HealthTelemetryPolicy.IsSuppressedPath(context.Request.Path.Value))
     {
       await this.next(context).ConfigureAwait(false);
       return;
     }
 
-    using (SuppressInstrumentationScope.Begin())
+    if (HealthTelemetryPolicy.IsSuppressionEnabled)
+    {
+      using (SuppressInstrumentationScope.Begin())
+      {
+        await this.next(context).ConfigureAwait(false);
+      }
+    }
+    else
     {
       await this.next(context).ConfigureAwait(false);
     }
 
-    // Recorded only after the scope is disposed — inside it, the measurement could be
+    // Recorded only after any scope is disposed — inside it, the measurement could be
     // discarded by the very mechanism that suppresses the request telemetry.
+    RecordFailures(context);
+  }
+
+  private static void RecordFailures(HttpContext context)
+  {
     if (context.Items.TryGetValue(HealthCheckMetrics.FailedChecksItemKey, out var failed)
         && failed is IEnumerable<string> failedCheckNames)
     {

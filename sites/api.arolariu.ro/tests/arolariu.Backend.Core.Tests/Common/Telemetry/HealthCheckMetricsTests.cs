@@ -8,7 +8,12 @@ using OpenTelemetry;
 using OpenTelemetry.Metrics;
 
 /// <summary>Unit tests for <see cref="HealthCheckMetrics"/>.</summary>
+/// <remarks>
+/// Not parallelized: the failure counter is a static instrument on a process-global meter, so a
+/// concurrently-alive <c>MeterProvider</c> in another class would observe these measurements too.
+/// </remarks>
 [TestClass]
+[DoNotParallelize]
 public sealed class HealthCheckMetricsTests
 {
   /// <summary>
