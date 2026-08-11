@@ -13,12 +13,13 @@ using arolariu.Backend.Domain.Tests.Builders;
 
 using Moq;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Extended unit tests for invoice and merchant broker interfaces covering additional
 /// scenarios and boundary conditions.
 /// </summary>
+[TestClass]
 public sealed class InvoiceBrokerExtendedTests
 {
   private readonly Mock<IInvoiceNoSqlBroker> mockBroker;
@@ -36,7 +37,7 @@ public sealed class InvoiceBrokerExtendedTests
   /// <summary>
   /// Validates invoice creation returns the created invoice.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateInvoiceAsync_ValidInvoice_ReturnsCreatedInvoice()
   {
     // Arrange
@@ -49,13 +50,13 @@ public sealed class InvoiceBrokerExtendedTests
     var result = await mockBroker.Object.CreateInvoiceAsync(invoice, CancellationToken.None);
 
     // Assert
-    Assert.Same(invoice, result);
+    Assert.AreSame(invoice, result);
   }
 
   /// <summary>
   /// Validates invoice reading with specific identifiers.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceAsync_ValidIdentifiers_ReturnsInvoice()
   {
     // Arrange
@@ -71,13 +72,13 @@ public sealed class InvoiceBrokerExtendedTests
     var result = await mockBroker.Object.ReadInvoiceAsync(invoiceId, userId, CancellationToken.None);
 
     // Assert
-    Assert.Same(expectedInvoice, result);
+    Assert.AreSame(expectedInvoice, result);
   }
 
   /// <summary>
   /// Validates invoice reading with null user identifier.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceAsync_NullUserIdentifier_ReturnsInvoice()
   {
     // Arrange
@@ -92,13 +93,13 @@ public sealed class InvoiceBrokerExtendedTests
     var result = await mockBroker.Object.ReadInvoiceAsync(invoiceId, null, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
   }
 
   /// <summary>
   /// Validates bulk invoice reading returns multiple invoices.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoicesAsync_ValidUserIdentifier_ReturnsInvoices()
   {
     // Arrange
@@ -113,13 +114,13 @@ public sealed class InvoiceBrokerExtendedTests
     var result = await mockBroker.Object.ReadInvoicesAsync(userId, CancellationToken.None);
 
     // Assert
-    Assert.Equal(5, result.Count());
+    Assert.AreEqual(5, result.Count());
   }
 
   /// <summary>
   /// Validates bulk invoice reading returns empty when no invoices exist.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoicesAsync_NoInvoices_ReturnsEmptyCollection()
   {
     // Arrange
@@ -133,13 +134,13 @@ public sealed class InvoiceBrokerExtendedTests
     var result = await mockBroker.Object.ReadInvoicesAsync(userId, CancellationToken.None);
 
     // Assert
-    Assert.Empty(result);
+    Assert.IsEmpty(result);
   }
 
   /// <summary>
   /// Validates invoice update returns updated invoice.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateInvoiceAsync_ValidData_ReturnsUpdatedInvoice()
   {
     // Arrange
@@ -154,13 +155,13 @@ public sealed class InvoiceBrokerExtendedTests
     var result = await mockBroker.Object.UpdateInvoiceAsync(invoiceId, updatedInvoice, CancellationToken.None);
 
     // Assert
-    Assert.Same(updatedInvoice, result);
+    Assert.AreSame(updatedInvoice, result);
   }
 
   /// <summary>
   /// Validates invoice deletion completes without error.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteInvoiceAsync_ValidIdentifiers_CompletesSuccessfully()
   {
     // Arrange
@@ -181,7 +182,7 @@ public sealed class InvoiceBrokerExtendedTests
   /// <summary>
   /// Validates invoice deletion with null user identifier.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteInvoiceAsync_NullUserIdentifier_CompletesSuccessfully()
   {
     // Arrange
@@ -201,7 +202,7 @@ public sealed class InvoiceBrokerExtendedTests
   /// <summary>
   /// Validates bulk delete for user invoices.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteInvoicesAsync_ValidUserIdentifier_CompletesSuccessfully()
   {
     // Arrange
@@ -225,7 +226,7 @@ public sealed class InvoiceBrokerExtendedTests
   /// <summary>
   /// Validates merchant creation returns the created merchant.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchantAsync_ValidMerchant_ReturnsCreatedMerchant()
   {
     // Arrange
@@ -239,13 +240,13 @@ public sealed class InvoiceBrokerExtendedTests
     var result = await mockBroker.Object.CreateMerchantAsync(merchant, CancellationToken.None);
 
     // Assert
-    Assert.Same(merchant, result);
+    Assert.AreSame(merchant, result);
   }
 
   /// <summary>
   /// Validates merchant reading with specific identifiers.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantAsync_ValidIdentifiers_ReturnsMerchant()
   {
     // Arrange
@@ -261,13 +262,13 @@ public sealed class InvoiceBrokerExtendedTests
     var result = await mockBroker.Object.ReadMerchantAsync(merchantId, parentCompanyId, CancellationToken.None);
 
     // Assert
-    Assert.Same(expectedMerchant, result);
+    Assert.AreSame(expectedMerchant, result);
   }
 
   /// <summary>
   /// Validates merchant reading with null parent company ID.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantAsync_NullParentCompanyId_ReturnsMerchant()
   {
     // Arrange
@@ -282,13 +283,13 @@ public sealed class InvoiceBrokerExtendedTests
     var result = await mockBroker.Object.ReadMerchantAsync(merchantId, null, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
   }
 
   /// <summary>
   /// Validates bulk merchant reading returns multiple merchants.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantsAsync_ValidParentCompanyId_ReturnsMerchants()
   {
     // Arrange
@@ -305,13 +306,13 @@ public sealed class InvoiceBrokerExtendedTests
     var result = await mockBroker.Object.ReadMerchantsAsync(parentCompanyId, CancellationToken.None);
 
     // Assert
-    Assert.Equal(10, result.Count());
+    Assert.AreEqual(10, result.Count());
   }
 
   /// <summary>
   /// Validates bulk merchant reading returns empty when no merchants exist.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantsAsync_NoMerchants_ReturnsEmptyCollection()
   {
     // Arrange
@@ -325,13 +326,13 @@ public sealed class InvoiceBrokerExtendedTests
     var result = await mockBroker.Object.ReadMerchantsAsync(parentCompanyId, CancellationToken.None);
 
     // Assert
-    Assert.Empty(result);
+    Assert.IsEmpty(result);
   }
 
   /// <summary>
   /// Validates merchant update returns updated merchant.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateMerchantAsync_ValidData_ReturnsUpdatedMerchant()
   {
     // Arrange
@@ -346,13 +347,13 @@ public sealed class InvoiceBrokerExtendedTests
     var result = await mockBroker.Object.UpdateMerchantAsync(currentMerchant, updatedMerchant, CancellationToken.None);
 
     // Assert
-    Assert.Same(updatedMerchant, result);
+    Assert.AreSame(updatedMerchant, result);
   }
 
   /// <summary>
   /// Validates merchant update by ID.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateMerchantAsync_ById_ReturnsUpdatedMerchant()
   {
     // Arrange
@@ -367,13 +368,13 @@ public sealed class InvoiceBrokerExtendedTests
     var result = await mockBroker.Object.UpdateMerchantAsync(merchantId, updatedMerchant, CancellationToken.None);
 
     // Assert
-    Assert.Same(updatedMerchant, result);
+    Assert.AreSame(updatedMerchant, result);
   }
 
   /// <summary>
   /// Validates merchant deletion completes without error.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteMerchantAsync_ValidIdentifiers_CompletesSuccessfully()
   {
     // Arrange
@@ -394,7 +395,7 @@ public sealed class InvoiceBrokerExtendedTests
   /// <summary>
   /// Validates merchant deletion with null parent company ID.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteMerchantAsync_NullParentCompanyId_CompletesSuccessfully()
   {
     // Arrange
@@ -418,7 +419,7 @@ public sealed class InvoiceBrokerExtendedTests
   /// <summary>
   /// Validates bulk invoice reading handles large collections.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoicesAsync_LargeCollection_ReturnsAllInvoices()
   {
     // Arrange
@@ -433,13 +434,13 @@ public sealed class InvoiceBrokerExtendedTests
     var result = await mockBroker.Object.ReadInvoicesAsync(userId, CancellationToken.None);
 
     // Assert
-    Assert.Equal(1000, result.Count());
+    Assert.AreEqual(1000, result.Count());
   }
 
   /// <summary>
   /// Validates bulk merchant reading handles large collections.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantsAsync_LargeCollection_ReturnsAllMerchants()
   {
     // Arrange
@@ -456,7 +457,7 @@ public sealed class InvoiceBrokerExtendedTests
     var result = await mockBroker.Object.ReadMerchantsAsync(parentCompanyId, CancellationToken.None);
 
     // Assert
-    Assert.Equal(500, result.Count());
+    Assert.AreEqual(500, result.Count());
   }
 
   #endregion
@@ -466,7 +467,7 @@ public sealed class InvoiceBrokerExtendedTests
   /// <summary>
   /// Validates operations with empty Guid identifiers.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceAsync_EmptyGuidIdentifier_ReturnsInvoice()
   {
     // Arrange
@@ -480,13 +481,13 @@ public sealed class InvoiceBrokerExtendedTests
     var result = await mockBroker.Object.ReadInvoiceAsync(Guid.Empty, Guid.Empty, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
   }
 
   /// <summary>
   /// Validates operations with same source and target Guids.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceAsync_SameIdentifierForInvoiceAndUser_ReturnsInvoice()
   {
     // Arrange
@@ -501,13 +502,13 @@ public sealed class InvoiceBrokerExtendedTests
     var result = await mockBroker.Object.ReadInvoiceAsync(sameId, sameId, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
   }
 
   /// <summary>
   /// Validates merchant operations with empty Guid identifiers.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantAsync_EmptyGuidIdentifier_ReturnsMerchant()
   {
     // Arrange
@@ -521,13 +522,13 @@ public sealed class InvoiceBrokerExtendedTests
     var result = await mockBroker.Object.ReadMerchantAsync(Guid.Empty, Guid.Empty, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
   }
 
   /// <summary>
   /// Validates invoice update with different overload.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateInvoiceAsync_TwoInvoices_ReturnsUpdatedInvoice()
   {
     // Arrange
@@ -542,13 +543,13 @@ public sealed class InvoiceBrokerExtendedTests
     var result = await mockBroker.Object.UpdateInvoiceAsync(currentInvoice, updatedInvoice, CancellationToken.None);
 
     // Assert
-    Assert.Same(updatedInvoice, result);
+    Assert.AreSame(updatedInvoice, result);
   }
 
   /// <summary>
   /// Validates reading invoices returns null when not found.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceAsync_NotFound_ReturnsNull()
   {
     // Arrange
@@ -562,13 +563,13 @@ public sealed class InvoiceBrokerExtendedTests
     var result = await mockBroker.Object.ReadInvoiceAsync(invoiceId, null, CancellationToken.None);
 
     // Assert
-    Assert.Null(result);
+    Assert.IsNull(result);
   }
 
   /// <summary>
   /// Validates reading merchants returns null when not found.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantAsync_NotFound_ReturnsNull()
   {
     // Arrange
@@ -582,7 +583,7 @@ public sealed class InvoiceBrokerExtendedTests
     var result = await mockBroker.Object.ReadMerchantAsync(merchantId, null, CancellationToken.None);
 
     // Assert
-    Assert.Null(result);
+    Assert.IsNull(result);
   }
 
   #endregion

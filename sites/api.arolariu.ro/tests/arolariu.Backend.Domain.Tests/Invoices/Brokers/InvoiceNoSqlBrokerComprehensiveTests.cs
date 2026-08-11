@@ -16,13 +16,14 @@ using Microsoft.EntityFrameworkCore;
 
 using Moq;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Comprehensive invoice broker tests covering create, read (by id &amp; partition key / by id only),
 /// and bulk read scenarios against the Cosmos EF Core broker abstraction.
 /// Follows MethodName_Condition_ExpectedResult pattern; underscores intentional.
 /// </summary>
+[TestClass]
 public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlBrokerTestsBase, IDisposable
 {
   private readonly InvoiceNoSqlBroker invoiceNoSqlBroker;
@@ -58,8 +59,8 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
   /// Verifies that a valid invoice is created and returned with matching identity and basic fields.
   /// </summary>
   /// <param name="expectedInvoice">The invoice instance to persist.</param>
-  [Theory]
-  [MemberData(nameof(GetInvoiceTestData))]
+  [TestMethod]
+  [DynamicData(nameof(GetInvoiceTestData))]
   public async Task ShouldCreateInvoice_WhenInvoiceIsValid(Invoice expectedInvoice)
   {
     ArgumentNullException.ThrowIfNull(expectedInvoice);
@@ -80,16 +81,16 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
     var actualInvoice = await invoiceNoSqlBroker.CreateInvoiceAsync(expectedInvoice, CancellationToken.None);
 
     // Then
-    Assert.NotNull(actualInvoice);
-    Assert.Equal(expectedInvoice.id, actualInvoice.id);
-    Assert.Equal(expectedInvoice.UserIdentifier, actualInvoice.UserIdentifier);
-    Assert.Equal(expectedInvoice.Name, actualInvoice.Name);
+    Assert.IsNotNull(actualInvoice);
+    Assert.AreEqual(expectedInvoice.id, actualInvoice.id);
+    Assert.AreEqual(expectedInvoice.UserIdentifier, actualInvoice.UserIdentifier);
+    Assert.AreEqual(expectedInvoice.Name, actualInvoice.Name);
   }
 
   /// <summary>
   /// Ensures a CosmosException surfaces when the underlying container throws during creation.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ShouldThrowCosmosException_WhenCreateFails()
   {
     // Given
@@ -105,9 +106,9 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ThrowsAsync(cosmosException);
 
     // When & Then
-    var exception = await Assert.ThrowsAsync<InvoiceFailedStorageException>(() => invoiceNoSqlBroker.CreateInvoiceAsync(invoice, CancellationToken.None).AsTask());
+    var exception = await Assert.ThrowsExactlyAsync<InvoiceFailedStorageException>(() => invoiceNoSqlBroker.CreateInvoiceAsync(invoice, CancellationToken.None).AsTask());
 
-    Assert.NotNull(exception.InnerException);
+    Assert.IsNotNull(exception.InnerException);
     Assert.Contains("Creation failed", exception.InnerException.Message, StringComparison.Ordinal);
   }
 
@@ -119,8 +120,8 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
   /// Reads an invoice when providing both identifier and partition key (user identifier) returning expected data.
   /// </summary>
   /// <param name="expectedInvoice">The seeded invoice instance.</param>
-  [Theory]
-  [MemberData(nameof(GetInvoiceTestData))]
+  [TestMethod]
+  [DynamicData(nameof(GetInvoiceTestData))]
   public async Task ShouldReadInvoiceWithUserIdentifier_WhenInvoiceExists(Invoice expectedInvoice)
   {
     ArgumentNullException.ThrowIfNull(expectedInvoice);
@@ -141,17 +142,17 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
     var actualInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(expectedInvoice.id, expectedInvoice.UserIdentifier, CancellationToken.None);
 
     // Then
-    Assert.NotNull(actualInvoice);
-    Assert.Equal(expectedInvoice.id, actualInvoice.id);
-    Assert.Equal(expectedInvoice.UserIdentifier, actualInvoice.UserIdentifier);
+    Assert.IsNotNull(actualInvoice);
+    Assert.AreEqual(expectedInvoice.id, actualInvoice.id);
+    Assert.AreEqual(expectedInvoice.UserIdentifier, actualInvoice.UserIdentifier);
   }
 
   /// <summary>
   /// Reads an invoice by identifier only (query path) when it exists, returning the correct instance.
   /// </summary>
   /// <param name="expectedInvoice">The seeded invoice instance.</param>
-  [Theory]
-  [MemberData(nameof(GetInvoiceTestData))]
+  [TestMethod]
+  [DynamicData(nameof(GetInvoiceTestData))]
   public async Task ShouldReadInvoiceWithoutUserIdentifier_WhenInvoiceExists(Invoice expectedInvoice)
   {
     ArgumentNullException.ThrowIfNull(expectedInvoice);
@@ -180,8 +181,8 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
     var actualInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(expectedInvoice.id, null, CancellationToken.None);
 
     // Then
-    Assert.NotNull(actualInvoice);
-    Assert.Equal(expectedInvoice.id, actualInvoice.id);
+    Assert.IsNotNull(actualInvoice);
+    Assert.AreEqual(expectedInvoice.id, actualInvoice.id);
   }
 
   #endregion
@@ -191,7 +192,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
   /// <summary>
   /// Verifies that reading invoices for a user returns all non-soft-deleted invoices.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ShouldReadInvoices_WhenInvoicesExist()
   {
     // Given
@@ -220,14 +221,14 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
     var actualInvoices = await invoiceNoSqlBroker.ReadInvoicesAsync(userIdentifier, CancellationToken.None);
 
     // Then
-    Assert.NotNull(actualInvoices);
-    Assert.Equal(expectedInvoices.Count, actualInvoices.Count());
+    Assert.IsNotNull(actualInvoices);
+    Assert.AreEqual(expectedInvoices.Count, actualInvoices.Count());
   }
 
   /// <summary>
   /// Verifies soft-deleted invoices are filtered out from the results.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ShouldFilterSoftDeletedInvoices_WhenReadingInvoices()
   {
     // Given
@@ -262,14 +263,17 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
     var actualInvoices = await invoiceNoSqlBroker.ReadInvoicesAsync(userIdentifier, CancellationToken.None);
 
     // Then
-    Assert.Single(actualInvoices);
-    Assert.All(actualInvoices, inv => Assert.False(inv.IsSoftDeleted));
+    Assert.ContainsSingle(actualInvoices);
+    foreach (var inv in actualInvoices)
+    {
+      Assert.IsFalse(inv.IsSoftDeleted);
+    }
   }
 
   /// <summary>
   /// Verifies empty result when no invoices exist for user.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ShouldReturnEmpty_WhenNoInvoicesExistForUser()
   {
     // Given
@@ -298,14 +302,14 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
     var actualInvoices = await invoiceNoSqlBroker.ReadInvoicesAsync(userIdentifier, CancellationToken.None);
 
     // Then
-    Assert.NotNull(actualInvoices);
-    Assert.Empty(actualInvoices);
+    Assert.IsNotNull(actualInvoices);
+    Assert.IsEmpty(actualInvoices);
   }
 
   /// <summary>
   /// Verifies pagination is handled correctly when HasMoreResults is true.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ShouldHandlePagination_WhenMultiplePagesExist()
   {
     // Given
@@ -347,8 +351,8 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
     var actualInvoices = await invoiceNoSqlBroker.ReadInvoicesAsync(userIdentifier, CancellationToken.None);
 
     // Then
-    Assert.NotNull(actualInvoices);
-    Assert.Equal(4, actualInvoices.Count());
+    Assert.IsNotNull(actualInvoices);
+    Assert.AreEqual(4, actualInvoices.Count());
   }
 
   #endregion
@@ -358,7 +362,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
   /// <summary>
   /// Verifies that reading a soft-deleted invoice throws InvalidOperationException when using partition key.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ShouldThrowInvalidOperationException_WhenInvoiceIsSoftDeletedWithPartitionKey()
   {
     // Given
@@ -377,7 +381,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ReturnsAsync(itemResponseMock.Object);
 
     // When & Then
-    var exception = await Assert.ThrowsAsync<InvoiceLockedException>(
+    var exception = await Assert.ThrowsExactlyAsync<InvoiceLockedException>(
       () => invoiceNoSqlBroker.ReadInvoiceAsync(deletedInvoice.id, deletedInvoice.UserIdentifier, CancellationToken.None).AsTask());
 
     Assert.Contains(deletedInvoice.id.ToString(), exception.Message, StringComparison.Ordinal);
@@ -386,7 +390,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
   /// <summary>
   /// Verifies that reading a soft-deleted invoice throws InvalidOperationException when using query path.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ShouldThrowInvalidOperationException_WhenInvoiceIsSoftDeletedWithoutPartitionKey()
   {
     // Given
@@ -413,7 +417,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .Returns(mockFeedIterator.Object);
 
     // When & Then
-    var exception = await Assert.ThrowsAsync<InvoiceLockedException>(
+    var exception = await Assert.ThrowsExactlyAsync<InvoiceLockedException>(
       () => invoiceNoSqlBroker.ReadInvoiceAsync(deletedInvoice.id, null, CancellationToken.None).AsTask());
 
     Assert.Contains(deletedInvoice.id.ToString(), exception.Message, StringComparison.Ordinal);
@@ -422,7 +426,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
   /// <summary>
   /// Verifies null is returned when invoice not found via query path.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ShouldReturnNull_WhenInvoiceNotFoundWithoutPartitionKey()
   {
     // Given
@@ -451,7 +455,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
     var actualInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(invoiceId, null, CancellationToken.None);
 
     // Then
-    Assert.Null(actualInvoice);
+    Assert.IsNull(actualInvoice);
   }
 
   #endregion
@@ -461,8 +465,8 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
   /// <summary>
   /// Verifies updating an invoice by identifier uses upsert and returns updated invoice.
   /// </summary>
-  [Theory]
-  [MemberData(nameof(GetInvoiceTestData))]
+  [TestMethod]
+  [DynamicData(nameof(GetInvoiceTestData))]
   public async Task ShouldUpdateInvoiceById_WhenValidInvoiceProvided(Invoice originalInvoice)
   {
     ArgumentNullException.ThrowIfNull(originalInvoice);
@@ -488,9 +492,9 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
     var actualInvoice = await invoiceNoSqlBroker.UpdateInvoiceAsync(originalInvoice.id, updatedInvoice, CancellationToken.None);
 
     // Then
-    Assert.NotNull(actualInvoice);
-    Assert.Equal(updatedInvoice.id, actualInvoice.id);
-    Assert.Equal("Updated Invoice Name", actualInvoice.Name);
+    Assert.IsNotNull(actualInvoice);
+    Assert.AreEqual(updatedInvoice.id, actualInvoice.id);
+    Assert.AreEqual("Updated Invoice Name", actualInvoice.Name);
 
     mockInvoicesContainer.Verify(container => container.UpsertItemAsync(
         updatedInvoice,
@@ -503,8 +507,8 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
   /// <summary>
   /// Verifies updating invoice using current and updated objects performs upsert.
   /// </summary>
-  [Theory]
-  [MemberData(nameof(GetInvoiceTestData))]
+  [TestMethod]
+  [DynamicData(nameof(GetInvoiceTestData))]
   public async Task ShouldUpdateInvoiceWithObjects_WhenValidInvoicesProvided(Invoice originalInvoice)
   {
     ArgumentNullException.ThrowIfNull(originalInvoice);
@@ -530,15 +534,15 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
     var actualInvoice = await invoiceNoSqlBroker.UpdateInvoiceAsync(originalInvoice, updatedInvoice, CancellationToken.None);
 
     // Then
-    Assert.NotNull(actualInvoice);
-    Assert.Equal(updatedInvoice.id, actualInvoice.id);
-    Assert.Equal("Updated Name Via Objects", actualInvoice.Name);
+    Assert.IsNotNull(actualInvoice);
+    Assert.AreEqual(updatedInvoice.id, actualInvoice.id);
+    Assert.AreEqual("Updated Name Via Objects", actualInvoice.Name);
   }
 
   /// <summary>
   /// Verifies CosmosException propagates when update fails.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ShouldThrowCosmosException_WhenUpdateFails()
   {
     // Given
@@ -554,10 +558,10 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ThrowsAsync(cosmosException);
 
     // When & Then
-    var exception = await Assert.ThrowsAsync<InvoiceFailedStorageException>(
+    var exception = await Assert.ThrowsExactlyAsync<InvoiceFailedStorageException>(
       () => invoiceNoSqlBroker.UpdateInvoiceAsync(invoice.id, invoice, CancellationToken.None).AsTask());
 
-    Assert.NotNull(exception.InnerException);
+    Assert.IsNotNull(exception.InnerException);
     Assert.Contains("Update failed", exception.InnerException.Message, StringComparison.Ordinal);
   }
 
@@ -568,8 +572,8 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
   /// <summary>
   /// Verifies deleting an invoice with partition key performs soft delete.
   /// </summary>
-  [Theory]
-  [MemberData(nameof(GetInvoiceTestData))]
+  [TestMethod]
+  [DynamicData(nameof(GetInvoiceTestData))]
   public async Task ShouldSoftDeleteInvoice_WhenInvoiceExistsWithPartitionKey(Invoice expectedInvoice)
   {
     ArgumentNullException.ThrowIfNull(expectedInvoice);
@@ -612,8 +616,8 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
   /// <summary>
   /// Verifies deleting an invoice without partition key performs query then soft delete.
   /// </summary>
-  [Theory]
-  [MemberData(nameof(GetInvoiceTestData))]
+  [TestMethod]
+  [DynamicData(nameof(GetInvoiceTestData))]
   public async Task ShouldSoftDeleteInvoice_WhenInvoiceExistsWithoutPartitionKey(Invoice expectedInvoice)
   {
     ArgumentNullException.ThrowIfNull(expectedInvoice);
@@ -664,7 +668,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
   /// <summary>
   /// Verifies no exception when invoice not found for deletion without partition key.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ShouldNotThrow_WhenInvoiceNotFoundForDeletionWithoutPartitionKey()
   {
     // Given
@@ -708,7 +712,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
   /// <summary>
   /// Verifies all invoices for a user are soft-deleted along with their products.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ShouldSoftDeleteAllInvoices_WhenInvoicesExistForUser()
   {
     // Given
@@ -760,7 +764,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
   /// <summary>
   /// Verifies products within invoices are also marked as soft-deleted.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ShouldSoftDeleteProducts_WhenDeletingAllInvoicesForUser()
   {
     // Given
@@ -804,15 +808,18 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
     await invoiceNoSqlBroker.DeleteInvoicesAsync(userIdentifier, CancellationToken.None);
 
     // Then
-    Assert.NotNull(capturedInvoice);
-    Assert.True(capturedInvoice.IsSoftDeleted);
-    Assert.All(capturedInvoice.Items, product => Assert.True(product.Metadata.IsSoftDeleted));
+    Assert.IsNotNull(capturedInvoice);
+    Assert.IsTrue(capturedInvoice.IsSoftDeleted);
+    foreach (var product in capturedInvoice.Items)
+    {
+      Assert.IsTrue(product.Metadata.IsSoftDeleted);
+    }
   }
 
   /// <summary>
   /// Verifies no operations when no invoices exist for user.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ShouldNotThrow_WhenNoInvoicesExistForUserDeletion()
   {
     // Given
@@ -852,7 +859,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
   /// <summary>
   /// Verifies pagination handling when deleting all invoices across multiple pages.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ShouldHandlePagination_WhenDeletingAllInvoicesForUser()
   {
     // Given

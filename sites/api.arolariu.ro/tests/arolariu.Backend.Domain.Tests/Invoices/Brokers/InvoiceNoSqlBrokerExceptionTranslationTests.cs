@@ -14,11 +14,12 @@ using Microsoft.EntityFrameworkCore;
 
 using Moq;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Tests the translation layer that wraps CosmosException into typed invoice inner exceptions.
 /// </summary>
+[TestClass]
 public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBrokerTestsBase
 {
   private InvoiceNoSqlBroker BuildBroker()
@@ -35,7 +36,7 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
   /// <summary>
   /// Verifies that a Cosmos 404 (NotFound) during read is translated into <see cref="InvoiceNotFoundException"/>.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceAsync_WhenCosmos404_ThrowsInvoiceNotFoundException()
   {
     using var broker = BuildBroker();
@@ -46,14 +47,14 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
         It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(MakeCosmosException(HttpStatusCode.NotFound));
 
-    await Assert.ThrowsAsync<InvoiceNotFoundException>(
+    await Assert.ThrowsExactlyAsync<InvoiceNotFoundException>(
       async () => await broker.ReadInvoiceAsync(invoiceId, userId, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
   /// Verifies that a Cosmos 409 (Conflict) during create is translated into <see cref="InvoiceAlreadyExistsException"/>.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateInvoiceAsync_WhenCosmos409_ThrowsInvoiceAlreadyExistsException()
   {
     using var broker = BuildBroker();
@@ -63,14 +64,14 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
         It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(MakeCosmosException(HttpStatusCode.Conflict));
 
-    await Assert.ThrowsAsync<InvoiceAlreadyExistsException>(
+    await Assert.ThrowsExactlyAsync<InvoiceAlreadyExistsException>(
       async () => await broker.CreateInvoiceAsync(invoice, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
   /// Verifies that a Cosmos 429 (TooManyRequests) during read is translated into <see cref="InvoiceCosmosDbRateLimitException"/>.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceAsync_WhenCosmos429_ThrowsInvoiceCosmosDbRateLimitException()
   {
     using var broker = BuildBroker();
@@ -81,14 +82,14 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
         It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(MakeCosmosException((HttpStatusCode)429));
 
-    await Assert.ThrowsAsync<InvoiceCosmosDbRateLimitException>(
+    await Assert.ThrowsExactlyAsync<InvoiceCosmosDbRateLimitException>(
       async () => await broker.ReadInvoiceAsync(invoiceId, userId, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
   /// Verifies that a Cosmos 503 (ServiceUnavailable) during read is translated into <see cref="InvoiceFailedStorageException"/>.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceAsync_WhenCosmos503_ThrowsInvoiceFailedStorageException()
   {
     using var broker = BuildBroker();
@@ -99,14 +100,14 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
         It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(MakeCosmosException(HttpStatusCode.ServiceUnavailable));
 
-    await Assert.ThrowsAsync<InvoiceFailedStorageException>(
+    await Assert.ThrowsExactlyAsync<InvoiceFailedStorageException>(
       async () => await broker.ReadInvoiceAsync(invoiceId, userId, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
   /// Verifies that a Cosmos 401 (Unauthorized) during read is translated into <see cref="InvoiceUnauthorizedAccessException"/>.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceAsync_WhenCosmos401_ThrowsInvoiceUnauthorizedAccessException()
   {
     using var broker = BuildBroker();
@@ -117,14 +118,14 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
         It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(MakeCosmosException(HttpStatusCode.Unauthorized));
 
-    await Assert.ThrowsAsync<InvoiceUnauthorizedAccessException>(
+    await Assert.ThrowsExactlyAsync<InvoiceUnauthorizedAccessException>(
       async () => await broker.ReadInvoiceAsync(invoiceId, userId, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
   /// Verifies that a Cosmos 403 (Forbidden) during read is translated into <see cref="InvoiceForbiddenAccessException"/>.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceAsync_WhenCosmos403_ThrowsInvoiceForbiddenAccessException()
   {
     using var broker = BuildBroker();
@@ -135,7 +136,7 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
         It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(MakeCosmosException(HttpStatusCode.Forbidden));
 
-    await Assert.ThrowsAsync<InvoiceForbiddenAccessException>(
+    await Assert.ThrowsExactlyAsync<InvoiceForbiddenAccessException>(
       async () => await broker.ReadInvoiceAsync(invoiceId, userId, CancellationToken.None).ConfigureAwait(false));
   }
 
@@ -143,7 +144,7 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
   /// Verifies that a soft-deleted invoice returned by Cosmos is surfaced as <see cref="InvoiceLockedException"/>
   /// by the broker instead of being returned to the caller as a valid resource.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceAsync_WhenInvoiceSoftDeleted_ThrowsInvoiceLockedException()
   {
     using var broker = BuildBroker();
@@ -159,7 +160,7 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
         It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
       .ReturnsAsync(responseMock.Object);
 
-    await Assert.ThrowsAsync<InvoiceLockedException>(
+    await Assert.ThrowsExactlyAsync<InvoiceLockedException>(
       async () => await broker.ReadInvoiceAsync(invoiceId, userId, CancellationToken.None));
   }
 }
