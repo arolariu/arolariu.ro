@@ -11,13 +11,14 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Tests.Builders;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Edge case tests for Invoice and related DDD entities.
 /// These tests focus on boundary conditions, null handling, and unusual scenarios.
 /// Method naming follows MethodName_Condition_ExpectedResult pattern per repository standards.
 /// </summary>
+[TestClass]
 public sealed class InvoiceEdgeCaseTests
 {
   #region Invoice Boundary Tests
@@ -25,7 +26,7 @@ public sealed class InvoiceEdgeCaseTests
   /// <summary>
   /// Verifies Invoice handles maximum items count.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_MaximumItemsCount_HandlesCorrectly()
   {
     // Arrange
@@ -37,13 +38,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(1000, invoice.Items.Count);
+    Assert.AreEqual(1000, invoice.Items.Count);
   }
 
   /// <summary>
   /// Verifies Invoice handles empty name.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_EmptyName_IsAllowed()
   {
     // Arrange
@@ -55,13 +56,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(string.Empty, invoice.Name);
+    Assert.AreEqual(string.Empty, invoice.Name);
   }
 
   /// <summary>
   /// Verifies Invoice handles whitespace name.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_WhitespaceName_IsAllowed()
   {
     // Arrange
@@ -73,13 +74,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal("   ", invoice.Name);
+    Assert.AreEqual("   ", invoice.Name);
   }
 
   /// <summary>
   /// Verifies Invoice handles very long name.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_VeryLongName_IsAllowed()
   {
     // Arrange
@@ -92,13 +93,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(10000, invoice.Name.Length);
+    Assert.AreEqual(10000, invoice.Name.Length);
   }
 
   /// <summary>
   /// Verifies Invoice handles special characters in name.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_SpecialCharactersInName_AreAllowed()
   {
     // Arrange
@@ -111,13 +112,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(specialName, invoice.Name);
+    Assert.AreEqual(specialName, invoice.Name);
   }
 
   /// <summary>
   /// Verifies Invoice handles maximum shared users.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_MaximumSharedUsers_HandlesCorrectly()
   {
     // Arrange
@@ -130,13 +131,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(100, invoice.SharedWith.Count);
+    Assert.AreEqual(100, invoice.SharedWith.Count);
   }
 
   /// <summary>
   /// Verifies Invoice handles duplicate shared users.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_DuplicateSharedUsers_AreAllowed()
   {
     // Arrange
@@ -149,13 +150,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(3, invoice.SharedWith.Count);
+    Assert.AreEqual(3, invoice.SharedWith.Count);
   }
 
   /// <summary>
   /// Verifies Invoice handles empty GUID for shared user.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_EmptyGuidSharedUser_IsAllowed()
   {
     // Arrange
@@ -167,14 +168,14 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Single(invoice.SharedWith);
+    Assert.ContainsSingle(invoice.SharedWith);
     Assert.Contains(Guid.Empty, invoice.SharedWith);
   }
 
   /// <summary>
   /// Verifies Invoice PerformUpdate with same user ID multiple times.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_PerformUpdate_SameUserId_MultipleUpdates_IncrementsCorrectly()
   {
     // Arrange
@@ -189,14 +190,14 @@ public sealed class InvoiceEdgeCaseTests
     }
 
     // Assert
-    Assert.Equal(initialCount + 10, invoice.NumberOfUpdates);
-    Assert.Equal(userId, invoice.LastUpdatedBy);
+    Assert.AreEqual(initialCount + 10, invoice.NumberOfUpdates);
+    Assert.AreEqual(userId, invoice.LastUpdatedBy);
   }
 
   /// <summary>
   /// Verifies Invoice handles null description.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_NullDescription_IsAllowed()
   {
     // Arrange
@@ -208,7 +209,7 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Null(invoice.Description);
+    Assert.IsNull(invoice.Description);
   }
 
   #endregion
@@ -218,7 +219,7 @@ public sealed class InvoiceEdgeCaseTests
   /// <summary>
   /// Verifies Product handles zero price.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Product_ZeroPrice_IsValid()
   {
     // Arrange
@@ -230,14 +231,14 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(0, product.Price);
-    Assert.Equal(0, product.TotalPrice);
+    Assert.AreEqual(0, product.Price);
+    Assert.AreEqual(0, product.TotalPrice);
   }
 
   /// <summary>
   /// Verifies Product handles negative price.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Product_NegativePrice_IsAllowed()
   {
     // Arrange
@@ -249,14 +250,14 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(-10.00m, product.Price);
-    Assert.Equal(-10.00m, product.TotalPrice);
+    Assert.AreEqual(-10.00m, product.Price);
+    Assert.AreEqual(-10.00m, product.TotalPrice);
   }
 
   /// <summary>
   /// Verifies Product handles very large price.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Product_VeryLargePrice_IsAllowed()
   {
     // Arrange
@@ -268,13 +269,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(999999999.99m, product.Price);
+    Assert.AreEqual(999999999.99m, product.Price);
   }
 
   /// <summary>
   /// Verifies Product handles fractional quantity.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Product_FractionalQuantity_CalculatesTotalCorrectly()
   {
     // Arrange
@@ -286,13 +287,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(5.00m, product.TotalPrice);
+    Assert.AreEqual(5.00m, product.TotalPrice);
   }
 
   /// <summary>
   /// Verifies Product handles maximum decimal precision.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Product_MaxDecimalPrecision_HandlesCorrectly()
   {
     // Arrange
@@ -304,13 +305,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(0.0000000001m, product.TotalPrice);
+    Assert.AreEqual(0.0000000001m, product.TotalPrice);
   }
 
   /// <summary>
   /// Verifies Product handles empty name.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Product_EmptyName_IsAllowed()
   {
     // Arrange
@@ -320,13 +321,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(string.Empty, product.Name);
+    Assert.AreEqual(string.Empty, product.Name);
   }
 
   /// <summary>
   /// Verifies Product handles very long product code.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Product_VeryLongProductCode_IsAllowed()
   {
     // Arrange
@@ -337,13 +338,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(1000, product.ProductCode.Length);
+    Assert.AreEqual(1000, product.ProductCode.Length);
   }
 
   /// <summary>
   /// Verifies Product handles multiple allergens.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Product_MultipleAllergens_HandlesCorrectly()
   {
     // Arrange
@@ -361,7 +362,7 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(5, product.DetectedAllergens.Count());
+    Assert.AreEqual(5, product.DetectedAllergens.Count());
   }
 
   #endregion
@@ -371,7 +372,7 @@ public sealed class InvoiceEdgeCaseTests
   /// <summary>
   /// Verifies PaymentInformation handles zero total cost.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_ZeroTotalCost_IsValid()
   {
     // Arrange
@@ -382,14 +383,14 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(0, payment.TotalCostAmount);
-    Assert.Equal(0, payment.TotalTaxAmount);
+    Assert.AreEqual(0, payment.TotalCostAmount);
+    Assert.AreEqual(0, payment.TotalTaxAmount);
   }
 
   /// <summary>
   /// Verifies PaymentInformation handles negative tax.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_NegativeTax_IsAllowed()
   {
     // Arrange
@@ -400,13 +401,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(-10.00m, payment.TotalTaxAmount);
+    Assert.AreEqual(-10.00m, payment.TotalTaxAmount);
   }
 
   /// <summary>
   /// Verifies PaymentInformation handles tax greater than cost.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_TaxGreaterThanCost_IsAllowed()
   {
     // Arrange
@@ -417,13 +418,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.True(payment.TotalTaxAmount > payment.TotalCostAmount);
+    Assert.IsTrue(payment.TotalTaxAmount > payment.TotalCostAmount);
   }
 
   /// <summary>
   /// Verifies PaymentInformation handles future transaction date.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_FutureTransactionDate_IsAllowed()
   {
     // Arrange
@@ -434,13 +435,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.True(payment.TransactionDate > DateTimeOffset.UtcNow);
+    Assert.IsTrue(payment.TransactionDate > DateTimeOffset.UtcNow);
   }
 
   /// <summary>
   /// Verifies PaymentInformation handles very old transaction date.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_VeryOldTransactionDate_IsAllowed()
   {
     // Arrange
@@ -451,7 +452,7 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(1900, payment.TransactionDate.Year);
+    Assert.AreEqual(1900, payment.TransactionDate.Year);
   }
 
   #endregion
@@ -461,20 +462,20 @@ public sealed class InvoiceEdgeCaseTests
   /// <summary>
   /// Verifies Currency handles empty code.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Currency_EmptyCode_IsAllowed()
   {
     // Arrange
     var currency = new Currency("Test", string.Empty, "$");
 
     // Assert
-    Assert.Equal(string.Empty, currency.Code);
+    Assert.AreEqual(string.Empty, currency.Code);
   }
 
   /// <summary>
   /// Verifies Currency handles very long name.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Currency_VeryLongName_IsAllowed()
   {
     // Arrange
@@ -482,33 +483,33 @@ public sealed class InvoiceEdgeCaseTests
     var currency = new Currency(longName, "XXX", "X");
 
     // Assert
-    Assert.Equal(1000, currency.Name.Length);
+    Assert.AreEqual(1000, currency.Name.Length);
   }
 
   /// <summary>
   /// Verifies Currency handles multi-character symbol.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Currency_MultiCharacterSymbol_IsAllowed()
   {
     // Arrange
     var currency = new Currency("Test Currency", "TST", "TST$");
 
     // Assert
-    Assert.Equal("TST$", currency.Symbol);
+    Assert.AreEqual("TST$", currency.Symbol);
   }
 
   /// <summary>
   /// Verifies Currency handles emoji symbol.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Currency_EmojiSymbol_IsAllowed()
   {
     // Arrange
     var currency = new Currency("Crypto", "CRY", "🪙");
 
     // Assert
-    Assert.Equal("🪙", currency.Symbol);
+    Assert.AreEqual("🪙", currency.Symbol);
   }
 
   #endregion
@@ -518,7 +519,7 @@ public sealed class InvoiceEdgeCaseTests
   /// <summary>
   /// Verifies Merchant handles many referenced invoices.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Merchant_ManyReferencedInvoices_HandlesCorrectly()
   {
     // Arrange
@@ -529,13 +530,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(500, merchant.ReferencedInvoices.Count);
+    Assert.AreEqual(500, merchant.ReferencedInvoices.Count);
   }
 
   /// <summary>
   /// Verifies Merchant handles empty name.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Merchant_EmptyName_IsAllowed()
   {
     // Arrange
@@ -545,13 +546,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(string.Empty, merchant.Name);
+    Assert.AreEqual(string.Empty, merchant.Name);
   }
 
   /// <summary>
   /// Verifies Merchant handles very long description.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Merchant_VeryLongDescription_IsAllowed()
   {
     // Arrange
@@ -562,13 +563,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(50000, merchant.Description.Length);
+    Assert.AreEqual(50000, merchant.Description.Length);
   }
 
   /// <summary>
   /// Verifies Merchant handles complex contact information.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Merchant_ComplexContactInformation_HandlesCorrectly()
   {
     // Arrange
@@ -585,9 +586,9 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.NotNull(merchant.Address);
-    Assert.True(merchant.Address.FullName.Contains("Company", StringComparison.Ordinal));
-    Assert.True(merchant.Address.PhoneNumber.Contains("ext.", StringComparison.Ordinal));
+    Assert.IsNotNull(merchant.Address);
+    Assert.IsTrue(merchant.Address.FullName.Contains("Company", StringComparison.Ordinal));
+    Assert.IsTrue(merchant.Address.PhoneNumber.Contains("ext.", StringComparison.Ordinal));
   }
 
   #endregion
@@ -597,7 +598,7 @@ public sealed class InvoiceEdgeCaseTests
   /// <summary>
   /// Verifies Recipe handles negative duration.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Recipe_NegativeDuration_IsAllowed()
   {
     // Arrange
@@ -608,13 +609,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(-1, recipe.ApproximateTotalDuration);
+    Assert.AreEqual(-1, recipe.ApproximateTotalDuration);
   }
 
   /// <summary>
   /// Verifies Recipe handles very large duration.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Recipe_VeryLargeDuration_IsAllowed()
   {
     // Arrange
@@ -625,13 +626,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(int.MaxValue, recipe.ApproximateTotalDuration);
+    Assert.AreEqual(int.MaxValue, recipe.ApproximateTotalDuration);
   }
 
   /// <summary>
   /// Verifies Recipe handles empty ingredients list.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Recipe_EmptyIngredients_IsValid()
   {
     // Arrange
@@ -642,13 +643,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Empty(recipe.Ingredients);
+    Assert.IsEmpty(recipe.Ingredients);
   }
 
   /// <summary>
   /// Verifies Recipe handles many ingredients.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Recipe_ManyIngredients_HandlesCorrectly()
   {
     // Arrange
@@ -660,7 +661,7 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(100, recipe.Ingredients.Count);
+    Assert.AreEqual(100, recipe.Ingredients.Count);
   }
 
   #endregion
@@ -670,7 +671,7 @@ public sealed class InvoiceEdgeCaseTests
   /// <summary>
   /// Verifies InvoiceScan handles complex URI.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceScan_ComplexUri_HandlesCorrectly()
   {
     // Arrange
@@ -678,13 +679,13 @@ public sealed class InvoiceEdgeCaseTests
     var scan = new InvoiceScan(ScanType.JPG, complexUri, null);
 
     // Assert
-    Assert.True(scan.Location.Query.Contains("token=", StringComparison.Ordinal));
+    Assert.IsTrue(scan.Location.Query.Contains("token=", StringComparison.Ordinal));
   }
 
   /// <summary>
   /// Verifies InvoiceScan handles file URI.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceScan_FileUri_HandlesCorrectly()
   {
     // Arrange
@@ -692,13 +693,13 @@ public sealed class InvoiceEdgeCaseTests
     var scan = new InvoiceScan(ScanType.PDF, fileUri, null);
 
     // Assert
-    Assert.Equal("file", scan.Location.Scheme);
+    Assert.AreEqual("file", scan.Location.Scheme);
   }
 
   /// <summary>
   /// Verifies InvoiceScan handles metadata with various types.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceScan_ComplexMetadata_HandlesCorrectly()
   {
     // Arrange
@@ -715,10 +716,10 @@ public sealed class InvoiceEdgeCaseTests
     var scan = new InvoiceScan(ScanType.JPG, new Uri("https://example.com/scan.jpg"), metadata);
 
     // Assert
-    Assert.Equal(7, scan.Metadata!.Count);
-    Assert.Equal("test", scan.Metadata["stringValue"]);
-    Assert.Equal(42, scan.Metadata["intValue"]);
-    Assert.Equal(true, scan.Metadata["boolValue"]);
+    Assert.AreEqual(7, scan.Metadata!.Count);
+    Assert.AreEqual("test", scan.Metadata["stringValue"]);
+    Assert.AreEqual(42, scan.Metadata["intValue"]);
+    Assert.AreEqual(true, scan.Metadata["boolValue"]);
   }
 
   #endregion
@@ -728,7 +729,7 @@ public sealed class InvoiceEdgeCaseTests
   /// <summary>
   /// Verifies Allergen handles special characters in name.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Allergen_SpecialCharactersInName_IsAllowed()
   {
     // Arrange
@@ -739,14 +740,14 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.True(allergen.Name.Contains('(', StringComparison.Ordinal));
-    Assert.True(allergen.Description.Contains('&', StringComparison.Ordinal));
+    Assert.IsTrue(allergen.Name.Contains('(', StringComparison.Ordinal));
+    Assert.IsTrue(allergen.Description.Contains('&', StringComparison.Ordinal));
   }
 
   /// <summary>
   /// Verifies Allergen handles international characters.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Allergen_InternationalCharacters_IsAllowed()
   {
     // Arrange
@@ -757,8 +758,8 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.True(allergen.Name.Contains('ü', StringComparison.Ordinal));
-    Assert.True(allergen.Description.Contains("日本語", StringComparison.Ordinal));
+    Assert.IsTrue(allergen.Name.Contains('ü', StringComparison.Ordinal));
+    Assert.IsTrue(allergen.Description.Contains("日本語", StringComparison.Ordinal));
   }
 
   #endregion
@@ -768,7 +769,7 @@ public sealed class InvoiceEdgeCaseTests
   /// <summary>
   /// Verifies Invoice AdditionalMetadata handles nested dictionaries.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_NestedMetadata_HandlesCorrectly()
   {
     // Arrange
@@ -788,13 +789,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.NotNull(invoice.AdditionalMetadata["level1"]);
+    Assert.IsNotNull(invoice.AdditionalMetadata["level1"]);
   }
 
   /// <summary>
   /// Verifies Invoice AdditionalMetadata handles null values.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_MetadataWithNullValue_HandlesCorrectly()
   {
     // Arrange
@@ -809,14 +810,14 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.True(invoice.AdditionalMetadata.ContainsKey("nullKey"));
-    Assert.Null(invoice.AdditionalMetadata["nullKey"]);
+    Assert.IsTrue(invoice.AdditionalMetadata.ContainsKey("nullKey"));
+    Assert.IsNull(invoice.AdditionalMetadata["nullKey"]);
   }
 
   /// <summary>
   /// Verifies Invoice AdditionalMetadata handles special key names.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_MetadataWithSpecialKeys_HandlesCorrectly()
   {
     // Arrange
@@ -835,8 +836,8 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(5, invoice.AdditionalMetadata.Count);
-    Assert.Equal("value1", invoice.AdditionalMetadata["key.with.dots"]);
+    Assert.AreEqual(5, invoice.AdditionalMetadata.Count);
+    Assert.AreEqual("value1", invoice.AdditionalMetadata["key.with.dots"]);
   }
 
   #endregion
@@ -846,7 +847,7 @@ public sealed class InvoiceEdgeCaseTests
   /// <summary>
   /// Verifies ContactInformation handles international phone numbers.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void ContactInformation_InternationalPhoneNumber_IsAllowed()
   {
     // Arrange
@@ -862,7 +863,7 @@ public sealed class InvoiceEdgeCaseTests
   /// <summary>
   /// Verifies ContactInformation handles invalid email format (no validation).
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void ContactInformation_InvalidEmailFormat_IsAllowed()
   {
     // Arrange - no validation on the model level
@@ -872,13 +873,13 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal("not-a-valid-email", contact.EmailAddress);
+    Assert.AreEqual("not-a-valid-email", contact.EmailAddress);
   }
 
   /// <summary>
   /// Verifies ContactInformation handles empty website.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void ContactInformation_EmptyWebsite_IsAllowed()
   {
     // Arrange
@@ -888,7 +889,7 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.Equal(string.Empty, contact.Website);
+    Assert.AreEqual(string.Empty, contact.Website);
   }
 
   #endregion
@@ -898,7 +899,7 @@ public sealed class InvoiceEdgeCaseTests
   /// <summary>
   /// Verifies ProductMetadata all flags can be true.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void ProductMetadata_AllFlagsTrue_IsValid()
   {
     // Arrange
@@ -910,15 +911,15 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.True(metadata.IsEdited);
-    Assert.True(metadata.IsComplete);
-    Assert.True(metadata.IsSoftDeleted);
+    Assert.IsTrue(metadata.IsEdited);
+    Assert.IsTrue(metadata.IsComplete);
+    Assert.IsTrue(metadata.IsSoftDeleted);
   }
 
   /// <summary>
   /// Verifies ProductMetadata all flags can be false.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void ProductMetadata_AllFlagsFalse_IsValid()
   {
     // Arrange
@@ -930,9 +931,9 @@ public sealed class InvoiceEdgeCaseTests
     };
 
     // Assert
-    Assert.False(metadata.IsEdited);
-    Assert.False(metadata.IsComplete);
-    Assert.False(metadata.IsSoftDeleted);
+    Assert.IsFalse(metadata.IsEdited);
+    Assert.IsFalse(metadata.IsComplete);
+    Assert.IsFalse(metadata.IsSoftDeleted);
   }
 
   #endregion
