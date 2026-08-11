@@ -20,7 +20,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Moq;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Integration-style tests asserting that invoice REST endpoints emit the correct
@@ -48,6 +48,7 @@ using Xunit;
 /// matches the implementation.
 /// </para>
 /// </remarks>
+[TestClass]
 public sealed class InvoiceEndpointsStatusCodeTests
 {
   #region Local test exceptions implementing the Common marker interfaces.
@@ -203,7 +204,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
   private static ProblemDetails GetProblemDetails(IResult result)
   {
-    var problem = Assert.IsType<ProblemHttpResult>(result);
+    var problem = Assert.IsExactInstanceOfType<ProblemHttpResult>(result);
     return problem.ProblemDetails;
   }
   #endregion
@@ -213,7 +214,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
   /// Verifies that an <see cref="INotFoundException"/> thrown by the processing service
   /// is mapped to a 404 Not Found <see cref="ProblemDetails"/> response by the endpoint.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task RetrieveSpecificInvoiceAsync_WhenServiceThrowsNotFound_Returns404()
   {
     // Arrange
@@ -226,16 +227,16 @@ public sealed class InvoiceEndpointsStatusCodeTests
 ;
 
     // Assert
-    Assert.Equal(StatusCodes.Status404NotFound, GetStatusCode(result));
+    Assert.AreEqual(StatusCodes.Status404NotFound, GetStatusCode(result));
     var problem = GetProblemDetails(result);
-    Assert.Equal(ProblemTypeUris.NotFound, problem.Type);
+    Assert.AreEqual(ProblemTypeUris.NotFound, problem.Type);
   }
 
   /// <summary>
   /// Verifies that an <see cref="IAlreadyExistsException"/> thrown by the processing service
   /// is mapped to a 409 Conflict <see cref="ProblemDetails"/> response by the endpoint.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task RetrieveSpecificInvoiceAsync_WhenServiceThrowsConflict_Returns409()
   {
     var mockService = CreateServiceMockThatThrowsOnRead(new TestConflictException("already exists"));
@@ -245,15 +246,15 @@ public sealed class InvoiceEndpointsStatusCodeTests
       .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid(), CancellationToken.None)
 ;
 
-    Assert.Equal(StatusCodes.Status409Conflict, GetStatusCode(result));
-    Assert.Equal(ProblemTypeUris.Conflict, GetProblemDetails(result).Type);
+    Assert.AreEqual(StatusCodes.Status409Conflict, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.Conflict, GetProblemDetails(result).Type);
   }
 
   /// <summary>
   /// Verifies that an <see cref="ILockedException"/> thrown by the processing service
   /// is mapped to a 423 Locked <see cref="ProblemDetails"/> response by the endpoint.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task RetrieveSpecificInvoiceAsync_WhenServiceThrowsLocked_Returns423()
   {
     var mockService = CreateServiceMockThatThrowsOnRead(new TestLockedException("resource locked"));
@@ -263,8 +264,8 @@ public sealed class InvoiceEndpointsStatusCodeTests
       .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid(), CancellationToken.None)
 ;
 
-    Assert.Equal(StatusCodes.Status423Locked, GetStatusCode(result));
-    Assert.Equal(ProblemTypeUris.Locked, GetProblemDetails(result).Type);
+    Assert.AreEqual(StatusCodes.Status423Locked, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.Locked, GetProblemDetails(result).Type);
   }
 
   /// <summary>
@@ -272,7 +273,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
   /// is mapped to a 429 Too Many Requests <see cref="ProblemDetails"/> response carrying
   /// the retry hint on the <c>retryAfterSeconds</c> extension member.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task RetrieveSpecificInvoiceAsync_WhenServiceThrowsRateLimit_Returns429WithRetryAfterSecondsExtension()
   {
     // Arrange - include a non-trivial RetryAfter so the mapper surfaces a positive hint.
@@ -287,23 +288,23 @@ public sealed class InvoiceEndpointsStatusCodeTests
 ;
 
     // Assert
-    Assert.Equal(StatusCodes.Status429TooManyRequests, GetStatusCode(result));
+    Assert.AreEqual(StatusCodes.Status429TooManyRequests, GetStatusCode(result));
     var problem = GetProblemDetails(result);
-    Assert.Equal(ProblemTypeUris.RateLimited, problem.Type);
+    Assert.AreEqual(ProblemTypeUris.RateLimited, problem.Type);
 
     // The mapper surfaces the retry hint as a ProblemDetails extension (JSON body),
     // NOT as an HTTP Retry-After header. See ExceptionToHttpResultMapper.
-    Assert.True(
+    Assert.IsTrue(
       problem.Extensions.TryGetValue("retryAfterSeconds", out var retryHint),
       "Expected 'retryAfterSeconds' extension on 429 ProblemDetails body.");
-    Assert.Equal(42, Assert.IsType<int>(retryHint));
+    Assert.AreEqual(42, Assert.IsExactInstanceOfType<int>(retryHint));
   }
 
   /// <summary>
   /// Verifies that an <see cref="IDependencyException"/> thrown by the processing service
   /// is mapped to a 503 Service Unavailable <see cref="ProblemDetails"/> response by the endpoint.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task RetrieveSpecificInvoiceAsync_WhenServiceThrowsDependencyFailure_Returns503()
   {
     var mockService = CreateServiceMockThatThrowsOnRead(
@@ -314,8 +315,8 @@ public sealed class InvoiceEndpointsStatusCodeTests
       .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid(), CancellationToken.None)
 ;
 
-    Assert.Equal(StatusCodes.Status503ServiceUnavailable, GetStatusCode(result));
-    Assert.Equal(ProblemTypeUris.ServiceUnavailable, GetProblemDetails(result).Type);
+    Assert.AreEqual(StatusCodes.Status503ServiceUnavailable, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.ServiceUnavailable, GetProblemDetails(result).Type);
   }
 
   /// <summary>
@@ -323,7 +324,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
   /// is mapped to a 500 Internal Server Error without leaking the exception type name or stack trace
   /// into the <see cref="ProblemDetails"/> payload.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task RetrieveSpecificInvoiceAsync_WhenServiceThrowsUnclassifiedException_Returns500WithoutLeakingType()
   {
     // Arrange - a plain Exception that implements none of the marker interfaces
@@ -338,13 +339,13 @@ public sealed class InvoiceEndpointsStatusCodeTests
 ;
 
     // Assert
-    Assert.Equal(StatusCodes.Status500InternalServerError, GetStatusCode(result));
+    Assert.AreEqual(StatusCodes.Status500InternalServerError, GetStatusCode(result));
     var problem = GetProblemDetails(result);
-    Assert.Equal(ProblemTypeUris.InternalServerError, problem.Type);
+    Assert.AreEqual(ProblemTypeUris.InternalServerError, problem.Type);
 
     // The mapper's BuildSafeDetail surfaces Message only - it does NOT emit the
     // exception type name / namespace / stack into the ProblemDetails payload.
-    Assert.Equal("An unexpected error occurred. Please try again later.", problem.Detail);
+    Assert.AreEqual("An unexpected error occurred. Please try again later.", problem.Detail);
   }
   #endregion
 
@@ -353,7 +354,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
   /// Verifies that the endpoint rejects a request with an empty user identifier by returning
   /// 400 Bad Request <em>before</em> invoking the processing service (endpoint-level validation).
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateNewInvoiceAsync_WhenUserIdentifierIsEmpty_Returns400ValidationProblem()
   {
     // Arrange - endpoint-level validation runs BEFORE any service call, so the mock
@@ -372,7 +373,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 ;
 
     // Assert
-    Assert.Equal(StatusCodes.Status400BadRequest, GetStatusCode(result));
+    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
     mockService.VerifyNoOtherCalls();
   }
   #endregion
@@ -382,7 +383,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
   /// Verifies that an <see cref="IUnauthorizedException"/> thrown by the processing service
   /// is mapped to a 401 Unauthorized <see cref="ProblemDetails"/> response by the endpoint.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task RetrieveSpecificInvoiceAsync_WhenServiceThrowsUnauthorized_Returns401()
   {
     var mockService = CreateServiceMockThatThrowsOnRead(new TestUnauthorizedException("authentication required"));
@@ -392,15 +393,15 @@ public sealed class InvoiceEndpointsStatusCodeTests
       .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid(), CancellationToken.None)
 ;
 
-    Assert.Equal(StatusCodes.Status401Unauthorized, GetStatusCode(result));
-    Assert.Equal(ProblemTypeUris.Unauthorized, GetProblemDetails(result).Type);
+    Assert.AreEqual(StatusCodes.Status401Unauthorized, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.Unauthorized, GetProblemDetails(result).Type);
   }
 
   /// <summary>
   /// Verifies that an <see cref="IForbiddenException"/> thrown by the processing service
   /// is mapped to a 403 Forbidden <see cref="ProblemDetails"/> response by the endpoint.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task RetrieveSpecificInvoiceAsync_WhenServiceThrowsForbidden_Returns403()
   {
     var mockService = CreateServiceMockThatThrowsOnRead(new TestForbiddenException("access denied"));
@@ -410,8 +411,8 @@ public sealed class InvoiceEndpointsStatusCodeTests
       .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid(), CancellationToken.None)
 ;
 
-    Assert.Equal(StatusCodes.Status403Forbidden, GetStatusCode(result));
-    Assert.Equal(ProblemTypeUris.Forbidden, GetProblemDetails(result).Type);
+    Assert.AreEqual(StatusCodes.Status403Forbidden, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.Forbidden, GetProblemDetails(result).Type);
   }
   #endregion
 
@@ -426,7 +427,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
   /// Verifies that an <see cref="INotFoundException"/> thrown from <c>ReadMerchant</c>
   /// is mapped to a 404 Not Found <see cref="ProblemDetails"/> response by the endpoint.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task RetrieveSpecificMerchantAsync_WhenServiceThrowsNotFound_Returns404()
   {
     var mockService = CreateServiceMockThatThrowsOnMerchantRead(new TestNotFoundException("merchant not found"));
@@ -436,15 +437,15 @@ public sealed class InvoiceEndpointsStatusCodeTests
       .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null, CancellationToken.None)
 ;
 
-    Assert.Equal(StatusCodes.Status404NotFound, GetStatusCode(result));
-    Assert.Equal(ProblemTypeUris.NotFound, GetProblemDetails(result).Type);
+    Assert.AreEqual(StatusCodes.Status404NotFound, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.NotFound, GetProblemDetails(result).Type);
   }
 
   /// <summary>
   /// Verifies that an <see cref="IAlreadyExistsException"/> thrown from <c>ReadMerchant</c>
   /// is mapped to a 409 Conflict <see cref="ProblemDetails"/> response by the endpoint.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task RetrieveSpecificMerchantAsync_WhenServiceThrowsConflict_Returns409()
   {
     var mockService = CreateServiceMockThatThrowsOnMerchantRead(new TestConflictException("merchant already exists"));
@@ -454,15 +455,15 @@ public sealed class InvoiceEndpointsStatusCodeTests
       .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null, CancellationToken.None)
 ;
 
-    Assert.Equal(StatusCodes.Status409Conflict, GetStatusCode(result));
-    Assert.Equal(ProblemTypeUris.Conflict, GetProblemDetails(result).Type);
+    Assert.AreEqual(StatusCodes.Status409Conflict, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.Conflict, GetProblemDetails(result).Type);
   }
 
   /// <summary>
   /// Verifies that an <see cref="ILockedException"/> thrown from <c>ReadMerchant</c>
   /// is mapped to a 423 Locked <see cref="ProblemDetails"/> response by the endpoint.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task RetrieveSpecificMerchantAsync_WhenServiceThrowsLocked_Returns423()
   {
     var mockService = CreateServiceMockThatThrowsOnMerchantRead(new TestLockedException("merchant locked"));
@@ -472,8 +473,8 @@ public sealed class InvoiceEndpointsStatusCodeTests
       .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null, CancellationToken.None)
 ;
 
-    Assert.Equal(StatusCodes.Status423Locked, GetStatusCode(result));
-    Assert.Equal(ProblemTypeUris.Locked, GetProblemDetails(result).Type);
+    Assert.AreEqual(StatusCodes.Status423Locked, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.Locked, GetProblemDetails(result).Type);
   }
 
   /// <summary>
@@ -481,7 +482,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
   /// is mapped to a 429 Too Many Requests <see cref="ProblemDetails"/> response carrying
   /// the retry hint on the <c>retryAfterSeconds</c> extension member.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task RetrieveSpecificMerchantAsync_WhenServiceThrowsRateLimit_Returns429WithRetryAfterSecondsExtension()
   {
     var retryAfter = TimeSpan.FromSeconds(17);
@@ -493,21 +494,21 @@ public sealed class InvoiceEndpointsStatusCodeTests
       .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null, CancellationToken.None)
 ;
 
-    Assert.Equal(StatusCodes.Status429TooManyRequests, GetStatusCode(result));
+    Assert.AreEqual(StatusCodes.Status429TooManyRequests, GetStatusCode(result));
     var problem = GetProblemDetails(result);
-    Assert.Equal(ProblemTypeUris.RateLimited, problem.Type);
+    Assert.AreEqual(ProblemTypeUris.RateLimited, problem.Type);
 
-    Assert.True(
+    Assert.IsTrue(
       problem.Extensions.TryGetValue("retryAfterSeconds", out var retryHint),
       "Expected 'retryAfterSeconds' extension on 429 ProblemDetails body.");
-    Assert.Equal(17, Assert.IsType<int>(retryHint));
+    Assert.AreEqual(17, Assert.IsExactInstanceOfType<int>(retryHint));
   }
 
   /// <summary>
   /// Verifies that an <see cref="IUnauthorizedException"/> thrown from <c>ReadMerchant</c>
   /// is mapped to a 401 Unauthorized <see cref="ProblemDetails"/> response by the endpoint.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task RetrieveSpecificMerchantAsync_WhenServiceThrowsUnauthorized_Returns401()
   {
     var mockService = CreateServiceMockThatThrowsOnMerchantRead(new TestUnauthorizedException("authentication required"));
@@ -517,15 +518,15 @@ public sealed class InvoiceEndpointsStatusCodeTests
       .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null, CancellationToken.None)
 ;
 
-    Assert.Equal(StatusCodes.Status401Unauthorized, GetStatusCode(result));
-    Assert.Equal(ProblemTypeUris.Unauthorized, GetProblemDetails(result).Type);
+    Assert.AreEqual(StatusCodes.Status401Unauthorized, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.Unauthorized, GetProblemDetails(result).Type);
   }
 
   /// <summary>
   /// Verifies that an <see cref="IForbiddenException"/> thrown from <c>ReadMerchant</c>
   /// is mapped to a 403 Forbidden <see cref="ProblemDetails"/> response by the endpoint.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task RetrieveSpecificMerchantAsync_WhenServiceThrowsForbidden_Returns403()
   {
     var mockService = CreateServiceMockThatThrowsOnMerchantRead(new TestForbiddenException("access denied"));
@@ -535,15 +536,15 @@ public sealed class InvoiceEndpointsStatusCodeTests
       .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null, CancellationToken.None)
 ;
 
-    Assert.Equal(StatusCodes.Status403Forbidden, GetStatusCode(result));
-    Assert.Equal(ProblemTypeUris.Forbidden, GetProblemDetails(result).Type);
+    Assert.AreEqual(StatusCodes.Status403Forbidden, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.Forbidden, GetProblemDetails(result).Type);
   }
 
   /// <summary>
   /// Verifies that an <see cref="IDependencyException"/> thrown from <c>ReadMerchant</c>
   /// is mapped to a 503 Service Unavailable <see cref="ProblemDetails"/> response by the endpoint.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task RetrieveSpecificMerchantAsync_WhenServiceThrowsDependencyFailure_Returns503()
   {
     var mockService = CreateServiceMockThatThrowsOnMerchantRead(
@@ -554,8 +555,8 @@ public sealed class InvoiceEndpointsStatusCodeTests
       .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null, CancellationToken.None)
 ;
 
-    Assert.Equal(StatusCodes.Status503ServiceUnavailable, GetStatusCode(result));
-    Assert.Equal(ProblemTypeUris.ServiceUnavailable, GetProblemDetails(result).Type);
+    Assert.AreEqual(StatusCodes.Status503ServiceUnavailable, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.ServiceUnavailable, GetProblemDetails(result).Type);
   }
   #endregion
 
@@ -572,7 +573,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
   /// non-null <see cref="Activity"/>; default sampling yields <c>null</c> outside a hosted app.
   /// Mirrors the pattern used by <c>ExceptionMappingHandlerTests.TryHandleAsync_ClassifiableException_IncludesTraceIdWhenActivityPresent</c>.
   /// </remarks>
-  [Fact]
+  [TestMethod]
   public async Task RetrieveSpecificInvoiceAsync_WhenActivityActive_ProblemDetailsIncludesTraceId()
   {
     // Arrange - register a listener that samples EVERYTHING so StartActivity returns a real Activity.
@@ -585,7 +586,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     using var source = new ActivitySource("arolariu.tests.InvoiceEndpointsStatusCodeTests");
     using var activity = source.StartActivity("test-op");
-    Assert.NotNull(activity);
+    Assert.IsNotNull(activity);
 
     var mockService = CreateServiceMockThatThrowsOnRead(new TestNotFoundException("invoice not found"));
     var accessor = CreateAuthenticatedContextAccessor();
@@ -596,15 +597,15 @@ public sealed class InvoiceEndpointsStatusCodeTests
 ;
 
     // Assert
-    Assert.Equal(StatusCodes.Status404NotFound, GetStatusCode(result));
+    Assert.AreEqual(StatusCodes.Status404NotFound, GetStatusCode(result));
     var problem = GetProblemDetails(result);
 
-    Assert.True(
+    Assert.IsTrue(
       problem.Extensions.TryGetValue("traceId", out var traceIdValue),
       "Expected 'traceId' extension on ProblemDetails when an Activity is active.");
 
     var expectedTraceId = Activity.Current!.TraceId.ToString();
-    Assert.Equal(expectedTraceId, Assert.IsType<string>(traceIdValue));
+    Assert.AreEqual(expectedTraceId, Assert.IsExactInstanceOfType<string>(traceIdValue));
   }
   #endregion
 }
