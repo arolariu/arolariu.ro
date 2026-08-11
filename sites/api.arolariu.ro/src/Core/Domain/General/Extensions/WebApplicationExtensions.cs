@@ -138,7 +138,7 @@ internal static class WebApplicationExtensions
     app.UseSwagger(SwaggerConfigurationService.GetSwaggerOptions());
     app.UseSwaggerUI(SwaggerConfigurationService.GetSwaggerUIOptions());
     app.MapOpenApi();
-    app.MapHealthChecks("/health", new HealthCheckOptions
+    var healthChecks = app.MapHealthChecks("/health", new HealthCheckOptions
     {
       ResponseWriter = async (httpContext, report) =>
       {
@@ -155,8 +155,14 @@ internal static class WebApplicationExtensions
         await UIResponseWriter.WriteHealthCheckUIResponse(httpContext, report).ConfigureAwait(false);
       },
     })
-       .RequireRateLimiting(RateLimitPolicies.HealthCheck)
-       .DisableHttpMetrics();
+       .RequireRateLimiting(RateLimitPolicies.HealthCheck);
+
+    // Gated so OTEL_SUPPRESS_HEALTH_TELEMETRY=false restores every signal, metrics included.
+    // An unconditional call would leave metrics suppressed even with the override disabled.
+    if (HealthTelemetryPolicy.IsSuppressionEnabled)
+    {
+      healthChecks.DisableHttpMetrics();
+    }
     app.MapGet("/terms", () => app.Configuration["ApplicationOptions:TermsAndConditions"]);
 
     logger.LogHealthChecksRegistered("/health");
