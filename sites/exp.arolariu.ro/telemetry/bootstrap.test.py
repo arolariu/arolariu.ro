@@ -312,9 +312,46 @@ class TestTelemetryBootstrap:
         finally:
             shutdown_telemetry()
 
+    def test_override_drops_health_exclusions(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """OTEL_SUPPRESS_HEALTH_TELEMETRY=false must restore probe traces, not just logs.
+
+        Guards the wiring, not just the predicate: the flag has to actually reach
+        FastAPIInstrumentor, otherwise disabling suppression silently leaves traces off.
+        """
+
+        dependencies = _build_fake_dependencies()
+        monkeypatch.setenv("EXP_OTEL_ENABLED", "true")
+        monkeypatch.setenv("INFRA", "local")
+        monkeypatch.setenv("OTEL_SUPPRESS_HEALTH_TELEMETRY", "false")
+        monkeypatch.delenv("EXP_OTEL_EXCLUDED_URLS", raising=False)
+        monkeypatch.setattr("telemetry.bootstrap._import_telemetry_dependencies", lambda: dependencies)
+
+        app = FastAPI()
+        initialize_telemetry(app)
+        try:
+            assert dependencies.FastAPIInstrumentor.instrument_calls[0]["excluded_urls"] == ""
+        finally:
+            shutdown_telemetry()
+
+    def test_override_preserves_operator_supplied_exclusions(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """A health flag must not silently discard an unrelated, explicitly-set exclusion list."""
+
+        dependencies = _build_fake_dependencies()
+        monkeypatch.setenv("EXP_OTEL_ENABLED", "true")
+        monkeypatch.setenv("INFRA", "local")
+        monkeypatch.setenv("OTEL_SUPPRESS_HEALTH_TELEMETRY", "false")
+        monkeypatch.setenv("EXP_OTEL_EXCLUDED_URLS", "/internal/debug")
+        monkeypatch.setattr("telemetry.bootstrap._import_telemetry_dependencies", lambda: dependencies)
+
+        app = FastAPI()
+        initialize_telemetry(app)
+        try:
+            assert dependencies.FastAPIInstrumentor.instrument_calls[0]["excluded_urls"] == "/internal/debug"
+        finally:
+            shutdown_telemetry()
+
     def test_initializes_azure_monitor_exporters(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
+        self,        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         dependencies = _build_fake_dependencies()
         monkeypatch.setenv("EXP_OTEL_ENABLED", "true")

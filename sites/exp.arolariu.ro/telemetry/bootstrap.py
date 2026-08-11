@@ -15,6 +15,7 @@ from fastapi import FastAPI
 from telemetry.health_policy import (
     SUPPRESSED_HEALTH_PATHS,
     SUPPRESSION_ENV_VAR,
+    build_excluded_urls,
     parse_suppression_flag,
 )
 from telemetry.settings import TelemetrySettings, get_telemetry_settings
@@ -573,11 +574,16 @@ def _instrument_fastapi_app(runtime: TelemetryRuntime, app: FastAPI) -> None:
     if getattr(app.state, "exp_otel_instrumented", False):
         return
 
-    # Exclusions are dropped entirely when the operator disables suppression, so
+    # Only the health-derived defaults answer to the suppression flag, so
     # OTEL_SUPPRESS_HEALTH_TELEMETRY=false restores traces and HTTP metrics for probe
     # endpoints as documented -- not just the request logs guarded in main.
-    suppression_enabled = parse_suppression_flag(os.environ.get(SUPPRESSION_ENV_VAR))
-    excluded_urls = runtime.settings.excluded_urls if suppression_enabled else ""
+    #
+    # An operator who set EXP_OTEL_EXCLUDED_URLS explicitly gets that list honoured verbatim:
+    # it is a general-purpose exclusion knob, and a flag about *health* telemetry has no
+    # business silently discarding unrelated exclusions.
+    excluded_urls = runtime.settings.excluded_urls
+    if not parse_suppression_flag(os.environ.get(SUPPRESSION_ENV_VAR)) and excluded_urls == build_excluded_urls():
+        excluded_urls = ""
 
     runtime.dependencies.FastAPIInstrumentor.instrument_app(
         app,
