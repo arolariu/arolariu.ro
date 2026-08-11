@@ -921,7 +921,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
   /// Provides theory data consisting of several randomized invoices.
   /// </summary>
   /// <returns>Collection of randomized <see cref="Invoice"/> instances.</returns>
-  public static TheoryData<Invoice> GetInvoiceTestData() => InvoiceBuilder.GetInvoiceTheoryData();
+  public static IEnumerable<object[]> GetInvoiceTestData() => InvoiceBuilder.GetInvoiceTheoryData();
 
   #endregion
 }

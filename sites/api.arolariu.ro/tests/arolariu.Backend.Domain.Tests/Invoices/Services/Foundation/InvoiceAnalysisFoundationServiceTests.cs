@@ -424,7 +424,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
   /// <summary>
   /// Provides theory data containing several randomized invoices for parameterized tests.
   /// </summary>
-  public static TheoryData<Invoice> GetInvoiceTestData() => InvoiceBuilder.GetInvoiceTheoryData();
+  public static IEnumerable<object[]> GetInvoiceTestData() => InvoiceBuilder.GetInvoiceTheoryData();
 
   #endregion
 }

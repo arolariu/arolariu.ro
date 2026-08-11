@@ -1034,12 +1034,12 @@ public sealed class InvoiceProcessingServiceTests
   /// <summary>
   /// Provides theory data containing several randomized invoices for parameterized tests.
   /// </summary>
-  public static TheoryData<Invoice> GetInvoiceTestData() => InvoiceBuilder.GetInvoiceTheoryData();
+  public static IEnumerable<object[]> GetInvoiceTestData() => InvoiceBuilder.GetInvoiceTheoryData();
 
   /// <summary>
   /// Provides theory data containing several randomized merchants for parameterized tests.
   /// </summary>
-  public static TheoryData<Merchant> GetMerchantTestData() => MerchantTestDataBuilder.GetMerchantTheoryData();
+  public static IEnumerable<object[]> GetMerchantTestData() => MerchantTestDataBuilder.GetMerchantTheoryData();
 
   #endregion
 }

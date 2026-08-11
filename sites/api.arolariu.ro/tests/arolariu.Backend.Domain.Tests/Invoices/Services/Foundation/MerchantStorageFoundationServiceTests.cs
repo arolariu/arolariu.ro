@@ -624,7 +624,7 @@ public sealed class MerchantStorageFoundationServiceTests
   /// <summary>
   /// Provides theory data containing several randomized merchants for parameterized tests.
   /// </summary>
-  public static TheoryData<Merchant> GetMerchantTestData() => MerchantTestDataBuilder.GetMerchantTheoryData();
+  public static IEnumerable<object[]> GetMerchantTestData() => MerchantTestDataBuilder.GetMerchantTheoryData();
 
   #endregion
 }

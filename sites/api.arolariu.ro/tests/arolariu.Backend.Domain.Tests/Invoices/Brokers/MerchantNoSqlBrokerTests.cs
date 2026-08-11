@@ -398,7 +398,7 @@ It.IsAny<System.Threading.CancellationToken>()
   #region Test Data
 
   /// <summary>Merchant theory data provider.</summary>
-  public static TheoryData<Merchant> GetMerchantTestData() => MerchantTestDataBuilder.GetMerchantTheoryData();
+  public static IEnumerable<object[]> GetMerchantTestData() => MerchantTestDataBuilder.GetMerchantTheoryData();
 
   #endregion
 }
