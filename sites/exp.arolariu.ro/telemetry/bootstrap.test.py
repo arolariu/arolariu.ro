@@ -10,6 +10,7 @@ import pytest
 from fastapi import FastAPI
 
 from telemetry.bootstrap import TelemetryDependencies, initialize_telemetry, shutdown_telemetry
+from telemetry.health_policy import build_excluded_urls
 
 
 def _build_fake_dependencies() -> TelemetryDependencies:
@@ -306,14 +307,51 @@ class TestTelemetryBootstrap:
             assert len(runtime.meter_provider.metric_readers) == 1
             assert isinstance(runtime.meter_provider.metric_readers[0].exporter, dependencies.ConsoleMetricExporter)
             assert len(dependencies.FastAPIInstrumentor.instrument_calls) == 1
-            expected_excluded = "/api/health,/api/ready,/admin"
+            expected_excluded = build_excluded_urls()
             assert dependencies.FastAPIInstrumentor.instrument_calls[0]["excluded_urls"] == expected_excluded
         finally:
             shutdown_telemetry()
 
+    def test_override_drops_health_exclusions(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """OTEL_SUPPRESS_HEALTH_TELEMETRY=false must restore probe traces, not just logs.
+
+        Guards the wiring, not just the predicate: the flag has to actually reach
+        FastAPIInstrumentor, otherwise disabling suppression silently leaves traces off.
+        """
+
+        dependencies = _build_fake_dependencies()
+        monkeypatch.setenv("EXP_OTEL_ENABLED", "true")
+        monkeypatch.setenv("INFRA", "local")
+        monkeypatch.setenv("OTEL_SUPPRESS_HEALTH_TELEMETRY", "false")
+        monkeypatch.delenv("EXP_OTEL_EXCLUDED_URLS", raising=False)
+        monkeypatch.setattr("telemetry.bootstrap._import_telemetry_dependencies", lambda: dependencies)
+
+        app = FastAPI()
+        initialize_telemetry(app)
+        try:
+            assert dependencies.FastAPIInstrumentor.instrument_calls[0]["excluded_urls"] == ""
+        finally:
+            shutdown_telemetry()
+
+    def test_override_preserves_operator_supplied_exclusions(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """A health flag must not silently discard an unrelated, explicitly-set exclusion list."""
+
+        dependencies = _build_fake_dependencies()
+        monkeypatch.setenv("EXP_OTEL_ENABLED", "true")
+        monkeypatch.setenv("INFRA", "local")
+        monkeypatch.setenv("OTEL_SUPPRESS_HEALTH_TELEMETRY", "false")
+        monkeypatch.setenv("EXP_OTEL_EXCLUDED_URLS", "/internal/debug")
+        monkeypatch.setattr("telemetry.bootstrap._import_telemetry_dependencies", lambda: dependencies)
+
+        app = FastAPI()
+        initialize_telemetry(app)
+        try:
+            assert dependencies.FastAPIInstrumentor.instrument_calls[0]["excluded_urls"] == "/internal/debug"
+        finally:
+            shutdown_telemetry()
+
     def test_initializes_azure_monitor_exporters(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
+        self,        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         dependencies = _build_fake_dependencies()
         monkeypatch.setenv("EXP_OTEL_ENABLED", "true")
@@ -347,3 +385,14 @@ class TestTelemetryBootstrap:
             assert log_exporter.kwargs["disable_offline_storage"] is True
         finally:
             shutdown_telemetry()
+
+
+class TestHealthFailureMetric:
+    """Behaviour of the health failure counter."""
+
+    def test_record_health_failure_metric_is_safe_without_runtime(self) -> None:
+        from telemetry.bootstrap import record_health_failure_metric, reset_telemetry_state
+
+        reset_telemetry_state()
+
+        record_health_failure_metric(check="config")

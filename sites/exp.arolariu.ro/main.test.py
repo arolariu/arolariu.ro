@@ -133,3 +133,46 @@ class TestRequestCorrelation:
 
         assert response.status_code == 200
         assert response.headers.get("X-Request-Id") == upstream_request_id
+
+
+class TestHealthFailureCounterMiddleware:
+    """The failure counter must fire on a real readiness failure, and only then."""
+
+    def test_records_counter_on_readiness_failure(self, client: TestClient) -> None:
+        """A 503 from /api/ready must record exactly one check=config measurement."""
+
+        with patch("main.record_health_failure_metric") as recorder, patch(
+            "api.health.get_config", side_effect=RuntimeError("config unavailable")
+        ):
+            response = client.get("/api/ready")
+
+        assert response.status_code == 503
+        recorder.assert_called_once_with(check="config")
+
+    def test_records_nothing_when_readiness_succeeds(self, client: TestClient) -> None:
+        """A healthy readiness probe must not touch the counter."""
+
+        with patch("main.record_health_failure_metric") as recorder:
+            response = client.get("/api/ready")
+
+        assert response.status_code == 200
+        recorder.assert_not_called()
+
+    def test_records_nothing_for_liveness(self, client: TestClient) -> None:
+        """/api/health is pure liveness and always 200, so it has no failure state."""
+
+        with patch("main.record_health_failure_metric") as recorder:
+            response = client.get("/api/health")
+
+        assert response.status_code == 200
+        recorder.assert_not_called()
+
+    def test_records_nothing_for_non_health_route(self, client: TestClient) -> None:
+        """A 5xx on a normal route must not be attributed to the health counter."""
+
+        with patch("main.record_health_failure_metric") as recorder, patch(
+            "api.config.get_config", side_effect=RuntimeError("boom")
+        ):
+            client.get("/api/v1/config")
+
+        recorder.assert_not_called()

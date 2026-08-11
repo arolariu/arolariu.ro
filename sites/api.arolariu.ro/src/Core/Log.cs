@@ -154,5 +154,14 @@ internal static partial class Log
     Message = "Health check completed — Status: {Status}, Duration: {DurationMs}ms.")]
   public static partial void LogHealthCheckCompleted(this ILogger logger, string status, double durationMs);
 
+  /// <summary>
+  /// Logs whether health endpoint telemetry suppression is active for this process.
+  /// </summary>
+  [LoggerMessage(
+    EventId = 500_302,
+    Level = LogLevel.Information,
+    Message = "Health telemetry suppression enabled: {Enabled}. Override with OTEL_SUPPRESS_HEALTH_TELEMETRY.")]
+  public static partial void LogHealthTelemetrySuppression(this ILogger logger, bool enabled);
+
   #endregion
 }

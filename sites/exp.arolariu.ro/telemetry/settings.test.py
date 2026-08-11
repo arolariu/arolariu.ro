@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import pytest
+from opentelemetry.util.http import parse_excluded_urls
 
+from telemetry.health_policy import build_excluded_urls
 from telemetry.settings import get_telemetry_settings
 
 
@@ -22,7 +24,7 @@ class TestTelemetrySettings:
         assert settings.console_metric_export_enabled is True
         assert settings.console_log_export_enabled is False
         assert settings.azure_export_enabled is False
-        assert settings.excluded_urls == "/api/health,/api/ready,/admin"
+        assert settings.excluded_urls == build_excluded_urls()
         assert settings.service_version == "3.0.0"
 
     def test_resolves_azure_export_when_connection_string_is_present(
@@ -53,3 +55,21 @@ class TestTelemetrySettings:
         assert settings.metric_export_interval_millis == 15_000
         assert settings.trace_sample_ratio == 0.25
         assert settings.log_level_name == "DEBUG"
+
+    def test_excluded_urls_cover_health_paths_only(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Assert on matching behaviour rather than the literal pattern string.
+
+        The value is a set of anchored regexes, not bare paths, because OpenTelemetry applies
+        ``re.search`` to these entries. See ``build_excluded_urls``.
+        """
+
+        monkeypatch.delenv("EXP_OTEL_EXCLUDED_URLS", raising=False)
+
+        settings = get_telemetry_settings()
+        exclude_list = parse_excluded_urls(settings.excluded_urls)
+
+        assert exclude_list.url_disabled("/api/health") is True
+        assert exclude_list.url_disabled("/api/ready") is True
+        assert exclude_list.url_disabled("/health") is True
+        assert exclude_list.url_disabled("/admin") is False
+        assert exclude_list.url_disabled("/api/healthy") is False
