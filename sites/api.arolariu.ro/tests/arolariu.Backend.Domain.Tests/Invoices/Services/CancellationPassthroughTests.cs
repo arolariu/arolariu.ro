@@ -21,13 +21,14 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Moq;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Guards the single most regression-prone rule of the cancellation contract:
 /// cancellation must never be reclassified into a domain exception, because that
 /// turns a client disconnect into an HTTP 500/503 and a false failure metric.
 /// </summary>
+[TestClass]
 public sealed class CancellationPassthroughTests
 {
   private static InvoiceStorageFoundationService CreateStorageService(Mock<IInvoiceNoSqlBroker> broker) =>
@@ -37,7 +38,7 @@ public sealed class CancellationPassthroughTests
   /// Verifies that <see cref="InvoiceStorageFoundationService.ReadInvoiceObject"/> propagates
   /// <see cref="OperationCanceledException"/> thrown by the broker without reclassifying it.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceObject_WhenBrokerCancels_PropagatesOperationCanceledException()
   {
     var broker = new Mock<IInvoiceNoSqlBroker>();
@@ -47,7 +48,7 @@ public sealed class CancellationPassthroughTests
 
     var service = CreateStorageService(broker);
 
-    await Assert.ThrowsAsync<OperationCanceledException>(
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(
       () => service.ReadInvoiceObject(Guid.NewGuid(), null, CancellationToken.None)).ConfigureAwait(true);
   }
 
@@ -55,7 +56,7 @@ public sealed class CancellationPassthroughTests
   /// Verifies that <see cref="InvoiceStorageFoundationService.ReadAllInvoiceObjects"/> propagates
   /// <see cref="TaskCanceledException"/> thrown by the broker without reclassifying it.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadAllInvoiceObjects_WhenBrokerCancels_PropagatesOperationCanceledException()
   {
     var broker = new Mock<IInvoiceNoSqlBroker>();
@@ -66,7 +67,7 @@ public sealed class CancellationPassthroughTests
     var service = CreateStorageService(broker);
 
     // TaskCanceledException derives from OperationCanceledException — one clause covers both.
-    await Assert.ThrowsAsync<TaskCanceledException>(
+    await Assert.ThrowsExactlyAsync<TaskCanceledException>(
       () => service.ReadAllInvoiceObjects(Guid.NewGuid(), CancellationToken.None)).ConfigureAwait(true);
   }
 
@@ -74,7 +75,7 @@ public sealed class CancellationPassthroughTests
   /// Verifies that <see cref="InvoiceStorageFoundationService.CreateInvoiceObject"/> propagates
   /// <see cref="OperationCanceledException"/> thrown by the broker without reclassifying it.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateInvoiceObject_WhenBrokerCancels_PropagatesOperationCanceledException()
   {
     var broker = new Mock<IInvoiceNoSqlBroker>();
@@ -85,7 +86,7 @@ public sealed class CancellationPassthroughTests
     var service = CreateStorageService(broker);
     var invoice = InvoiceBuilder.CreateRandomInvoice();
 
-    await Assert.ThrowsAsync<OperationCanceledException>(
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(
       () => service.CreateInvoiceObject(invoice, null, CancellationToken.None)).ConfigureAwait(true);
   }
 
@@ -93,7 +94,7 @@ public sealed class CancellationPassthroughTests
   /// Verifies that <see cref="InvoiceOrchestrationService.ReadInvoiceObject"/> propagates
   /// <see cref="OperationCanceledException"/> thrown by a foundation service without reclassifying it.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task OrchestrationLayer_WhenFoundationCancels_PropagatesOperationCanceledException()
   {
     var storage = new Mock<IInvoiceStorageFoundationService>();
@@ -104,7 +105,7 @@ public sealed class CancellationPassthroughTests
     var analysis = new Mock<IInvoiceAnalysisFoundationService>();
     var service = new InvoiceOrchestrationService(analysis.Object, storage.Object, NullLoggerFactory.Instance);
 
-    await Assert.ThrowsAsync<OperationCanceledException>(
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(
       () => service.ReadInvoiceObject(Guid.NewGuid(), null, CancellationToken.None)).ConfigureAwait(true);
   }
 
@@ -112,7 +113,7 @@ public sealed class CancellationPassthroughTests
   /// Verifies that <see cref="InvoiceProcessingService.ReadInvoice"/> propagates
   /// <see cref="OperationCanceledException"/> through all three wrapping layers without reclassifying it.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ProcessingLayer_WhenOrchestrationCancels_PropagatesOperationCanceledException()
   {
     var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>();
@@ -127,7 +128,7 @@ public sealed class CancellationPassthroughTests
       NullLoggerFactory.Instance);
 
     // Proves the exception survives all three wrapping layers, not just the innermost one.
-    await Assert.ThrowsAsync<OperationCanceledException>(
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(
       () => service.ReadInvoice(Guid.NewGuid(), null, CancellationToken.None)).ConfigureAwait(true);
   }
 
@@ -135,7 +136,7 @@ public sealed class CancellationPassthroughTests
   /// Verifies that <see cref="MerchantStorageFoundationService.ReadMerchantObject"/> propagates
   /// <see cref="OperationCanceledException"/> thrown by the broker without reclassifying it.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task MerchantStorage_WhenBrokerCancels_PropagatesOperationCanceledException()
   {
     var broker = new Mock<IInvoiceNoSqlBroker>();
@@ -145,7 +146,7 @@ public sealed class CancellationPassthroughTests
 
     var service = new MerchantStorageFoundationService(broker.Object, NullLoggerFactory.Instance);
 
-    await Assert.ThrowsAsync<OperationCanceledException>(
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(
       () => service.ReadMerchantObject(Guid.NewGuid(), null, CancellationToken.None)).ConfigureAwait(true);
   }
 
@@ -153,7 +154,7 @@ public sealed class CancellationPassthroughTests
   /// Verifies that <see cref="InvoiceOrchestrationService.AnalyzeInvoiceWithOptions"/> does not
   /// persist the result when cancellation is requested after the analysis stage completes.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceWithOptions_WhenCancelledAfterAnalysis_DoesNotPersistTheResult()
   {
     var invoice = InvoiceBuilder.CreateRandomInvoice();
@@ -176,7 +177,7 @@ public sealed class CancellationPassthroughTests
 
     var service = new InvoiceOrchestrationService(analysis.Object, storage.Object, NullLoggerFactory.Instance);
 
-    await Assert.ThrowsAnyAsync<OperationCanceledException>(
+    await Assert.ThrowsAsync<OperationCanceledException>(
       () => service.AnalyzeInvoiceWithOptions(AnalysisOptions.CompleteAnalysis, Guid.NewGuid(), null, cts.Token))
       .ConfigureAwait(true);
 
@@ -192,7 +193,7 @@ public sealed class CancellationPassthroughTests
   /// This checkpoint is the load-bearing guard that prevents both expensive AI stages from
   /// running after the caller has already given up.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_WhenCancelledAfterOcrStage_DoesNotInvokeGptStage()
   {
     var invoice = InvoiceBuilder.CreateRandomInvoice();
@@ -217,7 +218,7 @@ public sealed class CancellationPassthroughTests
       ocrBroker.Object,
       NullLoggerFactory.Instance);
 
-    await Assert.ThrowsAnyAsync<OperationCanceledException>(
+    await Assert.ThrowsAsync<OperationCanceledException>(
       () => service.AnalyzeInvoiceAsync(AnalysisOptions.CompleteAnalysis, invoice, cts.Token))
       .ConfigureAwait(true);
 
@@ -232,7 +233,7 @@ public sealed class CancellationPassthroughTests
   /// fan-out loop as soon as cancellation is requested, instead of deleting every remaining
   /// invoice after the caller has already given up.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteInvoices_WhenCancelledMidFanOut_StopsIterating()
   {
     var invoices = new[]
@@ -266,9 +267,9 @@ public sealed class CancellationPassthroughTests
       merchantOrchestration.Object,
       NullLoggerFactory.Instance);
 
-    await Assert.ThrowsAnyAsync<OperationCanceledException>(
+    await Assert.ThrowsAsync<OperationCanceledException>(
       () => service.DeleteInvoices(Guid.NewGuid(), cts.Token)).ConfigureAwait(true);
 
-    Assert.Equal(1, deleteCount);
+    Assert.AreEqual(1, deleteCount);
   }
 }
