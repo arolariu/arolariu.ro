@@ -1,11 +1,12 @@
 """Health and connectivity telemetry suppression policy for the exp service.
 
 Sole owner of the suppressed path list. Consumed by the request middleware in ``main``
-to keep probe traffic out of exported logs. Traces are excluded separately via
-``TelemetrySettings.excluded_urls``.
+to keep probe traffic out of exported logs, and by ``TelemetrySettings`` to build the
+trace/HTTP-metric exclusion patterns handed to ``FastAPIInstrumentor``.
 """
 
 import os
+import re
 
 SUPPRESSED_HEALTH_PATHS: tuple[str, ...] = ("/health", "/api/health", "/api/ready")
 
@@ -52,3 +53,19 @@ def should_suppress_telemetry(path: str | None) -> bool:
     """
 
     return parse_suppression_flag(os.environ.get(SUPPRESSION_ENV_VAR)) and is_suppressed_path(path)
+
+
+def build_excluded_urls() -> str:
+    """Return the comma-separated exclusion patterns for ``FastAPIInstrumentor``.
+
+    OpenTelemetry's ``ExcludeList`` joins the supplied entries with ``|`` and applies
+    ``re.search``, so a bare path such as ``/api/health`` is an **unanchored** regex that
+    would also swallow ``/api/healthy`` and ``/api/health/extra``. That contradicts the
+    exact-match policy implemented by :func:`is_suppressed_path`.
+
+    Each path is therefore emitted as an anchored, case-insensitive expression tolerating an
+    optional trailing slash and an optional query string, so trace and HTTP-metric exclusion
+    matches :func:`is_suppressed_path` exactly.
+    """
+
+    return ",".join(f"(?i:^{re.escape(path)}/?(\\?.*)?$)" for path in SUPPRESSED_HEALTH_PATHS)

@@ -573,11 +573,17 @@ def _instrument_fastapi_app(runtime: TelemetryRuntime, app: FastAPI) -> None:
     if getattr(app.state, "exp_otel_instrumented", False):
         return
 
+    # Exclusions are dropped entirely when the operator disables suppression, so
+    # OTEL_SUPPRESS_HEALTH_TELEMETRY=false restores traces and HTTP metrics for probe
+    # endpoints as documented -- not just the request logs guarded in main.
+    suppression_enabled = parse_suppression_flag(os.environ.get(SUPPRESSION_ENV_VAR))
+    excluded_urls = runtime.settings.excluded_urls if suppression_enabled else ""
+
     runtime.dependencies.FastAPIInstrumentor.instrument_app(
         app,
         tracer_provider=runtime.tracer_provider,
         meter_provider=runtime.meter_provider,
-        excluded_urls=runtime.settings.excluded_urls,
+        excluded_urls=excluded_urls,
         server_request_hook=_server_request_hook,
         client_response_hook=_client_response_hook,
         exclude_spans=["receive", "send"],

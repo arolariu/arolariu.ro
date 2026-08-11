@@ -10,6 +10,7 @@ import pytest
 from fastapi import FastAPI
 
 from telemetry.bootstrap import TelemetryDependencies, initialize_telemetry, shutdown_telemetry
+from telemetry.health_policy import build_excluded_urls
 
 
 def _build_fake_dependencies() -> TelemetryDependencies:
@@ -306,7 +307,7 @@ class TestTelemetryBootstrap:
             assert len(runtime.meter_provider.metric_readers) == 1
             assert isinstance(runtime.meter_provider.metric_readers[0].exporter, dependencies.ConsoleMetricExporter)
             assert len(dependencies.FastAPIInstrumentor.instrument_calls) == 1
-            expected_excluded = "/api/health,/api/ready"
+            expected_excluded = build_excluded_urls()
             assert dependencies.FastAPIInstrumentor.instrument_calls[0]["excluded_urls"] == expected_excluded
         finally:
             shutdown_telemetry()
