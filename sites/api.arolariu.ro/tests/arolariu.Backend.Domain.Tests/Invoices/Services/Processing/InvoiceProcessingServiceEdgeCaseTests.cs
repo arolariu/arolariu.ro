@@ -22,12 +22,13 @@ using Microsoft.Extensions.Logging;
 
 using Moq;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Edge case unit tests for <see cref="InvoiceProcessingService"/> covering
 /// product management, scan management, metadata management, and merchant operations.
 /// </summary>
+[TestClass]
 public sealed class InvoiceProcessingServiceEdgeCaseTests
 {
   private readonly Mock<IInvoiceOrchestrationService> mockInvoiceOrchestrationService;
@@ -61,7 +62,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates adding a product to an invoice.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AddProduct_ValidProduct_AddsSuccessfully()
   {
     // Arrange
@@ -87,7 +88,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates adding a product with null user identifier.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AddProduct_NullUserIdentifier_AddsSuccessfully()
   {
     // Arrange
@@ -112,7 +113,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates getting products from an invoice.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task GetProducts_ValidInvoice_ReturnsProducts()
   {
     // Arrange
@@ -128,13 +129,13 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
     var result = await service.GetProducts(invoiceId, userId, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
   }
 
   /// <summary>
   /// Validates getting products returns empty collection when invoice has no products.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task GetProducts_EmptyProducts_ReturnsEmptyCollection()
   {
     // Arrange
@@ -150,13 +151,13 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
     var result = await service.GetProducts(invoiceId, null, CancellationToken.None);
 
     // Assert
-    Assert.Empty(result);
+    Assert.IsEmpty(result);
   }
 
   /// <summary>
   /// Validates getting a specific product by name.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task GetProduct_ValidProductName_ReturnsProduct()
   {
     // Arrange
@@ -175,14 +176,14 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
     var result = await service.GetProduct(productName, invoiceId, userId, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
-    Assert.Equal(productName, result.Name);
+    Assert.IsNotNull(result);
+    Assert.AreEqual(productName, result.Name);
   }
 
   /// <summary>
   /// Validates deleting a product by name.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteProduct_ValidProductName_DeletesSuccessfully()
   {
     // Arrange
@@ -210,7 +211,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates deleting a product by product object.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteProduct_ByProductObject_DeletesSuccessfully()
   {
     // Arrange
@@ -238,7 +239,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates adding product with empty GUID identifier.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AddProduct_EmptyGuidInvoiceId_CallsOrchestration()
   {
     // Arrange
@@ -266,7 +267,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates creating an invoice scan.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateInvoiceScan_ValidScan_CreatesSuccessfully()
   {
     // Arrange
@@ -292,7 +293,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates reading invoice scans.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceScans_ValidInvoice_ReturnsScans()
   {
     // Arrange
@@ -308,13 +309,13 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
     var result = await service.ReadInvoiceScans(invoiceId, userId, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
   }
 
   /// <summary>
   /// Validates deleting an invoice scan.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteInvoiceScan_ValidScan_DeletesSuccessfully()
   {
     // Arrange
@@ -340,7 +341,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates creating scan with PNG type.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateInvoiceScan_PngType_CreatesSuccessfully()
   {
     // Arrange
@@ -369,7 +370,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates adding metadata to an invoice.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AddMetadataToInvoice_ValidMetadata_AddsSuccessfully()
   {
     // Arrange
@@ -395,7 +396,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates updating metadata on an invoice.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateMetadataOnInvoice_ValidMetadata_ReturnsUpdatedMetadata()
   {
     // Arrange
@@ -415,13 +416,13 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
     var result = await service.UpdateMetadataOnInvoice(metadata, invoiceId, userId, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
   }
 
   /// <summary>
   /// Validates getting metadata from an invoice.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task GetMetadataFromInvoice_ValidInvoice_ReturnsMetadata()
   {
     // Arrange
@@ -437,13 +438,13 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
     var result = await service.GetMetadataFromInvoice(invoiceId, userId, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
   }
 
   /// <summary>
   /// Validates deleting metadata from an invoice.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteMetadataFromInvoice_ValidKeys_DeletesSuccessfully()
   {
     // Arrange
@@ -471,7 +472,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates adding empty metadata dictionary.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AddMetadataToInvoice_EmptyMetadata_CompletesSuccessfully()
   {
     // Arrange
@@ -500,7 +501,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates merchant creation through processing service.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchant_ValidMerchant_CreatesSuccessfully()
   {
     // Arrange
@@ -521,7 +522,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates merchant creation with null parent company ID.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchant_NullParentCompanyId_CreatesSuccessfully()
   {
     // Arrange
@@ -541,7 +542,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates merchant read through processing service.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchant_ValidIdentifier_ReturnsMerchant()
   {
     // Arrange
@@ -557,14 +558,14 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
     var result = await service.ReadMerchant(merchantId, parentCompanyId, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
-    Assert.Same(expectedMerchant, result);
+    Assert.IsNotNull(result);
+    Assert.AreSame(expectedMerchant, result);
   }
 
   /// <summary>
   /// Validates merchant read with null parent company ID.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchant_NullParentCompanyId_ReturnsMerchant()
   {
     // Arrange
@@ -579,13 +580,13 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
     var result = await service.ReadMerchant(merchantId, null, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
   }
 
   /// <summary>
   /// Validates reading all merchants through processing service.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchants_ValidParentCompanyId_ReturnsAllMerchants()
   {
     // Arrange
@@ -602,13 +603,13 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
     var result = await service.ReadMerchants(parentCompanyId, CancellationToken.None);
 
     // Assert
-    Assert.Equal(5, result.Count());
+    Assert.AreEqual(5, result.Count());
   }
 
   /// <summary>
   /// Validates merchant update through processing service.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateMerchant_ValidData_ReturnsUpdatedMerchant()
   {
     // Arrange
@@ -624,13 +625,13 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
     var result = await service.UpdateMerchant(merchant, merchantId, parentCompanyId, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
   }
 
   /// <summary>
   /// Validates merchant deletion through processing service.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteMerchant_ValidIdentifier_DeletesSuccessfully()
   {
     // Arrange
@@ -651,7 +652,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates merchant deletion with null parent company ID.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteMerchant_NullParentCompanyId_DeletesSuccessfully()
   {
     // Arrange
@@ -675,7 +676,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates orchestration exception is wrapped during product addition.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AddProduct_OrchestrationException_ThrowsProcessingException()
   {
     // Arrange
@@ -687,14 +688,14 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ThrowsAsync(new InvoiceOrchestrationServiceException(new InvalidOperationException("Error")));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceException>(() =>
         service.AddProduct(product, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates orchestration validation exception is wrapped during product deletion.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteProduct_OrchestrationValidationException_ThrowsProcessingValidationException()
   {
     // Arrange
@@ -707,14 +708,14 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ThrowsAsync(new InvoiceOrchestrationValidationException(new InvalidOperationException("Validation error")));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceProcessingServiceValidationException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceValidationException>(() =>
         service.DeleteProduct(productName, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates merchant orchestration exception is wrapped during creation.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchant_OrchestrationException_ThrowsProcessingException()
   {
     // Arrange
@@ -725,14 +726,14 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ThrowsAsync(new MerchantOrchestrationServiceException(new InvalidOperationException("Error")));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceException>(() =>
         service.CreateMerchant(merchant, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates merchant orchestration validation exception is wrapped during update.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateMerchant_OrchestrationValidationException_ThrowsProcessingDependencyValidationException()
   {
     // Arrange
@@ -744,14 +745,14 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ThrowsAsync(new MerchantOrchestrationServiceValidationException(new InvalidOperationException("Validation error")));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyValidationException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceDependencyValidationException>(() =>
         service.UpdateMerchant(merchant, merchantId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates generic exception during scan creation is wrapped.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateInvoiceScan_GenericException_ThrowsProcessingException()
   {
     // Arrange
@@ -763,14 +764,14 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceException>(() =>
         service.CreateInvoiceScan(scan, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates generic exception during metadata update is wrapped.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateMetadataOnInvoice_GenericException_ThrowsProcessingException()
   {
     // Arrange
@@ -782,14 +783,14 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceException>(() =>
         service.UpdateMetadataOnInvoice(metadata, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates dependency exception is wrapped during product get.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task GetProducts_DependencyException_ThrowsProcessingDependencyException()
   {
     // Arrange
@@ -800,7 +801,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ThrowsAsync(new InvoiceOrchestrationDependencyException(new InvalidOperationException("Dependency error")));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceDependencyException>(() =>
         service.GetProducts(invoiceId, null, CancellationToken.None));
   }
 
@@ -811,7 +812,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates concurrent product additions complete successfully.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AddProduct_ConcurrentOperations_AllComplete()
   {
     // Arrange
@@ -840,7 +841,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates concurrent merchant reads complete successfully.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchant_ConcurrentOperations_AllComplete()
   {
     // Arrange
@@ -856,13 +857,16 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
     var results = await Task.WhenAll(tasks);
 
     // Assert
-    Assert.All(results, r => Assert.NotNull(r));
+    foreach (var r in results)
+    {
+      Assert.IsNotNull(r);
+    }
   }
 
   /// <summary>
   /// Validates concurrent metadata operations complete successfully.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task GetMetadataFromInvoice_ConcurrentOperations_AllComplete()
   {
     // Arrange
@@ -878,7 +882,10 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
     var results = await Task.WhenAll(tasks);
 
     // Assert
-    Assert.All(results, r => Assert.NotNull(r));
+    foreach (var r in results)
+    {
+      Assert.IsNotNull(r);
+    }
   }
 
   #endregion
@@ -888,7 +895,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates invoice analysis with valid options.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoice_ValidOptions_AnalyzesSuccessfully()
   {
     // Arrange
@@ -910,7 +917,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates invoice analysis with null user identifier.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoice_NullUserIdentifier_AnalyzesSuccessfully()
   {
     // Arrange
@@ -931,7 +938,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates orchestration dependency exception during analysis is wrapped.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoice_OrchestrationDependencyException_ThrowsProcessingDependencyException()
   {
     // Arrange
@@ -943,7 +950,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ThrowsAsync(new InvoiceOrchestrationDependencyException(new InvalidOperationException("Dependency error")));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceDependencyException>(() =>
         service.AnalyzeInvoice(options, invoiceId, null, CancellationToken.None));
   }
 
@@ -954,7 +961,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates single invoice deletion.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteInvoice_ValidIdentifier_DeletesSuccessfully()
   {
     // Arrange
@@ -975,7 +982,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   /// <summary>
   /// Validates invoice deletion with null user identifier.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteInvoice_NullUserIdentifier_DeletesSuccessfully()
   {
     // Arrange
