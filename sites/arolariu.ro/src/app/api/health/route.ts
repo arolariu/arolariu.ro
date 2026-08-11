@@ -119,10 +119,11 @@ export async function GET(): Promise<NextResponse<HealthResponse>> {
   const checkDurationMs = Math.round(performance.now() - checkStart);
 
   // The single always-on signal that survives suppression. Dimension values match the
-  // .NET and Python services so one query spans the estate.
+  // .NET and Python services so one query spans the estate. Names are of the form
+  // "exp (config proxy)" / "api (backend)"; the leading token keeps cardinality bounded.
   for (const dependency of dependencies) {
     if (dependency.status === "Unhealthy") {
-      healthFailureCounter.add(1, {check: dependency.name.split(" ")[0] ?? dependency.name});
+      healthFailureCounter.add(1, {check: dependency.name.split(" ")[0]!});
     }
   }
 
