@@ -10,13 +10,14 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Tests.Builders;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Comprehensive unit tests for all Entity classes in the invoicing domain.
 /// Tests validate property initialization, public API behavior, and entity constraints.
 /// Method naming follows MethodName_Condition_ExpectedResult pattern per repository standards.
 /// </summary>
+[TestClass]
 public sealed class EntityTests
 {
   #region Invoice Property Tests
@@ -24,7 +25,7 @@ public sealed class EntityTests
   /// <summary>
   /// Verifies Invoice can be created with required properties.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_Creation_WithRequiredProperties_Succeeds()
   {
     // Act
@@ -35,32 +36,32 @@ public sealed class EntityTests
     };
 
     // Assert
-    Assert.NotNull(invoice);
-    Assert.NotEqual(Guid.Empty, invoice.id);
-    Assert.NotEqual(Guid.Empty, invoice.UserIdentifier);
+    Assert.IsNotNull(invoice);
+    Assert.AreNotEqual(Guid.Empty, invoice.id);
+    Assert.AreNotEqual(Guid.Empty, invoice.UserIdentifier);
   }
 
   /// <summary>
   /// Verifies Invoice has default empty collections.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_DefaultCollections_AreEmpty()
   {
     // Arrange
     var invoice = InvoiceBuilder.CreateRandomInvoice();
 
     // Assert
-    Assert.NotNull(invoice.SharedWith);
-    Assert.NotNull(invoice.Scans);
-    Assert.NotNull(invoice.Items);
-    Assert.NotNull(invoice.PossibleRecipes);
-    Assert.NotNull(invoice.AdditionalMetadata);
+    Assert.IsNotNull(invoice.SharedWith);
+    Assert.IsNotNull(invoice.Scans);
+    Assert.IsNotNull(invoice.Items);
+    Assert.IsNotNull(invoice.PossibleRecipes);
+    Assert.IsNotNull(invoice.AdditionalMetadata);
   }
 
   /// <summary>
   /// Verifies Invoice default category is NOT_DEFINED.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_DefaultCategory_IsNotDefined()
   {
     // Arrange
@@ -71,13 +72,13 @@ public sealed class EntityTests
     };
 
     // Assert
-    Assert.Equal(InvoiceCategory.NOT_DEFINED, invoice.Category);
+    Assert.AreEqual(InvoiceCategory.NOT_DEFINED, invoice.Category);
   }
 
   /// <summary>
   /// Verifies Invoice default MerchantReference is empty GUID.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_DefaultMerchantReference_IsEmptyGuid()
   {
     // Arrange
@@ -88,19 +89,19 @@ public sealed class EntityTests
     };
 
     // Assert
-    Assert.Equal(Guid.Empty, invoice.MerchantReference);
+    Assert.AreEqual(Guid.Empty, invoice.MerchantReference);
   }
 
   /// <summary>
   /// Verifies Invoice category can be set to different values.
   /// </summary>
-  [Theory]
-  [InlineData(InvoiceCategory.NOT_DEFINED)]
-  [InlineData(InvoiceCategory.GROCERY)]
-  [InlineData(InvoiceCategory.FAST_FOOD)]
-  [InlineData(InvoiceCategory.HOME_CLEANING)]
-  [InlineData(InvoiceCategory.CAR_AUTO)]
-  [InlineData(InvoiceCategory.OTHER)]
+  [TestMethod]
+  [DataRow(InvoiceCategory.NOT_DEFINED)]
+  [DataRow(InvoiceCategory.GROCERY)]
+  [DataRow(InvoiceCategory.FAST_FOOD)]
+  [DataRow(InvoiceCategory.HOME_CLEANING)]
+  [DataRow(InvoiceCategory.CAR_AUTO)]
+  [DataRow(InvoiceCategory.OTHER)]
   public void Invoice_SetCategory_CategoryIsSet(InvoiceCategory category)
   {
     // Arrange
@@ -112,13 +113,13 @@ public sealed class EntityTests
     };
 
     // Assert
-    Assert.Equal(category, invoice.Category);
+    Assert.AreEqual(category, invoice.Category);
   }
 
   /// <summary>
   /// Verifies Invoice Name can be set.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_SetName_NameIsSet()
   {
     // Arrange
@@ -130,13 +131,13 @@ public sealed class EntityTests
     };
 
     // Assert
-    Assert.Equal("Test Invoice", invoice.Name);
+    Assert.AreEqual("Test Invoice", invoice.Name);
   }
 
   /// <summary>
   /// Verifies Invoice Description can be set.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_SetDescription_DescriptionIsSet()
   {
     // Arrange
@@ -148,13 +149,13 @@ public sealed class EntityTests
     };
 
     // Assert
-    Assert.Equal("Test Description", invoice.Description);
+    Assert.AreEqual("Test Description", invoice.Description);
   }
 
   /// <summary>
   /// Verifies Invoice IsImportant defaults to false.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_DefaultIsImportant_IsFalse()
   {
     // Arrange
@@ -165,13 +166,13 @@ public sealed class EntityTests
     };
 
     // Assert
-    Assert.False(invoice.IsImportant);
+    Assert.IsFalse(invoice.IsImportant);
   }
 
   /// <summary>
   /// Verifies Invoice IsImportant can be set to true.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_SetIsImportant_IsImportantIsSet()
   {
     // Arrange
@@ -183,13 +184,13 @@ public sealed class EntityTests
     };
 
     // Assert
-    Assert.True(invoice.IsImportant);
+    Assert.IsTrue(invoice.IsImportant);
   }
 
   /// <summary>
   /// Verifies Invoice Items collection can be populated.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_AddItems_ItemsAreAdded()
   {
     // Arrange
@@ -205,13 +206,13 @@ public sealed class EntityTests
     };
 
     // Assert
-    Assert.Equal(2, invoice.Items.Count);
+    Assert.AreEqual(2, invoice.Items.Count);
   }
 
   /// <summary>
   /// Verifies Invoice PaymentInformation can be set.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_SetPaymentInformation_PaymentInformationIsSet()
   {
     // Arrange
@@ -229,15 +230,15 @@ public sealed class EntityTests
     };
 
     // Assert
-    Assert.Equal(PaymentType.CARD, invoice.PaymentInformation.PaymentType);
-    Assert.Equal(100.00m, invoice.PaymentInformation.TotalCostAmount);
-    Assert.Equal(19.00m, invoice.PaymentInformation.TotalTaxAmount);
+    Assert.AreEqual(PaymentType.CARD, invoice.PaymentInformation.PaymentType);
+    Assert.AreEqual(100.00m, invoice.PaymentInformation.TotalCostAmount);
+    Assert.AreEqual(19.00m, invoice.PaymentInformation.TotalTaxAmount);
   }
 
   /// <summary>
   /// Verifies Invoice MerchantReference can be set.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_SetMerchantReference_MerchantReferenceIsSet()
   {
     // Arrange
@@ -250,13 +251,13 @@ public sealed class EntityTests
     };
 
     // Assert
-    Assert.Equal(merchantId, invoice.MerchantReference);
+    Assert.AreEqual(merchantId, invoice.MerchantReference);
   }
 
   /// <summary>
   /// Verifies Invoice PossibleRecipes collection can be populated.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_AddPossibleRecipes_RecipesAreAdded()
   {
     // Arrange
@@ -272,13 +273,13 @@ public sealed class EntityTests
     };
 
     // Assert
-    Assert.Equal(2, invoice.PossibleRecipes.Count);
+    Assert.AreEqual(2, invoice.PossibleRecipes.Count);
   }
 
   /// <summary>
   /// Verifies Invoice AdditionalMetadata can be populated.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_AddMetadata_MetadataIsAdded()
   {
     // Arrange
@@ -294,15 +295,15 @@ public sealed class EntityTests
     };
 
     // Assert
-    Assert.Equal(2, invoice.AdditionalMetadata.Count);
-    Assert.Equal("value1", invoice.AdditionalMetadata["key1"]);
-    Assert.Equal(42, invoice.AdditionalMetadata["key2"]);
+    Assert.AreEqual(2, invoice.AdditionalMetadata.Count);
+    Assert.AreEqual("value1", invoice.AdditionalMetadata["key1"]);
+    Assert.AreEqual(42, invoice.AdditionalMetadata["key2"]);
   }
 
   /// <summary>
   /// Verifies PerformUpdate sets LastUpdatedBy.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_PerformUpdate_SetsLastUpdatedBy()
   {
     // Arrange
@@ -313,13 +314,13 @@ public sealed class EntityTests
     invoice.PerformUpdate(updatedById);
 
     // Assert
-    Assert.Equal(updatedById, invoice.LastUpdatedBy);
+    Assert.AreEqual(updatedById, invoice.LastUpdatedBy);
   }
 
   /// <summary>
   /// Verifies PerformUpdate sets LastUpdatedAt to current time.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_PerformUpdate_SetsLastUpdatedAt()
   {
     // Arrange
@@ -330,13 +331,13 @@ public sealed class EntityTests
     invoice.PerformUpdate(Guid.NewGuid());
 
     // Assert
-    Assert.True(invoice.LastUpdatedAt >= beforeUpdate);
+    Assert.IsTrue(invoice.LastUpdatedAt >= beforeUpdate);
   }
 
   /// <summary>
   /// Verifies PerformUpdate increments NumberOfUpdates.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_PerformUpdate_IncrementsNumberOfUpdates()
   {
     // Arrange
@@ -347,13 +348,13 @@ public sealed class EntityTests
     invoice.PerformUpdate(Guid.NewGuid());
 
     // Assert
-    Assert.Equal(initialCount + 1, invoice.NumberOfUpdates);
+    Assert.AreEqual(initialCount + 1, invoice.NumberOfUpdates);
   }
 
   /// <summary>
   /// Verifies multiple PerformUpdate calls increment count correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Invoice_PerformUpdate_MultipleCalls_IncrementsCorrectly()
   {
     // Arrange
@@ -366,7 +367,7 @@ public sealed class EntityTests
     invoice.PerformUpdate(Guid.NewGuid());
 
     // Assert
-    Assert.Equal(initialCount + 3, invoice.NumberOfUpdates);
+    Assert.AreEqual(initialCount + 3, invoice.NumberOfUpdates);
   }
 
   #endregion
@@ -376,7 +377,7 @@ public sealed class EntityTests
   /// <summary>
   /// Verifies Merchant can be created with valid properties.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Merchant_Creation_WithValidProperties_Succeeds()
   {
     // Act
@@ -389,71 +390,71 @@ public sealed class EntityTests
     };
 
     // Assert
-    Assert.NotNull(merchant);
-    Assert.NotEqual(Guid.Empty, merchant.id);
-    Assert.Equal("Test Merchant", merchant.Name);
-    Assert.Equal(MerchantCategory.SUPERMARKET, merchant.Category);
+    Assert.IsNotNull(merchant);
+    Assert.AreNotEqual(Guid.Empty, merchant.id);
+    Assert.AreEqual("Test Merchant", merchant.Name);
+    Assert.AreEqual(MerchantCategory.SUPERMARKET, merchant.Category);
   }
 
   /// <summary>
   /// Verifies Merchant default category is OTHER.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Merchant_DefaultCategory_IsOther()
   {
     // Arrange
     var merchant = new Merchant();
 
     // Assert
-    Assert.Equal(MerchantCategory.OTHER, merchant.Category);
+    Assert.AreEqual(MerchantCategory.OTHER, merchant.Category);
   }
 
   /// <summary>
   /// Verifies Merchant has default empty Address.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Merchant_DefaultAddress_IsEmpty()
   {
     // Arrange
     var merchant = new Merchant();
 
     // Assert
-    Assert.NotNull(merchant.Address);
-    Assert.Equal(string.Empty, merchant.Address.FullName);
+    Assert.IsNotNull(merchant.Address);
+    Assert.AreEqual(string.Empty, merchant.Address.FullName);
   }
 
   /// <summary>
   /// Verifies Merchant has default empty ReferencedInvoices.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Merchant_DefaultReferencedInvoices_IsEmpty()
   {
     // Arrange
     var merchant = new Merchant();
 
     // Assert
-    Assert.NotNull(merchant.ReferencedInvoices);
-    Assert.Empty(merchant.ReferencedInvoices);
+    Assert.IsNotNull(merchant.ReferencedInvoices);
+    Assert.IsEmpty(merchant.ReferencedInvoices);
   }
 
   /// <summary>
   /// Verifies Merchant has default empty AdditionalMetadata.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Merchant_DefaultAdditionalMetadata_IsEmpty()
   {
     // Arrange
     var merchant = new Merchant();
 
     // Assert
-    Assert.NotNull(merchant.AdditionalMetadata);
-    Assert.Empty(merchant.AdditionalMetadata);
+    Assert.IsNotNull(merchant.AdditionalMetadata);
+    Assert.IsEmpty(merchant.AdditionalMetadata);
   }
 
   /// <summary>
   /// Verifies Merchant Address can be set.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Merchant_SetAddress_AddressIsSet()
   {
     // Arrange
@@ -468,34 +469,34 @@ public sealed class EntityTests
     };
 
     // Assert
-    Assert.Equal("Test Store", merchant.Address.FullName);
-    Assert.Equal("123 Main St", merchant.Address.Address);
-    Assert.Equal("+1234567890", merchant.Address.PhoneNumber);
+    Assert.AreEqual("Test Store", merchant.Address.FullName);
+    Assert.AreEqual("123 Main St", merchant.Address.Address);
+    Assert.AreEqual("+1234567890", merchant.Address.PhoneNumber);
   }
 
   /// <summary>
   /// Verifies MerchantCategory can be set on Merchant.
   /// </summary>
-  [Theory]
-  [InlineData(MerchantCategory.NOT_DEFINED)]
-  [InlineData(MerchantCategory.LOCAL_SHOP)]
-  [InlineData(MerchantCategory.SUPERMARKET)]
-  [InlineData(MerchantCategory.HYPERMARKET)]
-  [InlineData(MerchantCategory.ONLINE_SHOP)]
-  [InlineData(MerchantCategory.OTHER)]
+  [TestMethod]
+  [DataRow(MerchantCategory.NOT_DEFINED)]
+  [DataRow(MerchantCategory.LOCAL_SHOP)]
+  [DataRow(MerchantCategory.SUPERMARKET)]
+  [DataRow(MerchantCategory.HYPERMARKET)]
+  [DataRow(MerchantCategory.ONLINE_SHOP)]
+  [DataRow(MerchantCategory.OTHER)]
   public void MerchantCategory_CanBeSetOnMerchant(MerchantCategory category)
   {
     // Arrange
     var merchant = new Merchant { Category = category };
 
     // Assert
-    Assert.Equal(category, merchant.Category);
+    Assert.AreEqual(category, merchant.Category);
   }
 
   /// <summary>
   /// Verifies Merchant ParentCompanyId can be set.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Merchant_SetParentCompanyId_ParentCompanyIdIsSet()
   {
     // Arrange
@@ -506,20 +507,20 @@ public sealed class EntityTests
     };
 
     // Assert
-    Assert.Equal(parentId, merchant.ParentCompanyId);
+    Assert.AreEqual(parentId, merchant.ParentCompanyId);
   }
 
   /// <summary>
   /// Verifies Merchant default ParentCompanyId is empty GUID.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Merchant_DefaultParentCompanyId_IsEmptyGuid()
   {
     // Arrange
     var merchant = new Merchant();
 
     // Assert
-    Assert.Equal(Guid.Empty, merchant.ParentCompanyId);
+    Assert.AreEqual(Guid.Empty, merchant.ParentCompanyId);
   }
 
   #endregion
@@ -529,47 +530,47 @@ public sealed class EntityTests
   /// <summary>
   /// Verifies InvoiceScan.Default() creates instance with UNKNOWN type.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceScan_Default_SetsTypeToUnknown()
   {
     // Act
     var scan = InvoiceScan.Default();
 
     // Assert
-    Assert.Equal(ScanType.UNKNOWN, scan.Type);
+    Assert.AreEqual(ScanType.UNKNOWN, scan.Type);
   }
 
   /// <summary>
   /// Verifies InvoiceScan.Default() sets location to default URI.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceScan_Default_SetsDefaultLocation()
   {
     // Act
     var scan = InvoiceScan.Default();
 
     // Assert
-    Assert.Equal("https://arolariu.ro/", scan.Location.ToString());
+    Assert.AreEqual("https://arolariu.ro/", scan.Location.ToString());
   }
 
   /// <summary>
   /// Verifies InvoiceScan.Default() creates empty metadata.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceScan_Default_CreatesEmptyMetadata()
   {
     // Act
     var scan = InvoiceScan.Default();
 
     // Assert
-    Assert.NotNull(scan.Metadata);
-    Assert.Empty(scan.Metadata);
+    Assert.IsNotNull(scan.Metadata);
+    Assert.IsEmpty(scan.Metadata);
   }
 
   /// <summary>
   /// Verifies InvoiceScan.NotDefault() returns false for default scan.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceScan_NotDefault_DefaultScan_ReturnsFalse()
   {
     // Arrange
@@ -579,13 +580,13 @@ public sealed class EntityTests
     var result = InvoiceScan.NotDefault(scan);
 
     // Assert
-    Assert.False(result);
+    Assert.IsFalse(result);
   }
 
   /// <summary>
   /// Verifies InvoiceScan.NotDefault() returns true for valid scan.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceScan_NotDefault_ValidScan_ReturnsTrue()
   {
     // Arrange
@@ -595,13 +596,13 @@ public sealed class EntityTests
     var result = InvoiceScan.NotDefault(scan);
 
     // Assert
-    Assert.True(result);
+    Assert.IsTrue(result);
   }
 
   /// <summary>
   /// Verifies InvoiceScan.NotDefault() returns false when type is UNKNOWN.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceScan_NotDefault_UnknownType_ReturnsFalse()
   {
     // Arrange
@@ -611,13 +612,13 @@ public sealed class EntityTests
     var result = InvoiceScan.NotDefault(scan);
 
     // Assert
-    Assert.False(result);
+    Assert.IsFalse(result);
   }
 
   /// <summary>
   /// Verifies InvoiceScan.NotDefault() returns false when location is default.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceScan_NotDefault_DefaultLocation_ReturnsFalse()
   {
     // Arrange
@@ -627,13 +628,13 @@ public sealed class EntityTests
     var result = InvoiceScan.NotDefault(scan);
 
     // Assert
-    Assert.False(result);
+    Assert.IsFalse(result);
   }
 
   /// <summary>
   /// Verifies InvoiceScan can be created with all parameters.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceScan_ParameterizedConstructor_SetsAllProperties()
   {
     // Arrange
@@ -645,15 +646,15 @@ public sealed class EntityTests
     var scan = new InvoiceScan(type, location, metadata);
 
     // Assert
-    Assert.Equal(ScanType.JPG, scan.Type);
-    Assert.Equal("https://example.com/invoice.jpg", scan.Location.ToString());
-    Assert.Equal("mobile", scan.Metadata!["source"]);
+    Assert.AreEqual(ScanType.JPG, scan.Type);
+    Assert.AreEqual("https://example.com/invoice.jpg", scan.Location.ToString());
+    Assert.AreEqual("mobile", scan.Metadata!["source"]);
   }
 
   /// <summary>
   /// Verifies InvoiceScan equality based on value.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceScan_SameValues_AreEqual()
   {
     // Arrange
@@ -661,13 +662,13 @@ public sealed class EntityTests
     var scan2 = new InvoiceScan(ScanType.PDF, new Uri("https://example.com/doc.pdf"), null);
 
     // Assert
-    Assert.Equal(scan1, scan2);
+    Assert.AreEqual(scan1, scan2);
   }
 
   /// <summary>
   /// Verifies InvoiceScan inequality for different values.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceScan_DifferentValues_AreNotEqual()
   {
     // Arrange
@@ -675,17 +676,17 @@ public sealed class EntityTests
     var scan2 = new InvoiceScan(ScanType.PDF, new Uri("https://example.com/doc2.pdf"), null);
 
     // Assert
-    Assert.NotEqual(scan1, scan2);
+    Assert.AreNotEqual(scan1, scan2);
   }
 
   /// <summary>
   /// Verifies InvoiceScan has Serializable attribute.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceScan_HasSerializableAttribute()
   {
     // Assert
-    Assert.True(Attribute.IsDefined(typeof(InvoiceScan), typeof(SerializableAttribute)));
+    Assert.IsTrue(Attribute.IsDefined(typeof(InvoiceScan), typeof(SerializableAttribute)));
   }
 
   #endregion
@@ -695,36 +696,36 @@ public sealed class EntityTests
   /// <summary>
   /// Verifies ScanType enum has expected values.
   /// </summary>
-  [Theory]
-  [InlineData(ScanType.JPG)]
-  [InlineData(ScanType.JPEG)]
-  [InlineData(ScanType.PNG)]
-  [InlineData(ScanType.PDF)]
-  [InlineData(ScanType.OTHER)]
-  [InlineData(ScanType.UNKNOWN)]
+  [TestMethod]
+  [DataRow(ScanType.JPG)]
+  [DataRow(ScanType.JPEG)]
+  [DataRow(ScanType.PNG)]
+  [DataRow(ScanType.PDF)]
+  [DataRow(ScanType.OTHER)]
+  [DataRow(ScanType.UNKNOWN)]
   public void ScanType_AllValues_AreDefined(ScanType scanType)
   {
     // Assert
-    Assert.True(Enum.IsDefined<ScanType>(scanType));
+    Assert.IsTrue(Enum.IsDefined<ScanType>(scanType));
   }
 
   /// <summary>
   /// Verifies ScanType can be parsed from string.
   /// </summary>
-  [Theory]
-  [InlineData("JPG")]
-  [InlineData("JPEG")]
-  [InlineData("PNG")]
-  [InlineData("PDF")]
-  [InlineData("OTHER")]
-  [InlineData("UNKNOWN")]
+  [TestMethod]
+  [DataRow("JPG")]
+  [DataRow("JPEG")]
+  [DataRow("PNG")]
+  [DataRow("PDF")]
+  [DataRow("OTHER")]
+  [DataRow("UNKNOWN")]
   public void ScanType_ParseFromString_ReturnsCorrectValue(string scanTypeName)
   {
     // Act
     var parsed = Enum.Parse<ScanType>(scanTypeName);
 
     // Assert
-    Assert.True(Enum.IsDefined<ScanType>(parsed));
+    Assert.IsTrue(Enum.IsDefined<ScanType>(parsed));
   }
 
   #endregion
@@ -734,27 +735,27 @@ public sealed class EntityTests
   /// <summary>
   /// Verifies InvoiceCategory enum has NOT_DEFINED as valid value.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceCategory_NotDefined_IsDefined()
   {
     // Assert
-    Assert.True(Enum.IsDefined<InvoiceCategory>(InvoiceCategory.NOT_DEFINED));
+    Assert.IsTrue(Enum.IsDefined<InvoiceCategory>(InvoiceCategory.NOT_DEFINED));
   }
 
   /// <summary>
   /// Verifies InvoiceCategory has multiple category options.
   /// </summary>
-  [Theory]
-  [InlineData(InvoiceCategory.NOT_DEFINED)]
-  [InlineData(InvoiceCategory.GROCERY)]
-  [InlineData(InvoiceCategory.FAST_FOOD)]
-  [InlineData(InvoiceCategory.HOME_CLEANING)]
-  [InlineData(InvoiceCategory.CAR_AUTO)]
-  [InlineData(InvoiceCategory.OTHER)]
+  [TestMethod]
+  [DataRow(InvoiceCategory.NOT_DEFINED)]
+  [DataRow(InvoiceCategory.GROCERY)]
+  [DataRow(InvoiceCategory.FAST_FOOD)]
+  [DataRow(InvoiceCategory.HOME_CLEANING)]
+  [DataRow(InvoiceCategory.CAR_AUTO)]
+  [DataRow(InvoiceCategory.OTHER)]
   public void InvoiceCategory_AllValues_AreDefined(InvoiceCategory category)
   {
     // Assert
-    Assert.True(Enum.IsDefined<InvoiceCategory>(category));
+    Assert.IsTrue(Enum.IsDefined<InvoiceCategory>(category));
   }
 
   #endregion
@@ -764,27 +765,27 @@ public sealed class EntityTests
   /// <summary>
   /// Verifies MerchantCategory enum has OTHER as valid value.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantCategory_Other_IsDefined()
   {
     // Assert
-    Assert.True(Enum.IsDefined<MerchantCategory>(MerchantCategory.OTHER));
+    Assert.IsTrue(Enum.IsDefined<MerchantCategory>(MerchantCategory.OTHER));
   }
 
   /// <summary>
   /// Verifies MerchantCategory has multiple category options.
   /// </summary>
-  [Theory]
-  [InlineData(MerchantCategory.NOT_DEFINED)]
-  [InlineData(MerchantCategory.LOCAL_SHOP)]
-  [InlineData(MerchantCategory.SUPERMARKET)]
-  [InlineData(MerchantCategory.HYPERMARKET)]
-  [InlineData(MerchantCategory.ONLINE_SHOP)]
-  [InlineData(MerchantCategory.OTHER)]
+  [TestMethod]
+  [DataRow(MerchantCategory.NOT_DEFINED)]
+  [DataRow(MerchantCategory.LOCAL_SHOP)]
+  [DataRow(MerchantCategory.SUPERMARKET)]
+  [DataRow(MerchantCategory.HYPERMARKET)]
+  [DataRow(MerchantCategory.ONLINE_SHOP)]
+  [DataRow(MerchantCategory.OTHER)]
   public void MerchantCategory_AllValues_AreDefined(MerchantCategory category)
   {
     // Assert
-    Assert.True(Enum.IsDefined<MerchantCategory>(category));
+    Assert.IsTrue(Enum.IsDefined<MerchantCategory>(category));
   }
 
   #endregion
