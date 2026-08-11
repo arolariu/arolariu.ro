@@ -40,7 +40,7 @@ Make sure you're familiar with the project structure and how to run tests:
 ```bash
 npm run test             # all tests
 npm run test:website     # frontend unit tests (Vitest)
-npm run test:api         # backend tests (xUnit)
+npm run test:api         # backend tests (MSTest)
 npm run test:e2e         # end-to-end tests (Playwright + Newman)
 ```
 
@@ -76,7 +76,7 @@ npm run doctor           # check workspace health
 - [ ] Max 2-3 dependencies per service (Florance Pattern)
 - [ ] XML documentation on all public APIs
 - [ ] `.ConfigureAwait(false)` in library code
-- [ ] Tests written with xUnit
+- [ ] Tests written with MSTest
 - [ ] No business logic in Brokers
 
 **All changes:**

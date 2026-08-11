@@ -251,7 +251,7 @@ npm run dev:cv           # SvelteKit CV site standalone
 ```bash
 npm run test             # All tests
 npm run test:website     # Website unit tests (Vitest)
-npm run test:api         # API tests (xUnit)
+npm run test:api         # API tests (MSTest)
 npm run test:exp         # exp tests (pytest)
 npm run test:unit        # All unit tests
 npm run test:e2e         # All E2E tests (Playwright + Newman)

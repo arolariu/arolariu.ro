@@ -1,6 +1,6 @@
 ---
 name: "api-endpoint"
-description: 'Scaffolds a complete API endpoint following The Standard architecture with Broker, Foundation Service, Endpoint, and xUnit tests.'
+description: 'Scaffolds a complete API endpoint following The Standard architecture with Broker, Foundation Service, Endpoint, and MSTest tests.'
 agent: 'agent'
 model: 'Claude Sonnet 4.5'
 tools: ['codebase', 'search', 'editFiles', 'terminalLastCommand']
@@ -97,18 +97,19 @@ public static IServiceCollection Add[Domain]Services(this IServiceCollection ser
 
 ```csharp
 // tests/[Domain]/Services/Foundation/[Entity]StorageFoundationServiceTests.cs
+[TestClass]
 public class [Entity]StorageFoundationServiceTests
 {
-    [Fact]
+    [TestMethod]
     public async Task Create[Entity]Object_ValidInput_CreatesSuccessfully() { }
 
-    [Fact]
+    [TestMethod]
     public async Task Create[Entity]Object_NullInput_ThrowsValidationException() { }
 
-    [Fact]
+    [TestMethod]
     public async Task Retrieve[Entity]Object_ExistingId_ReturnsEntity() { }
 
-    [Fact]
+    [TestMethod]
     public async Task Retrieve[Entity]Object_NonExistentId_ReturnsNull() { }
 }
 ```
@@ -125,7 +126,7 @@ public class [Entity]StorageFoundationServiceTests
 - [ ] `.ConfigureAwait(false)` on all async calls
 - [ ] Endpoint mapped with proper HTTP verbs and authorization
 - [ ] DI registration in Extensions class
-- [ ] xUnit tests with 85%+ coverage
+- [ ] MSTest tests with 85%+ coverage
 - [ ] `dotnet build` passes with no warnings
 
 ## RFC Grounding Checklist (Mandatory)

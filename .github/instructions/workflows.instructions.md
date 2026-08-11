@@ -104,7 +104,7 @@ official-api-trigger.yml
 │ Trigger: Push main      │
 │                         │
 │ Job: test               │
-│  └─ Run xUnit tests     │
+│  └─ Run MSTest tests    │
 │                         │
 │ Job: build-and-deploy   │
 │  └─ Build .NET app      │
@@ -625,7 +625,7 @@ paths-ignore:
     path: playwright-report/
 ```
 
-### .NET Tests (xUnit)
+### .NET Tests (MSTest)
 
 ```yaml
 - name: 🧪 Run tests

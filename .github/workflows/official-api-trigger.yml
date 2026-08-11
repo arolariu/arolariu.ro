@@ -120,7 +120,7 @@ jobs:
           echo "::group::🧪 Running .NET Unit Tests"
           echo "📍 Solution: arolariu.slnx"
           echo "📍 Configuration: Release"
-          echo "📍 Test framework: xUnit"
+          echo "📍 Test framework: MSTest"
           echo ""
           START_TIME=$(date +%s)
           dotnet test --configuration Release --logger trx --results-directory ./sites/api.arolariu.ro/TestResults --collect:"XPlat Code Coverage" ./arolariu.slnx

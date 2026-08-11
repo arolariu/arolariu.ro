@@ -63,7 +63,7 @@ Invoke with `@workspace /prompt` in VS Code or use directly in Copilot CLI:
 |--------|---------|
 | `api-endpoint` | Scaffold a new API endpoint (The Standard layers) |
 | `new-page` | Scaffold a Next.js page (Island pattern) |
-| `unit-test` | Generate unit tests (Vitest or xUnit) |
+| `unit-test` | Generate unit tests (Vitest or MSTest) |
 | `comment-standard` | Add JSDoc/XML documentation to code |
 | `fix-bug` | Systematic debugging workflow |
 | `extend-store` | Add state/actions to a Zustand store |

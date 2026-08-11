@@ -346,7 +346,7 @@ updates:
   # ===========================================================================
   # BACKEND - .NET 10 API
   # ===========================================================================
-  # Modular monolith API: Microsoft, Azure SDK, OpenTelemetry, xUnit
+  # Modular monolith API: Microsoft, Azure SDK, OpenTelemetry, MSTest
   - package-ecosystem: "nuget"
     directory: "/sites/api.arolariu.ro"
     target-branch: "preview"
@@ -393,10 +393,10 @@ updates:
         update-types:
           - "minor"
           - "major"
-      # Testing: xUnit, Moq, Coverlet
+      # Testing: MSTest, Moq, Coverlet
       testing:
         patterns:
-          - "xunit*"
+          - "MSTest*"
           - "Moq*"
           - "coverlet*"
         update-types:
