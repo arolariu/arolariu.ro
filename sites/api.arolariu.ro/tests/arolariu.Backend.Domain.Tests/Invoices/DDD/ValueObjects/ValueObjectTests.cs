@@ -7,13 +7,14 @@ using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Comprehensive unit tests for all Value Object classes in the invoicing domain.
 /// Tests validate property initialization, equality semantics, default values, and record behavior.
 /// Method naming follows MethodName_Condition_ExpectedResult pattern per repository standards.
 /// </summary>
+[TestClass]
 public sealed class ValueObjectTests
 {
   #region Currency Tests
@@ -21,37 +22,37 @@ public sealed class ValueObjectTests
   /// <summary>
   /// Verifies Currency struct can be created with all parameters.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Currency_ParameterizedConstructor_SetsAllProperties()
   {
     // Arrange & Act
     var currency = new Currency("US Dollar", "USD", "$");
 
     // Assert
-    Assert.Equal("US Dollar", currency.Name);
-    Assert.Equal("USD", currency.Code);
-    Assert.Equal("$", currency.Symbol);
+    Assert.AreEqual("US Dollar", currency.Name);
+    Assert.AreEqual("USD", currency.Code);
+    Assert.AreEqual("$", currency.Symbol);
   }
 
   /// <summary>
   /// Verifies Currency default constructor creates instance with default values.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Currency_DefaultConstructor_CreatesInstanceWithDefaults()
   {
     // Act
     var currency = new Currency();
 
     // Assert
-    Assert.Null(currency.Name);
-    Assert.Null(currency.Code);
-    Assert.Null(currency.Symbol);
+    Assert.IsNull(currency.Name);
+    Assert.IsNull(currency.Code);
+    Assert.IsNull(currency.Symbol);
   }
 
   /// <summary>
   /// Verifies Currency equality based on value.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Currency_SameValues_AreEqual()
   {
     // Arrange
@@ -59,14 +60,14 @@ public sealed class ValueObjectTests
     var currency2 = new Currency("Euro", "EUR", "€");
 
     // Assert
-    Assert.Equal(currency1, currency2);
-    Assert.True(currency1 == currency2);
+    Assert.AreEqual(currency1, currency2);
+    Assert.IsTrue(currency1 == currency2);
   }
 
   /// <summary>
   /// Verifies Currency inequality for different values.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Currency_DifferentValues_AreNotEqual()
   {
     // Arrange
@@ -74,14 +75,14 @@ public sealed class ValueObjectTests
     var currency2 = new Currency("Euro", "EUR", "€");
 
     // Assert
-    Assert.NotEqual(currency1, currency2);
-    Assert.True(currency1 != currency2);
+    Assert.AreNotEqual(currency1, currency2);
+    Assert.IsTrue(currency1 != currency2);
   }
 
   /// <summary>
   /// Verifies Currency has consistent hash code for same values.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Currency_SameValues_HaveSameHashCode()
   {
     // Arrange
@@ -89,17 +90,17 @@ public sealed class ValueObjectTests
     var currency2 = new Currency("British Pound", "GBP", "£");
 
     // Assert
-    Assert.Equal(currency1.GetHashCode(), currency2.GetHashCode());
+    Assert.AreEqual(currency1.GetHashCode(), currency2.GetHashCode());
   }
 
   /// <summary>
   /// Verifies Currency has Serializable attribute.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Currency_HasSerializableAttribute()
   {
     // Assert
-    Assert.True(Attribute.IsDefined(typeof(Currency), typeof(SerializableAttribute)));
+    Assert.IsTrue(Attribute.IsDefined(typeof(Currency), typeof(SerializableAttribute)));
   }
 
   #endregion
@@ -109,24 +110,24 @@ public sealed class ValueObjectTests
   /// <summary>
   /// Verifies ContactInformation creates instance with default empty values.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void ContactInformation_DefaultConstructor_CreatesInstanceWithDefaults()
   {
     // Act
     var contact = new ContactInformation();
 
     // Assert
-    Assert.Equal(string.Empty, contact.FullName);
-    Assert.Equal(string.Empty, contact.Address);
-    Assert.Equal(string.Empty, contact.PhoneNumber);
-    Assert.Equal(string.Empty, contact.EmailAddress);
-    Assert.Equal(string.Empty, contact.Website);
+    Assert.AreEqual(string.Empty, contact.FullName);
+    Assert.AreEqual(string.Empty, contact.Address);
+    Assert.AreEqual(string.Empty, contact.PhoneNumber);
+    Assert.AreEqual(string.Empty, contact.EmailAddress);
+    Assert.AreEqual(string.Empty, contact.Website);
   }
 
   /// <summary>
   /// Verifies ContactInformation properties can be set.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void ContactInformation_SetProperties_PropertiesAreSet()
   {
     // Arrange
@@ -140,17 +141,17 @@ public sealed class ValueObjectTests
     };
 
     // Assert
-    Assert.Equal("John Doe", contact.FullName);
-    Assert.Equal("123 Main St", contact.Address);
-    Assert.Equal("+1234567890", contact.PhoneNumber);
-    Assert.Equal("john@example.com", contact.EmailAddress);
-    Assert.Equal("https://example.com", contact.Website);
+    Assert.AreEqual("John Doe", contact.FullName);
+    Assert.AreEqual("123 Main St", contact.Address);
+    Assert.AreEqual("+1234567890", contact.PhoneNumber);
+    Assert.AreEqual("john@example.com", contact.EmailAddress);
+    Assert.AreEqual("https://example.com", contact.Website);
   }
 
   /// <summary>
   /// Verifies ContactInformation equality based on value.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void ContactInformation_SameValues_AreEqual()
   {
     // Arrange
@@ -158,17 +159,17 @@ public sealed class ValueObjectTests
     var contact2 = new ContactInformation { FullName = "Test", EmailAddress = "test@test.com" };
 
     // Assert
-    Assert.Equal(contact1, contact2);
+    Assert.AreEqual(contact1, contact2);
   }
 
   /// <summary>
   /// Verifies ContactInformation has Serializable attribute.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void ContactInformation_HasSerializableAttribute()
   {
     // Assert
-    Assert.True(Attribute.IsDefined(typeof(ContactInformation), typeof(SerializableAttribute)));
+    Assert.IsTrue(Attribute.IsDefined(typeof(ContactInformation), typeof(SerializableAttribute)));
   }
 
   #endregion
@@ -178,26 +179,26 @@ public sealed class ValueObjectTests
   /// <summary>
   /// Verifies PaymentInformation creates instance with default values.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_DefaultConstructor_CreatesInstanceWithDefaults()
   {
     // Act
     var payment = new PaymentInformation();
 
     // Assert
-    Assert.Equal(PaymentType.UNKNOWN, payment.PaymentType);
-    Assert.Equal(0.0m, payment.TotalCostAmount);
-    Assert.Equal(0.0m, payment.TotalTaxAmount);
-    Assert.NotEqual(default, payment.TransactionDate);
-    Assert.Equal("Romanian Leu", payment.Currency.Name);
-    Assert.Equal("RON", payment.Currency.Code);
-    Assert.Equal("lei", payment.Currency.Symbol);
+    Assert.AreEqual(PaymentType.UNKNOWN, payment.PaymentType);
+    Assert.AreEqual(0.0m, payment.TotalCostAmount);
+    Assert.AreEqual(0.0m, payment.TotalTaxAmount);
+    Assert.AreNotEqual(default, payment.TransactionDate);
+    Assert.AreEqual("Romanian Leu", payment.Currency.Name);
+    Assert.AreEqual("RON", payment.Currency.Code);
+    Assert.AreEqual("lei", payment.Currency.Symbol);
   }
 
   /// <summary>
   /// Verifies PaymentInformation properties can be set.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_SetProperties_PropertiesAreSet()
   {
     // Arrange
@@ -212,17 +213,17 @@ public sealed class ValueObjectTests
     };
 
     // Assert
-    Assert.Equal(transactionDate, payment.TransactionDate);
-    Assert.Equal(PaymentType.CARD, payment.PaymentType);
-    Assert.Equal("USD", payment.Currency.Code);
-    Assert.Equal(100.50m, payment.TotalCostAmount);
-    Assert.Equal(19.00m, payment.TotalTaxAmount);
+    Assert.AreEqual(transactionDate, payment.TransactionDate);
+    Assert.AreEqual(PaymentType.CARD, payment.PaymentType);
+    Assert.AreEqual("USD", payment.Currency.Code);
+    Assert.AreEqual(100.50m, payment.TotalCostAmount);
+    Assert.AreEqual(19.00m, payment.TotalTaxAmount);
   }
 
   /// <summary>
   /// Verifies PaymentInformation equality based on value.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_SameValues_AreEqual()
   {
     // Arrange
@@ -231,17 +232,17 @@ public sealed class ValueObjectTests
     var payment2 = new PaymentInformation { TransactionDate = date, TotalCostAmount = 50m };
 
     // Assert
-    Assert.Equal(payment1, payment2);
+    Assert.AreEqual(payment1, payment2);
   }
 
   /// <summary>
   /// Verifies PaymentInformation has Serializable attribute.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_HasSerializableAttribute()
   {
     // Assert
-    Assert.True(Attribute.IsDefined(typeof(PaymentInformation), typeof(SerializableAttribute)));
+    Assert.IsTrue(Attribute.IsDefined(typeof(PaymentInformation), typeof(SerializableAttribute)));
   }
 
   #endregion
@@ -251,38 +252,38 @@ public sealed class ValueObjectTests
   /// <summary>
   /// Verifies PaymentType enum has expected values.
   /// </summary>
-  [Theory]
-  [InlineData(PaymentType.UNKNOWN, 0)]
-  [InlineData(PaymentType.CASH, 100)]
-  [InlineData(PaymentType.CARD, 200)]
-  [InlineData(PaymentType.TRANSFER, 300)]
-  [InlineData(PaymentType.MOBILEPAYMENT, 400)]
-  [InlineData(PaymentType.VOUCHER, 500)]
-  [InlineData(PaymentType.Other, 9999)]
+  [TestMethod]
+  [DataRow(PaymentType.UNKNOWN, 0)]
+  [DataRow(PaymentType.CASH, 100)]
+  [DataRow(PaymentType.CARD, 200)]
+  [DataRow(PaymentType.TRANSFER, 300)]
+  [DataRow(PaymentType.MOBILEPAYMENT, 400)]
+  [DataRow(PaymentType.VOUCHER, 500)]
+  [DataRow(PaymentType.Other, 9999)]
   public void PaymentType_EnumValues_HaveCorrectUnderlyingValues(PaymentType paymentType, int expectedValue)
   {
     // Assert
-    Assert.Equal(expectedValue, (int)paymentType);
+    Assert.AreEqual(expectedValue, (int)paymentType);
   }
 
   /// <summary>
   /// Verifies all PaymentType enum values can be parsed.
   /// </summary>
-  [Theory]
-  [InlineData("UNKNOWN")]
-  [InlineData("CASH")]
-  [InlineData("CARD")]
-  [InlineData("TRANSFER")]
-  [InlineData("MOBILEPAYMENT")]
-  [InlineData("VOUCHER")]
-  [InlineData("Other")]
+  [TestMethod]
+  [DataRow("UNKNOWN")]
+  [DataRow("CASH")]
+  [DataRow("CARD")]
+  [DataRow("TRANSFER")]
+  [DataRow("MOBILEPAYMENT")]
+  [DataRow("VOUCHER")]
+  [DataRow("Other")]
   public void PaymentType_ParseFromString_ReturnsCorrectValue(string paymentTypeName)
   {
     // Act
     var parsed = Enum.Parse<PaymentType>(paymentTypeName);
 
     // Assert
-    Assert.True(Enum.IsDefined<PaymentType>(parsed));
+    Assert.IsTrue(Enum.IsDefined<PaymentType>(parsed));
   }
 
   #endregion
@@ -292,23 +293,23 @@ public sealed class ValueObjectTests
   /// <summary>
   /// Verifies Allergen creates instance with default values.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Allergen_DefaultConstructor_CreatesInstanceWithDefaults()
   {
     // Act
     var allergen = new Allergen();
 
     // Assert
-    Assert.Equal(string.Empty, allergen.Name);
-    Assert.Equal(string.Empty, allergen.Description);
-    Assert.NotNull(allergen.LearnMoreAddress);
-    Assert.Equal("https://arolariu.ro/", allergen.LearnMoreAddress.ToString());
+    Assert.AreEqual(string.Empty, allergen.Name);
+    Assert.AreEqual(string.Empty, allergen.Description);
+    Assert.IsNotNull(allergen.LearnMoreAddress);
+    Assert.AreEqual("https://arolariu.ro/", allergen.LearnMoreAddress.ToString());
   }
 
   /// <summary>
   /// Verifies Allergen properties can be set.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Allergen_SetProperties_PropertiesAreSet()
   {
     // Arrange
@@ -320,15 +321,15 @@ public sealed class ValueObjectTests
     };
 
     // Assert
-    Assert.Equal("Peanuts", allergen.Name);
-    Assert.Equal("Common tree nut allergen", allergen.Description);
-    Assert.Equal("https://example.com/allergens/peanuts", allergen.LearnMoreAddress.ToString());
+    Assert.AreEqual("Peanuts", allergen.Name);
+    Assert.AreEqual("Common tree nut allergen", allergen.Description);
+    Assert.AreEqual("https://example.com/allergens/peanuts", allergen.LearnMoreAddress.ToString());
   }
 
   /// <summary>
   /// Verifies Allergen equality based on value.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Allergen_SameValues_AreEqual()
   {
     // Arrange
@@ -336,13 +337,13 @@ public sealed class ValueObjectTests
     var allergen2 = new Allergen { Name = "Gluten", Description = "Wheat protein" };
 
     // Assert
-    Assert.Equal(allergen1, allergen2);
+    Assert.AreEqual(allergen1, allergen2);
   }
 
   /// <summary>
   /// Verifies Allergen inequality for different values.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Allergen_DifferentValues_AreNotEqual()
   {
     // Arrange
@@ -350,7 +351,7 @@ public sealed class ValueObjectTests
     var allergen2 = new Allergen { Name = "Dairy" };
 
     // Assert
-    Assert.NotEqual(allergen1, allergen2);
+    Assert.AreNotEqual(allergen1, allergen2);
   }
 
   #endregion
@@ -360,26 +361,26 @@ public sealed class ValueObjectTests
   /// <summary>
   /// Verifies Recipe creates instance with default values using parameterless constructor.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Recipe_ParameterlessConstructor_CreatesInstanceWithDefaults()
   {
     // Act
     var recipe = new Recipe();
 
     // Assert
-    Assert.Equal(string.Empty, recipe.Name);
-    Assert.Equal(string.Empty, recipe.Description);
-    Assert.Equal(-1, recipe.ApproximateTotalDuration);
-    Assert.Equal(RecipeComplexity.UNKNOWN, recipe.Complexity);
-    Assert.Empty(recipe.Ingredients);
-    Assert.NotNull(recipe.ReferenceForMoreDetails);
-    Assert.Equal("https://arolariu.ro/", recipe.ReferenceForMoreDetails.ToString());
+    Assert.AreEqual(string.Empty, recipe.Name);
+    Assert.AreEqual(string.Empty, recipe.Description);
+    Assert.AreEqual(-1, recipe.ApproximateTotalDuration);
+    Assert.AreEqual(RecipeComplexity.UNKNOWN, recipe.Complexity);
+    Assert.IsEmpty(recipe.Ingredients);
+    Assert.IsNotNull(recipe.ReferenceForMoreDetails);
+    Assert.AreEqual("https://arolariu.ro/", recipe.ReferenceForMoreDetails.ToString());
   }
 
   /// <summary>
   /// Verifies Recipe parameterized constructor sets all properties.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Recipe_ParameterizedConstructor_SetsAllProperties()
   {
     // Arrange
@@ -394,18 +395,18 @@ public sealed class ValueObjectTests
     var recipe = new Recipe(name, description, duration, complexity, ingredients, reference);
 
     // Assert
-    Assert.Equal(name, recipe.Name);
-    Assert.Equal(description, recipe.Description);
-    Assert.Equal(duration, recipe.ApproximateTotalDuration);
-    Assert.Equal(complexity, recipe.Complexity);
-    Assert.Equal(ingredients, recipe.Ingredients);
-    Assert.Equal(reference, recipe.ReferenceForMoreDetails);
+    Assert.AreEqual(name, recipe.Name);
+    Assert.AreEqual(description, recipe.Description);
+    Assert.AreEqual(duration, recipe.ApproximateTotalDuration);
+    Assert.AreEqual(complexity, recipe.Complexity);
+    Assert.AreSequenceEqual(ingredients, recipe.Ingredients);
+    Assert.AreEqual(reference, recipe.ReferenceForMoreDetails);
   }
 
   /// <summary>
   /// Verifies Recipe properties can be set.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Recipe_SetProperties_PropertiesAreSet()
   {
     // Arrange
@@ -418,25 +419,25 @@ public sealed class ValueObjectTests
     };
 
     // Assert
-    Assert.Equal("Pizza Margherita", recipe.Name);
-    Assert.Equal("Traditional Italian pizza", recipe.Description);
-    Assert.Equal(45, recipe.ApproximateTotalDuration);
-    Assert.Equal(RecipeComplexity.EASY, recipe.Complexity);
+    Assert.AreEqual("Pizza Margherita", recipe.Name);
+    Assert.AreEqual("Traditional Italian pizza", recipe.Description);
+    Assert.AreEqual(45, recipe.ApproximateTotalDuration);
+    Assert.AreEqual(RecipeComplexity.EASY, recipe.Complexity);
   }
 
   /// <summary>
   /// Verifies Recipe same instance is equal to itself.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Recipe_SameInstance_IsEqual()
   {
     // Arrange
     var recipe = new Recipe { Name = "Test Recipe", ApproximateTotalDuration = 30 };
 
     // Assert
-    Assert.Equal(recipe, recipe);
-    Assert.Equal("Test Recipe", recipe.Name);
-    Assert.Equal(30, recipe.ApproximateTotalDuration);
+    Assert.AreEqual(recipe, recipe);
+    Assert.AreEqual("Test Recipe", recipe.Name);
+    Assert.AreEqual(30, recipe.ApproximateTotalDuration);
   }
 
   #endregion
@@ -446,32 +447,32 @@ public sealed class ValueObjectTests
   /// <summary>
   /// Verifies RecipeComplexity enum has expected values.
   /// </summary>
-  [Theory]
-  [InlineData(RecipeComplexity.UNKNOWN, 0)]
-  [InlineData(RecipeComplexity.EASY, 1)]
-  [InlineData(RecipeComplexity.NORMAL, 2)]
-  [InlineData(RecipeComplexity.HARD, 3)]
+  [TestMethod]
+  [DataRow(RecipeComplexity.UNKNOWN, 0)]
+  [DataRow(RecipeComplexity.EASY, 1)]
+  [DataRow(RecipeComplexity.NORMAL, 2)]
+  [DataRow(RecipeComplexity.HARD, 3)]
   public void RecipeComplexity_EnumValues_HaveCorrectUnderlyingValues(RecipeComplexity complexity, int expectedValue)
   {
     // Assert
-    Assert.Equal(expectedValue, (int)complexity);
+    Assert.AreEqual(expectedValue, (int)complexity);
   }
 
   /// <summary>
   /// Verifies all RecipeComplexity enum values can be parsed.
   /// </summary>
-  [Theory]
-  [InlineData("UNKNOWN")]
-  [InlineData("EASY")]
-  [InlineData("NORMAL")]
-  [InlineData("HARD")]
+  [TestMethod]
+  [DataRow("UNKNOWN")]
+  [DataRow("EASY")]
+  [DataRow("NORMAL")]
+  [DataRow("HARD")]
   public void RecipeComplexity_ParseFromString_ReturnsCorrectValue(string complexityName)
   {
     // Act
     var parsed = Enum.Parse<RecipeComplexity>(complexityName);
 
     // Assert
-    Assert.True(Enum.IsDefined<RecipeComplexity>(parsed));
+    Assert.IsTrue(Enum.IsDefined<RecipeComplexity>(parsed));
   }
 
   #endregion
@@ -481,27 +482,27 @@ public sealed class ValueObjectTests
   /// <summary>
   /// Verifies Product creates instance with default values.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Product_DefaultConstructor_CreatesInstanceWithDefaults()
   {
     // Act
     var product = new Product();
 
     // Assert
-    Assert.Equal(string.Empty, product.Name);
-    Assert.Equal(ProductCategory.OTHER, product.Category);
-    Assert.Equal(0, product.Quantity);
-    Assert.Equal(string.Empty, product.QuantityUnit);
-    Assert.Equal(string.Empty, product.ProductCode);
-    Assert.Equal(0, product.Price);
-    Assert.Empty(product.DetectedAllergens);
-    Assert.Equal(default, product.Metadata);
+    Assert.AreEqual(string.Empty, product.Name);
+    Assert.AreEqual(ProductCategory.OTHER, product.Category);
+    Assert.AreEqual(0, product.Quantity);
+    Assert.AreEqual(string.Empty, product.QuantityUnit);
+    Assert.AreEqual(string.Empty, product.ProductCode);
+    Assert.AreEqual(0, product.Price);
+    Assert.IsEmpty(product.DetectedAllergens);
+    Assert.AreEqual(default, product.Metadata);
   }
 
   /// <summary>
   /// Verifies Product properties can be set.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Product_SetProperties_PropertiesAreSet()
   {
     // Arrange
@@ -518,19 +519,19 @@ public sealed class ValueObjectTests
     };
 
     // Assert
-    Assert.Equal("MONSTER ENERGY DRINK 500ML", product.Name);
-    Assert.Equal(ProductCategory.BEVERAGES, product.Category);
-    Assert.Equal(2, product.Quantity);
-    Assert.Equal("pcs", product.QuantityUnit);
-    Assert.Equal("SKU12345", product.ProductCode);
-    Assert.Equal(5.99m, product.Price);
-    Assert.Single(product.DetectedAllergens);
+    Assert.AreEqual("MONSTER ENERGY DRINK 500ML", product.Name);
+    Assert.AreEqual(ProductCategory.BEVERAGES, product.Category);
+    Assert.AreEqual(2, product.Quantity);
+    Assert.AreEqual("pcs", product.QuantityUnit);
+    Assert.AreEqual("SKU12345", product.ProductCode);
+    Assert.AreEqual(5.99m, product.Price);
+    Assert.ContainsSingle(product.DetectedAllergens);
   }
 
   /// <summary>
   /// Verifies Product TotalPrice computed property calculates correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Product_TotalPrice_CalculatesCorrectly()
   {
     // Arrange
@@ -541,13 +542,13 @@ public sealed class ValueObjectTests
     };
 
     // Assert
-    Assert.Equal(30.00m, product.TotalPrice);
+    Assert.AreEqual(30.00m, product.TotalPrice);
   }
 
   /// <summary>
   /// Verifies Product TotalPrice returns zero when quantity is zero.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Product_TotalPrice_QuantityZero_ReturnsZero()
   {
     // Arrange
@@ -558,13 +559,13 @@ public sealed class ValueObjectTests
     };
 
     // Assert
-    Assert.Equal(0, product.TotalPrice);
+    Assert.AreEqual(0, product.TotalPrice);
   }
 
   /// <summary>
   /// Verifies Product TotalPrice returns zero when price is zero.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Product_TotalPrice_PriceZero_ReturnsZero()
   {
     // Arrange
@@ -575,13 +576,13 @@ public sealed class ValueObjectTests
     };
 
     // Assert
-    Assert.Equal(0, product.TotalPrice);
+    Assert.AreEqual(0, product.TotalPrice);
   }
 
   /// <summary>
   /// Verifies Product TotalPrice handles decimal calculations correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Product_TotalPrice_DecimalValues_CalculatesCorrectly()
   {
     // Arrange
@@ -592,7 +593,7 @@ public sealed class ValueObjectTests
     };
 
     // Assert
-    Assert.Equal(12.475m, product.TotalPrice);
+    Assert.AreEqual(12.475m, product.TotalPrice);
   }
 
   #endregion
@@ -602,22 +603,22 @@ public sealed class ValueObjectTests
   /// <summary>
   /// Verifies ProductMetadata creates instance with default false values.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void ProductMetadata_DefaultConstructor_CreatesInstanceWithDefaults()
   {
     // Act
     var metadata = new ProductMetadata();
 
     // Assert
-    Assert.False(metadata.IsEdited);
-    Assert.False(metadata.IsComplete);
-    Assert.False(metadata.IsSoftDeleted);
+    Assert.IsFalse(metadata.IsEdited);
+    Assert.IsFalse(metadata.IsComplete);
+    Assert.IsFalse(metadata.IsSoftDeleted);
   }
 
   /// <summary>
   /// Verifies ProductMetadata properties can be set.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void ProductMetadata_SetProperties_PropertiesAreSet()
   {
     // Arrange
@@ -629,15 +630,15 @@ public sealed class ValueObjectTests
     };
 
     // Assert
-    Assert.True(metadata.IsEdited);
-    Assert.True(metadata.IsComplete);
-    Assert.False(metadata.IsSoftDeleted);
+    Assert.IsTrue(metadata.IsEdited);
+    Assert.IsTrue(metadata.IsComplete);
+    Assert.IsFalse(metadata.IsSoftDeleted);
   }
 
   /// <summary>
   /// Verifies ProductMetadata equality based on value.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void ProductMetadata_SameValues_AreEqual()
   {
     // Arrange
@@ -645,13 +646,13 @@ public sealed class ValueObjectTests
     var metadata2 = new ProductMetadata { IsEdited = true, IsComplete = false, IsSoftDeleted = false };
 
     // Assert
-    Assert.Equal(metadata1, metadata2);
+    Assert.AreEqual(metadata1, metadata2);
   }
 
   /// <summary>
   /// Verifies ProductMetadata inequality for different values.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void ProductMetadata_DifferentValues_AreNotEqual()
   {
     // Arrange
@@ -659,26 +660,26 @@ public sealed class ValueObjectTests
     var metadata2 = new ProductMetadata { IsEdited = false };
 
     // Assert
-    Assert.NotEqual(metadata1, metadata2);
+    Assert.AreNotEqual(metadata1, metadata2);
   }
 
   /// <summary>
   /// Verifies ProductMetadata represents soft delete state correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void ProductMetadata_SoftDeleted_StateIsCorrect()
   {
     // Arrange
     var metadata = new ProductMetadata { IsSoftDeleted = true };
 
     // Assert
-    Assert.True(metadata.IsSoftDeleted);
+    Assert.IsTrue(metadata.IsSoftDeleted);
   }
 
   /// <summary>
   /// Verifies ProductMetadata hash code is consistent for same values.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void ProductMetadata_SameValues_HaveSameHashCode()
   {
     // Arrange
@@ -686,7 +687,7 @@ public sealed class ValueObjectTests
     var metadata2 = new ProductMetadata { IsEdited = true, IsComplete = true, IsSoftDeleted = false };
 
     // Assert
-    Assert.Equal(metadata1.GetHashCode(), metadata2.GetHashCode());
+    Assert.AreEqual(metadata1.GetHashCode(), metadata2.GetHashCode());
   }
 
   #endregion
@@ -696,42 +697,42 @@ public sealed class ValueObjectTests
   /// <summary>
   /// Verifies ProductCategory.OTHER is the default category.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void ProductCategory_Default_IsOther()
   {
     // Arrange
     var product = new Product();
 
     // Assert
-    Assert.Equal(ProductCategory.OTHER, product.Category);
+    Assert.AreEqual(ProductCategory.OTHER, product.Category);
   }
 
   /// <summary>
   /// Verifies ProductCategory can be set to different values.
   /// </summary>
-  [Theory]
-  [InlineData(ProductCategory.NOT_DEFINED)]
-  [InlineData(ProductCategory.BAKED_GOODS)]
-  [InlineData(ProductCategory.GROCERIES)]
-  [InlineData(ProductCategory.DAIRY)]
-  [InlineData(ProductCategory.MEAT)]
-  [InlineData(ProductCategory.FISH)]
-  [InlineData(ProductCategory.FRUITS)]
-  [InlineData(ProductCategory.VEGETABLES)]
-  [InlineData(ProductCategory.BEVERAGES)]
-  [InlineData(ProductCategory.ALCOHOLIC_BEVERAGES)]
-  [InlineData(ProductCategory.TOBACCO)]
-  [InlineData(ProductCategory.CLEANING_SUPPLIES)]
-  [InlineData(ProductCategory.PERSONAL_CARE)]
-  [InlineData(ProductCategory.MEDICINE)]
-  [InlineData(ProductCategory.OTHER)]
+  [TestMethod]
+  [DataRow(ProductCategory.NOT_DEFINED)]
+  [DataRow(ProductCategory.BAKED_GOODS)]
+  [DataRow(ProductCategory.GROCERIES)]
+  [DataRow(ProductCategory.DAIRY)]
+  [DataRow(ProductCategory.MEAT)]
+  [DataRow(ProductCategory.FISH)]
+  [DataRow(ProductCategory.FRUITS)]
+  [DataRow(ProductCategory.VEGETABLES)]
+  [DataRow(ProductCategory.BEVERAGES)]
+  [DataRow(ProductCategory.ALCOHOLIC_BEVERAGES)]
+  [DataRow(ProductCategory.TOBACCO)]
+  [DataRow(ProductCategory.CLEANING_SUPPLIES)]
+  [DataRow(ProductCategory.PERSONAL_CARE)]
+  [DataRow(ProductCategory.MEDICINE)]
+  [DataRow(ProductCategory.OTHER)]
   public void ProductCategory_CanBeSetToAnyValue(ProductCategory category)
   {
     // Arrange
     var product = new Product { Category = category };
 
     // Assert
-    Assert.Equal(category, product.Category);
+    Assert.AreEqual(category, product.Category);
   }
 
   #endregion
