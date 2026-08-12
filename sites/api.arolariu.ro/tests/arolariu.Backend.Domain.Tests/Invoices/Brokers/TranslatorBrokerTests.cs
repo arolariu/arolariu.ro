@@ -12,7 +12,7 @@ using arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
 using Moq;
 using Moq.Protected;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Unit tests for <see cref="AzureTranslatorBroker"/> covering constructor validation,
@@ -22,6 +22,7 @@ using Xunit;
 /// an external Azure service. These tests focus on constructor validation and exception paths
 /// that can be tested without hitting the actual Azure Translation API.
 /// </summary>
+[TestClass]
 public sealed class TranslatorBrokerTests : IDisposable
 {
   private readonly Mock<IOptionsManager> mockOptionsManager;
@@ -54,21 +55,21 @@ public sealed class TranslatorBrokerTests : IDisposable
   /// <summary>
   /// Verifies that constructor throws ArgumentNullException when options manager is null.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Constructor_ShouldThrowArgumentNullException_WhenOptionsManagerIsNull()
   {
     // Given
     IOptionsManager? nullOptionsManager = null;
 
     // When & Then
-    var exception = Assert.Throws<ArgumentNullException>(() => new AzureTranslatorBroker(nullOptionsManager!));
-    Assert.Equal("optionsManager", exception.ParamName);
+    var exception = Assert.ThrowsExactly<ArgumentNullException>(() => new AzureTranslatorBroker(nullOptionsManager!));
+    Assert.AreEqual("optionsManager", exception.ParamName);
   }
 
   /// <summary>
   /// Verifies that HTTP client constructor throws ArgumentNullException when options manager is null.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void ConstructorWithHttpClient_ShouldThrowArgumentNullException_WhenOptionsManagerIsNull()
   {
     // Given
@@ -76,42 +77,42 @@ public sealed class TranslatorBrokerTests : IDisposable
     using var httpClient = new HttpClient();
 
     // When & Then
-    var exception = Assert.Throws<ArgumentNullException>(() => new AzureTranslatorBroker(nullOptionsManager!, httpClient));
-    Assert.Equal("optionsManager", exception.ParamName);
+    var exception = Assert.ThrowsExactly<ArgumentNullException>(() => new AzureTranslatorBroker(nullOptionsManager!, httpClient));
+    Assert.AreEqual("optionsManager", exception.ParamName);
   }
 
   /// <summary>
   /// Verifies that HTTP client constructor throws ArgumentNullException when HTTP client is null.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void ConstructorWithHttpClient_ShouldThrowArgumentNullException_WhenHttpClientIsNull()
   {
     // Given
     HttpClient? nullHttpClient = null;
 
     // When & Then
-    var exception = Assert.Throws<ArgumentNullException>(() => new AzureTranslatorBroker(mockOptionsManager.Object, nullHttpClient!));
-    Assert.Equal("httpClient", exception.ParamName);
+    var exception = Assert.ThrowsExactly<ArgumentNullException>(() => new AzureTranslatorBroker(mockOptionsManager.Object, nullHttpClient!));
+    Assert.AreEqual("httpClient", exception.ParamName);
   }
 
   /// <summary>
   /// Verifies that the broker can be instantiated with valid options manager.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Constructor_ShouldSucceed_WhenOptionsManagerIsValid()
   {
     // Given & When
     var broker = new AzureTranslatorBroker(mockOptionsManager.Object);
 
     // Then
-    Assert.NotNull(broker);
+    Assert.IsNotNull(broker);
     mockOptionsManager.Verify(om => om.GetApplicationOptions(), Times.Once);
   }
 
   /// <summary>
   /// Verifies that the broker can be instantiated with valid options manager and HTTP client.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void ConstructorWithHttpClient_ShouldSucceed_WhenDependenciesAreValid()
   {
     // Given
@@ -121,7 +122,7 @@ public sealed class TranslatorBrokerTests : IDisposable
     var broker = new AzureTranslatorBroker(mockOptionsManager.Object, httpClient);
 
     // Then
-    Assert.NotNull(broker);
+    Assert.IsNotNull(broker);
     mockOptionsManager.Verify(om => om.GetApplicationOptions(), Times.Once);
   }
 
@@ -133,11 +134,11 @@ public sealed class TranslatorBrokerTests : IDisposable
   /// Verifies that Translate method accepts various BCP-47 language codes.
   /// This test verifies that the broker can be created for use with different target languages.
   /// </summary>
-  [Theory]
-  [InlineData("en")]
-  [InlineData("ro")]
-  [InlineData("de")]
-  [InlineData("fr")]
+  [TestMethod]
+  [DataRow("en")]
+  [DataRow("ro")]
+  [DataRow("de")]
+  [DataRow("fr")]
   public void Translate_ShouldAcceptVariousLanguageCodes(string languageCode)
   {
     // Given - verifying the broker accepts different language codes
@@ -145,14 +146,14 @@ public sealed class TranslatorBrokerTests : IDisposable
     var broker = new AzureTranslatorBroker(mockOptionsManager.Object, httpClient);
 
     // Then - broker should be created and language code should be valid BCP-47 format
-    Assert.NotNull(broker);
-    Assert.Matches(@"^[a-z]{2}(-[A-Z]{2})?$", languageCode);
+    Assert.IsNotNull(broker);
+    Assert.MatchesRegex(@"^[a-z]{2}(-[A-Z]{2})?$", languageCode);
   }
 
   /// <summary>
   /// Verifies that the default language parameter is "en" when not specified.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Translate_ShouldUseEnglishAsDefaultLanguage()
   {
     // This is verified by the interface contract - ITranslatorBroker.Translate has language = "en" as default
@@ -161,7 +162,7 @@ public sealed class TranslatorBrokerTests : IDisposable
     var broker = new AzureTranslatorBroker(mockOptionsManager.Object, httpClient);
 
     // Verify the broker implements ITranslatorBroker
-    Assert.IsAssignableFrom<ITranslatorBroker>(broker);
+    Assert.IsInstanceOfType<ITranslatorBroker>(broker);
   }
 
   #endregion
@@ -171,7 +172,7 @@ public sealed class TranslatorBrokerTests : IDisposable
   /// <summary>
   /// Verifies that DetectLanguage method exists and broker implements interface correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void DetectLanguage_ShouldBeImplemented()
   {
     // Given
@@ -179,8 +180,8 @@ public sealed class TranslatorBrokerTests : IDisposable
     var broker = new AzureTranslatorBroker(mockOptionsManager.Object, httpClient);
 
     // Then - broker should implement ITranslatorBroker with DetectLanguage method
-    Assert.IsAssignableFrom<ITranslatorBroker>(broker);
-    Assert.NotNull(broker);
+    Assert.IsInstanceOfType<ITranslatorBroker>(broker);
+    Assert.IsNotNull(broker);
   }
 
   #endregion
@@ -190,7 +191,7 @@ public sealed class TranslatorBrokerTests : IDisposable
   /// <summary>
   /// Verifies that broker can be constructed with custom HTTP pipeline for testing.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Constructor_ShouldAllowCustomHttpPipeline_ForTestingPurposes()
   {
     // Given
@@ -215,13 +216,13 @@ public sealed class TranslatorBrokerTests : IDisposable
     var broker = new AzureTranslatorBroker(mockOptionsManager.Object, httpClient);
 
     // Then
-    Assert.NotNull(broker);
+    Assert.IsNotNull(broker);
   }
 
   /// <summary>
   /// Verifies that options are correctly retrieved from the options manager during construction.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Constructor_ShouldRetrieveOptionsFromManager()
   {
     // Given
@@ -235,7 +236,7 @@ public sealed class TranslatorBrokerTests : IDisposable
     var broker = new AzureTranslatorBroker(mockOptionsManager.Object, httpClient);
 
     // Then
-    Assert.Equal(1, callCount);
+    Assert.AreEqual(1, callCount);
     mockOptionsManager.Verify(om => om.GetApplicationOptions(), Times.Once);
   }
 

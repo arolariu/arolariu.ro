@@ -1,6 +1,6 @@
 ---
 name: ddd-service
-description: 'Scaffolds a complete DDD service following The Standard architecture with Broker, Foundation Service, Processing/Orchestration layers, partial class separation, TryCatch pattern, OpenTelemetry tracing, and xUnit tests for the arolariu.ro backend.'
+description: 'Scaffolds a complete DDD service following The Standard architecture with Broker, Foundation Service, Processing/Orchestration layers, partial class separation, TryCatch pattern, OpenTelemetry tracing, and MSTest tests for the arolariu.ro backend.'
 lastReviewed: 2026-05-08
 ---
 
@@ -136,6 +136,7 @@ public static IServiceCollection Add[Domain]Services(this IServiceCollection ser
 
 **`tests/[Domain]/Services/Foundation/[Entity]StorageFoundationServiceTests.cs`**:
 ```csharp
+[TestClass]
 public class [Entity]StorageFoundationServiceTests
 {
     private readonly Mock<I[Entity]NoSqlBroker> _mockBroker = new();
@@ -148,7 +149,7 @@ public class [Entity]StorageFoundationServiceTests
             new NullLoggerFactory());
     }
 
-    [Fact]
+    [TestMethod]
     public async Task Create[Entity]Object_ValidInput_CreatesSuccessfully()
     {
         // Arrange
@@ -159,11 +160,11 @@ public class [Entity]StorageFoundationServiceTests
         _mockBroker.Verify(b => b.Create[Entity]Async(entity), Times.Once);
     }
 
-    [Fact]
+    [TestMethod]
     public async Task Create[Entity]Object_NullInput_ThrowsValidationException()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<[Entity]ValidationException>(
+        await Assert.ThrowsExactlyAsync<[Entity]ValidationException>(
             () => _service.Create[Entity]Object(null!));
     }
 }
@@ -179,7 +180,7 @@ public class [Entity]StorageFoundationServiceTests
 - [ ] OpenTelemetry activity spans on all methods
 - [ ] XML documentation on all public APIs
 - [ ] DI registration in Extensions class
-- [ ] xUnit tests with 85%+ coverage
+- [ ] MSTest tests with 85%+ coverage
 - [ ] `dotnet build` passes with no warnings
 - [ ] Max 2-3 dependencies (Florance Pattern)
 

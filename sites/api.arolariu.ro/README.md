@@ -49,7 +49,7 @@ The codebase adheres to SOLID design patterns:
 - **API Pattern**: ASP.NET Core Minimal APIs
 - **Dependency Injection**: Built-in DI container
 - **Documentation**: OpenAPI/Swagger with Swashbuckle
-- **Testing**: xUnit with comprehensive unit and integration tests
+- **Testing**: MSTest with comprehensive unit and integration tests
 - **Logging**: Microsoft.Extensions.Logging with structured logging
 - **Telemetry**: OpenTelemetry for observability
 - **Health Checks**: Built-in health check middleware
@@ -158,7 +158,7 @@ dotnet test --collect:"XPlat Code Coverage"
 
 Example:
 ```csharp
-[Fact(DisplayName = "Invoice creation succeeds with valid data")]
+[TestMethod]
 public void CreateInvoice_WithValidData_ReturnsSuccessResult()
 {
     // Arrange
@@ -168,8 +168,8 @@ public void CreateInvoice_WithValidData_ReturnsSuccessResult()
     var result = _invoiceService.Create(invoice);
     
     // Assert
-    Assert.NotNull(result);
-    Assert.True(result.IsSuccess);
+    Assert.IsNotNull(result);
+    Assert.IsTrue(result.IsSuccess);
 }
 ```
 
@@ -424,7 +424,7 @@ Required environment variables:
 - [Domain-Driven Design](https://martinfowler.com/tags/domain%20driven%20design.html)
 - [SOLID Principles](https://en.wikipedia.org/wiki/SOLID)
 - [ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/)
-- [xUnit Testing](https://xunit.net/)
+- [MSTest Documentation](https://learn.microsoft.com/dotnet/core/testing/unit-testing-mstest-intro)
 
 ---
 

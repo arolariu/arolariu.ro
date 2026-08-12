@@ -80,7 +80,7 @@ public async Task<ProcessedData> ProcessAsync(InputData data)
 
 ```csharp
 // ✅ CORRECT - No ConfigureAwait in tests
-[Fact]
+[TestMethod]
 public async Task GetInvoice_ValidId_ReturnsInvoice()
 {
     // Arrange
@@ -92,18 +92,18 @@ public async Task GetInvoice_ValidId_ReturnsInvoice()
     var result = await _service.GetInvoiceAsync(Guid.NewGuid());
 
     // Assert
-    Assert.NotNull(result);
-    Assert.Equal(expectedInvoice.id, result.id);
+    Assert.IsNotNull(result);
+    Assert.AreEqual(expectedInvoice.id, result.id);
 }
 ```
 
 ```csharp
 // ❌ INCORRECT - ConfigureAwait in test bypasses parallelization
-[Fact]
+[TestMethod]
 public async Task GetInvoice_ValidId_ReturnsInvoice()
 {
     var result = await _service.GetInvoiceAsync(Guid.NewGuid()).ConfigureAwait(false);
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
 }
 ```
 
@@ -182,7 +182,7 @@ private async Task<Invoice> TryCatchAsync(ReturningInvoiceFunction function)
 
 ```csharp
 // ✅ CORRECT - Integration tests can omit ConfigureAwait
-[Fact]
+[TestMethod]
 public async Task EndToEnd_CreateAndRetrieveInvoice_Success()
 {
     // Arrange
@@ -279,7 +279,7 @@ await orchestrationService.CreateInvoiceObject(invoice, null);
 - [ConfigureAwait FAQ](https://devblogs.microsoft.com/dotnet/configureawait-faq/)
 - [CA2007: Do not directly await a Task](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
 - [Async/Await Best Practices](https://learn.microsoft.com/en-us/archive/msdn-magazine/2013/march/async-await-best-practices-in-asynchronous-programming)
-- [Test Parallelization in xUnit](https://xunit.net/docs/running-tests-in-parallel)
+- [MSTest Parallel Test Execution](https://learn.microsoft.com/dotnet/core/testing/unit-testing-parallel-execution)
 
 ---
 

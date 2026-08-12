@@ -205,10 +205,6 @@ dotnet_naming_style.begins_with_i.capitalization = pascal_case
 dotnet_naming_style.pascal_case.capitalization = pascal_case
 
 # Suppress or configure specific analyzer diagnostics
-dotnet_diagnostic.xUnit2025.severity = warning
-dotnet_diagnostic.xUnit2024.severity = warning
-dotnet_diagnostic.xUnit2023.severity = warning
-dotnet_diagnostic.xUnit2022.severity = warning
 dotnet_diagnostic.IDE0160.severity = warning
 dotnet_diagnostic.IDE0051.severity = suggestion
 dotnet_diagnostic.IDE0052.severity = warning

@@ -15,13 +15,14 @@ using Microsoft.Extensions.Logging;
 
 using Moq;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Comprehensive unit tests for <see cref="InvoiceStorageFoundationService"/> targeting 95%+ code coverage.
 /// Tests validate CRUD operations, exception handling, validation, and broker coordination.
 /// Method naming follows MethodName_Condition_ExpectedResult pattern per repository standards.
 /// </summary>
+[TestClass]
 public sealed class InvoiceStorageFoundationServiceTests
 {
   private readonly Mock<IInvoiceNoSqlBroker> mockBroker;
@@ -52,15 +53,15 @@ public sealed class InvoiceStorageFoundationServiceTests
   /// <summary>
   /// Verifies constructor throws ArgumentNullException when broker is null.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Constructor_NullBroker_ThrowsArgumentNullException() =>
-      Assert.Throws<ArgumentNullException>(() =>
+      Assert.ThrowsExactly<ArgumentNullException>(() =>
           new InvoiceStorageFoundationService(null!, mockLoggerFactory.Object));
 
   /// <summary>
   /// Validates successful instantiation with all valid dependencies.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Constructor_ValidDependencies_CreatesInstance()
   {
     // Arrange & Act
@@ -69,7 +70,7 @@ public sealed class InvoiceStorageFoundationServiceTests
         mockLoggerFactory.Object);
 
     // Assert
-    Assert.NotNull(svc);
+    Assert.IsNotNull(svc);
   }
 
   #endregion
@@ -79,7 +80,7 @@ public sealed class InvoiceStorageFoundationServiceTests
   /// <summary>
   /// Validates successful invoice creation through foundation layer.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateInvoiceObject_ValidInvoice_CallsBrokerSuccessfully()
   {
     // Arrange
@@ -100,7 +101,7 @@ public sealed class InvoiceStorageFoundationServiceTests
   /// <summary>
   /// Ensures creation succeeds without user identifier.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateInvoiceObject_NoUserIdentifier_CreatesSuccessfully()
   {
     // Arrange
@@ -120,7 +121,7 @@ public sealed class InvoiceStorageFoundationServiceTests
   /// <summary>
   /// Validates OperationCanceledException during creation is wrapped into foundation dependency exception.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateInvoiceObject_OperationCanceledException_PropagatesOperationCanceledException()
   {
     // Arrange
@@ -131,14 +132,14 @@ public sealed class InvoiceStorageFoundationServiceTests
         .ThrowsAsync(new OperationCanceledException("Operation cancelled"));
 
     // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
-    await Assert.ThrowsAsync<OperationCanceledException>(() =>
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(() =>
         service.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Ensures generic exceptions during creation are wrapped into foundation service exceptions.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateInvoiceObject_GenericException_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -149,15 +150,15 @@ public sealed class InvoiceStorageFoundationServiceTests
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceFoundationServiceException>(() =>
         service.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates multiple invoice creations work in sequence.
   /// </summary>
-  [Theory]
-  [MemberData(nameof(GetInvoiceTestData))]
+  [TestMethod]
+  [DynamicData(nameof(GetInvoiceTestData))]
   public async Task CreateInvoiceObject_MultipleInvoices_AllCreateSuccessfully(Invoice invoice)
   {
     // Arrange
@@ -179,7 +180,7 @@ public sealed class InvoiceStorageFoundationServiceTests
   /// <summary>
   /// Validates successful retrieval of single invoice by identifier.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceObject_ValidIdentifier_ReturnsInvoice()
   {
     // Arrange
@@ -195,15 +196,15 @@ public sealed class InvoiceStorageFoundationServiceTests
     var result = await service.ReadInvoiceObject(invoiceId, userId, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
-    Assert.Equal(expectedInvoice.id, result.id);
+    Assert.IsNotNull(result);
+    Assert.AreEqual(expectedInvoice.id, result.id);
     mockBroker.Verify(b => b.ReadInvoiceAsync(invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
   /// Ensures read operation succeeds without user identifier.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceObject_NoUserIdentifier_ReturnsInvoice()
   {
     // Arrange
@@ -218,7 +219,7 @@ public sealed class InvoiceStorageFoundationServiceTests
     var result = await service.ReadInvoiceObject(invoiceId, null, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
     mockBroker.Verify(b => b.ReadInvoiceAsync(invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);
   }
 
@@ -227,14 +228,14 @@ public sealed class InvoiceStorageFoundationServiceTests
   /// Note: The validation exception class lacks the required constructor for Validator.ValidateAndThrow,
   /// causing a MissingMethodException that falls through to the generic exception handler.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceObject_EmptyGuidIdentifier_ThrowsFoundationServiceException()
   {
     // Arrange
     var emptyId = Guid.Empty;
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceFoundationServiceException>(() =>
         service.ReadInvoiceObject(emptyId, null, CancellationToken.None));
   }
 
@@ -243,21 +244,21 @@ public sealed class InvoiceStorageFoundationServiceTests
   /// Note: The validation exception class lacks the required constructor for Validator.ValidateAndThrow,
   /// causing a MissingMethodException that falls through to the generic exception handler.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceObject_DefaultGuidIdentifier_ThrowsFoundationServiceException()
   {
     // Arrange
     var defaultId = default(Guid);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceFoundationServiceException>(() =>
         service.ReadInvoiceObject(defaultId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates OperationCanceledException during read is wrapped into foundation dependency exception.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceObject_OperationCanceledException_PropagatesOperationCanceledException()
   {
     // Arrange
@@ -268,14 +269,14 @@ public sealed class InvoiceStorageFoundationServiceTests
         .ThrowsAsync(new OperationCanceledException("Cancelled"));
 
     // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
-    await Assert.ThrowsAsync<OperationCanceledException>(() =>
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(() =>
         service.ReadInvoiceObject(invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Ensures generic exceptions during read are wrapped into foundation service exceptions.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceObject_GenericException_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -286,7 +287,7 @@ public sealed class InvoiceStorageFoundationServiceTests
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceFoundationServiceException>(() =>
         service.ReadInvoiceObject(invoiceId, null, CancellationToken.None));
   }
 
@@ -297,7 +298,7 @@ public sealed class InvoiceStorageFoundationServiceTests
   /// <summary>
   /// Validates successful retrieval of all invoices for a user.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadAllInvoiceObjects_WithUserIdentifier_ReturnsInvoiceCollection()
   {
     // Arrange
@@ -312,15 +313,15 @@ public sealed class InvoiceStorageFoundationServiceTests
     var result = await service.ReadAllInvoiceObjects(userId, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
-    Assert.Equal(5, ((List<Invoice>)result).Count);
+    Assert.IsNotNull(result);
+    Assert.AreEqual(5, ((List<Invoice>)result).Count);
     mockBroker.Verify(b => b.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
   /// Validates empty collection is returned when no invoices exist.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadAllInvoiceObjects_NoInvoices_ReturnsEmptyCollection()
   {
     // Arrange
@@ -335,14 +336,14 @@ public sealed class InvoiceStorageFoundationServiceTests
     var result = await service.ReadAllInvoiceObjects(userId, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
-    Assert.Empty(result);
+    Assert.IsNotNull(result);
+    Assert.IsEmpty(result);
   }
 
   /// <summary>
   /// Validates OperationCanceledException during bulk read is wrapped appropriately.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadAllInvoiceObjects_OperationCanceledException_PropagatesOperationCanceledException()
   {
     // Arrange
@@ -353,14 +354,14 @@ public sealed class InvoiceStorageFoundationServiceTests
         .ThrowsAsync(new OperationCanceledException("Query timeout"));
 
     // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
-    await Assert.ThrowsAsync<OperationCanceledException>(() =>
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(() =>
         service.ReadAllInvoiceObjects(userId, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates generic exceptions during bulk read propagate as foundation service exceptions.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadAllInvoiceObjects_GenericException_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -371,7 +372,7 @@ public sealed class InvoiceStorageFoundationServiceTests
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceFoundationServiceException>(() =>
         service.ReadAllInvoiceObjects(userId, CancellationToken.None));
   }
 
@@ -382,7 +383,7 @@ public sealed class InvoiceStorageFoundationServiceTests
   /// <summary>
   /// Validates successful invoice update through foundation layer.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateInvoiceObject_ValidUpdate_ReturnsUpdatedInvoice()
   {
     // Arrange
@@ -398,15 +399,15 @@ public sealed class InvoiceStorageFoundationServiceTests
     var result = await service.UpdateInvoiceObject(updatedInvoice, invoiceId, userId, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
-    Assert.Equal(updatedInvoice.id, result.id);
+    Assert.IsNotNull(result);
+    Assert.AreEqual(updatedInvoice.id, result.id);
     mockBroker.Verify(b => b.UpdateInvoiceAsync(invoiceId, updatedInvoice, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
   /// Ensures update succeeds without user identifier.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateInvoiceObject_NoUserIdentifier_UpdatesSuccessfully()
   {
     // Arrange
@@ -421,7 +422,7 @@ public sealed class InvoiceStorageFoundationServiceTests
     var result = await service.UpdateInvoiceObject(updatedInvoice, invoiceId, null, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
     mockBroker.Verify(b => b.UpdateInvoiceAsync(invoiceId, updatedInvoice, It.IsAny<CancellationToken>()), Times.Once);
   }
 
@@ -430,7 +431,7 @@ public sealed class InvoiceStorageFoundationServiceTests
   /// Note: The validation exception class lacks the required constructor for Validator.ValidateAndThrow,
   /// causing a MissingMethodException that falls through to the generic exception handler.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateInvoiceObject_EmptyGuidIdentifier_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -438,14 +439,14 @@ public sealed class InvoiceStorageFoundationServiceTests
     var updatedInvoice = InvoiceBuilder.CreateRandomInvoice();
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceFoundationServiceException>(() =>
         service.UpdateInvoiceObject(updatedInvoice, emptyId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Ensures generic exceptions during update are wrapped into foundation service exceptions.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateInvoiceObject_GenericException_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -457,7 +458,7 @@ public sealed class InvoiceStorageFoundationServiceTests
         .ThrowsAsync(new InvalidOperationException("Update failed"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceFoundationServiceException>(() =>
         service.UpdateInvoiceObject(updatedInvoice, invoiceId, null, CancellationToken.None));
   }
 
@@ -468,7 +469,7 @@ public sealed class InvoiceStorageFoundationServiceTests
   /// <summary>
   /// Validates successful invoice deletion through foundation layer.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteInvoiceObject_ValidIdentifier_DeletesSuccessfully()
   {
     // Arrange
@@ -489,7 +490,7 @@ public sealed class InvoiceStorageFoundationServiceTests
   /// <summary>
   /// Ensures deletion succeeds without user identifier.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteInvoiceObject_NoUserIdentifier_DeletesSuccessfully()
   {
     // Arrange
@@ -511,21 +512,21 @@ public sealed class InvoiceStorageFoundationServiceTests
   /// Note: The validation exception class lacks the required constructor for Validator.ValidateAndThrow,
   /// causing a MissingMethodException that falls through to the generic exception handler.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteInvoiceObject_EmptyGuidIdentifier_ThrowsFoundationServiceException()
   {
     // Arrange
     var emptyId = Guid.Empty;
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceFoundationServiceException>(() =>
         service.DeleteInvoiceObject(emptyId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates OperationCanceledException during delete is wrapped into foundation dependency exception.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteInvoiceObject_OperationCanceledException_PropagatesOperationCanceledException()
   {
     // Arrange
@@ -536,14 +537,14 @@ public sealed class InvoiceStorageFoundationServiceTests
         .ThrowsAsync(new OperationCanceledException("Cancelled"));
 
     // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
-    await Assert.ThrowsAsync<OperationCanceledException>(() =>
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(() =>
         service.DeleteInvoiceObject(invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Ensures generic exceptions during delete are wrapped into foundation service exceptions.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteInvoiceObject_GenericException_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -554,14 +555,14 @@ public sealed class InvoiceStorageFoundationServiceTests
         .ThrowsAsync(new InvalidOperationException("Deletion failed"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceFoundationServiceException>(() =>
         service.DeleteInvoiceObject(invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates idempotency of delete operation (repeated calls succeed).
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteInvoiceObject_IdempotentCalls_SucceedMultipleTimes()
   {
     // Arrange
@@ -587,7 +588,7 @@ public sealed class InvoiceStorageFoundationServiceTests
   /// <summary>
   /// Provides theory data containing several randomized invoices for parameterized tests.
   /// </summary>
-  public static TheoryData<Invoice> GetInvoiceTestData() => InvoiceBuilder.GetInvoiceTheoryData();
+  public static IEnumerable<object[]> GetInvoiceTestData() => InvoiceBuilder.GetInvoiceTheoryData();
 
   #endregion
 }

@@ -35,7 +35,7 @@ lastReviewed: 2026-05-08
 - Write a test named `MethodOrComponent_BugCondition_ExpectedBehavior`
 - The test MUST fail without the fix and pass with it
 - Frontend: Vitest + Testing Library
-- Backend: xUnit with AAA pattern
+- Backend: MSTest with AAA pattern
 
 ### 5. Verify
 ```bash

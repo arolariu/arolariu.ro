@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Integration-style tests asserting that the ASP.NET Core pipeline wiring of
@@ -40,6 +40,7 @@ using Xunit;
 /// standardised ProblemDetails contract.
 /// </para>
 /// </remarks>
+[TestClass]
 public sealed class ExceptionHandlerPipelineTests
 {
   /// <summary>
@@ -109,7 +110,7 @@ public sealed class ExceptionHandlerPipelineTests
   /// pipeline wiring exists to guarantee — endpoint try/catch blocks cannot see these
   /// faults because they occur before the handler runs.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task MalformedJsonBody_ReturnsProblemDetails_NotPlainText()
   {
     // Arrange
@@ -138,7 +139,7 @@ public sealed class ExceptionHandlerPipelineTests
       // IProblemDetailsService does not emit.
       Assert.Contains("api.arolariu.ro/problems", body, StringComparison.Ordinal);
 
-      Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+      Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
     }
   }
 }

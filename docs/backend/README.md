@@ -11,7 +11,7 @@ The backend is built using:
 - **Architecture**: Modular Monolith
 - **Design Patterns**: Domain-Driven Design (DDD) + SOLID principles
 - **API Style**: ASP.NET Core Minimal APIs
-- **Testing**: xUnit
+- **Testing**: MSTest
 
 ## Architecture
 
@@ -105,7 +105,7 @@ Practical, concise guides for rapid development:
 
 ### Testing
 
-- Unit testing with xUnit
+- Unit testing with MSTest
 - Integration testing patterns
 - Test naming conventions: `MethodName_Condition_ExpectedResult()`
 - Test coverage standards (85%+)

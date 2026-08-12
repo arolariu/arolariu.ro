@@ -72,7 +72,7 @@ You are an AI assistant specialized in Domain-Driven Design (DDD), The Standard 
 | **Authentication** | ASP.NET Identity + JWT Bearer | - |
 | **Observability** | OpenTelemetry | pinned in `Directory.Packages.props` |
 | **AI Services** | Azure OpenAI, Document Intelligence | - |
-| **Testing** | xUnit, MSTest, Moq | - |
+| **Testing** | MSTest, Moq | - |
 
 ---
 
@@ -550,18 +550,18 @@ tests/
 Pattern: `MethodName_Condition_ExpectedResult`
 
 ```csharp
-[Fact]
+[TestMethod]
 public void Constructor_NullAnalysisService_ThrowsArgumentNullException()
 {
     // Arrange
     IInvoiceAnalysisOrchestrationService? nullService = null;
     
     // Act & Assert
-    Assert.Throws<ArgumentNullException>(() => 
+    Assert.ThrowsExactly<ArgumentNullException>(() => 
         new InvoiceProcessingService(nullService!));
 }
 
-[Fact]
+[TestMethod]
 public async Task AnalyzeInvoiceWithOptions_ValidInput_ExecutesCompleteWorkflow()
 {
     // Arrange
@@ -596,8 +596,8 @@ public static class InvoiceBuilder
 
 | Package | Purpose |
 |---------|---------|
-| `xunit` | Primary test framework |
-| `MSTest` | Alternative framework |
+| `MSTest.TestFramework` | Primary test framework |
+| `MSTest.TestAdapter` | Test discovery and VSTest execution adapter |
 | `Moq` | Mocking |
 | `coverlet.collector` | Code coverage |
 | `Microsoft.EntityFrameworkCore.InMemory` | In-memory database testing |

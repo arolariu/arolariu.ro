@@ -9,13 +9,14 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.O
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Comprehensive unit tests for all Invoice exception classes.
 /// Tests validate all constructors, serialization, and inheritance.
 /// Method naming follows MethodName_Condition_ExpectedResult pattern per repository standards.
 /// </summary>
+[TestClass]
 public sealed class InvoiceExceptionTests
 {
   #region InvoiceIdNotSetException Tests
@@ -23,22 +24,22 @@ public sealed class InvoiceExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceIdNotSetException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new InvoiceIdNotSetException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<InvoiceIdNotSetException>(exception);
-    Assert.IsAssignableFrom<Exception>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<InvoiceIdNotSetException>(exception);
+    Assert.IsInstanceOfType<Exception>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets message and inner exception.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceIdNotSetException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -48,23 +49,23 @@ public sealed class InvoiceExceptionTests
     var exception = new InvoiceIdNotSetException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Invoice identifier not set Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Invoice identifier not set Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   /// <summary>
   /// Verifies constructor with null inner exception works.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceIdNotSetException_NullInnerException_CreatesInstance()
   {
     // Act
     var exception = new InvoiceIdNotSetException(null!);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Null(exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.IsNull(exception.InnerException);
   }
 
   #endregion
@@ -74,21 +75,21 @@ public sealed class InvoiceExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceDescriptionNotSetException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new InvoiceDescriptionNotSetException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<InvoiceDescriptionNotSetException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<InvoiceDescriptionNotSetException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceDescriptionNotSetException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -98,9 +99,9 @@ public sealed class InvoiceExceptionTests
     var exception = new InvoiceDescriptionNotSetException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Invoice description not set Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Invoice description not set Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -110,21 +111,21 @@ public sealed class InvoiceExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoicePaymentInformationNotCorrectException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new InvoicePaymentInformationNotCorrectException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<InvoicePaymentInformationNotCorrectException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<InvoicePaymentInformationNotCorrectException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoicePaymentInformationNotCorrectException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -134,9 +135,9 @@ public sealed class InvoiceExceptionTests
     var exception = new InvoicePaymentInformationNotCorrectException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Invoice payment information not correct Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Invoice payment information not correct Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -146,21 +147,21 @@ public sealed class InvoiceExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoicePhotoLocationNotCorrectException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new InvoicePhotoLocationNotCorrectException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<InvoicePhotoLocationNotCorrectException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<InvoicePhotoLocationNotCorrectException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoicePhotoLocationNotCorrectException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -170,9 +171,9 @@ public sealed class InvoiceExceptionTests
     var exception = new InvoicePhotoLocationNotCorrectException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Invoice photo location not correct Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Invoice photo location not correct Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -182,21 +183,21 @@ public sealed class InvoiceExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceTimeInformationNotCorrectException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new InvoiceTimeInformationNotCorrectException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<InvoiceTimeInformationNotCorrectException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<InvoiceTimeInformationNotCorrectException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceTimeInformationNotCorrectException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -206,9 +207,9 @@ public sealed class InvoiceExceptionTests
     var exception = new InvoiceTimeInformationNotCorrectException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Invoice time information not correct Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Invoice time information not correct Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -218,21 +219,21 @@ public sealed class InvoiceExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceFoundationValidationException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new InvoiceFoundationValidationException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<InvoiceFoundationValidationException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<InvoiceFoundationValidationException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceFoundationValidationException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -242,15 +243,15 @@ public sealed class InvoiceExceptionTests
     var exception = new InvoiceFoundationValidationException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Invoice Validation Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Invoice Validation Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   /// <summary>
   /// Verifies constructor with nested inner exceptions preserves exception chain.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceFoundationValidationException_NestedInnerExceptions_PreservesExceptionChain()
   {
     // Arrange
@@ -261,9 +262,9 @@ public sealed class InvoiceExceptionTests
     var exception = new InvoiceFoundationValidationException(innerException);
 
     // Assert
-    Assert.NotNull(exception.InnerException);
-    Assert.NotNull(exception.InnerException.InnerException);
-    Assert.IsType<ArgumentException>(exception.InnerException.InnerException);
+    Assert.IsNotNull(exception.InnerException);
+    Assert.IsNotNull(exception.InnerException.InnerException);
+    Assert.IsExactInstanceOfType<ArgumentException>(exception.InnerException.InnerException);
   }
 
   #endregion
@@ -273,21 +274,21 @@ public sealed class InvoiceExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceFoundationDependencyException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new InvoiceFoundationDependencyException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<InvoiceFoundationDependencyException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<InvoiceFoundationDependencyException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceFoundationDependencyException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -297,9 +298,9 @@ public sealed class InvoiceExceptionTests
     var exception = new InvoiceFoundationDependencyException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Invoice Dependency Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Invoice Dependency Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -309,21 +310,21 @@ public sealed class InvoiceExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceFoundationDependencyValidationException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new InvoiceFoundationDependencyValidationException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<InvoiceFoundationDependencyValidationException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<InvoiceFoundationDependencyValidationException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceFoundationDependencyValidationException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -333,9 +334,9 @@ public sealed class InvoiceExceptionTests
     var exception = new InvoiceFoundationDependencyValidationException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Invoice Dependency Validation Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Invoice Dependency Validation Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -345,21 +346,21 @@ public sealed class InvoiceExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceFoundationServiceException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new InvoiceFoundationServiceException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<InvoiceFoundationServiceException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<InvoiceFoundationServiceException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceFoundationServiceException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -369,9 +370,9 @@ public sealed class InvoiceExceptionTests
     var exception = new InvoiceFoundationServiceException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Invoice Service Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Invoice Service Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -381,21 +382,21 @@ public sealed class InvoiceExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceOrchestrationValidationException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new InvoiceOrchestrationValidationException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<InvoiceOrchestrationValidationException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<InvoiceOrchestrationValidationException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceOrchestrationValidationException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -405,9 +406,9 @@ public sealed class InvoiceExceptionTests
     var exception = new InvoiceOrchestrationValidationException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Invoice Orchestration Validation Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Invoice Orchestration Validation Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -417,21 +418,21 @@ public sealed class InvoiceExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceOrchestrationDependencyException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new InvoiceOrchestrationDependencyException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<InvoiceOrchestrationDependencyException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<InvoiceOrchestrationDependencyException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceOrchestrationDependencyException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -441,9 +442,9 @@ public sealed class InvoiceExceptionTests
     var exception = new InvoiceOrchestrationDependencyException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Invoice Orchestration Dependency Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Invoice Orchestration Dependency Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -453,21 +454,21 @@ public sealed class InvoiceExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceOrchestrationDependencyValidationException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new InvoiceOrchestrationDependencyValidationException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<InvoiceOrchestrationDependencyValidationException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<InvoiceOrchestrationDependencyValidationException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceOrchestrationDependencyValidationException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -477,9 +478,9 @@ public sealed class InvoiceExceptionTests
     var exception = new InvoiceOrchestrationDependencyValidationException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Invoice Orchestration Dependency Validation Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Invoice Orchestration Dependency Validation Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -489,21 +490,21 @@ public sealed class InvoiceExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceOrchestrationServiceException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new InvoiceOrchestrationServiceException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<InvoiceOrchestrationServiceException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<InvoiceOrchestrationServiceException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceOrchestrationServiceException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -513,9 +514,9 @@ public sealed class InvoiceExceptionTests
     var exception = new InvoiceOrchestrationServiceException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Invoice Orchestration Service Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Invoice Orchestration Service Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -525,21 +526,21 @@ public sealed class InvoiceExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceProcessingServiceValidationException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new InvoiceProcessingServiceValidationException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<InvoiceProcessingServiceValidationException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<InvoiceProcessingServiceValidationException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceProcessingServiceValidationException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -549,9 +550,9 @@ public sealed class InvoiceExceptionTests
     var exception = new InvoiceProcessingServiceValidationException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Invoice Processing Validation Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Invoice Processing Validation Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -561,21 +562,21 @@ public sealed class InvoiceExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceProcessingServiceDependencyException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new InvoiceProcessingServiceDependencyException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<InvoiceProcessingServiceDependencyException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<InvoiceProcessingServiceDependencyException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceProcessingServiceDependencyException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -585,9 +586,9 @@ public sealed class InvoiceExceptionTests
     var exception = new InvoiceProcessingServiceDependencyException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Invoice Processing Dependency Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Invoice Processing Dependency Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -597,21 +598,21 @@ public sealed class InvoiceExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceProcessingServiceDependencyValidationException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new InvoiceProcessingServiceDependencyValidationException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<InvoiceProcessingServiceDependencyValidationException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<InvoiceProcessingServiceDependencyValidationException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceProcessingServiceDependencyValidationException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -621,9 +622,9 @@ public sealed class InvoiceExceptionTests
     var exception = new InvoiceProcessingServiceDependencyValidationException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Invoice Processing Dependency Validation Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Invoice Processing Dependency Validation Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -633,21 +634,21 @@ public sealed class InvoiceExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceProcessingServiceException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new InvoiceProcessingServiceException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<InvoiceProcessingServiceException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<InvoiceProcessingServiceException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void InvoiceProcessingServiceException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -657,9 +658,9 @@ public sealed class InvoiceExceptionTests
     var exception = new InvoiceProcessingServiceException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Invoice Processing Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Invoice Processing Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -669,85 +670,85 @@ public sealed class InvoiceExceptionTests
   /// <summary>
   /// Verifies all inner exceptions inherit from Exception base class.
   /// </summary>
-  [Theory]
-  [InlineData(typeof(InvoiceIdNotSetException))]
-  [InlineData(typeof(InvoiceDescriptionNotSetException))]
-  [InlineData(typeof(InvoicePaymentInformationNotCorrectException))]
-  [InlineData(typeof(InvoicePhotoLocationNotCorrectException))]
-  [InlineData(typeof(InvoiceTimeInformationNotCorrectException))]
+  [TestMethod]
+  [DataRow(typeof(InvoiceIdNotSetException))]
+  [DataRow(typeof(InvoiceDescriptionNotSetException))]
+  [DataRow(typeof(InvoicePaymentInformationNotCorrectException))]
+  [DataRow(typeof(InvoicePhotoLocationNotCorrectException))]
+  [DataRow(typeof(InvoiceTimeInformationNotCorrectException))]
   public void InnerExceptions_InheritFromException_TypeVerification(Type exceptionType)
   {
     // Assert
-    Assert.True(typeof(Exception).IsAssignableFrom(exceptionType));
+    Assert.IsTrue(typeof(Exception).IsAssignableFrom(exceptionType));
   }
 
   /// <summary>
   /// Verifies all foundation exceptions inherit from Exception base class.
   /// </summary>
-  [Theory]
-  [InlineData(typeof(InvoiceFoundationValidationException))]
-  [InlineData(typeof(InvoiceFoundationDependencyException))]
-  [InlineData(typeof(InvoiceFoundationDependencyValidationException))]
-  [InlineData(typeof(InvoiceFoundationServiceException))]
+  [TestMethod]
+  [DataRow(typeof(InvoiceFoundationValidationException))]
+  [DataRow(typeof(InvoiceFoundationDependencyException))]
+  [DataRow(typeof(InvoiceFoundationDependencyValidationException))]
+  [DataRow(typeof(InvoiceFoundationServiceException))]
   public void FoundationExceptions_InheritFromException_TypeVerification(Type exceptionType)
   {
     // Assert
-    Assert.True(typeof(Exception).IsAssignableFrom(exceptionType));
+    Assert.IsTrue(typeof(Exception).IsAssignableFrom(exceptionType));
   }
 
   /// <summary>
   /// Verifies all orchestration exceptions inherit from Exception base class.
   /// </summary>
-  [Theory]
-  [InlineData(typeof(InvoiceOrchestrationValidationException))]
-  [InlineData(typeof(InvoiceOrchestrationDependencyException))]
-  [InlineData(typeof(InvoiceOrchestrationDependencyValidationException))]
-  [InlineData(typeof(InvoiceOrchestrationServiceException))]
+  [TestMethod]
+  [DataRow(typeof(InvoiceOrchestrationValidationException))]
+  [DataRow(typeof(InvoiceOrchestrationDependencyException))]
+  [DataRow(typeof(InvoiceOrchestrationDependencyValidationException))]
+  [DataRow(typeof(InvoiceOrchestrationServiceException))]
   public void OrchestrationExceptions_InheritFromException_TypeVerification(Type exceptionType)
   {
     // Assert
-    Assert.True(typeof(Exception).IsAssignableFrom(exceptionType));
+    Assert.IsTrue(typeof(Exception).IsAssignableFrom(exceptionType));
   }
 
   /// <summary>
   /// Verifies all processing exceptions inherit from Exception base class.
   /// </summary>
-  [Theory]
-  [InlineData(typeof(InvoiceProcessingServiceValidationException))]
-  [InlineData(typeof(InvoiceProcessingServiceDependencyException))]
-  [InlineData(typeof(InvoiceProcessingServiceDependencyValidationException))]
-  [InlineData(typeof(InvoiceProcessingServiceException))]
+  [TestMethod]
+  [DataRow(typeof(InvoiceProcessingServiceValidationException))]
+  [DataRow(typeof(InvoiceProcessingServiceDependencyException))]
+  [DataRow(typeof(InvoiceProcessingServiceDependencyValidationException))]
+  [DataRow(typeof(InvoiceProcessingServiceException))]
   public void ProcessingExceptions_InheritFromException_TypeVerification(Type exceptionType)
   {
     // Assert
-    Assert.True(typeof(Exception).IsAssignableFrom(exceptionType));
+    Assert.IsTrue(typeof(Exception).IsAssignableFrom(exceptionType));
   }
 
   /// <summary>
   /// Verifies all invoice exceptions have the Serializable attribute.
   /// </summary>
-  [Theory]
-  [InlineData(typeof(InvoiceIdNotSetException))]
-  [InlineData(typeof(InvoiceDescriptionNotSetException))]
-  [InlineData(typeof(InvoicePaymentInformationNotCorrectException))]
-  [InlineData(typeof(InvoicePhotoLocationNotCorrectException))]
-  [InlineData(typeof(InvoiceTimeInformationNotCorrectException))]
-  [InlineData(typeof(InvoiceFoundationValidationException))]
-  [InlineData(typeof(InvoiceFoundationDependencyException))]
-  [InlineData(typeof(InvoiceFoundationDependencyValidationException))]
-  [InlineData(typeof(InvoiceFoundationServiceException))]
-  [InlineData(typeof(InvoiceOrchestrationValidationException))]
-  [InlineData(typeof(InvoiceOrchestrationDependencyException))]
-  [InlineData(typeof(InvoiceOrchestrationDependencyValidationException))]
-  [InlineData(typeof(InvoiceOrchestrationServiceException))]
-  [InlineData(typeof(InvoiceProcessingServiceValidationException))]
-  [InlineData(typeof(InvoiceProcessingServiceDependencyException))]
-  [InlineData(typeof(InvoiceProcessingServiceDependencyValidationException))]
-  [InlineData(typeof(InvoiceProcessingServiceException))]
+  [TestMethod]
+  [DataRow(typeof(InvoiceIdNotSetException))]
+  [DataRow(typeof(InvoiceDescriptionNotSetException))]
+  [DataRow(typeof(InvoicePaymentInformationNotCorrectException))]
+  [DataRow(typeof(InvoicePhotoLocationNotCorrectException))]
+  [DataRow(typeof(InvoiceTimeInformationNotCorrectException))]
+  [DataRow(typeof(InvoiceFoundationValidationException))]
+  [DataRow(typeof(InvoiceFoundationDependencyException))]
+  [DataRow(typeof(InvoiceFoundationDependencyValidationException))]
+  [DataRow(typeof(InvoiceFoundationServiceException))]
+  [DataRow(typeof(InvoiceOrchestrationValidationException))]
+  [DataRow(typeof(InvoiceOrchestrationDependencyException))]
+  [DataRow(typeof(InvoiceOrchestrationDependencyValidationException))]
+  [DataRow(typeof(InvoiceOrchestrationServiceException))]
+  [DataRow(typeof(InvoiceProcessingServiceValidationException))]
+  [DataRow(typeof(InvoiceProcessingServiceDependencyException))]
+  [DataRow(typeof(InvoiceProcessingServiceDependencyValidationException))]
+  [DataRow(typeof(InvoiceProcessingServiceException))]
   public void AllExceptions_HaveSerializableAttribute_AttributeVerification(Type exceptionType)
   {
     // Assert
-    Assert.True(Attribute.IsDefined(exceptionType, typeof(SerializableAttribute)));
+    Assert.IsTrue(Attribute.IsDefined(exceptionType, typeof(SerializableAttribute)));
   }
 
   #endregion
@@ -757,7 +758,7 @@ public sealed class InvoiceExceptionTests
   /// <summary>
   /// Verifies full exception chain from Processing to Foundation layers.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void ExceptionChain_ProcessingToFoundation_PreservesFullChain()
   {
     // Arrange
@@ -770,26 +771,26 @@ public sealed class InvoiceExceptionTests
     var processingException = new InvoiceProcessingServiceValidationException(orchestrationException);
 
     // Assert
-    Assert.NotNull(processingException.InnerException);
-    Assert.IsType<InvoiceOrchestrationValidationException>(processingException.InnerException);
+    Assert.IsNotNull(processingException.InnerException);
+    Assert.IsExactInstanceOfType<InvoiceOrchestrationValidationException>(processingException.InnerException);
 
     var orchestration = processingException.InnerException;
-    Assert.NotNull(orchestration.InnerException);
-    Assert.IsType<InvoiceFoundationValidationException>(orchestration.InnerException);
+    Assert.IsNotNull(orchestration.InnerException);
+    Assert.IsExactInstanceOfType<InvoiceFoundationValidationException>(orchestration.InnerException);
 
     var foundation = orchestration.InnerException;
-    Assert.NotNull(foundation.InnerException);
-    Assert.IsType<InvoiceIdNotSetException>(foundation.InnerException);
+    Assert.IsNotNull(foundation.InnerException);
+    Assert.IsExactInstanceOfType<InvoiceIdNotSetException>(foundation.InnerException);
 
     var inner = foundation.InnerException;
-    Assert.NotNull(inner.InnerException);
-    Assert.IsType<ArgumentException>(inner.InnerException);
+    Assert.IsNotNull(inner.InnerException);
+    Assert.IsExactInstanceOfType<ArgumentException>(inner.InnerException);
   }
 
   /// <summary>
   /// Verifies dependency exception chain preservation.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void DependencyExceptionChain_ProcessingToFoundation_PreservesFullChain()
   {
     // Arrange
@@ -801,16 +802,16 @@ public sealed class InvoiceExceptionTests
     var processingException = new InvoiceProcessingServiceDependencyException(orchestrationException);
 
     // Assert
-    Assert.NotNull(processingException.InnerException);
-    Assert.IsType<InvoiceOrchestrationDependencyException>(processingException.InnerException);
+    Assert.IsNotNull(processingException.InnerException);
+    Assert.IsExactInstanceOfType<InvoiceOrchestrationDependencyException>(processingException.InnerException);
 
     var orchestration = processingException.InnerException;
-    Assert.NotNull(orchestration.InnerException);
-    Assert.IsType<InvoiceFoundationDependencyException>(orchestration.InnerException);
+    Assert.IsNotNull(orchestration.InnerException);
+    Assert.IsExactInstanceOfType<InvoiceFoundationDependencyException>(orchestration.InnerException);
 
     var foundation = orchestration.InnerException;
-    Assert.NotNull(foundation.InnerException);
-    Assert.IsType<InvalidOperationException>(foundation.InnerException);
+    Assert.IsNotNull(foundation.InnerException);
+    Assert.IsExactInstanceOfType<InvalidOperationException>(foundation.InnerException);
   }
 
   #endregion

@@ -38,7 +38,7 @@
         "Brokers are thin wrappers ONLY — no business logic",
         "No sideways calls: Foundation↔Foundation forbidden, use Orchestration",
         "XML docs required on all public APIs, TreatWarningsAsErrors enabled",
-        "85%+ test coverage target, xUnit + MSTest"
+        "85%+ test coverage target, MSTest"
       ]
     },
     {

@@ -59,7 +59,7 @@ npm run dev:api              # Dev server via Nx
 4. **Implement with TryCatch pattern:** Wrap operations in exception handling
 5. **Add observability:** OpenTelemetry activity spans for tracing
 6. **Document:** XML documentation on all public APIs
-7. **Test:** xUnit tests with 85%+ coverage target
+7. **Test:** MSTest tests with 85%+ coverage target
 8. **Validate:** `dotnet build` with no warnings (TreatWarningsAsErrors enabled)
 
 ## Project Knowledge
@@ -85,7 +85,7 @@ npm run dev:api              # Dev server via Nx
 | Orchestration Services | `[Domain]/Services/Orchestration/` | Service coordination |
 | Processing Services | `[Domain]/Services/Processing/` | Complex transformations |
 | Endpoints | `[Domain]/Endpoints/` | Minimal API routes |
-| Tests | `sites/api.arolariu.ro/tests/` | xUnit/MSTest tests |
+| Tests | `sites/api.arolariu.ro/tests/` | MSTest tests |
 
 ## The Standard - Layer Hierarchy
 
@@ -213,13 +213,13 @@ public async Task ProcessInvoice(Invoice invoice) { } // No XML docs!
 
 ## Testing Standards
 
-- **Framework:** xUnit (domain tests), MSTest (core tests), Moq (mocking)
+- **Framework:** MSTest, Moq (mocking)
 - **Coverage target:** 85%+
 - **Naming convention:** `MethodName_Condition_ExpectedResult`
 - **Test builders:** Use `InvoiceBuilder.CreateRandomInvoice()` from test utilities
 
 ```csharp
-[Fact]
+[TestMethod]
 public async Task AnalyzeInvoiceWithOptions_ValidInput_ExecutesCompleteWorkflow()
 {
     // Arrange
