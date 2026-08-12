@@ -491,7 +491,7 @@ public async Task CreateInvoice_ShouldCreateActivitySpan()
   await invoiceProcessingService.CreateInvoice(testInvoice);
 
   // Assert
-  Assert.Contains(activities, a => a.DisplayName == nameof(CreateInvoice));
+  Assert.Contains(a => a.DisplayName == nameof(CreateInvoice), activities);
 }
 ```
 
