@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
@@ -54,6 +55,7 @@ internal sealed class MerchantResolutionHarness : IDisposable
 
     var storageService = new MerchantStorageFoundationService(
       broker,
+      new Mock<ITaxonomyBroker>().Object,
       loggerFactory);
 
     Service = new MerchantOrchestrationService(

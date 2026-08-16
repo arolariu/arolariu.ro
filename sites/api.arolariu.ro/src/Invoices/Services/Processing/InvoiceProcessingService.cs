@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
-using arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
 
@@ -46,32 +45,6 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
     logger = loggerFactory.CreateLogger<IInvoiceProcessingService>();
   }
 
-  #region Analyze Invoice API
-  /// <inheritdoc/>
-  public async Task AnalyzeInvoice(AnalysisOptions options, Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
-  await TryCatchAsync(async () =>
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoice));
-    var sw = Stopwatch.StartNew();
-
-    try
-    {
-      await invoiceOrchestrationService
-        .AnalyzeInvoiceWithOptions(options, identifier, userIdentifier, cancellationToken)
-        .ConfigureAwait(false);
-
-      sw.Stop();
-      InvoiceMetrics.RecordOperation("analyze", "invoice", "success", sw.Elapsed.TotalMilliseconds);
-      InvoiceMetrics.RecordAnalysis("success", sw.Elapsed.TotalMilliseconds);
-    }
-    catch
-    {
-      sw.Stop();
-      InvoiceMetrics.RecordAnalysis("failure", sw.Elapsed.TotalMilliseconds);
-      throw;
-    }
-  }).ConfigureAwait(false);
-  #endregion
 
   #region Create Invoice API
   /// <inheritdoc/>

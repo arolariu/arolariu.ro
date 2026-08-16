@@ -12,6 +12,7 @@ using System.Collections.ObjectModel;
 /// <para><b>Immutability:</b> The constructor snapshots hierarchy and evidence collections into read-only copies so later caller mutations do not change the classification.</para>
 /// <para><b>Confidence Contract:</b> Manual classifications MUST NOT carry confidence values, while analysis-produced classifications MUST provide confidence in the inclusive range <c>[0, 1]</c>.</para>
 /// </remarks>
+[Serializable]
 public sealed record StandardClassification
 {
   /// <summary>

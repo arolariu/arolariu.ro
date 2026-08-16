@@ -144,7 +144,7 @@ public sealed partial class AnalysisOrchestrationService
     for (int index = 0; index < extractionResult.Products.Count; index++)
     {
       ExtractedProduct extracted = extractionResult.Products[index];
-      string correlationToken = $"product-{index:D4}";
+      string correlationToken = AnalysisCorrelationTokens.ForProduct(index);
       Product product = ToDomainProduct(extracted);
       inputs.Add(new ProductAnalysisInput(correlationToken, product));
     }

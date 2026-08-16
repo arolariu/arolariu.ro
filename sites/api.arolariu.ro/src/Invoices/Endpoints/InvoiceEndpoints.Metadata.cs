@@ -9,10 +9,11 @@ using System.Threading.Tasks;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
-using arolariu.Backend.Domain.Invoices.DTOs;
+using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.DTOs.Responses;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
+using arolariu.Backend.Domain.Invoices.Services.Processing.AnalysisService;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -988,21 +989,25 @@ public static partial class InvoiceEndpoints
   #endregion
 
   /// <summary>
-  /// Analyzes a specific invoice using AI/ML services.
+  /// Enqueues an asynchronous analysis run for a specific invoice.
   /// </summary>
-  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling analysis logic.</param>
+  /// <remarks>
+  /// <para>The request body carries only the capability selection. The owning user, tenant, and partition are never
+  /// accepted from the caller: they are derived from the authenticated principal and the persisted target.</para>
+  /// </remarks>
+  /// <param name="analysisProcessingService">The analysis processing service that validates the target and enqueues the run.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice to analyze.</param>
-  /// <param name="options">The options for the analysis (e.g., detailed, basic).</param>
-  /// <returns>A task representing the asynchronous operation, containing the analysis result.</returns>
+  /// <param name="request">The requested analysis profile and per-capability overrides.</param>
+  /// <returns>A task representing the asynchronous operation, containing the accepted-run acknowledgement.</returns>
   [SwaggerOperation(
-    Summary = "Analyzes a specific invoice in the system.",
-    Description = "This endpoint triggers an analysis of a specific invoice using AI/ML services. " +
-    "It allows specifying analysis options to control the depth and type of analysis. " +
-    "If successful, the analysis result is returned.",
+    Summary = "Enqueues an asynchronous analysis run for a specific invoice.",
+    Description = "This endpoint validates the invoice, resolves the effective analysis capability selection, and " +
+    "durably enqueues an analysis run. It returns immediately with 202 Accepted; the analysis itself is executed " +
+    "later by a background worker and applied to the invoice.",
     OperationId = nameof(AnalyzeInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice analysis has been accepted and is processing.", typeof(InvoiceResponseDto))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice analysis run has been accepted and queued.", typeof(AnalysisAcceptedResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice identifier or analysis options are invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to analyze this invoice.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status402PaymentRequired, "The user does not have enough credits to perform this analysis.", typeof(ProblemDetails))]
@@ -1014,9 +1019,45 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> AnalyzeInvoiceAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IAnalysisProcessingService analysisProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("The analysis options to configure the pipeline.", Required = true)] AnalyzeInvoiceRequestDto options);
+    [FromBody, SwaggerRequestBody("The analysis profile and capability overrides.", Required = true)] AnalyzeInvoiceRequestDto request);
+
+  /// <summary>
+  /// Enqueues an asynchronous analysis run for a specific merchant.
+  /// </summary>
+  /// <remarks>
+  /// <para>The merchant's parent company is resolved server-side and persisted on the run, so the caller never has to
+  /// know - or be trusted with - the partition scope of the target.</para>
+  /// </remarks>
+  /// <param name="analysisProcessingService">The analysis processing service that validates the target and enqueues the run.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the merchant to analyze.</param>
+  /// <param name="request">The requested analysis profile and per-capability overrides.</param>
+  /// <returns>A task representing the asynchronous operation, containing the accepted-run acknowledgement.</returns>
+  [SwaggerOperation(
+    Summary = "Enqueues an asynchronous analysis run for a specific merchant.",
+    Description = "This endpoint validates the merchant, resolves the effective analysis capability selection, and " +
+    "durably enqueues an analysis run. It returns immediately with 202 Accepted; the analysis itself is executed " +
+    "later by a background worker and applied to the merchant.",
+    OperationId = nameof(AnalyzeMerchantAsync),
+    Tags = [EndpointNameTag])]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The merchant analysis run has been accepted and queued.", typeof(AnalysisAcceptedResponseDto))]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant identifier or analysis options are invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to analyze this merchant.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status402PaymentRequired, "The user does not have enough credits to perform this analysis.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
+  [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
+  [Authorize]
+  internal static partial Task<IResult> AnalyzeMerchantAsync(
+    [FromServices] IAnalysisProcessingService analysisProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("The analysis profile and capability overrides.", Required = true)] AnalyzeMerchantRequestDto request);
 }
 

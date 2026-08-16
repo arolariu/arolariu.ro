@@ -43,6 +43,91 @@ public static partial class Log
   public static partial void LogInvoiceProcessingServiceException(this ILogger logger, string exceptionMessage);
   #endregion
 
+  #region Processing Service Logging Methods (Analysis Processing Service)
+  /// <summary>
+  /// Logs a validation exception raised by the analysis processing service.
+  /// </summary>
+  /// <param name="logger">The logger.</param>
+  /// <param name="exceptionMessage">The classified exception message.</param>
+  [LoggerMessage(300_200, LogLevel.Error, "The analysis processing service encountered a validation exception: {exceptionMessage}")]
+  public static partial void LogAnalysisProcessingValidationException(this ILogger logger, string exceptionMessage);
+
+  /// <summary>
+  /// Logs a dependency exception raised by the analysis processing service.
+  /// </summary>
+  /// <param name="logger">The logger.</param>
+  /// <param name="exceptionMessage">The classified exception message.</param>
+  [LoggerMessage(300_201, LogLevel.Error, "The analysis processing service encountered a dependency exception: {exceptionMessage}")]
+  public static partial void LogAnalysisProcessingDependencyException(this ILogger logger, string exceptionMessage);
+
+  /// <summary>
+  /// Logs a dependency validation exception raised by the analysis processing service.
+  /// </summary>
+  /// <param name="logger">The logger.</param>
+  /// <param name="exceptionMessage">The classified exception message.</param>
+  [LoggerMessage(300_202, LogLevel.Error, "The analysis processing service encountered a dependency validation exception: {exceptionMessage}")]
+  public static partial void LogAnalysisProcessingDependencyValidationException(this ILogger logger, string exceptionMessage);
+
+  /// <summary>
+  /// Logs a service exception raised by the analysis processing service.
+  /// </summary>
+  /// <param name="logger">The logger.</param>
+  /// <param name="exceptionMessage">The classified exception message.</param>
+  [LoggerMessage(300_203, LogLevel.Error, "The analysis processing service encountered a service exception: {exceptionMessage}")]
+  public static partial void LogAnalysisProcessingServiceException(this ILogger logger, string exceptionMessage);
+
+  /// <summary>
+  /// Logs the loss of an analysis run lease while the run was still executing.
+  /// </summary>
+  /// <param name="logger">The logger.</param>
+  /// <param name="runId">The identifier of the affected run.</param>
+  /// <param name="reason">The underlying renewal failure message.</param>
+  [LoggerMessage(300_210, LogLevel.Warning, "The analysis run '{runId}' lost its lease during execution: {reason}")]
+  public static partial void LogAnalysisProcessingLeaseLost(this ILogger logger, string runId, string reason);
+
+  /// <summary>
+  /// Logs a failure to persist the analyzed target of an analysis run.
+  /// </summary>
+  /// <param name="logger">The logger.</param>
+  /// <param name="runId">The identifier of the affected run.</param>
+  /// <param name="reason">The underlying persistence failure message.</param>
+  [LoggerMessage(300_211, LogLevel.Error, "The analysis run '{runId}' could not persist its analyzed target: {reason}")]
+  public static partial void LogAnalysisProcessingTargetPersistenceFailed(this ILogger logger, string runId, string reason);
+
+  /// <summary>
+  /// Logs the durable failure of an analysis run.
+  /// </summary>
+  /// <param name="logger">The logger.</param>
+  /// <param name="runId">The identifier of the affected run.</param>
+  /// <param name="failureCode">The stable failure code recorded on the run.</param>
+  [LoggerMessage(300_212, LogLevel.Error, "The analysis run '{runId}' was marked as failed with code '{failureCode}'.")]
+  public static partial void LogAnalysisProcessingRunFailed(this ILogger logger, string runId, string failureCode);
+
+  /// <summary>
+  /// Logs an unexpected failure inside the analysis worker's polling loop.
+  /// </summary>
+  /// <param name="logger">The logger.</param>
+  /// <param name="reason">The underlying failure message.</param>
+  [LoggerMessage(300_213, LogLevel.Error, "The analysis worker iteration failed and will retry: {reason}")]
+  public static partial void LogAnalysisWorkerIterationFailed(this ILogger logger, string reason);
+
+  /// <summary>
+  /// Logs the analysis worker starting its polling loop.
+  /// </summary>
+  /// <param name="logger">The logger.</param>
+  /// <param name="workerId">The stable lease-owner identifier of the worker.</param>
+  [LoggerMessage(300_214, LogLevel.Information, "The analysis worker '{workerId}' started polling for queued runs.")]
+  public static partial void LogAnalysisWorkerStarted(this ILogger logger, string workerId);
+
+  /// <summary>
+  /// Logs a failure to ensure the durable analysis run store during worker startup.
+  /// </summary>
+  /// <param name="logger">The logger.</param>
+  /// <param name="reason">The underlying failure message.</param>
+  [LoggerMessage(300_215, LogLevel.Error, "The analysis worker could not ensure the durable run store: {reason}")]
+  public static partial void LogAnalysisWorkerStoreInitializationFailed(this ILogger logger, string reason);
+  #endregion
+
   #region Orchestration Services Logging Methods (Invoice + Merchant)
 
   /// <summary>

@@ -12,6 +12,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 /// <para>A non-null <see cref="AllergenAssessment"/> value means the capability was selected and returned a structured section.</para>
 /// <para><see cref="AllergenAssessmentStatus.NoSignals"/> is intentionally distinct from <see cref="AllergenAssessmentStatus.InsufficientData"/> so callers can differentiate between a successful empty result and insufficient evidence.</para>
 /// </remarks>
+[Serializable]
 public sealed record AllergenAssessment
 {
   /// <summary>

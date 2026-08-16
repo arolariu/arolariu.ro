@@ -4,7 +4,9 @@ using System;
 using System.Linq;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Tests.Builders;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -301,141 +303,6 @@ public sealed class ProductExtendedTests
 
   #endregion
 
-  #region Product Category Tests
-
-  /// <summary>
-  /// Validates Category can be set.
-  /// </summary>
-  [TestMethod]
-  public void Product_SetCategory_StoresValue()
-  {
-    // Arrange
-    var product = new Product();
-
-    // Act
-    product.Category = ProductCategory.GROCERIES;
-
-    // Assert
-    Assert.AreEqual(ProductCategory.GROCERIES, product.Category);
-  }
-
-  /// <summary>
-  /// Validates all ProductCategory enum values are valid.
-  /// </summary>
-  [TestMethod]
-  public void Product_AllCategoryValues_AreValid()
-  {
-    // Arrange
-    var categories = Enum.GetValues<ProductCategory>();
-
-    // Act & Assert
-    foreach (var category in categories)
-    {
-      var product = new Product { Category = category };
-      Assert.AreEqual(category, product.Category);
-    }
-  }
-
-  /// <summary>
-  /// Validates default ProductCategory.
-  /// </summary>
-  [TestMethod]
-  public void Product_DefaultCategory_IsOther()
-  {
-    // Arrange & Act
-    var product = new Product();
-
-    // Assert
-    Assert.AreEqual(ProductCategory.OTHER, product.Category);
-  }
-
-  /// <summary>
-  /// Validates ProductCategory.NOT_DEFINED exists.
-  /// </summary>
-  [TestMethod]
-  public void ProductCategory_NotDefined_Exists()
-  {
-    Assert.IsTrue(Enum.IsDefined<ProductCategory>(ProductCategory.NOT_DEFINED));
-  }
-
-  /// <summary>
-  /// Validates ProductCategory.BEVERAGES exists.
-  /// </summary>
-  [TestMethod]
-  public void ProductCategory_Beverages_Exists()
-  {
-    Assert.IsTrue(Enum.IsDefined<ProductCategory>(ProductCategory.BEVERAGES));
-  }
-
-  /// <summary>
-  /// Validates ProductCategory.CLEANING_SUPPLIES exists.
-  /// </summary>
-  [TestMethod]
-  public void ProductCategory_CleaningSupplies_Exists()
-  {
-    Assert.IsTrue(Enum.IsDefined<ProductCategory>(ProductCategory.CLEANING_SUPPLIES));
-  }
-
-  /// <summary>
-  /// Validates ProductCategory.OTHER exists.
-  /// </summary>
-  [TestMethod]
-  public void ProductCategory_Other_Exists()
-  {
-    Assert.IsTrue(Enum.IsDefined<ProductCategory>(ProductCategory.OTHER));
-  }
-
-  /// <summary>
-  /// Validates ProductCategory enum has expected values.
-  /// </summary>
-  [TestMethod]
-  public void ProductCategory_HasExpectedValueCount()
-  {
-    // Arrange
-    var values = Enum.GetValues<ProductCategory>();
-
-    // Assert - Should have multiple categories (14 total)
-    Assert.IsTrue(values.Length >= 14);
-  }
-
-  /// <summary>
-  /// Validates ProductCategory.DAIRY exists.
-  /// </summary>
-  [TestMethod]
-  public void ProductCategory_Dairy_Exists()
-  {
-    Assert.IsTrue(Enum.IsDefined<ProductCategory>(ProductCategory.DAIRY));
-  }
-
-  /// <summary>
-  /// Validates ProductCategory.MEAT exists.
-  /// </summary>
-  [TestMethod]
-  public void ProductCategory_Meat_Exists()
-  {
-    Assert.IsTrue(Enum.IsDefined<ProductCategory>(ProductCategory.MEAT));
-  }
-
-  /// <summary>
-  /// Validates ProductCategory.FRUITS exists.
-  /// </summary>
-  [TestMethod]
-  public void ProductCategory_Fruits_Exists()
-  {
-    Assert.IsTrue(Enum.IsDefined<ProductCategory>(ProductCategory.FRUITS));
-  }
-
-  /// <summary>
-  /// Validates ProductCategory.VEGETABLES exists.
-  /// </summary>
-  [TestMethod]
-  public void ProductCategory_Vegetables_Exists()
-  {
-    Assert.IsTrue(Enum.IsDefined<ProductCategory>(ProductCategory.VEGETABLES));
-  }
-
-  #endregion
-
   #region Product Default Value Tests
 
   /// <summary>
@@ -597,78 +464,6 @@ public sealed class ProductExtendedTests
 
   #endregion
 
-  #region Product DetectedAllergens Tests
-
-  /// <summary>
-  /// Validates DetectedAllergens can be set.
-  /// </summary>
-  [TestMethod]
-  public void Product_SetDetectedAllergens_StoresValue()
-  {
-    // Arrange
-    var product = new Product();
-    var allergens = new[]
-    {
-            new Allergen { Name = "Gluten" },
-            new Allergen { Name = "Dairy" },
-            new Allergen { Name = "Nuts" }
-        };
-
-    // Act
-    product.DetectedAllergens = allergens;
-
-    // Assert
-    Assert.AreEqual(3, product.DetectedAllergens.Count());
-    Assert.Contains(a => a.Name == "Gluten", product.DetectedAllergens);
-  }
-
-  /// <summary>
-  /// Validates empty allergens collection.
-  /// </summary>
-  [TestMethod]
-  public void Product_EmptyAllergens_IsAllowed()
-  {
-    // Arrange & Act
-    var product = new Product { DetectedAllergens = Array.Empty<Allergen>() };
-
-    // Assert
-    Assert.IsEmpty(product.DetectedAllergens);
-  }
-
-  /// <summary>
-  /// Validates large allergens collection.
-  /// </summary>
-  [TestMethod]
-  public void Product_LargeAllergensCollection_IsAllowed()
-  {
-    // Arrange
-    var allergens = Enumerable.Range(0, 100)
-        .Select(i => new Allergen { Name = $"Allergen{i}" })
-        .ToArray();
-
-    // Act
-    var product = new Product { DetectedAllergens = allergens };
-
-    // Assert
-    Assert.AreEqual(100, product.DetectedAllergens.Count());
-  }
-
-  /// <summary>
-  /// Validates default allergens is empty collection.
-  /// </summary>
-  [TestMethod]
-  public void Product_DefaultAllergens_IsEmptyCollection()
-  {
-    // Arrange & Act
-    var product = new Product();
-
-    // Assert
-    Assert.IsNotNull(product.DetectedAllergens);
-    Assert.IsEmpty(product.DetectedAllergens);
-  }
-
-  #endregion
-
   #region Product Equality Tests
 
   /// <summary>
@@ -750,154 +545,25 @@ public sealed class ProductExtendedTests
     var product = new Product
     {
       Name = "MONSTER ENERGY 500ML",
-      Category = ProductCategory.BEVERAGES,
+      Classification = ClassificationTestData.Gpc("10000123", "Energy Drinks"),
       Quantity = 2,
       QuantityUnit = "pcs",
       ProductCode = "5449000131805",
       Price = 4.99M,
-      DetectedAllergens = new[] { new Allergen { Name = "Caffeine" } }
+      AllergenAssessment = AllergenAssessment.NoSignals(Guid.NewGuid())
     };
 
     // Assert
     Assert.AreEqual("MONSTER ENERGY 500ML", product.Name);
-    Assert.AreEqual(ProductCategory.BEVERAGES, product.Category);
+    Assert.AreEqual("10000123", product.Classification!.Code);
     Assert.AreEqual(2, product.Quantity);
     Assert.AreEqual("pcs", product.QuantityUnit);
     Assert.AreEqual("5449000131805", product.ProductCode);
     Assert.AreEqual(4.99M, product.Price);
     Assert.AreEqual(9.98M, product.TotalPrice);
-    Assert.ContainsSingle(product.DetectedAllergens);
+    Assert.IsEmpty(product.AllergenAssessment!.Signals);
   }
 
   #endregion
 
-  #region Allergen Tests
-
-  /// <summary>
-  /// Validates Allergen can be created with defaults.
-  /// </summary>
-  [TestMethod]
-  public void Allergen_DefaultCreation_HasEmptyName()
-  {
-    // Arrange & Act
-    var allergen = new Allergen();
-
-    // Assert
-    Assert.AreEqual(string.Empty, allergen.Name);
-  }
-
-  /// <summary>
-  /// Validates Allergen Name property.
-  /// </summary>
-  [TestMethod]
-  public void Allergen_SetName_StoresValue()
-  {
-    // Arrange
-    var allergen = new Allergen();
-
-    // Act
-    allergen.Name = "Peanuts";
-
-    // Assert
-    Assert.AreEqual("Peanuts", allergen.Name);
-  }
-
-  /// <summary>
-  /// Validates Allergen Description property.
-  /// </summary>
-  [TestMethod]
-  public void Allergen_SetDescription_StoresValue()
-  {
-    // Arrange
-    var allergen = new Allergen();
-
-    // Act
-    allergen.Description = "Contains tree nuts";
-
-    // Assert
-    Assert.AreEqual("Contains tree nuts", allergen.Description);
-  }
-
-  /// <summary>
-  /// Validates Allergen LearnMoreAddress property.
-  /// </summary>
-  [TestMethod]
-  public void Allergen_SetLearnMoreAddress_StoresValue()
-  {
-    // Arrange
-    var allergen = new Allergen();
-    var uri = new Uri("https://example.com/allergens");
-
-    // Act
-    allergen.LearnMoreAddress = uri;
-
-    // Assert
-    Assert.AreEqual(uri, allergen.LearnMoreAddress);
-  }
-
-  /// <summary>
-  /// Validates Allergen default LearnMoreAddress.
-  /// </summary>
-  [TestMethod]
-  public void Allergen_DefaultLearnMoreAddress_IsArolariu()
-  {
-    // Arrange & Act
-    var allergen = new Allergen();
-
-    // Assert
-    Assert.AreEqual("https://arolariu.ro/", allergen.LearnMoreAddress.ToString());
-  }
-
-  /// <summary>
-  /// Validates Allergen record equality.
-  /// </summary>
-  [TestMethod]
-  public void Allergen_SameValues_AreEqual()
-  {
-    // Arrange
-    var allergen1 = new Allergen { Name = "Gluten", Description = "Contains gluten" };
-    var allergen2 = new Allergen { Name = "Gluten", Description = "Contains gluten" };
-
-    // Assert - Records with same values should be equal
-    Assert.AreEqual(allergen1, allergen2);
-  }
-
-  /// <summary>
-  /// Validates Allergen record inequality.
-  /// </summary>
-  [TestMethod]
-  public void Allergen_DifferentValues_AreNotEqual()
-  {
-    // Arrange
-    var allergen1 = new Allergen { Name = "Gluten" };
-    var allergen2 = new Allergen { Name = "Dairy" };
-
-    // Assert
-    Assert.AreNotEqual(allergen1, allergen2);
-  }
-
-  /// <summary>
-  /// Validates common allergen names.
-  /// </summary>
-  [TestMethod]
-  [DataRow("Gluten")]
-  [DataRow("Dairy")]
-  [DataRow("Eggs")]
-  [DataRow("Peanuts")]
-  [DataRow("Tree Nuts")]
-  [DataRow("Fish")]
-  [DataRow("Shellfish")]
-  [DataRow("Soy")]
-  [DataRow("Wheat")]
-  [DataRow("Sesame")]
-  public void Allergen_CommonAllergenNames_AreAccepted(string name)
-  {
-    // Arrange & Act
-    var allergen = new Allergen { Name = name };
-
-    // Assert
-    Assert.AreEqual(name, allergen.Name);
-  }
-
-  #endregion
 }

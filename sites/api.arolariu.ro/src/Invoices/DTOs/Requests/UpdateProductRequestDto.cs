@@ -5,8 +5,8 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 
 /// <summary>
 /// Request DTO for replacing an existing product within an invoice (PUT semantics).
@@ -38,8 +38,9 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// The new name for the product. Required.
 /// May be the same as <see cref="OriginalProductName"/> if only other fields change.
 /// </param>
-/// <param name="Category">
-/// The product category classification. Replaces the existing category.
+/// <param name="Classification">
+/// The new manual GPC classification selection. Null clears any manual selection and leaves the
+/// line item's persisted classification to analysis runs.
 /// </param>
 /// <param name="Quantity">
 /// The new quantity of product units. Must be positive.
@@ -53,21 +54,18 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// <param name="Price">
 /// The new unit price. Total price is recomputed as <c>Quantity × Price</c>.
 /// </param>
-/// <param name="DetectedAllergens">
-/// The new collection of detected allergens. Null becomes empty collection.
-/// </param>
+
 /// <example>
 /// <code>
 /// // Fix OCR error in product name and price
 /// var request = new UpdateProductRequestDto(
 ///     OriginalProductName: "LAPTE ZU2U 1L",  // OCR misread
 ///     Name: "LAPTE ZUZU 1L",                 // Corrected
-///     Category: ProductCategory.DAIRY,
+///     Classification: new ClassificationSelectionDto(ClassificationSystem.Gs1Gpc, "10000025"),
 ///     Quantity: 2,
 ///     QuantityUnit: "buc",
 ///     ProductCode: "5941234567890",
-///     Price: 8.99m,
-///     DetectedAllergens: [Allergen.Lactose]);
+///     Price: 8.99m);
 ///
 /// var updatedProduct = request.ToProduct();
 /// </code>
@@ -80,12 +78,11 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 public readonly record struct UpdateProductRequestDto(
   [Required] string OriginalProductName,
   [Required] string Name,
-  ProductCategory Category,
+  ClassificationSelectionDto? Classification,
   decimal Quantity,
   string? QuantityUnit,
   string? ProductCode,
-  decimal Price,
-  IEnumerable<Allergen>? DetectedAllergens)
+  decimal Price)
 {
   /// <summary>
   /// Converts this DTO to a <see cref="Product"/> domain value object.
@@ -106,11 +103,10 @@ public readonly record struct UpdateProductRequestDto(
   public Product ToProduct() => new()
   {
     Name = Name,
-    Category = Category,
+    Classification = Classification?.ToManualSelection(),
     Quantity = Quantity,
     QuantityUnit = QuantityUnit ?? string.Empty,
     ProductCode = ProductCode ?? string.Empty,
     Price = Price,
-    DetectedAllergens = DetectedAllergens ?? [],
   };
 }

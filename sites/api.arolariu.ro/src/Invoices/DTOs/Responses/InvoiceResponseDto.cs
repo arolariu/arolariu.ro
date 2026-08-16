@@ -7,6 +7,8 @@ using System.Linq;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 /// <summary>
@@ -55,8 +57,8 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// <param name="Description">
 /// A detailed description of the invoice contents. Never null; may be empty string.
 /// </param>
-/// <param name="Category">
-/// The invoice category classification. Defaults to <see cref="InvoiceCategory.NOT_DEFINED"/>
+/// <param name="Classification">
+/// The standardised ECOICOP classification assigned to this invoice. Null
 /// until AI analysis categorizes the invoice.
 /// </param>
 /// <param name="Scans">
@@ -125,12 +127,12 @@ public readonly record struct InvoiceResponseDto(
   IReadOnlyCollection<Guid> SharedWith,
   string Name,
   string Description,
-  InvoiceCategory Category,
+  StandardClassification? Classification,
   IReadOnlyCollection<InvoiceScan> Scans,
   PaymentInformation PaymentInformation,
   Guid MerchantReference,
   IReadOnlyCollection<ProductResponseDto> Items,
-  IReadOnlyCollection<Recipe> PossibleRecipes,
+  IReadOnlyCollection<RecipeSuggestion> PossibleRecipes,
   IReadOnlyDictionary<string, object> AdditionalMetadata,
   bool IsImportant,
   bool IsSoftDeleted,
@@ -191,7 +193,7 @@ public readonly record struct InvoiceResponseDto(
       SharedWith: invoice.SharedWith.ToList().AsReadOnly(),
       Name: invoice.Name,
       Description: invoice.Description,
-      Category: invoice.Category,
+      Classification: invoice.Classification,
       Scans: invoice.Scans.ToList().AsReadOnly(),
       PaymentInformation: invoice.PaymentInformation,
       MerchantReference: invoice.MerchantReference,

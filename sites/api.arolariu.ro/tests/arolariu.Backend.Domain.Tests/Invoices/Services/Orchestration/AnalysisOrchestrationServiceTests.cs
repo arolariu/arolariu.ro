@@ -30,6 +30,8 @@ using Moq;
 [TestClass]
 public sealed class AnalysisOrchestrationServiceTests
 {
+  private const string SampleTraceId = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01";
+
   private static readonly string[] ComprehensiveInvoiceOrder =
     ["document", "summary", "product-classification", "allergens", "invoice-classification", "recipes"];
 
@@ -431,7 +433,7 @@ public sealed class AnalysisOrchestrationServiceTests
       Guid.NewGuid(),
       Guid.NewGuid(),
       InvoiceAnalysisOptions.Fast(),
-      traceId: null!,
+      SampleTraceId,
       CancellationToken.None).ConfigureAwait(true);
 
     Assert.IsNotNull(persistedRun);
@@ -465,7 +467,7 @@ public sealed class AnalysisOrchestrationServiceTests
         Guid.NewGuid(),
         Guid.Empty,
         MerchantAnalysisOptions.Comprehensive(),
-        traceId: null!,
+        SampleTraceId,
         CancellationToken.None)).ConfigureAwait(true);
 
     analysisRunFoundation.Verify(
@@ -497,7 +499,7 @@ public sealed class AnalysisOrchestrationServiceTests
       Guid.NewGuid(),
       parentCompanyId,
       MerchantAnalysisOptions.Comprehensive(),
-      traceId: null!,
+      SampleTraceId,
       CancellationToken.None).ConfigureAwait(true);
 
     Assert.IsNotNull(persistedRun);
@@ -728,6 +730,76 @@ public sealed class AnalysisOrchestrationServiceTests
       Mock.Of<IDocumentAnalysisFoundationService>(),
       Mock.Of<IGenerativeAnalysisFoundationService>(),
       NullLoggerFactory.Instance);
+
+  #endregion
+
+  #region Trace identifier validation
+
+  /// <summary>
+  /// Verifies that an absent trace identifier is rejected before an invoice run is persisted.
+  /// </summary>
+  /// <remarks>
+  /// <para>A run without a usable trace identifier is unjoinable: nothing downstream can correlate the worker's
+  /// execution back to the request that asked for it. Rejecting it at the boundary is cheaper than persisting a run
+  /// that can never be traced.</para>
+  /// </remarks>
+  /// <param name="traceId">The rejected trace identifier.</param>
+  /// <returns>Asynchronous task.</returns>
+  [TestMethod]
+  [DataRow(null)]
+  [DataRow("")]
+  [DataRow("   ")]
+  public async Task QueueInvoiceRunAsync_MissingTraceId_RejectsBeforePersistence(string? traceId)
+  {
+    // Arrange
+    var analysisRunFoundation = new Mock<IAnalysisRunFoundationService>();
+    AnalysisOrchestrationService service = CreateService(analysisRunFoundation.Object);
+
+    // Act + Assert
+    await Assert.ThrowsExactlyAsync<AnalysisOrchestrationValidationException>(
+      () => service.QueueInvoiceRunAsync(
+        Guid.NewGuid(),
+        Guid.NewGuid(),
+        InvoiceAnalysisOptions.Fast(),
+        traceId!,
+        CancellationToken.None)).ConfigureAwait(true);
+
+    analysisRunFoundation.Verify(
+      a => a.CreateRunAsync(It.IsAny<AnalysisRun>(), It.IsAny<CancellationToken>()),
+      Times.Never,
+      "A run without a usable trace identifier must never reach the store.");
+  }
+
+  /// <summary>
+  /// Verifies that an absent trace identifier is rejected before a merchant run is persisted.
+  /// </summary>
+  /// <param name="traceId">The rejected trace identifier.</param>
+  /// <returns>Asynchronous task.</returns>
+  [TestMethod]
+  [DataRow(null)]
+  [DataRow("")]
+  [DataRow("   ")]
+  public async Task QueueMerchantRunAsync_MissingTraceId_RejectsBeforePersistence(string? traceId)
+  {
+    // Arrange
+    var analysisRunFoundation = new Mock<IAnalysisRunFoundationService>();
+    AnalysisOrchestrationService service = CreateService(analysisRunFoundation.Object);
+
+    // Act + Assert
+    await Assert.ThrowsExactlyAsync<AnalysisOrchestrationValidationException>(
+      () => service.QueueMerchantRunAsync(
+        Guid.NewGuid(),
+        Guid.NewGuid(),
+        Guid.Empty,
+        MerchantAnalysisOptions.Comprehensive(),
+        traceId!,
+        CancellationToken.None)).ConfigureAwait(true);
+
+    analysisRunFoundation.Verify(
+      a => a.CreateRunAsync(It.IsAny<AnalysisRun>(), It.IsAny<CancellationToken>()),
+      Times.Never,
+      "A run without a usable trace identifier must never reach the store.");
+  }
 
   #endregion
 }

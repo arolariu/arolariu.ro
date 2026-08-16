@@ -7,7 +7,10 @@ using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Invoices.Modules.ValueConverters;
 
 using Microsoft.Azure.Cosmos;
@@ -21,8 +24,10 @@ using Microsoft.EntityFrameworkCore;
 /// members, owned collections, and partition key assignments. Performs no domain validation or business rule enforcement.</para>
 /// <para><b>Containers:</b> Invoices mapped to <c>invoices</c> (partitioned by <c>UserIdentifier</c>); Merchants mapped to <c>merchants</c>
 /// (partitioned by <c>ParentCompanyId</c>).</para>
-/// <para><b>Owned Types:</b> <c>Items</c> (products), <c>PossibleRecipes</c>, and <c>PaymentInformation</c> configured as owned to ensure embedded
-/// document structure in Cosmos JSON.</para>
+/// <para><b>Owned Types:</b> <c>Items</c> (products) and <c>PaymentInformation</c> are configured as owned to ensure embedded
+/// document structure in Cosmos JSON. The immutable analysis value objects (<c>Classification</c>, <c>AllergenAssessment</c>,
+/// <c>PossibleRecipes</c>) are persisted through JSON value converters because EF Core cannot bind their collection members
+/// through a validating constructor.</para>
 /// <para><b>Soft Delete:</b> Relies on <c>IsSoftDeleted</c> flags (invoice and product metadata) — filtering is applied by higher layer query logic; the context
 /// does not automatically filter them out.</para>
 /// <para><b>Performance:</b> Explicit JSON property names and conversions reduce implicit reflection cost and ensure stable persisted schema.</para>
@@ -59,7 +64,7 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
   /// </summary>
   /// <remarks>
   /// <para>Defines container name, partition key (<c>UserIdentifier</c>), JSON property naming, value conversions (including enumerable converters for
-  /// collection serialization), indices and owned navigations (products, recipes, payment information).</para>
+  /// collection serialization), indices and owned navigations (products, payment information).</para>
   /// <para><b>Design Notes:</b> <c>HasNoDiscriminator()</c> used to avoid adding a synthetic type field as only a single aggregate type resides in the container.</para>
   /// </remarks>
   /// <param name="modelBuilder">The mutable model builder.</param>
@@ -74,7 +79,6 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 
       #region Base types
       entity.Property(i => i.Name).HasConversion<string>();
-      entity.Property(i => i.Category).HasConversion<string>();
       entity.Property(i => i.CreatedBy).HasConversion<string>();
       entity.Property(i => i.IsImportant).HasConversion<bool>();
       entity.Property(i => i.IsSoftDeleted).HasConversion<bool>();
@@ -84,7 +88,17 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
       entity.Property(i => i.MerchantReference).HasConversion<string>();
       entity.Property(i => i.CreatedAt).HasConversion<DateTimeOffset>();
       entity.Property(i => i.LastUpdatedAt).HasConversion<DateTimeOffset>();
-      entity.Property(i => i.SharedWith).HasConversion(new ValueConverterForIEnumerableOf<Guid>());
+      entity.Property(i => i.SharedWith).HasConversion(new ValueConverterForCollectionOf<Guid>());
+      #endregion
+
+      #region Analysis value objects
+      entity.Property(i => i.Classification)
+      .ToJsonProperty("Classification")
+      .HasConversion(new ValueConverterForValueObjectOf<StandardClassification>());
+
+      entity.Property(i => i.PossibleRecipes)
+      .ToJsonProperty("PossibleRecipes")
+      .HasConversion(new ValueConverterForCollectionOf<RecipeSuggestion>());
       #endregion
 
       entity.HasIndex(invoice => invoice.id);
@@ -101,9 +115,9 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
         .ToJsonProperty("Name")
         .HasConversion<string>();
 
-        items.Property(item => item.Category)
-        .ToJsonProperty("Category")
-        .HasConversion<string>();
+        items.Property(item => item.Classification)
+        .ToJsonProperty("Classification")
+        .HasConversion(new ValueConverterForValueObjectOf<StandardClassification>());
 
         items.Property(item => item.Quantity)
         .ToJsonProperty("Quantity")
@@ -121,39 +135,9 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
         .ToJsonProperty("Price")
         .HasConversion<decimal>();
 
-        items.Property(item => item.DetectedAllergens)
-        .ToJsonProperty("DetectedAllergens")
-        .HasConversion(new ValueConverterForIEnumerableOf<Allergen>());
-      });
-
-    modelBuilder.Entity<Invoice>().OwnsMany<Recipe>(navigationExpression: invoice => invoice.PossibleRecipes,
-      buildAction: recipes =>
-      {
-        recipes.ToJsonProperty("PossibleRecipes");
-
-        recipes.Property(recipe => recipe.Name)
-        .ToJsonProperty("Name")
-        .HasConversion<string>();
-
-        recipes.Property(recipe => recipe.Description)
-        .ToJsonProperty("Description")
-        .HasConversion<string>();
-
-        recipes.Property(recipe => recipe.ApproximateTotalDuration)
-        .ToJsonProperty("ApproximateTotalDuration")
-        .HasConversion<int>();
-
-        recipes.Property(recipe => recipe.Complexity)
-        .ToJsonProperty("Complexity")
-        .HasConversion<string>();
-
-        recipes.Property(recipe => recipe.Ingredients)
-        .ToJsonProperty("Ingredients")
-        .HasConversion(new ValueConverterForIEnumerableOf<string>());
-
-        recipes.Property(recipe => recipe.ReferenceForMoreDetails)
-        .ToJsonProperty("ReferenceForMoreDetails")
-        .HasConversion<string>();
+        items.Property(item => item.AllergenAssessment)
+        .ToJsonProperty("AllergenAssessment")
+        .HasConversion(new ValueConverterForValueObjectOf<AllergenAssessment>());
       });
 
     modelBuilder.Entity<Invoice>().OwnsOne<PaymentInformation>(navigationExpression: invoice => invoice.PaymentInformation,
@@ -200,7 +184,9 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 
       #region Base types
       entity.Property(i => i.Name).HasConversion<string>();
-      entity.Property(i => i.Category).HasConversion<string>();
+      entity.Property(m => m.Classification)
+      .ToJsonProperty("Classification")
+      .HasConversion(new ValueConverterForValueObjectOf<StandardClassification>());
       entity.Property(i => i.CreatedBy).HasConversion<string>();
       entity.Property(i => i.IsImportant).HasConversion<bool>();
       entity.Property(i => i.IsSoftDeleted).HasConversion<bool>();

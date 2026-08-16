@@ -16,6 +16,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysis;
+using arolariu.Backend.Domain.Tests.Builders;
 using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Azure;
@@ -301,7 +302,7 @@ public sealed class GenerativeClassificationTests
     var merchant = new Merchant
     {
       Name = "Ferma Test SRL",
-      Category = MerchantCategory.SUPERMARKET,
+      Classification = ClassificationTestData.Nace("47.11", "Retail sale in non-specialised stores"),
       Address = new ContactInformation { Address = "Bucharest, Romania" },
     };
 

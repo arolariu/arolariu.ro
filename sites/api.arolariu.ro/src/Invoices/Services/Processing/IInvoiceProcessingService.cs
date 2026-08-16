@@ -40,21 +40,6 @@ public interface IInvoiceProcessingService
 {
   #region Invoice Orchestration Service
 
-  #region Analyze Invoice API
-  /// <summary>
-  /// Performs analysis / enrichment over a single invoice according to option flags.
-  /// </summary>
-  /// <remarks>
-  /// <para><b>Behavior:</b> Retrieves (if not already forwarded), validates and applies analysis steps (classification, normalization, tagging).
-  /// Delegates deterministic enrichment to foundation analysis service; may invoke external AI/OCR via brokers indirectly in future.</para>
-  /// <para><b>Side Effects:</b> Does not currently persist changes (future: optional persistence flag).</para>
-  /// </remarks>
-  /// <param name="options">Directive flags specifying which enrichment steps to perform (MUST NOT be null).</param>
-  /// <param name="identifier">Invoice identifier.</param>
-  /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
-  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
-  Task AnalyzeInvoice(AnalysisOptions options, Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken);
-  #endregion
 
   #region Create Invoice API
   /// <summary>

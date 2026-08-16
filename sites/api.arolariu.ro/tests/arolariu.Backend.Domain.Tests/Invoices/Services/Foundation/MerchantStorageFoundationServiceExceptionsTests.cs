@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation;
@@ -24,12 +25,13 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 public class MerchantStorageFoundationServiceExceptionsTests
 {
   private readonly Mock<IInvoiceNoSqlBroker> _broker = new();
+  private readonly Mock<ITaxonomyBroker> _taxonomy = new();
   private readonly MerchantStorageFoundationService _sut;
 
   /// <summary>Initializes a new instance of the <see cref="MerchantStorageFoundationServiceExceptionsTests"/> class.</summary>
   public MerchantStorageFoundationServiceExceptionsTests()
   {
-    _sut = new MerchantStorageFoundationService(_broker.Object, NullLoggerFactory.Instance);
+    _sut = new MerchantStorageFoundationService(_broker.Object, _taxonomy.Object, NullLoggerFactory.Instance);
   }
 
   /// <summary>Verifies that a <see cref="MerchantNotFoundException"/> from the broker is wrapped into a <see cref="MerchantFoundationServiceDependencyValidationException"/>.</summary>

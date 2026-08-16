@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 
 /// <summary>
 /// Request DTO for full invoice replacement operations (HTTP PUT semantics).
@@ -38,9 +39,9 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// A detailed description of the invoice. Required, but may be empty.
 /// Useful for notes, context, or search purposes.
 /// </param>
-/// <param name="Category">
-/// The invoice category classification (e.g., Groceries, Entertainment, Utilities).
-/// Defaults to <see cref="InvoiceCategory.NOT_DEFINED"/> if not specified.
+/// <param name="Classification">
+/// Optional manual ECOICOP classification selection (system plus code).
+/// Null leaves the invoice unclassified until an analysis run classifies it.
 /// </param>
 /// <param name="PaymentInformation">
 /// Payment details including currency, total amount, tax, and payment method.
@@ -63,7 +64,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// var request = new UpdateInvoiceRequestDto(
 ///     Name: "Updated Invoice Name",
 ///     Description: "Monthly groceries",
-///     Category: InvoiceCategory.GROCERIES,
+///     Classification: new ClassificationSelectionDto(ClassificationSystem.EcoicopV2, "01.1.1"),
 ///     PaymentInformation: new PaymentInformation(Currency.RON, 150.50m, 28.60m, PaymentMethod.Card),
 ///     MerchantReference: merchantId,
 ///     IsImportant: true,
@@ -81,7 +82,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 public readonly record struct UpdateInvoiceRequestDto(
   [Required] string Name,
   [Required] string Description,
-  InvoiceCategory Category,
+  ClassificationSelectionDto? Classification,
   PaymentInformation PaymentInformation,
   Guid? MerchantReference,
   bool IsImportant,
@@ -122,7 +123,7 @@ public readonly record struct UpdateInvoiceRequestDto(
       UserIdentifier = userIdentifier,
       Name = Name,
       Description = Description,
-      Category = Category,
+      Classification = Classification?.ToManualSelection(),
       PaymentInformation = PaymentInformation,
       MerchantReference = MerchantReference ?? Guid.Empty,
       IsImportant = IsImportant,

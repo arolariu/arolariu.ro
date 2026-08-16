@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation;
@@ -51,6 +52,7 @@ public partial class MerchantStorageFoundationService
 
     MerchantIdNotSetException
       or MerchantParentCompanyIdNotSetException
+      or TaxonomyCodeNotFoundException
       => LogAndWrapValidation(exception),
 
     MerchantNotFoundException

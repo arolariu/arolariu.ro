@@ -245,7 +245,8 @@ public sealed partial class GenerativeAnalysisFoundationService
     string.Join(
       " ",
       $"Merchant name: {merchant.Name}.",
-      $"Category: {merchant.Category}.",
+      // The human-readable official label is the useful signal for a language model; the raw code is not.
+      $"Category: {merchant.Classification?.OfficialLabel ?? "unknown"}.",
       $"Address: {merchant.Address.Address}.");
 
   private static string BuildSearchTermsSystemPrompt(ClassificationSystem system) =>

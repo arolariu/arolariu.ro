@@ -78,6 +78,7 @@ public sealed partial class AnalysisOrchestrationService : IAnalysisOrchestratio
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(QueueInvoiceRunAsync));
     ArgumentNullException.ThrowIfNull(options);
+    ValidateTraceIdIsSet(traceId);
 
     InvoiceAnalysisOptions effectiveOptions = AnalysisProfileResolver.Resolve(options);
     AnalysisRun run = AnalysisRun.CreateInvoice(
@@ -105,6 +106,7 @@ public sealed partial class AnalysisOrchestrationService : IAnalysisOrchestratio
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(QueueMerchantRunAsync));
     ArgumentNullException.ThrowIfNull(options);
+    ValidateTraceIdIsSet(traceId);
     ValidateParentCompanyIdIsSet(parentCompanyId);
 
     MerchantAnalysisOptions effectiveOptions = AnalysisProfileResolver.Resolve(options);
@@ -191,6 +193,24 @@ public sealed partial class AnalysisOrchestrationService : IAnalysisOrchestratio
     if (parentCompanyId == Guid.Empty)
     {
       throw new ArgumentException("Parent company identifier must be set.", nameof(parentCompanyId));
+    }
+  }
+
+  /// <summary>
+  /// Rejects runs that would be persisted without a usable distributed-tracing correlation identifier.
+  /// </summary>
+  /// <remarks>
+  /// <para>A durable run is the only correlation anchor between the accepting HTTP request and the deferred worker
+  /// execution. Persisting a blank trace identifier would silently break that link for the entire lifetime of the run,
+  /// so the guard runs before the aggregate factory rather than after persistence.</para>
+  /// </remarks>
+  /// <param name="traceId">The caller-supplied W3C trace identifier.</param>
+  /// <exception cref="ArgumentException">Thrown when <paramref name="traceId"/> is null, empty, or whitespace.</exception>
+  private static void ValidateTraceIdIsSet(string traceId)
+  {
+    if (string.IsNullOrWhiteSpace(traceId))
+    {
+      throw new ArgumentException("Trace identifier must be set.", nameof(traceId));
     }
   }
 }

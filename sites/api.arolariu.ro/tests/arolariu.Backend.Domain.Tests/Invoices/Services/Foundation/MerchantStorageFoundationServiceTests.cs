@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
@@ -26,6 +27,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 public sealed class MerchantStorageFoundationServiceTests
 {
   private readonly Mock<IInvoiceNoSqlBroker> mockBroker;
+  private readonly Mock<ITaxonomyBroker> mockTaxonomyBroker;
   private readonly Mock<ILoggerFactory> mockLoggerFactory;
   private readonly Mock<ILogger<IMerchantStorageFoundationService>> mockLogger;
   private readonly MerchantStorageFoundationService service;
@@ -36,6 +38,7 @@ public sealed class MerchantStorageFoundationServiceTests
   public MerchantStorageFoundationServiceTests()
   {
     mockBroker = new Mock<IInvoiceNoSqlBroker>();
+    mockTaxonomyBroker = new Mock<ITaxonomyBroker>();
     mockLoggerFactory = new Mock<ILoggerFactory>();
     mockLogger = new Mock<ILogger<IMerchantStorageFoundationService>>();
 
@@ -43,9 +46,7 @@ public sealed class MerchantStorageFoundationServiceTests
         .Setup(factory => factory.CreateLogger(It.IsAny<string>()))
         .Returns(mockLogger.Object);
 
-    service = new MerchantStorageFoundationService(
-        mockBroker.Object,
-        mockLoggerFactory.Object);
+    service = new MerchantStorageFoundationService(mockBroker.Object, mockTaxonomyBroker.Object, mockLoggerFactory.Object);
   }
 
   #region Constructor Tests
@@ -56,7 +57,7 @@ public sealed class MerchantStorageFoundationServiceTests
   [TestMethod]
   public void Constructor_NullBroker_ThrowsArgumentNullException() =>
       Assert.ThrowsExactly<ArgumentNullException>(() =>
-          new MerchantStorageFoundationService(null!, mockLoggerFactory.Object));
+          new MerchantStorageFoundationService(null!, mockTaxonomyBroker.Object, mockLoggerFactory.Object));
 
   /// <summary>
   /// Validates successful instantiation with all valid dependencies.
@@ -65,9 +66,7 @@ public sealed class MerchantStorageFoundationServiceTests
   public void Constructor_ValidDependencies_CreatesInstance()
   {
     // Arrange & Act
-    var svc = new MerchantStorageFoundationService(
-        mockBroker.Object,
-        mockLoggerFactory.Object);
+    var svc = new MerchantStorageFoundationService(mockBroker.Object, mockTaxonomyBroker.Object, mockLoggerFactory.Object);
 
     // Assert
     Assert.IsNotNull(svc);

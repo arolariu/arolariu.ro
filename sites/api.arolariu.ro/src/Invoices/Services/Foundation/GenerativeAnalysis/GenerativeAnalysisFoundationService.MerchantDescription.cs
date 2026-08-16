@@ -36,7 +36,7 @@ public sealed partial class GenerativeAnalysisFoundationService
         activity?.SetTag("analysis.source_run_id", sourceRunId);
         activity?.SetTag("analysis.referenced_invoice_count", referencedInvoices.Length);
         activity?.SetTag("analysis.has_parent_company", merchant.ParentCompanyId != Guid.Empty);
-        activity?.SetTag("analysis.category", merchant.Category.ToString());
+        activity?.SetTag("analysis.classification", merchant.Classification?.Code);
         activity?.SetTag("analysis.merchant_evidence_strength", hasWeakEvidence ? "weak" : "supported");
 
         var request = new GenerativeRequest(
@@ -47,7 +47,7 @@ public sealed partial class GenerativeAnalysisFoundationService
             {
               name = merchant.Name,
               description = merchant.Description,
-              category = merchant.Category.ToString(),
+              classification = merchant.Classification?.OfficialLabel,
               address = new
               {
                 fullName = address.FullName,
@@ -106,7 +106,7 @@ public sealed partial class GenerativeAnalysisFoundationService
       evidenceSignals++;
     }
 
-    if (merchant.Category is not MerchantCategory.NOT_DEFINED and not MerchantCategory.OTHER)
+    if (merchant.Classification is not null)
     {
       evidenceSignals++;
     }

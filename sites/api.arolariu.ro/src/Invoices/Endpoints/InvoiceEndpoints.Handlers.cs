@@ -11,9 +11,11 @@ using arolariu.Backend.Common.Http;
 using arolariu.Backend.Common.Telemetry.Tracing;
 using arolariu.Backend.Domain.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.DTOs.Responses;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
+using arolariu.Backend.Domain.Invoices.Services.Processing.AnalysisService;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -1672,14 +1674,16 @@ public static partial class InvoiceEndpoints
 
   #region Analysis operations
   internal static async partial Task<IResult> AnalyzeInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IAnalysisProcessingService analysisProcessingService,
     IHttpContextAccessor httpContext,
     Guid id,
-    AnalyzeInvoiceRequestDto options)
+    AnalyzeInvoiceRequestDto request)
   {
+    // Enqueueing is an ordinary durable write, not an analysis: the long analysis budget belongs to the worker,
+    // not to the request thread.
     using var writeScope = RequestCancellation.ForWrite(
       httpContext.HttpContext!,
-      RequestCancellation.AnalysisWriteBudget);
+      RequestCancellation.CrudWriteBudget);
 
     try
     {
@@ -1692,41 +1696,66 @@ public static partial class InvoiceEndpoints
 
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
+      activity?.SetTag("analysis.profile", request.Profile.ToString());
 
-      // Set analysis options on the span
-      var analysisOptions = options.ToAnalysisOptions();
-      activity?.SetTag("analysis.mode", analysisOptions.ToString());
-
-      var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier, writeScope.Token)
-        .ConfigureAwait(false);
-      if (possibleInvoice is null)
-      {
-        activity?.SetTag("result.found", false);
-        return TypedResults.NotFound();
-      }
-
-      await invoiceProcessingService
-        .AnalyzeInvoice(analysisOptions, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+      var acceptedRun = await analysisProcessingService
+        .QueueInvoiceAnalysisAsync(id, potentialUserIdentifier, request, writeScope.Token)
         .ConfigureAwait(false);
 
-      var analyzedInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier, writeScope.Token)
-        .ConfigureAwait(false);
+      activity?.SetTag("analysis.run_id", acceptedRun.RunId.ToString());
+      activity?.RecordSuccess("Invoice analysis run queued");
 
-      if (analyzedInvoice is null)
-      {
-        activity?.SetTag("result.analyzed", false);
-        return TypedResults.NotFound();
-      }
-
-      activity?.SetTag("result.items_count", analyzedInvoice.Items.Count);
-      activity?.RecordSuccess("Invoice analyzed");
-      return TypedResults.Accepted($"/rest/v1/invoices/{id}", InvoiceResponseDto.FromInvoice(analyzedInvoice));
+      // The Location header points at the analyzed target, because the target is what the client polls for the
+      // eventually applied outcome.
+      return TypedResults.Accepted($"/rest/v1/invoices/{id}", acceptedRun);
     }
     catch (OperationCanceledException)
     {
       return HandleCancellation(httpContext.HttpContext!, writeScope, "analyze", "invoice");
+    }
+    catch (Exception ex)
+    {
+      Activity.Current?.RecordException(ex);
+      Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
+    }
+  }
+
+  internal static async partial Task<IResult> AnalyzeMerchantAsync(
+    IAnalysisProcessingService analysisProcessingService,
+    IHttpContextAccessor httpContext,
+    Guid id,
+    AnalyzeMerchantRequestDto request)
+  {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
+    try
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeMerchantAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Merchant.Analyze");
+      }
+
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetMerchantContext(id);
+      activity?.SetTag("analysis.profile", request.Profile.ToString());
+
+      var acceptedRun = await analysisProcessingService
+        .QueueMerchantAnalysisAsync(id, potentialUserIdentifier, request, writeScope.Token)
+        .ConfigureAwait(false);
+
+      activity?.SetTag("analysis.run_id", acceptedRun.RunId.ToString());
+      activity?.RecordSuccess("Merchant analysis run queued");
+
+      return TypedResults.Accepted($"/rest/v1/merchants/{id}", acceptedRun);
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "analyze", "merchant");
     }
     catch (Exception ex)
     {

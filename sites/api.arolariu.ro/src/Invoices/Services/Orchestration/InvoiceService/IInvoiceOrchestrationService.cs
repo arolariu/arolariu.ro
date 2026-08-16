@@ -31,27 +31,6 @@ using arolariu.Backend.Domain.Invoices.DTOs;
 /// </remarks>
 public interface IInvoiceOrchestrationService
 {
-  /// <summary>
-  /// Executes an analysis workflow for a specific invoice using the supplied option flags.
-  /// </summary>
-  /// <remarks>
-  /// <para><b>Behavior:</b> Orchestrates retrieval (if not already loaded downstream), validation, then delegates enrichment /
-  /// classification steps to processing / foundation analysis components.</para>
-  /// <para><b>Side Effects:</b> May update persisted invoice state if analysis results are persisted (future enhancement).
-  /// Currently assumed to be synchronous; backlog: promote to async operation resource.</para>
-  /// <para><b>Idempotency:</b> Re-running with identical inputs SHOULD yield semantically equivalent enrichment unless time‑variant
-  /// data sources are consulted (e.g., external tax rates).</para>
-  /// </remarks>
-  /// <param name="options">Directive flags controlling which analysis / enrichment steps to perform (MUST NOT be null).</param>
-  /// <param name="invoiceIdentifier">Target invoice identifier (MUST reference an existing invoice).</param>
-  /// <param name="userIdentifier">Tenant / partition scope (enforced for ownership isolation); pass null for a cross-partition operation.</param>
-  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
-  /// <returns>Asynchronous task.</returns>
-  /// <exception cref="ArgumentNullException">Thrown if <paramref name="options"/> is null.</exception>
-  /// <exception cref="InvalidOperationException">Thrown if invoice not found or fails pre-analysis invariants.</exception>
-  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  Task AnalyzeInvoiceWithOptions(AnalysisOptions options, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
-
   #region Implements the Invoice Storage Foundation Service
   #region Create Invoice API
   /// <summary>

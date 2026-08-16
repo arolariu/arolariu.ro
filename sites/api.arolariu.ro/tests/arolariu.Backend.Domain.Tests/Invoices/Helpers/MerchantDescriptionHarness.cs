@@ -10,6 +10,7 @@ using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysis;
+using arolariu.Backend.Domain.Tests.Builders;
 
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -92,7 +93,7 @@ internal sealed class MerchantDescriptionHarness
     {
       Name = "Corner Shop SRL",
       Description = "Neighborhood grocery retailer.",
-      Category = MerchantCategory.LOCAL_SHOP,
+      Classification = ClassificationTestData.Nace("47.11", "Retail sale in non-specialised stores"),
       Address = new ContactInformation
       {
         FullName = "Corner Shop SRL",
@@ -110,7 +111,7 @@ internal sealed class MerchantDescriptionHarness
     {
       Name = "Market",
       Description = string.Empty,
-      Category = MerchantCategory.OTHER,
+      Classification = null,
       Address = new ContactInformation(),
       ParentCompanyId = Guid.Empty,
       ReferencedInvoices = [],

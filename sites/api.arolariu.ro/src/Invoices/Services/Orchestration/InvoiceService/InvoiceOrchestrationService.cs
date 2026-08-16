@@ -6,8 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DTOs;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 
 using Microsoft.Extensions.Logging;
@@ -19,54 +17,24 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 /// </summary>
 public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 {
-  private readonly IInvoiceAnalysisFoundationService invoiceAnalysisFoundationService;
   private readonly IInvoiceStorageFoundationService invoiceStorageFoundationService;
   private readonly ILogger<IInvoiceOrchestrationService> logger;
 
   /// <summary>
   /// Constructor.
   /// </summary>
-  /// <param name="invoiceAnalysisFoundationService"></param>
-  /// <param name="invoiceStorageFoundationService"></param>
-  /// <param name="loggerFactory"></param>
+  /// <param name="invoiceStorageFoundationService">The invoice storage foundation service.</param>
+  /// <param name="loggerFactory">The logger factory used to create the orchestration logger.</param>
   public InvoiceOrchestrationService(
-    IInvoiceAnalysisFoundationService invoiceAnalysisFoundationService,
     IInvoiceStorageFoundationService invoiceStorageFoundationService,
     ILoggerFactory loggerFactory)
   {
-    ArgumentNullException.ThrowIfNull(invoiceAnalysisFoundationService);
     ArgumentNullException.ThrowIfNull(invoiceStorageFoundationService);
 
-    this.invoiceAnalysisFoundationService = invoiceAnalysisFoundationService;
     this.invoiceStorageFoundationService = invoiceStorageFoundationService;
     logger = loggerFactory.CreateLogger<IInvoiceOrchestrationService>();
   }
 
-  #region Analyze Invoice API
-  /// <inheritdoc/>
-  public async Task AnalyzeInvoiceWithOptions(AnalysisOptions options, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
-  await TryCatchAsync(async () =>
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceWithOptions));
-    Invoice currentInvoice = await invoiceStorageFoundationService
-      .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
-
-    cancellationToken.ThrowIfCancellationRequested();
-
-    Invoice analyzedInvoice = await invoiceAnalysisFoundationService
-      .AnalyzeInvoiceAsync(options, currentInvoice, cancellationToken)
-      .ConfigureAwait(false);
-
-    // Last safe boundary: past this point the AI spend is already incurred, so cancelling
-    // here would waste it. Before it, abandoning costs nothing but the read.
-    cancellationToken.ThrowIfCancellationRequested();
-
-    await invoiceStorageFoundationService
-      .UpdateInvoiceObject(analyzedInvoice, invoiceIdentifier, userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
-  }).ConfigureAwait(false);
-  #endregion
 
   #region Create Invoice API
   /// <inheritdoc/>

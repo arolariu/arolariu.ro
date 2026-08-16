@@ -1,9 +1,9 @@
 namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
-using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -11,13 +11,15 @@ using Microsoft.EntityFrameworkCore;
 /// Represents a single invoice line item (product) enriched via OCR and AI classification pipelines.
 /// </summary>
 /// <remarks>
-/// <para>Encapsulates product name (<c>Name</c>), categorical classification
-/// (<c>Category</c>), quantitative details (<c>Quantity</c>, <c>QuantityUnit</c>), commercial identifiers (<c>ProductCode</c>), pricing
-/// (<c>Price</c>, computed <c>TotalPrice</c>) and enrichment artifacts (<c>DetectedAllergens</c>, <c>Metadata</c>).</para>
-/// <para><b>Lifecycle:</b> Instances are owned by the containing <see cref="Invoices"/> aggregate and are persisted as embedded documents
+/// <para>Encapsulates product name (<c>Name</c>), standardised classification
+/// (<c>Classification</c>), quantitative details (<c>Quantity</c>, <c>QuantityUnit</c>), commercial identifiers (<c>ProductCode</c>), pricing
+/// (<c>Price</c>, computed <c>TotalPrice</c>) and analysis artifacts (<c>AllergenAssessment</c>, <c>Metadata</c>).</para>
+/// <para><b>Identity:</b> This value object is deliberately identity-free. Line items are correlated to analysis results
+/// positionally, by their ordinal within the owning invoice.</para>
+/// <para><b>Lifecycle:</b> Instances are owned by the containing invoice aggregate and are persisted as embedded documents
 /// (Cosmos owned collection). They SHOULD NOT be shared across invoice aggregates.</para>
-/// <para><b>Classification:</b> <c>Category</c> and <c>DetectedAllergens</c> may be progressively enriched; initial ingestion often sets
-/// <c>Category = ProductCategory.NOT_DEFINED</c> and an empty allergen list.</para>
+/// <para><b>Analysis:</b> <c>Classification</c> and <c>AllergenAssessment</c> are progressively enriched; both are
+/// <see langword="null"/> until an analysis run or a manual selection populates them.</para>
 /// <para><b>Thread-safety:</b> Not thread-safe; mutate only within the aggregate's modification workflow.</para>
 /// </remarks>
 [Owned]
@@ -28,10 +30,13 @@ public class Product
   [JsonPropertyOrder(0)]
   public string Name { get; set; } = string.Empty;
 
-  /// <summary>Domain classification for the product.</summary>
-  /// <remarks><para>Defaults to <see cref="ProductCategory.NOT_DEFINED"/> or <see cref="ProductCategory.OTHER"/> when enrichment has not resolved a concrete category.</para></remarks>
+  /// <summary>Standardised classification assigned to this product.</summary>
+  /// <remarks>
+  /// <para><b>Expected system:</b> <see cref="ClassificationSystem.Gs1Gpc"/>. Storage foundations reject any other system.</para>
+  /// <para><see langword="null"/> means the line item has not been classified yet.</para>
+  /// </remarks>
   [JsonPropertyOrder(1)]
-  public ProductCategory Category { get; set; } = ProductCategory.OTHER;
+  public StandardClassification? Classification { get; set; }
 
   /// <summary>Quantity of the product associated with the unit indicated by <see cref="QuantityUnit"/>.</summary>
   /// <remarks><para>Must be non-negative. Zero often indicates an OCR failure and SHOULD be corrected upstream.</para></remarks>
@@ -61,10 +66,13 @@ public class Product
   [JsonIgnore]
   public decimal TotalPrice => Quantity * Price;
 
-  /// <summary>Detected / inferred allergens associated with this product.</summary>
-  /// <remarks><para>List may be empty when not yet enriched. Duplicates SHOULD be avoided by upstream enrichment logic.</para></remarks>
+  /// <summary>The structured allergen assessment produced for this product by an analysis run.</summary>
+  /// <remarks>
+  /// <para><see langword="null"/> means no allergen assessment has been produced yet. An assessment carries its own
+  /// status (detected / no signals / insufficient data) so an empty signal list is never ambiguous.</para>
+  /// </remarks>
   [JsonPropertyOrder(6)]
-  public IEnumerable<Allergen> DetectedAllergens { get; set; } = [];
+  public AllergenAssessment? AllergenAssessment { get; set; }
 
   /// <summary>Mutable operational metadata (editing state, completion state, soft delete flag).</summary>
   /// <remarks><para>Soft-deleted products remain embedded for audit; parent invoice filters them out at presentation layers.</para></remarks>
