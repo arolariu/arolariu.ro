@@ -5,7 +5,7 @@
 
 import {afterEach, describe, expect, it} from "vitest";
 import {getContainerAdapter} from "./adapters.ts";
-import {buildSelfhostPlan, getRequiredSqlPassword} from "./selfhost.ts";
+import {buildSelfhostPlan, getRequiredSqlPassword, shouldGenerateTaxonomyArtifacts} from "./selfhost.ts";
 
 const originalSqlPassword = process.env["MSSQL_SA_PASSWORD"];
 
@@ -73,5 +73,13 @@ describe("getRequiredSqlPassword", () => {
     delete process.env["MSSQL_SA_PASSWORD"];
 
     expect(() => getRequiredSqlPassword()).toThrow("MSSQL_SA_PASSWORD environment variable is required");
+  });
+});
+
+describe("shouldGenerateTaxonomyArtifacts", () => {
+  it("generates artifacts only for selfhost start", () => {
+    expect(shouldGenerateTaxonomyArtifacts("start")).toBe(true);
+    expect(shouldGenerateTaxonomyArtifacts("stop")).toBe(false);
+    expect(shouldGenerateTaxonomyArtifacts("logs")).toBe(false);
   });
 });

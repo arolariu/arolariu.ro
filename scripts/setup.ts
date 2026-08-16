@@ -364,6 +364,9 @@ export async function main(): Promise<number> {
     return 1;
   }
 
+  console.log(styleText("bold", "\n🧱 Generating runtime taxonomy artifacts..."));
+  await import("./generate.artifacts.ts").then((module) => module.main());
+
   console.log(styleText(["bold", "green"], "\n✅ Setup completed successfully!"));
   console.log(styleText("gray", "\n📝 Next steps:"));
   console.log(styleText("gray", "  1. Restart your terminal or IDE if you installed new software"));

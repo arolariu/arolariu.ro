@@ -47,7 +47,15 @@ on:
   # Automatic trigger on main branch changes to backend API
   push:
     branches: ["main"]
-    paths: ["sites/api.arolariu.ro/**"]
+    paths:
+      - "sites/api.arolariu.ro/**"
+      - "scripts/generate.artifacts.ts"
+      - "scripts/generate.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/actions/setup-workspace/**"
+      - "infra/containers/Dockerfile.backend"
+      - "infra/containers/Dockerfile.frontend"
 
   # Manual trigger for controlled deployments
   workflow_dispatch:
@@ -109,10 +117,12 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          node: 'false'
-          install-node-deps: 'false'
+          node: 'true'
+          install-node-deps: 'true'
           dotnet: 'true'
           install-dotnet-deps: 'true'
+          run-generate: 'true'
+          generate-args: '/artifacts'
 
       - name: 🧪 Running unit tests...
         working-directory: .
@@ -184,6 +194,12 @@ jobs:
           echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "└────────────────────────────────────────────────────────────┘"
           echo "::endgroup::"
+
+      - name: 📦 Setup workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          run-generate: 'true'
+          generate-args: '/artifacts'
 
       - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@v3

@@ -79,9 +79,19 @@ export function buildSelfhostPlan(inputs: SelfhostPlanInputs): readonly RuntimeC
   ];
 }
 
-async function runCommandOrThrow(runner: CommandRunner, command: RuntimeCommand): Promise<void> {
+/**
+ * Determines whether the requested selfhost action needs generated taxonomy artifacts.
+ *
+ * @param action - Requested selfhost action.
+ * @returns `true` only for start operations that build the API and website images.
+ */
+export function shouldGenerateTaxonomyArtifacts(action: SelfhostAction): boolean {
+  return action === "start";
+}
+
+async function runCommandOrThrow(runner: CommandRunner, command: RuntimeCommand, cwd: string = "infra/Local"): Promise<void> {
   console.log(`$ ${formatCommand(command)}`);
-  const result = await runner.run(command, {cwd: "infra/Local", stdio: "tee"});
+  const result = await runner.run(command, {cwd, stdio: "tee"});
   if (result.code !== 0) {
     throw new ContainerRuntimeError(`Command failed: ${formatCommand(command)}\n${result.output}`);
   }
@@ -233,6 +243,7 @@ export async function runSelfhost(action: SelfhostAction, runner: CommandRunner 
 
   if (action === "start") {
     getRequiredSqlPassword();
+    await runCommandOrThrow(runner, {command: "npm", args: ["run", "generate:artifacts"]}, ".");
     await ensureHttpsCertificates(runner);
     await writeSelfhostTraefikConfig();
   }

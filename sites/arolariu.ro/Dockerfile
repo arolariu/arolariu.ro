@@ -74,6 +74,10 @@ COPY packages/components/ ./packages/components/
 # Copy the website source
 COPY sites/arolariu.ro/ ./sites/arolariu.ro/
 
+RUN test -s sites/arolariu.ro/src/data/taxonomies/gpc-2026-05.min.json \
+  && test -s sites/arolariu.ro/src/data/taxonomies/ecoicop-v2.min.json \
+  && test -s sites/arolariu.ro/src/data/taxonomies/nace-2.1.min.json
+
 # Build the website
 WORKDIR /app/sites/arolariu.ro
 RUN npm run build
