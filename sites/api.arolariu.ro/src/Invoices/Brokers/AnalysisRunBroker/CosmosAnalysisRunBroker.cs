@@ -279,6 +279,8 @@ public sealed class CosmosAnalysisRunBroker : IAnalysisRunBroker
       HttpStatusCode.PreconditionFailed => runId.HasValue
         ? new AnalysisRunLeaseConflictException($"Analysis run '{runId.Value}' was modified concurrently; the expected revision is stale.", cosmosException)
         : new AnalysisRunLeaseConflictException("An analysis run was modified concurrently; the expected revision is stale.", cosmosException),
+      HttpStatusCode.TooManyRequests => new AnalysisRunCosmosDbRateLimitException(
+        cosmosException.RetryAfter ?? TimeSpan.FromSeconds(1), cosmosException),
       _ => cosmosException,
     };
 }

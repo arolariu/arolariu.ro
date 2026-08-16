@@ -101,15 +101,38 @@ public sealed class AnalysisRunFoundationServiceTests
   }
 
   /// <summary>
-  /// Verifies that a raw <see cref="CosmosException"/> surfaced by the broker (any status code other than
-  /// the specifically-classified 404/412 cases the broker itself translates) is classified as a dependency
-  /// failure, not a generic service failure — Cosmos outages/throttling are dependency problems.
+  /// Verifies that an <see cref="AnalysisRunCosmosDbRateLimitException"/> surfaced by the broker (the typed
+  /// exception <see cref="CosmosAnalysisRunBroker"/> itself produces for a Cosmos HTTP 429 response) is
+  /// classified as a dependency-validation failure — a caller-correctable 429, not a generic 503 — and that
+  /// the retry-after hint survives the wrap so <c>ExceptionToHttpResultMapper</c> can surface it.
   /// </summary>
   [TestMethod]
-  public async Task CreateRunAsync_BrokerThrowsCosmosException_ThrowsAnalysisFoundationDependencyException()
+  public async Task CreateRunAsync_BrokerThrowsRateLimitException_ThrowsAnalysisFoundationDependencyValidationException()
   {
     var run = AnalysisRunTestBuilder.Queued();
-    var cosmosException = new CosmosException("Request rate is large", System.Net.HttpStatusCode.TooManyRequests, 429, "", 0);
+    var rateLimitException = new AnalysisRunCosmosDbRateLimitException(TimeSpan.FromSeconds(3), new InvalidOperationException());
+    mockBroker
+      .Setup(b => b.CreateAsync(run, It.IsAny<CancellationToken>()))
+      .ThrowsAsync(rateLimitException);
+
+    var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyValidationException>(
+      () => service.CreateRunAsync(run, CancellationToken.None)).ConfigureAwait(true);
+
+    var inner = Assert.IsInstanceOfType<AnalysisRunCosmosDbRateLimitException>(exception.InnerException);
+    Assert.AreEqual(TimeSpan.FromSeconds(3), inner.RetryAfter);
+  }
+
+  /// <summary>
+  /// Verifies that a raw <see cref="CosmosException"/> surfaced by the broker for a status code the broker
+  /// itself does not translate into a typed inner exception (defense-in-depth fallback — should not normally
+  /// leak past <c>CosmosAnalysisRunBroker</c>) is still classified as a generic dependency failure, not a
+  /// generic service failure — Cosmos outages remain dependency problems even when untyped.
+  /// </summary>
+  [TestMethod]
+  public async Task CreateRunAsync_BrokerThrowsUnclassifiedCosmosException_ThrowsAnalysisFoundationDependencyException()
+  {
+    var run = AnalysisRunTestBuilder.Queued();
+    var cosmosException = new CosmosException("Service unavailable", System.Net.HttpStatusCode.ServiceUnavailable, 503, "", 0);
     mockBroker
       .Setup(b => b.CreateAsync(run, It.IsAny<CancellationToken>()))
       .ThrowsAsync(cosmosException);

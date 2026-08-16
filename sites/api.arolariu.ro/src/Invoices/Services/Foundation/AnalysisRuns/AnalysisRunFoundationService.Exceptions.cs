@@ -71,7 +71,9 @@ public partial class AnalysisRunFoundationService
     ArgumentException or InvalidAnalysisRunTransitionException
       => LogAndWrapValidation(exception),
 
-    AnalysisRunNotFoundException or AnalysisRunLeaseConflictException
+    AnalysisRunNotFoundException
+      or AnalysisRunLeaseConflictException
+      or AnalysisRunCosmosDbRateLimitException
       => LogAndWrapDependencyValidation(exception),
 
     CosmosException
