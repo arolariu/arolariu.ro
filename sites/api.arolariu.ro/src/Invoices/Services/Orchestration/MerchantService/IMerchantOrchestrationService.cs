@@ -44,6 +44,16 @@ public interface IMerchantOrchestrationService
   Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
+  #region Find Merchant By Normalized Name API
+  /// <summary>
+  /// Resolves a merchant by exact normalized name.
+  /// </summary>
+  /// <param name="normalizedName">The normalized merchant name to resolve.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
+  /// <returns>The matching merchant or null when no exact normalized match exists.</returns>
+  Task<Merchant?> FindMerchantByNormalizedNameObject(string normalizedName, CancellationToken cancellationToken);
+  #endregion
+
   #region Update Merchant API
   /// <summary>
   /// Updates a merchant object.

@@ -73,6 +73,22 @@ public interface IMerchantStorageFoundationService
   Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
+  #region Find Merchant By Normalized Name API
+  /// <summary>
+  /// Resolves a merchant by exact normalized name.
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Normalization Contract:</b> The caller supplies the logical normalized name; implementations validate the input and delegate
+  /// to broker query logic that performs the authoritative comparison against stored merchant names.</para>
+  /// <para><b>Soft Delete:</b> Soft-deleted merchants are excluded from resolution.</para>
+  /// </remarks>
+  /// <param name="normalizedName">The normalized merchant name to resolve.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
+  /// <returns>The matching merchant or null when no exact normalized match exists.</returns>
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  Task<Merchant?> FindMerchantByNormalizedNameObject(string normalizedName, CancellationToken cancellationToken);
+  #endregion
+
   #region Update Merchant Object API
   /// <summary>
   /// Replaces existing merchant state with provided aggregate.

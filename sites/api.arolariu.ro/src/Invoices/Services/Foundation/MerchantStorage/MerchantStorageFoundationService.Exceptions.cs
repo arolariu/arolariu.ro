@@ -10,11 +10,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.F
 
 public partial class MerchantStorageFoundationService
 {
-  private delegate Task ReturningTaskFunction();
-  private delegate Task<Merchant> ReturningMerchantFunction();
-  private delegate Task<IEnumerable<Merchant>> ReturningMerchantsFunction();
-
-  private async Task TryCatchAsync(ReturningTaskFunction returningTaskFunction)
+  private async Task TryCatchAsync(Func<Task> returningTaskFunction)
   {
     try
     {
@@ -31,28 +27,11 @@ public partial class MerchantStorageFoundationService
     }
   }
 
-  private async Task<Merchant> TryCatchAsync(ReturningMerchantFunction returningMerchantFunction)
+  private async Task<TResult> TryCatchAsync<TResult>(Func<Task<TResult>> returningTaskFunction)
   {
     try
     {
-      return await returningMerchantFunction().ConfigureAwait(false);
-    }
-    catch (OperationCanceledException)
-    {
-      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
-      throw;
-    }
-    catch (Exception exception)
-    {
-      throw Classify(exception);
-    }
-  }
-
-  private async Task<IEnumerable<Merchant>> TryCatchAsync(ReturningMerchantsFunction returningMerchantsFunction)
-  {
-    try
-    {
-      return await returningMerchantsFunction().ConfigureAwait(false);
+      return await returningTaskFunction().ConfigureAwait(false);
     }
     catch (OperationCanceledException)
     {
@@ -67,6 +46,9 @@ public partial class MerchantStorageFoundationService
 
   private Exception Classify(Exception exception) => exception switch
   {
+    MerchantNormalizedNameNotSetException
+      => LogAndWrapValidation(exception),
+
     MerchantIdNotSetException
       or MerchantParentCompanyIdNotSetException
       => LogAndWrapValidation(exception),

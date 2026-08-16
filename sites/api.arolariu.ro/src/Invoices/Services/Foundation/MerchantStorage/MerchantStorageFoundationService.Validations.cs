@@ -7,6 +7,15 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 
 public partial class MerchantStorageFoundationService
 {
+  private static void ValidateNormalizedNameIsSet(string normalizedName)
+  {
+    if (string.IsNullOrWhiteSpace(normalizedName))
+    {
+      throw new MerchantNormalizedNameNotSetException(
+        new ArgumentException("Merchant normalized name must be provided.", nameof(normalizedName)));
+    }
+  }
+
   private static void ValidateMerchantIdentifierIsSet(Guid? identifier)
   {
     Validator.ValidateAndThrow<Guid?, MerchantIdNotSetException>(identifier, identifier => identifier is not null, "Identifier not set!");

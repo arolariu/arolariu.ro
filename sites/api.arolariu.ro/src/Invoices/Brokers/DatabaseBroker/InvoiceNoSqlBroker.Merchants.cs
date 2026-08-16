@@ -2,8 +2,10 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -134,6 +136,67 @@ public partial class InvoiceNoSqlBroker
     activity?.RecordSuccess();
 
     return filteredMerchants;
+  }
+
+  /// <inheritdoc/>
+  public async ValueTask<Merchant?> FindMerchantByNormalizedNameAsync(string normalizedName, CancellationToken cancellationToken)
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(FindMerchantByNormalizedNameAsync));
+    activity?.SetLayerContext("Broker", nameof(InvoiceNoSqlBroker));
+    activity?.SetCosmosDbContext("primary", "merchants", "query");
+    activity?.SetTag("db.query.type", "cross_partition_query_then_in_memory_exact_normalized_match");
+
+    const string queryText = "SELECT * FROM c WHERE NOT IS_DEFINED(c.IsSoftDeleted) OR c.IsSoftDeleted = false";
+    activity?.SetDbStatement(queryText);
+
+    string normalizedTargetName = NormalizeMerchantName(normalizedName);
+
+    var database = CosmosClient.GetDatabase("primary");
+    var container = database.GetContainer("merchants");
+    var query = new QueryDefinition(queryText);
+    var iterator = container.GetItemQueryIterator<Merchant>(query);
+
+    double totalRequestCharge = 0.0;
+    Merchant? resolvedMerchant = null;
+
+    while (iterator.HasMoreResults)
+    {
+      cancellationToken.ThrowIfCancellationRequested();
+
+      FeedResponse<Merchant> response = await TranslateMerchantCosmosAsync(
+        () => iterator.ReadNextAsync(cancellationToken),
+        null).ConfigureAwait(false);
+
+      totalRequestCharge += response.RequestCharge;
+
+      foreach (Merchant merchant in response)
+      {
+        if (merchant.IsSoftDeleted)
+        {
+          continue;
+        }
+
+        if (string.Equals(
+          NormalizeMerchantName(merchant.Name),
+          normalizedTargetName,
+          StringComparison.Ordinal) is false)
+        {
+          continue;
+        }
+
+        if (resolvedMerchant is null || merchant.id.CompareTo(resolvedMerchant.id) < 0)
+        {
+          resolvedMerchant = merchant;
+        }
+      }
+    }
+
+    activity?.SetCosmosDbRequestCharge(totalRequestCharge);
+    InvoiceMetrics.RecordCosmosDbCharge(totalRequestCharge, "query", "merchants");
+    activity?.SetTag("result.match_found", resolvedMerchant is not null);
+    activity?.RecordSuccess();
+
+    return resolvedMerchant;
   }
 
   /// <inheritdoc/>
@@ -284,6 +347,53 @@ public partial class InvoiceNoSqlBroker
     {
       throw TranslateMerchantCosmos(cosmosException, merchantIdentifier);
     }
+  }
+
+  private static string NormalizeMerchantName(string? name)
+  {
+    if (string.IsNullOrWhiteSpace(name))
+    {
+      return string.Empty;
+    }
+
+    string decomposedName = name.Normalize(NormalizationForm.FormD);
+    var builder = new StringBuilder(decomposedName.Length);
+    bool previousCharacterWasWhitespace = false;
+
+    foreach (char character in decomposedName)
+    {
+      UnicodeCategory unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(character);
+
+      if (unicodeCategory is UnicodeCategory.NonSpacingMark
+        or UnicodeCategory.SpacingCombiningMark
+        or UnicodeCategory.EnclosingMark)
+      {
+        continue;
+      }
+
+      if (char.IsWhiteSpace(character))
+      {
+        if (builder.Length > 0 && previousCharacterWasWhitespace is false)
+        {
+          builder.Append(' ');
+          previousCharacterWasWhitespace = true;
+        }
+
+        continue;
+      }
+
+      builder.Append(char.ToLowerInvariant(character));
+      previousCharacterWasWhitespace = false;
+    }
+
+    if (builder.Length > 0 && builder[^1] == ' ')
+    {
+      builder.Length--;
+    }
+
+    return builder
+      .ToString()
+      .Normalize(NormalizationForm.FormC);
   }
 
   /// <summary>Maps a <see cref="CosmosException"/> status code to the corresponding merchant inner exception type.</summary>

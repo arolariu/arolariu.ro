@@ -172,6 +172,20 @@ public interface IInvoiceNoSqlBroker
   ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync(Guid parentCompanyId, CancellationToken cancellationToken);
 
   /// <summary>
+  /// Finds a merchant whose normalized display name exactly matches the provided normalized name.
+  /// </summary>
+  /// <remarks>
+  /// <para>Performs a safe cross-partition candidate query that excludes soft-deleted merchants, then applies the authoritative
+  /// diacritic-insensitive and whitespace-normalized comparison in memory for correctness.</para>
+  /// <para>When multiple merchants normalize to the same value, the implementation returns a deterministic winner.</para>
+  /// </remarks>
+  /// <param name="normalizedName">The normalized merchant name to resolve.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
+  /// <returns>The resolved merchant or null when no exact normalized match exists.</returns>
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  ValueTask<Merchant?> FindMerchantByNormalizedNameAsync(string normalizedName, CancellationToken cancellationToken);
+
+  /// <summary>
   /// Replaces (upserts) a merchant by identifier (partition inferred via existing document lookup).
   /// </summary>
   /// <param name="merchantIdentifier">Merchant identity.</param>
