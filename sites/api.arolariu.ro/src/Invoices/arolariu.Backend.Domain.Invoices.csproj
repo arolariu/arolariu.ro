@@ -20,4 +20,10 @@
     <ProjectReference Include="..\Common\arolariu.Backend.Common.csproj" />
   </ItemGroup>
 
+  <ItemGroup Label="Taxonomy Artifacts">
+    <EmbeddedResource Include="Resources\Taxonomies\gpc-2026-05.min.json" />
+    <EmbeddedResource Include="Resources\Taxonomies\ecoicop-v2.min.json" />
+    <EmbeddedResource Include="Resources\Taxonomies\nace-2.1.min.json" />
+  </ItemGroup>
+
 </Project>
