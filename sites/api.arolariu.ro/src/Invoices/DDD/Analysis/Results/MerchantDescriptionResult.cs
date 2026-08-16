@@ -1,6 +1,7 @@
 namespace arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 
 using System;
+using System.Text.RegularExpressions;
 
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 
@@ -10,6 +11,10 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 public sealed record MerchantDescriptionResult
 {
   private const int MaximumDescriptionLength = 240;
+  private static readonly Regex BareDomainPattern = new(
+    @"\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\b",
+    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+    TimeSpan.FromMilliseconds(250));
 
   /// <summary>
   /// Initializes a new instance of the <see cref="MerchantDescriptionResult"/> record.
@@ -51,25 +56,23 @@ public sealed record MerchantDescriptionResult
   }
 
   private static bool ContainsUrl(string value) =>
-    value.Contains("://", StringComparison.Ordinal)
-    || value.Contains("http://", StringComparison.OrdinalIgnoreCase)
+    value.Contains("http://", StringComparison.OrdinalIgnoreCase)
     || value.Contains("https://", StringComparison.OrdinalIgnoreCase)
-    || value.Contains("www.", StringComparison.OrdinalIgnoreCase);
+    || value.Contains("www.", StringComparison.OrdinalIgnoreCase)
+    || BareDomainPattern.IsMatch(value);
 
   private static bool ContainsExternalResearchClaim(string value)
   {
     string[] forbiddenPhrases =
     [
-      "research",
-      "registry",
-      "looked up",
-      "looked into",
-      "searched the web",
-      "search results",
-      "web research",
-      "online research",
-      "based on web",
-      "based on registry",
+      "based on web research",
+      "based on registry data",
+      "according to google",
+      "according to linkedin",
+      "per google",
+      "per linkedin",
+      "i looked up",
+      "i searched",
     ];
 
     foreach (string phrase in forbiddenPhrases)

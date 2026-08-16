@@ -4,6 +4,7 @@ using System;
 using System.Text.Json;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Tests.Invoices.Helpers;
@@ -31,16 +32,30 @@ public sealed class MerchantDescriptionGenerationTests
   }
 
   /// <summary>
-  /// Verifies that an unknown merchant keeps a qualified description rather than asserting invented facts.
+  /// Verifies that a sparse-evidence merchant keeps a qualified description rather than asserting invented facts.
   /// </summary>
   [TestMethod]
-  public async Task GenerateMerchantDescriptionAsync_UnknownMerchant_ReturnsQualifiedDescription()
+  public async Task GenerateMerchantDescriptionAsync_SparseEvidenceQualifiedDescription_ReturnsDescription()
   {
-    var harness = MerchantDescriptionHarness.WithResponse("Likely a local grocery retailer based on invoice evidence.");
+    var harness = MerchantDescriptionHarness.WithSparseResponse("Likely a local retailer based on limited invoice evidence.");
 
     MerchantDescriptionResult result = await harness.ExecuteAsync();
 
     StringAssert.Contains(result.Description, "Likely", StringComparison.Ordinal);
+  }
+
+  /// <summary>
+  /// Verifies that a sparse-evidence merchant rejects unqualified factual assertions.
+  /// </summary>
+  [TestMethod]
+  public async Task GenerateMerchantDescriptionAsync_SparseEvidenceUnqualifiedDescription_ThrowsDependencyException()
+  {
+    var harness = MerchantDescriptionHarness.WithSparseResponse("A local grocery retailer serving neighborhood shoppers.");
+
+    var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
+      () => harness.ExecuteAsync());
+
+    Assert.IsInstanceOfType<InvalidStructuredOutputException>(exception.InnerException);
   }
 
   /// <summary>
@@ -54,7 +69,7 @@ public sealed class MerchantDescriptionGenerationTests
     var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
       () => harness.ExecuteAsync());
 
-    Assert.IsNotNull(exception.InnerException);
+    Assert.IsInstanceOfType<InvalidStructuredOutputException>(exception.InnerException);
   }
 
   /// <summary>
@@ -68,35 +83,59 @@ public sealed class MerchantDescriptionGenerationTests
     var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
       () => harness.ExecuteAsync());
 
-    Assert.IsNotNull(exception.InnerException);
+    Assert.IsInstanceOfType<InvalidStructuredOutputException>(exception.InnerException);
   }
 
   /// <summary>
-  /// Verifies that URL-containing descriptions are rejected.
+  /// Verifies that URL-like descriptions are rejected across supported patterns.
   /// </summary>
   [TestMethod]
-  public async Task GenerateMerchantDescriptionAsync_UrlContainingDescription_ThrowsDependencyException()
+  [DataRow("Visit https://example.test for more details.")]
+  [DataRow("Visit www.example.test for more details.")]
+  [DataRow("Visit example.com for more details.")]
+  public async Task GenerateMerchantDescriptionAsync_UrlContainingDescription_ThrowsDependencyException(string description)
   {
-    var harness = MerchantDescriptionHarness.WithResponse("Visit https://example.test for more details.");
+    var harness = MerchantDescriptionHarness.WithResponse(description);
 
     var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
       () => harness.ExecuteAsync());
 
-    Assert.IsNotNull(exception.InnerException);
+    Assert.IsInstanceOfType<InvalidStructuredOutputException>(exception.InnerException);
   }
 
   /// <summary>
-  /// Verifies that external research claims are rejected.
+  /// Verifies that prohibited external research claim phrases are rejected.
   /// </summary>
   [TestMethod]
-  public async Task GenerateMerchantDescriptionAsync_ExternalResearchClaim_ThrowsDependencyException()
+  [DataRow("Based on web research, this appears to be a retail shop.")]
+  [DataRow("Based on registry data, this appears to be a retail shop.")]
+  [DataRow("According to Google Maps, this appears to be a retail shop.")]
+  [DataRow("Per LinkedIn, this appears to be a retail shop.")]
+  [DataRow("I looked up the merchant and it appears to be a retail shop.")]
+  [DataRow("I searched for the merchant and it appears to be a retail shop.")]
+  public async Task GenerateMerchantDescriptionAsync_ExternalResearchClaim_ThrowsDependencyException(string description)
   {
-    var harness = MerchantDescriptionHarness.WithResponse("Based on web research, this appears to be a retail shop.");
+    var harness = MerchantDescriptionHarness.WithResponse(description);
 
     var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
       () => harness.ExecuteAsync());
 
-    Assert.IsNotNull(exception.InnerException);
+    Assert.IsInstanceOfType<InvalidStructuredOutputException>(exception.InnerException);
+  }
+
+  /// <summary>
+  /// Verifies that ordinary domain nouns do not trigger false positives when no prohibited claim phrase is present.
+  /// </summary>
+  [TestMethod]
+  [DataRow("Research Triangle retailer serving local shoppers.")]
+  [DataRow("Registry services office handling administrative tasks.")]
+  public async Task GenerateMerchantDescriptionAsync_NonClaimResearchTerms_ReturnsDescription(string description)
+  {
+    var harness = MerchantDescriptionHarness.WithResponse(description);
+
+    MerchantDescriptionResult result = await harness.ExecuteAsync();
+
+    Assert.AreEqual(description, result.Description);
   }
 
   /// <summary>

@@ -68,6 +68,20 @@ internal sealed class MerchantDescriptionHarness
   }
 
   /// <summary>
+  /// Creates a harness scripted to return one merchant description response for a sparse-evidence merchant.
+  /// </summary>
+  /// <param name="description">The scripted merchant description returned by the provider.</param>
+  /// <param name="sourceRunId">The source analysis run identifier.</param>
+  /// <returns>A harness ready for sparse-evidence merchant description generation tests.</returns>
+  public static MerchantDescriptionHarness WithSparseResponse(
+    string description,
+    Guid? sourceRunId = null) =>
+    WithResponse(
+      description,
+      CreateSparseMerchant(),
+      sourceRunId);
+
+  /// <summary>
   /// Returns the captured structured request payload.
   /// </summary>
   /// <returns>The first captured request.</returns>
@@ -89,6 +103,17 @@ internal sealed class MerchantDescriptionHarness
       },
       ParentCompanyId = Guid.Empty,
       ReferencedInvoices = [Guid.NewGuid()],
+    };
+
+  private static Merchant CreateSparseMerchant() =>
+    new()
+    {
+      Name = "Market",
+      Description = string.Empty,
+      Category = MerchantCategory.OTHER,
+      Address = new ContactInformation(),
+      ParentCompanyId = Guid.Empty,
+      ReferencedInvoices = [],
     };
 
   private static object CreateMerchantDescriptionOutput(string description)
