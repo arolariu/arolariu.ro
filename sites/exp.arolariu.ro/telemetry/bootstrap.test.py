@@ -351,7 +351,8 @@ class TestTelemetryBootstrap:
             shutdown_telemetry()
 
     def test_initializes_azure_monitor_exporters(
-        self,        monkeypatch: pytest.MonkeyPatch,
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         dependencies = _build_fake_dependencies()
         monkeypatch.setenv("EXP_OTEL_ENABLED", "true")
