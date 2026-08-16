@@ -49,7 +49,9 @@ def is_suppressed_path(path: str | None) -> bool:
 def should_suppress_telemetry(path: str | None) -> bool:
     """Return whether telemetry must be suppressed for ``path``.
 
-    Fails open toward emitting: a malformed override leaves suppression at its default.
+    Fails safe toward suppression: an unset or malformed override leaves suppression
+    enabled, so cost control holds even when the environment is misconfigured. Only the
+    literal string ``false`` re-enables health telemetry.
     """
 
     return parse_suppression_flag(os.environ.get(SUPPRESSION_ENV_VAR)) and is_suppressed_path(path)
