@@ -10,7 +10,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 /// <remarks>
 /// <para>This contract captures only capability selection and recipe limits. It deliberately excludes run metadata and persisted stamps because those arrive in later pipeline tasks.</para>
 /// <para><b>Dependency Closure:</b> Recipe generation and allergen assessment both require product classification to be enabled.</para>
-/// <para><b>Profiles:</b> <see cref="AnalysisProfile.Comprehensive"/> must exactly match the published comprehensive preset; callers requiring custom combinations must use <see cref="AnalysisProfile.Custom"/>.</para>
+/// <para><b>Profiles:</b> <see cref="AnalysisProfile.Fast"/>, <see cref="AnalysisProfile.Balanced"/>, and <see cref="AnalysisProfile.Comprehensive"/> must each exactly match their published preset shape; callers requiring custom combinations must use <see cref="AnalysisProfile.Custom"/>.</para>
 /// </remarks>
 public sealed record InvoiceAnalysisOptions
 {
@@ -82,6 +82,34 @@ public sealed record InvoiceAnalysisOptions
           maximumRecipes))
     {
       throw new ArgumentException("Comprehensive analysis options must match the published comprehensive preset.", nameof(profile));
+    }
+
+    if (profile == AnalysisProfile.Fast
+        && !HasFastShape(
+          documentExtraction,
+          merchantResolution,
+          invoiceSummary,
+          productClassification,
+          allergenAssessment,
+          invoiceClassification,
+          recipeGeneration,
+          maximumRecipes))
+    {
+      throw new ArgumentException("Fast analysis options must match the published fast preset.", nameof(profile));
+    }
+
+    if (profile == AnalysisProfile.Balanced
+        && !HasBalancedShape(
+          documentExtraction,
+          merchantResolution,
+          invoiceSummary,
+          productClassification,
+          allergenAssessment,
+          invoiceClassification,
+          recipeGeneration,
+          maximumRecipes))
+    {
+      throw new ArgumentException("Balanced analysis options must match the published balanced preset.", nameof(profile));
     }
 
     Profile = profile;
@@ -156,6 +184,40 @@ public sealed record InvoiceAnalysisOptions
       recipeGeneration: true,
       maximumRecipes: 3);
 
+  /// <summary>
+  /// Creates the published fast (minimal, low-latency) invoice analysis preset: document extraction, merchant
+  /// resolution, product GPC classification, and invoice ECOICOP classification only.
+  /// </summary>
+  /// <returns>The fast invoice analysis option set.</returns>
+  public static InvoiceAnalysisOptions Fast() =>
+    new(
+      AnalysisProfile.Fast,
+      documentExtraction: true,
+      merchantResolution: true,
+      invoiceSummary: false,
+      productClassification: true,
+      allergenAssessment: false,
+      invoiceClassification: true,
+      recipeGeneration: false,
+      maximumRecipes: 0);
+
+  /// <summary>
+  /// Creates the published balanced (mid-tier) invoice analysis preset: the fast preset plus invoice
+  /// summarization and allergen assessment. Recipe generation remains disabled.
+  /// </summary>
+  /// <returns>The balanced invoice analysis option set.</returns>
+  public static InvoiceAnalysisOptions Balanced() =>
+    new(
+      AnalysisProfile.Balanced,
+      documentExtraction: true,
+      merchantResolution: true,
+      invoiceSummary: true,
+      productClassification: true,
+      allergenAssessment: true,
+      invoiceClassification: true,
+      recipeGeneration: false,
+      maximumRecipes: 0);
+
   private static bool HasComprehensiveShape(
     bool documentExtraction,
     bool merchantResolution,
@@ -173,4 +235,40 @@ public sealed record InvoiceAnalysisOptions
       && invoiceClassification
       && recipeGeneration
       && maximumRecipes == 3;
+
+  private static bool HasFastShape(
+    bool documentExtraction,
+    bool merchantResolution,
+    bool invoiceSummary,
+    bool productClassification,
+    bool allergenAssessment,
+    bool invoiceClassification,
+    bool recipeGeneration,
+    int maximumRecipes) =>
+      documentExtraction
+      && merchantResolution
+      && !invoiceSummary
+      && productClassification
+      && !allergenAssessment
+      && invoiceClassification
+      && !recipeGeneration
+      && maximumRecipes == 0;
+
+  private static bool HasBalancedShape(
+    bool documentExtraction,
+    bool merchantResolution,
+    bool invoiceSummary,
+    bool productClassification,
+    bool allergenAssessment,
+    bool invoiceClassification,
+    bool recipeGeneration,
+    int maximumRecipes) =>
+      documentExtraction
+      && merchantResolution
+      && invoiceSummary
+      && productClassification
+      && allergenAssessment
+      && invoiceClassification
+      && !recipeGeneration
+      && maximumRecipes == 0;
 }

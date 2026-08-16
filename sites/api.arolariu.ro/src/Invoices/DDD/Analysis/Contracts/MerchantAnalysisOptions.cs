@@ -33,6 +33,18 @@ public sealed record MerchantAnalysisOptions
       throw new ArgumentException("Comprehensive merchant analysis options must enable every merchant capability.", nameof(profile));
     }
 
+    if (profile == AnalysisProfile.Balanced
+        && (!merchantClassification || !descriptionGeneration))
+    {
+      throw new ArgumentException("Balanced merchant analysis options must enable every merchant capability.", nameof(profile));
+    }
+
+    if (profile == AnalysisProfile.Fast
+        && (!merchantClassification || descriptionGeneration))
+    {
+      throw new ArgumentException("Fast merchant analysis options must enable only NACE classification.", nameof(profile));
+    }
+
     Profile = profile;
     MerchantClassification = merchantClassification;
     DescriptionGeneration = descriptionGeneration;
@@ -60,6 +72,28 @@ public sealed record MerchantAnalysisOptions
   public static MerchantAnalysisOptions Comprehensive() =>
     new(
       AnalysisProfile.Comprehensive,
+      merchantClassification: true,
+      descriptionGeneration: true);
+
+  /// <summary>
+  /// Creates the published fast (minimal, low-latency) merchant analysis preset: NACE classification only.
+  /// </summary>
+  /// <returns>The fast merchant analysis option set.</returns>
+  public static MerchantAnalysisOptions Fast() =>
+    new(
+      AnalysisProfile.Fast,
+      merchantClassification: true,
+      descriptionGeneration: false);
+
+  /// <summary>
+  /// Creates the published balanced (mid-tier) merchant analysis preset: NACE classification and description
+  /// generation. This preset currently shares its capability shape with <see cref="Comprehensive"/>; the
+  /// distinct profile is retained so a later provider-quality policy can diverge them without a breaking change.
+  /// </summary>
+  /// <returns>The balanced merchant analysis option set.</returns>
+  public static MerchantAnalysisOptions Balanced() =>
+    new(
+      AnalysisProfile.Balanced,
       merchantClassification: true,
       descriptionGeneration: true);
 }

@@ -108,6 +108,38 @@ public static partial class Log
   /// <param name="exceptionMessage"></param>
   [LoggerMessage(200_203, LogLevel.Error, "The merchant orchestration service encountered a service exception: {exceptionMessage}")]
   public static partial void LogMerchantOrchestrationServiceException(this ILogger logger, string exceptionMessage);
+
+  /// <summary>
+  /// Auto-generated method for logging the analysis orchestration validation exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  /// <param name="exceptionMessage"></param>
+  [LoggerMessage(200_300, LogLevel.Error, "The analysis orchestration service encountered a validation exception: {exceptionMessage}")]
+  public static partial void LogAnalysisOrchestrationValidationException(this ILogger logger, string exceptionMessage);
+
+  /// <summary>
+  /// Auto-generated method for logging the analysis orchestration dependency exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  /// <param name="exceptionMessage"></param>
+  [LoggerMessage(200_301, LogLevel.Error, "The analysis orchestration service encountered a dependency exception: {exceptionMessage}")]
+  public static partial void LogAnalysisOrchestrationDependencyException(this ILogger logger, string exceptionMessage);
+
+  /// <summary>
+  /// Auto-generated method for logging the analysis orchestration dependency validation exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  /// <param name="exceptionMessage"></param>
+  [LoggerMessage(200_302, LogLevel.Error, "The analysis orchestration service encountered a dependency validation exception: {exceptionMessage}")]
+  public static partial void LogAnalysisOrchestrationDependencyValidationException(this ILogger logger, string exceptionMessage);
+
+  /// <summary>
+  /// Auto-generated method for logging the analysis orchestration service exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  /// <param name="exceptionMessage"></param>
+  [LoggerMessage(200_303, LogLevel.Error, "The analysis orchestration service encountered a service exception: {exceptionMessage}")]
+  public static partial void LogAnalysisOrchestrationServiceException(this ILogger logger, string exceptionMessage);
   #endregion
 
   #region Foundation Services Logging Methods (Invoice + Merchant)

@@ -36,6 +36,82 @@ public sealed class AnalysisContractTests
   }
 
   /// <summary>
+  /// Verifies that the fast invoice preset enables only document extraction, merchant resolution, product
+  /// classification, and invoice classification, with recipe generation and its limit both disabled/zeroed.
+  /// </summary>
+  [TestMethod]
+  public void InvoiceAnalysisOptions_Fast_EnablesExpectedCapabilitiesOnly()
+  {
+    // Act
+    InvoiceAnalysisOptions options = InvoiceAnalysisOptions.Fast();
+
+    // Assert
+    Assert.AreEqual(AnalysisProfile.Fast, options.Profile);
+    Assert.IsTrue(options.DocumentExtraction);
+    Assert.IsTrue(options.MerchantResolution);
+    Assert.IsFalse(options.InvoiceSummary);
+    Assert.IsTrue(options.ProductClassification);
+    Assert.IsFalse(options.AllergenAssessment);
+    Assert.IsTrue(options.InvoiceClassification);
+    Assert.IsFalse(options.RecipeGeneration);
+    Assert.AreEqual(0, options.MaximumRecipes);
+  }
+
+  /// <summary>
+  /// Verifies that the balanced invoice preset enables everything the fast preset enables plus invoice
+  /// summarization and allergen assessment, while still disabling recipe generation.
+  /// </summary>
+  [TestMethod]
+  public void InvoiceAnalysisOptions_Balanced_EnablesExpectedCapabilitiesOnly()
+  {
+    // Act
+    InvoiceAnalysisOptions options = InvoiceAnalysisOptions.Balanced();
+
+    // Assert
+    Assert.AreEqual(AnalysisProfile.Balanced, options.Profile);
+    Assert.IsTrue(options.DocumentExtraction);
+    Assert.IsTrue(options.MerchantResolution);
+    Assert.IsTrue(options.InvoiceSummary);
+    Assert.IsTrue(options.ProductClassification);
+    Assert.IsTrue(options.AllergenAssessment);
+    Assert.IsTrue(options.InvoiceClassification);
+    Assert.IsFalse(options.RecipeGeneration);
+    Assert.AreEqual(0, options.MaximumRecipes);
+  }
+
+  /// <summary>
+  /// Verifies that a fast profile cannot be contradicted with manual overrides that don't match the published preset.
+  /// </summary>
+  [TestMethod]
+  public void InvoiceAnalysisOptions_FastOverrides_ThrowsArgumentException() =>
+    Assert.ThrowsExactly<ArgumentException>(() => new InvoiceAnalysisOptions(
+      AnalysisProfile.Fast,
+      documentExtraction: true,
+      merchantResolution: true,
+      invoiceSummary: true,
+      productClassification: true,
+      allergenAssessment: false,
+      invoiceClassification: true,
+      recipeGeneration: false,
+      maximumRecipes: 0));
+
+  /// <summary>
+  /// Verifies that a balanced profile cannot be contradicted with manual overrides that don't match the published preset.
+  /// </summary>
+  [TestMethod]
+  public void InvoiceAnalysisOptions_BalancedOverrides_ThrowsArgumentException() =>
+    Assert.ThrowsExactly<ArgumentException>(() => new InvoiceAnalysisOptions(
+      AnalysisProfile.Balanced,
+      documentExtraction: true,
+      merchantResolution: true,
+      invoiceSummary: false,
+      productClassification: true,
+      allergenAssessment: true,
+      invoiceClassification: true,
+      recipeGeneration: false,
+      maximumRecipes: 0));
+
+  /// <summary>
   /// Verifies that recipe generation depends on product classification.
   /// </summary>
   [TestMethod]
@@ -123,6 +199,57 @@ public sealed class AnalysisContractTests
       AnalysisProfile.Comprehensive,
       merchantClassification: true,
       descriptionGeneration: false));
+
+  /// <summary>
+  /// Verifies that the fast merchant preset enables only NACE classification.
+  /// </summary>
+  [TestMethod]
+  public void MerchantAnalysisOptions_Fast_EnablesClassificationOnly()
+  {
+    // Act
+    MerchantAnalysisOptions options = MerchantAnalysisOptions.Fast();
+
+    // Assert
+    Assert.AreEqual(AnalysisProfile.Fast, options.Profile);
+    Assert.IsTrue(options.MerchantClassification);
+    Assert.IsFalse(options.DescriptionGeneration);
+  }
+
+  /// <summary>
+  /// Verifies that the balanced merchant preset enables both NACE classification and description generation,
+  /// matching the comprehensive preset's shape while remaining a distinct profile value for later divergence.
+  /// </summary>
+  [TestMethod]
+  public void MerchantAnalysisOptions_Balanced_EnablesExpectedCapabilities()
+  {
+    // Act
+    MerchantAnalysisOptions options = MerchantAnalysisOptions.Balanced();
+
+    // Assert
+    Assert.AreEqual(AnalysisProfile.Balanced, options.Profile);
+    Assert.IsTrue(options.MerchantClassification);
+    Assert.IsTrue(options.DescriptionGeneration);
+  }
+
+  /// <summary>
+  /// Verifies that a fast merchant profile cannot be contradicted by enabling description generation.
+  /// </summary>
+  [TestMethod]
+  public void MerchantAnalysisOptions_FastOverrides_ThrowsArgumentException() =>
+    Assert.ThrowsExactly<ArgumentException>(() => new MerchantAnalysisOptions(
+      AnalysisProfile.Fast,
+      merchantClassification: true,
+      descriptionGeneration: true));
+
+  /// <summary>
+  /// Verifies that a balanced merchant profile cannot be contradicted by disabling either capability.
+  /// </summary>
+  [TestMethod]
+  public void MerchantAnalysisOptions_BalancedOverrides_ThrowsArgumentException() =>
+    Assert.ThrowsExactly<ArgumentException>(() => new MerchantAnalysisOptions(
+      AnalysisProfile.Balanced,
+      merchantClassification: false,
+      descriptionGeneration: true));
 
   /// <summary>
   /// Verifies that product analysis inputs require a transient correlation token.
