@@ -165,6 +165,51 @@ public sealed class AnalysisOrchestrationServiceTests
   }
 
   /// <summary>
+  /// Verifies that <see cref="InvoiceAnalysisResult.MerchantCandidateResult"/> is returned when
+  /// <see cref="InvoiceAnalysisOptions.MerchantResolution"/> is enabled and document extraction succeeds, carrying
+  /// through the merchant candidate observed during extraction unchanged.
+  /// </summary>
+  [TestMethod]
+  public async Task AnalyzeInvoiceAsync_MerchantResolutionEnabledAndExtractionSucceeds_ReturnsMerchantCandidateResult()
+  {
+    AnalysisServiceHarness harness = AnalysisServiceHarness.Comprehensive();
+
+    InvoiceAnalysisResult result = await harness.ExecuteInvoiceAsync().ConfigureAwait(true);
+
+    Assert.IsNotNull(result.ExtractionResult);
+    Assert.IsNotNull(result.MerchantCandidateResult);
+    Assert.AreEqual("Test Merchant", result.MerchantCandidateResult!.Name);
+  }
+
+  /// <summary>
+  /// Verifies that <see cref="InvoiceAnalysisResult.MerchantCandidateResult"/> is suppressed when
+  /// <see cref="InvoiceAnalysisOptions.MerchantResolution"/> is disabled, even though document extraction still
+  /// succeeds and observes a merchant candidate internally.
+  /// </summary>
+  [TestMethod]
+  public async Task AnalyzeInvoiceAsync_MerchantResolutionDisabled_SuppressesMerchantCandidateResult()
+  {
+    InvoiceAnalysisOptions options = new(
+      AnalysisProfile.Custom,
+      documentExtraction: true,
+      merchantResolution: false,
+      invoiceSummary: false,
+      productClassification: false,
+      allergenAssessment: false,
+      invoiceClassification: false,
+      recipeGeneration: false,
+      maximumRecipes: 0);
+
+    AnalysisServiceHarness harness = AnalysisServiceHarness.ForInvoice(
+      options, new HashSet<string>(StringComparer.Ordinal));
+
+    InvoiceAnalysisResult result = await harness.ExecuteInvoiceAsync().ConfigureAwait(true);
+
+    Assert.IsNotNull(result.ExtractionResult);
+    Assert.IsNull(result.MerchantCandidateResult);
+  }
+
+  /// <summary>
   /// Verifies that a null <see cref="AnalysisRun"/> argument throws <see cref="ArgumentNullException"/> without
   /// being reclassified into an orchestration exception (best-effort methods propagate their own validation bare).
   /// </summary>
@@ -427,6 +472,262 @@ public sealed class AnalysisOrchestrationServiceTests
       a => a.CreateRunAsync(It.IsAny<AnalysisRun>(), It.IsAny<CancellationToken>()),
       Times.Never);
   }
+
+  /// <summary>
+  /// Verifies that <see cref="AnalysisOrchestrationService.QueueMerchantRunAsync"/> persists the supplied
+  /// <c>parentCompanyId</c> onto the created run's <see cref="AnalysisRun.TargetPartitionIdentifier"/>, so a later
+  /// Task 11 point-update against the merchant's partition does not need to re-resolve the partition scope.
+  /// </summary>
+  [TestMethod]
+  public async Task QueueMerchantRunAsync_ValidParentCompanyId_PersistsTargetPartitionIdentifier()
+  {
+    AnalysisRun? persistedRun = null;
+    Guid parentCompanyId = Guid.NewGuid();
+
+    var analysisRunFoundation = new Mock<IAnalysisRunFoundationService>();
+    analysisRunFoundation
+      .Setup(a => a.CreateRunAsync(It.IsAny<AnalysisRun>(), It.IsAny<CancellationToken>()))
+      .Callback<AnalysisRun, CancellationToken>((run, _) => persistedRun = run)
+      .ReturnsAsync((AnalysisRun run, CancellationToken _) => run);
+
+    var service = CreateService(analysisRunFoundation.Object);
+
+    await service.QueueMerchantRunAsync(
+      Guid.NewGuid(),
+      Guid.NewGuid(),
+      parentCompanyId,
+      MerchantAnalysisOptions.Comprehensive(),
+      traceId: null!,
+      CancellationToken.None).ConfigureAwait(true);
+
+    Assert.IsNotNull(persistedRun);
+    Assert.AreEqual(parentCompanyId, persistedRun.TargetPartitionIdentifier);
+  }
+
+  #endregion
+
+  #region Run Infrastructure Delegation and Exception Classification (Claim / Renew / Complete / Fail)
+
+  /// <summary>
+  /// Verifies that <see cref="AnalysisOrchestrationService.ClaimNextRunAsync"/> delegates its arguments unchanged
+  /// to the run foundation service and returns the claimed run as-is.
+  /// </summary>
+  [TestMethod]
+  public async Task ClaimNextRunAsync_Always_DelegatesToFoundationServiceAndReturnsClaimedRun()
+  {
+    AnalysisRun expected = AnalysisRunTestBuilder.Queued();
+    DateTimeOffset now = DateTimeOffset.UtcNow;
+    TimeSpan leaseDuration = TimeSpan.FromMinutes(5);
+
+    var analysisRunFoundation = new Mock<IAnalysisRunFoundationService>();
+    analysisRunFoundation
+      .Setup(a => a.ClaimNextRunAsync("worker-a", now, leaseDuration, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(expected);
+
+    var service = CreateService(analysisRunFoundation.Object);
+
+    AnalysisRun? claimed = await service.ClaimNextRunAsync("worker-a", now, leaseDuration, CancellationToken.None).ConfigureAwait(true);
+
+    Assert.AreSame(expected, claimed);
+    analysisRunFoundation.Verify(
+      a => a.ClaimNextRunAsync("worker-a", now, leaseDuration, It.IsAny<CancellationToken>()),
+      Times.Once);
+  }
+
+  /// <summary>
+  /// Verifies that an unclassified exception raised by the run foundation service during
+  /// <see cref="AnalysisOrchestrationService.ClaimNextRunAsync"/> is wrapped into an
+  /// <see cref="AnalysisOrchestrationServiceException"/>.
+  /// </summary>
+  [TestMethod]
+  public async Task ClaimNextRunAsync_WhenFoundationThrowsUnknown_ThrowsAnalysisOrchestrationServiceException()
+  {
+    var analysisRunFoundation = new Mock<IAnalysisRunFoundationService>();
+    analysisRunFoundation
+      .Setup(a => a.ClaimNextRunAsync(It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new InvalidOperationException("boom"));
+
+    var service = CreateService(analysisRunFoundation.Object);
+
+    var ex = await Assert.ThrowsExactlyAsync<AnalysisOrchestrationServiceException>(
+      () => service.ClaimNextRunAsync("worker-a", DateTimeOffset.UtcNow, TimeSpan.FromMinutes(5), CancellationToken.None)).ConfigureAwait(true);
+
+    Assert.IsInstanceOfType<InvalidOperationException>(ex.InnerException);
+  }
+
+  /// <summary>
+  /// Verifies that <see cref="OperationCanceledException"/> raised by the run foundation service propagates
+  /// unchanged from <see cref="AnalysisOrchestrationService.ClaimNextRunAsync"/> — the one run-infrastructure
+  /// method whose foundation call returns a nullable result, exercising a distinct generic <c>TryCatchAsync</c>
+  /// instantiation from <see cref="EnsureRunStoreAsync_WhenFoundationCancels_PropagatesOperationCanceledException"/>.
+  /// </summary>
+  [TestMethod]
+  public async Task ClaimNextRunAsync_WhenFoundationCancels_PropagatesOperationCanceledException()
+  {
+    var analysisRunFoundation = new Mock<IAnalysisRunFoundationService>();
+    analysisRunFoundation
+      .Setup(a => a.ClaimNextRunAsync(It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new OperationCanceledException());
+
+    var service = CreateService(analysisRunFoundation.Object);
+
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(
+      () => service.ClaimNextRunAsync("worker-a", DateTimeOffset.UtcNow, TimeSpan.FromMinutes(5), CancellationToken.None)).ConfigureAwait(true);
+  }
+
+  /// <summary>
+  /// Verifies that <see cref="AnalysisOrchestrationService.RenewRunLeaseAsync"/> delegates its arguments unchanged
+  /// to the run foundation service.
+  /// </summary>
+  [TestMethod]
+  public async Task RenewRunLeaseAsync_Always_DelegatesToFoundationService()
+  {
+    Guid runId = Guid.NewGuid();
+    DateTimeOffset now = DateTimeOffset.UtcNow;
+    TimeSpan leaseDuration = TimeSpan.FromMinutes(10);
+
+    var analysisRunFoundation = new Mock<IAnalysisRunFoundationService>();
+    analysisRunFoundation
+      .Setup(a => a.RenewLeaseAsync(runId, "worker-a", now, leaseDuration, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(AnalysisRunTestBuilder.ActiveRunning());
+
+    var service = CreateService(analysisRunFoundation.Object);
+
+    await service.RenewRunLeaseAsync(runId, "worker-a", now, leaseDuration, CancellationToken.None).ConfigureAwait(true);
+
+    analysisRunFoundation.Verify(
+      a => a.RenewLeaseAsync(runId, "worker-a", now, leaseDuration, It.IsAny<CancellationToken>()),
+      Times.Once);
+  }
+
+  /// <summary>
+  /// Verifies that an unclassified exception raised by the run foundation service during
+  /// <see cref="AnalysisOrchestrationService.RenewRunLeaseAsync"/> is wrapped into an
+  /// <see cref="AnalysisOrchestrationServiceException"/>.
+  /// </summary>
+  [TestMethod]
+  public async Task RenewRunLeaseAsync_WhenFoundationThrowsUnknown_ThrowsAnalysisOrchestrationServiceException()
+  {
+    var analysisRunFoundation = new Mock<IAnalysisRunFoundationService>();
+    analysisRunFoundation
+      .Setup(a => a.RenewLeaseAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new InvalidOperationException("boom"));
+
+    var service = CreateService(analysisRunFoundation.Object);
+
+    var ex = await Assert.ThrowsExactlyAsync<AnalysisOrchestrationServiceException>(
+      () => service.RenewRunLeaseAsync(Guid.NewGuid(), "worker-a", DateTimeOffset.UtcNow, TimeSpan.FromMinutes(5), CancellationToken.None)).ConfigureAwait(true);
+
+    Assert.IsInstanceOfType<InvalidOperationException>(ex.InnerException);
+  }
+
+  /// <summary>
+  /// Verifies that <see cref="AnalysisOrchestrationService.CompleteRunAsync"/> delegates its arguments unchanged
+  /// to the run foundation service.
+  /// </summary>
+  [TestMethod]
+  public async Task CompleteRunAsync_Always_DelegatesToFoundationService()
+  {
+    Guid runId = Guid.NewGuid();
+    DateTimeOffset completedAt = DateTimeOffset.UtcNow;
+    AnalysisCapability[] completedCapabilities = [AnalysisCapability.DocumentExtraction];
+
+    var analysisRunFoundation = new Mock<IAnalysisRunFoundationService>();
+    analysisRunFoundation
+      .Setup(a => a.CompleteRunAsync(runId, "worker-a", completedCapabilities, completedAt, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(AnalysisRunTestBuilder.Terminal(AnalysisRunStatus.Completed));
+
+    var service = CreateService(analysisRunFoundation.Object);
+
+    await service.CompleteRunAsync(runId, "worker-a", completedCapabilities, completedAt, CancellationToken.None).ConfigureAwait(true);
+
+    analysisRunFoundation.Verify(
+      a => a.CompleteRunAsync(runId, "worker-a", completedCapabilities, completedAt, It.IsAny<CancellationToken>()),
+      Times.Once);
+  }
+
+  /// <summary>
+  /// Verifies that an unclassified exception raised by the run foundation service during
+  /// <see cref="AnalysisOrchestrationService.CompleteRunAsync"/> is wrapped into an
+  /// <see cref="AnalysisOrchestrationServiceException"/>.
+  /// </summary>
+  [TestMethod]
+  public async Task CompleteRunAsync_WhenFoundationThrowsUnknown_ThrowsAnalysisOrchestrationServiceException()
+  {
+    var analysisRunFoundation = new Mock<IAnalysisRunFoundationService>();
+    analysisRunFoundation
+      .Setup(a => a.CompleteRunAsync(
+        It.IsAny<Guid>(),
+        It.IsAny<string>(),
+        It.IsAny<IReadOnlyCollection<AnalysisCapability>>(),
+        It.IsAny<DateTimeOffset>(),
+        It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new InvalidOperationException("boom"));
+
+    var service = CreateService(analysisRunFoundation.Object);
+
+    var ex = await Assert.ThrowsExactlyAsync<AnalysisOrchestrationServiceException>(
+      () => service.CompleteRunAsync(
+        Guid.NewGuid(),
+        "worker-a",
+        [AnalysisCapability.DocumentExtraction],
+        DateTimeOffset.UtcNow,
+        CancellationToken.None)).ConfigureAwait(true);
+
+    Assert.IsInstanceOfType<InvalidOperationException>(ex.InnerException);
+  }
+
+  /// <summary>
+  /// Verifies that <see cref="AnalysisOrchestrationService.FailRunAsync"/> delegates its arguments unchanged to
+  /// the run foundation service.
+  /// </summary>
+  [TestMethod]
+  public async Task FailRunAsync_Always_DelegatesToFoundationService()
+  {
+    Guid runId = Guid.NewGuid();
+    DateTimeOffset failedAt = DateTimeOffset.UtcNow;
+
+    var analysisRunFoundation = new Mock<IAnalysisRunFoundationService>();
+    analysisRunFoundation
+      .Setup(a => a.FailRunAsync(runId, "worker-a", "boom", failedAt, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(AnalysisRunTestBuilder.Terminal(AnalysisRunStatus.Failed));
+
+    var service = CreateService(analysisRunFoundation.Object);
+
+    await service.FailRunAsync(runId, "worker-a", "boom", failedAt, CancellationToken.None).ConfigureAwait(true);
+
+    analysisRunFoundation.Verify(
+      a => a.FailRunAsync(runId, "worker-a", "boom", failedAt, It.IsAny<CancellationToken>()),
+      Times.Once);
+  }
+
+  /// <summary>
+  /// Verifies that an unclassified exception raised by the run foundation service during
+  /// <see cref="AnalysisOrchestrationService.FailRunAsync"/> is wrapped into an
+  /// <see cref="AnalysisOrchestrationServiceException"/>.
+  /// </summary>
+  [TestMethod]
+  public async Task FailRunAsync_WhenFoundationThrowsUnknown_ThrowsAnalysisOrchestrationServiceException()
+  {
+    var analysisRunFoundation = new Mock<IAnalysisRunFoundationService>();
+    analysisRunFoundation
+      .Setup(a => a.FailRunAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new InvalidOperationException("boom"));
+
+    var service = CreateService(analysisRunFoundation.Object);
+
+    var ex = await Assert.ThrowsExactlyAsync<AnalysisOrchestrationServiceException>(
+      () => service.FailRunAsync(Guid.NewGuid(), "worker-a", "boom", DateTimeOffset.UtcNow, CancellationToken.None)).ConfigureAwait(true);
+
+    Assert.IsInstanceOfType<InvalidOperationException>(ex.InnerException);
+  }
+
+  private static AnalysisOrchestrationService CreateService(IAnalysisRunFoundationService analysisRunFoundationService) =>
+    new(
+      analysisRunFoundationService,
+      Mock.Of<IDocumentAnalysisFoundationService>(),
+      Mock.Of<IGenerativeAnalysisFoundationService>(),
+      NullLoggerFactory.Instance);
 
   #endregion
 }

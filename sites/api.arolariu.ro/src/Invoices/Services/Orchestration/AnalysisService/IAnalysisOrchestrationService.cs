@@ -68,7 +68,11 @@ public interface IAnalysisOrchestrationService
   /// </summary>
   /// <param name="merchantId">The identifier of the merchant to analyze.</param>
   /// <param name="ownerIdentifier">The identifier of the user who requested the analysis.</param>
-  /// <param name="parentCompanyId">The identifier of the merchant's parent company, when applicable.</param>
+  /// <param name="parentCompanyId">
+  /// The identifier of the merchant's parent company. Persisted verbatim on the queued run as
+  /// <see cref="AnalysisRun.TargetPartitionIdentifier"/> so a later Task 11 point-update against the merchant's
+  /// partition does not need to re-resolve the partition scope.
+  /// </param>
   /// <param name="options">The caller-supplied merchant analysis capability selection.</param>
   /// <param name="traceId">The distributed trace identifier to continue across the pipeline boundary.</param>
   /// <param name="cancellationToken">The cancellation token that aborts the operation.</param>

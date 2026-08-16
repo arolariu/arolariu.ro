@@ -9,7 +9,12 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 /// </summary>
 /// <remarks>
 /// <para>This contract captures only capability selection and recipe limits. It deliberately excludes run metadata and persisted stamps because those arrive in later pipeline tasks.</para>
-/// <para><b>Dependency Closure:</b> Recipe generation and allergen assessment both require product classification to be enabled.</para>
+/// <para><b>Dependency Closure:</b> Allergen assessment requires product classification to be enabled. Recipe generation
+/// requires allergen assessment to be enabled (and therefore, transitively, product classification as well) — this
+/// mirrors the orchestration DAG (Task 9), which only attempts recipe generation once both product classification and
+/// allergen assessment outcomes are available; without this closure a legal <see cref="AnalysisProfile.Custom"/>
+/// selection could enable recipe generation while disabling allergen assessment, causing the DAG to silently skip
+/// recipes forever.</para>
 /// <para><b>Profiles:</b> <see cref="AnalysisProfile.Fast"/>, <see cref="AnalysisProfile.Balanced"/>, and <see cref="AnalysisProfile.Comprehensive"/> must each exactly match their published preset shape; callers requiring custom combinations must use <see cref="AnalysisProfile.Custom"/>.</para>
 /// </remarks>
 public sealed record InvoiceAnalysisOptions
@@ -57,6 +62,11 @@ public sealed record InvoiceAnalysisOptions
     if (recipeGeneration && !productClassification)
     {
       throw new ArgumentException("Recipe generation requires product classification.", nameof(recipeGeneration));
+    }
+
+    if (recipeGeneration && !allergenAssessment)
+    {
+      throw new ArgumentException("Recipe generation requires allergen assessment.", nameof(recipeGeneration));
     }
 
     maximumRecipes = AnalysisContractGuards.RequireNonNegative(maximumRecipes, nameof(maximumRecipes));

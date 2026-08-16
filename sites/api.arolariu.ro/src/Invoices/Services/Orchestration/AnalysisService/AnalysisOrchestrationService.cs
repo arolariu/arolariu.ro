@@ -112,6 +112,7 @@ public sealed partial class AnalysisOrchestrationService : IAnalysisOrchestratio
       merchantId,
       ownerIdentifier,
       Guid.CreateVersion7(),
+      parentCompanyId,
       effectiveOptions,
       traceId);
 

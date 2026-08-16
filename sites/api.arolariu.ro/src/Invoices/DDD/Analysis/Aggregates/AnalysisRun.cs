@@ -30,6 +30,10 @@ using NewtonsoftJson = Newtonsoft.Json;
 /// state (<see cref="AnalysisRunStatus.Completed"/> or <see cref="AnalysisRunStatus.Failed"/>).</para>
 /// <para><b>Immutability:</b> All transitions (<see cref="Claim"/>, <see cref="RenewLease"/>, <see cref="Complete"/>,
 /// <see cref="Fail"/>) return a new instance; the original is left unmodified.</para>
+/// <para><b>Target partition context:</b> <see cref="TargetPartitionIdentifier"/> is set once, by
+/// <see cref="CreateMerchant"/>, and carried unchanged through every transition (<see cref="Claim"/>,
+/// <see cref="RenewLease"/>, <see cref="Complete"/>, <see cref="Fail"/>) because record <c>with</c>-expressions only
+/// touch the properties they explicitly assign. It is always <c>null</c> for invoice runs.</para>
 /// </remarks>
 public sealed record AnalysisRun
 {
@@ -60,6 +64,21 @@ public sealed record AnalysisRun
   [JsonPropertyName("targetId")]
   [NewtonsoftJson.JsonProperty("targetId")]
   public required Guid TargetId { get; init; }
+
+  /// <summary>
+  /// Gets the partition/company scope of the target aggregate — the merchant's parent company identifier when
+  /// <see cref="TargetType"/> is <see cref="AnalysisTargetType.Merchant"/>, or <see langword="null"/> for invoice
+  /// runs (invoices are not partitioned by parent company).
+  /// </summary>
+  /// <remarks>
+  /// Persisted verbatim so a later Task 11 point-update against the merchant's partition (e.g. attaching analysis
+  /// outcomes back onto the durable <c>Merchant</c> aggregate) does not need to re-resolve or re-validate the
+  /// caller-supplied partition scope; the effective partition context is fixed at queue time, exactly like the
+  /// resolved effective analysis options.
+  /// </remarks>
+  [JsonPropertyName("targetPartitionIdentifier")]
+  [NewtonsoftJson.JsonProperty("targetPartitionIdentifier", NullValueHandling = NewtonsoftJson.NullValueHandling.Ignore)]
+  public Guid? TargetPartitionIdentifier { get; init; }
 
   /// <summary>Gets the identifier of the user who requested this analysis run.</summary>
   [JsonPropertyName("requestedBy")]
@@ -193,6 +212,11 @@ public sealed record AnalysisRun
   /// <param name="targetId">The identifier of the merchant to analyze.</param>
   /// <param name="requestedBy">The identifier of the user requesting the analysis.</param>
   /// <param name="correlationId">The correlation identifier linking this run to its originating request.</param>
+  /// <param name="targetPartitionIdentifier">
+  /// The merchant's parent company identifier (partition/company scope), persisted verbatim on the run for a later
+  /// Task 11 point-update against the same partition, or <see langword="null"/> when the merchant has no parent
+  /// company scope.
+  /// </param>
   /// <param name="options">The merchant analysis capability selection.</param>
   /// <param name="traceParent">The W3C <c>traceparent</c> value to continue the distributed trace, or <c>null</c>.</param>
   /// <returns>A newly queued <see cref="AnalysisRun"/>.</returns>
@@ -202,6 +226,7 @@ public sealed record AnalysisRun
     Guid targetId,
     Guid requestedBy,
     Guid correlationId,
+    Guid? targetPartitionIdentifier,
     MerchantAnalysisOptions options,
     string? traceParent)
   {
@@ -215,6 +240,7 @@ public sealed record AnalysisRun
       Bucket = DefaultBucket,
       TargetType = AnalysisTargetType.Merchant,
       TargetId = targetId,
+      TargetPartitionIdentifier = targetPartitionIdentifier,
       RequestedBy = requestedBy,
       CorrelationId = correlationId,
       TraceParent = traceParent,

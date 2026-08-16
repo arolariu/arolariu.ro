@@ -144,7 +144,7 @@ internal sealed class AnalysisServiceHarness
   /// <returns>A configured harness.</returns>
   public static AnalysisServiceHarness ForMerchant(MerchantAnalysisOptions options, IReadOnlySet<string> failingCapabilities) =>
     new(
-      AnalysisRun.CreateMerchant(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), options, traceParent: null),
+      AnalysisRun.CreateMerchant(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), options, traceParent: null),
       CreateInvoiceEntity(),
       CreateMerchantEntity(),
       failingCapabilities);

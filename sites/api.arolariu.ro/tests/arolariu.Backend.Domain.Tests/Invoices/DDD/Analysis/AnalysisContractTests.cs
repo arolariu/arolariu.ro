@@ -144,6 +144,53 @@ public sealed class AnalysisContractTests
       maximumRecipes: 0));
 
   /// <summary>
+  /// RED: verifies that recipe generation depends on allergen assessment, not merely on product classification.
+  /// Product classification alone (without allergen assessment) is a legal <see cref="AnalysisProfile.Custom"/>
+  /// combination on its own, but pairing it with recipe generation must be rejected — otherwise the orchestration
+  /// DAG (Task 9) would silently and permanently skip recipe generation for this run, because
+  /// <c>AnalyzeInvoiceAsync</c> only attempts recipes once both product classification AND allergen assessment
+  /// results are available.
+  /// </summary>
+  [TestMethod]
+  public void InvoiceAnalysisOptions_RecipesWithoutAllergenAssessment_ThrowsArgumentException() =>
+    Assert.ThrowsExactly<ArgumentException>(() => new InvoiceAnalysisOptions(
+      AnalysisProfile.Custom,
+      documentExtraction: true,
+      merchantResolution: false,
+      invoiceSummary: false,
+      productClassification: true,
+      allergenAssessment: false,
+      invoiceClassification: false,
+      recipeGeneration: true,
+      maximumRecipes: 1));
+
+  /// <summary>
+  /// GREEN counterpart: verifies that recipe generation is accepted once both product classification AND allergen
+  /// assessment are enabled, confirming the dependency closure requires allergen assessment specifically (not just
+  /// product classification) without over-rejecting legal combinations.
+  /// </summary>
+  [TestMethod]
+  public void InvoiceAnalysisOptions_RecipesWithAllergenAssessment_DoesNotThrow()
+  {
+    // Act
+    InvoiceAnalysisOptions options = new(
+      AnalysisProfile.Custom,
+      documentExtraction: true,
+      merchantResolution: false,
+      invoiceSummary: false,
+      productClassification: true,
+      allergenAssessment: true,
+      invoiceClassification: false,
+      recipeGeneration: true,
+      maximumRecipes: 1);
+
+    // Assert
+    Assert.IsTrue(options.RecipeGeneration);
+    Assert.IsTrue(options.AllergenAssessment);
+    Assert.IsTrue(options.ProductClassification);
+  }
+
+  /// <summary>
   /// Verifies that recipe generation requires a positive recipe limit.
   /// </summary>
   [TestMethod]
@@ -154,7 +201,7 @@ public sealed class AnalysisContractTests
       merchantResolution: false,
       invoiceSummary: false,
       productClassification: true,
-      allergenAssessment: false,
+      allergenAssessment: true,
       invoiceClassification: false,
       recipeGeneration: true,
       maximumRecipes: 0));

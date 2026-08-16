@@ -169,13 +169,15 @@ public sealed class AnalysisRunStateTests
       AnalysisRun.CreateInvoice(Guid.Empty, Guid.NewGuid(), Guid.NewGuid(), InvoiceAnalysisOptions.Comprehensive(), null));
 
   /// <summary>
-  /// Verifies that <see cref="AnalysisRun.CreateMerchant"/> produces a queued run with the merchant target type.
+  /// Verifies that <see cref="AnalysisRun.CreateMerchant"/> produces a queued run with the merchant target type
+  /// and persists the supplied parent company identifier as <see cref="AnalysisRun.TargetPartitionIdentifier"/>.
   /// </summary>
   [TestMethod]
   public void CreateMerchant_ValidInput_ReturnsQueuedMerchantRun()
   {
+    Guid parentCompanyId = Guid.NewGuid();
     AnalysisRun run = AnalysisRun.CreateMerchant(
-      Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), MerchantAnalysisOptions.Comprehensive(), null);
+      Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), parentCompanyId, MerchantAnalysisOptions.Comprehensive(), null);
 
     Assert.AreEqual(AnalysisTargetType.Merchant, run.TargetType);
     Assert.AreEqual(AnalysisRunStatus.Queued, run.Status);
@@ -183,6 +185,57 @@ public sealed class AnalysisRunStateTests
     Assert.IsNull(run.InvoiceOptions);
     Assert.AreEqual(AnalysisRun.DefaultBucket, run.Bucket);
     Assert.AreEqual(0, run.AttemptCount);
+    Assert.AreEqual(parentCompanyId, run.TargetPartitionIdentifier);
+  }
+
+  /// <summary>
+  /// Verifies that <see cref="AnalysisRun.CreateMerchant"/> accepts a <see langword="null"/> parent company
+  /// identifier, leaving <see cref="AnalysisRun.TargetPartitionIdentifier"/> unset.
+  /// </summary>
+  [TestMethod]
+  public void CreateMerchant_NullTargetPartitionIdentifier_LeavesTargetPartitionIdentifierNull()
+  {
+    AnalysisRun run = AnalysisRun.CreateMerchant(
+      Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), null, MerchantAnalysisOptions.Comprehensive(), null);
+
+    Assert.IsNull(run.TargetPartitionIdentifier);
+  }
+
+  /// <summary>
+  /// Verifies that <see cref="AnalysisRun.CreateInvoice"/> never sets <see cref="AnalysisRun.TargetPartitionIdentifier"/>,
+  /// since invoice runs carry no parent-company partition scope.
+  /// </summary>
+  [TestMethod]
+  public void CreateInvoice_ValidInput_LeavesTargetPartitionIdentifierNull()
+  {
+    AnalysisRun run = AnalysisRun.CreateInvoice(
+      Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), InvoiceAnalysisOptions.Comprehensive(), null);
+
+    Assert.IsNull(run.TargetPartitionIdentifier);
+  }
+
+  /// <summary>
+  /// Verifies that <see cref="AnalysisRun.TargetPartitionIdentifier"/> survives claim, lease renewal, and both
+  /// terminal transitions unchanged, since record <c>with</c>-expressions only touch explicitly assigned properties.
+  /// </summary>
+  [TestMethod]
+  public void TargetPartitionIdentifier_ThroughClaimRenewCompleteAndFail_IsPreserved()
+  {
+    Guid parentCompanyId = Guid.NewGuid();
+    AnalysisRun queued = AnalysisRun.CreateMerchant(
+      Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), parentCompanyId, MerchantAnalysisOptions.Comprehensive(), null);
+
+    AnalysisRun claimed = queued.Claim("worker-a", DateTimeOffset.UtcNow, TimeSpan.FromMinutes(5));
+    Assert.AreEqual(parentCompanyId, claimed.TargetPartitionIdentifier);
+
+    AnalysisRun renewed = claimed.RenewLease(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(5));
+    Assert.AreEqual(parentCompanyId, renewed.TargetPartitionIdentifier);
+
+    AnalysisRun completed = renewed.Complete(DateTimeOffset.UtcNow, [AnalysisCapability.MerchantClassification]);
+    Assert.AreEqual(parentCompanyId, completed.TargetPartitionIdentifier);
+
+    AnalysisRun failedFromRenewed = renewed.Fail("boom", DateTimeOffset.UtcNow);
+    Assert.AreEqual(parentCompanyId, failedFromRenewed.TargetPartitionIdentifier);
   }
 
   /// <summary>
