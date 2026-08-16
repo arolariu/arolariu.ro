@@ -54,7 +54,7 @@ function createStoredZip(fileName: string, contents: string): Uint8Array {
   return Buffer.concat([localHeader, fileNameBytes, contentBytes, centralHeader, fileNameBytes, endRecord]);
 }
 
-function createFakeFetch(): typeof fetch {
+function createFakeFetch(options: Readonly<{malformedBroader?: boolean}> = {}): typeof fetch {
   const gpcDocument = {
     LanguageCode: "EN",
     DateUtc: "20/5/2026",
@@ -84,6 +84,7 @@ function createFakeFetch(): typeof fetch {
           concept: {value: "eco:01"},
           notation: {value: "01"},
           label: {value: "01 Food and non-alcoholic beverages"},
+          ...(options.malformedBroader === true ? {broader: {type: "uri"}} : {}),
         }
       : {
           concept: {value: "nace:A"},
@@ -233,5 +234,14 @@ describe("generate.artifacts", () => {
     const unavailableFetch: typeof fetch = async () => new Response("Unavailable", {status: 503, statusText: "Service Unavailable"});
 
     await expect(generateTaxonomyArtifacts(unavailableFetch, [join(root, "backend"), join(root, "frontend")])).rejects.toThrow("HTTP 503");
+  });
+
+  it("rejects a present optional SPARQL binding without a value", async () => {
+    const root = await mkdtemp(join(tmpdir(), "taxonomy-malformed-binding-"));
+    temporaryDirectories.push(root);
+
+    await expect(
+      generateTaxonomyArtifacts(createFakeFetch({malformedBroader: true}), [join(root, "backend"), join(root, "frontend")]),
+    ).rejects.toThrow("SPARQL binding 'broader'.value must be a non-empty string");
   });
 });

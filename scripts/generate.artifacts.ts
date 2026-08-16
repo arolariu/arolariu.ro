@@ -378,11 +378,13 @@ OFFSET ${offset}`;
 
 function readBindingValue(binding: Readonly<Record<string, unknown>>, key: string, required: boolean): string | null {
   const valueRecord = binding[key];
-  if (valueRecord === undefined && !required) return null;
+  if (valueRecord === undefined) {
+    if (!required) return null;
+    throw new TypeError(`SPARQL binding '${key}' is required.`);
+  }
+
   const record = requireRecord(valueRecord, `SPARQL binding '${key}'`);
-  const value = record["value"];
-  if (value === undefined && !required) return null;
-  return requireString(value, `SPARQL binding '${key}'.value`);
+  return requireString(record["value"], `SPARQL binding '${key}'.value`);
 }
 
 function parseSparqlResponse(value: unknown): readonly SparqlBindingInput[] {
@@ -522,6 +524,7 @@ async function createEuArtifact(
  * Downloads and generates all mirrored taxonomy artifacts.
  *
  * @param fetchImpl - Fetch implementation, injectable for tests.
+ * @param outputRoots - Runtime directories that receive byte-identical artifacts.
  * @returns Generated output paths.
  */
 export async function generateTaxonomyArtifacts(
