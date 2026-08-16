@@ -17,11 +17,11 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// <para>
 /// Implementations MUST batch all requested subjects into single structured generation calls per phase, preserve
 /// exactly one result per transient correlation token, and resolve every AI-selected code through the canonical
-/// taxonomy broker before returning it. Implementations MUST NOT persist aggregates, parse free-text fallbacks,
-/// or generate merchant descriptions.
+/// taxonomy broker before returning it. Implementations MUST NOT persist aggregates or parse free-text fallbacks.
 /// </para>
 /// <para><b>Taxonomy mapping:</b> Products classify against GS1 GPC, invoices against ECOICOP v2, and merchants
-/// against NACE 2.1.</para>
+/// against NACE 2.1. Merchant descriptions are generated as concise typed structured outputs from merchant fields
+/// and related invoice evidence.</para>
 /// </remarks>
 public interface IGenerativeAnalysisFoundationService
 {
@@ -57,6 +57,18 @@ public interface IGenerativeAnalysisFoundationService
   /// <param name="cancellationToken">The cancellation token that aborts classification.</param>
   /// <returns>The canonical NACE 2.1 classification for the merchant.</returns>
   Task<MerchantClassificationResult> ClassifyMerchantAsync(
+    Merchant merchant,
+    Guid sourceRunId,
+    CancellationToken cancellationToken);
+
+  /// <summary>
+  /// Generates a concise factual description for a merchant from merchant fields and related invoice evidence.
+  /// </summary>
+  /// <param name="merchant">The merchant to describe.</param>
+  /// <param name="sourceRunId">The analysis run identifier that originated this description request.</param>
+  /// <param name="cancellationToken">The cancellation token that aborts description generation.</param>
+  /// <returns>The structured merchant description result.</returns>
+  Task<MerchantDescriptionResult> GenerateMerchantDescriptionAsync(
     Merchant merchant,
     Guid sourceRunId,
     CancellationToken cancellationToken);

@@ -18,7 +18,8 @@ using Microsoft.Extensions.Logging;
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
 /// <summary>
-/// Provides the reusable structured analysis engine for summaries, allergen assessments, classifications, and recipes.
+/// Provides the reusable structured analysis engine for summaries, merchant descriptions, allergen assessments,
+/// classifications, and recipes.
 /// </summary>
 public sealed partial class GenerativeAnalysisFoundationService : IGenerativeAnalysisFoundationService
 {

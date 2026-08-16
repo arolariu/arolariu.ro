@@ -1,0 +1,120 @@
+namespace arolariu.Backend.Domain.Tests.Invoices.Services.Foundation;
+
+using System;
+using System.Text.Json;
+using System.Threading.Tasks;
+
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Foundation;
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
+using arolariu.Backend.Domain.Tests.Invoices.Helpers;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+/// <summary>
+/// Verifies merchant description generation behavior for the generative analysis foundation service.
+/// </summary>
+[TestClass]
+public sealed class MerchantDescriptionGenerationTests
+{
+  /// <summary>
+  /// Verifies that a valid structured description returns the concise description and uses exactly one typed request.
+  /// </summary>
+  [TestMethod]
+  public async Task GenerateMerchantDescriptionAsync_ValidStructuredResponse_ReturnsDescription()
+  {
+    var harness = MerchantDescriptionHarness.WithResponse("A local grocery retailer serving neighborhood shoppers.");
+
+    MerchantDescriptionResult result = await harness.ExecuteAsync();
+
+    Assert.AreEqual("A local grocery retailer serving neighborhood shoppers.", result.Description);
+    Assert.AreEqual(1, harness.Broker.InvocationCount);
+  }
+
+  /// <summary>
+  /// Verifies that an unknown merchant keeps a qualified description rather than asserting invented facts.
+  /// </summary>
+  [TestMethod]
+  public async Task GenerateMerchantDescriptionAsync_UnknownMerchant_ReturnsQualifiedDescription()
+  {
+    var harness = MerchantDescriptionHarness.WithResponse("Likely a local grocery retailer based on invoice evidence.");
+
+    MerchantDescriptionResult result = await harness.ExecuteAsync();
+
+    StringAssert.Contains(result.Description, "Likely", StringComparison.Ordinal);
+  }
+
+  /// <summary>
+  /// Verifies that empty structured output is rejected.
+  /// </summary>
+  [TestMethod]
+  public async Task GenerateMerchantDescriptionAsync_EmptyDescription_ThrowsDependencyException()
+  {
+    var harness = MerchantDescriptionHarness.WithResponse(string.Empty);
+
+    var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
+      () => harness.ExecuteAsync());
+
+    Assert.IsNotNull(exception.InnerException);
+  }
+
+  /// <summary>
+  /// Verifies that descriptions exceeding the concise limit are rejected.
+  /// </summary>
+  [TestMethod]
+  public async Task GenerateMerchantDescriptionAsync_OverLimitDescription_ThrowsDependencyException()
+  {
+    var harness = MerchantDescriptionHarness.WithResponse(new string('a', 241));
+
+    var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
+      () => harness.ExecuteAsync());
+
+    Assert.IsNotNull(exception.InnerException);
+  }
+
+  /// <summary>
+  /// Verifies that URL-containing descriptions are rejected.
+  /// </summary>
+  [TestMethod]
+  public async Task GenerateMerchantDescriptionAsync_UrlContainingDescription_ThrowsDependencyException()
+  {
+    var harness = MerchantDescriptionHarness.WithResponse("Visit https://example.test for more details.");
+
+    var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
+      () => harness.ExecuteAsync());
+
+    Assert.IsNotNull(exception.InnerException);
+  }
+
+  /// <summary>
+  /// Verifies that external research claims are rejected.
+  /// </summary>
+  [TestMethod]
+  public async Task GenerateMerchantDescriptionAsync_ExternalResearchClaim_ThrowsDependencyException()
+  {
+    var harness = MerchantDescriptionHarness.WithResponse("Based on web research, this appears to be a retail shop.");
+
+    var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
+      () => harness.ExecuteAsync());
+
+    Assert.IsNotNull(exception.InnerException);
+  }
+
+  /// <summary>
+  /// Verifies that the prompt treats the user payload as untrusted merchant data and remains content-free in logs.
+  /// </summary>
+  [TestMethod]
+  public async Task GenerateMerchantDescriptionAsync_PromptUsesUntrustedPayloadBoundary()
+  {
+    var harness = MerchantDescriptionHarness.WithResponse("A local grocery retailer serving neighborhood shoppers.");
+
+    _ = await harness.ExecuteAsync();
+
+    string systemPrompt = harness.Broker.CapturedRequests[0].SystemPrompt;
+    string payload = JsonSerializer.Serialize(harness.Broker.CapturedRequests[0].UserPayload);
+
+    StringAssert.Contains(systemPrompt, "untrusted data", StringComparison.Ordinal);
+    StringAssert.Contains(systemPrompt, "merchant fields", StringComparison.Ordinal);
+    StringAssert.Contains(systemPrompt, "related invoice evidence", StringComparison.Ordinal);
+    StringAssert.Contains(payload, "Corner Shop SRL", StringComparison.Ordinal);
+  }
+}
