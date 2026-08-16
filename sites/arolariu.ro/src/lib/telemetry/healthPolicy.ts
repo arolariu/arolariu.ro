@@ -45,7 +45,10 @@ export function isSuppressedPath(path: string | undefined): boolean {
  * Determines whether telemetry should be suppressed for a path.
  * @param path The request path, with or without a query string.
  * @returns True when telemetry must be suppressed.
- * @remarks Fails open toward emitting: a malformed env var leaves suppression at its default.
+ * @remarks
+ * Fails safe toward suppression: an unset or malformed env var leaves suppression
+ * enabled, so cost control holds even when the environment is misconfigured. Only the
+ * literal `false` re-enables health telemetry.
  */
 export function shouldSuppressTelemetry(path: string | undefined): boolean {
   return parseSuppressionFlag(process.env[SUPPRESSION_ENV_VAR]) && isSuppressedPath(path);
