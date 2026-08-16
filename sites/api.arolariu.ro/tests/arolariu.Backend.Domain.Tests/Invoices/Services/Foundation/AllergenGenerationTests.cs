@@ -24,15 +24,18 @@ using GenerativeService = arolariu.Backend.Domain.Invoices.Services.Foundation.G
 public sealed class AllergenGenerationTests
 {
   /// <summary>
-  /// Verifies that product-name-only evidence can never be surfaced as declared allergen evidence.
+  /// Verifies that declared allergen evidence is rejected for Task 7 regardless of the labeled evidence source.
   /// </summary>
   [TestMethod]
-  public async Task AssessAllergensAsync_ProductNameOnly_NeverReturnsDeclared()
+  [DataRow("productName")]
+  [DataRow("ingredientsText")]
+  [DataRow("allergenStatement")]
+  public async Task AssessAllergensAsync_DeclaredEvidenceTier_ThrowsDependencyException(string evidenceSource)
   {
     var harness = GenerativeCapabilityHarness.WithAllergenSignal(
       AllergenCode.Milk,
       ProductAllergenEvidenceTier.Declared,
-      evidenceSource: "productName");
+      evidenceSource);
 
     var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
       () => harness.Service.AssessAllergensAsync(

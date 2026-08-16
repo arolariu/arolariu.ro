@@ -17,7 +17,7 @@ public sealed partial class GenerativeAnalysisFoundationService
 
     if (products.Count == 0)
     {
-      throw new ArgumentException("At least one product is required for GPC classification.", nameof(products));
+      throw new ArgumentException("At least one product is required for the requested analysis capability.", nameof(products));
     }
 
     ValidateCorrelationTokensAreUnique(products.Select(product => product.CorrelationToken));

@@ -310,4 +310,72 @@ public sealed class RecipeGenerationTests
 
     Assert.IsInstanceOfType<InvalidStructuredOutputException>(exception.InnerException);
   }
+
+  /// <summary>
+  /// Verifies that the structured recipe response must not exceed a requested maximum below three.
+  /// </summary>
+  [TestMethod]
+  public async Task GenerateRecipesAsync_ResponseExceedsRequestedMaximum_ThrowsDependencyException()
+  {
+    var recipes = Enumerable.Range(1, 3)
+      .Select(index =>
+        new GenerativeService.RecipeStructuredSuggestion(
+          $"Recipe {index}",
+          "A simple meal.",
+          2,
+          5,
+          10,
+          15,
+          "Easy",
+          [
+            new GenerativeService.RecipeStructuredIngredient(
+              "lapte",
+              "500 ml",
+              null)
+          ],
+          [],
+          [],
+          [
+            new GenerativeService.RecipeStructuredStep(
+              1,
+              "Heat the milk in a saucepan.",
+              null)
+          ],
+          [AllergenCode.Milk.ToString()]))
+      .ToArray();
+
+    var harness = GenerativeCapabilityHarness.WithRecipes(recipes);
+
+    var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
+      () => harness.Service.GenerateRecipesAsync(
+        harness.Products,
+        harness.Classifications,
+        harness.Allergens,
+        maximumRecipes: 2,
+        Guid.NewGuid(),
+        CancellationToken.None));
+
+    Assert.IsInstanceOfType<InvalidStructuredOutputException>(exception.InnerException);
+  }
+
+  /// <summary>
+  /// Verifies that all-non-food recipe inputs return an empty success result without calling the broker.
+  /// </summary>
+  [TestMethod]
+  public async Task GenerateRecipesAsync_AllNonFoodInput_ReturnsEmptyResultWithoutBrokerCall()
+  {
+    var harness = GenerativeCapabilityHarness.WithNonFoodOnlyRecipeInputs();
+
+    RecipeGenerationResult result = await harness.Service.GenerateRecipesAsync(
+      harness.Products,
+      harness.Classifications,
+      harness.Allergens,
+      maximumRecipes: 2,
+      Guid.NewGuid(),
+      CancellationToken.None);
+
+    Assert.AreEqual(0, result.Recipes.Count);
+    Assert.AreEqual(0, harness.Broker.InvocationCount);
+    Assert.AreEqual(0, harness.Broker.CapturedRequests.Count);
+  }
 }

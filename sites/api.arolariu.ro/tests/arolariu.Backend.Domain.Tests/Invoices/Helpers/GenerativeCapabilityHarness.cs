@@ -166,6 +166,28 @@ internal sealed class GenerativeCapabilityHarness
         }));
   }
 
+  /// <summary>
+  /// Creates a harness containing only non-food recipe inputs.
+  /// </summary>
+  /// <returns>A harness ready for all-non-food recipe generation tests.</returns>
+  public static GenerativeCapabilityHarness WithNonFoodOnlyRecipeInputs()
+  {
+    var broker = new ScriptedGenerativeAiBroker();
+
+    return new GenerativeCapabilityHarness(
+      broker,
+      TaxonomyBrokerTestFactory.Create(),
+      [new ProductAnalysisInput("item-0001", new Product { Name = "pensula", Quantity = 1, QuantityUnit = "pcs" })],
+      new ProductClassificationResult(new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
+      {
+        ["item-0001"] = CreateNonFoodClassification("10001674", "Artists Brushes/Applicators"),
+      }),
+      CreateAllergens(new Dictionary<string, ProductAllergenAssessment>(StringComparer.Ordinal)
+      {
+        ["item-0001"] = ProductAllergenAssessment.NoSignalsInAvailableEvidence(),
+      }));
+  }
+
   private static IReadOnlyList<ProductAnalysisInput> CreateProducts(bool includeNonFood) =>
     includeNonFood
       ?
