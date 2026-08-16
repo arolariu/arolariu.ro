@@ -2,6 +2,7 @@ namespace arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysi
 
 using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -142,19 +143,7 @@ public sealed partial class GenerativeAnalysisFoundationService
       || !string.IsNullOrWhiteSpace(contactInformation.Website));
 
   private static bool ContainsQualifiedLanguage(string description)
-  {
-    string[] qualifyingPhrases =
-    [
-      "likely",
-      "possibly",
-      "appears to be",
-      "may be",
-      "seems to be",
-      "probably",
-    ];
-
-    return qualifyingPhrases.Any(phrase => description.Contains(phrase, StringComparison.OrdinalIgnoreCase));
-  }
+    => MerchantWeakEvidenceQualifierRegex().IsMatch(description);
 
   private static string BuildMerchantDescriptionSystemPrompt() =>
     """
@@ -177,4 +166,9 @@ public sealed partial class GenerativeAnalysisFoundationService
   /// </summary>
   /// <param name="Description">The concise merchant description.</param>
   private sealed record MerchantDescriptionOutput(string Description);
+
+  [GeneratedRegex(
+    @"\b(?:likely|possibly|potentially|probably)\b|\b(?:may|might|could)\s+be\b|\b(?:appears?|seems?)\s+to\s+be\b",
+    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+  private static partial Regex MerchantWeakEvidenceQualifierRegex();
 }

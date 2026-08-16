@@ -45,12 +45,44 @@ public sealed class MerchantDescriptionGenerationTests
   }
 
   /// <summary>
+  /// Verifies that accepted weak-evidence qualifier phrases pass validation.
+  /// </summary>
+  [TestMethod]
+  [DataRow("Potentially a local retailer based on limited invoice evidence.")]
+  [DataRow("Appears to be a local retailer based on limited invoice evidence.")]
+  [DataRow("May be a local retailer based on limited invoice evidence.")]
+  public async Task GenerateMerchantDescriptionAsync_SparseEvidenceAcceptedQualifier_ReturnsDescription(string description)
+  {
+    var harness = MerchantDescriptionHarness.WithSparseResponse(description);
+
+    MerchantDescriptionResult result = await harness.ExecuteAsync();
+
+    Assert.AreEqual(description, result.Description);
+  }
+
+  /// <summary>
   /// Verifies that a sparse-evidence merchant rejects unqualified factual assertions.
   /// </summary>
   [TestMethod]
   public async Task GenerateMerchantDescriptionAsync_SparseEvidenceUnqualifiedDescription_ThrowsDependencyException()
   {
     var harness = MerchantDescriptionHarness.WithSparseResponse("A local grocery retailer serving neighborhood shoppers.");
+
+    var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
+      () => harness.ExecuteAsync());
+
+    Assert.IsInstanceOfType<InvalidStructuredOutputException>(exception.InnerException);
+  }
+
+  /// <summary>
+  /// Verifies that word-adjacent non-qualifier terms do not bypass weak-evidence validation.
+  /// </summary>
+  [TestMethod]
+  [DataRow("Unlikely a local retailer based on limited invoice evidence.")]
+  [DataRow("A retailer with only a likelihood of local trade based on limited invoice evidence.")]
+  public async Task GenerateMerchantDescriptionAsync_SparseEvidenceNonQualifierTerm_ThrowsDependencyException(string description)
+  {
+    var harness = MerchantDescriptionHarness.WithSparseResponse(description);
 
     var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
       () => harness.ExecuteAsync());
@@ -109,10 +141,13 @@ public sealed class MerchantDescriptionGenerationTests
   [TestMethod]
   [DataRow("Based on web research, this appears to be a retail shop.")]
   [DataRow("Based on registry data, this appears to be a retail shop.")]
+  [DataRow("Based on online sources, this appears to be a retail shop.")]
   [DataRow("According to Google Maps, this appears to be a retail shop.")]
+  [DataRow("According to public records, this appears to be a retail shop.")]
   [DataRow("Per LinkedIn, this appears to be a retail shop.")]
-  [DataRow("I looked up the merchant and it appears to be a retail shop.")]
-  [DataRow("I searched for the merchant and it appears to be a retail shop.")]
+  [DataRow("Per registry listings, this appears to be a retail shop.")]
+  [DataRow("I looked up the merchant on Google Maps and it appears to be a retail shop.")]
+  [DataRow("I searched online for the merchant and it appears to be a retail shop.")]
   public async Task GenerateMerchantDescriptionAsync_ExternalResearchClaim_ThrowsDependencyException(string description)
   {
     var harness = MerchantDescriptionHarness.WithResponse(description);
@@ -127,6 +162,9 @@ public sealed class MerchantDescriptionGenerationTests
   /// Verifies that ordinary domain nouns do not trigger false positives when no prohibited claim phrase is present.
   /// </summary>
   [TestMethod]
+  [DataRow("Based on available invoice evidence, this appears to be a local retailer.")]
+  [DataRow("Per available invoice evidence, this appears to be a local retailer.")]
+  [DataRow("I searched the available invoice evidence and it appears to be a local retailer.")]
   [DataRow("Research Triangle retailer serving local shoppers.")]
   [DataRow("Registry services office handling administrative tasks.")]
   public async Task GenerateMerchantDescriptionAsync_NonClaimResearchTerms_ReturnsDescription(string description)
