@@ -171,6 +171,13 @@ public sealed class AnalysisContractTests
   }
 
   /// <summary>
+  /// Verifies that value-type payloads are rejected by the generic constraint.
+  /// </summary>
+  [TestMethod]
+  public void CapabilityOutcome_OpenGenericWithValueType_ThrowsArgumentException() =>
+    Assert.ThrowsExactly<ArgumentException>(() => typeof(CapabilityOutcome<>).MakeGenericType(typeof(int)));
+
+  /// <summary>
   /// Verifies that successful outcomes cannot also carry a failure code.
   /// </summary>
   [TestMethod]

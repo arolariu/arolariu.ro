@@ -9,7 +9,7 @@ using System.Diagnostics.CodeAnalysis;
 /// Represents the success or failure outcome for an individual analysis capability section.
 /// </summary>
 /// <typeparam name="T">
-/// The structured section payload produced by the capability.
+/// The reference-type structured section payload produced by the capability.
 /// Successful outcomes carry a non-null value; failed outcomes carry a failure code instead.
 /// </typeparam>
 [SuppressMessage(
@@ -17,6 +17,7 @@ using System.Diagnostics.CodeAnalysis;
   "CA1000:Do not declare static members on generic types",
   Justification = "Task 3 requires named factory methods on the generic analysis capability outcome contract.")]
 public sealed record CapabilityOutcome<T>
+  where T : class
 {
   /// <summary>
   /// Initializes a new instance of the <see cref="CapabilityOutcome{T}"/> record.
@@ -91,7 +92,7 @@ public sealed record CapabilityOutcome<T>
   /// <param name="failureCode">The stable failure code explaining why the capability section is unavailable.</param>
   /// <returns>A failed capability outcome containing <paramref name="failureCode"/>.</returns>
   public static CapabilityOutcome<T> Failure(string failureCode) =>
-    new(succeeded: false, value: default, failureCode);
+    new(succeeded: false, value: null, failureCode);
 }
 
 internal static class AnalysisContractGuards
