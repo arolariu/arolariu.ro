@@ -5,6 +5,7 @@
 
 import {resolve} from "node:path";
 import {fileURLToPath} from "node:url";
+import {buildTaxonomyArtifactGenerationCommand} from "../generate.artifacts.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runSharedPreflight} from "./preflight.ts";
 import {defaultRunner, formatCommand, type CommandRunner} from "./process.ts";
@@ -109,7 +110,7 @@ export async function runImageCli(runner: CommandRunner = defaultRunner): Promis
 
   if (action === "build") {
     if (requiresTaxonomyArtifacts(target)) {
-      await runImageCommand(runner, {command: "npm", args: ["run", "generate:artifacts"]});
+      await runImageCommand(runner, buildTaxonomyArtifactGenerationCommand());
     }
 
     await runImageCommand(

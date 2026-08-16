@@ -8,6 +8,7 @@ import {access, mkdir} from "node:fs/promises";
 import {resolve} from "node:path";
 import {setTimeout as delay} from "node:timers/promises";
 import {fileURLToPath} from "node:url";
+import {buildTaxonomyArtifactGenerationCommand} from "../generate.artifacts.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runSharedPreflight} from "./preflight.ts";
 import {defaultRunner, formatCommand, type CommandRunner} from "./process.ts";
@@ -243,7 +244,7 @@ export async function runSelfhost(action: SelfhostAction, runner: CommandRunner 
 
   if (shouldGenerateTaxonomyArtifacts(action)) {
     getRequiredSqlPassword();
-    await runCommandOrThrow(runner, {command: "npm", args: ["run", "generate:artifacts"]}, ".");
+    await runCommandOrThrow(runner, buildTaxonomyArtifactGenerationCommand(), ".");
     await ensureHttpsCertificates(runner);
     await writeSelfhostTraefikConfig();
   }

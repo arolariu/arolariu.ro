@@ -4,6 +4,8 @@
  */
 
 import {afterEach, describe, expect, it} from "vitest";
+import {basename} from "node:path";
+import {buildTaxonomyArtifactGenerationCommand} from "../generate.artifacts.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import {buildSelfhostPlan, getRequiredSqlPassword, shouldGenerateTaxonomyArtifacts} from "./selfhost.ts";
 
@@ -81,5 +83,12 @@ describe("shouldGenerateTaxonomyArtifacts", () => {
     expect(shouldGenerateTaxonomyArtifacts("start")).toBe(true);
     expect(shouldGenerateTaxonomyArtifacts("stop")).toBe(false);
     expect(shouldGenerateTaxonomyArtifacts("logs")).toBe(false);
+  });
+
+  it("uses the current Node executable instead of a shell-resolved npm command", () => {
+    const command = buildTaxonomyArtifactGenerationCommand();
+
+    expect(command.command).toBe(process.execPath);
+    expect(basename(command.args[0] ?? "")).toBe("generate.artifacts.ts");
   });
 });

@@ -77,10 +77,10 @@ describe("buildImageRunCommand", () => {
 
       try {
         await runImageCli(runner);
-        expect(commands).toContain("npm run generate:artifacts");
-        expect(commands.indexOf("npm run generate:artifacts")).toBeLessThan(
-          commands.findIndex((command) => command.startsWith("podman build")),
-        );
+        const generationCommand = commands.find((command) => command.includes("generate.artifacts.ts"));
+        expect(generationCommand).toBeDefined();
+        expect(generationCommand).not.toContain("npm run");
+        expect(commands.indexOf(generationCommand ?? "")).toBeLessThan(commands.findIndex((command) => command.startsWith("podman build")));
       } finally {
         process.argv = originalArgv;
       }

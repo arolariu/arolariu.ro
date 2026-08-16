@@ -558,6 +558,18 @@ export async function main(): Promise<number> {
   return 0;
 }
 
+/**
+ * Builds a platform-safe command for invoking this generator through the current Node.js executable.
+ *
+ * @returns Shell-independent command and arguments.
+ */
+export function buildTaxonomyArtifactGenerationCommand(): Readonly<{command: string; args: readonly string[]}> {
+  return {
+    command: process.execPath,
+    args: [fileURLToPath(import.meta.url)],
+  };
+}
+
 const isDirectExecution = process.argv[1] !== undefined && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
 if (isDirectExecution) {
   try {
