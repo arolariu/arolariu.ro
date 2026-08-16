@@ -65,9 +65,18 @@ def build_excluded_urls() -> str:
     would also swallow ``/api/healthy`` and ``/api/health/extra``. That contradicts the
     exact-match policy implemented by :func:`is_suppressed_path`.
 
-    Each path is therefore emitted as an anchored, case-insensitive expression tolerating an
-    optional trailing slash and an optional query string, so trace and HTTP-metric exclusion
-    matches :func:`is_suppressed_path` exactly.
+    The ASGI instrumentation matches against the **full request URL** — it calls
+    ``url_disabled`` with the output of ``get_host_port_url_tuple``, e.g.
+    ``http://exp/api/health`` — so a pattern anchored directly to the path would never
+    match in production. Each entry therefore allows an optional ``scheme://host`` prefix
+    before the path.
+
+    Each path is emitted as an anchored, case-insensitive expression tolerating that
+    optional origin, an optional trailing slash, and an optional query string, so trace and
+    HTTP-metric exclusion matches :func:`is_suppressed_path` exactly.
     """
 
-    return ",".join(f"(?i:^{re.escape(path)}/?(\\?.*)?$)" for path in SUPPRESSED_HEALTH_PATHS)
+    return ",".join(
+        f"(?i:^(?:[a-z][a-z0-9+.\\-]*://[^/]*)?{re.escape(path)}/?(\\?.*)?$)"
+        for path in SUPPRESSED_HEALTH_PATHS
+    )

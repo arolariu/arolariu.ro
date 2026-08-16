@@ -107,3 +107,44 @@ class TestBuildExcludedUrls:
             "/",
         ]:
             assert exclude_list.url_disabled(path) is is_suppressed_path(path), path
+
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "http://exp/health",
+            "http://exp/api/health",
+            "http://exp:8080/api/health",
+            "https://exp.arolariu.ro/api/health",
+            "http://exp/api/health?probe=1",
+            "http://exp/api/health/",
+            "https://exp.arolariu.ro/api/ready",
+        ],
+    )
+    def test_excludes_full_request_urls(self, url: str) -> None:
+        """Regression: the ASGI instrumentation matches the full URL, not the bare path.
+
+        ``OpenTelemetryMiddleware`` calls ``url_disabled`` with the output of
+        ``get_host_port_url_tuple``, e.g. ``http://exp/api/health``. Patterns anchored
+        directly to the path silently never matched in production, so probe traces and
+        HTTP metrics were still exported despite the exclusion list being configured.
+        """
+
+        from opentelemetry.util.http import parse_excluded_urls
+
+        assert parse_excluded_urls(build_excluded_urls()).url_disabled(url) is True
+
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "http://exp/api/healthy",
+            "http://exp/api/health/extra",
+            "http://exp/healthcheck-admin",
+            "https://exp.arolariu.ro/api/v1/config",
+        ],
+    )
+    def test_does_not_exclude_full_url_near_misses(self, url: str) -> None:
+        """Tolerating an origin prefix must not loosen the exact-match policy."""
+
+        from opentelemetry.util.http import parse_excluded_urls
+
+        assert parse_excluded_urls(build_excluded_urls()).url_disabled(url) is False
