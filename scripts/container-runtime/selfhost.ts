@@ -241,7 +241,7 @@ export async function runSelfhost(action: SelfhostAction, runner: CommandRunner 
 
   await runSharedPreflight(adapter, runner);
 
-  if (action === "start") {
+  if (shouldGenerateTaxonomyArtifacts(action)) {
     getRequiredSqlPassword();
     await runCommandOrThrow(runner, {command: "npm", args: ["run", "generate:artifacts"]}, ".");
     await ensureHttpsCertificates(runner);

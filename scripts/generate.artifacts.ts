@@ -339,11 +339,16 @@ export function normalizeSparqlBindings(
   const codeByConcept = new Map(bindings.map((binding) => [binding.concept, binding.notation] as const));
   const provisional = bindings.map<TaxonomyArtifactNode>((binding) => {
     const label = stripCodePrefix(binding.label, binding.notation);
+    const parentCode = binding.broader === null ? null : codeByConcept.get(binding.broader);
+    if (binding.broader !== null && parentCode === undefined) {
+      throw new Error(`Unresolved parent '${binding.broader}' for taxonomy code '${binding.notation}'.`);
+    }
+
     return {
       code: binding.notation,
       officialLabel: label,
       level: getEuLevel(system, binding.notation),
-      parentCode: binding.broader === null ? null : (codeByConcept.get(binding.broader) ?? null),
+      parentCode,
       hierarchyCodes: [],
       hierarchyLabels: [],
       definition: null,
@@ -519,7 +524,10 @@ async function createEuArtifact(
  * @param fetchImpl - Fetch implementation, injectable for tests.
  * @returns Generated output paths.
  */
-export async function generateTaxonomyArtifacts(fetchImpl: typeof fetch = fetch): Promise<readonly string[]> {
+export async function generateTaxonomyArtifacts(
+  fetchImpl: typeof fetch = fetch,
+  outputRoots: readonly string[] = OUTPUT_ROOTS,
+): Promise<readonly string[]> {
   const generatedAt = new Date().toISOString();
   const [gpc, ecoicop, nace] = await Promise.all([
     createGpcArtifact(fetchImpl, generatedAt),
@@ -528,9 +536,9 @@ export async function generateTaxonomyArtifacts(fetchImpl: typeof fetch = fetch)
   ]);
 
   const outputGroups = await Promise.all([
-    writeMirroredArtifacts(FILE_NAMES.GS1_GPC, gpc),
-    writeMirroredArtifacts(FILE_NAMES.ECOICOP_V2, ecoicop),
-    writeMirroredArtifacts(FILE_NAMES.NACE_2_1, nace),
+    writeMirroredArtifacts(FILE_NAMES.GS1_GPC, gpc, outputRoots),
+    writeMirroredArtifacts(FILE_NAMES.ECOICOP_V2, ecoicop, outputRoots),
+    writeMirroredArtifacts(FILE_NAMES.NACE_2_1, nace, outputRoots),
   ]);
   return outputGroups.flat();
 }
