@@ -119,10 +119,14 @@ export async function GET(): Promise<NextResponse<HealthResponse>> {
   const checkDurationMs = Math.round(performance.now() - checkStart);
 
   // The single always-on signal that survives suppression. Dimension values match the
-  // .NET and Python services so one query spans the estate. Names are of the form
-  // "exp (config proxy)" / "api (backend)"; the leading token keeps cardinality bounded.
+  // .NET and Python services so one query spans the estate: the backend counts every
+  // check whose status is not Healthy, and exp counts every health 5xx. Degraded is
+  // therefore counted here too — a dependency that answered 503 still drives this
+  // endpoint to 503, and with routine health telemetry suppressed this counter is the
+  // only remaining signal. Names are of the form "exp (config proxy)" / "api (backend)";
+  // the leading token keeps cardinality bounded.
   for (const dependency of dependencies) {
-    if (dependency.status === "Unhealthy") {
+    if (dependency.status !== "Healthy") {
       healthFailureCounter.add(1, {check: dependency.name.split(" ")[0]!});
     }
   }

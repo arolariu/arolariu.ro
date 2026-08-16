@@ -214,7 +214,7 @@ describe("/api/health", () => {
       expect(instrumentationMocks.counterAdd).not.toHaveBeenCalled();
     });
 
-    it("records nothing for a Degraded dependency, which answered but unhappily", async () => {
+    it("records a failure for a Degraded dependency, which answered but unhappily", async () => {
       mockFetch.mockResolvedValue({ok: false, status: 503});
 
       const {GET} = await import("./route");
@@ -222,7 +222,12 @@ describe("/api/health", () => {
       const body = await response.json();
 
       expect(body.dependencies[0]?.status).toBe("Degraded");
-      expect(instrumentationMocks.counterAdd).not.toHaveBeenCalled();
+      // Degraded drives this endpoint to 503, so it must reach the counter — it is the
+      // only signal left once routine health telemetry is suppressed. Both dependencies
+      // are Degraded here because the mock answers every fetch.
+      expect(instrumentationMocks.counterAdd).toHaveBeenCalledTimes(2);
+      expect(instrumentationMocks.counterAdd).toHaveBeenCalledWith(1, {check: "exp"});
+      expect(instrumentationMocks.counterAdd).toHaveBeenCalledWith(1, {check: "api"});
     });
   });
 
