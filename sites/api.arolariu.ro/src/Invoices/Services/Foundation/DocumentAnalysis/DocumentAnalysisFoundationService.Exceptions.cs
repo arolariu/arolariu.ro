@@ -37,11 +37,14 @@ public sealed partial class DocumentAnalysisFoundationService
 
   private Exception Classify(Exception exception) => exception switch
   {
-    ArgumentException or InvalidStructuredOutputException
+    ArgumentException
       => LogAndWrapValidation(exception),
 
     RequestFailedException requestFailedException when IsDependencyValidation(requestFailedException)
       => LogAndWrapDependencyValidation(exception),
+
+    InvalidStructuredOutputException
+      => LogAndWrapDependency(exception),
 
     RequestFailedException
       or HttpRequestException

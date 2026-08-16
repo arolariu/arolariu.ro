@@ -291,7 +291,81 @@ internal static class ReceiptDocumentTestData
         0.70f),
     };
 
-    return (AnalyzedDocument)AnalyzedDocumentConstructor.Invoke(
+    return CreateAnalyzedDocument(fields);
+  }
+
+  /// <summary>
+  /// Creates an analyzed-document fixture where root string targets use unsupported field types.
+  /// </summary>
+  /// <returns>An Azure analyzed document fixture with unsupported root string field types.</returns>
+  public static AnalyzedDocument AzureAnalyzedDocumentWithUnsupportedRootStringTypes()
+  {
+    var fields = new Dictionary<string, DocumentField>
+    {
+      ["MerchantName"] = UnsupportedNumericStringField("Should Not Map Merchant Name", 0.98f),
+      ["MerchantAddress"] = UnsupportedListStringField("Should Not Map Merchant Address", 0.97f),
+      ["MerchantPhoneNumber"] = UnsupportedDictionaryStringField("Should Not Map Merchant Phone", 0.96f),
+      ["ReceiptType"] = UnsupportedNumericStringField("Should Not Map Receipt Type", 0.95f),
+      ["CountryRegion"] = UnsupportedListStringField("Should Not Map Country Region", 0.94f),
+    };
+
+    return CreateAnalyzedDocument(fields);
+  }
+
+  /// <summary>
+  /// Creates an analyzed-document fixture where nested string targets use unsupported field types.
+  /// </summary>
+  /// <returns>An Azure analyzed document fixture with unsupported nested string field types.</returns>
+  public static AnalyzedDocument AzureAnalyzedDocumentWithUnsupportedNestedStringTypes()
+  {
+    var fields = new Dictionary<string, DocumentField>
+    {
+      ["Items"] = ListDocumentField(
+        [
+          DictionaryDocumentField(
+            new Dictionary<string, DocumentField>
+            {
+              { "Description", UnsupportedDictionaryStringField("Should Not Map Product Name", 0.87f) },
+              { "Quantity", DoubleDocumentField(2.0, 0.86f) },
+              { "QuantityUnit", UnsupportedListStringField("Should Not Map Quantity Unit", 0.85f) },
+              { "ProductCode", UnsupportedNumericStringField("Should Not Map Product Code", 0.84f) },
+              { "Price", CurrencyDocumentField(4.50, "RON", "lei", 0.83f) },
+              { "TotalPrice", CurrencyDocumentField(9.00, "RON", "lei", 0.82f) },
+            },
+            0.81f),
+        ],
+        0.80f),
+      ["TaxDetails"] = ListDocumentField(
+        [
+          DictionaryDocumentField(
+            new Dictionary<string, DocumentField>
+            {
+              { "Amount", CurrencyDocumentField(2.50, "RON", "lei", 0.79f) },
+              { "Rate", DoubleDocumentField(19.0, 0.78f) },
+              { "NetAmount", CurrencyDocumentField(13.00, "RON", "lei", 0.77f) },
+              { "Description", UnsupportedDictionaryStringField("Should Not Map Tax Description", 0.76f) },
+            },
+            0.75f),
+        ],
+        0.74f),
+      ["Payments"] = ListDocumentField(
+        [
+          DictionaryDocumentField(
+            new Dictionary<string, DocumentField>
+            {
+              { "Method", UnsupportedListStringField("Should Not Map Payment Method", 0.73f) },
+              { "Amount", CurrencyDocumentField(15.50, "RON", "lei", 0.72f) },
+            },
+            0.71f),
+        ],
+        0.70f),
+    };
+
+    return CreateAnalyzedDocument(fields);
+  }
+
+  private static AnalyzedDocument CreateAnalyzedDocument(IReadOnlyDictionary<string, DocumentField> fields) =>
+    (AnalyzedDocument)AnalyzedDocumentConstructor.Invoke(
       [
         "receipt",
         Array.Empty<BoundingRegion>(),
@@ -300,7 +374,6 @@ internal static class ReceiptDocumentTestData
         0.99f,
         new Dictionary<string, BinaryData>(),
       ]);
-  }
 
   private static DocumentValue<string> Field(string value, double confidence) =>
     new(value, confidence, sourceScanIndex: -1);
@@ -319,6 +392,27 @@ internal static class ReceiptDocumentTestData
       DocumentFieldType.String,
       valueString: value,
       content: value,
+      confidence: confidence);
+
+  private static DocumentField UnsupportedNumericStringField(string content, float confidence) =>
+    CreateDocumentField(
+      DocumentFieldType.Double,
+      valueDouble: 123.0,
+      content: content,
+      confidence: confidence);
+
+  private static DocumentField UnsupportedListStringField(string content, float confidence) =>
+    CreateDocumentField(
+      DocumentFieldType.List,
+      valueList: [],
+      content: content,
+      confidence: confidence);
+
+  private static DocumentField UnsupportedDictionaryStringField(string content, float confidence) =>
+    CreateDocumentField(
+      DocumentFieldType.Dictionary,
+      valueDictionary: (DocumentFieldDictionary)DocumentFieldDictionaryConstructor.Invoke([new Dictionary<string, DocumentField>()]),
+      content: content,
       confidence: confidence);
 
   private static DocumentField CountryRegionDocumentField(string value, float confidence) =>

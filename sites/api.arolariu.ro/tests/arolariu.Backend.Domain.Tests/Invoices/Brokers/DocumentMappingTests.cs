@@ -51,4 +51,41 @@ public sealed class DocumentMappingTests
     Assert.AreEqual(2, stampedDocument.TaxDetails[0].Amount.SourceScanIndex);
     Assert.AreEqual(2, stampedDocument.Payments[0].Method.SourceScanIndex);
   }
+
+  /// <summary>
+  /// Verifies unsupported root field types do not leak arbitrary OCR content into string output fields.
+  /// </summary>
+  [TestMethod]
+  public void MapReceiptDocument_WhenRootStringFieldsUseUnsupportedTypes_IgnoresArbitraryContent()
+  {
+    var analyzedDocument = ReceiptDocumentTestData.AzureAnalyzedDocumentWithUnsupportedRootStringTypes();
+
+    ReceiptDocument receiptDocument = AzureDocumentIntelligenceBroker.MapReceiptDocument(analyzedDocument);
+
+    Assert.AreEqual(string.Empty, receiptDocument.Merchant.Name.Value);
+    Assert.AreEqual(string.Empty, receiptDocument.Merchant.Address.Value);
+    Assert.AreEqual(string.Empty, receiptDocument.Merchant.PhoneNumber.Value);
+    Assert.AreEqual(string.Empty, receiptDocument.ReceiptType.Value);
+    Assert.AreEqual(string.Empty, receiptDocument.CountryRegion.Value);
+  }
+
+  /// <summary>
+  /// Verifies unsupported nested field types do not leak arbitrary OCR content into product, tax, or payment strings.
+  /// </summary>
+  [TestMethod]
+  public void MapReceiptDocument_WhenNestedStringFieldsUseUnsupportedTypes_IgnoresArbitraryContent()
+  {
+    var analyzedDocument = ReceiptDocumentTestData.AzureAnalyzedDocumentWithUnsupportedNestedStringTypes();
+
+    ReceiptDocument receiptDocument = AzureDocumentIntelligenceBroker.MapReceiptDocument(analyzedDocument);
+
+    Assert.AreEqual(1, receiptDocument.Products.Count);
+    Assert.AreEqual(string.Empty, receiptDocument.Products[0].Name.Value);
+    Assert.AreEqual(string.Empty, receiptDocument.Products[0].QuantityUnit.Value);
+    Assert.AreEqual(string.Empty, receiptDocument.Products[0].ProductCode.Value);
+    Assert.AreEqual(1, receiptDocument.TaxDetails.Count);
+    Assert.AreEqual(string.Empty, receiptDocument.TaxDetails[0].Description.Value);
+    Assert.AreEqual(1, receiptDocument.Payments.Count);
+    Assert.AreEqual(string.Empty, receiptDocument.Payments[0].Method.Value);
+  }
 }

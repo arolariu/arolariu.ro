@@ -224,6 +224,9 @@ public sealed record DocumentValue<TValue>
 /// <summary>
 /// Represents the provider-neutral merchant section extracted from a receipt scan.
 /// </summary>
+/// <param name="Name">The extracted merchant name field.</param>
+/// <param name="Address">The extracted merchant address field.</param>
+/// <param name="PhoneNumber">The extracted merchant phone-number field.</param>
 public sealed record ReceiptMerchantDocument(
   DocumentValue<string> Name,
   DocumentValue<string> Address,
@@ -244,6 +247,13 @@ public sealed record ReceiptMerchantDocument(
 /// <summary>
 /// Represents one provider-neutral product line extracted from a receipt scan.
 /// </summary>
+/// <param name="Name">The extracted product-name field.</param>
+/// <param name="Quantity">The extracted quantity field.</param>
+/// <param name="QuantityUnit">The extracted quantity-unit field.</param>
+/// <param name="ProductCode">The extracted product-code field.</param>
+/// <param name="Price">The extracted unit-price field.</param>
+/// <param name="TotalPrice">The extracted total-price field.</param>
+/// <param name="Confidence">The extraction confidence for the product line.</param>
 public sealed record ReceiptProductDocument(
   DocumentValue<string> Name,
   DocumentValue<decimal?> Quantity,
@@ -272,6 +282,12 @@ public sealed record ReceiptProductDocument(
 /// <summary>
 /// Represents the provider-neutral payment-information section extracted from a receipt scan.
 /// </summary>
+/// <param name="TransactionDate">The extracted transaction-date field.</param>
+/// <param name="Currency">The extracted currency field.</param>
+/// <param name="TotalAmount">The extracted total-amount field.</param>
+/// <param name="TotalTaxAmount">The extracted total-tax field.</param>
+/// <param name="SubtotalAmount">The extracted subtotal field.</param>
+/// <param name="TipAmount">The extracted tip field.</param>
 public sealed record ReceiptPaymentDocument(
   DocumentValue<DateTimeOffset?> TransactionDate,
   DocumentValue<Currency?> Currency,
@@ -298,6 +314,11 @@ public sealed record ReceiptPaymentDocument(
 /// <summary>
 /// Represents one provider-neutral tax line extracted from a receipt scan.
 /// </summary>
+/// <param name="Amount">The extracted tax-amount field.</param>
+/// <param name="Rate">The extracted tax-rate field.</param>
+/// <param name="NetAmount">The extracted tax net-amount field.</param>
+/// <param name="Description">The extracted tax-description field.</param>
+/// <param name="Confidence">The extraction confidence for the tax line.</param>
 public sealed record ReceiptTaxDocument(
   DocumentValue<decimal?> Amount,
   DocumentValue<decimal?> Rate,
@@ -322,6 +343,9 @@ public sealed record ReceiptTaxDocument(
 /// <summary>
 /// Represents one provider-neutral payment line extracted from a receipt scan.
 /// </summary>
+/// <param name="Method">The extracted payment-method field.</param>
+/// <param name="Amount">The extracted payment-amount field.</param>
+/// <param name="Confidence">The extraction confidence for the payment line.</param>
 public sealed record ReceiptPaymentLineDocument(
   DocumentValue<string> Method,
   DocumentValue<decimal?> Amount,

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.DocumentAnalysis;
 using arolariu.Backend.Domain.Tests.Invoices.Helpers;
@@ -178,5 +179,23 @@ public sealed class DocumentAnalysisFoundationServiceTests
       () => service.ExtractInvoiceAsync([InvoiceScanTestData.First()], CancellationToken.None));
 
     Assert.IsInstanceOfType<RequestFailedException>(exception.InnerException);
+  }
+
+  /// <summary>
+  /// Verifies invalid structured output from the external provider is classified as a dependency failure.
+  /// </summary>
+  [TestMethod]
+  public async Task ExtractInvoiceAsync_WhenBrokerThrowsInvalidStructuredOutput_ThrowsDependencyException()
+  {
+    var broker = new ScriptedDocumentIntelligenceBroker(
+      ScriptedDocumentIntelligenceBroker.Failure(
+        new InvalidStructuredOutputException("provider output violated the receipt contract")));
+
+    var service = new DocumentAnalysisFoundationService(broker, NullLoggerFactory.Instance);
+
+    var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
+      () => service.ExtractInvoiceAsync([InvoiceScanTestData.First()], CancellationToken.None));
+
+    Assert.IsInstanceOfType<InvalidStructuredOutputException>(exception.InnerException);
   }
 }

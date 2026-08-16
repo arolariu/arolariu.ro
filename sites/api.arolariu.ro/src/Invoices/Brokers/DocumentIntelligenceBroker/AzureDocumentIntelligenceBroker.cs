@@ -233,28 +233,37 @@ public sealed class AzureDocumentIntelligenceBroker : IDocumentIntelligenceBroke
         continue;
       }
 
-      string? value = field.Content;
-
-      if (field.FieldType == DocumentFieldType.String)
-      {
-        value = field.ValueString;
-      }
-      else if (field.FieldType == DocumentFieldType.PhoneNumber)
-      {
-        value = field.ValuePhoneNumber ?? field.Content;
-      }
-      else if (field.FieldType == DocumentFieldType.CountryRegion)
-      {
-        value = field.ValueCountryRegion ?? field.Content;
-      }
-
-      if (value is not null)
+      if (TryReadSupportedString(field, out string? value))
       {
         return new DocumentValue<string>(value, ReadConfidence(field), sourceScanIndex: -1);
       }
     }
 
     return new DocumentValue<string>(string.Empty, confidence: 0.0, sourceScanIndex: -1);
+  }
+
+  private static bool TryReadSupportedString(DocumentField field, out string? value)
+  {
+    if (field.FieldType == DocumentFieldType.String)
+    {
+      value = field.ValueString ?? field.Content;
+      return value is not null;
+    }
+
+    if (field.FieldType == DocumentFieldType.PhoneNumber)
+    {
+      value = field.ValuePhoneNumber ?? field.Content;
+      return value is not null;
+    }
+
+    if (field.FieldType == DocumentFieldType.CountryRegion)
+    {
+      value = field.ValueCountryRegion ?? field.Content;
+      return value is not null;
+    }
+
+    value = null;
+    return false;
   }
 
   private static DocumentValue<string> ReadCountryRegion(IReadOnlyDictionary<string, DocumentField> fields, params string[] fieldNames) =>
