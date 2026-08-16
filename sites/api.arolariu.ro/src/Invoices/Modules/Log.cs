@@ -255,6 +255,44 @@ public static partial class Log
   [LoggerMessage(100_403, LogLevel.Error, "The analysis run service encountered a service exception: {exceptionMessage}")]
   public static partial void LogAnalysisRunServiceException(this ILogger logger, string exceptionMessage);
   #endregion
+
+  #region Document Analysis Foundation Logging Methods
+  /// <summary>
+  /// Auto-generated method for logging the document analysis validation exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  /// <param name="exception"></param>
+  /// <param name="exceptionMessage"></param>
+  [LoggerMessage(100_410, LogLevel.Error, "The document analysis service encountered a validation exception: {exceptionMessage}")]
+  public static partial void LogDocumentAnalysisValidationException(this ILogger logger, Exception exception, string exceptionMessage);
+
+  /// <summary>
+  /// Auto-generated method for logging the document analysis dependency exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  /// <param name="exception"></param>
+  /// <param name="exceptionMessage"></param>
+  [LoggerMessage(100_411, LogLevel.Error, "The document analysis service encountered a dependency exception: {exceptionMessage}")]
+  public static partial void LogDocumentAnalysisDependencyException(this ILogger logger, Exception exception, string exceptionMessage);
+
+  /// <summary>
+  /// Auto-generated method for logging the document analysis dependency validation exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  /// <param name="exception"></param>
+  /// <param name="exceptionMessage"></param>
+  [LoggerMessage(100_412, LogLevel.Error, "The document analysis service encountered a dependency validation exception: {exceptionMessage}")]
+  public static partial void LogDocumentAnalysisDependencyValidationException(this ILogger logger, Exception exception, string exceptionMessage);
+
+  /// <summary>
+  /// Auto-generated method for logging the document analysis service exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  /// <param name="exception"></param>
+  /// <param name="exceptionMessage"></param>
+  [LoggerMessage(100_413, LogLevel.Error, "The document analysis service encountered a service exception: {exceptionMessage}")]
+  public static partial void LogDocumentAnalysisServiceException(this ILogger logger, Exception exception, string exceptionMessage);
+  #endregion
   #endregion
 
   #region General Validation and Exception Logging Methods

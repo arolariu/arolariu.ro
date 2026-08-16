@@ -9,8 +9,10 @@ using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.DocumentAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
@@ -106,11 +108,13 @@ public static class WebApplicationBuilderExtensions
     // Broker services:
     services.AddScoped<IClassifierBroker, AzureClassifierBroker>();
     services.AddScoped<IFormRecognizerBroker, AzureFormRecognizerBroker>();
+    services.AddScoped<IDocumentIntelligenceBroker, AzureDocumentIntelligenceBroker>();
     services.AddScoped<IInvoiceNoSqlBroker, InvoiceNoSqlBroker>();
     services.AddSingleton<ITaxonomyBroker, JsonTaxonomyBroker>();
     services.AddScoped<ITranslatorBroker, AzureTranslatorBroker>();
 
     // Foundation services:
+    services.AddScoped<IDocumentAnalysisFoundationService, DocumentAnalysisFoundationService>();
     services.AddScoped<IInvoiceStorageFoundationService, InvoiceStorageFoundationService>();
     services.AddScoped<IInvoiceAnalysisFoundationService, InvoiceAnalysisFoundationService>();
     services.AddScoped<IMerchantStorageFoundationService, MerchantStorageFoundationService>();
