@@ -24,6 +24,8 @@ internal static class Constants
   public const string CosmosInvoicesPartitionKey = "/UserIdentifier";
   public const string CosmosMerchantsContainer = "merchants";
   public const string CosmosMerchantsPartitionKey = "/ParentCompanyId";
+  public const string CosmosAnalysisRunsContainer = "analysisRuns";
+  public const string CosmosAnalysisRunsPartitionKey = "/bucket";
 
   // ── Volume names (data persistence across container restarts) ──
   public const string SqlDataVolume = "arolariu-mssql-data";

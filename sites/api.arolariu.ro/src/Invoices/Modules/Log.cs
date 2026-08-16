@@ -221,6 +221,40 @@ public static partial class Log
   [LoggerMessage(100_303, LogLevel.Error, "The merchant storage service encountered a service exception: {exceptionMessage}")]
   public static partial void LogMerchantStorageServiceException(this ILogger logger, string exceptionMessage);
   #endregion
+
+  #region Analysis Run Foundation Logging Methods
+  /// <summary>
+  /// Auto-generated method for logging the analysis run validation exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  /// <param name="exceptionMessage"></param>
+  [LoggerMessage(100_400, LogLevel.Error, "The analysis run service encountered a validation exception: {exceptionMessage}")]
+  public static partial void LogAnalysisRunValidationException(this ILogger logger, string exceptionMessage);
+
+  /// <summary>
+  /// Auto-generated method for logging the analysis run dependency exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  /// <param name="exceptionMessage"></param>
+  [LoggerMessage(100_401, LogLevel.Error, "The analysis run service encountered a dependency exception: {exceptionMessage}")]
+  public static partial void LogAnalysisRunDependencyException(this ILogger logger, string exceptionMessage);
+
+  /// <summary>
+  /// Auto-generated method for logging the analysis run dependency validation exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  /// <param name="exceptionMessage"></param>
+  [LoggerMessage(100_402, LogLevel.Error, "The analysis run service encountered a dependency validation exception: {exceptionMessage}")]
+  public static partial void LogAnalysisRunDependencyValidationException(this ILogger logger, string exceptionMessage);
+
+  /// <summary>
+  /// Auto-generated method for logging the analysis run service exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  /// <param name="exceptionMessage"></param>
+  [LoggerMessage(100_403, LogLevel.Error, "The analysis run service encountered a service exception: {exceptionMessage}")]
+  public static partial void LogAnalysisRunServiceException(this ILogger logger, string exceptionMessage);
+  #endregion
   #endregion
 
   #region General Validation and Exception Logging Methods

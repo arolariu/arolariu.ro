@@ -88,6 +88,10 @@ Event IDs follow the pattern `XXX_YZZ` where:
 | `100_301` | Error | Merchant storage dependency exception | `LogMerchantStorageServiceDependencyException` |
 | `100_302` | Error | Merchant storage dependency validation exception | `LogMerchantStorageServiceDependencyValidationException` |
 | `100_303` | Error | Merchant storage service exception | `LogMerchantStorageServiceException` |
+| `100_400` | Error | Analysis run validation exception | `LogAnalysisRunValidationException` |
+| `100_401` | Error | Analysis run dependency exception | `LogAnalysisRunDependencyException` |
+| `100_402` | Error | Analysis run dependency validation exception | `LogAnalysisRunDependencyValidationException` |
+| `100_403` | Error | Analysis run service exception | `LogAnalysisRunServiceException` |
 
 #### Orchestration Services (200_xxx)
 

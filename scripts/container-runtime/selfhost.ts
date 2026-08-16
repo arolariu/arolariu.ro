@@ -140,7 +140,17 @@ async function postCosmosResource(url: string, body: unknown): Promise<void> {
   }
 }
 
-async function bootstrapCosmos(): Promise<void> {
+/**
+ * Creates the `primary` Cosmos database plus its `invoices`, `merchants`, and
+ * `analysisRuns` containers against the local emulator's data-plane REST API.
+ *
+ * @remarks
+ * Exported for unit testing via a stubbed global `fetch` — no live emulator
+ * is contacted in tests. `analysisRuns` sets `defaultTtl: -1` so item-level
+ * `ttl` (stamped only on completed/failed runs) is honored, mirroring the
+ * Bicep and Aspire AppHost provisioning of the same container.
+ */
+export async function bootstrapCosmos(): Promise<void> {
   try {
     await postCosmosResource("http://localhost:8081/dbs", {id: "primary"});
     await postCosmosResource("http://localhost:8081/dbs/primary/colls", {
@@ -150,6 +160,11 @@ async function bootstrapCosmos(): Promise<void> {
     await postCosmosResource("http://localhost:8081/dbs/primary/colls", {
       id: "merchants",
       partitionKey: {paths: ["/ParentCompanyId"], kind: "Hash"},
+    });
+    await postCosmosResource("http://localhost:8081/dbs/primary/colls", {
+      id: "analysisRuns",
+      partitionKey: {paths: ["/bucket"], kind: "Hash"},
+      defaultTtl: -1,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
