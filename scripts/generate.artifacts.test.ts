@@ -108,7 +108,7 @@ describe("generate.artifacts", () => {
         Code: 50000000,
         Title: "Food/Beverage/Tobacco",
         Definition: "Food products",
-        DefinitionExcludes: null,
+        DefinitionExcludes: "Automotive products",
         Active: true,
         Childs: [
           {
