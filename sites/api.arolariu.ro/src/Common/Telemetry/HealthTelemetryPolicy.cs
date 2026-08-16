@@ -76,7 +76,11 @@ public static class HealthTelemetryPolicy
   /// </summary>
   /// <param name="path">The request path, with or without a query string.</param>
   /// <returns><see langword="true"/> when telemetry must be suppressed.</returns>
-  /// <remarks>Fails open: any unexpected condition resolves to emitting telemetry.</remarks>
+  /// <remarks>
+  /// Fails safe toward suppression: an unset or unparseable <see cref="SuppressionEnvVar"/>
+  /// leaves suppression enabled, so cost control holds even when the environment is
+  /// misconfigured. Only the literal value <c>false</c> re-enables health telemetry.
+  /// </remarks>
   public static bool ShouldSuppress(string? path) =>
     IsSuppressionEnabled && IsSuppressedPath(path);
 
