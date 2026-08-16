@@ -221,6 +221,11 @@
           "SQLitePCLRaw.core": "2.1.11"
         }
       },
+      "Microsoft.Extensions.AI.Abstractions": {
+        "type": "Transitive",
+        "resolved": "10.9.0",
+        "contentHash": "//nASHMCJVxnYfE/WSzfaLOao6/q816kPpgB9rxU0gfSmAny1u3rfQT0D4xAmcIo4yQqJs7rAeBB+M/dIMdZYA=="
+      },
       "Microsoft.Extensions.ApiDescription.Server": {
         "type": "Transitive",
         "resolved": "10.0.0",
@@ -304,10 +309,10 @@
       },
       "OpenAI": {
         "type": "Transitive",
-        "resolved": "2.9.1",
-        "contentHash": "KPTFYEt1EhrPeIZXGBE+DlutFEpMo/RspqSdUJ3p6pMqsw3NeGJcIja/K0He1j9KyRq8ASfzBgp2biWbNUGnFA==",
+        "resolved": "2.12.0",
+        "contentHash": "rKyVV0sJPo7pn0Ya5dgRs5ggGbjvnKcYSvYV2jITKgFIfeo2XHjgyi6UqNT/OnF0YBqjsNpPdgM6QjzYczWplg==",
         "dependencies": {
-          "System.ClientModel": "1.9.0"
+          "System.ClientModel": "1.14.0"
         }
       },
       "OpenTelemetry.Api.ProviderBuilderExtensions": {
@@ -379,6 +384,11 @@
         "resolved": "10.0.9",
         "contentHash": "YweovHiLUoEdbr2Xv8eRqCSkTu1vMms4a6xBHaQiMSFVy32PL+hXv6Vhol2NWOmLHjaVgTyhJ3R52U6JxS6w3Q=="
       },
+      "System.Numerics.Tensors": {
+        "type": "Transitive",
+        "resolved": "10.0.11",
+        "contentHash": "4jNNt67NhCqf3bf2FN0mrsC+EH60L7Sny6poqVeiviB27Kw7TQzMmgn8HIaPc8E9EcuGusUyfeu21gLfzcBpDA=="
+      },
       "System.Security.Cryptography.Pkcs": {
         "type": "Transitive",
         "resolved": "9.0.4",
@@ -443,6 +453,8 @@
           "Azure.AI.Translation.Text": "[2.0.0, )",
           "Azure.Storage.Blobs": "[12.29.1, )",
           "Microsoft.Azure.Cosmos": "[3.62.0, )",
+          "Microsoft.Extensions.AI": "[10.9.0, )",
+          "Microsoft.Extensions.AI.OpenAI": "[10.9.0, )",
           "Microsoft.Extensions.Azure": "[1.14.0, )",
           "arolariu.Backend.Common": "[1.0.0, )"
         }
@@ -625,6 +637,26 @@
         "dependencies": {
           "Microsoft.Data.SqlClient": "6.1.1",
           "Microsoft.EntityFrameworkCore.Relational": "10.0.10"
+        }
+      },
+      "Microsoft.Extensions.AI": {
+        "type": "CentralTransitive",
+        "requested": "[10.9.0, )",
+        "resolved": "10.9.0",
+        "contentHash": "ymREzi/+uQ9KL0d0ir3FXHUb/XLHyLYcJYH/7A/uO6rg6Km8hUk++nMRG4/gDpDYrrU6s6YIpSDTexofexMGRg==",
+        "dependencies": {
+          "Microsoft.Extensions.AI.Abstractions": "10.9.0",
+          "System.Numerics.Tensors": "10.0.11"
+        }
+      },
+      "Microsoft.Extensions.AI.OpenAI": {
+        "type": "CentralTransitive",
+        "requested": "[10.9.0, )",
+        "resolved": "10.9.0",
+        "contentHash": "1e2eO85ZpSBKarCTwRf1PmZJVGF09UJ23314bTmdxjFvY5LyHgeZNXcDU5S89upwnuGUbJSSnW8DXK3ntqbsMw==",
+        "dependencies": {
+          "Microsoft.Extensions.AI.Abstractions": "10.9.0",
+          "OpenAI": "[2.12.0, 2.13.0)"
         }
       },
       "Microsoft.IdentityModel.JsonWebTokens": {

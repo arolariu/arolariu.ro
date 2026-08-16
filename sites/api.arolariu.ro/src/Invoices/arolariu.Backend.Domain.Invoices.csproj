@@ -10,6 +10,11 @@
     <PackageReference Include="Azure.AI.Translation.Text" />
   </ItemGroup>
 
+  <ItemGroup Label="Microsoft Extensions AI Packages">
+    <PackageReference Include="Microsoft.Extensions.AI" />
+    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
+  </ItemGroup>
+
   <ItemGroup Label="Azure SDK Packages">
     <PackageReference Include="Azure.Storage.Blobs" />
     <PackageReference Include="Microsoft.Azure.Cosmos" />

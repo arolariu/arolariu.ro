@@ -293,6 +293,44 @@ public static partial class Log
   [LoggerMessage(100_413, LogLevel.Error, "The document analysis service encountered a service exception: {exceptionMessage}")]
   public static partial void LogDocumentAnalysisServiceException(this ILogger logger, Exception exception, string exceptionMessage);
   #endregion
+
+  #region Generative Analysis Foundation Logging Methods
+  /// <summary>
+  /// Auto-generated method for logging the generative analysis validation exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  /// <param name="exception"></param>
+  /// <param name="exceptionMessage"></param>
+  [LoggerMessage(100_420, LogLevel.Error, "The generative analysis service encountered a validation exception: {exceptionMessage}")]
+  public static partial void LogGenerativeAnalysisValidationException(this ILogger logger, Exception exception, string exceptionMessage);
+
+  /// <summary>
+  /// Auto-generated method for logging the generative analysis dependency exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  /// <param name="exception"></param>
+  /// <param name="exceptionMessage"></param>
+  [LoggerMessage(100_421, LogLevel.Error, "The generative analysis service encountered a dependency exception: {exceptionMessage}")]
+  public static partial void LogGenerativeAnalysisDependencyException(this ILogger logger, Exception exception, string exceptionMessage);
+
+  /// <summary>
+  /// Auto-generated method for logging the generative analysis dependency validation exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  /// <param name="exception"></param>
+  /// <param name="exceptionMessage"></param>
+  [LoggerMessage(100_422, LogLevel.Error, "The generative analysis service encountered a dependency validation exception: {exceptionMessage}")]
+  public static partial void LogGenerativeAnalysisDependencyValidationException(this ILogger logger, Exception exception, string exceptionMessage);
+
+  /// <summary>
+  /// Auto-generated method for logging the generative analysis service exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  /// <param name="exception"></param>
+  /// <param name="exceptionMessage"></param>
+  [LoggerMessage(100_423, LogLevel.Error, "The generative analysis service encountered a service exception: {exceptionMessage}")]
+  public static partial void LogGenerativeAnalysisServiceException(this ILogger logger, Exception exception, string exceptionMessage);
+  #endregion
   #endregion
 
   #region General Validation and Exception Logging Methods
