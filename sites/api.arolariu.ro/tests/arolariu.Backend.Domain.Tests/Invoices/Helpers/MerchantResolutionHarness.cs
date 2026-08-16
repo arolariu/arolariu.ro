@@ -2,6 +2,7 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -25,7 +26,9 @@ internal sealed class MerchantResolutionHarness : IDisposable
   private readonly InvoiceNoSqlBroker broker;
   private readonly ILoggerFactory loggerFactory;
 
-  private MerchantResolutionHarness(IEnumerable<Merchant> merchants)
+  private MerchantResolutionHarness(
+    IEnumerable<IEnumerable<Merchant>> merchantPages,
+    Action<int, CancellationToken>? onPageRead = null)
   {
     mockCosmosClient = new Mock<CosmosClient>();
     mockDatabase = new Mock<Database>();
@@ -39,7 +42,7 @@ internal sealed class MerchantResolutionHarness : IDisposable
       .Setup(database => database.GetContainer("merchants"))
       .Returns(mockMerchantsContainer.Object);
 
-    ConfigureMerchantQuery(merchants);
+    ConfigureMerchantQuery(merchantPages, onPageRead);
 
     var options = new DbContextOptionsBuilder<InvoiceNoSqlBroker>()
       .UseCosmos("https://localhost:8081", "test-key", "primary")
@@ -59,6 +62,9 @@ internal sealed class MerchantResolutionHarness : IDisposable
   }
 
   internal IMerchantOrchestrationService Service { get; }
+  internal int QueryIteratorInvocationCount { get; private set; }
+  internal int FeedReadInvocationCount { get; private set; }
+  internal CancellationToken LastObservedCancellationToken { get; private set; }
 
   internal static MerchantResolutionHarness WithStoredMerchant(
     string name,
@@ -71,11 +77,20 @@ internal sealed class MerchantResolutionHarness : IDisposable
       merchant.SoftDelete();
     }
 
-    return new MerchantResolutionHarness([merchant]);
+    return new MerchantResolutionHarness([[merchant]]);
   }
 
   internal static MerchantResolutionHarness WithStoredMerchants(params Merchant[] merchants) =>
-    new MerchantResolutionHarness(merchants);
+    new([merchants]);
+
+  internal static MerchantResolutionHarness WithStoredMerchantPages(
+    params Merchant[][] merchantPages) =>
+    new(merchantPages);
+
+  internal static MerchantResolutionHarness WithStoredMerchantPages(
+    Action<int, CancellationToken> onPageRead,
+    params Merchant[][] merchantPages) =>
+    new(merchantPages, onPageRead);
 
   internal async Task<Merchant?> FindAsync(
     string normalizedName,
@@ -91,28 +106,57 @@ internal sealed class MerchantResolutionHarness : IDisposable
     GC.SuppressFinalize(this);
   }
 
-  private void ConfigureMerchantQuery(IEnumerable<Merchant> merchants)
+  private void ConfigureMerchantQuery(
+    IEnumerable<IEnumerable<Merchant>> merchantsPages,
+    Action<int, CancellationToken>? onPageRead)
   {
-    IReadOnlyList<Merchant> merchantList = [.. merchants];
-
-    var feedResponseMock = new Mock<FeedResponse<Merchant>>();
-    feedResponseMock.SetupGet(response => response.Resource).Returns(merchantList);
-    feedResponseMock.SetupGet(response => response.RequestCharge).Returns(1.0);
-    feedResponseMock.Setup(response => response.GetEnumerator()).Returns(() => merchantList.GetEnumerator());
+    IReadOnlyList<FeedResponse<Merchant>> feedResponses =
+    [
+      .. merchantsPages.Select(CreateFeedResponse),
+    ];
 
     var feedIteratorMock = new Mock<FeedIterator<Merchant>>();
-    feedIteratorMock.SetupSequence(iterator => iterator.HasMoreResults)
-      .Returns(true)
-      .Returns(false);
+    var hasMoreResultsSequence = feedIteratorMock.SetupSequence(iterator => iterator.HasMoreResults);
+
+    foreach (FeedResponse<Merchant> _ in feedResponses)
+    {
+      hasMoreResultsSequence = hasMoreResultsSequence.Returns(true);
+    }
+
+    hasMoreResultsSequence.Returns(false);
+
+    int pageIndex = 0;
+
     feedIteratorMock
       .Setup(iterator => iterator.ReadNextAsync(It.IsAny<CancellationToken>()))
-      .ReturnsAsync(feedResponseMock.Object);
+      .Returns((CancellationToken cancellationToken) =>
+      {
+        LastObservedCancellationToken = cancellationToken;
+        FeedReadInvocationCount++;
+        onPageRead?.Invoke(pageIndex, cancellationToken);
+
+        FeedResponse<Merchant> response = feedResponses[pageIndex];
+        pageIndex++;
+
+        return Task.FromResult(response);
+      });
 
     mockMerchantsContainer
       .Setup(container => container.GetItemQueryIterator<Merchant>(
         It.IsAny<QueryDefinition>(),
         It.IsAny<string>(),
         It.IsAny<QueryRequestOptions>()))
+      .Callback(() => QueryIteratorInvocationCount++)
       .Returns(feedIteratorMock.Object);
+  }
+
+  private static FeedResponse<Merchant> CreateFeedResponse(IEnumerable<Merchant> merchants)
+  {
+    IReadOnlyList<Merchant> merchantList = [.. merchants];
+    var feedResponseMock = new Mock<FeedResponse<Merchant>>();
+    feedResponseMock.SetupGet(response => response.Resource).Returns(merchantList);
+    feedResponseMock.SetupGet(response => response.RequestCharge).Returns(1.0);
+    feedResponseMock.Setup(response => response.GetEnumerator()).Returns(() => merchantList.GetEnumerator());
+    return feedResponseMock.Object;
   }
 }

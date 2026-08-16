@@ -2,10 +2,8 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -149,7 +147,14 @@ public partial class InvoiceNoSqlBroker
     const string queryText = "SELECT * FROM c WHERE NOT IS_DEFINED(c.IsSoftDeleted) OR c.IsSoftDeleted = false";
     activity?.SetDbStatement(queryText);
 
-    string normalizedTargetName = NormalizeMerchantName(normalizedName);
+    string normalizedTargetName = MerchantNameNormalizer.Normalize(normalizedName);
+
+    if (string.IsNullOrEmpty(normalizedTargetName))
+    {
+      activity?.SetTag("result.match_found", false);
+      activity?.RecordSuccess();
+      return null;
+    }
 
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("merchants");
@@ -177,7 +182,7 @@ public partial class InvoiceNoSqlBroker
         }
 
         if (string.Equals(
-          NormalizeMerchantName(merchant.Name),
+          MerchantNameNormalizer.Normalize(merchant.Name),
           normalizedTargetName,
           StringComparison.Ordinal) is false)
         {
@@ -347,53 +352,6 @@ public partial class InvoiceNoSqlBroker
     {
       throw TranslateMerchantCosmos(cosmosException, merchantIdentifier);
     }
-  }
-
-  private static string NormalizeMerchantName(string? name)
-  {
-    if (string.IsNullOrWhiteSpace(name))
-    {
-      return string.Empty;
-    }
-
-    string decomposedName = name.Normalize(NormalizationForm.FormD);
-    var builder = new StringBuilder(decomposedName.Length);
-    bool previousCharacterWasWhitespace = false;
-
-    foreach (char character in decomposedName)
-    {
-      UnicodeCategory unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(character);
-
-      if (unicodeCategory is UnicodeCategory.NonSpacingMark
-        or UnicodeCategory.SpacingCombiningMark
-        or UnicodeCategory.EnclosingMark)
-      {
-        continue;
-      }
-
-      if (char.IsWhiteSpace(character))
-      {
-        if (builder.Length > 0 && previousCharacterWasWhitespace is false)
-        {
-          builder.Append(' ');
-          previousCharacterWasWhitespace = true;
-        }
-
-        continue;
-      }
-
-      builder.Append(char.ToLowerInvariant(character));
-      previousCharacterWasWhitespace = false;
-    }
-
-    if (builder.Length > 0 && builder[^1] == ' ')
-    {
-      builder.Length--;
-    }
-
-    return builder
-      .ToString()
-      .Normalize(NormalizationForm.FormC);
   }
 
   /// <summary>Maps a <see cref="CosmosException"/> status code to the corresponding merchant inner exception type.</summary>

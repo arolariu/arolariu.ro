@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Orchestration;
 
 /// <summary>
 /// This interface represents the merchant orchestration service.
@@ -48,9 +49,22 @@ public interface IMerchantOrchestrationService
   /// <summary>
   /// Resolves a merchant by exact normalized name.
   /// </summary>
+  /// <remarks>
+  /// <para><b>Validation:</b> Delegates to the merchant foundation layer, which canonicalizes the supplied merchant name and rejects values that normalize
+  /// to an empty representation.</para>
+  /// <para><b>Dependency Behavior:</b> Persistence and query failures are surfaced as orchestration dependency or dependency-validation exceptions after
+  /// the foundation layer classifies broker faults.</para>
+  /// <para><b>Cancellation:</b> Cancellation is not wrapped; an <see cref="OperationCanceledException"/> flows through unchanged so callers can honor
+  /// request abort semantics.</para>
+  /// </remarks>
   /// <param name="normalizedName">The normalized merchant name to resolve.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>The matching merchant or null when no exact normalized match exists.</returns>
+  /// <exception cref="MerchantOrchestrationServiceValidationException">Thrown when the supplied merchant name resolves to an empty canonical value.</exception>
+  /// <exception cref="MerchantOrchestrationServiceDependencyValidationException">Thrown when dependency validation failures occur during merchant lookup.</exception>
+  /// <exception cref="MerchantOrchestrationServiceDependencyException">Thrown when dependency failures occur during merchant lookup.</exception>
+  /// <exception cref="MerchantOrchestrationServiceException">Thrown when an unexpected orchestration failure occurs.</exception>
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
   Task<Merchant?> FindMerchantByNormalizedNameObject(string normalizedName, CancellationToken cancellationToken);
   #endregion
 

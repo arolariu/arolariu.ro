@@ -3,17 +3,24 @@ namespace arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
 using System;
 
 using arolariu.Backend.Common.Validators;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 
 public partial class MerchantStorageFoundationService
 {
-  private static void ValidateNormalizedNameIsSet(string normalizedName)
+  private static string NormalizeAndValidateNormalizedName(string normalizedName)
   {
-    if (string.IsNullOrWhiteSpace(normalizedName))
+    string normalizedMerchantName = MerchantNameNormalizer.Normalize(normalizedName);
+
+    if (string.IsNullOrEmpty(normalizedMerchantName))
     {
       throw new MerchantNormalizedNameNotSetException(
-        new ArgumentException("Merchant normalized name must be provided.", nameof(normalizedName)));
+        new ArgumentException(
+          "Merchant normalized name must resolve to a non-empty value.",
+          nameof(normalizedName)));
     }
+
+    return normalizedMerchantName;
   }
 
   private static void ValidateMerchantIdentifierIsSet(Guid? identifier)

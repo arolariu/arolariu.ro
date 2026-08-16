@@ -85,10 +85,10 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(FindMerchantByNormalizedNameObject));
 
-    ValidateNormalizedNameIsSet(normalizedName);
+    string canonicalNormalizedName = NormalizeAndValidateNormalizedName(normalizedName);
 
     Merchant? merchant = await invoiceNoSqlBroker
-      .FindMerchantByNormalizedNameAsync(normalizedName, cancellationToken)
+      .FindMerchantByNormalizedNameAsync(canonicalNormalizedName, cancellationToken)
       .ConfigureAwait(false);
 
     return merchant;
