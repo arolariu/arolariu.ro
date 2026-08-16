@@ -3,14 +3,14 @@
  * @module scripts/generate
  *
  * @remarks
- * This module wires together multiple generators (env, acks, i18n, gql) under
+ * This module wires together multiple generators (env, acks, i18n, gql, runtime artifacts) under
  * a single CLI command, keeping output consistent across tools.
  */
 
 import {styleText} from "node:util";
 
 /**
- * Master generation orchestrator for monorepo assets (env, acks, i18n, gql).
+ * Master generation orchestrator for monorepo assets (env, acks, i18n, gql, runtime artifacts).
  * Provides a unified CLI with colored, emoji-rich output consistent with `generate.env.ts`.
  */
 type CommandLineOptions = {

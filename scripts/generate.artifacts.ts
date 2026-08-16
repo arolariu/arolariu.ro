@@ -266,13 +266,7 @@ export function flattenGpcSchema(schema: readonly GpcSourceNode[]): readonly Tax
             hierarchyCodes: [...ancestors.map((ancestor) => ancestor.code), code],
             hierarchyLabels: [...ancestors.map((ancestor) => ancestor.officialLabel), node.Title.trim()],
             definition,
-            searchText: normalizeText(
-              code,
-              node.Title,
-              definition,
-              node.DefinitionExcludes,
-              ...ancestors.map((ancestor) => ancestor.officialLabel),
-            ),
+            searchText: normalizeText(code, node.Title, definition, ...ancestors.map((ancestor) => ancestor.officialLabel)),
           };
 
     if (current !== null) nodes.push(current);

@@ -64,7 +64,7 @@ function createFakeFetch(options: Readonly<{malformedBroader?: boolean}> = {}): 
         Code: 50000000,
         Title: "Food/Beverage/Tobacco",
         Definition: "Food products",
-        DefinitionExcludes: null,
+        DefinitionExcludes: "Automotive products",
         Active: true,
         Childs: [],
       },
@@ -145,6 +145,7 @@ describe("generate.artifacts", () => {
 
     expect(nodes.map((node) => node.code)).toEqual(["50000000", "10000025"]);
     expect(nodes[1]?.hierarchyCodes).toEqual(["50000000", "10000025"]);
+    expect(nodes[0]?.searchText).not.toContain("automotive");
   });
 
   it("builds hierarchy from SPARQL broader links and strips code prefixes from labels", () => {
