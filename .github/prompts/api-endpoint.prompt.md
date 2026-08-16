@@ -15,6 +15,35 @@ Generate a complete API endpoint following The Standard architecture pattern, in
 
 ---
 
+## Agent Contract
+
+### Scope
+Scaffolding a new HTTP endpoint in `sites/api.arolariu.ro/`, spanning Broker, Foundation Service, Orchestration/Processing, and Endpoint layers plus their MSTest coverage. Does not cover frontend consumers, database schema changes, or auth policy changes.
+
+### Required Inputs
+- The target bounded context under `sites/api.arolariu.ro/src/**` (Core, Core.Auth, Invoices, or Common).
+- `.github/instructions/backend.instructions.md` and `.github/instructions/csharp.instructions.md`.
+- RFC 2001 (DDD), RFC 2003 (The Standard), RFC 2004 (XML docs).
+- The existing endpoint and service files the new endpoint will sit beside.
+
+### Execution Constraints
+- Respect The Standard layer hierarchy; never make Foundation→Foundation calls.
+- Keep Brokers free of business logic and obey the Florance Pattern (max 2-3 dependencies per service).
+- XML docs on every public API; `.ConfigureAwait(false)` in library code; no sync-over-async.
+- `TreatWarningsAsErrors` is enabled — never silence a diagnostic with `NoWarn` or `#pragma` to make a build pass.
+- Do not create or delete files outside the scope above without user confirmation.
+
+### Validation
+```bash
+dotnet build sites/api.arolariu.ro/src/Core
+dotnet test sites/api.arolariu.ro/tests
+```
+
+### Escalation Conditions
+Stop and ask the user before proceeding when the work involves a new bounded context, a database schema change, authentication or authorization logic, a new NuGet dependency, or any change to CI/CD or infrastructure. See **Ask-User Criteria** under [Execution Contract](#execution-contract) for the full rule.
+
+---
+
 ## What Gets Generated
 
 For a new endpoint, create the following artifacts in order:
