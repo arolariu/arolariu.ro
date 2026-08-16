@@ -26,8 +26,14 @@ export function parseSuppressionFlag(rawValue: string | undefined): boolean {
 
 function normalize(path: string): string {
   const queryIndex = path.indexOf("?");
-  const withoutQuery = queryIndex >= 0 ? path.slice(0, queryIndex) : path;
-  return withoutQuery.length > 1 ? withoutQuery.replace(/\/+$/u, "") : withoutQuery;
+  const withoutQuery = queryIndex === -1 ? path : path.slice(0, queryIndex);
+  if (withoutQuery.length <= 1) return withoutQuery;
+
+  // Trailing slashes are trimmed by scanning rather than with /\/+$/u: the quantifier in
+  // that pattern backtracks super-linearly on adversarial input (sonarjs/super-linear-regex).
+  let end = withoutQuery.length;
+  while (end > 0 && withoutQuery[end - 1] === "/") end--;
+  return withoutQuery.slice(0, end);
 }
 
 /**
