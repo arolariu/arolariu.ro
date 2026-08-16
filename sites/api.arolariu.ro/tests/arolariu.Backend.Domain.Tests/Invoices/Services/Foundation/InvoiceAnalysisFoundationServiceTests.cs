@@ -18,13 +18,14 @@ using Microsoft.Extensions.Logging;
 
 using Moq;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Comprehensive unit tests for <see cref="InvoiceAnalysisFoundationService"/> targeting 95%+ code coverage.
 /// Tests validate analysis pipeline orchestration, exception handling, and broker coordination.
 /// Method naming follows MethodName_Condition_ExpectedResult pattern per repository standards.
 /// </summary>
+[TestClass]
 public sealed class InvoiceAnalysisFoundationServiceTests
 {
   private readonly Mock<IClassifierBroker> mockOpenAiBroker;
@@ -58,7 +59,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
   /// <summary>
   /// Validates successful instantiation with all valid dependencies.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Constructor_ValidDependencies_CreatesInstance()
   {
     // Arrange & Act
@@ -68,7 +69,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         mockLoggerFactory.Object);
 
     // Assert
-    Assert.NotNull(svc);
+    Assert.IsNotNull(svc);
   }
 
   #endregion
@@ -78,7 +79,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
   /// <summary>
   /// Validates successful complete analysis workflow execution.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_ValidInput_ExecutesCompleteWorkflow()
   {
     // Arrange
@@ -98,8 +99,8 @@ public sealed class InvoiceAnalysisFoundationServiceTests
     var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
-    Assert.Equal(initialUpdates + 1, result.NumberOfUpdates);
+    Assert.IsNotNull(result);
+    Assert.AreEqual(initialUpdates + 1, result.NumberOfUpdates);
     mockFormRecognizerBroker.Verify(b => b.PerformOcrAnalysisOnSingleInvoice(invoice, options), Times.Once);
     mockOpenAiBroker.Verify(b => b.PerformGptAnalysisOnSingleInvoice(invoice, options), Times.Once);
   }
@@ -107,7 +108,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
   /// <summary>
   /// Validates analysis workflow with invoice only option.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_InvoiceOnlyOption_ExecutesWorkflow()
   {
     // Arrange
@@ -126,13 +127,13 @@ public sealed class InvoiceAnalysisFoundationServiceTests
     var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
   }
 
   /// <summary>
   /// Validates analysis workflow with no analysis option.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_NoAnalysisOption_ExecutesWorkflow()
   {
     // Arrange
@@ -151,13 +152,13 @@ public sealed class InvoiceAnalysisFoundationServiceTests
     var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
   }
 
   /// <summary>
   /// Validates analysis with multiple products completes successfully.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_MultipleProducts_AnalyzesAllProducts()
   {
     // Arrange
@@ -176,14 +177,14 @@ public sealed class InvoiceAnalysisFoundationServiceTests
     var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
-    Assert.Equal(invoice.Items.Count, result.Items.Count);
+    Assert.IsNotNull(result);
+    Assert.AreEqual(invoice.Items.Count, result.Items.Count);
   }
 
   /// <summary>
   /// Validates analysis with empty products collection completes.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_EmptyProducts_CompletesSuccessfully()
   {
     // Arrange
@@ -203,14 +204,14 @@ public sealed class InvoiceAnalysisFoundationServiceTests
     var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
-    Assert.Empty(result.Items);
+    Assert.IsNotNull(result);
+    Assert.IsEmpty(result.Items);
   }
 
   /// <summary>
   /// Validates NumberOfUpdates is incremented after analysis.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_ValidInput_IncrementsNumberOfUpdates()
   {
     // Arrange
@@ -230,13 +231,13 @@ public sealed class InvoiceAnalysisFoundationServiceTests
     var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
-    Assert.Equal(initialUpdates + 1, result.NumberOfUpdates);
+    Assert.AreEqual(initialUpdates + 1, result.NumberOfUpdates);
   }
 
   /// <summary>
   /// Validates OCR broker exception is wrapped into foundation service exception.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_OcrBrokerThrows_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -248,14 +249,14 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ThrowsAsync(new InvalidOperationException("OCR failed"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceFoundationServiceException>(() =>
         service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates GPT broker exception is wrapped into foundation service exception.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_GptBrokerThrows_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -271,14 +272,14 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ThrowsAsync(new InvalidOperationException("GPT failed"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceFoundationServiceException>(() =>
         service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates ArgumentNullException is wrapped into foundation service exception.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_ArgumentNullException_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -290,7 +291,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ThrowsAsync(new ArgumentNullException("invoice"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceFoundationServiceException>(() =>
         service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
   }
 
@@ -298,7 +299,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
   /// Validates that OperationCanceledException from the OCR broker propagates unchanged,
   /// per the cancellation-passthrough contract. Cancellation is never a server fault.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_OperationCanceledException_PropagatesOperationCanceledException()
   {
     // Arrange
@@ -310,14 +311,14 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .ThrowsAsync(new OperationCanceledException("Cancelled"));
 
     // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
-    await Assert.ThrowsAsync<OperationCanceledException>(() =>
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(() =>
         service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates analysis with InvoiceItemsOnly option.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_InvoiceItemsOnlyOption_ExecutesWorkflow()
   {
     // Arrange
@@ -336,13 +337,13 @@ public sealed class InvoiceAnalysisFoundationServiceTests
     var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
   }
 
   /// <summary>
   /// Validates analysis with InvoiceMerchantOnly option.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_InvoiceMerchantOnlyOption_ExecutesWorkflow()
   {
     // Arrange
@@ -361,13 +362,13 @@ public sealed class InvoiceAnalysisFoundationServiceTests
     var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
   }
 
   /// <summary>
   /// Validates analysis workflow preserves invoice properties.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_ValidInput_PreservesInvoiceProperties()
   {
     // Arrange
@@ -388,15 +389,15 @@ public sealed class InvoiceAnalysisFoundationServiceTests
     var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
-    Assert.Equal(originalId, result.id);
-    Assert.Equal(originalUserIdentifier, result.UserIdentifier);
+    Assert.AreEqual(originalId, result.id);
+    Assert.AreEqual(originalUserIdentifier, result.UserIdentifier);
   }
 
   /// <summary>
   /// Validates multiple sequential analyses work correctly.
   /// </summary>
-  [Theory]
-  [MemberData(nameof(GetInvoiceTestData))]
+  [TestMethod]
+  [DynamicData(nameof(GetInvoiceTestData))]
   public async Task AnalyzeInvoiceAsync_MultipleInvoices_AllAnalyzeSuccessfully(Invoice invoice)
   {
     // Arrange
@@ -414,7 +415,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
     var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
   }
 
   #endregion
@@ -424,7 +425,7 @@ public sealed class InvoiceAnalysisFoundationServiceTests
   /// <summary>
   /// Provides theory data containing several randomized invoices for parameterized tests.
   /// </summary>
-  public static TheoryData<Invoice> GetInvoiceTestData() => InvoiceBuilder.GetInvoiceTheoryData();
+  public static IEnumerable<object[]> GetInvoiceTestData() => InvoiceBuilder.GetInvoiceTheoryData();
 
   #endregion
 }

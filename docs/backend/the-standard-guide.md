@@ -701,7 +701,7 @@ public class InvoiceProcessingService
 ### Foundation Service Tests
 
 ```csharp
-[Fact]
+[TestMethod]
 public async Task ShouldAddInvoiceAsync()
 {
     // given
@@ -729,7 +729,7 @@ public async Task ShouldAddInvoiceAsync()
 ### Exception Classification Tests
 
 ```csharp
-[Fact]
+[TestMethod]
 public async Task ShouldThrowValidationExceptionOnAddIfInvoiceIsNullAndLogItAsync()
 {
     // given
@@ -745,7 +745,7 @@ public async Task ShouldThrowValidationExceptionOnAddIfInvoiceIsNullAndLogItAsyn
         this.invoiceStorageFoundationService.AddInvoiceAsync(nullInvoice);
     
     // then
-    await Assert.ThrowsAsync<InvoiceStorageFoundationServiceValidationException>(
+    await Assert.ThrowsExactlyAsync<InvoiceStorageFoundationServiceValidationException>(
         () => addInvoiceTask.AsTask());
 }
 ```

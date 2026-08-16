@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Options;
+using arolariu.Backend.Common.Telemetry;
 
 using global::Azure.Monitor.OpenTelemetry.Exporter;
 
@@ -65,6 +66,20 @@ public static class LoggingExtensions
       .GetRequiredService<IOptionsManager>()
       .GetApplicationOptions()
       .ApplicationInsightsEndpoint ?? string.Empty;
+
+    // Health check execution logs carry no diagnostic value at Information level and are
+    // dominated by probe traffic. Scoped to the OTel provider so console logging is untouched.
+    //
+    // Only the HealthChecks category is filtered. ILogger filters match on category and level,
+    // never on request path, so filtering Microsoft.AspNetCore.Hosting.Diagnostics or
+    // Routing.EndpointMiddleware would strip request logs for EVERY route, not just probes.
+    // Those categories are already at Warning via appsettings.json, so filtering them here
+    // would be a no-op today and an over-reach the moment someone lowers that level to debug.
+    if (HealthTelemetryPolicy.IsSuppressionEnabled)
+    {
+      builder.Logging.AddFilter<OpenTelemetryLoggerProvider>(
+        "Microsoft.Extensions.Diagnostics.HealthChecks", LogLevel.Warning);
+    }
 
     builder.Logging.AddOpenTelemetry(otelOptions =>
     {

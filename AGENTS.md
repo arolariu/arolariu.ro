@@ -73,7 +73,7 @@ npm run build:components   # Build component library
 
 # Testing
 npm run test               # Run all tests
-npm run test:unit          # Unit tests (Vitest + xUnit)
+npm run test:unit          # Unit tests (Vitest + MSTest)
 npm run test:e2e           # E2E tests (Playwright + Newman)
 npm run test:website       # Website FULL suite: Vitest + Playwright E2E + Storybook (expensive)
 npm run test:api           # API tests only
@@ -167,7 +167,7 @@ sites/
     src/Core.Auth/         #   Authentication bounded context
     src/Invoices/          #   Invoice management bounded context
     src/Common/            #   Shared DDD base classes, telemetry
-    tests/                 #   xUnit + MSTest tests
+    tests/                 #   MSTest tests
   cv.arolariu.ro/          # SvelteKit CV site (standalone)
   docs.arolariu.ro/        # DocFX documentation site
   exp.arolariu.ro/         # Python FastAPI experimental service
@@ -286,7 +286,7 @@ sites/cv.arolariu.ro (SvelteKit — standalone)
 |--------|-----------|----------------|---------|
 | Frontend unit | Vitest + Testing Library | 90%+ | `npm run test:unit` |
 | Frontend E2E | Playwright | Critical paths | `npm run test:e2e:frontend` |
-| Backend unit | xUnit + MSTest | 85%+ | `dotnet test sites/api.arolariu.ro/tests` |
+| Backend unit | MSTest | 85%+ | `dotnet test sites/api.arolariu.ro/tests` |
 | Backend E2E | Newman/Postman | API contracts | `npm run test:e2e:backend` |
 
 **Test patterns**: AAA (Arrange, Act, Assert), mock builders (`InvoiceBuilder`, `ProductBuilder`), proper cleanup in `afterEach`.

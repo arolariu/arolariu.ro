@@ -960,6 +960,7 @@ The Standard emphasizes **unit testing at every layer** with:
 ### Example: Foundation Service Unit Test
 
 ```csharp
+[TestClass]
 public class InvoiceStorageFoundationServiceTests
 {
   private readonly Mock<IInvoiceNoSqlBroker> brokerMock;
@@ -972,7 +973,7 @@ public class InvoiceStorageFoundationServiceTests
     service = new InvoiceStorageFoundationService(brokerMock.Object, loggerFactory.Object);
   }
 
-  [Fact]
+  [TestMethod]
   public async Task Should_CreateInvoice_When_ValidInvoiceProvided()
   {
     // Arrange
@@ -986,14 +987,14 @@ public class InvoiceStorageFoundationServiceTests
     brokerMock.Verify(b => b.CreateInvoiceAsync(invoice), Times.Once);
   }
 
-  [Fact]
+  [TestMethod]
   public async Task Should_ThrowValidationException_When_IdentifierNotSet()
   {
     // Arrange
     Guid? invalidId = null;
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceIdNotSetException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceIdNotSetException>(() =>
       service.ReadInvoiceObject(invalidId.Value));
   }
 }

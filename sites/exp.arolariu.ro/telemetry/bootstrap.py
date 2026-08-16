@@ -12,6 +12,12 @@ from typing import Any
 
 from fastapi import FastAPI
 
+from telemetry.health_policy import (
+    SUPPRESSED_HEALTH_PATHS,
+    SUPPRESSION_ENV_VAR,
+    build_excluded_urls,
+    parse_suppression_flag,
+)
 from telemetry.settings import TelemetrySettings, get_telemetry_settings
 
 logger = logging.getLogger(__name__)
@@ -83,6 +89,7 @@ _config_load_duration_histogram: Any = None
 _auth_decision_counter: Any = None
 _config_delivery_counter: Any = None
 _config_values_counter: Any = None
+_health_failure_counter: Any = None
 
 
 class SafeOtelFormatter(logging.Formatter):
@@ -380,6 +387,7 @@ def _configure_custom_metrics(runtime: TelemetryRuntime) -> None:
     global _auth_decision_counter
     global _config_delivery_counter
     global _config_values_counter
+    global _health_failure_counter
 
     if runtime.meter_provider is None or runtime.dependencies is None:
         return
@@ -409,6 +417,11 @@ def _configure_custom_metrics(runtime: TelemetryRuntime) -> None:
         "exp.config.values_served",
         unit="value",
         description="Number of config values returned by successful config responses.",
+    )
+    _health_failure_counter = meter.create_counter(
+        "arolariu.health.check.failures",
+        unit="{failure}",
+        description="Health check failures, dimensioned by the failing check name.",
     )
 
     meter.create_observable_gauge(
@@ -561,11 +574,22 @@ def _instrument_fastapi_app(runtime: TelemetryRuntime, app: FastAPI) -> None:
     if getattr(app.state, "exp_otel_instrumented", False):
         return
 
+    # Only the health-derived defaults answer to the suppression flag, so
+    # OTEL_SUPPRESS_HEALTH_TELEMETRY=false restores traces and HTTP metrics for probe
+    # endpoints as documented -- not just the request logs guarded in main.
+    #
+    # An operator who set EXP_OTEL_EXCLUDED_URLS explicitly gets that list honoured verbatim:
+    # it is a general-purpose exclusion knob, and a flag about *health* telemetry has no
+    # business silently discarding unrelated exclusions.
+    excluded_urls = runtime.settings.excluded_urls
+    if not parse_suppression_flag(os.environ.get(SUPPRESSION_ENV_VAR)) and excluded_urls == build_excluded_urls():
+        excluded_urls = ""
+
     runtime.dependencies.FastAPIInstrumentor.instrument_app(
         app,
         tracer_provider=runtime.tracer_provider,
         meter_provider=runtime.meter_provider,
-        excluded_urls=runtime.settings.excluded_urls,
+        excluded_urls=excluded_urls,
         server_request_hook=_server_request_hook,
         client_response_hook=_client_response_hook,
         exclude_spans=["receive", "send"],
@@ -631,6 +655,12 @@ def initialize_telemetry(app: FastAPI) -> TelemetryRuntime:
             settings.console_log_export_enabled,
             settings.azure_export_enabled,
         )
+        logging.getLogger(__name__).info(
+            "health telemetry suppression enabled=%s paths=%s override=%s",
+            parse_suppression_flag(os.environ.get(SUPPRESSION_ENV_VAR)),
+            ",".join(SUPPRESSED_HEALTH_PATHS),
+            SUPPRESSION_ENV_VAR,
+        )
 
         _telemetry_runtime = runtime
         return runtime
@@ -660,6 +690,7 @@ def shutdown_telemetry() -> None:
     global _auth_decision_counter
     global _config_delivery_counter
     global _config_values_counter
+    global _health_failure_counter
 
     with _runtime_lock:
         runtime = _telemetry_runtime
@@ -669,6 +700,7 @@ def shutdown_telemetry() -> None:
         _auth_decision_counter = None
         _config_delivery_counter = None
         _config_values_counter = None
+        _health_failure_counter = None
 
     if runtime is None or not runtime.initialized:
         return
@@ -699,6 +731,7 @@ def reset_telemetry_state() -> None:
     global _auth_decision_counter
     global _config_delivery_counter
     global _config_values_counter
+    global _health_failure_counter
 
     with _runtime_lock:
         _telemetry_runtime = None
@@ -707,6 +740,7 @@ def reset_telemetry_state() -> None:
         _auth_decision_counter = None
         _config_delivery_counter = None
         _config_values_counter = None
+        _health_failure_counter = None
 
 
 def _set_span_attributes(span: Any, attributes: AttributeMap | None) -> None:
@@ -871,3 +905,18 @@ def record_config_delivery_metric(
 
     if _config_values_counter is not None:
         _config_values_counter.add(value_count, attributes)
+
+
+def record_health_failure_metric(*, check: str) -> None:
+    """Record one health or readiness check failure.
+
+    This is the single always-on signal that survives health telemetry suppression; its
+    volume is effectively zero until a dependency actually fails.
+    """
+
+    runtime = _telemetry_runtime
+    if runtime is None:
+        return
+
+    if _health_failure_counter is not None:
+        _health_failure_counter.add(1, _get_metric_attributes({"check": check}))

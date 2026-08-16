@@ -356,7 +356,7 @@ public static void MapInvoiceEndpoints(this WebApplication app)
 All tests follow: `MethodName_Condition_ExpectedResult()`
 
 ```csharp
-[Fact(DisplayName = "Invoice creation succeeds with valid data")]
+[TestMethod]
 public void CreateInvoice_WithValidData_ReturnsSuccessResult()
 {
     // Arrange
@@ -367,12 +367,12 @@ public void CreateInvoice_WithValidData_ReturnsSuccessResult()
     var invoice = Invoice.Create(merchant.Id, products);
     
     // Assert
-    Assert.NotNull(invoice);
-    Assert.Equal(merchant.Id, invoice.MerchantId);
-    Assert.Equal(products.Count, invoice.Products.Count);
+    Assert.IsNotNull(invoice);
+    Assert.AreEqual(merchant.Id, invoice.MerchantId);
+    Assert.AreEqual(products.Count, invoice.Products.Count);
 }
 
-[Fact(DisplayName = "Invoice creation fails with empty products")]
+[TestMethod]
 public void CreateInvoice_WithEmptyProducts_ThrowsArgumentException()
 {
     // Arrange
@@ -380,7 +380,7 @@ public void CreateInvoice_WithEmptyProducts_ThrowsArgumentException()
     var emptyProducts = new List<Product>();
     
     // Act & Assert
-    Assert.Throws<ArgumentException>(() => 
+    Assert.ThrowsExactly<ArgumentException>(() => 
         Invoice.Create(merchantId, emptyProducts));
 }
 ```
@@ -420,7 +420,7 @@ public void CreateInvoice_WithEmptyProducts_ThrowsArgumentException()
 
 - [.NET 10.0 Documentation](https://docs.microsoft.com/en-us/dotnet/)
 - [ASP.NET Core Minimal APIs](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis)
-- [xUnit Testing](https://xunit.net/)
+- [MSTest Documentation](https://learn.microsoft.com/dotnet/core/testing/unit-testing-mstest-intro)
 
 ---
 

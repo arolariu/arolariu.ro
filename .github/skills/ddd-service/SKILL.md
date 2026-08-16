@@ -1,12 +1,40 @@
 ---
 name: ddd-service
-description: 'Scaffolds a complete DDD service following The Standard architecture with Broker, Foundation Service, Processing/Orchestration layers, partial class separation, TryCatch pattern, OpenTelemetry tracing, and xUnit tests for the arolariu.ro backend.'
+description: 'Scaffolds a complete DDD service following The Standard architecture with Broker, Foundation Service, Processing/Orchestration layers, partial class separation, TryCatch pattern, OpenTelemetry tracing, and MSTest tests for the arolariu.ro backend.'
 lastReviewed: 2026-05-08
 ---
 
 # DDD Service Scaffolding
 
 Generates a complete service following The Standard architecture for the arolariu.ro backend API.
+
+## Agent Contract
+
+### Scope
+Scaffolding a DDD service in `sites/api.arolariu.ro/` — Broker, Foundation, Processing/Orchestration layers with partial-class separation, the TryCatch pattern, OpenTelemetry tracing, and MSTest coverage. Does not cover endpoint routing, frontend consumers, or persistence schema design.
+
+### Required Inputs
+- The target bounded context under `sites/api.arolariu.ro/src/**` and the aggregate or entity being served.
+- `.github/instructions/backend.instructions.md` and `.github/instructions/csharp.instructions.md`.
+- RFC 2001 (DDD), RFC 2002 (OpenTelemetry), RFC 2003 (The Standard), RFC 2004 (XML docs).
+- An existing sibling service to match for structure and naming.
+
+### Execution Constraints
+- Respect the layer hierarchy: Endpoints → Processing → Orchestration → Foundation → Brokers. No Foundation→Foundation sideways calls.
+- Brokers are thin wrappers with no business logic; obey the Florance Pattern (max 2-3 dependencies per service).
+- Wrap service methods in the TryCatch pattern with an OpenTelemetry `Activity`.
+- XML docs on every public API; `.ConfigureAwait(false)` throughout; no sync-over-async.
+- `TreatWarningsAsErrors` is enabled — fix diagnostics at the source, never with `NoWarn` or `#pragma`.
+- Generated tests use MSTest: `[TestClass]` on every test class, and `Assert.ThrowsExactly`/`ThrowsExactlyAsync` for exact-type exception expectations (MSTest's bare `Assert.Throws` also matches derived types).
+
+### Validation
+```bash
+dotnet build sites/api.arolariu.ro/src/Core
+dotnet test sites/api.arolariu.ro/tests
+```
+
+### Escalation Conditions
+Stop and ask the user before proceeding when the work creates a new bounded context, changes a Cosmos or SQL schema, touches authentication or authorization, or adds a NuGet dependency. See **Ask-User Criteria** under [Execution Contract](#execution-contract) for the full rule.
 
 ## When to Use
 
@@ -136,6 +164,7 @@ public static IServiceCollection Add[Domain]Services(this IServiceCollection ser
 
 **`tests/[Domain]/Services/Foundation/[Entity]StorageFoundationServiceTests.cs`**:
 ```csharp
+[TestClass]
 public class [Entity]StorageFoundationServiceTests
 {
     private readonly Mock<I[Entity]NoSqlBroker> _mockBroker = new();
@@ -148,7 +177,7 @@ public class [Entity]StorageFoundationServiceTests
             new NullLoggerFactory());
     }
 
-    [Fact]
+    [TestMethod]
     public async Task Create[Entity]Object_ValidInput_CreatesSuccessfully()
     {
         // Arrange
@@ -159,11 +188,11 @@ public class [Entity]StorageFoundationServiceTests
         _mockBroker.Verify(b => b.Create[Entity]Async(entity), Times.Once);
     }
 
-    [Fact]
+    [TestMethod]
     public async Task Create[Entity]Object_NullInput_ThrowsValidationException()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<[Entity]ValidationException>(
+        await Assert.ThrowsExactlyAsync<[Entity]ValidationException>(
             () => _service.Create[Entity]Object(null!));
     }
 }
@@ -179,7 +208,7 @@ public class [Entity]StorageFoundationServiceTests
 - [ ] OpenTelemetry activity spans on all methods
 - [ ] XML documentation on all public APIs
 - [ ] DI registration in Extensions class
-- [ ] xUnit tests with 85%+ coverage
+- [ ] MSTest tests with 85%+ coverage
 - [ ] `dotnet build` passes with no warnings
 - [ ] Max 2-3 dependencies (Florance Pattern)
 

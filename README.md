@@ -495,7 +495,7 @@ arolariu.ro/
 │   │   │   ├── Core.Auth/          #    Authentication bounded context
 │   │   │   ├── Invoices/           #    Invoice management bounded context
 │   │   │   └── Common/             #    Shared DDD base classes, telemetry
-│   │   └── tests/                  #    xUnit + MSTest tests
+│   │   └── tests/                  #    MSTest tests
 │   │
 │   ├── cv.arolariu.ro/             # 📄 SvelteKit 2 CV/Resume (standalone)
 │   └── docs.arolariu.ro/           # 📚 DocFX documentation site
@@ -508,7 +508,7 @@ arolariu.ro/
 ├── 📜 scripts/                     # Build & utility scripts
 ├── 🛠️  tooling/                    # Dev tooling
 │   ├── AppHost/                    #    .NET Aspire 13.x AppHost (orchestrator)
-│   └── AppHost.Tests/              #    xUnit tests for AppHost helpers
+│   └── AppHost.Tests/              #    MSTest tests for AppHost helpers
 ├── 📖 docs/                        # Architecture documentation & RFCs
 │   └── rfc/                        #    13 Architecture Decision Records
 │
@@ -844,7 +844,7 @@ This repository is fully configured with **GitHub Copilot** context-aware AI ass
 | Prompt | Purpose |
 |:------:|:--------|
 | `comment-standard` | Consistent JSDoc/XML documentation |
-| `unit-test` | Test scaffolding (Vitest/xUnit) |
+| `unit-test` | Test scaffolding (Vitest/MSTest) |
 | `refactor` | Safe refactoring with patterns |
 | `api-endpoint` | New .NET endpoint scaffold |
 | `new-page` | Next.js page with i18n + metadata |

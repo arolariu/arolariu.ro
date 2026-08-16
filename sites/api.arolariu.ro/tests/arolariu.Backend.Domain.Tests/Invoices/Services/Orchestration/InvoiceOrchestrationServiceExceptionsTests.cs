@@ -16,12 +16,13 @@ using Microsoft.Extensions.Logging;
 
 using Moq;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Unit tests validating that <see cref="InvoiceOrchestrationService"/> classifies each foundation
 /// outer exception tier to its matching orchestration outer tier (no collapse).
 /// </summary>
+[TestClass]
 public sealed class InvoiceOrchestrationServiceExceptionsTests
 {
   private readonly Mock<IInvoiceAnalysisFoundationService> mockAnalysisService;
@@ -53,7 +54,7 @@ public sealed class InvoiceOrchestrationServiceExceptionsTests
   /// <summary>
   /// Foundation validation failures must surface as orchestration validation (no collapse into dependency-validation).
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateInvoice_WhenFoundationThrowsValidation_ThrowsOrchestrationValidation()
   {
     var invoice = InvoiceBuilder.CreateRandomInvoice();
@@ -62,14 +63,14 @@ public sealed class InvoiceOrchestrationServiceExceptionsTests
       .Setup(s => s.CreateInvoiceObject(It.IsAny<Invoice>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvoiceFoundationValidationException(inner));
 
-    await Assert.ThrowsAsync<InvoiceOrchestrationValidationException>(
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationValidationException>(
       () => orchestrationService.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Foundation dependency-validation failures must surface distinctly as orchestration dependency-validation.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateInvoice_WhenFoundationThrowsDependencyValidation_ThrowsOrchestrationDependencyValidation()
   {
     var invoice = InvoiceBuilder.CreateRandomInvoice();
@@ -78,14 +79,14 @@ public sealed class InvoiceOrchestrationServiceExceptionsTests
       .Setup(s => s.CreateInvoiceObject(It.IsAny<Invoice>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvoiceFoundationDependencyValidationException(inner));
 
-    await Assert.ThrowsAsync<InvoiceOrchestrationDependencyValidationException>(
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationDependencyValidationException>(
       () => orchestrationService.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Foundation dependency failures must surface as orchestration dependency.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateInvoice_WhenFoundationThrowsDependency_ThrowsOrchestrationDependency()
   {
     var invoice = InvoiceBuilder.CreateRandomInvoice();
@@ -94,14 +95,14 @@ public sealed class InvoiceOrchestrationServiceExceptionsTests
       .Setup(s => s.CreateInvoiceObject(It.IsAny<Invoice>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvoiceFoundationDependencyException(inner));
 
-    await Assert.ThrowsAsync<InvoiceOrchestrationDependencyException>(
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationDependencyException>(
       () => orchestrationService.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Foundation service failures must surface as orchestration service failures.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateInvoice_WhenFoundationThrowsService_ThrowsOrchestrationService()
   {
     var invoice = InvoiceBuilder.CreateRandomInvoice();
@@ -110,14 +111,14 @@ public sealed class InvoiceOrchestrationServiceExceptionsTests
       .Setup(s => s.CreateInvoiceObject(It.IsAny<Invoice>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvoiceFoundationServiceException(inner));
 
-    await Assert.ThrowsAsync<InvoiceOrchestrationServiceException>(
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationServiceException>(
       () => orchestrationService.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Unknown exceptions from the foundation must be treated as orchestration service failures (catch-all).
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateInvoice_WhenFoundationThrowsUnknown_ThrowsOrchestrationService()
   {
     var invoice = InvoiceBuilder.CreateRandomInvoice();
@@ -125,7 +126,7 @@ public sealed class InvoiceOrchestrationServiceExceptionsTests
       .Setup(s => s.CreateInvoiceObject(It.IsAny<Invoice>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvalidOperationException("unknown"));
 
-    await Assert.ThrowsAsync<InvoiceOrchestrationServiceException>(
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationServiceException>(
       () => orchestrationService.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 }

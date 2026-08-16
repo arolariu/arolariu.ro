@@ -14,11 +14,12 @@ using Microsoft.EntityFrameworkCore;
 
 using Moq;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Tests the translation layer that wraps CosmosException into typed merchant inner exceptions.
 /// </summary>
+[TestClass]
 public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBrokerTestsBase
 {
   private InvoiceNoSqlBroker BuildBroker()
@@ -35,7 +36,7 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
   /// <summary>
   /// Verifies that a Cosmos 404 (NotFound) during read is translated into <see cref="MerchantNotFoundException"/>.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantAsync_WhenCosmos404_ThrowsMerchantNotFoundException()
   {
     using var broker = BuildBroker();
@@ -46,14 +47,14 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
         It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(MakeCosmosException(HttpStatusCode.NotFound));
 
-    await Assert.ThrowsAsync<MerchantNotFoundException>(
+    await Assert.ThrowsExactlyAsync<MerchantNotFoundException>(
       async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
   /// Verifies that a Cosmos 409 (Conflict) during create is translated into <see cref="MerchantAlreadyExistsException"/>.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateMerchantAsync_WhenCosmos409_ThrowsMerchantAlreadyExistsException()
   {
     using var broker = BuildBroker();
@@ -63,14 +64,14 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
         It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(MakeCosmosException(HttpStatusCode.Conflict));
 
-    await Assert.ThrowsAsync<MerchantAlreadyExistsException>(
+    await Assert.ThrowsExactlyAsync<MerchantAlreadyExistsException>(
       async () => await broker.CreateMerchantAsync(merchant, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
   /// Verifies that a Cosmos 429 (TooManyRequests) during read is translated into <see cref="MerchantCosmosDbRateLimitException"/>.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantAsync_WhenCosmos429_ThrowsMerchantCosmosDbRateLimitException()
   {
     using var broker = BuildBroker();
@@ -81,14 +82,14 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
         It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(MakeCosmosException((HttpStatusCode)429));
 
-    await Assert.ThrowsAsync<MerchantCosmosDbRateLimitException>(
+    await Assert.ThrowsExactlyAsync<MerchantCosmosDbRateLimitException>(
       async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
   /// Verifies that a Cosmos 503 (ServiceUnavailable) during read is translated into <see cref="MerchantFailedStorageException"/>.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantAsync_WhenCosmos503_ThrowsMerchantFailedStorageException()
   {
     using var broker = BuildBroker();
@@ -99,14 +100,14 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
         It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(MakeCosmosException(HttpStatusCode.ServiceUnavailable));
 
-    await Assert.ThrowsAsync<MerchantFailedStorageException>(
+    await Assert.ThrowsExactlyAsync<MerchantFailedStorageException>(
       async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
   /// Verifies that a Cosmos 401 (Unauthorized) during read is translated into <see cref="MerchantUnauthorizedAccessException"/>.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantAsync_WhenCosmos401_ThrowsMerchantUnauthorizedAccessException()
   {
     using var broker = BuildBroker();
@@ -117,14 +118,14 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
         It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(MakeCosmosException(HttpStatusCode.Unauthorized));
 
-    await Assert.ThrowsAsync<MerchantUnauthorizedAccessException>(
+    await Assert.ThrowsExactlyAsync<MerchantUnauthorizedAccessException>(
       async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId, CancellationToken.None).ConfigureAwait(false));
   }
 
   /// <summary>
   /// Verifies that a Cosmos 403 (Forbidden) during read is translated into <see cref="MerchantForbiddenAccessException"/>.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantAsync_WhenCosmos403_ThrowsMerchantForbiddenAccessException()
   {
     using var broker = BuildBroker();
@@ -135,7 +136,7 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
         It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(MakeCosmosException(HttpStatusCode.Forbidden));
 
-    await Assert.ThrowsAsync<MerchantForbiddenAccessException>(
+    await Assert.ThrowsExactlyAsync<MerchantForbiddenAccessException>(
       async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId, CancellationToken.None).ConfigureAwait(false));
   }
 
@@ -143,7 +144,7 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
   /// Verifies that a soft-deleted merchant returned by Cosmos is surfaced as <see cref="MerchantLockedException"/>
   /// by the broker instead of being returned to the caller as a valid resource.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadMerchantAsync_WhenMerchantSoftDeleted_ThrowsMerchantLockedException()
   {
     using var broker = BuildBroker();
@@ -159,7 +160,7 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
         It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()))
       .ReturnsAsync(responseMock.Object);
 
-    await Assert.ThrowsAsync<MerchantLockedException>(
+    await Assert.ThrowsExactlyAsync<MerchantLockedException>(
       async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId, CancellationToken.None));
   }
 }

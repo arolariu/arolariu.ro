@@ -453,7 +453,7 @@ public class InvoiceController : ControllerBase
 **Approach**: Test telemetry configuration without actual export
 
 ```csharp
-[Fact]
+[TestMethod]
 public void AddOTelTracing_ShouldRegisterActivitySources()
 {
   // Arrange
@@ -465,7 +465,7 @@ public void AddOTelTracing_ShouldRegisterActivitySources()
   // Assert
   var serviceProvider = builder.Services.BuildServiceProvider();
   var tracerProvider = serviceProvider.GetService<TracerProvider>();
-  Assert.NotNull(tracerProvider);
+  Assert.IsNotNull(tracerProvider);
 }
 ```
 
@@ -474,7 +474,7 @@ public void AddOTelTracing_ShouldRegisterActivitySources()
 **Approach**: Verify telemetry end-to-end with in-memory exporter
 
 ```csharp
-[Fact]
+[TestMethod]
 public async Task CreateInvoice_ShouldCreateActivitySpan()
 {
   // Arrange
@@ -491,7 +491,7 @@ public async Task CreateInvoice_ShouldCreateActivitySpan()
   await invoiceProcessingService.CreateInvoice(testInvoice);
 
   // Assert
-  Assert.Contains(activities, a => a.DisplayName == nameof(CreateInvoice));
+  Assert.Contains(a => a.DisplayName == nameof(CreateInvoice), activities);
 }
 ```
 

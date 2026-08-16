@@ -2,14 +2,15 @@ namespace AppHost.Tests;
 
 using System.Text.Json;
 using AppHost.Aspire;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Unit tests for <see cref="ExpConfigGenerator.GenerateAspireConfig"/>.
 /// </summary>
+[TestClass]
 public sealed class ExpConfigGeneratorTests
 {
-  [Fact]
+  [TestMethod]
   public void GenerateAspireConfig_KeyPresentInOverrides_UpdatesKeyAndPreservesUnrelatedTopLevelKeys()
   {
     var sourcePath = Path.GetTempFileName();
@@ -29,10 +30,10 @@ public sealed class ExpConfigGeneratorTests
       using var doc = JsonDocument.Parse(File.ReadAllText(targetPath));
       var root = doc.RootElement;
 
-      Assert.Equal("localhost:1433", root.GetProperty("DbConnection").GetString());
-      Assert.True(root.GetProperty("FeatureFlag").GetBoolean());
-      Assert.Equal(3, root.GetProperty("RetryCount").GetInt32());
-      Assert.False(root.TryGetProperty("UnknownKey", out _));
+      Assert.AreEqual("localhost:1433", root.GetProperty("DbConnection").GetString());
+      Assert.IsTrue(root.GetProperty("FeatureFlag").GetBoolean());
+      Assert.AreEqual(3, root.GetProperty("RetryCount").GetInt32());
+      Assert.IsFalse(root.TryGetProperty("UnknownKey", out _));
     }
     finally
     {
@@ -41,7 +42,7 @@ public sealed class ExpConfigGeneratorTests
     }
   }
 
-  [Fact]
+  [TestMethod]
   public void GenerateAspireConfig_CalledTwiceWithSameInputs_ProducesIdenticalFileContent()
   {
     var sourcePath = Path.GetTempFileName();
@@ -57,7 +58,7 @@ public sealed class ExpConfigGeneratorTests
       ExpConfigGenerator.GenerateAspireConfig(sourcePath, targetPath, overrides);
       var second = File.ReadAllText(targetPath);
 
-      Assert.Equal(first, second);
+      Assert.AreEqual(first, second);
     }
     finally
     {
@@ -66,7 +67,7 @@ public sealed class ExpConfigGeneratorTests
     }
   }
 
-  [Fact]
+  [TestMethod]
   public void GenerateAspireConfig_SourceMissing_Throws()
   {
     var missing = Path.Combine(Path.GetTempPath(), $"does-not-exist-{Guid.NewGuid():N}.json");
@@ -74,7 +75,7 @@ public sealed class ExpConfigGeneratorTests
 
     try
     {
-      var ex = Assert.Throws<InvalidOperationException>(() =>
+      var ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
           ExpConfigGenerator.GenerateAspireConfig(
               missing, targetPath, new Dictionary<string, string>()));
       Assert.Contains("config.docker.json", ex.Message, StringComparison.Ordinal);
@@ -85,7 +86,7 @@ public sealed class ExpConfigGeneratorTests
     }
   }
 
-  [Fact]
+  [TestMethod]
   public void GenerateAspireConfig_SourceNotJsonObject_Throws()
   {
     var sourcePath = Path.GetTempFileName();
@@ -94,7 +95,7 @@ public sealed class ExpConfigGeneratorTests
 
     try
     {
-      Assert.Throws<InvalidOperationException>(() =>
+      Assert.ThrowsExactly<InvalidOperationException>(() =>
           ExpConfigGenerator.GenerateAspireConfig(
               sourcePath, targetPath, new Dictionary<string, string>()));
     }

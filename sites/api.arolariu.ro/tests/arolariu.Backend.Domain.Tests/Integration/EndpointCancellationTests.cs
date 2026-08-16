@@ -17,12 +17,13 @@ using Microsoft.Extensions.Hosting;
 
 using Moq;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Asserts that a cancelled request produces the correct HTTP outcome at the endpoint boundary:
 /// a client disconnect is not a server fault, and only a genuine timeout yields 504.
 /// </summary>
+[TestClass]
 public sealed class EndpointCancellationTests
 {
   // ---------------------------------------------------------------------------
@@ -108,7 +109,7 @@ public sealed class EndpointCancellationTests
   /// write tier exists: a write must not be reported as a client abort when the server is the one
   /// that gave up on it.
   /// </remarks>
-  [Fact]
+  [TestMethod]
   public async Task DeleteInvoicesAsync_WhenWriteScopeCancelled_Returns504NotClientClosed()
   {
     var processing = new Mock<IInvoiceProcessingService>();
@@ -133,8 +134,8 @@ public sealed class EndpointCancellationTests
       .DeleteInvoicesAsync(processing.Object, accessor)
       .ConfigureAwait(true);
 
-    var statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
-    Assert.Equal(StatusCodes.Status504GatewayTimeout, statusResult.StatusCode);
+    var statusResult = Assert.IsInstanceOfType<IStatusCodeHttpResult>(result);
+    Assert.AreEqual(StatusCodes.Status504GatewayTimeout, statusResult.StatusCode);
   }
 
   /// <summary>
@@ -142,7 +143,7 @@ public sealed class EndpointCancellationTests
   /// and no <c>IHttpRequestTimeoutFeature</c> is present (i.e. the client disconnected),
   /// the endpoint returns 499 and not a 5xx error.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task RetrieveAllInvoicesAsync_WhenClientDisconnects_DoesNotReturnServerError()
   {
     var processing = new Mock<IInvoiceProcessingService>();
@@ -158,8 +159,8 @@ public sealed class EndpointCancellationTests
       .ConfigureAwait(true);
 
     // No IHttpRequestTimeoutFeature is present, so this is a client abort — never 500/503.
-    var statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
-    Assert.Equal(StatusCodes.Status499ClientClosedRequest, statusResult.StatusCode);
+    var statusResult = Assert.IsInstanceOfType<IStatusCodeHttpResult>(result);
+    Assert.AreEqual(StatusCodes.Status499ClientClosedRequest, statusResult.StatusCode);
   }
 
   /// <summary>
@@ -168,7 +169,7 @@ public sealed class EndpointCancellationTests
   /// <see cref="InvoiceEndpoints.RetrieveAllInvoicesAsync"/> returns 504 Gateway Timeout —
   /// not 499 or any 5xx server fault.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task RetrieveAllInvoicesAsync_WhenRequestTimesOut_Returns504()
   {
     var processing = new Mock<IInvoiceProcessingService>();
@@ -186,8 +187,8 @@ public sealed class EndpointCancellationTests
       .ConfigureAwait(true);
 
     // IHttpRequestTimeoutFeature is present with a cancelled token → this is a server timeout.
-    var statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
-    Assert.Equal(StatusCodes.Status504GatewayTimeout, statusResult.StatusCode);
+    var statusResult = Assert.IsInstanceOfType<IStatusCodeHttpResult>(result);
+    Assert.AreEqual(StatusCodes.Status504GatewayTimeout, statusResult.StatusCode);
   }
 
   /// <summary>
@@ -196,7 +197,7 @@ public sealed class EndpointCancellationTests
   /// <see cref="InvoiceEndpoints.RetrieveSpecificInvoiceAsync"/> returns 499 (client disconnect)
   /// rather than a 5xx server fault.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task RetrieveSpecificInvoiceAsync_WhenClientDisconnects_Returns499()
   {
     var processing = new Mock<IInvoiceProcessingService>();
@@ -211,8 +212,8 @@ public sealed class EndpointCancellationTests
       .RetrieveSpecificInvoiceAsync(processing.Object, accessor, Guid.NewGuid(), CancellationToken.None)
       .ConfigureAwait(true);
 
-    var statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
-    Assert.Equal(StatusCodes.Status499ClientClosedRequest, statusResult.StatusCode);
+    var statusResult = Assert.IsInstanceOfType<IStatusCodeHttpResult>(result);
+    Assert.AreEqual(StatusCodes.Status499ClientClosedRequest, statusResult.StatusCode);
   }
 
   /// <summary>
@@ -220,7 +221,7 @@ public sealed class EndpointCancellationTests
   /// and no <c>IHttpRequestTimeoutFeature</c> is present (client disconnected),
   /// <see cref="InvoiceEndpoints.CreateNewInvoiceAsync"/> returns 499.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateNewInvoiceAsync_WhenClientDisconnects_Returns499()
   {
     var processing = new Mock<IInvoiceProcessingService>();
@@ -246,8 +247,8 @@ public sealed class EndpointCancellationTests
       .CreateNewInvoiceAsync(processing.Object, accessor, invoiceDto)
       .ConfigureAwait(true);
 
-    var statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
-    Assert.Equal(StatusCodes.Status499ClientClosedRequest, statusResult.StatusCode);
+    var statusResult = Assert.IsInstanceOfType<IStatusCodeHttpResult>(result);
+    Assert.AreEqual(StatusCodes.Status499ClientClosedRequest, statusResult.StatusCode);
   }
 
   /// <summary>
@@ -255,7 +256,7 @@ public sealed class EndpointCancellationTests
   /// and a cancelled <c>IHttpRequestTimeoutFeature</c> is installed,
   /// <see cref="InvoiceEndpoints.CreateNewInvoiceAsync"/> returns 504 Gateway Timeout.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateNewInvoiceAsync_WhenRequestTimesOut_Returns504()
   {
     var processing = new Mock<IInvoiceProcessingService>();
@@ -285,7 +286,7 @@ public sealed class EndpointCancellationTests
       .ConfigureAwait(true);
 
     // IHttpRequestTimeoutFeature present with cancelled token → server timeout.
-    var statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
-    Assert.Equal(StatusCodes.Status504GatewayTimeout, statusResult.StatusCode);
+    var statusResult = Assert.IsInstanceOfType<IStatusCodeHttpResult>(result);
+    Assert.AreEqual(StatusCodes.Status504GatewayTimeout, statusResult.StatusCode);
   }
 }

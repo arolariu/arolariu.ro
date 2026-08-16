@@ -19,13 +19,14 @@ using Microsoft.Extensions.Logging;
 
 using Moq;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Extended unit tests for <see cref="InvoiceOrchestrationService"/> covering additional edge cases,
 /// exception scenarios, and boundary conditions for comprehensive code coverage.
 /// Method naming follows MethodName_Condition_ExpectedResult pattern per repository standards.
 /// </summary>
+[TestClass]
 public sealed class InvoiceOrchestrationServiceExtendedTests
 {
   private readonly Mock<IInvoiceStorageFoundationService> mockStorageService;
@@ -57,7 +58,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
   /// <summary>
   /// Validates constructor throws when logger factory is null.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Constructor_NullLoggerFactory_CreatesInstanceWithNullLogger()
   {
     // Note: LoggerFactory null handling depends on implementation
@@ -67,7 +68,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         mockStorageService.Object,
         mockLoggerFactory.Object);
 
-    Assert.NotNull(service);
+    Assert.IsNotNull(service);
   }
 
   #endregion
@@ -77,7 +78,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
   /// <summary>
   /// Validates invoice creation with foundation validation exception wrapping.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateInvoiceObject_FoundationValidationException_ThrowsOrchestrationValidationException()
   {
     // Arrange
@@ -90,14 +91,14 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationValidationException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationValidationException>(() =>
         orchestrationService.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates invoice creation with foundation dependency exception wrapping.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateInvoiceObject_FoundationDependencyException_ThrowsOrchestrationDependencyException()
   {
     // Arrange
@@ -110,14 +111,14 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationDependencyException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationDependencyException>(() =>
         orchestrationService.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates invoice creation with foundation dependency validation exception wrapping.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateInvoiceObject_FoundationDependencyValidationException_ThrowsOrchestrationDependencyValidationException()
   {
     // Arrange
@@ -130,14 +131,14 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationDependencyValidationException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationDependencyValidationException>(() =>
         orchestrationService.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates invoice creation with foundation service exception wrapping.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateInvoiceObject_FoundationServiceException_ThrowsOrchestrationServiceException()
   {
     // Arrange
@@ -150,14 +151,14 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationServiceException>(() =>
         orchestrationService.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates invoice creation with generic exception wrapping.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task CreateInvoiceObject_GenericException_ThrowsOrchestrationServiceException()
   {
     // Arrange
@@ -168,7 +169,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationServiceException>(() =>
         orchestrationService.CreateInvoiceObject(invoice, null, CancellationToken.None));
   }
 
@@ -179,7 +180,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
   /// <summary>
   /// Validates invoice read with null user identifier.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceObject_NullUserIdentifier_ReturnsInvoice()
   {
     // Arrange
@@ -194,13 +195,13 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
     var result = await orchestrationService.ReadInvoiceObject(invoiceId, null, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
   }
 
   /// <summary>
   /// Validates invoice read with foundation validation exception wrapping.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceObject_FoundationValidationException_ThrowsOrchestrationValidationException()
   {
     // Arrange
@@ -213,14 +214,14 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationValidationException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationValidationException>(() =>
         orchestrationService.ReadInvoiceObject(invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates invoice read with foundation dependency exception wrapping.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceObject_FoundationDependencyException_ThrowsOrchestrationDependencyException()
   {
     // Arrange
@@ -233,14 +234,14 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationDependencyException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationDependencyException>(() =>
         orchestrationService.ReadInvoiceObject(invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates invoice read with generic exception wrapping.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadInvoiceObject_GenericException_ThrowsOrchestrationServiceException()
   {
     // Arrange
@@ -251,7 +252,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationServiceException>(() =>
         orchestrationService.ReadInvoiceObject(invoiceId, null, CancellationToken.None));
   }
 
@@ -262,7 +263,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
   /// <summary>
   /// Validates bulk read returns empty collection.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadAllInvoiceObjects_NoInvoices_ReturnsEmptyCollection()
   {
     // Arrange
@@ -276,14 +277,14 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
     var result = await orchestrationService.ReadAllInvoiceObjects(userId, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
-    Assert.Empty(result);
+    Assert.IsNotNull(result);
+    Assert.IsEmpty(result);
   }
 
   /// <summary>
   /// Validates bulk read returns large collection.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadAllInvoiceObjects_LargeCollection_ReturnsAllInvoices()
   {
     // Arrange
@@ -298,13 +299,13 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
     var result = await orchestrationService.ReadAllInvoiceObjects(userId, CancellationToken.None);
 
     // Assert
-    Assert.Equal(100, result.Count());
+    Assert.AreEqual(100, result.Count());
   }
 
   /// <summary>
   /// Validates bulk read with foundation dependency exception wrapping.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadAllInvoiceObjects_FoundationDependencyException_ThrowsOrchestrationDependencyException()
   {
     // Arrange
@@ -317,14 +318,14 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationDependencyException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationDependencyException>(() =>
         orchestrationService.ReadAllInvoiceObjects(userId, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates bulk read with foundation validation exception wrapping.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadAllInvoiceObjects_FoundationValidationException_ThrowsOrchestrationValidationException()
   {
     // Arrange
@@ -337,14 +338,14 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationValidationException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationValidationException>(() =>
         orchestrationService.ReadAllInvoiceObjects(userId, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates bulk read with generic exception wrapping.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task ReadAllInvoiceObjects_GenericException_ThrowsOrchestrationServiceException()
   {
     // Arrange
@@ -355,7 +356,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationServiceException>(() =>
         orchestrationService.ReadAllInvoiceObjects(userId, CancellationToken.None));
   }
 
@@ -366,7 +367,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
   /// <summary>
   /// Validates invoice update with null user identifier.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateInvoiceObject_NullUserIdentifier_ReturnsUpdatedInvoice()
   {
     // Arrange
@@ -381,13 +382,13 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
     var result = await orchestrationService.UpdateInvoiceObject(updatedInvoice, invoiceId, null, CancellationToken.None);
 
     // Assert
-    Assert.NotNull(result);
+    Assert.IsNotNull(result);
   }
 
   /// <summary>
   /// Validates invoice update with foundation validation exception wrapping.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateInvoiceObject_FoundationValidationException_ThrowsOrchestrationValidationException()
   {
     // Arrange
@@ -401,14 +402,14 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationValidationException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationValidationException>(() =>
         orchestrationService.UpdateInvoiceObject(updatedInvoice, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates invoice update with foundation dependency exception wrapping.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateInvoiceObject_FoundationDependencyException_ThrowsOrchestrationDependencyException()
   {
     // Arrange
@@ -422,14 +423,14 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationDependencyException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationDependencyException>(() =>
         orchestrationService.UpdateInvoiceObject(updatedInvoice, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates invoice update with foundation dependency validation exception wrapping.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateInvoiceObject_FoundationDependencyValidationException_ThrowsOrchestrationDependencyValidationException()
   {
     // Arrange
@@ -443,14 +444,14 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationDependencyValidationException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationDependencyValidationException>(() =>
         orchestrationService.UpdateInvoiceObject(updatedInvoice, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates invoice update with generic exception wrapping.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task UpdateInvoiceObject_GenericException_ThrowsOrchestrationServiceException()
   {
     // Arrange
@@ -462,7 +463,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationServiceException>(() =>
         orchestrationService.UpdateInvoiceObject(updatedInvoice, invoiceId, null, CancellationToken.None));
   }
 
@@ -473,7 +474,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
   /// <summary>
   /// Validates invoice delete with null user identifier.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteInvoiceObject_NullUserIdentifier_DeletesSuccessfully()
   {
     // Arrange
@@ -493,7 +494,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
   /// <summary>
   /// Validates invoice delete with foundation validation exception wrapping.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteInvoiceObject_FoundationValidationException_ThrowsOrchestrationValidationException()
   {
     // Arrange
@@ -506,14 +507,14 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationValidationException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationValidationException>(() =>
         orchestrationService.DeleteInvoiceObject(invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates invoice delete with foundation dependency exception wrapping.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteInvoiceObject_FoundationDependencyException_ThrowsOrchestrationDependencyException()
   {
     // Arrange
@@ -526,14 +527,14 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationDependencyException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationDependencyException>(() =>
         orchestrationService.DeleteInvoiceObject(invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates invoice delete with generic exception wrapping.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteInvoiceObject_GenericException_ThrowsOrchestrationServiceException()
   {
     // Arrange
@@ -544,14 +545,14 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationServiceException>(() =>
         orchestrationService.DeleteInvoiceObject(invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates idempotent delete operations.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task DeleteInvoiceObject_IdempotentCalls_SucceedMultipleTimes()
   {
     // Arrange
@@ -578,7 +579,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
   /// <summary>
   /// Validates analysis with CompleteAnalysis option.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceWithOptions_CompleteAnalysis_CallsAllServices()
   {
     // Arrange
@@ -609,7 +610,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
   /// <summary>
   /// Validates analysis with InvoiceOnly option.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceWithOptions_InvoiceOnlyOption_CallsAnalysisService()
   {
     // Arrange
@@ -639,7 +640,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
   /// <summary>
   /// Validates analysis read failure wrapping.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceWithOptions_ReadFails_ThrowsOrchestrationServiceException()
   {
     // Arrange
@@ -651,14 +652,14 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(new InvalidOperationException("Read failed"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationServiceException>(() =>
         orchestrationService.AnalyzeInvoiceWithOptions(options, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates analysis service failure wrapping.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceWithOptions_AnalysisFails_ThrowsOrchestrationServiceException()
   {
     // Arrange
@@ -675,14 +676,14 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(new InvalidOperationException("Analysis failed"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationServiceException>(() =>
         orchestrationService.AnalyzeInvoiceWithOptions(options, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates analysis update failure wrapping.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceWithOptions_UpdateFails_ThrowsOrchestrationServiceException()
   {
     // Arrange
@@ -703,14 +704,14 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(new InvalidOperationException("Update failed"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationServiceException>(() =>
         orchestrationService.AnalyzeInvoiceWithOptions(options, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates analysis with foundation dependency exception.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceWithOptions_FoundationDependencyException_ThrowsOrchestrationDependencyException()
   {
     // Arrange
@@ -724,14 +725,14 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationDependencyException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationDependencyException>(() =>
         orchestrationService.AnalyzeInvoiceWithOptions(options, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates analysis with foundation validation exception.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceWithOptions_FoundationValidationException_ThrowsOrchestrationValidationException()
   {
     // Arrange
@@ -745,7 +746,7 @@ public sealed class InvoiceOrchestrationServiceExtendedTests
         .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationValidationException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationValidationException>(() =>
         orchestrationService.AnalyzeInvoiceWithOptions(options, invoiceId, null, CancellationToken.None));
   }
 

@@ -51,6 +51,7 @@ import {NodeSDK} from "@opentelemetry/sdk-node";
 // eslint-disable-next-line n/no-extraneous-import -- sdk-logs ships with the pinned OpenTelemetry SDK family used by the website runtime
 import {BatchLogRecordProcessor, LoggerProvider} from "@opentelemetry/sdk-logs";
 import {BatchSpanProcessor} from "@opentelemetry/sdk-trace-node";
+import {parseSuppressionFlag, shouldSuppressTelemetry, SUPPRESSION_ENV_VAR} from "@/lib/telemetry/healthPolicy";
 
 // #endregion
 
@@ -131,7 +132,8 @@ export type MetricName =
   | `page.${string}`
   | `component.${string}`
   | `business.${string}`
-  | `website.${string}`;
+  | `website.${string}`
+  | `arolariu.${string}`;
 
 /**
  * Standard semantic attribute keys for HTTP operations.
@@ -564,6 +566,15 @@ const sdk = new NodeSDK({
       "@opentelemetry/instrumentation-fs": {
         enabled: false,
       },
+      // Inbound: drop spans for the website's own health probe.
+      "@opentelemetry/instrumentation-http": {
+        ignoreIncomingRequestHook: (request) => shouldSuppressTelemetry(request.url),
+      },
+      // Outbound: fetch() in route handlers goes through undici, not http. Without this
+      // hook the /api/health fan-out to api and exp still emits dependency spans.
+      "@opentelemetry/instrumentation-undici": {
+        ignoreRequestHook: (request) => shouldSuppressTelemetry(request.path),
+      },
     }),
   ],
 });
@@ -598,6 +609,9 @@ export function startTelemetry(): void {
   try {
     sdk.start();
     console.log("📊 OpenTelemetry SDK started successfully");
+    console.log(
+      `>>> 🔇 Health telemetry suppression enabled: ${parseSuppressionFlag(process.env[SUPPRESSION_ENV_VAR])}. Override with ${SUPPRESSION_ENV_VAR}.`,
+    );
   } catch (error) {
     console.error("❌ Failed to start OpenTelemetry SDK:", error);
   }

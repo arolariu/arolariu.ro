@@ -628,18 +628,20 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Services.Orchestration;
 using System;
 using System.Threading.Tasks;
 
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Xunit;
 
 using arolariu.Backend.Domain.Invoices.Services.Orchestration;
 
-public class InvoiceOrchestrationServiceTests
+[TestClass]
+public sealed class InvoiceOrchestrationServiceTests
 {
-    private readonly Mock<IInvoiceStorageFoundationService> _mockFoundationService;
-    private readonly Mock<IInvoiceAnalysisFoundationService> _mockAnalysisService;
-    private readonly InvoiceOrchestrationService _sut;
+    private Mock<IInvoiceStorageFoundationService> _mockFoundationService = null!;
+    private Mock<IInvoiceAnalysisFoundationService> _mockAnalysisService = null!;
+    private InvoiceOrchestrationService _sut = null!;
 
-    public InvoiceOrchestrationServiceTests()
+    [TestInitialize]
+    public void TestInitialize()
     {
         _mockFoundationService = new Mock<IInvoiceStorageFoundationService>();
         _mockAnalysisService = new Mock<IInvoiceAnalysisFoundationService>();
@@ -648,15 +650,15 @@ public class InvoiceOrchestrationServiceTests
             _mockAnalysisService.Object);
     }
 
-    [Fact]
+    [TestMethod]
     public void Constructor_NullFoundationService_ThrowsArgumentNullException()
     {
         // Arrange & Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
+        Assert.ThrowsExactly<ArgumentNullException>(() =>
             new InvoiceOrchestrationService(null!, _mockAnalysisService.Object));
     }
 
-    [Fact]
+    [TestMethod]
     public async Task CreateInvoiceObject_ValidInvoice_CallsFoundationService()
     {
         // Arrange

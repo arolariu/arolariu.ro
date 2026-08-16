@@ -6,13 +6,14 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Orchestration;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Comprehensive unit tests for all Merchant exception classes.
 /// Tests validate all constructors, serialization, and inheritance.
 /// Method naming follows MethodName_Condition_ExpectedResult pattern per repository standards.
 /// </summary>
+[TestClass]
 public sealed class MerchantExceptionTests
 {
   #region MerchantIdNotSetException Tests
@@ -20,22 +21,22 @@ public sealed class MerchantExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantIdNotSetException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new MerchantIdNotSetException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<MerchantIdNotSetException>(exception);
-    Assert.IsAssignableFrom<Exception>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<MerchantIdNotSetException>(exception);
+    Assert.IsInstanceOfType<Exception>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets message and inner exception.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantIdNotSetException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -45,23 +46,23 @@ public sealed class MerchantExceptionTests
     var exception = new MerchantIdNotSetException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Merchant identifier not set Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Merchant identifier not set Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   /// <summary>
   /// Verifies constructor with null inner exception works.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantIdNotSetException_NullInnerException_CreatesInstance()
   {
     // Act
     var exception = new MerchantIdNotSetException(null!);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Null(exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.IsNull(exception.InnerException);
   }
 
   #endregion
@@ -71,21 +72,21 @@ public sealed class MerchantExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantParentCompanyIdNotSetException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new MerchantParentCompanyIdNotSetException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<MerchantParentCompanyIdNotSetException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<MerchantParentCompanyIdNotSetException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantParentCompanyIdNotSetException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -95,9 +96,9 @@ public sealed class MerchantExceptionTests
     var exception = new MerchantParentCompanyIdNotSetException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Merchant parent company identifier not set Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Merchant parent company identifier not set Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -107,21 +108,21 @@ public sealed class MerchantExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantFoundationServiceValidationException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new MerchantFoundationServiceValidationException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<MerchantFoundationServiceValidationException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<MerchantFoundationServiceValidationException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantFoundationServiceValidationException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -131,15 +132,15 @@ public sealed class MerchantExceptionTests
     var exception = new MerchantFoundationServiceValidationException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Merchant Foundation Service Validation Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Merchant Foundation Service Validation Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   /// <summary>
   /// Verifies constructor with nested inner exceptions preserves exception chain.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantFoundationServiceValidationException_NestedInnerExceptions_PreservesExceptionChain()
   {
     // Arrange
@@ -150,9 +151,9 @@ public sealed class MerchantExceptionTests
     var exception = new MerchantFoundationServiceValidationException(innerException);
 
     // Assert
-    Assert.NotNull(exception.InnerException);
-    Assert.NotNull(exception.InnerException.InnerException);
-    Assert.IsType<ArgumentException>(exception.InnerException.InnerException);
+    Assert.IsNotNull(exception.InnerException);
+    Assert.IsNotNull(exception.InnerException.InnerException);
+    Assert.IsExactInstanceOfType<ArgumentException>(exception.InnerException.InnerException);
   }
 
   #endregion
@@ -162,21 +163,21 @@ public sealed class MerchantExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantFoundationServiceDependencyException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new MerchantFoundationServiceDependencyException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<MerchantFoundationServiceDependencyException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<MerchantFoundationServiceDependencyException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantFoundationServiceDependencyException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -186,9 +187,9 @@ public sealed class MerchantExceptionTests
     var exception = new MerchantFoundationServiceDependencyException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Merchant Foundation Service Dependency Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Merchant Foundation Service Dependency Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -198,21 +199,21 @@ public sealed class MerchantExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantFoundationServiceDependencyValidationException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new MerchantFoundationServiceDependencyValidationException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<MerchantFoundationServiceDependencyValidationException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<MerchantFoundationServiceDependencyValidationException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantFoundationServiceDependencyValidationException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -222,9 +223,9 @@ public sealed class MerchantExceptionTests
     var exception = new MerchantFoundationServiceDependencyValidationException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Merchant Foundation Service Dependency Validation Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Merchant Foundation Service Dependency Validation Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -234,21 +235,21 @@ public sealed class MerchantExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantFoundationServiceException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new MerchantFoundationServiceException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<MerchantFoundationServiceException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<MerchantFoundationServiceException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantFoundationServiceException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -258,9 +259,9 @@ public sealed class MerchantExceptionTests
     var exception = new MerchantFoundationServiceException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Merchant Foundation Service Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Merchant Foundation Service Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -270,21 +271,21 @@ public sealed class MerchantExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantOrchestrationServiceValidationException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new MerchantOrchestrationServiceValidationException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<MerchantOrchestrationServiceValidationException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<MerchantOrchestrationServiceValidationException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantOrchestrationServiceValidationException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -294,9 +295,9 @@ public sealed class MerchantExceptionTests
     var exception = new MerchantOrchestrationServiceValidationException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Merchant Orchestration Service Validation Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Merchant Orchestration Service Validation Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -306,21 +307,21 @@ public sealed class MerchantExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantOrchestrationServiceDependencyException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new MerchantOrchestrationServiceDependencyException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<MerchantOrchestrationServiceDependencyException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<MerchantOrchestrationServiceDependencyException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantOrchestrationServiceDependencyException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -330,9 +331,9 @@ public sealed class MerchantExceptionTests
     var exception = new MerchantOrchestrationServiceDependencyException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Merchant Orchestration Service Dependency Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Merchant Orchestration Service Dependency Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -342,21 +343,21 @@ public sealed class MerchantExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantOrchestrationServiceDependencyValidationException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new MerchantOrchestrationServiceDependencyValidationException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<MerchantOrchestrationServiceDependencyValidationException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<MerchantOrchestrationServiceDependencyValidationException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantOrchestrationServiceDependencyValidationException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -366,9 +367,9 @@ public sealed class MerchantExceptionTests
     var exception = new MerchantOrchestrationServiceDependencyValidationException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Merchant Orchestration Service Dependency Validation Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Merchant Orchestration Service Dependency Validation Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -378,21 +379,21 @@ public sealed class MerchantExceptionTests
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantOrchestrationServiceException_DefaultConstructor_CreatesInstance()
   {
     // Act
     var exception = new MerchantOrchestrationServiceException();
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.IsType<MerchantOrchestrationServiceException>(exception);
+    Assert.IsNotNull(exception);
+    Assert.IsExactInstanceOfType<MerchantOrchestrationServiceException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void MerchantOrchestrationServiceException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
@@ -402,9 +403,9 @@ public sealed class MerchantExceptionTests
     var exception = new MerchantOrchestrationServiceException(innerException);
 
     // Assert
-    Assert.NotNull(exception);
-    Assert.Equal("Merchant Orchestration Service Exception", exception.Message);
-    Assert.Same(innerException, exception.InnerException);
+    Assert.IsNotNull(exception);
+    Assert.AreEqual("Merchant Orchestration Service Exception", exception.Message);
+    Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
@@ -414,61 +415,61 @@ public sealed class MerchantExceptionTests
   /// <summary>
   /// Verifies all inner exceptions inherit from Exception base class.
   /// </summary>
-  [Theory]
-  [InlineData(typeof(MerchantIdNotSetException))]
-  [InlineData(typeof(MerchantParentCompanyIdNotSetException))]
+  [TestMethod]
+  [DataRow(typeof(MerchantIdNotSetException))]
+  [DataRow(typeof(MerchantParentCompanyIdNotSetException))]
   public void InnerExceptions_InheritFromException_TypeVerification(Type exceptionType)
   {
     // Assert
-    Assert.True(typeof(Exception).IsAssignableFrom(exceptionType));
+    Assert.IsTrue(typeof(Exception).IsAssignableFrom(exceptionType));
   }
 
   /// <summary>
   /// Verifies all foundation exceptions inherit from Exception base class.
   /// </summary>
-  [Theory]
-  [InlineData(typeof(MerchantFoundationServiceValidationException))]
-  [InlineData(typeof(MerchantFoundationServiceDependencyException))]
-  [InlineData(typeof(MerchantFoundationServiceDependencyValidationException))]
-  [InlineData(typeof(MerchantFoundationServiceException))]
+  [TestMethod]
+  [DataRow(typeof(MerchantFoundationServiceValidationException))]
+  [DataRow(typeof(MerchantFoundationServiceDependencyException))]
+  [DataRow(typeof(MerchantFoundationServiceDependencyValidationException))]
+  [DataRow(typeof(MerchantFoundationServiceException))]
   public void FoundationExceptions_InheritFromException_TypeVerification(Type exceptionType)
   {
     // Assert
-    Assert.True(typeof(Exception).IsAssignableFrom(exceptionType));
+    Assert.IsTrue(typeof(Exception).IsAssignableFrom(exceptionType));
   }
 
   /// <summary>
   /// Verifies all orchestration exceptions inherit from Exception base class.
   /// </summary>
-  [Theory]
-  [InlineData(typeof(MerchantOrchestrationServiceValidationException))]
-  [InlineData(typeof(MerchantOrchestrationServiceDependencyException))]
-  [InlineData(typeof(MerchantOrchestrationServiceDependencyValidationException))]
-  [InlineData(typeof(MerchantOrchestrationServiceException))]
+  [TestMethod]
+  [DataRow(typeof(MerchantOrchestrationServiceValidationException))]
+  [DataRow(typeof(MerchantOrchestrationServiceDependencyException))]
+  [DataRow(typeof(MerchantOrchestrationServiceDependencyValidationException))]
+  [DataRow(typeof(MerchantOrchestrationServiceException))]
   public void OrchestrationExceptions_InheritFromException_TypeVerification(Type exceptionType)
   {
     // Assert
-    Assert.True(typeof(Exception).IsAssignableFrom(exceptionType));
+    Assert.IsTrue(typeof(Exception).IsAssignableFrom(exceptionType));
   }
 
   /// <summary>
   /// Verifies all merchant exceptions have the Serializable attribute.
   /// </summary>
-  [Theory]
-  [InlineData(typeof(MerchantIdNotSetException))]
-  [InlineData(typeof(MerchantParentCompanyIdNotSetException))]
-  [InlineData(typeof(MerchantFoundationServiceValidationException))]
-  [InlineData(typeof(MerchantFoundationServiceDependencyException))]
-  [InlineData(typeof(MerchantFoundationServiceDependencyValidationException))]
-  [InlineData(typeof(MerchantFoundationServiceException))]
-  [InlineData(typeof(MerchantOrchestrationServiceValidationException))]
-  [InlineData(typeof(MerchantOrchestrationServiceDependencyException))]
-  [InlineData(typeof(MerchantOrchestrationServiceDependencyValidationException))]
-  [InlineData(typeof(MerchantOrchestrationServiceException))]
+  [TestMethod]
+  [DataRow(typeof(MerchantIdNotSetException))]
+  [DataRow(typeof(MerchantParentCompanyIdNotSetException))]
+  [DataRow(typeof(MerchantFoundationServiceValidationException))]
+  [DataRow(typeof(MerchantFoundationServiceDependencyException))]
+  [DataRow(typeof(MerchantFoundationServiceDependencyValidationException))]
+  [DataRow(typeof(MerchantFoundationServiceException))]
+  [DataRow(typeof(MerchantOrchestrationServiceValidationException))]
+  [DataRow(typeof(MerchantOrchestrationServiceDependencyException))]
+  [DataRow(typeof(MerchantOrchestrationServiceDependencyValidationException))]
+  [DataRow(typeof(MerchantOrchestrationServiceException))]
   public void AllExceptions_HaveSerializableAttribute_AttributeVerification(Type exceptionType)
   {
     // Assert
-    Assert.True(Attribute.IsDefined(exceptionType, typeof(SerializableAttribute)));
+    Assert.IsTrue(Attribute.IsDefined(exceptionType, typeof(SerializableAttribute)));
   }
 
   #endregion
@@ -478,7 +479,7 @@ public sealed class MerchantExceptionTests
   /// <summary>
   /// Verifies full exception chain from Orchestration to Foundation layers.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void ExceptionChain_OrchestrationToFoundation_PreservesFullChain()
   {
     // Arrange
@@ -490,22 +491,22 @@ public sealed class MerchantExceptionTests
     var orchestrationException = new MerchantOrchestrationServiceValidationException(foundationException);
 
     // Assert
-    Assert.NotNull(orchestrationException.InnerException);
-    Assert.IsType<MerchantFoundationServiceValidationException>(orchestrationException.InnerException);
+    Assert.IsNotNull(orchestrationException.InnerException);
+    Assert.IsExactInstanceOfType<MerchantFoundationServiceValidationException>(orchestrationException.InnerException);
 
     var foundation = orchestrationException.InnerException;
-    Assert.NotNull(foundation.InnerException);
-    Assert.IsType<MerchantIdNotSetException>(foundation.InnerException);
+    Assert.IsNotNull(foundation.InnerException);
+    Assert.IsExactInstanceOfType<MerchantIdNotSetException>(foundation.InnerException);
 
     var inner = foundation.InnerException;
-    Assert.NotNull(inner.InnerException);
-    Assert.IsType<ArgumentException>(inner.InnerException);
+    Assert.IsNotNull(inner.InnerException);
+    Assert.IsExactInstanceOfType<ArgumentException>(inner.InnerException);
   }
 
   /// <summary>
   /// Verifies dependency exception chain preservation.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void DependencyExceptionChain_OrchestrationToFoundation_PreservesFullChain()
   {
     // Arrange
@@ -516,12 +517,12 @@ public sealed class MerchantExceptionTests
     var orchestrationException = new MerchantOrchestrationServiceDependencyException(foundationException);
 
     // Assert
-    Assert.NotNull(orchestrationException.InnerException);
-    Assert.IsType<MerchantFoundationServiceDependencyException>(orchestrationException.InnerException);
+    Assert.IsNotNull(orchestrationException.InnerException);
+    Assert.IsExactInstanceOfType<MerchantFoundationServiceDependencyException>(orchestrationException.InnerException);
 
     var foundation = orchestrationException.InnerException;
-    Assert.NotNull(foundation.InnerException);
-    Assert.IsType<InvalidOperationException>(foundation.InnerException);
+    Assert.IsNotNull(foundation.InnerException);
+    Assert.IsExactInstanceOfType<InvalidOperationException>(foundation.InnerException);
   }
 
   #endregion

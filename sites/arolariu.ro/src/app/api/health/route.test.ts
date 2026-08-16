@@ -10,6 +10,9 @@ const instrumentationMocks = vi.hoisted(() => ({
     enrichedHeaders.set("X-Request-Id", "feedfacefeedfacefeedfacefeedface");
     return enrichedHeaders;
   }),
+  // Stable across re-imports so tests can assert on the failure counter, which the route
+  // creates at module scope and `vi.resetModules()` re-creates for every test.
+  counterAdd: vi.fn(),
 }));
 
 // Mock server-only and OTel before any imports
@@ -19,7 +22,7 @@ vi.mock("@/instrumentation.server", () => ({
   setSpanAttributes: vi.fn(),
   logWithTrace: vi.fn(),
   createHistogram: vi.fn(() => ({record: vi.fn()})),
-  createCounter: vi.fn(() => ({add: vi.fn()})),
+  createCounter: vi.fn(() => ({add: instrumentationMocks.counterAdd})),
   createHttpServerAttributes: vi.fn(() => ({})),
   getTraceparentHeader: vi.fn(() => ""),
   injectTraceContextHeaders: instrumentationMocks.injectTraceContextHeaders,
@@ -35,6 +38,7 @@ describe("/api/health", () => {
   beforeEach(() => {
     vi.resetModules();
     mockFetch.mockReset();
+    instrumentationMocks.counterAdd.mockReset();
     vi.stubEnv("SITE_ENV", "DEVELOPMENT");
     vi.stubEnv("COMMIT_SHA", "abc123def456");
     vi.stubEnv("SITE_NAME", "dev.arolariu.ro");
@@ -177,6 +181,54 @@ describe("/api/health", () => {
 
     expect(body.dependencies[1]?.status).toBe("Unhealthy");
     expect(body.dependencies[1]?.error).toBe("string error");
+  });
+
+  describe("arolariu.health.check.failures counter", () => {
+    it("records one measurement per Unhealthy dependency, with low-cardinality check values", async () => {
+      mockFetch.mockRejectedValue(new Error("down"));
+
+      const {GET} = await import("./route");
+      await GET();
+
+      expect(instrumentationMocks.counterAdd).toHaveBeenCalledTimes(2);
+      expect(instrumentationMocks.counterAdd).toHaveBeenCalledWith(1, {check: "exp"});
+      expect(instrumentationMocks.counterAdd).toHaveBeenCalledWith(1, {check: "api"});
+    });
+
+    it("records only the failing dependency when one is reachable", async () => {
+      mockFetch.mockResolvedValueOnce({ok: true, status: 200}).mockRejectedValueOnce(new Error("down"));
+
+      const {GET} = await import("./route");
+      await GET();
+
+      expect(instrumentationMocks.counterAdd).toHaveBeenCalledTimes(1);
+      expect(instrumentationMocks.counterAdd).toHaveBeenCalledWith(1, {check: "api"});
+    });
+
+    it("records nothing when all dependencies are healthy", async () => {
+      mockFetch.mockResolvedValue({ok: true, status: 200});
+
+      const {GET} = await import("./route");
+      await GET();
+
+      expect(instrumentationMocks.counterAdd).not.toHaveBeenCalled();
+    });
+
+    it("records a failure for a Degraded dependency, which answered but unhappily", async () => {
+      mockFetch.mockResolvedValue({ok: false, status: 503});
+
+      const {GET} = await import("./route");
+      const response = await GET();
+      const body = await response.json();
+
+      expect(body.dependencies[0]?.status).toBe("Degraded");
+      // Degraded drives this endpoint to 503, so it must reach the counter — it is the
+      // only signal left once routine health telemetry is suppressed. Both dependencies
+      // are Degraded here because the mock answers every fetch.
+      expect(instrumentationMocks.counterAdd).toHaveBeenCalledTimes(2);
+      expect(instrumentationMocks.counterAdd).toHaveBeenCalledWith(1, {check: "exp"});
+      expect(instrumentationMocks.counterAdd).toHaveBeenCalledWith(1, {check: "api"});
+    });
   });
 
   it("uses fallback values when env vars are missing", async () => {

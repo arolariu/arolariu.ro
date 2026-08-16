@@ -1,6 +1,6 @@
 ---
 name: "unit-test-generator"
-description: 'Generates comprehensive unit tests for TypeScript/React (Vitest) and C# (xUnit/MSTest) following established codebase patterns and achieving 90%+ coverage.'
+description: 'Generates comprehensive unit tests for TypeScript/React (Vitest) and C# (MSTest) following established codebase patterns and achieving 90%+ coverage.'
 agent: 'agent'
 model: 'Claude Sonnet 4.5'
 tools: ['codebase', 'search', 'editFiles', 'terminalLastCommand']
@@ -11,13 +11,43 @@ lastReviewed: 2026-05-08
 
 ## Purpose
 
-This prompt analyzes source code and generates comprehensive, idiomatic unit tests following the arolariu.ro testing standards and patterns. It supports both frontend (TypeScript/React with Vitest) and backend (C# with xUnit/MSTest) test generation.
+This prompt analyzes source code and generates comprehensive, idiomatic unit tests following the arolariu.ro testing standards and patterns. It supports both frontend (TypeScript/React with Vitest) and backend (C# with MSTest) test generation.
 
 **Testing Frameworks:**
 - **Frontend**: Vitest + @testing-library/react
-- **Backend**: xUnit (domain tests) + MSTest (core tests)
+- **Backend**: MSTest
 
 **Coverage Target**: 90%+ per `vitest.config.ts` thresholds
+
+---
+
+## Agent Contract
+
+### Scope
+Generating and extending unit tests for frontend (Vitest + Testing Library) and backend (MSTest) code in this monorepo. Covers test files, mock builders, and fixtures. Does not cover E2E/Playwright specs, Storybook stories, or changes to the production code under test.
+
+### Required Inputs
+- The source file(s) under test and their existing colocated `*.test.ts`/`*.cs` neighbours.
+- `.github/instructions/typescript.instructions.md` or `.github/instructions/csharp.instructions.md`, per stack.
+- Existing shared builders in `sites/arolariu.ro/tests/helpers/builders/` and `tests/**/Builders/`.
+- RFC 1002 (JSDoc) for frontend, RFC 2004 (XML docs) for backend.
+
+### Execution Constraints
+- Tests are colocated: put `*.test.ts` beside the file it covers.
+- Mock only true external boundaries (network, Azure SDK, Clerk). Never mock our own modules; excess test doubles are a smell here.
+- Do not modify production code to make a test pass — report the defect instead.
+- Backend: MSTest only. `[TestClass]` on every test class, and prefer `Assert.ThrowsExactly`/`ThrowsExactlyAsync` for exact-type expectations, since MSTest's bare `Assert.Throws` matches derived types too.
+- Never weaken or delete an existing assertion to turn a suite green.
+
+### Validation
+```bash
+npm run test:unit                     # Vitest + MSTest (routine check)
+dotnet test sites/api.arolariu.ro/tests
+```
+Avoid `npm run test:website` for routine work — it runs the full Playwright and Storybook suites.
+
+### Escalation Conditions
+Stop and ask the user before proceeding when a test cannot be written without changing production behavior, when the required coverage would demand a new dependency, or when an existing test appears deliberately wrong rather than merely outdated. See **Ask-User Criteria** under [Execution Contract](#execution-contract) for the full rule.
 
 ---
 
@@ -566,7 +596,7 @@ const invoices = new InvoiceBuilder()
 
 ---
 
-# Part 2: Backend Testing (C# with xUnit/MSTest)
+# Part 2: Backend Testing (C# with MSTest)
 
 ## Test Project Structure
 
@@ -580,31 +610,33 @@ tests/
 │       ├── Models/
 │       ├── Services/
 │       └── Data/
-└── arolariu.Backend.Domain.Tests/    # xUnit for domain logic
+└── arolariu.Backend.Domain.Tests/    # MSTest for domain logic
     └── Invoices/
         ├── Brokers/
         └── Services/
             └── Orchestration/
 ```
 
-## xUnit Test Pattern
+## MSTest Test Pattern — Service (with mocks)
 
 ```csharp
 /// <summary>
 /// Comprehensive unit tests for <see cref="InvoiceOrchestrationService"/>.
 /// Method naming follows MethodName_Condition_ExpectedResult pattern.
 /// </summary>
+[TestClass]
 public sealed class InvoiceOrchestrationServiceTests
 {
-    private readonly Mock<IInvoiceAnalysisFoundationService> mockAnalysisService;
-    private readonly Mock<IInvoiceStorageFoundationService> mockStorageService;
-    private readonly Mock<ILoggerFactory> mockLoggerFactory;
-    private readonly InvoiceOrchestrationService orchestrationService;
+    private Mock<IInvoiceAnalysisFoundationService> mockAnalysisService = null!;
+    private Mock<IInvoiceStorageFoundationService> mockStorageService = null!;
+    private Mock<ILoggerFactory> mockLoggerFactory = null!;
+    private InvoiceOrchestrationService orchestrationService = null!;
 
     /// <summary>
     /// Initializes test fixtures with mocked dependencies.
     /// </summary>
-    public InvoiceOrchestrationServiceTests()
+    [TestInitialize]
+    public void TestInitialize()
     {
         mockAnalysisService = new Mock<IInvoiceAnalysisFoundationService>();
         mockStorageService = new Mock<IInvoiceStorageFoundationService>();
@@ -622,12 +654,12 @@ public sealed class InvoiceOrchestrationServiceTests
 
     #region Constructor Tests
 
-    [Fact]
+    [TestMethod]
     public void Constructor_NullAnalysisService_ThrowsArgumentNullException() =>
-        Assert.Throws<ArgumentNullException>(() =>
+        Assert.ThrowsExactly<ArgumentNullException>(() =>
             new InvoiceOrchestrationService(null!, mockStorageService.Object, mockLoggerFactory.Object));
 
-    [Fact]
+    [TestMethod]
     public void Constructor_ValidDependencies_CreatesInstance()
     {
         var service = new InvoiceOrchestrationService(
@@ -635,14 +667,14 @@ public sealed class InvoiceOrchestrationServiceTests
             mockStorageService.Object,
             mockLoggerFactory.Object);
 
-        Assert.NotNull(service);
+        Assert.IsNotNull(service);
     }
 
     #endregion
 
     #region Method Tests
 
-    [Fact]
+    [TestMethod]
     public async Task AnalyzeInvoice_ValidInput_ExecutesCompleteWorkflow()
     {
         // Arrange
@@ -669,7 +701,7 @@ public sealed class InvoiceOrchestrationServiceTests
             AnalysisOptions.CompleteAnalysis, originalInvoice), Times.Once);
     }
 
-    [Fact]
+    [TestMethod]
     public async Task AnalyzeInvoice_StorageThrows_PropagatesException()
     {
         // Arrange
@@ -679,7 +711,7 @@ public sealed class InvoiceOrchestrationServiceTests
             .ThrowsAsync(new InvoiceNotFoundException());
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvoiceNotFoundException>(() =>
+        await Assert.ThrowsExactlyAsync<InvoiceNotFoundException>(() =>
             orchestrationService.AnalyzeInvoiceWithOptions(
                 AnalysisOptions.InvoiceOnly, invoiceId, null));
     }
@@ -688,7 +720,7 @@ public sealed class InvoiceOrchestrationServiceTests
 }
 ```
 
-## MSTest Test Pattern
+## MSTest Test Pattern — Entity
 
 ```csharp
 /// <summary>
@@ -799,13 +831,13 @@ describe("ComponentName", () => {
 ### C# (MethodName_Condition_ExpectedResult)
 
 ```csharp
-[Fact]
+[TestMethod]
 public void CreateInvoice_ValidInput_ReturnsCreatedInvoice() { }
 
-[Fact]
+[TestMethod]
 public void CreateInvoice_NullInput_ThrowsArgumentNullException() { }
 
-[Fact]
+[TestMethod]
 public async Task GetInvoice_NotFound_ReturnsNull() { }
 ```
 

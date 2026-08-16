@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from config.settings import get_runtime_infra_mode
+from telemetry.health_policy import build_excluded_urls
 
 DEFAULT_TELEMETRY_ENABLED = True
 DEFAULT_CONSOLE_LOG_EXPORT_ENABLED = False
@@ -23,7 +24,7 @@ DEFAULT_TRACE_SAMPLE_RATIO = 1.0
 DEFAULT_LOG_LEVEL = "INFO"
 DEFAULT_SERVICE_NAME = "exp.arolariu.ro"
 DEFAULT_SERVICE_NAMESPACE = "arolariu.ro"
-DEFAULT_EXCLUDED_URLS = "/api/health,/api/ready,/admin"
+DEFAULT_EXCLUDED_URLS = build_excluded_urls()
 
 
 @dataclass(frozen=True, slots=True)

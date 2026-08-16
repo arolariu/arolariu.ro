@@ -9,7 +9,6 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
-using Xunit;
 
 /// <summary>
 /// Test data builder for <see cref="Invoice"/> entities following test naming and data generation patterns.
@@ -68,12 +67,12 @@ internal static class InvoiceBuilder
     };
   }
 
-  public static TheoryData<Invoice> GetInvoiceTheoryData() => new()
-  {
-    CreateRandomInvoice(),
-    CreateRandomInvoice(),
-    CreateRandomInvoice()
-  };
+  public static IEnumerable<object[]> GetInvoiceTheoryData() =>
+  [
+    [CreateRandomInvoice()],
+    [CreateRandomInvoice()],
+    [CreateRandomInvoice()]
+  ];
 
   public static List<Invoice> CreateMultipleRandomInvoices(int count = 3)
   {

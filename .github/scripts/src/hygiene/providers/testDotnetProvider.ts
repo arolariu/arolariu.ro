@@ -1,5 +1,5 @@
 /**
- * @fileoverview .NET unit tests provider (@arolariu/api xUnit suite via TRX).
+ * @fileoverview .NET unit tests provider (@arolariu/api MSTest suite via TRX).
  * @module github/scripts/src/hygiene/providers/testDotnetProvider
  *
  * @remarks

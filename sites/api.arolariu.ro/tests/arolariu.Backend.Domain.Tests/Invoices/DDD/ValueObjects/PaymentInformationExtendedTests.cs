@@ -5,11 +5,12 @@ using System;
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Extended unit tests for the PaymentInformation value object.
 /// </summary>
+[TestClass]
 public sealed class PaymentInformationExtendedTests
 {
   #region PaymentInformation Property Tests
@@ -17,23 +18,23 @@ public sealed class PaymentInformationExtendedTests
   /// <summary>
   /// Validates default PaymentInformation creation.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_DefaultCreation_HasDefaultValues()
   {
     // Arrange & Act
     var payment = new PaymentInformation();
 
     // Assert
-    Assert.Equal(PaymentType.UNKNOWN, payment.PaymentType);
-    Assert.Equal(0.0m, payment.TotalCostAmount);
-    Assert.Equal(0.0m, payment.TotalTaxAmount);
-    Assert.NotEqual(default, payment.Currency);
+    Assert.AreEqual(PaymentType.UNKNOWN, payment.PaymentType);
+    Assert.AreEqual(0.0m, payment.TotalCostAmount);
+    Assert.AreEqual(0.0m, payment.TotalTaxAmount);
+    Assert.AreNotEqual(default, payment.Currency);
   }
 
   /// <summary>
   /// Validates TransactionDate property.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_SetTransactionDate_StoresValue()
   {
     // Arrange
@@ -44,13 +45,13 @@ public sealed class PaymentInformationExtendedTests
     payment.TransactionDate = date;
 
     // Assert
-    Assert.Equal(date, payment.TransactionDate);
+    Assert.AreEqual(date, payment.TransactionDate);
   }
 
   /// <summary>
   /// Validates PaymentType property.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_SetPaymentType_StoresValue()
   {
     // Arrange
@@ -60,13 +61,13 @@ public sealed class PaymentInformationExtendedTests
     payment.PaymentType = PaymentType.CARD;
 
     // Assert
-    Assert.Equal(PaymentType.CARD, payment.PaymentType);
+    Assert.AreEqual(PaymentType.CARD, payment.PaymentType);
   }
 
   /// <summary>
   /// Validates TotalCostAmount property.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_SetTotalCostAmount_StoresValue()
   {
     // Arrange
@@ -76,13 +77,13 @@ public sealed class PaymentInformationExtendedTests
     payment.TotalCostAmount = 150.99m;
 
     // Assert
-    Assert.Equal(150.99m, payment.TotalCostAmount);
+    Assert.AreEqual(150.99m, payment.TotalCostAmount);
   }
 
   /// <summary>
   /// Validates TotalTaxAmount property.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_SetTotalTaxAmount_StoresValue()
   {
     // Arrange
@@ -92,13 +93,13 @@ public sealed class PaymentInformationExtendedTests
     payment.TotalTaxAmount = 28.69m;
 
     // Assert
-    Assert.Equal(28.69m, payment.TotalTaxAmount);
+    Assert.AreEqual(28.69m, payment.TotalTaxAmount);
   }
 
   /// <summary>
   /// Validates Currency property.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_SetCurrency_StoresValue()
   {
     // Arrange
@@ -109,22 +110,22 @@ public sealed class PaymentInformationExtendedTests
     payment.Currency = currency;
 
     // Assert
-    Assert.Equal("Euro", payment.Currency.Name);
-    Assert.Equal("EUR", payment.Currency.Code);
+    Assert.AreEqual("Euro", payment.Currency.Name);
+    Assert.AreEqual("EUR", payment.Currency.Code);
   }
 
   /// <summary>
   /// Validates default Currency is Romanian Leu.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_DefaultCurrency_IsRomanianLeu()
   {
     // Arrange & Act
     var payment = new PaymentInformation();
 
     // Assert
-    Assert.Equal("Romanian Leu", payment.Currency.Name);
-    Assert.Equal("RON", payment.Currency.Code);
+    Assert.AreEqual("Romanian Leu", payment.Currency.Name);
+    Assert.AreEqual("RON", payment.Currency.Code);
   }
 
   #endregion
@@ -134,7 +135,7 @@ public sealed class PaymentInformationExtendedTests
   /// <summary>
   /// Validates all PaymentType enum values.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentType_AllValues_AreValid()
   {
     // Arrange
@@ -144,84 +145,84 @@ public sealed class PaymentInformationExtendedTests
     foreach (var type in paymentTypes)
     {
       var payment = new PaymentInformation { PaymentType = type };
-      Assert.Equal(type, payment.PaymentType);
+      Assert.AreEqual(type, payment.PaymentType);
     }
   }
 
   /// <summary>
   /// Validates PaymentType.UNKNOWN exists.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentType_Unknown_Exists()
   {
-    Assert.True(Enum.IsDefined<PaymentType>(PaymentType.UNKNOWN));
+    Assert.IsTrue(Enum.IsDefined<PaymentType>(PaymentType.UNKNOWN));
   }
 
   /// <summary>
   /// Validates PaymentType.CASH exists.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentType_Cash_Exists()
   {
-    Assert.True(Enum.IsDefined<PaymentType>(PaymentType.CASH));
+    Assert.IsTrue(Enum.IsDefined<PaymentType>(PaymentType.CASH));
   }
 
   /// <summary>
   /// Validates PaymentType.CARD exists.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentType_Card_Exists()
   {
-    Assert.True(Enum.IsDefined<PaymentType>(PaymentType.CARD));
+    Assert.IsTrue(Enum.IsDefined<PaymentType>(PaymentType.CARD));
   }
 
   /// <summary>
   /// Validates PaymentType.TRANSFER exists.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentType_Transfer_Exists()
   {
-    Assert.True(Enum.IsDefined<PaymentType>(PaymentType.TRANSFER));
+    Assert.IsTrue(Enum.IsDefined<PaymentType>(PaymentType.TRANSFER));
   }
 
   /// <summary>
   /// Validates PaymentType.MOBILEPAYMENT exists.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentType_MobilePayment_Exists()
   {
-    Assert.True(Enum.IsDefined<PaymentType>(PaymentType.MOBILEPAYMENT));
+    Assert.IsTrue(Enum.IsDefined<PaymentType>(PaymentType.MOBILEPAYMENT));
   }
 
   /// <summary>
   /// Validates PaymentType.VOUCHER exists.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentType_Voucher_Exists()
   {
-    Assert.True(Enum.IsDefined<PaymentType>(PaymentType.VOUCHER));
+    Assert.IsTrue(Enum.IsDefined<PaymentType>(PaymentType.VOUCHER));
   }
 
   /// <summary>
   /// Validates PaymentType.Other exists.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentType_Other_Exists()
   {
-    Assert.True(Enum.IsDefined<PaymentType>(PaymentType.Other));
+    Assert.IsTrue(Enum.IsDefined<PaymentType>(PaymentType.Other));
   }
 
   /// <summary>
   /// Validates PaymentType enum has expected count.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentType_HasExpectedValueCount()
   {
     // Arrange
     var values = Enum.GetValues<PaymentType>();
 
     // Assert - Should have 7 payment types
-    Assert.Equal(7, values.Length);
+    Assert.AreEqual(7, values.Length);
   }
 
   #endregion
@@ -231,33 +232,33 @@ public sealed class PaymentInformationExtendedTests
   /// <summary>
   /// Validates zero cost amount is allowed.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_ZeroCostAmount_IsAllowed()
   {
     // Arrange & Act
     var payment = new PaymentInformation { TotalCostAmount = 0 };
 
     // Assert
-    Assert.Equal(0, payment.TotalCostAmount);
+    Assert.AreEqual(0, payment.TotalCostAmount);
   }
 
   /// <summary>
   /// Validates large cost amount is allowed.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_LargeCostAmount_IsAllowed()
   {
     // Arrange & Act
     var payment = new PaymentInformation { TotalCostAmount = 999999.99m };
 
     // Assert
-    Assert.Equal(999999.99m, payment.TotalCostAmount);
+    Assert.AreEqual(999999.99m, payment.TotalCostAmount);
   }
 
   /// <summary>
   /// Validates tax amount greater than cost amount (edge case).
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_TaxGreaterThanCost_IsAllowed()
   {
     // Arrange & Act
@@ -268,14 +269,14 @@ public sealed class PaymentInformationExtendedTests
     };
 
     // Assert - No validation preventing this edge case
-    Assert.Equal(100m, payment.TotalCostAmount);
-    Assert.Equal(200m, payment.TotalTaxAmount);
+    Assert.AreEqual(100m, payment.TotalCostAmount);
+    Assert.AreEqual(200m, payment.TotalTaxAmount);
   }
 
   /// <summary>
   /// Validates very old transaction date.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_VeryOldDate_IsAllowed()
   {
     // Arrange & Act
@@ -285,13 +286,13 @@ public sealed class PaymentInformationExtendedTests
     };
 
     // Assert
-    Assert.Equal(1900, payment.TransactionDate.Year);
+    Assert.AreEqual(1900, payment.TransactionDate.Year);
   }
 
   /// <summary>
   /// Validates future transaction date.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_FutureDate_IsAllowed()
   {
     // Arrange & Act
@@ -301,13 +302,13 @@ public sealed class PaymentInformationExtendedTests
     };
 
     // Assert
-    Assert.Equal(2100, payment.TransactionDate.Year);
+    Assert.AreEqual(2100, payment.TransactionDate.Year);
   }
 
   /// <summary>
   /// Validates high precision decimal amounts.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_HighPrecisionAmount_IsAllowed()
   {
     // Arrange & Act
@@ -318,14 +319,14 @@ public sealed class PaymentInformationExtendedTests
     };
 
     // Assert
-    Assert.Equal(123.456789m, payment.TotalCostAmount);
-    Assert.Equal(23.456789m, payment.TotalTaxAmount);
+    Assert.AreEqual(123.456789m, payment.TotalCostAmount);
+    Assert.AreEqual(23.456789m, payment.TotalTaxAmount);
   }
 
   /// <summary>
   /// Validates record equality.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_SameValues_AreEqual()
   {
     // Arrange
@@ -346,13 +347,13 @@ public sealed class PaymentInformationExtendedTests
     };
 
     // Assert
-    Assert.Equal(payment1, payment2);
+    Assert.AreEqual(payment1, payment2);
   }
 
   /// <summary>
   /// Validates record inequality.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void PaymentInformation_DifferentValues_AreNotEqual()
   {
     // Arrange
@@ -360,7 +361,7 @@ public sealed class PaymentInformationExtendedTests
     var payment2 = new PaymentInformation { TotalCostAmount = 200m };
 
     // Assert
-    Assert.NotEqual(payment1, payment2);
+    Assert.AreNotEqual(payment1, payment2);
   }
 
   #endregion
@@ -370,35 +371,35 @@ public sealed class PaymentInformationExtendedTests
   /// <summary>
   /// Validates Currency can be created.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public void Currency_Creation_StoresValues()
   {
     // Arrange & Act
     var currency = new Currency("US Dollar", "USD", "$");
 
     // Assert
-    Assert.Equal("US Dollar", currency.Name);
-    Assert.Equal("USD", currency.Code);
-    Assert.Equal("$", currency.Symbol);
+    Assert.AreEqual("US Dollar", currency.Name);
+    Assert.AreEqual("USD", currency.Code);
+    Assert.AreEqual("$", currency.Symbol);
   }
 
   /// <summary>
   /// Validates common currencies.
   /// </summary>
-  [Theory]
-  [InlineData("US Dollar", "USD", "$")]
-  [InlineData("Euro", "EUR", "Euro")]
-  [InlineData("British Pound", "GBP", "Pounds")]
-  [InlineData("Romanian Leu", "RON", "lei")]
+  [TestMethod]
+  [DataRow("US Dollar", "USD", "$")]
+  [DataRow("Euro", "EUR", "Euro")]
+  [DataRow("British Pound", "GBP", "Pounds")]
+  [DataRow("Romanian Leu", "RON", "lei")]
   public void Currency_CommonCurrencies_AreAccepted(string name, string code, string symbol)
   {
     // Arrange & Act
     var currency = new Currency(name, code, symbol);
 
     // Assert
-    Assert.Equal(name, currency.Name);
-    Assert.Equal(code, currency.Code);
-    Assert.Equal(symbol, currency.Symbol);
+    Assert.AreEqual(name, currency.Name);
+    Assert.AreEqual(code, currency.Code);
+    Assert.AreEqual(symbol, currency.Symbol);
   }
 
   #endregion

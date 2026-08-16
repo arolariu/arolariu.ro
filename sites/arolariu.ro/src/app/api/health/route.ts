@@ -5,26 +5,21 @@
  * @remarks
  * Reports website health status including latency to upstream dependencies
  * (exp.arolariu.ro config proxy and api.arolariu.ro backend API).
- * Instrumented with OpenTelemetry spans and metrics.
+ * Telemetry is handled automatically by the OTel ignore hooks; the only
+ * hand-authored instrument is the always-on failure counter.
  */
 
-import {
-  addSpanEvent,
-  createCounter,
-  createHistogram,
-  createHttpServerAttributes,
-  injectTraceContextHeaders,
-  logWithTrace,
-  setSpanAttributes,
-  withSpan,
-} from "@/instrumentation.server";
+import {createCounter, injectTraceContextHeaders} from "@/instrumentation.server";
 import {version as nextVersion} from "next/package.json";
 import {NextResponse} from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const healthCheckDuration = createHistogram("website.health.duration", "Health check total duration", "ms");
-const healthCheckCounter = createCounter("website.health.requests", "Total health check requests", "1");
+const healthFailureCounter = createCounter(
+  "arolariu.health.check.failures",
+  "Health check failures, dimensioned by the failing check name.",
+  "{failure}",
+);
 
 /** Whether we're running with Azure identity (determines exp URL). */
 const HAS_AZURE_CLIENT_ID = Boolean(process.env["AZURE_CLIENT_ID"]);
@@ -89,12 +84,6 @@ async function checkDependency(name: string, url: string): Promise<DependencySta
       signal: AbortSignal.timeout(10_000),
     });
     const latencyMs = Math.round(performance.now() - start);
-    addSpanEvent("health.dependency.checked", {
-      "dependency.name": name,
-      "dependency.status_code": response.status,
-      "dependency.url": url,
-      "dependency.latency_ms": latencyMs,
-    });
 
     if (response.ok) {
       return {name, status: "Healthy", url, latencyMs, statusCode: response.status};
@@ -103,7 +92,6 @@ async function checkDependency(name: string, url: string): Promise<DependencySta
   } catch (error) {
     const latencyMs = Math.round(performance.now() - start);
     const message = error instanceof Error ? error.message : String(error);
-    logWithTrace("warn", `Health check failed for ${name}`, {url, error: message}, "api");
     return {name, status: "Unhealthy", url, latencyMs, error: message};
   }
 }
@@ -120,66 +108,57 @@ function deriveOverallStatus(dependencies: readonly DependencyStatus[]): HealthS
  * @returns JSON health report with dependency latencies, process info, and build metadata.
  */
 export async function GET(): Promise<NextResponse<HealthResponse>> {
-  return withSpan("api.health.check", async () => {
-    const checkStart = performance.now();
-    healthCheckCounter.add(1);
+  const checkStart = performance.now();
 
-    addSpanEvent("health.check.start");
-    setSpanAttributes({
-      "health.exp_url": EXP_URL,
-      "health.api_url": API_URL,
-    });
+  const dependencies = await Promise.all([
+    checkDependency("exp (config proxy)", `${EXP_URL}/api/health`),
+    checkDependency("api (backend)", `${API_URL}/health`),
+  ]);
 
-    // Check dependencies in parallel
-    const dependencies = await Promise.all([
-      checkDependency("exp (config proxy)", `${EXP_URL}/api/health`),
-      checkDependency("api (backend)", `${API_URL}/health`),
-    ]);
+  const overallStatus = deriveOverallStatus(dependencies);
+  const checkDurationMs = Math.round(performance.now() - checkStart);
 
-    const overallStatus = deriveOverallStatus(dependencies);
-    const checkDurationMs = Math.round(performance.now() - checkStart);
+  // The single always-on signal that survives suppression. Dimension values match the
+  // .NET and Python services so one query spans the estate: the backend counts every
+  // check whose status is not Healthy, and exp counts every health 5xx. Degraded is
+  // therefore counted here too — a dependency that answered 503 still drives this
+  // endpoint to 503, and with routine health telemetry suppressed this counter is the
+  // only remaining signal. Names are of the form "exp (config proxy)" / "api (backend)";
+  // the leading token keeps cardinality bounded.
+  for (const dependency of dependencies) {
+    if (dependency.status !== "Healthy") {
+      healthFailureCounter.add(1, {check: dependency.name.split(" ")[0]!});
+    }
+  }
 
-    addSpanEvent("health.check.complete", {
-      "overall.status": overallStatus,
-      "check.duration_ms": checkDurationMs,
-      "dependencies.count": dependencies.length,
-    });
-
-    healthCheckDuration.record(checkDurationMs, {
-      ...createHttpServerAttributes("GET", overallStatus === "Healthy" ? 200 : 503, {route: "/api/health"}),
-    });
-
-    const mem = process.memoryUsage();
-    const response: HealthResponse = {
-      status: overallStatus,
-      timestamp: new Date().toISOString(),
-      checkDurationMs,
-      process: {
-        uptimeSeconds: Math.round((Date.now() - startedAt) / 1000),
-        startedAt: startedAtISO,
-        nodeVersion: process.version,
-        nextVersion: nextVersion ?? "unknown",
-        platform: process.platform,
-        arch: process.arch,
-        memoryUsageMB: {
-          rss: Math.round(mem.rss / 1024 / 1024),
-          heapUsed: Math.round(mem.heapUsed / 1024 / 1024),
-          heapTotal: Math.round(mem.heapTotal / 1024 / 1024),
-        },
+  const mem = process.memoryUsage();
+  const response: HealthResponse = {
+    status: overallStatus,
+    timestamp: new Date().toISOString(),
+    checkDurationMs,
+    process: {
+      uptimeSeconds: Math.round((Date.now() - startedAt) / 1000),
+      startedAt: startedAtISO,
+      nodeVersion: process.version,
+      nextVersion: nextVersion ?? "unknown",
+      platform: process.platform,
+      arch: process.arch,
+      memoryUsageMB: {
+        rss: Math.round(mem.rss / 1024 / 1024),
+        heapUsed: Math.round(mem.heapUsed / 1024 / 1024),
+        heapTotal: Math.round(mem.heapTotal / 1024 / 1024),
       },
-      build: {
-        commitSha: process.env["COMMIT_SHA"] ?? "unknown",
-        environment: process.env["SITE_ENV"] ?? "unknown",
-        siteName: process.env["SITE_NAME"] ?? "unknown",
-        siteUrl: process.env["SITE_URL"] ?? "unknown",
-        infraMode: process.env["INFRA"] ?? "unknown",
-      },
-      dependencies,
-    };
+    },
+    build: {
+      commitSha: process.env["COMMIT_SHA"] ?? "unknown",
+      environment: process.env["SITE_ENV"] ?? "unknown",
+      siteName: process.env["SITE_NAME"] ?? "unknown",
+      siteUrl: process.env["SITE_URL"] ?? "unknown",
+      infraMode: process.env["INFRA"] ?? "unknown",
+    },
+    dependencies,
+  };
 
-    logWithTrace("info", "Health check completed", {status: overallStatus, checkDurationMs}, "api");
-
-    const httpStatus = overallStatus === "Healthy" ? 200 : 503;
-    return NextResponse.json(response, {status: httpStatus});
-  });
+  const httpStatus = overallStatus === "Healthy" ? 200 : 503;
+  return NextResponse.json(response, {status: httpStatus});
 }

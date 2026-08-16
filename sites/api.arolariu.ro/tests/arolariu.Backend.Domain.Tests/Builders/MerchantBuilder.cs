@@ -7,7 +7,6 @@ using System.Diagnostics.CodeAnalysis;
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
-using Xunit;
 
 /// <summary>
 /// Test data builder for <see cref="Merchant"/> aggregates used across domain test cases.
@@ -61,12 +60,12 @@ public static class MerchantTestDataBuilder
   }
 
   /// <summary>Provides theory data containing several randomized merchants.</summary>
-  public static TheoryData<Merchant> GetMerchantTheoryData() => new()
-  {
-    CreateRandomMerchant(),
-    CreateRandomMerchant(),
-    CreateRandomMerchant()
-  };
+  public static IEnumerable<object[]> GetMerchantTheoryData() =>
+  [
+    [CreateRandomMerchant()],
+    [CreateRandomMerchant()],
+    [CreateRandomMerchant()]
+  ];
 
   /// <summary>Creates multiple randomly generated merchants.</summary>
   public static List<Merchant> CreateMultipleRandomMerchants(int count = 3)

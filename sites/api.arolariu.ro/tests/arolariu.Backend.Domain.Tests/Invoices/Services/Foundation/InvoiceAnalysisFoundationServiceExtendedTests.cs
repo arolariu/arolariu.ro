@@ -19,12 +19,13 @@ using Microsoft.Extensions.Logging;
 
 using Moq;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Extended unit tests for <see cref="InvoiceAnalysisFoundationService"/> covering additional
 /// edge cases, exception scenarios, and boundary conditions for comprehensive code coverage.
 /// </summary>
+[TestClass]
 public sealed class InvoiceAnalysisFoundationServiceExtendedTests
 {
   private readonly Mock<IClassifierBroker> mockOpenAiBroker;
@@ -58,7 +59,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
   /// <summary>
   /// Validates TimeoutException from OCR broker is wrapped correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_OcrBrokerTimesOut_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -70,15 +71,15 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
         .ThrowsAsync(new TimeoutException("OCR service timeout"));
 
     // Act & Assert
-    var exception = await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
+    var exception = await Assert.ThrowsExactlyAsync<InvoiceFoundationServiceException>(() =>
         service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
-    Assert.NotNull(exception.InnerException);
+    Assert.IsNotNull(exception.InnerException);
   }
 
   /// <summary>
   /// Validates TimeoutException from GPT broker is wrapped correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_GptBrokerTimesOut_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -94,14 +95,14 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
         .ThrowsAsync(new TimeoutException("GPT service timeout"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceFoundationServiceException>(() =>
         service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates HttpRequestException from OCR broker is wrapped correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_OcrNetworkError_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -113,14 +114,14 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
         .ThrowsAsync(new System.Net.Http.HttpRequestException("Network error"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceFoundationServiceException>(() =>
         service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates NotSupportedException is wrapped correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_NotSupportedException_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -132,14 +133,14 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
         .ThrowsAsync(new NotSupportedException("Not supported"));
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
+    await Assert.ThrowsExactlyAsync<InvoiceFoundationServiceException>(() =>
         service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
   }
 
   /// <summary>
   /// Validates InvalidOperationException is wrapped correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_InvalidOperationException_ThrowsFoundationServiceException()
   {
     // Arrange
@@ -151,9 +152,9 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
         .ThrowsAsync(new InvalidOperationException("Invalid operation"));
 
     // Act & Assert
-    var exception = await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
+    var exception = await Assert.ThrowsExactlyAsync<InvoiceFoundationServiceException>(() =>
         service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None));
-    Assert.IsType<InvalidOperationException>(exception.InnerException);
+    Assert.IsExactInstanceOfType<InvalidOperationException>(exception.InnerException);
   }
 
   #endregion
@@ -163,7 +164,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
   /// <summary>
   /// Validates OCR is called before GPT.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_ValidInput_OcrCalledBeforeGpt()
   {
     // Arrange
@@ -185,7 +186,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
     await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
-    Assert.True(callOrder.IndexOf("OCR") < callOrder.IndexOf("GPT"));
+    Assert.IsTrue(callOrder.IndexOf("OCR") < callOrder.IndexOf("GPT"));
   }
 
   #endregion
@@ -195,12 +196,12 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
   /// <summary>
   /// Validates all analysis options are passed to OCR broker correctly.
   /// </summary>
-  [Theory]
-  [InlineData(AnalysisOptions.NoAnalysis)]
-  [InlineData(AnalysisOptions.InvoiceOnly)]
-  [InlineData(AnalysisOptions.InvoiceItemsOnly)]
-  [InlineData(AnalysisOptions.InvoiceMerchantOnly)]
-  [InlineData(AnalysisOptions.CompleteAnalysis)]
+  [TestMethod]
+  [DataRow(AnalysisOptions.NoAnalysis)]
+  [DataRow(AnalysisOptions.InvoiceOnly)]
+  [DataRow(AnalysisOptions.InvoiceItemsOnly)]
+  [DataRow(AnalysisOptions.InvoiceMerchantOnly)]
+  [DataRow(AnalysisOptions.CompleteAnalysis)]
   public async Task AnalyzeInvoiceAsync_DifferentOptions_PassesCorrectOptionsToOcr(AnalysisOptions options)
   {
     // Arrange
@@ -224,12 +225,12 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
   /// <summary>
   /// Validates all analysis options are passed to GPT broker correctly.
   /// </summary>
-  [Theory]
-  [InlineData(AnalysisOptions.NoAnalysis)]
-  [InlineData(AnalysisOptions.InvoiceOnly)]
-  [InlineData(AnalysisOptions.InvoiceItemsOnly)]
-  [InlineData(AnalysisOptions.InvoiceMerchantOnly)]
-  [InlineData(AnalysisOptions.CompleteAnalysis)]
+  [TestMethod]
+  [DataRow(AnalysisOptions.NoAnalysis)]
+  [DataRow(AnalysisOptions.InvoiceOnly)]
+  [DataRow(AnalysisOptions.InvoiceItemsOnly)]
+  [DataRow(AnalysisOptions.InvoiceMerchantOnly)]
+  [DataRow(AnalysisOptions.CompleteAnalysis)]
   public async Task AnalyzeInvoiceAsync_DifferentOptions_PassesCorrectOptionsToGpt(AnalysisOptions options)
   {
     // Arrange
@@ -257,7 +258,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
   /// <summary>
   /// Validates invoice returned by OCR broker is passed to translation.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_OcrReturnsModifiedInvoice_PassesToTranslation()
   {
     // Arrange
@@ -285,7 +286,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
   /// <summary>
   /// Validates NumberOfUpdates starts at initial value before increment.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_InvoiceWithExistingUpdates_IncrementsFromExistingValue()
   {
     // Arrange
@@ -305,7 +306,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
     var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
-    Assert.Equal(6, result.NumberOfUpdates);
+    Assert.AreEqual(6, result.NumberOfUpdates);
   }
 
   #endregion
@@ -315,7 +316,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
   /// <summary>
   /// Validates concurrent analysis calls complete successfully.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_ConcurrentCalls_AllComplete()
   {
     // Arrange
@@ -335,14 +336,17 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
     var results = await Task.WhenAll(tasks);
 
     // Assert
-    Assert.Equal(10, results.Length);
-    Assert.All(results, r => Assert.NotNull(r));
+    Assert.AreEqual(10, results.Length);
+    foreach (var r in results)
+    {
+      Assert.IsNotNull(r);
+    }
   }
 
   /// <summary>
   /// Validates concurrent analysis with failures handles correctly.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_ConcurrentCallsWithFailures_IndependentExceptions()
   {
     // Arrange
@@ -368,8 +372,8 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
 
     // Assert
     var result1 = await task1;
-    Assert.NotNull(result1);
-    await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() => task2);
+    Assert.IsNotNull(result1);
+    await Assert.ThrowsExactlyAsync<InvoiceFoundationServiceException>(() => task2);
   }
 
   #endregion
@@ -379,7 +383,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
   /// <summary>
   /// Validates analysis with single character product name succeeds.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_SingleCharacterProductName_AnalyzesSuccessfully()
   {
     // Arrange
@@ -400,13 +404,13 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
     var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
-    Assert.Equal("A", result.Items.First().Name);
+    Assert.AreEqual("A", result.Items.First().Name);
   }
 
   /// <summary>
   /// Validates analysis with very long product name succeeds.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_VeryLongProductName_AnalyzesSuccessfully()
   {
     // Arrange
@@ -428,13 +432,13 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
     var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
-    Assert.Equal(longName, result.Items.First().Name);
+    Assert.AreEqual(longName, result.Items.First().Name);
   }
 
   /// <summary>
   /// Validates analysis with unicode product name succeeds.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_UnicodeProductName_AnalyzesSuccessfully()
   {
     // Arrange
@@ -456,13 +460,13 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
     var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
-    Assert.Equal(unicodeName, result.Items.First().Name);
+    Assert.AreEqual(unicodeName, result.Items.First().Name);
   }
 
   /// <summary>
   /// Validates analysis with special characters in product name succeeds.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_SpecialCharactersInProductName_AnalyzesSuccessfully()
   {
     // Arrange
@@ -484,13 +488,13 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
     var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
-    Assert.Equal(specialName, result.Items.First().Name);
+    Assert.AreEqual(specialName, result.Items.First().Name);
   }
 
   /// <summary>
   /// Validates analysis with whitespace-only product name succeeds.
   /// </summary>
-  [Fact]
+  [TestMethod]
   public async Task AnalyzeInvoiceAsync_WhitespaceProductName_AnalyzesSuccessfully()
   {
     // Arrange
@@ -511,7 +515,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
     var result = await service.AnalyzeInvoiceAsync(options, invoice, CancellationToken.None);
 
     // Assert
-    Assert.Equal("   ", result.Items.First().Name);
+    Assert.AreEqual("   ", result.Items.First().Name);
   }
 
   #endregion

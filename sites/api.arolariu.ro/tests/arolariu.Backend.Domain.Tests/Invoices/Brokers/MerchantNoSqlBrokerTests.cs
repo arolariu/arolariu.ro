@@ -17,13 +17,14 @@ using Microsoft.EntityFrameworkCore;
 
 using Moq;
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Comprehensive test suite for <see cref="InvoiceNoSqlBroker"/> merchant operations following project test standards.
 /// Covers CRUD operations, exception pathways and query filtering scenarios. Method names follow
 /// the MethodName_Condition_ExpectedResult pattern by design; CA1707 suppressed accordingly.
 /// </summary>
+[TestClass]
 public sealed partial class MerchantNoSqlBrokerTests : InvoiceNoSqlBrokerTestsBase, IDisposable
 {
   private readonly InvoiceNoSqlBroker merchantNoSqlBroker;
@@ -52,8 +53,8 @@ public sealed partial class MerchantNoSqlBrokerTests : InvoiceNoSqlBrokerTestsBa
   #region CreateMerchantAsync Tests
 
   /// <summary>Verifies a valid merchant is persisted via CreateMerchantAsync.</summary>
-  [Theory]
-  [MemberData(nameof(GetMerchantTestData))]
+  [TestMethod]
+  [DynamicData(nameof(GetMerchantTestData))]
   public async Task ShouldCreateMerchant_WhenMerchantIsValid(Merchant expectedMerchant)
   {
     ArgumentNullException.ThrowIfNull(expectedMerchant);
@@ -73,10 +74,10 @@ public sealed partial class MerchantNoSqlBrokerTests : InvoiceNoSqlBrokerTestsBa
     var actualMerchant = await merchantNoSqlBroker.CreateMerchantAsync(expectedMerchant, CancellationToken.None);
 
     // Then
-    Assert.NotNull(actualMerchant);
-    Assert.Equal(expectedMerchant.id, actualMerchant.id);
-    Assert.Equal(expectedMerchant.ParentCompanyId, actualMerchant.ParentCompanyId);
-    Assert.Equal(expectedMerchant.Name, actualMerchant.Name);
+    Assert.IsNotNull(actualMerchant);
+    Assert.AreEqual(expectedMerchant.id, actualMerchant.id);
+    Assert.AreEqual(expectedMerchant.ParentCompanyId, actualMerchant.ParentCompanyId);
+    Assert.AreEqual(expectedMerchant.Name, actualMerchant.Name);
 
     mockMerchantsContainer.Verify(container => container.CreateItemAsync(
         expectedMerchant,
@@ -87,7 +88,7 @@ public sealed partial class MerchantNoSqlBrokerTests : InvoiceNoSqlBrokerTestsBa
   }
 
   /// <summary>Ensures passing null merchant throws an exception.</summary>
-  [Fact]
+  [TestMethod]
   public async Task ShouldThrowException_WhenMerchantIsNull()
   {
     // Given
@@ -95,11 +96,11 @@ public sealed partial class MerchantNoSqlBrokerTests : InvoiceNoSqlBrokerTestsBa
 
     // When & Then
     // Broker does not perform explicit null check, so NullReferenceException is thrown
-    await Assert.ThrowsAnyAsync<Exception>(() => merchantNoSqlBroker.CreateMerchantAsync(nullMerchant!, CancellationToken.None).AsTask());
+    await Assert.ThrowsAsync<Exception>(() => merchantNoSqlBroker.CreateMerchantAsync(nullMerchant!, CancellationToken.None).AsTask());
   }
 
   /// <summary>Validates Cosmos exception surfaces when container create fails.</summary>
-  [Fact]
+  [TestMethod]
   public async Task ShouldTranslateCosmosException_WhenCreateMerchantFails()
   {
     // Given
@@ -115,8 +116,8 @@ It.IsAny<System.Threading.CancellationToken>()
       .ThrowsAsync(cosmosException);
 
     // When & Then
-    var exception = await Assert.ThrowsAsync<MerchantFailedStorageException>(() => merchantNoSqlBroker.CreateMerchantAsync(merchant, CancellationToken.None).AsTask());
-    Assert.Same(cosmosException, exception.InnerException);
+    var exception = await Assert.ThrowsExactlyAsync<MerchantFailedStorageException>(() => merchantNoSqlBroker.CreateMerchantAsync(merchant, CancellationToken.None).AsTask());
+    Assert.AreSame(cosmosException, exception.InnerException);
   }
 
   #endregion
@@ -124,8 +125,8 @@ It.IsAny<System.Threading.CancellationToken>()
   #region ReadMerchantAsync Tests
 
   /// <summary>Ensures a merchant can be read when it exists.</summary>
-  [Theory]
-  [MemberData(nameof(GetMerchantTestData))]
+  [TestMethod]
+  [DynamicData(nameof(GetMerchantTestData))]
   public async Task ShouldReadMerchant_WhenMerchantExists(Merchant expectedMerchant)
   {
     ArgumentNullException.ThrowIfNull(expectedMerchant);
@@ -154,13 +155,13 @@ It.IsAny<System.Threading.CancellationToken>()
     var actualMerchant = await merchantNoSqlBroker.ReadMerchantAsync(expectedMerchant.id, null, CancellationToken.None);
 
     // Then
-    Assert.NotNull(actualMerchant);
-    Assert.Equal(expectedMerchant.id, actualMerchant.id);
-    Assert.Equal(expectedMerchant.ParentCompanyId, actualMerchant.ParentCompanyId);
+    Assert.IsNotNull(actualMerchant);
+    Assert.AreEqual(expectedMerchant.id, actualMerchant.id);
+    Assert.AreEqual(expectedMerchant.ParentCompanyId, actualMerchant.ParentCompanyId);
   }
 
   /// <summary>Returns null when merchant does not exist.</summary>
-  [Fact]
+  [TestMethod]
   public async Task ShouldReturnNull_WhenMerchantNotFound()
   {
     // Given
@@ -186,7 +187,7 @@ It.IsAny<System.Threading.CancellationToken>()
 
     // When
     var actualMerchant = await merchantNoSqlBroker.ReadMerchantAsync(merchantId, null, CancellationToken.None);
-    Assert.Null(actualMerchant);
+    Assert.IsNull(actualMerchant);
   }
 
   #endregion
@@ -194,7 +195,7 @@ It.IsAny<System.Threading.CancellationToken>()
   #region ReadMerchantsAsync Tests
 
   /// <summary>Reads merchants filtered by parent company id.</summary>
-  [Fact]
+  [TestMethod]
   public async Task ShouldReadMerchantsByParentCompanyId_WhenMerchantsExist()
   {
     // Given
@@ -224,9 +225,12 @@ It.IsAny<System.Threading.CancellationToken>()
     var actualMerchants = await merchantNoSqlBroker.ReadMerchantsAsync(parentCompanyId, CancellationToken.None);
 
     // Then
-    Assert.NotNull(actualMerchants);
-    Assert.Equal(expectedMerchants.Count, actualMerchants.Count());
-    Assert.All(actualMerchants, merchant => Assert.Equal(parentCompanyId, merchant.ParentCompanyId));
+    Assert.IsNotNull(actualMerchants);
+    Assert.AreEqual(expectedMerchants.Count, actualMerchants.Count());
+    foreach (var merchant in actualMerchants)
+    {
+      Assert.AreEqual(parentCompanyId, merchant.ParentCompanyId);
+    }
   }
 
   #endregion
@@ -234,8 +238,8 @@ It.IsAny<System.Threading.CancellationToken>()
   #region UpdateMerchantAsync Tests
 
   /// <summary>Updates a merchant by identifier, verifying replace semantics.</summary>
-  [Theory]
-  [MemberData(nameof(GetMerchantTestData))]
+  [TestMethod]
+  [DynamicData(nameof(GetMerchantTestData))]
   public async Task ShouldUpdateMerchantById_WhenValidMerchantProvided(Merchant originalMerchant)
   {
     ArgumentNullException.ThrowIfNull(originalMerchant);
@@ -283,14 +287,14 @@ It.IsAny<System.Threading.CancellationToken>()
     var actualMerchant = await merchantNoSqlBroker.UpdateMerchantAsync(originalMerchant.id, updatedMerchant, CancellationToken.None);
 
     // Then
-    Assert.NotNull(actualMerchant);
-    Assert.Equal(updatedMerchant.id, actualMerchant.id);
-    Assert.Equal("Updated Merchant Name", actualMerchant.Name);
+    Assert.IsNotNull(actualMerchant);
+    Assert.AreEqual(updatedMerchant.id, actualMerchant.id);
+    Assert.AreEqual("Updated Merchant Name", actualMerchant.Name);
   }
 
   /// <summary>Updates merchant via object upsert semantics.</summary>
-  [Theory]
-  [MemberData(nameof(GetMerchantTestData))]
+  [TestMethod]
+  [DynamicData(nameof(GetMerchantTestData))]
   public async Task ShouldUpdateMerchantWithObjects_WhenValidMerchantsProvided(Merchant originalMerchant)
   {
     ArgumentNullException.ThrowIfNull(originalMerchant);
@@ -315,9 +319,9 @@ It.IsAny<System.Threading.CancellationToken>()
     var actualMerchant = await merchantNoSqlBroker.UpdateMerchantAsync(originalMerchant, updatedMerchant, CancellationToken.None);
 
     // Then
-    Assert.NotNull(actualMerchant);
-    Assert.Equal(updatedMerchant.id, actualMerchant.id);
-    Assert.Equal("Updated Name", actualMerchant.Name);
+    Assert.IsNotNull(actualMerchant);
+    Assert.AreEqual(updatedMerchant.id, actualMerchant.id);
+    Assert.AreEqual("Updated Name", actualMerchant.Name);
   }
 
   #endregion
@@ -325,8 +329,8 @@ It.IsAny<System.Threading.CancellationToken>()
   #region DeleteMerchantAsync Tests
 
   /// <summary>Deletes a merchant when it exists.</summary>
-  [Theory]
-  [MemberData(nameof(GetMerchantTestData))]
+  [TestMethod]
+  [DynamicData(nameof(GetMerchantTestData))]
   public async Task ShouldDeleteMerchant_WhenMerchantExists(Merchant expectedMerchant)
   {
     ArgumentNullException.ThrowIfNull(expectedMerchant);
@@ -365,7 +369,7 @@ It.IsAny<System.Threading.CancellationToken>()
   }
 
   /// <summary>Does nothing when merchant is not found.</summary>
-  [Fact]
+  [TestMethod]
   public async Task ShouldNotDeleteMerchant_WhenMerchantNotFound()
   {
     // Given
@@ -398,7 +402,7 @@ It.IsAny<System.Threading.CancellationToken>()
   #region Test Data
 
   /// <summary>Merchant theory data provider.</summary>
-  public static TheoryData<Merchant> GetMerchantTestData() => MerchantTestDataBuilder.GetMerchantTheoryData();
+  public static IEnumerable<object[]> GetMerchantTestData() => MerchantTestDataBuilder.GetMerchantTheoryData();
 
   #endregion
 }
