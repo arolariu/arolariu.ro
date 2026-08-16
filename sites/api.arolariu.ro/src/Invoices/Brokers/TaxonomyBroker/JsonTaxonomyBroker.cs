@@ -251,6 +251,11 @@ public sealed partial class JsonTaxonomyBroker : ITaxonomyBroker
     _ = ClassificationContracts.RequireText(artifact.SourceUrl, nameof(artifact.SourceUrl));
     _ = ClassificationContracts.RequireText(artifact.Attribution, nameof(artifact.Attribution));
     ArgumentNullException.ThrowIfNull(artifact.Nodes);
+
+    if (artifact.Nodes.Length == 0)
+    {
+      throw new InvalidOperationException($"Taxonomy artifact for '{system}' must contain at least one node.");
+    }
   }
 
   private static void ValidateArtifactHierarchy(

@@ -1,5 +1,6 @@
 namespace arolariu.Backend.Domain.Tests.Invoices.Brokers;
 
+using System;
 using System.Collections.Generic;
 
 using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
@@ -121,5 +122,19 @@ public sealed class TaxonomyBrokerTests
 
     // Assert
     Assert.IsTrue(containsCode);
+  }
+
+  /// <summary>
+  /// Verifies that constructor validation rejects taxonomy artifacts with no nodes.
+  /// </summary>
+  [TestMethod]
+  public void Constructor_ArtifactWithEmptyNodes_ThrowsInvalidOperationException()
+  {
+    // Arrange
+    IReadOnlyDictionary<ClassificationSystem, string> artifactJsonBySystem =
+      TaxonomyBrokerTestFactory.CreateArtifactJsonBySystemWithEmptyNodes(ClassificationSystem.Nace21);
+
+    // Act & Assert
+    Assert.ThrowsExactly<InvalidOperationException>(() => new JsonTaxonomyBroker(artifactJsonBySystem));
   }
 }

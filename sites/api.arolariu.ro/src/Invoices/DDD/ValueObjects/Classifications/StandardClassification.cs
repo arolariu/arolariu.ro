@@ -82,6 +82,36 @@ public sealed record StandardClassification
   /// <summary>Gets the evidence items captured for the classification decision.</summary>
   public IReadOnlyList<ClassificationEvidence> Evidence { get; }
 
+  /// <inheritdoc />
+  public bool Equals(StandardClassification? other) =>
+    ReferenceEquals(this, other)
+    || (other is not null
+      && System == other.System
+      && string.Equals(Version, other.Version, StringComparison.Ordinal)
+      && string.Equals(Code, other.Code, StringComparison.Ordinal)
+      && string.Equals(OfficialLabel, other.OfficialLabel, StringComparison.Ordinal)
+      && Origin == other.Origin
+      && Nullable.Equals(Confidence, other.Confidence)
+      && HaveEquivalentSequence(Hierarchy, other.Hierarchy)
+      && HaveEquivalentSequence(Evidence, other.Evidence));
+
+  /// <inheritdoc />
+  public override int GetHashCode()
+  {
+    var hashCode = new HashCode();
+
+    hashCode.Add(System);
+    hashCode.Add(Version, StringComparer.Ordinal);
+    hashCode.Add(Code, StringComparer.Ordinal);
+    hashCode.Add(OfficialLabel, StringComparer.Ordinal);
+    hashCode.Add(Origin);
+    hashCode.Add(Confidence);
+    AddSequenceToHashCode(ref hashCode, Hierarchy);
+    AddSequenceToHashCode(ref hashCode, Evidence);
+
+    return hashCode.ToHashCode();
+  }
+
   private static double? ValidateConfidence(ClassificationOrigin origin, double? confidence)
   {
     if (origin == ClassificationOrigin.Manual && confidence is not null)
@@ -100,6 +130,36 @@ public sealed record StandardClassification
     }
 
     return ClassificationContracts.RequireConfidence(confidence.Value, nameof(confidence));
+  }
+
+  private static bool HaveEquivalentSequence<TItem>(IReadOnlyList<TItem> left, IReadOnlyList<TItem> right)
+    where TItem : class
+  {
+    if (left.Count != right.Count)
+    {
+      return false;
+    }
+
+    for (int index = 0; index < left.Count; index++)
+    {
+      if (!EqualityComparer<TItem>.Default.Equals(left[index], right[index]))
+      {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private static void AddSequenceToHashCode<TItem>(ref HashCode hashCode, IReadOnlyList<TItem> items)
+    where TItem : class
+  {
+    hashCode.Add(items.Count);
+
+    for (int index = 0; index < items.Count; index++)
+    {
+      hashCode.Add(items[index]);
+    }
   }
 }
 

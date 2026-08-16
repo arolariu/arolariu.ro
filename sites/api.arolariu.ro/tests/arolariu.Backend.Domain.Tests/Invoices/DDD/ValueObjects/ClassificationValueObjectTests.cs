@@ -132,6 +132,75 @@ public sealed class ClassificationValueObjectTests
   }
 
   /// <summary>
+  /// Verifies that independently allocated but equivalent classifications compare structurally.
+  /// </summary>
+  [TestMethod]
+  public void StandardClassification_EquivalentIndependentAllocations_AreEqual()
+  {
+    // Arrange
+    StandardClassification first = CreateAnalysisClassification(
+      hierarchy:
+      [
+        new ClassificationNode("division", "01", "Food and non-alcoholic beverages"),
+        new ClassificationNode("group", "01.1", "Food")
+      ],
+      evidence:
+      [
+        new ClassificationEvidence("product.name", "wholegrain bread")
+      ]);
+
+    StandardClassification second = CreateAnalysisClassification(
+      hierarchy:
+      [
+        new ClassificationNode("division", "01", "Food and non-alcoholic beverages"),
+        new ClassificationNode("group", "01.1", "Food")
+      ],
+      evidence:
+      [
+        new ClassificationEvidence("product.name", "wholegrain bread")
+      ]);
+
+    // Act & Assert
+    Assert.AreEqual(first, second);
+    Assert.IsTrue(first == second);
+    Assert.AreEqual(first.GetHashCode(), second.GetHashCode());
+  }
+
+  /// <summary>
+  /// Verifies that differing sequence content makes classifications unequal.
+  /// </summary>
+  [TestMethod]
+  public void StandardClassification_DifferentEvidenceSequenceContent_AreNotEqual()
+  {
+    // Arrange
+    StandardClassification first = CreateAnalysisClassification(
+      hierarchy:
+      [
+        new ClassificationNode("division", "01", "Food and non-alcoholic beverages"),
+        new ClassificationNode("group", "01.1", "Food")
+      ],
+      evidence:
+      [
+        new ClassificationEvidence("product.name", "wholegrain bread")
+      ]);
+
+    StandardClassification second = CreateAnalysisClassification(
+      hierarchy:
+      [
+        new ClassificationNode("division", "01", "Food and non-alcoholic beverages"),
+        new ClassificationNode("group", "01.1", "Food")
+      ],
+      evidence:
+      [
+        new ClassificationEvidence("product.name", "whole milk")
+      ]);
+
+    // Act & Assert
+    Assert.AreNotEqual(first, second);
+    Assert.IsFalse(first == second);
+  }
+
+  /// <summary>
   /// Verifies that classification nodes reject empty levels.
   /// </summary>
   [TestMethod]
@@ -144,4 +213,17 @@ public sealed class ClassificationValueObjectTests
   [TestMethod]
   public void ClassificationEvidence_EmptySource_ThrowsArgumentException() =>
     Assert.ThrowsExactly<ArgumentException>(() => new ClassificationEvidence("", "bread"));
+
+  private static StandardClassification CreateAnalysisClassification(
+    IReadOnlyList<ClassificationNode> hierarchy,
+    IReadOnlyList<ClassificationEvidence> evidence) =>
+      new(
+        ClassificationSystem.EcoicopV2,
+        "2",
+        "01.1",
+        "Food",
+        hierarchy,
+        ClassificationOrigin.Analysis,
+        0.92,
+        evidence);
 }
