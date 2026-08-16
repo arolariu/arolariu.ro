@@ -21,6 +21,36 @@ This prompt analyzes source code and generates comprehensive, idiomatic unit tes
 
 ---
 
+## Agent Contract
+
+### Scope
+Generating and extending unit tests for frontend (Vitest + Testing Library) and backend (MSTest) code in this monorepo. Covers test files, mock builders, and fixtures. Does not cover E2E/Playwright specs, Storybook stories, or changes to the production code under test.
+
+### Required Inputs
+- The source file(s) under test and their existing colocated `*.test.ts`/`*.cs` neighbours.
+- `.github/instructions/typescript.instructions.md` or `.github/instructions/csharp.instructions.md`, per stack.
+- Existing shared builders in `sites/arolariu.ro/tests/helpers/builders/` and `tests/**/Builders/`.
+- RFC 1002 (JSDoc) for frontend, RFC 2004 (XML docs) for backend.
+
+### Execution Constraints
+- Tests are colocated: put `*.test.ts` beside the file it covers.
+- Mock only true external boundaries (network, Azure SDK, Clerk). Never mock our own modules; excess test doubles are a smell here.
+- Do not modify production code to make a test pass — report the defect instead.
+- Backend: MSTest only. `[TestClass]` on every test class, and prefer `Assert.ThrowsExactly`/`ThrowsExactlyAsync` for exact-type expectations, since MSTest's bare `Assert.Throws` matches derived types too.
+- Never weaken or delete an existing assertion to turn a suite green.
+
+### Validation
+```bash
+npm run test:unit                     # Vitest + MSTest (routine check)
+dotnet test sites/api.arolariu.ro/tests
+```
+Avoid `npm run test:website` for routine work — it runs the full Playwright and Storybook suites.
+
+### Escalation Conditions
+Stop and ask the user before proceeding when a test cannot be written without changing production behavior, when the required coverage would demand a new dependency, or when an existing test appears deliberately wrong rather than merely outdated. See **Ask-User Criteria** under [Execution Contract](#execution-contract) for the full rule.
+
+---
+
 ## Core Instructions
 
 When invoked with source code:
