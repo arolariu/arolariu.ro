@@ -10,15 +10,15 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 /// <summary>
-/// Defines the reusable structured classification engine that resolves canonical standard classifications for
-/// products, invoices, and merchants using generative AI search-term generation and candidate-code selection.
+/// Defines the reusable structured analysis engine that produces invoice summaries, product allergen assessments,
+/// canonical classifications, and recipe suggestions using typed generative AI outputs.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Implementations MUST batch all requested subjects into single structured generation calls per phase, preserve
 /// exactly one result per transient correlation token, and resolve every AI-selected code through the canonical
-/// taxonomy broker before returning it. Implementations MUST NOT persist aggregates, produce invoice summaries,
-/// detect allergens, suggest recipes, or generate merchant descriptions.
+/// taxonomy broker before returning it. Implementations MUST NOT persist aggregates, parse free-text fallbacks,
+/// or generate merchant descriptions.
 /// </para>
 /// <para><b>Taxonomy mapping:</b> Products classify against GS1 GPC, invoices against ECOICOP v2, and merchants
 /// against NACE 2.1.</para>
@@ -58,6 +58,50 @@ public interface IGenerativeAnalysisFoundationService
   /// <returns>The canonical NACE 2.1 classification for the merchant.</returns>
   Task<MerchantClassificationResult> ClassifyMerchantAsync(
     Merchant merchant,
+    Guid sourceRunId,
+    CancellationToken cancellationToken);
+
+  /// <summary>
+  /// Generates a concise invoice name and description from transient product analysis inputs.
+  /// </summary>
+  /// <param name="products">The transient product analysis inputs representing the invoice contents.</param>
+  /// <param name="sourceRunId">The analysis run identifier that originated this summary request.</param>
+  /// <param name="cancellationToken">The cancellation token that aborts summary generation.</param>
+  /// <returns>The structured invoice summary result.</returns>
+  Task<InvoiceSummaryResult> GenerateInvoiceSummaryAsync(
+    IReadOnlyList<ProductAnalysisInput> products,
+    Guid sourceRunId,
+    CancellationToken cancellationToken);
+
+  /// <summary>
+  /// Assesses EU-14 allergen signals for a batch of transient products.
+  /// </summary>
+  /// <param name="products">The transient product analysis inputs to assess.</param>
+  /// <param name="classifications">The canonical GPC classifications resolved for the same product batch.</param>
+  /// <param name="sourceRunId">The analysis run identifier that originated this assessment request.</param>
+  /// <param name="cancellationToken">The cancellation token that aborts allergen assessment.</param>
+  /// <returns>The structured allergen assessments keyed by transient correlation token.</returns>
+  Task<ProductAllergenAssessmentResult> AssessAllergensAsync(
+    IReadOnlyList<ProductAnalysisInput> products,
+    ProductClassificationResult classifications,
+    Guid sourceRunId,
+    CancellationToken cancellationToken);
+
+  /// <summary>
+  /// Generates structured recipe suggestions from food-eligible transient products.
+  /// </summary>
+  /// <param name="products">The transient product analysis inputs for the invoice.</param>
+  /// <param name="classifications">The canonical GPC classifications resolved for the same product batch.</param>
+  /// <param name="allergens">The allergen assessments resolved for the same product batch.</param>
+  /// <param name="maximumRecipes">The maximum number of recipes to generate in the inclusive range <c>[1, 3]</c>.</param>
+  /// <param name="sourceRunId">The analysis run identifier that originated this recipe request.</param>
+  /// <param name="cancellationToken">The cancellation token that aborts recipe generation.</param>
+  /// <returns>The structured recipe generation result.</returns>
+  Task<RecipeGenerationResult> GenerateRecipesAsync(
+    IReadOnlyList<ProductAnalysisInput> products,
+    ProductClassificationResult classifications,
+    ProductAllergenAssessmentResult allergens,
+    int maximumRecipes,
     Guid sourceRunId,
     CancellationToken cancellationToken);
 }

@@ -18,9 +18,7 @@ using Microsoft.Extensions.Logging;
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
 /// <summary>
-/// Provides the reusable structured classification engine that resolves canonical standard classifications for
-/// products, invoices, and merchants using two-phase generative AI search-term generation and candidate-code
-/// selection, followed by canonical taxonomy broker resolution.
+/// Provides the reusable structured analysis engine for summaries, allergen assessments, classifications, and recipes.
 /// </summary>
 public sealed partial class GenerativeAnalysisFoundationService : IGenerativeAnalysisFoundationService
 {
