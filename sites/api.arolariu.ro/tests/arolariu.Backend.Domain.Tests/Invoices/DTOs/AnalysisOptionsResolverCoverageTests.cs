@@ -15,17 +15,18 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 public sealed class AnalysisOptionsResolverCoverageTests
 {
   /// <summary>
-  /// Verifies invoice resolution defaults to the balanced preset when profile and overrides are omitted.
+  /// Verifies invoice resolution defaults to the comprehensive preset when profile and overrides are omitted.
   /// </summary>
   [TestMethod]
-  public void ResolveInvoiceOptions_NoProfileNoOverrides_ReturnsBalancedPreset()
+  public void ResolveInvoiceOptions_NoProfileNoOverrides_ReturnsComprehensivePreset()
   {
     InvoiceAnalysisOptions options = AnalysisOptionsResolver.ResolveInvoiceOptions(null, null);
 
-    Assert.AreEqual(AnalysisProfile.Balanced, options.Profile);
+    Assert.AreEqual(AnalysisProfile.Comprehensive, options.Profile);
     Assert.IsTrue(options.InvoiceSummary);
     Assert.IsTrue(options.AllergenAssessment);
-    Assert.IsFalse(options.RecipeGeneration);
+    Assert.IsTrue(options.RecipeGeneration);
+    Assert.AreEqual(3, options.MaximumRecipes);
   }
 
   /// <summary>
@@ -184,6 +185,27 @@ public sealed class AnalysisOptionsResolverCoverageTests
   }
 
   /// <summary>
+  /// Verifies disabling recipes accepts an explicit zero maximum and preserves the disabled limit.
+  /// </summary>
+  [TestMethod]
+  public void ResolveInvoiceOptions_RecipeDisabledWithZeroMaximum_ReturnsZeroMaximum()
+  {
+    var overrides = new InvoiceAnalysisOverridesDto(
+      DocumentExtraction: null,
+      MerchantResolution: null,
+      InvoiceSummary: null,
+      ProductClassification: null,
+      AllergenAssessment: null,
+      InvoiceClassification: null,
+      RecipeGeneration: new RecipeGenerationOverrideDto(false, 0));
+
+    InvoiceAnalysisOptions options = AnalysisOptionsResolver.ResolveInvoiceOptions(AnalysisProfile.Comprehensive, overrides);
+
+    Assert.IsFalse(options.RecipeGeneration);
+    Assert.AreEqual(0, options.MaximumRecipes);
+  }
+
+  /// <summary>
   /// Verifies disabled recipes cannot carry a positive maximum.
   /// </summary>
   [TestMethod]
@@ -192,6 +214,16 @@ public sealed class AnalysisOptionsResolverCoverageTests
       AnalysisOptionsResolver.ResolveInvoiceOptions(
         AnalysisProfile.Comprehensive,
         new InvoiceAnalysisOverridesDto(null, null, null, null, null, null, new RecipeGenerationOverrideDto(false, 1))));
+
+  /// <summary>
+  /// Verifies disabled recipes cannot carry a negative maximum.
+  /// </summary>
+  [TestMethod]
+  public void ResolveInvoiceOptions_RecipeDisabledWithNegativeMaximum_ThrowsArgumentOutOfRangeException() =>
+    Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+      AnalysisOptionsResolver.ResolveInvoiceOptions(
+        AnalysisProfile.Comprehensive,
+        new InvoiceAnalysisOverridesDto(null, null, null, null, null, null, new RecipeGenerationOverrideDto(false, -1))));
 
   /// <summary>
   /// Verifies enabled recipes reject values outside the supported inclusive range.
@@ -207,14 +239,14 @@ public sealed class AnalysisOptionsResolverCoverageTests
         new InvoiceAnalysisOverridesDto(null, null, null, null, null, null, new RecipeGenerationOverrideDto(true, maximumRecipes))));
 
   /// <summary>
-  /// Verifies merchant resolution defaults to the balanced preset when profile and overrides are omitted.
+  /// Verifies merchant resolution defaults to the comprehensive preset when profile and overrides are omitted.
   /// </summary>
   [TestMethod]
-  public void ResolveMerchantOptions_NoProfileNoOverrides_ReturnsBalancedPreset()
+  public void ResolveMerchantOptions_NoProfileNoOverrides_ReturnsComprehensivePreset()
   {
     MerchantAnalysisOptions options = AnalysisOptionsResolver.ResolveMerchantOptions(null, null);
 
-    Assert.AreEqual(AnalysisProfile.Balanced, options.Profile);
+    Assert.AreEqual(AnalysisProfile.Comprehensive, options.Profile);
     Assert.IsTrue(options.MerchantClassification);
     Assert.IsTrue(options.DescriptionGeneration);
   }
@@ -340,4 +372,3 @@ public sealed class AnalysisOptionsResolverCoverageTests
     Assert.IsTrue(options.DescriptionGeneration);
   }
 }
-

@@ -20,14 +20,14 @@ internal static class AnalysisOptionsResolver
   /// <summary>
   /// Resolves the effective invoice analysis options for a profile and optional overrides.
   /// </summary>
-  /// <param name="profile">The requested profile, or <see langword="null"/> to use the balanced preset.</param>
+  /// <param name="profile">The requested profile, or <see langword="null"/> to use the comprehensive preset.</param>
   /// <param name="overrides">The optional per-capability overrides.</param>
   /// <returns>The effective, validated invoice analysis capability selection.</returns>
   internal static InvoiceAnalysisOptions ResolveInvoiceOptions(
     AnalysisProfile? profile,
     InvoiceAnalysisOverridesDto? overrides)
   {
-    AnalysisProfile requestedProfile = profile ?? AnalysisProfile.Balanced;
+    AnalysisProfile requestedProfile = profile ?? AnalysisProfile.Comprehensive;
 
     if (!Enum.IsDefined(requestedProfile))
     {
@@ -86,14 +86,14 @@ internal static class AnalysisOptionsResolver
   /// <summary>
   /// Resolves the effective merchant analysis options for a profile and optional overrides.
   /// </summary>
-  /// <param name="profile">The requested profile, or <see langword="null"/> to use the balanced preset.</param>
+  /// <param name="profile">The requested profile, or <see langword="null"/> to use the comprehensive preset.</param>
   /// <param name="overrides">The optional per-capability overrides.</param>
   /// <returns>The effective, validated merchant analysis capability selection.</returns>
   internal static MerchantAnalysisOptions ResolveMerchantOptions(
     AnalysisProfile? profile,
     MerchantAnalysisOverridesDto? overrides)
   {
-    AnalysisProfile requestedProfile = profile ?? AnalysisProfile.Balanced;
+    AnalysisProfile requestedProfile = profile ?? AnalysisProfile.Comprehensive;
 
     if (!Enum.IsDefined(requestedProfile))
     {
@@ -173,11 +173,11 @@ internal static class AnalysisOptionsResolver
 
     if (!selection.Enabled)
     {
-      if (selection.MaximumRecipes is > 0)
+      if (selection.MaximumRecipes is int configuredMaximumRecipes && configuredMaximumRecipes != 0)
       {
         throw new ArgumentOutOfRangeException(
           nameof(recipeOverride),
-          selection.MaximumRecipes,
+          configuredMaximumRecipes,
           "Maximum recipes must be zero or omitted when recipe generation is disabled.");
       }
 

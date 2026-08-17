@@ -23,10 +23,10 @@ public sealed class AnalysisDtoTests
     ["user", "tenant", "partition", "owner", "account"];
 
   /// <summary>
-  /// Verifies that an empty invoice analyze request resolves to the published balanced preset.
+  /// Verifies that an empty invoice analyze request resolves to the published comprehensive preset.
   /// </summary>
   [TestMethod]
-  public void ToInvoiceAnalysisOptions_NoProfileNoOverrides_ResolvesBalancedPreset()
+  public void ToInvoiceAnalysisOptions_NoProfileNoOverrides_ResolvesComprehensivePreset()
   {
     // Arrange
     var request = new AnalyzeInvoiceRequestDto(Profile: null, Overrides: null);
@@ -35,11 +35,12 @@ public sealed class AnalysisDtoTests
     InvoiceAnalysisOptions options = request.ToInvoiceAnalysisOptions();
 
     // Assert
-    Assert.AreEqual(AnalysisProfile.Balanced, options.Profile);
+    Assert.AreEqual(AnalysisProfile.Comprehensive, options.Profile);
     Assert.IsTrue(options.DocumentExtraction);
     Assert.IsTrue(options.InvoiceSummary);
     Assert.IsTrue(options.AllergenAssessment);
-    Assert.IsFalse(options.RecipeGeneration);
+    Assert.IsTrue(options.RecipeGeneration);
+    Assert.AreEqual(3, options.MaximumRecipes);
   }
 
   /// <summary>
@@ -151,6 +152,24 @@ public sealed class AnalysisDtoTests
         .ToInvoiceAnalysisOptions());
 
   /// <summary>
+  /// Verifies that a disabled recipe override with a negative result cap is rejected at the transport boundary.
+  /// </summary>
+  [TestMethod]
+  public void ToInvoiceAnalysisOptions_RecipeDisabledWithNegativeMaximum_Throws() =>
+    Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+      new AnalyzeInvoiceRequestDto(
+        AnalysisProfile.Comprehensive,
+        new InvoiceAnalysisOverridesDto(
+          DocumentExtraction: null,
+          MerchantResolution: null,
+          InvoiceSummary: null,
+          ProductClassification: null,
+          AllergenAssessment: null,
+          InvoiceClassification: null,
+          RecipeGeneration: new RecipeGenerationOverrideDto(Enabled: false, MaximumRecipes: -1)))
+        .ToInvoiceAnalysisOptions());
+
+  /// <summary>
   /// Verifies that an override set disabling every invoice capability is rejected as an empty run.
   /// </summary>
   [TestMethod]
@@ -177,10 +196,10 @@ public sealed class AnalysisDtoTests
       new AnalyzeInvoiceRequestDto(AnalysisProfile.Custom, Overrides: null).ToInvoiceAnalysisOptions());
 
   /// <summary>
-  /// Verifies that an empty merchant analyze request resolves to the published balanced preset.
+  /// Verifies that an empty merchant analyze request resolves to the published comprehensive preset.
   /// </summary>
   [TestMethod]
-  public void ToMerchantAnalysisOptions_NoProfileNoOverrides_ResolvesBalancedPreset()
+  public void ToMerchantAnalysisOptions_NoProfileNoOverrides_ResolvesComprehensivePreset()
   {
     // Arrange
     var request = new AnalyzeMerchantRequestDto(Profile: null, Overrides: null);
@@ -189,7 +208,7 @@ public sealed class AnalysisDtoTests
     MerchantAnalysisOptions options = request.ToMerchantAnalysisOptions();
 
     // Assert
-    Assert.AreEqual(AnalysisProfile.Balanced, options.Profile);
+    Assert.AreEqual(AnalysisProfile.Comprehensive, options.Profile);
     Assert.IsTrue(options.MerchantClassification);
     Assert.IsTrue(options.DescriptionGeneration);
   }

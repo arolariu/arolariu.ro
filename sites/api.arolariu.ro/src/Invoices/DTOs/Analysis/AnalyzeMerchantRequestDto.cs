@@ -14,7 +14,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 /// server-side from the merchant aggregate.</para>
 /// </remarks>
 /// <param name="Profile">
-/// The named analysis profile to resolve. Defaults to <see cref="AnalysisProfile.Balanced"/>; custom is output-only.
+/// The named analysis profile to resolve. Defaults to <see cref="AnalysisProfile.Comprehensive"/>; custom is output-only.
 /// </param>
 /// <param name="Overrides">Optional per-capability overrides layered over the resolved preset.</param>
 [Serializable]
