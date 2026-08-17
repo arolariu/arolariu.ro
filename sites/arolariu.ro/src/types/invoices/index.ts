@@ -40,6 +40,57 @@
 export type {Allergen, CreateAllergenDtoPayload, DeleteAllergenDtoPayload, UpdateAllergenDtoPayload} from "./Allergen";
 
 /**
+ * Analysis enqueue contracts and runtime response guards.
+ * @see {@link AnalysisAcceptedResponse} for the durable enqueue acknowledgement.
+ */
+export {
+  AnalysisCapability,
+  AnalysisProfile,
+  AnalysisRunStatus,
+  AnalysisTargetType,
+  isAnalysisAcceptedResponse,
+  isAnalysisCapability,
+  isAnalysisProfile,
+  isAnalysisRunStatus,
+  isAnalysisTargetType,
+  isAnalyzeInvoiceRequest,
+  isAnalyzeMerchantRequest,
+  type AnalysisAcceptedResponse,
+  type AnalysisCapabilityOverride,
+  type AnalyzeInvoiceRequest,
+  type AnalyzeMerchantRequest,
+  type InvoiceAnalysisOverrides,
+  type MerchantAnalysisOverrides,
+  type RecipeGenerationOverride,
+} from "./Analysis";
+
+/**
+ * Canonical taxonomy classification contracts and generated-artifact guards.
+ * @see {@link StandardClassification} for persisted canonical classifications.
+ */
+export {
+  ClassificationOrigin,
+  ClassificationSystem,
+  isClassificationEvidence,
+  isClassificationNode,
+  isClassificationOrigin,
+  isClassificationSelection,
+  isClassificationSystem,
+  isSearchClassificationsInput,
+  isStandardClassification,
+  isTaxonomyArtifact,
+  isTaxonomyArtifactNode,
+  type ClassificationEvidence,
+  type ClassificationNode,
+  type ClassificationSearchResult,
+  type ClassificationSelection,
+  type SearchClassificationsInput,
+  type StandardClassification,
+  type TaxonomyArtifact,
+  type TaxonomyArtifactNode,
+} from "./Classification";
+
+/**
  * Invoice aggregate root and related types.
  * The core entity of the invoices bounded context.
  * @see {@link Invoice} for the main entity

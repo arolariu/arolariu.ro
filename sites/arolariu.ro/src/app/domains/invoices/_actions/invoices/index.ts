@@ -26,7 +26,7 @@
  * **Functional Grouping:**
  * - **Queries**: `fetchInvoice`, `fetchInvoices` - Read operations
  * - **Mutations**: `createInvoice`, `updateInvoice`, `patchInvoice`, `deleteInvoice` - Write operations
- * - **Analysis**: `analyzeInvoice` - AI/ML pipeline integration
+ * - **Analysis**: `analyzeInvoice` - durable asynchronous analysis enqueueing
  * - **Nested Resources**: Products, metadata, scans sub-modules
  *
  * **Import Strategy:**

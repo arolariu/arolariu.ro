@@ -9,6 +9,7 @@
  * **Exported Actions:**
  * - {@link fetchMerchant} - Fetch a single merchant by ID
  * - {@link fetchMerchants} - Fetch all merchants for the authenticated user
+ * - {@link analyzeMerchant} - Enqueue asynchronous merchant analysis
  *
  * **Shared Characteristics:**
  * - **Authentication**: All actions require valid JWT token via `fetchBFFUserFromAuthService`
@@ -61,6 +62,7 @@
  */
 
 // #region Merchant server-side queries (fetch single/multiple)
+export {analyzeMerchant} from "./analyzeMerchant";
 export {fetchMerchant} from "./fetchMerchant";
 export {fetchMerchants} from "./fetchMerchants";
 // #endregion
