@@ -22,7 +22,7 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
-import {type CreateInvoiceDtoPayload, type CreateInvoiceScanDtoPayload, type Invoice} from "@/types/invoices";
+import {AnalysisProfile, type CreateInvoiceDtoPayload, type CreateInvoiceScanDtoPayload, type Invoice} from "@/types/invoices";
 import {type Scan, ScanMetadataStatus, ScanMetadataKey} from "@/types/scans";
 import {analyzeInvoice} from "../../_actions/invoices";
 import {updateScan} from "../../_actions/scans";
@@ -105,6 +105,26 @@ type CreationResult = {
 };
 
 /**
+ * Enqueues invoice analysis without coupling a scan-creation response to worker completion.
+ *
+ * @param invoiceIdentifier - The invoice that was created from one or more scans.
+ */
+function enqueueInvoiceAnalysis(invoiceIdentifier: string): void {
+  void analyzeInvoice({
+    invoiceIdentifier,
+    request: {profile: AnalysisProfile.Comprehensive, overrides: {}},
+  })
+    .then((result) => {
+      if (!result.success) {
+        logWithTrace("warn", "Background invoice analysis was not accepted.", {code: result.error.code}, "server");
+      }
+    })
+    .catch(() => {
+      logWithTrace("error", "Background invoice analysis enqueue failed.", undefined, "server");
+    });
+}
+
+/**
  * Attaches an additional scan to an existing invoice.
  */
 async function attachScanToInvoice(invoiceId: string, scan: Scan, authToken: string): Promise<void> {
@@ -147,10 +167,7 @@ async function processSingleScan(
   try {
     const invoice = await createSingleInvoice(scan, userIdentifier, authToken);
     logWithTrace("info", `Created invoice ${invoice.id} from scan ${scan.id}`, {}, "server");
-    // Fire-and-forget auto-analysis after successful creation
-    analyzeInvoice({invoiceIdentifier: invoice.id, request: {profile: "comprehensive", overrides: {}}}).catch((error) => {
-      console.error("Background invoice analysis failed:", error);
-    });
+    enqueueInvoiceAnalysis(invoice.id);
     return {success: true, invoice};
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
@@ -298,10 +315,7 @@ async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, userIdentif
       });
     }
 
-    // Fire-and-forget auto-analysis after successful batch creation
-    analyzeInvoice({invoiceIdentifier: invoice.id, request: {profile: "comprehensive", overrides: {}}}).catch((error) => {
-      console.error("Background invoice analysis failed:", error);
-    });
+    enqueueInvoiceAnalysis(invoice.id);
 
     addSpanEvent("bff.invoice.create.batch.complete");
     return {

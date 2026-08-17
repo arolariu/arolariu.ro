@@ -27,6 +27,7 @@
 import {formatAmount, formatEnum, toSafeDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores/invoicesStore";
 import {MerchantCategory, type Invoice} from "@/types/invoices";
+import {MerchantAnalysisForm} from "../../../../_components/analysis/MerchantAnalysisForm";
 import {
   Area,
   AreaChart,
@@ -246,6 +247,13 @@ export function MerchantInfoCard(): React.JSX.Element {
             </div>
           )}
 
+          <section className={styles["analysisSection"]}>
+            <MerchantAnalysisForm
+              merchantIdentifier={merchant.id}
+              refreshAfterAcceptance
+            />
+          </section>
+
           {/* Spending History Sparkline */}
           {monthlySpendingData.length > 0 && (
             <div className={styles["section"]}>
@@ -324,8 +332,6 @@ export function MerchantInfoCard(): React.JSX.Element {
                   <div
                     key={cat.category}
                     className={styles["categorySegment"]}
-                    style={{width: `${cat.percentage}%`}}
-                    title={`${cat.label}: ${cat.count} (${cat.percentage.toFixed(1)}%)`}
                   />
                 ))}
               </div>

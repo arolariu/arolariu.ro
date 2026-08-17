@@ -9,8 +9,6 @@ import type {AnalyzeMerchantRequest} from "@/types/invoices";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder} from "../../../../../../tests/helpers";
 
-vi.mock("@/lib/actions/user/fetchUser");
-
 const {analyzeMerchant} = await import("./analyzeMerchant");
 const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
 const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
@@ -141,6 +139,21 @@ describe("analyzeMerchant", () => {
       expect(result.error.message).toContain("merchantIdentifier");
     }
   });
+
+  it.each([null, undefined, [], {merchantIdentifier}, {request}])(
+    "returns a validation result without calling auth for malformed outer input %#",
+    async (input) => {
+      // Act
+      const result = await analyzeMerchant(input);
+
+      // Assert
+      expect(result).toMatchObject({
+        success: false,
+        error: {code: "VALIDATION_ERROR"},
+      });
+      expect(mockFetchUser).not.toHaveBeenCalled();
+    },
+  );
 
   it("returns a network error when authentication fails", async () => {
     // Arrange

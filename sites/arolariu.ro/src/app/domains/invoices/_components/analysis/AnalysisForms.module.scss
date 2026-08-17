@@ -1,0 +1,113 @@
+@use "../../../../../styles/abstracts" as *;
+
+.form {
+  display: grid;
+  gap: space(5);
+  min-inline-size: 0;
+}
+
+.heading {
+  margin: 0;
+  color: color("foreground");
+  font-size: font-size("base");
+  font-weight: font-weight("semibold");
+}
+
+.description {
+  margin: space(1) 0 0;
+  color: color("muted-foreground");
+  font-size: font-size("sm");
+  overflow-wrap: anywhere;
+}
+
+.fieldset {
+  display: grid;
+  gap: space(3);
+  min-inline-size: 0;
+  margin: 0;
+  border: 1px solid color("border");
+  border-radius: radius("md");
+  padding: space(4);
+}
+
+.legend {
+  padding-inline: space(1);
+  color: color("foreground");
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
+}
+
+.fieldsetDescription {
+  margin: 0;
+  color: color("muted-foreground");
+  font-size: font-size("sm");
+  overflow-wrap: anywhere;
+}
+
+.profileGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: space(2);
+}
+
+.profileOption,
+.capabilityOption {
+  display: flex;
+  align-items: flex-start;
+  gap: space(2);
+  min-inline-size: 0;
+  color: color("foreground");
+  font-size: font-size("sm");
+}
+
+.profileOption {
+  border: 1px solid color("border");
+  border-radius: radius("md");
+  padding: space(3);
+
+  &:focus-within {
+    outline: 2px solid color-alpha("primary", 0.6);
+    outline-offset: 2px;
+  }
+}
+
+.radio {
+  flex: 0 0 auto;
+  margin-block-start: 0.125rem;
+}
+
+.capabilityList {
+  display: grid;
+  gap: space(3);
+}
+
+.capabilityOption {
+  cursor: pointer;
+
+  &:has(button:focus-visible, input:focus-visible) {
+    outline: 2px solid color-alpha("primary", 0.6);
+    outline-offset: 2px;
+  }
+}
+
+.capabilityLabel {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.status {
+  min-block-size: 1.5rem;
+  margin: 0;
+  color: color("muted-foreground");
+  font-size: font-size("sm");
+  overflow-wrap: anywhere;
+}
+
+.submitButton {
+  inline-size: 100%;
+
+  @include respond-to("sm") {
+    inline-size: auto;
+    justify-self: start;
+  }
+}

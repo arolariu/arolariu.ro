@@ -62,7 +62,10 @@
  */
 
 // #region Merchant server-side queries (fetch single/multiple)
-export {analyzeMerchant} from "./analyzeMerchant";
 export {fetchMerchant} from "./fetchMerchant";
 export {fetchMerchants} from "./fetchMerchants";
+// #endregion
+
+// #region Merchant server-side mutations and analysis
+export {analyzeMerchant} from "./analyzeMerchant";
 // #endregion

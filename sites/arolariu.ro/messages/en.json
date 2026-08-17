@@ -887,112 +887,6 @@
         },
         "title": "Edit Allergens"
       },
-      "analyzeDialog": {
-        "analysisSteps": {
-          "analyzingWithAi": "Analyzing with AI...",
-          "categorizingItems": "Categorizing items...",
-          "finalizingResults": "Finalizing results...",
-          "preparingDocument": "Preparing document...",
-          "processing": "Processing...",
-          "runningOcrExtraction": "Running OCR extraction..."
-        },
-        "analyzing": {
-          "progressComplete": "{progress}% complete",
-          "title": "Analyzing Invoice"
-        },
-        "badges": {
-          "recommended": "Recommended"
-        },
-        "buttons": {
-          "analyzing": "Analyzing...",
-          "cancel": "Cancel",
-          "startAnalysis": "Start Analysis"
-        },
-        "enhancements": {
-          "priceComparison": {
-            "description": "Compare prices with historical data",
-            "label": "Price Comparison"
-          },
-          "quickExtract": {
-            "description": "Prioritize speed over accuracy",
-            "label": "Quick Extract Mode"
-          },
-          "savingsTips": {
-            "description": "Get AI-powered saving recommendations",
-            "label": "Savings Suggestions"
-          }
-        },
-        "header": {
-          "description": "Configure AI-powered analysis for invoice",
-          "title": "Analyze Invoice"
-        },
-        "options": {
-          "completeAnalysis": {
-            "description": "Full AI-powered analysis including all invoice data, items, and merchant information.",
-            "estimatedTime": "2-3 min",
-            "features": {
-              "itemCategorization": "Item categorization",
-              "merchantIdentification": "Merchant identification",
-              "ocrExtraction": "OCR extraction",
-              "priceAnalysis": "Price analysis",
-              "receiptValidation": "Receipt validation"
-            },
-            "title": "Complete Analysis"
-          },
-          "invoiceOnly": {
-            "description": "Analyze basic invoice information like totals, dates, and payment details.",
-            "estimatedTime": "30-60 sec",
-            "features": {
-              "dateParsing": "Date parsing",
-              "paymentMethodDetection": "Payment method detection",
-              "totalExtraction": "Total extraction"
-            },
-            "title": "Invoice Data Only"
-          },
-          "itemsOnly": {
-            "description": "Focus on extracting and categorizing individual line items from the invoice.",
-            "estimatedTime": "1-2 min",
-            "features": {
-              "categoryAssignment": "Category assignment",
-              "itemExtraction": "Item extraction",
-              "pricePerItem": "Price per item",
-              "quantityDetection": "Quantity detection"
-            },
-            "title": "Items Analysis"
-          },
-          "merchantOnly": {
-            "description": "Identify and analyze merchant information including location and category.",
-            "estimatedTime": "30-45 sec",
-            "features": {
-              "businessCategory": "Business category",
-              "contactInfo": "Contact info",
-              "locationExtraction": "Location extraction",
-              "merchantIdentification": "Merchant identification"
-            },
-            "title": "Merchant Analysis"
-          }
-        },
-        "sections": {
-          "analysisType": "Analysis Type",
-          "enhancementsOptional": "Enhancements (Optional)",
-          "includedFeatures": "Included Features"
-        },
-        "summary": {
-          "enhancementsSelected": "+ {count} enhancement(s)",
-          "estimatedTime": "Estimated time",
-          "noEnhancementsSelected": "No enhancements selected"
-        },
-        "toasts": {
-          "analysisComplete": {
-            "description": "Your invoice has been analyzed successfully.",
-            "title": "Analysis Complete"
-          },
-          "analysisFailed": {
-            "description": "We couldn't analyze your invoice. Please try again.",
-            "title": "Analysis Failed"
-          }
-        }
-      },
       "bulkCategoryDialog": {
         "buttons": {
           "cancel": "Cancel",
@@ -2108,6 +2002,58 @@
   },
   "forms": {
     "invoices": {
+      "analysis": {
+        "buttons": {
+          "start": "Start analysis",
+          "submitting": "Submitting request…"
+        },
+        "capabilities": {
+          "allergenAssessment": "Allergen assessment",
+          "documentExtraction": "Document extraction",
+          "invoiceClassification": "Invoice classification",
+          "invoiceSummary": "Invoice summary",
+          "merchantResolution": "Merchant resolution",
+          "productClassification": "Product classification",
+          "recipeGeneration": "Recipe generation"
+        },
+        "descriptions": {
+          "invoice": "Choose the profile and capabilities for this queued invoice analysis.",
+          "merchant": "Choose the profile and capabilities for this queued merchant analysis.",
+          "profiles": "A profile provides a valid starting set of capabilities."
+        },
+        "dialog": {
+          "cancel": "Close",
+          "description": "Choose what to queue. Results appear after the page refreshes.",
+          "title": "Analyze invoice"
+        },
+        "invoice": {
+          "capabilitiesLegend": "Invoice analysis capabilities",
+          "profileLegend": "Analysis profile",
+          "title": "Invoice analysis"
+        },
+        "merchant": {
+          "capabilitiesLegend": "Merchant analysis capabilities",
+          "profileLegend": "Analysis profile",
+          "title": "Merchant analysis"
+        },
+        "merchantCapabilities": {
+          "descriptionGeneration": "Generate merchant description",
+          "naceClassification": "NACE classification"
+        },
+        "panel": {
+          "description": "Queue an analysis request; results will appear after the page refreshes.",
+          "title": "AI analysis"
+        },
+        "profiles": {
+          "balanced": "Balanced",
+          "comprehensive": "Comprehensive",
+          "fast": "Fast"
+        },
+        "status": {
+          "queued": "Analysis started. Results will appear after the page refreshes.",
+          "submitting": "Submitting analysis request."
+        }
+      },
       "createInvoice": {
         "detailsForm": {
           "fields": {
@@ -3065,55 +3011,6 @@
         }
       },
       "viewInvoice": {
-        "analysisPanel": {
-          "analyzing": {
-            "progress": "{progress}% complete",
-            "title": "Analyzing..."
-          },
-          "buttons": {
-            "reanalyze": "Re-Analyze Invoice"
-          },
-          "description": "Re-analyze this invoice with AI to extract or update data",
-          "labels": {
-            "analysisComplete": "Analysis Complete — All data has been extracted",
-            "granularOptions": "Or choose specific analysis",
-            "lastAnalyzed": "Last Analyzed",
-            "updates": "{count, plural, one {# update} other {# updates}}"
-          },
-          "options": {
-            "completeAnalysis": "Full Analysis",
-            "invoiceOnly": "Invoice Only",
-            "itemsOnly": "Items Only",
-            "merchantOnly": "Merchant Only"
-          },
-          "steps": {
-            "analyzing": "Analyzing with AI...",
-            "complete": "Analysis complete!",
-            "extracting": "Running OCR extraction...",
-            "finalizing": "Finalizing results...",
-            "preparing": "Preparing document...",
-            "processing": "Processing items..."
-          },
-          "tip": "Quick Tip: Full analysis takes 30-60 seconds but provides the most accurate results.",
-          "title": "AI Analysis",
-          "toasts": {
-            "error": {
-              "description": "Unable to analyze invoice. Please try again later.",
-              "title": "Analysis Failed"
-            },
-            "success": {
-              "description": "Invoice has been successfully re-analyzed with updated data.",
-              "title": "Analysis Complete"
-            }
-          },
-          "tooltips": {
-            "completeAnalysis": "Complete OCR extraction + AI processing of all invoice data",
-            "invoiceOnly": "Re-extract basic invoice information (date, total, payment)",
-            "itemsOnly": "Re-categorize and analyze line items only",
-            "merchantOnly": "Re-identify merchant and location data",
-            "reanalyze": "Trigger complete re-analysis with all AI features"
-          }
-        },
         "categoryComparisonChart": {
           "description": "This invoice vs your average",
           "labels": {
@@ -5360,6 +5257,16 @@
   },
   "toasts": {
     "invoices": {
+      "analysis": {
+        "failed": {
+          "description": "The analysis request was not accepted. Please try again.",
+          "title": "Analysis could not be started"
+        },
+        "started": {
+          "description": "The request is queued. Results will appear after the page refreshes.",
+          "title": "Analysis started"
+        }
+      },
       "useInvoiceDelete": {
         "bulkDeleteError": "Failed to delete {count} invoices.",
         "bulkDeletePartial": "Deleted {successCount}; failed {failureCount}.",

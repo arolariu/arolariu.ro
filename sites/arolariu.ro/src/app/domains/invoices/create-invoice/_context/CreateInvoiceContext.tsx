@@ -13,7 +13,7 @@
  */
 
 import {useScansStore} from "@/stores";
-import {InvoiceCategory, PaymentType} from "@/types/invoices";
+import {AnalysisProfile, InvoiceCategory, PaymentType} from "@/types/invoices";
 import {type CachedScan, ScanMetadataKey, ScanMetadataStatus, ScanStatus} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {useRouter} from "next/navigation";
@@ -255,10 +255,19 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       // Navigate to view invoice page — user can trigger analysis from there
       router.push(`/domains/invoices/view-invoice/${invoice.id}`);
 
-      // Fire-and-forget auto-analysis after successful creation
-      analyzeInvoice({invoiceIdentifier: invoice.id, request: {profile: "comprehensive", overrides: {}}}).catch((error) => {
-        console.error("Background invoice analysis failed:", error);
-      });
+      // Enqueue analysis independently so navigation never waits for worker completion.
+      void analyzeInvoice({
+        invoiceIdentifier: invoice.id,
+        request: {profile: AnalysisProfile.Comprehensive, overrides: {}},
+      })
+        .then((result) => {
+          if (!result.success) {
+            console.error("Background invoice analysis was not accepted:", result.error.code);
+          }
+        })
+        .catch(() => {
+          console.error("Background invoice analysis enqueue failed.");
+        });
     } catch (error) {
       console.error("Error creating invoice:", error);
       toast.error(error instanceof Error ? error.message : "Failed to create invoice. Please try again.");

@@ -887,112 +887,6 @@
         },
         "title": "Editează Alergeni"
       },
-      "analyzeDialog": {
-        "analysisSteps": {
-          "analyzingWithAi": "Se analizează cu IA...",
-          "categorizingItems": "Se categorisesc articolele...",
-          "finalizingResults": "Se finalizează rezultatele...",
-          "preparingDocument": "Se pregătește documentul...",
-          "processing": "Se procesează...",
-          "runningOcrExtraction": "Se rulează extracția OCR..."
-        },
-        "analyzing": {
-          "progressComplete": "{progress}% complet",
-          "title": "Se analizează factura"
-        },
-        "badges": {
-          "recommended": "Recomandat"
-        },
-        "buttons": {
-          "analyzing": "Se analizează...",
-          "cancel": "Anulează",
-          "startAnalysis": "Pornește analiza"
-        },
-        "enhancements": {
-          "priceComparison": {
-            "description": "Compară prețurile cu date istorice",
-            "label": "Comparare prețuri"
-          },
-          "quickExtract": {
-            "description": "Prioritizează viteza în locul acurateței",
-            "label": "Mod de extragere rapidă"
-          },
-          "savingsTips": {
-            "description": "Primește recomandări de economisire cu IA",
-            "label": "Sugestii de economisire"
-          }
-        },
-        "header": {
-          "description": "Configurează o analiză cu IA pentru factura",
-          "title": "Analizează factura"
-        },
-        "options": {
-          "completeAnalysis": {
-            "description": "Analiză completă cu IA ce include toate datele facturii, articolele și informațiile comerciantului.",
-            "estimatedTime": "2-3 min",
-            "features": {
-              "itemCategorization": "Categorisirea articolelor",
-              "merchantIdentification": "Identificarea comerciantului",
-              "ocrExtraction": "Extracție OCR",
-              "priceAnalysis": "Analiza prețurilor",
-              "receiptValidation": "Validarea bonului"
-            },
-            "title": "Analiză completă"
-          },
-          "invoiceOnly": {
-            "description": "Analizează informațiile de bază ale facturii precum totaluri, date și detalii de plată.",
-            "estimatedTime": "30-60 sec",
-            "features": {
-              "dateParsing": "Interpretarea datelor",
-              "paymentMethodDetection": "Detectarea metodei de plată",
-              "totalExtraction": "Extracția totalului"
-            },
-            "title": "Doar datele facturii"
-          },
-          "itemsOnly": {
-            "description": "Se concentrează pe extragerea și categorisirea articolelor individuale din factură.",
-            "estimatedTime": "1-2 min",
-            "features": {
-              "categoryAssignment": "Atribuirea categoriilor",
-              "itemExtraction": "Extracția articolelor",
-              "pricePerItem": "Preț per articol",
-              "quantityDetection": "Detectarea cantității"
-            },
-            "title": "Analiza articolelor"
-          },
-          "merchantOnly": {
-            "description": "Identifică și analizează informațiile comerciantului, inclusiv locația și categoria.",
-            "estimatedTime": "30-45 sec",
-            "features": {
-              "businessCategory": "Categoria afacerii",
-              "contactInfo": "Informații de contact",
-              "locationExtraction": "Extracția locației",
-              "merchantIdentification": "Identificarea comerciantului"
-            },
-            "title": "Analiza comerciantului"
-          }
-        },
-        "sections": {
-          "analysisType": "Tip analiză",
-          "enhancementsOptional": "Îmbunătățiri (opțional)",
-          "includedFeatures": "Funcționalități incluse"
-        },
-        "summary": {
-          "enhancementsSelected": "+ {count} îmbunătățire(i)",
-          "estimatedTime": "Durată estimată",
-          "noEnhancementsSelected": "Nicio îmbunătățire selectată"
-        },
-        "toasts": {
-          "analysisComplete": {
-            "description": "Factura ta a fost analizată cu succes.",
-            "title": "Analiză finalizată"
-          },
-          "analysisFailed": {
-            "description": "Nu am putut analiza factura ta. Te rugăm să încerci din nou.",
-            "title": "Analiza a eșuat"
-          }
-        }
-      },
       "bulkCategoryDialog": {
         "buttons": {
           "cancel": "Anulează",
@@ -2108,6 +2002,58 @@
   },
   "forms": {
     "invoices": {
+      "analysis": {
+        "buttons": {
+          "start": "Pornește analiza",
+          "submitting": "Se trimite cererea…"
+        },
+        "capabilities": {
+          "allergenAssessment": "Evaluarea alergenilor",
+          "documentExtraction": "Extragerea documentului",
+          "invoiceClassification": "Clasificarea facturii",
+          "invoiceSummary": "Rezumatul facturii",
+          "merchantResolution": "Identificarea comerciantului",
+          "productClassification": "Clasificarea produselor",
+          "recipeGeneration": "Generarea rețetelor"
+        },
+        "descriptions": {
+          "invoice": "Alege profilul și capabilitățile pentru această analiză a facturii puse în coadă.",
+          "merchant": "Alege profilul și capabilitățile pentru această analiză a comerciantului pusă în coadă.",
+          "profiles": "Un profil oferă un set inițial valid de capabilități."
+        },
+        "dialog": {
+          "cancel": "Închide",
+          "description": "Alege ce să pui în coadă. Rezultatele vor apărea după reîmprospătarea paginii.",
+          "title": "Analizează factura"
+        },
+        "invoice": {
+          "capabilitiesLegend": "Capabilități pentru analiza facturii",
+          "profileLegend": "Profil de analiză",
+          "title": "Analiza facturii"
+        },
+        "merchant": {
+          "capabilitiesLegend": "Capabilități pentru analiza comerciantului",
+          "profileLegend": "Profil de analiză",
+          "title": "Analiza comerciantului"
+        },
+        "merchantCapabilities": {
+          "descriptionGeneration": "Generează descrierea comerciantului",
+          "naceClassification": "Clasificare NACE"
+        },
+        "panel": {
+          "description": "Pune în coadă o cerere de analiză; rezultatele vor apărea după reîmprospătarea paginii.",
+          "title": "Analiză AI"
+        },
+        "profiles": {
+          "balanced": "Echilibrat",
+          "comprehensive": "Complet",
+          "fast": "Rapid"
+        },
+        "status": {
+          "queued": "Analiza a pornit. Rezultatele vor apărea după reîmprospătarea paginii.",
+          "submitting": "Se trimite cererea de analiză."
+        }
+      },
       "createInvoice": {
         "detailsForm": {
           "fields": {
@@ -3065,55 +3011,6 @@
         }
       },
       "viewInvoice": {
-        "analysisPanel": {
-          "analyzing": {
-            "progress": "{progress}% completat",
-            "title": "Se analizează..."
-          },
-          "buttons": {
-            "reanalyze": "Re-analizează Factura"
-          },
-          "description": "Re-analizează această factură cu AI pentru a extrage sau actualiza datele",
-          "labels": {
-            "analysisComplete": "Analiză Completă — Toate datele au fost extrase",
-            "granularOptions": "Sau alege o analiză specifică",
-            "lastAnalyzed": "Ultima Analiză",
-            "updates": "{count, plural, one {# actualizare} other {# actualizări}}"
-          },
-          "options": {
-            "completeAnalysis": "Analiză Completă",
-            "invoiceOnly": "Doar Factura",
-            "itemsOnly": "Doar Articole",
-            "merchantOnly": "Doar Comerciant"
-          },
-          "steps": {
-            "analyzing": "Se analizează cu AI...",
-            "complete": "Analiză completă!",
-            "extracting": "Se rulează extragerea OCR...",
-            "finalizing": "Se finalizează rezultatele...",
-            "preparing": "Se pregătește documentul...",
-            "processing": "Se procesează articolele..."
-          },
-          "tip": "Sfat Rapid: Analiza completă durează 30-60 secunde, dar oferă cele mai precise rezultate.",
-          "title": "Analiză AI",
-          "toasts": {
-            "error": {
-              "description": "Nu s-a putut analiza factura. Vă rugăm să încercați din nou mai târziu.",
-              "title": "Analiză Eșuată"
-            },
-            "success": {
-              "description": "Factura a fost re-analizată cu succes cu date actualizate.",
-              "title": "Analiză Completă"
-            }
-          },
-          "tooltips": {
-            "completeAnalysis": "Extragere OCR completă + procesare AI a tuturor datelor facturii",
-            "invoiceOnly": "Re-extrage informații de bază ale facturii (dată, total, plată)",
-            "itemsOnly": "Re-categorizează și analizează doar articolele individuale",
-            "merchantOnly": "Re-identifică comerciantul și datele de locație",
-            "reanalyze": "Declanșează re-analiza completă cu toate caracteristicile AI"
-          }
-        },
         "categoryComparisonChart": {
           "description": "Factura aceasta vs media ta",
           "labels": {
@@ -5360,6 +5257,16 @@
   },
   "toasts": {
     "invoices": {
+      "analysis": {
+        "failed": {
+          "description": "Cererea de analiză nu a fost acceptată. Încearcă din nou.",
+          "title": "Analiza nu a putut fi pornită"
+        },
+        "started": {
+          "description": "Cererea este în coadă. Rezultatele vor apărea după reîmprospătarea paginii.",
+          "title": "Analiza a pornit"
+        }
+      },
       "useInvoiceDelete": {
         "bulkDeleteError": "Ștergerea a eșuat pentru {count} facturi.",
         "bulkDeletePartial": "Șterse {successCount}; eșuate {failureCount}.",

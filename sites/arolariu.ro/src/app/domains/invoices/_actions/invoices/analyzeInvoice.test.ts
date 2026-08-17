@@ -9,8 +9,6 @@ import type {AnalyzeInvoiceRequest} from "@/types/invoices";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder} from "../../../../../../tests/helpers";
 
-vi.mock("@/lib/actions/user/fetchUser");
-
 const {analyzeInvoice} = await import("./analyzeInvoice");
 const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
 const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
@@ -195,6 +193,21 @@ describe("analyzeInvoice", () => {
       expect(result.error.message).toContain("invoiceIdentifier");
     }
   });
+
+  it.each([null, undefined, [], {invoiceIdentifier}, {request}])(
+    "returns a validation result without calling auth for malformed outer input %#",
+    async (input) => {
+      // Act
+      const result = await analyzeInvoice(input);
+
+      // Assert
+      expect(result).toMatchObject({
+        success: false,
+        error: {code: "VALIDATION_ERROR"},
+      });
+      expect(mockFetchUser).not.toHaveBeenCalled();
+    },
+  );
 
   it("returns a mapped error result when the enqueue request fails", async () => {
     // Arrange

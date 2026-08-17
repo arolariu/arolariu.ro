@@ -18,18 +18,7 @@ import {
   isAnalysisAcceptedResponseForRequest,
   resolveAnalysisRequest,
   type AnalysisAcceptedResponse,
-  type AnalyzeMerchantRequest,
 } from "@/types/invoices";
-
-/**
- * Input accepted by the merchant analysis enqueue action.
- */
-type ServerActionInputType = Readonly<{
-  /** UUID of the merchant to enqueue. */
-  readonly merchantIdentifier: string;
-  /** Exact profile-and-overrides payload for the merchant analysis API. */
-  readonly request: AnalyzeMerchantRequest;
-}>;
 
 /**
  * Result returned from a merchant analysis enqueue request.
@@ -46,6 +35,20 @@ function createValidationResult(message: string): Awaited<ServerActionOutputType
   };
 }
 
+function isMerchantAnalysisRequestInput(value: unknown): value is Readonly<{merchantIdentifier: string; request: unknown}> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  const input = value as Readonly<Record<string, unknown>>;
+  return (
+    Object.hasOwn(input, "merchantIdentifier")
+    && Object.hasOwn(input, "request")
+    && typeof input["merchantIdentifier"] === "string"
+    && Reflect.ownKeys(input).every((key) => key === "merchantIdentifier" || key === "request")
+  );
+}
+
 /**
  * Enqueues asynchronous analysis for one merchant.
  *
@@ -54,11 +57,16 @@ function createValidationResult(message: string): Awaited<ServerActionOutputType
  * {@link AnalysisAcceptedResponse}. This action uses a 15-second enqueue timeout
  * and does not log request payloads or response bodies.
  *
- * @param input - The target merchant UUID and exact merchant-analysis request.
+ * @param input - Untrusted target merchant UUID and exact merchant-analysis request.
  * @returns The durable accepted-run acknowledgement, or a standardized error result.
  */
-export async function analyzeMerchant({merchantIdentifier, request}: ServerActionInputType): ServerActionOutputType {
+export async function analyzeMerchant(input: unknown): ServerActionOutputType {
   return withSpan("api.actions.invoices.analyzeMerchant", async () => {
+    if (!isMerchantAnalysisRequestInput(input)) {
+      return createValidationResult("Merchant analysis input is invalid.");
+    }
+
+    const {merchantIdentifier, request} = input;
     try {
       validateStringIsGuidType(merchantIdentifier, "merchantIdentifier");
     } catch (error) {

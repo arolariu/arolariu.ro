@@ -19,18 +19,7 @@ import {
   isAnalysisAcceptedResponseForRequest,
   resolveAnalysisRequest,
   type AnalysisAcceptedResponse,
-  type AnalyzeInvoiceRequest,
 } from "@/types/invoices";
-
-/**
- * Input accepted by the invoice analysis enqueue action.
- */
-type InvoiceAnalysisRequestInput = Readonly<{
-  /** UUID of the invoice to enqueue. */
-  readonly invoiceIdentifier: string;
-  /** Exact profile-and-overrides payload for the invoice analysis API. */
-  readonly request: AnalyzeInvoiceRequest;
-}>;
 
 /**
  * Result returned from an invoice analysis enqueue request.
@@ -47,6 +36,20 @@ function createValidationResult(message: string): Awaited<ServerActionOutputType
   };
 }
 
+function isInvoiceAnalysisRequestInput(value: unknown): value is Readonly<{invoiceIdentifier: string; request: unknown}> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  const input = value as Readonly<Record<string, unknown>>;
+  return (
+    Object.hasOwn(input, "invoiceIdentifier")
+    && Object.hasOwn(input, "request")
+    && typeof input["invoiceIdentifier"] === "string"
+    && Reflect.ownKeys(input).every((key) => key === "invoiceIdentifier" || key === "request")
+  );
+}
+
 /**
  * Enqueues asynchronous analysis for one invoice.
  *
@@ -56,11 +59,16 @@ function createValidationResult(message: string): Awaited<ServerActionOutputType
  * backend JSON before returning it, uses a 15-second enqueue timeout, and does
  * not log the request payload or response body.
  *
- * @param input - The target invoice UUID and exact analysis enqueue request.
+ * @param input - Untrusted target invoice UUID and exact analysis enqueue request.
  * @returns The durable accepted-run acknowledgement, or a standardized error result.
  */
-export async function analyzeInvoice({invoiceIdentifier, request}: InvoiceAnalysisRequestInput): ServerActionOutputType {
+export async function analyzeInvoice(input: unknown): ServerActionOutputType {
   return withSpan("api.actions.invoices.analyzeInvoice", async () => {
+    if (!isInvoiceAnalysisRequestInput(input)) {
+      return createValidationResult("Invoice analysis input is invalid.");
+    }
+
+    const {invoiceIdentifier, request} = input;
     try {
       validateStringIsGuidType(invoiceIdentifier, "invoiceIdentifier");
     } catch (error) {

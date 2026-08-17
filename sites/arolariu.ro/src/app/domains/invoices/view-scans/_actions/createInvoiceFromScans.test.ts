@@ -14,9 +14,8 @@ vi.mock("../../_actions/scans", () => ({
   updateScan: vi.fn(async () => ({success: true, data: {scan: {}}})),
 }));
 
-// analyzeInvoice is imported by the module under test — mock it as async (must return a Promise)
 vi.mock("../../_actions/invoices", () => ({
-  analyzeInvoice: vi.fn(async () => {}),
+  analyzeInvoice: vi.fn(),
 }));
 
 // Stub references — use vi.mocked for type-safe access
@@ -24,9 +23,11 @@ const mockFetch = vi.mocked(fetchWithTimeout);
 const mockFetchBFFUser = vi.mocked(fetchBFFUserFromAuthService);
 
 import {updateScan} from "../../_actions/scans";
+import {analyzeInvoice} from "../../_actions/invoices";
 import {createInvoiceFromScans} from "./createInvoiceFromScans";
 
 const mockUpdateScan = vi.mocked(updateScan);
+const mockAnalyzeInvoice = vi.mocked(analyzeInvoice);
 
 /**
  * Creates a test scan with default values
@@ -81,6 +82,7 @@ describe("createInvoiceFromScans", () => {
       user: null,
     });
     mockUpdateScan.mockResolvedValue({success: true, data: {scan: {} as never}});
+    mockAnalyzeInvoice.mockResolvedValue({success: true, data: {} as never});
   });
 
   afterEach(() => {
@@ -557,15 +559,15 @@ describe("createInvoiceFromScans", () => {
   });
 
   describe("fire-and-forget background operations", () => {
-    it("should handle background analysis failure gracefully in single mode", async () => {
+    it("enqueues analysis without waiting and logs an action failure in single mode", async () => {
       // Arrange
       const scans = [createTestScan("scan-1")];
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-
-      // Import the analyzeInvoice mock
-      const {analyzeInvoice} = await import("../../_actions/invoices");
-      const mockAnalyze = vi.mocked(analyzeInvoice);
-      mockAnalyze.mockRejectedValueOnce(new Error("Analysis service down"));
+      const {logWithTrace} = await import("@/instrumentation.server");
+      const mockLogWithTrace = vi.mocked(logWithTrace);
+      mockAnalyzeInvoice.mockResolvedValueOnce({
+        success: false,
+        error: {code: "SERVER_ERROR", message: "Analysis service down"},
+      });
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -579,23 +581,31 @@ describe("createInvoiceFromScans", () => {
       expect(result.invoices).toHaveLength(1);
       expect(result.convertedScanIds).toEqual(["scan-1"]);
       expect(result.errors).toHaveLength(0);
-
-      // Wait for the microtask queue to flush (fire-and-forget catch runs async)
-      await vi.waitFor(() => {
-        expect(consoleErrorSpy).toHaveBeenCalledWith("Background invoice analysis failed:", expect.any(Error));
+      expect(mockAnalyzeInvoice).toHaveBeenCalledWith({
+        invoiceIdentifier: "invoice-1",
+        request: {profile: "comprehensive", overrides: {}},
       });
 
-      consoleErrorSpy.mockRestore();
+      // Wait for the background result inspection without blocking the create flow.
+      await vi.waitFor(() => {
+        expect(mockLogWithTrace).toHaveBeenCalledWith(
+          "warn",
+          "Background invoice analysis was not accepted.",
+          {code: "SERVER_ERROR"},
+          "server",
+        );
+      });
     });
 
-    it("should handle background analysis failure gracefully in batch mode", async () => {
+    it("enqueues analysis without waiting and logs an action failure in batch mode", async () => {
       // Arrange
       const scans = [createTestScan("scan-1"), createTestScan("scan-2")];
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-
-      const {analyzeInvoice} = await import("../../_actions/invoices");
-      const mockAnalyze = vi.mocked(analyzeInvoice);
-      mockAnalyze.mockRejectedValueOnce(new Error("Analysis failed"));
+      const {logWithTrace} = await import("@/instrumentation.server");
+      const mockLogWithTrace = vi.mocked(logWithTrace);
+      mockAnalyzeInvoice.mockResolvedValueOnce({
+        success: false,
+        error: {code: "NETWORK_ERROR", message: "Analysis failed"},
+      });
 
       mockFetch
         .mockResolvedValueOnce({
@@ -611,13 +621,20 @@ describe("createInvoiceFromScans", () => {
       expect(result.invoices).toHaveLength(1);
       expect(result.convertedScanIds).toEqual(["scan-1", "scan-2"]);
       expect(result.errors).toHaveLength(0);
-
-      // Wait for fire-and-forget error handler
-      await vi.waitFor(() => {
-        expect(consoleErrorSpy).toHaveBeenCalledWith("Background invoice analysis failed:", expect.any(Error));
+      expect(mockAnalyzeInvoice).toHaveBeenCalledWith({
+        invoiceIdentifier: "invoice-batch",
+        request: {profile: "comprehensive", overrides: {}},
       });
 
-      consoleErrorSpy.mockRestore();
+      // Wait for the background result inspection without blocking the create flow.
+      await vi.waitFor(() => {
+        expect(mockLogWithTrace).toHaveBeenCalledWith(
+          "warn",
+          "Background invoice analysis was not accepted.",
+          {code: "NETWORK_ERROR"},
+          "server",
+        );
+      });
     });
 
     it("should handle updateScan failure gracefully in single mode", async () => {
