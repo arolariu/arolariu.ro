@@ -2,16 +2,21 @@ namespace arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysi
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.GenerativeAiBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.Modules;
+
+using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
 public sealed partial class GenerativeAnalysisFoundationService
 {
@@ -24,10 +29,15 @@ public sealed partial class GenerativeAnalysisFoundationService
   /// (3) select a single candidate code per subject, and (4) resolve every selected code canonically.
   /// </summary>
   private async Task<IReadOnlyDictionary<string, StandardClassification>> ClassifyBatchAsync(
+    AnalysisCapability capability,
     ClassificationSystem system,
     IReadOnlyList<ClassificationSubject> subjects,
     CancellationToken cancellationToken)
   {
+    string taxonomyVersion = taxonomyBroker.GetArtifactVersion(system);
+    GenerativeTelemetryMetadata telemetryMetadata = GenerativeTelemetryCatalog.ForClassificationCapability(
+      capability,
+      taxonomyVersion);
     var expectedTokens = new HashSet<string>(
       subjects.Select(subject => subject.CorrelationToken),
       StringComparer.Ordinal);
@@ -42,6 +52,7 @@ public sealed partial class GenerativeAnalysisFoundationService
       });
 
     GenerativeResponse<SearchTermsBatchResult> searchTermsResponse = await GenerateWithRetryAsync<SearchTermsBatchResult>(
+      telemetryMetadata,
       searchTermsRequest,
       cancellationToken)
       .ConfigureAwait(false);
@@ -76,6 +87,7 @@ public sealed partial class GenerativeAnalysisFoundationService
       });
 
     GenerativeResponse<SelectionBatchResult> selectionResponse = await GenerateWithRetryAsync<SelectionBatchResult>(
+      telemetryMetadata,
       selectionRequest,
       cancellationToken)
       .ConfigureAwait(false);
@@ -94,24 +106,158 @@ public sealed partial class GenerativeAnalysisFoundationService
 
       ValidateSelectedCodeIsCandidate(selection.SelectedCode, candidates, subject.CorrelationToken);
 
-      classifications[subject.CorrelationToken] = taxonomyBroker.Resolve(
-        system,
-        selection.SelectedCode,
-        ClassificationOrigin.Analysis,
-        NormalizeConfidence(selection.Confidence),
-        [new ClassificationEvidence("subject.description", subject.Description)]);
+      try
+      {
+        classifications[subject.CorrelationToken] = taxonomyBroker.Resolve(
+          system,
+          selection.SelectedCode,
+          ClassificationOrigin.Analysis,
+          NormalizeConfidence(selection.Confidence),
+          [new ClassificationEvidence("subject.description", subject.Description)]);
+      }
+      catch (TaxonomyCodeNotFoundException)
+      {
+        // The model selected a code that is not in the taxonomy. Only the bounded system enum is recorded; the
+        // model-supplied code itself is unbounded and never reaches telemetry.
+        InvoiceMetrics.RecordTaxonomyValidationFailure(system);
+        logger.LogAnalysisTaxonomyValidationFailed(system);
+        throw;
+      }
     }
 
     return classifications;
   }
 
-  private Task<GenerativeResponse<TResult>> GenerateWithRetryAsync<TResult>(
+  /// <summary>
+  /// Invokes the generative broker through the bounded retry policy and emits every generative telemetry signal that
+  /// is only observable at this choke point: retry attempts, token usage, and provider refusals.
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Confidentiality:</b> Only the capability, the model identifier, and token counts leave this method.
+  /// Neither the prompt nor the response nor any provider payload is recorded.</para>
+  /// <para><b>Refusal marking:</b> A refusal surfaces as an <see cref="InvalidStructuredOutputException"/> that is
+  /// indistinguishable from a schema violation by type alone, so it is stamped with a refusal marker for the
+  /// orchestration layer to read back when it attributes the capability failure.</para>
+  /// </remarks>
+  /// <typeparam name="TResult">The structured result type requested from the model.</typeparam>
+  /// <param name="telemetryMetadata">The trusted bounded schema, prompt, and taxonomy metadata for the capability.</param>
+  /// <param name="request">The generative request.</param>
+  /// <param name="cancellationToken">The cancellation token that aborts all attempts.</param>
+  /// <returns>The structured generative response.</returns>
+  private async Task<GenerativeResponse<TResult>> GenerateWithRetryAsync<TResult>(
+    GenerativeTelemetryMetadata telemetryMetadata,
     GenerativeRequest request,
     CancellationToken cancellationToken)
-    where TResult : class =>
-    retryPolicy.ExecuteAsync(
-      attemptCancellationToken => generativeAiBroker.GenerateStructuredAsync<TResult>(request, attemptCancellationToken),
-      cancellationToken);
+    where TResult : class
+  {
+    Activity? capabilityActivity = Activity.Current;
+    SetGenerativeMetadataTags(capabilityActivity, telemetryMetadata);
+
+    using Activity? generationActivity = InvoicePackageTracing.StartActivity(nameof(GenerateWithRetryAsync));
+    SetGenerativeMetadataTags(generationActivity, telemetryMetadata);
+
+    try
+    {
+      GenerativeResponse<TResult> response = await retryPolicy.ExecuteAsync(
+        attemptCancellationToken => generativeAiBroker.GenerateStructuredAsync<TResult>(request, attemptCancellationToken),
+        cancellationToken,
+        attempt => RecordRetryAttempt(telemetryMetadata.Capability, attempt))
+        .ConfigureAwait(false);
+
+      RecordTokenUsage(telemetryMetadata, response);
+      SetGenerativeResponseTags(capabilityActivity, response);
+      SetGenerativeResponseTags(generationActivity, response);
+      return response;
+    }
+    catch (InvalidStructuredOutputException exception)
+    {
+      // The broker only raises this type when the provider declined to produce a typed result, which is the
+      // content-filter/refusal signal. Schema violations detected by this service are raised further down.
+      SetGenerativeOutcomeTags(capabilityActivity, "failure");
+      SetGenerativeOutcomeTags(generationActivity, "failure");
+      InvoiceMetrics.RecordCapabilityContentFilterOrRefusal(telemetryMetadata.Capability);
+      logger.LogAnalysisContentFilterOrRefusalTriggered(telemetryMetadata.Capability);
+      throw GenerativeAnalysisRefusalMarker.MarkAsRefusal(exception);
+    }
+    catch
+    {
+      SetGenerativeOutcomeTags(capabilityActivity, "failure");
+      SetGenerativeOutcomeTags(generationActivity, "failure");
+      throw;
+    }
+  }
+
+  /// <summary>
+  /// Records a single bounded retry attempt for a capability.
+  /// </summary>
+  /// <param name="capability">The capability whose generative call is being retried.</param>
+  /// <param name="attemptNumber">The 1-based number of the attempt that just failed.</param>
+  private void RecordRetryAttempt(AnalysisCapability capability, int attemptNumber)
+  {
+    InvoiceMetrics.RecordCapabilityRetry(capability, attemptNumber);
+    logger.LogAnalysisCapabilityRetryAttempted(capability, attemptNumber);
+  }
+
+  /// <summary>
+  /// Records the token usage reported by the provider for a completed generative call.
+  /// </summary>
+  /// <remarks>
+  /// <para>Providers are not required to report usage. When both counts are absent nothing is recorded, so the
+  /// absence of usage data never fabricates a zero-token data point.</para>
+  /// </remarks>
+  /// <typeparam name="TResult">The structured result type.</typeparam>
+  /// <param name="telemetryMetadata">The trusted bounded metadata for the capability call.</param>
+  /// <param name="response">The generative response carrying optional usage metadata.</param>
+  private void RecordTokenUsage<TResult>(GenerativeTelemetryMetadata telemetryMetadata, GenerativeResponse<TResult> response)
+    where TResult : class
+  {
+    if (response.Usage is null)
+    {
+      return;
+    }
+
+    long? inputTokenCount = response.Usage.InputTokenCount;
+    long? outputTokenCount = response.Usage.OutputTokenCount;
+
+    if (inputTokenCount is null && outputTokenCount is null)
+    {
+      return;
+    }
+
+    string modelId = InvoiceMetrics.ToTelemetryModelIdentifier(response.ModelId);
+
+    InvoiceMetrics.RecordTokenUsage(telemetryMetadata, modelId, inputTokenCount, outputTokenCount);
+    logger.LogAnalysisTokenUsageObserved(telemetryMetadata, modelId, inputTokenCount, outputTokenCount);
+  }
+
+  private static void SetGenerativeMetadataTags(Activity? activity, GenerativeTelemetryMetadata telemetryMetadata)
+  {
+    activity?.SetTag("analysis.schema.version", telemetryMetadata.SchemaVersion);
+    activity?.SetTag("analysis.prompt.version", telemetryMetadata.PromptVersion);
+    activity?.SetTag("analysis.taxonomy.version", telemetryMetadata.TaxonomyVersion);
+  }
+
+  private static void SetGenerativeResponseTags<TResult>(Activity? activity, GenerativeResponse<TResult> response)
+    where TResult : class
+  {
+    string modelId = InvoiceMetrics.ToTelemetryModelIdentifier(response.ModelId);
+    activity?.SetTag("analysis.model.id", modelId);
+
+    if (response.Usage?.InputTokenCount is long inputTokenCount)
+    {
+      activity?.SetTag("analysis.input_tokens", inputTokenCount);
+    }
+
+    if (response.Usage?.OutputTokenCount is long outputTokenCount)
+    {
+      activity?.SetTag("analysis.output_tokens", outputTokenCount);
+    }
+
+    SetGenerativeOutcomeTags(activity, "success");
+  }
+
+  private static void SetGenerativeOutcomeTags(Activity? activity, string outcome) =>
+    activity?.SetTag("analysis.outcome", outcome);
 
   private List<TaxonomySearchResult> CollectBoundedCandidates(
     ClassificationSystem system,

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.Brokers.GenerativeAiBroker;
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
@@ -67,6 +68,7 @@ public sealed partial class GenerativeAnalysisFoundationService
           });
 
         GenerativeResponse<MerchantDescriptionOutput> response = await GenerateWithRetryAsync<MerchantDescriptionOutput>(
+          GenerativeTelemetryCatalog.ForNonTaxonomyCapability(AnalysisCapability.DescriptionGeneration),
           request,
           cancellationToken)
           .ConfigureAwait(false);
@@ -165,7 +167,7 @@ public sealed partial class GenerativeAnalysisFoundationService
   /// Represents the structured merchant-description output for one analysis request.
   /// </summary>
   /// <param name="Description">The concise merchant description.</param>
-  private sealed record MerchantDescriptionOutput(string Description);
+  internal sealed record MerchantDescriptionOutput(string Description);
 
   [GeneratedRegex(
     @"\b(?:likely|possibly|potentially|probably)\b|\b(?:may|might|could)\s+be\b|\b(?:appears?|seems?)\s+to\s+be\b",

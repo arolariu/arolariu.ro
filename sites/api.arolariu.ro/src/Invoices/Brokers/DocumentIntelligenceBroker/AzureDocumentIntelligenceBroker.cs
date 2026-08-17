@@ -2,7 +2,6 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -70,7 +69,7 @@ public sealed class AzureDocumentIntelligenceBroker : IDocumentIntelligenceBroke
     ArgumentNullException.ThrowIfNull(scanLocation);
 
     using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeReceiptAsync));
-    activity?.SetTag("receipt.scan.location", scanLocation.ToString());
+    activity?.SetTag("receipt.scan.source_kind", "uri");
 
     Operation<AnalyzeResult> operation = await client
       .AnalyzeDocumentAsync(
@@ -373,15 +372,19 @@ public sealed class AzureDocumentIntelligenceBroker : IDocumentIntelligenceBroke
     };
   }
 
-  private static TimeSpan ParseTimeFromDigits(char[] digits, bool hasSeconds)
+  private static TimeSpan? ParseTimeFromDigits(char[] digits, bool hasSeconds)
   {
-    var hour = int.Parse($"{digits[0]}{digits[1]}", NumberStyles.Integer, CultureInfo.InvariantCulture);
-    var minute = int.Parse($"{digits[2]}{digits[3]}", NumberStyles.Integer, CultureInfo.InvariantCulture);
-    var second = hasSeconds
-      ? int.Parse($"{digits[4]}{digits[5]}", NumberStyles.Integer, CultureInfo.InvariantCulture)
+    int hour = ((digits[0] - '0') * 10) + (digits[1] - '0');
+    int minute = ((digits[2] - '0') * 10) + (digits[3] - '0');
+    int second = hasSeconds
+      ? ((digits[4] - '0') * 10) + (digits[5] - '0')
       : 0;
 
-    return new TimeSpan(hour, minute, second);
+    return hour is > 23
+      || minute is > 59
+      || second is > 59
+        ? null
+        : new TimeSpan(hour, minute, second);
   }
 
   private static double ReadConfidence(DocumentField field) =>

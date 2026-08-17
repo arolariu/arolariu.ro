@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.GenerativeAiBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
@@ -81,6 +82,7 @@ public sealed partial class GenerativeAnalysisFoundationService : IGenerativeAna
           .ToArray();
 
         IReadOnlyDictionary<string, StandardClassification> classifications = await ClassifyBatchAsync(
+          AnalysisCapability.ProductClassification,
           ClassificationSystem.Gs1Gpc,
           subjects,
           cancellationToken)
@@ -108,6 +110,7 @@ public sealed partial class GenerativeAnalysisFoundationService : IGenerativeAna
         var subject = new ClassificationSubject(sourceRunId.ToString(), BuildInvoiceDescription(extraction, products));
 
         IReadOnlyDictionary<string, StandardClassification> classifications = await ClassifyBatchAsync(
+          AnalysisCapability.InvoiceClassification,
           ClassificationSystem.EcoicopV2,
           [subject],
           cancellationToken)
@@ -133,6 +136,7 @@ public sealed partial class GenerativeAnalysisFoundationService : IGenerativeAna
         var subject = new ClassificationSubject(sourceRunId.ToString(), BuildMerchantDescription(merchant));
 
         IReadOnlyDictionary<string, StandardClassification> classifications = await ClassifyBatchAsync(
+          AnalysisCapability.MerchantClassification,
           ClassificationSystem.Nace21,
           [subject],
           cancellationToken)

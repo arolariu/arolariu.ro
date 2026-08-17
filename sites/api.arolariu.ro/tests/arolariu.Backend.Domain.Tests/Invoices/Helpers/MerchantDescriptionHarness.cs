@@ -1,6 +1,7 @@
 namespace arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using System;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -128,12 +129,14 @@ internal sealed class MerchantDescriptionHarness
       throw new InvalidOperationException("Merchant description output type could not be located.");
     }
 
-    return Activator.CreateInstance(
-      outputType,
-      BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
-      binder: null,
-      args: [description],
-      culture: null)
-      ?? throw new InvalidOperationException("Merchant description output type could not be constructed.");
+    ConstructorInfo constructor = outputType
+      .GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+      .Single(candidate =>
+      {
+        ParameterInfo[] parameters = candidate.GetParameters();
+        return parameters.Length == 1 && parameters[0].ParameterType == typeof(string);
+      });
+
+    return constructor.Invoke([description]);
   }
 }

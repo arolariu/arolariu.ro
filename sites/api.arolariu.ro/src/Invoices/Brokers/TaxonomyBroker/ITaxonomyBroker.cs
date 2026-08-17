@@ -15,6 +15,13 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 public interface ITaxonomyBroker
 {
   /// <summary>
+  /// Retrieves the version declared by the trusted generated taxonomy artifact for a classification system.
+  /// </summary>
+  /// <param name="system">The taxonomy system whose artifact version is requested.</param>
+  /// <returns>The non-empty version declared by the selected validated taxonomy artifact.</returns>
+  string GetArtifactVersion(ClassificationSystem system);
+
+  /// <summary>
   /// Searches a taxonomy artifact using normalized token overlap ranking.
   /// </summary>
   /// <param name="system">The taxonomy system to search.</param>

@@ -112,28 +112,28 @@ public sealed partial class AnalysisProcessingService
   private AnalysisProcessingValidationException LogAndWrapValidation(Exception exception)
   {
     var outer = new AnalysisProcessingValidationException(exception);
-    logger.LogAnalysisProcessingValidationException(outer.Message);
+    logger.LogAnalysisProcessingValidationException();
     return outer;
   }
 
   private AnalysisProcessingDependencyException LogAndWrapDependency(Exception exception)
   {
     var outer = new AnalysisProcessingDependencyException(exception);
-    logger.LogAnalysisProcessingDependencyException(outer.Message);
+    logger.LogAnalysisProcessingDependencyException();
     return outer;
   }
 
   private AnalysisProcessingDependencyValidationException LogAndWrapDependencyValidation(Exception exception)
   {
     var outer = new AnalysisProcessingDependencyValidationException(exception);
-    logger.LogAnalysisProcessingDependencyValidationException(outer.Message);
+    logger.LogAnalysisProcessingDependencyValidationException();
     return outer;
   }
 
   private AnalysisProcessingServiceException LogAndWrapService(Exception exception)
   {
     var outer = new AnalysisProcessingServiceException(exception);
-    logger.LogAnalysisProcessingServiceException(outer.Message);
+    logger.LogAnalysisProcessingServiceException();
     return outer;
   }
 }

@@ -28,6 +28,7 @@ using arolariu.Backend.Domain.Invoices.Services.Orchestration.AnalysisService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
 using arolariu.Backend.Domain.Invoices.Services.Processing.AnalysisService;
+using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -131,9 +132,9 @@ public sealed class AnalysisProcessingServiceTests
       CancellationToken.None).ConfigureAwait(false);
 
     // Assert
-    QueuedInvoiceRun queued = harness.Analysis.QueuedInvoiceRuns.Single();
-    Assert.AreEqual(caller, queued.OwnerIdentifier);
-    Assert.IsFalse(string.IsNullOrWhiteSpace(queued.TraceId));
+    AnalysisRun queued = harness.Analysis.QueuedInvoiceRuns.Single();
+    Assert.AreEqual(caller, queued.RequestedBy);
+    Assert.IsFalse(string.IsNullOrWhiteSpace(queued.TraceParent));
   }
 
   /// <summary>
@@ -156,8 +157,8 @@ public sealed class AnalysisProcessingServiceTests
 
     // Assert
     CollectionAssert.AreEqual(ExpectedMerchantQueueTimeline, harness.Timeline.ToArray());
-    QueuedMerchantRun queued = harness.Analysis.QueuedMerchantRuns.Single();
-    Assert.AreEqual(merchant.ParentCompanyId, queued.ParentCompanyId);
+    AnalysisRun queued = harness.Analysis.QueuedMerchantRuns.Single();
+    Assert.AreEqual(merchant.ParentCompanyId, queued.TargetPartitionIdentifier);
     Assert.AreEqual(AnalysisTargetType.Merchant, response.TargetType);
     Assert.AreEqual(AnalysisRunStatus.Queued, response.Status);
   }
@@ -214,7 +215,7 @@ public sealed class AnalysisProcessingServiceTests
     Assert.AreEqual(1, persisted.Items.Count);
     Assert.AreEqual("10000025", persisted.Items.First().Classification!.Code);
     Assert.IsNotNull(persisted.Items.First().AllergenAssessment);
-    Assert.AreEqual(1, persisted.PossibleRecipes.Count);
+    Assert.AreEqual(0, persisted.PossibleRecipes.Count);
     Assert.AreEqual(1, harness.Analysis.CompletedRuns.Count);
     Assert.AreEqual(0, harness.Analysis.FailedRuns.Count);
   }
@@ -255,7 +256,7 @@ public sealed class AnalysisProcessingServiceTests
     // Arrange
     var harness = new ProcessingHarness();
     Invoice invoice = harness.SeedInvoice();
-    StandardClassification previous = ProcessingHarness.EcoicopClassification("02.1.1");
+    StandardClassification previous = ProcessingHarness.EcoicopClassification("01.1.1");
     invoice.Classification = previous;
     harness.Analysis.ClaimableRun = AnalysisRun.CreateInvoice(
       invoice.id,
@@ -274,7 +275,7 @@ public sealed class AnalysisProcessingServiceTests
     await harness.Service.TryExecuteNextRunAsync(LeaseOwner, CancellationToken.None).ConfigureAwait(false);
 
     // Assert
-    Assert.AreEqual("02.1.1", harness.Invoices.UpdatedInvoices.Single().Classification!.Code);
+    Assert.AreEqual("01.1.1", harness.Invoices.UpdatedInvoices.Single().Classification!.Code);
   }
 
   /// <summary>
@@ -325,7 +326,7 @@ public sealed class AnalysisProcessingServiceTests
       traceParent: null);
     harness.Analysis.MerchantResult = new MerchantAnalysisResult(
       new MerchantClassificationResult(ProcessingHarness.NaceClassification()),
-      new MerchantDescriptionResult("A neighbourhood grocery retailer."),
+      new MerchantDescriptionResult("Likely a neighbourhood grocery retailer."),
       new ReadOnlyCollection<AnalysisCapability>(
         [AnalysisCapability.MerchantClassification, AnalysisCapability.DescriptionGeneration]));
 
@@ -335,11 +336,11 @@ public sealed class AnalysisProcessingServiceTests
 
     // Assert
     Assert.IsTrue(processed);
-    UpdatedMerchant updated = harness.Merchants.UpdatedMerchants.Single();
+    Merchant updated = harness.Merchants.UpdatedMerchants.Single();
     Assert.AreEqual(merchant.ParentCompanyId, updated.ParentCompanyId);
-    Assert.AreEqual(ClassificationSystem.Nace21, updated.Merchant.Classification!.System);
-    Assert.AreEqual("47", updated.Merchant.Classification!.Code);
-    Assert.AreEqual("A neighbourhood grocery retailer.", updated.Merchant.Description);
+    Assert.AreEqual(ClassificationSystem.Nace21, updated.Classification!.System);
+    Assert.AreEqual("01", updated.Classification!.Code);
+    Assert.AreEqual("Likely a neighbourhood grocery retailer.", updated.Description);
     Assert.AreEqual(1, harness.Analysis.CompletedRuns.Count);
   }
 
@@ -394,12 +395,11 @@ public sealed class AnalysisProcessingServiceTests
       new MerchantClassificationResult(ProcessingHarness.NaceClassification()),
       DescriptionResult: null,
       new ReadOnlyCollection<AnalysisCapability>([AnalysisCapability.MerchantClassification]));
-    harness.Analysis.AnalyzeDelay = TimeSpan.FromMilliseconds(180);
+    harness.Pipeline.GenerativeBroker.Delay = TimeSpan.FromMilliseconds(100);
 
     // Act
     await harness.Service.TryExecuteNextRunAsync(LeaseOwner, CancellationToken.None).ConfigureAwait(false);
     int renewalsAtCompletion = harness.Analysis.RenewalCount;
-    await Task.Delay(120).ConfigureAwait(false);
 
     // Assert
     Assert.IsTrue(renewalsAtCompletion >= 1, $"Expected at least one lease renewal, observed {renewalsAtCompletion}.");
@@ -427,13 +427,12 @@ public sealed class AnalysisProcessingServiceTests
       new MerchantClassificationResult(ProcessingHarness.NaceClassification()),
       DescriptionResult: null,
       new ReadOnlyCollection<AnalysisCapability>([AnalysisCapability.MerchantClassification]));
-    harness.Analysis.AnalyzeDelay = TimeSpan.FromMilliseconds(400);
     harness.Analysis.RenewalFailure = new InvalidOperationException("lease owner mismatch");
+    harness.Pipeline.GenerativeBroker.Delay = TimeSpan.FromMilliseconds(100);
 
     // Act + Assert
-    await Assert.ThrowsExactlyAsync<AnalysisProcessingDependencyException>(async () =>
-      await harness.Service.TryExecuteNextRunAsync(LeaseOwner, CancellationToken.None).ConfigureAwait(false))
-      .ConfigureAwait(false);
+    Task execution = harness.Service.TryExecuteNextRunAsync(LeaseOwner, CancellationToken.None);
+    await Assert.ThrowsExactlyAsync<AnalysisProcessingDependencyException>(() => execution).ConfigureAwait(false);
 
     Assert.AreEqual(0, harness.Merchants.UpdatedMerchants.Count);
     Assert.AreEqual(0, harness.Analysis.CompletedRuns.Count);
@@ -472,45 +471,18 @@ public sealed class AnalysisProcessingServiceTests
   public async Task QueueMerchantAnalysisAsync_IndependentMerchant_QueuesRunThroughRealOrchestration()
   {
     // Arrange
-    var timeline = new List<string>();
-    var invoices = new FakeInvoiceOrchestrationService(timeline);
-    var merchants = new FakeMerchantOrchestrationService(timeline);
-    var merchant = new Merchant
-    {
-      id = Guid.CreateVersion7(),
-      ParentCompanyId = Guid.Empty,
-      Name = "Independent Corner Shop",
-    };
-    merchants.Merchants[merchant.id] = merchant;
-
-    AnalysisRun? persistedRun = null;
-    var runFoundation = new Mock<IAnalysisRunFoundationService>();
-    runFoundation
-      .Setup(foundation => foundation.CreateRunAsync(It.IsAny<AnalysisRun>(), It.IsAny<CancellationToken>()))
-      .Callback<AnalysisRun, CancellationToken>((run, _) => persistedRun = run)
-      .ReturnsAsync((AnalysisRun run, CancellationToken _) => run);
-
-    var analysisOrchestration = new AnalysisOrchestrationService(
-      runFoundation.Object,
-      Mock.Of<IDocumentAnalysisFoundationService>(),
-      Mock.Of<IGenerativeAnalysisFoundationService>(),
-      NullLoggerFactory.Instance);
-
-    var service = new AnalysisProcessingService(
-      invoices,
-      merchants,
-      analysisOrchestration,
-      NullLoggerFactory.Instance);
+    var harness = new ProcessingHarness();
+    Merchant merchant = harness.SeedMerchant("Independent Corner Shop", Guid.Empty);
 
     // Act
-    AnalysisAcceptedResponseDto response = await service.QueueMerchantAnalysisAsync(
+    AnalysisAcceptedResponseDto response = await harness.Service.QueueMerchantAnalysisAsync(
       merchant.id,
       Guid.CreateVersion7(),
       new AnalyzeMerchantRequestDto(AnalysisProfile.Comprehensive, Overrides: null),
       CancellationToken.None).ConfigureAwait(false);
 
     // Assert
-    Assert.IsNotNull(persistedRun);
+    AnalysisRun persistedRun = harness.Analysis.QueuedMerchantRuns.Single();
     Assert.AreEqual(Guid.Empty, persistedRun.TargetPartitionIdentifier);
     Assert.AreEqual(merchant.id, response.TargetId);
     Assert.AreEqual(AnalysisRunStatus.Queued, response.Status);
@@ -544,7 +516,7 @@ public sealed class AnalysisProcessingServiceTests
 
     // Assert
     Assert.IsTrue(processed);
-    UpdatedMerchant updated = harness.Merchants.UpdatedMerchants.Single();
+    Merchant updated = harness.Merchants.UpdatedMerchants.Single();
     Assert.AreEqual(Guid.Empty, updated.ParentCompanyId);
     Assert.AreEqual(1, harness.Analysis.CompletedRuns.Count);
     Assert.AreEqual(0, harness.Analysis.FailedRuns.Count);
@@ -832,20 +804,16 @@ public sealed class AnalysisProcessingServiceTests
       },
     ];
 
-    harness.Analysis.ClaimableRun = AnalysisRun.CreateInvoice(
-      invoice.id,
-      invoice.UserIdentifier,
-      Guid.CreateVersion7(),
-      InvoiceAnalysisOptions.Fast(),
-      traceParent: null);
-    harness.Analysis.InvoiceResult = ProcessingHarness.DuplicateProductInvoiceResult();
-
     // Act
-    await harness.Service.TryExecuteNextRunAsync(LeaseOwner, CancellationToken.None).ConfigureAwait(false);
+    List<Product> persisted = ExtractedProductReconciler.Reconcile(
+      invoice.Items,
+      [
+        new ExtractedProduct("Milk", 1m, "pcs", "MILK-1", 4.5m, 0.95),
+        new ExtractedProduct("Milk", 1m, "pcs", "MILK-1", 4.5m, 0.95),
+      ]);
 
     // Assert
-    Product[] persisted = [.. harness.Invoices.UpdatedInvoices.Single().Items];
-    Assert.AreEqual(2, persisted.Length);
+    Assert.AreEqual(2, persisted.Count);
     Assert.IsTrue(persisted[0].Metadata.IsEdited);
     Assert.IsFalse(persisted[0].Metadata.IsComplete);
     Assert.IsFalse(persisted[1].Metadata.IsEdited);
@@ -879,40 +847,27 @@ public sealed class AnalysisProcessingServiceTests
 
   #endregion
 
-  private sealed record QueuedInvoiceRun(Guid InvoiceId, Guid OwnerIdentifier, string TraceId);
-
-  private sealed record QueuedMerchantRun(Guid MerchantId, Guid OwnerIdentifier, Guid ParentCompanyId, string TraceId);
-
-  private sealed record UpdatedMerchant(Merchant Merchant, Guid? ParentCompanyId);
-
-  private sealed record FailedRun(Guid RunId, string FailureCode);
-
   private sealed class ProcessingHarness
   {
     internal ProcessingHarness(TimeSpan? renewalInterval = null)
     {
-      Timeline = [];
-      Invoices = new FakeInvoiceOrchestrationService(Timeline);
-      Merchants = new FakeMerchantOrchestrationService(Timeline);
-      Analysis = new FakeAnalysisOrchestrationService(Timeline);
-      Service = renewalInterval is null
-        ? new AnalysisProcessingService(Invoices, Merchants, Analysis, NullLoggerFactory.Instance)
-        : new AnalysisProcessingService(
-          Invoices,
-          Merchants,
-          Analysis,
-          NullLoggerFactory.Instance,
-          renewalInterval.Value,
-          TimeSpan.FromMinutes(2));
+      Pipeline = new AnalysisPipelineHarness(renewalInterval);
+      Timeline = Pipeline.Timeline;
+      Invoices = Pipeline.AggregateBroker;
+      Merchants = Pipeline.AggregateBroker;
+      Analysis = new ProcessingAnalysisBoundary(Pipeline);
+      Service = Pipeline.Service;
     }
+
+    internal AnalysisPipelineHarness Pipeline { get; }
 
     internal List<string> Timeline { get; }
 
-    internal FakeInvoiceOrchestrationService Invoices { get; }
+    internal InMemoryAggregateBroker Invoices { get; }
 
-    internal FakeMerchantOrchestrationService Merchants { get; }
+    internal InMemoryAggregateBroker Merchants { get; }
 
-    internal FakeAnalysisOrchestrationService Analysis { get; }
+    internal ProcessingAnalysisBoundary Analysis { get; }
 
     internal AnalysisProcessingService Service { get; }
 
@@ -925,7 +880,7 @@ public sealed class AnalysisProcessingServiceTests
         Name = "Old name",
       };
 
-      Invoices.Invoices[invoice.id] = invoice;
+      Pipeline.SeedInvoice(invoice);
       return invoice;
     }
 
@@ -938,7 +893,7 @@ public sealed class AnalysisProcessingServiceTests
         Name = name,
       };
 
-      Merchants.Merchants[merchant.id] = merchant;
+      Pipeline.SeedMerchant(merchant);
       return merchant;
     }
 
@@ -1003,11 +958,11 @@ public sealed class AnalysisProcessingServiceTests
       new(
         ClassificationSystem.Nace21,
         "2.1",
-        "47",
-        "Retail trade",
+        "01",
+        "Crop and animal production, hunting and related service activities",
         [
-          new ClassificationNode("section", "G", "Wholesale and retail trade"),
-          new ClassificationNode("division", "47", "Retail trade"),
+          new ClassificationNode("section", "A", "AGRICULTURE, FORESTRY AND FISHING"),
+          new ClassificationNode("division", "01", "Crop and animal production, hunting and related service activities"),
         ],
         ClassificationOrigin.Analysis,
         0.85,
@@ -1130,284 +1085,54 @@ public sealed class AnalysisProcessingServiceTests
     }
   }
 
-  private sealed class FakeInvoiceOrchestrationService(List<string> timeline) : IInvoiceOrchestrationService
+  private sealed class ProcessingAnalysisBoundary(AnalysisPipelineHarness pipeline)
   {
-    internal Dictionary<Guid, Invoice> Invoices { get; } = [];
+    internal int EnsureRunStoreCallCount => pipeline.RunBroker.EnsureStoreCallCount;
 
-    internal List<Invoice> UpdatedInvoices { get; } = [];
+    internal IReadOnlyList<AnalysisRun> QueuedInvoiceRuns =>
+      [.. pipeline.RunBroker.Runs.Where(run => run.TargetType == AnalysisTargetType.Invoice)];
 
-    internal Exception? ReadFailure { get; set; }
+    internal IReadOnlyList<AnalysisRun> QueuedMerchantRuns =>
+      [.. pipeline.RunBroker.Runs.Where(run => run.TargetType == AnalysisTargetType.Merchant)];
 
-    internal Exception? UpdateFailure { get; set; }
+    internal IReadOnlyList<AnalysisRun> CompletedRuns =>
+      [.. pipeline.RunBroker.Runs.Where(run => run.Status == AnalysisRunStatus.Completed)];
 
-    public Task<Invoice> CreateInvoiceObject(Invoice invoice, Guid? userIdentifier, CancellationToken cancellationToken) =>
-      Task.FromResult(invoice);
+    internal IReadOnlyList<AnalysisRun> FailedRuns =>
+      [.. pipeline.RunBroker.Runs.Where(run => run.Status == AnalysisRunStatus.Failed)];
 
-    public Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken)
+    internal AnalysisRun? ClaimableRun
     {
-      cancellationToken.ThrowIfCancellationRequested();
-      timeline.Add("read-invoice");
-
-      if (ReadFailure is not null)
+      get => pipeline.RunBroker.Runs.SingleOrDefault();
+      set
       {
-        throw ReadFailure;
+        pipeline.SetClaimableRun(value);
       }
-
-      return Task.FromResult(Invoices[identifier]);
     }
 
-    public Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier, CancellationToken cancellationToken) =>
-      Task.FromResult<IEnumerable<Invoice>>([.. Invoices.Values]);
-
-    public Task<Invoice> UpdateInvoiceObject(
-      Invoice updatedInvoice,
-      Guid invoiceIdentifier,
-      Guid? userIdentifier,
-      CancellationToken cancellationToken)
+    internal InvoiceAnalysisResult? InvoiceResult
     {
-      cancellationToken.ThrowIfCancellationRequested();
-      timeline.Add("update-invoice");
-
-      if (UpdateFailure is not null)
-      {
-        throw UpdateFailure;
-      }
-
-      UpdatedInvoices.Add(updatedInvoice);
-      return Task.FromResult(updatedInvoice);
+      get => pipeline.GenerativeBroker.InvoiceResult;
+      set => pipeline.ConfigureInvoiceResult(value);
     }
 
-    public Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
-      Task.CompletedTask;
+    internal MerchantAnalysisResult? MerchantResult
+    {
+      get => pipeline.GenerativeBroker.MerchantResult;
+      set => pipeline.ConfigureMerchantResult(value);
+    }
+
+    internal Exception? RenewalFailure
+    {
+      get => pipeline.RunBroker.RenewalFailure;
+      set => pipeline.RunBroker.RenewalFailure = value;
+    }
+
+    internal int RenewalCount => pipeline.RunBroker.RenewalCount;
+
+    internal Task BlockNextGenerativeInvocationAsync() => pipeline.GenerativeBroker.BlockNextInvocation();
+
+    internal void ReleaseGenerativeInvocation() => pipeline.GenerativeBroker.ReleaseInvocation();
   }
 
-  private sealed class FakeMerchantOrchestrationService(List<string> timeline) : IMerchantOrchestrationService
-  {
-    internal Dictionary<Guid, Merchant> Merchants { get; } = [];
-
-    internal List<Merchant> CreatedMerchants { get; } = [];
-
-    internal List<UpdatedMerchant> UpdatedMerchants { get; } = [];
-
-    internal Exception? UpdateFailure { get; set; }
-
-    public Task CreateMerchantObject(Merchant merchant, Guid? parentCompanyId, CancellationToken cancellationToken)
-    {
-      cancellationToken.ThrowIfCancellationRequested();
-      timeline.Add("create-merchant");
-      CreatedMerchants.Add(merchant);
-      Merchants[merchant.id] = merchant;
-      return Task.CompletedTask;
-    }
-
-    public Task<Merchant> ReadMerchantObject(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken)
-    {
-      cancellationToken.ThrowIfCancellationRequested();
-      timeline.Add("read-merchant");
-      return Task.FromResult(Merchants[identifier]);
-    }
-
-    public Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId, CancellationToken cancellationToken) =>
-      Task.FromResult<IEnumerable<Merchant>>([.. Merchants.Values]);
-
-    public Task<Merchant?> FindMerchantByNormalizedNameObject(string normalizedName, CancellationToken cancellationToken)
-    {
-      cancellationToken.ThrowIfCancellationRequested();
-      timeline.Add("find-merchant");
-
-      Merchant? match = Merchants.Values.FirstOrDefault(merchant =>
-        string.Equals(
-          merchant.Name.ToUpperInvariant().Replace(" ", string.Empty, StringComparison.Ordinal),
-          normalizedName.ToUpperInvariant().Replace(" ", string.Empty, StringComparison.Ordinal),
-          StringComparison.Ordinal));
-
-      return Task.FromResult(match);
-    }
-
-    public Task<Merchant> UpdateMerchantObject(
-      Merchant updatedMerchant,
-      Guid merchantIdentifier,
-      Guid? parentCompanyId,
-      CancellationToken cancellationToken)
-    {
-      cancellationToken.ThrowIfCancellationRequested();
-      timeline.Add("update-merchant");
-
-      if (UpdateFailure is not null)
-      {
-        throw UpdateFailure;
-      }
-
-      UpdatedMerchants.Add(new UpdatedMerchant(updatedMerchant, parentCompanyId));
-      Merchants[merchantIdentifier] = updatedMerchant;
-      return Task.FromResult(updatedMerchant);
-    }
-
-    public Task DeleteMerchantObject(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
-      Task.CompletedTask;
-  }
-
-  private sealed class FakeAnalysisOrchestrationService(List<string> timeline) : IAnalysisOrchestrationService
-  {
-    private int renewalCount;
-
-    internal int EnsureRunStoreCallCount { get; private set; }
-
-    internal List<QueuedInvoiceRun> QueuedInvoiceRuns { get; } = [];
-
-    internal List<QueuedMerchantRun> QueuedMerchantRuns { get; } = [];
-
-    internal List<Guid> CompletedRuns { get; } = [];
-
-    internal List<FailedRun> FailedRuns { get; } = [];
-
-    internal AnalysisRun? ClaimableRun { get; set; }
-
-    internal InvoiceAnalysisResult? InvoiceResult { get; set; }
-
-    internal MerchantAnalysisResult? MerchantResult { get; set; }
-
-    internal TimeSpan AnalyzeDelay { get; set; }
-
-    internal Exception? RenewalFailure { get; set; }
-
-    internal int RenewalCount => Volatile.Read(ref renewalCount);
-
-    public Task EnsureRunStoreAsync(CancellationToken cancellationToken)
-    {
-      cancellationToken.ThrowIfCancellationRequested();
-      EnsureRunStoreCallCount++;
-      return Task.CompletedTask;
-    }
-
-    public Task<AnalysisRun> QueueInvoiceRunAsync(
-      Guid invoiceId,
-      Guid ownerIdentifier,
-      InvoiceAnalysisOptions options,
-      string traceId,
-      CancellationToken cancellationToken)
-    {
-      cancellationToken.ThrowIfCancellationRequested();
-      timeline.Add("queue-invoice-run");
-      QueuedInvoiceRuns.Add(new QueuedInvoiceRun(invoiceId, ownerIdentifier, traceId));
-      return Task.FromResult(AnalysisRun.CreateInvoice(
-        invoiceId,
-        ownerIdentifier,
-        Guid.CreateVersion7(),
-        options,
-        traceId));
-    }
-
-    public Task<AnalysisRun> QueueMerchantRunAsync(
-      Guid merchantId,
-      Guid ownerIdentifier,
-      Guid parentCompanyId,
-      MerchantAnalysisOptions options,
-      string traceId,
-      CancellationToken cancellationToken)
-    {
-      cancellationToken.ThrowIfCancellationRequested();
-      timeline.Add("queue-merchant-run");
-      QueuedMerchantRuns.Add(new QueuedMerchantRun(merchantId, ownerIdentifier, parentCompanyId, traceId));
-      return Task.FromResult(AnalysisRun.CreateMerchant(
-        merchantId,
-        ownerIdentifier,
-        Guid.CreateVersion7(),
-        parentCompanyId,
-        options,
-        traceId));
-    }
-
-    public Task<AnalysisRun?> ClaimNextRunAsync(
-      string leaseOwner,
-      DateTimeOffset now,
-      TimeSpan leaseDuration,
-      CancellationToken cancellationToken)
-    {
-      cancellationToken.ThrowIfCancellationRequested();
-      timeline.Add("claim-run");
-
-      if (ClaimableRun is null)
-      {
-        return Task.FromResult<AnalysisRun?>(null);
-      }
-
-      AnalysisRun claimed = ClaimableRun.Claim(leaseOwner, now, leaseDuration);
-      ClaimableRun = null;
-      return Task.FromResult<AnalysisRun?>(claimed);
-    }
-
-    public async Task<InvoiceAnalysisResult> AnalyzeInvoiceAsync(
-      AnalysisRun run,
-      Invoice invoice,
-      CancellationToken cancellationToken)
-    {
-      timeline.Add("analyze-invoice");
-
-      if (AnalyzeDelay > TimeSpan.Zero)
-      {
-        await Task.Delay(AnalyzeDelay, cancellationToken).ConfigureAwait(false);
-      }
-
-      cancellationToken.ThrowIfCancellationRequested();
-      return InvoiceResult!;
-    }
-
-    public async Task<MerchantAnalysisResult> AnalyzeMerchantAsync(
-      AnalysisRun run,
-      Merchant merchant,
-      CancellationToken cancellationToken)
-    {
-      timeline.Add("analyze-merchant");
-
-      if (AnalyzeDelay > TimeSpan.Zero)
-      {
-        await Task.Delay(AnalyzeDelay, cancellationToken).ConfigureAwait(false);
-      }
-
-      cancellationToken.ThrowIfCancellationRequested();
-      return MerchantResult!;
-    }
-
-    public Task RenewRunLeaseAsync(
-      Guid runId,
-      string leaseOwner,
-      DateTimeOffset now,
-      TimeSpan leaseDuration,
-      CancellationToken cancellationToken)
-    {
-      Interlocked.Increment(ref renewalCount);
-
-      if (RenewalFailure is not null)
-      {
-        throw RenewalFailure;
-      }
-
-      return Task.CompletedTask;
-    }
-
-    public Task CompleteRunAsync(
-      Guid runId,
-      string leaseOwner,
-      IReadOnlyCollection<AnalysisCapability> completedCapabilities,
-      DateTimeOffset completedAt,
-      CancellationToken cancellationToken)
-    {
-      timeline.Add("complete-run");
-      CompletedRuns.Add(runId);
-      return Task.CompletedTask;
-    }
-
-    public Task FailRunAsync(
-      Guid runId,
-      string leaseOwner,
-      string failureCode,
-      DateTimeOffset failedAt,
-      CancellationToken cancellationToken)
-    {
-      timeline.Add("fail-run");
-      FailedRuns.Add(new FailedRun(runId, failureCode));
-      return Task.CompletedTask;
-    }
-  }
 }

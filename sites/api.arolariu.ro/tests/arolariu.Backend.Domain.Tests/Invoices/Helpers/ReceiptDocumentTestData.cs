@@ -364,6 +364,209 @@ internal static class ReceiptDocumentTestData
     return CreateAnalyzedDocument(fields);
   }
 
+  /// <summary>
+  /// Creates an analyzed-document fixture with no optional receipt sections or payment fields.
+  /// </summary>
+  /// <returns>An Azure analyzed document with no optional receipt data.</returns>
+  public static AnalyzedDocument AzureAnalyzedDocumentWithMissingOptionalSections() =>
+    CreateAnalyzedDocument(new Dictionary<string, DocumentField>());
+
+  /// <summary>
+  /// Creates an analyzed-document fixture exercising supported provider alternates while mixing malformed
+  /// collection entries with valid receipt lines.
+  /// </summary>
+  /// <returns>An Azure analyzed document containing valid alternates and malformed collection entries.</returns>
+  public static AnalyzedDocument AzureAnalyzedDocumentWithAlternatesAndMalformedCollectionEntries()
+  {
+    var fields = new Dictionary<string, DocumentField>
+    {
+      ["MerchantName"] = CreateDocumentField(
+        DocumentFieldType.String,
+        content: "Contoso Bakery",
+        confidence: null),
+      ["MerchantPhoneNumber"] = PhoneNumberDocumentField("+40 700 000 000", 0.97f),
+      ["TransactionDate"] = DateDocumentField(new DateTimeOffset(2026, 08, 16, 0, 0, 0, TimeSpan.Zero), 0.96f),
+      ["TransactionTime"] = StringDocumentField("12:34:56", 0.98f),
+      ["Total"] = StringDocumentField("not-a-number", 0.95f),
+      ["InvoiceTotal"] = Int64DocumentField(25, 0.94f),
+      ["TotalTax"] = DoubleDocumentField(5.0, 0.93f),
+      ["Subtotal"] = CurrencyDocumentField(20.0, "RON", "lei", 0.92f),
+      ["Items"] = ListDocumentField(
+        [
+          StringDocumentField("not-a-record", 0.91f),
+          DictionaryDocumentField(
+            new Dictionary<string, DocumentField>
+            {
+              { "Description", StringDocumentField("Bread", 0.89f) },
+              { "Quantity", Int64DocumentField(2, 0.88f) },
+              { "Unit", StringDocumentField("loaf", 0.87f) },
+              { "Amount", DoubleDocumentField(12.5, 0.86f) },
+              { "TotalPrice", Int64DocumentField(25, 0.85f) },
+            },
+            0.84f),
+        ],
+        0.83f),
+      ["TaxDetails"] = ListDocumentField(
+        [
+          StringDocumentField("not-a-record", 0.82f),
+          DictionaryDocumentField(
+            new Dictionary<string, DocumentField>
+            {
+              { "Amount", DoubleDocumentField(5.0, 0.80f) },
+              { "Rate", Int64DocumentField(20, 0.79f) },
+              { "NetAmount", DoubleDocumentField(20.0, 0.78f) },
+              { "Description", StringDocumentField("VAT", 0.77f) },
+            },
+            0.76f),
+        ],
+        0.75f),
+      ["Payments"] = ListDocumentField(
+        [
+          StringDocumentField("not-a-record", 0.74f),
+          DictionaryDocumentField(
+            new Dictionary<string, DocumentField>
+            {
+              { "PaymentMethod", StringDocumentField("cash", 0.72f) },
+              { "Amount", Int64DocumentField(25, 0.71f) },
+            },
+            0.70f),
+        ],
+        0.69f),
+    };
+
+    return CreateAnalyzedDocument(fields);
+  }
+
+  /// <summary>
+  /// Creates an analyzed-document fixture containing nullable provider values and list fields without payloads.
+  /// </summary>
+  /// <returns>An Azure analyzed document with safe nullable provider values.</returns>
+  public static AnalyzedDocument AzureAnalyzedDocumentWithNullValuesAndCollections()
+  {
+    var fields = new Dictionary<string, DocumentField>
+    {
+      ["MerchantPhoneNumber"] = CreateDocumentField(
+        DocumentFieldType.PhoneNumber,
+        content: "+40 700 000 001",
+        confidence: 0.98f),
+      ["CountryRegion"] = CreateDocumentField(
+        DocumentFieldType.CountryRegion,
+        content: "RO",
+        confidence: 0.97f),
+      ["TransactionDate"] = DateDocumentField(new DateTimeOffset(2026, 08, 16, 0, 0, 0, TimeSpan.Zero), 0.96f),
+      ["TransactionTime"] = CreateDocumentField(
+        DocumentFieldType.String,
+        content: " ",
+        confidence: 0.95f),
+      ["Total"] = CreateDocumentField(
+        DocumentFieldType.Currency,
+        content: string.Empty,
+        confidence: 0.94f),
+      ["Items"] = CreateDocumentField(
+        DocumentFieldType.List,
+        content: string.Empty,
+        confidence: 0.93f),
+      ["TaxDetails"] = CreateDocumentField(
+        DocumentFieldType.List,
+        content: string.Empty,
+        confidence: 0.92f),
+      ["Payments"] = CreateDocumentField(
+        DocumentFieldType.List,
+        content: string.Empty,
+        confidence: 0.91f),
+    };
+
+    return CreateAnalyzedDocument(fields);
+  }
+
+  /// <summary>
+  /// Creates an analyzed-document fixture with a four-digit transaction time in the provider content field.
+  /// </summary>
+  /// <returns>An Azure analyzed document with an hours-and-minutes transaction time.</returns>
+  public static AnalyzedDocument AzureAnalyzedDocumentWithFourDigitTransactionTime()
+  {
+    var fields = new Dictionary<string, DocumentField>
+    {
+      ["TransactionDate"] = DateDocumentField(new DateTimeOffset(2026, 08, 16, 0, 0, 0, TimeSpan.Zero), 0.98f),
+      ["TransactionTime"] = CreateDocumentField(
+        DocumentFieldType.String,
+        content: "1234",
+        confidence: 0.97f),
+    };
+
+    return CreateAnalyzedDocument(fields);
+  }
+
+  /// <summary>
+  /// Creates an analyzed-document fixture whose currency candidates do not carry supported currency values.
+  /// </summary>
+  /// <returns>An Azure analyzed document with no usable currency candidate.</returns>
+  public static AnalyzedDocument AzureAnalyzedDocumentWithInvalidCurrencyCandidates()
+  {
+    var fields = new Dictionary<string, DocumentField>
+    {
+      ["Total"] = StringDocumentField("not-a-currency", 0.98f),
+      ["InvoiceTotal"] = ListDocumentField([], 0.97f),
+      ["Subtotal"] = CreateDocumentField(DocumentFieldType.Currency, content: string.Empty, confidence: 0.96f),
+      ["SubTotal"] = DoubleDocumentField(10.0, 0.95f),
+      ["TotalTax"] = StringDocumentField("not-a-currency", 0.94f),
+      ["Tip"] = ListDocumentField([], 0.93f),
+    };
+
+    return CreateAnalyzedDocument(fields);
+  }
+
+  /// <summary>
+  /// Creates an analyzed-document fixture with an unsupported transaction-date field.
+  /// </summary>
+  /// <returns>An Azure analyzed document whose transaction date must be ignored.</returns>
+  public static AnalyzedDocument AzureAnalyzedDocumentWithMalformedTransactionDate() =>
+    CreateAnalyzedDocument(
+      new Dictionary<string, DocumentField>
+      {
+        ["TransactionDate"] = StringDocumentField("2026-08-16", 0.98f),
+      });
+
+  /// <summary>
+  /// Creates an analyzed-document fixture with a transaction date but no transaction-time field.
+  /// </summary>
+  /// <returns>An Azure analyzed document whose transaction date remains at midnight.</returns>
+  public static AnalyzedDocument AzureAnalyzedDocumentWithTransactionDateWithoutTime() =>
+    CreateAnalyzedDocument(
+      new Dictionary<string, DocumentField>
+      {
+        ["TransactionDate"] = DateDocumentField(new DateTimeOffset(2026, 08, 16, 0, 0, 0, TimeSpan.Zero), 0.98f),
+      });
+
+  /// <summary>
+  /// Creates an analyzed-document fixture with a valid transaction date and malformed OCR time content.
+  /// </summary>
+  /// <returns>An Azure analyzed document whose transaction time must be ignored.</returns>
+  public static AnalyzedDocument AzureAnalyzedDocumentWithMalformedTransactionTime() =>
+    CreateAnalyzedDocument(
+      new Dictionary<string, DocumentField>
+      {
+        ["TransactionDate"] = DateDocumentField(new DateTimeOffset(2026, 08, 16, 0, 0, 0, TimeSpan.Zero), 0.98f),
+        ["TransactionTime"] = CreateDocumentField(DocumentFieldType.String, content: "1?", confidence: 0.97f),
+      });
+
+  /// <summary>
+  /// Creates an analyzed document with a valid transaction date and caller-specified compact time content.
+  /// </summary>
+  /// <param name="transactionTime">The provider time content to map.</param>
+  /// <returns>An Azure analyzed document with the requested transaction-time content.</returns>
+  public static AnalyzedDocument AzureAnalyzedDocumentWithCompactTransactionTime(string transactionTime)
+  {
+    ArgumentNullException.ThrowIfNull(transactionTime);
+
+    return CreateAnalyzedDocument(
+      new Dictionary<string, DocumentField>
+      {
+        ["TransactionDate"] = DateDocumentField(new DateTimeOffset(2026, 08, 16, 0, 0, 0, TimeSpan.Zero), 0.98f),
+        ["TransactionTime"] = CreateDocumentField(DocumentFieldType.String, content: transactionTime, confidence: 0.97f),
+      });
+  }
+
   private static AnalyzedDocument CreateAnalyzedDocument(IReadOnlyDictionary<string, DocumentField> fields) =>
     (AnalyzedDocument)AnalyzedDocumentConstructor.Invoke(
       [
@@ -422,6 +625,13 @@ internal static class ReceiptDocumentTestData
       content: value,
       confidence: confidence);
 
+  private static DocumentField PhoneNumberDocumentField(string value, float confidence) =>
+    CreateDocumentField(
+      DocumentFieldType.PhoneNumber,
+      valuePhoneNumber: value,
+      content: value,
+      confidence: confidence);
+
   private static DocumentField DateDocumentField(DateTimeOffset value, float confidence) =>
     CreateDocumentField(
       DocumentFieldType.Date,
@@ -440,6 +650,13 @@ internal static class ReceiptDocumentTestData
     CreateDocumentField(
       DocumentFieldType.Double,
       valueDouble: value,
+      content: value.ToString(System.Globalization.CultureInfo.InvariantCulture),
+      confidence: confidence);
+
+  private static DocumentField Int64DocumentField(long value, float confidence) =>
+    CreateDocumentField(
+      DocumentFieldType.Int64,
+      valueInt64: value,
       content: value.ToString(System.Globalization.CultureInfo.InvariantCulture),
       confidence: confidence);
 

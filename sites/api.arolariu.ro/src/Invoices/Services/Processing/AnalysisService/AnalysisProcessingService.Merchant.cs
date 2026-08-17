@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Aggregates;
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
@@ -14,7 +15,7 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 public sealed partial class AnalysisProcessingService
 {
   /// <summary>
-  /// Executes a claimed merchant run end to end: load, analyze, patch, persist, complete.
+  /// Executes merchant target work: load, analyze, patch, and persist.
   /// </summary>
   /// <remarks>
   /// <para><b>Partition handling:</b> The merchant's parent company was captured on the run at queue time, so the
@@ -22,16 +23,14 @@ public sealed partial class AnalysisProcessingService
   /// execution.</para>
   /// </remarks>
   /// <param name="run">The claimed merchant run.</param>
-  /// <param name="leaseOwner">The worker holding the lease.</param>
   /// <param name="cancellationToken">The cancellation token that aborts the operation.</param>
-  /// <returns>Asynchronous task.</returns>
+  /// <returns>The terminal transition to perform after the heartbeat stops.</returns>
   [SuppressMessage(
     "Design",
     "CA1031:Do not catch general exception types",
     Justification = "Any persistence failure fails the run explicitly rather than completing it and silently discarding analysis output.")]
-  private async Task ExecuteMerchantRunAsync(
+  private async Task<RunExecutionResult> ExecuteMerchantRunAsync(
     AnalysisRun run,
-    string leaseOwner,
     CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ExecuteMerchantRunAsync));
@@ -65,16 +64,14 @@ public sealed partial class AnalysisProcessingService
       // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
       throw;
     }
-    catch (Exception exception)
+    catch (Exception)
     {
-      logger.LogAnalysisProcessingTargetPersistenceFailed(run.Id.ToString(), exception.Message);
-      await FailRunAsync(run, leaseOwner, TargetPersistenceFailureCode, cancellationToken).ConfigureAwait(false);
-      return;
+      return RunExecutionResult.Failed(
+        TargetPersistenceFailureCode,
+        AnalysisFailureReason.TargetPersistence);
     }
 
-    await analysisOrchestrationService
-      .CompleteRunAsync(run.Id, leaseOwner, result.CompletedCapabilities, DateTimeOffset.UtcNow, cancellationToken)
-      .ConfigureAwait(false);
+    return RunExecutionResult.Completed(result.CompletedCapabilities);
   }
 
   /// <summary>

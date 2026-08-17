@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisRunBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Aggregates;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 
 using Microsoft.Extensions.Logging;
 
@@ -74,10 +75,79 @@ public partial class AnalysisRunFoundationService : IAnalysisRunFoundationServic
     ValidateLeaseOwnerIsSet(leaseOwner);
     ValidateLeaseDurationIsPositive(leaseDuration);
 
-    var claimed = await analysisRunBroker
-      .ClaimNextAsync(leaseOwner, now, leaseDuration, cancellationToken)
+    int inspectedCandidates = 0;
+
+    // Claim coordination lives here, not in the broker: choosing a candidate, reacting to a state transition that
+    // raced the scan, and retrying after a lost optimistic-concurrency race are policy decisions about how the
+    // pipeline shares work between workers. The broker only projects candidates and replaces documents (RFC 2003).
+    await foreach (var candidate in analysisRunBroker
+      .StreamClaimCandidatesAsync(now, cancellationToken)
+      .ConfigureAwait(false))
+    {
+      cancellationToken.ThrowIfCancellationRequested();
+      inspectedCandidates++;
+
+      AnalysisRun claimed;
+      try
+      {
+        claimed = candidate.Claim(leaseOwner, now, leaseDuration);
+      }
+      catch (InvalidAnalysisRunTransitionException)
+      {
+        // The candidate's state moved on between the scan and the claim attempt; skip it.
+        continue;
+      }
+
+      try
+      {
+        var persisted = await analysisRunBroker
+          .ReplaceAsync(claimed, candidate.ETag, cancellationToken)
+          .ConfigureAwait(false);
+
+        activity?.SetTag("analysis.claim.candidates_inspected", inspectedCandidates);
+        activity?.SetTag("analysis.claim.claimed", true);
+        return persisted;
+      }
+      catch (AnalysisRunLeaseConflictException)
+      {
+        // A concurrent worker won the race for this candidate; fall through to the next-oldest one.
+        continue;
+      }
+      catch (AnalysisRunNotFoundException)
+      {
+        // The candidate was removed (TTL expiry or an administrative delete) between the scan and the replace.
+        continue;
+      }
+    }
+
+    activity?.SetTag("analysis.claim.candidates_inspected", inspectedCandidates);
+    activity?.SetTag("analysis.claim.claimed", false);
+    return null;
+  }).ConfigureAwait(false);
+
+  /// <inheritdoc/>
+  public async Task<IReadOnlyDictionary<AnalysisTargetType, long>> CountPendingRunsAsync(
+    DateTimeOffset now,
+    CancellationToken cancellationToken) =>
+  await TryCatchAsync(async () =>
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(CountPendingRunsAsync));
+
+    var counts = await analysisRunBroker
+      .CountPendingByTargetTypeAsync(now, cancellationToken)
       .ConfigureAwait(false);
-    return claimed;
+
+    ArgumentNullException.ThrowIfNull(counts);
+
+    // Every known target type is reported, so a queue that just drained publishes an explicit zero rather than
+    // leaving the previous non-zero depth standing in the gauge forever.
+    var complete = new Dictionary<AnalysisTargetType, long>();
+    foreach (AnalysisTargetType targetType in Enum.GetValues<AnalysisTargetType>())
+    {
+      complete[targetType] = counts.TryGetValue(targetType, out long count) ? count : 0L;
+    }
+
+    return (IReadOnlyDictionary<AnalysisTargetType, long>)complete;
   }).ConfigureAwait(false);
 
   /// <inheritdoc/>

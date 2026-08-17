@@ -47,6 +47,7 @@ public sealed partial class AnalysisOrchestrationService
     {
       var scans = new List<InvoiceScan>(invoice.Scans);
       extractionResult = await ExecuteBestEffortAsync(
+        run,
         AnalysisCapability.DocumentExtraction,
         () => documentAnalysisFoundationService.ExtractInvoiceAsync(scans, cancellationToken),
         completedCapabilities).ConfigureAwait(false);
@@ -56,12 +57,18 @@ public sealed partial class AnalysisOrchestrationService
       ? extractionResult?.MerchantCandidate
       : null;
 
+    if (merchantCandidateResult is not null)
+    {
+      completedCapabilities.Enqueue(AnalysisCapability.MerchantResolution);
+    }
+
     List<ProductAnalysisInput> products = BuildProductAnalysisInputs(extractionResult);
 
     // Step 3: invoice summary and product classification are independent of each other and are started
     // before either is awaited, so they execute concurrently.
     Task<InvoiceSummaryResult?>? summaryTask = options.InvoiceSummary && products.Count > 0
       ? ExecuteBestEffortAsync(
+          run,
           AnalysisCapability.InvoiceSummary,
           () => generativeAnalysisFoundationService.GenerateInvoiceSummaryAsync(products, run.Id, cancellationToken),
           completedCapabilities)
@@ -69,6 +76,7 @@ public sealed partial class AnalysisOrchestrationService
 
     Task<ProductClassificationResult?>? classificationTask = options.ProductClassification && products.Count > 0
       ? ExecuteBestEffortAsync(
+          run,
           AnalysisCapability.ProductClassification,
           () => generativeAnalysisFoundationService.ClassifyProductsAsync(products, cancellationToken),
           completedCapabilities)
@@ -87,6 +95,7 @@ public sealed partial class AnalysisOrchestrationService
     if (options.AllergenAssessment && productClassificationResult is not null)
     {
       allergenAssessmentResult = await ExecuteBestEffortAsync(
+        run,
         AnalysisCapability.AllergenAssessment,
         () => generativeAnalysisFoundationService.AssessAllergensAsync(products, productClassificationResult, run.Id, cancellationToken),
         completedCapabilities).ConfigureAwait(false);
@@ -97,6 +106,7 @@ public sealed partial class AnalysisOrchestrationService
     if (options.InvoiceClassification && extractionResult is not null && productClassificationResult is not null)
     {
       invoiceClassificationResult = await ExecuteBestEffortAsync(
+        run,
         AnalysisCapability.InvoiceClassification,
         () => generativeAnalysisFoundationService.ClassifyInvoiceAsync(extractionResult, productClassificationResult, run.Id, cancellationToken),
         completedCapabilities).ConfigureAwait(false);
@@ -110,6 +120,7 @@ public sealed partial class AnalysisOrchestrationService
       && allergenAssessmentResult is not null)
     {
       recipeGenerationResult = await ExecuteBestEffortAsync(
+        run,
         AnalysisCapability.RecipeGeneration,
         () => generativeAnalysisFoundationService.GenerateRecipesAsync(
           products,

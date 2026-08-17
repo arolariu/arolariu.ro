@@ -11,6 +11,7 @@ using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Aggregates;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
@@ -23,7 +24,7 @@ public sealed partial class AnalysisProcessingService
   private const string TargetPersistenceFailureCode = "TARGET_PERSISTENCE_FAILED";
 
   /// <summary>
-  /// Executes a claimed invoice run end to end: load, analyze, resolve the merchant, patch, persist, complete.
+  /// Executes invoice target work: load, analyze, resolve the merchant, patch, and persist.
   /// </summary>
   /// <remarks>
   /// <para><b>Failure boundary:</b> Capability failures are already absorbed by the orchestration layer and simply
@@ -32,16 +33,14 @@ public sealed partial class AnalysisProcessingService
   /// completing it and silently losing the output.</para>
   /// </remarks>
   /// <param name="run">The claimed invoice run.</param>
-  /// <param name="leaseOwner">The worker holding the lease.</param>
   /// <param name="cancellationToken">The cancellation token that aborts the operation.</param>
-  /// <returns>Asynchronous task.</returns>
+  /// <returns>The terminal transition to perform after the heartbeat stops.</returns>
   [SuppressMessage(
     "Design",
     "CA1031:Do not catch general exception types",
     Justification = "Any persistence failure fails the run explicitly rather than completing it and silently discarding analysis output.")]
-  private async Task ExecuteInvoiceRunAsync(
+  private async Task<RunExecutionResult> ExecuteInvoiceRunAsync(
     AnalysisRun run,
-    string leaseOwner,
     CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ExecuteInvoiceRunAsync));
@@ -93,16 +92,14 @@ public sealed partial class AnalysisProcessingService
       // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
       throw;
     }
-    catch (Exception exception)
+    catch (Exception)
     {
-      logger.LogAnalysisProcessingTargetPersistenceFailed(run.Id.ToString(), exception.Message);
-      await FailRunAsync(run, leaseOwner, TargetPersistenceFailureCode, cancellationToken).ConfigureAwait(false);
-      return;
+      return RunExecutionResult.Failed(
+        TargetPersistenceFailureCode,
+        AnalysisFailureReason.TargetPersistence);
     }
 
-    await analysisOrchestrationService
-      .CompleteRunAsync(run.Id, leaseOwner, result.CompletedCapabilities, DateTimeOffset.UtcNow, cancellationToken)
-      .ConfigureAwait(false);
+    return RunExecutionResult.Completed(result.CompletedCapabilities);
   }
 
   /// <summary>

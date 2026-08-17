@@ -2,6 +2,7 @@ namespace arolariu.Backend.Domain.Invoices.DDD.Analysis.Aggregates;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
@@ -158,6 +159,89 @@ public sealed record AnalysisRun
   [JsonPropertyName("failureCode")]
   [NewtonsoftJson.JsonProperty("failureCode", NullValueHandling = NewtonsoftJson.NullValueHandling.Ignore)]
   public string? FailureCode { get; init; }
+
+  /// <summary>
+  /// Gets the capabilities this run was accepted to perform, derived from its persisted effective options.
+  /// </summary>
+  /// <remarks>
+  /// <para>This is the denominator every completion judgement is measured against: a run that completed every
+  /// requested capability succeeded, one that completed some of them is partial, and one that completed none
+  /// failed. Deriving it here rather than in a transport DTO keeps the rule with the aggregate that owns the
+  /// options, so the API response and the pipeline's terminal telemetry can never disagree about what was asked
+  /// for.</para>
+  /// <para>The set is computed on demand from the immutable options; it is never persisted, so it cannot drift
+  /// away from the options actually executed.</para>
+  /// </remarks>
+  [JsonIgnore]
+  [NewtonsoftJson.JsonIgnore]
+  public IReadOnlyCollection<AnalysisCapability> RequestedCapabilities
+  {
+    get
+    {
+      var capabilities = new List<AnalysisCapability>();
+
+      if (InvoiceOptions is not null)
+      {
+        AddWhen(capabilities, InvoiceOptions.DocumentExtraction, AnalysisCapability.DocumentExtraction);
+        AddWhen(capabilities, InvoiceOptions.MerchantResolution, AnalysisCapability.MerchantResolution);
+        AddWhen(capabilities, InvoiceOptions.InvoiceSummary, AnalysisCapability.InvoiceSummary);
+        AddWhen(capabilities, InvoiceOptions.ProductClassification, AnalysisCapability.ProductClassification);
+        AddWhen(capabilities, InvoiceOptions.AllergenAssessment, AnalysisCapability.AllergenAssessment);
+        AddWhen(capabilities, InvoiceOptions.InvoiceClassification, AnalysisCapability.InvoiceClassification);
+        AddWhen(capabilities, InvoiceOptions.RecipeGeneration, AnalysisCapability.RecipeGeneration);
+      }
+
+      if (MerchantOptions is not null)
+      {
+        AddWhen(capabilities, MerchantOptions.MerchantClassification, AnalysisCapability.MerchantClassification);
+        AddWhen(capabilities, MerchantOptions.DescriptionGeneration, AnalysisCapability.DescriptionGeneration);
+      }
+
+      return capabilities.AsReadOnly();
+    }
+  }
+
+  /// <summary>
+  /// Resolves the terminal outcome of this run from how many of its requested capabilities produced a result.
+  /// </summary>
+  /// <param name="completedCapabilities">The capabilities that produced a usable result.</param>
+  /// <returns>
+  /// <see cref="AnalysisOutcome.Success"/> when every requested capability completed,
+  /// <see cref="AnalysisOutcome.Partial"/> when some completed, and
+  /// <see cref="AnalysisOutcome.Failure"/> when none did.
+  /// </returns>
+  /// <exception cref="ArgumentNullException">Thrown when <paramref name="completedCapabilities"/> is null.</exception>
+  /// <remarks>
+  /// A run that requested nothing is treated as a success: there was no work to fail. Only capabilities that were
+  /// actually requested count toward completion, so a stray capability in the result cannot inflate the outcome.
+  /// </remarks>
+  public AnalysisOutcome ResolveOutcome(IReadOnlyCollection<AnalysisCapability> completedCapabilities)
+  {
+    ArgumentNullException.ThrowIfNull(completedCapabilities);
+
+    var requested = RequestedCapabilities;
+    if (requested.Count == 0)
+    {
+      return AnalysisOutcome.Success;
+    }
+
+    int completedRequestedCount = requested.Count(completedCapabilities.Contains);
+
+    if (completedRequestedCount == 0)
+    {
+      return AnalysisOutcome.Failure;
+    }
+
+    return completedRequestedCount == requested.Count ? AnalysisOutcome.Success : AnalysisOutcome.Partial;
+  }
+
+  private static void AddWhen(List<AnalysisCapability> capabilities, bool enabled, AnalysisCapability capability)
+  {
+    if (enabled)
+    {
+      capabilities.Add(capability);
+    }
+  }
 
   /// <summary>Gets the Cosmos DB optimistic-concurrency token for this document revision.</summary>
   [JsonPropertyName("_etag")]

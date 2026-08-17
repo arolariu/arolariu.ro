@@ -78,6 +78,9 @@ public sealed partial class JsonTaxonomyBroker : ITaxonomyBroker
   }
 
   /// <inheritdoc />
+  public string GetArtifactVersion(ClassificationSystem system) => artifacts[system].Version;
+
+  /// <inheritdoc />
   public IReadOnlyList<TaxonomySearchResult> Search(
     ClassificationSystem system,
     string query,
@@ -129,6 +132,8 @@ public sealed partial class JsonTaxonomyBroker : ITaxonomyBroker
 
     if (!nodesByCode.TryGetValue((system, normalizedCode), out TaxonomyArtifactNode? node))
     {
+      // Telemetry for a taxonomy miss is emitted by the calling service, not here: a broker is a thin adapter over
+      // its dependency and must not own domain observability (RFC 2003).
       throw new TaxonomyCodeNotFoundException(system, code);
     }
 
@@ -362,8 +367,7 @@ public sealed partial class JsonTaxonomyBroker : ITaxonomyBroker
   private static Dictionary<ClassificationSystem, string> LoadEmbeddedArtifacts()
   {
     Assembly assembly = typeof(JsonTaxonomyBroker).Assembly;
-    string assemblyName = assembly.GetName().Name
-      ?? throw new InvalidOperationException("Unable to determine invoices assembly name for taxonomy resources.");
+    string assemblyName = assembly.GetName().Name!;
 
     var artifactsBySystem = new Dictionary<ClassificationSystem, string>();
 

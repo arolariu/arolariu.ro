@@ -57,35 +57,8 @@ public readonly record struct AnalysisAcceptedResponseDto(
   private static AnalysisProfile ResolveProfile(AnalysisRun run) =>
     run.InvoiceOptions?.Profile ?? run.MerchantOptions?.Profile ?? AnalysisProfile.Custom;
 
-  private static ReadOnlyCollection<AnalysisCapability> ResolveAcceptedCapabilities(AnalysisRun run)
-  {
-    var capabilities = new List<AnalysisCapability>();
-
-    if (run.InvoiceOptions is not null)
-    {
-      AddWhen(capabilities, run.InvoiceOptions.DocumentExtraction, AnalysisCapability.DocumentExtraction);
-      AddWhen(capabilities, run.InvoiceOptions.MerchantResolution, AnalysisCapability.MerchantResolution);
-      AddWhen(capabilities, run.InvoiceOptions.InvoiceSummary, AnalysisCapability.InvoiceSummary);
-      AddWhen(capabilities, run.InvoiceOptions.ProductClassification, AnalysisCapability.ProductClassification);
-      AddWhen(capabilities, run.InvoiceOptions.AllergenAssessment, AnalysisCapability.AllergenAssessment);
-      AddWhen(capabilities, run.InvoiceOptions.InvoiceClassification, AnalysisCapability.InvoiceClassification);
-      AddWhen(capabilities, run.InvoiceOptions.RecipeGeneration, AnalysisCapability.RecipeGeneration);
-    }
-
-    if (run.MerchantOptions is not null)
-    {
-      AddWhen(capabilities, run.MerchantOptions.MerchantClassification, AnalysisCapability.MerchantClassification);
-      AddWhen(capabilities, run.MerchantOptions.DescriptionGeneration, AnalysisCapability.DescriptionGeneration);
-    }
-
-    return capabilities.AsReadOnly();
-  }
-
-  private static void AddWhen(List<AnalysisCapability> capabilities, bool enabled, AnalysisCapability capability)
-  {
-    if (enabled)
-    {
-      capabilities.Add(capability);
-    }
-  }
+  // The accepted capability set is the run's own requested capability set: deriving it here as well would let the
+  // API response and the pipeline's terminal outcome telemetry disagree about what the run was accepted to do.
+  private static ReadOnlyCollection<AnalysisCapability> ResolveAcceptedCapabilities(AnalysisRun run) =>
+    new([.. run.RequestedCapabilities]);
 }

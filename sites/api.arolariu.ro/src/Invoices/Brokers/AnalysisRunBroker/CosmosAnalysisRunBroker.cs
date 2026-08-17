@@ -1,13 +1,17 @@
 namespace arolariu.Backend.Domain.Invoices.Brokers.AnalysisRunBroker;
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Telemetry.Tracing;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Aggregates;
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.Modules;
 
@@ -26,12 +30,17 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 /// <para><b>Partitioning:</b> Single partition key path <c>/bucket</c>; every run currently lives in the
 /// <see cref="AnalysisRun.DefaultBucket"/> bucket.</para>
 /// </remarks>
-[ExcludeFromCodeCoverage]
 public sealed class CosmosAnalysisRunBroker : IAnalysisRunBroker
 {
   private const string DatabaseId = "primary";
   private const string ContainerId = "analysisRuns";
   private const string PartitionKeyPath = "/bucket";
+
+  private const string ClaimCandidateQuery =
+    "SELECT * FROM c WHERE c.bucket = @bucket AND (c.status = 'Queued' OR (c.status = 'Running' AND c.leaseExpiresAt <= @now)) ORDER BY c.acceptedAt ASC";
+
+  private const string PendingCountQuery =
+    "SELECT c.targetType AS targetType, COUNT(1) AS count FROM c WHERE c.bucket = @bucket AND (c.status = 'Queued' OR (c.status = 'Running' AND c.leaseExpiresAt <= @now)) GROUP BY c.targetType";
 
   private readonly CosmosClient cosmosClient;
 
@@ -138,91 +147,91 @@ public sealed class CosmosAnalysisRunBroker : IAnalysisRunBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<AnalysisRun?> ClaimNextAsync(
-    string leaseOwner,
+  public async IAsyncEnumerable<AnalysisRun> StreamClaimCandidatesAsync(
     DateTimeOffset now,
-    TimeSpan leaseDuration,
-    CancellationToken cancellationToken)
+    [EnumeratorCancellation] CancellationToken cancellationToken)
   {
-    ArgumentException.ThrowIfNullOrWhiteSpace(leaseOwner);
-
-    using var activity = InvoicePackageTracing.StartActivity(nameof(ClaimNextAsync));
+    using var activity = InvoicePackageTracing.StartActivity(nameof(StreamClaimCandidatesAsync));
     activity?
       .SetLayerContext("Broker", nameof(CosmosAnalysisRunBroker))
-      .SetCosmosDbContext(DatabaseId, ContainerId, "claim", AnalysisRun.DefaultBucket)
-      .SetDbStatement(
-        "SELECT * FROM c WHERE c.bucket = @bucket AND (c.status = 'Queued' OR (c.status = 'Running' AND c.leaseExpiresAt <= @now)) ORDER BY c.acceptedAt ASC");
+      .SetCosmosDbContext(DatabaseId, ContainerId, "claim_candidates", AnalysisRun.DefaultBucket)
+      .SetDbStatement(ClaimCandidateQuery);
 
     var container = GetContainer();
-    var query = new QueryDefinition(
-        "SELECT * FROM c WHERE c.bucket = @bucket AND (c.status = 'Queued' OR (c.status = 'Running' AND c.leaseExpiresAt <= @now)) ORDER BY c.acceptedAt ASC")
+    var query = new QueryDefinition(ClaimCandidateQuery)
       .WithParameter("@bucket", AnalysisRun.DefaultBucket)
       .WithParameter("@now", now);
 
-    var partitionKey = new PartitionKey(AnalysisRun.DefaultBucket);
-    var iterator = container.GetItemQueryIterator<AnalysisRun>(query, requestOptions: new QueryRequestOptions
+    using var iterator = container.GetItemQueryIterator<AnalysisRun>(query, requestOptions: new QueryRequestOptions
     {
-      PartitionKey = partitionKey,
+      PartitionKey = new PartitionKey(AnalysisRun.DefaultBucket),
     });
 
-    var totalRequestCharge = 0.0;
-    try
+    while (iterator.HasMoreResults)
     {
-      while (iterator.HasMoreResults)
+      cancellationToken.ThrowIfCancellationRequested();
+
+      var page = await TranslateAnalysisRunCosmosAsync(
+        () => iterator.ReadNextAsync(cancellationToken),
+        runId: null).ConfigureAwait(false);
+
+      InvoiceMetrics.RecordCosmosDbCharge(page.RequestCharge, "claim_candidates", ContainerId);
+
+      foreach (var candidate in page)
       {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        var page = await TranslateAnalysisRunCosmosAsync(
-          () => iterator.ReadNextAsync(cancellationToken),
-          runId: null).ConfigureAwait(false);
-        totalRequestCharge += page.RequestCharge;
-
-        foreach (var candidate in page)
-        {
-          AnalysisRun claimed;
-          try
-          {
-            claimed = candidate.Claim(leaseOwner, now, leaseDuration);
-          }
-          catch (InvalidAnalysisRunTransitionException)
-          {
-            // The candidate's state moved on between the scan and the claim attempt; skip it.
-            continue;
-          }
-
-          try
-          {
-            var replaceOptions = new ItemRequestOptions { IfMatchEtag = candidate.ETag };
-            var replaceResponse = await container.ReplaceItemAsync(
-              claimed, claimed.Id.ToString(), partitionKey, replaceOptions, cancellationToken).ConfigureAwait(false);
-            totalRequestCharge += replaceResponse.RequestCharge;
-
-            activity?.SetCosmosDbRequestCharge(totalRequestCharge);
-            InvoiceMetrics.RecordCosmosDbCharge(totalRequestCharge, "claim", ContainerId);
-            activity?.RecordSuccess();
-
-            return replaceResponse.Resource.WithETag(replaceResponse.ETag);
-          }
-          catch (CosmosException cosmosException) when (
-            cosmosException.StatusCode is HttpStatusCode.PreconditionFailed or HttpStatusCode.NotFound)
-          {
-            // A concurrent worker already claimed (or the run was otherwise mutated/removed); try the next candidate.
-            continue;
-          }
-        }
+        yield return candidate.WithETag(candidate.ETag);
       }
     }
-    catch (CosmosException cosmosException)
+
+    activity?.RecordSuccess();
+  }
+
+  /// <inheritdoc/>
+  public async ValueTask<IReadOnlyDictionary<AnalysisTargetType, long>> CountPendingByTargetTypeAsync(
+    DateTimeOffset now,
+    CancellationToken cancellationToken)
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(CountPendingByTargetTypeAsync));
+    activity?
+      .SetLayerContext("Broker", nameof(CosmosAnalysisRunBroker))
+      .SetCosmosDbContext(DatabaseId, ContainerId, "count_pending", AnalysisRun.DefaultBucket)
+      .SetDbStatement(PendingCountQuery);
+
+    var container = GetContainer();
+    var query = new QueryDefinition(PendingCountQuery)
+      .WithParameter("@bucket", AnalysisRun.DefaultBucket)
+      .WithParameter("@now", now);
+
+    using var iterator = container.GetItemQueryIterator<PendingCountProjection>(query, requestOptions: new QueryRequestOptions
     {
-      throw TranslateAnalysisRunCosmos(cosmosException, runId: null);
+      PartitionKey = new PartitionKey(AnalysisRun.DefaultBucket),
+    });
+
+    var counts = new Dictionary<AnalysisTargetType, long>();
+    while (iterator.HasMoreResults)
+    {
+      cancellationToken.ThrowIfCancellationRequested();
+
+      var page = await TranslateAnalysisRunCosmosAsync(
+        () => iterator.ReadNextAsync(cancellationToken),
+        runId: null).ConfigureAwait(false);
+
+      InvoiceMetrics.RecordCosmosDbCharge(page.RequestCharge, "count_pending", ContainerId);
+
+      foreach (var projection in page)
+      {
+        counts[projection.TargetType] = projection.Count;
+      }
     }
 
-    activity?.SetCosmosDbRequestCharge(totalRequestCharge);
-    InvoiceMetrics.RecordCosmosDbCharge(totalRequestCharge, "claim", ContainerId);
-    activity?.SetTag("result.claimed", false);
     activity?.RecordSuccess();
-    return null;
+    return counts;
   }
+
+  /// <summary>The shape returned by the grouped pending-count projection.</summary>
+  private sealed record PendingCountProjection(
+    [property: JsonPropertyName("targetType")] AnalysisTargetType TargetType,
+    [property: JsonPropertyName("count")] long Count);
 
   /// <inheritdoc/>
   public async ValueTask<AnalysisRun> ReplaceAsync(

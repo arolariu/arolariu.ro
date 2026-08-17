@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Aggregates;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
@@ -282,5 +283,32 @@ public sealed class AnalysisDtoTests
 
     // Assert
     Assert.AreEqual(0, offendingMembers.Length, string.Join(", ", offendingMembers));
+  }
+
+  /// <summary>
+  /// Verifies that projecting a run with neither invoice nor merchant options falls back to the custom profile,
+  /// and that the projected acknowledgement exposes the run's exact accepted-at instant.
+  /// </summary>
+  [TestMethod]
+  public void FromRun_NoInvoiceOrMerchantOptions_ResolvesCustomProfileAndAcceptedAt()
+  {
+    // Arrange
+    DateTimeOffset acceptedAt = DateTimeOffset.UtcNow;
+    AnalysisRun run = new()
+    {
+      Id = Guid.NewGuid(),
+      TargetType = AnalysisTargetType.Invoice,
+      TargetId = Guid.NewGuid(),
+      RequestedBy = Guid.NewGuid(),
+      Status = AnalysisRunStatus.Queued,
+      AcceptedAt = acceptedAt,
+    };
+
+    // Act
+    AnalysisAcceptedResponseDto dto = AnalysisAcceptedResponseDto.FromRun(run);
+
+    // Assert
+    Assert.AreEqual(AnalysisProfile.Custom, dto.Profile);
+    Assert.AreEqual(acceptedAt, dto.AcceptedAt);
   }
 }

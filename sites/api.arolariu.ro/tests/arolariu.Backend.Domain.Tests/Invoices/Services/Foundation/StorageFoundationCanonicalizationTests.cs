@@ -362,6 +362,8 @@ public sealed class StorageFoundationCanonicalizationTests
   {
     internal List<TaxonomyResolveCall> Calls { get; } = [];
 
+    public string GetArtifactVersion(ClassificationSystem system) => inner.GetArtifactVersion(system);
+
     public IReadOnlyList<TaxonomySearchResult> Search(ClassificationSystem system, string query, int maximumResults) =>
       inner.Search(system, query, maximumResults);
 

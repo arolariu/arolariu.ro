@@ -42,6 +42,20 @@ public sealed class TaxonomyBrokerTests
   }
 
   /// <summary>
+  /// Verifies the broker exposes the actual version declared by each validated generated artifact, rather than a
+  /// taxonomy-system name or caller-supplied value.
+  /// </summary>
+  [TestMethod]
+  public void GetArtifactVersion_InjectedArtifacts_ReturnsDeclaredArtifactVersions()
+  {
+    ITaxonomyBroker broker = TaxonomyBrokerTestFactory.Create();
+
+    Assert.AreEqual("2026-05", broker.GetArtifactVersion(ClassificationSystem.Gs1Gpc));
+    Assert.AreEqual("2", broker.GetArtifactVersion(ClassificationSystem.EcoicopV2));
+    Assert.AreEqual("2.1", broker.GetArtifactVersion(ClassificationSystem.Nace21));
+  }
+
+  /// <summary>
   /// Verifies that resolving an unknown taxonomy code throws the dedicated not-found exception.
   /// </summary>
   [TestMethod]

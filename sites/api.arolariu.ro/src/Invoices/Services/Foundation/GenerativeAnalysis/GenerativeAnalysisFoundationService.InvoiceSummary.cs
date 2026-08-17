@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.GenerativeAiBroker;
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 
@@ -45,6 +46,7 @@ public sealed partial class GenerativeAnalysisFoundationService
           });
 
         GenerativeResponse<InvoiceSummaryStructuredResult> response = await GenerateWithRetryAsync<InvoiceSummaryStructuredResult>(
+          GenerativeTelemetryCatalog.ForNonTaxonomyCapability(AnalysisCapability.InvoiceSummary),
           request,
           cancellationToken)
           .ConfigureAwait(false);

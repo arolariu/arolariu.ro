@@ -39,9 +39,6 @@ using Microsoft.Extensions.DependencyInjection;
 [ExcludeFromCodeCoverage] // This class is not tested because it is a simple extension class.
 public static class WebApplicationBuilderExtensions
 {
-  /// <summary>The Azure AI Foundry deployment used for every generative analysis capability.</summary>
-  private const string ChatModelDeploymentName = "model-router";
-
   /// <summary>The OpenTelemetry activity source name emitted by the generative analysis pipeline.</summary>
   private const string AnalysisTelemetrySourceName = "arolariu.Backend.Domain.Invoices.Analysis";
 
@@ -134,7 +131,7 @@ public static class WebApplicationBuilderExtensions
       .AddChatClient(serviceProvider =>
       {
         var azureClient = serviceProvider.GetRequiredService<AzureOpenAIClient>();
-        return azureClient.GetChatClient(ChatModelDeploymentName).AsIChatClient();
+        return azureClient.GetChatClient(InvoiceMetrics.ConfiguredGenerativeModelIdentifier).AsIChatClient();
       })
       .UseOpenTelemetry(
         sourceName: AnalysisTelemetrySourceName,

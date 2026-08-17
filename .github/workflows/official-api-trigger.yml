@@ -51,6 +51,8 @@ on:
       - "sites/api.arolariu.ro/**"
       - "scripts/generate.artifacts.ts"
       - "scripts/generate.ts"
+      - "scripts/verify.analysis-coverage.ts"
+      - "scripts/verify.analysis-coverage.test.ts"
       - "package.json"
       - "package-lock.json"
       - ".github/actions/setup-workspace/**"
@@ -128,12 +130,21 @@ jobs:
         working-directory: .
         run: |
           echo "::group::🧪 Running .NET Unit Tests"
-          echo "📍 Solution: arolariu.slnx"
           echo "📍 Configuration: Release"
           echo "📍 Test framework: MSTest"
           echo ""
           START_TIME=$(date +%s)
-          dotnet test --configuration Release --logger trx --results-directory ./sites/api.arolariu.ro/TestResults --collect:"XPlat Code Coverage" ./arolariu.slnx
+          # Each suite runs exactly once. Domain.Tests writes into its own AnalysisCoverage directory so the
+          # coverage gate below reads one unambiguous OpenCover report instead of guessing among several; Core.Tests
+          # writes into the shared root. Running the whole solution here as well would execute Domain.Tests twice.
+          dotnet test --configuration Release --logger trx \
+            --results-directory ./sites/api.arolariu.ro/TestResults/AnalysisCoverage \
+            --collect:"XPlat Code Coverage;Format=opencover,cobertura" \
+            ./sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/arolariu.Backend.Domain.Tests.csproj
+          dotnet test --configuration Release --logger trx \
+            --results-directory ./sites/api.arolariu.ro/TestResults \
+            --collect:"XPlat Code Coverage;Format=opencover,cobertura" \
+            ./sites/api.arolariu.ro/tests/arolariu.Backend.Core.Tests/arolariu.Backend.Core.Tests.csproj
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
           echo ""
@@ -148,6 +159,18 @@ jobs:
           echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
           echo "| Configuration | Release |" >> $GITHUB_STEP_SUMMARY
           echo "| Results Directory | ./sites/api.arolariu.ro/TestResults |" >> $GITHUB_STEP_SUMMARY
+
+      - name: 🧪 Assert analysis coverage verifier against collected report
+        working-directory: '.'
+        env:
+          CI: 'true'
+        run: npx vitest run scripts/verify.analysis-coverage.test.ts --config vitest.config.ts --coverage.enabled=false
+
+      - name: 📊 Verify analysis feature coverage
+        working-directory: '.'
+        env:
+          CI: 'true'
+        run: npm run verify:analysis-coverage -- --results-directory sites/api.arolariu.ro/TestResults/AnalysisCoverage --threshold 99
 
       - name: 📤 Upload test results...
         if: always()

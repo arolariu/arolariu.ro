@@ -1,6 +1,7 @@
 namespace arolariu.Backend.Domain.Tests.Invoices.Services.Foundation;
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -29,6 +30,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 public sealed class AnalysisRunFoundationServiceTests
 {
   private readonly Mock<IAnalysisRunBroker> mockBroker;
+  private AnalysisRun? lastReplacedRun;
   private readonly AnalysisRunFoundationService service;
 
   /// <summary>
@@ -168,8 +170,8 @@ public sealed class AnalysisRunFoundationServiceTests
   public async Task ClaimNextRunAsync_NoClaimableRun_ReturnsNull()
   {
     mockBroker
-      .Setup(b => b.ClaimNextAsync(It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
-      .ReturnsAsync((AnalysisRun?)null);
+      .Setup(b => b.StreamClaimCandidatesAsync(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+      .Returns(EmptyCandidates());
 
     var result = await service.ClaimNextRunAsync("worker-a", DateTimeOffset.UtcNow, TimeSpan.FromMinutes(5), CancellationToken.None).ConfigureAwait(true);
 
@@ -177,19 +179,233 @@ public sealed class AnalysisRunFoundationServiceTests
   }
 
   /// <summary>
-  /// Verifies that a claimed run is passed through from the broker unchanged.
+  /// Verifies that a claimable candidate is transitioned and persisted with the candidate's own ETag.
   /// </summary>
   [TestMethod]
   public async Task ClaimNextRunAsync_ClaimableRunExists_ReturnsClaimedRun()
   {
-    var claimed = AnalysisRunTestBuilder.ActiveRunning();
+    var candidate = AnalysisRunTestBuilder.Queued();
+    lastReplacedRun = null;
     mockBroker
-      .Setup(b => b.ClaimNextAsync("worker-a", It.IsAny<DateTimeOffset>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
-      .ReturnsAsync(claimed);
+      .Setup(b => b.StreamClaimCandidatesAsync(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+      .Returns(Candidates(candidate));
+    mockBroker
+      .Setup(b => b.ReplaceAsync(It.IsAny<AnalysisRun>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+      .Returns((AnalysisRun run, string _, CancellationToken _) => Replaced(run));
 
     var result = await service.ClaimNextRunAsync("worker-a", DateTimeOffset.UtcNow, TimeSpan.FromMinutes(5), CancellationToken.None).ConfigureAwait(true);
 
-    Assert.AreEqual(claimed, result);
+    Assert.IsNotNull(result);
+    Assert.AreEqual(lastReplacedRun, result);
+    Assert.AreEqual(AnalysisRunStatus.Running, result.Status);
+    Assert.AreEqual("worker-a", result.LeaseOwner);
+  }
+
+  /// <summary>
+  /// Verifies that a candidate whose state moved on between the scan and the claim is skipped, and the next
+  /// candidate is claimed instead.
+  /// </summary>
+  [TestMethod]
+  public async Task ClaimNextRunAsync_CandidateNoLongerClaimable_SkipsToNextCandidate()
+  {
+    var untransitionable = AnalysisRunTestBuilder.Terminal(AnalysisRunStatus.Completed);
+    var claimable = AnalysisRunTestBuilder.Queued();
+    mockBroker
+      .Setup(b => b.StreamClaimCandidatesAsync(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+      .Returns(Candidates(untransitionable, claimable));
+    mockBroker
+      .Setup(b => b.ReplaceAsync(It.IsAny<AnalysisRun>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+      .Returns((AnalysisRun run, string _, CancellationToken _) => new ValueTask<AnalysisRun>(run));
+
+    var result = await service.ClaimNextRunAsync("worker-a", DateTimeOffset.UtcNow, TimeSpan.FromMinutes(5), CancellationToken.None).ConfigureAwait(true);
+
+    Assert.IsNotNull(result);
+    Assert.AreEqual(claimable.Id, result.Id);
+    mockBroker.Verify(
+      b => b.ReplaceAsync(It.IsAny<AnalysisRun>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+      Times.Once);
+  }
+
+  /// <summary>
+  /// Verifies that losing the optimistic-concurrency race on one candidate is a benign skip, not a failure.
+  /// </summary>
+  [TestMethod]
+  public async Task ClaimNextRunAsync_ConcurrentWorkerWinsRace_ClaimsNextCandidate()
+  {
+    var contended = AnalysisRunTestBuilder.Queued();
+    var free = AnalysisRunTestBuilder.Queued();
+    mockBroker
+      .Setup(b => b.StreamClaimCandidatesAsync(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+      .Returns(Candidates(contended, free));
+    mockBroker
+      .Setup(b => b.ReplaceAsync(It.Is<AnalysisRun>(r => r.Id == contended.Id), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+      .Throws(new AnalysisRunLeaseConflictException("contended"));
+    mockBroker
+      .Setup(b => b.ReplaceAsync(It.Is<AnalysisRun>(r => r.Id == free.Id), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+      .Returns((AnalysisRun run, string _, CancellationToken _) => new ValueTask<AnalysisRun>(run));
+
+    var result = await service.ClaimNextRunAsync("worker-a", DateTimeOffset.UtcNow, TimeSpan.FromMinutes(5), CancellationToken.None).ConfigureAwait(true);
+
+    Assert.IsNotNull(result);
+    Assert.AreEqual(free.Id, result.Id);
+  }
+
+  /// <summary>
+  /// Verifies that a candidate deleted between the scan and the replace is skipped rather than faulting the claim.
+  /// </summary>
+  [TestMethod]
+  public async Task ClaimNextRunAsync_CandidateVanishes_SkipsToNextCandidate()
+  {
+    var vanished = AnalysisRunTestBuilder.Queued();
+    var free = AnalysisRunTestBuilder.Queued();
+    mockBroker
+      .Setup(b => b.StreamClaimCandidatesAsync(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+      .Returns(Candidates(vanished, free));
+    mockBroker
+      .Setup(b => b.ReplaceAsync(It.Is<AnalysisRun>(r => r.Id == vanished.Id), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+      .Throws(new AnalysisRunNotFoundException("vanished"));
+    mockBroker
+      .Setup(b => b.ReplaceAsync(It.Is<AnalysisRun>(r => r.Id == free.Id), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+      .Returns((AnalysisRun run, string _, CancellationToken _) => new ValueTask<AnalysisRun>(run));
+
+    var result = await service.ClaimNextRunAsync("worker-a", DateTimeOffset.UtcNow, TimeSpan.FromMinutes(5), CancellationToken.None).ConfigureAwait(true);
+
+    Assert.IsNotNull(result);
+    Assert.AreEqual(free.Id, result.Id);
+  }
+
+  /// <summary>
+  /// Verifies that exhausting every candidate without a successful claim yields <c>null</c>.
+  /// </summary>
+  [TestMethod]
+  public async Task ClaimNextRunAsync_AllCandidatesContended_ReturnsNull()
+  {
+    var first = AnalysisRunTestBuilder.Queued();
+    var second = AnalysisRunTestBuilder.Queued();
+    mockBroker
+      .Setup(b => b.StreamClaimCandidatesAsync(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+      .Returns(Candidates(first, second));
+    mockBroker
+      .Setup(b => b.ReplaceAsync(It.IsAny<AnalysisRun>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+      .Throws(new AnalysisRunLeaseConflictException("contended"));
+
+    var result = await service.ClaimNextRunAsync("worker-a", DateTimeOffset.UtcNow, TimeSpan.FromMinutes(5), CancellationToken.None).ConfigureAwait(true);
+
+    Assert.IsNull(result);
+  }
+
+  /// <summary>
+  /// Verifies that an already-cancelled token stops the claim scan before any candidate is transitioned.
+  /// </summary>
+  [TestMethod]
+  public async Task ClaimNextRunAsync_CancelledToken_PropagatesOperationCanceledExceptionWithoutClaiming()
+  {
+    using var cts = new CancellationTokenSource();
+    await cts.CancelAsync().ConfigureAwait(true);
+    mockBroker
+      .Setup(b => b.StreamClaimCandidatesAsync(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+      .Returns(Candidates(AnalysisRunTestBuilder.Queued()));
+
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(
+      () => service.ClaimNextRunAsync("worker-a", DateTimeOffset.UtcNow, TimeSpan.FromMinutes(5), cts.Token)).ConfigureAwait(true);
+
+    mockBroker.Verify(
+      b => b.ReplaceAsync(It.IsAny<AnalysisRun>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+      Times.Never);
+  }
+  #endregion
+
+  #region CountPendingRunsAsync Tests
+  /// <summary>
+  /// Verifies that broker-reported pending counts are surfaced unchanged.
+  /// </summary>
+  [TestMethod]
+  public async Task CountPendingRunsAsync_BrokerReportsCounts_ReturnsThem()
+  {
+    mockBroker
+      .Setup(b => b.CountPendingByTargetTypeAsync(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+      .Returns(() => new ValueTask<IReadOnlyDictionary<AnalysisTargetType, long>>(
+        new Dictionary<AnalysisTargetType, long> { [AnalysisTargetType.Invoice] = 7L }));
+
+    var result = await service.CountPendingRunsAsync(DateTimeOffset.UtcNow, CancellationToken.None).ConfigureAwait(true);
+
+    Assert.AreEqual(7L, result[AnalysisTargetType.Invoice]);
+  }
+
+  /// <summary>
+  /// Verifies that target types absent from the broker projection are reported as an explicit zero, so a drained
+  /// queue publishes zero instead of leaving a stale non-zero depth standing.
+  /// </summary>
+  [TestMethod]
+  public async Task CountPendingRunsAsync_TargetTypeAbsentFromProjection_ReportsZero()
+  {
+    mockBroker
+      .Setup(b => b.CountPendingByTargetTypeAsync(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+      .Returns(() => new ValueTask<IReadOnlyDictionary<AnalysisTargetType, long>>(
+        new Dictionary<AnalysisTargetType, long> { [AnalysisTargetType.Invoice] = 3L }));
+
+    var result = await service.CountPendingRunsAsync(DateTimeOffset.UtcNow, CancellationToken.None).ConfigureAwait(true);
+
+    foreach (AnalysisTargetType targetType in Enum.GetValues<AnalysisTargetType>())
+    {
+      Assert.IsTrue(result.ContainsKey(targetType), $"Missing target type {targetType}.");
+    }
+
+    Assert.AreEqual(0L, result[AnalysisTargetType.Merchant]);
+  }
+
+  /// <summary>
+  /// Verifies that a broker failure while counting is classified as a foundation dependency failure.
+  /// </summary>
+  [TestMethod]
+  public async Task CountPendingRunsAsync_BrokerFails_ThrowsAnalysisFoundationServiceException()
+  {
+    mockBroker
+      .Setup(b => b.CountPendingByTargetTypeAsync(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+      .Throws(new InvalidOperationException("count failed"));
+
+    await Assert.ThrowsExactlyAsync<AnalysisFoundationServiceException>(
+      () => service.CountPendingRunsAsync(DateTimeOffset.UtcNow, CancellationToken.None)).ConfigureAwait(true);
+  }
+
+  /// <summary>
+  /// Verifies that cancellation raised while counting is propagated unchanged.
+  /// </summary>
+  [TestMethod]
+  public async Task CountPendingRunsAsync_WhenBrokerCancels_PropagatesOperationCanceledException()
+  {
+    mockBroker
+      .Setup(b => b.CountPendingByTargetTypeAsync(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+      .Throws(new OperationCanceledException());
+
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(
+      () => service.CountPendingRunsAsync(DateTimeOffset.UtcNow, CancellationToken.None)).ConfigureAwait(true);
+  }
+
+  /// <summary>Records the run handed to the broker replace and echoes it back.</summary>
+  /// <param name="run">The run submitted for replacement.</param>
+  private ValueTask<AnalysisRun> Replaced(AnalysisRun run)
+  {
+    lastReplacedRun = run;
+    return new ValueTask<AnalysisRun>(run);
+  }
+
+  /// <summary>Produces an empty claim-candidate stream.</summary>
+  private static async IAsyncEnumerable<AnalysisRun> EmptyCandidates()
+  {
+    await Task.CompletedTask.ConfigureAwait(false);
+    yield break;
+  }
+
+  /// <summary>Produces a claim-candidate stream over the supplied runs.</summary>
+  /// <param name="runs">The candidates to stream, in scan order.</param>
+  private static async IAsyncEnumerable<AnalysisRun> Candidates(params AnalysisRun[] runs)
+  {
+    foreach (AnalysisRun run in runs)
+    {
+      await Task.Yield();
+      yield return run;
+    }
   }
   #endregion
 
@@ -352,8 +568,8 @@ public sealed class AnalysisRunFoundationServiceTests
   public async Task ClaimNextRunAsync_WhenBrokerCancels_PropagatesOperationCanceledException()
   {
     mockBroker
-      .Setup(b => b.ClaimNextAsync(It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
-      .ThrowsAsync(new OperationCanceledException());
+      .Setup(b => b.StreamClaimCandidatesAsync(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+      .Throws(new OperationCanceledException());
 
     await Assert.ThrowsExactlyAsync<OperationCanceledException>(
       () => service.ClaimNextRunAsync("worker-a", DateTimeOffset.UtcNow, TimeSpan.FromMinutes(5), CancellationToken.None)).ConfigureAwait(true);
@@ -388,6 +604,21 @@ public sealed class AnalysisRunFoundationServiceTests
 
     await Assert.ThrowsExactlyAsync<OperationCanceledException>(
       () => service.RenewLeaseAsync(Guid.NewGuid(), "worker-a", DateTimeOffset.UtcNow, TimeSpan.FromMinutes(5), CancellationToken.None)).ConfigureAwait(true);
+  }
+
+  /// <summary>
+  /// Verifies that <see cref="AnalysisRunFoundationService.EnsureStoreAsync"/> propagates
+  /// <see cref="OperationCanceledException"/> thrown by the broker without reclassifying it.
+  /// </summary>
+  [TestMethod]
+  public async Task EnsureStoreAsync_WhenBrokerCancels_PropagatesOperationCanceledException()
+  {
+    mockBroker
+      .Setup(b => b.EnsureContainerAsync(It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new OperationCanceledException());
+
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(
+      () => service.EnsureStoreAsync(CancellationToken.None)).ConfigureAwait(true);
   }
   #endregion
 }

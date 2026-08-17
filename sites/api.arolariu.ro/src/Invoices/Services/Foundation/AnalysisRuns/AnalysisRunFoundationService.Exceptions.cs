@@ -1,9 +1,11 @@
 namespace arolariu.Backend.Domain.Invoices.Services.Foundation.AnalysisRuns;
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Aggregates;
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Foundation;
 
@@ -66,6 +68,25 @@ public partial class AnalysisRunFoundationService
     }
   }
 
+  /// <summary>Executes an operation returning a pending-run count projection, classifying any thrown exception.</summary>
+  private async Task<IReadOnlyDictionary<AnalysisTargetType, long>> TryCatchAsync(
+    Func<Task<IReadOnlyDictionary<AnalysisTargetType, long>>> returningCountsFunction)
+  {
+    try
+    {
+      return await returningCountsFunction().ConfigureAwait(false);
+    }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
+    }
+    catch (Exception exception)
+    {
+      throw Classify(exception);
+    }
+  }
+
   private Exception Classify(Exception exception) => exception switch
   {
     ArgumentException or InvalidAnalysisRunTransitionException
@@ -85,28 +106,28 @@ public partial class AnalysisRunFoundationService
   private AnalysisFoundationValidationException LogAndWrapValidation(Exception exception)
   {
     var outer = new AnalysisFoundationValidationException(exception);
-    logger.LogAnalysisRunValidationException(outer.Message);
+    logger.LogAnalysisRunValidationException();
     return outer;
   }
 
   private AnalysisFoundationDependencyException LogAndWrapDependency(Exception exception)
   {
     var outer = new AnalysisFoundationDependencyException(exception);
-    logger.LogAnalysisRunDependencyException(outer.Message);
+    logger.LogAnalysisRunDependencyException();
     return outer;
   }
 
   private AnalysisFoundationDependencyValidationException LogAndWrapDependencyValidation(Exception exception)
   {
     var outer = new AnalysisFoundationDependencyValidationException(exception);
-    logger.LogAnalysisRunDependencyValidationException(outer.Message);
+    logger.LogAnalysisRunDependencyValidationException();
     return outer;
   }
 
   private AnalysisFoundationServiceException LogAndWrapService(Exception exception)
   {
     var outer = new AnalysisFoundationServiceException(exception);
-    logger.LogAnalysisRunServiceException(outer.Message);
+    logger.LogAnalysisRunServiceException();
     return outer;
   }
 }

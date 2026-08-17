@@ -25,12 +25,12 @@ using arolariu.Backend.Domain.Invoices.Services.Orchestration.AnalysisService;
 using Microsoft.Extensions.Logging.Abstractions;
 
 /// <summary>
-/// Wires an <see cref="AnalysisOrchestrationService"/> to hand-rolled, order-preserving capability fakes for
-/// DAG-ordering and best-effort-failure tests.
+/// Wires an <see cref="AnalysisOrchestrationService"/> through real foundation services and external broker doubles.
 /// </summary>
 /// <remarks>
-/// <para><see cref="CompletedCapabilities"/> is the harness's own instrumentation list, populated by the fakes at
-/// the moment each capability call is invoked. It is intentionally distinct from the production
+/// <para><see cref="CompletedCapabilities"/> is the harness's own readable projection of the production
+/// <see cref="InvoiceAnalysisResult.CompletedCapabilities"/> / <see cref="MerchantAnalysisResult.CompletedCapabilities"/>
+/// collection. It is intentionally distinct from the production
 /// <see cref="InvoiceAnalysisResult.CompletedCapabilities"/> / <see cref="MerchantAnalysisResult.CompletedCapabilities"/>
 /// enum collections returned by the service under test: this list captures call order using human-readable labels
 /// so DAG ordering assertions read naturally, decoupled from the production <c>AnalysisCapability</c> enum shape.</para>
@@ -43,6 +43,7 @@ internal sealed class AnalysisServiceHarness
   private static readonly IReadOnlySet<string> NoFailures = new HashSet<string>(StringComparer.Ordinal);
 
   private readonly List<string> completedCapabilities = [];
+  private readonly AnalysisPipelineHarness pipeline;
 
   private AnalysisServiceHarness(AnalysisRun run, Invoice invoice, Merchant merchant, IReadOnlySet<string> failingCapabilities)
   {
@@ -50,27 +51,25 @@ internal sealed class AnalysisServiceHarness
     Invoice = invoice;
     Merchant = merchant;
 
-    var documentAnalysis = new FakeDocumentAnalysisFoundationService(
-      completedCapabilities,
-      failingCapabilities,
-      CreateExtractionResult());
+    pipeline = new AnalysisPipelineHarness();
+    pipeline.SeedInvoice(invoice);
+    pipeline.SeedMerchant(merchant);
+    pipeline.SetClaimableRun(run);
+    pipeline.ConfigureInvoiceResult(new InvoiceAnalysisResult(
+      failingCapabilities.Contains("document") ? null : CreateExtractionResult(),
+      failingCapabilities.Contains("document") ? null : CreateExtractionResult().MerchantCandidate,
+      failingCapabilities.Contains("summary") ? null : CreateSummary(),
+      failingCapabilities.Contains("product-classification") ? null : CreateClassifications(),
+      failingCapabilities.Contains("allergens") ? null : CreateAllergens(),
+      failingCapabilities.Contains("invoice-classification") ? null : CreateInvoiceClassification(),
+      failingCapabilities.Contains("recipes") ? null : CreateRecipes(),
+      []));
+    pipeline.ConfigureMerchantResult(new MerchantAnalysisResult(
+      failingCapabilities.Contains("merchant-classification") ? null : CreateMerchantClassification(),
+      failingCapabilities.Contains("description-generation") ? null : CreateMerchantDescription(),
+      []));
 
-    var generativeAnalysis = new FakeGenerativeAnalysisFoundationService(
-      completedCapabilities,
-      failingCapabilities,
-      CreateClassifications(),
-      CreateAllergens(),
-      CreateInvoiceClassification(),
-      CreateSummary(),
-      CreateMerchantClassification(),
-      CreateMerchantDescription(),
-      CreateRecipes());
-
-    Service = new AnalysisOrchestrationService(
-      new ThrowingAnalysisRunFoundationService(),
-      documentAnalysis,
-      generativeAnalysis,
-      NullLoggerFactory.Instance);
+    Service = pipeline.AnalysisOrchestration;
   }
 
   /// <summary>Gets the orchestration service under test.</summary>
@@ -154,20 +153,34 @@ internal sealed class AnalysisServiceHarness
   /// </summary>
   /// <param name="cancellationToken">The cancellation token that aborts the operation.</param>
   /// <returns>The best-effort invoice analysis result.</returns>
-  public Task<InvoiceAnalysisResult> ExecuteInvoiceAsync(CancellationToken cancellationToken = default) =>
-    Service.AnalyzeInvoiceAsync(Run, Invoice, cancellationToken);
+  public async Task<InvoiceAnalysisResult> ExecuteInvoiceAsync(CancellationToken cancellationToken = default)
+  {
+    InvoiceAnalysisResult result = await Service.AnalyzeInvoiceAsync(Run, Invoice, cancellationToken).ConfigureAwait(false);
+    RecordCompletedCapabilities(result.CompletedCapabilities);
+    return result;
+  }
 
   /// <summary>
   /// Executes the merchant analysis DAG against <see cref="Merchant"/> using <see cref="Run"/>.
   /// </summary>
   /// <param name="cancellationToken">The cancellation token that aborts the operation.</param>
   /// <returns>The best-effort merchant analysis result.</returns>
-  public Task<MerchantAnalysisResult> ExecuteMerchantAsync(CancellationToken cancellationToken = default) =>
-    Service.AnalyzeMerchantAsync(Run, Merchant, cancellationToken);
+  public async Task<MerchantAnalysisResult> ExecuteMerchantAsync(CancellationToken cancellationToken = default)
+  {
+    MerchantAnalysisResult result = await Service.AnalyzeMerchantAsync(Run, Merchant, cancellationToken).ConfigureAwait(false);
+    RecordCompletedCapabilities(result.CompletedCapabilities);
+    return result;
+  }
 
   private static Invoice CreateInvoiceEntity() => new() { id = Guid.NewGuid(), UserIdentifier = Guid.NewGuid() };
 
-  private static Merchant CreateMerchantEntity() => new() { id = Guid.NewGuid(), Name = "Test Merchant" };
+  private static Merchant CreateMerchantEntity() => new()
+  {
+    id = Guid.NewGuid(),
+    Name = "Test Merchant",
+    Description = "Known merchant.",
+    ParentCompanyId = Guid.NewGuid(),
+  };
 
   private static ReceiptExtractionResult CreateExtractionResult() =>
     new(
@@ -204,7 +217,10 @@ internal sealed class AnalysisServiceHarness
   private static InvoiceSummaryResult CreateSummary() => new("Grocery run", "A small grocery purchase.");
 
   private static MerchantClassificationResult CreateMerchantClassification() =>
-    new(CreateClassification(ClassificationSystem.Nace21, "47.11", "Retail sale in non-specialised stores"));
+    new(CreateClassification(
+      ClassificationSystem.Nace21,
+      "01",
+      "Crop and animal production, hunting and related service activities"));
 
   private static MerchantDescriptionResult CreateMerchantDescription() => new("A neighborhood grocery store.");
 
@@ -238,110 +254,26 @@ internal sealed class AnalysisServiceHarness
       0.9,
       [new ClassificationEvidence("subject.description", label)]);
 
-  private sealed class ThrowingAnalysisRunFoundationService : IAnalysisRunFoundationService
+  private void RecordCompletedCapabilities(IReadOnlyCollection<AnalysisCapability> capabilities)
   {
-    public Task EnsureStoreAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
+    completedCapabilities.Clear();
 
-    public Task<AnalysisRun> CreateRunAsync(AnalysisRun run, CancellationToken cancellationToken) => throw new NotSupportedException();
-
-    public Task<AnalysisRun?> ClaimNextRunAsync(string leaseOwner, DateTimeOffset now, TimeSpan leaseDuration, CancellationToken cancellationToken) =>
-      throw new NotSupportedException();
-
-    public Task<AnalysisRun> RenewLeaseAsync(Guid runId, string leaseOwner, DateTimeOffset now, TimeSpan leaseDuration, CancellationToken cancellationToken) =>
-      throw new NotSupportedException();
-
-    public Task<AnalysisRun> CompleteRunAsync(
-      Guid runId,
-      string leaseOwner,
-      IReadOnlyCollection<AnalysisCapability> completedCapabilities,
-      DateTimeOffset completedAt,
-      CancellationToken cancellationToken) => throw new NotSupportedException();
-
-    public Task<AnalysisRun> FailRunAsync(Guid runId, string leaseOwner, string failureCode, DateTimeOffset failedAt, CancellationToken cancellationToken) =>
-      throw new NotSupportedException();
-  }
-
-  private sealed class FakeDocumentAnalysisFoundationService(
-    List<string> completedCapabilities,
-    IReadOnlySet<string> failingCapabilities,
-    ReceiptExtractionResult result) : IDocumentAnalysisFoundationService
-  {
-    public Task<ReceiptExtractionResult> ExtractInvoiceAsync(IReadOnlyList<InvoiceScan> scans, CancellationToken cancellationToken) =>
-      Complete("document", result);
-
-    private Task<TResult> Complete<TResult>(string capability, TResult result)
-      where TResult : notnull
+    foreach (AnalysisCapability capability in capabilities)
     {
-      if (failingCapabilities.Contains(capability))
+      completedCapabilities.Add(capability switch
       {
-        throw new AnalysisFoundationServiceException(new InvalidOperationException($"Scripted failure for '{capability}'."));
-      }
-
-      completedCapabilities.Add(capability);
-      return Task.FromResult(result);
+        AnalysisCapability.DocumentExtraction => "document",
+        AnalysisCapability.MerchantResolution => "merchant-resolution",
+        AnalysisCapability.InvoiceSummary => "summary",
+        AnalysisCapability.ProductClassification => "product-classification",
+        AnalysisCapability.AllergenAssessment => "allergens",
+        AnalysisCapability.InvoiceClassification => "invoice-classification",
+        AnalysisCapability.RecipeGeneration => "recipes",
+        AnalysisCapability.MerchantClassification => "merchant-classification",
+        AnalysisCapability.DescriptionGeneration => "description-generation",
+        _ => capability.ToString(),
+      });
     }
   }
 
-  private sealed class FakeGenerativeAnalysisFoundationService(
-    List<string> completedCapabilities,
-    IReadOnlySet<string> failingCapabilities,
-    ProductClassificationResult classifications,
-    ProductAllergenAssessmentResult allergens,
-    InvoiceClassificationResult invoiceClassification,
-    InvoiceSummaryResult summary,
-    MerchantClassificationResult merchantClassification,
-    MerchantDescriptionResult merchantDescription,
-    RecipeGenerationResult recipes) : IGenerativeAnalysisFoundationService
-  {
-    public Task<ProductClassificationResult> ClassifyProductsAsync(
-      IReadOnlyList<ProductAnalysisInput> products,
-      CancellationToken cancellationToken) => Complete("product-classification", classifications);
-
-    public Task<InvoiceClassificationResult> ClassifyInvoiceAsync(
-      ReceiptExtractionResult extraction,
-      ProductClassificationResult products,
-      Guid sourceRunId,
-      CancellationToken cancellationToken) => Complete("invoice-classification", invoiceClassification);
-
-    public Task<MerchantClassificationResult> ClassifyMerchantAsync(
-      Merchant merchant,
-      Guid sourceRunId,
-      CancellationToken cancellationToken) => Complete("merchant-classification", merchantClassification);
-
-    public Task<MerchantDescriptionResult> GenerateMerchantDescriptionAsync(
-      Merchant merchant,
-      Guid sourceRunId,
-      CancellationToken cancellationToken) => Complete("description-generation", merchantDescription);
-
-    public Task<InvoiceSummaryResult> GenerateInvoiceSummaryAsync(
-      IReadOnlyList<ProductAnalysisInput> products,
-      Guid sourceRunId,
-      CancellationToken cancellationToken) => Complete("summary", summary);
-
-    public Task<ProductAllergenAssessmentResult> AssessAllergensAsync(
-      IReadOnlyList<ProductAnalysisInput> products,
-      ProductClassificationResult classifications,
-      Guid sourceRunId,
-      CancellationToken cancellationToken) => Complete("allergens", allergens);
-
-    public Task<RecipeGenerationResult> GenerateRecipesAsync(
-      IReadOnlyList<ProductAnalysisInput> products,
-      ProductClassificationResult classifications,
-      ProductAllergenAssessmentResult allergens,
-      int maximumRecipes,
-      Guid sourceRunId,
-      CancellationToken cancellationToken) => Complete("recipes", recipes);
-
-    private Task<TResult> Complete<TResult>(string capability, TResult result)
-      where TResult : notnull
-    {
-      if (failingCapabilities.Contains(capability))
-      {
-        throw new AnalysisFoundationServiceException(new InvalidOperationException($"Scripted failure for '{capability}'."));
-      }
-
-      completedCapabilities.Add(capability);
-      return Task.FromResult(result);
-    }
-  }
 }

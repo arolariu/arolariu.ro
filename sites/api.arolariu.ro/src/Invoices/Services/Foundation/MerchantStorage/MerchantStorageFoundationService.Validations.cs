@@ -29,14 +29,12 @@ public partial class MerchantStorageFoundationService
   {
     Validator.ValidateAndThrow<Guid?, MerchantIdNotSetException>(identifier, identifier => identifier is not null, "Identifier not set!");
     Validator.ValidateAndThrow<Guid?, MerchantIdNotSetException>(identifier, identifier => identifier != Guid.Empty, "Identifier not set!");
-    Validator.ValidateAndThrow<Guid?, MerchantIdNotSetException>(identifier, identifier => identifier != default, "Identifier not set!");
   }
 
   private static void ValidateParentCompanyIdentifierIsSet(Guid? parentCompanyId)
   {
     Validator.ValidateAndThrow<Guid?, MerchantParentCompanyIdNotSetException>(parentCompanyId, identifier => identifier is not null, "Identifier not set!");
     Validator.ValidateAndThrow<Guid?, MerchantParentCompanyIdNotSetException>(parentCompanyId, identifier => identifier != Guid.Empty, "Identifier not set!");
-    Validator.ValidateAndThrow<Guid?, MerchantParentCompanyIdNotSetException>(parentCompanyId, identifier => identifier != default, "Identifier not set!");
   }
 
   /// <summary>
@@ -67,15 +65,38 @@ public partial class MerchantStorageFoundationService
 
     if (classification.System != expectedSystem)
     {
+      RecordTaxonomyValidationFailure(classification.System);
       throw new TaxonomyCodeNotFoundException(
         $"Classification code '{classification.Code}' was supplied for system '{classification.System}' but system '{expectedSystem}' is required here.");
     }
 
-    return taxonomyBroker.Resolve(
-      expectedSystem,
-      classification.Code,
-      classification.Origin,
-      classification.Confidence,
-      classification.Evidence);
+    try
+    {
+      return taxonomyBroker.Resolve(
+        expectedSystem,
+        classification.Code,
+        classification.Origin,
+        classification.Confidence,
+        classification.Evidence);
+    }
+    catch (TaxonomyCodeNotFoundException)
+    {
+      RecordTaxonomyValidationFailure(expectedSystem);
+      throw;
+    }
+  }
+
+  /// <summary>
+  /// Emits the taxonomy validation-failure signals for a rejected classification.
+  /// </summary>
+  /// <param name="classificationSystem">The taxonomy system whose validation failed.</param>
+  /// <remarks>
+  /// Only the bounded taxonomy system enum leaves this method. The rejected code is deliberately omitted from both
+  /// the metric and the log because it is model- or caller-supplied and therefore unbounded.
+  /// </remarks>
+  private void RecordTaxonomyValidationFailure(ClassificationSystem classificationSystem)
+  {
+    InvoiceMetrics.RecordTaxonomyValidationFailure(classificationSystem);
+    logger.LogAnalysisTaxonomyValidationFailed(classificationSystem);
   }
 }

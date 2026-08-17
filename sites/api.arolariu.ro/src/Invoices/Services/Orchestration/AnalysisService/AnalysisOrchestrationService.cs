@@ -140,6 +140,20 @@ public sealed partial class AnalysisOrchestrationService : IAnalysisOrchestratio
   }).ConfigureAwait(false);
 
   /// <inheritdoc/>
+  public async Task<IReadOnlyDictionary<AnalysisTargetType, long>> CountPendingRunsAsync(
+    DateTimeOffset now,
+    CancellationToken cancellationToken) =>
+  await TryCatchAsync(async () =>
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(CountPendingRunsAsync));
+
+    var pending = await analysisRunFoundationService
+      .CountPendingRunsAsync(now, cancellationToken)
+      .ConfigureAwait(false);
+    return pending;
+  }).ConfigureAwait(false);
+
+  /// <inheritdoc/>
   public async Task RenewRunLeaseAsync(
     Guid runId,
     string leaseOwner,

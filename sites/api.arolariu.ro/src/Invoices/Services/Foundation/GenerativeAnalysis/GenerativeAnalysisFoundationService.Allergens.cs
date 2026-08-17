@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.GenerativeAiBroker;
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
@@ -62,6 +63,7 @@ public sealed partial class GenerativeAnalysisFoundationService
           });
 
         GenerativeResponse<AllergenAssessmentBatchStructuredResult> response = await GenerateWithRetryAsync<AllergenAssessmentBatchStructuredResult>(
+          GenerativeTelemetryCatalog.ForNonTaxonomyCapability(AnalysisCapability.AllergenAssessment),
           request,
           cancellationToken)
           .ConfigureAwait(false);

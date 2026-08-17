@@ -62,28 +62,28 @@ public sealed partial class DocumentAnalysisFoundationService
   private AnalysisFoundationValidationException LogAndWrapValidation(Exception exception)
   {
     var outer = new AnalysisFoundationValidationException(exception);
-    logger.LogDocumentAnalysisValidationException(exception, outer.Message);
+    logger.LogDocumentAnalysisValidationException();
     return outer;
   }
 
   private AnalysisFoundationDependencyException LogAndWrapDependency(Exception exception)
   {
     var outer = new AnalysisFoundationDependencyException(exception);
-    logger.LogDocumentAnalysisDependencyException(exception, outer.Message);
+    logger.LogDocumentAnalysisDependencyException();
     return outer;
   }
 
   private AnalysisFoundationDependencyValidationException LogAndWrapDependencyValidation(Exception exception)
   {
     var outer = new AnalysisFoundationDependencyValidationException(exception);
-    logger.LogDocumentAnalysisDependencyValidationException(exception, outer.Message);
+    logger.LogDocumentAnalysisDependencyValidationException();
     return outer;
   }
 
   private AnalysisFoundationServiceException LogAndWrapService(Exception exception)
   {
     var outer = new AnalysisFoundationServiceException(exception);
-    logger.LogDocumentAnalysisServiceException(exception, outer.Message);
+    logger.LogDocumentAnalysisServiceException();
     return outer;
   }
 }

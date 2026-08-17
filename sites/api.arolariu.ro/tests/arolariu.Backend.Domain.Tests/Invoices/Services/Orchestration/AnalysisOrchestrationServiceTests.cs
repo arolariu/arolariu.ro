@@ -33,13 +33,13 @@ public sealed class AnalysisOrchestrationServiceTests
   private const string SampleTraceId = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01";
 
   private static readonly string[] ComprehensiveInvoiceOrder =
-    ["document", "summary", "product-classification", "allergens", "invoice-classification", "recipes"];
+    ["document", "merchant-resolution", "summary", "product-classification", "allergens", "invoice-classification", "recipes"];
 
   private static readonly string[] FastInvoiceOrder =
-    ["document", "product-classification", "invoice-classification"];
+    ["document", "merchant-resolution", "product-classification", "invoice-classification"];
 
   private static readonly string[] BalancedInvoiceOrder =
-    ["document", "summary", "product-classification", "allergens", "invoice-classification"];
+    ["document", "merchant-resolution", "summary", "product-classification", "allergens", "invoice-classification"];
 
   private static readonly string[] ComprehensiveMerchantOrder = ["merchant-classification", "description-generation"];
 
@@ -102,10 +102,7 @@ public sealed class AnalysisOrchestrationServiceTests
   {
     AnalysisServiceHarness harness = AnalysisServiceHarness.Comprehensive();
 
-    await harness.Service.AnalyzeInvoiceAsync(
-      harness.Run,
-      harness.Invoice,
-      CancellationToken.None).ConfigureAwait(true);
+    await harness.ExecuteInvoiceAsync(CancellationToken.None).ConfigureAwait(true);
 
     CollectionAssert.AreEqual(
       ComprehensiveInvoiceOrder,
@@ -727,6 +724,56 @@ public sealed class AnalysisOrchestrationServiceTests
 
     var ex = await Assert.ThrowsExactlyAsync<AnalysisOrchestrationServiceException>(
       () => service.FailRunAsync(Guid.NewGuid(), "worker-a", "boom", DateTimeOffset.UtcNow, CancellationToken.None)).ConfigureAwait(true);
+
+    Assert.IsInstanceOfType<InvalidOperationException>(ex.InnerException);
+  }
+
+  /// <summary>
+  /// Verifies that <see cref="AnalysisOrchestrationService.CountPendingRunsAsync"/> delegates its arguments
+  /// unchanged to the run foundation service and returns the pending-run counts as-is.
+  /// </summary>
+  [TestMethod]
+  public async Task CountPendingRunsAsync_Always_DelegatesToFoundationServiceAndReturnsCounts()
+  {
+    DateTimeOffset now = DateTimeOffset.UtcNow;
+    IReadOnlyDictionary<AnalysisTargetType, long> expected = new Dictionary<AnalysisTargetType, long>
+    {
+      [AnalysisTargetType.Invoice] = 3,
+      [AnalysisTargetType.Merchant] = 1,
+    };
+
+    var analysisRunFoundation = new Mock<IAnalysisRunFoundationService>();
+    analysisRunFoundation
+      .Setup(a => a.CountPendingRunsAsync(now, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(expected);
+
+    var service = CreateService(analysisRunFoundation.Object);
+
+    IReadOnlyDictionary<AnalysisTargetType, long> pending = await service
+      .CountPendingRunsAsync(now, CancellationToken.None)
+      .ConfigureAwait(true);
+
+    Assert.AreSame(expected, pending);
+    analysisRunFoundation.Verify(a => a.CountPendingRunsAsync(now, It.IsAny<CancellationToken>()), Times.Once);
+  }
+
+  /// <summary>
+  /// Verifies that an unclassified exception raised by the run foundation service during
+  /// <see cref="AnalysisOrchestrationService.CountPendingRunsAsync"/> is wrapped into an
+  /// <see cref="AnalysisOrchestrationServiceException"/>.
+  /// </summary>
+  [TestMethod]
+  public async Task CountPendingRunsAsync_WhenFoundationThrowsUnknown_ThrowsAnalysisOrchestrationServiceException()
+  {
+    var analysisRunFoundation = new Mock<IAnalysisRunFoundationService>();
+    analysisRunFoundation
+      .Setup(a => a.CountPendingRunsAsync(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new InvalidOperationException("boom"));
+
+    var service = CreateService(analysisRunFoundation.Object);
+
+    var ex = await Assert.ThrowsExactlyAsync<AnalysisOrchestrationServiceException>(
+      () => service.CountPendingRunsAsync(DateTimeOffset.UtcNow, CancellationToken.None)).ConfigureAwait(true);
 
     Assert.IsInstanceOfType<InvalidOperationException>(ex.InnerException);
   }

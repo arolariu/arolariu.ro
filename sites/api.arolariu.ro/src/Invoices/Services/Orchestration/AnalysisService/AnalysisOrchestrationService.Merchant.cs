@@ -37,6 +37,7 @@ public sealed partial class AnalysisOrchestrationService
 
     Task<MerchantClassificationResult?>? classificationTask = options.MerchantClassification
       ? ExecuteBestEffortAsync(
+          run,
           AnalysisCapability.MerchantClassification,
           () => generativeAnalysisFoundationService.ClassifyMerchantAsync(merchant, run.Id, cancellationToken),
           completedCapabilities)
@@ -44,6 +45,7 @@ public sealed partial class AnalysisOrchestrationService
 
     Task<MerchantDescriptionResult?>? descriptionTask = options.DescriptionGeneration
       ? ExecuteBestEffortAsync(
+          run,
           AnalysisCapability.DescriptionGeneration,
           () => generativeAnalysisFoundationService.GenerateMerchantDescriptionAsync(merchant, run.Id, cancellationToken),
           completedCapabilities)

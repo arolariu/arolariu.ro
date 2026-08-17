@@ -69,34 +69,38 @@ public sealed class GenerativeAnalysisRetryPolicy
   /// <typeparam name="TResult">The operation result type.</typeparam>
   /// <param name="operation">The operation to execute, receiving the cancellation token for the current attempt.</param>
   /// <param name="cancellationToken">The cancellation token that aborts all attempts.</param>
+  /// <param name="onRetryScheduled">
+  /// An optional observer invoked with the 1-based number of the attempt that just failed, immediately before the
+  /// policy waits and retries. Only the attempt number is surfaced so retry telemetry stays free of payload content.
+  /// </param>
   /// <returns>The result produced by the first successful attempt.</returns>
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="operation"/> is null.</exception>
   public async Task<TResult> ExecuteAsync<TResult>(
     Func<CancellationToken, Task<TResult>> operation,
-    CancellationToken cancellationToken)
+    CancellationToken cancellationToken,
+    Action<int>? onRetryScheduled = null)
   {
     ArgumentNullException.ThrowIfNull(operation);
 
-    for (int attempt = 1; attempt <= MaximumAttempts; attempt++)
+    for (int attempt = 1; attempt < MaximumAttempts; attempt++)
     {
       try
       {
         return await operation(cancellationToken).ConfigureAwait(false);
       }
-      catch (Exception exception) when (ShouldRetry(exception, attempt, cancellationToken))
+      catch (Exception exception) when (ShouldRetry(exception, cancellationToken))
       {
+        onRetryScheduled?.Invoke(attempt);
         TimeSpan waitDuration = ComputeDelay(attempt);
         await delayAsync(waitDuration, cancellationToken).ConfigureAwait(false);
       }
     }
 
-    // Unreachable: the final attempt either returns a result or lets its exception propagate uncaught.
-    throw new InvalidOperationException("The generative analysis retry policy failed to complete.");
+    return await operation(cancellationToken).ConfigureAwait(false);
   }
 
-  private static bool ShouldRetry(Exception exception, int attempt, CancellationToken cancellationToken) =>
-    attempt < MaximumAttempts
-    && !cancellationToken.IsCancellationRequested
+  private static bool ShouldRetry(Exception exception, CancellationToken cancellationToken) =>
+    !cancellationToken.IsCancellationRequested
     && IsTransientDependencyFailure(exception);
 
   /// <summary>

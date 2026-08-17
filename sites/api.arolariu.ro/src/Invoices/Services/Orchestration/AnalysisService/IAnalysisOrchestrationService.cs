@@ -102,6 +102,16 @@ public interface IAnalysisOrchestrationService
     CancellationToken cancellationToken);
 
   /// <summary>
+  /// Counts the analysis runs currently awaiting a worker, grouped by analysis target type.
+  /// </summary>
+  /// <param name="now">The current instant, used to evaluate lease expiry.</param>
+  /// <param name="cancellationToken">A token used to observe cancellation requests.</param>
+  /// <returns>The pending run count for every known target type; target types with no pending runs report zero.</returns>
+  Task<IReadOnlyDictionary<AnalysisTargetType, long>> CountPendingRunsAsync(
+    DateTimeOffset now,
+    CancellationToken cancellationToken);
+
+  /// <summary>
   /// Executes the invoice analysis capability DAG for <paramref name="run"/>'s persisted effective options against
   /// <paramref name="invoice"/>, catching only typed analysis-foundation capability failures on a best-effort basis.
   /// </summary>

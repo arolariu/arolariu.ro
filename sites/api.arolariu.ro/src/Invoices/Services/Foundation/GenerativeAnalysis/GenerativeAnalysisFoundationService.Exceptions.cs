@@ -64,28 +64,28 @@ public sealed partial class GenerativeAnalysisFoundationService
   private AnalysisFoundationValidationException LogAndWrapValidation(Exception exception)
   {
     var outer = new AnalysisFoundationValidationException(exception);
-    logger.LogGenerativeAnalysisValidationException(exception, outer.Message);
+    logger.LogGenerativeAnalysisValidationException();
     return outer;
   }
 
   private AnalysisFoundationDependencyException LogAndWrapDependency(Exception exception)
   {
     var outer = new AnalysisFoundationDependencyException(exception);
-    logger.LogGenerativeAnalysisDependencyException(exception, outer.Message);
+    logger.LogGenerativeAnalysisDependencyException();
     return outer;
   }
 
   private AnalysisFoundationDependencyValidationException LogAndWrapDependencyValidation(Exception exception)
   {
     var outer = new AnalysisFoundationDependencyValidationException(exception);
-    logger.LogGenerativeAnalysisDependencyValidationException(exception, outer.Message);
+    logger.LogGenerativeAnalysisDependencyValidationException();
     return outer;
   }
 
   private AnalysisFoundationServiceException LogAndWrapService(Exception exception)
   {
     var outer = new AnalysisFoundationServiceException(exception);
-    logger.LogGenerativeAnalysisServiceException(exception, outer.Message);
+    logger.LogGenerativeAnalysisServiceException();
     return outer;
   }
 }

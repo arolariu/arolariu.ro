@@ -82,7 +82,7 @@ public sealed class AnalysisWorker : BackgroundService
     Justification = "A single poisoned run must never terminate the hosted worker; the failure is logged and the run's lease expires for retry.")]
   protected override async Task ExecuteAsync(CancellationToken stoppingToken)
   {
-    logger.LogAnalysisWorkerStarted(workerId);
+    logger.LogAnalysisWorkerStarted();
 
     // The durable store is provisioned once, before the first poll, so an empty environment does not produce a
     // storm of not-found failures on every iteration.
@@ -106,10 +106,10 @@ public sealed class AnalysisWorker : BackgroundService
         // Host shutdown. Leave the loop without faulting the background task.
         return;
       }
-      catch (Exception exception)
+      catch (Exception)
       {
         // A single poisoned run must not take the worker down; the run's own lease will expire and be retried.
-        logger.LogAnalysisWorkerIterationFailed(exception.Message);
+        logger.LogAnalysisWorkerIterationFailed();
       }
 
       try
@@ -148,11 +148,11 @@ public sealed class AnalysisWorker : BackgroundService
       // Host shutdown during startup provisioning. The polling loop exits immediately on the same token.
       return;
     }
-    catch (Exception exception)
+    catch (Exception)
     {
       // Provisioning is best-effort at startup: the store may already exist and simply be unreachable for a moment.
       // Polling still proceeds, and each run's own dependency classification reports the real failure.
-      logger.LogAnalysisWorkerStoreInitializationFailed(exception.Message);
+      logger.LogAnalysisWorkerStoreInitializationFailed();
     }
   }
 }

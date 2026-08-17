@@ -1,10 +1,12 @@
 namespace arolariu.Backend.Domain.Invoices.Brokers.AnalysisRunBroker;
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Aggregates;
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 
 /// <summary>
 /// Low-level (broker) persistence contract for the durable <see cref="AnalysisRun"/> aggregate, backed by a
@@ -15,9 +17,9 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Aggregates;
 /// query operations with minimal translation. It MUST NOT implement domain validation, cross-aggregate orchestration, authorization,
 /// business workflow branching, or exception classification beyond direct dependency errors.</para>
 /// <para><b>Partitioning:</b> All runs live in the single <c>"default"</c> bucket partition (see <see cref="AnalysisRun.DefaultBucket"/>)
-/// for the lifetime of this design; <see cref="ClaimNextAsync"/> therefore scans a single logical partition.</para>
-/// <para><b>Concurrency:</b> <see cref="ReplaceAsync"/> and the internal claim replace performed by <see cref="ClaimNextAsync"/> use
-/// Cosmos DB conditional requests (<c>If-Match</c> on the run's <c>_etag</c>). A precondition failure (HTTP 412) indicates a concurrent
+/// for the lifetime of this design; <see cref="StreamClaimCandidatesAsync"/> therefore scans a single logical partition.</para>
+/// <para><b>Concurrency:</b> <see cref="ReplaceAsync"/> uses Cosmos DB conditional requests (<c>If-Match</c> on the run's <c>_etag</c>).
+/// A precondition failure (HTTP 412) indicates a concurrent
 /// writer won the race; per the pipeline's target semantics this is an expected, benign outcome for run claiming — NOT last-write-wins —
 /// and callers must treat it as "no candidate claimed this round", not as a failure.</para>
 /// <para><b>Provisioning:</b> <see cref="EnsureContainerAsync"/> idempotently creates the <c>analysisRuns</c> container (partition key
@@ -53,19 +55,29 @@ public interface IAnalysisRunBroker
   ValueTask<AnalysisRun?> ReadAsync(Guid runId, CancellationToken cancellationToken);
 
   /// <summary>
-  /// Scans the <c>"default"</c> bucket partition for the oldest claimable run (queued, or running with an expired
-  /// lease) and atomically claims it for <paramref name="leaseOwner"/>, retrying against the next-oldest candidate
-  /// whenever a concurrent claimer wins the optimistic-concurrency race.
+  /// Streams the runs currently awaiting a worker (queued, or running with an expired lease) from the
+  /// <c>"default"</c> bucket partition, oldest first.
   /// </summary>
-  /// <param name="leaseOwner">The identifier of the worker claiming a run.</param>
-  /// <param name="now">The current instant, used to evaluate lease expiry and to compute the new lease expiry.</param>
-  /// <param name="leaseDuration">How long the claimed run's lease remains valid.</param>
+  /// <param name="now">The current instant, used to evaluate lease expiry.</param>
   /// <param name="cancellationToken">A token used to observe cancellation requests.</param>
-  /// <returns>The claimed run, stamped with its new Cosmos DB <c>_etag</c>; or <c>null</c> when no claimable run is currently available.</returns>
-  ValueTask<AnalysisRun?> ClaimNextAsync(
-    string leaseOwner,
+  /// <returns>The claim candidates, oldest acceptance first, streamed page by page.</returns>
+  /// <remarks>
+  /// This is a read-only projection: it applies no claim policy and mutates nothing. Deciding which candidate to
+  /// take, how to react to a lost optimistic-concurrency race, and when to stop is coordination logic that belongs
+  /// to the foundation layer (see RFC 2003); the broker only knows how to ask Cosmos the question.
+  /// </remarks>
+  IAsyncEnumerable<AnalysisRun> StreamClaimCandidatesAsync(
     DateTimeOffset now,
-    TimeSpan leaseDuration,
+    CancellationToken cancellationToken);
+
+  /// <summary>
+  /// Counts the runs currently awaiting a worker, grouped by analysis target type.
+  /// </summary>
+  /// <param name="now">The current instant, used to evaluate lease expiry.</param>
+  /// <param name="cancellationToken">A token used to observe cancellation requests.</param>
+  /// <returns>The pending run count per target type; target types with no pending runs are reported as zero.</returns>
+  ValueTask<IReadOnlyDictionary<AnalysisTargetType, long>> CountPendingByTargetTypeAsync(
+    DateTimeOffset now,
     CancellationToken cancellationToken);
 
   /// <summary>
