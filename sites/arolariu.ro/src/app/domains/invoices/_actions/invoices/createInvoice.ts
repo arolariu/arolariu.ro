@@ -23,7 +23,7 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {createErrorResult, fetchWithTimeout, ServerActionResult} from "@/lib/utils.server";
+import {createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, ServerActionResult} from "@/lib/utils.server";
 import type {CreateInvoiceDtoPayload, Invoice} from "@/types/invoices";
 
 /**
@@ -35,6 +35,22 @@ type ServerActionInputType = Readonly<Partial<CreateInvoiceDtoPayload>>;
  * Returns the newly created Invoice entity with generated ID.
  */
 type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
+
+function createSafeCreateInvoiceMessage(status: number): string {
+  if (status === 401 || status === 403) {
+    return "You are not authorized to create invoices.";
+  }
+
+  if (status === 400 || status === 422) {
+    return "Unable to create invoice with the provided details.";
+  }
+
+  if (status >= 500) {
+    return "Invoice creation is temporarily unavailable. Please try again.";
+  }
+
+  return "Unable to create invoice. Please try again.";
+}
 
 /**
  * Creates a new invoice entity in the backend system.
@@ -79,17 +95,15 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  * });
  *
  * if (result.success) {
- *   console.log("Created invoice:", result.data.id);
- * } else {
- *   console.error("Failed to create invoice:", result.error);
+ *   return result.data;
  * }
+ *
+ * return null;
  * ```
  *
  * @see {@link Invoice} for the returned entity structure
  */
 export async function createInvoice(payload: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{createInvoice}}, with:", {payload});
-
   return withSpan("api.actions.invoices.createInvoice", async () => {
     try {
       // Step 1. Fetch user JWT for authentication
@@ -118,20 +132,20 @@ export async function createInvoice(payload: ServerActionInputType): ServerActio
       }
 
       addSpanEvent("bff.invoice.create.error");
-      const errorText = await response.text();
-      const internalMessage = `Failed to create invoice: ${response.status} ${response.statusText}`;
-      logWithTrace("warn", internalMessage, {errorText}, "server");
-      const userMessage =
-        response.status >= 500
-          ? "A server error occurred. Please try again later."
-          : "Failed to create the invoice. Please check your input and try again.";
-      return createErrorResult(new Error(internalMessage), userMessage);
-    } catch (error: unknown) {
+      const code = mapHttpStatusToErrorCode(response.status);
+      logWithTrace("warn", "Invoice creation request was rejected.", {httpStatus: response.status, errorCode: code}, "server");
+      return {
+        success: false,
+        error: {
+          code,
+          message: createSafeCreateInvoiceMessage(response.status),
+          status: response.status,
+        },
+      } as const;
+    } catch {
       addSpanEvent("bff.invoice.create.error");
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error creating the invoice entity...", {error}, "server");
-      console.error("Error creating the invoice entity:", error);
-      return createErrorResult(new Error(errorMessage));
+      logWithTrace("error", "Invoice creation request failed.", {errorCode: "NETWORK_ERROR"}, "server");
+      return createErrorResult(new Error("network"), "Unable to create invoice. Please try again.");
     }
   }) satisfies ServerActionOutputType;
 }

@@ -1,60 +1,73 @@
 /**
- * @fileoverview Unit tests for background analysis in the create-invoice context.
+ * @fileoverview Durable analysis enqueue tests for the create-invoice context.
  * @module app/domains/invoices/create-invoice/_context/CreateInvoiceContext.test
  */
 
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {fetchWithTimeout} from "@/lib/utils.server";
+import {useScansStore} from "@/stores";
 import type {CachedScan} from "@/types/scans";
+import {ScanStatus, ScanType} from "@/types/scans";
 import {act, render, waitFor} from "@testing-library/react";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {CreateInvoiceProvider, useCreateInvoiceContext} from "./CreateInvoiceContext";
 
-vi.mock("@/stores", () => ({
-  useScansStore: vi.fn(),
-}));
-
-vi.mock("../../_actions/invoices", () => ({
-  analyzeInvoice: vi.fn(),
-  createInvoice: vi.fn(),
-}));
-
-vi.mock("../../_actions/scans", () => ({
-  updateScan: vi.fn(),
+const navigationMocks = vi.hoisted(() => ({
+  push: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
-  useRouter: vi.fn(),
+  useRouter: () => ({push: navigationMocks.push}),
 }));
 
-vi.mock("@arolariu/components", () => ({
-  toast: {
-    error: vi.fn(),
-    success: vi.fn(),
-  },
+vi.mock("next-intl-selector", () => ({
+  useTranslations:
+    () =>
+    (
+      selector: (messages: {
+        forms: {
+          invoices: {
+            createInvoice: {
+              notifications: {
+                analysisNotQueued: string;
+                createFailed: string;
+                createdAndAnalysisQueued: string;
+              };
+            };
+          };
+        };
+      }) => string,
+    ) =>
+      selector({
+        forms: {
+          invoices: {
+            createInvoice: {
+              notifications: {
+                analysisNotQueued: "Analysis was not queued.",
+                createFailed: "Invoice creation failed.",
+                createdAndAnalysisQueued: "Analysis was queued.",
+              },
+            },
+          },
+        },
+      }),
 }));
 
-const {useScansStore} = await import("@/stores");
-const {analyzeInvoice, createInvoice} = await import("../../_actions/invoices");
-const {updateScan} = await import("../../_actions/scans");
-const {useRouter} = await import("next/navigation");
+const mockFetchBffUser = vi.mocked(fetchBFFUserFromAuthService);
+const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
 
-const mockUseScansStore = vi.mocked(useScansStore);
-const mockAnalyzeInvoice = vi.mocked(analyzeInvoice);
-const mockCreateInvoice = vi.mocked(createInvoice);
-const mockUpdateScan = vi.mocked(updateScan);
-const mockUseRouter = vi.mocked(useRouter);
-
-const invoiceIdentifier = "11111111-1111-4111-8111-111111111111";
-const scan = {
-  id: "scan-1",
-  blobUrl: "https://example.test/scan-1.jpg",
-  name: "receipt.jpg",
-  scanType: "JPEG",
-} as unknown as CachedScan;
+const INVOICE_IDENTIFIER = "11111111-1111-4111-8111-111111111111";
+const ANALYSIS_RUN_IDENTIFIER = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 
 let invokeCreateInvoiceWithScans: (() => Promise<void>) | null = null;
-let selectScan: ((selectedScan: CachedScan) => void) | null = null;
+let selectScan: ((scan: CachedScan) => void) | null = null;
 let setName: ((name: string) => void) | null = null;
 
+/**
+ * Exposes the context methods under test without mocking the context or actions.
+ *
+ * @returns A non-visual context probe.
+ */
 function ContextProbe(): React.JSX.Element {
   const context = useCreateInvoiceContext();
   invokeCreateInvoiceWithScans = context.createInvoiceWithScans;
@@ -63,34 +76,84 @@ function ContextProbe(): React.JSX.Element {
   return <div />;
 }
 
-describe("CreateInvoiceContext background analysis", () => {
+/**
+ * Creates a selected scan fixture.
+ *
+ * @returns A ready cached scan.
+ */
+function createScan(): CachedScan {
+  return {
+    id: "scan-1",
+    blobUrl: "https://storage.example.test/scan-1.jpg",
+    name: "receipt.jpg",
+    scanType: ScanType.JPEG,
+    status: ScanStatus.READY,
+    metadata: {
+      scanId: "scan-1",
+      ownerId: "user-1",
+      displayName: "receipt.jpg",
+      documentKind: "receipt",
+      documentRole: "primary",
+      status: "ready",
+      uploadedAt: new Date("2026-08-17T19:40:42.187Z"),
+      uploadedBy: "user-1",
+    },
+  } as CachedScan;
+}
+
+/**
+ * Returns a durable analysis enqueue acknowledgement.
+ *
+ * @returns An HTTP 202 response.
+ */
+function acceptedAnalysisResponse(): Response {
+  return new Response(
+    JSON.stringify({
+      runId: ANALYSIS_RUN_IDENTIFIER,
+      targetType: "invoice",
+      targetId: INVOICE_IDENTIFIER,
+      status: "queued",
+      profile: "comprehensive",
+      acceptedCapabilities: [
+        "documentExtraction",
+        "merchantResolution",
+        "invoiceSummary",
+        "productClassification",
+        "allergenAssessment",
+        "invoiceClassification",
+        "recipeGeneration",
+      ],
+      acceptedAt: "2026-08-17T19:40:42.187Z",
+    }),
+    {status: 202},
+  );
+}
+
+describe("CreateInvoiceContext durable analysis enqueue", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    navigationMocks.push.mockReset();
     invokeCreateInvoiceWithScans = null;
     selectScan = null;
     setName = null;
-    mockUseScansStore.mockReturnValue({
-      scans: [],
-      markScansAsUsedByInvoice: vi.fn(),
-    } as unknown as ReturnType<typeof useScansStore>);
-    mockUseRouter.mockReturnValue({push: vi.fn()} as unknown as ReturnType<typeof useRouter>);
-    mockCreateInvoice.mockResolvedValue({
-      success: true,
-      data: {id: invoiceIdentifier, userIdentifier: "user-1"},
-    } as never);
-    mockUpdateScan.mockResolvedValue({success: true, data: {scan: {}} as never});
-    mockAnalyzeInvoice.mockResolvedValue({success: true, data: {} as never});
+    useScansStore.getState().clearScans();
+    mockFetchBffUser.mockResolvedValue({userIdentifier: "user-1", userJwt: "jwt-1", user: null});
   });
 
-  it("enqueues analysis without waiting for its completion after the invoice is created", async () => {
+  it("waits for the durable analysis acknowledgement before navigating away from invoice creation", async () => {
     // Arrange
-    let resolveAnalysis: (() => void) | undefined;
-    mockAnalyzeInvoice.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          resolveAnalysis = () => resolve({success: true, data: {} as never});
-        }),
-    );
+    let resolveAcknowledgement: ((response: Response) => void) | undefined;
+    mockFetchWithTimeout.mockImplementation((url: string) => {
+      if (url.endsWith("/analyze")) {
+        return new Promise<Response>((resolve) => {
+          resolveAcknowledgement = resolve;
+        });
+      }
+
+      return Promise.resolve(new Response(JSON.stringify({id: INVOICE_IDENTIFIER, userIdentifier: "user-1"}), {status: 201}));
+    });
+    const scan = createScan();
+    useScansStore.getState().setScans([scan]);
     render(
       <CreateInvoiceProvider>
         <ContextProbe />
@@ -102,49 +165,54 @@ describe("CreateInvoiceContext background analysis", () => {
     });
 
     // Act
-    await act(async () => {
-      await invokeCreateInvoiceWithScans?.();
-    });
-
-    // Assert
-    expect(mockAnalyzeInvoice).toHaveBeenCalledWith({
-      invoiceIdentifier,
-      request: {profile: "comprehensive", overrides: {}},
-    });
-    expect(mockUseRouter().push).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${invoiceIdentifier}`);
-
-    await act(async () => {
-      resolveAnalysis?.();
-    });
-  });
-
-  it("inspects and bounds an analysis action failure without disrupting invoice creation", async () => {
-    // Arrange
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    mockAnalyzeInvoice.mockResolvedValueOnce({
-      success: false,
-      error: {code: "SERVER_ERROR", message: "Raw backend payload must not be logged."},
-    });
-    render(
-      <CreateInvoiceProvider>
-        <ContextProbe />
-      </CreateInvoiceProvider>,
-    );
+    let creation: Promise<void> | undefined;
     act(() => {
-      selectScan?.(scan);
-      setName?.("Receipt");
+      creation = invokeCreateInvoiceWithScans?.();
     });
-
-    // Act
-    await act(async () => {
-      await invokeCreateInvoiceWithScans?.();
-    });
-
-    // Assert
     await waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalledWith("Background invoice analysis was not accepted:", "SERVER_ERROR");
+      expect(mockFetchWithTimeout).toHaveBeenCalledWith(
+        `/rest/v1/invoices/${INVOICE_IDENTIFIER}/analyze`,
+        expect.objectContaining({method: "POST"}),
+        15_000,
+      );
     });
-    expect(mockUseRouter().push).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${invoiceIdentifier}`);
-    consoleErrorSpy.mockRestore();
+
+    // Assert
+    expect(navigationMocks.push).not.toHaveBeenCalled();
+    resolveAcknowledgement?.(acceptedAnalysisResponse());
+    await act(async () => {
+      await creation;
+    });
+    expect(navigationMocks.push).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${INVOICE_IDENTIFIER}`);
+  });
+
+  it("keeps the created invoice and navigation when durable analysis enqueue is rejected", async () => {
+    // Arrange
+    mockFetchWithTimeout.mockImplementation((url: string) =>
+      Promise.resolve(
+        url.endsWith("/analyze")
+          ? new Response("raw backend body that must remain private", {status: 503})
+          : new Response(JSON.stringify({id: INVOICE_IDENTIFIER, userIdentifier: "user-1"}), {status: 201}),
+      ),
+    );
+    const scan = createScan();
+    useScansStore.getState().setScans([scan]);
+    render(
+      <CreateInvoiceProvider>
+        <ContextProbe />
+      </CreateInvoiceProvider>,
+    );
+    act(() => {
+      selectScan?.(scan);
+      setName?.("Receipt");
+    });
+
+    // Act
+    await act(async () => {
+      await invokeCreateInvoiceWithScans?.();
+    });
+
+    // Assert
+    expect(navigationMocks.push).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${INVOICE_IDENTIFIER}`);
   });
 });

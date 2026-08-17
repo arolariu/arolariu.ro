@@ -8,7 +8,6 @@ import {fetchWithTimeout} from "@/lib/utils.server";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder} from "../../../../../../tests/helpers";
 
-vi.mock("@/lib/actions/user/fetchUser");
 const {createInvoice} = await import("./createInvoice");
 const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
 const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
@@ -65,59 +64,113 @@ describe("createInvoice", () => {
     expect(body.userIdentifier).toBe("custom-user-id");
   });
 
-  it("returns a server-error user message for 5xx responses", async () => {
+  it("returns a stable server-error result without reading or exposing the backend body", async () => {
+    // Arrange
+    const sensitiveBackendBody = "OCR text: card 4111 1111 1111 1111; provider response";
+    const readResponseBody = vi.fn(async () => sensitiveBackendBody);
     mockFetchWithTimeout.mockResolvedValue({
       ok: false,
       status: 500,
       statusText: "Internal Server Error",
-      text: async () => "Server error",
-    } as Response);
+      text: readResponseBody,
+    } as unknown as Response);
 
+    // Act
     const result = await createInvoice({});
 
+    // Assert
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toContain("500");
-      expect(result.error.message).toContain("Failed to create invoice");
+      expect(result.error).toEqual({
+        code: "SERVER_ERROR",
+        message: "Invoice creation is temporarily unavailable. Please try again.",
+        status: 500,
+      });
+      expect(JSON.stringify(result.error)).not.toContain(sensitiveBackendBody);
     }
+    expect(readResponseBody).not.toHaveBeenCalled();
   });
 
-  it("returns a validation user message for non-5xx responses", async () => {
+  it("returns a stable validation result for non-5xx responses", async () => {
     mockFetchWithTimeout.mockResolvedValue({
       ok: false,
       status: 400,
       statusText: "Bad Request",
-      text: async () => "Validation failed",
     } as Response);
 
     const result = await createInvoice({});
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toContain("Failed to create invoice");
+      expect(result.error).toEqual({
+        code: "VALIDATION_ERROR",
+        message: "Unable to create invoice with the provided details.",
+        status: 400,
+      });
     }
   });
 
-  it("returns an error result when auth throws", async () => {
-    mockFetchUser.mockRejectedValue(new Error("Auth failed"));
+  it("preserves an authentication rejection as a stable auth result", async () => {
+    mockFetchWithTimeout.mockResolvedValue({
+      ok: false,
+      status: 401,
+      statusText: "Unauthorized",
+    } as unknown as Response);
+
+    const result = await createInvoice({});
+
+    expect(result).toEqual({
+      success: false,
+      error: {
+        code: "AUTH_ERROR",
+        message: "You are not authorized to create invoices.",
+        status: 401,
+      },
+    });
+  });
+
+  it("does not expose an authentication exception message", async () => {
+    const sensitiveException = "authorization provider token for user@example.test";
+    mockFetchUser.mockRejectedValue(new Error(sensitiveException));
 
     const result = await createInvoice({});
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toContain("Auth failed");
+      expect(result.error.code).toBe("NETWORK_ERROR");
+      expect(result.error.message).toBe("Unable to create invoice. Please try again.");
+      expect(JSON.stringify(result.error)).not.toContain(sensitiveException);
     }
   });
 
-  it("returns an error result when fetch throws", async () => {
-    mockFetchWithTimeout.mockRejectedValue(new Error("Network error"));
+  it("does not log or return a submitted SAS URL, OCR text, or backend exception", async () => {
+    // Arrange
+    const fakeSasUrl = "https://storage.example.test/invoices/scan.jpg?sv=2025-01-01&sig=fake-sensitive-signature";
+    const fakeOcrText = "OCR: customer email ocr-customer@example.test";
+    const fakeBackendBody = "provider response: internal reasoning";
+    const sensitiveException = `${fakeOcrText}; ${fakeBackendBody}`;
+    const consoleInfoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockFetchWithTimeout.mockRejectedValue(new Error(sensitiveException));
 
-    const result = await createInvoice({});
+    // Act
+    const result = await createInvoice({
+      initialScan: TestDataBuilder.build("invoiceScan", {location: fakeSasUrl}),
+      metadata: {isImportant: "false", requiresAnalysis: "true", ocrPreview: fakeOcrText},
+    });
 
+    // Assert
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toContain("Network error");
+      expect(result.error.code).toBe("NETWORK_ERROR");
+      expect(result.error.message).toBe("Unable to create invoice. Please try again.");
     }
+    const capturedOutput = JSON.stringify([...consoleInfoSpy.mock.calls, ...consoleErrorSpy.mock.calls, result]);
+    for (const sensitiveValue of [fakeSasUrl, fakeOcrText, fakeBackendBody, sensitiveException]) {
+      expect(capturedOutput).not.toContain(sensitiveValue);
+    }
+    consoleInfoSpy.mockRestore();
+    consoleErrorSpy.mockRestore();
   });
 
   it("returns a fallback error message when fetch throws a non-Error", async () => {
@@ -127,7 +180,7 @@ describe("createInvoice", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toContain("An unexpected error occurred");
+      expect(result.error.message).toBe("Unable to create invoice. Please try again.");
     }
   });
 });

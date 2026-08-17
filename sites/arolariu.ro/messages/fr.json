@@ -926,19 +926,18 @@
         "buttons": {
           "cancel": "Annuler",
           "close": "Fermer",
-          "createMultiple": "Lancer l'analyse sur {count} scans",
-          "createSingle": "Lancer l'analyse"
+          "createMultiple": "Créer {count} factures",
+          "createSingle": "Créer la facture"
         },
         "chooseMode": "Choisir le Mode de Création",
         "complete": {
-          "description": "Votre facture est prête à être consultée et modifiée.",
-          "descriptionPlural": "Vos factures sont prêtes à être consultées et modifiées.",
+          "analysisNotQueued": "Les factures ont été créées, mais l’analyse n’a pas pu être mise en file d’attente. Vous pouvez réessayer l’analyse depuis la page de la facture.",
+          "analysisQueued": "L’analyse a été mise en file d’attente. Les résultats apparaîtront une fois terminée.",
+          "description": "Votre facture a été créée et est prête à être consultée et modifiée.",
+          "descriptionPlural": "Vos factures ont été créées et sont prêtes à être consultées et modifiées.",
           "errorsLabel": "Scans échoués :",
           "failureDescription": "Nous n'avons pas pu créer de factures. Veuillez vérifier les erreurs ci-dessous et réessayer.",
           "failureTitle": "Échec de la création",
-          "nextSteps": "Prochaines étapes :",
-          "nextStepsDescription": "Examinez votre facture, vérifiez les données extraites et effectuez les modifications nécessaires. Vous pouvez également demander une analyse IA pour des informations sur vos dépenses.",
-          "nextStepsDescriptionPlural": "Examinez vos factures, vérifiez les données extraites et effectuez les modifications nécessaires. Vous pouvez également demander une analyse IA pour des informations sur vos dépenses.",
           "partialDescription": "Certains scans n'ont pas pu être traités. Les factures créées avec succès sont prêtes à être consultées.",
           "partialTitle": "{created} factures créées sur {total}",
           "retryButton": "Réessayer",
@@ -948,22 +947,15 @@
           "viewButtonPlural": "Voir les Factures"
         },
         "creating": {
-          "processing": "Traitement de {count} scan...",
-          "processingPlural": "Traitement de {count} scans...",
-          "step1Description": "Envoi de vos scans vers nos serveurs",
-          "step1Title": "Téléchargement des scans",
-          "step2Description": "Configuration des structures de données de factures",
-          "step2Title": "Création des enregistrements de factures",
-          "step3Description": "Préparation des factures pour la visualisation",
-          "step3Title": "Finalisation",
+          "description": "Création de votre facture. L’analyse sera mise en file d’attente avant de continuer.",
           "title": "Création de Votre Facture",
           "titlePlural": "Création de Vos Factures"
         },
-        "description": "Transformez vos scans en données de facture structurées.",
+        "description": "Créez des factures à partir de vos scans sélectionnés. L’analyse est mise en file d’attente après la création.",
         "errors": {
-          "createFailed": "Échec de la création des factures : {message}",
-          "partialFail": "Échec de la création de {count} facture(s)",
-          "unknown": "Erreur inconnue"
+          "createFailed": "Impossible de créer les factures. Veuillez réessayer.",
+          "creationFailed": "Cette facture n’a pas pu être créée.",
+          "partialFail": "Échec de la création de {count} facture(s)"
         },
         "selectedScans": "Scans Sélectionnés",
         "singleMode": {
@@ -971,11 +963,11 @@
           "title": "Une facture par scan"
         },
         "singleScanInfo": {
-          "description": "Notre IA analysera votre scan et extraira automatiquement les détails du commerçant, les articles, les prix et les totaux. Vous pourrez examiner et modifier les résultats par la suite.",
+          "description": "L’analyse sera mise en file d’attente après la création de la facture. Elle peut se terminer après avoir quitté cette boîte de dialogue.",
           "title": "Que se passe-t-il ensuite ?"
         },
-        "title": "Lancer l'analyse IA",
-        "titlePlural": "Lancer l'analyse IA",
+        "title": "Créer la facture",
+        "titlePlural": "Créer des factures",
         "totalSize": "total"
       },
       "deleteInvoiceDialog": {
@@ -2112,6 +2104,11 @@
           "backToInvoices": "Retour aux factures",
           "subtitle": "Suivez les étapes ci-dessous pour créer une nouvelle facture à partir de vos numérisations",
           "title": "Créer une facture"
+        },
+        "notifications": {
+          "analysisNotQueued": "La facture a été créée, mais l’analyse n’a pas pu être mise en file d’attente. Vous pouvez la réessayer depuis la page de la facture.",
+          "createFailed": "Impossible de créer la facture. Veuillez réessayer.",
+          "createdAndAnalysisQueued": "La facture a été créée. L’analyse a été mise en file d’attente."
         },
         "metadata": {
           "description": "Créez une nouvelle facture à partir de vos numérisations téléchargées.",

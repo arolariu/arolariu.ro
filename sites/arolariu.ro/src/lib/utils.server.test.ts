@@ -424,7 +424,7 @@ describe("mapHttpStatusToErrorCode", () => {
 });
 
 describe("createErrorResult", () => {
-  it("should create error result from Error object", async () => {
+  it("uses the safe default message instead of an Error message", async () => {
     const error = new Error("Something went wrong");
 
     const result = await createErrorResult<string>(error, "Default message");
@@ -432,7 +432,7 @@ describe("createErrorResult", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error?.code).toBe("NETWORK_ERROR");
-      expect(result.error?.message).toBe("Something went wrong");
+      expect(result.error?.message).toBe("Default message");
     }
   });
 
@@ -444,7 +444,7 @@ describe("createErrorResult", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error?.code).toBe("TIMEOUT_ERROR");
-      expect(result.error?.message).toContain("timed out");
+      expect(result.error?.message).toBe("Default message");
     }
   });
 
@@ -456,7 +456,7 @@ describe("createErrorResult", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.code).toBe("NETWORK_ERROR");
-      expect(result.error.message).toBe("Unauthorized");
+      expect(result.error.message).toBe("Default message");
       expect(result.error.status).toBe(401);
     }
   });
@@ -500,6 +500,26 @@ describe("createErrorResult", () => {
     if (!result.success) {
       expect(result.error?.code).toBe("UNKNOWN_ERROR");
       expect(result.error?.message).toBe("Unexpected error");
+    }
+  });
+
+  it("never returns sensitive exception content when a client-safe default is supplied", async () => {
+    const fakeSasUrl = "https://storage.example.test/scan.jpg?sig=fake-sensitive-signature";
+    const fakeOcrText = "OCR customer name: A. Example";
+    const fakeBackendBody = "provider content that must not reach the client";
+    const error = new Error(`${fakeSasUrl} ${fakeOcrText} ${fakeBackendBody}`);
+
+    const result = await createErrorResult<string>(error, "Unable to create invoice. Please try again.");
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toEqual({
+        code: "NETWORK_ERROR",
+        message: "Unable to create invoice. Please try again.",
+      });
+      for (const sensitiveValue of [fakeSasUrl, fakeOcrText, fakeBackendBody]) {
+        expect(JSON.stringify(result.error)).not.toContain(sensitiveValue);
+      }
     }
   });
 });

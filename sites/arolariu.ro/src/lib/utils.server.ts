@@ -357,10 +357,17 @@ function readHttpStatus(value: unknown): number | undefined {
 }
 
 /**
- * Creates a standardized error result from an error object.
- * @param error - The caught error
- * @param defaultMessage - Default message if error doesn't have one
- * @returns ServerActionResult with error details
+ * Creates a standardized client-safe error result from a caught value.
+ *
+ * @remarks
+ * Exception messages may contain backend responses, URLs, provider content, or
+ * user data. This helper uses them only to classify timeouts and never returns
+ * them. Callers must provide a static, client-safe `defaultMessage` when a
+ * domain-specific message is required.
+ *
+ * @param error - The caught error, used only to classify code and HTTP status.
+ * @param defaultMessage - Static client-safe fallback message.
+ * @returns A result containing only a stable code, safe message, and optional status.
  */
 export async function createErrorResult<T>(error: unknown, defaultMessage?: string): ServerActionResult<T> {
   if (error instanceof Error) {
@@ -371,7 +378,7 @@ export async function createErrorResult<T>(error: unknown, defaultMessage?: stri
       success: false,
       error: {
         code: isTimeout ? "TIMEOUT_ERROR" : "NETWORK_ERROR",
-        message: error.message,
+        message: defaultMessage ?? (isTimeout ? "The request timed out. Please try again." : "A network error occurred. Please try again."),
         ...(status === undefined ? {} : {status}),
       },
     } as const;
@@ -383,7 +390,7 @@ export async function createErrorResult<T>(error: unknown, defaultMessage?: stri
     success: false,
     error: {
       code: "UNKNOWN_ERROR",
-      message: defaultMessage ?? (typeof error === "string" ? error : "An unknown error occurred"),
+      message: defaultMessage ?? "An unexpected error occurred. Please try again.",
       ...(status === undefined ? {} : {status}),
     },
   } as const;

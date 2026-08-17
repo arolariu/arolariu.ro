@@ -1,700 +1,365 @@
 /**
- * @fileoverview Tests for createInvoiceFromScans server action.
+ * @fileoverview Security and durable-enqueue tests for invoice creation from scans.
  * @module app/domains/invoices/view-scans/_actions/createInvoiceFromScans.test
  */
 
+import {logWithTrace} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
-import {InvoiceScanType} from "@/types/invoices";
 import type {Scan} from "@/types/scans";
 import {ScanStatus, ScanType} from "@/types/scans";
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-
-vi.mock("../../_actions/scans", () => ({
-  updateScan: vi.fn(async () => ({success: true, data: {scan: {}}})),
-}));
-
-vi.mock("../../_actions/invoices", () => ({
-  analyzeInvoice: vi.fn(),
-}));
-
-// Stub references — use vi.mocked for type-safe access
-const mockFetch = vi.mocked(fetchWithTimeout);
-const mockFetchBFFUser = vi.mocked(fetchBFFUserFromAuthService);
-
-import {updateScan} from "../../_actions/scans";
-import {analyzeInvoice} from "../../_actions/invoices";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import {createInvoiceFromScans} from "./createInvoiceFromScans";
 
-const mockUpdateScan = vi.mocked(updateScan);
-const mockAnalyzeInvoice = vi.mocked(analyzeInvoice);
+const mockFetchBffUser = vi.mocked(fetchBFFUserFromAuthService);
+const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
+const mockLogWithTrace = vi.mocked(logWithTrace);
+
+const INVOICE_IDENTIFIER = "11111111-1111-4111-8111-111111111111";
+const ANALYSIS_RUN_IDENTIFIER = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 
 /**
- * Creates a test scan with default values
+ * Creates a deterministic scan for server-action boundary tests.
+ *
+ * @param overrides - Optional scan field overrides.
+ * @returns A ready scan fixture.
  */
-function createTestScan(id: string, overrides: Partial<Scan> = {}): Scan {
+function createScan(overrides: Partial<Scan> = {}): Scan {
   return {
-    id,
-    userIdentifier: "test-user",
-    name: `Scan ${id}`,
-    blobUrl: `https://storage.blob.core.windows.net/scans/${id}.jpg`,
+    id: "scan-1",
+    userIdentifier: "user-1",
+    name: "receipt.jpg",
+    blobUrl: "https://storage.example.test/scans/scan-1.jpg",
     mimeType: "image/jpeg",
     sizeInBytes: 1024,
     scanType: ScanType.JPEG,
-    uploadedAt: new Date("2024-01-01"),
+    uploadedAt: new Date("2026-08-17T19:40:42.187Z"),
     status: ScanStatus.READY,
     metadata: {
-      scanId: id,
-      ownerId: "user-123",
-      displayName: `${id}.jpg`,
+      scanId: "scan-1",
+      ownerId: "user-1",
+      displayName: "receipt.jpg",
       documentKind: "receipt",
       documentRole: "primary",
       status: "ready",
-      uploadedAt: new Date("2026-06-03T20:00:00.000Z"),
-      uploadedBy: "user-123",
+      uploadedAt: new Date("2026-08-17T19:40:42.187Z"),
+      uploadedBy: "user-1",
     },
     ...overrides,
   };
 }
 
 /**
- * Creates a mock invoice response
+ * Returns a response that represents a durable analysis enqueue acknowledgement.
+ *
+ * @returns A valid HTTP 202 response.
  */
-function createMockInvoice(id: string) {
+function acceptedAnalysisResponse(): Response {
+  return new Response(
+    JSON.stringify({
+      runId: ANALYSIS_RUN_IDENTIFIER,
+      targetType: "invoice",
+      targetId: INVOICE_IDENTIFIER,
+      status: "queued",
+      profile: "comprehensive",
+      acceptedCapabilities: [
+        "documentExtraction",
+        "merchantResolution",
+        "invoiceSummary",
+        "productClassification",
+        "allergenAssessment",
+        "invoiceClassification",
+        "recipeGeneration",
+      ],
+      acceptedAt: "2026-08-17T19:40:42.187Z",
+    }),
+    {status: 202},
+  );
+}
+
+/**
+ * Returns the smallest invoice shape consumed by this composite action.
+ *
+ * @returns A successful invoice-creation response.
+ */
+function createdInvoiceResponse(): Response {
+  return new Response(JSON.stringify({id: INVOICE_IDENTIFIER, userIdentifier: "user-1"}), {status: 201});
+}
+
+/**
+ * Creates a second unique scan for batch and partial-success tests.
+ *
+ * @returns A ready scan with a distinct identifier.
+ */
+function createSecondScan(): Scan {
+  const firstScan = createScan();
   return {
-    id,
-    userIdentifier: "test-user",
-    createdAt: new Date().toISOString(),
-    paymentInformation: {
-      transactionDate: new Date().toISOString(),
-      currency: {code: "USD", name: "US Dollar", symbol: "$"},
-      totalAmount: 100,
-    },
+    ...firstScan,
+    id: "scan-2",
+    metadata: {...firstScan.metadata, scanId: "scan-2", displayName: "receipt-2.jpg"},
+    name: "receipt-2.jpg",
   };
 }
 
 describe("createInvoiceFromScans", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetchBFFUser.mockResolvedValue({
-      userIdentifier: "test-user-guid",
-      userJwt: "mock-jwt-token",
+    mockFetchBffUser.mockResolvedValue({
+      userIdentifier: "user-1",
+      userJwt: "jwt-1",
       user: null,
     });
-    mockUpdateScan.mockResolvedValue({success: true, data: {scan: {} as never}});
-    mockAnalyzeInvoice.mockResolvedValue({success: true, data: {} as never});
   });
 
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
+  it("waits for the durable HTTP 202 acknowledgement without waiting for analysis work", async () => {
+    // Arrange
+    let resolveAcknowledgement: ((response: Response) => void) | undefined;
+    mockFetchWithTimeout.mockImplementation((url: string) => {
+      if (url.endsWith("/analyze")) {
+        return new Promise<Response>((resolve) => {
+          resolveAcknowledgement = resolve;
+        });
+      }
 
-  describe("single mode", () => {
-    it("should create one invoice per scan", async () => {
-      const scans = [createTestScan("scan-1"), createTestScan("scan-2")];
-
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(createMockInvoice("invoice-1")),
-        } as unknown as Response)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(createMockInvoice("invoice-2")),
-        } as unknown as Response);
-
-      const result = await createInvoiceFromScans({scans, mode: "single"});
-
-      expect(result.invoices).toHaveLength(2);
-      expect(result.convertedScanIds).toEqual(["scan-1", "scan-2"]);
-      expect(result.errors).toHaveLength(0);
-      expect(mockFetch).toHaveBeenCalledTimes(2);
-
-      // Assert initial scan metadata includes canonical scan metadata
-      const firstCallPayload = JSON.parse(mockFetch.mock.calls[0]?.[1]?.body as string);
-      expect(firstCallPayload.initialScan.metadata).toMatchObject({
-        sourceScanId: "scan-1",
-        sourceOwnerId: "user-123",
-        documentKind: "receipt",
-        documentRole: "primary",
-        uploadedAt: "2026-06-03T20:00:00.000Z",
-      });
-
-      // Assert updateScan was called for each successfully created invoice with attach metadata
-      expect(mockUpdateScan).toHaveBeenCalledTimes(2);
-      expect(mockUpdateScan).toHaveBeenNthCalledWith(1, {
-        scanId: "scan-1",
-        metadataAdd: {
-          status: "attached",
-          attachedAt: expect.any(Date),
-          attachedBy: "test-user-guid",
-          attachedTo: "invoice-1",
-        },
-        metadataRemove: ["detachedAt", "detachedBy", "detachedFrom", "archivedAt", "archivedBy"],
-      });
-      expect(mockUpdateScan).toHaveBeenNthCalledWith(2, {
-        scanId: "scan-2",
-        metadataAdd: {
-          status: "attached",
-          attachedAt: expect.any(Date),
-          attachedBy: "test-user-guid",
-          attachedTo: "invoice-2",
-        },
-        metadataRemove: ["detachedAt", "detachedBy", "detachedFrom", "archivedAt", "archivedBy"],
-      });
+      return Promise.resolve(createdInvoiceResponse());
     });
 
-    it("should handle partial failures in single mode", async () => {
-      const scans = [createTestScan("scan-1"), createTestScan("scan-2"), createTestScan("scan-3")];
-
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(createMockInvoice("invoice-1")),
-        } as unknown as Response)
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 500,
-          text: () => Promise.resolve("Internal server error"),
-        } as unknown as Response)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(createMockInvoice("invoice-3")),
-        } as unknown as Response);
-
-      const result = await createInvoiceFromScans({scans, mode: "single"});
-
-      expect(result.invoices).toHaveLength(2);
-      expect(result.convertedScanIds).toEqual(["scan-1", "scan-3"]);
-      expect(result.errors).toHaveLength(1);
-      expect(result.errors[0]?.scanId).toBe("scan-2");
-
-      // Assert updateScan was called only for successful scans
-      expect(mockUpdateScan).toHaveBeenCalledTimes(2);
-      expect(mockUpdateScan).toHaveBeenCalledWith(expect.objectContaining({scanId: "scan-1"}));
-      expect(mockUpdateScan).toHaveBeenCalledWith(expect.objectContaining({scanId: "scan-3"}));
+    // Act
+    const creation = createInvoiceFromScans({scans: [createScan()], mode: "single"});
+    let hasSettled = false;
+    void creation.then(() => {
+      hasSettled = true;
     });
 
-    it("should handle all failures in single mode", async () => {
-      const scans = [createTestScan("scan-1"), createTestScan("scan-2")];
-
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 400,
-        text: () => Promise.resolve("Bad request"),
-      } as unknown as Response);
-
-      const result = await createInvoiceFromScans({scans, mode: "single"});
-
-      expect(result.invoices).toHaveLength(0);
-      expect(result.convertedScanIds).toHaveLength(0);
-      expect(result.errors).toHaveLength(2);
-
-      // Assert updateScan was not called when all failed
-      expect(mockUpdateScan).not.toHaveBeenCalled();
+    await vi.waitFor(() => {
+      expect(mockFetchWithTimeout).toHaveBeenCalledWith(
+        `/rest/v1/invoices/${INVOICE_IDENTIFIER}/analyze`,
+        expect.objectContaining({method: "POST"}),
+        15_000,
+      );
     });
+    await Promise.resolve();
 
-    it("should handle empty scans array", async () => {
-      const result = await createInvoiceFromScans({scans: [], mode: "single"});
-
-      expect(result.invoices).toHaveLength(0);
-      expect(result.convertedScanIds).toHaveLength(0);
-      expect(result.errors).toHaveLength(0);
-      expect(mockFetch).not.toHaveBeenCalled();
+    // Assert
+    expect(hasSettled).toBe(false);
+    resolveAcknowledgement?.(acceptedAnalysisResponse());
+    await expect(creation).resolves.toMatchObject({
+      success: true,
+      data: {
+        invoices: [{id: INVOICE_IDENTIFIER}],
+        analysis: [{invoiceIdentifier: INVOICE_IDENTIFIER, status: "queued"}],
+      },
     });
   });
 
-  describe("batch mode", () => {
-    it("should create one invoice with all scans attached", async () => {
-      const scans = [createTestScan("scan-1"), createTestScan("scan-2"), createTestScan("scan-3")];
+  it("preserves a created invoice when analysis enqueue is rejected and reports only a safe code", async () => {
+    // Arrange
+    const fakeSasUrl = "https://storage.example.test/scans/scan-1.jpg?sig=fake-sensitive-signature";
+    const fakeOcrText = "OCR text for customer ocr@example.test";
+    const fakeBackendBody = "provider body containing internal detail";
+    mockFetchWithTimeout.mockImplementation((url: string) =>
+      Promise.resolve(url.endsWith("/analyze") ? new Response(fakeBackendBody, {status: 503}) : createdInvoiceResponse()),
+    );
 
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(createMockInvoice("invoice-batch")),
-        } as unknown as Response)
-        .mockResolvedValueOnce({ok: true} as unknown as Response) // attach scan-2
-        .mockResolvedValueOnce({ok: true} as unknown as Response); // attach scan-3
-
-      const result = await createInvoiceFromScans({scans, mode: "batch"});
-
-      expect(result.invoices).toHaveLength(1);
-      expect(result.invoices[0]?.id).toBe("invoice-batch");
-      expect(result.convertedScanIds).toEqual(["scan-1", "scan-2", "scan-3"]);
-      expect(result.errors).toHaveLength(0);
-      expect(mockFetch).toHaveBeenCalledTimes(3);
-
-      // Assert initial scan includes canonical metadata
-      const createPayload = JSON.parse(mockFetch.mock.calls[0]?.[1]?.body as string);
-      expect(createPayload.initialScan.metadata).toMatchObject({
-        sourceScanId: "scan-1",
-        sourceOwnerId: "user-123",
-        documentKind: "receipt",
-        documentRole: "primary",
-        uploadedAt: "2026-06-03T20:00:00.000Z",
-      });
-
-      // Assert additional scans include canonical metadata
-      const attachPayload2 = JSON.parse(mockFetch.mock.calls[1]?.[1]?.body as string);
-      expect(attachPayload2.additionalMetadata).toMatchObject({
-        sourceScanId: "scan-2",
-        sourceOwnerId: "user-123",
-        documentKind: "receipt",
-        documentRole: "primary",
-      });
-      expect(attachPayload2.additionalMetadata.attachedAt).toBeDefined();
-
-      // Assert updateScan was called once for all scans in batch with same invoiceId
-      expect(mockUpdateScan).toHaveBeenCalledTimes(3);
-      expect(mockUpdateScan).toHaveBeenNthCalledWith(1, {
-        scanId: "scan-1",
-        metadataAdd: {
-          status: "attached",
-          attachedAt: expect.any(Date),
-          attachedBy: "test-user-guid",
-          attachedTo: "invoice-batch",
-        },
-        metadataRemove: ["detachedAt", "detachedBy", "detachedFrom", "archivedAt", "archivedBy"],
-      });
-      expect(mockUpdateScan).toHaveBeenNthCalledWith(2, {
-        scanId: "scan-2",
-        metadataAdd: {
-          status: "attached",
-          attachedAt: expect.any(Date),
-          attachedBy: "test-user-guid",
-          attachedTo: "invoice-batch",
-        },
-        metadataRemove: ["detachedAt", "detachedBy", "detachedFrom", "archivedAt", "archivedBy"],
-      });
-      expect(mockUpdateScan).toHaveBeenNthCalledWith(3, {
-        scanId: "scan-3",
-        metadataAdd: {
-          status: "attached",
-          attachedAt: expect.any(Date),
-          attachedBy: "test-user-guid",
-          attachedTo: "invoice-batch",
-        },
-        metadataRemove: ["detachedAt", "detachedBy", "detachedFrom", "archivedAt", "archivedBy"],
-      });
+    // Act
+    const result = await createInvoiceFromScans({
+      scans: [createScan({blobUrl: fakeSasUrl, name: fakeOcrText})],
+      mode: "single",
     });
 
-    it("should handle attachment failures in batch mode", async () => {
-      const scans = [createTestScan("scan-1"), createTestScan("scan-2"), createTestScan("scan-3")];
+    // Assert
+    expect(result).toMatchObject({
+      success: true,
+      data: {
+        invoices: [{id: INVOICE_IDENTIFIER}],
+        analysis: [{invoiceIdentifier: INVOICE_IDENTIFIER, status: "not_queued", errorCode: "SERVER_ERROR"}],
+      },
+    });
+    const capturedValues = JSON.stringify([result, ...mockLogWithTrace.mock.calls]);
+    for (const sensitiveValue of [fakeSasUrl, fakeOcrText, fakeBackendBody]) {
+      expect(capturedValues).not.toContain(sensitiveValue);
+    }
+  });
 
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(createMockInvoice("invoice-batch")),
-        } as unknown as Response)
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 500,
-          text: () => Promise.resolve("Attachment failed"),
-        } as unknown as Response)
-        .mockResolvedValueOnce({ok: true} as unknown as Response);
+  it("does not read, log, or return a rejected invoice-creation response body", async () => {
+    // Arrange
+    const fakeSasUrl = "https://storage.example.test/scans/scan-1.jpg?sig=fake-sensitive-signature";
+    const fakeOcrText = "OCR content that must not be returned";
+    const fakeBackendBody = "backend body with provider content";
+    const readResponseBody = vi.fn(async () => fakeBackendBody);
+    mockFetchWithTimeout.mockResolvedValue({
+      ok: false,
+      status: 500,
+      text: readResponseBody,
+    } as unknown as Response);
 
-      const result = await createInvoiceFromScans({scans, mode: "batch"});
-
-      expect(result.invoices).toHaveLength(1);
-      expect(result.convertedScanIds).toEqual(["scan-1", "scan-3"]);
-      expect(result.errors).toHaveLength(1);
-      expect(result.errors[0]?.scanId).toBe("scan-2");
-
-      // Assert updateScan was called for successfully attached scans
-      expect(mockUpdateScan).toHaveBeenCalledTimes(2);
-      expect(mockUpdateScan).toHaveBeenCalledWith(expect.objectContaining({scanId: "scan-1"}));
-      expect(mockUpdateScan).toHaveBeenCalledWith(expect.objectContaining({scanId: "scan-3"}));
+    // Act
+    const result = await createInvoiceFromScans({
+      scans: [createScan({blobUrl: fakeSasUrl, name: fakeOcrText})],
+      mode: "single",
     });
 
-    it("should handle non-Error thrown values during attachment in batch mode", async () => {
-      const scans = [createTestScan("scan-1"), createTestScan("scan-2")];
-
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(createMockInvoice("invoice-batch")),
-        } as unknown as Response)
-        .mockRejectedValueOnce("String error during attachment");
-
-      const result = await createInvoiceFromScans({scans, mode: "batch"});
-
-      expect(result.invoices).toHaveLength(1);
-      expect(result.convertedScanIds).toEqual(["scan-1"]);
-      expect(result.errors).toHaveLength(1);
-      expect(result.errors[0]?.error).toBe("Unknown error");
+    // Assert
+    expect(result).toMatchObject({
+      success: false,
+      error: {
+        code: "SERVER_ERROR",
+        message: "Invoice creation is temporarily unavailable. Please try again.",
+      },
     });
+    expect(readResponseBody).not.toHaveBeenCalled();
+    const capturedValues = JSON.stringify([result, ...mockLogWithTrace.mock.calls]);
+    for (const sensitiveValue of [fakeSasUrl, fakeOcrText, fakeBackendBody]) {
+      expect(capturedValues).not.toContain(sensitiveValue);
+    }
+  });
 
-    it("should handle non-Error thrown values during initial batch creation", async () => {
-      const scans = [createTestScan("scan-1"), createTestScan("scan-2")];
+  it("returns an explicit safe auth failure instead of a success-shaped fallback", async () => {
+    // Arrange
+    mockFetchBffUser.mockResolvedValue({userIdentifier: "", userJwt: "jwt-1", user: null});
 
-      mockFetch.mockRejectedValueOnce("String error");
+    // Act
+    const result = await createInvoiceFromScans({scans: [createScan()], mode: "single"});
 
-      const result = await createInvoiceFromScans({scans, mode: "batch"});
-
-      expect(result.invoices).toHaveLength(0);
-      expect(result.convertedScanIds).toHaveLength(0);
-      expect(result.errors).toHaveLength(2);
-      expect(result.errors.every((e) => e.error === "Unknown error")).toBe(true);
-    });
-
-    it("should fail all scans when initial invoice creation fails", async () => {
-      const scans = [createTestScan("scan-1"), createTestScan("scan-2")];
-
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        text: () => Promise.resolve("Invoice creation failed"),
-      } as unknown as Response);
-
-      const result = await createInvoiceFromScans({scans, mode: "batch"});
-
-      expect(result.invoices).toHaveLength(0);
-      expect(result.convertedScanIds).toHaveLength(0);
-      expect(result.errors).toHaveLength(2);
-      expect(result.errors.every((e) => e.error.includes("Failed to create invoice"))).toBe(true);
-    });
-
-    it("should throw error for empty scans array in batch mode", async () => {
-      await expect(createInvoiceFromScans({scans: [], mode: "batch"})).rejects.toThrow("No scans provided for batch creation");
-    });
-
-    it("should work with single scan in batch mode", async () => {
-      const scans = [createTestScan("scan-1")];
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(createMockInvoice("invoice-single-batch")),
-      } as unknown as Response);
-
-      const result = await createInvoiceFromScans({scans, mode: "batch"});
-
-      expect(result.invoices).toHaveLength(1);
-      expect(result.convertedScanIds).toEqual(["scan-1"]);
-      expect(result.errors).toHaveLength(0);
-      expect(mockFetch).toHaveBeenCalledTimes(1);
+    // Assert
+    expect(result).toMatchObject({
+      success: false,
+      error: {
+        code: "AUTH_ERROR",
+        message: "You must be authenticated to create invoices.",
+      },
     });
   });
 
-  describe("scan type mapping", () => {
-    it("should map JPEG scan type correctly", async () => {
-      const scans = [createTestScan("scan-1", {scanType: ScanType.JPEG})];
+  it("continues single-mode creation after a safe per-scan rejection", async () => {
+    // Arrange
+    let createAttempts = 0;
+    mockFetchWithTimeout.mockImplementation((url: string) => {
+      if (url.endsWith("/analyze")) {
+        return Promise.resolve(acceptedAnalysisResponse());
+      }
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(createMockInvoice("invoice-1")),
-      } as unknown as Response);
-
-      await createInvoiceFromScans({scans, mode: "single"});
-
-      const fetchCall = mockFetch.mock.calls[0];
-      const body = JSON.parse(fetchCall?.[1]?.body as string);
-      expect(body.initialScan.scanType).toBe(InvoiceScanType.JPEG);
+      createAttempts += 1;
+      return Promise.resolve(createAttempts === 1 ? new Response(null, {status: 422}) : createdInvoiceResponse());
     });
 
-    it("should map PNG scan type correctly", async () => {
-      const scans = [createTestScan("scan-1", {scanType: ScanType.PNG})];
+    // Act
+    const result = await createInvoiceFromScans({scans: [createScan(), createSecondScan()], mode: "single"});
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(createMockInvoice("invoice-1")),
-      } as unknown as Response);
-
-      await createInvoiceFromScans({scans, mode: "single"});
-
-      const fetchCall = mockFetch.mock.calls[0];
-      const body = JSON.parse(fetchCall?.[1]?.body as string);
-      expect(body.initialScan.scanType).toBe(InvoiceScanType.PNG);
-    });
-
-    it("should map PDF scan type correctly", async () => {
-      const scans = [createTestScan("scan-1", {scanType: ScanType.PDF})];
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(createMockInvoice("invoice-1")),
-      } as unknown as Response);
-
-      await createInvoiceFromScans({scans, mode: "single"});
-
-      const fetchCall = mockFetch.mock.calls[0];
-      const body = JSON.parse(fetchCall?.[1]?.body as string);
-      expect(body.initialScan.scanType).toBe(InvoiceScanType.PDF);
-    });
-
-    it("should map unknown scan type to UNKNOWN", async () => {
-      const scans = [createTestScan("scan-1", {scanType: "UNKNOWN" as ScanType})];
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(createMockInvoice("invoice-1")),
-      } as unknown as Response);
-
-      await createInvoiceFromScans({scans, mode: "single"});
-
-      const fetchCall = mockFetch.mock.calls[0];
-      const body = JSON.parse(fetchCall?.[1]?.body as string);
-      expect(body.initialScan.scanType).toBe(InvoiceScanType.UNKNOWN);
+    // Assert
+    expect(result).toMatchObject({
+      success: true,
+      data: {
+        invoices: [{id: INVOICE_IDENTIFIER}],
+        convertedScanIds: ["scan-2"],
+        errors: [{scanId: "scan-1", code: "VALIDATION_ERROR"}],
+        analysis: [{invoiceIdentifier: INVOICE_IDENTIFIER, status: "queued"}],
+      },
     });
   });
 
-  describe("authentication", () => {
-    it("should throw error when user is not authenticated", async () => {
-      mockFetchBFFUser.mockResolvedValue({
-        userIdentifier: null as unknown as string,
-        userJwt: "token",
-        user: null,
-      });
+  it("creates a batch invoice, attaches remaining scans, and awaits its durable enqueue acknowledgement", async () => {
+    // Arrange
+    mockFetchWithTimeout.mockImplementation((url: string) => {
+      if (url.endsWith("/analyze")) {
+        return Promise.resolve(acceptedAnalysisResponse());
+      }
 
-      const scans = [createTestScan("scan-1")];
+      if (url.endsWith("/scans")) {
+        return Promise.resolve(new Response(null, {status: 201}));
+      }
 
-      await expect(createInvoiceFromScans({scans, mode: "single"})).rejects.toThrow("User must be authenticated to create invoices");
+      return Promise.resolve(createdInvoiceResponse());
     });
 
-    it("should throw error when userIdentifier is empty string", async () => {
-      mockFetchBFFUser.mockResolvedValue({
-        userIdentifier: "",
-        userJwt: "token",
-        user: null,
-      });
+    // Act
+    const result = await createInvoiceFromScans({scans: [createScan(), createSecondScan()], mode: "batch"});
 
-      const scans = [createTestScan("scan-1")];
-
-      await expect(createInvoiceFromScans({scans, mode: "single"})).rejects.toThrow("User must be authenticated to create invoices");
-    });
-
-    it("should use JWT token for authorization header", async () => {
-      const scans = [createTestScan("scan-1")];
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(createMockInvoice("invoice-1")),
-      } as unknown as Response);
-
-      await createInvoiceFromScans({scans, mode: "single"});
-
-      const fetchCall = mockFetch.mock.calls[0];
-      expect((fetchCall?.[1]?.headers as Record<string, string> | undefined)?.["Authorization"]).toBe("Bearer mock-jwt-token");
+    // Assert
+    expect(result).toMatchObject({
+      success: true,
+      data: {
+        invoices: [{id: INVOICE_IDENTIFIER}],
+        convertedScanIds: ["scan-1", "scan-2"],
+        errors: [],
+        analysis: [{invoiceIdentifier: INVOICE_IDENTIFIER, status: "queued"}],
+      },
     });
   });
 
-  describe("API payload", () => {
-    it("should send correct payload for invoice creation", async () => {
-      const scans = [createTestScan("scan-1", {blobUrl: "https://storage.test.com/scan-1.jpg"})];
+  it("preserves a batch invoice when an additional scan cannot be attached", async () => {
+    // Arrange
+    mockFetchWithTimeout.mockImplementation((url: string) => {
+      if (url.endsWith("/analyze")) {
+        return Promise.resolve(acceptedAnalysisResponse());
+      }
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(createMockInvoice("invoice-1")),
-      } as unknown as Response);
+      if (url.endsWith("/scans")) {
+        return Promise.resolve(new Response(null, {status: 404}));
+      }
 
-      await createInvoiceFromScans({scans, mode: "single"});
-
-      const fetchCall = mockFetch.mock.calls[0];
-      const body = JSON.parse(fetchCall?.[1]?.body as string);
-
-      expect(body.userIdentifier).toBe("test-user-guid");
-      expect(body.initialScan.location).toBe("https://storage.test.com/scan-1.jpg");
-      expect(body.metadata.sourceScanId).toBe("scan-1");
-      expect(body.metadata.isImportant).toBe("false");
-      expect(body.metadata.requiresAnalysis).toBe("true");
+      return Promise.resolve(createdInvoiceResponse());
     });
 
-    it("should send correct payload for scan attachment", async () => {
-      const scans = [
-        createTestScan("scan-1"),
-        createTestScan("scan-2", {blobUrl: "https://storage.test.com/scan-2.png", scanType: ScanType.PNG}),
-      ];
+    // Act
+    const result = await createInvoiceFromScans({scans: [createScan(), createSecondScan()], mode: "batch"});
 
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(createMockInvoice("invoice-batch")),
-        } as unknown as Response)
-        .mockResolvedValueOnce({ok: true} as unknown as Response);
-
-      await createInvoiceFromScans({scans, mode: "batch"});
-
-      // Check attachment call (relative path — URL resolution happens inside real fetchWithTimeout)
-      const attachCall = mockFetch.mock.calls[1];
-      expect(attachCall?.[0]).toBe("/rest/v1/invoices/invoice-batch/scans");
-
-      const body = JSON.parse(attachCall?.[1]?.body as string);
-      expect(body.type).toBe(InvoiceScanType.PNG);
-      expect(body.location).toBe("https://storage.test.com/scan-2.png");
-      expect(body.additionalMetadata.sourceScanId).toBe("scan-2");
-      expect(body.additionalMetadata.attachedAt).toBeDefined();
+    // Assert
+    expect(result).toMatchObject({
+      success: true,
+      data: {
+        invoices: [{id: INVOICE_IDENTIFIER}],
+        convertedScanIds: ["scan-1"],
+        errors: [{scanId: "scan-2", code: "NOT_FOUND"}],
+        analysis: [{invoiceIdentifier: INVOICE_IDENTIFIER, status: "queued"}],
+      },
     });
   });
 
-  describe("error handling", () => {
-    it("should handle fetch network errors", async () => {
-      const scans = [createTestScan("scan-1")];
+  it("returns a validation failure for an empty batch without sending a request", async () => {
+    // Act
+    const result = await createInvoiceFromScans({scans: [], mode: "batch"});
 
-      mockFetch.mockRejectedValueOnce(new Error("Network error"));
-
-      const result = await createInvoiceFromScans({scans, mode: "single"});
-
-      expect(result.invoices).toHaveLength(0);
-      expect(result.errors).toHaveLength(1);
-      expect(result.errors[0]?.error).toContain("Network error");
+    // Assert
+    expect(result).toMatchObject({
+      success: false,
+      error: {code: "VALIDATION_ERROR", message: "Select at least one scan to create an invoice."},
     });
-
-    it("should handle auth service errors", async () => {
-      mockFetchBFFUser.mockRejectedValue(new Error("Auth service unavailable"));
-
-      const scans = [createTestScan("scan-1")];
-
-      await expect(createInvoiceFromScans({scans, mode: "single"})).rejects.toThrow("Auth service unavailable");
-    });
-
-    it("should handle non-Error thrown values", async () => {
-      const scans = [createTestScan("scan-1")];
-
-      mockFetch.mockRejectedValueOnce("String error");
-
-      const result = await createInvoiceFromScans({scans, mode: "single"});
-
-      expect(result.errors).toHaveLength(1);
-      expect(result.errors[0]?.error).toBe("Unknown error");
-    });
+    expect(mockFetchWithTimeout).not.toHaveBeenCalled();
   });
 
-  describe("fire-and-forget background operations", () => {
-    it("enqueues analysis without waiting and logs an action failure in single mode", async () => {
-      // Arrange
-      const scans = [createTestScan("scan-1")];
-      const {logWithTrace} = await import("@/instrumentation.server");
-      const mockLogWithTrace = vi.mocked(logWithTrace);
-      mockAnalyzeInvoice.mockResolvedValueOnce({
-        success: false,
-        error: {code: "SERVER_ERROR", message: "Analysis service down"},
-      });
+  it("returns a stable network result when all requested invoice creations fail before a response", async () => {
+    // Arrange
+    const sensitiveException = "provider response included OCR text and a SAS query string";
+    mockFetchWithTimeout.mockRejectedValue(new Error(sensitiveException));
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(createMockInvoice("invoice-1")),
-      } as unknown as Response);
+    // Act
+    const result = await createInvoiceFromScans({scans: [createScan()], mode: "single"});
 
-      // Act
-      const result = await createInvoiceFromScans({scans, mode: "single"});
-
-      // The main function should still succeed (analysis is fire-and-forget)
-      expect(result.invoices).toHaveLength(1);
-      expect(result.convertedScanIds).toEqual(["scan-1"]);
-      expect(result.errors).toHaveLength(0);
-      expect(mockAnalyzeInvoice).toHaveBeenCalledWith({
-        invoiceIdentifier: "invoice-1",
-        request: {profile: "comprehensive", overrides: {}},
-      });
-
-      // Wait for the background result inspection without blocking the create flow.
-      await vi.waitFor(() => {
-        expect(mockLogWithTrace).toHaveBeenCalledWith(
-          "warn",
-          "Background invoice analysis was not accepted.",
-          {code: "SERVER_ERROR"},
-          "server",
-        );
-      });
+    // Assert
+    expect(result).toMatchObject({
+      success: false,
+      error: {code: "NETWORK_ERROR", message: "Unable to create invoices. Please try again."},
     });
+    expect(JSON.stringify(result)).not.toContain(sensitiveException);
+  });
 
-    it("enqueues analysis without waiting and logs an action failure in batch mode", async () => {
-      // Arrange
-      const scans = [createTestScan("scan-1"), createTestScan("scan-2")];
-      const {logWithTrace} = await import("@/instrumentation.server");
-      const mockLogWithTrace = vi.mocked(logWithTrace);
-      mockAnalyzeInvoice.mockResolvedValueOnce({
-        success: false,
-        error: {code: "NETWORK_ERROR", message: "Analysis failed"},
-      });
+  it("keeps the created invoice and reports a safe unknown code for an invalid 202 acknowledgement", async () => {
+    // Arrange
+    mockFetchWithTimeout.mockImplementation((url: string) =>
+      Promise.resolve(url.endsWith("/analyze") ? new Response(JSON.stringify({}), {status: 202}) : createdInvoiceResponse()),
+    );
 
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(createMockInvoice("invoice-batch")),
-        } as unknown as Response)
-        .mockResolvedValueOnce({ok: true} as unknown as Response); // attach scan-2
+    // Act
+    const result = await createInvoiceFromScans({scans: [createScan()], mode: "single"});
 
-      // Act
-      const result = await createInvoiceFromScans({scans, mode: "batch"});
-
-      // Main function should succeed
-      expect(result.invoices).toHaveLength(1);
-      expect(result.convertedScanIds).toEqual(["scan-1", "scan-2"]);
-      expect(result.errors).toHaveLength(0);
-      expect(mockAnalyzeInvoice).toHaveBeenCalledWith({
-        invoiceIdentifier: "invoice-batch",
-        request: {profile: "comprehensive", overrides: {}},
-      });
-
-      // Wait for the background result inspection without blocking the create flow.
-      await vi.waitFor(() => {
-        expect(mockLogWithTrace).toHaveBeenCalledWith(
-          "warn",
-          "Background invoice analysis was not accepted.",
-          {code: "NETWORK_ERROR"},
-          "server",
-        );
-      });
-    });
-
-    it("should handle updateScan failure gracefully in single mode", async () => {
-      // Arrange
-      const scans = [createTestScan("scan-1")];
-      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-      // Configure updateScan mock to reject
-      mockUpdateScan.mockRejectedValueOnce(new Error("Update scan failed"));
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(createMockInvoice("invoice-1")),
-      } as unknown as Response);
-
-      // Act
-      const result = await createInvoiceFromScans({scans, mode: "single"});
-
-      // Main function should succeed
-      expect(result.invoices).toHaveLength(1);
-      expect(result.convertedScanIds).toEqual(["scan-1"]);
-
-      // Wait for fire-and-forget warning
-      await vi.waitFor(() => {
-        expect(consoleWarnSpy).toHaveBeenCalledWith("Failed to mark scan as attached (non-critical):", expect.any(Error));
-      });
-
-      consoleWarnSpy.mockRestore();
-    });
-
-    it("should handle updateScan failure gracefully in batch mode", async () => {
-      // Arrange
-      const scans = [createTestScan("scan-1"), createTestScan("scan-2")];
-      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-      // Configure updateScan mock to reject for first call, succeed for second
-      mockUpdateScan
-        .mockRejectedValueOnce(new Error("Update scan batch failed"))
-        .mockResolvedValueOnce({success: true, data: {scan: {} as never}});
-
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(createMockInvoice("invoice-batch")),
-        } as unknown as Response)
-        .mockResolvedValueOnce({ok: true} as unknown as Response); // attach scan-2
-
-      // Act
-      const result = await createInvoiceFromScans({scans, mode: "batch"});
-
-      // Main function should succeed
-      expect(result.invoices).toHaveLength(1);
-      expect(result.convertedScanIds).toEqual(["scan-1", "scan-2"]);
-
-      // Wait for fire-and-forget warning (multiple calls in batch mode)
-      await vi.waitFor(() => {
-        expect(consoleWarnSpy).toHaveBeenCalledWith("Failed to mark scan as attached (non-critical):", expect.any(Error));
-      });
-
-      consoleWarnSpy.mockRestore();
+    // Assert
+    expect(result).toMatchObject({
+      success: true,
+      data: {
+        invoices: [{id: INVOICE_IDENTIFIER}],
+        analysis: [{invoiceIdentifier: INVOICE_IDENTIFIER, status: "not_queued", errorCode: "UNKNOWN_ERROR"}],
+      },
     });
   });
 });

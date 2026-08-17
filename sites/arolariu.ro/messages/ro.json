@@ -926,19 +926,18 @@
         "buttons": {
           "cancel": "Anulare",
           "close": "Închide",
-          "createMultiple": "Pornește analiza pentru {count} scanări",
-          "createSingle": "Pornește analiza"
+          "createMultiple": "Creează {count} facturi",
+          "createSingle": "Creează factura"
         },
         "chooseMode": "Alegeți Modul de Creare",
         "complete": {
-          "description": "Factura dvs. este gata pentru vizualizare și editare.",
-          "descriptionPlural": "Facturile dvs. sunt gata pentru vizualizare și editare.",
+          "analysisNotQueued": "Facturile au fost create, dar analiza nu a putut fi pusă în coadă. Puteți reîncerca analiza din pagina facturii.",
+          "analysisQueued": "Analiza a fost pusă în coadă. Rezultatele vor apărea după finalizare.",
+          "description": "Factura dvs. a fost creată și este gata pentru vizualizare și editare.",
+          "descriptionPlural": "Facturile dvs. au fost create și sunt gata pentru vizualizare și editare.",
           "errorsLabel": "Scanări Eșuate:",
           "failureDescription": "Nu am putut crea nicio factură. Vă rugăm să revedeți erorile de mai jos și să încercați din nou.",
           "failureTitle": "Creare Eșuată",
-          "nextSteps": "Pași următori:",
-          "nextStepsDescription": "Revizuiți factura, verificați datele extrase și faceți orice modificări necesare. Puteți solicita și analiza AI pentru informații despre cheltuieli.",
-          "nextStepsDescriptionPlural": "Revizuiți facturile, verificați datele extrase și faceți orice modificări necesare. Puteți solicita și analiza AI pentru informații despre cheltuieli.",
           "partialDescription": "Unele scanări nu au putut fi procesate. Facturile create cu succes sunt gata pentru vizualizare.",
           "partialTitle": "{created} din {total} Facturi Create",
           "retryButton": "Încearcă Din Nou",
@@ -948,22 +947,15 @@
           "viewButtonPlural": "Vizualizați Facturile"
         },
         "creating": {
-          "processing": "Se procesează {count} scanare...",
-          "processingPlural": "Se procesează {count} scanări...",
-          "step1Description": "Se trimit scanările către serverele noastre",
-          "step1Title": "Se încarcă scanările",
-          "step2Description": "Se configurează structurile de date ale facturilor",
-          "step2Title": "Se creează înregistrările facturilor",
-          "step3Description": "Se pregătesc facturile pentru vizualizare",
-          "step3Title": "Finalizare",
+          "description": "Se creează factura. Analiza va fi pusă în coadă înainte de a continua.",
           "title": "Se creează Factura",
           "titlePlural": "Se creează Facturile"
         },
-        "description": "Transformă scanările în date structurate de factură.",
+        "description": "Creează facturi din scanările selectate. Analiza este pusă în coadă după creare.",
         "errors": {
-          "createFailed": "Nu s-au putut crea facturile: {message}",
-          "partialFail": "Nu s-au putut crea {count} facturi",
-          "unknown": "Eroare necunoscută"
+          "createFailed": "Facturile nu au putut fi create. Vă rugăm să încercați din nou.",
+          "creationFailed": "Această factură nu a putut fi creată.",
+          "partialFail": "Nu s-au putut crea {count} facturi"
         },
         "selectedScans": "Scanări Selectate",
         "singleMode": {
@@ -971,11 +963,11 @@
           "title": "O factură per scanare"
         },
         "singleScanInfo": {
-          "description": "AI-ul nostru va analiza scanarea dvs. și va extrage automat detaliile comerciantului, articolele, prețurile și totalurile. Puteți revizui și edita rezultatele ulterior.",
+          "description": "Analiza va fi pusă în coadă după crearea facturii. Se poate finaliza după ce părăsiți acest dialog.",
           "title": "Ce se întâmplă în continuare?"
         },
-        "title": "Pornește analiza AI",
-        "titlePlural": "Pornește analiza AI",
+        "title": "Creează Factura",
+        "titlePlural": "Creează Facturi",
         "totalSize": "total"
       },
       "deleteInvoiceDialog": {
@@ -2112,6 +2104,11 @@
           "backToInvoices": "Înapoi la facturi",
           "subtitle": "Urmați pașii de mai jos pentru a crea o factură nouă din scanările dvs.",
           "title": "Creare factură"
+        },
+        "notifications": {
+          "analysisNotQueued": "Factura a fost creată, dar analiza nu a putut fi pusă în coadă. O puteți reîncerca din pagina facturii.",
+          "createFailed": "Factura nu a putut fi creată. Vă rugăm să încercați din nou.",
+          "createdAndAnalysisQueued": "Factura a fost creată. Analiza a fost pusă în coadă."
         },
         "metadata": {
           "description": "Creați o factură nouă din scanările încărcate.",

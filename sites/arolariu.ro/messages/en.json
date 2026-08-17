@@ -926,19 +926,18 @@
         "buttons": {
           "cancel": "Cancel",
           "close": "Close",
-          "createMultiple": "Start analysis on {count} scans",
-          "createSingle": "Start analysis"
+          "createMultiple": "Create {count} invoices",
+          "createSingle": "Create invoice"
         },
         "chooseMode": "Choose Creation Mode",
         "complete": {
-          "description": "Your invoice is ready for viewing and editing.",
-          "descriptionPlural": "Your invoices are ready for viewing and editing.",
+          "analysisNotQueued": "Invoices were created, but analysis could not be queued. You can retry analysis from the invoice page.",
+          "analysisQueued": "Analysis was queued. Results will appear after it finishes.",
+          "description": "Your invoice was created and is ready for viewing and editing.",
+          "descriptionPlural": "Your invoices were created and are ready for viewing and editing.",
           "errorsLabel": "Failed Scans:",
           "failureDescription": "We couldn't create any invoices. Please review the errors below and try again.",
           "failureTitle": "Creation Failed",
-          "nextSteps": "Next steps:",
-          "nextStepsDescription": "Review your invoice, verify the extracted data, and make any necessary edits. You can also request AI analysis for spending insights.",
-          "nextStepsDescriptionPlural": "Review your invoices, verify the extracted data, and make any necessary edits. You can also request AI analysis for spending insights.",
           "partialDescription": "Some scans couldn't be processed. Successfully created invoices are ready for viewing.",
           "partialTitle": "{created} of {total} Invoices Created",
           "retryButton": "Try Again",
@@ -948,22 +947,15 @@
           "viewButtonPlural": "View Invoices"
         },
         "creating": {
-          "processing": "Processing {count} scan...",
-          "processingPlural": "Processing {count} scans...",
-          "step1Description": "Sending your scans to our servers",
-          "step1Title": "Uploading scans",
-          "step2Description": "Setting up invoice data structures",
-          "step2Title": "Creating invoice records",
-          "step3Description": "Preparing invoices for viewing",
-          "step3Title": "Finalizing",
+          "description": "Creating your invoice. Analysis will be queued before you continue.",
           "title": "Creating Your Invoice",
           "titlePlural": "Creating Your Invoices"
         },
-        "description": "Transform your scans into structured invoice data.",
+        "description": "Create invoices from your selected scans. Analysis is queued after creation.",
         "errors": {
-          "createFailed": "Failed to create invoices: {message}",
-          "partialFail": "Failed to create {count} invoice(s)",
-          "unknown": "Unknown error"
+          "createFailed": "Unable to create invoices. Please try again.",
+          "creationFailed": "This invoice could not be created.",
+          "partialFail": "Failed to create {count} invoice(s)"
         },
         "selectedScans": "Selected Scans",
         "singleMode": {
@@ -971,11 +963,11 @@
           "title": "One invoice per scan"
         },
         "singleScanInfo": {
-          "description": "Our AI will analyze your scan and automatically extract merchant details, items, prices, and totals. You can review and edit the results afterward.",
+          "description": "Analysis will be queued after the invoice is created. It may finish after you leave this dialog.",
           "title": "What happens next?"
         },
-        "title": "Start AI analysis",
-        "titlePlural": "Start AI analysis",
+        "title": "Create Invoice",
+        "titlePlural": "Create Invoices",
         "totalSize": "total"
       },
       "deleteInvoiceDialog": {
@@ -2112,6 +2104,11 @@
           "backToInvoices": "Back to Invoices",
           "subtitle": "Follow the steps below to create a new invoice from your scans",
           "title": "Create Invoice"
+        },
+        "notifications": {
+          "analysisNotQueued": "Invoice created, but analysis could not be queued. You can retry it from the invoice page.",
+          "createFailed": "Unable to create the invoice. Please try again.",
+          "createdAndAnalysisQueued": "Invoice created. Analysis was queued."
         },
         "metadata": {
           "description": "Create a new invoice from your uploaded scans.",

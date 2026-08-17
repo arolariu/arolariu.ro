@@ -4,65 +4,6 @@
 @use "../../../../../styles/abstracts" as *;
 
 // ===========================================
-// PROCESS STEP
-// ===========================================
-.processStep {
-  display: flex;
-  align-items: flex-start;
-  gap: space(3);
-  opacity: 0.5;
-}
-
-.processStepActive {
-  opacity: 1;
-}
-
-.stepCircle {
-  @include flex-center;
-  height: space(8);
-  width: space(8);
-  flex-shrink: 0;
-  border-radius: radius("full");
-  font-size: font-size("sm");
-  font-weight: font-weight("medium");
-  @include transition((background-color, color));
-}
-
-.stepCircleDefault {
-  background-color: color("muted");
-  color: color("muted-foreground");
-}
-
-.stepCircleActive {
-  @include gradient-bg();
-  color: color("primary-foreground");
-}
-
-.stepCircleComplete {
-  background-color: color("success");
-  color: color("success-foreground");
-}
-
-.stepContent {
-  flex: 1;
-}
-
-.stepTitle {
-  font-size: font-size("sm");
-  font-weight: font-weight("medium");
-  color: color("foreground");
-}
-
-.stepDescription {
-  @include text-muted;
-}
-
-.stepCheckIcon {
-  height: space(4);
-  width: space(4);
-}
-
-// ===========================================
 // SELECT STEP
 // ===========================================
 .scansPreviewBox {
@@ -250,22 +191,6 @@
   @include text-muted("sm");
 }
 
-.progressSection {
-  margin-top: space(6);
-}
-
-.progressLabel {
-  margin-top: space(2);
-  text-align: center;
-  @include text-muted;
-}
-
-.stepsSection {
-  margin-top: space(6);
-
-  @include spaced-children(space(3));
-}
-
 // ===========================================
 // COMPLETE STEP
 // ===========================================
@@ -301,17 +226,27 @@
   @include text-muted("sm");
 }
 
-.completeNextSteps {
+.completeAnalysisNotice {
   margin-top: space(6);
   border-radius: radius("lg");
   border: 1px solid color-alpha("success", 0.35);
   background-color: color-alpha("success", 0.1);
   padding: space(4);
+  overflow-wrap: anywhere;
 }
 
-.completeNextStepsText {
+.completeAnalysisNoticeWarning {
+  border-color: color-alpha("warning", 0.45);
+  background-color: color-alpha("warning", 0.1);
+}
+
+.completeAnalysisNoticeText {
   font-size: font-size("sm");
   color: color("success");
+}
+
+.completeAnalysisNoticeWarning .completeAnalysisNoticeText {
+  color: color("warning");
 }
 
 .completeFooter {
@@ -370,10 +305,6 @@
   &:hover {
     opacity: 0.9;
   }
-}
-
-.progressBar {
-  height: 0.5rem;
 }
 
 .completeButton {
@@ -485,5 +416,5 @@
 .completeErrorItemText {
   font-size: font-size("sm");
   color: color("muted-foreground");
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }

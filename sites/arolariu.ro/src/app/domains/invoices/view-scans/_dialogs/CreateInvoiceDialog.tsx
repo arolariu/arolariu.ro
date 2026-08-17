@@ -21,7 +21,6 @@ import {
   DialogHeader,
   DialogTitle,
   Label,
-  Progress,
   RadioGroup,
   RadioGroupItem,
   toast,
@@ -49,39 +48,13 @@ import styles from "./CreateInvoiceDialog.module.scss";
 
 type CreationMode = "single" | "batch";
 type CreationStep = "select" | "creating" | "complete";
+type SafeErrorCode = "NETWORK_ERROR" | "TIMEOUT_ERROR" | "AUTH_ERROR" | "NOT_FOUND" | "VALIDATION_ERROR" | "SERVER_ERROR" | "UNKNOWN_ERROR";
 
-/** Process step indicator */
-function ProcessStep({
-  step,
-  title,
-  description,
-  isActive,
-  isComplete,
-}: Readonly<{
-  step: number;
-  title: string;
-  description: string;
-  isActive: boolean;
-  isComplete: boolean;
-}>): React.JSX.Element {
-  const getCircleClass = (): string => {
-    if (isComplete) return styles["stepCircleComplete"]!;
-    if (isActive) return styles["stepCircleActive"]!;
-    return styles["stepCircleDefault"]!;
-  };
-
-  return (
-    <div className={`${styles["processStep"]} ${isActive ? styles["processStepActive"] : ""}`}>
-      <div className={`${styles["stepCircle"]} ${getCircleClass()}`}>
-        {isComplete ? <TbCheck className={styles["stepCheckIcon"]} /> : step}
-      </div>
-      <div className={styles["stepContent"]}>
-        <p className={styles["stepTitle"]}>{title}</p>
-        <p className={styles["stepDescription"]}>{description}</p>
-      </div>
-    </div>
-  );
-}
+type CreationError = Readonly<{
+  code: SafeErrorCode;
+  scanId?: string;
+  scanName?: string;
+}>;
 
 /**
  * Dialog for choosing between single and batch invoice creation modes.
@@ -105,9 +78,9 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
   // Local state for wizard steps
   const [mode, setMode] = useState<CreationMode>("single");
   const [step, setStep] = useState<CreationStep>("select");
-  const [progress, setProgress] = useState(0);
   const [createdCount, setCreatedCount] = useState(0);
-  const [errors, setErrors] = useState<Array<{message: string; scanId?: string; scanName?: string}>>([]);
+  const [errors, setErrors] = useState<CreationError[]>([]);
+  const [analysisQueueFailureCount, setAnalysisQueueFailureCount] = useState(0);
 
   // Store actions
   const archiveScans = useScansStore((state) => state.archiveScans);
@@ -120,14 +93,11 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
 
   const handleClose = useCallback((): void => {
     close();
-    // Reset state after dialog closes
-    setTimeout(() => {
-      setStep("select");
-      setProgress(0);
-      setCreatedCount(0);
-      setErrors([]);
-      setMode("single");
-    }, 300);
+    setStep("select");
+    setCreatedCount(0);
+    setErrors([]);
+    setAnalysisQueueFailureCount(0);
+    setMode("single");
   }, [close]);
 
   const handleViewInvoices = useCallback((): void => {
@@ -139,90 +109,112 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
     if (selectedScans.length === 0) return;
 
     setStep("creating");
-    setProgress(10);
     setErrors([]);
+    setAnalysisQueueFailureCount(0);
 
     try {
-      setProgress(30);
       const result = await createInvoiceFromScans({scans: selectedScans, mode});
 
-      setProgress(70);
-      for (const invoice of result.invoices) {
+      if (!result.success) {
+        setErrors([{code: result.error.code}]);
+        setCreatedCount(0);
+        setStep("complete");
+        toast.error(t((m) => m.dialogs.invoices.createInvoiceDialog.errors.createFailed));
+        return;
+      }
+
+      const {analysis, convertedScanIds, errors: creationErrors, invoices} = result.data;
+      for (const invoice of invoices) {
         upsertInvoice(invoice);
       }
 
-      setCreatedCount(result.invoices.length);
-      // Map errors with scan details
+      setCreatedCount(invoices.length);
       setErrors(
-        result.errors.map((err) => {
-          const scan = selectedScans.find((s) => s.id === err.scanId);
+        creationErrors.map((error) => {
+          const scan = selectedScans.find((candidate) => candidate.id === error.scanId);
           return {
-            message: err.error,
-            scanId: err.scanId,
-            scanName: scan?.name ?? "Unknown scan",
+            code: error.code,
+            scanId: error.scanId,
+            ...(scan ? {scanName: scan.name} : {}),
           };
         }),
       );
-      setProgress(90);
+      setAnalysisQueueFailureCount(analysis.filter((outcome) => outcome.status === "not_queued").length);
 
       // Link scans to invoices
-      if (result.convertedScanIds.length > 0 && result.invoices.length > 0) {
+      if (convertedScanIds.length > 0 && invoices.length > 0) {
         if (mode === "batch") {
-          markScansAsUsedByInvoice(result.convertedScanIds, result.invoices[0]!.id);
+          markScansAsUsedByInvoice([...convertedScanIds], invoices[0]!.id);
         } else {
-          result.invoices.forEach((invoice, index) => {
-            const scanId = result.convertedScanIds[index];
+          invoices.forEach((invoice, index) => {
+            const scanId = convertedScanIds[index];
             if (scanId) markScansAsUsedByInvoice([scanId], invoice.id);
           });
         }
-        archiveScans(result.convertedScanIds);
+        archiveScans([...convertedScanIds]);
       }
 
       clearSelectedScans();
-      setProgress(100);
       setStep("complete");
 
-      if (result.errors.length > 0 && result.invoices.length > 0) {
-        // Show partial failure toast with first error details
-        const [firstError] = result.errors;
-        const errorMessage = firstError ? `${firstError.scanId}: ${firstError.error}` : "";
-        const partialFailMessage = t((m) => m.dialogs.invoices.createInvoiceDialog.errors.partialFail, {
-          count: String(result.errors.length),
-        });
-        toast.error(errorMessage ? `${partialFailMessage} ${errorMessage}` : partialFailMessage);
+      if (creationErrors.length > 0 && invoices.length > 0) {
+        toast.error(
+          t((m) => m.dialogs.invoices.createInvoiceDialog.errors.partialFail, {
+            count: String(creationErrors.length),
+          }),
+        );
+      } else if (analysis.some((outcome) => outcome.status === "not_queued")) {
+        toast.error(t((m) => m.dialogs.invoices.createInvoiceDialog.complete.analysisNotQueued));
+      } else {
+        toast.success(t((m) => m.dialogs.invoices.createInvoiceDialog.complete.analysisQueued));
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : t((m) => m.dialogs.invoices.createInvoiceDialog.errors.unknown);
-      setErrors([{message: String(errorMessage), scanId: undefined, scanName: undefined}]);
+    } catch {
+      setErrors([{code: "NETWORK_ERROR"}]);
       setCreatedCount(0);
-      setProgress(100);
       setStep("complete");
-      // Show error toast with backend details
-      toast.error(t((m) => m.dialogs.invoices.createInvoiceDialog.errors.createFailed, {message: errorMessage}));
+      toast.error(t((m) => m.dialogs.invoices.createInvoiceDialog.errors.createFailed));
     }
   };
 
-  const handleModeChange = useCallback((v: unknown) => {
-    setMode(v as CreationMode);
+  const handleModeChange = useCallback((value: unknown): void => {
+    if (value === "single" || value === "batch") {
+      setMode(value);
+    }
   }, []);
 
-  const handleRetry = useCallback(() => {
+  const handleRetry = useCallback((): void => {
     setStep("select");
-    setProgress(0);
     setCreatedCount(0);
     setErrors([]);
+    setAnalysisQueueFailureCount(0);
   }, []);
 
   const handleOpenChange = useCallback(
-    (shouldOpen: boolean) => {
-      if (shouldOpen) open();
-      else if (step !== "creating") {
-        // Prevent closing during creation to avoid interrupting API call
+    (shouldOpen: boolean): void => {
+      if (shouldOpen) {
+        open();
+      } else if (step !== "creating") {
+        // Preserve the active request and dialog focus until the API responds.
         handleClose();
       }
     },
     [open, handleClose, step],
   );
+
+  const renderAnalysisOutcome = (): React.JSX.Element =>
+    analysisQueueFailureCount > 0 ? (
+      <div
+        className={`${styles["completeAnalysisNotice"]} ${styles["completeAnalysisNoticeWarning"]}`}
+        role='alert'>
+        <p className={styles["completeAnalysisNoticeText"]}>
+          {t((m) => m.dialogs.invoices.createInvoiceDialog.complete.analysisNotQueued)}
+        </p>
+      </div>
+    ) : (
+      <div className={styles["completeAnalysisNotice"]}>
+        <p className={styles["completeAnalysisNoticeText"]}>{t((m) => m.dialogs.invoices.createInvoiceDialog.complete.analysisQueued)}</p>
+      </div>
+    );
 
   // Render select step content
   const renderSelectStep = (): React.JSX.Element => (
@@ -368,6 +360,9 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       initial={{opacity: 0, y: 10}}
       animate={{opacity: 1, y: 0}}
       exit={{opacity: 0, y: -10}}
+      aria-busy='true'
+      aria-live='polite'
+      role='status'
       className={styles["creatingWrapper"]}>
       <div className={styles["creatingCenter"]}>
         <div className={styles["creatingIconCircle"]}>
@@ -378,43 +373,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
             ? t((m) => m.dialogs.invoices.createInvoiceDialog.creating.titlePlural)
             : t((m) => m.dialogs.invoices.createInvoiceDialog.creating.title)}
         </h3>
-        <p className={styles["creatingDescription"]}>
-          {selectedScans.length > 1
-            ? t((m) => m.dialogs.invoices.createInvoiceDialog.creating.processingPlural, {count: String(selectedScans.length)})
-            : t((m) => m.dialogs.invoices.createInvoiceDialog.creating.processing, {count: String(selectedScans.length)})}
-        </p>
-      </div>
-
-      <div className={styles["progressSection"]}>
-        <Progress
-          value={progress}
-          className={styles["progressBar"]}
-        />
-        <p className={styles["progressLabel"]}>{progress}%</p>
-      </div>
-
-      <div className={styles["stepsSection"]}>
-        <ProcessStep
-          step={1}
-          title={t((m) => m.dialogs.invoices.createInvoiceDialog.creating.step1Title)}
-          description={t((m) => m.dialogs.invoices.createInvoiceDialog.creating.step1Description)}
-          isActive={progress < 30}
-          isComplete={progress >= 30}
-        />
-        <ProcessStep
-          step={2}
-          title={t((m) => m.dialogs.invoices.createInvoiceDialog.creating.step2Title)}
-          description={t((m) => m.dialogs.invoices.createInvoiceDialog.creating.step2Description)}
-          isActive={progress >= 30 && progress < 70}
-          isComplete={progress >= 70}
-        />
-        <ProcessStep
-          step={3}
-          title={t((m) => m.dialogs.invoices.createInvoiceDialog.creating.step3Title)}
-          description={t((m) => m.dialogs.invoices.createInvoiceDialog.creating.step3Description)}
-          isActive={progress >= 70}
-          isComplete={progress >= 100}
-        />
+        <p className={styles["creatingDescription"]}>{t((m) => m.dialogs.invoices.createInvoiceDialog.creating.description)}</p>
       </div>
     </motion.div>
   );
@@ -443,15 +402,19 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
           <p className={styles["completeDescription"]}>{t((m) => m.dialogs.invoices.createInvoiceDialog.complete.failureDescription)}</p>
 
           {errors.length > 0 && (
-            <div className={styles["completeErrorsList"]}>
-              {errors.map((error, _index) => (
+            <div
+              className={styles["completeErrorsList"]}
+              role='alert'>
+              {errors.map((error) => (
                 <div
-                  key={error.scanId ?? error.message}
+                  key={error.scanId ?? error.code}
                   className={styles["completeErrorItem"]}>
                   <TbX className={styles["completeErrorItemIcon"]} />
                   <div>
                     {error.scanName ? <p className={styles["completeErrorItemScanName"]}>{error.scanName}</p> : null}
-                    <p className={styles["completeErrorItemText"]}>{error.message}</p>
+                    <p className={styles["completeErrorItemText"]}>
+                      {t((m) => m.dialogs.invoices.createInvoiceDialog.errors.creationFailed)}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -499,14 +462,20 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
               <p className={styles["completeErrorsListTitle"]}>{t((m) => m.dialogs.invoices.createInvoiceDialog.complete.errorsLabel)}</p>
               {errors.map((error) => (
                 <div
-                  key={error.scanId ?? error.message ?? "unknown-error"}
+                  key={error.scanId ?? error.code}
                   className={styles["completeErrorItem"]}>
                   <TbX className={styles["completeErrorItemIcon"]} />
-                  <p className={styles["completeErrorItemText"]}>{error.message}</p>
+                  <div>
+                    {error.scanName ? <p className={styles["completeErrorItemScanName"]}>{error.scanName}</p> : null}
+                    <p className={styles["completeErrorItemText"]}>
+                      {t((m) => m.dialogs.invoices.createInvoiceDialog.errors.creationFailed)}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
           )}
+          {renderAnalysisOutcome()}
 
           <DialogFooter className={styles["completeFooter"]}>
             <Button
@@ -548,14 +517,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
             : t((m) => m.dialogs.invoices.createInvoiceDialog.complete.description)}
         </p>
 
-        <div className={styles["completeNextSteps"]}>
-          <p className={styles["completeNextStepsText"]}>
-            <strong>{t((m) => m.dialogs.invoices.createInvoiceDialog.complete.nextSteps)}</strong>{" "}
-            {isPlural
-              ? t((m) => m.dialogs.invoices.createInvoiceDialog.complete.nextStepsDescriptionPlural)
-              : t((m) => m.dialogs.invoices.createInvoiceDialog.complete.nextStepsDescription)}
-          </p>
-        </div>
+        {renderAnalysisOutcome()}
 
         <DialogFooter className={styles["completeFooter"]}>
           <Button

@@ -16,6 +16,7 @@ import {useScansStore} from "@/stores";
 import {AnalysisProfile, InvoiceCategory, PaymentType} from "@/types/invoices";
 import {type CachedScan, ScanMetadataKey, ScanMetadataStatus, ScanStatus} from "@/types/scans";
 import {toast} from "@arolariu/components";
+import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
 import {createContext, useCallback, useContext, useMemo, useState, type ReactNode} from "react";
 import {analyzeInvoice, createInvoice} from "../../_actions/invoices";
@@ -89,6 +90,7 @@ interface CreateInvoiceProviderProps {
  */
 export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProviderProps>): React.JSX.Element {
   const router = useRouter();
+  const t = useTranslations();
   const {scans, markScansAsUsedByInvoice} = useScansStore();
 
   // Filter to only READY scans
@@ -190,7 +192,8 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       // Use first scan as initial scan for invoice creation
       const [firstScan] = selectedScans;
       if (!firstScan) {
-        throw new Error("No scans selected");
+        toast.error(t((m) => m.forms.invoices.createInvoice.notifications.createFailed));
+        return;
       }
 
       // Derive the invoice scan type through the centralized MIME utility.
@@ -199,11 +202,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       // Create invoice with first scan and ALL invoice details in metadata
       // Note: All form fields (name, category, paymentType, transactionDate, description)
       // are included in metadata. Backend should extract these to populate top-level Invoice fields.
-      const {
-        success,
-        data: invoice,
-        error,
-      } = await createInvoice({
+      const result = await createInvoice({
         initialScan: {
           scanType,
           location: firstScan.blobUrl,
@@ -220,9 +219,11 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
         },
       });
 
-      if (!success || !invoice) {
-        throw new Error(error?.message ?? "Invoice creation failed");
+      if (!result.success) {
+        toast.error(t((m) => m.forms.invoices.createInvoice.notifications.createFailed));
+        return;
       }
+      const invoice = result.data;
 
       // Mark scans as used in local store (immediate UI update)
       const scanIds = selectedScans.map((s) => s.id);
@@ -245,32 +246,26 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
             ScanMetadataKey.ARCHIVED_AT,
             ScanMetadataKey.ARCHIVED_BY,
           ],
-        }).catch((error) => {
-          console.warn("Failed to persist scan attachment metadata (non-critical):", error);
-        });
+        }).catch(() => undefined);
       }
 
-      toast.success(`Invoice "${invoiceDetails.name}" has been created successfully.`);
-
-      // Navigate to view invoice page — user can trigger analysis from there
-      router.push(`/domains/invoices/view-invoice/${invoice.id}`);
-
-      // Enqueue analysis independently so navigation never waits for worker completion.
-      void analyzeInvoice({
+      // Await only the analysis endpoint's durable HTTP 202 acknowledgement.
+      // This never waits for OCR or worker completion, but prevents navigation
+      // from terminating the enqueue request before it reaches durable storage.
+      const analysisResult = await analyzeInvoice({
         invoiceIdentifier: invoice.id,
         request: {profile: AnalysisProfile.Comprehensive, overrides: {}},
-      })
-        .then((result) => {
-          if (!result.success) {
-            console.error("Background invoice analysis was not accepted:", result.error.code);
-          }
-        })
-        .catch(() => {
-          console.error("Background invoice analysis enqueue failed.");
-        });
-    } catch (error) {
-      console.error("Error creating invoice:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to create invoice. Please try again.");
+      }).catch(() => null);
+
+      if (analysisResult?.success) {
+        toast.success(t((m) => m.forms.invoices.createInvoice.notifications.createdAndAnalysisQueued));
+      } else {
+        toast.error(t((m) => m.forms.invoices.createInvoice.notifications.analysisNotQueued));
+      }
+
+      router.push(`/domains/invoices/view-invoice/${invoice.id}`);
+    } catch {
+      toast.error(t((m) => m.forms.invoices.createInvoice.notifications.createFailed));
     } finally {
       setIsCreating(false);
     }
