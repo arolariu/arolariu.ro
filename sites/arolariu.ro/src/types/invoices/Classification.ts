@@ -8,6 +8,8 @@
  * untrusted JSON from being treated as a domain classification.
  */
 
+import {isStrictRfc3339Timestamp} from "./transportValidation";
+
 /**
  * Supported canonical taxonomy systems.
  */
@@ -211,10 +213,7 @@ export function isClassificationOrigin(value: unknown): value is ClassificationO
  */
 export function isClassificationSelection(value: unknown): value is ClassificationSelection {
   return (
-    isRecord(value)
-    && hasOnlyKeys(value, ["system", "code"])
-    && isClassificationSystem(value["system"])
-    && isNonBlankString(value["code"])
+    isRecord(value) && hasOnlyKeys(value, ["system", "code"]) && isClassificationSystem(value["system"]) && isNonBlankString(value["code"])
   );
 }
 
@@ -242,10 +241,7 @@ export function isClassificationNode(value: unknown): value is ClassificationNod
  */
 export function isClassificationEvidence(value: unknown): value is ClassificationEvidence {
   return (
-    isRecord(value)
-    && hasOnlyKeys(value, ["source", "value"])
-    && isNonBlankString(value["source"])
-    && isNonBlankString(value["value"])
+    isRecord(value) && hasOnlyKeys(value, ["source", "value"]) && isNonBlankString(value["source"]) && isNonBlankString(value["value"])
   );
 }
 
@@ -308,7 +304,7 @@ export function isTaxonomyArtifactNode(value: unknown): value is TaxonomyArtifac
     || !isNonBlankString(value["code"])
     || !isNonBlankString(value["officialLabel"])
     || !isNonBlankString(value["level"])
-    || !(typeof value["parentCode"] === "string" || value["parentCode"] === null)
+    || !(isNonBlankString(value["parentCode"]) || value["parentCode"] === null)
     || !isStringArray(value["hierarchyCodes"])
     || value["hierarchyCodes"].length === 0
     || !isStringArray(value["hierarchyLabels"])
@@ -319,29 +315,83 @@ export function isTaxonomyArtifactNode(value: unknown): value is TaxonomyArtifac
     return false;
   }
 
-  return value["hierarchyCodes"].at(-1) === value["code"];
+  return value["hierarchyCodes"].at(-1) === value["code"] && value["hierarchyLabels"].at(-1) === value["officialLabel"];
+}
+
+function hasValidTaxonomyHierarchy(nodes: readonly TaxonomyArtifactNode[]): boolean {
+  const nodesByCode = new Map<string, TaxonomyArtifactNode>();
+
+  for (const node of nodes) {
+    if (nodesByCode.has(node.code)) {
+      return false;
+    }
+
+    nodesByCode.set(node.code, node);
+  }
+
+  for (const node of nodes) {
+    const hierarchyCodes = node.hierarchyCodes;
+    const hierarchyLabels = node.hierarchyLabels;
+    const terminalCode = hierarchyCodes.at(-1);
+    const terminalLabel = hierarchyLabels.at(-1);
+
+    if (terminalCode !== node.code || terminalLabel !== node.officialLabel) {
+      return false;
+    }
+
+    if (node.parentCode === null && hierarchyCodes.length !== 1) {
+      return false;
+    }
+
+    if (node.parentCode !== null && (hierarchyCodes.length < 2 || hierarchyCodes.at(-2) !== node.parentCode)) {
+      return false;
+    }
+
+    for (const [index, code] of hierarchyCodes.entries()) {
+      const hierarchyNode = nodesByCode.get(code);
+      if (hierarchyNode === undefined || hierarchyNode.officialLabel !== hierarchyLabels[index]) {
+        return false;
+      }
+
+      if (index === 0) {
+        if (hierarchyNode.parentCode !== null) {
+          return false;
+        }
+      } else {
+        const parentCode = hierarchyCodes[index - 1];
+        if (hierarchyNode.parentCode !== parentCode) {
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
 }
 
 /**
- * Determines whether a value has the full generated-taxonomy artifact shape.
+ * Determines whether a value has the full generated-taxonomy artifact shape and hierarchy integrity.
  *
  * @param value - Untrusted runtime value to validate.
  * @returns Whether the value is a {@link TaxonomyArtifact}.
  */
 export function isTaxonomyArtifact(value: unknown): value is TaxonomyArtifact {
-  return (
-    isRecord(value)
-    && hasOnlyKeys(value, ["system", "version", "sourceUrl", "generatedAt", "attribution", "nodes"])
-    && isClassificationSystem(value["system"])
-    && isNonBlankString(value["version"])
-    && isNonBlankString(value["sourceUrl"])
-    && isNonBlankString(value["generatedAt"])
-    && !Number.isNaN(Date.parse(value["generatedAt"]))
-    && isNonBlankString(value["attribution"])
-    && Array.isArray(value["nodes"])
-    && value["nodes"].length > 0
-    && value["nodes"].every(isTaxonomyArtifactNode)
-  );
+  if (
+    !isRecord(value)
+    || !hasOnlyKeys(value, ["system", "version", "sourceUrl", "generatedAt", "attribution", "nodes"])
+    || !isClassificationSystem(value["system"])
+    || !isNonBlankString(value["version"])
+    || !isNonBlankString(value["sourceUrl"])
+    || !isStrictRfc3339Timestamp(value["generatedAt"])
+    || !isNonBlankString(value["attribution"])
+    || !Array.isArray(value["nodes"])
+    || value["nodes"].length === 0
+    || !value["nodes"].every(isTaxonomyArtifactNode)
+  ) {
+    return false;
+  }
+
+  return hasValidTaxonomyHierarchy(value["nodes"]);
 }
 
 /**

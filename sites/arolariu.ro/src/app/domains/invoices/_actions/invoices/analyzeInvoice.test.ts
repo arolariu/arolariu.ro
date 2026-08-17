@@ -16,21 +16,27 @@ const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
 const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
 
 describe("analyzeInvoice", () => {
-  const invoiceIdentifier = "11111111-1111-4111-8111-111111111111";
+  const invoiceIdentifier = "abcdefab-cdef-4abc-8def-abcdefabcdef";
   const acceptedResponse = {
     runId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
     targetType: "invoice",
     targetId: invoiceIdentifier,
     status: "queued",
     profile: "comprehensive",
-    acceptedCapabilities: ["documentExtraction", "invoiceClassification"],
+    acceptedCapabilities: [
+      "documentExtraction",
+      "merchantResolution",
+      "invoiceSummary",
+      "productClassification",
+      "allergenAssessment",
+      "invoiceClassification",
+      "recipeGeneration",
+    ],
     acceptedAt: "2026-08-17T19:40:42.187Z",
   } as const;
   const request: AnalyzeInvoiceRequest = {
     profile: "comprehensive",
-    overrides: {
-      recipeGeneration: {enabled: true, maximumRecipes: 3},
-    },
+    overrides: {},
   };
 
   beforeEach(() => {
@@ -99,6 +105,25 @@ describe("analyzeInvoice", () => {
     }
   });
 
+  it("rejects an acknowledgement whose capability set differs from the resolved request", async () => {
+    // Arrange
+    mockFetchWithTimeout.mockResolvedValue(
+      TestDataBuilder.jsonResponse(
+        {...acceptedResponse, acceptedCapabilities: ["documentExtraction"]},
+        {status: 202, statusText: "Accepted"},
+      ),
+    );
+
+    // Act
+    const result = await analyzeInvoice({invoiceIdentifier, request});
+
+    // Assert
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.message).toContain("invalid acceptance response");
+    }
+  });
+
   it("rejects a response accepted for a different invoice", async () => {
     // Arrange
     mockFetchWithTimeout.mockResolvedValue(
@@ -106,6 +131,46 @@ describe("analyzeInvoice", () => {
         {...acceptedResponse, targetId: "22222222-2222-4222-8222-222222222222"},
         {status: 202, statusText: "Accepted"},
       ),
+    );
+
+    // Act
+    const result = await analyzeInvoice({invoiceIdentifier, request});
+
+    // Assert
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.message).toContain("invalid acceptance response");
+    }
+  });
+
+  it("matches uppercase caller identifiers to lowercase acknowledgement identifiers", async () => {
+    // Act
+    const result = await analyzeInvoice({invoiceIdentifier: invoiceIdentifier.toUpperCase(), request});
+
+    // Assert
+    expect(result).toEqual({success: true, data: acceptedResponse});
+  });
+
+  it("accepts a custom effective profile when the request includes an override", async () => {
+    // Arrange
+    const customRequest: AnalyzeInvoiceRequest = {
+      profile: "comprehensive",
+      overrides: {documentExtraction: {enabled: true}},
+    };
+    const customResponse = {...acceptedResponse, profile: "custom"} as const;
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse(customResponse, {status: 202, statusText: "Accepted"}));
+
+    // Act
+    const result = await analyzeInvoice({invoiceIdentifier, request: customRequest});
+
+    // Assert
+    expect(result).toEqual({success: true, data: customResponse});
+  });
+
+  it("rejects an acknowledgement with a permissive but non-RFC-3339 acceptance date", async () => {
+    // Arrange
+    mockFetchWithTimeout.mockResolvedValue(
+      TestDataBuilder.jsonResponse({...acceptedResponse, acceptedAt: "2026-08-17 19:40:42Z"}, {status: 202, statusText: "Accepted"}),
     );
 
     // Act

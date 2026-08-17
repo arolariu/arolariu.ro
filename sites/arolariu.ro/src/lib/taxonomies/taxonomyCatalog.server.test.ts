@@ -7,6 +7,42 @@ import {ClassificationSystem} from "@/types/invoices";
 import {describe, expect, it} from "vitest";
 import {searchTaxonomyArtifact, searchTaxonomyCatalog} from "./taxonomyCatalog.server";
 
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function createValidTaxonomyArtifact(): unknown {
+  return {
+    system: ClassificationSystem.EcoicopV2,
+    version: "2",
+    sourceUrl: "https://example.test/taxonomy",
+    generatedAt: "2026-08-17T20:00:00.000Z",
+    attribution: "Example",
+    nodes: [
+      {
+        code: "01",
+        officialLabel: "Food and non-alcoholic beverages",
+        level: "division",
+        parentCode: null,
+        hierarchyCodes: ["01"],
+        hierarchyLabels: ["Food and non-alcoholic beverages"],
+        definition: null,
+        searchText: "food non alcoholic beverages",
+      },
+      {
+        code: "01.1",
+        officialLabel: "Food",
+        level: "group",
+        parentCode: "01",
+        hierarchyCodes: ["01", "01.1"],
+        hierarchyLabels: ["Food and non-alcoholic beverages", "Food"],
+        definition: null,
+        searchText: "food non alcoholic beverages",
+      },
+    ],
+  };
+}
+
 describe("taxonomyCatalog", () => {
   it("searches the generated ECOICOP catalog with stable relevance ranking", () => {
     // Act
@@ -81,5 +117,40 @@ describe("taxonomyCatalog", () => {
         query: "   ",
       }),
     ).toThrow("non-empty");
+  });
+
+  it("rejects corrupt taxonomy node relationships before normalizing a catalog", () => {
+    // Arrange
+    const artifact = createValidTaxonomyArtifact();
+    if (!isRecord(artifact)) {
+      throw new Error("The taxonomy fixture must be an object.");
+    }
+
+    const nodes = artifact["nodes"];
+    if (!Array.isArray(nodes)) {
+      throw new Error("The taxonomy fixture must contain nodes.");
+    }
+
+    const root = nodes.at(0);
+    const child = nodes.at(1);
+    if (!isRecord(root) || !isRecord(child)) {
+      throw new Error("The taxonomy fixture must contain root and child nodes.");
+    }
+
+    // Assert
+    expect(() => searchTaxonomyArtifact({...artifact, generatedAt: "2026-02-30T20:00:00Z"}, "food")).toThrow("Invalid taxonomy artifact");
+    expect(() => searchTaxonomyArtifact({...artifact, nodes: [root, child, root]}, "food")).toThrow("Invalid taxonomy artifact");
+    expect(() => searchTaxonomyArtifact({...artifact, nodes: [{...root, parentCode: "01"}, child]}, "food")).toThrow(
+      "Invalid taxonomy artifact",
+    );
+    expect(() => searchTaxonomyArtifact({...artifact, nodes: [root, {...child, parentCode: "missing"}]}, "food")).toThrow(
+      "Invalid taxonomy artifact",
+    );
+    expect(() =>
+      searchTaxonomyArtifact(
+        {...artifact, nodes: [root, {...child, hierarchyLabels: ["Food and non-alcoholic beverages", "Other"]}]},
+        "food",
+      ),
+    ).toThrow("Invalid taxonomy artifact");
   });
 });

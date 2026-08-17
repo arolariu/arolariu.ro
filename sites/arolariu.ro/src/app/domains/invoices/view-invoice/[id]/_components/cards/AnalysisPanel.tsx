@@ -2,7 +2,7 @@
 
 import {analyzeInvoice} from "@/app/domains/invoices/_actions/invoices";
 import {formatDate} from "@/lib/utils.generic";
-import {InvoiceAnalysisOptions} from "@/types/invoices";
+import {type AnalyzeInvoiceRequest, InvoiceAnalysisOptions} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -38,6 +38,7 @@ import styles from "./AnalysisPanel.module.scss";
  */
 type AnalysisOption = Readonly<{
   readonly id: InvoiceAnalysisOptions;
+  readonly request: AnalyzeInvoiceRequest;
   readonly label: string;
   readonly description: string;
   readonly icon: React.ReactNode;
@@ -88,18 +89,35 @@ export function AnalysisPanel(): React.JSX.Element | null {
   const analysisOptions: readonly AnalysisOption[] = [
     {
       id: InvoiceAnalysisOptions.CompleteAnalysis,
+      request: {profile: "comprehensive", overrides: {}},
       label: t((m) => m.pages.invoices.viewInvoice.analysisPanel.options.completeAnalysis),
       description: t((m) => m.pages.invoices.viewInvoice.analysisPanel.tooltips.completeAnalysis),
       icon: <TbBrain className={styles["optionIcon"]} />,
     },
     {
       id: InvoiceAnalysisOptions.InvoiceOnly,
+      request: {
+        profile: "fast",
+        overrides: {
+          merchantResolution: {enabled: false},
+          productClassification: {enabled: false},
+          invoiceClassification: {enabled: false},
+        },
+      },
       label: t((m) => m.pages.invoices.viewInvoice.analysisPanel.options.invoiceOnly),
       description: t((m) => m.pages.invoices.viewInvoice.analysisPanel.tooltips.invoiceOnly),
       icon: <TbRefreshAlert className={styles["optionIcon"]} />,
     },
     {
       id: InvoiceAnalysisOptions.InvoiceItemsOnly,
+      request: {
+        profile: "fast",
+        overrides: {
+          documentExtraction: {enabled: false},
+          merchantResolution: {enabled: false},
+          invoiceClassification: {enabled: false},
+        },
+      },
       label: t((m) => m.pages.invoices.viewInvoice.analysisPanel.options.itemsOnly),
       description: t((m) => m.pages.invoices.viewInvoice.analysisPanel.tooltips.itemsOnly),
       icon: <TbShoppingCart className={styles["optionIcon"]} />,
@@ -112,9 +130,9 @@ export function AnalysisPanel(): React.JSX.Element | null {
    * @param option - The analysis option to use
    */
   const handleAnalyze = useCallback(
-    async (option: InvoiceAnalysisOptions): Promise<void> => {
+    async (option: AnalysisOption): Promise<void> => {
       setIsAnalyzing(true);
-      setSelectedOption(option);
+      setSelectedOption(option.id);
       setProgress(0);
 
       const delay = async (ms: number): Promise<void> =>
@@ -134,7 +152,7 @@ export function AnalysisPanel(): React.JSX.Element | null {
         // Start analysis
         const analysisPromise = analyzeInvoice({
           invoiceIdentifier: invoice.id,
-          analysisOptions: option,
+          request: option.request,
         });
 
         // Animate progress while waiting
@@ -202,16 +220,19 @@ export function AnalysisPanel(): React.JSX.Element | null {
    * Handles quick re-analyze (CompleteAnalysis).
    */
   const handleQuickAnalyze = useCallback(async (): Promise<void> => {
-    await handleAnalyze(InvoiceAnalysisOptions.CompleteAnalysis);
-  }, [handleAnalyze]);
+    const completeAnalysisOption = analysisOptions.find((option) => option.id === InvoiceAnalysisOptions.CompleteAnalysis);
+    if (completeAnalysisOption !== undefined) {
+      await handleAnalyze(completeAnalysisOption);
+    }
+  }, [analysisOptions, handleAnalyze]);
 
   /**
    * Factory: returns a stable click handler for triggering analysis with a specific option.
    * Each option button gets its own callback to avoid re-rendering on unrelated state changes.
    */
   const createAnalyzeHandler = useCallback(
-    (optionId: InvoiceAnalysisOptions) => {
-      return () => handleAnalyze(optionId);
+    (option: AnalysisOption) => {
+      return () => handleAnalyze(option);
     },
     [handleAnalyze],
   );
@@ -321,7 +342,7 @@ export function AnalysisPanel(): React.JSX.Element | null {
                           <TooltipTrigger
                             render={
                               <Button
-                                onClick={createAnalyzeHandler(option.id)}
+                                onClick={createAnalyzeHandler(option)}
                                 disabled={isAnalyzing}
                                 variant='outline'
                                 size='sm'

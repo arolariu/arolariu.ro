@@ -127,11 +127,7 @@ function assertTaxonomyArtifact(value: unknown, expectedSystem?: ClassificationS
   return value;
 }
 
-function projectNode(
-  system: ClassificationSystemType,
-  version: string,
-  node: TaxonomyArtifactNode,
-): ClassificationSearchResult {
+function projectNode(system: ClassificationSystemType, version: string, node: TaxonomyArtifactNode): ClassificationSearchResult {
   return {
     system,
     version,
@@ -205,9 +201,7 @@ function resolveSearchInput(input: unknown): ResolvedTaxonomySearchInput {
   const rawLimit = input["limit"];
   const limit = rawLimit === undefined ? DEFAULT_TAXONOMY_SEARCH_RESULTS : rawLimit;
   if (typeof limit !== "number" || !Number.isInteger(limit) || limit < 1 || limit > MAXIMUM_TAXONOMY_SEARCH_RESULTS) {
-    throw new TaxonomySearchValidationError(
-      `Taxonomy search limit must be an integer between 1 and ${MAXIMUM_TAXONOMY_SEARCH_RESULTS}.`,
-    );
+    throw new TaxonomySearchValidationError(`Taxonomy search limit must be an integer between 1 and ${MAXIMUM_TAXONOMY_SEARCH_RESULTS}.`);
   }
 
   return {
@@ -239,10 +233,7 @@ function rankNode(node: NormalizedTaxonomyNode, input: ResolvedTaxonomySearchInp
     return {node, rank: 1, overlap: input.queryTokens.size};
   }
 
-  if (
-    node.normalizedCode.startsWith(input.normalizedQuery)
-    || node.normalizedOfficialLabel.startsWith(input.normalizedQuery)
-  ) {
+  if (node.normalizedCode.startsWith(input.normalizedQuery) || node.normalizedOfficialLabel.startsWith(input.normalizedQuery)) {
     return {node, rank: 2, overlap: calculateTokenOverlap(input.queryTokens, node.searchTokens)};
   }
 
@@ -268,10 +259,7 @@ function compareRankedNodes(left: RankedTaxonomyNode, right: RankedTaxonomyNode)
   return labelComparison !== 0 ? labelComparison : left.node.ordinal - right.node.ordinal;
 }
 
-function searchNodes(
-  nodes: readonly NormalizedTaxonomyNode[],
-  input: ResolvedTaxonomySearchInput,
-): readonly ClassificationSearchResult[] {
+function searchNodes(nodes: readonly NormalizedTaxonomyNode[], input: ResolvedTaxonomySearchInput): readonly ClassificationSearchResult[] {
   return nodes
     .map((node) => rankNode(node, input))
     .filter((candidate): candidate is RankedTaxonomyNode => candidate !== null)
@@ -297,11 +285,7 @@ const normalizedCatalog = createCatalog();
  * @throws {Error} When the artifact envelope or a node is malformed.
  * @throws {TaxonomySearchValidationError} When query or limit input is invalid.
  */
-export function searchTaxonomyArtifact(
-  artifact: unknown,
-  query: unknown,
-  limit?: unknown,
-): readonly ClassificationSearchResult[] {
+export function searchTaxonomyArtifact(artifact: unknown, query: unknown, limit?: unknown): readonly ClassificationSearchResult[] {
   const validatedArtifact = assertTaxonomyArtifact(artifact);
   const input = resolveSearchInput({system: validatedArtifact.system, query, ...(limit === undefined ? {} : {limit})});
   return searchNodes(normalizeArtifact(validatedArtifact), input);

@@ -28,10 +28,7 @@ describe("analyzeMerchant", () => {
   } as const;
   const request: AnalyzeMerchantRequest = {
     profile: "balanced",
-    overrides: {
-      merchantClassification: {enabled: true},
-      descriptionGeneration: {enabled: true},
-    },
+    overrides: {},
   };
 
   beforeEach(() => {
@@ -81,6 +78,41 @@ describe("analyzeMerchant", () => {
       expect(result.error.code).toBe("UNKNOWN_ERROR");
       expect(result.error.message).toContain("invalid acceptance response");
     }
+  });
+
+  it("rejects a response whose capabilities differ from the merchant request", async () => {
+    // Arrange
+    mockFetchWithTimeout.mockResolvedValue(
+      TestDataBuilder.jsonResponse(
+        {...acceptedResponse, acceptedCapabilities: ["merchantClassification"]},
+        {status: 202, statusText: "Accepted"},
+      ),
+    );
+
+    // Act
+    const result = await analyzeMerchant({merchantIdentifier, request});
+
+    // Assert
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.message).toContain("invalid acceptance response");
+    }
+  });
+
+  it("accepts a custom response profile for actual merchant overrides", async () => {
+    // Arrange
+    const customRequest: AnalyzeMerchantRequest = {
+      profile: "balanced",
+      overrides: {descriptionGeneration: {enabled: true}},
+    };
+    const customResponse = {...acceptedResponse, profile: "custom"} as const;
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse(customResponse, {status: 202, statusText: "Accepted"}));
+
+    // Act
+    const result = await analyzeMerchant({merchantIdentifier, request: customRequest});
+
+    // Assert
+    expect(result).toEqual({success: true, data: customResponse});
   });
 
   it("rejects a non-202 response even when it is otherwise successful", async () => {

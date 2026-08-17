@@ -1,7 +1,7 @@
 "use client";
 
 import {useDialog} from "@/app/domains/invoices/_contexts/DialogContext";
-import {InvoiceAnalysisOptions} from "@/types/invoices";
+import {type AnalyzeInvoiceRequest, InvoiceAnalysisOptions} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -45,6 +45,7 @@ import styles from "./AnalyzeDialog.module.scss";
 /** Configuration for each analysis option. */
 type AnalysisOptionConfig = {
   id: InvoiceAnalysisOptions;
+  request: AnalyzeInvoiceRequest;
   title: string;
   description: string;
   icon: React.ReactNode;
@@ -98,6 +99,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
   const analysisOptions: AnalysisOptionConfig[] = [
     {
       id: InvoiceAnalysisOptions.CompleteAnalysis,
+      request: {profile: "comprehensive", overrides: {}},
       title: t((m) => m.dialogs.invoices.analyzeDialog.options.completeAnalysis.title),
       description: t((m) => m.dialogs.invoices.analyzeDialog.options.completeAnalysis.description),
       icon: <TbBrain className={styles["optionIcon"]} />,
@@ -113,6 +115,14 @@ export default function AnalyzeDialog(): React.JSX.Element {
     },
     {
       id: InvoiceAnalysisOptions.InvoiceOnly,
+      request: {
+        profile: "fast",
+        overrides: {
+          merchantResolution: {enabled: false},
+          productClassification: {enabled: false},
+          invoiceClassification: {enabled: false},
+        },
+      },
       title: t((m) => m.dialogs.invoices.analyzeDialog.options.invoiceOnly.title),
       description: t((m) => m.dialogs.invoices.analyzeDialog.options.invoiceOnly.description),
       icon: <TbReceipt className={styles["optionIcon"]} />,
@@ -125,6 +135,14 @@ export default function AnalyzeDialog(): React.JSX.Element {
     },
     {
       id: InvoiceAnalysisOptions.InvoiceItemsOnly,
+      request: {
+        profile: "fast",
+        overrides: {
+          documentExtraction: {enabled: false},
+          merchantResolution: {enabled: false},
+          invoiceClassification: {enabled: false},
+        },
+      },
       title: t((m) => m.dialogs.invoices.analyzeDialog.options.itemsOnly.title),
       description: t((m) => m.dialogs.invoices.analyzeDialog.options.itemsOnly.description),
       icon: <TbShoppingCart className={styles["optionIcon"]} />,
@@ -138,6 +156,14 @@ export default function AnalyzeDialog(): React.JSX.Element {
     },
     {
       id: InvoiceAnalysisOptions.InvoiceMerchantOnly,
+      request: {
+        profile: "fast",
+        overrides: {
+          documentExtraction: {enabled: false},
+          productClassification: {enabled: false},
+          invoiceClassification: {enabled: false},
+        },
+      },
       title: t((m) => m.dialogs.invoices.analyzeDialog.options.merchantOnly.title),
       description: t((m) => m.dialogs.invoices.analyzeDialog.options.merchantOnly.description),
       icon: <TbBuildingStore className={styles["optionIcon"]} />,
@@ -185,7 +211,13 @@ export default function AnalyzeDialog(): React.JSX.Element {
     );
   }, []);
 
+  const selectedConfig = analysisOptions.find((option) => option.id === selectedOption);
+
   const handleAnalysis = useCallback(async () => {
+    if (selectedConfig === undefined) {
+      return;
+    }
+
     setIsAnalyzing(true);
     setProgress(0);
 
@@ -205,7 +237,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
     try {
       const analysisPromise = analyzeInvoice({
         invoiceIdentifier: invoice.id,
-        analysisOptions: selectedOption,
+        request: selectedConfig.request,
       });
 
       // Keep the same spinner + step texts while the backend request is pending.
@@ -270,9 +302,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
       setProgress(0);
       setCurrentStep("");
     }
-  }, [invoice, selectedOption, selectedEnhancements, close, t]);
-
-  const selectedConfig = analysisOptions.find((opt) => opt.id === selectedOption);
+  }, [invoice, selectedConfig, selectedEnhancements, selectedOption, close, t]);
 
   return (
     <Dialog

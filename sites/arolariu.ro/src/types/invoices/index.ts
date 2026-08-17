@@ -45,23 +45,31 @@ export type {Allergen, CreateAllergenDtoPayload, DeleteAllergenDtoPayload, Updat
  */
 export {
   AnalysisCapability,
+  AnalysisAcceptedProfile,
   AnalysisProfile,
   AnalysisRunStatus,
   AnalysisTargetType,
   isAnalysisAcceptedResponse,
+  isAnalysisAcceptedResponseForRequest,
+  isAnalysisAcceptedProfile,
   isAnalysisCapability,
   isAnalysisProfile,
   isAnalysisRunStatus,
   isAnalysisTargetType,
   isAnalyzeInvoiceRequest,
   isAnalyzeMerchantRequest,
+  resolveAnalysisRequest,
   type AnalysisAcceptedResponse,
+  type AnalysisAcceptedResponseExpectation,
   type AnalysisCapabilityOverride,
   type AnalyzeInvoiceRequest,
   type AnalyzeMerchantRequest,
   type InvoiceAnalysisOverrides,
   type MerchantAnalysisOverrides,
+  type RecipeGenerationDisabledOverride,
+  type RecipeGenerationEnabledOverride,
   type RecipeGenerationOverride,
+  type ResolvedAnalysisRequest,
 } from "./Analysis";
 
 /**

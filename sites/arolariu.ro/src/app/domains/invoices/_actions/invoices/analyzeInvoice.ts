@@ -15,12 +15,11 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "@/lib/utils.server";
 import {
-  InvoiceAnalysisOptions,
-  isAnalysisAcceptedResponse,
-  isAnalyzeInvoiceRequest,
+  AnalysisTargetType,
+  isAnalysisAcceptedResponseForRequest,
+  resolveAnalysisRequest,
   type AnalysisAcceptedResponse,
   type AnalyzeInvoiceRequest,
-  type InvoiceAnalysisOptions as LegacyInvoiceAnalysisOption,
 } from "@/types/invoices";
 
 /**
@@ -32,21 +31,6 @@ type InvoiceAnalysisRequestInput = Readonly<{
   /** Exact profile-and-overrides payload for the invoice analysis API. */
   readonly request: AnalyzeInvoiceRequest;
 }>;
-
-/**
- * Temporary input retained while legacy analysis controls are migrated.
- *
- * @deprecated Use {@link InvoiceAnalysisRequestInput} with an explicit profile
- * and overrides request instead.
- */
-type LegacyInvoiceAnalysisInput = Readonly<{
-  /** UUID of the invoice to enqueue. */
-  readonly invoiceIdentifier: string;
-  /** Legacy numeric option selected by the existing analysis controls. */
-  readonly analysisOptions: LegacyInvoiceAnalysisOption;
-}>;
-
-type ServerActionInputType = InvoiceAnalysisRequestInput | LegacyInvoiceAnalysisInput;
 
 /**
  * Result returned from an invoice analysis enqueue request.
@@ -63,24 +47,6 @@ function createValidationResult(message: string): Awaited<ServerActionOutputType
   };
 }
 
-function isLegacyInvoiceAnalysisInput(input: ServerActionInputType): input is LegacyInvoiceAnalysisInput {
-  return "analysisOptions" in input;
-}
-
-function resolveLegacyRequest(analysisOptions: LegacyInvoiceAnalysisOption): AnalyzeInvoiceRequest | null {
-  switch (analysisOptions) {
-    case InvoiceAnalysisOptions.CompleteAnalysis:
-      return {profile: "comprehensive", overrides: {}};
-    case InvoiceAnalysisOptions.InvoiceOnly:
-    case InvoiceAnalysisOptions.InvoiceItemsOnly:
-      return {profile: "balanced", overrides: {}};
-    case InvoiceAnalysisOptions.InvoiceMerchantOnly:
-      return {profile: "fast", overrides: {}};
-    case InvoiceAnalysisOptions.NoAnalysis:
-      return null;
-  }
-}
-
 /**
  * Enqueues asynchronous analysis for one invoice.
  *
@@ -93,10 +59,7 @@ function resolveLegacyRequest(analysisOptions: LegacyInvoiceAnalysisOption): Ana
  * @param input - The target invoice UUID and exact analysis enqueue request.
  * @returns The durable accepted-run acknowledgement, or a standardized error result.
  */
-export async function analyzeInvoice(input: ServerActionInputType): ServerActionOutputType {
-  const {invoiceIdentifier} = input;
-  const request = isLegacyInvoiceAnalysisInput(input) ? resolveLegacyRequest(input.analysisOptions) : input.request;
-
+export async function analyzeInvoice({invoiceIdentifier, request}: InvoiceAnalysisRequestInput): ServerActionOutputType {
   return withSpan("api.actions.invoices.analyzeInvoice", async () => {
     try {
       validateStringIsGuidType(invoiceIdentifier, "invoiceIdentifier");
@@ -104,7 +67,8 @@ export async function analyzeInvoice(input: ServerActionInputType): ServerAction
       return createValidationResult(error instanceof Error ? error.message : "Invoice identifier is invalid.");
     }
 
-    if (request === null || !isAnalyzeInvoiceRequest(request)) {
+    const resolvedRequest = resolveAnalysisRequest(AnalysisTargetType.Invoice, request);
+    if (resolvedRequest === null) {
       return createValidationResult("Invoice analysis request is invalid.");
     }
 
@@ -140,9 +104,11 @@ export async function analyzeInvoice(input: ServerActionInputType): ServerAction
 
       const responseData: unknown = await response.json();
       if (
-        !isAnalysisAcceptedResponse(responseData)
-        || responseData.targetType !== "invoice"
-        || responseData.targetId !== invoiceIdentifier
+        !isAnalysisAcceptedResponseForRequest(responseData, {
+          targetType: AnalysisTargetType.Invoice,
+          targetIdentifier: invoiceIdentifier,
+          resolvedRequest,
+        })
       ) {
         addSpanEvent("bff.invoice.analyze.enqueue.invalid-response");
         return {

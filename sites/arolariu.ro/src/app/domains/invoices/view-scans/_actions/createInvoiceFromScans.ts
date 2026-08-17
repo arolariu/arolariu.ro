@@ -22,7 +22,7 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
-import {type CreateInvoiceDtoPayload, type CreateInvoiceScanDtoPayload, type Invoice, InvoiceAnalysisOptions} from "@/types/invoices";
+import {type CreateInvoiceDtoPayload, type CreateInvoiceScanDtoPayload, type Invoice} from "@/types/invoices";
 import {type Scan, ScanMetadataStatus, ScanMetadataKey} from "@/types/scans";
 import {analyzeInvoice} from "../../_actions/invoices";
 import {updateScan} from "../../_actions/scans";
@@ -148,7 +148,7 @@ async function processSingleScan(
     const invoice = await createSingleInvoice(scan, userIdentifier, authToken);
     logWithTrace("info", `Created invoice ${invoice.id} from scan ${scan.id}`, {}, "server");
     // Fire-and-forget auto-analysis after successful creation
-    analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {
+    analyzeInvoice({invoiceIdentifier: invoice.id, request: {profile: "comprehensive", overrides: {}}}).catch((error) => {
       console.error("Background invoice analysis failed:", error);
     });
     return {success: true, invoice};
@@ -299,7 +299,7 @@ async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, userIdentif
     }
 
     // Fire-and-forget auto-analysis after successful batch creation
-    analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {
+    analyzeInvoice({invoiceIdentifier: invoice.id, request: {profile: "comprehensive", overrides: {}}}).catch((error) => {
       console.error("Background invoice analysis failed:", error);
     });
 

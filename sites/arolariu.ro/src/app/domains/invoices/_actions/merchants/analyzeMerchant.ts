@@ -14,8 +14,9 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "@/lib/utils.server";
 import {
-  isAnalysisAcceptedResponse,
-  isAnalyzeMerchantRequest,
+  AnalysisTargetType,
+  isAnalysisAcceptedResponseForRequest,
+  resolveAnalysisRequest,
   type AnalysisAcceptedResponse,
   type AnalyzeMerchantRequest,
 } from "@/types/invoices";
@@ -64,7 +65,8 @@ export async function analyzeMerchant({merchantIdentifier, request}: ServerActio
       return createValidationResult(error instanceof Error ? error.message : "Merchant identifier is invalid.");
     }
 
-    if (!isAnalyzeMerchantRequest(request)) {
+    const resolvedRequest = resolveAnalysisRequest(AnalysisTargetType.Merchant, request);
+    if (resolvedRequest === null) {
       return createValidationResult("Merchant analysis request is invalid.");
     }
 
@@ -100,9 +102,11 @@ export async function analyzeMerchant({merchantIdentifier, request}: ServerActio
 
       const responseData: unknown = await response.json();
       if (
-        !isAnalysisAcceptedResponse(responseData)
-        || responseData.targetType !== "merchant"
-        || responseData.targetId !== merchantIdentifier
+        !isAnalysisAcceptedResponseForRequest(responseData, {
+          targetType: AnalysisTargetType.Merchant,
+          targetIdentifier: merchantIdentifier,
+          resolvedRequest,
+        })
       ) {
         addSpanEvent("bff.merchant.analyze.enqueue.invalid-response");
         return {
