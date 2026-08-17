@@ -10,7 +10,7 @@ import {analyzeMerchant} from "@/app/domains/invoices/_actions/merchants";
 import type {AnalysisAcceptedResponse, AnalyzeInvoiceRequest, AnalyzeMerchantRequest} from "@/types/invoices";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import {useCallback, useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useLayoutEffect, useRef, useState} from "react";
 
 /**
  * Schedules one browser reload after an accepted analysis has had time to run.
@@ -67,6 +67,8 @@ export interface AnalysisSubmissionState {
 export interface UseAnalysisSubmissionOptions {
   /** Callback used by an accepted explicit submission to reload the document. */
   readonly refresh?: () => void;
+  /** Stable target key that invalidates acknowledgements from a previous target. */
+  readonly scopeKey?: string;
 }
 
 type AnalysisSubmissionAction<Input> = (input: Input) => ReturnType<typeof analyzeInvoice>;
@@ -85,13 +87,19 @@ const defaultRefresh = (): void => window.location.reload();
  * @param options - Optional injectable browser refresh callback.
  * @returns Submission state and invoice/merchant enqueue operations.
  */
-export function useAnalysisSubmission({refresh = defaultRefresh}: Readonly<UseAnalysisSubmissionOptions> = {}): AnalysisSubmissionState {
+export function useAnalysisSubmission({
+  refresh = defaultRefresh,
+  scopeKey,
+}: Readonly<UseAnalysisSubmissionOptions> = {}): AnalysisSubmissionState {
   const t = useTranslations();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [acceptedRunId, setAcceptedRunId] = useState<string | null>(null);
   const isMountedReference = useRef(true);
   const isSubmittingReference = useRef(false);
   const refreshTimerReference = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scopeKeyReference = useRef(scopeKey);
+  const attemptSequenceReference = useRef(0);
+  const activeAttemptReference = useRef(0);
 
   const clearScheduledRefresh = useCallback((): void => {
     if (refreshTimerReference.current !== null) {
@@ -105,9 +113,26 @@ export function useAnalysisSubmission({refresh = defaultRefresh}: Readonly<UseAn
 
     return () => {
       isMountedReference.current = false;
+      activeAttemptReference.current = ++attemptSequenceReference.current;
+      isSubmittingReference.current = false;
       clearScheduledRefresh();
     };
   }, [clearScheduledRefresh]);
+
+  useLayoutEffect(() => {
+    if (scopeKeyReference.current === scopeKey) {
+      return;
+    }
+
+    scopeKeyReference.current = scopeKey;
+    activeAttemptReference.current = ++attemptSequenceReference.current;
+    isSubmittingReference.current = false;
+    clearScheduledRefresh();
+    if (isMountedReference.current) {
+      setIsSubmitting(false);
+      setAcceptedRunId(null);
+    }
+  }, [clearScheduledRefresh, scopeKey]);
 
   const submit = useCallback(
     async <Input>(
@@ -119,11 +144,21 @@ export function useAnalysisSubmission({refresh = defaultRefresh}: Readonly<UseAn
         return null;
       }
 
+      const attemptIdentifier = ++attemptSequenceReference.current;
+      activeAttemptReference.current = attemptIdentifier;
       isSubmittingReference.current = true;
+      clearScheduledRefresh();
+      setAcceptedRunId(null);
       setIsSubmitting(true);
+
+      const isCurrentAttempt = (): boolean => isMountedReference.current && activeAttemptReference.current === attemptIdentifier;
 
       try {
         const result = await action(input);
+        if (!isCurrentAttempt()) {
+          return null;
+        }
+
         if (!result.success) {
           toast(
             t((messages) => messages.toasts.invoices.analysis.failed.title),
@@ -134,14 +169,13 @@ export function useAnalysisSubmission({refresh = defaultRefresh}: Readonly<UseAn
           return null;
         }
 
-        if (!isMountedReference.current) {
-          return null;
-        }
-
         setAcceptedRunId(result.data.runId);
-        clearScheduledRefresh();
         if (refreshAfterAcceptance) {
-          refreshTimerReference.current = scheduleHardRefresh(refresh);
+          refreshTimerReference.current = scheduleHardRefresh(() => {
+            if (isCurrentAttempt()) {
+              refresh();
+            }
+          });
         }
         toast(
           t((messages) => messages.toasts.invoices.analysis.started.title),
@@ -151,6 +185,10 @@ export function useAnalysisSubmission({refresh = defaultRefresh}: Readonly<UseAn
         );
         return result.data;
       } catch {
+        if (!isCurrentAttempt()) {
+          return null;
+        }
+
         toast(
           t((messages) => messages.toasts.invoices.analysis.failed.title),
           {
@@ -159,8 +197,8 @@ export function useAnalysisSubmission({refresh = defaultRefresh}: Readonly<UseAn
         );
         return null;
       } finally {
-        isSubmittingReference.current = false;
-        if (isMountedReference.current) {
+        if (isCurrentAttempt()) {
+          isSubmittingReference.current = false;
           setIsSubmitting(false);
         }
       }

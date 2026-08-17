@@ -166,7 +166,8 @@ describe("analyzeMerchant", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.code).toBe("NETWORK_ERROR");
-      expect(result.error.message).toContain("Auth failed");
+      expect(result.error.message).toBe("Unable to enqueue merchant analysis.");
+      expect(result.error.message).not.toContain("Auth failed");
     }
   });
 });

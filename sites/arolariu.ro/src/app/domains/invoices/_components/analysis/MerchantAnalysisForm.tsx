@@ -5,7 +5,7 @@
  * @module app/domains/invoices/_components/analysis/MerchantAnalysisForm
  */
 
-import {AnalysisProfile, type AnalyzeMerchantRequest, type MerchantAnalysisOverrides} from "@/types/invoices";
+import {AnalysisProfile, isAnalysisProfile, type AnalyzeMerchantRequest, type MerchantAnalysisOverrides} from "@/types/invoices";
 import {Button, Checkbox, Input, Label} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo, useState} from "react";
@@ -65,14 +65,18 @@ export function MerchantAnalysisForm({
   refreshAfterAcceptance = false,
 }: Readonly<MerchantAnalysisFormProps>): React.JSX.Element {
   const t = useTranslations();
-  const {acceptedRunId, isSubmitting, submitMerchant} = useAnalysisSubmission();
+  const {acceptedRunId, isSubmitting, submitMerchant} = useAnalysisSubmission({scopeKey: merchantIdentifier});
   const [profile, setProfile] = useState<AnalysisProfile>(AnalysisProfile.Comprehensive);
   const [selection, setSelection] = useState<MerchantCapabilitySelection>(() => profileSelection(AnalysisProfile.Comprehensive));
 
   const selectedCapabilityCount = useMemo(() => merchantCapabilities.filter((capability) => selection[capability]).length, [selection]);
 
   const handleProfileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => {
-    const nextProfile = event.target.value as AnalysisProfile;
+    const nextProfile = event.target.value;
+    if (!isAnalysisProfile(nextProfile)) {
+      return;
+    }
+
     setProfile(nextProfile);
     setSelection(profileSelection(nextProfile));
   }, []);

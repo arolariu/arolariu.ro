@@ -20,39 +20,6 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({push: navigationMocks.push}),
 }));
 
-vi.mock("next-intl-selector", () => ({
-  useTranslations:
-    () =>
-    (
-      selector: (messages: {
-        forms: {
-          invoices: {
-            createInvoice: {
-              notifications: {
-                analysisNotQueued: string;
-                createFailed: string;
-                createdAndAnalysisQueued: string;
-              };
-            };
-          };
-        };
-      }) => string,
-    ) =>
-      selector({
-        forms: {
-          invoices: {
-            createInvoice: {
-              notifications: {
-                analysisNotQueued: "Analysis was not queued.",
-                createFailed: "Invoice creation failed.",
-                createdAndAnalysisQueued: "Analysis was queued.",
-              },
-            },
-          },
-        },
-      }),
-}));
-
 const mockFetchBffUser = vi.mocked(fetchBFFUserFromAuthService);
 const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
 
@@ -86,7 +53,12 @@ function createScan(): CachedScan {
     id: "scan-1",
     blobUrl: "https://storage.example.test/scan-1.jpg",
     name: "receipt.jpg",
+    userIdentifier: "user-1",
+    mimeType: "image/jpeg",
+    sizeInBytes: 1024,
     scanType: ScanType.JPEG,
+    uploadedAt: new Date("2026-08-17T19:40:42.187Z"),
+    cachedAt: new Date("2026-08-17T19:40:42.187Z"),
     status: ScanStatus.READY,
     metadata: {
       scanId: "scan-1",
@@ -98,7 +70,7 @@ function createScan(): CachedScan {
       uploadedAt: new Date("2026-08-17T19:40:42.187Z"),
       uploadedBy: "user-1",
     },
-  } as CachedScan;
+  } satisfies CachedScan;
 }
 
 /**

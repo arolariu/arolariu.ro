@@ -5,7 +5,7 @@
  * @module app/domains/invoices/_components/analysis/InvoiceAnalysisForm
  */
 
-import {AnalysisProfile, type AnalyzeInvoiceRequest, type InvoiceAnalysisOverrides} from "@/types/invoices";
+import {AnalysisProfile, isAnalysisProfile, type AnalyzeInvoiceRequest, type InvoiceAnalysisOverrides} from "@/types/invoices";
 import {Button, Checkbox, Input, Label} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo, useState} from "react";
@@ -114,14 +114,18 @@ export function InvoiceAnalysisForm({
   refreshAfterAcceptance = false,
 }: Readonly<InvoiceAnalysisFormProps>): React.JSX.Element {
   const t = useTranslations();
-  const {acceptedRunId, isSubmitting, submitInvoice} = useAnalysisSubmission();
+  const {acceptedRunId, isSubmitting, submitInvoice} = useAnalysisSubmission({scopeKey: invoiceIdentifier});
   const [profile, setProfile] = useState<AnalysisProfile>(AnalysisProfile.Comprehensive);
   const [selection, setSelection] = useState<InvoiceCapabilitySelection>(() => profileSelection(AnalysisProfile.Comprehensive));
 
   const selectedCapabilityCount = useMemo(() => invoiceCapabilities.filter((capability) => selection[capability]).length, [selection]);
 
   const handleProfileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => {
-    const nextProfile = event.target.value as AnalysisProfile;
+    const nextProfile = event.target.value;
+    if (!isAnalysisProfile(nextProfile)) {
+      return;
+    }
+
     setProfile(nextProfile);
     setSelection(profileSelection(nextProfile));
   }, []);

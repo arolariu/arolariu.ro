@@ -186,12 +186,9 @@ describe("createInvoiceFromScans", () => {
     const fakeSasUrl = "https://storage.example.test/scans/scan-1.jpg?sig=fake-sensitive-signature";
     const fakeOcrText = "OCR content that must not be returned";
     const fakeBackendBody = "backend body with provider content";
-    const readResponseBody = vi.fn(async () => fakeBackendBody);
-    mockFetchWithTimeout.mockResolvedValue({
-      ok: false,
-      status: 500,
-      text: readResponseBody,
-    } as unknown as Response);
+    const rejectedResponse = new Response(fakeBackendBody, {status: 500, statusText: "Internal Server Error"});
+    const readResponseBody = vi.spyOn(rejectedResponse, "text");
+    mockFetchWithTimeout.mockResolvedValue(rejectedResponse);
 
     // Act
     const result = await createInvoiceFromScans({
