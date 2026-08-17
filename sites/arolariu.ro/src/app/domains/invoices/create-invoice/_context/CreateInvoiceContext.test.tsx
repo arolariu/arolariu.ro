@@ -1,30 +1,19 @@
 /**
- * @fileoverview Durable analysis enqueue tests for the create-invoice context.
+ * @fileoverview Real-module durable-analysis tests for the create-invoice context.
  * @module app/domains/invoices/create-invoice/_context/CreateInvoiceContext.test
  */
 
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
+import {analysisRouter} from "@/../tests/helpers/analysisNavigation";
+import {ANALYSIS_API_URL, getAnalysisApiRequests, installAnalysisFetchHandler} from "@/../tests/helpers/analysisBoundary";
 import {useScansStore} from "@/stores";
 import type {CachedScan} from "@/types/scans";
 import {ScanStatus, ScanType} from "@/types/scans";
 import {act, render, waitFor} from "@testing-library/react";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {beforeEach, describe, expect, it} from "vitest";
+import {AnalysisTestProvider} from "../../../../../../tests/helpers/analysis";
 import {CreateInvoiceProvider, useCreateInvoiceContext} from "./CreateInvoiceContext";
 
-const navigationMocks = vi.hoisted(() => ({
-  push: vi.fn(),
-}));
-
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({push: navigationMocks.push}),
-}));
-
-const mockFetchBffUser = vi.mocked(fetchBFFUserFromAuthService);
-const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
-
-const INVOICE_IDENTIFIER = "11111111-1111-4111-8111-111111111111";
-const ANALYSIS_RUN_IDENTIFIER = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const invoiceIdentifier = "11111111-1111-4111-8111-111111111111";
 
 let invokeCreateInvoiceWithScans: (() => Promise<void>) | null = null;
 let selectScan: ((scan: CachedScan) => void) | null = null;
@@ -43,11 +32,6 @@ function ContextProbe(): React.JSX.Element {
   return <div />;
 }
 
-/**
- * Creates a selected scan fixture.
- *
- * @returns A ready cached scan.
- */
 function createScan(): CachedScan {
   return {
     id: "scan-1",
@@ -73,17 +57,12 @@ function createScan(): CachedScan {
   } satisfies CachedScan;
 }
 
-/**
- * Returns a durable analysis enqueue acknowledgement.
- *
- * @returns An HTTP 202 response.
- */
 function acceptedAnalysisResponse(): Response {
   return new Response(
     JSON.stringify({
-      runId: ANALYSIS_RUN_IDENTIFIER,
+      runId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
       targetType: "invoice",
-      targetId: INVOICE_IDENTIFIER,
+      targetId: invoiceIdentifier,
       status: "queued",
       profile: "comprehensive",
       acceptedCapabilities: [
@@ -103,33 +82,33 @@ function acceptedAnalysisResponse(): Response {
 
 describe("CreateInvoiceContext durable analysis enqueue", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    navigationMocks.push.mockReset();
+    analysisRouter.push.mockReset();
     invokeCreateInvoiceWithScans = null;
     selectScan = null;
     setName = null;
     useScansStore.getState().clearScans();
-    mockFetchBffUser.mockResolvedValue({userIdentifier: "user-1", userJwt: "jwt-1", user: null});
   });
 
   it("waits for the durable analysis acknowledgement before navigating away from invoice creation", async () => {
     // Arrange
     let resolveAcknowledgement: ((response: Response) => void) | undefined;
-    mockFetchWithTimeout.mockImplementation((url: string) => {
-      if (url.endsWith("/analyze")) {
+    installAnalysisFetchHandler((requestAtBoundary) => {
+      if (requestAtBoundary.url.endsWith("/analyze")) {
         return new Promise<Response>((resolve) => {
           resolveAcknowledgement = resolve;
         });
       }
 
-      return Promise.resolve(new Response(JSON.stringify({id: INVOICE_IDENTIFIER, userIdentifier: "user-1"}), {status: 201}));
+      return new Response(JSON.stringify({id: invoiceIdentifier, userIdentifier: "user-1"}), {status: 201});
     });
     const scan = createScan();
     useScansStore.getState().setScans([scan]);
     render(
-      <CreateInvoiceProvider>
-        <ContextProbe />
-      </CreateInvoiceProvider>,
+      <AnalysisTestProvider>
+        <CreateInvoiceProvider>
+          <ContextProbe />
+        </CreateInvoiceProvider>
+      </AnalysisTestProvider>,
     );
     act(() => {
       selectScan?.(scan);
@@ -142,37 +121,38 @@ describe("CreateInvoiceContext durable analysis enqueue", () => {
       creation = invokeCreateInvoiceWithScans?.();
     });
     await waitFor(() => {
-      expect(mockFetchWithTimeout).toHaveBeenCalledWith(
-        `/rest/v1/invoices/${INVOICE_IDENTIFIER}/analyze`,
-        expect.objectContaining({method: "POST"}),
-        15_000,
+      expect(getAnalysisApiRequests()).toContainEqual(
+        expect.objectContaining({
+          url: `${ANALYSIS_API_URL}/rest/v1/invoices/${invoiceIdentifier}/analyze`,
+          init: expect.objectContaining({method: "POST"}),
+        }),
       );
     });
 
     // Assert
-    expect(navigationMocks.push).not.toHaveBeenCalled();
-    resolveAcknowledgement?.(acceptedAnalysisResponse());
+    expect(analysisRouter.push).not.toHaveBeenCalled();
     await act(async () => {
+      resolveAcknowledgement?.(acceptedAnalysisResponse());
       await creation;
     });
-    expect(navigationMocks.push).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${INVOICE_IDENTIFIER}`);
+    expect(analysisRouter.push).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${invoiceIdentifier}`);
   });
 
   it("keeps the created invoice and navigation when durable analysis enqueue is rejected", async () => {
     // Arrange
-    mockFetchWithTimeout.mockImplementation((url: string) =>
-      Promise.resolve(
-        url.endsWith("/analyze")
-          ? new Response("raw backend body that must remain private", {status: 503})
-          : new Response(JSON.stringify({id: INVOICE_IDENTIFIER, userIdentifier: "user-1"}), {status: 201}),
-      ),
+    installAnalysisFetchHandler((requestAtBoundary) =>
+      requestAtBoundary.url.endsWith("/analyze")
+        ? new Response("raw backend body that must remain private", {status: 503})
+        : new Response(JSON.stringify({id: invoiceIdentifier, userIdentifier: "user-1"}), {status: 201}),
     );
     const scan = createScan();
     useScansStore.getState().setScans([scan]);
     render(
-      <CreateInvoiceProvider>
-        <ContextProbe />
-      </CreateInvoiceProvider>,
+      <AnalysisTestProvider>
+        <CreateInvoiceProvider>
+          <ContextProbe />
+        </CreateInvoiceProvider>
+      </AnalysisTestProvider>,
     );
     act(() => {
       selectScan?.(scan);
@@ -185,6 +165,6 @@ describe("CreateInvoiceContext durable analysis enqueue", () => {
     });
 
     // Assert
-    expect(navigationMocks.push).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${INVOICE_IDENTIFIER}`);
+    expect(analysisRouter.push).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${invoiceIdentifier}`);
   });
 });

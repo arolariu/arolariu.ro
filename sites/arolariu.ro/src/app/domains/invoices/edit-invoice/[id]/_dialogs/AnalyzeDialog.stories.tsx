@@ -20,14 +20,14 @@ const storyInvoice = {
  *
  * @returns The production dialog in its open state.
  */
-function OpenAnalyzeDialogStory(): React.JSX.Element {
-  const {open} = useDialog("EDIT_INVOICE__ANALYSIS", "view", {invoice: storyInvoice});
+export function OpenAnalyzeDialogStory(): React.JSX.Element {
+  const {isOpen, open} = useDialog("EDIT_INVOICE__ANALYSIS", "view", {invoice: storyInvoice});
 
   useEffect(() => {
     open();
   }, [open]);
 
-  return <AnalyzeDialog />;
+  return isOpen ? <AnalyzeDialog /> : <></>;
 }
 
 const meta = {

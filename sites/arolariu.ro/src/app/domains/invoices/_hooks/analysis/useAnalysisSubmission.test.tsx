@@ -1,10 +1,9 @@
 /**
- * @fileoverview Unit tests for honest asynchronous analysis submission.
+ * @fileoverview Real-module tests for honest asynchronous analysis submission.
  * @module app/domains/invoices/_hooks/analysis/useAnalysisSubmission.test
  */
 
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
+import {getAnalysisApiRequests, installAnalysisFetchHandler, type AnalysisFetchRequest} from "@/../tests/helpers/analysisBoundary";
 import type {AnalysisAcceptedResponse} from "@/types/invoices";
 import {act, renderHook} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
@@ -40,8 +39,7 @@ const acceptedMerchantResponse: AnalysisAcceptedResponse = {
   acceptedAt: "2026-08-17T19:40:42.187Z",
 };
 
-const stubFetchBffUser = vi.mocked(fetchBFFUserFromAuthService);
-const stubFetchWithTimeout = vi.mocked(fetchWithTimeout);
+let apiHandler: (request: AnalysisFetchRequest) => Response | Promise<Response>;
 
 function createAcceptedResponse(response: AnalysisAcceptedResponse): Response {
   return new Response(JSON.stringify(response), {status: 202, statusText: "Accepted"});
@@ -49,13 +47,11 @@ function createAcceptedResponse(response: AnalysisAcceptedResponse): Response {
 
 describe("useAnalysisSubmission", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    stubFetchBffUser.mockResolvedValue({userIdentifier: "user-1", userJwt: "jwt-1", user: null});
-    stubFetchWithTimeout.mockImplementation((url: string) =>
-      Promise.resolve(
-        url.includes("/merchants/") ? createAcceptedResponse(acceptedMerchantResponse) : createAcceptedResponse(acceptedInvoiceResponse),
-      ),
-    );
+    apiHandler = (requestAtBoundary) =>
+      requestAtBoundary.url.includes("/merchants/")
+        ? createAcceptedResponse(acceptedMerchantResponse)
+        : createAcceptedResponse(acceptedInvoiceResponse);
+    installAnalysisFetchHandler((requestAtBoundary) => apiHandler(requestAtBoundary));
   });
 
   afterEach(() => {
@@ -81,11 +77,12 @@ describe("useAnalysisSubmission", () => {
     expect(acknowledgement).toEqual(acceptedMerchantResponse);
     expect(result.current.acceptedRunId).toBe(acceptedMerchantResponse.runId);
     expect(result.current.isSubmitting).toBe(false);
-    expect(stubFetchWithTimeout).toHaveBeenCalledWith(
-      `/rest/v1/merchants/${merchantIdentifier}/analyze`,
-      expect.objectContaining({method: "POST"}),
-      15_000,
-    );
+    expect(getAnalysisApiRequests()).toEqual([
+      expect.objectContaining({
+        url: expect.stringContaining(`/rest/v1/merchants/${merchantIdentifier}/analyze`),
+        init: expect.objectContaining({method: "POST"}),
+      }),
+    ]);
   });
 
   it("clears an earlier acknowledgement before a failed resubmission", async () => {
@@ -101,7 +98,7 @@ describe("useAnalysisSubmission", () => {
         request: {profile: "comprehensive", overrides: {}},
       });
     });
-    stubFetchWithTimeout.mockResolvedValue(new Response(null, {status: 503, statusText: "Service Unavailable"}));
+    apiHandler = () => new Response(null, {status: 503, statusText: "Service Unavailable"});
     let acknowledgement: AnalysisAcceptedResponse | null = acceptedInvoiceResponse;
     let submission: Promise<AnalysisAcceptedResponse | null> | undefined;
     act(() => {
@@ -124,15 +121,13 @@ describe("useAnalysisSubmission", () => {
     expect(result.current.acceptedRunId).toBeNull();
   });
 
-  it("prevents a concurrent second submission while an action is pending", async () => {
+  it("prevents a concurrent second submission while a real action is pending", async () => {
     // Arrange
     let resolveAction: ((response: Response) => void) | undefined;
-    stubFetchWithTimeout.mockImplementationOnce(
-      () =>
-        new Promise<Response>((resolve) => {
-          resolveAction = resolve;
-        }),
-    );
+    apiHandler = () =>
+      new Promise<Response>((resolve) => {
+        resolveAction = resolve;
+      });
     const {result} = renderHook(() => useAnalysisSubmission({refresh: vi.fn(), scopeKey: invoiceIdentifier}), {
       wrapper: AnalysisTestProvider,
     });
@@ -153,7 +148,9 @@ describe("useAnalysisSubmission", () => {
 
     // Assert
     expect(await secondSubmission).toBeNull();
-    expect(stubFetchWithTimeout).toHaveBeenCalledOnce();
+    await vi.waitFor(() => {
+      expect(getAnalysisApiRequests()).toHaveLength(1);
+    });
 
     await act(async () => {
       resolveAction?.(createAcceptedResponse(acceptedInvoiceResponse));
@@ -201,18 +198,17 @@ describe("useAnalysisSubmission", () => {
     };
     let resolveFirst: ((response: Response) => void) | undefined;
     let resolveSecond: ((response: Response) => void) | undefined;
-    stubFetchWithTimeout.mockImplementationOnce(
-      () =>
-        new Promise<Response>((resolve) => {
+    let invocationCount = 0;
+    apiHandler = () => {
+      invocationCount += 1;
+      return new Promise<Response>((resolve) => {
+        if (invocationCount === 1) {
           resolveFirst = resolve;
-        }),
-    );
-    stubFetchWithTimeout.mockImplementationOnce(
-      () =>
-        new Promise<Response>((resolve) => {
+        } else {
           resolveSecond = resolve;
-        }),
-    );
+        }
+      });
+    };
     const {result, rerender} = renderHook(({scopeKey}) => useAnalysisSubmission({refresh: vi.fn(), scopeKey}), {
       initialProps: {scopeKey: invoiceIdentifier},
       wrapper: AnalysisTestProvider,
@@ -235,7 +231,7 @@ describe("useAnalysisSubmission", () => {
       });
     });
     await vi.waitFor(() => {
-      expect(stubFetchWithTimeout).toHaveBeenCalledTimes(2);
+      expect(getAnalysisApiRequests()).toHaveLength(2);
     });
     await act(async () => {
       resolveSecond?.(createAcceptedResponse(nextResponse));
@@ -256,6 +252,17 @@ describe("useAnalysisSubmission", () => {
     vi.useFakeTimers();
     const refresh = vi.fn();
     let resolveSecond: ((response: Response) => void) | undefined;
+    let invocationCount = 0;
+    apiHandler = () => {
+      invocationCount += 1;
+      if (invocationCount === 1) {
+        return createAcceptedResponse(acceptedInvoiceResponse);
+      }
+
+      return new Promise<Response>((resolve) => {
+        resolveSecond = resolve;
+      });
+    };
     const {result} = renderHook(() => useAnalysisSubmission({refresh, scopeKey: invoiceIdentifier}), {
       wrapper: AnalysisTestProvider,
     });
@@ -268,12 +275,6 @@ describe("useAnalysisSubmission", () => {
         refreshAfterAcceptance: true,
       });
     });
-    stubFetchWithTimeout.mockImplementationOnce(
-      () =>
-        new Promise<Response>((resolve) => {
-          resolveSecond = resolve;
-        }),
-    );
     act(() => {
       void result.current.submitInvoice({
         invoiceIdentifier,
@@ -282,7 +283,7 @@ describe("useAnalysisSubmission", () => {
       });
     });
     await vi.waitFor(() => {
-      expect(stubFetchWithTimeout).toHaveBeenCalledTimes(2);
+      expect(getAnalysisApiRequests()).toHaveLength(2);
     });
     await act(async () => {
       vi.advanceTimersByTime(30_000);
@@ -302,12 +303,10 @@ describe("useAnalysisSubmission", () => {
   it("does not apply a rejection after the hook has unmounted", async () => {
     // Arrange
     let rejectAction: ((reason?: unknown) => void) | undefined;
-    stubFetchWithTimeout.mockImplementationOnce(
-      () =>
-        new Promise<Response>((_resolve, reject) => {
-          rejectAction = reject;
-        }),
-    );
+    apiHandler = () =>
+      new Promise<Response>((_resolve, reject) => {
+        rejectAction = reject;
+      });
     const {result, unmount} = renderHook(() => useAnalysisSubmission({refresh: vi.fn(), scopeKey: invoiceIdentifier}), {
       wrapper: AnalysisTestProvider,
     });
@@ -321,7 +320,7 @@ describe("useAnalysisSubmission", () => {
       });
     });
     await vi.waitFor(() => {
-      expect(stubFetchWithTimeout).toHaveBeenCalledOnce();
+      expect(getAnalysisApiRequests()).toHaveLength(1);
     });
     unmount();
     await act(async () => {
@@ -331,7 +330,7 @@ describe("useAnalysisSubmission", () => {
 
     // Assert
     expect(await submission).toBeNull();
-    expect(document.body).not.toHaveTextContent("toasts.invoices.analysis.failed.title");
+    expect(document.body).not.toHaveTextContent("Analysis could not be started");
   });
 
   it("cancels a pending hard refresh when the submitting component unmounts", async () => {

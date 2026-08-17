@@ -1,124 +1,143 @@
 /**
- * @fileoverview Unit tests for createInvoice server action.
+ * @fileoverview Real-boundary tests for invoice creation server actions.
  * @module app/domains/invoices/_actions/invoices/createInvoice.test
  */
 
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
+import {analysisClerk} from "@/../tests/helpers/analysisClerk";
+import {
+  ANALYSIS_API_URL,
+  getAnalysisApiRequests,
+  installAnalysisFetchHandler,
+  type AnalysisFetchRequest,
+} from "@/../tests/helpers/analysisBoundary";
+import {EMPTY_GUID} from "@/lib/utils.generic";
+import {InvoiceScanType} from "@/types/invoices";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {TestDataBuilder} from "../../../../../../tests/helpers";
+import {createInvoice} from "./createInvoice";
 
-const {createInvoice} = await import("./createInvoice");
-const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
-const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
+let apiHandler: (request: AnalysisFetchRequest) => Response | Promise<Response>;
+
+function getOnlyApiRequest(): AnalysisFetchRequest {
+  const requestAtBoundary = getAnalysisApiRequests()[0];
+  if (!requestAtBoundary) {
+    throw new Error("Expected the real action to send an API request.");
+  }
+
+  return requestAtBoundary;
+}
+
+function getRequestPayload(requestAtBoundary: AnalysisFetchRequest): unknown {
+  if (typeof requestAtBoundary.init?.body !== "string") {
+    throw new Error("Expected the real action to send a JSON request body.");
+  }
+
+  return JSON.parse(requestAtBoundary.init.body) as unknown;
+}
 
 describe("createInvoice", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse(TestDataBuilder.build("invoice")) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    apiHandler = () => new Response(JSON.stringify({id: "11111111-1111-4111-8111-111111111111"}), {status: 201});
+    installAnalysisFetchHandler((requestAtBoundary) => apiHandler(requestAtBoundary));
   });
 
-  it("posts a creation payload with authenticated userIdentifier when missing", async () => {
+  it("posts a creation payload with the real guest userIdentifier when missing", async () => {
+    // Arrange
     const payload = {
-      initialScan: TestDataBuilder.build("invoiceScan", {
+      initialScan: {
+        scanType: InvoiceScanType.JPEG,
         location: "https://storage.test/scan.jpg",
-      }),
+        metadata: {},
+      },
       metadata: {isImportant: "false", requiresAnalysis: "true"},
     };
 
+    // Act
     const result = await createInvoice(payload);
 
+    // Assert
     expect(result.success).toBe(true);
-    expect(mockFetchWithTimeout).toHaveBeenCalledWith(
-      "/rest/v1/invoices",
-      expect.objectContaining({
+    const requestAtBoundary = getOnlyApiRequest();
+    expect(requestAtBoundary).toMatchObject({
+      url: `${ANALYSIS_API_URL}/rest/v1/invoices`,
+      init: expect.objectContaining({
         method: "POST",
         headers: expect.objectContaining({
-          Authorization: "Bearer jwt-1",
+          Authorization: expect.stringMatching(/^Bearer /u),
           "Content-Type": "application/json",
         }),
       }),
-    );
-
-    const callArgs = mockFetchWithTimeout.mock.calls[0];
-    const body = JSON.parse(callArgs?.[1]?.body as string);
-    expect(body.userIdentifier).toBe("user-1");
+    });
+    expect(getRequestPayload(requestAtBoundary)).toMatchObject({userIdentifier: EMPTY_GUID});
   });
 
   it("preserves an explicit userIdentifier in the payload", async () => {
-    const payload = TestDataBuilder.build("createInvoicePayload", {
+    // Arrange
+    const payload = {
       userIdentifier: "custom-user-id",
-      initialScan: TestDataBuilder.build("invoiceScan", {
+      initialScan: {
+        scanType: InvoiceScanType.JPEG,
         location: "https://storage.test/scan.jpg",
-      }),
+        metadata: {},
+      },
       metadata: {isImportant: "false", requiresAnalysis: "true"},
-    });
+    };
 
+    // Act
     await createInvoice(payload);
 
-    const callArgs = mockFetchWithTimeout.mock.calls[0];
-    const body = JSON.parse(callArgs?.[1]?.body as string);
-    expect(body.userIdentifier).toBe("custom-user-id");
+    // Assert
+    expect(getRequestPayload(getOnlyApiRequest())).toMatchObject({userIdentifier: "custom-user-id"});
   });
 
   it("returns a stable server-error result without reading or exposing the backend body", async () => {
     // Arrange
     const sensitiveBackendBody = "OCR text: card 4111 1111 1111 1111; provider response";
-    const readResponseBody = vi.fn(async () => sensitiveBackendBody);
-    mockFetchWithTimeout.mockResolvedValue({
-      ok: false,
-      status: 500,
-      statusText: "Internal Server Error",
-      text: readResponseBody,
-    } as unknown as Response);
+    const rejectedResponse = new Response(sensitiveBackendBody, {status: 500, statusText: "Internal Server Error"});
+    const readResponseBody = vi.spyOn(rejectedResponse, "text");
+    apiHandler = () => rejectedResponse;
 
     // Act
     const result = await createInvoice({});
 
     // Assert
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toEqual({
+    expect(result).toEqual({
+      success: false,
+      error: {
         code: "SERVER_ERROR",
         message: "Invoice creation is temporarily unavailable. Please try again.",
         status: 500,
-      });
-      expect(JSON.stringify(result.error)).not.toContain(sensitiveBackendBody);
-    }
+      },
+    });
+    expect(JSON.stringify(result)).not.toContain(sensitiveBackendBody);
     expect(readResponseBody).not.toHaveBeenCalled();
   });
 
   it("returns a stable validation result for non-5xx responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue({
-      ok: false,
-      status: 400,
-      statusText: "Bad Request",
-    } as Response);
+    // Arrange
+    apiHandler = () => new Response(null, {status: 400, statusText: "Bad Request"});
 
+    // Act
     const result = await createInvoice({});
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toEqual({
+    // Assert
+    expect(result).toEqual({
+      success: false,
+      error: {
         code: "VALIDATION_ERROR",
         message: "Unable to create invoice with the provided details.",
         status: 400,
-      });
-    }
+      },
+    });
   });
 
   it("preserves an authentication rejection as a stable auth result", async () => {
-    mockFetchWithTimeout.mockResolvedValue({
-      ok: false,
-      status: 401,
-      statusText: "Unauthorized",
-    } as unknown as Response);
+    // Arrange
+    apiHandler = () => new Response(null, {status: 401, statusText: "Unauthorized"});
 
+    // Act
     const result = await createInvoice({});
 
+    // Assert
     expect(result).toEqual({
       success: false,
       error: {
@@ -130,17 +149,16 @@ describe("createInvoice", () => {
   });
 
   it("does not expose an authentication exception message", async () => {
+    // Arrange
     const sensitiveException = "authorization provider token for user@example.test";
-    mockFetchUser.mockRejectedValue(new Error(sensitiveException));
+    analysisClerk.auth.mockRejectedValue(new Error(sensitiveException));
 
+    // Act
     const result = await createInvoice({});
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.code).toBe("NETWORK_ERROR");
-      expect(result.error.message).toBe("Unable to create invoice. Please try again.");
-      expect(JSON.stringify(result.error)).not.toContain(sensitiveException);
-    }
+    // Assert
+    expect(result).toMatchObject({success: false, error: {code: "NETWORK_ERROR", message: "Unable to create invoice. Please try again."}});
+    expect(JSON.stringify(result)).not.toContain(sensitiveException);
   });
 
   it("does not log or return a submitted SAS URL, OCR text, or backend exception", async () => {
@@ -151,20 +169,20 @@ describe("createInvoice", () => {
     const sensitiveException = `${fakeOcrText}; ${fakeBackendBody}`;
     const consoleInfoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    mockFetchWithTimeout.mockRejectedValue(new Error(sensitiveException));
+    apiHandler = () => Promise.reject(new Error(sensitiveException));
 
     // Act
     const result = await createInvoice({
-      initialScan: TestDataBuilder.build("invoiceScan", {location: fakeSasUrl}),
+      initialScan: {
+        scanType: InvoiceScanType.JPEG,
+        location: fakeSasUrl,
+        metadata: {},
+      },
       metadata: {isImportant: "false", requiresAnalysis: "true", ocrPreview: fakeOcrText},
     });
 
     // Assert
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.code).toBe("NETWORK_ERROR");
-      expect(result.error.message).toBe("Unable to create invoice. Please try again.");
-    }
+    expect(result).toMatchObject({success: false, error: {code: "NETWORK_ERROR", message: "Unable to create invoice. Please try again."}});
     const capturedOutput = JSON.stringify([...consoleInfoSpy.mock.calls, ...consoleErrorSpy.mock.calls, result]);
     for (const sensitiveValue of [fakeSasUrl, fakeOcrText, fakeBackendBody, sensitiveException]) {
       expect(capturedOutput).not.toContain(sensitiveValue);
@@ -173,14 +191,14 @@ describe("createInvoice", () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it("returns a fallback error message when fetch throws a non-Error", async () => {
-    mockFetchWithTimeout.mockRejectedValue({code: "TIMEOUT"});
+  it("returns a fallback error message when native fetch throws a non-Error", async () => {
+    // Arrange
+    apiHandler = () => Promise.reject({code: "TIMEOUT"});
 
+    // Act
     const result = await createInvoice({});
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toBe("Unable to create invoice. Please try again.");
-    }
+    // Assert
+    expect(result).toMatchObject({success: false, error: {message: "Unable to create invoice. Please try again."}});
   });
 });

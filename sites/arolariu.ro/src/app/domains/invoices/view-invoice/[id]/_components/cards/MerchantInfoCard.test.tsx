@@ -1,15 +1,14 @@
 /**
- * @fileoverview Integration tests for linked-merchant analysis controls.
+ * @fileoverview Real-module tests for linked-merchant analysis controls.
  * @module app/domains/invoices/view-invoice/[id]/_components/cards/MerchantInfoCard.test
  */
 
+import {ANALYSIS_API_URL, getAnalysisApiRequests, installAnalysisFetchHandler} from "@/../tests/helpers/analysisBoundary";
 import {mockInvoice, mockMerchant} from "@/data/mocks";
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
 import {useInvoicesStore} from "@/stores/invoicesStore";
 import {render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {afterEach, beforeEach, describe, expect, it} from "vitest";
 import {AnalysisTestProvider} from "../../../../../../../../tests/helpers/analysis";
 import {InvoiceContextProvider} from "../../_context/InvoiceContext";
 import {MerchantInfoCard} from "./MerchantInfoCard";
@@ -27,8 +26,6 @@ const acceptedResponse = {
   acceptedCapabilities: ["merchantClassification", "descriptionGeneration"],
   acceptedAt: "2026-08-17T19:40:42.187Z",
 } as const;
-const stubFetchBffUser = vi.mocked(fetchBFFUserFromAuthService);
-const stubFetchWithTimeout = vi.mocked(fetchWithTimeout);
 
 function renderMerchantCard(linkedMerchant: typeof merchant | null): void {
   render(
@@ -44,10 +41,8 @@ function renderMerchantCard(linkedMerchant: typeof merchant | null): void {
 
 describe("MerchantInfoCard analysis integration", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     useInvoicesStore.getState().setEntities([invoice]);
-    stubFetchBffUser.mockResolvedValue({userIdentifier: "user-1", userJwt: "jwt-1", user: null});
-    stubFetchWithTimeout.mockResolvedValue(new Response(JSON.stringify(acceptedResponse), {status: 202, statusText: "Accepted"}));
+    installAnalysisFetchHandler(() => new Response(JSON.stringify(acceptedResponse), {status: 202, statusText: "Accepted"}));
   });
 
   afterEach(() => {
@@ -59,8 +54,8 @@ describe("MerchantInfoCard analysis integration", () => {
     renderMerchantCard(null);
 
     // Assert
-    expect(screen.queryByRole("heading", {name: "forms.invoices.analysis.merchant.title"})).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", {name: "forms.invoices.analysis.buttons.start"})).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", {name: "Merchant analysis"})).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", {name: "Start analysis"})).not.toBeInTheDocument();
   });
 
   it("submits the linked merchant identifier through the real analysis form", async () => {
@@ -69,16 +64,17 @@ describe("MerchantInfoCard analysis integration", () => {
     renderMerchantCard(merchant);
 
     // Act
-    await user.click(screen.getByRole("button", {name: "forms.invoices.analysis.buttons.start"}));
+    await user.click(screen.getByRole("button", {name: "Start analysis"}));
 
     // Assert
     await waitFor(() => {
-      expect(stubFetchWithTimeout).toHaveBeenCalledWith(
-        `/rest/v1/merchants/${merchantIdentifier}/analyze`,
-        expect.objectContaining({method: "POST"}),
-        15_000,
-      );
+      expect(getAnalysisApiRequests()).toEqual([
+        expect.objectContaining({
+          url: `${ANALYSIS_API_URL}/rest/v1/merchants/${merchantIdentifier}/analyze`,
+          init: expect.objectContaining({method: "POST"}),
+        }),
+      ]);
     });
-    expect(screen.getByRole("status")).toHaveTextContent("forms.invoices.analysis.status.queued");
+    expect(screen.getByRole("status")).toHaveTextContent("Analysis started. Results will appear after the page refreshes.");
   });
 });

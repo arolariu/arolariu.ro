@@ -1,13 +1,17 @@
 /**
- * @fileoverview Unit tests for the merchant analysis form.
+ * @fileoverview Real-module tests for the merchant analysis form.
  * @module app/domains/invoices/_components/analysis/MerchantAnalysisForm.test
  */
 
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
+import {
+  ANALYSIS_API_URL,
+  getAnalysisApiRequests,
+  installAnalysisFetchHandler,
+  type AnalysisFetchRequest,
+} from "@/../tests/helpers/analysisBoundary";
 import {fireEvent, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {beforeEach, describe, expect, it} from "vitest";
 import {AnalysisTestProvider} from "../../../../../../tests/helpers/analysis";
 import {MerchantAnalysisForm} from "./MerchantAnalysisForm";
 
@@ -21,24 +25,21 @@ const response = {
   acceptedCapabilities: ["merchantClassification", "descriptionGeneration"],
   acceptedAt: "2026-08-17T19:40:42.187Z",
 } as const;
-const stubFetchBffUser = vi.mocked(fetchBFFUserFromAuthService);
-const stubFetchWithTimeout = vi.mocked(fetchWithTimeout);
-const labels = {
-  balanced: "forms.invoices.analysis.profiles.balanced",
-  capabilities: "forms.invoices.analysis.merchant.capabilitiesLegend",
-  descriptionGeneration: "forms.invoices.analysis.merchantCapabilities.descriptionGeneration",
-  fast: "forms.invoices.analysis.profiles.fast",
-  naceClassification: "forms.invoices.analysis.merchantCapabilities.naceClassification",
-  profile: "forms.invoices.analysis.merchant.profileLegend",
-  start: "forms.invoices.analysis.buttons.start",
-} as const;
+
+function getOnlyApiRequest(): AnalysisFetchRequest {
+  const requestAtBoundary = getAnalysisApiRequests()[0];
+  if (!requestAtBoundary) {
+    throw new Error("Expected the form to submit through the real API boundary.");
+  }
+
+  return requestAtBoundary;
+}
 
 describe("MerchantAnalysisForm", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    stubFetchBffUser.mockResolvedValue({userIdentifier: "user-1", userJwt: "jwt-1", user: null});
-    stubFetchWithTimeout.mockImplementation((_url, options) => {
-      const requestBody = typeof options?.body === "string" ? (JSON.parse(options.body) as {overrides?: Record<string, unknown>}) : {};
+    installAnalysisFetchHandler((requestAtBoundary) => {
+      const body = requestAtBoundary.init?.body;
+      const requestBody = typeof body === "string" ? (JSON.parse(body) as {overrides?: Record<string, unknown>}) : {};
       const merchantClassification = requestBody.overrides?.["merchantClassification"];
       const hasDisabledClassification =
         typeof merchantClassification === "object"
@@ -53,7 +54,7 @@ describe("MerchantAnalysisForm", () => {
           }
         : response;
 
-      return Promise.resolve(new Response(JSON.stringify(acceptedResponse), {status: 202, statusText: "Accepted"}));
+      return new Response(JSON.stringify(acceptedResponse), {status: 202, statusText: "Accepted"});
     });
   });
 
@@ -67,35 +68,32 @@ describe("MerchantAnalysisForm", () => {
     );
 
     // Assert
-    expect(screen.getByRole("group", {name: labels.profile})).toBeInTheDocument();
-    expect(screen.getByRole("group", {name: labels.capabilities})).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", {name: labels.naceClassification})).toBeChecked();
-    expect(screen.getByRole("checkbox", {name: labels.descriptionGeneration})).toBeChecked();
-    expect(screen.queryByRole("checkbox", {name: "forms.invoices.analysis.capabilities.documentExtraction"})).not.toBeInTheDocument();
-    expect(screen.queryByRole("checkbox", {name: "forms.invoices.analysis.capabilities.productClassification"})).not.toBeInTheDocument();
+    expect(screen.getByRole("group", {name: "Analysis profile"})).toBeInTheDocument();
+    expect(screen.getByRole("group", {name: "Merchant analysis capabilities"})).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", {name: "NACE classification"})).toBeChecked();
+    expect(screen.getByRole("checkbox", {name: "Generate merchant description"})).toBeChecked();
+    expect(screen.queryByRole("checkbox", {name: "Document extraction"})).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", {name: "Product classification"})).not.toBeInTheDocument();
 
     // Act
-    await user.click(screen.getByRole("checkbox", {name: labels.naceClassification}));
-    await user.click(screen.getByRole("button", {name: labels.start}));
+    await user.click(screen.getByRole("checkbox", {name: "NACE classification"}));
+    await user.click(screen.getByRole("button", {name: "Start analysis"}));
 
     // Assert
     await waitFor(() => {
-      expect(stubFetchWithTimeout).toHaveBeenCalledWith(
-        `/rest/v1/merchants/${merchantIdentifier}/analyze`,
-        expect.objectContaining({method: "POST"}),
-        15_000,
-      );
+      expect(getOnlyApiRequest()).toMatchObject({
+        url: `${ANALYSIS_API_URL}/rest/v1/merchants/${merchantIdentifier}/analyze`,
+        init: expect.objectContaining({method: "POST"}),
+      });
     });
-    const requestOptions = stubFetchWithTimeout.mock.calls[0]?.[1];
-    expect(typeof requestOptions?.body).toBe("string");
-    if (typeof requestOptions?.body === "string") {
-      expect(JSON.parse(requestOptions.body) as unknown).toEqual({
+    expect(getOnlyApiRequest().init?.body).toBe(
+      JSON.stringify({
         profile: "comprehensive",
         overrides: {merchantClassification: {enabled: false}},
-      });
-    }
+      }),
+    );
     await waitFor(() => {
-      expect(screen.getByRole("status")).toHaveTextContent("forms.invoices.analysis.status.queued");
+      expect(screen.getByRole("status")).toHaveTextContent("Analysis started. Results will appear after the page refreshes.");
     });
   });
 
@@ -107,22 +105,18 @@ describe("MerchantAnalysisForm", () => {
         <MerchantAnalysisForm merchantIdentifier={merchantIdentifier} />
       </AnalysisTestProvider>,
     );
-    const balancedProfile = screen.getByRole("radio", {name: labels.balanced});
+    const balancedProfile = screen.getByRole("radio", {name: "Balanced"});
     await user.click(balancedProfile);
 
     // Act
     fireEvent.change(balancedProfile, {target: {value: "unexpected-profile"}});
-    await user.click(screen.getByRole("button", {name: labels.start}));
+    await user.click(screen.getByRole("button", {name: "Start analysis"}));
 
     // Assert
     await waitFor(() => {
-      expect(stubFetchWithTimeout).toHaveBeenCalledOnce();
+      expect(getAnalysisApiRequests()).toHaveLength(1);
     });
-    const requestOptions = stubFetchWithTimeout.mock.calls[0]?.[1];
-    expect(typeof requestOptions?.body).toBe("string");
-    if (typeof requestOptions?.body === "string") {
-      expect(JSON.parse(requestOptions.body) as unknown).toEqual({profile: "balanced", overrides: {}});
-    }
+    expect(getOnlyApiRequest().init?.body).toBe(JSON.stringify({profile: "balanced", overrides: {}}));
   });
 
   it("applies the fast profile baseline and protects the last enabled control", async () => {
@@ -135,10 +129,10 @@ describe("MerchantAnalysisForm", () => {
     );
 
     // Act
-    await user.click(screen.getByRole("radio", {name: labels.fast}));
+    await user.click(screen.getByRole("radio", {name: "Fast"}));
 
     // Assert
-    expect(screen.getByRole("checkbox", {name: labels.descriptionGeneration})).not.toBeChecked();
-    expect(screen.getByRole("checkbox", {name: labels.naceClassification})).toBeDisabled();
+    expect(screen.getByRole("checkbox", {name: "Generate merchant description"})).not.toBeChecked();
+    expect(screen.getByRole("checkbox", {name: "NACE classification"})).toBeDisabled();
   });
 });

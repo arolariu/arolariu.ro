@@ -1,38 +1,56 @@
 /**
- * @fileoverview Unit tests for the merchant analysis enqueue server action.
+ * @fileoverview Real-boundary tests for the merchant analysis enqueue action.
  * @module app/domains/invoices/_actions/merchants/analyzeMerchant.test
  */
 
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
+import {
+  ANALYSIS_API_URL,
+  getAnalysisApiRequests,
+  installAnalysisFetchHandler,
+  type AnalysisFetchRequest,
+} from "@/../tests/helpers/analysisBoundary";
+import {analysisClerk} from "@/../tests/helpers/analysisClerk";
 import type {AnalyzeMerchantRequest} from "@/types/invoices";
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {TestDataBuilder} from "../../../../../../tests/helpers";
+import {beforeEach, describe, expect, it} from "vitest";
+import {analyzeMerchant} from "./analyzeMerchant";
 
-const {analyzeMerchant} = await import("./analyzeMerchant");
-const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
-const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
+const merchantIdentifier = "22222222-2222-4222-8222-222222222222";
+const request: AnalyzeMerchantRequest = {
+  profile: "balanced",
+  overrides: {},
+};
+
+const acceptedResponse = {
+  runId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+  targetType: "merchant",
+  targetId: merchantIdentifier,
+  status: "queued",
+  profile: "balanced",
+  acceptedCapabilities: ["merchantClassification", "descriptionGeneration"],
+  acceptedAt: "2026-08-17T19:40:42.187Z",
+} as const;
+
+let apiHandler: (request: AnalysisFetchRequest) => Response | Promise<Response>;
+
+function acceptedJsonResponse(body: unknown = acceptedResponse, status = 202): Response {
+  return new Response(JSON.stringify(body), {status, statusText: status === 202 ? "Accepted" : "OK"});
+}
+
+function getOnlyApiRequest(): AnalysisFetchRequest {
+  const requestAtBoundary = getAnalysisApiRequests()[0];
+  if (!requestAtBoundary) {
+    throw new Error("Expected the real action to send an API request.");
+  }
+
+  return requestAtBoundary;
+}
 
 describe("analyzeMerchant", () => {
-  const merchantIdentifier = "22222222-2222-4222-8222-222222222222";
-  const acceptedResponse = {
-    runId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-    targetType: "merchant",
-    targetId: merchantIdentifier,
-    status: "queued",
-    profile: "balanced",
-    acceptedCapabilities: ["merchantClassification", "descriptionGeneration"],
-    acceptedAt: "2026-08-17T19:40:42.187Z",
-  } as const;
-  const request: AnalyzeMerchantRequest = {
-    profile: "balanced",
-    overrides: {},
-  };
-
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
-    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse(acceptedResponse, {status: 202, statusText: "Accepted"}));
+    analysisClerk.auth.mockResolvedValue({isAuthenticated: false, userId: null});
+    analysisClerk.currentUser.mockResolvedValue(null);
+    apiHandler = () => acceptedJsonResponse();
+    installAnalysisFetchHandler((requestAtBoundary) => apiHandler(requestAtBoundary));
   });
 
   it("posts the merchant-only request contract with a fifteen-second timeout", async () => {
@@ -41,60 +59,43 @@ describe("analyzeMerchant", () => {
 
     // Assert
     expect(result).toEqual({success: true, data: acceptedResponse});
-    expect(mockFetchWithTimeout).toHaveBeenCalledWith(
-      `/rest/v1/merchants/${merchantIdentifier}/analyze`,
-      expect.objectContaining({
+    const requestAtBoundary = getOnlyApiRequest();
+    expect(requestAtBoundary).toMatchObject({
+      url: `${ANALYSIS_API_URL}/rest/v1/merchants/${merchantIdentifier}/analyze`,
+      init: expect.objectContaining({
         method: "POST",
         headers: expect.objectContaining({
-          Authorization: "Bearer jwt-1",
+          Authorization: expect.stringMatching(/^Bearer /u),
           "Content-Type": "application/json",
         }),
       }),
-      15_000,
-    );
-
-    const callArguments = mockFetchWithTimeout.mock.calls[0];
-    const body = JSON.parse(callArguments?.[1]?.body as string) as Record<string, unknown>;
-    expect(body).toEqual(request);
-    expect(body).not.toHaveProperty("userIdentifier");
-    expect(body).not.toHaveProperty("merchantIdentifier");
-    expect(body).not.toHaveProperty("invoiceClassification");
+    });
+    expect(requestAtBoundary.init?.body).toBe(JSON.stringify(request));
   });
 
   it("rejects an acceptance response for a different target type", async () => {
     // Arrange
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse({...acceptedResponse, targetType: "invoice"}, {status: 202, statusText: "Accepted"}),
-    );
+    apiHandler = () => acceptedJsonResponse({...acceptedResponse, targetType: "invoice"});
 
     // Act
     const result = await analyzeMerchant({merchantIdentifier, request});
 
     // Assert
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.code).toBe("UNKNOWN_ERROR");
-      expect(result.error.message).toContain("invalid acceptance response");
-    }
+    expect(result).toMatchObject({
+      success: false,
+      error: {code: "UNKNOWN_ERROR", message: expect.stringContaining("invalid acceptance response")},
+    });
   });
 
   it("rejects a response whose capabilities differ from the merchant request", async () => {
     // Arrange
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse(
-        {...acceptedResponse, acceptedCapabilities: ["merchantClassification"]},
-        {status: 202, statusText: "Accepted"},
-      ),
-    );
+    apiHandler = () => acceptedJsonResponse({...acceptedResponse, acceptedCapabilities: ["merchantClassification"]});
 
     // Act
     const result = await analyzeMerchant({merchantIdentifier, request});
 
     // Assert
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("invalid acceptance response");
-    }
+    expect(result).toMatchObject({success: false, error: {message: expect.stringContaining("invalid acceptance response")}});
   });
 
   it("accepts a custom response profile for actual merchant overrides", async () => {
@@ -104,7 +105,7 @@ describe("analyzeMerchant", () => {
       overrides: {descriptionGeneration: {enabled: true}},
     };
     const customResponse = {...acceptedResponse, profile: "custom"} as const;
-    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse(customResponse, {status: 202, statusText: "Accepted"}));
+    apiHandler = () => acceptedJsonResponse(customResponse);
 
     // Act
     const result = await analyzeMerchant({merchantIdentifier, request: customRequest});
@@ -115,59 +116,48 @@ describe("analyzeMerchant", () => {
 
   it("rejects a non-202 response even when it is otherwise successful", async () => {
     // Arrange
-    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse(acceptedResponse, {status: 201, statusText: "Created"}));
+    apiHandler = () => acceptedJsonResponse(acceptedResponse, 201);
 
     // Act
     const result = await analyzeMerchant({merchantIdentifier, request});
 
     // Assert
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.status).toBe(201);
-    }
+    expect(result).toMatchObject({success: false, error: {status: 201}});
   });
 
-  it("returns a validation error without calling auth for an invalid merchant identifier", async () => {
+  it("returns a validation error without crossing the authentication or fetch boundaries for an invalid merchant identifier", async () => {
     // Act
     const result = await analyzeMerchant({merchantIdentifier: "not-a-guid", request});
 
     // Assert
-    expect(result.success).toBe(false);
-    expect(mockFetchUser).not.toHaveBeenCalled();
-    if (!result.success) {
-      expect(result.error.code).toBe("VALIDATION_ERROR");
-      expect(result.error.message).toContain("merchantIdentifier");
-    }
+    expect(result).toMatchObject({
+      success: false,
+      error: {code: "VALIDATION_ERROR", message: expect.stringContaining("merchantIdentifier")},
+    });
+    expect(getAnalysisApiRequests()).toHaveLength(0);
   });
 
   it.each([null, undefined, [], {merchantIdentifier}, {request}])(
-    "returns a validation result without calling auth for malformed outer input %#",
+    "returns a validation result without crossing the authentication or fetch boundaries for malformed outer input %#",
     async (input) => {
       // Act
       const result = await analyzeMerchant(input);
 
       // Assert
-      expect(result).toMatchObject({
-        success: false,
-        error: {code: "VALIDATION_ERROR"},
-      });
-      expect(mockFetchUser).not.toHaveBeenCalled();
+      expect(result).toMatchObject({success: false, error: {code: "VALIDATION_ERROR"}});
+      expect(getAnalysisApiRequests()).toHaveLength(0);
     },
   );
 
-  it("returns a network error when authentication fails", async () => {
+  it("returns a network error when the Clerk boundary rejects authentication", async () => {
     // Arrange
-    mockFetchUser.mockRejectedValue(new Error("Auth failed"));
+    analysisClerk.auth.mockRejectedValue(new Error("Auth failed"));
 
     // Act
     const result = await analyzeMerchant({merchantIdentifier, request});
 
     // Assert
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.code).toBe("NETWORK_ERROR");
-      expect(result.error.message).toBe("Unable to enqueue merchant analysis.");
-      expect(result.error.message).not.toContain("Auth failed");
-    }
+    expect(result).toMatchObject({success: false, error: {code: "NETWORK_ERROR", message: "Unable to enqueue merchant analysis."}});
+    expect(JSON.stringify(result)).not.toContain("Auth failed");
   });
 });

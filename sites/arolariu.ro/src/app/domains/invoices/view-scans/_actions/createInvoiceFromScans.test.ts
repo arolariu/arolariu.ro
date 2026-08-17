@@ -1,29 +1,25 @@
 /**
- * @fileoverview Security and durable-enqueue tests for invoice creation from scans.
+ * @fileoverview Real-boundary tests for invoice creation from scans and durable enqueueing.
  * @module app/domains/invoices/view-scans/_actions/createInvoiceFromScans.test
  */
 
-import {logWithTrace} from "@/instrumentation.server";
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
+import {analysisClerk} from "@/../tests/helpers/analysisClerk";
+import {
+  ANALYSIS_API_URL,
+  getAnalysisApiRequests,
+  installAnalysisFetchHandler,
+  type AnalysisFetchRequest,
+} from "@/../tests/helpers/analysisBoundary";
 import type {Scan} from "@/types/scans";
 import {ScanStatus, ScanType} from "@/types/scans";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {createInvoiceFromScans} from "./createInvoiceFromScans";
 
-const mockFetchBffUser = vi.mocked(fetchBFFUserFromAuthService);
-const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
-const mockLogWithTrace = vi.mocked(logWithTrace);
+const invoiceIdentifier = "11111111-1111-4111-8111-111111111111";
+const analysisRunIdentifier = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 
-const INVOICE_IDENTIFIER = "11111111-1111-4111-8111-111111111111";
-const ANALYSIS_RUN_IDENTIFIER = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+let apiHandler: (request: AnalysisFetchRequest) => Response | Promise<Response>;
 
-/**
- * Creates a deterministic scan for server-action boundary tests.
- *
- * @param overrides - Optional scan field overrides.
- * @returns A ready scan fixture.
- */
 function createScan(overrides: Partial<Scan> = {}): Scan {
   return {
     id: "scan-1",
@@ -49,17 +45,12 @@ function createScan(overrides: Partial<Scan> = {}): Scan {
   };
 }
 
-/**
- * Returns a response that represents a durable analysis enqueue acknowledgement.
- *
- * @returns A valid HTTP 202 response.
- */
 function acceptedAnalysisResponse(): Response {
   return new Response(
     JSON.stringify({
-      runId: ANALYSIS_RUN_IDENTIFIER,
+      runId: analysisRunIdentifier,
       targetType: "invoice",
-      targetId: INVOICE_IDENTIFIER,
+      targetId: invoiceIdentifier,
       status: "queued",
       profile: "comprehensive",
       acceptedCapabilities: [
@@ -77,20 +68,10 @@ function acceptedAnalysisResponse(): Response {
   );
 }
 
-/**
- * Returns the smallest invoice shape consumed by this composite action.
- *
- * @returns A successful invoice-creation response.
- */
 function createdInvoiceResponse(): Response {
-  return new Response(JSON.stringify({id: INVOICE_IDENTIFIER, userIdentifier: "user-1"}), {status: 201});
+  return new Response(JSON.stringify({id: invoiceIdentifier, userIdentifier: "user-1"}), {status: 201});
 }
 
-/**
- * Creates a second unique scan for batch and partial-success tests.
- *
- * @returns A ready scan with a distinct identifier.
- */
 function createSecondScan(): Scan {
   const firstScan = createScan();
   return {
@@ -103,26 +84,22 @@ function createSecondScan(): Scan {
 
 describe("createInvoiceFromScans", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockFetchBffUser.mockResolvedValue({
-      userIdentifier: "user-1",
-      userJwt: "jwt-1",
-      user: null,
-    });
+    apiHandler = () => createdInvoiceResponse();
+    installAnalysisFetchHandler((requestAtBoundary) => apiHandler(requestAtBoundary));
   });
 
   it("waits for the durable HTTP 202 acknowledgement without waiting for analysis work", async () => {
     // Arrange
     let resolveAcknowledgement: ((response: Response) => void) | undefined;
-    mockFetchWithTimeout.mockImplementation((url: string) => {
-      if (url.endsWith("/analyze")) {
+    apiHandler = (requestAtBoundary) => {
+      if (requestAtBoundary.url.endsWith("/analyze")) {
         return new Promise<Response>((resolve) => {
           resolveAcknowledgement = resolve;
         });
       }
 
-      return Promise.resolve(createdInvoiceResponse());
-    });
+      return createdInvoiceResponse();
+    };
 
     // Act
     const creation = createInvoiceFromScans({scans: [createScan()], mode: "single"});
@@ -132,10 +109,11 @@ describe("createInvoiceFromScans", () => {
     });
 
     await vi.waitFor(() => {
-      expect(mockFetchWithTimeout).toHaveBeenCalledWith(
-        `/rest/v1/invoices/${INVOICE_IDENTIFIER}/analyze`,
-        expect.objectContaining({method: "POST"}),
-        15_000,
+      expect(getAnalysisApiRequests()).toContainEqual(
+        expect.objectContaining({
+          url: `${ANALYSIS_API_URL}/rest/v1/invoices/${invoiceIdentifier}/analyze`,
+          init: expect.objectContaining({method: "POST"}),
+        }),
       );
     });
     await Promise.resolve();
@@ -146,8 +124,8 @@ describe("createInvoiceFromScans", () => {
     await expect(creation).resolves.toMatchObject({
       success: true,
       data: {
-        invoices: [{id: INVOICE_IDENTIFIER}],
-        analysis: [{invoiceIdentifier: INVOICE_IDENTIFIER, status: "queued"}],
+        invoices: [{id: invoiceIdentifier}],
+        analysis: [{invoiceIdentifier, status: "queued"}],
       },
     });
   });
@@ -157,9 +135,10 @@ describe("createInvoiceFromScans", () => {
     const fakeSasUrl = "https://storage.example.test/scans/scan-1.jpg?sig=fake-sensitive-signature";
     const fakeOcrText = "OCR text for customer ocr@example.test";
     const fakeBackendBody = "provider body containing internal detail";
-    mockFetchWithTimeout.mockImplementation((url: string) =>
-      Promise.resolve(url.endsWith("/analyze") ? new Response(fakeBackendBody, {status: 503}) : createdInvoiceResponse()),
-    );
+    const consoleInfoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+    const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    apiHandler = (requestAtBoundary) =>
+      requestAtBoundary.url.endsWith("/analyze") ? new Response(fakeBackendBody, {status: 503}) : createdInvoiceResponse();
 
     // Act
     const result = await createInvoiceFromScans({
@@ -171,14 +150,16 @@ describe("createInvoiceFromScans", () => {
     expect(result).toMatchObject({
       success: true,
       data: {
-        invoices: [{id: INVOICE_IDENTIFIER}],
-        analysis: [{invoiceIdentifier: INVOICE_IDENTIFIER, status: "not_queued", errorCode: "SERVER_ERROR"}],
+        invoices: [{id: invoiceIdentifier}],
+        analysis: [{invoiceIdentifier, status: "not_queued", errorCode: "SERVER_ERROR"}],
       },
     });
-    const capturedValues = JSON.stringify([result, ...mockLogWithTrace.mock.calls]);
+    const capturedValues = JSON.stringify([result, ...consoleInfoSpy.mock.calls, ...consoleWarnSpy.mock.calls]);
     for (const sensitiveValue of [fakeSasUrl, fakeOcrText, fakeBackendBody]) {
       expect(capturedValues).not.toContain(sensitiveValue);
     }
+    consoleInfoSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
   });
 
   it("does not read, log, or return a rejected invoice-creation response body", async () => {
@@ -188,7 +169,8 @@ describe("createInvoiceFromScans", () => {
     const fakeBackendBody = "backend body with provider content";
     const rejectedResponse = new Response(fakeBackendBody, {status: 500, statusText: "Internal Server Error"});
     const readResponseBody = vi.spyOn(rejectedResponse, "text");
-    mockFetchWithTimeout.mockResolvedValue(rejectedResponse);
+    const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    apiHandler = () => rejectedResponse;
 
     // Act
     const result = await createInvoiceFromScans({
@@ -205,25 +187,26 @@ describe("createInvoiceFromScans", () => {
       },
     });
     expect(readResponseBody).not.toHaveBeenCalled();
-    const capturedValues = JSON.stringify([result, ...mockLogWithTrace.mock.calls]);
+    const capturedValues = JSON.stringify([result, ...consoleWarnSpy.mock.calls]);
     for (const sensitiveValue of [fakeSasUrl, fakeOcrText, fakeBackendBody]) {
       expect(capturedValues).not.toContain(sensitiveValue);
     }
+    consoleWarnSpy.mockRestore();
   });
 
-  it("returns an explicit safe auth failure instead of a success-shaped fallback", async () => {
+  it("returns an explicit safe authentication-boundary failure instead of a success-shaped fallback", async () => {
     // Arrange
-    mockFetchBffUser.mockResolvedValue({userIdentifier: "", userJwt: "jwt-1", user: null});
+    analysisClerk.auth.mockRejectedValue(new Error("Clerk unavailable"));
 
     // Act
     const result = await createInvoiceFromScans({scans: [createScan()], mode: "single"});
 
     // Assert
-    expect(result).toMatchObject({
+    expect(result).toEqual({
       success: false,
       error: {
-        code: "AUTH_ERROR",
-        message: "You must be authenticated to create invoices.",
+        code: "NETWORK_ERROR",
+        message: "Unable to create invoices. Please try again.",
       },
     });
   });
@@ -231,14 +214,14 @@ describe("createInvoiceFromScans", () => {
   it("continues single-mode creation after a safe per-scan rejection", async () => {
     // Arrange
     let createAttempts = 0;
-    mockFetchWithTimeout.mockImplementation((url: string) => {
-      if (url.endsWith("/analyze")) {
-        return Promise.resolve(acceptedAnalysisResponse());
+    apiHandler = (requestAtBoundary) => {
+      if (requestAtBoundary.url.endsWith("/analyze")) {
+        return acceptedAnalysisResponse();
       }
 
       createAttempts += 1;
-      return Promise.resolve(createAttempts === 1 ? new Response(null, {status: 422}) : createdInvoiceResponse());
-    });
+      return createAttempts === 1 ? new Response(null, {status: 422}) : createdInvoiceResponse();
+    };
 
     // Act
     const result = await createInvoiceFromScans({scans: [createScan(), createSecondScan()], mode: "single"});
@@ -247,27 +230,27 @@ describe("createInvoiceFromScans", () => {
     expect(result).toMatchObject({
       success: true,
       data: {
-        invoices: [{id: INVOICE_IDENTIFIER}],
+        invoices: [{id: invoiceIdentifier}],
         convertedScanIds: ["scan-2"],
         errors: [{scanId: "scan-1", code: "VALIDATION_ERROR"}],
-        analysis: [{invoiceIdentifier: INVOICE_IDENTIFIER, status: "queued"}],
+        analysis: [{invoiceIdentifier, status: "queued"}],
       },
     });
   });
 
   it("creates a batch invoice, attaches remaining scans, and awaits its durable enqueue acknowledgement", async () => {
     // Arrange
-    mockFetchWithTimeout.mockImplementation((url: string) => {
-      if (url.endsWith("/analyze")) {
-        return Promise.resolve(acceptedAnalysisResponse());
+    apiHandler = (requestAtBoundary) => {
+      if (requestAtBoundary.url.endsWith("/analyze")) {
+        return acceptedAnalysisResponse();
       }
 
-      if (url.endsWith("/scans")) {
-        return Promise.resolve(new Response(null, {status: 201}));
+      if (requestAtBoundary.url.endsWith("/scans")) {
+        return new Response(null, {status: 201});
       }
 
-      return Promise.resolve(createdInvoiceResponse());
-    });
+      return createdInvoiceResponse();
+    };
 
     // Act
     const result = await createInvoiceFromScans({scans: [createScan(), createSecondScan()], mode: "batch"});
@@ -276,27 +259,27 @@ describe("createInvoiceFromScans", () => {
     expect(result).toMatchObject({
       success: true,
       data: {
-        invoices: [{id: INVOICE_IDENTIFIER}],
+        invoices: [{id: invoiceIdentifier}],
         convertedScanIds: ["scan-1", "scan-2"],
         errors: [],
-        analysis: [{invoiceIdentifier: INVOICE_IDENTIFIER, status: "queued"}],
+        analysis: [{invoiceIdentifier, status: "queued"}],
       },
     });
   });
 
   it("preserves a batch invoice when an additional scan cannot be attached", async () => {
     // Arrange
-    mockFetchWithTimeout.mockImplementation((url: string) => {
-      if (url.endsWith("/analyze")) {
-        return Promise.resolve(acceptedAnalysisResponse());
+    apiHandler = (requestAtBoundary) => {
+      if (requestAtBoundary.url.endsWith("/analyze")) {
+        return acceptedAnalysisResponse();
       }
 
-      if (url.endsWith("/scans")) {
-        return Promise.resolve(new Response(null, {status: 404}));
+      if (requestAtBoundary.url.endsWith("/scans")) {
+        return new Response(null, {status: 404});
       }
 
-      return Promise.resolve(createdInvoiceResponse());
-    });
+      return createdInvoiceResponse();
+    };
 
     // Act
     const result = await createInvoiceFromScans({scans: [createScan(), createSecondScan()], mode: "batch"});
@@ -305,10 +288,10 @@ describe("createInvoiceFromScans", () => {
     expect(result).toMatchObject({
       success: true,
       data: {
-        invoices: [{id: INVOICE_IDENTIFIER}],
+        invoices: [{id: invoiceIdentifier}],
         convertedScanIds: ["scan-1"],
         errors: [{scanId: "scan-2", code: "NOT_FOUND"}],
-        analysis: [{invoiceIdentifier: INVOICE_IDENTIFIER, status: "queued"}],
+        analysis: [{invoiceIdentifier, status: "queued"}],
       },
     });
   });
@@ -322,13 +305,13 @@ describe("createInvoiceFromScans", () => {
       success: false,
       error: {code: "VALIDATION_ERROR", message: "Select at least one scan to create an invoice."},
     });
-    expect(mockFetchWithTimeout).not.toHaveBeenCalled();
+    expect(getAnalysisApiRequests()).toHaveLength(0);
   });
 
   it("returns a stable network result when all requested invoice creations fail before a response", async () => {
     // Arrange
     const sensitiveException = "provider response included OCR text and a SAS query string";
-    mockFetchWithTimeout.mockRejectedValue(new Error(sensitiveException));
+    apiHandler = () => Promise.reject(new Error(sensitiveException));
 
     // Act
     const result = await createInvoiceFromScans({scans: [createScan()], mode: "single"});
@@ -343,9 +326,8 @@ describe("createInvoiceFromScans", () => {
 
   it("keeps the created invoice and reports a safe unknown code for an invalid 202 acknowledgement", async () => {
     // Arrange
-    mockFetchWithTimeout.mockImplementation((url: string) =>
-      Promise.resolve(url.endsWith("/analyze") ? new Response(JSON.stringify({}), {status: 202}) : createdInvoiceResponse()),
-    );
+    apiHandler = (requestAtBoundary) =>
+      requestAtBoundary.url.endsWith("/analyze") ? new Response(JSON.stringify({}), {status: 202}) : createdInvoiceResponse();
 
     // Act
     const result = await createInvoiceFromScans({scans: [createScan()], mode: "single"});
@@ -354,8 +336,8 @@ describe("createInvoiceFromScans", () => {
     expect(result).toMatchObject({
       success: true,
       data: {
-        invoices: [{id: INVOICE_IDENTIFIER}],
-        analysis: [{invoiceIdentifier: INVOICE_IDENTIFIER, status: "not_queued", errorCode: "UNKNOWN_ERROR"}],
+        invoices: [{id: invoiceIdentifier}],
+        analysis: [{invoiceIdentifier, status: "not_queued", errorCode: "UNKNOWN_ERROR"}],
       },
     });
   });

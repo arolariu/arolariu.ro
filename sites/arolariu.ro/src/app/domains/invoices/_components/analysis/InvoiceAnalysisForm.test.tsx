@@ -1,13 +1,17 @@
 /**
- * @fileoverview Unit tests for the invoice analysis form.
+ * @fileoverview Real-module tests for the invoice analysis form.
  * @module app/domains/invoices/_components/analysis/InvoiceAnalysisForm.test
  */
 
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
+import {
+  ANALYSIS_API_URL,
+  getAnalysisApiRequests,
+  installAnalysisFetchHandler,
+  type AnalysisFetchRequest,
+} from "@/../tests/helpers/analysisBoundary";
 import {fireEvent, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {beforeEach, describe, expect, it} from "vitest";
 import {AnalysisTestProvider} from "../../../../../../tests/helpers/analysis";
 import {InvoiceAnalysisForm} from "./InvoiceAnalysisForm";
 
@@ -29,26 +33,19 @@ const response = {
   ],
   acceptedAt: "2026-08-17T19:40:42.187Z",
 } as const;
-const stubFetchBffUser = vi.mocked(fetchBFFUserFromAuthService);
-const stubFetchWithTimeout = vi.mocked(fetchWithTimeout);
-const labels = {
-  allergenAssessment: "forms.invoices.analysis.capabilities.allergenAssessment",
-  capabilities: "forms.invoices.analysis.invoice.capabilitiesLegend",
-  documentExtraction: "forms.invoices.analysis.capabilities.documentExtraction",
-  fast: "forms.invoices.analysis.profiles.fast",
-  invoiceClassification: "forms.invoices.analysis.capabilities.invoiceClassification",
-  merchantResolution: "forms.invoices.analysis.capabilities.merchantResolution",
-  profile: "forms.invoices.analysis.invoice.profileLegend",
-  productClassification: "forms.invoices.analysis.capabilities.productClassification",
-  recipeGeneration: "forms.invoices.analysis.capabilities.recipeGeneration",
-  start: "forms.invoices.analysis.buttons.start",
-} as const;
+
+function getOnlyApiRequest(): AnalysisFetchRequest {
+  const requestAtBoundary = getAnalysisApiRequests()[0];
+  if (!requestAtBoundary) {
+    throw new Error("Expected the form to submit through the real API boundary.");
+  }
+
+  return requestAtBoundary;
+}
 
 describe("InvoiceAnalysisForm", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    stubFetchBffUser.mockResolvedValue({userIdentifier: "user-1", userJwt: "jwt-1", user: null});
-    stubFetchWithTimeout.mockResolvedValue(new Response(JSON.stringify(response), {status: 202, statusText: "Accepted"}));
+    installAnalysisFetchHandler(() => new Response(JSON.stringify(response), {status: 202, statusText: "Accepted"}));
   });
 
   it("uses accessible fieldsets, defaults to comprehensive, and announces accepted analysis", async () => {
@@ -61,23 +58,22 @@ describe("InvoiceAnalysisForm", () => {
     );
 
     // Assert
-    expect(screen.getByRole("group", {name: labels.profile})).toBeInTheDocument();
-    expect(screen.getByRole("group", {name: labels.capabilities})).toBeInTheDocument();
-    expect(screen.getByRole("radio", {name: "forms.invoices.analysis.profiles.comprehensive"})).toBeChecked();
+    expect(screen.getByRole("group", {name: "Analysis profile"})).toBeInTheDocument();
+    expect(screen.getByRole("group", {name: "Invoice analysis capabilities"})).toBeInTheDocument();
+    expect(screen.getByRole("radio", {name: "Comprehensive"})).toBeChecked();
 
     // Act
-    await user.click(screen.getByRole("button", {name: labels.start}));
+    await user.click(screen.getByRole("button", {name: "Start analysis"}));
 
     // Assert
     await waitFor(() => {
-      expect(stubFetchWithTimeout).toHaveBeenCalledWith(
-        `/rest/v1/invoices/${invoiceIdentifier}/analyze`,
-        expect.objectContaining({method: "POST"}),
-        15_000,
-      );
+      expect(getOnlyApiRequest()).toMatchObject({
+        url: `${ANALYSIS_API_URL}/rest/v1/invoices/${invoiceIdentifier}/analyze`,
+        init: expect.objectContaining({method: "POST"}),
+      });
     });
     expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
-    expect(screen.getByRole("status")).toHaveTextContent("forms.invoices.analysis.status.queued");
+    expect(screen.getByRole("status")).toHaveTextContent("Analysis started. Results will appear after the page refreshes.");
   });
 
   it("does not render simulated stages or percentage progress", () => {
@@ -102,22 +98,18 @@ describe("InvoiceAnalysisForm", () => {
         <InvoiceAnalysisForm invoiceIdentifier={invoiceIdentifier} />
       </AnalysisTestProvider>,
     );
-    const fastProfile = screen.getByRole("radio", {name: labels.fast});
+    const fastProfile = screen.getByRole("radio", {name: "Fast"});
     await user.click(fastProfile);
 
     // Act
     fireEvent.change(fastProfile, {target: {value: "unexpected-profile"}});
-    await user.click(screen.getByRole("button", {name: labels.start}));
+    await user.click(screen.getByRole("button", {name: "Start analysis"}));
 
     // Assert
     await waitFor(() => {
-      expect(stubFetchWithTimeout).toHaveBeenCalledOnce();
+      expect(getAnalysisApiRequests()).toHaveLength(1);
     });
-    const requestOptions = stubFetchWithTimeout.mock.calls[0]?.[1];
-    expect(typeof requestOptions?.body).toBe("string");
-    if (typeof requestOptions?.body === "string") {
-      expect(JSON.parse(requestOptions.body) as unknown).toEqual({profile: "fast", overrides: {}});
-    }
+    expect(getOnlyApiRequest().init?.body).toBe(JSON.stringify({profile: "fast", overrides: {}}));
   });
 
   it("enforces dependent capability closure and disables the final enabled control", async () => {
@@ -128,16 +120,16 @@ describe("InvoiceAnalysisForm", () => {
         <InvoiceAnalysisForm invoiceIdentifier={invoiceIdentifier} />
       </AnalysisTestProvider>,
     );
-    await user.click(screen.getByRole("radio", {name: labels.fast}));
+    await user.click(screen.getByRole("radio", {name: "Fast"}));
 
     // Act
-    await user.click(screen.getByRole("checkbox", {name: labels.documentExtraction}));
-    await user.click(screen.getByRole("checkbox", {name: labels.merchantResolution}));
-    await user.click(screen.getByRole("checkbox", {name: labels.productClassification}));
+    await user.click(screen.getByRole("checkbox", {name: "Document extraction"}));
+    await user.click(screen.getByRole("checkbox", {name: "Merchant resolution"}));
+    await user.click(screen.getByRole("checkbox", {name: "Product classification"}));
 
     // Assert
-    expect(screen.getByRole("checkbox", {name: labels.allergenAssessment})).not.toBeChecked();
-    expect(screen.getByRole("checkbox", {name: labels.recipeGeneration})).not.toBeChecked();
-    expect(screen.getByRole("checkbox", {name: labels.invoiceClassification})).toBeDisabled();
+    expect(screen.getByRole("checkbox", {name: "Allergen assessment"})).not.toBeChecked();
+    expect(screen.getByRole("checkbox", {name: "Recipe generation"})).not.toBeChecked();
+    expect(screen.getByRole("checkbox", {name: "Invoice classification"})).toBeDisabled();
   });
 });
