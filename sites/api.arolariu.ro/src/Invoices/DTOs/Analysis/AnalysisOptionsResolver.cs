@@ -34,17 +34,16 @@ internal static class AnalysisOptionsResolver
       throw new ArgumentOutOfRangeException(nameof(profile), requestedProfile, "Profile must be a defined analysis profile.");
     }
 
-    if (overrides is null)
+    if (requestedProfile == AnalysisProfile.Custom)
     {
-      return requestedProfile switch
-      {
-        AnalysisProfile.Comprehensive => InvoiceAnalysisOptions.Comprehensive(),
-        AnalysisProfile.Fast => InvoiceAnalysisOptions.Fast(),
-        AnalysisProfile.Balanced => InvoiceAnalysisOptions.Balanced(),
-        _ => throw new ArgumentException(
-          "The custom profile requires at least one capability override.",
-          nameof(profile)),
-      };
+      throw new ArgumentException(
+        "The custom profile is an effective response value and cannot be requested.",
+        nameof(profile));
+    }
+
+    if (overrides is null || !HasInvoiceCapabilityOverrides(overrides.Value))
+    {
+      return ResolveInvoiceBaseline(requestedProfile);
     }
 
     InvoiceAnalysisOptions baseline = ResolveInvoiceBaseline(requestedProfile);
@@ -101,17 +100,16 @@ internal static class AnalysisOptionsResolver
       throw new ArgumentOutOfRangeException(nameof(profile), requestedProfile, "Profile must be a defined analysis profile.");
     }
 
-    if (overrides is null)
+    if (requestedProfile == AnalysisProfile.Custom)
     {
-      return requestedProfile switch
-      {
-        AnalysisProfile.Comprehensive => MerchantAnalysisOptions.Comprehensive(),
-        AnalysisProfile.Fast => MerchantAnalysisOptions.Fast(),
-        AnalysisProfile.Balanced => MerchantAnalysisOptions.Balanced(),
-        _ => throw new ArgumentException(
-          "The custom profile requires at least one capability override.",
-          nameof(profile)),
-      };
+      throw new ArgumentException(
+        "The custom profile is an effective response value and cannot be requested.",
+        nameof(profile));
+    }
+
+    if (overrides is null || !HasMerchantCapabilityOverrides(overrides.Value))
+    {
+      return ResolveMerchantBaseline(requestedProfile);
     }
 
     MerchantAnalysisOptions baseline = ResolveMerchantBaseline(requestedProfile);
@@ -148,6 +146,19 @@ internal static class AnalysisOptionsResolver
       AnalysisProfile.Fast => MerchantAnalysisOptions.Fast(),
       _ => MerchantAnalysisOptions.Balanced(),
     };
+
+  private static bool HasInvoiceCapabilityOverrides(InvoiceAnalysisOverridesDto overrides) =>
+    overrides.DocumentExtraction is not null
+    || overrides.MerchantResolution is not null
+    || overrides.InvoiceSummary is not null
+    || overrides.ProductClassification is not null
+    || overrides.AllergenAssessment is not null
+    || overrides.InvoiceClassification is not null
+    || overrides.RecipeGeneration is not null;
+
+  private static bool HasMerchantCapabilityOverrides(MerchantAnalysisOverridesDto overrides) =>
+    overrides.MerchantClassification is not null
+    || overrides.DescriptionGeneration is not null;
 
   private static (bool RecipeGeneration, int MaximumRecipes) ResolveRecipeSelection(
     InvoiceAnalysisOptions baseline,

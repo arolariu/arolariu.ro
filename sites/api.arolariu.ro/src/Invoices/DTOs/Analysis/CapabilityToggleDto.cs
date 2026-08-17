@@ -6,8 +6,8 @@ using System;
 /// Represents a caller-supplied override that explicitly enables or disables a single analysis capability.
 /// </summary>
 /// <remarks>
-/// <para>A capability with no toggle inherits the value from the resolved profile preset. Supplying any toggle
-/// downgrades the effective profile to <see cref="DDD.Analysis.Enums.AnalysisProfile.Custom"/>.</para>
+/// <para>A capability with no toggle inherits the value from the resolved profile preset. Supplying a toggle produces
+/// the effective <see cref="DDD.Analysis.Enums.AnalysisProfile.Custom"/> profile.</para>
 /// </remarks>
 /// <param name="Enabled">Whether the capability should execute during the run.</param>
 [Serializable]

@@ -6,9 +6,9 @@ using System;
 /// Represents the per-capability overrides a caller may layer over an invoice analysis profile preset.
 /// </summary>
 /// <remarks>
-/// <para>Every member is optional. Omitted members inherit the resolved preset value. Any supplied member downgrades
-/// the effective profile to <see cref="DDD.Analysis.Enums.AnalysisProfile.Custom"/>, because the resulting capability
-/// set no longer matches a published preset.</para>
+/// <para>Every member is optional. Omitted members inherit the resolved preset value. An object with every member
+/// omitted preserves the named profile; any supplied capability member produces the effective
+/// <see cref="DDD.Analysis.Enums.AnalysisProfile.Custom"/> profile.</para>
 /// <para><b>Dependency closure:</b> Allergen assessment requires product classification, and recipe generation requires
 /// both product classification and allergen assessment. Violating overrides are rejected rather than silently repaired.</para>
 /// </remarks>

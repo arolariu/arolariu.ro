@@ -1,5 +1,9 @@
 namespace arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 
+using System.Text.Json.Serialization;
+
+using arolariu.Backend.Domain.Invoices.Serialization;
+
 /// <summary>
 /// Describes how an analysis option set was composed.
 /// </summary>
@@ -9,25 +13,30 @@ namespace arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 /// <para><see cref="Balanced"/> represents the mid-tier preset that adds summarization and allergen assessment to <see cref="Fast"/>.</para>
 /// <para><see cref="Comprehensive"/> represents the full end-to-end preset published by the invoices analysis domain.</para>
 /// </remarks>
+[JsonConverter(typeof(StrictStringEnumConverter<AnalysisProfile>))]
 public enum AnalysisProfile
 {
   /// <summary>
-  /// Indicates that the caller composed a bespoke set of analysis capabilities.
+  /// Indicates that capability overrides produced an effective bespoke selection.
   /// </summary>
+  [JsonStringEnumMemberName("custom")]
   Custom,
 
   /// <summary>
   /// Indicates that the caller selected the full end-to-end analysis preset.
   /// </summary>
+  [JsonStringEnumMemberName("comprehensive")]
   Comprehensive,
 
   /// <summary>
   /// Indicates that the caller selected the minimal, low-latency analysis preset.
   /// </summary>
+  [JsonStringEnumMemberName("fast")]
   Fast,
 
   /// <summary>
   /// Indicates that the caller selected the mid-tier analysis preset.
   /// </summary>
+  [JsonStringEnumMemberName("balanced")]
   Balanced,
 }

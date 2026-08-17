@@ -13,8 +13,9 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 /// run is always resolved server-side from the authenticated principal, so a caller can never queue analysis on behalf
 /// of another user by editing the payload.</para>
 /// <para><b>Resolution order:</b> the profile (defaulting to <see cref="AnalysisProfile.Balanced"/>) resolves the
-/// preset baseline, then overrides are layered over it. Supplying overrides downgrades the effective profile to
-/// <see cref="AnalysisProfile.Custom"/>.</para>
+/// preset baseline, then actual capability overrides are layered over it. An empty override object preserves the
+/// named profile; one or more capability overrides produce the effective <see cref="AnalysisProfile.Custom"/> profile.
+/// <see cref="AnalysisProfile.Custom"/> itself is an output-only effective profile and is rejected on requests.</para>
 /// </remarks>
 /// <param name="Profile">The named analysis profile to resolve. Defaults to <see cref="AnalysisProfile.Balanced"/>.</param>
 /// <param name="Overrides">Optional per-capability overrides layered over the resolved preset.</param>
@@ -29,7 +30,7 @@ public readonly record struct AnalyzeInvoiceRequestDto(
   /// <returns>The effective, validated invoice analysis capability selection.</returns>
   /// <exception cref="ArgumentException">
   /// Thrown when the resolved capability set is empty, violates the capability dependency closure, or when
-  /// <see cref="AnalysisProfile.Custom"/> is requested without any override to customize.
+  /// <see cref="AnalysisProfile.Custom"/> is requested.
   /// </exception>
   /// <exception cref="ArgumentOutOfRangeException">
   /// Thrown when the requested maximum recipe count falls outside the inclusive range 1 to 3, or when a disabled

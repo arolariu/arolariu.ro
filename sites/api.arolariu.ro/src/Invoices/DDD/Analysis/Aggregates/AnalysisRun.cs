@@ -8,6 +8,7 @@ using System.Text.Json.Serialization;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
+using arolariu.Backend.Domain.Invoices.Serialization;
 
 using NewtonsoftJson = Newtonsoft.Json;
 
@@ -57,7 +58,7 @@ public sealed record AnalysisRun
   /// <summary>Gets the domain target type this run analyzes (invoice or merchant).</summary>
   [JsonPropertyName("targetType")]
   [NewtonsoftJson.JsonProperty("targetType")]
-  [JsonConverter(typeof(JsonStringEnumConverter))]
+  [JsonConverter(typeof(StrictStringEnumConverter<AnalysisTargetType>))]
   [NewtonsoftJson.JsonConverter(typeof(NewtonsoftJson.Converters.StringEnumConverter))]
   public required AnalysisTargetType TargetType { get; init; }
 
@@ -111,7 +112,7 @@ public sealed record AnalysisRun
   /// <summary>Gets the run's current lifecycle status.</summary>
   [JsonPropertyName("status")]
   [NewtonsoftJson.JsonProperty("status")]
-  [JsonConverter(typeof(JsonStringEnumConverter))]
+  [JsonConverter(typeof(StrictStringEnumConverter<AnalysisRunStatus>))]
   [NewtonsoftJson.JsonConverter(typeof(NewtonsoftJson.Converters.StringEnumConverter))]
   public required AnalysisRunStatus Status { get; init; }
 

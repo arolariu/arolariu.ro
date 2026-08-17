@@ -3,9 +3,11 @@ namespace arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
+using arolariu.Backend.Domain.Invoices.Serialization;
 
 /// <summary>
 /// Represents the immutable transient allergen assessments for a batch of analyzed products.
@@ -124,15 +126,19 @@ public sealed record ProductAllergenAssessment
 /// <summary>
 /// Describes the structured outcome of one product-level allergen assessment.
 /// </summary>
+[JsonConverter(typeof(StrictStringEnumConverter<ProductAllergenAssessmentStatus>))]
 public enum ProductAllergenAssessmentStatus
 {
   /// <summary>The assessment found one or more allergen signals.</summary>
+  [JsonStringEnumMemberName("signalsFound")]
   SignalsFound,
 
   /// <summary>The assessment succeeded but found no signals in the available evidence.</summary>
+  [JsonStringEnumMemberName("noSignalsInAvailableEvidence")]
   NoSignalsInAvailableEvidence,
 
   /// <summary>The assessment ran but lacked sufficient evidence for a reliable result.</summary>
+  [JsonStringEnumMemberName("insufficientData")]
   InsufficientData,
 }
 
@@ -196,14 +202,18 @@ public sealed record ProductAllergenSignal
 /// <summary>
 /// Describes the confidence tier for one product-level allergen signal.
 /// </summary>
+[JsonConverter(typeof(StrictStringEnumConverter<ProductAllergenEvidenceTier>))]
 public enum ProductAllergenEvidenceTier
 {
   /// <summary>The allergen is explicitly declared by ingredients or allergen statements.</summary>
+  [JsonStringEnumMemberName("declared")]
   Declared,
 
   /// <summary>The allergen is strongly suggested by the available evidence but not explicitly declared.</summary>
+  [JsonStringEnumMemberName("likely")]
   Likely,
 
   /// <summary>The allergen is weakly suggested by the available evidence.</summary>
+  [JsonStringEnumMemberName("possible")]
   Possible,
 }

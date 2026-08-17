@@ -51,6 +51,21 @@ public sealed class AnalysisOptionsResolverCoverageTests
   }
 
   /// <summary>
+  /// Verifies an empty invoice override object preserves the selected named profile.
+  /// </summary>
+  [TestMethod]
+  public void ResolveInvoiceOptions_EmptyOverrides_PreservesNamedProfile()
+  {
+    var overrides = new InvoiceAnalysisOverridesDto(null, null, null, null, null, null, null);
+
+    InvoiceAnalysisOptions options = AnalysisOptionsResolver.ResolveInvoiceOptions(AnalysisProfile.Fast, overrides);
+
+    Assert.AreEqual(AnalysisProfile.Fast, options.Profile);
+    Assert.IsTrue(options.DocumentExtraction);
+    Assert.IsFalse(options.RecipeGeneration);
+  }
+
+  /// <summary>
   /// Verifies custom invoice profiles require at least one override.
   /// </summary>
   [TestMethod]
@@ -65,6 +80,16 @@ public sealed class AnalysisOptionsResolverCoverageTests
   public void ResolveInvoiceOptions_UndefinedProfile_ThrowsArgumentOutOfRangeException() =>
     Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
       AnalysisOptionsResolver.ResolveInvoiceOptions((AnalysisProfile)999, null));
+
+  /// <summary>
+  /// Verifies the custom profile cannot be supplied by an invoice request, even with a capability override.
+  /// </summary>
+  [TestMethod]
+  public void ResolveInvoiceOptions_InboundCustomProfileWithOverride_ThrowsArgumentException() =>
+    Assert.ThrowsExactly<ArgumentException>(() =>
+      AnalysisOptionsResolver.ResolveInvoiceOptions(
+        AnalysisProfile.Custom,
+        new InvoiceAnalysisOverridesDto(new CapabilityToggleDto(true), null, null, null, null, null, null)));
 
   /// <summary>
   /// Verifies capability toggles layer over the invoice baseline and downgrade the profile to custom.
@@ -92,6 +117,28 @@ public sealed class AnalysisOptionsResolverCoverageTests
     Assert.IsFalse(options.InvoiceClassification);
     Assert.IsFalse(options.RecipeGeneration);
     Assert.AreEqual(0, options.MaximumRecipes);
+  }
+
+  /// <summary>
+  /// Verifies an explicitly supplied invoice capability produces a custom effective profile even when it matches
+  /// the selected named baseline.
+  /// </summary>
+  [TestMethod]
+  public void ResolveInvoiceOptions_ExplicitBaselineCapability_ProducesCustomProfile()
+  {
+    var overrides = new InvoiceAnalysisOverridesDto(
+      DocumentExtraction: new CapabilityToggleDto(true),
+      MerchantResolution: null,
+      InvoiceSummary: null,
+      ProductClassification: null,
+      AllergenAssessment: null,
+      InvoiceClassification: null,
+      RecipeGeneration: null);
+
+    InvoiceAnalysisOptions options = AnalysisOptionsResolver.ResolveInvoiceOptions(AnalysisProfile.Fast, overrides);
+
+    Assert.AreEqual(AnalysisProfile.Custom, options.Profile);
+    Assert.IsTrue(options.DocumentExtraction);
   }
 
   /// <summary>
@@ -193,6 +240,21 @@ public sealed class AnalysisOptionsResolverCoverageTests
   }
 
   /// <summary>
+  /// Verifies an empty merchant override object preserves the selected named profile.
+  /// </summary>
+  [TestMethod]
+  public void ResolveMerchantOptions_EmptyOverrides_PreservesNamedProfile()
+  {
+    var overrides = new MerchantAnalysisOverridesDto(null, null);
+
+    MerchantAnalysisOptions options = AnalysisOptionsResolver.ResolveMerchantOptions(AnalysisProfile.Fast, overrides);
+
+    Assert.AreEqual(AnalysisProfile.Fast, options.Profile);
+    Assert.IsTrue(options.MerchantClassification);
+    Assert.IsFalse(options.DescriptionGeneration);
+  }
+
+  /// <summary>
   /// Verifies custom merchant profiles require at least one override.
   /// </summary>
   [TestMethod]
@@ -209,6 +271,16 @@ public sealed class AnalysisOptionsResolverCoverageTests
       AnalysisOptionsResolver.ResolveMerchantOptions((AnalysisProfile)999, null));
 
   /// <summary>
+  /// Verifies the custom profile cannot be supplied by a merchant request, even with a capability override.
+  /// </summary>
+  [TestMethod]
+  public void ResolveMerchantOptions_InboundCustomProfileWithOverride_ThrowsArgumentException() =>
+    Assert.ThrowsExactly<ArgumentException>(() =>
+      AnalysisOptionsResolver.ResolveMerchantOptions(
+        AnalysisProfile.Custom,
+        new MerchantAnalysisOverridesDto(new CapabilityToggleDto(true), null)));
+
+  /// <summary>
   /// Verifies merchant overrides layer over the named baseline and downgrade the profile to custom.
   /// </summary>
   [TestMethod]
@@ -223,6 +295,23 @@ public sealed class AnalysisOptionsResolverCoverageTests
     Assert.AreEqual(AnalysisProfile.Custom, options.Profile);
     Assert.IsTrue(options.MerchantClassification);
     Assert.IsFalse(options.DescriptionGeneration);
+  }
+
+  /// <summary>
+  /// Verifies an explicitly supplied merchant capability produces a custom effective profile even when it matches
+  /// the selected named baseline.
+  /// </summary>
+  [TestMethod]
+  public void ResolveMerchantOptions_ExplicitBaselineCapability_ProducesCustomProfile()
+  {
+    var overrides = new MerchantAnalysisOverridesDto(
+      MerchantClassification: new CapabilityToggleDto(true),
+      DescriptionGeneration: null);
+
+    MerchantAnalysisOptions options = AnalysisOptionsResolver.ResolveMerchantOptions(AnalysisProfile.Fast, overrides);
+
+    Assert.AreEqual(AnalysisProfile.Custom, options.Profile);
+    Assert.IsTrue(options.MerchantClassification);
   }
 
   /// <summary>
@@ -251,5 +340,4 @@ public sealed class AnalysisOptionsResolverCoverageTests
     Assert.IsTrue(options.DescriptionGeneration);
   }
 }
-
 

@@ -6,8 +6,9 @@ using System;
 /// Represents the per-capability overrides a caller may layer over a merchant analysis profile preset.
 /// </summary>
 /// <remarks>
-/// <para>Every member is optional. Omitted members inherit the resolved preset value. Any supplied member downgrades
-/// the effective profile to <see cref="DDD.Analysis.Enums.AnalysisProfile.Custom"/>.</para>
+/// <para>Every member is optional. Omitted members inherit the resolved preset value. An object with every member
+/// omitted preserves the named profile; any supplied capability member produces the effective
+/// <see cref="DDD.Analysis.Enums.AnalysisProfile.Custom"/> profile.</para>
 /// </remarks>
 /// <param name="MerchantClassification">Overrides NACE merchant classification.</param>
 /// <param name="DescriptionGeneration">Overrides evidence-bound merchant description generation.</param>
