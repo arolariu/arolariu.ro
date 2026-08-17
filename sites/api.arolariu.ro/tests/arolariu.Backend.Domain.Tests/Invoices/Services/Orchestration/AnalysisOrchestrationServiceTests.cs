@@ -446,33 +446,40 @@ public sealed class AnalysisOrchestrationServiceTests
   }
 
   /// <summary>
-  /// Verifies that <see cref="AnalysisOrchestrationService.QueueMerchantRunAsync"/> rejects an empty
-  /// <c>parentCompanyId</c> with a bare <see cref="ArgumentException"/> before ever calling the run foundation
-  /// service, and never persists a run for a structurally invalid request.
+  /// Verifies that <see cref="AnalysisOrchestrationService.QueueMerchantRunAsync"/> accepts
+  /// <see cref="Guid.Empty"/> as a legitimate merchant partition and persists it verbatim on the queued run.
   /// </summary>
+  /// <remarks>
+  /// <para><b>Why this is not a validation failure:</b> <c>Merchant.ParentCompanyId</c> defaults to
+  /// <see cref="Guid.Empty"/> and is the real Cosmos partition key for every independent merchant, including every
+  /// merchant auto-created during invoice analysis. Rejecting it here made the merchant analyze route permanently
+  /// unusable for exactly those merchants.</para>
+  /// </remarks>
   [TestMethod]
-  public async Task QueueMerchantRunAsync_EmptyParentCompanyId_ThrowsArgumentExceptionWithoutPersisting()
+  public async Task QueueMerchantRunAsync_EmptyParentCompanyId_PersistsEmptyTargetPartitionIdentifier()
   {
+    AnalysisRun? persistedRun = null;
+
     var analysisRunFoundation = new Mock<IAnalysisRunFoundationService>();
+    analysisRunFoundation
+      .Setup(a => a.CreateRunAsync(It.IsAny<AnalysisRun>(), It.IsAny<CancellationToken>()))
+      .Callback<AnalysisRun, CancellationToken>((run, _) => persistedRun = run)
+      .ReturnsAsync((AnalysisRun run, CancellationToken _) => run);
 
-    var service = new AnalysisOrchestrationService(
-      analysisRunFoundation.Object,
-      Mock.Of<IDocumentAnalysisFoundationService>(),
-      Mock.Of<IGenerativeAnalysisFoundationService>(),
-      NullLoggerFactory.Instance);
+    var service = CreateService(analysisRunFoundation.Object);
 
-    await Assert.ThrowsExactlyAsync<AnalysisOrchestrationValidationException>(
-      () => service.QueueMerchantRunAsync(
-        Guid.NewGuid(),
-        Guid.NewGuid(),
-        Guid.Empty,
-        MerchantAnalysisOptions.Comprehensive(),
-        SampleTraceId,
-        CancellationToken.None)).ConfigureAwait(true);
+    AnalysisRun queued = await service.QueueMerchantRunAsync(
+      Guid.NewGuid(),
+      Guid.NewGuid(),
+      Guid.Empty,
+      MerchantAnalysisOptions.Comprehensive(),
+      SampleTraceId,
+      CancellationToken.None).ConfigureAwait(true);
 
-    analysisRunFoundation.Verify(
-      a => a.CreateRunAsync(It.IsAny<AnalysisRun>(), It.IsAny<CancellationToken>()),
-      Times.Never);
+    Assert.IsNotNull(persistedRun);
+    Assert.AreEqual(Guid.Empty, persistedRun.TargetPartitionIdentifier);
+    Assert.AreEqual(Guid.Empty, queued.TargetPartitionIdentifier);
+    Assert.AreEqual(AnalysisRunStatus.Queued, queued.Status);
   }
 
   /// <summary>

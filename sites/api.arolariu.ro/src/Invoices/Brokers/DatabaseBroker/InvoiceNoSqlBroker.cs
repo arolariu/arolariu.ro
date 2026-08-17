@@ -17,20 +17,32 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore;
 
 /// <summary>
-/// Entity Framework Core (Cosmos provider) context implementing the <see cref="IInvoiceNoSqlBroker"/> contract for invoice and merchant aggregates.
+/// Entity Framework Core (Cosmos provider) context declaring an EF model for invoice and merchant aggregates.
 /// </summary>
 /// <remarks>
-/// <para><b>Responsibilities:</b> Configures entity-to-container mappings, JSON property names, value conversions for strongly typed / value object
-/// members, owned collections, and partition key assignments. Performs no domain validation or business rule enforcement.</para>
-/// <para><b>Containers:</b> Invoices mapped to <c>invoices</c> (partitioned by <c>UserIdentifier</c>); Merchants mapped to <c>merchants</c>
-/// (partitioned by <c>ParentCompanyId</c>).</para>
-/// <para><b>Owned Types:</b> <c>Items</c> (products) and <c>PaymentInformation</c> are configured as owned to ensure embedded
-/// document structure in Cosmos JSON. The immutable analysis value objects (<c>Classification</c>, <c>AllergenAssessment</c>,
-/// <c>PossibleRecipes</c>) are persisted through JSON value converters because EF Core cannot bind their collection members
-/// through a validating constructor.</para>
-/// <para><b>Soft Delete:</b> Relies on <c>IsSoftDeleted</c> flags (invoice and product metadata) — filtering is applied by higher layer query logic; the context
-/// does not automatically filter them out.</para>
-/// <para><b>Performance:</b> Explicit JSON property names and conversions reduce implicit reflection cost and ensure stable persisted schema.</para>
+/// <para><b>⚠ The EF model below is INACTIVE at runtime.</b> Every operation implemented by this broker
+/// (<c>InvoiceNoSqlBroker.Invoices.cs</c> and <c>InvoiceNoSqlBroker.Merchants.cs</c>) goes through the raw
+/// <see cref="CosmosClient"/> - <c>GetDatabase("primary").GetContainer(...)</c> followed by <c>CreateItemAsync</c>,
+/// <c>ReadItemAsync&lt;T&gt;</c>, <c>GetItemQueryIterator&lt;T&gt;</c>, <c>UpsertItemAsync</c>, or
+/// <c>ReplaceItemAsync</c>. There is no <c>DbSet</c>, no <c>Set&lt;T&gt;()</c>, and no <c>SaveChangesAsync</c> call
+/// anywhere in this broker, so <see cref="OnModelCreating"/>, the container/partition-key mappings, the owned-type
+/// configuration, and every value converter referenced here never participate in a production read or write.</para>
+/// <para><b>Authoritative persistence behaviour:</b> The wire format is produced by the Cosmos SDK's own serializer.
+/// <c>CosmosClientOptions</c> never sets <c>UseSystemTextJsonSerializerWithOptions</c>, so that is the SDK default
+/// (Newtonsoft-based). The contract that actually governs stored documents is therefore the aggregates' JSON
+/// attributes and constructors, pinned by <c>AnalysisPersistenceSerializationTests</c> - not this model. Changing a
+/// value converter here changes nothing observable in production.</para>
+/// <para><b>Why it is retained:</b> The model is kept as-is, deliberately, as dormant configuration for a possible
+/// future migration onto EF Core. It has NOT been validated against EF's model-building rules and is known to
+/// contain at least one unmapped member (<c>Invoice.AdditionalMetadata</c>). Anyone activating the EF path MUST
+/// first build and validate the model rather than assuming it is correct.</para>
+/// <para><b>Responsibilities (raw-SDK path):</b> Container selection, partition-key selection, Cosmos exception
+/// translation, and telemetry. No domain validation or business rule enforcement.</para>
+/// <para><b>Containers:</b> Invoices in <c>invoices</c> (partitioned by <c>UserIdentifier</c>); merchants in
+/// <c>merchants</c> (partitioned by <c>ParentCompanyId</c>, where <see cref="Guid.Empty"/> is the valid partition of
+/// an independent merchant).</para>
+/// <para><b>Soft Delete:</b> Relies on <c>IsSoftDeleted</c> flags (invoice and product metadata); filtering is applied
+/// by the broker's own queries and by higher layer query logic.</para>
 /// <para><b>Thread-safety:</b> Inherits EF Core DbContext non-thread-safe semantics. Scope per logical unit-of-work.</para>
 /// </remarks>
 [ExcludeFromCodeCoverage]
@@ -88,7 +100,7 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
       entity.Property(i => i.MerchantReference).HasConversion<string>();
       entity.Property(i => i.CreatedAt).HasConversion<DateTimeOffset>();
       entity.Property(i => i.LastUpdatedAt).HasConversion<DateTimeOffset>();
-      entity.Property(i => i.SharedWith).HasConversion(new ValueConverterForCollectionOf<Guid>());
+      entity.Property(i => i.SharedWith).HasConversion(new ValueConverterForIEnumerableOf<Guid>());
       #endregion
 
       #region Analysis value objects
@@ -98,7 +110,7 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 
       entity.Property(i => i.PossibleRecipes)
       .ToJsonProperty("PossibleRecipes")
-      .HasConversion(new ValueConverterForCollectionOf<RecipeSuggestion>());
+      .HasConversion(new ValueConverterForIEnumerableOf<RecipeSuggestion>());
       #endregion
 
       entity.HasIndex(invoice => invoice.id);
@@ -222,7 +234,9 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 
   /// <inheritdoc/>
   /// <remarks>
-  /// <para>Adds custom entity and owned-type mapping after base configuration. Intentionally idempotent and safe for repeated model cache usage.</para>
+  /// <para><b>Never invoked on the production path.</b> This broker performs all persistence through the raw Cosmos
+  /// SDK, so EF never builds this model. See the type-level remarks on <see cref="InvoiceNoSqlBroker"/> before
+  /// relying on anything configured here.</para>
   /// </remarks>
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {

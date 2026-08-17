@@ -107,7 +107,6 @@ public sealed partial class AnalysisOrchestrationService : IAnalysisOrchestratio
     using var activity = InvoicePackageTracing.StartActivity(nameof(QueueMerchantRunAsync));
     ArgumentNullException.ThrowIfNull(options);
     ValidateTraceIdIsSet(traceId);
-    ValidateParentCompanyIdIsSet(parentCompanyId);
 
     MerchantAnalysisOptions effectiveOptions = AnalysisProfileResolver.Resolve(options);
     AnalysisRun run = AnalysisRun.CreateMerchant(
@@ -187,14 +186,6 @@ public sealed partial class AnalysisOrchestrationService : IAnalysisOrchestratio
       .FailRunAsync(runId, leaseOwner, failureCode, failedAt, cancellationToken)
       .ConfigureAwait(false);
   }).ConfigureAwait(false);
-
-  private static void ValidateParentCompanyIdIsSet(Guid parentCompanyId)
-  {
-    if (parentCompanyId == Guid.Empty)
-    {
-      throw new ArgumentException("Parent company identifier must be set.", nameof(parentCompanyId));
-    }
-  }
 
   /// <summary>
   /// Rejects runs that would be persisted without a usable distributed-tracing correlation identifier.

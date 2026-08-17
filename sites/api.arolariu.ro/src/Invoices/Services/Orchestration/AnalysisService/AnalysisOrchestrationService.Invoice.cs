@@ -145,21 +145,10 @@ public sealed partial class AnalysisOrchestrationService
     {
       ExtractedProduct extracted = extractionResult.Products[index];
       string correlationToken = AnalysisCorrelationTokens.ForProduct(index);
-      Product product = ToDomainProduct(extracted);
+      Product product = ExtractedProductMapper.ToDomainProduct(extracted);
       inputs.Add(new ProductAnalysisInput(correlationToken, product));
     }
 
     return inputs;
   }
-
-  private static Product ToDomainProduct(ExtractedProduct extracted) =>
-    new()
-    {
-      Name = extracted.Name,
-      Quantity = extracted.Quantity,
-      QuantityUnit = extracted.QuantityUnit,
-      ProductCode = extracted.ProductCode,
-      Price = extracted.Price,
-      Metadata = new ProductMetadata { Confidence = extracted.Confidence },
-    };
 }

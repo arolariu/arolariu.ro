@@ -21,6 +21,9 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.AnalysisRuns;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.DocumentAnalysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.AnalysisService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
@@ -28,6 +31,8 @@ using arolariu.Backend.Domain.Invoices.Services.Processing.AnalysisService;
 
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+using Moq;
 
 /// <summary>
 /// Defines behavioural tests for the analysis processing service: request-time queueing, worker-time execution,
@@ -451,6 +456,429 @@ public sealed class AnalysisProcessingServiceTests
       .ConfigureAwait(false);
   }
 
+  #region Independent merchant partition (ParentCompanyId == Guid.Empty)
+
+  /// <summary>
+  /// Verifies that the merchant analyze route accepts an independent merchant - one whose
+  /// <c>ParentCompanyId</c> is <see cref="Guid.Empty"/>, which is the default for every merchant auto-created
+  /// during invoice analysis - and persists that empty partition verbatim on the durable run.
+  /// </summary>
+  /// <remarks>
+  /// <para>This regression deliberately wires the <b>real</b> <see cref="AnalysisOrchestrationService"/> rather than
+  /// the forgiving in-file fake, because the defect this covers lived in the orchestration layer's queue-time
+  /// validation and a fake orchestration would have accepted the request regardless.</para>
+  /// </remarks>
+  [TestMethod]
+  public async Task QueueMerchantAnalysisAsync_IndependentMerchant_QueuesRunThroughRealOrchestration()
+  {
+    // Arrange
+    var timeline = new List<string>();
+    var invoices = new FakeInvoiceOrchestrationService(timeline);
+    var merchants = new FakeMerchantOrchestrationService(timeline);
+    var merchant = new Merchant
+    {
+      id = Guid.CreateVersion7(),
+      ParentCompanyId = Guid.Empty,
+      Name = "Independent Corner Shop",
+    };
+    merchants.Merchants[merchant.id] = merchant;
+
+    AnalysisRun? persistedRun = null;
+    var runFoundation = new Mock<IAnalysisRunFoundationService>();
+    runFoundation
+      .Setup(foundation => foundation.CreateRunAsync(It.IsAny<AnalysisRun>(), It.IsAny<CancellationToken>()))
+      .Callback<AnalysisRun, CancellationToken>((run, _) => persistedRun = run)
+      .ReturnsAsync((AnalysisRun run, CancellationToken _) => run);
+
+    var analysisOrchestration = new AnalysisOrchestrationService(
+      runFoundation.Object,
+      Mock.Of<IDocumentAnalysisFoundationService>(),
+      Mock.Of<IGenerativeAnalysisFoundationService>(),
+      NullLoggerFactory.Instance);
+
+    var service = new AnalysisProcessingService(
+      invoices,
+      merchants,
+      analysisOrchestration,
+      NullLoggerFactory.Instance);
+
+    // Act
+    AnalysisAcceptedResponseDto response = await service.QueueMerchantAnalysisAsync(
+      merchant.id,
+      Guid.CreateVersion7(),
+      new AnalyzeMerchantRequestDto(AnalysisProfile.Comprehensive, Overrides: null),
+      CancellationToken.None).ConfigureAwait(false);
+
+    // Assert
+    Assert.IsNotNull(persistedRun);
+    Assert.AreEqual(Guid.Empty, persistedRun.TargetPartitionIdentifier);
+    Assert.AreEqual(merchant.id, response.TargetId);
+    Assert.AreEqual(AnalysisRunStatus.Queued, response.Status);
+  }
+
+  /// <summary>
+  /// Verifies that an independent merchant's run executes worker-side and point-updates against the empty
+  /// partition captured at queue time instead of falling back to a cross-partition write.
+  /// </summary>
+  [TestMethod]
+  public async Task TryExecuteNextRunAsync_IndependentMerchantRun_PersistsUsingEmptyPartition()
+  {
+    // Arrange
+    var harness = new ProcessingHarness();
+    Merchant merchant = harness.SeedMerchant(parentCompanyId: Guid.Empty);
+    harness.Analysis.ClaimableRun = AnalysisRun.CreateMerchant(
+      merchant.id,
+      Guid.CreateVersion7(),
+      Guid.CreateVersion7(),
+      merchant.ParentCompanyId,
+      MerchantAnalysisOptions.Fast(),
+      traceParent: null);
+    harness.Analysis.MerchantResult = new MerchantAnalysisResult(
+      new MerchantClassificationResult(ProcessingHarness.NaceClassification()),
+      DescriptionResult: null,
+      new ReadOnlyCollection<AnalysisCapability>([AnalysisCapability.MerchantClassification]));
+
+    // Act
+    bool processed = await harness.Service.TryExecuteNextRunAsync(LeaseOwner, CancellationToken.None)
+      .ConfigureAwait(false);
+
+    // Assert
+    Assert.IsTrue(processed);
+    UpdatedMerchant updated = harness.Merchants.UpdatedMerchants.Single();
+    Assert.AreEqual(Guid.Empty, updated.ParentCompanyId);
+    Assert.AreEqual(1, harness.Analysis.CompletedRuns.Count);
+    Assert.AreEqual(0, harness.Analysis.FailedRuns.Count);
+  }
+
+  #endregion
+
+  #region Merchant resolution capability toggle
+
+  /// <summary>
+  /// Verifies that a run with merchant resolution disabled never creates, links, or updates a merchant, even
+  /// though document extraction succeeded and its extraction result still carries a merchant candidate.
+  /// </summary>
+  /// <remarks>
+  /// <para>The orchestration layer expresses "merchant resolution is off" by leaving
+  /// <see cref="InvoiceAnalysisResult.MerchantCandidateResult"/> null while
+  /// <see cref="ReceiptExtractionResult.MerchantCandidate"/> remains populated. Reading through to the extraction
+  /// result would silently re-enable a capability the caller explicitly turned off.</para>
+  /// </remarks>
+  [TestMethod]
+  public async Task TryExecuteNextRunAsync_MerchantResolutionDisabled_DoesNotCreateLinkOrUpdateMerchant()
+  {
+    // Arrange
+    var harness = new ProcessingHarness();
+    Invoice invoice = harness.SeedInvoice();
+    var previousMerchantReference = Guid.CreateVersion7();
+    invoice.MerchantReference = previousMerchantReference;
+    harness.SeedMerchant("Test Merchant");
+
+    harness.Analysis.ClaimableRun = AnalysisRun.CreateInvoice(
+      invoice.id,
+      invoice.UserIdentifier,
+      Guid.CreateVersion7(),
+      ProcessingHarness.ExtractionOnlyWithoutMerchantResolution(),
+      traceParent: null);
+
+    // Extraction still observed a merchant candidate; merchant resolution being disabled means it is not used.
+    harness.Analysis.InvoiceResult = ProcessingHarness.FullInvoiceResult() with
+    {
+      MerchantCandidateResult = null,
+      CompletedCapabilities = new ReadOnlyCollection<AnalysisCapability>([AnalysisCapability.DocumentExtraction]),
+    };
+
+    // Act
+    await harness.Service.TryExecuteNextRunAsync(LeaseOwner, CancellationToken.None).ConfigureAwait(false);
+
+    // Assert
+    Assert.AreEqual(0, harness.Merchants.CreatedMerchants.Count);
+    Assert.AreEqual(0, harness.Merchants.UpdatedMerchants.Count);
+    Assert.IsFalse(harness.Timeline.Contains("find-merchant"), "Merchant lookup must not run when the capability is disabled.");
+    Assert.AreEqual(previousMerchantReference, harness.Invoices.UpdatedInvoices.Single().MerchantReference);
+  }
+
+  #endregion
+
+  #region Extraction re-application: per-item carry-over
+
+  /// <summary>
+  /// Verifies that a Fast re-analysis (extraction plus classification, no allergen assessment) applied over an
+  /// invoice previously enriched by a Balanced run preserves the earlier allergen assessment and the user's
+  /// per-item metadata flags for recognizably identical line items.
+  /// </summary>
+  [TestMethod]
+  public async Task TryExecuteNextRunAsync_FastRunAfterBalancedRun_PreservesPriorPerItemAnalysisAndMetadata()
+  {
+    // Arrange
+    var harness = new ProcessingHarness();
+    Invoice invoice = harness.SeedInvoice();
+    AllergenAssessment previousAssessment = AllergenAssessment.NoSignals(Guid.CreateVersion7());
+    invoice.Items =
+    [
+      new Product
+      {
+        Name = "Milk",
+        Quantity = 1m,
+        QuantityUnit = "pcs",
+        ProductCode = "MILK-1",
+        Price = 4.5m,
+        Classification = ProcessingHarness.GpcClassification(),
+        AllergenAssessment = previousAssessment,
+        Metadata = new ProductMetadata
+        {
+          IsEdited = true,
+          IsComplete = true,
+          IsSoftDeleted = true,
+          Confidence = 0.11,
+        },
+      },
+    ];
+
+    harness.Analysis.ClaimableRun = AnalysisRun.CreateInvoice(
+      invoice.id,
+      invoice.UserIdentifier,
+      Guid.CreateVersion7(),
+      InvoiceAnalysisOptions.Fast(),
+      traceParent: null);
+
+    // A Fast run: extraction succeeded, allergen assessment never ran and therefore has no section.
+    harness.Analysis.InvoiceResult = ProcessingHarness.FullInvoiceResult() with
+    {
+      AllergenAssessmentResult = null,
+      RecipeGenerationResult = null,
+      CompletedCapabilities = new ReadOnlyCollection<AnalysisCapability>(
+      [
+        AnalysisCapability.DocumentExtraction,
+        AnalysisCapability.MerchantResolution,
+        AnalysisCapability.ProductClassification,
+        AnalysisCapability.InvoiceClassification,
+      ]),
+    };
+
+    // Act
+    await harness.Service.TryExecuteNextRunAsync(LeaseOwner, CancellationToken.None).ConfigureAwait(false);
+
+    // Assert
+    Product persisted = harness.Invoices.UpdatedInvoices.Single().Items.Single();
+    Assert.AreEqual(previousAssessment, persisted.AllergenAssessment);
+    Assert.IsTrue(persisted.Metadata.IsEdited);
+    Assert.IsTrue(persisted.Metadata.IsComplete);
+    Assert.IsTrue(persisted.Metadata.IsSoftDeleted);
+    Assert.AreEqual(0.95, persisted.Metadata.Confidence, "OCR confidence must be refreshed from the new extraction.");
+  }
+
+  /// <summary>
+  /// Verifies that a succeeding product classification section still overwrites a preserved classification, so
+  /// carry-over never shadows a fresh authoritative result.
+  /// </summary>
+  [TestMethod]
+  public async Task TryExecuteNextRunAsync_SuccessfulClassificationSection_OverwritesPreservedClassification()
+  {
+    // Arrange
+    var harness = new ProcessingHarness();
+    Invoice invoice = harness.SeedInvoice();
+    invoice.Items =
+    [
+      new Product
+      {
+        Name = "Milk",
+        Quantity = 1m,
+        QuantityUnit = "pcs",
+        ProductCode = "MILK-1",
+        Price = 4.5m,
+        Classification = ProcessingHarness.StaleGpcClassification(),
+      },
+    ];
+
+    harness.Analysis.ClaimableRun = AnalysisRun.CreateInvoice(
+      invoice.id,
+      invoice.UserIdentifier,
+      Guid.CreateVersion7(),
+      InvoiceAnalysisOptions.Comprehensive(),
+      traceParent: null);
+    harness.Analysis.InvoiceResult = ProcessingHarness.FullInvoiceResult();
+
+    // Act
+    await harness.Service.TryExecuteNextRunAsync(LeaseOwner, CancellationToken.None).ConfigureAwait(false);
+
+    // Assert
+    Product persisted = harness.Invoices.UpdatedInvoices.Single().Items.Single();
+    Assert.AreEqual("10000025", persisted.Classification!.Code);
+  }
+
+  /// <summary>
+  /// Verifies that a line item the new extraction no longer recognizes is dropped, and that an unmatched new line
+  /// item starts from a clean per-item state rather than inheriting an unrelated product's analysis.
+  /// </summary>
+  [TestMethod]
+  public async Task TryExecuteNextRunAsync_UnrecognizedPreviousItem_DoesNotLeakAnalysisOntoNewItem()
+  {
+    // Arrange
+    var harness = new ProcessingHarness();
+    Invoice invoice = harness.SeedInvoice();
+    invoice.Items =
+    [
+      new Product
+      {
+        Name = "Bread",
+        Quantity = 2m,
+        QuantityUnit = "pcs",
+        ProductCode = "BREAD-9",
+        Price = 7.5m,
+        Classification = ProcessingHarness.StaleGpcClassification(),
+        AllergenAssessment = AllergenAssessment.NoSignals(Guid.CreateVersion7()),
+        Metadata = new ProductMetadata { IsEdited = true, IsComplete = true },
+      },
+    ];
+
+    harness.Analysis.ClaimableRun = AnalysisRun.CreateInvoice(
+      invoice.id,
+      invoice.UserIdentifier,
+      Guid.CreateVersion7(),
+      InvoiceAnalysisOptions.Fast(),
+      traceParent: null);
+    harness.Analysis.InvoiceResult = ProcessingHarness.FullInvoiceResult() with
+    {
+      AllergenAssessmentResult = null,
+      RecipeGenerationResult = null,
+      CompletedCapabilities = new ReadOnlyCollection<AnalysisCapability>(
+      [
+        AnalysisCapability.DocumentExtraction,
+        AnalysisCapability.MerchantResolution,
+        AnalysisCapability.ProductClassification,
+        AnalysisCapability.InvoiceClassification,
+      ]),
+    };
+
+    // Act
+    await harness.Service.TryExecuteNextRunAsync(LeaseOwner, CancellationToken.None).ConfigureAwait(false);
+
+    // Assert
+    Product persisted = harness.Invoices.UpdatedInvoices.Single().Items.Single();
+    Assert.AreEqual("Milk", persisted.Name);
+    Assert.IsNull(persisted.AllergenAssessment);
+    Assert.IsFalse(persisted.Metadata.IsEdited);
+    Assert.IsFalse(persisted.Metadata.IsComplete);
+  }
+
+  /// <summary>
+  /// Verifies that a successful extraction returning zero products replaces the previously persisted line items,
+  /// because an empty successful section is an authoritative result rather than a missing one.
+  /// </summary>
+  [TestMethod]
+  public async Task TryExecuteNextRunAsync_SuccessfulEmptyExtraction_ReplacesExistingItems()
+  {
+    // Arrange
+    var harness = new ProcessingHarness();
+    Invoice invoice = harness.SeedInvoice();
+    invoice.Items =
+    [
+      new Product
+      {
+        Name = "Milk",
+        Quantity = 1m,
+        QuantityUnit = "pcs",
+        ProductCode = "MILK-1",
+        Price = 4.5m,
+        Classification = ProcessingHarness.GpcClassification(),
+      },
+    ];
+
+    harness.Analysis.ClaimableRun = AnalysisRun.CreateInvoice(
+      invoice.id,
+      invoice.UserIdentifier,
+      Guid.CreateVersion7(),
+      InvoiceAnalysisOptions.Fast(),
+      traceParent: null);
+    harness.Analysis.InvoiceResult = ProcessingHarness.EmptyExtractionInvoiceResult();
+
+    // Act
+    await harness.Service.TryExecuteNextRunAsync(LeaseOwner, CancellationToken.None).ConfigureAwait(false);
+
+    // Assert
+    Assert.AreEqual(0, harness.Invoices.UpdatedInvoices.Single().Items.Count);
+  }
+
+  /// <summary>
+  /// Verifies that duplicate line items sharing a product code are carried over in first-in-first-out order, so a
+  /// repeated product never receives another occurrence's analysis.
+  /// </summary>
+  [TestMethod]
+  public async Task TryExecuteNextRunAsync_DuplicateProductCodes_CarriesOverInQueueOrder()
+  {
+    // Arrange
+    var harness = new ProcessingHarness();
+    Invoice invoice = harness.SeedInvoice();
+    invoice.Items =
+    [
+      new Product
+      {
+        Name = "Milk",
+        Quantity = 1m,
+        QuantityUnit = "pcs",
+        ProductCode = "MILK-1",
+        Price = 4.5m,
+        Metadata = new ProductMetadata { IsEdited = true },
+      },
+      new Product
+      {
+        Name = "Milk",
+        Quantity = 1m,
+        QuantityUnit = "pcs",
+        ProductCode = "MILK-1",
+        Price = 4.5m,
+        Metadata = new ProductMetadata { IsComplete = true },
+      },
+    ];
+
+    harness.Analysis.ClaimableRun = AnalysisRun.CreateInvoice(
+      invoice.id,
+      invoice.UserIdentifier,
+      Guid.CreateVersion7(),
+      InvoiceAnalysisOptions.Fast(),
+      traceParent: null);
+    harness.Analysis.InvoiceResult = ProcessingHarness.DuplicateProductInvoiceResult();
+
+    // Act
+    await harness.Service.TryExecuteNextRunAsync(LeaseOwner, CancellationToken.None).ConfigureAwait(false);
+
+    // Assert
+    Product[] persisted = [.. harness.Invoices.UpdatedInvoices.Single().Items];
+    Assert.AreEqual(2, persisted.Length);
+    Assert.IsTrue(persisted[0].Metadata.IsEdited);
+    Assert.IsFalse(persisted[0].Metadata.IsComplete);
+    Assert.IsFalse(persisted[1].Metadata.IsEdited);
+    Assert.IsTrue(persisted[1].Metadata.IsComplete);
+  }
+
+  /// <summary>
+  /// Verifies that the persisted line items carry the OCR confidence reported by document extraction, which the
+  /// shared extracted-product mapper is responsible for projecting onto product metadata.
+  /// </summary>
+  [TestMethod]
+  public async Task TryExecuteNextRunAsync_SuccessfulExtraction_PersistsOcrConfidenceOnProductMetadata()
+  {
+    // Arrange
+    var harness = new ProcessingHarness();
+    Invoice invoice = harness.SeedInvoice();
+    harness.Analysis.ClaimableRun = AnalysisRun.CreateInvoice(
+      invoice.id,
+      invoice.UserIdentifier,
+      Guid.CreateVersion7(),
+      InvoiceAnalysisOptions.Comprehensive(),
+      traceParent: null);
+    harness.Analysis.InvoiceResult = ProcessingHarness.FullInvoiceResult();
+
+    // Act
+    await harness.Service.TryExecuteNextRunAsync(LeaseOwner, CancellationToken.None).ConfigureAwait(false);
+
+    // Assert
+    Assert.AreEqual(0.95, harness.Invoices.UpdatedInvoices.Single().Items.Single().Metadata.Confidence);
+  }
+
+  #endregion
+
   private sealed record QueuedInvoiceRun(Guid InvoiceId, Guid OwnerIdentifier, string TraceId);
 
   private sealed record QueuedMerchantRun(Guid MerchantId, Guid OwnerIdentifier, Guid ParentCompanyId, string TraceId);
@@ -501,18 +929,34 @@ public sealed class AnalysisProcessingServiceTests
       return invoice;
     }
 
-    internal Merchant SeedMerchant(string name = "Seeded Merchant")
+    internal Merchant SeedMerchant(string name = "Seeded Merchant", Guid? parentCompanyId = null)
     {
       var merchant = new Merchant
       {
         id = Guid.CreateVersion7(),
-        ParentCompanyId = Guid.CreateVersion7(),
+        ParentCompanyId = parentCompanyId ?? Guid.CreateVersion7(),
         Name = name,
       };
 
       Merchants.Merchants[merchant.id] = merchant;
       return merchant;
     }
+
+    /// <summary>
+    /// Builds a custom capability selection with document extraction enabled but merchant resolution disabled.
+    /// </summary>
+    /// <returns>A custom invoice analysis option set with merchant resolution off.</returns>
+    internal static InvoiceAnalysisOptions ExtractionOnlyWithoutMerchantResolution() =>
+      new(
+        AnalysisProfile.Custom,
+        documentExtraction: true,
+        merchantResolution: false,
+        invoiceSummary: false,
+        productClassification: false,
+        allergenAssessment: false,
+        invoiceClassification: false,
+        recipeGeneration: false,
+        maximumRecipes: 0);
 
     internal static StandardClassification EcoicopClassification(string code) =>
       new(
@@ -542,6 +986,17 @@ public sealed class AnalysisProcessingServiceTests
         ],
         ClassificationOrigin.Analysis,
         0.8,
+        []);
+
+    internal static StandardClassification StaleGpcClassification() =>
+      new(
+        ClassificationSystem.Gs1Gpc,
+        "2024",
+        "99999999",
+        "Stale GPC brick",
+        [new ClassificationNode("brick", "99999999", "Stale GPC brick")],
+        ClassificationOrigin.Analysis,
+        0.2,
         []);
 
     internal static StandardClassification NaceClassification() =>
@@ -617,6 +1072,61 @@ public sealed class AnalysisProcessingServiceTests
           AnalysisCapability.InvoiceClassification,
           AnalysisCapability.RecipeGeneration,
         ]));
+    }
+
+    /// <summary>
+    /// Builds an invoice analysis result whose extraction succeeded but produced no line items.
+    /// </summary>
+    /// <returns>An invoice analysis result carrying an authoritative empty extraction.</returns>
+    internal static InvoiceAnalysisResult EmptyExtractionInvoiceResult()
+    {
+      var extraction = new ReceiptExtractionResult(
+        merchantCandidate: null,
+        [],
+        new PaymentInformation(),
+        "receipt",
+        "RO",
+        [],
+        []);
+
+      return new InvoiceAnalysisResult(
+        extraction,
+        MerchantCandidateResult: null,
+        SummaryResult: null,
+        ProductClassificationResult: null,
+        AllergenAssessmentResult: null,
+        InvoiceClassificationResult: null,
+        RecipeGenerationResult: null,
+        new ReadOnlyCollection<AnalysisCapability>([AnalysisCapability.DocumentExtraction]));
+    }
+
+    /// <summary>
+    /// Builds an invoice analysis result whose extraction produced two identical line items.
+    /// </summary>
+    /// <returns>An invoice analysis result carrying duplicate extracted products.</returns>
+    internal static InvoiceAnalysisResult DuplicateProductInvoiceResult()
+    {
+      var extraction = new ReceiptExtractionResult(
+        merchantCandidate: null,
+        [
+          new ExtractedProduct("Milk", 1m, "pcs", "MILK-1", 4.5m, 0.95),
+          new ExtractedProduct("Milk", 1m, "pcs", "MILK-1", 4.5m, 0.95),
+        ],
+        new PaymentInformation(),
+        "receipt",
+        "RO",
+        [],
+        []);
+
+      return new InvoiceAnalysisResult(
+        extraction,
+        MerchantCandidateResult: null,
+        SummaryResult: null,
+        ProductClassificationResult: null,
+        AllergenAssessmentResult: null,
+        InvoiceClassificationResult: null,
+        RecipeGenerationResult: null,
+        new ReadOnlyCollection<AnalysisCapability>([AnalysisCapability.DocumentExtraction]));
     }
   }
 

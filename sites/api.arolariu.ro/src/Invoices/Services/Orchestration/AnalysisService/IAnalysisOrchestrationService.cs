@@ -69,9 +69,11 @@ public interface IAnalysisOrchestrationService
   /// <param name="merchantId">The identifier of the merchant to analyze.</param>
   /// <param name="ownerIdentifier">The identifier of the user who requested the analysis.</param>
   /// <param name="parentCompanyId">
-  /// The identifier of the merchant's parent company. Persisted verbatim on the queued run as
-  /// <see cref="AnalysisRun.TargetPartitionIdentifier"/> so a later Task 11 point-update against the merchant's
-  /// partition does not need to re-resolve the partition scope.
+  /// The identifier of the merchant's parent company, which is the merchant's Cosmos partition key. Persisted
+  /// verbatim on the queued run as <see cref="AnalysisRun.TargetPartitionIdentifier"/> so a worker-time point
+  /// update against the merchant's partition does not need to re-resolve the partition scope.
+  /// <see cref="Guid.Empty"/> is a legitimate value: it is the partition of every independent merchant, including
+  /// every merchant auto-created during invoice analysis, and is therefore accepted rather than rejected.
   /// </param>
   /// <param name="options">The caller-supplied merchant analysis capability selection.</param>
   /// <param name="traceId">The distributed trace identifier to continue across the pipeline boundary.</param>

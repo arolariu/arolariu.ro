@@ -122,7 +122,10 @@ public sealed partial class AnalysisProcessingService
     InvoiceAnalysisResult result,
     CancellationToken cancellationToken)
   {
-    MerchantCandidate? candidate = result.MerchantCandidateResult ?? result.ExtractionResult?.MerchantCandidate;
+    // Only the dedicated merchant-resolution section is honoured. The extraction result may still carry a merchant
+    // candidate when merchant resolution was switched off, and reading through to it would silently re-enable a
+    // capability the caller explicitly disabled.
+    MerchantCandidate? candidate = result.MerchantCandidateResult;
 
     if (candidate is null || string.IsNullOrWhiteSpace(candidate.Name))
     {
@@ -248,24 +251,26 @@ public sealed partial class AnalysisProcessingService
     }
   }
 
+  /// <summary>
+  /// Applies a successful document-extraction section onto the invoice aggregate.
+  /// </summary>
+  /// <remarks>
+  /// <para>The extracted line items are authoritative about which products the invoice has, so they replace the
+  /// collection outright - including when the extraction legitimately produced none. Prior per-item analysis
+  /// artifacts and user workflow flags are carried onto recognizably identical products by
+  /// <see cref="ExtractedProductReconciler"/>; see that type for the identity-free matching contract.</para>
+  /// </remarks>
+  /// <param name="invoice">The aggregate to mutate.</param>
+  /// <param name="extraction">The successful extraction section.</param>
   private static void ApplyExtraction(Invoice invoice, ReceiptExtractionResult extraction)
   {
-    invoice.Items = [.. extraction.Products.Select(ToDomainProduct)];
+    invoice.Items = ExtractedProductReconciler.Reconcile(invoice.Items, extraction.Products);
     invoice.PaymentInformation = extraction.PaymentInformation;
     invoice.ReceiptType = extraction.ReceiptType;
     invoice.CountryRegion = extraction.CountryRegion;
     invoice.TaxDetails = [.. extraction.TaxDetails];
     invoice.Payments = [.. extraction.Payments];
   }
-
-  private static Product ToDomainProduct(ExtractedProduct extracted) => new()
-  {
-    Name = extracted.Name,
-    Quantity = extracted.Quantity,
-    QuantityUnit = extracted.QuantityUnit,
-    ProductCode = extracted.ProductCode,
-    Price = extracted.Price,
-  };
 
   private static void ApplyProductClassifications(Invoice invoice, ProductClassificationResult classifications)
   {

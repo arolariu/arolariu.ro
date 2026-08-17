@@ -9,6 +9,14 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 /// <summary>
 /// Value converter between <see cref="IEnumerable{T}"/> and <see cref="string"/>."
 /// </summary>
+/// <remarks>
+/// <para><b>Runtime status - INACTIVE:</b> <c>InvoiceNoSqlBroker</c> performs every invoice and merchant operation
+/// through the raw Cosmos SDK rather than through EF Core, so its <c>OnModelCreating</c> model - and therefore this
+/// converter - never participates in a production read or write. The authoritative wire format is produced by the
+/// Cosmos SDK's default (Newtonsoft-based) serializer and is pinned by <c>AnalysisPersistenceSerializationTests</c>.
+/// This converter is dormant configuration retained for a future EF migration.</para>
+/// </remarks>
+/// <typeparam name="T">The element type being persisted.</typeparam>
 [ExcludeFromCodeCoverage]
 public class ValueConverterForIEnumerableOf<T> : ValueConverter<IEnumerable<T>, string>
 {

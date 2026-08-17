@@ -71,10 +71,12 @@ public sealed record AnalysisRun
   /// runs (invoices are not partitioned by parent company).
   /// </summary>
   /// <remarks>
-  /// Persisted verbatim so a later Task 11 point-update against the merchant's partition (e.g. attaching analysis
-  /// outcomes back onto the durable <c>Merchant</c> aggregate) does not need to re-resolve or re-validate the
-  /// caller-supplied partition scope; the effective partition context is fixed at queue time, exactly like the
-  /// resolved effective analysis options.
+  /// Persisted verbatim so a worker-time point update against the merchant's partition (attaching analysis outcomes
+  /// back onto the durable <c>Merchant</c> aggregate) does not need to re-resolve or re-validate the partition scope;
+  /// the effective partition context is fixed at queue time, exactly like the resolved effective analysis options.
+  /// <see cref="Guid.Empty"/> is a legitimate persisted value - it is the partition of every independent merchant,
+  /// including every merchant auto-created during invoice analysis - and is distinct from <see langword="null"/>,
+  /// which means "this run has no partition scope at all" (invoice runs).
   /// </remarks>
   [JsonPropertyName("targetPartitionIdentifier")]
   [NewtonsoftJson.JsonProperty("targetPartitionIdentifier", NullValueHandling = NewtonsoftJson.NullValueHandling.Ignore)]
@@ -213,9 +215,9 @@ public sealed record AnalysisRun
   /// <param name="requestedBy">The identifier of the user requesting the analysis.</param>
   /// <param name="correlationId">The correlation identifier linking this run to its originating request.</param>
   /// <param name="targetPartitionIdentifier">
-  /// The merchant's parent company identifier (partition/company scope), persisted verbatim on the run for a later
-  /// Task 11 point-update against the same partition, or <see langword="null"/> when the merchant has no parent
-  /// company scope.
+  /// The merchant's parent company identifier (partition/company scope), persisted verbatim on the run for a
+  /// worker-time point update against the same partition. <see cref="Guid.Empty"/> is a legitimate partition for an
+  /// independent merchant and is persisted as-is; <see langword="null"/> means no partition scope was captured.
   /// </param>
   /// <param name="options">The merchant analysis capability selection.</param>
   /// <param name="traceParent">The W3C <c>traceparent</c> value to continue the distributed trace, or <c>null</c>.</param>

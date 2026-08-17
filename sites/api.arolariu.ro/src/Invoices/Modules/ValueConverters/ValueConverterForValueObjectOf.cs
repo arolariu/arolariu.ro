@@ -9,12 +9,17 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 /// Value converter between a nullable immutable value object and its JSON <see cref="string"/> projection.
 /// </summary>
 /// <remarks>
-/// <para><b>Why JSON rather than an owned mapping:</b> The analysis value objects introduced by the taxonomy and
-/// allergen contracts are immutable records that expose get-only <c>IReadOnlyList</c> members and enforce their
-/// invariants inside a validating constructor. EF Core cannot bind collection navigations through a constructor, so an
-/// owned mapping would require weakening those contracts. Serializing the whole value object keeps the domain
-/// invariants authoritative and matches the JSON projection already used for the other embedded collections in this
-/// context.</para>
+/// <para><b>Runtime status - INACTIVE:</b> <c>InvoiceNoSqlBroker</c> reads and writes every invoice and merchant
+/// through the raw Cosmos SDK (<c>CreateItemAsync</c> / <c>ReadItemAsync&lt;T&gt;</c> / <c>UpsertItemAsync</c> /
+/// <c>ReplaceItemAsync</c>), never through a <c>DbSet</c> or <c>SaveChangesAsync</c>. Its <c>OnModelCreating</c> model
+/// - and therefore this converter - does NOT participate in any production read or write. The authoritative wire
+/// format is produced by the Cosmos SDK's default (Newtonsoft-based) serializer and is pinned by
+/// <c>AnalysisPersistenceSerializationTests</c>. Treat this converter as dormant configuration retained for a future
+/// EF migration, not as a description of current persistence behaviour.</para>
+/// <para><b>Why JSON rather than an owned mapping (if EF is ever activated):</b> The analysis value objects
+/// introduced by the taxonomy and allergen contracts are immutable records that expose get-only
+/// <c>IReadOnlyList</c> members and enforce their invariants inside a validating constructor. EF Core cannot bind
+/// collection navigations through a constructor, so an owned mapping would require weakening those contracts.</para>
 /// <para><b>Round-trip safety:</b> Deserialization runs through the value object's public constructor, so a document
 /// that violates an invariant fails loudly rather than materializing an invalid aggregate.</para>
 /// </remarks>
