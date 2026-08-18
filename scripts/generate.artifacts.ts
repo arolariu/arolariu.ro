@@ -11,10 +11,6 @@
 
 import {inflateRawSync} from "node:zlib";
 
-const GPC_SOURCE = "https://ref.gs1.org/standards/gpc/2026-05/";
-const GPC_VERSION = "2026-05";
-const GPC_ATTRIBUTION = "GS1 Global Product Classification (GPC), May 2026 release.";
-
 const GPC_LEVELS: Readonly<Record<number, string>> = {
   1: "segment",
   2: "family",
