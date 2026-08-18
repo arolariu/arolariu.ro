@@ -27,6 +27,7 @@ import {
   buildHierarchy,
   EcoicopTaxonomyClassificationGenerator,
   Gs1GpcTaxonomyClassificationGenerator,
+  NaceTaxonomyClassificationGenerator,
   flattenGpcSchema,
   parseGpcDocument,
   writeMirroredArtifacts,
@@ -608,6 +609,57 @@ describe("Taxonomy classification generator classes", () => {
         await expect(generator.generate()).rejects.toThrow(
           "SPARQL binding 'broader'.value must be a non-empty string.",
         );
+      });
+    });
+  });
+
+  describe("NaceTaxonomyClassificationGenerator", () => {
+    describe("generate", () => {
+      it("generates a mirrored NACE 2.1 artifact with mapped hierarchy levels", async () => {
+        vi.stubGlobal(
+          "fetch",
+          vi.fn(async () =>
+            Response.json({
+              results: {
+                bindings: [
+                  {concept: {value: "nace:A"}, notation: {value: "A"}, label: {value: "A Agriculture"}},
+                  {
+                    concept: {value: "nace:01"},
+                    notation: {value: "01"},
+                    label: {value: "01 Crop and animal production"},
+                    broader: {value: "nace:A"},
+                  },
+                  {
+                    concept: {value: "nace:011"},
+                    notation: {value: "01.1"},
+                    label: {value: "01.1 Growing crops"},
+                    broader: {value: "nace:01"},
+                  },
+                  {
+                    concept: {value: "nace:0111"},
+                    notation: {value: "01.11"},
+                    label: {value: "01.11 Growing cereals"},
+                    broader: {value: "nace:011"},
+                  },
+                ],
+              },
+            }),
+          ),
+        );
+        const base = await mkdtemp(join(tmpdir(), "arolariu-nace-class-"));
+        const roots = [join(base, "api"), join(base, "web")];
+        const generator = new NaceTaxonomyClassificationGenerator(roots);
+
+        const outputs = await generator.generate();
+        const nodes = readArtifactNodes(await readFile(outputs[0] ?? "", "utf8"));
+
+        expect(outputs.map((output) => basename(output))).toEqual(["nace-2.1.min.json", "nace-2.1.min.json"]);
+        expect(nodes).toMatchObject([
+          {code: "01", level: "division"},
+          {code: "01.1", level: "group"},
+          {code: "01.11", level: "class"},
+          {code: "A", level: "section"},
+        ]);
       });
     });
   });

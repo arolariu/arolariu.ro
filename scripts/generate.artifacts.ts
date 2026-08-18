@@ -34,10 +34,11 @@ const OUTPUT_ROOTS = [
 export const FILE_NAMES = {
   GS1_GPC: "gpc-2026-05.min.json",
   ECOICOP_V2: "ecoicop-v2.min.json",
+  NACE_2_1: "nace-2.1.min.json",
 } as const satisfies Readonly<Record<ArtifactClassificationSystem, string>>;
 
 /** Classification systems supported by generated artifacts. */
-export type ArtifactClassificationSystem = "GS1_GPC" | "ECOICOP_V2";
+export type ArtifactClassificationSystem = "GS1_GPC" | "ECOICOP_V2" | "NACE_2_1";
 
 /** Single normalized taxonomy node. */
 export interface TaxonomyArtifactNode {
@@ -330,6 +331,7 @@ export function buildHierarchy(nodes: readonly TaxonomyArtifactNode[], code: str
 
 const SPARQL_ENDPOINT = "https://publications.europa.eu/webapi/rdf/sparql";
 const ECOICOP_SCHEME = "http://data.europa.eu/ed1/ecoicop2/ecoicop2";
+const NACE_SCHEME = "http://data.europa.eu/ux2/nace2.1/nace2.1";
 const SPARQL_PAGE_SIZE = 5_000;
 const EU_ATTRIBUTION =
   "European Union, Publications Office of the European Union, reused under the European Commission reuse policy.";
@@ -639,6 +641,29 @@ export class EcoicopTaxonomyClassificationGenerator extends TaxonomyClassificati
     };
 
     return writeMirroredArtifacts(FILE_NAMES.ECOICOP_V2, artifact, this.outputRoots);
+  }
+}
+
+/** Generates the official NACE 2.1 taxonomy artifact. */
+export class NaceTaxonomyClassificationGenerator extends TaxonomyClassificationGenerator {
+  /** Creates the generator. */
+  public constructor(private readonly outputRoots: readonly string[] = OUTPUT_ROOTS) {
+    super();
+  }
+
+  /** Downloads, validates, normalizes, and writes the NACE artifact. */
+  public override async generate(): Promise<readonly string[]> {
+    const bindings = await fetchSparqlBindings(NACE_SCHEME);
+    const artifact: TaxonomyArtifact = {
+      system: "NACE_2_1",
+      version: "2.1",
+      sourceUrl: `${SPARQL_ENDPOINT}#${NACE_SCHEME}`,
+      generatedAt: new Date().toISOString(),
+      attribution: EU_ATTRIBUTION,
+      nodes: normalizeSparqlBindings("NACE_2_1", "2.1", bindings),
+    };
+
+    return writeMirroredArtifacts(FILE_NAMES.NACE_2_1, artifact, this.outputRoots);
   }
 }
 
