@@ -8,7 +8,7 @@ import {ChildProcess, execFile} from "node:child_process";
 import {mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {basename, dirname, join} from "node:path";
-import {afterEach, describe, expect, it, vi} from "vitest";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 vi.mock("node:child_process", async (importOriginal) => {
   const actual = await importOriginal<typeof import("node:child_process")>();
@@ -25,122 +25,138 @@ import {
 } from "./generate.artifacts.ts";
 import {parseCommandLineOptions} from "./generate.ts";
 
-const temporaryDirectories: string[] = [];
+class ArtifactGeneratorTestHarness {
+  readonly #temporaryDirectories: string[] = [];
 
-const gpcDocument = {
-  LanguageCode: "EN",
-  DateUtc: "2026-05-01",
-  Schema: [
-    {
-      Level: 1,
-      Code: 50000000,
-      Title: "Food",
-      Definition: null,
-      DefinitionExcludes: null,
-      Active: true,
-      Childs: [
-        {
-          Level: 4,
-          Code: 10000266,
-          Title: "Bread",
-          Definition: "Ready-to-eat; chilled!",
-          DefinitionExcludes: null,
-          Active: true,
-          Childs: [],
-        },
-      ],
-    },
-  ],
-} as const;
+  public readonly gpcDocument = {
+    LanguageCode: "EN",
+    DateUtc: "2026-05-01",
+    Schema: [
+      {
+        Level: 1,
+        Code: 50000000,
+        Title: "Food",
+        Definition: null,
+        DefinitionExcludes: null,
+        Active: true,
+        Childs: [
+          {
+            Level: 4,
+            Code: 10000266,
+            Title: "Bread",
+            Definition: "Ready-to-eat; chilled!",
+            DefinitionExcludes: null,
+            Active: true,
+            Childs: [],
+          },
+        ],
+      },
+    ],
+  } as const;
 
-afterEach(async () => {
-  vi.unstubAllGlobals();
-  vi.clearAllMocks();
-  await Promise.all(
-    temporaryDirectories.splice(0).map((directory) => rm(directory, {recursive: true, force: true})),
-  );
-});
-
-async function createTemporaryDirectory(prefix: string): Promise<string> {
-  const directory = await mkdtemp(join(tmpdir(), prefix));
-  temporaryDirectories.push(directory);
-  return directory;
-}
-
-async function createOutputRoots(prefix: string): Promise<readonly string[]> {
-  const root = await createTemporaryDirectory(prefix);
-  return [join(root, "api"), join(root, "web")];
-}
-
-async function writeJson(path: string, value: unknown): Promise<void> {
-  await mkdir(dirname(path), {recursive: true});
-  await writeFile(path, JSON.stringify(value), "utf8");
-}
-
-function readObjectArray(contents: string, key: string): readonly unknown[] {
-  const parsed: unknown = JSON.parse(contents);
-  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    throw new TypeError("Generated document must be an object.");
+  public async createTemporaryDirectory(prefix: string): Promise<string> {
+    const directory = await mkdtemp(join(tmpdir(), prefix));
+    this.#temporaryDirectories.push(directory);
+    return directory;
   }
 
-  const value = Reflect.get(parsed, key);
-  if (!Array.isArray(value)) throw new TypeError(`Generated document '${key}' field must be an array.`);
-  return value;
-}
+  public async createOutputRoots(prefix: string): Promise<readonly string[]> {
+    const root = await this.createTemporaryDirectory(prefix);
+    return [join(root, "api"), join(root, "web")];
+  }
 
-function mockArchiveExtraction(document: unknown): void {
-  vi.mocked(execFile).mockImplementation((_file, args, callback) => {
-    const outputIndex = args?.findIndex((value) => value === "-C" || value === "-d") ?? -1;
-    const outputDirectory = args?.[outputIndex + 1];
-    if (outputDirectory === undefined) throw new Error("Output directory argument is missing.");
+  public async writeJson(path: string, value: unknown): Promise<void> {
+    await mkdir(dirname(path), {recursive: true});
+    await writeFile(path, JSON.stringify(value), "utf8");
+  }
 
-    const childProcess = new ChildProcess();
-    void writeFile(join(outputDirectory, "GPC 2026-05 EN.json"), JSON.stringify(document), "utf8")
-      .then(() => {
-        if (typeof callback === "function") callback(null, "", "");
-      })
-      .catch((error: unknown) => {
-        if (typeof callback === "function") {
-          callback(error instanceof Error ? error : new Error(String(error)), "", "");
+  public readObjectArray(contents: string, key: string): readonly unknown[] {
+    const parsed: unknown = JSON.parse(contents);
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      throw new TypeError("Generated document must be an object.");
+    }
+
+    const value = Reflect.get(parsed, key);
+    if (!Array.isArray(value)) {
+      throw new TypeError(`Generated document '${key}' field must be an array.`);
+    }
+    return value;
+  }
+
+  public mockArchiveExtraction(document: unknown = this.gpcDocument): void {
+    vi.mocked(execFile).mockImplementation((_file, args, callback) => {
+      const outputIndex = args?.findIndex((value) => value === "-C" || value === "-d") ?? -1;
+      const outputDirectory = args?.[outputIndex + 1];
+      if (outputDirectory === undefined) throw new Error("Output directory argument is missing.");
+
+      const childProcess = new ChildProcess();
+      void writeFile(join(outputDirectory, "GPC 2026-05 EN.json"), JSON.stringify(document), "utf8")
+        .then(() => {
+          if (typeof callback === "function") callback(null, "", "");
+        })
+        .catch((error: unknown) => {
+          if (typeof callback === "function") {
+            callback(error instanceof Error ? error : new Error(String(error)), "", "");
+          }
+        });
+      return childProcess;
+    });
+  }
+
+  public createSparqlResponse(bindings: readonly unknown[]): Response {
+    return Response.json({results: {bindings}});
+  }
+
+  public stubUnifiedFetch(): void {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request) => {
+        const url = new URL(String(input));
+        if (url.href === "https://ref.gs1.org/standards/gpc/2026-05/") {
+          return new Response(new Uint8Array([1, 2, 3]), {status: 200});
         }
-      });
-    return childProcess;
-  });
-}
 
-function createSparqlResponse(bindings: readonly unknown[]): Response {
-  return Response.json({results: {bindings}});
-}
+        const query = url.searchParams.get("query") ?? "";
+        const isEcoicop = query.includes("ecoicop2");
+        return this.createSparqlResponse([
+          {
+            concept: {value: isEcoicop ? "eco:01" : "nace:A"},
+            notation: {value: isEcoicop ? "01" : "A"},
+            label: {value: isEcoicop ? "01 Food" : "A Agriculture"},
+          },
+        ]);
+      }),
+    );
+  }
 
-function stubUnifiedFetch(): void {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async (input: string | URL | Request) => {
-      const url = new URL(String(input));
-      if (url.href === "https://ref.gs1.org/standards/gpc/2026-05/") {
-        return new Response(new Uint8Array([1, 2, 3]), {status: 200});
-      }
-
-      const query = url.searchParams.get("query") ?? "";
-      const isEcoicop = query.includes("ecoicop2");
-      return createSparqlResponse([
-        {
-          concept: {value: isEcoicop ? "eco:01" : "nace:A"},
-          notation: {value: isEcoicop ? "01" : "A"},
-          label: {value: isEcoicop ? "01 Food" : "A Agriculture"},
-        },
-      ]);
-    }),
-  );
+  public async cleanup(): Promise<void> {
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
+    await Promise.all(
+      this.#temporaryDirectories
+        .splice(0)
+        .map((directory) => rm(directory, {recursive: true, force: true})),
+    );
+  }
 }
 
 describe("Taxonomy classification generators", () => {
+  let harness: ArtifactGeneratorTestHarness;
+
+  beforeEach(() => {
+    harness = new ArtifactGeneratorTestHarness();
+  });
+
+  afterEach(async () => {
+    await harness.cleanup();
+  });
+
   describe("Gs1GpcTaxonomyClassificationGenerator", () => {
     describe("generate", () => {
       it("generates the mirrored GPC artifact", async () => {
         vi.stubGlobal("fetch", vi.fn(async () => new Response(new Uint8Array([1]), {status: 200})));
-        mockArchiveExtraction(gpcDocument);
-        const roots = await createOutputRoots("arolariu-gpc-class-");
+        harness.mockArchiveExtraction();
+        const roots = await harness.createOutputRoots("arolariu-gpc-class-");
 
         const outputs = await new Gs1GpcTaxonomyClassificationGenerator(roots).generate();
 
@@ -169,7 +185,7 @@ describe("Taxonomy classification generators", () => {
         vi.stubGlobal(
           "fetch",
           vi.fn(async () =>
-            createSparqlResponse([
+            harness.createSparqlResponse([
               {concept: {value: "eco:01"}, notation: {value: "01"}, label: {value: "01 Food"}},
               {
                 concept: {value: "eco:011"},
@@ -180,10 +196,10 @@ describe("Taxonomy classification generators", () => {
             ]),
           ),
         );
-        const roots = await createOutputRoots("arolariu-ecoicop-class-");
+        const roots = await harness.createOutputRoots("arolariu-ecoicop-class-");
 
         const outputs = await new EcoicopTaxonomyClassificationGenerator(roots).generate();
-        const nodes = readObjectArray(await readFile(outputs[0] ?? "", "utf8"), "nodes");
+        const nodes = harness.readObjectArray(await readFile(outputs[0] ?? "", "utf8"), "nodes");
 
         expect(outputs.map((output) => basename(output))).toEqual([
           "ecoicop-v2.min.json",
@@ -200,12 +216,14 @@ describe("Taxonomy classification generators", () => {
         }));
         const fetchMock = vi
           .fn()
-          .mockResolvedValueOnce(createSparqlResponse(firstPage))
+          .mockResolvedValueOnce(harness.createSparqlResponse(firstPage))
           .mockResolvedValueOnce(
-            createSparqlResponse([{concept: {value: "eco:final"}, notation: {value: "9999.1"}, label: {value: "Final"}}]),
+            harness.createSparqlResponse([
+              {concept: {value: "eco:final"}, notation: {value: "9999.1"}, label: {value: "Final"}},
+            ]),
           );
         vi.stubGlobal("fetch", fetchMock);
-        const roots = await createOutputRoots("arolariu-ecoicop-pages-");
+        const roots = await harness.createOutputRoots("arolariu-ecoicop-pages-");
 
         await new EcoicopTaxonomyClassificationGenerator(roots).generate();
 
@@ -216,7 +234,7 @@ describe("Taxonomy classification generators", () => {
         vi.stubGlobal(
           "fetch",
           vi.fn(async () =>
-            createSparqlResponse([
+            harness.createSparqlResponse([
               {
                 concept: {value: "eco:01"},
                 notation: {value: "01"},
@@ -240,7 +258,7 @@ describe("Taxonomy classification generators", () => {
         vi.stubGlobal(
           "fetch",
           vi.fn(async () =>
-            createSparqlResponse([
+            harness.createSparqlResponse([
               {concept: {value: "nace:A"}, notation: {value: "A"}, label: {value: "A Agriculture"}},
               {
                 concept: {value: "nace:01"},
@@ -251,10 +269,10 @@ describe("Taxonomy classification generators", () => {
             ]),
           ),
         );
-        const roots = await createOutputRoots("arolariu-nace-class-");
+        const roots = await harness.createOutputRoots("arolariu-nace-class-");
 
         const outputs = await new NaceTaxonomyClassificationGenerator(roots).generate();
-        const nodes = readObjectArray(await readFile(outputs[0] ?? "", "utf8"), "nodes");
+        const nodes = harness.readObjectArray(await readFile(outputs[0] ?? "", "utf8"), "nodes");
 
         expect(outputs.map((output) => basename(output))).toEqual([
           "nace-2.1.min.json",
@@ -270,26 +288,36 @@ describe("Taxonomy classification generators", () => {
 });
 
 describe("License generators", () => {
+  let harness: ArtifactGeneratorTestHarness;
+
+  beforeEach(() => {
+    harness = new ArtifactGeneratorTestHarness();
+  });
+
+  afterEach(async () => {
+    await harness.cleanup();
+  });
+
   describe("FrontendLicenseGenerator", () => {
     describe("generate", () => {
       it("groups direct frontend dependencies", async () => {
-        const workspace = await createTemporaryDirectory("arolariu-license-class-");
-        await writeJson(join(workspace, "sites", "arolariu.ro", "package.json"), {
+        const workspace = await harness.createTemporaryDirectory("arolariu-license-class-");
+        await harness.writeJson(join(workspace, "sites", "arolariu.ro", "package.json"), {
           dependencies: {"production-package": "1.0.0"},
           devDependencies: {"development-package": "2.0.0"},
           peerDependencies: {"peer-package": "3.0.0"},
         });
-        await writeJson(join(workspace, "node_modules", "production-package", "package.json"), {
+        await harness.writeJson(join(workspace, "node_modules", "production-package", "package.json"), {
           name: "production-package",
           version: "1.0.0",
           license: "MIT",
         });
-        await writeJson(join(workspace, "node_modules", "development-package", "package.json"), {
+        await harness.writeJson(join(workspace, "node_modules", "development-package", "package.json"), {
           name: "development-package",
           version: "2.0.0",
           license: "Apache-2.0",
         });
-        await writeJson(join(workspace, "node_modules", "peer-package", "package.json"), {
+        await harness.writeJson(join(workspace, "node_modules", "peer-package", "package.json"), {
           name: "peer-package",
           version: "3.0.0",
           license: "BSD-3-Clause",
@@ -297,33 +325,33 @@ describe("License generators", () => {
 
         const [output] = await new FrontendLicenseGenerator(workspace).generate();
 
-        expect(readObjectArray(await readFile(output ?? "", "utf8"), "production")).toMatchObject([
+        expect(harness.readObjectArray(await readFile(output ?? "", "utf8"), "production")).toMatchObject([
           {name: "production-package"},
         ]);
-        expect(readObjectArray(await readFile(output ?? "", "utf8"), "development")).toMatchObject([
+        expect(harness.readObjectArray(await readFile(output ?? "", "utf8"), "development")).toMatchObject([
           {name: "development-package"},
         ]);
-        expect(readObjectArray(await readFile(output ?? "", "utf8"), "peer")).toMatchObject([
+        expect(harness.readObjectArray(await readFile(output ?? "", "utf8"), "peer")).toMatchObject([
           {name: "peer-package"},
         ]);
       });
 
       it("sorts scoped packages and applies defaults", async () => {
-        const workspace = await createTemporaryDirectory("arolariu-license-order-");
-        await writeJson(join(workspace, "sites", "arolariu.ro", "package.json"), {
+        const workspace = await harness.createTemporaryDirectory("arolariu-license-order-");
+        await harness.writeJson(join(workspace, "sites", "arolariu.ro", "package.json"), {
           dependencies: {"zeta-package": "1.0.0", "@scope/alpha-package": "2.0.0"},
         });
-        await writeJson(join(workspace, "node_modules", "zeta-package", "package.json"), {
+        await harness.writeJson(join(workspace, "node_modules", "zeta-package", "package.json"), {
           name: "zeta-package",
           repository: {url: "https://example.test/zeta"},
         });
-        await writeJson(join(workspace, "node_modules", "@scope", "alpha-package", "package.json"), {
+        await harness.writeJson(join(workspace, "node_modules", "@scope", "alpha-package", "package.json"), {
           name: "@scope/alpha-package",
           author: {name: "Alpha Author"},
         });
 
         const [output] = await new FrontendLicenseGenerator(workspace).generate();
-        const packages = readObjectArray(await readFile(output ?? "", "utf8"), "production");
+        const packages = harness.readObjectArray(await readFile(output ?? "", "utf8"), "production");
 
         expect(packages).toEqual([
           expect.objectContaining({
@@ -339,12 +367,12 @@ describe("License generators", () => {
       });
 
       it("names malformed installed manifests", async () => {
-        const workspace = await createTemporaryDirectory("arolariu-license-invalid-");
+        const workspace = await harness.createTemporaryDirectory("arolariu-license-invalid-");
         const manifestPath = join(workspace, "node_modules", "broken-package", "package.json");
-        await writeJson(join(workspace, "sites", "arolariu.ro", "package.json"), {
+        await harness.writeJson(join(workspace, "sites", "arolariu.ro", "package.json"), {
           dependencies: {"broken-package": "1.0.0"},
         });
-        await writeJson(manifestPath, {name: "broken-package", description: 42});
+        await harness.writeJson(manifestPath, {name: "broken-package", description: 42});
 
         await expect(new FrontendLicenseGenerator(workspace).generate()).rejects.toThrow(
           `Package manifest '${manifestPath}' field 'description' must be a string.`,
@@ -363,6 +391,16 @@ describe("License generators", () => {
 });
 
 describe("Artifact orchestration and CLI contracts", () => {
+  let harness: ArtifactGeneratorTestHarness;
+
+  beforeEach(() => {
+    harness = new ArtifactGeneratorTestHarness();
+  });
+
+  afterEach(async () => {
+    await harness.cleanup();
+  });
+
   describe("module surface", () => {
     it("exports only main and the seven generator classes", async () => {
       const artifactModule = await import("./generate.artifacts.ts");
@@ -382,11 +420,11 @@ describe("Artifact orchestration and CLI contracts", () => {
 
   describe("main", () => {
     it("returns zero after unified generation succeeds", async () => {
-      const workspace = await createTemporaryDirectory("arolariu-unified-main-");
+      const workspace = await harness.createTemporaryDirectory("arolariu-unified-main-");
       const outputRoots = [join(workspace, "api"), join(workspace, "web")];
-      await writeJson(join(workspace, "sites", "arolariu.ro", "package.json"), {});
-      mockArchiveExtraction(gpcDocument);
-      stubUnifiedFetch();
+      await harness.writeJson(join(workspace, "sites", "arolariu.ro", "package.json"), {});
+      harness.mockArchiveExtraction();
+      harness.stubUnifiedFetch();
 
       await expect(main({outputRoots, workspaceRoot: workspace})).resolves.toBe(0);
     });
