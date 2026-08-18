@@ -2042,7 +2042,7 @@
           "fast": "Rapid"
         },
         "status": {
-          "queued": "Analiza a pornit. Rezultatele vor apărea după reîmprospătarea paginii.",
+          "queued": "Analiza este în coadă. Pagina se va reîmprospăta automat; procesarea poate continua și după aceea.",
           "submitting": "Se trimite cererea de analiză."
         }
       },
@@ -5260,8 +5260,8 @@
           "title": "Analiza nu a putut fi pornită"
         },
         "started": {
-          "description": "Cererea este în coadă. Rezultatele vor apărea după reîmprospătarea paginii.",
-          "title": "Analiza a pornit"
+          "description": "Analiza este în coadă. Pagina se va reîmprospăta automat; procesarea poate continua și după aceea.",
+          "title": "Analiza este în coadă"
         }
       },
       "useInvoiceDelete": {

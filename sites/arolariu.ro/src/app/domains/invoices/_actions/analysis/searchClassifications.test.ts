@@ -3,7 +3,7 @@
  * @module app/domains/invoices/_actions/analysis/searchClassifications.test
  */
 
-import {ClassificationSystem, type SearchClassificationsInput} from "@/types/invoices";
+import {ClassificationSystem} from "@/types/invoices";
 import {describe, expect, it} from "vitest";
 import {searchClassifications} from "./searchClassifications";
 
@@ -36,15 +36,33 @@ describe("searchClassifications", () => {
       system: "UNSUPPORTED_SYSTEM",
       query: "food",
       limit: 1,
-    } as unknown as SearchClassificationsInput);
+    });
 
     // Assert
-    expect(result).toMatchObject({
+    expect(result).toEqual({
       success: false,
       error: {
         code: "VALIDATION_ERROR",
+        message: "Taxonomy search request is invalid.",
       },
     });
+  });
+
+  it("returns standardized validation results for null and non-object action input", async () => {
+    // Act
+    const nullInputResult = await searchClassifications(null);
+    const stringInputResult = await searchClassifications("food");
+
+    // Assert
+    const expectedResult = {
+      success: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Taxonomy search request is invalid.",
+      },
+    };
+    expect(nullInputResult).toEqual(expectedResult);
+    expect(stringInputResult).toEqual(expectedResult);
   });
 
   it("returns an explicit validation result for a blank query and excessive limit", async () => {

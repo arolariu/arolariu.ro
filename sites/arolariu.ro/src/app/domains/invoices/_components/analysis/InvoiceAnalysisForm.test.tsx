@@ -73,7 +73,9 @@ describe("InvoiceAnalysisForm", () => {
       });
     });
     expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
-    expect(screen.getByRole("status")).toHaveTextContent("Analysis started. Results will appear after the page refreshes.");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Analysis is queued. This page will refresh automatically; processing may continue afterward.",
+    );
   });
 
   it("does not render simulated stages or percentage progress", () => {

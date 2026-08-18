@@ -8,7 +8,7 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {TaxonomySearchValidationError, searchTaxonomyCatalog} from "@/lib/taxonomies/taxonomyCatalog.server";
 import {createErrorResult, type ServerActionResult} from "@/lib/utils.server";
-import type {ClassificationSearchResult, SearchClassificationsInput} from "@/types/invoices";
+import {isSearchClassificationsInput, type ClassificationSearchResult} from "@/types/invoices";
 
 /**
  * Result returned from a taxonomy-search action invocation.
@@ -23,16 +23,32 @@ type ServerActionOutputType = ServerActionResult<readonly ClassificationSearchRe
  * initialization, validates this action input at runtime, and caps every result
  * set at fifty entries. Search text itself is not logged.
  *
- * @param input - System, non-empty query, and optional bounded result limit.
+ * @param input - Untrusted server-action payload containing the taxonomy system, query, and optional result limit.
  * @returns Ranked bounded classification projections, or a standardized error result.
  */
-export async function searchClassifications(input: Readonly<SearchClassificationsInput>): ServerActionOutputType {
+export async function searchClassifications(input: unknown): ServerActionOutputType {
   return withSpan("api.actions.invoices.searchClassifications", async () => {
     try {
       addSpanEvent("bff.taxonomies.search.start");
-      const data = searchTaxonomyCatalog(input);
+      if (!isSearchClassificationsInput(input)) {
+        addSpanEvent("bff.taxonomies.search.error");
+        return {
+          success: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Taxonomy search request is invalid.",
+          },
+        };
+      }
+
+      const {system, query, limit} = input;
+      const data = searchTaxonomyCatalog({
+        system,
+        query,
+        ...(limit === undefined ? {} : {limit}),
+      });
       addSpanEvent("bff.taxonomies.search.complete", {"taxonomy.result_count": data.length});
-      return {success: true, data} as const;
+      return {success: true, data};
     } catch (error) {
       addSpanEvent("bff.taxonomies.search.error");
 
@@ -43,7 +59,7 @@ export async function searchClassifications(input: Readonly<SearchClassification
             code: "VALIDATION_ERROR",
             message: error.message,
           },
-        } as const;
+        };
       }
 
       logWithTrace("error", "Taxonomy search failed.", undefined, "server");

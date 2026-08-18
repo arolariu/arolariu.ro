@@ -2042,7 +2042,7 @@
           "fast": "Rapide"
         },
         "status": {
-          "queued": "L’analyse a démarré. Les résultats apparaîtront après l’actualisation de la page.",
+          "queued": "L’analyse est en file d’attente. Cette page s’actualisera automatiquement ; le traitement peut se poursuivre ensuite.",
           "submitting": "Envoi de la demande d’analyse."
         }
       },
@@ -5260,8 +5260,8 @@
           "title": "L’analyse n’a pas pu démarrer"
         },
         "started": {
-          "description": "La demande est en file d’attente. Les résultats apparaîtront après l’actualisation de la page.",
-          "title": "Analyse démarrée"
+          "description": "L’analyse est en file d’attente. Cette page s’actualisera automatiquement ; le traitement peut se poursuivre ensuite.",
+          "title": "Analyse mise en file d’attente"
         }
       },
       "useInvoiceDelete": {

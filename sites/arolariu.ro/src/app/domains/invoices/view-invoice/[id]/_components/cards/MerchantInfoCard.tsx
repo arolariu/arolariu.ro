@@ -26,7 +26,7 @@
 
 import {formatAmount, formatEnum, toSafeDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores/invoicesStore";
-import {MerchantCategory, type Invoice} from "@/types/invoices";
+import {MerchantCategory, type Invoice, type Merchant} from "@/types/invoices";
 import {MerchantAnalysisForm} from "../../../../_components/analysis/MerchantAnalysisForm";
 import {
   Area,
@@ -71,6 +71,13 @@ type CategoryDistribution = {
   readonly percentage: number;
 };
 
+interface LinkedMerchantInfoCardProps {
+  /** The invoice being viewed. */
+  readonly invoice: Invoice;
+  /** The merchant linked to the invoice. */
+  readonly merchant: Merchant;
+}
+
 /**
  * Merchant information card component with rich analytics.
  *
@@ -100,10 +107,8 @@ type CategoryDistribution = {
  */
 export function MerchantInfoCard(): React.JSX.Element {
   const {invoice, merchant} = useInvoiceContext();
-  const {entities: invoices} = useInvoicesStore();
   const t = useTranslations();
 
-  // Early return if merchant is null
   if (!merchant) {
     return (
       <Card>
@@ -118,6 +123,18 @@ export function MerchantInfoCard(): React.JSX.Element {
       </Card>
     );
   }
+
+  return (
+    <LinkedMerchantInfoCard
+      invoice={invoice}
+      merchant={merchant}
+    />
+  );
+}
+
+function LinkedMerchantInfoCard({invoice, merchant}: Readonly<LinkedMerchantInfoCardProps>): React.JSX.Element {
+  const {entities: invoices} = useInvoicesStore();
+  const t = useTranslations();
 
   /**
    * Filter all invoices for this merchant.

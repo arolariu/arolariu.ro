@@ -59,7 +59,9 @@ describe("AnalysisPanel", () => {
 
     // Assert
     await waitFor(() => {
-      expect(screen.getByRole("status")).toHaveTextContent("Analysis started. Results will appear after the page refreshes.");
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "Analysis is queued. This page will refresh automatically; processing may continue afterward.",
+      );
     });
     expect(getAnalysisApiRequests()).toEqual([
       expect.objectContaining({

@@ -2042,7 +2042,7 @@
           "fast": "Fast"
         },
         "status": {
-          "queued": "Analysis started. Results will appear after the page refreshes.",
+          "queued": "Analysis is queued. This page will refresh automatically; processing may continue afterward.",
           "submitting": "Submitting analysis request."
         }
       },
@@ -5260,8 +5260,8 @@
           "title": "Analysis could not be started"
         },
         "started": {
-          "description": "The request is queued. Results will appear after the page refreshes.",
-          "title": "Analysis started"
+          "description": "Analysis is queued. This page will refresh automatically; processing may continue afterward.",
+          "title": "Analysis queued"
         }
       },
       "useInvoiceDelete": {

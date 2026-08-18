@@ -6,7 +6,7 @@
 import {ANALYSIS_API_URL, getAnalysisApiRequests, installAnalysisFetchHandler} from "@/../tests/helpers/analysisBoundary";
 import {mockInvoice, mockMerchant} from "@/data/mocks";
 import {useInvoicesStore} from "@/stores/invoicesStore";
-import {render, screen, waitFor} from "@testing-library/react";
+import {render, screen, waitFor, type RenderResult} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
 import {AnalysisTestProvider} from "../../../../../../../../tests/helpers/analysis";
@@ -27,16 +27,24 @@ const acceptedResponse = {
   acceptedAt: "2026-08-17T19:40:42.187Z",
 } as const;
 
-function renderMerchantCard(linkedMerchant: typeof merchant | null): void {
-  render(
+interface MerchantCardHarnessProps {
+  readonly linkedMerchant: typeof merchant | null;
+}
+
+function MerchantCardHarness({linkedMerchant}: Readonly<MerchantCardHarnessProps>): React.JSX.Element {
+  return (
     <AnalysisTestProvider>
       <InvoiceContextProvider
         invoice={invoice}
         merchant={linkedMerchant}>
         <MerchantInfoCard />
       </InvoiceContextProvider>
-    </AnalysisTestProvider>,
+    </AnalysisTestProvider>
   );
+}
+
+function renderMerchantCard(linkedMerchant: typeof merchant | null): RenderResult {
+  return render(<MerchantCardHarness linkedMerchant={linkedMerchant} />);
 }
 
 describe("MerchantInfoCard analysis integration", () => {
@@ -58,6 +66,18 @@ describe("MerchantInfoCard analysis integration", () => {
     expect(screen.queryByRole("button", {name: "Start analysis"})).not.toBeInTheDocument();
   });
 
+  it("renders linked merchant analysis after an unlinked-to-linked rerender", () => {
+    // Arrange
+    const {rerender} = renderMerchantCard(null);
+
+    // Act
+    rerender(<MerchantCardHarness linkedMerchant={merchant} />);
+
+    // Assert
+    expect(screen.getByRole("heading", {name: "Merchant analysis"})).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Start analysis"})).toBeInTheDocument();
+  });
+
   it("submits the linked merchant identifier through the real analysis form", async () => {
     // Arrange
     const user = userEvent.setup();
@@ -75,6 +95,8 @@ describe("MerchantInfoCard analysis integration", () => {
         }),
       ]);
     });
-    expect(screen.getByRole("status")).toHaveTextContent("Analysis started. Results will appear after the page refreshes.");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Analysis is queued. This page will refresh automatically; processing may continue afterward.",
+    );
   });
 });
