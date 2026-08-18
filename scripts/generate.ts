@@ -3,17 +3,17 @@
  * @module scripts/generate
  *
  * @remarks
- * This module wires together multiple generators (env, acks, i18n, gql) under
+ * This module wires together multiple generators (env, i18n, gql, artifacts) under
  * a single CLI command, keeping output consistent across tools.
  */
 
 import {styleText} from "node:util";
 
 /**
- * Master generation orchestrator for monorepo assets (env, acks, i18n, gql).
+ * Master generation orchestrator for monorepo assets (env, i18n, gql, artifacts).
  * Provides a unified CLI with colored, emoji-rich output consistent with `generate.env.ts`.
  */
-type CommandLineOptions = {
+export type CommandLineOptions = {
   /**
    * Enables verbose logging during the generation process.
    */
@@ -30,11 +30,6 @@ type CommandLineOptions = {
   generateI18n: boolean;
 
   /**
-   * Indicates whether to generate acknowledgements (akin to SBOM, but lightweight).
-   */
-  generateAcks: boolean;
-
-  /**
    * Indicates whether to generate environment configuration files.
    */
   generateEnv: boolean;
@@ -46,7 +41,7 @@ type CommandLineOptions = {
 };
 
 export async function main(options: Readonly<CommandLineOptions>): Promise<number> {
-  const {verbose, generateGql, generateI18n, generateAcks, generateEnv, generateArtifacts} = options;
+  const {verbose, generateGql, generateI18n, generateEnv, generateArtifacts} = options;
 
   console.log(styleText("magenta", "\n╔══════════════════════════════════════════════════════════════════╗"));
   console.log(styleText("magenta", "║          ||arolariu.ro|| Generation Orchestrator                 ║"));
@@ -57,15 +52,14 @@ export async function main(options: Readonly<CommandLineOptions>): Promise<numbe
   console.log(styleText("gray", `   Working Directory: ${styleText("dim", process.cwd())}`));
   console.log(styleText("gray", `   Selected Tasks:`));
   console.log(styleText("gray", `     • Env (${generateEnv ? styleText("green", "✓") : styleText("red", "✗")})`));
-  console.log(styleText("gray", `     • Acks (${generateAcks ? styleText("green", "✓") : styleText("red", "✗")})`));
   console.log(styleText("gray", `     • i18n (${generateI18n ? styleText("green", "✓") : styleText("red", "✗")})`));
   console.log(styleText("gray", `     • GraphQL (${generateGql ? styleText("green", "✓") : styleText("red", "✗")})`));
   console.log(styleText("gray", `     • Artifacts (${generateArtifacts ? styleText("green", "✓") : styleText("red", "✗")})`));
   console.log();
 
-  if (!(generateEnv || generateAcks || generateI18n || generateGql || generateArtifacts)) {
+  if (!(generateEnv || generateI18n || generateGql || generateArtifacts)) {
     console.log(styleText("yellow", "⚠ No generation tasks selected. Nothing to do."));
-    console.log(styleText("gray", "   Tip: Use one or more flags (e.g. /env /acks /i18n /gql /artifacts)."));
+    console.log(styleText("gray", "   Tip: Use one or more flags (e.g. /env /i18n /gql /artifacts)."));
     return 0;
   }
 
@@ -74,12 +68,6 @@ export async function main(options: Readonly<CommandLineOptions>): Promise<numbe
   if (generateEnv) {
     console.log(styleText("cyan", "🚀 Running environment configuration generator..."));
     await import("./generate.env.ts").then((module) => module.main(verbose));
-    tasksExecuted++;
-  }
-
-  if (generateAcks) {
-    console.log(styleText("cyan", "📄 Running acknowledgements (licenses) generator..."));
-    await import("./generate.acks.ts").then((module) => module.main(verbose));
     tasksExecuted++;
   }
 
@@ -106,14 +94,20 @@ export async function main(options: Readonly<CommandLineOptions>): Promise<numbe
   return 0;
 }
 
+/** Parses generation CLI aliases into a stable options object. */
+export function parseCommandLineOptions(argv: readonly string[]): CommandLineOptions {
+  return {
+    verbose: argv.some((argument) => ["/verbose", "/v", "--verbose", "-v"].includes(argument)),
+    generateGql: argv.some((argument) => ["/gql", "/g", "--gql", "-g"].includes(argument)),
+    generateI18n: argv.some((argument) => ["/i18n", "/i", "--i18n", "-i"].includes(argument)),
+    generateEnv: argv.some((argument) => ["/env", "/e", "--env", "-e"].includes(argument)),
+    generateArtifacts: argv.some((argument) => ["/artifacts", "/a", "--artifacts", "-a"].includes(argument)),
+  };
+}
+
 if (import.meta.main) {
   const argv = process.argv.slice(2);
-  const verbose = argv.some((a) => ["/verbose", "/v", "--verbose", "-v"].includes(a));
-  const generateGql = argv.some((a) => ["/gql", "/g", "--gql", "-g"].includes(a));
-  const generateI18n = argv.some((a) => ["/i18n", "/i", "--i18n", "-i"].includes(a));
-  const generateAcks = argv.some((a) => ["/acks", "/a", "--acks", "-a"].includes(a));
-  const generateEnv = argv.some((a) => ["/env", "/e", "--env", "-e"].includes(a));
-  const generateArtifacts = argv.some((a) => ["/artifacts", "/art", "--artifacts", "-t"].includes(a));
+  const options = parseCommandLineOptions(argv);
   const wantsHelp = argv.some((a) => ["/help", "/h", "--help", "-h"].includes(a));
 
   if (wantsHelp || argv.length === 0) {
@@ -123,20 +117,18 @@ if (import.meta.main) {
     console.log(styleText("cyan", "Usage:"), styleText("gray", "npm run generate [flags]\n"));
     console.log(styleText("cyan", "Flags:"));
     console.log(`  ${styleText("green", "/env     /e   --env   -e")}   Generate environment configuration file (.env) ☁️`);
-    console.log(`  ${styleText("green", "/acks    /a   --acks  -a")}   Generate acknowledgements (licenses.json) 📄`);
     console.log(`  ${styleText("green", "/i18n    /i   --i18n  -i")}   Synchronize translation keys (messages) 🌍`);
     console.log(`  ${styleText("green", "/gql     /g   --gql   -g")}   Generate GraphQL type artifacts 🧬`);
-    console.log(`  ${styleText("green", "/artifacts /art --artifacts -t")} Generate official taxonomy artifacts 🏷️`);
+    console.log(`  ${styleText("green", "/artifacts /a   --artifacts -a")} Generate taxonomy and license artifacts 🏷️`);
     console.log(`  ${styleText("green", "/verbose /v   --verbose -v")} Enable verbose logging 🔊`);
     console.log(`  ${styleText("green", "/help    /h   --help  -h")}   Show this help menu ❓`);
     console.log("\nExamples:");
-    console.log(styleText("gray", "  npm run generate /env /acks"));
-    console.log(styleText("gray", "  npm run generate --env --i18n --verbose"));
-    console.log(styleText("gray", "  npm run generate -e -g -v"));
+    console.log(styleText("gray", "  npm run generate /env /artifacts"));
+    console.log(styleText("gray", "  npm run generate --env --i18n --artifacts --verbose"));
+    console.log(styleText("gray", "  npm run generate -e -g -a -v"));
     if (wantsHelp) process.exit(0);
   }
 
-  const options: CommandLineOptions = {verbose, generateGql, generateI18n, generateAcks, generateEnv, generateArtifacts};
   try {
     const code = await main(options);
     process.exit(code);

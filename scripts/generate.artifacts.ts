@@ -839,15 +839,43 @@ export class NaceTaxonomyClassificationGenerator extends TaxonomyClassificationG
   }
 }
 
+/** Optional roots used by unified artifact generation. */
+export interface ArtifactGenerationOptions {
+  readonly outputRoots?: readonly string[];
+  readonly workspaceRoot?: string;
+}
+
 /**
- * Runs taxonomy artifact generation and reports the written paths.
+ * Runs every taxonomy and license generator.
  *
- * @param outputRoots - Output roots; defaults to the API and website runtime directories.
+ * @param options - Optional output roots for targeted tests and alternate workspaces.
+ * @returns Every generated output path.
+ */
+export async function generateArtifacts(
+  options: Readonly<ArtifactGenerationOptions> = {},
+): Promise<readonly string[]> {
+  const outputRoots = options.outputRoots ?? OUTPUT_ROOTS;
+  const workspaceRoot = options.workspaceRoot ?? process.cwd();
+  const generators = [
+    new Gs1GpcTaxonomyClassificationGenerator(outputRoots),
+    new EcoicopTaxonomyClassificationGenerator(outputRoots),
+    new NaceTaxonomyClassificationGenerator(outputRoots),
+    new FrontendLicenseGenerator(workspaceRoot),
+    new BackendLicenseGenerator(),
+  ] as const;
+
+  return (await Promise.all(generators.map((generator) => generator.generate()))).flat();
+}
+
+/**
+ * Runs unified artifact generation and reports the written paths.
+ *
+ * @param options - Optional output roots for targeted tests and alternate workspaces.
  * @returns Process exit code; zero on success.
  */
-export async function main(outputRoots: readonly string[] = OUTPUT_ROOTS): Promise<number> {
-  const outputs = await new Gs1GpcTaxonomyClassificationGenerator(outputRoots).generate();
-  console.info(`Generated ${outputs.length} taxonomy artifact file(s).`);
+export async function main(options: Readonly<ArtifactGenerationOptions> = {}): Promise<number> {
+  const outputs = await generateArtifacts(options);
+  console.info(`Generated ${outputs.length} artifact file(s).`);
   for (const output of outputs) console.info(`  - ${output}`);
   return 0;
 }

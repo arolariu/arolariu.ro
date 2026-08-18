@@ -358,10 +358,10 @@ export async function main(): Promise<number> {
     return 1;
   }
 
-  console.log(styleText("bold", "\n🏷️ Generating taxonomy artifacts..."));
+  console.log(styleText("bold", "\n🏷️ Generating taxonomy and license artifacts..."));
   try {
     await import("./generate.artifacts.ts").then((module) => module.main());
-    console.log(styleText("green", "  ✓ Taxonomy artifacts generated"));
+    console.log(styleText("green", "  ✓ Taxonomy and license artifacts generated"));
   } catch (error: unknown) {
     console.log(styleText("red", `  ✗ Taxonomy artifact generation failed: ${error instanceof Error ? error.message : String(error)}`));
     return 1;
