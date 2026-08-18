@@ -17,8 +17,16 @@ import type {
   TaxonomyArtifactNode,
 } from "./types";
 
-/** Base contract and shared invariants for taxonomy artifact generators. */
+/**
+ * Base contract and shared invariants for taxonomy artifact generators.
+ *
+ * @remarks
+ * Concrete generators own source-specific fetching and parsing. This base owns
+ * runtime guards, normalization, hierarchy reconstruction, artifact validation,
+ * mirrored serialization, and lifecycle logging dependencies.
+ */
 export abstract class TaxonomyClassificationGenerator {
+  /** Default API and website directories that receive byte-identical artifacts. */
   protected static readonly defaultOutputRoots = [
     resolve("sites/api.arolariu.ro/src/Invoices/Resources/Taxonomies"),
     resolve("sites/arolariu.ro/src/data/taxonomies"),
@@ -30,6 +38,12 @@ export abstract class TaxonomyClassificationGenerator {
   /** Logger used for lifecycle, diagnostic, failure, and completion output. */
   protected readonly logger: MonorepositoryLogger;
 
+  /**
+   * Creates a taxonomy generator.
+   *
+   * @param outputRoots - Runtime directories that receive mirrored artifacts.
+   * @param logger - Logger used for lifecycle and failure output.
+   */
   protected constructor(
     outputRoots: readonly string[] = TaxonomyClassificationGenerator.defaultOutputRoots,
     logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::artifacts"),
@@ -38,18 +52,46 @@ export abstract class TaxonomyClassificationGenerator {
     this.logger = logger;
   }
 
-  /** Generates one taxonomy and returns every written path. */
+  /**
+   * Generates one taxonomy.
+   *
+   * @returns Every artifact path written by the generator.
+   * @throws {Error} When fetching, parsing, validation, or writing fails.
+   */
   public abstract generate(): Promise<readonly string[]>;
 
+  /**
+   * Determines whether an unknown value is a plain record.
+   *
+   * @param value - Value to inspect.
+   * @returns `true` when the value is a non-array object.
+   */
   protected isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
     return typeof value === "object" && value !== null && !Array.isArray(value);
   }
 
+  /**
+   * Requires an unknown value to be a plain record.
+   *
+   * @param value - Value to validate.
+   * @param context - Human-readable source location used in errors.
+   * @returns Validated record.
+   * @throws {TypeError} When the value is not a record.
+   */
   protected requireRecord(value: unknown, context: string): Readonly<Record<string, unknown>> {
     if (!this.isRecord(value)) throw new TypeError(`${context} must be an object.`);
     return value;
   }
 
+  /**
+   * Reads a required non-empty string field.
+   *
+   * @param record - Source record.
+   * @param key - Field name.
+   * @param context - Human-readable source location used in errors.
+   * @returns Validated string.
+   * @throws {TypeError} When the field is missing, empty, or not a string.
+   */
   protected requireString(
     record: Readonly<Record<string, unknown>>,
     key: string,
@@ -63,6 +105,15 @@ export abstract class TaxonomyClassificationGenerator {
     return value;
   }
 
+  /**
+   * Reads an optional nullable string field.
+   *
+   * @param record - Source record.
+   * @param key - Field name.
+   * @param context - Human-readable source location used in errors.
+   * @returns String value or `null` when absent.
+   * @throws {TypeError} When a present value is not a string.
+   */
   protected optionalString(
     record: Readonly<Record<string, unknown>>,
     key: string,
@@ -76,6 +127,15 @@ export abstract class TaxonomyClassificationGenerator {
     return value;
   }
 
+  /**
+   * Reads a required finite numeric field.
+   *
+   * @param record - Source record.
+   * @param key - Field name.
+   * @param context - Human-readable source location used in errors.
+   * @returns Validated number.
+   * @throws {TypeError} When the field is not a finite number.
+   */
   protected requireNumber(
     record: Readonly<Record<string, unknown>>,
     key: string,
@@ -88,6 +148,15 @@ export abstract class TaxonomyClassificationGenerator {
     return value;
   }
 
+  /**
+   * Reads a required boolean field.
+   *
+   * @param record - Source record.
+   * @param key - Field name.
+   * @param context - Human-readable source location used in errors.
+   * @returns Validated boolean.
+   * @throws {TypeError} When the field is not boolean.
+   */
   protected requireBoolean(
     record: Readonly<Record<string, unknown>>,
     key: string,
@@ -100,6 +169,12 @@ export abstract class TaxonomyClassificationGenerator {
     return value;
   }
 
+  /**
+   * Normalizes source text for accent-insensitive taxonomy search.
+   *
+   * @param parts - Source fragments to combine.
+   * @returns Lowercase normalized text with stable whitespace.
+   */
   protected normalizeText(...parts: readonly (string | null | undefined)[]): string {
     return parts
       .filter((part): part is string => typeof part === "string" && part.trim().length > 0)
@@ -112,6 +187,14 @@ export abstract class TaxonomyClassificationGenerator {
       .replace(/\s+/gu, " ");
   }
 
+  /**
+   * Rebuilds the root-to-node hierarchy for one provisional node.
+   *
+   * @param nodes - Complete provisional taxonomy node collection.
+   * @param code - Selected node code.
+   * @returns Selected node with complete hierarchy and normalized search text.
+   * @throws {Error} When the code is absent, a parent is missing, or a cycle exists.
+   */
   protected buildHierarchy(
     nodes: readonly TaxonomyArtifactNode[],
     code: string,
@@ -154,6 +237,14 @@ export abstract class TaxonomyClassificationGenerator {
     };
   }
 
+  /**
+   * Validates, serializes, and writes an artifact to every runtime root.
+   *
+   * @param fileName - Generated artifact file name.
+   * @param artifact - Artifact contract to validate and serialize.
+   * @returns Absolute paths written in output-root order.
+   * @throws {Error} When validation, writing, or read-back comparison fails.
+   */
   protected async writeArtifact(
     fileName: string,
     artifact: Readonly<TaxonomyArtifact>,
@@ -179,6 +270,12 @@ export abstract class TaxonomyClassificationGenerator {
     return paths;
   }
 
+  /**
+   * Enforces structural invariants before artifact serialization.
+   *
+   * @param artifact - Artifact to validate.
+   * @throws {Error} When nodes are empty, duplicated, orphaned, or malformed.
+   */
   private validateArtifact(artifact: Readonly<TaxonomyArtifact>): void {
     if (artifact.nodes.length === 0) {
       throw new Error(`${artifact.system} artifact contains no taxonomy nodes.`);
@@ -212,13 +309,35 @@ export abstract class TaxonomyClassificationGenerator {
   }
 }
 
-/** Generates the official GS1 GPC taxonomy artifact. */
+/**
+ * Generates the official GS1 Global Product Classification taxonomy artifact.
+ *
+ * @remarks
+ * Downloads the pinned archive, delegates extraction to the host operating
+ * system, validates the English source document, flattens active levels 1-4,
+ * and writes mirrored API and website artifacts.
+ *
+ * @example
+ * ```typescript
+ * const generator = new Gs1GpcTaxonomyClassificationGenerator();
+ * const outputs = await generator.generate();
+ * ```
+ */
 export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificationGenerator {
+  /** Pinned GS1 release endpoint. */
   static readonly #sourceUrl = "https://ref.gs1.org/standards/gpc/2026-05/";
+
+  /** Version encoded in the generated artifact. */
   static readonly #version = "2026-05";
+
+  /** File name written to every runtime output root. */
   static readonly #fileName = "gpc-2026-05.min.json";
+
+  /** Required GS1 attribution stored with the generated artifact. */
   static readonly #attribution =
     "GS1 Global Product Classification (GPC), May 2026 release.";
+
+  /** Supported GPC source levels and their normalized names. */
   static readonly #levels: Readonly<Record<number, string>> = {
     1: "segment",
     2: "family",
@@ -226,7 +345,12 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
     4: "brick",
   };
 
-  /** Creates the generator. */
+  /**
+   * Creates the GPC generator.
+   *
+   * @param outputRoots - Optional mirrored artifact output directories.
+   * @param logger - Optional lifecycle logger.
+   */
   public constructor(
     outputRoots?: readonly string[],
     logger?: MonorepositoryLogger,
@@ -234,7 +358,12 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
     super(outputRoots, logger);
   }
 
-  /** Downloads, validates, normalizes, and writes the GPC artifact. */
+  /**
+   * Downloads, validates, normalizes, and writes the GPC artifact.
+   *
+   * @returns Every mirrored GPC artifact path.
+   * @throws {Error} When download, extraction, parsing, validation, or writing fails.
+   */
   public override async generate(): Promise<readonly string[]> {
     this.logger.info("[GPC] Starting generation.");
     try {
@@ -274,6 +403,17 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
     }
   }
 
+  /**
+   * Parses and flattens the untrusted GPC source document.
+   *
+   * @remarks
+   * Inactive nodes and their descendants are skipped. Unsupported levels are
+   * omitted while their active descendants continue through the traversal.
+   *
+   * @param value - Parsed untrusted source JSON.
+   * @returns Active normalized GPC nodes in source order.
+   * @throws {TypeError} When required source fields have invalid shapes.
+   */
   private parseDocument(value: unknown): readonly TaxonomyArtifactNode[] {
     const document = this.requireRecord(value, "GPC document");
     const languageCode = this.requireString(document, "LanguageCode", "GPC document");
@@ -334,16 +474,43 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
   }
 }
 
-/** Generates the official ECOICOP v2 taxonomy artifact. */
+/**
+ * Generates the official European Classification of Individual Consumption artifact.
+ *
+ * @remarks
+ * Reads paginated English SKOS concepts from the Publications Office SPARQL
+ * endpoint, validates bindings, rebuilds parent hierarchies, and writes mirrored
+ * ECOICOP v2 artifacts.
+ *
+ * @example
+ * ```typescript
+ * const generator = new EcoicopTaxonomyClassificationGenerator();
+ * await generator.generate();
+ * ```
+ */
 export class EcoicopTaxonomyClassificationGenerator extends TaxonomyClassificationGenerator {
+  /** Publications Office SPARQL endpoint. */
   static readonly #endpoint = "https://publications.europa.eu/webapi/rdf/sparql";
+
+  /** ECOICOP v2 SKOS scheme identifier. */
   static readonly #scheme = "http://data.europa.eu/ed1/ecoicop2/ecoicop2";
+
+  /** Maximum SPARQL bindings requested per page. */
   static readonly #pageSize = 5_000;
+
+  /** File name written to every runtime output root. */
   static readonly #fileName = "ecoicop-v2.min.json";
+
+  /** Required European Union source attribution. */
   static readonly #attribution =
     "European Union, Publications Office of the European Union, reused under the European Commission reuse policy.";
 
-  /** Creates the generator. */
+  /**
+   * Creates the ECOICOP generator.
+   *
+   * @param outputRoots - Optional mirrored artifact output directories.
+   * @param logger - Optional lifecycle logger.
+   */
   public constructor(
     outputRoots?: readonly string[],
     logger?: MonorepositoryLogger,
@@ -351,7 +518,12 @@ export class EcoicopTaxonomyClassificationGenerator extends TaxonomyClassificati
     super(outputRoots, logger);
   }
 
-  /** Downloads, validates, normalizes, and writes the ECOICOP artifact. */
+  /**
+   * Downloads, validates, normalizes, and writes the ECOICOP artifact.
+   *
+   * @returns Every mirrored ECOICOP artifact path.
+   * @throws {Error} When fetching, parsing, hierarchy building, or writing fails.
+   */
   public override async generate(): Promise<readonly string[]> {
     this.logger.info("[ECOICOP] Starting generation.");
     try {
@@ -382,6 +554,12 @@ export class EcoicopTaxonomyClassificationGenerator extends TaxonomyClassificati
     }
   }
 
+  /**
+   * Fetches every paginated ECOICOP binding.
+   *
+   * @returns Validated source bindings in endpoint order.
+   * @throws {Error} When an HTTP request or response validation fails.
+   */
   private async fetchBindings(): Promise<
     readonly Readonly<{
       concept: string;
@@ -422,6 +600,12 @@ export class EcoicopTaxonomyClassificationGenerator extends TaxonomyClassificati
     return bindings;
   }
 
+  /**
+   * Builds one paginated ECOICOP SPARQL query.
+   *
+   * @param offset - Zero-based result offset.
+   * @returns SPARQL query text.
+   */
   private createQuery(offset: number): string {
     return `
 PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
@@ -437,6 +621,13 @@ LIMIT ${EcoicopTaxonomyClassificationGenerator.#pageSize}
 OFFSET ${offset}`;
   }
 
+  /**
+   * Parses one untrusted SPARQL response.
+   *
+   * @param value - Parsed response JSON.
+   * @returns Validated simplified bindings.
+   * @throws {TypeError} When response or binding shapes are invalid.
+   */
   private parseResponse(
     value: unknown,
   ): readonly Readonly<{
@@ -463,6 +654,15 @@ OFFSET ${offset}`;
     });
   }
 
+  /**
+   * Reads one required or optional SPARQL binding value.
+   *
+   * @param binding - Raw binding record.
+   * @param key - Binding key.
+   * @param required - Whether a missing binding is invalid.
+   * @returns Binding string or `null` for an absent optional binding.
+   * @throws {TypeError} When a present binding has no non-empty string value.
+   */
   private readBindingValue(
     binding: Readonly<Record<string, unknown>>,
     key: string,
@@ -480,6 +680,13 @@ OFFSET ${offset}`;
     return value;
   }
 
+  /**
+   * Converts ECOICOP source bindings into normalized taxonomy nodes.
+   *
+   * @param bindings - Validated source bindings.
+   * @returns Deterministically sorted nodes with complete hierarchies.
+   * @throws {Error} When a broader concept cannot be resolved.
+   */
   private normalizeBindings(
     bindings: readonly Readonly<{
       concept: string;
@@ -523,6 +730,13 @@ OFFSET ${offset}`;
       );
   }
 
+  /**
+   * Removes a notation prefix from an official source label.
+   *
+   * @param label - Published label.
+   * @param notation - Published taxonomy notation.
+   * @returns Clean official label.
+   */
   private stripCodePrefix(label: string, notation: string): string {
     const trimmed = label.trim();
     if (!trimmed.startsWith(notation)) return trimmed;
@@ -534,16 +748,43 @@ OFFSET ${offset}`;
   }
 }
 
-/** Generates the official NACE 2.1 taxonomy artifact. */
+/**
+ * Generates the official NACE 2.1 economic-activity taxonomy artifact.
+ *
+ * @remarks
+ * Reads paginated English SKOS concepts from the Publications Office SPARQL
+ * endpoint, validates bindings, maps NACE levels, rebuilds hierarchies, and
+ * writes mirrored runtime artifacts.
+ *
+ * @example
+ * ```typescript
+ * const generator = new NaceTaxonomyClassificationGenerator();
+ * await generator.generate();
+ * ```
+ */
 export class NaceTaxonomyClassificationGenerator extends TaxonomyClassificationGenerator {
+  /** Publications Office SPARQL endpoint. */
   static readonly #endpoint = "https://publications.europa.eu/webapi/rdf/sparql";
+
+  /** NACE 2.1 SKOS scheme identifier. */
   static readonly #scheme = "http://data.europa.eu/ux2/nace2.1/nace2.1";
+
+  /** Maximum SPARQL bindings requested per page. */
   static readonly #pageSize = 5_000;
+
+  /** File name written to every runtime output root. */
   static readonly #fileName = "nace-2.1.min.json";
+
+  /** Required European Union source attribution. */
   static readonly #attribution =
     "European Union, Publications Office of the European Union, reused under the European Commission reuse policy.";
 
-  /** Creates the generator. */
+  /**
+   * Creates the NACE generator.
+   *
+   * @param outputRoots - Optional mirrored artifact output directories.
+   * @param logger - Optional lifecycle logger.
+   */
   public constructor(
     outputRoots?: readonly string[],
     logger?: MonorepositoryLogger,
@@ -551,7 +792,12 @@ export class NaceTaxonomyClassificationGenerator extends TaxonomyClassificationG
     super(outputRoots, logger);
   }
 
-  /** Downloads, validates, normalizes, and writes the NACE artifact. */
+  /**
+   * Downloads, validates, normalizes, and writes the NACE artifact.
+   *
+   * @returns Every mirrored NACE artifact path.
+   * @throws {Error} When fetching, parsing, hierarchy building, or writing fails.
+   */
   public override async generate(): Promise<readonly string[]> {
     this.logger.info("[NACE] Starting generation.");
     try {
@@ -580,6 +826,12 @@ export class NaceTaxonomyClassificationGenerator extends TaxonomyClassificationG
     }
   }
 
+  /**
+   * Fetches every paginated NACE binding.
+   *
+   * @returns Validated source bindings in endpoint order.
+   * @throws {Error} When an HTTP request or response validation fails.
+   */
   private async fetchBindings(): Promise<
     readonly Readonly<{
       concept: string;
@@ -616,6 +868,12 @@ export class NaceTaxonomyClassificationGenerator extends TaxonomyClassificationG
     return bindings;
   }
 
+  /**
+   * Builds one paginated NACE SPARQL query.
+   *
+   * @param offset - Zero-based result offset.
+   * @returns SPARQL query text.
+   */
   private createQuery(offset: number): string {
     return `
 PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
@@ -631,6 +889,13 @@ LIMIT ${NaceTaxonomyClassificationGenerator.#pageSize}
 OFFSET ${offset}`;
   }
 
+  /**
+   * Parses one untrusted SPARQL response.
+   *
+   * @param value - Parsed response JSON.
+   * @returns Validated simplified bindings.
+   * @throws {TypeError} When response or binding shapes are invalid.
+   */
   private parseResponse(
     value: unknown,
   ): readonly Readonly<{
@@ -657,6 +922,15 @@ OFFSET ${offset}`;
     });
   }
 
+  /**
+   * Reads one required or optional SPARQL binding value.
+   *
+   * @param binding - Raw binding record.
+   * @param key - Binding key.
+   * @param required - Whether a missing binding is invalid.
+   * @returns Binding string or `null` for an absent optional binding.
+   * @throws {TypeError} When a present binding has no non-empty string value.
+   */
   private readBindingValue(
     binding: Readonly<Record<string, unknown>>,
     key: string,
@@ -674,6 +948,13 @@ OFFSET ${offset}`;
     return value;
   }
 
+  /**
+   * Converts NACE source bindings into normalized taxonomy nodes.
+   *
+   * @param bindings - Validated source bindings.
+   * @returns Deterministically sorted nodes with complete hierarchies.
+   * @throws {Error} When a broader concept cannot be resolved.
+   */
   private normalizeBindings(
     bindings: readonly Readonly<{
       concept: string;
@@ -714,6 +995,13 @@ OFFSET ${offset}`;
       );
   }
 
+  /**
+   * Removes a notation prefix from an official source label.
+   *
+   * @param label - Published label.
+   * @param notation - Published taxonomy notation.
+   * @returns Clean official label.
+   */
   private stripCodePrefix(label: string, notation: string): string {
     const trimmed = label.trim();
     if (!trimmed.startsWith(notation)) return trimmed;
@@ -724,6 +1012,12 @@ OFFSET ${offset}`;
     return withoutNotation.length > 0 ? withoutNotation : trimmed;
   }
 
+  /**
+   * Maps a NACE code pattern to its hierarchy level.
+   *
+   * @param code - NACE code.
+   * @returns Section, division, group, class, or fallback code level.
+   */
   private getLevel(code: string): string {
     if (/^[A-Z]$/u.test(code)) return "section";
     if (/^\d{2}$/u.test(code)) return "division";
@@ -733,24 +1027,56 @@ OFFSET ${offset}`;
   }
 }
 
-/** Base contract and shared helpers for license generators. */
+/**
+ * Base contract and runtime guards for license generators.
+ *
+ * @remarks
+ * Concrete generators own discovery and output behavior. This base centralizes
+ * manifest parsing, primitive field validation, dependency-map validation, and
+ * lifecycle logging dependencies.
+ */
 export abstract class LicenseGenerator {
   /** Logger used for lifecycle, warning, failure, and completion output. */
   protected readonly logger: MonorepositoryLogger;
 
+  /**
+   * Creates a license generator.
+   *
+   * @param logger - Logger used for lifecycle, warning, and failure output.
+   */
   protected constructor(
     logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::artifacts"),
   ) {
     this.logger = logger;
   }
 
-  /** Generates one license document family and returns every written path. */
+  /**
+   * Generates one license document family.
+   *
+   * @returns Every license artifact path written by the generator.
+   * @throws {Error} When discovery, parsing, normalization, or writing fails.
+   */
   public abstract generate(): Promise<readonly string[]>;
 
+  /**
+   * Determines whether an unknown value is a plain record.
+   *
+   * @param value - Value to inspect.
+   * @returns `true` when the value is a non-array object.
+   */
   protected isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
     return typeof value === "object" && value !== null && !Array.isArray(value);
   }
 
+  /**
+   * Parses manifest JSON and requires a record root.
+   *
+   * @param contents - Manifest JSON text.
+   * @param manifestPath - File path used in validation errors.
+   * @returns Parsed manifest record.
+   * @throws {SyntaxError} When JSON parsing fails.
+   * @throws {TypeError} When the parsed root is not a record.
+   */
   protected readJsonRecord(
     contents: string,
     manifestPath: string,
@@ -762,6 +1088,15 @@ export abstract class LicenseGenerator {
     return parsed;
   }
 
+  /**
+   * Reads an optional string manifest field.
+   *
+   * @param manifest - Parsed manifest record.
+   * @param key - Field name.
+   * @param manifestPath - File path used in validation errors.
+   * @returns Field value or `undefined` when absent.
+   * @throws {TypeError} When a present value is not a string.
+   */
   protected readOptionalString(
     manifest: Readonly<Record<string, unknown>>,
     key: string,
@@ -777,6 +1112,15 @@ export abstract class LicenseGenerator {
     return value;
   }
 
+  /**
+   * Reads and validates a dependency-map field.
+   *
+   * @param manifest - Parsed manifest record.
+   * @param key - Dependency field name.
+   * @param manifestPath - File path used in validation errors.
+   * @returns Validated package-to-version map.
+   * @throws {TypeError} When the field or a version has an invalid type.
+   */
   protected readDependencyMap(
     manifest: Readonly<Record<string, unknown>>,
     key: string,
@@ -803,12 +1147,30 @@ export abstract class LicenseGenerator {
   }
 }
 
-/** Generates the frontend third-party license document. */
+/**
+ * Generates the frontend third-party license document.
+ *
+ * @remarks
+ * Discovers direct installed packages declared by the frontend manifest,
+ * normalizes their metadata, groups them by dependency type, sorts them
+ * deterministically, and writes `licenses.json`.
+ *
+ * @example
+ * ```typescript
+ * const generator = new FrontendLicenseGenerator();
+ * await generator.generate();
+ * ```
+ */
 export class FrontendLicenseGenerator extends LicenseGenerator {
   /** Repository root containing the frontend manifest and installed packages. */
   private readonly workspaceRoot: string;
 
-  /** Creates the generator. */
+  /**
+   * Creates the frontend license generator.
+   *
+   * @param workspaceRoot - Repository root containing the frontend and node_modules.
+   * @param logger - Optional lifecycle logger.
+   */
   public constructor(
     workspaceRoot: string = process.cwd(),
     logger?: MonorepositoryLogger,
@@ -817,7 +1179,12 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
     this.workspaceRoot = workspaceRoot;
   }
 
-  /** Reads direct frontend dependencies and writes licenses.json. */
+  /**
+   * Reads direct frontend dependencies and writes `licenses.json`.
+   *
+   * @returns The generated frontend license-document path.
+   * @throws {Error} When discovery, manifest validation, or writing fails.
+   */
   public override async generate(): Promise<readonly string[]> {
     this.logger.info("[Frontend licenses] Starting generation.");
     try {
@@ -882,6 +1249,12 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
     }
   }
 
+  /**
+   * Reads declared frontend dependency names by dependency type.
+   *
+   * @returns Map of production, development, and peer dependency names.
+   * @throws {Error} When the frontend manifest cannot be read or validated.
+   */
   private async readDeclaredDependencies(): Promise<
     ReadonlyMap<NodePackageDependencyType, readonly string[]>
   > {
@@ -905,6 +1278,11 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
     ]);
   }
 
+  /**
+   * Finds direct installed package manifests, including scoped packages.
+   *
+   * @returns Absolute direct package-manifest paths.
+   */
   private async findInstalledManifestPaths(): Promise<readonly string[]> {
     const nodeModulesRoot = join(this.workspaceRoot, "node_modules");
     const paths: string[] = [];
@@ -917,6 +1295,14 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
     return paths;
   }
 
+  /**
+   * Reads and normalizes one installed package manifest.
+   *
+   * @param manifestPath - Absolute installed package-manifest path.
+   * @param declaredDependencies - Frontend dependency names grouped by type.
+   * @returns Classified package information, or `null` for undeclared packages.
+   * @throws {Error} When package metadata has an invalid shape.
+   */
   private async readInstalledPackage(
     manifestPath: string,
     declaredDependencies: ReadonlyMap<NodePackageDependencyType, readonly string[]>,
@@ -999,6 +1385,13 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
     };
   }
 
+  /**
+   * Resolves the declared dependency group for one package.
+   *
+   * @param packageName - Installed package name.
+   * @param declaredDependencies - Frontend dependency names grouped by type.
+   * @returns Dependency type, or `null` when the package is not directly declared.
+   */
   private resolveDependencyType(
     packageName: string,
     declaredDependencies: ReadonlyMap<NodePackageDependencyType, readonly string[]>,
@@ -1012,14 +1405,35 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
   }
 }
 
-/** Reserved backend license generator; backend discovery is intentionally deferred. */
+/**
+ * Represents the reserved backend license-generation surface.
+ *
+ * @remarks
+ * Backend dependency discovery is intentionally deferred. The class emits a
+ * warning and returns no outputs so the unified generator contract remains
+ * stable.
+ *
+ * @example
+ * ```typescript
+ * const generator = new BackendLicenseGenerator();
+ * await generator.generate(); // []
+ * ```
+ */
 export class BackendLicenseGenerator extends LicenseGenerator {
-  /** Creates the deferred backend license generator. */
+  /**
+   * Creates the deferred backend license generator.
+   *
+   * @param logger - Optional lifecycle logger.
+   */
   public constructor(logger?: MonorepositoryLogger) {
     super(logger);
   }
 
-  /** Returns no outputs until backend license discovery is defined. */
+  /**
+   * Reports deferred behavior and returns no outputs.
+   *
+   * @returns An empty output-path collection.
+   */
   public override async generate(): Promise<readonly string[]> {
     this.logger.warn(
       "[Backend licenses] Generation is intentionally deferred; no artifact was written.",
@@ -1028,11 +1442,26 @@ export class BackendLicenseGenerator extends LicenseGenerator {
   }
 }
 
-/** Extracts ZIP entries by delegating to the host operating system. */
+/**
+ * Extracts ZIP entries by delegating to the host operating system.
+ *
+ * @remarks
+ * Windows uses `tar.exe`; Linux and macOS use `unzip`. Every extraction runs
+ * inside a unique temporary directory that is removed in a `finally` block.
+ */
 class SystemArchiveExtractor {
+  /** Promisified Node.js child-process boundary used for archive extraction. */
   static readonly #executeFile = promisify(execFile);
 
-  /** Extracts one archive entry selected by suffix. */
+  /**
+   * Extracts one archive entry selected by suffix.
+   *
+   * @param archive - Complete ZIP archive bytes.
+   * @param suffix - File-name suffix identifying the desired entry.
+   * @returns Extracted entry bytes.
+   * @throws {Error} When the platform tool is missing, extraction fails, or the
+   * matching entry is missing or ambiguous.
+   */
   public async extractEntry(
     archive: Uint8Array,
     suffix: string,
@@ -1086,6 +1515,13 @@ class SystemArchiveExtractor {
     }
   }
 
+  /**
+   * Builds the platform-specific extraction command.
+   *
+   * @param archivePath - Temporary ZIP path.
+   * @param outputDirectory - Temporary extraction directory.
+   * @returns Executable and argument list.
+   */
   private createCommand(
     archivePath: string,
     outputDirectory: string,
@@ -1095,6 +1531,12 @@ class SystemArchiveExtractor {
       : {command: "unzip", args: ["-qq", archivePath, "-d", outputDirectory]};
   }
 
+  /**
+   * Determines whether an unknown error exposes a string error code.
+   *
+   * @param error - Unknown caught value.
+   * @returns `true` when a string `code` property is available.
+   */
   private hasErrorCode(error: unknown): error is Error & Readonly<{code: string}> {
     return (
       error instanceof Error &&
@@ -1107,8 +1549,13 @@ class SystemArchiveExtractor {
 /**
  * Runs every taxonomy and license generator.
  *
+ * @remarks
+ * The five concrete generators run concurrently and share one logger so
+ * interleaved messages retain a stable prefix and generator label.
+ *
  * @param options - Optional roots used by targeted tests and alternate workspaces.
  * @returns Process exit code.
+ * @throws {Error} When any generator fails.
  */
 export async function main(
   options: Readonly<{

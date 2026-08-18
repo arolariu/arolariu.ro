@@ -27,8 +27,15 @@ import {
 import {MonorepositoryConsoleLogger} from "./common/logger.ts";
 import {parseCommandLineOptions} from "./generate.ts";
 
+/**
+ * Owns external-boundary mocks, fixtures, temporary paths, and output readers
+ * used by artifact-generator tests.
+ */
 class ArtifactGeneratorTestHarness {
+  /** Temporary directories registered for cleanup after the current test. */
   readonly #temporaryDirectories: string[] = [];
+
+  /** ANSI-normalized console messages captured by semantic console level. */
   readonly #consoleMessages: Record<"debug" | "info" | "warn" | "error", string[]> = {
     debug: [],
     info: [],
@@ -36,6 +43,7 @@ class ArtifactGeneratorTestHarness {
     error: [],
   };
 
+  /** Valid English GPC source document used by successful generation tests. */
   public readonly gpcDocument = {
     LanguageCode: "EN",
     DateUtc: "2026-05-01",
@@ -62,22 +70,47 @@ class ArtifactGeneratorTestHarness {
     ],
   } as const;
 
+  /**
+   * Creates and registers one temporary directory.
+   *
+   * @param prefix - Temporary-directory prefix.
+   * @returns Absolute temporary-directory path.
+   */
   public async createTemporaryDirectory(prefix: string): Promise<string> {
     const directory = await mkdtemp(join(tmpdir(), prefix));
     this.#temporaryDirectories.push(directory);
     return directory;
   }
 
+  /**
+   * Creates mirrored API and website output roots.
+   *
+   * @param prefix - Temporary root prefix.
+   * @returns API and website output directories.
+   */
   public async createOutputRoots(prefix: string): Promise<readonly string[]> {
     const root = await this.createTemporaryDirectory(prefix);
     return [join(root, "api"), join(root, "web")];
   }
 
+  /**
+   * Writes one JSON fixture, creating parent directories first.
+   *
+   * @param path - Fixture file path.
+   * @param value - JSON-serializable fixture value.
+   */
   public async writeJson(path: string, value: unknown): Promise<void> {
     await mkdir(dirname(path), {recursive: true});
     await writeFile(path, JSON.stringify(value), "utf8");
   }
 
+  /**
+   * Reads an array property from a generated JSON document.
+   *
+   * @param contents - Generated JSON text.
+   * @param key - Array property name.
+   * @returns Validated array value.
+   */
   public readObjectArray(contents: string, key: string): readonly unknown[] {
     const parsed: unknown = JSON.parse(contents);
     if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
@@ -91,6 +124,11 @@ class ArtifactGeneratorTestHarness {
     return value;
   }
 
+  /**
+   * Mocks OS archive extraction by writing an extracted GPC fixture.
+   *
+   * @param document - GPC document written into the mocked extraction directory.
+   */
   public mockArchiveExtraction(document: unknown = this.gpcDocument): void {
     vi.mocked(execFile).mockImplementation((_file, args, callback) => {
       const outputIndex = args?.findIndex((value) => value === "-C" || value === "-d") ?? -1;
@@ -111,10 +149,17 @@ class ArtifactGeneratorTestHarness {
     });
   }
 
+  /**
+   * Creates a SPARQL JSON response.
+   *
+   * @param bindings - Raw SPARQL bindings.
+   * @returns JSON response containing the bindings.
+   */
   public createSparqlResponse(bindings: readonly unknown[]): Response {
     return Response.json({results: {bindings}});
   }
 
+  /** Stubs global fetch for successful unified GPC, ECOICOP, and NACE generation. */
   public stubUnifiedFetch(): void {
     vi.stubGlobal(
       "fetch",
@@ -137,6 +182,11 @@ class ArtifactGeneratorTestHarness {
     );
   }
 
+  /**
+   * Stubs the GPC request with one specific failure.
+   *
+   * @param error - Error thrown by the GPC fetch boundary.
+   */
   public stubGpcFailure(error: Error): void {
     vi.stubGlobal(
       "fetch",
@@ -147,6 +197,7 @@ class ArtifactGeneratorTestHarness {
     );
   }
 
+  /** Captures and suppresses debug, info, warning, and error console output. */
   public captureConsole(): void {
     for (const level of ["debug", "info", "warn", "error"] as const) {
       vi.spyOn(console, level).mockImplementation((...args: readonly unknown[]) => {
@@ -157,6 +208,12 @@ class ArtifactGeneratorTestHarness {
     }
   }
 
+  /**
+   * Asserts that one captured console level contains a semantic message.
+   *
+   * @param level - Captured console level.
+   * @param expected - Stable message fragment.
+   */
   public expectMessage(
     level: "debug" | "info" | "warn" | "error",
     expected: string,
@@ -166,6 +223,11 @@ class ArtifactGeneratorTestHarness {
     );
   }
 
+  /**
+   * Creates a complete temporary environment for `main`.
+   *
+   * @returns Output-root and workspace options accepted by `main`.
+   */
   public async createUnifiedMainOptions(): Promise<
     Readonly<{outputRoots: readonly string[]; workspaceRoot: string}>
   > {
@@ -177,6 +239,7 @@ class ArtifactGeneratorTestHarness {
     return {outputRoots, workspaceRoot};
   }
 
+  /** Restores mocks and removes every registered temporary directory. */
   public async cleanup(): Promise<void> {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
