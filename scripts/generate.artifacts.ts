@@ -11,10 +11,11 @@
 
 import {execFile} from "node:child_process";
 import {glob, mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
-import {tmpdir} from "node:os";
-import {join, resolve} from "node:path";
+import {EOL, tmpdir} from "node:os";
+import {basename, dirname, join, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {promisify} from "node:util";
+import type {NodePackageDependencyType, NodePackageInformation} from "./types";
 
 const executeFile = promisify(execFile);
 
@@ -105,6 +106,177 @@ export class BackendLicenseGenerator extends LicenseGenerator {
   /** Returns no outputs until backend license discovery is defined. */
   public override async generate(): Promise<readonly string[]> {
     return [];
+  }
+}
+
+function readJsonRecord(contents: string, manifestPath: string): Readonly<Record<string, unknown>> {
+  const parsed: unknown = JSON.parse(contents);
+  if (!isRecord(parsed)) throw new TypeError(`Package manifest '${manifestPath}' must be an object.`);
+  return parsed;
+}
+
+function readOptionalManifestString(
+  manifest: Readonly<Record<string, unknown>>,
+  key: string,
+  manifestPath: string,
+): string | undefined {
+  const value = manifest[key];
+  if (value === undefined) return undefined;
+  if (typeof value !== "string") {
+    throw new TypeError(`Package manifest '${manifestPath}' field '${key}' must be a string.`);
+  }
+  return value;
+}
+
+function readDependencyMap(
+  manifest: Readonly<Record<string, unknown>>,
+  key: string,
+  manifestPath: string,
+): Readonly<Record<string, string>> {
+  const value = manifest[key];
+  if (value === undefined) return {};
+  if (!isRecord(value)) {
+    throw new TypeError(`Package manifest '${manifestPath}' field '${key}' must be an object.`);
+  }
+
+  const dependencies: Record<string, string> = {};
+  for (const [name, version] of Object.entries(value)) {
+    if (typeof version !== "string") {
+      throw new TypeError(`Package manifest '${manifestPath}' dependency '${name}' must have a string version.`);
+    }
+    dependencies[name] = version;
+  }
+  return dependencies;
+}
+
+async function readDeclaredFrontendDependencies(
+  workspaceRoot: string,
+): Promise<ReadonlyMap<NodePackageDependencyType, readonly string[]>> {
+  const manifestPath = join(workspaceRoot, "sites", "arolariu.ro", "package.json");
+  const manifest = readJsonRecord(await readFile(manifestPath, "utf8"), manifestPath);
+
+  return new Map<NodePackageDependencyType, readonly string[]>([
+    ["production", Object.keys(readDependencyMap(manifest, "dependencies", manifestPath))],
+    ["development", Object.keys(readDependencyMap(manifest, "devDependencies", manifestPath))],
+    ["peer", Object.keys(readDependencyMap(manifest, "peerDependencies", manifestPath))],
+  ]);
+}
+
+async function findDirectInstalledPackageManifestPaths(workspaceRoot: string): Promise<readonly string[]> {
+  const nodeModulesRoot = join(workspaceRoot, "node_modules");
+  const paths: string[] = [];
+  for await (const manifestPath of glob(["*/package.json", "@*/*/package.json"], {cwd: nodeModulesRoot})) {
+    paths.push(join(nodeModulesRoot, manifestPath));
+  }
+  return paths;
+}
+
+function resolveDependencyType(
+  packageName: string,
+  declaredDependencies: ReadonlyMap<NodePackageDependencyType, readonly string[]>,
+): NodePackageDependencyType | null {
+  for (const dependencyType of ["production", "development", "peer"] as const) {
+    if (declaredDependencies.get(dependencyType)?.includes(packageName) === true) return dependencyType;
+  }
+  return null;
+}
+
+async function readInstalledPackageInformation(
+  manifestPath: string,
+  declaredDependencies: ReadonlyMap<NodePackageDependencyType, readonly string[]>,
+): Promise<Readonly<{dependencyType: NodePackageDependencyType; packageInformation: NodePackageInformation}> | null> {
+  const manifest = readJsonRecord(await readFile(manifestPath, "utf8"), manifestPath);
+  const packageName = readOptionalManifestString(manifest, "name", manifestPath) ?? basename(dirname(manifestPath));
+  const dependencyType = resolveDependencyType(packageName, declaredDependencies);
+  if (dependencyType === null) return null;
+
+  const authorValue = manifest["author"];
+  let author = "unknown";
+  if (typeof authorValue === "string") {
+    author = authorValue;
+  } else if (isRecord(authorValue) && typeof authorValue["name"] === "string") {
+    author = authorValue["name"];
+  } else if (authorValue !== undefined) {
+    throw new TypeError(`Package manifest '${manifestPath}' field 'author' must be a string or named object.`);
+  }
+
+  const repositoryValue = manifest["repository"];
+  let repositoryUrl: string | undefined;
+  if (typeof repositoryValue === "string") {
+    repositoryUrl = repositoryValue;
+  } else if (isRecord(repositoryValue) && typeof repositoryValue["url"] === "string") {
+    repositoryUrl = repositoryValue["url"];
+  } else if (repositoryValue !== undefined) {
+    throw new TypeError(`Package manifest '${manifestPath}' field 'repository' must be a string or URL object.`);
+  }
+
+  const dependencyMaps = [
+    readDependencyMap(manifest, "dependencies", manifestPath),
+    readDependencyMap(manifest, "devDependencies", manifestPath),
+    readDependencyMap(manifest, "peerDependencies", manifestPath),
+  ];
+  const dependents = dependencyMaps.flatMap((dependencies) =>
+    Object.entries(dependencies).map(([name, version]) => ({name, version})),
+  );
+
+  return {
+    dependencyType,
+    packageInformation: {
+      name: packageName,
+      author,
+      description:
+        readOptionalManifestString(manifest, "description", manifestPath)
+        ?? "This package has not provided a valid description.",
+      homepage: readOptionalManifestString(manifest, "homepage", manifestPath) ?? repositoryUrl ?? "unknown",
+      license: readOptionalManifestString(manifest, "license", manifestPath) ?? "unknown",
+      version: readOptionalManifestString(manifest, "version", manifestPath) ?? "unknown",
+      dependents,
+    },
+  };
+}
+
+async function writeFrontendLicenseDocument(
+  workspaceRoot: string,
+  packages: ReadonlyMap<NodePackageDependencyType, readonly NodePackageInformation[]>,
+): Promise<string> {
+  const outputPath = join(workspaceRoot, "sites", "arolariu.ro", "licenses.json");
+  const sortedPackages = new Map<NodePackageDependencyType, readonly NodePackageInformation[]>();
+  for (const [dependencyType, packageInformation] of packages) {
+    sortedPackages.set(
+      dependencyType,
+      packageInformation.toSorted((left, right) => left.name.localeCompare(right.name)),
+    );
+  }
+
+  await mkdir(dirname(outputPath), {recursive: true});
+  await writeFile(outputPath, `${JSON.stringify(Object.fromEntries(sortedPackages))}${EOL}`, "utf8");
+  return outputPath;
+}
+
+/** Generates the frontend third-party license document. */
+export class FrontendLicenseGenerator extends LicenseGenerator {
+  /** Creates the generator. */
+  public constructor(private readonly workspaceRoot: string = process.cwd()) {
+    super();
+  }
+
+  /** Reads direct frontend dependencies and writes licenses.json. */
+  public override async generate(): Promise<readonly string[]> {
+    const declaredDependencies = await readDeclaredFrontendDependencies(this.workspaceRoot);
+    const manifestPaths = await findDirectInstalledPackageManifestPaths(this.workspaceRoot);
+    const resolvedPackages = await Promise.all(
+      manifestPaths.map((manifestPath) => readInstalledPackageInformation(manifestPath, declaredDependencies)),
+    );
+    const groupedPackages = new Map<NodePackageDependencyType, NodePackageInformation[]>();
+
+    for (const resolvedPackage of resolvedPackages) {
+      if (resolvedPackage === null) continue;
+      const packages = groupedPackages.get(resolvedPackage.dependencyType) ?? [];
+      packages.push(resolvedPackage.packageInformation);
+      groupedPackages.set(resolvedPackage.dependencyType, packages);
+    }
+
+    return [await writeFrontendLicenseDocument(this.workspaceRoot, groupedPackages)];
   }
 }
 

@@ -5,9 +5,9 @@
  */
 
 import {ChildProcess, execFile} from "node:child_process";
-import {mkdtemp, readFile, writeFile} from "node:fs/promises";
+import {mkdir, mkdtemp, readFile, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
-import {basename, join} from "node:path";
+import {basename, dirname, join} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 vi.mock("node:child_process", async (importOriginal) => {
@@ -26,6 +26,7 @@ import {
   buildTaxonomyArtifactGenerationCommand,
   buildHierarchy,
   EcoicopTaxonomyClassificationGenerator,
+  FrontendLicenseGenerator,
   Gs1GpcTaxonomyClassificationGenerator,
   NaceTaxonomyClassificationGenerator,
   flattenGpcSchema,
@@ -69,6 +70,25 @@ function readArtifactNodes(contents: string): readonly unknown[] {
   }
 
   return nodes;
+}
+
+function readLicenseGroup(contents: string, dependencyType: string): readonly unknown[] {
+  const parsed: unknown = JSON.parse(contents);
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    throw new TypeError("Generated license document must be an object.");
+  }
+
+  const packages = Reflect.get(parsed, dependencyType);
+  if (!Array.isArray(packages)) {
+    throw new TypeError(`Generated license document '${dependencyType}' group must be an array.`);
+  }
+
+  return packages;
+}
+
+async function writeJson(path: string, value: unknown): Promise<void> {
+  await mkdir(dirname(path), {recursive: true});
+  await writeFile(path, JSON.stringify(value), "utf8");
 }
 
 describe("parseGpcDocument", () => {
@@ -441,6 +461,96 @@ describe("buildTaxonomyArtifactGenerationCommand", () => {
 });
 
 describe("License generators", () => {
+  describe("FrontendLicenseGenerator", () => {
+    describe("generate", () => {
+      it("writes deterministic licenses.json for direct frontend dependencies", async () => {
+        const workspace = await mkdtemp(join(tmpdir(), "arolariu-license-class-"));
+        await writeJson(join(workspace, "sites", "arolariu.ro", "package.json"), {
+          dependencies: {"production-package": "1.0.0"},
+          devDependencies: {"development-package": "2.0.0"},
+          peerDependencies: {"peer-package": "3.0.0"},
+        });
+        await writeJson(join(workspace, "node_modules", "production-package", "package.json"), {
+          name: "production-package",
+          version: "1.0.0",
+          license: "MIT",
+        });
+        await writeJson(join(workspace, "node_modules", "development-package", "package.json"), {
+          name: "development-package",
+          version: "2.0.0",
+          license: "Apache-2.0",
+        });
+        await writeJson(join(workspace, "node_modules", "peer-package", "package.json"), {
+          name: "peer-package",
+          version: "3.0.0",
+          license: "BSD-3-Clause",
+        });
+        const generator = new FrontendLicenseGenerator(workspace);
+
+        const outputs = await generator.generate();
+        const contents: unknown = JSON.parse(await readFile(outputs[0] ?? "", "utf8"));
+
+        expect(outputs).toEqual([join(workspace, "sites", "arolariu.ro", "licenses.json")]);
+        expect(contents).toMatchObject({
+          production: [{name: "production-package"}],
+          development: [{name: "development-package"}],
+          peer: [{name: "peer-package"}],
+        });
+      });
+
+      it("sorts scoped packages and applies metadata defaults", async () => {
+        const workspace = await mkdtemp(join(tmpdir(), "arolariu-license-order-"));
+        await writeJson(join(workspace, "sites", "arolariu.ro", "package.json"), {
+          dependencies: {"zeta-package": "1.0.0", "@scope/alpha-package": "2.0.0"},
+        });
+        await writeJson(join(workspace, "node_modules", "zeta-package", "package.json"), {
+          name: "zeta-package",
+          repository: {url: "https://example.test/zeta"},
+        });
+        await writeJson(join(workspace, "node_modules", "@scope", "alpha-package", "package.json"), {
+          name: "@scope/alpha-package",
+          author: {name: "Alpha Author"},
+        });
+        const generator = new FrontendLicenseGenerator(workspace);
+
+        const [output] = await generator.generate();
+        const productionPackages = readLicenseGroup(await readFile(output ?? "", "utf8"), "production");
+
+        expect(productionPackages).toEqual([
+          expect.objectContaining({
+            name: "@scope/alpha-package",
+            author: "Alpha Author",
+            description: "This package has not provided a valid description.",
+            homepage: "unknown",
+            license: "unknown",
+            version: "unknown",
+          }),
+          expect.objectContaining({
+            name: "zeta-package",
+            homepage: "https://example.test/zeta",
+          }),
+        ]);
+      });
+
+      it("names the malformed installed manifest in validation errors", async () => {
+        const workspace = await mkdtemp(join(tmpdir(), "arolariu-license-invalid-"));
+        const manifestPath = join(workspace, "node_modules", "broken-package", "package.json");
+        await writeJson(join(workspace, "sites", "arolariu.ro", "package.json"), {
+          dependencies: {"broken-package": "1.0.0"},
+        });
+        await writeJson(manifestPath, {
+          name: "broken-package",
+          description: 42,
+        });
+        const generator = new FrontendLicenseGenerator(workspace);
+
+        await expect(generator.generate()).rejects.toThrow(
+          `Package manifest '${manifestPath}' field 'description' must be a string.`,
+        );
+      });
+    });
+  });
+
   describe("BackendLicenseGenerator", () => {
     describe("generate", () => {
       it("returns no generated outputs", async () => {

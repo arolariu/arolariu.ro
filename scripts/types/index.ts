@@ -74,7 +74,7 @@ export type {LintTarget, LintWorkerInput, LintWorkerResult} from "./lint.ts";
  * strict type safety when categorizing dependencies.
  *
  * **Usage Context:**
- * - Dependency analysis scripts (e.g., `scripts/generate.acks.ts`)
+ * - Dependency analysis scripts (e.g., `FrontendLicenseGenerator` in `scripts/generate.artifacts.ts`)
  * - Package.json parsing and validation
  * - License acknowledgment generation
  * - Dependency graph visualization
@@ -232,7 +232,7 @@ export type NodePackageDependencyType = Readonly<"production" | "development" | 
  * ```
  *
  * @see {@link NodePackageDependencyType} - Dependency type classification
- * @see `scripts/generate.acks.ts` - Script that generates acknowledgments using this type
+ * @see `scripts/generate.artifacts.ts` - Unified artifact generator containing `FrontendLicenseGenerator`
  */
 export type NodePackageInformation = {
   name: string;
