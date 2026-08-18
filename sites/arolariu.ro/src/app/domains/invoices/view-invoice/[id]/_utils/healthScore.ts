@@ -30,7 +30,7 @@ export function calculateHealthScorePercentage(invoice: Invoice): number {
   const completenessRatio = totalItems > 0 ? completeProducts / totalItems : 0;
   const completenessPoints = Math.round(completenessRatio * 20);
 
-  const confidenceScores = items.map((item) => item.metadata.confidence).filter((c) => c > 0);
+  const confidenceScores = items.map((item) => item.metadata.confidence);
   const avgConfidence = confidenceScores.length > 0 ? confidenceScores.reduce((sum, c) => sum + c, 0) / confidenceScores.length : 0;
   const confidencePoints = Math.round(avgConfidence * 20);
 

@@ -21,6 +21,7 @@ import {TbBuilding, TbMapPin, TbPhone} from "react-icons/tb";
 import {updateMerchant} from "../../../_actions/merchants";
 import {useDialog} from "../../../_contexts/DialogContext";
 import {ClassificationPicker} from "../../../_components/analysis/ClassificationPicker";
+import {ClassificationProvenance} from "../../../_components/analysis/StructuredAnalysisDetails";
 import styles from "./MerchantDialog.module.scss";
 
 /**
@@ -170,6 +171,7 @@ export default function MerchantDialog(): React.JSX.Element {
             </TableBody>
           </Table>
           <div className={styles["classificationSection"]}>
+            <ClassificationProvenance classification={merchant.classification} />
             <ClassificationPicker
               system={ClassificationSystem.Nace21}
               value={classification}

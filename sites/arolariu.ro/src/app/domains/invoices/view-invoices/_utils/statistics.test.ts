@@ -1,7 +1,20 @@
-import {AllergenAssessmentStatus, AllergenCode, ClassificationSystem} from "@/types/invoices";
-import {buildAllergenAssessment, buildClassification, buildInvoice, buildProduct} from "../../../../../../tests/helpers/builders/domain";
+import {AllergenAssessmentStatus, AllergenCode, ClassificationOrigin, ClassificationSystem} from "@/types/invoices";
+import {
+  buildAllergenAssessment,
+  buildClassification,
+  buildInvoice,
+  buildMerchant,
+  buildProduct,
+} from "../../../../../../tests/helpers/builders/domain";
 import {describe, expect, it} from "vitest";
-import {computeAllergenFrequency, computeCategoryAggregates, computeKPIs, computeProductClassificationSpending} from "./statistics";
+import {
+  computeAllergenFrequency,
+  computeAllergenStatistics,
+  computeCategoryAggregates,
+  computeKPIs,
+  computeMerchantNaceAggregates,
+  computeProductClassificationSpending,
+} from "./statistics";
 
 describe("statistics", () => {
   it("groups invoice spending by the canonical ECOICOP root", () => {
@@ -62,6 +75,81 @@ describe("statistics", () => {
     const invoice = buildInvoice({items: [buildProduct({allergenAssessment: detected}), buildProduct({allergenAssessment: noSignals})]});
 
     expect(computeAllergenFrequency([invoice])).toEqual([{name: AllergenCode.Milk, description: "milk", productCount: 1, percentage: 50}]);
+  });
+
+  it("deduplicates allergen codes per product and exposes assessment coverage", () => {
+    const detected = buildAllergenAssessment({
+      status: AllergenAssessmentStatus.Detected,
+      signals: [
+        {
+          code: AllergenCode.Milk,
+          evidenceLevel: "explicit",
+          confidence: 0.9,
+          evidence: [{source: "ingredients", value: "milk"}],
+        },
+        {
+          code: AllergenCode.Milk,
+          evidenceLevel: "inferred",
+          confidence: 0.6,
+          evidence: [{source: "name", value: "dairy"}],
+        },
+      ],
+    });
+    const invoice = buildInvoice({
+      items: [
+        buildProduct({allergenAssessment: detected}),
+        buildProduct({allergenAssessment: buildAllergenAssessment({status: AllergenAssessmentStatus.NoSignals})}),
+        buildProduct({allergenAssessment: buildAllergenAssessment({status: AllergenAssessmentStatus.InsufficientData})}),
+        buildProduct({allergenAssessment: null}),
+      ],
+    });
+
+    expect(computeAllergenStatistics([invoice])).toEqual({
+      frequencies: [{name: AllergenCode.Milk, description: "milk", productCount: 1, percentage: 50}],
+      assessedProductCount: 2,
+      insufficientDataProductCount: 1,
+      unassessedProductCount: 1,
+      totalProductCount: 4,
+    });
+  });
+
+  it("groups merchant spending by canonical NACE section with stable keys", () => {
+    const nace = buildClassification({
+      system: ClassificationSystem.Nace21,
+      version: "2.1",
+      code: "47.11",
+      officialLabel: "Non-specialised retail sale of predominately food, beverages or tobacco",
+      hierarchy: [
+        {level: "section", code: "G", officialLabel: "WHOLESALE AND RETAIL TRADE"},
+        {level: "division", code: "47", officialLabel: "Retail trade"},
+        {level: "class", code: "47.11", officialLabel: "Non-specialised retail sale of predominately food, beverages or tobacco"},
+      ],
+      origin: ClassificationOrigin.Manual,
+      confidence: null,
+    });
+    const merchant = buildMerchant({id: "merchant-1", classification: nace});
+    const invoices = [
+      buildInvoice({
+        merchantReference: merchant.id,
+        paymentInformation: {...buildInvoice().paymentInformation, totalCostAmount: 12},
+      }),
+      buildInvoice({
+        id: "44444444-4444-7444-8444-444444444444",
+        merchantReference: merchant.id,
+        paymentInformation: {...buildInvoice().paymentInformation, totalCostAmount: 8},
+      }),
+    ];
+
+    expect(computeMerchantNaceAggregates(invoices, [merchant])).toEqual([
+      {
+        naceKey: "NACE_2_1:G",
+        sectionCode: "G",
+        sectionLabel: "WHOLESALE AND RETAIL TRADE",
+        totalSpend: 20,
+        invoiceCount: 2,
+        merchantCount: 1,
+      },
+    ]);
   });
 
   it("keeps empty statistics safe", () => {

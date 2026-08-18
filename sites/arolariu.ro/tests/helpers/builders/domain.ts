@@ -154,7 +154,7 @@ export function buildRecipe(overrides: Partial<RecipeSuggestion> = {}): RecipeSu
     purchasedIngredients: [],
     assumedPantryStaples: [],
     missingOptionalIngredients: [],
-    steps: [],
+    steps: [{sequence: 1, instruction: "Serve the prepared ingredients.", notes: null}],
     allergenWarnings: [],
     ...overrides,
   };

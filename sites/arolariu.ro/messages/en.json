@@ -437,8 +437,7 @@
       },
       "recipeCard": {
         "buttons": {
-          "viewRecipe": "View Recipe",
-          "visitReference": "Visit Reference"
+          "viewRecipe": "View Recipe"
         },
         "complexity": {
           "easy": "Easy Complexity",
@@ -564,7 +563,12 @@
         "allergenSummary": {
           "ariaLabel": "Allergen frequency summary",
           "description": "Allergen exposure across products",
-          "empty": "No allergens detected in your purchases",
+          "empty": "No allergen signals were found in the assessed evidence.",
+          "coverage": {
+            "assessed": "Assessed evidence",
+            "insufficientData": "Insufficient data",
+            "notAssessed": "Not assessed"
+          },
           "stats": {
             "ofTotal": "of total",
             "products": "products"
@@ -654,6 +658,12 @@
           "empty": "No merchant data available yet",
           "labels": {
             "totalSpent": "Total Spent"
+          },
+          "merchantNace": {
+            "title": "Merchant sectors",
+            "description": "Spending grouped by canonical NACE 2.1 section",
+            "empty": "No linked merchants have a canonical NACE section yet.",
+            "metadata": "{invoices} invoices · {merchants} merchants"
           },
           "title": "Top Merchants",
           "tooltip": {
@@ -822,7 +832,8 @@
           "analysisOrigin": "Analysis result",
           "manualOrigin": "Manual selection",
           "confidence": "Advisory confidence: {confidence}",
-          "evidence": "Available evidence"
+          "evidence": "Available evidence",
+          "root": "Root: {label} ({code})"
         },
         "allergens": {
           "detected": "Signals detected",
@@ -830,14 +841,36 @@
           "insufficientData": "Insufficient data",
           "explicit": "Explicit evidence",
           "inferred": "Inferred evidence",
-          "precautionary": "Precautionary evidence"
+          "precautionary": "Precautionary evidence",
+          "notAssessed": "Not assessed",
+          "confidence": "Advisory confidence: {confidence}%",
+          "codes": {
+            "cerealsContainingGluten": "Cereals containing gluten",
+            "crustaceans": "Crustaceans",
+            "eggs": "Eggs",
+            "fish": "Fish",
+            "peanuts": "Peanuts",
+            "soybeans": "Soybeans",
+            "milk": "Milk",
+            "nuts": "Nuts",
+            "celery": "Celery",
+            "mustard": "Mustard",
+            "sesame": "Sesame",
+            "sulphurDioxideAndSulphites": "Sulphur dioxide and sulphites",
+            "lupin": "Lupin",
+            "molluscs": "Molluscs"
+          }
         },
         "recipes": {
           "purchasedIngredients": "Purchased ingredients",
           "pantryStaples": "Assumed pantry staples",
           "missingOptionalIngredients": "Missing optional ingredients",
           "steps": "Preparation steps",
-          "warnings": "Allergen warnings"
+          "warnings": "Allergen warnings",
+          "servings": "{count} servings",
+          "preparationMinutes": "Preparation: {minutes} min",
+          "cookingMinutes": "Cooking: {minutes} min",
+          "totalMinutes": "Total: {minutes} min"
         }
       }
     }
@@ -885,9 +918,9 @@
           "saving": "Saving..."
         },
         "defaultDescription": "Contains {name}",
-        "description": "Manage allergens for {productName}",
+        "description": "Review assessment evidence for {productName}",
         "empty": {
-          "noAllergens": "No allergens detected"
+          "noAllergens": "Not assessed"
         },
         "errors": {
           "duplicate": "Allergen {name} already added",
@@ -908,7 +941,7 @@
           "removed": "Removed allergen: {name}",
           "saved": "Allergens updated successfully"
         },
-        "title": "Edit Allergens"
+        "title": "Allergen assessment"
       },
       "bulkCategoryDialog": {
         "buttons": {
@@ -3108,6 +3141,41 @@
           "printError": "Failed to open print dialog",
           "printSuccess": "Print dialog opened",
           "title": "Export Invoice"
+        },
+        "pdf": {
+          "reportTitle": "Invoice report",
+          "generatedOn": "Generated on {date}",
+          "invoiceInformation": "Invoice information",
+          "invoiceName": "Invoice name",
+          "description": "Description",
+          "classification": "Classification",
+          "invoiceIdentifier": "Invoice ID",
+          "transactionDate": "Transaction date",
+          "receiptType": "Receipt type",
+          "merchantInformation": "Merchant information",
+          "merchantName": "Merchant name",
+          "unknownMerchant": "Merchant not linked",
+          "fullName": "Full name",
+          "address": "Address",
+          "phone": "Phone",
+          "paymentSummary": "Payment summary",
+          "subtotal": "Subtotal",
+          "tax": "Tax",
+          "tip": "Tip",
+          "total": "Total",
+          "currency": "Currency",
+          "paymentMethod": "Payment method",
+          "items": "Items",
+          "number": "#",
+          "product": "Product",
+          "quantity": "Quantity",
+          "unitPrice": "Unit price",
+          "productSignals": "Signals",
+          "analysisSummary": "Analysis summary",
+          "numberOfItems": "Number of items",
+          "numberOfScans": "Number of scans",
+          "recipes": "Recipe suggestions",
+          "page": "Page {page}"
         },
         "healthScore": {
           "cta": {

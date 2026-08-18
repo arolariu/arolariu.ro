@@ -16,11 +16,11 @@ export type CategorySpending = {
   fill: string;
 };
 
-export function getCategorySpending(items: readonly Product[]): CategorySpending[] {
+export function getCategorySpending(items: readonly Product[], unclassifiedLabel: string): CategorySpending[] {
   const categoryMap = new Map<string, {amount: number; count: number}>();
 
   items.forEach((item) => {
-    const classification = item.classification === null ? "Unclassified" : getClassificationSummary(item.classification);
+    const classification = getClassificationSummary(item.classification, unclassifiedLabel);
     const existing = categoryMap.get(classification) || {amount: 0, count: 0};
     categoryMap.set(classification, {
       amount: existing.amount + item.totalPrice,
@@ -394,7 +394,11 @@ export type CategoryTrendData = {
  * - Returns empty array if current invoice has no items
  * - Only includes categories present in the current invoice
  */
-export function getCategoryComparison(currentInvoice: Invoice, allInvoices: ReadonlyArray<Invoice>): CategoryTrendData[] {
+export function getCategoryComparison(
+  currentInvoice: Invoice,
+  allInvoices: ReadonlyArray<Invoice>,
+  unclassifiedLabel: string,
+): CategoryTrendData[] {
   const currentItems = currentInvoice.items ?? [];
   if (currentItems.length === 0) {
     return [];
@@ -403,7 +407,7 @@ export function getCategoryComparison(currentInvoice: Invoice, allInvoices: Read
   // Calculate current invoice's spending by category
   const currentCategoryMap = new Map<string, number>();
   currentItems.forEach((item) => {
-    const classification = item.classification === null ? "Unclassified" : getClassificationSummary(item.classification);
+    const classification = getClassificationSummary(item.classification, unclassifiedLabel);
     const existing = currentCategoryMap.get(classification) ?? 0;
     currentCategoryMap.set(classification, existing + item.totalPrice);
   });
@@ -415,7 +419,7 @@ export function getCategoryComparison(currentInvoice: Invoice, allInvoices: Read
   otherInvoices.forEach((inv) => {
     const items = inv.items ?? [];
     items.forEach((item) => {
-      const classification = item.classification === null ? "Unclassified" : getClassificationSummary(item.classification);
+      const classification = getClassificationSummary(item.classification, unclassifiedLabel);
       const existing = historicalCategoryMap.get(classification) ?? {total: 0, count: 0};
       historicalCategoryMap.set(classification, {
         total: existing.total + item.totalPrice,

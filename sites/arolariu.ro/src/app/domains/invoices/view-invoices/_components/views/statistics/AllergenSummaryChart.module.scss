@@ -176,14 +176,7 @@
 .emptyIcon {
   width: 64px;
   height: 64px;
-  border-radius: 50%;
-  background: rgba(var(--color-primary-rgb), 0.1);
-  color: color("primary");
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: font-size("3xl");
-  font-weight: font-weight("bold");
+  color: color("muted-foreground");
 }
 
 .emptyText {
@@ -191,6 +184,28 @@
   color: color("muted-foreground");
   text-align: center;
   max-width: 300px;
+}
+
+.coverage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(3);
+  margin: 0 0 space(4);
+
+  & > div {
+    display: flex;
+    gap: space(1);
+  }
+
+  dt {
+    @include text-muted("xs");
+  }
+
+  dd {
+    margin: 0;
+    font-size: font-size("xs");
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 // ===========================================

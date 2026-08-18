@@ -6,7 +6,7 @@
  */
 
 import {type RecipeSuggestion} from "@/types/invoices";
-import {getAllergenCodeLabel} from "../../../_utils/classificationUtilities";
+import {RecipeSuggestionDetails} from "../../../_components/analysis/StructuredAnalysisDetails";
 import {
   Badge,
   Button,
@@ -22,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import {TbClock, TbEdit, TbLayoutBottombarExpand, TbSeparatorHorizontal, TbTrash, TbAlertTriangle} from "react-icons/tb";
+import {TbEdit, TbLayoutBottombarExpand, TbSeparatorHorizontal, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./RecipeCard.module.scss";
 
@@ -79,61 +79,7 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <p className={styles["description"]}>{recipe.description}</p>
-        <div className={styles["ingredientsSection"]}>
-          <h4 className={styles["ingredientsLabel"]}>{t((m) => m.cards.invoices.recipeCard.ingredients.label)}</h4>
-          <ul className={styles["ingredientsList"]}>
-            {recipe.purchasedIngredients.map((ingredient) => (
-              <li key={`${ingredient.name}-${ingredient.quantity}`}>
-                {ingredient.name} — {ingredient.quantity}
-                {ingredient.preparation === null ? null : ` (${ingredient.preparation})`}
-              </li>
-            ))}
-          </ul>
-          <ul className={styles["ingredientsList"]}>
-            {recipe.assumedPantryStaples.map((ingredient) => (
-              <li key={`${ingredient.name}-${ingredient.quantity}`}>
-                {ingredient.name} — {ingredient.quantity}
-                {ingredient.preparation === null ? null : ` (${ingredient.preparation})`}
-              </li>
-            ))}
-          </ul>
-          <ul className={styles["ingredientsList"]}>
-            {recipe.missingOptionalIngredients.map((ingredient) => (
-              <li key={`${ingredient.name}-${ingredient.quantity}`}>
-                {ingredient.name} — {ingredient.quantity}
-                {ingredient.preparation === null ? null : ` (${ingredient.preparation})`}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <ol className={styles["ingredientsList"]}>
-          {recipe.steps.map((step) => (
-            <li key={step.sequence}>
-              {step.instruction}
-              {step.notes === null ? null : ` (${step.notes})`}
-            </li>
-          ))}
-        </ol>
-        {recipe.allergenWarnings.length === 0 ? null : (
-          <ul className={styles["ingredientsList"]}>
-            {recipe.allergenWarnings.map((warning) => (
-              <li key={warning}>
-                <TbAlertTriangle className={styles["menuIcon"]} />
-                {getAllergenCodeLabel(warning)}
-              </li>
-            ))}
-          </ul>
-        )}
-        <div className={styles["timingRow"]}>
-          <span className={styles["timeItem"]}>
-            <TbClock className={styles["timeIcon"]} />
-            {t((m) => m.cards.invoices.recipeCard.timing.prepLabel, {minutes: String(recipe.preparationMinutes)})}
-          </span>
-          <span className={styles["timeItem"]}>
-            <TbClock className={styles["timeIcon"]} />
-            {t((m) => m.cards.invoices.recipeCard.timing.cookLabel, {minutes: String(recipe.cookingMinutes)})}
-          </span>
-        </div>
+        <RecipeSuggestionDetails recipe={recipe} />
       </CardContent>
       <CardFooter className={styles["cardFooter"]}>
         <Button

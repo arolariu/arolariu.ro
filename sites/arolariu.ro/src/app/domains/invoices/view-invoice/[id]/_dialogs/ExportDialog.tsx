@@ -32,6 +32,7 @@
 import {formatAmount, formatDate} from "@/lib/utils.generic";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, toast} from "@arolariu/components";
 import {pdf} from "@react-pdf/renderer";
+import {useLocale} from "next-intl";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import {TbChevronRight, TbClipboard, TbCode, TbFileSpreadsheet, TbFileTypePdf} from "react-icons/tb";
@@ -85,6 +86,7 @@ import styles from "./ExportDialog.module.scss";
  */
 export function ExportDialog(): React.JSX.Element {
   const t = useTranslations();
+  const locale = useLocale();
   const {invoice, merchant} = useInvoiceContext();
   const {isOpen, close} = useDialog("VIEW_INVOICE__EXPORT");
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
@@ -246,6 +248,57 @@ Items: ${invoice.items.length}
         <InvoicePDF
           invoice={invoice}
           merchant={merchant}
+          locale={locale}
+          labels={{
+            reportTitle: t((m) => m.pages.invoices.viewInvoice.pdf.reportTitle),
+            generatedOn: (date) => t((m) => m.pages.invoices.viewInvoice.pdf.generatedOn, {date}),
+            invoiceInformation: t((m) => m.pages.invoices.viewInvoice.pdf.invoiceInformation),
+            invoiceName: t((m) => m.pages.invoices.viewInvoice.pdf.invoiceName),
+            description: t((m) => m.pages.invoices.viewInvoice.pdf.description),
+            classification: t((m) => m.pages.invoices.viewInvoice.pdf.classification),
+            invoiceIdentifier: t((m) => m.pages.invoices.viewInvoice.pdf.invoiceIdentifier),
+            transactionDate: t((m) => m.pages.invoices.viewInvoice.pdf.transactionDate),
+            receiptType: t((m) => m.pages.invoices.viewInvoice.pdf.receiptType),
+            merchantInformation: t((m) => m.pages.invoices.viewInvoice.pdf.merchantInformation),
+            merchantName: t((m) => m.pages.invoices.viewInvoice.pdf.merchantName),
+            unknownMerchant: t((m) => m.pages.invoices.viewInvoice.pdf.unknownMerchant),
+            fullName: t((m) => m.pages.invoices.viewInvoice.pdf.fullName),
+            address: t((m) => m.pages.invoices.viewInvoice.pdf.address),
+            phone: t((m) => m.pages.invoices.viewInvoice.pdf.phone),
+            paymentSummary: t((m) => m.pages.invoices.viewInvoice.pdf.paymentSummary),
+            subtotal: t((m) => m.pages.invoices.viewInvoice.pdf.subtotal),
+            tax: t((m) => m.pages.invoices.viewInvoice.pdf.tax),
+            tip: t((m) => m.pages.invoices.viewInvoice.pdf.tip),
+            total: t((m) => m.pages.invoices.viewInvoice.pdf.total),
+            currency: t((m) => m.pages.invoices.viewInvoice.pdf.currency),
+            paymentMethod: t((m) => m.pages.invoices.viewInvoice.pdf.paymentMethod),
+            items: t((m) => m.pages.invoices.viewInvoice.pdf.items),
+            number: t((m) => m.pages.invoices.viewInvoice.pdf.number),
+            product: t((m) => m.pages.invoices.viewInvoice.pdf.product),
+            quantity: t((m) => m.pages.invoices.viewInvoice.pdf.quantity),
+            unitPrice: t((m) => m.pages.invoices.viewInvoice.pdf.unitPrice),
+            productSignals: t((m) => m.pages.invoices.viewInvoice.pdf.productSignals),
+            analysisSummary: t((m) => m.pages.invoices.viewInvoice.pdf.analysisSummary),
+            numberOfItems: t((m) => m.pages.invoices.viewInvoice.pdf.numberOfItems),
+            numberOfScans: t((m) => m.pages.invoices.viewInvoice.pdf.numberOfScans),
+            recipes: t((m) => m.pages.invoices.viewInvoice.pdf.recipes),
+            purchasedIngredients: t((m) => m.cards.invoices.analysisResults.recipes.purchasedIngredients),
+            pantryStaples: t((m) => m.cards.invoices.analysisResults.recipes.pantryStaples),
+            missingOptionalIngredients: t((m) => m.cards.invoices.analysisResults.recipes.missingOptionalIngredients),
+            preparationSteps: t((m) => m.cards.invoices.analysisResults.recipes.steps),
+            allergenWarnings: t((m) => m.cards.invoices.analysisResults.recipes.warnings),
+            servings: (count) => t((m) => m.cards.invoices.analysisResults.recipes.servings, {count: String(count)}),
+            preparationMinutes: (minutes) =>
+              t((m) => m.cards.invoices.analysisResults.recipes.preparationMinutes, {minutes: String(minutes)}),
+            cookingMinutes: (minutes) => t((m) => m.cards.invoices.analysisResults.recipes.cookingMinutes, {minutes: String(minutes)}),
+            totalMinutes: (minutes) => t((m) => m.cards.invoices.analysisResults.recipes.totalMinutes, {minutes: String(minutes)}),
+            classificationRoot: (label, code) => t((m) => m.cards.invoices.analysisResults.classification.root, {label, code}),
+            classificationAnalysisOrigin: t((m) => m.cards.invoices.analysisResults.classification.analysisOrigin),
+            classificationManualOrigin: t((m) => m.cards.invoices.analysisResults.classification.manualOrigin),
+            classificationConfidence: (confidence) => t((m) => m.cards.invoices.analysisResults.classification.confidence, {confidence}),
+            unclassified: t((m) => m.cards.invoices.analysisResults.unclassified),
+            page: (page) => t((m) => m.pages.invoices.viewInvoice.pdf.page, {page: String(page)}),
+          }}
         />,
       ).toBlob();
 
@@ -274,7 +327,7 @@ Items: ${invoice.items.length}
     } finally {
       setIsGeneratingPDF(false);
     }
-  }, [invoice, merchant, close, t]);
+  }, [invoice, merchant, locale, close, t]);
 
   return (
     <Dialog

@@ -96,6 +96,10 @@ function isNonNegativeInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value >= 0;
 }
 
+function isPositiveInteger(value: unknown): value is number {
+  return isNonNegativeInteger(value) && value > 0;
+}
+
 /** Determines whether a value is an exact recipe difficulty string. */
 export function isRecipeDifficulty(value: unknown): value is RecipeDifficultyValue {
   return typeof value === "string" && difficultyValues.includes(value);
@@ -144,7 +148,7 @@ export function isRecipeSuggestion(value: unknown): value is RecipeSuggestion {
     ])
     || !isNonBlankString(value["name"])
     || !isNonBlankString(value["description"])
-    || !isNonNegativeInteger(value["servings"])
+    || !isPositiveInteger(value["servings"])
     || !isNonNegativeInteger(value["preparationMinutes"])
     || !isNonNegativeInteger(value["cookingMinutes"])
     || !isNonNegativeInteger(value["totalMinutes"])
@@ -156,6 +160,7 @@ export function isRecipeSuggestion(value: unknown): value is RecipeSuggestion {
     || !Array.isArray(value["missingOptionalIngredients"])
     || !value["missingOptionalIngredients"].every(isRecipeIngredient)
     || !Array.isArray(value["steps"])
+    || value["steps"].length === 0
     || !value["steps"].every(isRecipeStep)
     || !Array.isArray(value["allergenWarnings"])
     || !value["allergenWarnings"].every(isAllergenCode)
@@ -163,5 +168,8 @@ export function isRecipeSuggestion(value: unknown): value is RecipeSuggestion {
     return false;
   }
 
-  return value["steps"].every((step, index) => step.sequence === index + 1);
+  return (
+    value["totalMinutes"] >= value["preparationMinutes"] + value["cookingMinutes"]
+    && value["steps"].every((step, index) => step.sequence === index + 1)
+  );
 }

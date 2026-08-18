@@ -39,7 +39,14 @@
  */
 
 import {formatDate, toSafeDate} from "@/lib/utils.generic";
-import {ClassificationSystem, type Invoice, type StandardClassification} from "@/types/invoices";
+import {
+  AllergenAssessmentStatus,
+  ClassificationSystem,
+  type AllergenCodeValue,
+  type Invoice,
+  type Merchant,
+  type StandardClassification,
+} from "@/types/invoices";
 import {getTransactionYear, toRON} from "../../../../../lib/currency";
 
 /**
@@ -212,6 +219,38 @@ export type MerchantAggregate = {
   /** Average spending per visit */
   averageSpend: number;
 };
+
+/**
+ * Merchant spending aggregate grouped by a canonical NACE 2.1 section.
+ *
+ * @remarks
+ * The key is always `NACE_2_1:<section-code>`. Merchants without a canonical
+ * NACE section are intentionally excluded rather than assigned an inferred
+ * industry.
+ */
+export type MerchantNaceAggregate = {
+  /** Stable `NACE_2_1:<section-code>` group key. */
+  naceKey: string;
+  /** Canonical NACE section code. */
+  sectionCode: string;
+  /** Official NACE section label from the classification hierarchy. */
+  sectionLabel: string;
+  /** RON-normalized spending associated with classified merchants. */
+  totalSpend: number;
+  /** Number of invoices represented by the group. */
+  invoiceCount: number;
+  /** Number of distinct merchants represented by the group. */
+  merchantCount: number;
+};
+
+function getNaceSection(classification: StandardClassification | null): {readonly code: string; readonly officialLabel: string} | null {
+  if (classification?.system !== ClassificationSystem.Nace21) {
+    return null;
+  }
+
+  const section = classification.hierarchy.find((node) => node.level.toLocaleLowerCase("en-US") === "section") ?? null;
+  return section === null ? null : {code: section.code, officialLabel: section.officialLabel};
+}
 
 /**
  * Daily spending data for heatmap visualizations.
@@ -643,6 +682,62 @@ export function computeMerchantAggregates(invoices: ReadonlyArray<Invoice>): Mer
   }
 
   return result.toSorted((a, b) => b.totalSpend - a.totalSpend);
+}
+
+/**
+ * Groups invoice spending by the canonical NACE section of each linked merchant.
+ *
+ * @param invoices - Invoice collection whose merchant references are analyzed.
+ * @param merchants - Canonical merchant DTOs used to resolve NACE classifications.
+ * @returns NACE section aggregates sorted by total spend descending.
+ */
+export function computeMerchantNaceAggregates(
+  invoices: ReadonlyArray<Invoice>,
+  merchants: ReadonlyArray<Merchant>,
+): MerchantNaceAggregate[] {
+  const merchantsById = new Map(merchants.filter((merchant) => !merchant.isSoftDeleted).map((merchant) => [merchant.id, merchant]));
+  const groups = new Map<
+    string,
+    {sectionCode: string; sectionLabel: string; totalSpend: number; invoiceCount: number; merchantIds: Set<string>}
+  >();
+
+  for (const invoice of invoices) {
+    if (!isValidMerchantRef(invoice.merchantReference)) {
+      continue;
+    }
+
+    const merchant = merchantsById.get(invoice.merchantReference);
+    if (merchant === undefined) {
+      continue;
+    }
+
+    const section = getNaceSection(merchant.classification);
+    if (section === null) {
+      continue;
+    }
+
+    const naceKey = `${ClassificationSystem.Nace21}:${section.code}`;
+    const existing = groups.get(naceKey) ?? {
+      sectionCode: section.code,
+      sectionLabel: section.officialLabel,
+      totalSpend: 0,
+      invoiceCount: 0,
+      merchantIds: new Set<string>(),
+    };
+    existing.totalSpend += getAmountInRON(invoice);
+    existing.invoiceCount += 1;
+    existing.merchantIds.add(merchant.id);
+    groups.set(naceKey, existing);
+  }
+
+  return Array.from(groups, ([naceKey, group]) => ({
+    naceKey,
+    sectionCode: group.sectionCode,
+    sectionLabel: group.sectionLabel,
+    totalSpend: Math.round(group.totalSpend * 100) / 100,
+    invoiceCount: group.invoiceCount,
+    merchantCount: group.merchantIds.size,
+  })).toSorted((left, right) => right.totalSpend - left.totalSpend);
 }
 
 /**
@@ -1373,14 +1468,36 @@ export type TopProduct = {
  * ```
  */
 export type AllergenFrequency = {
-  /** Allergen name */
-  name: string;
+  /** Canonical EU-14 allergen code. */
+  name: AllergenCodeValue;
   /** Allergen description */
   description: string;
   /** Number of products containing this allergen */
   productCount: number;
   /** Percentage of total products */
   percentage: number;
+};
+
+/**
+ * Cautious coverage and signal-frequency statistics for allergen assessments.
+ *
+ * @remarks
+ * Only `detected` and `noSignals` outcomes are assessed evidence. Products
+ * with no assessment or insufficient data are kept out of the percentage
+ * denominator and exposed separately so an empty frequency list is never
+ * interpreted as an allergen-free result.
+ */
+export type AllergenStatistics = {
+  /** Signal frequencies whose percentage uses assessed-product coverage only. */
+  frequencies: AllergenFrequency[];
+  /** Products with a detected or no-signals assessment outcome. */
+  assessedProductCount: number;
+  /** Products whose assessment could not be completed with available data. */
+  insufficientDataProductCount: number;
+  /** Products for which no assessment section exists. */
+  unassessedProductCount: number;
+  /** All non-soft-deleted products considered for coverage. */
+  totalProductCount: number;
 };
 
 function getProductGroup(classification: StandardClassification | null): {readonly key: string; readonly label: string} {
@@ -1579,18 +1696,51 @@ export function computeTopProducts(invoices: ReadonlyArray<Invoice>, topN = 10):
  * ```
  */
 export function computeAllergenFrequency(invoices: ReadonlyArray<Invoice>): AllergenFrequency[] {
-  const allergenMap = new Map<string, {description: string; productCount: number}>();
-  let totalProducts = 0;
+  return computeAllergenStatistics(invoices).frequencies;
+}
+
+/**
+ * Computes cautious allergen signal frequencies and assessment coverage.
+ *
+ * @param invoices - Invoice collection containing structured product assessments.
+ * @returns Signal frequencies and distinct assessment-status coverage totals.
+ */
+export function computeAllergenStatistics(invoices: ReadonlyArray<Invoice>): AllergenStatistics {
+  const allergenMap = new Map<AllergenCodeValue, {description: string; productCount: number}>();
+  let assessedProductCount = 0;
+  let insufficientDataProductCount = 0;
+  let unassessedProductCount = 0;
+  let totalProductCount = 0;
 
   for (const invoice of invoices) {
     const items = invoice.items ?? [];
     for (const product of items) {
       // Skip soft-deleted products
       if (!product.metadata?.isSoftDeleted) {
-        totalProducts++;
+        totalProductCount++;
         const assessment = product.allergenAssessment;
-        if (assessment?.status !== "detected") continue;
+        if (assessment === null) {
+          unassessedProductCount++;
+          continue;
+        }
+
+        if (assessment.status === AllergenAssessmentStatus.InsufficientData) {
+          insufficientDataProductCount++;
+          continue;
+        }
+
+        assessedProductCount++;
+        if (assessment.status !== AllergenAssessmentStatus.Detected) {
+          continue;
+        }
+
+        const codesInProduct = new Set<string>();
         for (const signal of assessment.signals) {
+          if (codesInProduct.has(signal.code)) {
+            continue;
+          }
+
+          codesInProduct.add(signal.code);
           const existing = allergenMap.get(signal.code);
           const description = signal.evidence.map((evidence) => evidence.value).join("; ");
           if (existing) {
@@ -1611,7 +1761,7 @@ export function computeAllergenFrequency(invoices: ReadonlyArray<Invoice>): Alle
 
   const result: AllergenFrequency[] = [];
   for (const [name, data] of allergenMap.entries()) {
-    const percentage = totalProducts > 0 ? (data.productCount / totalProducts) * 100 : 0;
+    const percentage = assessedProductCount > 0 ? (data.productCount / assessedProductCount) * 100 : 0;
 
     result.push({
       name,
@@ -1621,7 +1771,13 @@ export function computeAllergenFrequency(invoices: ReadonlyArray<Invoice>): Alle
     });
   }
 
-  return result.toSorted((a, b) => b.productCount - a.productCount);
+  return {
+    frequencies: result.toSorted((a, b) => b.productCount - a.productCount),
+    assessedProductCount,
+    insufficientDataProductCount,
+    unassessedProductCount,
+    totalProductCount,
+  };
 }
 
 /**

@@ -5,10 +5,9 @@
  * @module domains/invoices/view-invoice/[id]/components/cards/InvoiceDetailsCard
  */
 
-import {getClassificationSummary} from "@/app/domains/invoices/_utils/classificationUtilities";
+import {ClassificationProvenance} from "@/app/domains/invoices/_components/analysis/StructuredAnalysisDetails";
 import {getPaymentTypeLabel} from "@/app/domains/invoices/_utils/labelUtilities";
 import {
-  Badge,
   Card,
   CardContent,
   CardHeader,
@@ -38,7 +37,10 @@ export default function InvoiceDetailsCard(): React.JSX.Element {
         <dl>
           <dt>{t((m) => m.cards.invoices.invoiceDetailsCard.labels.category)}</dt>
           <dd>
-            <Badge variant='outline'>{getClassificationSummary(invoice.classification)}</Badge>
+            <ClassificationProvenance
+              classification={invoice.classification}
+              compact
+            />
           </dd>
           <dt>{t((m) => m.cards.invoices.invoiceDetailsCard.labels.payment)}</dt>
           <dd>{getPaymentTypeLabel(paymentInformation.paymentType)}</dd>
@@ -59,7 +61,11 @@ export default function InvoiceDetailsCard(): React.JSX.Element {
             {invoice.items.map((item, index) => (
               <TableRow key={`${item.productCode}-${item.name}-${index}`}>
                 <TableCell>
-                  {item.name} <Badge variant='outline'>{getClassificationSummary(item.classification)}</Badge>
+                  {item.name}{" "}
+                  <ClassificationProvenance
+                    classification={item.classification}
+                    compact
+                  />
                 </TableCell>
                 <TableCell>
                   {item.quantity} {item.quantityUnit}

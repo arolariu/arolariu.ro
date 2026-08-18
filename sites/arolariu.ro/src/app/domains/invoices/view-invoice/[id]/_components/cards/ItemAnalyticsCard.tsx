@@ -6,11 +6,10 @@
  */
 
 import {
-  getAllergenStatusLabel,
-  getClassificationRoot,
-  getClassificationSummary,
-} from "@/app/domains/invoices/_utils/classificationUtilities";
-import {Badge, Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
+  AllergenAssessmentStatusBadge,
+  ClassificationProvenance,
+} from "@/app/domains/invoices/_components/analysis/StructuredAnalysisDetails";
+import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 
@@ -26,15 +25,14 @@ export default function ItemAnalyticsCard(): React.JSX.Element {
       <CardContent>
         <ul>
           {invoice.items.map((item, index) => {
-            const root = getClassificationRoot(item.classification);
             return (
               <li key={`${item.productCode}-${item.name}-${index}`}>
                 <strong>{item.name}</strong>
-                <Badge variant='outline'>{getClassificationSummary(item.classification)}</Badge>
-                {root === null ? null : <span>{root.officialLabel}</span>}
-                {item.allergenAssessment === null ? null : (
-                  <Badge variant='secondary'>{getAllergenStatusLabel(item.allergenAssessment.status)}</Badge>
-                )}
+                <ClassificationProvenance
+                  classification={item.classification}
+                  compact
+                />
+                <AllergenAssessmentStatusBadge assessment={item.allergenAssessment} />
               </li>
             );
           })}

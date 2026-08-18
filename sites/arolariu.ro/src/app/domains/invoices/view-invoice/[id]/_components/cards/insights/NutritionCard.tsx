@@ -5,14 +5,10 @@
  * @module domains/invoices/view-invoice/[id]/components/cards/insights/NutritionCard
  */
 
-import {
-  getAllergenCodeLabel,
-  getAllergenEvidenceLevelLabel,
-  getAllergenStatusLabel,
-} from "@/app/domains/invoices/_utils/classificationUtilities";
-import {Badge, Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
+import {AllergenAssessmentDetails} from "@/app/domains/invoices/_components/analysis/StructuredAnalysisDetails";
+import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import {TbAlertTriangle, TbLeaf} from "react-icons/tb";
+import {TbLeaf} from "react-icons/tb";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
 import styles from "./NutritionCard.module.scss";
 
@@ -20,7 +16,6 @@ import styles from "./NutritionCard.module.scss";
 export function NutritionCard(): React.JSX.Element {
   const t = useTranslations();
   const {invoice} = useInvoiceContext();
-  const assessedItems = invoice.items.filter((item) => item.allergenAssessment !== null);
 
   return (
     <Card>
@@ -31,29 +26,16 @@ export function NutritionCard(): React.JSX.Element {
         </CardTitle>
       </CardHeader>
       <CardContent className={styles["contentSpaced"]}>
-        {assessedItems.length === 0 ? (
+        {invoice.items.length === 0 ? (
           <p className={styles["scoreLabel"]}>{t((m) => m.cards.invoices.nutritionCard.allergens.title)}</p>
         ) : (
           <ul className={styles["allergenList"]}>
-            {assessedItems.map((item) => {
-              const assessment = item.allergenAssessment;
-              if (assessment === null) return null;
-              return (
-                <li key={`${item.productCode}-${item.name}`}>
-                  <p className={styles["scoreLabel"]}>
-                    {item.name}: {getAllergenStatusLabel(assessment.status)}
-                  </p>
-                  {assessment.signals.map((signal) => (
-                    <Badge
-                      key={signal.code}
-                      variant='outline'>
-                      <TbAlertTriangle />
-                      {getAllergenCodeLabel(signal.code)} · {getAllergenEvidenceLevelLabel(signal.evidenceLevel)}
-                    </Badge>
-                  ))}
-                </li>
-              );
-            })}
+            {invoice.items.map((item, index) => (
+              <li key={`${item.productCode}-${item.name}-${index}`}>
+                <p className={styles["scoreLabel"]}>{item.name}</p>
+                <AllergenAssessmentDetails assessment={item.allergenAssessment} />
+              </li>
+            ))}
           </ul>
         )}
       </CardContent>

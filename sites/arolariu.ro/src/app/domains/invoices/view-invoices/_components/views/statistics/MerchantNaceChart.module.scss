@@ -1,0 +1,39 @@
+@use "../../../../../../../styles/abstracts" as *;
+
+.card {
+  min-height: 100%;
+}
+
+.list {
+  @include spaced-children(space(3));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: space(3);
+  border-bottom: 1px solid color("border");
+  padding-bottom: space(3);
+}
+
+.label {
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
+}
+
+.meta {
+  @include text-muted("xs");
+}
+
+.amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: font-weight("semibold");
+  white-space: nowrap;
+}
+
+.empty {
+  @include text-muted("sm");
+}

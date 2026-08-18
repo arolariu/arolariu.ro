@@ -4,17 +4,18 @@
  */
 
 import {ClassificationOrigin, ClassificationSystem, type Merchant, type StandardClassification} from "@/types/invoices";
-import {faker} from "@faker-js/faker";
 
 function buildNaceClassification(): StandardClassification {
   return {
     system: ClassificationSystem.Nace21,
-    version: "2026.08",
-    code: "G47",
-    officialLabel: "Retail trade",
+    version: "2.1",
+    code: "47.11",
+    officialLabel: "Non-specialised retail sale of predominately food, beverages or tobacco",
     hierarchy: [
-      {level: "section", code: "G", officialLabel: "Wholesale and retail trade"},
-      {level: "division", code: "G47", officialLabel: "Retail trade"},
+      {level: "section", code: "G", officialLabel: "WHOLESALE AND RETAIL TRADE"},
+      {level: "division", code: "47", officialLabel: "Retail trade"},
+      {level: "group", code: "47.1", officialLabel: "Non-specialised retail sale"},
+      {level: "class", code: "47.11", officialLabel: "Non-specialised retail sale of predominately food, beverages or tobacco"},
     ],
     origin: ClassificationOrigin.Analysis,
     confidence: 0.9,
@@ -27,27 +28,27 @@ export class MerchantBuilder {
   private value: Merchant;
 
   public constructor() {
-    const now = faker.date.recent();
+    const now = new Date("2026-08-18T00:00:00.000Z");
     this.value = {
-      id: faker.string.uuid(),
-      name: faker.company.name(),
-      description: faker.lorem.sentence(),
+      id: "11111111-1111-7111-8111-111111111111",
+      name: "Test Merchant",
+      description: "Deterministic merchant fixture.",
       classification: buildNaceClassification(),
       address: {
-        fullName: faker.company.name(),
-        address: faker.location.streetAddress(true),
-        phoneNumber: faker.phone.number(),
-        emailAddress: faker.internet.email(),
-        website: faker.internet.url(),
+        fullName: "Test Merchant",
+        address: "123 Test Street",
+        phoneNumber: "+40 700 000 000",
+        emailAddress: "merchant@example.test",
+        website: "https://merchant.example.test",
       },
       parentCompanyId: "00000000-0000-0000-0000-000000000000",
       referencedInvoiceCount: 0,
       referencedInvoiceIds: [],
       additionalMetadata: {},
       createdAt: now,
-      createdBy: faker.string.uuid(),
+      createdBy: "22222222-2222-7222-8222-222222222222",
       lastUpdatedAt: now,
-      lastUpdatedBy: faker.string.uuid(),
+      lastUpdatedBy: "22222222-2222-7222-8222-222222222222",
       numberOfUpdates: 0,
       isImportant: false,
       isSoftDeleted: false,
@@ -124,7 +125,7 @@ export class MerchantBuilder {
   }
 
   public buildMany(count: number): Merchant[] {
-    return Array.from({length: count}, () => this.withId(faker.string.uuid()).build());
+    return Array.from({length: count}, (_, index) => this.withId(`11111111-1111-7111-8111-${String(index + 1).padStart(12, "0")}`).build());
   }
 }
 

@@ -437,8 +437,7 @@
       },
       "recipeCard": {
         "buttons": {
-          "viewRecipe": "Vezi rețeta",
-          "visitReference": "Vizitează referința"
+          "viewRecipe": "Vezi rețeta"
         },
         "complexity": {
           "easy": "Complexitate ușoară",
@@ -564,7 +563,12 @@
         "allergenSummary": {
           "ariaLabel": "Rezumat frecvență alergeni",
           "description": "Expunerea la alergeni în produse",
-          "empty": "Niciun alergen detectat în achizițiile tale",
+          "empty": "Nu au fost găsite semnale de alergeni în dovezile evaluate.",
+          "coverage": {
+            "assessed": "Dovezi evaluate",
+            "insufficientData": "Date insuficiente",
+            "notAssessed": "Neevaluat"
+          },
           "stats": {
             "ofTotal": "din total",
             "products": "produse"
@@ -654,6 +658,12 @@
           "empty": "Nu sunt date disponibile despre comercianți",
           "labels": {
             "totalSpent": "Total Cheltuit"
+          },
+          "merchantNace": {
+            "title": "Sectoare comercianți",
+            "description": "Cheltuieli grupate după secțiunea canonică NACE 2.1",
+            "empty": "Niciun comerciant asociat nu are încă o secțiune NACE canonică.",
+            "metadata": "{invoices} facturi · {merchants} comercianți"
           },
           "title": "Comercianți de Top",
           "tooltip": {
@@ -822,7 +832,8 @@
           "analysisOrigin": "Rezultat al analizei",
           "manualOrigin": "Selecție manuală",
           "confidence": "Încredere orientativă: {confidence}",
-          "evidence": "Dovezi disponibile"
+          "evidence": "Dovezi disponibile",
+          "root": "Rădăcină: {label} ({code})"
         },
         "allergens": {
           "detected": "Au fost detectate semnale",
@@ -830,14 +841,36 @@
           "insufficientData": "Date insuficiente",
           "explicit": "Dovezi explicite",
           "inferred": "Dovezi deduse",
-          "precautionary": "Dovezi de precauție"
+          "precautionary": "Dovezi de precauție",
+          "notAssessed": "Neevaluat",
+          "confidence": "Încredere orientativă: {confidence}%",
+          "codes": {
+            "cerealsContainingGluten": "Cereale care conțin gluten",
+            "crustaceans": "Crustacee",
+            "eggs": "Ouă",
+            "fish": "Pește",
+            "peanuts": "Arahide",
+            "soybeans": "Soia",
+            "milk": "Lapte",
+            "nuts": "Nuci",
+            "celery": "Țelină",
+            "mustard": "Muștar",
+            "sesame": "Susan",
+            "sulphurDioxideAndSulphites": "Dioxid de sulf și sulfiți",
+            "lupin": "Lupin",
+            "molluscs": "Moluște"
+          }
         },
         "recipes": {
           "purchasedIngredients": "Ingrediente cumpărate",
           "pantryStaples": "Produse de bază presupuse în cămară",
           "missingOptionalIngredients": "Ingrediente opționale lipsă",
           "steps": "Pași de preparare",
-          "warnings": "Avertismente despre alergeni"
+          "warnings": "Avertismente despre alergeni",
+          "servings": "{count} porții",
+          "preparationMinutes": "Pregătire: {minutes} min",
+          "cookingMinutes": "Gătire: {minutes} min",
+          "totalMinutes": "Total: {minutes} min"
         }
       }
     }
@@ -885,9 +918,9 @@
           "saving": "Se salvează..."
         },
         "defaultDescription": "Conține {name}",
-        "description": "Gestionează alergenii pentru {productName}",
+        "description": "Examinează dovezile evaluării pentru {productName}",
         "empty": {
-          "noAllergens": "Niciun alergen detectat"
+          "noAllergens": "Neevaluat"
         },
         "errors": {
           "duplicate": "Alergenul {name} este deja adăugat",
@@ -908,7 +941,7 @@
           "removed": "Alergen eliminat: {name}",
           "saved": "Alergenii au fost actualizați cu succes"
         },
-        "title": "Editează Alergeni"
+        "title": "Evaluare alergeni"
       },
       "bulkCategoryDialog": {
         "buttons": {
@@ -3108,6 +3141,41 @@
           "printError": "Eroare la deschiderea dialogului de printare",
           "printSuccess": "Dialog de printare deschis",
           "title": "Exportă Factură"
+        },
+        "pdf": {
+          "reportTitle": "Raport factură",
+          "generatedOn": "Generat la {date}",
+          "invoiceInformation": "Informații factură",
+          "invoiceName": "Nume factură",
+          "description": "Descriere",
+          "classification": "Clasificare",
+          "invoiceIdentifier": "ID factură",
+          "transactionDate": "Data tranzacției",
+          "receiptType": "Tip bon",
+          "merchantInformation": "Informații comerciant",
+          "merchantName": "Nume comerciant",
+          "unknownMerchant": "Comerciant neasociat",
+          "fullName": "Nume complet",
+          "address": "Adresă",
+          "phone": "Telefon",
+          "paymentSummary": "Rezumat plată",
+          "subtotal": "Subtotal",
+          "tax": "Taxă",
+          "tip": "Bacșiș",
+          "total": "Total",
+          "currency": "Monedă",
+          "paymentMethod": "Metodă de plată",
+          "items": "Articole",
+          "number": "#",
+          "product": "Produs",
+          "quantity": "Cantitate",
+          "unitPrice": "Preț unitar",
+          "productSignals": "Semnale",
+          "analysisSummary": "Rezumat analiză",
+          "numberOfItems": "Număr articole",
+          "numberOfScans": "Număr scanări",
+          "recipes": "Sugestii de rețete",
+          "page": "Pagina {page}"
         },
         "healthScore": {
           "cta": {

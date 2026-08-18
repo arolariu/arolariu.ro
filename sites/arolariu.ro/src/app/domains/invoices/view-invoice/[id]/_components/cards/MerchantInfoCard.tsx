@@ -5,9 +5,9 @@
  * @module domains/invoices/view-invoice/[id]/components/cards/MerchantInfoCard
  */
 
-import {getClassificationSummary} from "@/app/domains/invoices/_utils/classificationUtilities";
+import {ClassificationProvenance} from "@/app/domains/invoices/_components/analysis/StructuredAnalysisDetails";
 import {MerchantAnalysisForm} from "@/app/domains/invoices/_components/analysis/MerchantAnalysisForm";
-import {Badge, Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
+import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 
@@ -31,7 +31,7 @@ export default function MerchantInfoCard(): React.JSX.Element {
       <CardContent>
         <p>{merchant.name}</p>
         <p>{merchant.description}</p>
-        <Badge variant='outline'>{getClassificationSummary(merchant.classification)}</Badge>
+        <ClassificationProvenance classification={merchant.classification} />
         <address>
           {merchant.address.address}
           {merchant.address.phoneNumber === "" ? null : <span>{merchant.address.phoneNumber}</span>}

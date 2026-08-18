@@ -39,7 +39,8 @@ export function InvoiceAnalytics(): React.JSX.Element {
 
   const isOwner = invoice.userIdentifier === userIdentifier;
   const currency = invoice.paymentInformation.currency.symbol;
-  const categoryData = getCategorySpending(invoice.items);
+  const unclassifiedLabel = t((m) => m.cards.invoices.analysisResults.unclassified);
+  const categoryData = getCategorySpending(invoice.items, unclassifiedLabel);
   const priceData = getPriceDistribution(invoice.items);
   const quantityData = getQuantityAnalysis(invoice.items);
   const summary = getInvoiceSummary(invoice);
@@ -47,7 +48,10 @@ export function InvoiceAnalytics(): React.JSX.Element {
   // Memoize comparison analytics (computed from all cached invoices)
   const trendData = useMemo(() => getSpendingTrend(invoice, allInvoices), [invoice, allInvoices]);
   const comparisonStats = useMemo(() => getComparisonStats(invoice, allInvoices), [invoice, allInvoices]);
-  const categoryComparison = useMemo(() => getCategoryComparison(invoice, allInvoices), [invoice, allInvoices]);
+  const categoryComparison = useMemo(
+    () => getCategoryComparison(invoice, allInvoices, unclassifiedLabel),
+    [invoice, allInvoices, unclassifiedLabel],
+  );
   const merchantBreakdown = useMemo(() => getMerchantBreakdown(allInvoices), [allInvoices]);
 
   // Check if we have enough data for meaningful comparisons

@@ -1,18 +1,10 @@
-import {
-  ClassificationOrigin,
-  ClassificationSystem,
-  AllergenAssessmentStatus,
-  AllergenEvidenceLevel,
-  type StandardClassification,
-} from "@/types/invoices";
+import {ClassificationOrigin, ClassificationSystem, type StandardClassification} from "@/types/invoices";
 import {describe, expect, it} from "vitest";
 import {
   formatClassificationConfidence,
   getClassificationLabel,
   getClassificationRoot,
   getClassificationSummary,
-  getAllergenEvidenceLevelLabel,
-  getAllergenStatusLabel,
 } from "./classificationUtilities";
 
 const analysisClassification: StandardClassification = {
@@ -31,15 +23,15 @@ const analysisClassification: StandardClassification = {
 
 describe("classificationUtilities", () => {
   it("renders an honest explicit fallback for an unclassified value", () => {
-    expect(getClassificationLabel(null)).toBe("Unclassified");
+    expect(getClassificationLabel(null, "Unclassified")).toBe("Unclassified");
     expect(getClassificationRoot(null)).toBeNull();
-    expect(getClassificationSummary(null)).toBe("Unclassified");
+    expect(getClassificationSummary(null, "Unclassified")).toBe("Unclassified");
   });
 
   it("uses the official label, code, and root hierarchy node", () => {
-    expect(getClassificationLabel(analysisClassification)).toBe("Food");
+    expect(getClassificationLabel(analysisClassification, "Unclassified")).toBe("Food");
     expect(getClassificationRoot(analysisClassification)).toEqual(analysisClassification.hierarchy[0]);
-    expect(getClassificationSummary(analysisClassification)).toBe("Food (01.1)");
+    expect(getClassificationSummary(analysisClassification, "Unclassified")).toBe("Food (01.1)");
   });
 
   it("shows bounded confidence only for analysis-origin classifications", () => {
@@ -61,17 +53,5 @@ describe("classificationUtilities", () => {
     };
 
     expect(formatClassificationConfidence(confidenceUnavailable)).toBeNull();
-  });
-
-  it("uses cautious status wording for every assessment outcome", () => {
-    expect(getAllergenStatusLabel(AllergenAssessmentStatus.Detected)).toBe("Signals detected");
-    expect(getAllergenStatusLabel(AllergenAssessmentStatus.NoSignals)).toBe("No signals in available evidence");
-    expect(getAllergenStatusLabel(AllergenAssessmentStatus.InsufficientData)).toBe("Insufficient data");
-  });
-
-  it("labels every evidence tier without overstating certainty", () => {
-    expect(getAllergenEvidenceLevelLabel(AllergenEvidenceLevel.Explicit)).toBe("Explicit evidence");
-    expect(getAllergenEvidenceLevelLabel(AllergenEvidenceLevel.Inferred)).toBe("Inferred evidence");
-    expect(getAllergenEvidenceLevelLabel(AllergenEvidenceLevel.Precautionary)).toBe("Precautionary evidence");
   });
 });

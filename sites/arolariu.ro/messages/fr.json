@@ -437,8 +437,7 @@
       },
       "recipeCard": {
         "buttons": {
-          "viewRecipe": "Voir la recette",
-          "visitReference": "Visiter la référence"
+          "viewRecipe": "Voir la recette"
         },
         "complexity": {
           "easy": "Complexité facile",
@@ -564,7 +563,12 @@
         "allergenSummary": {
           "ariaLabel": "Résumé de la fréquence des allergènes",
           "description": "Exposition aux allergènes dans vos produits",
-          "empty": "Aucun allergène détecté dans vos achats",
+          "empty": "Aucun signal d’allergène n’a été trouvé dans les éléments évalués.",
+          "coverage": {
+            "assessed": "Éléments évalués",
+            "insufficientData": "Données insuffisantes",
+            "notAssessed": "Non évalué"
+          },
           "stats": {
             "ofTotal": "du total",
             "products": "produits"
@@ -654,6 +658,12 @@
           "empty": "Aucune donnée de marchand disponible",
           "labels": {
             "totalSpent": "Total dépensé"
+          },
+          "merchantNace": {
+            "title": "Secteurs des commerçants",
+            "description": "Dépenses regroupées par section NACE 2.1 canonique",
+            "empty": "Aucun commerçant associé ne possède encore de section NACE canonique.",
+            "metadata": "{invoices} factures · {merchants} commerçants"
           },
           "title": "Principaux commerçants",
           "tooltip": {
@@ -822,7 +832,8 @@
           "analysisOrigin": "Résultat de l’analyse",
           "manualOrigin": "Sélection manuelle",
           "confidence": "Confiance indicative : {confidence}",
-          "evidence": "Éléments disponibles"
+          "evidence": "Éléments disponibles",
+          "root": "Racine : {label} ({code})"
         },
         "allergens": {
           "detected": "Signaux détectés",
@@ -830,14 +841,36 @@
           "insufficientData": "Données insuffisantes",
           "explicit": "Éléments explicites",
           "inferred": "Éléments déduits",
-          "precautionary": "Éléments de précaution"
+          "precautionary": "Éléments de précaution",
+          "notAssessed": "Non évalué",
+          "confidence": "Confiance indicative : {confidence} %",
+          "codes": {
+            "cerealsContainingGluten": "Céréales contenant du gluten",
+            "crustaceans": "Crustacés",
+            "eggs": "Œufs",
+            "fish": "Poissons",
+            "peanuts": "Arachides",
+            "soybeans": "Soja",
+            "milk": "Lait",
+            "nuts": "Fruits à coque",
+            "celery": "Céleri",
+            "mustard": "Moutarde",
+            "sesame": "Sésame",
+            "sulphurDioxideAndSulphites": "Dioxyde de soufre et sulfites",
+            "lupin": "Lupin",
+            "molluscs": "Mollusques"
+          }
         },
         "recipes": {
           "purchasedIngredients": "Ingrédients achetés",
           "pantryStaples": "Produits de base supposés disponibles",
           "missingOptionalIngredients": "Ingrédients facultatifs manquants",
           "steps": "Étapes de préparation",
-          "warnings": "Avertissements concernant les allergènes"
+          "warnings": "Avertissements concernant les allergènes",
+          "servings": "{count} portions",
+          "preparationMinutes": "Préparation : {minutes} min",
+          "cookingMinutes": "Cuisson : {minutes} min",
+          "totalMinutes": "Total : {minutes} min"
         }
       }
     }
@@ -885,9 +918,9 @@
           "saving": "Enregistrement..."
         },
         "defaultDescription": "Contient {name}",
-        "description": "Gérer les allergènes pour {productName}",
+        "description": "Examiner les éléments de l’évaluation pour {productName}",
         "empty": {
-          "noAllergens": "Aucun allergène détecté"
+          "noAllergens": "Non évalué"
         },
         "errors": {
           "duplicate": "L''allergène {name} a déjà été ajouté",
@@ -908,7 +941,7 @@
           "removed": "Allergène retiré : {name}",
           "saved": "Allergènes mis à jour avec succès"
         },
-        "title": "Modifier les allergènes"
+        "title": "Évaluation des allergènes"
       },
       "bulkCategoryDialog": {
         "buttons": {
@@ -3108,6 +3141,41 @@
           "printError": "Échec de l'ouverture de la boîte de dialogue d'impression",
           "printSuccess": "Boîte de dialogue d'impression ouverte",
           "title": "Exporter la facture"
+        },
+        "pdf": {
+          "reportTitle": "Rapport de facture",
+          "generatedOn": "Généré le {date}",
+          "invoiceInformation": "Informations sur la facture",
+          "invoiceName": "Nom de la facture",
+          "description": "Description",
+          "classification": "Classification",
+          "invoiceIdentifier": "ID de la facture",
+          "transactionDate": "Date de transaction",
+          "receiptType": "Type de reçu",
+          "merchantInformation": "Informations sur le commerçant",
+          "merchantName": "Nom du commerçant",
+          "unknownMerchant": "Commerçant non associé",
+          "fullName": "Nom complet",
+          "address": "Adresse",
+          "phone": "Téléphone",
+          "paymentSummary": "Résumé du paiement",
+          "subtotal": "Sous-total",
+          "tax": "Taxe",
+          "tip": "Pourboire",
+          "total": "Total",
+          "currency": "Devise",
+          "paymentMethod": "Méthode de paiement",
+          "items": "Articles",
+          "number": "#",
+          "product": "Produit",
+          "quantity": "Quantité",
+          "unitPrice": "Prix unitaire",
+          "productSignals": "Signaux",
+          "analysisSummary": "Résumé de l’analyse",
+          "numberOfItems": "Nombre d’articles",
+          "numberOfScans": "Nombre de scans",
+          "recipes": "Suggestions de recettes",
+          "page": "Page {page}"
         },
         "healthScore": {
           "cta": {

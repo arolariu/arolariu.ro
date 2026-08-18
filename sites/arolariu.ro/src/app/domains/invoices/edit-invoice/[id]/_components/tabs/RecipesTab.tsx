@@ -148,7 +148,7 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
         <CardContent>
           {paginatedItems.length > 0 ? (
             <div className={styles["recipesGrid"]}>
-              {recipes.map((recipe) => (
+              {paginatedItems.map((recipe) => (
                 <RecipeCard
                   key={recipe.name}
                   recipe={recipe}

@@ -19,14 +19,25 @@
  */
 
 import {formatAmount} from "@/lib/utils.generic";
+import {AllergenCodeLabel} from "@/app/domains/invoices/_components/analysis/StructuredAnalysisDetails";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import {TbAlertTriangle} from "react-icons/tb";
-import type {AllergenFrequency} from "../../../_utils/statistics";
+import {TbAlertTriangle, TbInfoCircle} from "react-icons/tb";
+import type {AllergenFrequency, AllergenStatistics} from "../../../_utils/statistics";
 import styles from "./AllergenSummaryChart.module.scss";
 
 type Props = {
-  readonly data: AllergenFrequency[];
+  /** Detected-signal frequencies using assessed-product coverage as their denominator. */
+  readonly data: readonly AllergenFrequency[];
+  /** Separate assessment coverage so empty signal results cannot imply safety. */
+  readonly coverage?: Omit<AllergenStatistics, "frequencies">;
+};
+
+const EMPTY_COVERAGE: Omit<AllergenStatistics, "frequencies"> = {
+  assessedProductCount: 0,
+  insufficientDataProductCount: 0,
+  unassessedProductCount: 0,
+  totalProductCount: 0,
 };
 
 /**
@@ -63,7 +74,7 @@ function AllergenCard({allergen}: {readonly allergen: AllergenFrequency}): React
           <h4
             className={styles["allergenName"]}
             title={allergen.description}>
-            {allergen.name}
+            <AllergenCodeLabel code={allergen.name} />
           </h4>
           <p className={styles["allergenDescription"]}>{allergen.description}</p>
         </div>
@@ -104,10 +115,9 @@ function AllergenCard({allergen}: {readonly allergen: AllergenFrequency}): React
  * @param data - Allergen frequencies sorted by product count
  * @returns Grid of allergen cards
  */
-export function AllergenSummaryChart({data}: Props): React.JSX.Element {
+export function AllergenSummaryChart({data, coverage = EMPTY_COVERAGE}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations();
 
-  // Empty state - positive message
   if (data.length === 0) {
     return (
       <Card className={styles["card"]}>
@@ -119,8 +129,9 @@ export function AllergenSummaryChart({data}: Props): React.JSX.Element {
         </CardHeader>
         <CardContent className={styles["cardContent"]}>
           <div className={styles["emptyState"]}>
-            <div className={styles["emptyIcon"]}>✓</div>
+            <TbInfoCircle className={styles["emptyIcon"]} />
             <p className={styles["emptyText"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.empty)}</p>
+            <AssessmentCoverage coverage={coverage} />
           </div>
         </CardContent>
       </Card>
@@ -136,6 +147,7 @@ export function AllergenSummaryChart({data}: Props): React.JSX.Element {
         </CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
+        <AssessmentCoverage coverage={coverage} />
         <div
           className={styles["allergenGrid"]}
           role='list'
@@ -149,5 +161,27 @@ export function AllergenSummaryChart({data}: Props): React.JSX.Element {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function AssessmentCoverage({coverage}: Readonly<{coverage: Omit<AllergenStatistics, "frequencies">}>): React.JSX.Element {
+  const t = useTranslations();
+  return (
+    <dl className={styles["coverage"]}>
+      <div>
+        <dt>{t((m) => m.cards.invoices.statistics.allergenSummary.coverage.assessed)}</dt>
+        <dd>
+          {coverage.assessedProductCount}/{coverage.totalProductCount}
+        </dd>
+      </div>
+      <div>
+        <dt>{t((m) => m.cards.invoices.statistics.allergenSummary.coverage.insufficientData)}</dt>
+        <dd>{coverage.insufficientDataProductCount}</dd>
+      </div>
+      <div>
+        <dt>{t((m) => m.cards.invoices.statistics.allergenSummary.coverage.notAssessed)}</dt>
+        <dd>{coverage.unassessedProductCount}</dd>
+      </div>
+    </dl>
   );
 }

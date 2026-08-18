@@ -3,46 +3,7 @@
  * @module app/domains/invoices/_utils/classificationUtilities
  */
 
-import {
-  AllergenAssessmentStatus as AllergenStatus,
-  AllergenCode as Allergen,
-  AllergenEvidenceLevel as AllergenEvidence,
-  ClassificationOrigin,
-  type AllergenAssessmentStatusValue,
-  type AllergenCodeValue,
-  type AllergenEvidenceLevelValue,
-  type ClassificationNode,
-  type StandardClassification,
-} from "@/types/invoices";
-
-const allergenLabels: Readonly<Record<AllergenCodeValue, string>> = {
-  [Allergen.CerealsContainingGluten]: "Cereals containing gluten",
-  [Allergen.Crustaceans]: "Crustaceans",
-  [Allergen.Eggs]: "Eggs",
-  [Allergen.Fish]: "Fish",
-  [Allergen.Peanuts]: "Peanuts",
-  [Allergen.Soybeans]: "Soybeans",
-  [Allergen.Milk]: "Milk",
-  [Allergen.Nuts]: "Nuts",
-  [Allergen.Celery]: "Celery",
-  [Allergen.Mustard]: "Mustard",
-  [Allergen.Sesame]: "Sesame",
-  [Allergen.SulphurDioxideAndSulphites]: "Sulphur dioxide and sulphites",
-  [Allergen.Lupin]: "Lupin",
-  [Allergen.Molluscs]: "Molluscs",
-};
-
-const allergenStatusLabels: Readonly<Record<AllergenAssessmentStatusValue, string>> = {
-  [AllergenStatus.Detected]: "Signals detected",
-  [AllergenStatus.NoSignals]: "No signals in available evidence",
-  [AllergenStatus.InsufficientData]: "Insufficient data",
-};
-
-const allergenEvidenceLevelLabels: Readonly<Record<AllergenEvidenceLevelValue, string>> = {
-  [AllergenEvidence.Explicit]: "Explicit evidence",
-  [AllergenEvidence.Inferred]: "Inferred evidence",
-  [AllergenEvidence.Precautionary]: "Precautionary evidence",
-};
+import {ClassificationOrigin, type ClassificationNode, type StandardClassification} from "@/types/invoices";
 
 /**
  * Returns the authoritative label for a classification, with an explicit
@@ -52,7 +13,7 @@ const allergenEvidenceLevelLabels: Readonly<Record<AllergenEvidenceLevelValue, s
  * @param unclassifiedLabel - Localized fallback for null values.
  * @returns Official label or the localized unclassified label.
  */
-export function getClassificationLabel(classification: StandardClassification | null, unclassifiedLabel = "Unclassified"): string {
+export function getClassificationLabel(classification: StandardClassification | null, unclassifiedLabel: string): string {
   return classification?.officialLabel ?? unclassifiedLabel;
 }
 
@@ -73,7 +34,7 @@ export function getClassificationRoot(classification: StandardClassification | n
  * @param unclassifiedLabel - Localized fallback for null values.
  * @returns A concise, non-inferred display summary.
  */
-export function getClassificationSummary(classification: StandardClassification | null, unclassifiedLabel = "Unclassified"): string {
+export function getClassificationSummary(classification: StandardClassification | null, unclassifiedLabel: string): string {
   return classification === null ? unclassifiedLabel : `${classification.officialLabel} (${classification.code})`;
 }
 
@@ -96,24 +57,4 @@ export function formatClassificationConfidence(classification: StandardClassific
   }
 
   return `${Math.round(classification.confidence * 100)}%`;
-}
-
-/**
- * Returns a cautious human-readable status label for an allergen assessment.
- *
- * @param status - Exact backend assessment status.
- * @returns A label that never implies a safety guarantee.
- */
-export function getAllergenStatusLabel(status: AllergenAssessmentStatusValue): string {
-  return allergenStatusLabels[status];
-}
-
-/** Returns the human-readable EU-14 allergen label for an exact code. */
-export function getAllergenCodeLabel(code: AllergenCodeValue): string {
-  return allergenLabels[code];
-}
-
-/** Returns the human-readable evidence-strength label for an exact code. */
-export function getAllergenEvidenceLevelLabel(evidenceLevel: AllergenEvidenceLevelValue): string {
-  return allergenEvidenceLevelLabels[evidenceLevel];
 }

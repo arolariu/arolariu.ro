@@ -12,7 +12,9 @@ describe("invoice analytics", () => {
       items: [buildProduct({classification: milk, totalPrice: 10})],
     });
 
-    expect(getCategoryComparison(current, [current, historical])).toEqual([{category: "Milk (10000234)", current: 20, average: 10}]);
+    expect(getCategoryComparison(current, [current, historical], "Unclassified")).toEqual([
+      {category: "Milk (10000234)", current: 20, average: 10},
+    ]);
   });
 
   it("calculates product unit prices without inferring a numeric classification", () => {

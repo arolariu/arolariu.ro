@@ -1,4 +1,4 @@
-import {AllergenAssessmentStatus, ClassificationSystem} from "../../../src/types/invoices";
+import {AllergenAssessmentStatus, ClassificationSystem, isRecipeSuggestion} from "../../../src/types/invoices";
 import {describe, expect, it} from "vitest";
 import {
   buildAllergenAssessment,
@@ -11,7 +11,8 @@ import {
 describe("domain builders", () => {
   it("builds canonical classifications and structured recipes", () => {
     expect(buildClassification().system).toBe(ClassificationSystem.EcoicopV2);
-    expect(buildRecipe().steps).toEqual([]);
+    expect(buildRecipe().steps).toHaveLength(1);
+    expect(isRecipeSuggestion(buildRecipe())).toBe(true);
   });
 
   it("builds cautious no-signals evidence", () => {

@@ -82,7 +82,10 @@ export default function ChangeHistory(): React.JSX.Element {
     }
 
     if (pendingChanges.classification) {
-      const oldClassification = getClassificationSummary(invoice.classification);
+      const oldClassification = getClassificationSummary(
+        invoice.classification,
+        t((m) => m.cards.invoices.analysisResults.unclassified),
+      );
       const newClassification = `${pendingChanges.classification.system}: ${pendingChanges.classification.code}`;
       items.push({
         id: "pending-classification",

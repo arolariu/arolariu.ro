@@ -6,10 +6,9 @@
  */
 
 import type {Product} from "@/types/invoices";
-import {Badge, Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@arolariu/components";
+import {Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import {TbAlertTriangle} from "react-icons/tb";
-import {getAllergenCodeLabel, getAllergenEvidenceLevelLabel, getAllergenStatusLabel} from "../../../_utils/classificationUtilities";
+import {AllergenAssessmentDetails} from "../../../_components/analysis/StructuredAnalysisDetails";
 import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./AllergenDialog.module.scss";
 
@@ -50,35 +49,7 @@ export default function AllergenDialog(): React.JSX.Element | null {
           </DialogDescription>
         </DialogHeader>
         <div className={styles["content"]}>
-          {assessment === null ? (
-            <p className={styles["emptyText"]}>{t((m) => m.dialogs.invoices.allergenDialog.empty.noAllergens)}</p>
-          ) : (
-            <>
-              <p className={styles["sectionLabel"]}>{getAllergenStatusLabel(assessment.status)}</p>
-              {assessment.signals.length === 0 ? null : (
-                <ul className={styles["allergenList"]}>
-                  {assessment.signals.map((signal) => (
-                    <li key={signal.code}>
-                      <Badge
-                        variant='secondary'
-                        className={styles["allergenBadge"]}>
-                        <TbAlertTriangle className={styles["removeIcon"]} />
-                        {getAllergenCodeLabel(signal.code)}
-                      </Badge>
-                      <p className={styles["emptyText"]}>
-                        {getAllergenEvidenceLevelLabel(signal.evidenceLevel)} · {Math.round(signal.confidence * 100)}%
-                      </p>
-                      <ul className={styles["allergenList"]}>
-                        {signal.evidence.map((evidence) => (
-                          <li key={`${evidence.source}-${evidence.value}`}>{evidence.value}</li>
-                        ))}
-                      </ul>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </>
-          )}
+          <AllergenAssessmentDetails assessment={assessment} />
         </div>
         <DialogFooter>
           <Button

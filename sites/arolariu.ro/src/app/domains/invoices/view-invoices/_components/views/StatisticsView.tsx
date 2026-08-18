@@ -23,17 +23,19 @@
  */
 
 import type {Invoice} from "@/types/invoices";
+import {useMerchantsStore} from "@/stores/merchantsStore";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import {useMemo} from "react";
 import {TbChartBar} from "react-icons/tb";
 import {
-  computeAllergenFrequency,
+  computeAllergenStatistics,
   computeCategoryAggregates,
   computeCurrencyDistribution,
   computeDailySpending,
   computeKPIs,
   computeMerchantAggregates,
+  computeMerchantNaceAggregates,
   computeMerchantTrends,
   computeMerchantVisitFrequency,
   computeMonthComparison,
@@ -49,6 +51,7 @@ import {ComparisonCards} from "./statistics/ComparisonCards";
 import {CurrencyDistributionChart} from "./statistics/CurrencyDistributionChart";
 import {KPISummaryRow} from "./statistics/KPISummaryRow";
 import {MerchantLeaderboard} from "./statistics/MerchantLeaderboard";
+import {MerchantNaceChart} from "./statistics/MerchantNaceChart";
 import {MerchantTrendsChart} from "./statistics/MerchantTrendsChart";
 import {MerchantVisitChart} from "./statistics/MerchantVisitChart";
 import {PriceDistributionChart} from "./statistics/PriceDistributionChart";
@@ -107,12 +110,14 @@ function EmptyState(): React.JSX.Element {
  */
 export default function RenderStatisticsView({invoices}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations();
+  const merchants = useMerchantsStore((state) => state.entities);
 
   // Compute all statistics data with memoization
   const kpiData = useMemo(() => computeKPIs(invoices), [invoices]);
   const monthlySpending = useMemo(() => computeMonthlySpending(invoices), [invoices]);
   const categoryAggregates = useMemo(() => computeCategoryAggregates(invoices), [invoices]);
   const merchantAggregates = useMemo(() => computeMerchantAggregates(invoices), [invoices]);
+  const merchantNaceAggregates = useMemo(() => computeMerchantNaceAggregates(invoices, merchants), [invoices, merchants]);
   const priceDistribution = useMemo(() => computePriceDistribution(invoices), [invoices]);
   const timeOfDaySegments = useMemo(() => computeTimeOfDay(invoices), [invoices]);
   const monthComparison = useMemo(() => computeMonthComparison(invoices), [invoices]);
@@ -121,7 +126,7 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
   // Product-level analytics
   const productClassificationSpending = useMemo(() => computeProductClassificationSpending(invoices), [invoices]);
   const topProducts = useMemo(() => computeTopProducts(invoices, 10), [invoices]);
-  const allergenFrequency = useMemo(() => computeAllergenFrequency(invoices), [invoices]);
+  const allergenStatistics = useMemo(() => computeAllergenStatistics(invoices), [invoices]);
 
   // Merchant-level analytics
   const merchantTrends = useMemo(() => computeMerchantTrends(invoices, 5), [invoices]);
@@ -178,6 +183,18 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
           transition={{duration: 0.5, delay: 0.4}}>
           <SpendingOverTimeChart
             data={monthlySpending}
+            currency={currency}
+          />
+        </motion.div>
+      </section>
+
+      <section className={styles["section"]}>
+        <motion.div
+          initial={{opacity: 0, y: 20}}
+          animate={{opacity: 1, y: 0}}
+          transition={{duration: 0.5, delay: 0.53}}>
+          <MerchantNaceChart
+            data={merchantNaceAggregates}
             currency={currency}
           />
         </motion.div>
@@ -332,7 +349,10 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
           initial={{opacity: 0, y: 20}}
           animate={{opacity: 1, y: 0}}
           transition={{duration: 0.5, delay: 0.85}}>
-          <AllergenSummaryChart data={allergenFrequency} />
+          <AllergenSummaryChart
+            data={allergenStatistics.frequencies}
+            coverage={allergenStatistics}
+          />
         </motion.div>
       </section>
     </div>

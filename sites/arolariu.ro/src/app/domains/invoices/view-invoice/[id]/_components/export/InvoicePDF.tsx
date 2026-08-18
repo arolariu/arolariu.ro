@@ -1,523 +1,391 @@
 "use client";
 
 /**
- * @fileoverview Professional PDF template for invoice export using @react-pdf/renderer.
+ * @fileoverview Localized evidence-first invoice PDF export.
  * @module domains/invoices/view-invoice/[id]/components/export/InvoicePDF
- *
- * @remarks
- * Generates a multi-page PDF document containing:
- * - **Page 1**: Invoice overview with header, transaction details, merchant info, and payment summary
- * - **Page 2+**: Products table with detailed line items
- * - **Final Section**: Analysis summary with health score and recipes
- *
- * **Design Principles:**
- * - Professional styling with clean layout and proper spacing
- * - Color palette: primary blue (#3b82f6), dark text (#1a1a1a), light gray borders
- * - Built-in Helvetica font family for consistency
- * - Page numbers in footer for navigation
- * - Proper handling of null/undefined values
- *
- * **Performance:**
- * - Client-side PDF generation using @react-pdf/renderer
- * - Efficient rendering with StyleSheet optimization
- * - On-demand generation (not during initial render)
- *
- * **Rendering Context**: Client Component (uses @react-pdf/renderer which requires client-side execution).
- *
- * @see {@link Invoice} for invoice data structure
- * @see {@link Merchant} for merchant data structure
  */
 
 import {formatAmount, formatDate} from "@/lib/utils.generic";
-import type {Invoice, Merchant} from "@/types/invoices";
+import type {Invoice, Merchant, StandardClassification} from "@/types/invoices";
 import {Document, Page, StyleSheet, Text, View} from "@react-pdf/renderer";
-import {getAllergenCodeLabel, getClassificationSummary} from "../../../../_utils/classificationUtilities";
-import {getPaymentTypeLabel} from "../../../../_utils/labelUtilities";
+import {formatClassificationConfidence, getClassificationRoot, getClassificationSummary} from "../../../../_utils/classificationUtilities";
 
-/**
- * PDF stylesheet with professional design.
- *
- * @remarks
- * **Design System:**
- * - Primary color: #3b82f6 (blue)
- * - Text color: #1a1a1a (dark gray)
- * - Border color: #e5e7eb (light gray)
- * - Background: #ffffff (white)
- *
- * **Typography:**
- * - Font family: Helvetica (built-in, reliable)
- * - Header: 18pt bold
- * - Section titles: 14pt bold
- * - Body text: 10pt regular
- * - Small text: 8pt regular
- *
- * **Layout:**
- * - Page padding: 40pt
- * - Section spacing: 20pt
- * - Row spacing: 8pt
- * - Proper use of flexbox for alignment
- */
 const styles = StyleSheet.create({
-  page: {
-    padding: 40,
-    fontFamily: "Helvetica",
-    fontSize: 10,
-    color: "#1a1a1a",
-    backgroundColor: "#ffffff",
-  },
-  header: {
-    marginBottom: 30,
-    paddingBottom: 15,
-    borderBottom: "2pt solid #3b82f6",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#3b82f6",
-    marginBottom: 5,
-  },
-  headerDate: {
-    fontSize: 9,
-    color: "#6b7280",
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#1a1a1a",
-    marginBottom: 8,
-  },
-  divider: {
-    borderBottom: "1pt solid #e5e7eb",
-    marginBottom: 8,
-  },
-  infoRow: {
-    flexDirection: "row",
-    marginBottom: 8,
-  },
-  label: {
-    width: "40%",
-    fontSize: 10,
-    color: "#6b7280",
-    fontWeight: "normal",
-  },
-  labelBold: {
-    width: "40%",
-    fontSize: 11,
-    color: "#1a1a1a",
-    fontWeight: "bold",
-  },
-  value: {
-    width: "60%",
-    fontSize: 10,
-    color: "#1a1a1a",
-  },
-  valueBold: {
-    width: "60%",
-    fontSize: 11,
-    color: "#1a1a1a",
-    fontWeight: "bold",
-  },
-  valueSmall: {
-    width: "60%",
-    fontSize: 8,
-    color: "#6b7280",
-  },
-  table: {
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  tableHeader: {
-    flexDirection: "row",
-    backgroundColor: "#f3f4f6",
-    padding: 8,
-    borderBottom: "2pt solid #3b82f6",
-    fontWeight: "bold",
-  },
-  tableRow: {
-    flexDirection: "row",
-    borderBottom: "1pt solid #e5e7eb",
-    padding: 8,
-    alignItems: "flex-start",
-  },
-  tableFooter: {
-    flexDirection: "row",
-    backgroundColor: "#f9fafb",
-    padding: 8,
-    borderTop: "2pt solid #3b82f6",
-    fontWeight: "bold",
-  },
-  tableCell: {
-    fontSize: 9,
-    color: "#1a1a1a",
-  },
-  tableCellNumber: {
-    width: "5%",
-    textAlign: "center",
-  },
-  tableCellProduct: {
-    width: "30%",
-  },
-  tableCellCategory: {
-    width: "15%",
-    fontSize: 8,
-  },
-  tableCellQty: {
-    width: "8%",
-    textAlign: "center",
-  },
-  tableCellUnit: {
-    width: "10%",
-    textAlign: "center",
-  },
-  tableCellPrice: {
-    width: "16%",
-    textAlign: "right",
-  },
-  tableCellTotal: {
-    width: "16%",
-    textAlign: "right",
-  },
-  productName: {
-    fontSize: 9,
-    color: "#1a1a1a",
-    marginBottom: 2,
-  },
-  allergens: {
-    fontSize: 7,
-    color: "#ef4444",
-    fontStyle: "italic",
-  },
-  subtotalValue: {
-    fontWeight: "bold",
-    fontSize: 10,
-  },
-  footer: {
-    position: "absolute",
-    bottom: 30,
-    left: 40,
-    right: 40,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderTop: "1pt solid #e5e7eb",
-    paddingTop: 10,
-  },
-  footerText: {
-    fontSize: 8,
-    color: "#6b7280",
-  },
+  page: {padding: 36, fontFamily: "Helvetica", fontSize: 9, color: "#1a1a1a", backgroundColor: "#ffffff"},
+  header: {marginBottom: 18, paddingBottom: 10, borderBottom: "2pt solid #3b82f6"},
+  title: {fontSize: 18, fontWeight: "bold", color: "#3b82f6"},
+  muted: {fontSize: 8, color: "#6b7280", marginTop: 4},
+  section: {marginBottom: 16},
+  sectionTitle: {fontSize: 13, fontWeight: "bold", marginBottom: 6},
+  row: {flexDirection: "row", marginBottom: 4},
+  label: {width: "36%", color: "#6b7280"},
+  value: {width: "64%"},
+  tableHeader: {flexDirection: "row", backgroundColor: "#f3f4f6", padding: 5, fontWeight: "bold"},
+  tableRow: {flexDirection: "row", borderBottom: "1pt solid #e5e7eb", padding: 5},
+  number: {width: "5%", textAlign: "center"},
+  product: {width: "35%"},
+  classification: {width: "25%"},
+  quantity: {width: "10%", textAlign: "right"},
+  price: {width: "12.5%", textAlign: "right"},
+  total: {width: "12.5%", textAlign: "right"},
+  evidence: {fontSize: 7, color: "#92400e", marginTop: 2},
+  recipe: {borderTop: "1pt solid #e5e7eb", paddingTop: 8, marginTop: 8},
+  listItem: {marginBottom: 3},
+  footer: {position: "absolute", bottom: 20, left: 36, right: 36, flexDirection: "row", justifyContent: "space-between"},
 });
 
-/**
- * Props for the InvoicePDF component.
- *
- * @remarks
- * Both invoice and merchant are passed from the ExportDialog which receives them from InvoiceContext.
- * Merchant can be null - component handles this gracefully by showing "Unknown Merchant".
- */
-interface InvoicePDFProps {
-  /** The invoice to render in the PDF */
-  readonly invoice: Invoice;
-  /** The merchant associated with the invoice (can be null) */
-  readonly merchant: Merchant | null;
+/** Localized labels supplied by the Next.js export island before PDF rendering. */
+export type InvoicePdfLabels = Readonly<{
+  reportTitle: string;
+  generatedOn: (date: string) => string;
+  invoiceInformation: string;
+  invoiceName: string;
+  description: string;
+  classification: string;
+  invoiceIdentifier: string;
+  transactionDate: string;
+  receiptType: string;
+  merchantInformation: string;
+  merchantName: string;
+  unknownMerchant: string;
+  fullName: string;
+  address: string;
+  phone: string;
+  paymentSummary: string;
+  subtotal: string;
+  tax: string;
+  tip: string;
+  total: string;
+  currency: string;
+  paymentMethod: string;
+  items: string;
+  number: string;
+  product: string;
+  quantity: string;
+  unitPrice: string;
+  productSignals: string;
+  analysisSummary: string;
+  numberOfItems: string;
+  numberOfScans: string;
+  recipes: string;
+  purchasedIngredients: string;
+  pantryStaples: string;
+  missingOptionalIngredients: string;
+  preparationSteps: string;
+  allergenWarnings: string;
+  servings: (count: number) => string;
+  preparationMinutes: (minutes: number) => string;
+  cookingMinutes: (minutes: number) => string;
+  totalMinutes: (minutes: number) => string;
+  classificationRoot: (label: string, code: string) => string;
+  classificationAnalysisOrigin: string;
+  classificationManualOrigin: string;
+  classificationConfidence: (confidence: string) => string;
+  unclassified: string;
+  page: (page: number) => string;
+}>;
+
+type InvoicePDFProps = Readonly<{
+  /** Public invoice response DTO to render. */
+  invoice: Invoice;
+  /** Linked merchant response DTO when it is available. */
+  merchant: Merchant | null;
+  /** Locale selected in the enclosing Next.js export flow. */
+  locale: string;
+  /** Localized PDF labels selected in the enclosing Next.js export flow. */
+  labels: InvoicePdfLabels;
+}>;
+
+function classificationLines(classification: StandardClassification | null, labels: InvoicePdfLabels): readonly string[] {
+  if (classification === null) {
+    return [labels.unclassified];
+  }
+
+  const root = getClassificationRoot(classification);
+  const confidence = formatClassificationConfidence(classification);
+  return [
+    getClassificationSummary(classification, labels.unclassified),
+    ...(root === null ? [] : [labels.classificationRoot(root.officialLabel, root.code)]),
+    classification.origin === "Manual" ? labels.classificationManualOrigin : labels.classificationAnalysisOrigin,
+    ...(confidence === null ? [] : [labels.classificationConfidence(confidence)]),
+    ...classification.hierarchy.map((node) => `${node.officialLabel} (${node.code})`),
+  ];
 }
 
-/**
- * Professional PDF template component for invoice export.
- *
- * @remarks
- * **Structure:**
- * 1. **Page 1 - Invoice Overview:**
- *    - Header with "arolariu.ro — Invoice Report" and generation date
- *    - Invoice name, description, category
- *    - Invoice ID (smaller, reference only)
- *    - Transaction date and receipt type
- *    - Merchant information (name, address, phone) - handles null merchant
- *    - Payment summary: subtotal, tax, tip, total, currency
- *    - Payment method
- *
- * 2. **Page 2+ - Products Table:**
- *    - Table headers: #, Product Name, Category, Qty, Unit, Unit Price, Total
- *    - One row per product
- *    - Allergens per product (comma-separated)
- *    - Soft-deleted products are excluded
- *    - Subtotal row at bottom
- *
- * 3. **Final Section - Analysis Summary:**
- *    - Invoice health score (if available)
- *    - Recipe names (if any)
- *    - Number of scans attached
- *
- * **Error Handling:**
- * - Null/undefined checks for all optional fields
- * - Empty arrays handled gracefully
- * - Missing data shows "N/A" or "Unknown"
- *
- * @param props - Component props
- * @param props.invoice - The invoice data to render
- * @param props.merchant - The merchant data (can be null)
- * @returns PDF Document component ready for rendering
- *
- * @example
- * ```tsx
- * // In ExportDialog
- * import {pdf} from "@react-pdf/renderer";
- * import {InvoicePDF} from "./InvoicePDF";
- *
- * const blob = await pdf(<InvoicePDF invoice={invoice} merchant={merchant} />).toBlob();
- * ```
- */
-export function InvoicePDF({invoice, merchant}: Readonly<InvoicePDFProps>): React.JSX.Element {
-  const generatedDate = formatDate(new Date(), {
-    locale: "en-US",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+function RecipeSection({
+  title,
+  ingredients,
+}: Readonly<{title: string; ingredients: Invoice["possibleRecipes"][number]["purchasedIngredients"]}>): React.JSX.Element | null {
+  if (ingredients.length === 0) {
+    return null;
+  }
 
-  const transactionDate = formatDate(invoice.paymentInformation.transactionDate, {
-    locale: "en-US",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  return (
+    <View>
+      <Text>{title}</Text>
+      {ingredients.map((ingredient) => (
+        <Text
+          key={`${ingredient.name}-${ingredient.quantity}`}
+          style={styles.listItem}>
+          {ingredient.name} — {ingredient.quantity}
+          {ingredient.preparation === null ? "" : ` (${ingredient.preparation})`}
+        </Text>
+      ))}
+    </View>
+  );
+}
 
-  // Filter out soft-deleted products
+/** Renders all public invoice data with explicit classification, allergen, and recipe provenance. */
+export function InvoicePDF({invoice, merchant, locale, labels}: InvoicePDFProps): React.JSX.Element {
   const activeProducts = invoice.items.filter((product) => !product.metadata.isSoftDeleted);
-
-  // Calculate subtotal from active products
-  const subtotal = activeProducts.reduce((sum, product) => sum + product.totalPrice, 0);
-
-  // Format currency helper
-  const formatCurrencyValue = (amount: number): string => {
-    return `${invoice.paymentInformation.currency.symbol}${formatAmount(amount)}`;
-  };
+  const currency = invoice.paymentInformation.currency;
+  const formatCurrency = (amount: number): string => `${currency.symbol}${formatAmount(amount, locale)}`;
+  const generatedAt = formatDate(new Date(), {locale, year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit"});
+  const transactionDate = formatDate(invoice.paymentInformation.transactionDate, {locale, year: "numeric", month: "long", day: "numeric"});
 
   return (
     <Document>
-      {/* Page 1 - Invoice Overview */}
       <Page
         size='A4'
         style={styles.page}>
-        {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>arolariu.ro — Invoice Report</Text>
-          <Text style={styles.headerDate}>Generated on {generatedDate}</Text>
+          <Text style={styles.title}>{labels.reportTitle}</Text>
+          <Text style={styles.muted}>{labels.generatedOn(generatedAt)}</Text>
         </View>
 
-        {/* Invoice Information Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Invoice Information</Text>
-          <View style={styles.divider} />
-
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Invoice Name:</Text>
-            <Text style={styles.value}>{invoice.name || "N/A"}</Text>
-          </View>
-
-          {invoice.description ? (
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Description:</Text>
-              <Text style={styles.value}>{invoice.description}</Text>
-            </View>
-          ) : null}
-
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Classification:</Text>
-            <Text style={styles.value}>{getClassificationSummary(invoice.classification)}</Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Invoice ID:</Text>
-            <Text style={styles.valueSmall}>{invoice.id}</Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Transaction Date:</Text>
-            <Text style={styles.value}>{transactionDate}</Text>
-          </View>
-
-          {invoice.receiptType ? (
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Receipt Type:</Text>
-              <Text style={styles.value}>{invoice.receiptType}</Text>
-            </View>
-          ) : null}
-        </View>
-
-        {/* Merchant Information Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Merchant Information</Text>
-          <View style={styles.divider} />
-
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Merchant Name:</Text>
-            <Text style={styles.value}>{merchant?.name || "Unknown Merchant"}</Text>
-          </View>
-
-          {merchant?.address?.fullName ? (
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Full Name:</Text>
-              <Text style={styles.value}>{merchant.address.fullName}</Text>
-            </View>
-          ) : null}
-
-          {merchant?.address?.address ? (
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Address:</Text>
-              <Text style={styles.value}>{merchant.address.address}</Text>
-            </View>
-          ) : null}
-
-          {merchant?.address?.phoneNumber ? (
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Phone:</Text>
-              <Text style={styles.value}>{merchant.address.phoneNumber}</Text>
-            </View>
-          ) : null}
-        </View>
-
-        {/* Payment Summary Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Payment Summary</Text>
-          <View style={styles.divider} />
-
-          {invoice.paymentInformation.subtotalAmount > 0 && (
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Subtotal:</Text>
-              <Text style={styles.value}>{formatCurrencyValue(invoice.paymentInformation.subtotalAmount)}</Text>
-            </View>
+          <Text style={styles.sectionTitle}>{labels.invoiceInformation}</Text>
+          <PdfRow
+            label={labels.invoiceName}
+            value={invoice.name}
+          />
+          {invoice.description === "" ? null : (
+            <PdfRow
+              label={labels.description}
+              value={invoice.description}
+            />
           )}
-
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Tax:</Text>
-            <Text style={styles.value}>{formatCurrencyValue(invoice.paymentInformation.totalTaxAmount)}</Text>
-          </View>
-
-          {invoice.paymentInformation.tipAmount > 0 && (
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Tip:</Text>
-              <Text style={styles.value}>{formatCurrencyValue(invoice.paymentInformation.tipAmount)}</Text>
-            </View>
+          <PdfLines
+            label={labels.classification}
+            values={classificationLines(invoice.classification, labels)}
+          />
+          <PdfRow
+            label={labels.invoiceIdentifier}
+            value={invoice.id}
+          />
+          <PdfRow
+            label={labels.transactionDate}
+            value={transactionDate}
+          />
+          {invoice.receiptType === "" ? null : (
+            <PdfRow
+              label={labels.receiptType}
+              value={invoice.receiptType}
+            />
           )}
-
-          <View style={styles.infoRow}>
-            <Text style={styles.labelBold}>Total:</Text>
-            <Text style={styles.valueBold}>{formatCurrencyValue(invoice.paymentInformation.totalCostAmount)}</Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Currency:</Text>
-            <Text style={styles.value}>
-              {invoice.paymentInformation.currency.code} ({invoice.paymentInformation.currency.name})
-            </Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Payment Method:</Text>
-            <Text style={styles.value}>{getPaymentTypeLabel(invoice.paymentInformation.paymentType)}</Text>
-          </View>
         </View>
 
-        {/* Footer with page number */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{labels.merchantInformation}</Text>
+          <PdfRow
+            label={labels.merchantName}
+            value={merchant?.name ?? labels.unknownMerchant}
+          />
+          {merchant === null ? null : (
+            <>
+              <PdfLines
+                label={labels.classification}
+                values={classificationLines(merchant.classification, labels)}
+              />
+              {merchant.address.fullName === "" ? null : (
+                <PdfRow
+                  label={labels.fullName}
+                  value={merchant.address.fullName}
+                />
+              )}
+              {merchant.address.address === "" ? null : (
+                <PdfRow
+                  label={labels.address}
+                  value={merchant.address.address}
+                />
+              )}
+              {merchant.address.phoneNumber === "" ? null : (
+                <PdfRow
+                  label={labels.phone}
+                  value={merchant.address.phoneNumber}
+                />
+              )}
+            </>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{labels.paymentSummary}</Text>
+          <PdfRow
+            label={labels.subtotal}
+            value={formatCurrency(invoice.paymentInformation.subtotalAmount)}
+          />
+          <PdfRow
+            label={labels.tax}
+            value={formatCurrency(invoice.paymentInformation.totalTaxAmount)}
+          />
+          <PdfRow
+            label={labels.tip}
+            value={formatCurrency(invoice.paymentInformation.tipAmount)}
+          />
+          <PdfRow
+            label={labels.total}
+            value={formatCurrency(invoice.paymentInformation.totalCostAmount)}
+          />
+          <PdfRow
+            label={labels.currency}
+            value={`${currency.code} (${currency.name})`}
+          />
+          <PdfRow
+            label={labels.paymentMethod}
+            value={String(invoice.paymentInformation.paymentType)}
+          />
+        </View>
+
         <View
           style={styles.footer}
           fixed>
-          <Text style={styles.footerText}>Page 1</Text>
-          <Text style={styles.footerText}>Invoice ID: {invoice.id}</Text>
+          <Text>{labels.page(1)}</Text>
+          <Text>{invoice.id}</Text>
         </View>
       </Page>
 
-      {/* Page 2+ - Products Table */}
-      {activeProducts.length > 0 && (
-        <Page
-          size='A4'
-          style={styles.page}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Invoice Items</Text>
-            <Text style={styles.headerDate}>{invoice.name}</Text>
-          </View>
-
-          {/* Products Table */}
-          <View style={styles.table}>
-            {/* Table Header */}
-            <View style={styles.tableHeader}>
-              <Text style={[styles.tableCell, styles.tableCellNumber]}>#</Text>
-              <Text style={[styles.tableCell, styles.tableCellProduct]}>Product Name</Text>
-              <Text style={[styles.tableCell, styles.tableCellCategory]}>Classification</Text>
-              <Text style={[styles.tableCell, styles.tableCellQty]}>Qty</Text>
-              <Text style={[styles.tableCell, styles.tableCellUnit]}>Unit</Text>
-              <Text style={[styles.tableCell, styles.tableCellPrice]}>Unit Price</Text>
-              <Text style={[styles.tableCell, styles.tableCellTotal]}>Total</Text>
+      <Page
+        size='A4'
+        style={styles.page}>
+        <Text style={styles.sectionTitle}>{labels.items}</Text>
+        <View style={styles.tableHeader}>
+          <Text style={styles.number}>{labels.number}</Text>
+          <Text style={styles.product}>{labels.product}</Text>
+          <Text style={styles.classification}>{labels.classification}</Text>
+          <Text style={styles.quantity}>{labels.quantity}</Text>
+          <Text style={styles.price}>{labels.unitPrice}</Text>
+          <Text style={styles.total}>{labels.total}</Text>
+        </View>
+        {activeProducts.map((product, index) => (
+          <View
+            key={`${product.productCode}-${product.name}-${index}`}
+            style={styles.tableRow}>
+            <Text style={styles.number}>{index + 1}</Text>
+            <View style={styles.product}>
+              <Text>{product.name}</Text>
+              {product.allergenAssessment === null ? null : (
+                <Text style={styles.evidence}>
+                  {product.allergenAssessment.status}
+                  {product.allergenAssessment.signals.length === 0
+                    ? ""
+                    : ` — ${labels.productSignals}: ${product.allergenAssessment.signals
+                        .map(
+                          (signal) => `${signal.code} (${signal.evidenceLevel}): ${signal.evidence.map((item) => item.value).join("; ")}`,
+                        )
+                        .join(", ")}`}
+                </Text>
+              )}
             </View>
+            <View style={styles.classification}>
+              {classificationLines(product.classification, labels).map((line) => (
+                <Text key={line}>{line}</Text>
+              ))}
+            </View>
+            <Text style={styles.quantity}>
+              {product.quantity} {product.quantityUnit}
+            </Text>
+            <Text style={styles.price}>{formatCurrency(product.price)}</Text>
+            <Text style={styles.total}>{formatCurrency(product.totalPrice)}</Text>
+          </View>
+        ))}
 
-            {/* Table Rows */}
-            {activeProducts.map((product, index) => (
-              // Composite key: @react-pdf/renderer is one-shot (no DOM, no reconciliation) so duplicate keys are visually harmless.
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{labels.analysisSummary}</Text>
+          <PdfRow
+            label={labels.numberOfItems}
+            value={String(activeProducts.length)}
+          />
+          <PdfRow
+            label={labels.numberOfScans}
+            value={String(invoice.scans.length)}
+          />
+        </View>
+
+        {invoice.possibleRecipes.length === 0 ? null : (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{labels.recipes}</Text>
+            {invoice.possibleRecipes.map((recipe) => (
               <View
-                key={`${product.productCode}-${product.name}-${product.totalPrice}-${product.quantity}`}
-                style={styles.tableRow}>
-                <Text style={[styles.tableCell, styles.tableCellNumber]}>{index + 1}</Text>
-                <View style={[styles.tableCell, styles.tableCellProduct]}>
-                  <Text style={styles.productName}>{product.name}</Text>
-                  {product.allergenAssessment?.status === "detected" ? (
-                    <Text style={styles.allergens}>
-                      Signals: {product.allergenAssessment.signals.map((signal) => getAllergenCodeLabel(signal.code)).join(", ")}
+                key={recipe.name}
+                style={styles.recipe}>
+                <Text>{recipe.name}</Text>
+                <Text style={styles.muted}>{recipe.description}</Text>
+                <Text>{labels.servings(recipe.servings)}</Text>
+                <Text>{labels.preparationMinutes(recipe.preparationMinutes)}</Text>
+                <Text>{labels.cookingMinutes(recipe.cookingMinutes)}</Text>
+                <Text>{labels.totalMinutes(recipe.totalMinutes)}</Text>
+                <RecipeSection
+                  title={labels.purchasedIngredients}
+                  ingredients={recipe.purchasedIngredients}
+                />
+                <RecipeSection
+                  title={labels.pantryStaples}
+                  ingredients={recipe.assumedPantryStaples}
+                />
+                <RecipeSection
+                  title={labels.missingOptionalIngredients}
+                  ingredients={recipe.missingOptionalIngredients}
+                />
+                <View>
+                  <Text>{labels.preparationSteps}</Text>
+                  {recipe.steps.map((step) => (
+                    <Text
+                      key={step.sequence}
+                      style={styles.listItem}>
+                      {step.sequence}. {step.instruction}
+                      {step.notes === null ? "" : ` (${step.notes})`}
                     </Text>
-                  ) : null}
+                  ))}
                 </View>
-                <Text style={[styles.tableCell, styles.tableCellCategory]}>{getClassificationSummary(product.classification)}</Text>
-                <Text style={[styles.tableCell, styles.tableCellQty]}>{product.quantity}</Text>
-                <Text style={[styles.tableCell, styles.tableCellUnit]}>{product.quantityUnit || "pcs"}</Text>
-                <Text style={[styles.tableCell, styles.tableCellPrice]}>{formatCurrencyValue(product.price)}</Text>
-                <Text style={[styles.tableCell, styles.tableCellTotal]}>{formatCurrencyValue(product.totalPrice)}</Text>
+                {recipe.allergenWarnings.length === 0 ? null : (
+                  <Text>
+                    {labels.allergenWarnings}: {recipe.allergenWarnings.join(", ")}
+                  </Text>
+                )}
               </View>
             ))}
-
-            {/* Subtotal Row */}
-            <View style={styles.tableFooter}>
-              <Text style={[styles.tableCell, styles.tableCellProduct]}>Subtotal</Text>
-              <Text style={[styles.tableCell, styles.tableCellTotal, styles.subtotalValue]}>{formatCurrencyValue(subtotal)}</Text>
-            </View>
           </View>
-
-          {/* Analysis Summary Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Analysis Summary</Text>
-            <View style={styles.divider} />
-
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Number of Items:</Text>
-              <Text style={styles.value}>{activeProducts.length}</Text>
-            </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Number of Scans:</Text>
-              <Text style={styles.value}>{invoice.scans.length}</Text>
-            </View>
-
-            {invoice.possibleRecipes.length > 0 ? (
-              <View style={styles.infoRow}>
-                <Text style={styles.label}>Possible Recipes:</Text>
-                <Text style={styles.value}>{invoice.possibleRecipes.map((r) => r.name).join(", ")}</Text>
-              </View>
-            ) : null}
-          </View>
-
-          {/* Footer with page number */}
-          <View
-            style={styles.footer}
-            fixed>
-            <Text style={styles.footerText}>Page 2</Text>
-            <Text style={styles.footerText}>Invoice ID: {invoice.id}</Text>
-          </View>
-        </Page>
-      )}
+        )}
+        <View
+          style={styles.footer}
+          fixed>
+          <Text>{labels.page(2)}</Text>
+          <Text>{invoice.id}</Text>
+        </View>
+      </Page>
     </Document>
+  );
+}
+
+function PdfRow({label, value}: Readonly<{label: string; value: string}>): React.JSX.Element {
+  return (
+    <View style={styles.row}>
+      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.value}>{value}</Text>
+    </View>
+  );
+}
+
+function PdfLines({label, values}: Readonly<{label: string; values: readonly string[]}>): React.JSX.Element {
+  return (
+    <View style={styles.row}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={styles.value}>
+        {values.map((value) => (
+          <Text key={value}>{value}</Text>
+        ))}
+      </View>
+    </View>
   );
 }

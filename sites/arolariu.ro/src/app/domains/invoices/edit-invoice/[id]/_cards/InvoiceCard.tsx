@@ -34,9 +34,9 @@ import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo} from "react";
 import {TbCalendar, TbCertificate, TbCreditCard, TbHeart} from "react-icons/tb";
 import {ClassificationPicker} from "../../../_components/analysis/ClassificationPicker";
+import {ClassificationProvenance} from "../../../_components/analysis/StructuredAnalysisDetails";
 import ItemsTable from "../_components/tables/ItemsTable";
 import {useEditInvoiceContext} from "../_context/EditInvoiceContext";
-import {formatClassificationConfidence, getClassificationSummary} from "../../../_utils/classificationUtilities";
 import styles from "./InvoiceCard.module.scss";
 
 /**
@@ -298,10 +298,7 @@ export default function InvoiceCard(): React.JSX.Element {
                     disabled={false}
                     allowClear={classification === null}
                   />
-                  <p className={styles["detailLabel"]}>{getClassificationSummary(classification)}</p>
-                  {formatClassificationConfidence(classification) === null ? null : (
-                    <p className={styles["detailLabel"]}>{formatClassificationConfidence(classification)}</p>
-                  )}
+                  <ClassificationProvenance classification={classification} />
                 </div>
               </div>
             </motion.div>
