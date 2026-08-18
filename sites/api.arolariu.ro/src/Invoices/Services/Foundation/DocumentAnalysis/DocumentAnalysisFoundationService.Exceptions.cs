@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Common.Exceptions;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
@@ -37,6 +38,12 @@ public sealed partial class DocumentAnalysisFoundationService
 
   private Exception Classify(Exception exception) => exception switch
   {
+    IValidationException
+      => LogAndWrapValidation(exception),
+
+    IDependencyException
+      => LogAndWrapDependency(exception),
+
     ArgumentException
       => LogAndWrapValidation(exception),
 

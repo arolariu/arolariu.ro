@@ -36,7 +36,28 @@ internal static class InvoiceScanStorageLocationPolicy
     ApplicationOptions storageOptions,
     out string validationMessage)
   {
+    return TryResolveApprovedBlobPath(location, storageOptions, out _, out validationMessage);
+  }
+
+  /// <summary>
+  /// Validates an approved invoice scan URI and resolves its path relative to the invoices container.
+  /// </summary>
+  /// <param name="location">The client-supplied scan location.</param>
+  /// <param name="storageOptions">The configured Azure storage options.</param>
+  /// <param name="blobPath">The validated, decoded path relative to the invoices container.</param>
+  /// <param name="validationMessage">A safe validation message that never includes the supplied URI.</param>
+  /// <returns>
+  /// <see langword="true"/> when <paramref name="location"/> identifies a blob inside the approved invoices
+  /// container; otherwise, <see langword="false"/>.
+  /// </returns>
+  internal static bool TryResolveApprovedBlobPath(
+    Uri? location,
+    ApplicationOptions storageOptions,
+    out string blobPath,
+    out string validationMessage)
+  {
     ArgumentNullException.ThrowIfNull(storageOptions);
+    blobPath = string.Empty;
 
     if (!TryGetConfiguredServiceRoot(storageOptions, out Uri? configuredServiceRoot, out bool isAzurite))
     {
@@ -53,10 +74,11 @@ internal static class InvoiceScanStorageLocationPolicy
         || !string.Equals(location.Scheme, configuredServiceRootUri.Scheme, StringComparison.OrdinalIgnoreCase)
         || !string.Equals(location.Host, configuredServiceRootUri.Host, StringComparison.OrdinalIgnoreCase)
         || location.Port != configuredServiceRootUri.Port
-        || !IsWithinInvoiceContainer(
+        || !TryResolveBlobPath(
           location.AbsolutePath,
           storageOptions.StorageAccountName,
-          isAzurite))
+          isAzurite,
+          out blobPath))
     {
       validationMessage = InvalidLocationMessage;
       return false;
@@ -123,11 +145,13 @@ internal static class InvoiceScanStorageLocationPolicy
       || string.Equals(endpoint.AbsolutePath, $"{expectedAccountPath}/", StringComparison.Ordinal);
   }
 
-  private static bool IsWithinInvoiceContainer(
+  private static bool TryResolveBlobPath(
     string absolutePath,
     string storageAccountName,
-    bool isAzurite)
+    bool isAzurite,
+    out string blobPath)
   {
+    blobPath = string.Empty;
     string containerPrefix = isAzurite
       ? $"/{storageAccountName}/{InvoiceScanContainerName}/"
       : $"/{InvoiceScanContainerName}/";
@@ -137,22 +161,27 @@ internal static class InvoiceScanStorageLocationPolicy
       return false;
     }
 
-    string blobPath = absolutePath[containerPrefix.Length..];
-    return IsValidBlobPath(blobPath);
+    string encodedBlobPath = absolutePath[containerPrefix.Length..];
+    return TryDecodeBlobPath(encodedBlobPath, out blobPath);
   }
 
-  private static bool IsValidBlobPath(string blobPath)
+  private static bool TryDecodeBlobPath(string encodedBlobPath, out string blobPath)
   {
-    if (string.IsNullOrEmpty(blobPath)
-        || blobPath.Contains('\\', StringComparison.Ordinal))
+    blobPath = string.Empty;
+
+    if (string.IsNullOrEmpty(encodedBlobPath)
+        || encodedBlobPath.Contains('\\', StringComparison.Ordinal))
     {
       return false;
     }
 
-    string[] segments = blobPath.Split('/', StringSplitOptions.None);
+    string[] segments = encodedBlobPath.Split('/', StringSplitOptions.None);
+    var decodedSegments = new string[segments.Length];
 
-    foreach (string segment in segments)
+    for (int index = 0; index < segments.Length; index++)
     {
+      string segment = segments[index];
+
       if (string.IsNullOrEmpty(segment)
           || ContainsEncodedSeparator(segment))
       {
@@ -178,8 +207,11 @@ internal static class InvoiceScanStorageLocationPolicy
       {
         return false;
       }
+
+      decodedSegments[index] = decodedSegment;
     }
 
+    blobPath = string.Join("/", decodedSegments);
     return true;
   }
 

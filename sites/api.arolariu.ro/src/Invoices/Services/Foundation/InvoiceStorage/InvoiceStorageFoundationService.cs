@@ -92,6 +92,7 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
     ValidateIdentifierIsSet(invoiceIdentifier);
+    ValidateInvoiceInformationIsValid(updatedInvoice);
     CanonicalizeInvoiceClassifications(
       updatedInvoice,
       updatedInvoice.PreserveUntouchedProductClassifications);

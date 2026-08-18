@@ -230,6 +230,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   public async Task AddProduct(Product product, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
+    ArgumentNullException.ThrowIfNull(product);
+
     using var activity = InvoicePackageTracing.StartActivity(nameof(AddProduct));
     var invoice = await invoiceOrchestrationService
       .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
@@ -387,13 +389,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceScan));
-    var invoice = await invoiceOrchestrationService
-      .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
-    invoice.Scans.Add(scan);
-
     await invoiceOrchestrationService
-      .UpdateInvoiceObject(invoice, invoiceIdentifier, userIdentifier, cancellationToken)
+      .AttachInvoiceScanAsync(scan, invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
   }).ConfigureAwait(false);
   #endregion

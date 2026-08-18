@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisRunBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.BlobStorageBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
@@ -139,6 +140,7 @@ public static class WebApplicationBuilderExtensions
 
     // Broker services:
     services.AddScoped<IDocumentIntelligenceBroker, AzureDocumentIntelligenceBroker>();
+    services.AddScoped<IInvoiceBlobStorageBroker, AzureInvoiceBlobStorageBroker>();
     services.AddScoped<IInvoiceNoSqlBroker, InvoiceNoSqlBroker>();
     services.AddScoped<IAnalysisRunBroker, CosmosAnalysisRunBroker>();
     services.AddScoped<IGenerativeAiBroker, MicrosoftExtensionsAiBroker>();
@@ -150,6 +152,7 @@ public static class WebApplicationBuilderExtensions
     services.AddScoped<IDocumentAnalysisFoundationService, DocumentAnalysisFoundationService>();
     services.AddScoped<IGenerativeAnalysisFoundationService, GenerativeAnalysisFoundationService>();
     services.AddScoped<IInvoiceStorageFoundationService, InvoiceStorageFoundationService>();
+    services.AddScoped<IInvoiceScanStorageFoundationService, InvoiceScanStorageFoundationService>();
     services.AddScoped<IMerchantStorageFoundationService, MerchantStorageFoundationService>();
 
     // Orchestration services:

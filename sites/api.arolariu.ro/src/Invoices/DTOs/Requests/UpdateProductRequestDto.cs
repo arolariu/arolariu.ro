@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 
 /// <summary>
@@ -97,8 +98,7 @@ public readonly record struct UpdateProductRequestDto(
   /// Thrown when the request omits its required selector.
   /// </exception>
   public ProductUpdateSelector ToSelector() =>
-    Selector?.ToDomainSelector()
-      ?? throw new ProductUpdateSelectorValidationException("A product update selector is required.");
+    ValidateSelector();
 
   /// <summary>
   /// Converts this DTO to the client-editable portion of a <see cref="Product"/> update.
@@ -116,13 +116,35 @@ public readonly record struct UpdateProductRequestDto(
   /// <returns>
   /// A transient <see cref="Product"/> carrying only client-editable update values.
   /// </returns>
-  public Product ToProduct() => new()
+  public Product ToProduct()
   {
-    Name = Name,
-    Classification = Classification?.ToManualSelection(),
-    Quantity = Quantity,
-    QuantityUnit = QuantityUnit ?? string.Empty,
-    ProductCode = ProductCode ?? string.Empty,
-    Price = Price,
-  };
+    if (Classification is { System: not ClassificationSystem.Gs1Gpc }
+      || Classification is { Code: var code } && string.IsNullOrWhiteSpace(code))
+    {
+      throw new ProductValidationException(
+        "Product classification must use the GS1 GPC system with a nonblank code.");
+    }
+
+    var product = new Product
+    {
+      Name = Name?.Trim() ?? string.Empty,
+      Classification = Classification?.ToManualSelection(),
+      Quantity = Quantity,
+      QuantityUnit = QuantityUnit?.Trim() ?? string.Empty,
+      ProductCode = ProductCode?.Trim() ?? string.Empty,
+      Price = Price,
+    };
+
+    product.ValidateForPersistence();
+    product.RequiresCommercialValidation = true;
+    return product;
+  }
+
+  private ProductUpdateSelector ValidateSelector()
+  {
+    ProductUpdateSelector selector = Selector?.ToDomainSelector()
+      ?? throw new ProductUpdateSelectorValidationException("A product update selector is required.");
+    selector.Validate();
+    return selector;
+  }
 }

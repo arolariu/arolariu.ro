@@ -374,7 +374,6 @@ public sealed class InvoiceProcessingServiceTests
     mockInvoiceOrchestrationService
         .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(invoice);
-
     mockInvoiceOrchestrationService
         .Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(invoice);
@@ -384,7 +383,9 @@ public sealed class InvoiceProcessingServiceTests
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
-    mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
+    mockInvoiceOrchestrationService.Verify(
+      s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()),
+      Times.Once);
   }
 
   #endregion
@@ -553,18 +554,16 @@ public sealed class InvoiceProcessingServiceTests
     var scan = new InvoiceScan(ScanType.JPG, new Uri("https://example.com/scan.jpg"), null);
 
     mockInvoiceOrchestrationService
-        .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(invoice);
-
-    mockInvoiceOrchestrationService
-        .Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()))
+        .Setup(s => s.AttachInvoiceScanAsync(scan, invoiceId, userId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(invoice);
 
     // Act
     await processingService.CreateInvoiceScan(scan, invoiceId, userId, CancellationToken.None);
 
     // Assert
-    mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
+    mockInvoiceOrchestrationService.Verify(
+      s => s.AttachInvoiceScanAsync(scan, invoiceId, userId, It.IsAny<CancellationToken>()),
+      Times.Once);
   }
 
   #endregion

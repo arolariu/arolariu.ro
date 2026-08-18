@@ -35,6 +35,11 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 /// included in telemetry.
 /// </para>
 /// <para>
+/// <b>Size Policy:</b> A direct-upload SAS grants upload authorization but cannot enforce the final blob size. Before
+/// persistence or Document Intelligence use, the backend reads server-side Blob Storage properties and authoritatively
+/// rejects missing, inaccessible, non-block, unsupported-content-type, or over-10 MiB blobs.
+/// </para>
+/// <para>
 /// <b>AI Processing:</b> After adding a scan, trigger analysis via the
 /// <see cref="arolariu.Backend.Domain.Invoices.DTOs.Analysis.AnalyzeInvoiceRequestDto"/> to extract data from the new scan.
 /// </para>

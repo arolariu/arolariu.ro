@@ -2,6 +2,7 @@ namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 
 using System;
 
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Common.Validators;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -20,7 +21,18 @@ public partial class InvoiceStorageFoundationService
 
   private static void ValidateInvoiceInformationIsValid(Invoice invoice)
   {
-    // TODO: complete in the future, if needed.
+    if (invoice?.Items is null)
+    {
+      return;
+    }
+
+    foreach (Product? product in invoice.Items)
+    {
+      if (product?.RequiresCommercialValidation == true)
+      {
+        product.ValidateForPersistence();
+      }
+    }
   }
 
   /// <summary>

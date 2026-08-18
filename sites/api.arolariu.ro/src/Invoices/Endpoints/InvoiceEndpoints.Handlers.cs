@@ -447,6 +447,8 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("Product.Add");
       }
 
+      var productEntity = product.ToProduct();
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
@@ -459,7 +461,6 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      var productEntity = product.ToProduct();
       await invoiceProcessingService
         .AddProduct(productEntity, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
@@ -590,6 +591,7 @@ public static partial class InvoiceEndpoints
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
       var selector = productInformation.ToSelector();
+      var productEntity = productInformation.ToProduct();
       activity?.SetTag(
         "product.selector.strategy",
         selector.UsesOriginalProductCode ? "product_code" : "composite_snapshot");
@@ -597,7 +599,7 @@ public static partial class InvoiceEndpoints
       var updatedProduct = await invoiceProcessingService
         .UpdateProduct(
           selector,
-          productInformation.ToProduct(),
+          productEntity,
           id,
           potentialUserIdentifier,
           writeScope.Token)
@@ -849,26 +851,15 @@ public static partial class InvoiceEndpoints
         return TypedResults.ValidationProblem(validationErrors);
       }
 
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
-      activity?.SetInvoiceContext(id, potentialUserIdentifier);
-
-      var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
-        .ConfigureAwait(false);
-      if (possibleInvoice is null)
-      {
-        activity?.SetTag("result.found", false);
-        return TypedResults.NotFound();
-      }
-
       InvoiceScan convertedScan = invoiceScanDto.ToInvoiceScan(storageOptions);
       activity?.SetTag("scan.type", convertedScan.Type.ToString());
 
-      possibleInvoice.Scans.Add(convertedScan);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       await invoiceProcessingService
-          .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
-          .ConfigureAwait(false);
+        .CreateInvoiceScan(convertedScan, id, potentialUserIdentifier, writeScope.Token)
+        .ConfigureAwait(false);
 
       activity?.RecordSuccess("Scan added to invoice");
       return TypedResults.Created($"/rest/v1/invoices/{id}/scans", InvoiceScanResponseDto.FromInvoiceScan(convertedScan));
@@ -1019,9 +1010,10 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      activity?.SetTag("metadata.count", possibleInvoice.AdditionalMetadata.Count);
+      var publicMetadata = InvoiceMetadataProjector.CreatePublicSnapshot(possibleInvoice.AdditionalMetadata);
+      activity?.SetTag("metadata.count", publicMetadata.Count);
       activity?.RecordSuccess();
-      return TypedResults.Ok(value: possibleInvoice.AdditionalMetadata);
+      return TypedResults.Ok(value: publicMetadata);
     }
     catch (OperationCanceledException)
     {
@@ -1054,6 +1046,8 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("Metadata.Patch");
       }
 
+      invoiceMetadataPatch.Validate();
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
@@ -1072,9 +1066,10 @@ public static partial class InvoiceEndpoints
         .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
-      activity?.SetTag("metadata.count", updatedInvoice.AdditionalMetadata.Count);
+      var publicMetadata = InvoiceMetadataProjector.CreatePublicSnapshot(updatedInvoice.AdditionalMetadata);
+      activity?.SetTag("metadata.count", publicMetadata.Count);
       activity?.RecordSuccess("Metadata patched");
-      return TypedResults.Accepted($"/rest/v1/invoices/{id}/metadata", updatedInvoice.AdditionalMetadata);
+      return TypedResults.Accepted($"/rest/v1/invoices/{id}/metadata", publicMetadata);
     }
     catch (OperationCanceledException)
     {

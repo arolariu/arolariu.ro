@@ -2,9 +2,7 @@ namespace arolariu.Backend.Domain.Invoices.DTOs.Responses;
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Linq;
 using System.Text.Json.Serialization;
 
@@ -220,7 +218,7 @@ public readonly record struct InvoiceResponseDto(
       MerchantReference: invoice.MerchantReference,
       Items: invoice.Items.Select(ProductResponseDto.FromProduct).ToList().AsReadOnly(),
       PossibleRecipes: invoice.PossibleRecipes.Select(RecipeSuggestionResponseDto.FromRecipeSuggestion).ToList().AsReadOnly(),
-      AdditionalMetadata: CreatePublicMetadataSnapshot(invoice.AdditionalMetadata),
+      AdditionalMetadata: InvoiceMetadataProjector.CreatePublicSnapshot(invoice.AdditionalMetadata),
       ReceiptType: invoice.ReceiptType,
       CountryRegion: invoice.CountryRegion,
       TaxDetails: invoice.TaxDetails.Select(TaxDetailResponseDto.FromTaxDetail).ToList().AsReadOnly(),
@@ -234,95 +232,4 @@ public readonly record struct InvoiceResponseDto(
       NumberOfUpdates: invoice.NumberOfUpdates);
   }
 
-  private static ReadOnlyDictionary<string, string?> CreatePublicMetadataSnapshot(
-    IDictionary<string, object> additionalMetadata)
-  {
-    var snapshot = new Dictionary<string, string?>(additionalMetadata.Count, StringComparer.Ordinal);
-
-    foreach ((string key, object value) in additionalMetadata)
-    {
-      if (!IsInternalMetadataKey(key) && TryCreatePublicMetadataValue(value, out string? publicValue))
-      {
-        snapshot.Add(key, publicValue);
-      }
-    }
-
-    return new ReadOnlyDictionary<string, string?>(snapshot);
-  }
-
-  private static bool IsInternalMetadataKey(string key) =>
-    key.Contains("raw", StringComparison.OrdinalIgnoreCase)
-    || key.Contains("ocr", StringComparison.OrdinalIgnoreCase)
-    || key.Contains("prompt", StringComparison.OrdinalIgnoreCase)
-    || key.Contains("lease", StringComparison.OrdinalIgnoreCase)
-    || key.Contains("analysis.run", StringComparison.OrdinalIgnoreCase)
-    || key.Contains("analysisrun", StringComparison.OrdinalIgnoreCase)
-    || key.Contains("sourceRunId", StringComparison.OrdinalIgnoreCase)
-    || key.Contains("runId", StringComparison.OrdinalIgnoreCase)
-    || key.Contains("secret", StringComparison.OrdinalIgnoreCase)
-    || key.Contains("token", StringComparison.OrdinalIgnoreCase)
-    || key.Contains("credential", StringComparison.OrdinalIgnoreCase)
-    || key.Contains("connectionString", StringComparison.OrdinalIgnoreCase)
-    || key.Contains("sas", StringComparison.OrdinalIgnoreCase);
-
-  private static bool TryCreatePublicMetadataValue(object value, out string? publicValue)
-  {
-    switch (value)
-    {
-      case null:
-        publicValue = null;
-        return true;
-      case string text:
-        publicValue = text;
-        return true;
-      case bool boolean:
-        publicValue = boolean.ToString(CultureInfo.InvariantCulture);
-        return true;
-      case byte number:
-        publicValue = number.ToString(CultureInfo.InvariantCulture);
-        return true;
-      case sbyte number:
-        publicValue = number.ToString(CultureInfo.InvariantCulture);
-        return true;
-      case short number:
-        publicValue = number.ToString(CultureInfo.InvariantCulture);
-        return true;
-      case ushort number:
-        publicValue = number.ToString(CultureInfo.InvariantCulture);
-        return true;
-      case int number:
-        publicValue = number.ToString(CultureInfo.InvariantCulture);
-        return true;
-      case uint number:
-        publicValue = number.ToString(CultureInfo.InvariantCulture);
-        return true;
-      case long number:
-        publicValue = number.ToString(CultureInfo.InvariantCulture);
-        return true;
-      case ulong number:
-        publicValue = number.ToString(CultureInfo.InvariantCulture);
-        return true;
-      case float number:
-        publicValue = number.ToString(CultureInfo.InvariantCulture);
-        return true;
-      case double number:
-        publicValue = number.ToString(CultureInfo.InvariantCulture);
-        return true;
-      case decimal number:
-        publicValue = number.ToString(CultureInfo.InvariantCulture);
-        return true;
-      case DateTime dateTime:
-        publicValue = dateTime.ToString("O", CultureInfo.InvariantCulture);
-        return true;
-      case DateTimeOffset dateTimeOffset:
-        publicValue = dateTimeOffset.ToString("O", CultureInfo.InvariantCulture);
-        return true;
-      case Guid identifier:
-        publicValue = identifier.ToString("D");
-        return true;
-      default:
-        publicValue = null;
-        return false;
-    }
-  }
 }

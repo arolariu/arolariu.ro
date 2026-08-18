@@ -54,6 +54,12 @@ public sealed record ProductUpdateSelector(
         "The product occurrence ordinal must be a non-negative integer.");
     }
 
+    if (UsesOriginalProductCode && !HasValidProductCode(OriginalProductCode!))
+    {
+      throw new ProductUpdateSelectorValidationException(
+        "The original product code must be a safe identifier of at most 128 characters.");
+    }
+
     bool containsAnySnapshotValue =
       OriginalName is not null
       || OriginalQuantity.HasValue
@@ -195,6 +201,27 @@ public sealed record ProductUpdateSelector(
     string.IsNullOrWhiteSpace(productCode)
       ? string.Empty
       : productCode.Trim().ToUpperInvariant();
+
+  private static bool HasValidProductCode(string productCode)
+  {
+    string normalizedProductCode = productCode.Trim();
+
+    if (string.IsNullOrEmpty(normalizedProductCode) || normalizedProductCode.Length > 128)
+    {
+      return false;
+    }
+
+    foreach (char character in normalizedProductCode)
+    {
+      if (!char.IsAsciiLetterOrDigit(character)
+        && character is not '.' and not '_' and not '-' and not '/')
+      {
+        return false;
+      }
+    }
+
+    return true;
+  }
 
   /// <summary>
   /// Normalizes a product name for deterministic composite-snapshot comparison.

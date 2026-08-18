@@ -212,6 +212,25 @@ internal static class WebApplicationBuilderExtensions
       ["AzureOptions:CognitiveServicesKey"] = configValues.GetValueOrDefault("Endpoints:AI:OCR:Key"),
     });
     services.Configure<AzureOptions>(builder.Configuration.GetSection("AzureOptions"));
+    services.AddSingleton<Azure.Storage.Blobs.BlobServiceClient>(sp =>
+    {
+      var endpoint = sp.GetRequiredService<IOptionsMonitor<AzureOptions>>().CurrentValue.StorageAccountEndpoint;
+
+      if (endpoint.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+      {
+        var connectionString =
+          $"DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint={endpoint};";
+
+        return new Azure.Storage.Blobs.BlobServiceClient(
+          connectionString,
+          new Azure.Storage.Blobs.BlobClientOptions(
+            Azure.Storage.Blobs.BlobClientOptions.ServiceVersion.V2025_01_05));
+      }
+
+      return new Azure.Storage.Blobs.BlobServiceClient(
+        new Uri(endpoint),
+        AzureCredentialFactory.CreateCredential());
+    });
 
     services.AddHostedService<ConfigRefreshHostedService>();
 
@@ -225,16 +244,7 @@ internal static class WebApplicationBuilderExtensions
         connectionStringFactory: sp => sp.GetRequiredService<IOptionsMonitor<AzureOptions>>().CurrentValue.SqlConnectionString,
         tags: ["db", "sql"])
       .AddAzureBlobStorage(
-        clientFactory: sp =>
-        {
-          var endpoint = sp.GetRequiredService<IOptionsMonitor<AzureOptions>>().CurrentValue.StorageAccountEndpoint;
-          if (endpoint.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
-          {
-            var connStr = $"DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint={endpoint};";
-            return new Azure.Storage.Blobs.BlobServiceClient(connStr, new Azure.Storage.Blobs.BlobClientOptions(Azure.Storage.Blobs.BlobClientOptions.ServiceVersion.V2025_01_05));
-          }
-          return new Azure.Storage.Blobs.BlobServiceClient(new Uri(endpoint), AzureCredentialFactory.CreateCredential());
-        },
+        clientFactory: sp => sp.GetRequiredService<Azure.Storage.Blobs.BlobServiceClient>(),
         configureOptions: (Action<HealthChecks.AzureStorage.AzureBlobStorageHealthCheckOptions>?)null,
         name: "blob-storage",
         failureStatus: null,

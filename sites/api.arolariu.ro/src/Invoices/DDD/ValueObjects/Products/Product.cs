@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -26,6 +27,11 @@ using Microsoft.EntityFrameworkCore;
 [Owned]
 public class Product
 {
+  private const int MaximumNameLength = 256;
+  private const int MaximumQuantityUnitLength = 32;
+  private const int MaximumProductCodeLength = 128;
+  private const int MaximumClassificationCodeLength = 64;
+
   /// <summary>The name of the product as extracted from the invoice via OCR.</summary>
   /// <remarks><para>Used for display, aggregation, allergen inference heuristics and recipe matching. May be empty prior to enrichment.</para></remarks>
   [JsonPropertyOrder(0)]
@@ -81,6 +87,93 @@ public class Product
   public ProductMetadata Metadata { get; set; }
 
   /// <summary>
+  /// Gets or sets whether this transient product instance originated from a client commercial request.
+  /// </summary>
+  /// <remarks>
+  /// The marker is not serialized or persisted. It lets the aggregate write boundary re-check the strict commercial
+  /// invariants enforced by client DTOs without retroactively rejecting incomplete OCR evidence that remains eligible
+  /// for later enrichment.
+  /// </remarks>
+  [JsonIgnore]
+  internal bool RequiresCommercialValidation { get; set; }
+
+  /// <summary>
+  /// Validates client-editable commercial invariants before the product enters an aggregate write path.
+  /// </summary>
+  /// <remarks>
+  /// <para>
+  /// The validation is intentionally side-effect free. <see cref="TotalPrice"/> is derived rather than supplied,
+  /// so the checked multiplication guards against a decimal overflow and proves the stored commercial inputs can
+  /// produce the domain line total.
+  /// </para>
+  /// <para>
+  /// Classification, allergen evidence, and workflow state remain server-owned. A supplied classification is allowed
+  /// only when it is a nonblank GS1 GPC selector; storage canonicalizes that selector before persistence.
+  /// </para>
+  /// </remarks>
+  /// <exception cref="ProductValidationException">
+  /// Thrown when the product has an invalid name, quantity, unit, code, price, classification, metadata confidence,
+  /// or non-representable total price.
+  /// </exception>
+  public void ValidateForPersistence()
+  {
+    if (string.IsNullOrWhiteSpace(Name)
+      || Name.Length > MaximumNameLength
+      || Name != Name.Trim())
+    {
+      throw new ProductValidationException("Product name must be nonblank, trimmed, and at most 256 characters.");
+    }
+
+    if (Quantity <= decimal.Zero)
+    {
+      throw new ProductValidationException("Product quantity must be positive.");
+    }
+
+    if (!HasValidQuantityUnit(QuantityUnit))
+    {
+      throw new ProductValidationException(
+        "Product quantity unit must be a nonblank unit identifier of at most 32 characters.");
+    }
+
+    if (Price < decimal.Zero)
+    {
+      throw new ProductValidationException("Product unit price must be nonnegative.");
+    }
+
+    if (!HasValidProductCode(ProductCode))
+    {
+      throw new ProductValidationException(
+        "Product code must be empty or a safe identifier of at most 128 characters.");
+    }
+
+    if (Classification is not null
+      && (Classification.System != ClassificationSystem.Gs1Gpc
+        || string.IsNullOrWhiteSpace(Classification.Code)
+        || Classification.Code.Length > MaximumClassificationCodeLength))
+    {
+      throw new ProductValidationException(
+        "Product classification must be a GS1 GPC selection with a nonblank code of at most 64 characters.");
+    }
+
+    if (!double.IsFinite(Metadata.Confidence)
+      || Metadata.Confidence is < 0.0 or > 1.0)
+    {
+      throw new ProductValidationException("Product metadata confidence must be a finite value from zero through one.");
+    }
+
+    try
+    {
+      _ = checked(Quantity * Price);
+    }
+    catch (OverflowException exception)
+    {
+      throw new ProductValidationException(
+        "Product quantity and unit price exceed the supported total-price range.",
+        exception);
+    }
+  }
+
+  /// <summary>
   /// Applies a client-editable line-item update while preserving analysis and workflow state.
   /// </summary>
   /// <remarks>
@@ -116,5 +209,52 @@ public class Product
     ProductMetadata metadata = Metadata;
     metadata.IsEdited = true;
     Metadata = metadata;
+    RequiresCommercialValidation = clientUpdate.RequiresCommercialValidation;
+  }
+
+  private static bool HasValidQuantityUnit(string? quantityUnit)
+  {
+    if (string.IsNullOrWhiteSpace(quantityUnit)
+      || quantityUnit.Length > MaximumQuantityUnitLength
+      || quantityUnit != quantityUnit.Trim())
+    {
+      return false;
+    }
+
+    foreach (char character in quantityUnit)
+    {
+      if (!char.IsLetter(character)
+        && character is not ' ' and not '-' and not '/')
+      {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private static bool HasValidProductCode(string? productCode)
+  {
+    if (string.IsNullOrEmpty(productCode))
+    {
+      return true;
+    }
+
+    if (productCode.Length > MaximumProductCodeLength
+      || productCode != productCode.Trim())
+    {
+      return false;
+    }
+
+    foreach (char character in productCode)
+    {
+      if (!char.IsAsciiLetterOrDigit(character)
+        && character is not '.' and not '_' and not '-' and not '/')
+      {
+        return false;
+      }
+    }
+
+    return true;
   }
 }

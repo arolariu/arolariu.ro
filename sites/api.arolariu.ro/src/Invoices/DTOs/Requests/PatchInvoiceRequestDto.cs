@@ -195,10 +195,7 @@ public readonly record struct PatchInvoiceRequestDto(
 
     if (AdditionalMetadata is not null)
     {
-      foreach (var (key, value) in AdditionalMetadata)
-      {
-        patched.AdditionalMetadata[key] = value;
-      }
+      new PatchMetadataRequestDto(AdditionalMetadata).ApplyTo(patched.AdditionalMetadata);
     }
 
     patched.PerformUpdate(updatedBy);

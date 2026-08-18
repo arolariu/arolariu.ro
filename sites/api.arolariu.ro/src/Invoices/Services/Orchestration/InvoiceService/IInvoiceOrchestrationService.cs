@@ -47,6 +47,26 @@ public interface IInvoiceOrchestrationService
   Task<Invoice> CreateInvoiceObject(Invoice invoice, Guid? userIdentifier, CancellationToken cancellationToken);
   #endregion
 
+  #region Attach Invoice Scan API
+  /// <summary>
+  /// Validates and attaches one uploaded scan to an existing invoice.
+  /// </summary>
+  /// <remarks>
+  /// The scan's approved storage path and server-observed Blob Storage properties are validated before the invoice
+  /// aggregate is loaded or mutated. This preserves the trusted upload boundary for scan attachments.
+  /// </remarks>
+  /// <param name="scan">The uploaded scan to attach.</param>
+  /// <param name="invoiceIdentifier">The identifier of the invoice receiving the scan.</param>
+  /// <param name="userIdentifier">The optional partition context for the invoice.</param>
+  /// <param name="cancellationToken">The token used to cancel validation or persistence.</param>
+  /// <returns>The updated invoice aggregate containing the attached scan.</returns>
+  Task<Invoice> AttachInvoiceScanAsync(
+    InvoiceScan scan,
+    Guid invoiceIdentifier,
+    Guid? userIdentifier,
+    CancellationToken cancellationToken);
+  #endregion
+
   #region Read Invoice API
   /// <summary>
   /// Retrieves a single invoice aggregate by identifier.
