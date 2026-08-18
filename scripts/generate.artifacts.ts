@@ -74,6 +74,26 @@ export interface GpcSourceDocument {
   readonly Schema: readonly GpcSourceNode[];
 }
 
+/** Generates one classification taxonomy and writes its runtime artifacts. */
+export abstract class TaxonomyClassificationGenerator {
+  /** Generates the classification artifact and returns every output path. */
+  public abstract generate(): Promise<readonly string[]>;
+}
+
+/** Generates one family of third-party license documents. */
+export abstract class LicenseGenerator {
+  /** Generates the license document and returns every output path. */
+  public abstract generate(): Promise<readonly string[]>;
+}
+
+/** Reserved backend license generator; backend discovery is intentionally deferred. */
+export class BackendLicenseGenerator extends LicenseGenerator {
+  /** Returns no outputs until backend license discovery is defined. */
+  public override async generate(): Promise<readonly string[]> {
+    return [];
+  }
+}
+
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }

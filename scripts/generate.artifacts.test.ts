@@ -16,6 +16,7 @@ vi.mock("node:fs/promises", async (importOriginal) => {
 });
 import {
   assertMirroredContentsIdentical,
+  BackendLicenseGenerator,
   buildTaxonomyArtifactGenerationCommand,
   buildHierarchy,
   extractZipEntry,
@@ -648,5 +649,17 @@ describe("buildTaxonomyArtifactGenerationCommand", () => {
     expect(command.command).toBe(process.execPath);
     expect(command.args).toHaveLength(1);
     expect(command.args[0]).toMatch(/generate\.artifacts\.ts$/u);
+  });
+});
+
+describe("License generators", () => {
+  describe("BackendLicenseGenerator", () => {
+    describe("generate", () => {
+      it("returns no generated outputs", async () => {
+        const generator = new BackendLicenseGenerator();
+
+        await expect(generator.generate()).resolves.toEqual([]);
+      });
+    });
   });
 });
