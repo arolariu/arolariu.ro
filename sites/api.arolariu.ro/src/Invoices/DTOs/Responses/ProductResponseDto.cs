@@ -1,8 +1,8 @@
 namespace arolariu.Backend.Domain.Invoices.DTOs.Responses;
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
@@ -91,15 +91,15 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct ProductResponseDto(
-  string Name,
-  StandardClassification? Classification,
-  decimal Quantity,
-  string QuantityUnit,
-  string ProductCode,
-  decimal Price,
-  decimal TotalPrice,
-  AllergenAssessment? AllergenAssessment,
-  ProductMetadataDto Metadata)
+  [property: JsonPropertyName("name")] string Name,
+  [property: JsonPropertyName("classification")] StandardClassificationResponseDto? Classification,
+  [property: JsonPropertyName("quantity")] decimal Quantity,
+  [property: JsonPropertyName("quantityUnit")] string QuantityUnit,
+  [property: JsonPropertyName("productCode")] string ProductCode,
+  [property: JsonPropertyName("price")] decimal Price,
+  [property: JsonPropertyName("totalPrice")] decimal TotalPrice,
+  [property: JsonPropertyName("allergenAssessment")] AllergenAssessmentResponseDto? AllergenAssessment,
+  [property: JsonPropertyName("metadata")] ProductMetadataDto Metadata)
 {
   /// <summary>
   /// Creates a <see cref="ProductResponseDto"/> from a domain <see cref="Product"/> value object.
@@ -132,13 +132,13 @@ public readonly record struct ProductResponseDto(
     ArgumentNullException.ThrowIfNull(product);
     return new(
       Name: product.Name,
-      Classification: product.Classification,
+      Classification: StandardClassificationResponseDto.FromStandardClassification(product.Classification),
       Quantity: product.Quantity,
       QuantityUnit: product.QuantityUnit,
       ProductCode: product.ProductCode,
       Price: product.Price,
       TotalPrice: product.TotalPrice,
-      AllergenAssessment: product.AllergenAssessment,
+      AllergenAssessment: AllergenAssessmentResponseDto.FromAllergenAssessment(product.AllergenAssessment),
       Metadata: new ProductMetadataDto(
         IsEdited: product.Metadata.IsEdited,
         IsComplete: product.Metadata.IsComplete,
@@ -153,7 +153,7 @@ public readonly record struct ProductResponseDto(
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct ProductMetadataDto(
-  bool IsEdited,
-  bool IsComplete,
-  bool IsSoftDeleted,
-  double Confidence);
+  [property: JsonPropertyName("isEdited")] bool IsEdited,
+  [property: JsonPropertyName("isComplete")] bool IsComplete,
+  [property: JsonPropertyName("isSoftDeleted")] bool IsSoftDeleted,
+  [property: JsonPropertyName("confidence")] double Confidence);

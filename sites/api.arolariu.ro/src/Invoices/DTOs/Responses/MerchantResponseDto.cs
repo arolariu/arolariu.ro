@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
@@ -106,22 +107,22 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct MerchantResponseDto(
-  Guid Id,
-  string Name,
-  string Description,
-  StandardClassification? Classification,
-  ContactInformation Address,
-  Guid ParentCompanyId,
-  int ReferencedInvoiceCount,
-  IReadOnlyCollection<Guid> ReferencedInvoiceIds,
-  IReadOnlyDictionary<string, string> AdditionalMetadata,
-  bool IsImportant,
-  bool IsSoftDeleted,
-  DateTimeOffset CreatedAt,
-  Guid CreatedBy,
-  DateTimeOffset LastUpdatedAt,
-  Guid LastUpdatedBy,
-  int NumberOfUpdates)
+  [property: JsonPropertyName("id")] Guid Id,
+  [property: JsonPropertyName("name")] string Name,
+  [property: JsonPropertyName("description")] string Description,
+  [property: JsonPropertyName("classification")] StandardClassificationResponseDto? Classification,
+  [property: JsonPropertyName("address")] ContactInformationResponseDto Address,
+  [property: JsonPropertyName("parentCompanyId")] Guid ParentCompanyId,
+  [property: JsonPropertyName("referencedInvoiceCount")] int ReferencedInvoiceCount,
+  [property: JsonPropertyName("referencedInvoiceIds")] IReadOnlyCollection<Guid> ReferencedInvoiceIds,
+  [property: JsonPropertyName("additionalMetadata")] IReadOnlyDictionary<string, string> AdditionalMetadata,
+  [property: JsonPropertyName("isImportant")] bool IsImportant,
+  [property: JsonPropertyName("isSoftDeleted")] bool IsSoftDeleted,
+  [property: JsonPropertyName("createdAt")] DateTimeOffset CreatedAt,
+  [property: JsonPropertyName("createdBy")] Guid CreatedBy,
+  [property: JsonPropertyName("lastUpdatedAt")] DateTimeOffset LastUpdatedAt,
+  [property: JsonPropertyName("lastUpdatedBy")] Guid LastUpdatedBy,
+  [property: JsonPropertyName("numberOfUpdates")] int NumberOfUpdates)
 {
   /// <summary>
   /// Creates a <see cref="MerchantResponseDto"/> from a domain <see cref="Merchant"/> entity.
@@ -152,8 +153,8 @@ public readonly record struct MerchantResponseDto(
       Id: merchant.id,
       Name: merchant.Name,
       Description: merchant.Description,
-      Classification: merchant.Classification,
-      Address: merchant.Address,
+      Classification: StandardClassificationResponseDto.FromStandardClassification(merchant.Classification),
+      Address: ContactInformationResponseDto.FromContactInformation(merchant.Address),
       ParentCompanyId: merchant.ParentCompanyId,
       ReferencedInvoiceCount: merchant.ReferencedInvoices.Count,
       ReferencedInvoiceIds: merchant.ReferencedInvoices.ToList().AsReadOnly(),
