@@ -10,6 +10,8 @@
  */
 
 import {inflateRawSync} from "node:zlib";
+import {mkdir, readFile, writeFile} from "node:fs/promises";
+import {resolve} from "node:path";
 
 const GPC_LEVELS: Readonly<Record<number, string>> = {
   1: "segment",
@@ -17,6 +19,16 @@ const GPC_LEVELS: Readonly<Record<number, string>> = {
   3: "class",
   4: "brick",
 };
+
+const OUTPUT_ROOTS = [
+  resolve("sites/api.arolariu.ro/src/Invoices/Resources/Taxonomies"),
+  resolve("sites/arolariu.ro/src/data/taxonomies"),
+] as const;
+
+/** @internal */
+export const FILE_NAMES = {
+  GS1_GPC: "gpc-2026-05.min.json",
+} as const satisfies Readonly<Record<ArtifactClassificationSystem, string>>;
 
 /** Classification systems supported by generated artifacts. */
 export type ArtifactClassificationSystem = "GS1_GPC";
@@ -224,6 +236,68 @@ export function buildHierarchy(nodes: readonly TaxonomyArtifactNode[], code: str
       ...hierarchy.map((node) => node.officialLabel),
     ),
   };
+}
+
+
+function validateArtifact(artifact: TaxonomyArtifact): void {
+  if (artifact.nodes.length === 0) throw new Error(`${artifact.system} artifact contains no taxonomy nodes.`);
+
+  const nodesByCode = new Map<string, TaxonomyArtifactNode>();
+  for (const node of artifact.nodes) {
+    if (nodesByCode.has(node.code)) throw new Error(`${artifact.system} contains duplicate code '${node.code}'.`);
+    nodesByCode.set(node.code, node);
+  }
+
+  for (const node of artifact.nodes) {
+    if (node.parentCode !== null && !nodesByCode.has(node.parentCode)) {
+      throw new Error(`${artifact.system} parent '${node.parentCode}' for '${node.code}' was not found.`);
+    }
+    if (node.hierarchyCodes.at(-1) !== node.code) {
+      throw new Error(`${artifact.system} hierarchy for '${node.code}' does not end with the selected code.`);
+    }
+    if (node.hierarchyCodes.length !== node.hierarchyLabels.length) {
+      throw new Error(`${artifact.system} hierarchy for '${node.code}' has mismatched code and label lengths.`);
+    }
+  }
+}
+
+/**
+ * Writes the same minified artifact into each runtime output directory.
+ *
+ * @remarks
+ * The artifact is validated before any write, and every written file is read back and
+ * compared so the API and website copies are provably byte-identical.
+ *
+ * @param fileName - Generated artifact file name.
+ * @param artifact - Artifact to validate and write.
+ * @param outputRoots - Output roots; defaults to the API and website runtime directories.
+ * @returns Absolute paths written, in output-root order.
+ * @throws {Error} When validation fails or the mirrored copies differ.
+ */
+export async function writeMirroredArtifacts(
+  fileName: string,
+  artifact: TaxonomyArtifact,
+  outputRoots: readonly string[] = OUTPUT_ROOTS,
+): Promise<readonly string[]> {
+  validateArtifact(artifact);
+  const contents = JSON.stringify(artifact);
+  const paths = outputRoots.map((root) => resolve(root, fileName));
+
+  await Promise.all(
+    paths.map(async (path, index) => {
+      const root = outputRoots[index];
+      if (root === undefined) throw new Error(`Output root for '${path}' was not found.`);
+      await mkdir(root, {recursive: true});
+      await writeFile(path, contents, "utf8");
+    }),
+  );
+
+  const writtenContents = await Promise.all(paths.map((path) => readFile(path, "utf8")));
+  if (writtenContents.some((value) => value !== contents)) {
+    throw new Error(`Mirrored artifact '${fileName}' was not written identically.`);
+  }
+
+  return paths;
 }
 
 /**

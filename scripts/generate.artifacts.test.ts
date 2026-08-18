@@ -4,9 +4,12 @@
  */
 
 import {deflateRawSync} from "node:zlib";
+import {mkdtemp, readFile} from "node:fs/promises";
+import {tmpdir} from "node:os";
+import {join} from "node:path";
 import {describe, expect, it} from "vitest";
-import {buildHierarchy, extractZipEntry, flattenGpcSchema, parseGpcDocument} from "./generate.artifacts.ts";
-import type {TaxonomyArtifactNode} from "./generate.artifacts.ts";
+import {buildHierarchy, extractZipEntry, flattenGpcSchema, parseGpcDocument, writeMirroredArtifacts} from "./generate.artifacts.ts";
+import type {TaxonomyArtifact, TaxonomyArtifactNode} from "./generate.artifacts.ts";
 
 /** Minimal ZIP entry description used by the archive builder below. */
 interface ZipEntryInput {
@@ -301,5 +304,101 @@ describe("buildHierarchy", () => {
     const cyclic = [node("A", "Alpha", "B"), node("B", "Beta", "A")];
 
     expect(() => buildHierarchy(cyclic, "A")).toThrow("Taxonomy hierarchy cycle detected at 'A'.");
+  });
+});
+
+
+describe("writeMirroredArtifacts", () => {
+  const validNode: TaxonomyArtifactNode = {
+    code: "50000000",
+    officialLabel: "Food",
+    level: "segment",
+    parentCode: null,
+    hierarchyCodes: ["50000000"],
+    hierarchyLabels: ["Food"],
+    definition: null,
+    searchText: "50000000 food",
+  };
+
+  const artifact = (nodes: readonly TaxonomyArtifactNode[]): TaxonomyArtifact => ({
+    system: "GS1_GPC",
+    version: "2026-05",
+    sourceUrl: "https://ref.gs1.org/standards/gpc/2026-05/",
+    generatedAt: "2026-08-18T00:00:00.000Z",
+    attribution: "GS1 Global Product Classification (GPC), May 2026 release.",
+    nodes,
+  });
+
+  async function createRoots(): Promise<readonly string[]> {
+    const base = await mkdtemp(join(tmpdir(), "arolariu-artifacts-"));
+    return [join(base, "api"), join(base, "web")];
+  }
+
+  it("writes byte-identical files into every output root", async () => {
+    const roots = await createRoots();
+
+    const written = await writeMirroredArtifacts("gpc-2026-05.min.json", artifact([validNode]), roots);
+
+    expect(written).toHaveLength(2);
+    const [first, second] = await Promise.all(written.map((path) => readFile(path, "utf8")));
+    expect(first).toBe(second);
+    expect(JSON.parse(first ?? "")).toMatchObject({system: "GS1_GPC", version: "2026-05"});
+  });
+
+  it("writes minified JSON without insignificant whitespace", async () => {
+    const roots = await createRoots();
+
+    const [path] = await writeMirroredArtifacts("gpc-2026-05.min.json", artifact([validNode]), roots);
+
+    expect(await readFile(path ?? "", "utf8")).not.toContain("\n");
+  });
+
+  it("creates output directories that do not yet exist", async () => {
+    const roots = await createRoots();
+
+    await expect(writeMirroredArtifacts("gpc-2026-05.min.json", artifact([validNode]), roots)).resolves.toHaveLength(2);
+  });
+
+  it("rejects an artifact with no nodes", async () => {
+    const roots = await createRoots();
+
+    await expect(writeMirroredArtifacts("gpc-2026-05.min.json", artifact([]), roots)).rejects.toThrow(
+      "GS1_GPC artifact contains no taxonomy nodes.",
+    );
+  });
+
+  it("rejects duplicate codes", async () => {
+    const roots = await createRoots();
+
+    await expect(
+      writeMirroredArtifacts("gpc-2026-05.min.json", artifact([validNode, validNode]), roots),
+    ).rejects.toThrow("GS1_GPC contains duplicate code '50000000'.");
+  });
+
+  it("rejects a dangling parent code", async () => {
+    const roots = await createRoots();
+    const orphan: TaxonomyArtifactNode = {...validNode, code: "50190000", parentCode: "99999999", hierarchyCodes: ["50190000"], hierarchyLabels: ["Baked"]};
+
+    await expect(writeMirroredArtifacts("gpc-2026-05.min.json", artifact([orphan]), roots)).rejects.toThrow(
+      "GS1_GPC parent '99999999' for '50190000' was not found.",
+    );
+  });
+
+  it("rejects a hierarchy that does not end with its own code", async () => {
+    const roots = await createRoots();
+    const broken: TaxonomyArtifactNode = {...validNode, hierarchyCodes: ["12345678"]};
+
+    await expect(writeMirroredArtifacts("gpc-2026-05.min.json", artifact([broken]), roots)).rejects.toThrow(
+      "GS1_GPC hierarchy for '50000000' does not end with the selected code.",
+    );
+  });
+
+  it("rejects mismatched hierarchy code and label lengths", async () => {
+    const roots = await createRoots();
+    const broken: TaxonomyArtifactNode = {...validNode, hierarchyLabels: ["Food", "Extra"]};
+
+    await expect(writeMirroredArtifacts("gpc-2026-05.min.json", artifact([broken]), roots)).rejects.toThrow(
+      "GS1_GPC hierarchy for '50000000' has mismatched code and label lengths.",
+    );
   });
 });
