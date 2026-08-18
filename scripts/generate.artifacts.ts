@@ -11,6 +11,42 @@
 
 import {inflateRawSync} from "node:zlib";
 
+const GPC_SOURCE = "https://ref.gs1.org/standards/gpc/2026-05/";
+const GPC_VERSION = "2026-05";
+const GPC_ATTRIBUTION = "GS1 Global Product Classification (GPC), May 2026 release.";
+
+const GPC_LEVELS: Readonly<Record<number, string>> = {
+  1: "segment",
+  2: "family",
+  3: "class",
+  4: "brick",
+};
+
+/** Classification systems supported by generated artifacts. */
+export type ArtifactClassificationSystem = "GS1_GPC";
+
+/** Single normalized taxonomy node. */
+export interface TaxonomyArtifactNode {
+  readonly code: string;
+  readonly officialLabel: string;
+  readonly level: string;
+  readonly parentCode: string | null;
+  readonly hierarchyCodes: readonly string[];
+  readonly hierarchyLabels: readonly string[];
+  readonly definition: string | null;
+  readonly searchText: string;
+}
+
+/** Versioned taxonomy artifact consumed by the API and the website. */
+export interface TaxonomyArtifact {
+  readonly system: ArtifactClassificationSystem;
+  readonly version: string;
+  readonly sourceUrl: string;
+  readonly generatedAt: string;
+  readonly attribution: string;
+  readonly nodes: readonly TaxonomyArtifactNode[];
+}
+
 /** Shape used by the official GS1 GPC JSON document. */
 export interface GpcSourceNode {
   readonly Level: number;
@@ -74,6 +110,14 @@ function parseGpcNode(value: unknown): GpcSourceNode {
   };
 }
 
+function normalizeText(...parts: readonly (string | null | undefined)[]): string {
+  return parts
+    .filter((part): part is string => typeof part === "string" && part.trim().length > 0)
+    .map((part) => part.trim().toLowerCase())
+    .join(" ")
+    .replaceAll(/\s+/gu, " ");
+}
+
 /**
  * Parses and validates the official GS1 GPC JSON document.
  *
@@ -91,6 +135,55 @@ export function parseGpcDocument(value: unknown): GpcSourceDocument {
     DateUtc: requireString(value, "DateUtc", "GPC document"),
     Schema: schema.map((node: unknown) => parseGpcNode(node)),
   };
+}
+
+/**
+ * Flattens the official hierarchical GPC schema into Segment through Brick nodes.
+ *
+ * @remarks
+ * Inactive nodes and their descendants are excluded. Nodes whose level falls outside
+ * 1-4 are omitted from the output but their children are still visited, so deeper
+ * classification levels are preserved.
+ *
+ * @param schema - Official GPC schema nodes.
+ * @returns Normalized active nodes for levels 1-4, in document order.
+ */
+export function flattenGpcSchema(schema: readonly GpcSourceNode[]): readonly TaxonomyArtifactNode[] {
+  const nodes: TaxonomyArtifactNode[] = [];
+
+  const visit = (node: GpcSourceNode, ancestors: readonly TaxonomyArtifactNode[]): void => {
+    if (!node.Active) return;
+
+    const level = GPC_LEVELS[node.Level];
+    const title = node.Title.trim();
+    const definition = node.Definition?.trim() ? node.Definition.trim() : null;
+
+    const current: TaxonomyArtifactNode | null =
+      level === undefined
+        ? null
+        : {
+            code: String(node.Code),
+            officialLabel: title,
+            level,
+            parentCode: ancestors.at(-1)?.code ?? null,
+            hierarchyCodes: [...ancestors.map((ancestor) => ancestor.code), String(node.Code)],
+            hierarchyLabels: [...ancestors.map((ancestor) => ancestor.officialLabel), title],
+            definition,
+            searchText: normalizeText(
+              String(node.Code),
+              title,
+              definition,
+              ...ancestors.map((ancestor) => ancestor.officialLabel),
+            ),
+          };
+
+    if (current !== null) nodes.push(current);
+    const nextAncestors = current === null ? ancestors : [...ancestors, current];
+    for (const child of node.Childs) visit(child, nextAncestors);
+  };
+
+  for (const root of schema) visit(root, []);
+  return nodes;
 }
 
 /**

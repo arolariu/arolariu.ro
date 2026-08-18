@@ -5,7 +5,7 @@
 
 import {deflateRawSync} from "node:zlib";
 import {describe, expect, it} from "vitest";
-import {extractZipEntry, parseGpcDocument} from "./generate.artifacts.ts";
+import {extractZipEntry, flattenGpcSchema, parseGpcDocument} from "./generate.artifacts.ts";
 
 /** Minimal ZIP entry description used by the archive builder below. */
 interface ZipEntryInput {
@@ -183,5 +183,74 @@ describe("parseGpcDocument", () => {
     expect(() =>
       parseGpcDocument({LanguageCode: "EN", DateUtc: "2026-05-01", Schema: [{...validNode, Childs: null}]}),
     ).toThrow("GPC node Childs must be an array.");
+  });
+});
+
+describe("flattenGpcSchema", () => {
+  const brick = {
+    Level: 4,
+    Code: 10000266,
+    Title: "Bread",
+    Definition: "Includes any bread product.",
+    DefinitionExcludes: null,
+    Active: true,
+    Childs: [],
+  };
+  const klass = {Level: 3, Code: 50192000, Title: "Bakery", Definition: null, DefinitionExcludes: null, Active: true, Childs: [brick]};
+  const family = {Level: 2, Code: 50190000, Title: "Baked Goods", Definition: null, DefinitionExcludes: null, Active: true, Childs: [klass]};
+  const segment = {Level: 1, Code: 50000000, Title: "Food", Definition: null, DefinitionExcludes: null, Active: true, Childs: [family]};
+
+  it("flattens all four levels in document order", () => {
+    const nodes = flattenGpcSchema([segment]);
+
+    expect(nodes.map((node) => node.code)).toEqual(["50000000", "50190000", "50192000", "10000266"]);
+    expect(nodes.map((node) => node.level)).toEqual(["segment", "family", "class", "brick"]);
+  });
+
+  it("records parent codes and full hierarchies", () => {
+    const nodes = flattenGpcSchema([segment]);
+    const leaf = nodes.at(-1);
+
+    expect(leaf?.parentCode).toBe("50192000");
+    expect(leaf?.hierarchyCodes).toEqual(["50000000", "50190000", "50192000", "10000266"]);
+    expect(leaf?.hierarchyLabels).toEqual(["Food", "Baked Goods", "Bakery", "Bread"]);
+  });
+
+  it("gives root nodes a null parent", () => {
+    expect(flattenGpcSchema([segment])[0]?.parentCode).toBeNull();
+  });
+
+  it("builds lowercase search text from code, title, definition and ancestors", () => {
+    const leaf = flattenGpcSchema([segment]).at(-1);
+
+    expect(leaf?.searchText).toContain("10000266");
+    expect(leaf?.searchText).toContain("bread");
+    expect(leaf?.searchText).toContain("includes any bread product.");
+    expect(leaf?.searchText).toContain("bakery");
+  });
+
+  it("skips inactive nodes and their descendants", () => {
+    const inactiveFamily = {...family, Active: false};
+
+    expect(flattenGpcSchema([{...segment, Childs: [inactiveFamily]}]).map((node) => node.code)).toEqual(["50000000"]);
+  });
+
+  it("skips unknown levels but still visits their children", () => {
+    const attribute = {Level: 5, Code: 20000123, Title: "Colour", Definition: null, DefinitionExcludes: null, Active: true, Childs: [brick]};
+
+    const nodes = flattenGpcSchema([{...klass, Childs: [attribute]}]);
+
+    expect(nodes.map((node) => node.code)).toEqual(["50192000", "10000266"]);
+    expect(nodes.at(-1)?.parentCode).toBe("50192000");
+  });
+
+  it("normalizes an empty definition to null", () => {
+    const nodes = flattenGpcSchema([{...brick, Definition: "   "}]);
+
+    expect(nodes[0]?.definition).toBeNull();
+  });
+
+  it("trims titles", () => {
+    expect(flattenGpcSchema([{...brick, Title: "  Bread  "}])[0]?.officialLabel).toBe("Bread");
   });
 });
