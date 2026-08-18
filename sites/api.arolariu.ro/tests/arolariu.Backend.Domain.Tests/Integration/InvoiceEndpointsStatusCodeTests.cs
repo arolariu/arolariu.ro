@@ -12,6 +12,7 @@ using arolariu.Backend.Common.Http;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.Endpoints;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -207,6 +208,55 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var problem = Assert.IsExactInstanceOfType<ProblemHttpResult>(result);
     return problem.ProblemDetails;
   }
+  #endregion
+
+  #region PUT /rest/v1/invoices/{id}/products status code tests
+  /// <summary>
+  /// Verifies that an unmatched product update reaches the endpoint as a typed 404 response and does not require
+  /// the endpoint to separately load, delete, and append invoice products.
+  /// </summary>
+  [TestMethod]
+  public async Task UpdateProductInInvoiceAsync_WhenServiceThrowsProductNotFound_Returns404()
+  {
+    // Arrange
+    var invoiceIdentifier = Guid.NewGuid();
+    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    mockService
+      .Setup(service => service.UpdateProduct(
+        "Missing product",
+        It.IsAny<arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Product>(),
+        invoiceIdentifier,
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new ProductNotFoundException(invoiceIdentifier));
+    var accessor = CreateAuthenticatedContextAccessor();
+    var request = new UpdateProductRequestDto(
+      OriginalProductName: "Missing product",
+      Name: "Replacement",
+      Classification: null,
+      Quantity: 1,
+      QuantityUnit: "pcs",
+      ProductCode: null,
+      Price: 1m);
+
+    // Act
+    IResult result = await InvoiceEndpoints
+      .UpdateProductInInvoiceAsync(mockService.Object, accessor, invoiceIdentifier, request)
+      .ConfigureAwait(false);
+
+    // Assert
+    Assert.AreEqual(StatusCodes.Status404NotFound, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.NotFound, GetProblemDetails(result).Type);
+    mockService.Verify(
+      service => service.UpdateProduct(
+        "Missing product",
+        It.IsAny<arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Product>(),
+        invoiceIdentifier,
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()),
+      Times.Once);
+  }
+
   #endregion
 
   #region GET /rest/v1/invoices/{id} status code tests

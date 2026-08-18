@@ -1,5 +1,6 @@
 namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
+using System;
 using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
@@ -78,4 +79,42 @@ public class Product
   /// <remarks><para>Soft-deleted products remain embedded for audit; parent invoice filters them out at presentation layers.</para></remarks>
   [JsonPropertyOrder(7)]
   public ProductMetadata Metadata { get; set; }
+
+  /// <summary>
+  /// Applies a client-editable line-item update while preserving analysis and workflow state.
+  /// </summary>
+  /// <remarks>
+  /// <para>
+  /// This method mutates the persisted line item selected by its owning invoice aggregate; it never replaces that
+  /// instance. As a result, the allergen assessment and operational metadata produced by server workflows remain
+  /// intact. The update only changes the client-editable commercial fields and marks the item as edited.
+  /// </para>
+  /// <para>
+  /// A null <see cref="Product.Classification"/> on <paramref name="clientUpdate"/> means that the caller did not
+  /// select a replacement classification, so the existing canonical classification (including its evidence and
+  /// taxonomy version) is retained. A non-null classification is canonicalized by the invoice storage foundation
+  /// before persistence.
+  /// </para>
+  /// </remarks>
+  /// <param name="clientUpdate">The client-controlled product values to apply.</param>
+  /// <exception cref="ArgumentNullException">Thrown when <paramref name="clientUpdate"/> is null.</exception>
+  public void ApplyClientUpdate(Product clientUpdate)
+  {
+    ArgumentNullException.ThrowIfNull(clientUpdate);
+
+    Name = clientUpdate.Name;
+    Quantity = clientUpdate.Quantity;
+    QuantityUnit = clientUpdate.QuantityUnit;
+    ProductCode = clientUpdate.ProductCode;
+    Price = clientUpdate.Price;
+
+    if (clientUpdate.Classification is not null)
+    {
+      Classification = clientUpdate.Classification;
+    }
+
+    ProductMetadata metadata = Metadata;
+    metadata.IsEdited = true;
+    Metadata = metadata;
+  }
 }

@@ -118,6 +118,29 @@ public interface IInvoiceProcessingService
   Task AddProduct(Product product, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
   #endregion
 
+  #region Update Invoice Product API
+  /// <summary>
+  /// Applies a client product update to one persisted line item and writes its invoice aggregate once.
+  /// </summary>
+  /// <remarks>
+  /// The target is the first line item whose normalized name exactly matches <paramref name="originalProductName"/>.
+  /// Duplicate matches use invoice collection order (FIFO) so no adjacent duplicate is replaced or appended.
+  /// Server-owned enrichment and workflow fields are retained by the persisted line item.
+  /// </remarks>
+  /// <param name="originalProductName">The current client-visible name identifying the line item.</param>
+  /// <param name="updatedProduct">The client-editable values to apply to the selected line item.</param>
+  /// <param name="invoiceIdentifier">Target invoice identifier.</param>
+  /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
+  /// <returns>The updated persisted line item after the aggregate write path has canonicalized it.</returns>
+  Task<Product> UpdateProduct(
+    string originalProductName,
+    Product updatedProduct,
+    Guid invoiceIdentifier,
+    Guid? userIdentifier,
+    CancellationToken cancellationToken);
+  #endregion
+
   #region Get Invoice Products API
   /// <summary>
   /// Retrieves all products belonging to an invoice.

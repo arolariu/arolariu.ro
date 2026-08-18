@@ -10,6 +10,8 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 
 public partial class InvoiceStorageFoundationService
 {
+  private const string UnresolvedManualClassificationVersion = "unresolved";
+
   private static void ValidateIdentifierIsSet(Guid? identifier)
   {
     Validator.ValidateAndThrow<Guid?, InvoiceIdNotSetException>(identifier, identifier => identifier is not null, "Identifier not set!");
@@ -30,14 +32,22 @@ public partial class InvoiceStorageFoundationService
   /// re-projected here immediately before it reaches the persistence broker.</para>
   /// </remarks>
   /// <param name="invoice">The aggregate about to be persisted.</param>
-  private void CanonicalizeInvoiceClassifications(Invoice invoice)
+  /// <param name="preserveUntouchedProductClassifications">
+  /// Whether an in-place product patch must preserve classifications not supplied by the caller.
+  /// </param>
+  private void CanonicalizeInvoiceClassifications(
+    Invoice invoice,
+    bool preserveUntouchedProductClassifications = false)
   {
     if (invoice is null)
     {
       return;
     }
 
-    invoice.Classification = Canonicalize(invoice.Classification, ClassificationSystem.EcoicopV2);
+    if (preserveUntouchedProductClassifications is false)
+    {
+      invoice.Classification = Canonicalize(invoice.Classification, ClassificationSystem.EcoicopV2);
+    }
 
     if (invoice.Items is null)
     {
@@ -48,10 +58,21 @@ public partial class InvoiceStorageFoundationService
     {
       if (product is not null)
       {
-        product.Classification = Canonicalize(product.Classification, ClassificationSystem.Gs1Gpc);
+        if (preserveUntouchedProductClassifications is false
+          || IsUnresolvedManualSelection(product.Classification))
+        {
+          product.Classification = Canonicalize(product.Classification, ClassificationSystem.Gs1Gpc);
+        }
       }
     }
   }
+
+  private static bool IsUnresolvedManualSelection(StandardClassification? classification) =>
+    classification is
+    {
+      Origin: ClassificationOrigin.Manual,
+      Version: UnresolvedManualClassificationVersion,
+    };
 
   private StandardClassification? Canonicalize(StandardClassification? classification, ClassificationSystem expectedSystem)
   {

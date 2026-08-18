@@ -8,7 +8,10 @@ using System.Threading.Tasks;
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
 using arolariu.Backend.Domain.Tests.Builders;
 
@@ -398,17 +401,17 @@ public sealed class MerchantStorageFoundationServiceTests
         .ReturnsAsync(currentMerchant);
 
     mockBroker
-        .Setup(b => b.UpdateMerchantAsync(currentMerchant, updatedMerchant, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(updatedMerchant);
+        .Setup(b => b.UpdateMerchantAsync(currentMerchant, currentMerchant, It.IsAny<CancellationToken>()))
+        .ReturnsAsync(currentMerchant);
 
     // Act
     var result = await service.UpdateMerchantObject(updatedMerchant, merchantId, parentCompanyId, CancellationToken.None);
 
     // Assert
     Assert.IsNotNull(result);
-    Assert.AreEqual(updatedMerchant.id, result.id);
+    Assert.AreEqual(currentMerchant.id, result.id);
     mockBroker.Verify(b => b.ReadMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()), Times.Once);
-    mockBroker.Verify(b => b.UpdateMerchantAsync(currentMerchant, updatedMerchant, It.IsAny<CancellationToken>()), Times.Once);
+    mockBroker.Verify(b => b.UpdateMerchantAsync(currentMerchant, currentMerchant, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -427,22 +430,108 @@ public sealed class MerchantStorageFoundationServiceTests
         .ReturnsAsync(currentMerchant);
 
     mockBroker
-        .Setup(b => b.UpdateMerchantAsync(currentMerchant, updatedMerchant, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(updatedMerchant);
+        .Setup(b => b.UpdateMerchantAsync(currentMerchant, currentMerchant, It.IsAny<CancellationToken>()))
+        .ReturnsAsync(currentMerchant);
 
     // Act
     var result = await service.UpdateMerchantObject(updatedMerchant, merchantId, null, CancellationToken.None);
 
     // Assert
     Assert.IsNotNull(result);
-    mockBroker.Verify(b => b.UpdateMerchantAsync(currentMerchant, updatedMerchant, It.IsAny<CancellationToken>()), Times.Once);
+    mockBroker.Verify(b => b.UpdateMerchantAsync(currentMerchant, currentMerchant, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
-  /// Validates null current merchant during update throws exception.
+  /// Verifies that a client update is applied to the loaded merchant instead of replacing it and thereby
+  /// discarding relationships, partition identity, audit state, and lifecycle flags.
   /// </summary>
   [TestMethod]
-  public async Task UpdateMerchantObject_NullCurrentMerchant_ThrowsFoundationServiceException()
+  public async Task UpdateMerchantObject_ClientUpdate_PreservesServerOwnedState()
+  {
+    // Arrange
+    var merchantId = Guid.NewGuid();
+    var parentCompanyId = Guid.NewGuid();
+    var referencedInvoiceId = Guid.NewGuid();
+    var currentMerchant = new Merchant
+    {
+      id = merchantId,
+      ParentCompanyId = parentCompanyId,
+      Name = "Persisted merchant",
+      Description = "Persisted description",
+      IsImportant = true,
+      CreatedAt = DateTimeOffset.UtcNow.AddDays(-2),
+      CreatedBy = Guid.NewGuid(),
+      NumberOfUpdates = 7,
+    };
+    currentMerchant.ReferencedInvoices.Add(referencedInvoiceId);
+    currentMerchant.AdditionalMetadata["analysis.source"] = "document-analysis";
+    currentMerchant.SoftDelete();
+
+    var canonicalClassification = new StandardClassification(
+      ClassificationSystem.Nace21,
+      "2.1",
+      "47.11",
+      "Retail sale in non-specialised stores with food, beverages or tobacco predominating",
+      [new ClassificationNode(
+        "class",
+        "47.11",
+        "Retail sale in non-specialised stores with food, beverages or tobacco predominating")],
+      ClassificationOrigin.Manual,
+      confidence: null,
+      evidence: []);
+    var clientMerchant = new Merchant
+    {
+      id = merchantId,
+      ParentCompanyId = Guid.NewGuid(),
+      Name = "Updated merchant",
+      Description = "Updated description",
+      Classification = new ClassificationSelectionDto(ClassificationSystem.Nace21, "47.11").ToManualSelection(),
+    };
+    Merchant? persistedMerchant = null;
+
+    mockTaxonomyBroker
+        .Setup(b => b.Resolve(
+          ClassificationSystem.Nace21,
+          "47.11",
+          ClassificationOrigin.Manual,
+          null,
+          It.IsAny<IReadOnlyList<ClassificationEvidence>>()))
+        .Returns(canonicalClassification);
+    mockBroker
+        .Setup(b => b.ReadMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()))
+        .ReturnsAsync(currentMerchant);
+    mockBroker
+        .Setup(b => b.UpdateMerchantAsync(currentMerchant, It.IsAny<Merchant>(), It.IsAny<CancellationToken>()))
+        .Callback<Merchant, Merchant, CancellationToken>((_, merchant, _) => persistedMerchant = merchant)
+        .ReturnsAsync(() => persistedMerchant!);
+
+    // Act
+    await service.UpdateMerchantObject(clientMerchant, merchantId, parentCompanyId, CancellationToken.None);
+
+    // Assert
+    Assert.AreSame(currentMerchant, persistedMerchant);
+    Merchant persisted = persistedMerchant!;
+    Assert.AreEqual("Updated merchant", persisted.Name);
+    Assert.AreEqual("Updated description", persisted.Description);
+    Assert.AreSame(canonicalClassification, persisted.Classification);
+    Assert.AreEqual(parentCompanyId, persisted.ParentCompanyId);
+    CollectionAssert.AreEqual(new[] { referencedInvoiceId }, new List<Guid>(persisted.ReferencedInvoices));
+    Assert.AreEqual("document-analysis", persisted.AdditionalMetadata["analysis.source"]);
+    Assert.IsTrue(persisted.IsImportant);
+    Assert.IsTrue(persisted.IsSoftDeleted);
+    Assert.AreEqual(currentMerchant.CreatedAt, persisted.CreatedAt);
+    Assert.AreEqual(currentMerchant.CreatedBy, persisted.CreatedBy);
+    Assert.AreEqual(7, persisted.NumberOfUpdates);
+    mockBroker.Verify(
+      b => b.UpdateMerchantAsync(currentMerchant, It.IsAny<Merchant>(), It.IsAny<CancellationToken>()),
+      Times.Once);
+  }
+
+  /// <summary>
+  /// Validates a missing merchant during update produces a typed dependency-validation exception.
+  /// </summary>
+  [TestMethod]
+  public async Task UpdateMerchantObject_NullCurrentMerchant_ThrowsFoundationDependencyValidationException()
   {
     // Arrange
     var merchantId = Guid.NewGuid();
@@ -453,8 +542,11 @@ public sealed class MerchantStorageFoundationServiceTests
         .ReturnsAsync((Merchant?)null);
 
     // Act & Assert
-    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
+    MerchantFoundationServiceDependencyValidationException exception =
+      await Assert.ThrowsExactlyAsync<MerchantFoundationServiceDependencyValidationException>(() =>
         service.UpdateMerchantObject(updatedMerchant, merchantId, null, CancellationToken.None));
+
+    Assert.IsInstanceOfType<MerchantNotFoundException>(exception.InnerException);
   }
 
   /// <summary>
@@ -473,7 +565,7 @@ public sealed class MerchantStorageFoundationServiceTests
         .ReturnsAsync(currentMerchant);
 
     mockBroker
-        .Setup(b => b.UpdateMerchantAsync(currentMerchant, updatedMerchant, It.IsAny<CancellationToken>()))
+        .Setup(b => b.UpdateMerchantAsync(currentMerchant, currentMerchant, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new InvalidOperationException("Update failed"));
 
     // Act & Assert

@@ -10,12 +10,12 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 
 /// <summary>
-/// Request DTO for full merchant replacement operations (HTTP PUT semantics).
+/// Request DTO for updating client-editable merchant fields.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>Purpose:</b> Replaces the entire merchant resource with the provided values.
-/// This follows HTTP PUT semantics where all mutable fields are replaced.
+/// <b>Purpose:</b> Updates contact, description, metadata, and an optional manual NACE
+/// selection without replacing relationships, audit state, or the Cosmos partition identity.
 /// </para>
 /// <para>
 /// <b>Immutability:</b> This is a <c>readonly record struct</c> ensuring thread-safety
@@ -23,7 +23,7 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// </para>
 /// <para>
 /// <b>Identity Preservation:</b> The merchant's ID and creation metadata are preserved.
-/// Only mutable business fields are replaced.
+/// Only client-editable business fields are applied to the persisted merchant.
 /// </para>
 /// <para>
 /// <b>Relationships:</b> The <see cref="ParentCompanyId"/> establishes hierarchical
@@ -37,20 +37,20 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// The new detailed description. Required. Replaces the existing description.
 /// </param>
 /// <param name="Classification">
-/// The new manual NACE classification selection. Null clears any manual selection and leaves the
-/// merchant's persisted classification to analysis runs.
+/// The optional new manual NACE classification selection. Null retains the persisted canonical
+/// classification and its analysis evidence.
 /// </param>
 /// <param name="Address">
 /// The new structured contact and address information.
 /// Null creates an empty <see cref="ContactInformation"/> instance.
 /// </param>
 /// <param name="ParentCompanyId">
-/// The new parent company reference for hierarchical organization.
-/// Null or <see cref="Guid.Empty"/> indicates no parent company.
+/// Retained for wire compatibility but not client-editable. The persisted parent company controls
+/// the Cosmos partition and is always retained by an update.
 /// </param>
 /// <param name="AdditionalMetadata">
-/// The new extensible key-value metadata. Replaces all existing metadata.
-/// Null or empty dictionary clears existing metadata.
+/// Optional extensible key-value metadata. A non-empty dictionary replaces existing client-editable metadata;
+/// null or an empty dictionary retains persisted metadata and server enrichment.
 /// </param>
 /// <example>
 /// <code>
@@ -90,8 +90,8 @@ public readonly record struct UpdateMerchantRequestDto(
   /// <b>Null Handling:</b>
   /// <list type="bullet">
   ///   <item><description><see cref="Address"/>: Null becomes empty <see cref="ContactInformation"/>.</description></item>
-  ///   <item><description><see cref="ParentCompanyId"/>: Null becomes <see cref="Guid.Empty"/>.</description></item>
-  ///   <item><description><see cref="AdditionalMetadata"/>: Null results in empty metadata.</description></item>
+  ///   <item><description><see cref="ParentCompanyId"/>: Deliberately ignored; the persisted partition identity is retained.</description></item>
+  ///   <item><description><see cref="AdditionalMetadata"/>: Null results in an empty update candidate and preserves persisted metadata.</description></item>
   /// </list>
   /// </para>
   /// <para>
@@ -103,7 +103,7 @@ public readonly record struct UpdateMerchantRequestDto(
   /// The existing merchant identifier to preserve. Must match an existing merchant.
   /// </param>
   /// <returns>
-  /// A fully populated <see cref="Merchant"/> instance ready for persistence.
+  /// A transient <see cref="Merchant"/> carrying only client-editable values for application to a persisted merchant.
   /// </returns>
   public Merchant ToMerchant(Guid merchantId)
   {
@@ -114,7 +114,6 @@ public readonly record struct UpdateMerchantRequestDto(
       Description = Description,
       Classification = Classification?.ToManualSelection(),
       Address = Address ?? new ContactInformation(),
-      ParentCompanyId = ParentCompanyId ?? Guid.Empty,
     };
 
     if (AdditionalMetadata is not null)

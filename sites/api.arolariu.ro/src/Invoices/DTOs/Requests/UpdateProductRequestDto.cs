@@ -9,12 +9,12 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 
 /// <summary>
-/// Request DTO for replacing an existing product within an invoice (PUT semantics).
+/// Request DTO for updating client-editable fields of an existing product within an invoice.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>Purpose:</b> Enables full replacement of a product's data, typically used to
-/// correct OCR errors or update product information after manual review.
+/// <b>Purpose:</b> Corrects OCR and commercial fields after manual review without
+/// replacing server-owned analysis or workflow state.
 /// </para>
 /// <para>
 /// <b>Immutability:</b> This is a <c>readonly record struct</c> ensuring thread-safety
@@ -22,12 +22,12 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// </para>
 /// <para>
 /// <b>Product Identification:</b> Products within an invoice are identified by their
-/// <see cref="OriginalProductName"/>. The update replaces the entire product data
-/// while maintaining its position in the invoice's item collection.
+/// normalized <see cref="OriginalProductName"/>. Duplicate names are selected FIFO in
+/// invoice collection order, and the selected persisted item is mutated in place.
 /// </para>
 /// <para>
-/// <b>Metadata Flag:</b> When a product is updated via this DTO, its
-/// <c>Metadata.IsEdited</c> flag is set to <c>true</c> to track manual modifications.
+/// <b>Preservation:</b> Allergen assessments, analysis metadata, workflow flags, and
+/// a classification not explicitly replaced by a manual selection remain unchanged.
 /// </para>
 /// </remarks>
 /// <param name="OriginalProductName">
@@ -39,8 +39,8 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// May be the same as <see cref="OriginalProductName"/> if only other fields change.
 /// </param>
 /// <param name="Classification">
-/// The new manual GPC classification selection. Null clears any manual selection and leaves the
-/// line item's persisted classification to analysis runs.
+/// The optional new manual GPC classification selection. Null retains the persisted canonical
+/// classification and its analysis evidence.
 /// </param>
 /// <param name="Quantity">
 /// The new quantity of product units. Must be positive.
@@ -85,12 +85,12 @@ public readonly record struct UpdateProductRequestDto(
   decimal Price)
 {
   /// <summary>
-  /// Converts this DTO to a <see cref="Product"/> domain value object.
+  /// Converts this DTO to the client-editable portion of a <see cref="Product"/> update.
   /// </summary>
   /// <remarks>
   /// <para>
   /// <b>Note:</b> The <see cref="OriginalProductName"/> is not included in the
-  /// returned product—it is only used for identification during the update operation.
+  /// returned product—it is only used for deterministic identification during the update operation.
   /// </para>
   /// <para>
   /// <b>Null Handling:</b> Optional string fields are converted to empty strings.
@@ -98,7 +98,7 @@ public readonly record struct UpdateProductRequestDto(
   /// </para>
   /// </remarks>
   /// <returns>
-  /// A new <see cref="Product"/> instance with the updated values.
+  /// A transient <see cref="Product"/> carrying only client-editable update values.
   /// </returns>
   public Product ToProduct() => new()
   {

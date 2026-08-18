@@ -2,6 +2,7 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Services.Foundation;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -164,6 +165,87 @@ public sealed class StorageFoundationCanonicalizationTests
     }
 
     Assert.IsNull(persisted[1].Classification);
+  }
+
+  /// <summary>
+  /// Verifies that the invoice update write path canonicalizes a manual GPC selection before the aggregate is
+  /// persisted, preventing caller-provided placeholder labels, versions, and hierarchy from reaching storage.
+  /// </summary>
+  [TestMethod]
+  public async Task UpdateInvoiceObject_ManualGpcSelection_PersistsCanonicalProductClassification()
+  {
+    // Arrange
+    var harness = new InvoiceHarness();
+    Invoice invoice = InvoiceHarness.CreateInvoice();
+    invoice.Items =
+    [
+      new Product
+      {
+        Name = "Milk",
+        Classification = new ClassificationSelectionDto(ClassificationSystem.Gs1Gpc, "10000025").ToManualSelection(),
+      },
+    ];
+
+    // Act
+    await harness.Service.UpdateInvoiceObject(invoice, invoice.id, invoice.UserIdentifier, CancellationToken.None)
+      .ConfigureAwait(false);
+
+    // Assert
+    StandardClassification persisted = harness.UpdatedInvoice!.Items.Single().Classification!;
+    Assert.AreEqual(ClassificationSystem.Gs1Gpc, persisted.System);
+    Assert.AreEqual("10000025", persisted.Code);
+    Assert.AreEqual("2026-05", persisted.Version);
+    Assert.AreEqual("Milk / Butter / Cream / Yogurt / Eggs / Egg Substitutes", persisted.OfficialLabel);
+    Assert.AreNotEqual(PlaceholderMetadata, persisted.Version);
+    Assert.AreEqual(ClassificationOrigin.Manual, persisted.Origin);
+    Assert.IsNull(persisted.Confidence);
+  }
+
+  /// <summary>
+  /// Verifies that a targeted product patch preserves every untouched classification snapshot while still resolving
+  /// the explicit manual selection that the patch introduced.
+  /// </summary>
+  [TestMethod]
+  public async Task UpdateInvoiceObject_ProductPatch_PreservesExistingClassificationAndCanonicalizesManualSelection()
+  {
+    // Arrange
+    var harness = new InvoiceHarness();
+    StandardClassification existingClassification = new(
+      ClassificationSystem.Gs1Gpc,
+      "historic-version",
+      "10000025",
+      "Historic label",
+      [new ClassificationNode("brick", "10000025", "Historic label")],
+      ClassificationOrigin.Analysis,
+      confidence: 0.81,
+      evidence: [new ClassificationEvidence("analysis.product", "Persisted milk")]);
+    Invoice invoice = InvoiceHarness.CreateInvoice();
+    invoice.Items =
+    [
+      new Product { Name = "Persisted milk", Classification = existingClassification },
+      new Product
+      {
+        Name = "Manually selected milk",
+        Classification = new ClassificationSelectionDto(ClassificationSystem.Gs1Gpc, "10000025").ToManualSelection(),
+      },
+    ];
+    invoice.PreserveUntouchedProductClassifications = true;
+
+    // Act
+    await harness.Service.UpdateInvoiceObject(invoice, invoice.id, invoice.UserIdentifier, CancellationToken.None)
+      .ConfigureAwait(false);
+
+    // Assert
+    Product[] persisted = [.. harness.UpdatedInvoice!.Items];
+    StandardClassification retainedClassification = persisted[0].Classification!;
+    StandardClassification canonicalClassification = persisted[1].Classification!;
+    Assert.AreSame(existingClassification, retainedClassification);
+    Assert.AreEqual("historic-version", retainedClassification.Version);
+    Assert.AreEqual(1, retainedClassification.Evidence.Count);
+    Assert.AreEqual("2026-05", canonicalClassification.Version);
+    Assert.AreEqual(ClassificationOrigin.Manual, canonicalClassification.Origin);
+    Assert.AreEqual(1, harness.Taxonomy.Calls.Count);
+    Assert.AreEqual("10000025", harness.Taxonomy.Calls[0].Code);
   }
 
   /// <summary>

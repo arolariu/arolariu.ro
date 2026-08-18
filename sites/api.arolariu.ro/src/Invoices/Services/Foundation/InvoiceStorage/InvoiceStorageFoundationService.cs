@@ -92,7 +92,10 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
     ValidateIdentifierIsSet(invoiceIdentifier);
-    CanonicalizeInvoiceClassifications(updatedInvoice);
+    CanonicalizeInvoiceClassifications(
+      updatedInvoice,
+      updatedInvoice.PreserveUntouchedProductClassifications);
+    updatedInvoice.PreserveUntouchedProductClassifications = false;
 
     var newInvoice = await invoiceNoSqlBroker
       .UpdateInvoiceAsync(invoiceIdentifier, updatedInvoice, cancellationToken)

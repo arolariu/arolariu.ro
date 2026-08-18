@@ -143,27 +143,21 @@ public sealed class StorageValidationCoverageTests
   }
 
   /// <summary>
-  /// Verifies merchant canonicalization exits cleanly when the updated merchant is null.
+  /// Verifies an update without merchant data is rejected before any broker operation.
   /// </summary>
   [TestMethod]
-  public async Task UpdateMerchantObject_NullUpdatedMerchant_ForwardsNullToBrokerWithoutCanonicalizationFailure()
+  public async Task UpdateMerchantObject_NullUpdatedMerchant_ThrowsBeforeBrokerOperations()
   {
     var broker = new Mock<IInvoiceNoSqlBroker>();
     Guid merchantId = Guid.NewGuid();
     Guid parentCompanyId = Guid.NewGuid();
-    var current = new Merchant { id = merchantId, ParentCompanyId = parentCompanyId, Name = "Current" };
-    broker
-      .Setup(item => item.ReadMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()))
-      .ReturnsAsync(current);
-    broker
-      .Setup(item => item.UpdateMerchantAsync(current, null!, It.IsAny<CancellationToken>()))
-      .ReturnsAsync(new Merchant { id = merchantId, ParentCompanyId = parentCompanyId, Name = "Updated" });
     MerchantStorageFoundationService service = CreateMerchantService(broker);
 
-    Merchant result = await service.UpdateMerchantObject(null!, merchantId, parentCompanyId, CancellationToken.None).ConfigureAwait(false);
+    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
+      service.UpdateMerchantObject(null!, merchantId, parentCompanyId, CancellationToken.None)).ConfigureAwait(false);
 
-    Assert.AreEqual(merchantId, result.id);
-    broker.Verify(item => item.UpdateMerchantAsync(current, null!, It.IsAny<CancellationToken>()), Times.Once);
+    broker.Verify(item => item.ReadMerchantAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
+    broker.Verify(item => item.UpdateMerchantAsync(It.IsAny<Merchant>(), It.IsAny<Merchant>(), It.IsAny<CancellationToken>()), Times.Never);
   }
 
   private static InvoiceStorageFoundationService CreateInvoiceService(Mock<IInvoiceNoSqlBroker> broker) =>
@@ -172,4 +166,3 @@ public sealed class StorageValidationCoverageTests
   private static MerchantStorageFoundationService CreateMerchantService(Mock<IInvoiceNoSqlBroker> broker) =>
     new(broker.Object, TaxonomyBrokerTestFactory.Create(), NullLoggerFactory.Instance);
 }
-

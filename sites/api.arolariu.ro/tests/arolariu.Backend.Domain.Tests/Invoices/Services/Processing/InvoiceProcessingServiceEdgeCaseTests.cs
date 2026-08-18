@@ -11,7 +11,10 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.O
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Orchestration;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions;
 using arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
@@ -108,6 +111,120 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);
+  }
+
+  /// <summary>
+  /// Verifies that a product update mutates the first normalized duplicate in the loaded aggregate, preserves
+  /// server-owned enrichment, and issues one aggregate write without appending a replacement line item.
+  /// </summary>
+  [TestMethod]
+  public async Task UpdateProduct_DuplicateName_UpdatesFifoItemAndPreservesAnalysisState()
+  {
+    // Arrange
+    var invoiceId = Guid.NewGuid();
+    var userId = Guid.NewGuid();
+    var classification = new StandardClassification(
+      ClassificationSystem.Gs1Gpc,
+      "analysis-v1",
+      "10000025",
+      "Original classification",
+      [new ClassificationNode("brick", "10000025", "Original classification")],
+      ClassificationOrigin.Analysis,
+      confidence: 0.94,
+      evidence: [new ClassificationEvidence("analysis.product", "Whole Milk")]);
+    var persistedFirst = new Product
+    {
+      Name = "Whole Milk",
+      ProductCode = "first-item",
+      Quantity = 1,
+      Price = 8m,
+      Classification = classification,
+      AllergenAssessment = AllergenAssessment.NoSignals(Guid.NewGuid()),
+      Metadata = new ProductMetadata
+      {
+        IsComplete = true,
+        IsSoftDeleted = true,
+        Confidence = 0.91,
+      },
+    };
+    var persistedSecond = new Product
+    {
+      Name = "Whole Milk",
+      ProductCode = "second-item",
+      Quantity = 2,
+      Price = 9m,
+    };
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    invoice.Items = [persistedFirst, persistedSecond];
+    var clientUpdate = new Product
+    {
+      Name = "Organic Whole Milk",
+      ProductCode = "replacement-code",
+      Quantity = 3,
+      QuantityUnit = "L",
+      Price = 11m,
+    };
+
+    mockInvoiceOrchestrationService
+        .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
+        .ReturnsAsync(invoice);
+    mockInvoiceOrchestrationService
+        .Setup(s => s.UpdateInvoiceObject(invoice, invoiceId, userId, It.IsAny<CancellationToken>()))
+        .ReturnsAsync(invoice);
+
+    // Act
+    Product updated = await service.UpdateProduct(
+      "  whole   milk  ",
+      clientUpdate,
+      invoiceId,
+      userId,
+      CancellationToken.None);
+
+    // Assert
+    Assert.AreSame(persistedFirst, updated);
+    Assert.AreEqual(2, invoice.Items.Count);
+    Assert.AreEqual("Organic Whole Milk", persistedFirst.Name);
+    Assert.AreEqual("replacement-code", persistedFirst.ProductCode);
+    Assert.AreEqual(3m, persistedFirst.Quantity);
+    Assert.AreEqual("L", persistedFirst.QuantityUnit);
+    Assert.AreEqual(11m, persistedFirst.Price);
+    Assert.AreSame(classification, persistedFirst.Classification);
+    Assert.AreEqual(AllergenAssessmentStatus.NoSignals, persistedFirst.AllergenAssessment!.Status);
+    Assert.IsTrue(persistedFirst.Metadata.IsEdited);
+    Assert.IsTrue(persistedFirst.Metadata.IsComplete);
+    Assert.IsTrue(persistedFirst.Metadata.IsSoftDeleted);
+    Assert.AreEqual(0.91, persistedFirst.Metadata.Confidence);
+    Assert.AreEqual("Whole Milk", persistedSecond.Name);
+    Assert.AreEqual("second-item", persistedSecond.ProductCode);
+    mockInvoiceOrchestrationService.Verify(
+      s => s.UpdateInvoiceObject(invoice, invoiceId, userId, It.IsAny<CancellationToken>()),
+      Times.Once);
+  }
+
+  /// <summary>
+  /// Verifies that a missing product fails with a typed not-found inner exception and does not write the aggregate.
+  /// </summary>
+  [TestMethod]
+  public async Task UpdateProduct_MissingProduct_ThrowsTypedErrorWithoutWriting()
+  {
+    // Arrange
+    var invoiceId = Guid.NewGuid();
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    invoice.Items.Clear();
+
+    mockInvoiceOrchestrationService
+        .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
+        .ReturnsAsync(invoice);
+
+    // Act + Assert
+    InvoiceProcessingServiceException exception =
+      await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceException>(() =>
+        service.UpdateProduct("Missing product", new Product { Name = "Replacement" }, invoiceId, null, CancellationToken.None));
+
+    Assert.IsInstanceOfType<ProductNotFoundException>(exception.InnerException);
+    mockInvoiceOrchestrationService.Verify(
+      s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()),
+      Times.Never);
   }
 
   /// <summary>
@@ -234,6 +351,38 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
+  }
+
+  /// <summary>
+  /// Verifies that deletion reconciles an equivalent caller product with the persisted line item rather than
+  /// relying on reference equality across separately loaded invoice snapshots.
+  /// </summary>
+  [TestMethod]
+  public async Task DeleteProduct_EquivalentCallerProduct_RemovesPersistedProduct()
+  {
+    // Arrange
+    var invoiceId = Guid.NewGuid();
+    var userId = Guid.NewGuid();
+    var persistedProduct = new Product { Name = "Whole Milk", ProductCode = "5940000000001" };
+    var callerProduct = new Product { Name = "Whole Milk", ProductCode = "5940000000001" };
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    invoice.Items = [persistedProduct];
+
+    mockInvoiceOrchestrationService
+        .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
+        .ReturnsAsync(invoice);
+    mockInvoiceOrchestrationService
+        .Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()))
+        .ReturnsAsync(invoice);
+
+    // Act
+    await service.DeleteProduct(callerProduct, invoiceId, userId, CancellationToken.None);
+
+    // Assert
+    Assert.IsEmpty(invoice.Items);
+    mockInvoiceOrchestrationService.Verify(
+      s => s.UpdateInvoiceObject(invoice, invoiceId, userId, It.IsAny<CancellationToken>()),
+      Times.Once);
   }
 
   /// <summary>

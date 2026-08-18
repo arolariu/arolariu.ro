@@ -587,35 +587,16 @@ public static partial class InvoiceEndpoints
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
       activity?.SetTag("product.original_name", productInformation.OriginalProductName);
 
-      var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
-        .ConfigureAwait(false);
-      if (possibleInvoice is null)
-      {
-        activity?.SetTag("result.invoice_found", false);
-        return TypedResults.NotFound();
-      }
-
-      var possibleProduct = await invoiceProcessingService
-        .GetProduct(productInformation.OriginalProductName, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
-        .ConfigureAwait(false);
-      if (possibleProduct is null)
-      {
-        activity?.SetTag("result.product_found", false);
-        return TypedResults.NotFound();
-      }
-
-      await invoiceProcessingService
-        .DeleteProduct(possibleProduct, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+      var updatedProduct = await invoiceProcessingService
+        .UpdateProduct(
+          productInformation.OriginalProductName,
+          productInformation.ToProduct(),
+          id,
+          potentialUserIdentifier,
+          writeScope.Token)
         .ConfigureAwait(false);
 
-      var updatedProduct = productInformation.ToProduct();
       activity?.SetTag("product.new_name", updatedProduct.Name);
-
-      await invoiceProcessingService
-        .AddProduct(updatedProduct, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
-        .ConfigureAwait(false);
-
       activity?.RecordSuccess("Product updated in invoice");
       return TypedResults.Accepted($"/rest/v1/invoices/{id}/products", value: ProductResponseDto.FromProduct(updatedProduct));
     }
@@ -1305,22 +1286,15 @@ public static partial class InvoiceEndpoints
       _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetMerchantContext(id);
 
-      var possibleMerchant = await invoiceProcessingService
-        .ReadMerchant(id, merchantPayload.ParentCompanyId, cancellationToken: writeScope.Token)
+      var updatedMerchant = await invoiceProcessingService
+        .UpdateMerchant(
+          merchantPayload.ToMerchant(id),
+          id,
+          parentCompanyId: null,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
-      if (possibleMerchant is null)
-      {
-        activity?.SetTag("result.found", false);
-        return TypedResults.NotFound();
-      }
 
-      var updatedMerchant = merchantPayload.ToMerchant(id);
       activity?.SetTag("merchant.name", updatedMerchant.Name);
-
-      await invoiceProcessingService
-        .UpdateMerchant(updatedMerchant, id, updatedMerchant.ParentCompanyId, cancellationToken: writeScope.Token)
-        .ConfigureAwait(false);
-
       activity?.RecordSuccess("Merchant updated");
       return TypedResults.Accepted($"/rest/v1/merchants/{id}", MerchantResponseDto.FromMerchant(updatedMerchant));
     }

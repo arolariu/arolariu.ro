@@ -7,11 +7,14 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Common.Telemetry.Tracing;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
+using arolariu.Backend.Domain.Invoices.Services.Processing.AnalysisService;
 
 using Microsoft.Extensions.Logging;
 
@@ -240,6 +243,50 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   }).ConfigureAwait(false);
   #endregion
 
+  #region Update Product API
+  /// <inheritdoc/>
+  public async Task<Product> UpdateProduct(
+    string originalProductName,
+    Product updatedProduct,
+    Guid invoiceIdentifier,
+    Guid? userIdentifier,
+    CancellationToken cancellationToken) =>
+  await TryCatchAsync(async () =>
+  {
+    ArgumentNullException.ThrowIfNull(updatedProduct);
+
+    using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateProduct));
+    activity?.SetInvoiceContext(invoiceIdentifier, userIdentifier);
+
+    var invoice = await invoiceOrchestrationService
+      .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
+      .ConfigureAwait(false);
+
+    string normalizedOriginalName = ExtractedProductReconciler.NormalizeName(originalProductName);
+    Product? persistedProduct = invoice.Items.FirstOrDefault(product =>
+      string.Equals(
+        ExtractedProductReconciler.NormalizeName(product.Name),
+        normalizedOriginalName,
+        StringComparison.Ordinal));
+
+    if (persistedProduct is null)
+    {
+      activity?.SetTag("result.product_found", false);
+      throw new ProductNotFoundException(invoiceIdentifier);
+    }
+
+    persistedProduct.ApplyClientUpdate(updatedProduct);
+    invoice.PreserveUntouchedProductClassifications = true;
+
+    await invoiceOrchestrationService
+      .UpdateInvoiceObject(invoice, invoiceIdentifier, userIdentifier, cancellationToken)
+      .ConfigureAwait(false);
+
+    activity?.SetTag("result.product_found", true);
+    return persistedProduct;
+  }).ConfigureAwait(false);
+  #endregion
+
   #region Get Products API
   /// <inheritdoc/>
   public async Task<IEnumerable<Product>> GetProducts(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
@@ -307,15 +354,16 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
       .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
 
-    var foundProduct = invoice.Items.FirstOrDefault(
-      p => p.Name is not null && p.Name.Contains(product.Name, StringComparison.InvariantCultureIgnoreCase),
-      new Product());
+    Product? foundProduct = invoice.Items.FirstOrDefault(
+      p => p.Name is not null && p.Name.Contains(product.Name, StringComparison.InvariantCultureIgnoreCase));
 
-    var newInvoice = invoice;
-    newInvoice.Items.Remove(product);
+    if (foundProduct is not null)
+    {
+      invoice.Items.Remove(foundProduct);
+    }
 
     var currentInvoice = await invoiceOrchestrationService
-      .UpdateInvoiceObject(newInvoice, invoiceIdentifier, userIdentifier, cancellationToken)
+      .UpdateInvoiceObject(invoice, invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
 
     return currentInvoice;

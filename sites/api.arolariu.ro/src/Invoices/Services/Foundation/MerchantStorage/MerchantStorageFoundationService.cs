@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 
 using Microsoft.Extensions.Logging;
 
@@ -123,13 +124,19 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantObject));
+    ArgumentNullException.ThrowIfNull(updatedMerchant);
     CanonicalizeMerchantClassification(updatedMerchant);
 
     var currentMerchant = await invoiceNoSqlBroker.ReadMerchantAsync(merchantIdentifier, parentCompanyId, cancellationToken).ConfigureAwait(false);
-    ArgumentNullException.ThrowIfNull(currentMerchant);
+    if (currentMerchant is null)
+    {
+      throw new MerchantNotFoundException(merchantIdentifier);
+    }
+
+    currentMerchant.ApplyClientUpdate(updatedMerchant);
 
     var newMerchant = await invoiceNoSqlBroker
-      .UpdateMerchantAsync(currentMerchant, updatedMerchant, cancellationToken)
+      .UpdateMerchantAsync(currentMerchant, currentMerchant, cancellationToken)
       .ConfigureAwait(false);
 
     return newMerchant;

@@ -116,7 +116,7 @@ internal static class ExtractedProductReconciler
   /// </summary>
   /// <param name="name">The raw product name.</param>
   /// <returns>The normalized name.</returns>
-  private static string NormalizeName(string? name) =>
+  internal static string NormalizeName(string? name) =>
     string.IsNullOrWhiteSpace(name)
       ? string.Empty
       : string.Join(
