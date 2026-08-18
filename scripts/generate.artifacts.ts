@@ -8,6 +8,7 @@ import {glob, mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
 import {EOL, tmpdir} from "node:os";
 import {basename, dirname, join, resolve} from "node:path";
 import {promisify} from "node:util";
+import {MonorepositoryConsoleLogger, MonorepositoryLogger} from "./common/logger.ts";
 import type {
   ArtifactClassificationSystem,
   NodePackageDependencyType,
@@ -23,10 +24,19 @@ export abstract class TaxonomyClassificationGenerator {
     resolve("sites/arolariu.ro/src/data/taxonomies"),
   ] as const;
 
+  /** Runtime directories that receive mirrored taxonomy artifacts. */
+  protected readonly outputRoots: readonly string[];
+
+  /** Logger used for lifecycle, diagnostic, failure, and completion output. */
+  protected readonly logger: MonorepositoryLogger;
+
   protected constructor(
-    protected readonly outputRoots: readonly string[] =
-      TaxonomyClassificationGenerator.defaultOutputRoots,
-  ) {}
+    outputRoots: readonly string[] = TaxonomyClassificationGenerator.defaultOutputRoots,
+    logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::artifacts"),
+  ) {
+    this.outputRoots = outputRoots;
+    this.logger = logger;
+  }
 
   /** Generates one taxonomy and returns every written path. */
   public abstract generate(): Promise<readonly string[]>;
@@ -217,34 +227,51 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
   };
 
   /** Creates the generator. */
-  public constructor(outputRoots?: readonly string[]) {
-    super(outputRoots);
+  public constructor(
+    outputRoots?: readonly string[],
+    logger?: MonorepositoryLogger,
+  ) {
+    super(outputRoots, logger);
   }
 
   /** Downloads, validates, normalizes, and writes the GPC artifact. */
   public override async generate(): Promise<readonly string[]> {
-    const response = await fetch(Gs1GpcTaxonomyClassificationGenerator.#sourceUrl, {
-      headers: {Accept: "application/zip"},
-    });
-    if (!response.ok) {
-      throw new Error(
-        `GPC download failed with HTTP ${response.status} ${response.statusText}.`,
+    this.logger.info("[GPC] Starting generation.");
+    try {
+      this.logger.info("[GPC] Fetching the GS1 GPC source.");
+      const response = await fetch(Gs1GpcTaxonomyClassificationGenerator.#sourceUrl, {
+        headers: {Accept: "application/zip"},
+      });
+      if (!response.ok) {
+        throw new Error(
+          `GPC download failed with HTTP ${response.status} ${response.statusText}.`,
+        );
+      }
+
+      const archive = new Uint8Array(await response.arrayBuffer());
+      const jsonBytes = await new SystemArchiveExtractor().extractEntry(archive, " EN.json");
+      const parsed: unknown = JSON.parse(Buffer.from(jsonBytes).toString("utf8"));
+      const nodes = this.parseDocument(parsed);
+      this.logger.debug(`[GPC] Normalized ${nodes.length} taxonomy node(s).`);
+      this.logger.info("[GPC] Writing mirrored taxonomy artifacts.");
+
+      const outputs = await this.writeArtifact(
+        Gs1GpcTaxonomyClassificationGenerator.#fileName,
+        {
+          system: "GS1_GPC",
+          version: Gs1GpcTaxonomyClassificationGenerator.#version,
+          sourceUrl: Gs1GpcTaxonomyClassificationGenerator.#sourceUrl,
+          generatedAt: new Date().toISOString(),
+          attribution: Gs1GpcTaxonomyClassificationGenerator.#attribution,
+          nodes,
+        },
       );
+      this.logger.success(`[GPC] Generated ${outputs.length} artifact file(s).`);
+      return outputs;
+    } catch (error: unknown) {
+      this.logger.error(`[GPC] ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
     }
-
-    const archive = new Uint8Array(await response.arrayBuffer());
-    const jsonBytes = await new SystemArchiveExtractor().extractEntry(archive, " EN.json");
-    const parsed: unknown = JSON.parse(Buffer.from(jsonBytes).toString("utf8"));
-    const nodes = this.parseDocument(parsed);
-
-    return this.writeArtifact(Gs1GpcTaxonomyClassificationGenerator.#fileName, {
-      system: "GS1_GPC",
-      version: Gs1GpcTaxonomyClassificationGenerator.#version,
-      sourceUrl: Gs1GpcTaxonomyClassificationGenerator.#sourceUrl,
-      generatedAt: new Date().toISOString(),
-      attribution: Gs1GpcTaxonomyClassificationGenerator.#attribution,
-      nodes,
-    });
   }
 
   private parseDocument(value: unknown): readonly TaxonomyArtifactNode[] {
@@ -317,23 +344,42 @@ export class EcoicopTaxonomyClassificationGenerator extends TaxonomyClassificati
     "European Union, Publications Office of the European Union, reused under the European Commission reuse policy.";
 
   /** Creates the generator. */
-  public constructor(outputRoots?: readonly string[]) {
-    super(outputRoots);
+  public constructor(
+    outputRoots?: readonly string[],
+    logger?: MonorepositoryLogger,
+  ) {
+    super(outputRoots, logger);
   }
 
   /** Downloads, validates, normalizes, and writes the ECOICOP artifact. */
   public override async generate(): Promise<readonly string[]> {
-    const bindings = await this.fetchBindings();
-    const nodes = this.normalizeBindings(bindings);
+    this.logger.info("[ECOICOP] Starting generation.");
+    try {
+      this.logger.info("[ECOICOP] Fetching Publications Office taxonomy data.");
+      const bindings = await this.fetchBindings();
+      const nodes = this.normalizeBindings(bindings);
+      this.logger.debug(`[ECOICOP] Normalized ${nodes.length} taxonomy node(s).`);
+      this.logger.info("[ECOICOP] Writing mirrored taxonomy artifacts.");
 
-    return this.writeArtifact(EcoicopTaxonomyClassificationGenerator.#fileName, {
-      system: "ECOICOP_V2",
-      version: "2",
-      sourceUrl: `${EcoicopTaxonomyClassificationGenerator.#endpoint}#${EcoicopTaxonomyClassificationGenerator.#scheme}`,
-      generatedAt: new Date().toISOString(),
-      attribution: EcoicopTaxonomyClassificationGenerator.#attribution,
-      nodes,
-    });
+      const outputs = await this.writeArtifact(
+        EcoicopTaxonomyClassificationGenerator.#fileName,
+        {
+          system: "ECOICOP_V2",
+          version: "2",
+          sourceUrl: `${EcoicopTaxonomyClassificationGenerator.#endpoint}#${EcoicopTaxonomyClassificationGenerator.#scheme}`,
+          generatedAt: new Date().toISOString(),
+          attribution: EcoicopTaxonomyClassificationGenerator.#attribution,
+          nodes,
+        },
+      );
+      this.logger.success(`[ECOICOP] Generated ${outputs.length} artifact file(s).`);
+      return outputs;
+    } catch (error: unknown) {
+      this.logger.error(
+        `[ECOICOP] ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw error;
+    }
   }
 
   private async fetchBindings(): Promise<
@@ -498,23 +544,40 @@ export class NaceTaxonomyClassificationGenerator extends TaxonomyClassificationG
     "European Union, Publications Office of the European Union, reused under the European Commission reuse policy.";
 
   /** Creates the generator. */
-  public constructor(outputRoots?: readonly string[]) {
-    super(outputRoots);
+  public constructor(
+    outputRoots?: readonly string[],
+    logger?: MonorepositoryLogger,
+  ) {
+    super(outputRoots, logger);
   }
 
   /** Downloads, validates, normalizes, and writes the NACE artifact. */
   public override async generate(): Promise<readonly string[]> {
-    const bindings = await this.fetchBindings();
-    const nodes = this.normalizeBindings(bindings);
+    this.logger.info("[NACE] Starting generation.");
+    try {
+      this.logger.info("[NACE] Fetching Publications Office taxonomy data.");
+      const bindings = await this.fetchBindings();
+      const nodes = this.normalizeBindings(bindings);
+      this.logger.debug(`[NACE] Normalized ${nodes.length} taxonomy node(s).`);
+      this.logger.info("[NACE] Writing mirrored taxonomy artifacts.");
 
-    return this.writeArtifact(NaceTaxonomyClassificationGenerator.#fileName, {
-      system: "NACE_2_1",
-      version: "2.1",
-      sourceUrl: `${NaceTaxonomyClassificationGenerator.#endpoint}#${NaceTaxonomyClassificationGenerator.#scheme}`,
-      generatedAt: new Date().toISOString(),
-      attribution: NaceTaxonomyClassificationGenerator.#attribution,
-      nodes,
-    });
+      const outputs = await this.writeArtifact(
+        NaceTaxonomyClassificationGenerator.#fileName,
+        {
+          system: "NACE_2_1",
+          version: "2.1",
+          sourceUrl: `${NaceTaxonomyClassificationGenerator.#endpoint}#${NaceTaxonomyClassificationGenerator.#scheme}`,
+          generatedAt: new Date().toISOString(),
+          attribution: NaceTaxonomyClassificationGenerator.#attribution,
+          nodes,
+        },
+      );
+      this.logger.success(`[NACE] Generated ${outputs.length} artifact file(s).`);
+      return outputs;
+    } catch (error: unknown) {
+      this.logger.error(`[NACE] ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
   }
 
   private async fetchBindings(): Promise<
@@ -672,6 +735,15 @@ OFFSET ${offset}`;
 
 /** Base contract and shared helpers for license generators. */
 export abstract class LicenseGenerator {
+  /** Logger used for lifecycle, warning, failure, and completion output. */
+  protected readonly logger: MonorepositoryLogger;
+
+  protected constructor(
+    logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::artifacts"),
+  ) {
+    this.logger = logger;
+  }
+
   /** Generates one license document family and returns every written path. */
   public abstract generate(): Promise<readonly string[]>;
 
@@ -733,55 +805,81 @@ export abstract class LicenseGenerator {
 
 /** Generates the frontend third-party license document. */
 export class FrontendLicenseGenerator extends LicenseGenerator {
+  /** Repository root containing the frontend manifest and installed packages. */
+  private readonly workspaceRoot: string;
+
   /** Creates the generator. */
-  public constructor(private readonly workspaceRoot: string = process.cwd()) {
-    super();
+  public constructor(
+    workspaceRoot: string = process.cwd(),
+    logger?: MonorepositoryLogger,
+  ) {
+    super(logger);
+    this.workspaceRoot = workspaceRoot;
   }
 
   /** Reads direct frontend dependencies and writes licenses.json. */
   public override async generate(): Promise<readonly string[]> {
-    const declaredDependencies = await this.readDeclaredDependencies();
-    const manifestPaths = await this.findInstalledManifestPaths();
-    const resolvedPackages = await Promise.all(
-      manifestPaths.map((manifestPath) =>
-        this.readInstalledPackage(manifestPath, declaredDependencies),
-      ),
-    );
-    const groupedPackages = new Map<NodePackageDependencyType, NodePackageInformation[]>();
-
-    for (const resolvedPackage of resolvedPackages) {
-      if (resolvedPackage === null) continue;
-      const packages = groupedPackages.get(resolvedPackage.dependencyType) ?? [];
-      packages.push(resolvedPackage.packageInformation);
-      groupedPackages.set(resolvedPackage.dependencyType, packages);
-    }
-
-    const outputPath = join(
-      this.workspaceRoot,
-      "sites",
-      "arolariu.ro",
-      "licenses.json",
-    );
-    const sortedPackages = new Map<
-      NodePackageDependencyType,
-      readonly NodePackageInformation[]
-    >();
-    for (const [dependencyType, packageInformation] of groupedPackages) {
-      sortedPackages.set(
-        dependencyType,
-        packageInformation.toSorted((left, right) =>
-          left.name.localeCompare(right.name),
+    this.logger.info("[Frontend licenses] Starting generation.");
+    try {
+      this.logger.info("[Frontend licenses] Reading the frontend dependency manifest.");
+      const declaredDependencies = await this.readDeclaredDependencies();
+      const manifestPaths = await this.findInstalledManifestPaths();
+      this.logger.debug(
+        `[Frontend licenses] Discovered ${manifestPaths.length} direct installed package manifest(s).`,
+      );
+      const resolvedPackages = await Promise.all(
+        manifestPaths.map((manifestPath) =>
+          this.readInstalledPackage(manifestPath, declaredDependencies),
         ),
       );
-    }
+      const groupedPackages = new Map<NodePackageDependencyType, NodePackageInformation[]>();
 
-    await mkdir(dirname(outputPath), {recursive: true});
-    await writeFile(
-      outputPath,
-      `${JSON.stringify(Object.fromEntries(sortedPackages))}${EOL}`,
-      "utf8",
-    );
-    return [outputPath];
+      for (const resolvedPackage of resolvedPackages) {
+        if (resolvedPackage === null) continue;
+        const packages = groupedPackages.get(resolvedPackage.dependencyType) ?? [];
+        packages.push(resolvedPackage.packageInformation);
+        groupedPackages.set(resolvedPackage.dependencyType, packages);
+      }
+
+      const packageCount = [...groupedPackages.values()].reduce(
+        (total, packages) => total + packages.length,
+        0,
+      );
+      this.logger.debug(`[Frontend licenses] Grouped ${packageCount} declared package(s).`);
+      const outputPath = join(
+        this.workspaceRoot,
+        "sites",
+        "arolariu.ro",
+        "licenses.json",
+      );
+      const sortedPackages = new Map<
+        NodePackageDependencyType,
+        readonly NodePackageInformation[]
+      >();
+      for (const [dependencyType, packageInformation] of groupedPackages) {
+        sortedPackages.set(
+          dependencyType,
+          packageInformation.toSorted((left, right) =>
+            left.name.localeCompare(right.name),
+          ),
+        );
+      }
+
+      this.logger.info("[Frontend licenses] Writing licenses.json.");
+      await mkdir(dirname(outputPath), {recursive: true});
+      await writeFile(
+        outputPath,
+        `${JSON.stringify(Object.fromEntries(sortedPackages))}${EOL}`,
+        "utf8",
+      );
+      this.logger.success("[Frontend licenses] Generated 1 artifact file(s).");
+      return [outputPath];
+    } catch (error: unknown) {
+      this.logger.error(
+        `[Frontend licenses] ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw error;
+    }
   }
 
   private async readDeclaredDependencies(): Promise<
@@ -916,8 +1014,16 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
 
 /** Reserved backend license generator; backend discovery is intentionally deferred. */
 export class BackendLicenseGenerator extends LicenseGenerator {
+  /** Creates the deferred backend license generator. */
+  public constructor(logger?: MonorepositoryLogger) {
+    super(logger);
+  }
+
   /** Returns no outputs until backend license discovery is defined. */
   public override async generate(): Promise<readonly string[]> {
+    this.logger.warn(
+      "[Backend licenses] Generation is intentionally deferred; no artifact was written.",
+    );
     return [];
   }
 }
@@ -1010,18 +1116,20 @@ export async function main(
     workspaceRoot?: string;
   }> = {},
 ): Promise<number> {
+  const logger = new MonorepositoryConsoleLogger("generate::artifacts");
+  logger.info("Starting 5 artifact generator(s).");
   const generators = [
-    new Gs1GpcTaxonomyClassificationGenerator(options.outputRoots),
-    new EcoicopTaxonomyClassificationGenerator(options.outputRoots),
-    new NaceTaxonomyClassificationGenerator(options.outputRoots),
-    new FrontendLicenseGenerator(options.workspaceRoot),
-    new BackendLicenseGenerator(),
+    new Gs1GpcTaxonomyClassificationGenerator(options.outputRoots, logger),
+    new EcoicopTaxonomyClassificationGenerator(options.outputRoots, logger),
+    new NaceTaxonomyClassificationGenerator(options.outputRoots, logger),
+    new FrontendLicenseGenerator(options.workspaceRoot, logger),
+    new BackendLicenseGenerator(logger),
   ] as const;
   const outputs = (
     await Promise.all(generators.map((generator) => generator.generate()))
   ).flat();
 
-  console.info(`Generated ${outputs.length} artifact file(s).`);
-  for (const output of outputs) console.info(`  - ${output}`);
+  logger.success(`Generated ${outputs.length} artifact file(s).`);
+  logger.debug(`Output paths: ${outputs.join(", ")}`);
   return 0;
 }

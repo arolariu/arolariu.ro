@@ -8,6 +8,7 @@ import {ChildProcess, execFile} from "node:child_process";
 import {mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {basename, dirname, join} from "node:path";
+import {stripVTControlCharacters} from "node:util";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 vi.mock("node:child_process", async (importOriginal) => {
@@ -28,6 +29,12 @@ import {parseCommandLineOptions} from "./generate.ts";
 
 class ArtifactGeneratorTestHarness {
   readonly #temporaryDirectories: string[] = [];
+  readonly #consoleMessages: Record<"debug" | "info" | "warn" | "error", string[]> = {
+    debug: [],
+    info: [],
+    warn: [],
+    error: [],
+  };
 
   public readonly gpcDocument = {
     LanguageCode: "EN",
@@ -130,9 +137,49 @@ class ArtifactGeneratorTestHarness {
     );
   }
 
+  public stubGpcFailure(error: Error): void {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request) => {
+        if (String(input) === "https://ref.gs1.org/standards/gpc/2026-05/") throw error;
+        return this.createSparqlResponse([]);
+      }),
+    );
+  }
+
+  public captureConsole(): void {
+    for (const level of ["debug", "info", "warn", "error"] as const) {
+      vi.spyOn(console, level).mockImplementation((...args: readonly unknown[]) => {
+        this.#consoleMessages[level].push(
+          stripVTControlCharacters(args.map((argument) => String(argument)).join(" ")),
+        );
+      });
+    }
+  }
+
+  public expectMessage(
+    level: "debug" | "info" | "warn" | "error",
+    expected: string,
+  ): void {
+    expect(this.#consoleMessages[level]).toEqual(
+      expect.arrayContaining([expect.stringContaining(expected)]),
+    );
+  }
+
+  public async createUnifiedMainOptions(): Promise<
+    Readonly<{outputRoots: readonly string[]; workspaceRoot: string}>
+  > {
+    const workspaceRoot = await this.createTemporaryDirectory("arolariu-unified-main-");
+    const outputRoots = [join(workspaceRoot, "api"), join(workspaceRoot, "web")];
+    await this.writeJson(join(workspaceRoot, "sites", "arolariu.ro", "package.json"), {});
+    this.mockArchiveExtraction();
+    this.stubUnifiedFetch();
+    return {outputRoots, workspaceRoot};
+  }
+
   public async cleanup(): Promise<void> {
     vi.unstubAllGlobals();
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
     await Promise.all(
       this.#temporaryDirectories
         .splice(0)
@@ -176,6 +223,18 @@ describe("Taxonomy classification generators", () => {
         await expect(new Gs1GpcTaxonomyClassificationGenerator([]).generate()).rejects.toThrow(
           "GPC download failed with HTTP 503 Service Unavailable.",
         );
+      });
+
+      it("logs a generator error and rethrows the original failure", async () => {
+        harness.captureConsole();
+        const failure = new Error("GPC unavailable");
+        harness.stubGpcFailure(failure);
+        const roots = await harness.createOutputRoots("arolariu-gpc-error-");
+
+        await expect(new Gs1GpcTaxonomyClassificationGenerator(roots).generate()).rejects.toBe(
+          failure,
+        );
+        harness.expectMessage("error", "⛔ [GPC] GPC unavailable");
       });
     });
   });
@@ -453,13 +512,27 @@ describe("Artifact orchestration and CLI contracts", () => {
 
   describe("main", () => {
     it("returns zero after unified generation succeeds", async () => {
-      const workspace = await harness.createTemporaryDirectory("arolariu-unified-main-");
-      const outputRoots = [join(workspace, "api"), join(workspace, "web")];
-      await harness.writeJson(join(workspace, "sites", "arolariu.ro", "package.json"), {});
-      harness.mockArchiveExtraction();
-      harness.stubUnifiedFetch();
+      const options = await harness.createUnifiedMainOptions();
 
-      await expect(main({outputRoots, workspaceRoot: workspace})).resolves.toBe(0);
+      await expect(main(options)).resolves.toBe(0);
+    });
+
+    it("logs unified lifecycle progress with the artifact prefix", async () => {
+      harness.captureConsole();
+      const options = await harness.createUnifiedMainOptions();
+
+      await main(options);
+
+      harness.expectMessage("info", "[arolariu::generate::artifacts]");
+      harness.expectMessage("info", "[GPC] Fetching");
+      harness.expectMessage("info", "[ECOICOP] Fetching");
+      harness.expectMessage("info", "[NACE] Fetching");
+      harness.expectMessage("info", "[Frontend licenses] Reading");
+      harness.expectMessage(
+        "warn",
+        "[Backend licenses] Generation is intentionally deferred",
+      );
+      harness.expectMessage("info", "✅ Generated 7 artifact file(s).");
     });
   });
 
