@@ -204,7 +204,7 @@ public interface IInvoiceProcessingService
     
     /// <summary>Analyzes an invoice with specified options.</summary>
     Task AnalyzeInvoice(
-        InvoiceAnalysisOptions options,
+        AnalysisConfiguration options,
         Guid identifier,
         Guid? userIdentifier = null);
     
@@ -243,7 +243,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
         }).ConfigureAwait(false);
     
     public async Task AnalyzeInvoice(
-        InvoiceAnalysisOptions options,
+        AnalysisConfiguration options,
         Guid identifier,
         Guid? userIdentifier = null) =>
         await TryCatchAsync(async () =>
@@ -290,7 +290,7 @@ public interface IInvoiceOrchestrationService
     
     /// <summary>Analyzes an invoice with specified options and enrichment.</summary>
     Task AnalyzeInvoiceWithOptions(
-        InvoiceAnalysisOptions options,
+        AnalysisConfiguration options,
         Guid invoiceId,
         Guid? userId = null);
 }

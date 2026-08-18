@@ -4,10 +4,11 @@
  */
 
 import {ANALYSIS_API_URL, getAnalysisApiRequests, installAnalysisFetchHandler} from "@/../tests/helpers/analysisBoundary";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {ClassificationOrigin, ClassificationSystem, type Invoice, type Merchant, type Product} from "@/types/invoices";
 import {render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {describe, expect, it} from "vitest";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import {AnalysisTestProvider} from "../../../../../../../tests/helpers/analysis";
 import {buildInvoice, buildMerchant, buildProduct} from "../../../../../../../tests/helpers/builders/domain";
 import {DialogProvider, useDialog} from "../../../_contexts/DialogContext";
@@ -15,8 +16,19 @@ import BulkCategoryDialog from "./BulkCategoryDialog";
 import ItemsDialog from "./ItemsDialog";
 import MerchantDialog from "./MerchantDialog";
 
+vi.mock("@/lib/actions/user/fetchUser");
+const mockFetchBffUser = vi.mocked(fetchBFFUserFromAuthService);
+
 const invoiceId = "11111111-1111-4111-8111-111111111111";
 const merchantId = "22222222-2222-4222-8222-222222222222";
+
+beforeEach(() => {
+  mockFetchBffUser.mockResolvedValue({
+    user: null,
+    userIdentifier: "33333333-3333-4333-8333-333333333333",
+    userJwt: "test-jwt",
+  });
+});
 
 const persistedProductClassification = {
   system: ClassificationSystem.Gs1Gpc,
@@ -41,19 +53,7 @@ const persistedMerchantClassification = {
 } as const;
 
 function productResponse(product: Product): Response {
-  return new Response(
-    JSON.stringify({
-      name: product.name,
-      classification: null,
-      quantity: product.quantity,
-      quantityUnit: product.quantityUnit,
-      productCode: product.productCode,
-      price: product.price,
-      totalPrice: product.totalPrice,
-      metadata: product.metadata,
-    }),
-    {status: 202},
-  );
+  return new Response(JSON.stringify({...product, classification: null}), {status: 202});
 }
 
 function ItemsDialogHarness({invoice}: Readonly<{invoice: Invoice}>): React.JSX.Element {
@@ -105,7 +105,7 @@ function extractClassificationCode(option: HTMLElement): string {
 }
 
 describe("safe classification persistence dialogs", () => {
-  it("converts an existing canonical product classification to an exact selection before saving", async () => {
+  it("keeps an existing analyzed product classification untouched while saving another product change", async () => {
     // Arrange
     const product = buildProduct({
       name: "Classified coffee",
@@ -129,25 +129,23 @@ describe("safe classification persistence dialogs", () => {
     // Act
     await user.click(screen.getByRole("button", {name: "open items"}));
     expect(screen.queryByRole("button", {name: "Clear GS1 GPC classification"})).not.toBeInTheDocument();
+    const updatedName = "Classified coffee beans";
+    await user.clear(screen.getByDisplayValue(product.name));
+    await user.type(screen.getByDisplayValue(""), updatedName);
     await user.click(screen.getByRole("button", {name: /save changes/i}));
 
     // Assert
     await waitFor(() => {
-      expect(getAnalysisApiRequests()).toContainEqual({
-        url: `${ANALYSIS_API_URL}/rest/v1/invoices/${invoiceId}/products`,
-        init: expect.objectContaining({
-          method: "PUT",
-          body: JSON.stringify({
-            originalProductName: product.name,
-            name: product.name,
-            classification: {system: ClassificationSystem.Gs1Gpc, code: persistedProductClassification.code},
-            quantity: product.quantity,
-            quantityUnit: product.quantityUnit,
-            productCode: product.productCode,
-            price: product.price,
-          }),
-        }),
+      const request = getAnalysisApiRequests().find((candidate) => candidate.url.endsWith(`/invoices/${invoiceId}/products`));
+      expect(request?.init?.method).toBe("PUT");
+      const body = JSON.parse(String(request?.init?.body)) as {
+        readonly selector: {readonly originalName: string};
+        readonly classification: unknown;
+      };
+      expect(body).toMatchObject({
+        selector: {originalName: product.name},
       });
+      expect(body.classification).toBeNull();
     });
   });
 
@@ -186,20 +184,11 @@ describe("safe classification persistence dialogs", () => {
 
     // Assert
     await waitFor(() => {
-      expect(getAnalysisApiRequests()).toContainEqual({
-        url: `${ANALYSIS_API_URL}/rest/v1/invoices/${invoiceId}/products`,
-        init: expect.objectContaining({
-          method: "PUT",
-          body: JSON.stringify({
-            originalProductName: product.name,
-            name: product.name,
-            classification: {system: ClassificationSystem.Gs1Gpc, code},
-            quantity: product.quantity,
-            quantityUnit: product.quantityUnit,
-            productCode: product.productCode,
-            price: product.price,
-          }),
-        }),
+      const request = getAnalysisApiRequests().find((candidate) => candidate.url.endsWith(`/invoices/${invoiceId}/products`));
+      expect(request?.init?.method).toBe("PUT");
+      expect(JSON.parse(String(request?.init?.body))).toMatchObject({
+        selector: {originalName: product.name, originalQuantity: product.quantity},
+        classification: {system: ClassificationSystem.Gs1Gpc, code},
       });
     });
   });
@@ -209,6 +198,7 @@ describe("safe classification persistence dialogs", () => {
     const merchant = buildMerchant({
       id: merchantId,
       classification: persistedMerchantClassification,
+      parentCompanyId: "",
       additionalMetadata: {},
       address: {
         fullName: "",
@@ -220,18 +210,9 @@ describe("safe classification persistence dialogs", () => {
     });
     installAnalysisFetchHandler((request) =>
       request.url === `${ANALYSIS_API_URL}/rest/v1/merchants/${merchantId}`
-        ? new Response(
-            JSON.stringify({
-              id: merchantId,
-              name: merchant.name,
-              description: merchant.description,
-              classification: persistedMerchantClassification,
-              address: merchant.address,
-              parentCompanyId: "00000000-0000-0000-0000-000000000000",
-              additionalMetadata: {},
-            }),
-            {status: 200},
-          )
+        ? new Response(JSON.stringify(buildMerchant({...merchant, id: merchantId, classification: persistedMerchantClassification})), {
+            status: 200,
+          })
         : new Response("Unexpected request", {status: 500}),
     );
     const user = userEvent.setup();

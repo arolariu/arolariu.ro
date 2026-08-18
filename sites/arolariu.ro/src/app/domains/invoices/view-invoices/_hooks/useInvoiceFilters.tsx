@@ -3,6 +3,18 @@
 import {usePathname, useRouter, useSearchParams} from "next/navigation";
 import {useCallback, useMemo} from "react";
 
+function getSortBy(value: string | null): FilterState["sortBy"] {
+  return value === "date" || value === "amount" || value === "name" ? value : "date";
+}
+
+function getSortOrder(value: string | null): FilterState["sortOrder"] {
+  return value === "asc" || value === "desc" ? value : "desc";
+}
+
+function getView(value: string | null): FilterState["view"] {
+  return value === "grid" || value === "table" ? value : "table";
+}
+
 /**
  * Filter state type containing all filter parameters stored in URL search params.
  *
@@ -16,7 +28,7 @@ import {useCallback, useMemo} from "react";
  * @property dateTo - End date for date range filter (ISO string)
  * @property amountMin - Minimum amount for amount range filter
  * @property amountMax - Maximum amount for amount range filter
- * @property categories - Selected invoice categories (comma-separated enum values)
+ * @property classifications - Selected `system:code` classification keys.
  * @property paymentTypes - Selected payment types (comma-separated enum values)
  * @property currencies - Selected ISO 4217 currency codes (comma-separated, URL key `cur`)
  * @property sortBy - Sort field. Defaults to `"date"`.
@@ -29,7 +41,7 @@ export type FilterState = {
   dateTo: string | null;
   amountMin: number | null;
   amountMax: number | null;
-  categories: number[];
+  classifications: string[];
   paymentTypes: number[];
   currencies: string[];
   sortBy: "date" | "amount" | "name" | null;
@@ -69,7 +81,7 @@ export type UseInvoiceFiltersReturn = {
  * - `to` (ISO date): End date for date range filter (e.g., `2026-03-28`)
  * - `min` (number): Minimum amount for amount range filter
  * - `max` (number): Maximum amount for amount range filter
- * - `cat` (comma-separated numbers): Selected category IDs (e.g., `100,200`)
+ * - `classification` (comma-separated stable keys): selected classifications.
  * - `pay` (comma-separated numbers): Selected payment type IDs (e.g., `200,300`)
  * - `sortBy` (string): Sort field - `date`, `amount`, `name`, or null for no sorting
  * - `sortOrder` (string): Sort direction - `asc`, `desc`, or null for no sorting
@@ -145,12 +157,11 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
       dateTo: searchParams.get("to"),
       amountMin: searchParams.has("min") ? Number(searchParams.get("min")) : null,
       amountMax: searchParams.has("max") ? Number(searchParams.get("max")) : null,
-      categories:
+      classifications:
         searchParams
-          .get("cat")
+          .get("classification")
           ?.split(",")
-          .map(Number)
-          .filter((n) => !Number.isNaN(n)) ?? [],
+          .filter((key) => key.includes(":")) ?? [],
       paymentTypes:
         searchParams
           .get("pay")
@@ -162,9 +173,9 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
           .get("cur")
           ?.split(",")
           .filter((c) => c.length > 0) ?? [],
-      sortBy: (searchParams.get("sortBy") as FilterState["sortBy"]) ?? "date",
-      sortOrder: (searchParams.get("sortOrder") as FilterState["sortOrder"]) ?? "desc",
-      view: (searchParams.get("view") as "table" | "grid") ?? "table",
+      sortBy: getSortBy(searchParams.get("sortBy")),
+      sortOrder: getSortOrder(searchParams.get("sortOrder")),
+      view: getView(searchParams.get("view")),
     }),
     [searchParams],
   );
@@ -225,10 +236,10 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
         params.set("max", String(merged.amountMax));
       }
 
-      if (merged.categories.length > 0) {
-        params.set("cat", merged.categories.join(","));
+      if (merged.classifications.length > 0) {
+        params.set("classification", merged.classifications.join(","));
       } else {
-        params.delete("cat");
+        params.delete("classification");
       }
 
       if (merged.paymentTypes.length > 0) {
@@ -301,7 +312,7 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
     if (filters.search) count++;
     if (filters.dateFrom || filters.dateTo) count++;
     if (filters.amountMin !== null || filters.amountMax !== null) count++;
-    if (filters.categories.length > 0) count++;
+    if (filters.classifications.length > 0) count++;
     if (filters.paymentTypes.length > 0) count++;
     if (filters.currencies.length > 0) count++;
     // Sort is "active" when not the default (date/desc). Matches the Sort card's

@@ -1,307 +1,100 @@
 /**
- * @fileoverview Product type definitions for invoice line items.
+ * @fileoverview Product-line contracts returned by the invoice API.
  * @module types/invoices/Product
- *
- * @remarks
- * This module defines product (line item) types representing individual
- * items purchased on an invoice. Products are the most granular level
- * of transaction data, enabling detailed spending analytics.
- *
- * **Data Extraction:**
- * Product data is extracted from invoice scans via:
- * 1. OCR text recognition
- * 2. AI entity extraction (names, prices, quantities)
- * 3. Barcode/product code lookups
- * 4. Manual user corrections
- *
- * **Product Enrichment:**
- * Raw OCR names are enriched with:
- * - Generic names (e.g., "MLK 2% 1L" → "Milk 2% 1 Liter")
- * - Category classification
- * - Allergen detection
- * - Nutritional information (future)
- *
- * @see {@link Invoice.items} for product attachment to invoices
- * @see {@link Allergen} for allergen information
  */
 
-import type {Allergen} from "./index.ts";
-import type {StandardClassification} from "./Classification";
+import type {AllergenAssessment} from "./Allergen";
+import type {ClassificationSelection, StandardClassification} from "./Classification";
 
-/**
- * Tracks the editing and lifecycle state of a product.
- *
- * @remarks
- * Metadata flags control product visibility and processing behavior.
- *
- * **Flag Meanings:**
- * - `isEdited`: User has manually modified AI-extracted data
- * - `isComplete`: All required fields have been populated
- * - `isSoftDeleted`: Product is hidden but retained for analytics
- * - `confidence`: OCR confidence score (0.0 to 1.0), zero when unavailable
- *
- * **Processing Behavior:**
- * - Edited products skip re-analysis to preserve user corrections
- * - Incomplete products are flagged for user attention in the UI
- * - Soft-deleted products are excluded from totals and reports
- * - Low confidence products may require manual review
- *
- * @example
- * ```typescript
- * const metadata: ProductMetadata = {
- *   isEdited: false,
- *   isComplete: true,
- *   isSoftDeleted: false,
- *   confidence: 0.95
- * };
- *
- * if (!metadata.isComplete) {
- *   showIncompleteWarning();
- * }
- *
- * if (metadata.confidence < 0.7) {
- *   flagForManualReview();
- * }
- * ```
- */
-export type ProductMetadata = {
-  /** Whether the product has been user-modified post-ingestion. */
-  isEdited: boolean;
-  /** Whether required enrichment steps have completed. */
-  isComplete: boolean;
-  /** Logical deletion marker (soft delete). */
-  isSoftDeleted: boolean;
-  /** OCR confidence score (0.0 to 1.0). Zero when not available. */
-  confidence: number;
-};
-
-/**
- * Categorizes products by their type for analytics and filtering.
- *
- * @remarks
- * Product categories enable spending breakdowns and dietary tracking.
- * Categories are assigned by AI during invoice analysis or manually by users.
- *
- * **Numeric Values:**
- * Values are spaced by 100 to allow subcategory insertion.
- * `NOT_DEFINED` (0) is the default for unclassified products.
- *
- * **Category Hierarchy:**
- * Future enhancement: Subcategories (e.g., FRUITS_CITRUS = 601)
- *
- * **Health Tracking:**
- * Categories like ALCOHOLIC_BEVERAGES and TOBACCO are flagged
- * separately for health-conscious spending reports.
- *
- * @example
- * ```typescript
- * const product: Product = {
- *   category: ProductCategory.DAIRY,
- *   // ... other properties
- * };
- *
- * // Spending by category
- * const dairySpending = products
- *   .filter(p => p.category === ProductCategory.DAIRY)
- *   .reduce((sum, p) => sum + p.totalPrice, 0);
- * ```
- *
- * @see {@link InvoiceCategory} for invoice-level categorization
- * @see {@link MerchantCategory} for merchant-level categorization
- */
-export const ProductCategory = {
-  NOT_DEFINED: 0,
-  BAKED_GOODS: 100,
-  GROCERIES: 200,
-  DAIRY: 300,
-  MEAT: 400,
-  FISH: 500,
-  FRUITS: 600,
-  VEGETABLES: 700,
-  BEVERAGES: 800,
-  ALCOHOLIC_BEVERAGES: 900,
-  TOBACCO: 1000,
-  CLEANING_SUPPLIES: 1100,
-  PERSONAL_CARE: 1200,
-  MEDICINE: 1300,
-  OTHER: 9999,
-} as const;
-export type ProductCategory = (typeof ProductCategory)[keyof typeof ProductCategory];
-
-/**
- * Represents a line item product on an invoice.
- *
- * @remarks
- * **Domain Concept:**
- * Products are value objects embedded within the Invoice aggregate.
- * They capture individual purchase items with pricing, quantity, and
- * enrichment data.
- *
- * **Naming:**
- * - `name`: Human-readable product name (e.g., "Zuzu Milk 2% 1 Liter")
- *
- * **Pricing Invariant:**
- * `totalPrice` should equal `price * quantity` within rounding tolerance.
- * Discrepancies may indicate coupon usage or pricing errors.
- *
- * **Product Identification:**
- * - `productCode`: Barcode (EAN-13, UPC-A) when available
- * - Used for product database lookups and enrichment
- * - Empty string if not detected
- *
- * **Allergen Detection:**
- * AI analysis scans product names and database matches to identify
- * common allergens. The `detectedAllergens` array is populated
- * automatically and can be manually edited.
- *
- * @example
- * ```typescript
- * const product: Product = {
- *   name: "Zuzu Milk 2% 1 Liter",
- *   category: ProductCategory.DAIRY,
- *   quantity: 2,
- *   quantityUnit: "pcs",
- *   productCode: "5941234567890",
- *   price: 8.99,
- *   totalPrice: 17.98,
- *   detectedAllergens: [{ name: "Lactose", description: "...", learnMoreAddress: "..." }],
- *   metadata: { isEdited: false, isComplete: true, isSoftDeleted: false, confidence: 0.95 }
- * };
- * ```
- *
- * @see {@link ProductCategory} for category options
- * @see {@link Allergen} for allergen structure
- * @see {@link ProductMetadata} for lifecycle state
- */
-export interface Product {
-  /** The name of the product. */
-  name: string;
-
-  /**
-   * The canonical GS1 GPC classification, when resolved by the backend.
-   *
-   * @remarks
-   * Manual mutation requests accept only a system/code selection; the backend
-   * resolves this richer persisted shape before returning it to the client.
-   */
-  classification?: StandardClassification | null;
-
-  /** The category of the product. */
-  category: ProductCategory;
-
-  /** The quantity of the product. */
-  quantity: number;
-
-  /** The unit of measurement for the product quantity. */
-  quantityUnit: string;
-
-  /** The product code (e.g., barcode) of the product. */
-  productCode: string;
-
-  /** The unit price of the product. */
-  price: number;
-
-  /** The total price of the product (price * quantity). */
-  totalPrice: number;
-
-  /** The list of detected allergens in the product. */
-  detectedAllergens: Allergen[];
-
-  /** The metadata associated with the product. */
-  metadata: ProductMetadata;
+/** Lifecycle, completeness, and OCR-confidence metadata for one product. */
+export interface ProductMetadata {
+  /** Whether a user has edited this product after extraction. */
+  readonly isEdited: boolean;
+  /** Whether required product fields were completed. */
+  readonly isComplete: boolean;
+  /** Whether the product is hidden through a soft delete. */
+  readonly isSoftDeleted: boolean;
+  /** Bounded extraction confidence from zero through one. */
+  readonly confidence: number;
 }
 
 /**
- * DTO payload for creating a new product entry.
+ * An identity-free line item embedded in an invoice response.
  *
  * @remarks
- * **Partial Fields:**
- * All fields are optional as products may be incrementally
- * populated during AI extraction or manual entry.
- *
- * **Minimum Viable Product:**
- * For display purposes, at least `name` should be provided.
- *
- * **Auto-calculation:**
- * If `price` and `quantity` are provided but `totalPrice` is not,
- * it will be calculated automatically.
- *
- * @example
- * ```typescript
- * const payload: CreateProductDtoPayload = {
- *   name: "Apple Fuji 1kg",
- *   category: ProductCategory.FRUITS,
- *   quantity: 1,
- *   price: 12.50
- * };
- * ```
- *
- * @see {@link Product} for the entity structure
+ * Product identity is intentionally not persisted. Mutations use a transient
+ * selector derived from the immutable original commercial snapshot.
  */
-export type CreateProductDtoPayload = Partial<Product>;
+export interface Product {
+  /** OCR or user-corrected display name. */
+  readonly name: string;
+  /** Canonical GS1 GPC classification, when one is available. */
+  readonly classification: StandardClassification | null;
+  /** Purchased quantity. */
+  readonly quantity: number;
+  /** Unit associated with the purchased quantity. */
+  readonly quantityUnit: string;
+  /** Barcode, SKU, or empty string when no code is available. */
+  readonly productCode: string;
+  /** Unit price. */
+  readonly price: number;
+  /** Receipt line total. */
+  readonly totalPrice: number;
+  /** Structured assessment outcome, or null before assessment runs. */
+  readonly allergenAssessment: AllergenAssessment | null;
+  /** Server-owned product lifecycle metadata. */
+  readonly metadata: ProductMetadata;
+}
 
 /**
- * DTO payload for updating an existing product.
+ * Identifies one identity-free persisted product for update or delete actions.
  *
  * @remarks
- * **Partial Updates:**
- * Only provided fields are updated. Products are embedded in
- * invoices, so updates go through the invoice update endpoint.
- *
- * **Edit Tracking:**
- * When a product is updated, `metadata.isEdited` is automatically
- * set to `true` to prevent AI re-analysis overwriting user corrections.
- *
- * @example
- * ```typescript
- * const updatePayload: UpdateProductDtoPayload = {
- *   name: "Corrected Product Name",
- *   category: ProductCategory.VEGETABLES
- * };
- * ```
- *
- * @see {@link Product} for the entity structure
+ * A non-empty original product code takes precedence. Without one, the
+ * immutable commercial snapshot plus an optional occurrence ordinal selects a
+ * duplicate deterministically.
  */
-export type UpdateProductDtoPayload = Partial<Product>;
+export interface ProductUpdateSelector {
+  /** Original barcode or SKU, or null when no product code was available. */
+  readonly originalProductCode: string | null;
+  /** Original product name used by the composite snapshot. */
+  readonly originalName: string | null;
+  /** Original purchased quantity used by the composite snapshot. */
+  readonly originalQuantity: number | null;
+  /** Original unit price used by the composite snapshot. */
+  readonly originalUnitPrice: number | null;
+  /** Original line total used by the composite snapshot. */
+  readonly originalTotalPrice: number | null;
+  /** Zero-based duplicate occurrence in invoice collection order. */
+  readonly occurrenceOrdinal: number | null;
+}
 
-/**
- * DTO payload for removing a product from an invoice.
- *
- * @remarks
- * **Identification:**
- * Products can be identified by either:
- * - `name`: Case-insensitive substring match on product name
- * - `productCode`: Barcode identifier
- *
- * **Soft Delete:**
- * Products are soft-deleted by setting `metadata.isSoftDeleted = true`.
- * They remain in the data for audit purposes but are excluded from
- * totals and reports.
- *
- * **Recalculation:**
- * After deletion, invoice totals are automatically recalculated.
- *
- * @example
- * ```typescript
- * // Delete by name
- * const deleteByName: DeleteProductDtoPayload = {
- *   name: "Product to remove"
- * };
- *
- * // Delete by barcode
- * const deleteByCode: DeleteProductDtoPayload = {
- *   productCode: "5941234567890"
- * };
- * ```
- *
- * @see {@link Product} for the entity being deleted
- */
-export type DeleteProductDtoPayload =
-  | {
-      /** The name of the product. */
-      readonly name: string;
-    }
-  | {
-      /** The product code of the product. */
-      readonly productCode: string;
-    };
+/** Exact client-editable product values accepted by create and update APIs. */
+export interface ProductMutation {
+  /** Updated display name. */
+  readonly name: string;
+  /** A changed manual GS1 GPC selection, null to preserve current classification. */
+  readonly classification: ClassificationSelection | null;
+  /** Updated quantity. */
+  readonly quantity: number;
+  /** Updated unit. */
+  readonly quantityUnit: string;
+  /** Updated barcode or SKU. */
+  readonly productCode: string;
+  /** Updated unit price. */
+  readonly price: number;
+}
+
+/** Product creation payload supported by the backend. */
+export type CreateProductDtoPayload = ProductMutation;
+
+/** Product update payload supported by the backend. */
+export type UpdateProductDtoPayload = Readonly<{
+  /** Deterministic pre-edit selector. */
+  readonly selector: ProductUpdateSelector;
+  /** Updated client-editable values. */
+  readonly product: ProductMutation;
+}>;
+
+/** Product deletion selector supported by the backend. */
+export type DeleteProductDtoPayload = ProductUpdateSelector;

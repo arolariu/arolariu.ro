@@ -39,7 +39,7 @@ import {
   computeMonthComparison,
   computeMonthlySpending,
   computePriceDistribution,
-  computeProductCategorySpending,
+  computeProductClassificationSpending,
   computeTimeOfDay,
   computeTopProducts,
 } from "../../_utils/statistics";
@@ -52,7 +52,7 @@ import {MerchantLeaderboard} from "./statistics/MerchantLeaderboard";
 import {MerchantTrendsChart} from "./statistics/MerchantTrendsChart";
 import {MerchantVisitChart} from "./statistics/MerchantVisitChart";
 import {PriceDistributionChart} from "./statistics/PriceDistributionChart";
-import {ProductCategoryChart} from "./statistics/ProductCategoryChart";
+import {ProductClassificationChart} from "./statistics/ProductClassificationChart";
 import SpendingCalendarHeatmap from "./statistics/SpendingCalendarHeatmap";
 import {SpendingOverTimeChart} from "./statistics/SpendingOverTimeChart";
 import {TimeOfDayChart} from "./statistics/TimeOfDayChart";
@@ -119,7 +119,7 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
   const dailySpending = useMemo(() => computeDailySpending(invoices), [invoices]);
 
   // Product-level analytics
-  const productCategorySpending = useMemo(() => computeProductCategorySpending(invoices), [invoices]);
+  const productClassificationSpending = useMemo(() => computeProductClassificationSpending(invoices), [invoices]);
   const topProducts = useMemo(() => computeTopProducts(invoices, 10), [invoices]);
   const allergenFrequency = useMemo(() => computeAllergenFrequency(invoices), [invoices]);
 
@@ -309,8 +309,8 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
             initial={{opacity: 0, x: -20}}
             animate={{opacity: 1, x: 0}}
             transition={{duration: 0.5, delay: 0.8}}>
-            <ProductCategoryChart
-              data={productCategorySpending}
+            <ProductClassificationChart
+              data={productClassificationSpending}
               currency={currency}
             />
           </motion.div>

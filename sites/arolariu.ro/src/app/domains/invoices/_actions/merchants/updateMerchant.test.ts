@@ -42,12 +42,15 @@ describe("updateMerchant", () => {
     installAnalysisFetchHandler((request) =>
       request.url === `${ANALYSIS_API_URL}/rest/v1/merchants/${merchantId}`
         ? TestDataBuilder.jsonResponse(
-            {
+            TestDataBuilder.build("merchant", {
               id: merchantId,
-              ...payload,
+              name: payload.name,
+              description: payload.description,
               classification: canonicalClassification,
+              address: payload.address,
               parentCompanyId: "00000000-0000-0000-0000-000000000000",
-            },
+              additionalMetadata: payload.additionalMetadata,
+            }),
             {status: 200},
           )
         : new Response("Unexpected request", {status: 500}),

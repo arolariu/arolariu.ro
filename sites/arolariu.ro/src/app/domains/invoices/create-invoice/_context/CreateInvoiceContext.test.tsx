@@ -13,6 +13,7 @@ import {act, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {beforeEach, describe, expect, it} from "vitest";
 import {AnalysisTestProvider} from "../../../../../../tests/helpers/analysis";
+import {buildInvoice} from "../../../../../../tests/helpers/builders/domain";
 import InvoiceDetailsForm from "../_components/InvoiceDetailsForm";
 import {CreateInvoiceProvider, useCreateInvoiceContext} from "./CreateInvoiceContext";
 
@@ -187,7 +188,7 @@ describe("CreateInvoiceContext durable analysis enqueue", () => {
       }
 
       if (requestAtBoundary.init?.method === "PATCH") {
-        return new Response(JSON.stringify({id: invoiceIdentifier, name: "Receipt", description: ""}), {status: 200});
+        return new Response(JSON.stringify(buildInvoice({id: invoiceIdentifier, name: "Receipt", description: ""})), {status: 200});
       }
 
       return new Response(JSON.stringify({id: invoiceIdentifier, userIdentifier: "user-1"}), {status: 201});

@@ -4,10 +4,11 @@
  */
 
 import {getTransactionYear, toRON} from "@/lib/currency";
-import {EMPTY_GUID, formatEnum} from "@/lib/utils.generic";
-import {type Invoice, type PaymentInformation, type Product, ProductCategory} from "@/types/invoices";
+import {EMPTY_GUID} from "@/lib/utils.generic";
+import {type Invoice, type PaymentInformation, type Product} from "@/types/invoices";
+import {getClassificationSummary} from "../../../_utils/classificationUtilities";
 
-// Spending by category data
+// Spending by canonical classification data
 export type CategorySpending = {
   category: string;
   amount: number;
@@ -15,37 +16,24 @@ export type CategorySpending = {
   fill: string;
 };
 
-// Chart color mapping
-const CATEGORY_COLORS: Record<number, string> = {
-  [ProductCategory.DAIRY]: "var(--ac-chart-1)",
-  [ProductCategory.BAKED_GOODS]: "var(--ac-chart-2)",
-  [ProductCategory.FRUITS]: "var(--ac-chart-3)",
-  [ProductCategory.VEGETABLES]: "var(--ac-chart-4)",
-  [ProductCategory.BEVERAGES]: "var(--ac-chart-5)",
-  [ProductCategory.CLEANING_SUPPLIES]: "var(--ac-chart-1)",
-  [ProductCategory.MEAT]: "var(--ac-chart-2)",
-  [ProductCategory.FISH]: "var(--ac-chart-3)",
-  [ProductCategory.GROCERIES]: "var(--ac-chart-4)",
-  [ProductCategory.OTHER]: "var(--ac-chart-5)",
-};
-
-export function getCategorySpending(items: Product[]): CategorySpending[] {
-  const categoryMap = new Map<ProductCategory, {amount: number; count: number}>();
+export function getCategorySpending(items: readonly Product[]): CategorySpending[] {
+  const categoryMap = new Map<string, {amount: number; count: number}>();
 
   items.forEach((item) => {
-    const existing = categoryMap.get(item.category) || {amount: 0, count: 0};
-    categoryMap.set(item.category, {
+    const classification = item.classification === null ? "Unclassified" : getClassificationSummary(item.classification);
+    const existing = categoryMap.get(classification) || {amount: 0, count: 0};
+    categoryMap.set(classification, {
       amount: existing.amount + item.totalPrice,
       count: existing.count + 1,
     });
   });
 
   return Array.from(categoryMap.entries())
-    .map(([category, data]) => ({
-      category: formatEnum(ProductCategory, category),
+    .map(([category, data], index) => ({
+      category,
       amount: Math.round(data.amount * 100) / 100,
       count: data.count,
-      fill: CATEGORY_COLORS[category] || "var(--ac-chart-1)",
+      fill: `var(--ac-chart-${(index % 5) + 1})`,
     }))
     .toSorted((a, b) => b.amount - a.amount);
 }
@@ -57,7 +45,7 @@ export type PriceRange = {
   fill: string;
 };
 
-export function getPriceDistribution(items: Product[]): PriceRange[] {
+export function getPriceDistribution(items: readonly Product[]): PriceRange[] {
   const ranges = [
     {min: 0, max: 10, label: "Under 10"},
     {min: 10, max: 25, label: "10-25"},
@@ -82,7 +70,7 @@ export type QuantityData = {
   price: number;
 };
 
-export function getQuantityAnalysis(items: Product[]): QuantityData[] {
+export function getQuantityAnalysis(items: readonly Product[]): QuantityData[] {
   return items
     .map((item) => ({
       name: item.name.length > 15 ? `${item.name.slice(0, 12)}...` : item.name,
@@ -110,7 +98,7 @@ export type InvoiceSummary = {
 export function getInvoiceSummary(invoice: Invoice): InvoiceSummary {
   const {items, paymentInformation} = invoice;
   const {totalCostAmount, totalTaxAmount} = paymentInformation;
-  const categories = new Set(items.map((item) => item.category));
+  const categories = new Set(items.map((item) => item.classification?.code ?? "unclassified"));
   const sortedByPrice = items.toSorted((a, b) => b.totalPrice - a.totalPrice);
 
   return {
@@ -400,7 +388,7 @@ export type CategoryTrendData = {
  * @returns Array of category comparison data sorted by current spending (descending)
  *
  * @remarks
- * - Groups products by ProductCategory
+ * - Groups products by canonical GS1 GPC classifications
  * - Compares current invoice's category spending against historical averages
  * - Normalizes all amounts to RON using yearly average exchange rates
  * - Returns empty array if current invoice has no items
@@ -413,21 +401,23 @@ export function getCategoryComparison(currentInvoice: Invoice, allInvoices: Read
   }
 
   // Calculate current invoice's spending by category
-  const currentCategoryMap = new Map<ProductCategory, number>();
+  const currentCategoryMap = new Map<string, number>();
   currentItems.forEach((item) => {
-    const existing = currentCategoryMap.get(item.category) ?? 0;
-    currentCategoryMap.set(item.category, existing + item.totalPrice);
+    const classification = item.classification === null ? "Unclassified" : getClassificationSummary(item.classification);
+    const existing = currentCategoryMap.get(classification) ?? 0;
+    currentCategoryMap.set(classification, existing + item.totalPrice);
   });
 
   // Calculate historical average spending per category (excluding current invoice)
   const otherInvoices = allInvoices.filter((inv) => inv.id !== currentInvoice.id);
-  const historicalCategoryMap = new Map<ProductCategory, {total: number; count: number}>();
+  const historicalCategoryMap = new Map<string, {total: number; count: number}>();
 
   otherInvoices.forEach((inv) => {
     const items = inv.items ?? [];
     items.forEach((item) => {
-      const existing = historicalCategoryMap.get(item.category) ?? {total: 0, count: 0};
-      historicalCategoryMap.set(item.category, {
+      const classification = item.classification === null ? "Unclassified" : getClassificationSummary(item.classification);
+      const existing = historicalCategoryMap.get(classification) ?? {total: 0, count: 0};
+      historicalCategoryMap.set(classification, {
         total: existing.total + item.totalPrice,
         count: existing.count + 1,
       });
@@ -437,12 +427,12 @@ export function getCategoryComparison(currentInvoice: Invoice, allInvoices: Read
   // Build comparison data
   const result: CategoryTrendData[] = [];
 
-  currentCategoryMap.forEach((currentAmount, category) => {
-    const historical = historicalCategoryMap.get(category);
+  currentCategoryMap.forEach((currentAmount, classification) => {
+    const historical = historicalCategoryMap.get(classification);
     const averageAmount = historical ? historical.total / Math.max(historical.count, 1) : 0;
 
     result.push({
-      category: formatEnum(ProductCategory, category),
+      category: classification,
       current: Math.round(currentAmount * 100) / 100,
       average: Math.round(averageAmount * 100) / 100,
     });
@@ -459,7 +449,7 @@ export type UnitPriceData = {
   unit: string;
 };
 
-export function getUnitPriceAnalysis(items: Product[]): UnitPriceData[] {
+export function getUnitPriceAnalysis(items: readonly Product[]): UnitPriceData[] {
   return items
     .map((item) => ({
       name: item.name.length > 18 ? `${item.name.slice(0, 15)}...` : item.name,

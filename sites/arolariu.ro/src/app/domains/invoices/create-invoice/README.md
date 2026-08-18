@@ -61,7 +61,7 @@ create-invoice/
 ### Step 2: Invoice Details
 
 - **Invoice Name** (required) - Auto-suggested from first scan's filename
-- **Category** - Dropdown with InvoiceCategory enum options
+- **Classification** - Taxonomy picker with canonical ECOICOP choices
 - **Payment Type** - Dropdown with PaymentType enum options
 - **Transaction Date** - Calendar picker (defaults to today)
 - **Description** (optional) - Textarea for notes
@@ -102,7 +102,7 @@ interface CreateInvoiceContextValue {
   // Invoice details
   invoiceDetails: InvoiceDetails;
   setName: (name: string) => void;
-  setCategory: (category: InvoiceCategory) => void;
+  setClassification: (classification: ClassificationSelection | null) => void;
   // ... other setters
 
   // Invoice creation
@@ -122,7 +122,7 @@ interface CreateInvoiceContextValue {
 All types are properly defined with strict TypeScript:
 
 ```typescript
-import type {Invoice, InvoiceCategory, InvoiceScanType} from "@/types/invoices";
+import type {ClassificationSelection, Invoice, InvoiceScanType} from "@/types/invoices";
 import type {PaymentType} from "@/types/invoices";
 import type {CachedScan} from "@/types/scans";
 ```

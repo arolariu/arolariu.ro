@@ -23,6 +23,7 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Invoice} from "@/types/invoices";
+import {parseInvoiceTransport} from "@/types/invoices/transport";
 
 /**
  * Input type (currently empty, reserved for future filter options).
@@ -101,8 +102,17 @@ export async function fetchInvoices(_void?: ServerActionInputType): ServerAction
 
       if (response.ok) {
         logWithTrace("info", "Successfully fetched invoices", {}, "server");
-        const data = (await response.json()) as ReadonlyArray<Invoice>;
-        return {success: true, data};
+        const responseData: unknown = await response.json();
+        if (!Array.isArray(responseData)) {
+          return createErrorResult(new Error("Invalid invoice response"), "The invoice response was invalid. Please try again.");
+        }
+
+        const data = responseData.map(parseInvoiceTransport);
+        if (data.some((invoice) => invoice === null)) {
+          return createErrorResult(new Error("Invalid invoice response"), "The invoice response was invalid. Please try again.");
+        }
+
+        return {success: true, data: data.filter((invoice): invoice is Invoice => invoice !== null)};
       }
 
       addSpanEvent("bff.request.fetch-invoices.error");

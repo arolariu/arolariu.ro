@@ -11,7 +11,7 @@ import userEvent from "@testing-library/user-event";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
 import {AnalysisTestProvider} from "../../../../../../../../tests/helpers/analysis";
 import {InvoiceContextProvider} from "../../_context/InvoiceContext";
-import {MerchantInfoCard} from "./MerchantInfoCard";
+import MerchantInfoCard from "./MerchantInfoCard";
 
 const invoiceIdentifier = "11111111-1111-4111-8111-111111111111";
 const merchantIdentifier = "22222222-2222-4222-8222-222222222222";

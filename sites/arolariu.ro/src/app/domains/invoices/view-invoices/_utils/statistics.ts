@@ -39,10 +39,8 @@
  */
 
 import {formatDate, toSafeDate} from "@/lib/utils.generic";
-import type {Invoice} from "@/types/invoices";
+import {ClassificationSystem, type Invoice, type StandardClassification} from "@/types/invoices";
 import {getTransactionYear, toRON} from "../../../../../lib/currency";
-import {getProductCategoryLabel} from "../../_utils/labelUtilities";
-export {getProductCategoryLabel} from "../../_utils/labelUtilities";
 
 /**
  * Empty GUID constant used to filter invalid merchant references.
@@ -165,7 +163,7 @@ export type MonthlySpending = {
  *
  * @remarks
  * Groups spending by invoice category to show where money goes.
- * Categories are defined by the InvoiceCategory enum.
+ * Groups are derived from the canonical ECOICOP hierarchy.
  *
  * **Percentage Calculation:**
  * Percentage is computed as (category amount / total spending) * 100
@@ -178,10 +176,10 @@ export type MonthlySpending = {
  * ```
  */
 export type CategoryAggregate = {
-  /** Human-readable category name */
+  /** Official label of the ECOICOP division/root. */
   category: string;
-  /** Numeric category ID from enum */
-  categoryId: number;
+  /** Stable taxonomy key in `system:code` format. */
+  categoryKey: string;
   /** Total spending in this category */
   amount: number;
   /** Number of invoices in this category */
@@ -534,43 +532,23 @@ export function computeMonthlySpending(invoices: ReadonlyArray<Invoice>): Monthl
   return result.toSorted((a, b) => a.monthKey.localeCompare(b.monthKey));
 }
 
-/**
- * Maps InvoiceCategory enum values to human-readable labels.
- *
- * @param categoryId - Numeric category ID from InvoiceCategory enum
- * @returns Human-readable category label
- *
- * @remarks
- * **Category Mappings:**
- * - 0 (NOT_DEFINED) → "Uncategorized"
- * - 100 (GROCERY) → "Grocery"
- * - 200 (FAST_FOOD) → "Dining"
- * - 300 (HOME_CLEANING) → "Home"
- * - 400 (CAR_AUTO) → "Auto"
- * - 9999 (OTHER) → "Other"
- * - Unknown → "Unknown"
- *
- * @example
- * ```typescript
- * const label = getCategoryLabel(100); // "Grocery"
- * const label2 = getCategoryLabel(200); // "Dining"
- * ```
- */
-export function getCategoryLabel(categoryId: number): string {
-  const labels: Record<number, string> = {
-    0: "Uncategorized",
-    100: "Grocery",
-    200: "Dining",
-    300: "Home",
-    400: "Auto",
-    9999: "Other",
-  };
+function getRootGroup(
+  classification: StandardClassification | null,
+  system: ClassificationSystem,
+): {
+  readonly key: string;
+  readonly label: string;
+} {
+  if (classification === null || classification.system !== system) {
+    return {key: "unclassified", label: "Unclassified"};
+  }
 
-  return labels[categoryId] ?? "Unknown";
+  const root = classification.hierarchy[0] ?? classification;
+  return {key: `${classification.system}:${root.code}`, label: root.officialLabel};
 }
 
 /**
- * Computes spending aggregates by invoice category.
+ * Computes spending aggregates by canonical ECOICOP division/root.
  *
  * @param invoices - Array of invoices to analyze
  * @returns Array of category aggregates, sorted by amount descending
@@ -581,41 +559,31 @@ export function getCategoryLabel(categoryId: number): string {
  * **Percentage Calculation:**
  * Each category's percentage is computed as (category total / grand total) * 100.
  *
- * **Category Mapping:**
- * Uses {@link getCategoryLabel} to convert enum values to human-readable names.
- *
- * @example
- * ```typescript
- * const categories = computeCategoryAggregates(invoices);
- * // Returns: [
- * //   { category: "Grocery", categoryId: 100, amount: 3456.78, count: 23, percentage: 45.2 },
- * //   { category: "Dining", categoryId: 200, amount: 2123.45, count: 18, percentage: 27.8 }
- * // ]
- * ```
  */
 export function computeCategoryAggregates(invoices: ReadonlyArray<Invoice>): CategoryAggregate[] {
-  const categoryMap = new Map<number, {amount: number; count: number}>();
+  const categoryMap = new Map<string, {label: string; amount: number; count: number}>();
   let totalSpending = 0;
 
   for (const invoice of invoices) {
-    const category = invoice.category ?? 0;
+    const group = getRootGroup(invoice.classification, ClassificationSystem.EcoicopV2);
     const amount = getAmountInRON(invoice);
     totalSpending += amount;
 
-    const existing = categoryMap.get(category) ?? {amount: 0, count: 0};
-    categoryMap.set(category, {
+    const existing = categoryMap.get(group.key) ?? {label: group.label, amount: 0, count: 0};
+    categoryMap.set(group.key, {
+      label: existing.label,
       amount: existing.amount + amount,
       count: existing.count + 1,
     });
   }
 
   const result: CategoryAggregate[] = [];
-  for (const [categoryId, data] of categoryMap.entries()) {
+  for (const [categoryKey, data] of categoryMap.entries()) {
     const percentage = totalSpending > 0 ? (data.amount / totalSpending) * 100 : 0;
 
     result.push({
-      category: getCategoryLabel(categoryId),
-      categoryId,
+      category: data.label,
+      categoryKey,
       amount: Math.round(data.amount * 100) / 100,
       count: data.count,
       percentage: Math.round(percentage * 10) / 10,
@@ -1319,11 +1287,11 @@ export function computeMerchantVisitFrequency(invoices: ReadonlyArray<Invoice>):
 }
 
 /**
- * Product category spending aggregate for product-level analytics.
+ * Product classification spending aggregate for product-level analytics.
  *
  * @remarks
- * Groups all products across all invoices by ProductCategory enum.
- * Provides spending insights at the product category level (not invoice category).
+ * Groups all products by their canonical GS1 GPC segment, falling back to the
+ * family node when a segment is absent.
  *
  * **Calculation:**
  * - Aggregates `product.totalPrice` across all invoices
@@ -1332,18 +1300,18 @@ export function computeMerchantVisitFrequency(invoices: ReadonlyArray<Invoice>):
  *
  * @example
  * ```typescript
- * const categoryData = computeProductCategorySpending(invoices);
+ * const categoryData = computeProductClassificationSpending(invoices);
  * // Returns: [
  * //   { category: "Dairy", categoryId: 300, totalSpent: 1234.56, productCount: 45, percentage: 15.2 },
  * //   { category: "Meat", categoryId: 400, totalSpent: 987.65, productCount: 32, percentage: 12.1 }
  * // ]
  * ```
  */
-export type ProductCategorySpending = {
-  /** Human-readable category name */
+export type ProductClassificationSpending = {
+  /** Official GPC group label. */
   category: string;
-  /** Numeric category ID from ProductCategory enum */
-  categoryId: number;
+  /** Stable taxonomy key in `system:code` format. */
+  categoryKey: string;
   /** Total spending in this category (RON) */
   totalSpent: number;
   /** Number of products in this category */
@@ -1415,39 +1383,22 @@ export type AllergenFrequency = {
   percentage: number;
 };
 
+function getProductGroup(classification: StandardClassification | null): {readonly key: string; readonly label: string} {
+  if (classification === null || classification.system !== ClassificationSystem.Gs1Gpc) {
+    return {key: "unclassified", label: "Unclassified"};
+  }
+
+  const hierarchy = classification.hierarchy;
+  const group =
+    hierarchy.find((node) => node.level.toLocaleLowerCase("en-US") === "segment")
+    ?? hierarchy.find((node) => node.level.toLocaleLowerCase("en-US") === "family")
+    ?? hierarchy[0]
+    ?? classification;
+  return {key: `${classification.system}:${group.code}`, label: group.officialLabel};
+}
+
 /**
- * Maps ProductCategory enum values to human-readable labels.
- *
- * @param categoryId - Numeric category ID from ProductCategory enum
- * @returns Human-readable category label
- *
- * @remarks
- * **Category Mappings:**
- * - 0 (NOT_DEFINED) → "Uncategorized"
- * - 100 (BAKED_GOODS) → "Baked Goods"
- * - 200 (GROCERIES) → "Groceries"
- * - 300 (DAIRY) → "Dairy"
- * - 400 (MEAT) → "Meat"
- * - 500 (FISH) → "Fish"
- * - 600 (FRUITS) → "Fruits"
- * - 700 (VEGETABLES) → "Vegetables"
- * - 800 (BEVERAGES) → "Beverages"
- * - 900 (ALCOHOLIC_BEVERAGES) → "Alcoholic Beverages"
- * - 1000 (TOBACCO) → "Tobacco"
- * - 1100 (CLEANING_SUPPLIES) → "Cleaning Supplies"
- * - 1200 (PERSONAL_CARE) → "Personal Care"
- * - 1300 (MEDICINE) → "Medicine"
- * - 9999 (OTHER) → "Other"
- * - Unknown → "Unknown"
- *
- * @example
- * ```typescript
- * const label = getProductCategoryLabel(300); // "Dairy"
- * const label2 = getProductCategoryLabel(400); // "Meat"
- * ```
- */
-/**
- * Computes spending aggregates by product category.
+ * Computes spending aggregates by product GS1 GPC segment/family.
  *
  * @param invoices - Array of invoices to analyze
  * @returns Array of product category spending data, sorted by totalSpent descending
@@ -1464,13 +1415,12 @@ export type AllergenFrequency = {
  *
  * @example
  * ```typescript
- * const categorySpending = computeProductCategorySpending(invoices);
- * const dairySpending = categorySpending.find(c => c.categoryId === 300);
- * console.log(`Dairy: ${dairySpending?.totalSpent.toFixed(2)} RON`);
+ * const classificationSpending = computeProductClassificationSpending(invoices);
+ * console.log(classificationSpending[0]?.totalSpent);
  * ```
  */
-export function computeProductCategorySpending(invoices: ReadonlyArray<Invoice>): ProductCategorySpending[] {
-  const categoryMap = new Map<number, {totalSpent: number; productCount: number}>();
+export function computeProductClassificationSpending(invoices: ReadonlyArray<Invoice>): ProductClassificationSpending[] {
+  const categoryMap = new Map<string, {label: string; totalSpent: number; productCount: number}>();
   let grandTotal = 0;
 
   for (const invoice of invoices) {
@@ -1481,11 +1431,12 @@ export function computeProductCategorySpending(invoices: ReadonlyArray<Invoice>)
     for (const product of items) {
       // Skip soft-deleted products
       if (!product.metadata?.isSoftDeleted) {
-        const category = product.category ?? 0;
+        const group = getProductGroup(product.classification);
         const productPriceRON = toRON(product.totalPrice, currencyCode, year);
 
-        const existing = categoryMap.get(category) ?? {totalSpent: 0, productCount: 0};
-        categoryMap.set(category, {
+        const existing = categoryMap.get(group.key) ?? {label: group.label, totalSpent: 0, productCount: 0};
+        categoryMap.set(group.key, {
+          label: existing.label,
           totalSpent: existing.totalSpent + productPriceRON,
           productCount: existing.productCount + 1,
         });
@@ -1495,13 +1446,13 @@ export function computeProductCategorySpending(invoices: ReadonlyArray<Invoice>)
     }
   }
 
-  const result: ProductCategorySpending[] = [];
-  for (const [categoryId, data] of categoryMap.entries()) {
+  const result: ProductClassificationSpending[] = [];
+  for (const [categoryKey, data] of categoryMap.entries()) {
     const percentage = grandTotal > 0 ? (data.totalSpent / grandTotal) * 100 : 0;
 
     result.push({
-      category: getProductCategoryLabel(categoryId),
-      categoryId,
+      category: data.label,
+      categoryKey,
       totalSpent: Math.round(data.totalSpent * 100) / 100,
       productCount: data.productCount,
       percentage: Math.round(percentage * 10) / 10,
@@ -1637,18 +1588,19 @@ export function computeAllergenFrequency(invoices: ReadonlyArray<Invoice>): Alle
       // Skip soft-deleted products
       if (!product.metadata?.isSoftDeleted) {
         totalProducts++;
-
-        const allergens = product.detectedAllergens ?? [];
-        for (const allergen of allergens) {
-          const existing = allergenMap.get(allergen.name);
+        const assessment = product.allergenAssessment;
+        if (assessment?.status !== "detected") continue;
+        for (const signal of assessment.signals) {
+          const existing = allergenMap.get(signal.code);
+          const description = signal.evidence.map((evidence) => evidence.value).join("; ");
           if (existing) {
-            allergenMap.set(allergen.name, {
+            allergenMap.set(signal.code, {
               description: existing.description,
               productCount: existing.productCount + 1,
             });
           } else {
-            allergenMap.set(allergen.name, {
-              description: allergen.description,
+            allergenMap.set(signal.code, {
+              description,
               productCount: 1,
             });
           }

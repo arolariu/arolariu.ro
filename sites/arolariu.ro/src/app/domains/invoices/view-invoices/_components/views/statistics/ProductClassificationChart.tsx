@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * @fileoverview Product Category Chart - displays spending by product category as horizontal bars.
- * @module app/domains/invoices/view-invoices/_components/views/statistics/ProductCategoryChart
+ * @fileoverview Product classification chart showing structured GPC spending.
+ * @module app/domains/invoices/view-invoices/_components/views/statistics/ProductClassificationChart
  *
  * @remarks
- * This component visualizes product-level spending aggregated by ProductCategory enum.
- * Unlike the CategoryBreakdownChart (which shows invoice-level categories),
+ * This component visualizes product-level spending aggregated by canonical GPC
+ * hierarchy nodes. Unlike the invoice classification chart,
  * this chart analyzes individual product items across all invoices.
  *
  * **Features:**
@@ -35,16 +35,16 @@ import {
   YAxis,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import type {ProductCategorySpending} from "../../../_utils/statistics";
-import styles from "./ProductCategoryChart.module.scss";
+import type {ProductClassificationSpending} from "../../../_utils/statistics";
+import styles from "./ProductClassificationChart.module.scss";
 
 type Props = {
-  readonly data: ProductCategorySpending[];
+  readonly data: ProductClassificationSpending[];
   readonly currency: string;
 };
 
 type TooltipPayloadItem = {
-  readonly payload?: ProductCategorySpending & {fill: string};
+  readonly payload?: ProductClassificationSpending & {fill: string};
 };
 
 type CustomTooltipProps = {
@@ -57,7 +57,7 @@ type CustomTooltipProps = {
 const EMPTY_TOOLTIP_PAYLOAD: ReadonlyArray<TooltipPayloadItem> = [];
 
 /**
- * Custom tooltip for the product category chart.
+ * Custom tooltip for the product classification chart.
  *
  * @remarks
  * Displays category name, total spending, product count, and percentage
@@ -90,7 +90,7 @@ function CustomTooltip({
 }
 
 /**
- * Renders a horizontal bar chart showing spending breakdown by product category.
+ * Renders a horizontal bar chart showing spending by product classification.
  *
  * @remarks
  * **Performance:**
@@ -106,11 +106,11 @@ function CustomTooltip({
  * Uses CSS custom properties from the theme (--chart-1 through --chart-5)
  * with cycling for categories beyond 5.
  *
- * @param data - Product category spending aggregates
+ * @param data - Product classification spending aggregates
  * @param currency - Currency code for display (always RON for normalized data)
  * @returns Horizontal bar chart component
  */
-export function ProductCategoryChart({data, currency}: Props): React.JSX.Element {
+export function ProductClassificationChart({data, currency}: Props): React.JSX.Element {
   const t = useTranslations();
 
   // Empty state

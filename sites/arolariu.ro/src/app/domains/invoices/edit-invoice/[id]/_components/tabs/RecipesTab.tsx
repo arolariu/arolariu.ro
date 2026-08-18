@@ -1,7 +1,7 @@
 "use client";
 
 import {usePaginationWithSearch} from "@/hooks";
-import type {Recipe} from "@/types/invoices";
+import type {RecipeSuggestion} from "@/types/invoices";
 import {
   Button,
   Card,
@@ -24,7 +24,7 @@ import RecipeCard from "../../_cards/RecipeCard";
 import styles from "./RecipesTab.module.scss";
 
 type Props = {
-  recipes: Recipe[];
+  recipes: readonly RecipeSuggestion[];
 };
 
 /**

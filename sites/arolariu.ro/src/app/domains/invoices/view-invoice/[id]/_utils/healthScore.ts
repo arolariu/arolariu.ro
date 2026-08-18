@@ -1,5 +1,4 @@
 import type {Invoice} from "@/types/invoices";
-import {ProductCategory} from "@/types/invoices/Product";
 
 const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 
@@ -15,7 +14,7 @@ const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
  * | OCR confidence       | 20%    |
  * | Merchant linked      | 10%    |
  * | Payment info         | 15%    |
- * | Categories assigned  | 10%    |
+ * | Classifications resolved | 10% |
  * | Recipes generated    | 10%    |
  *
  * @param invoice - The invoice to score
@@ -44,14 +43,14 @@ export function calculateHealthScorePercentage(invoice: Invoice): number {
     && (invoice.paymentInformation.currency?.code?.length ?? 0) > 0;
   const paymentPoints = hasCompletePayment ? 15 : 0;
 
-  const categorizedProducts = items.filter((item) => item.category !== ProductCategory.NOT_DEFINED).length;
-  const categoryRatio = totalItems > 0 ? categorizedProducts / totalItems : 0;
-  const categoryPoints = Math.round(categoryRatio * 10);
+  const classifiedProducts = items.filter((item) => item.classification !== null).length;
+  const classificationRatio = totalItems > 0 ? classifiedProducts / totalItems : 0;
+  const classificationPoints = Math.round(classificationRatio * 10);
 
   const recipesPoints = invoice.possibleRecipes.length > 0 ? 10 : 0;
 
   const totalScore =
-    productsPoints + completenessPoints + confidencePoints + merchantPoints + paymentPoints + categoryPoints + recipesPoints;
+    productsPoints + completenessPoints + confidencePoints + merchantPoints + paymentPoints + classificationPoints + recipesPoints;
 
   return Math.round((totalScore / 100) * 100);
 }

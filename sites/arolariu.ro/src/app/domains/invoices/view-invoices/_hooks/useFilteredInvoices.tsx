@@ -3,6 +3,7 @@
 import {getTransactionYear, toRON} from "@/lib/currency";
 import {toSafeDate} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
+import {toClassificationFilterKey} from "../_utils/filterOptions";
 import {useMemo} from "react";
 import type {FilterState} from "./useInvoiceFilters";
 
@@ -17,7 +18,7 @@ import type {FilterState} from "./useInvoiceFilters";
  * - Text search: Searches invoice name and description (case-insensitive)
  * - Date range: Filters by transaction date (inclusive)
  * - Amount range: Filters by total cost amount (inclusive)
- * - Categories: Multi-select filter (OR logic)
+ * - Classifications: Multi-select stable `system:code` filter (OR logic)
  * - Payment types: Multi-select filter (OR logic)
  * - Currencies: Multi-select filter (OR logic) on `invoice.paymentInformation.currency.code`,
  *   with `"RON"` as the fallback for invoices missing a currency code (matches the
@@ -38,7 +39,7 @@ import type {FilterState} from "./useInvoiceFilters";
  *   dateTo: "2024-12-31", // ISO date string
  *   amountMin: 10,
  *   amountMax: 100,
- *   categories: [InvoiceCategory.GROCERY],
+ *   classifications: ["ECOICOP_V2:01.1"],
  *   paymentTypes: [PaymentType.Card],
  *   sortBy: "date",
  *   sortOrder: "desc",
@@ -89,9 +90,14 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
       filtered = filtered.filter((invoice) => invoice.paymentInformation.totalCostAmount <= filters.amountMax!);
     }
 
-    // Apply category filter (OR logic)
-    if (filters.categories.length > 0) {
-      filtered = filtered.filter((invoice) => filters.categories.includes(invoice.category));
+    // Apply canonical classification filter (OR logic).
+    if (filters.classifications.length > 0) {
+      filtered = filtered.filter((invoice) => {
+        const classification = invoice.classification;
+        return (
+          classification !== null && filters.classifications.includes(toClassificationFilterKey(classification.system, classification.code))
+        );
+      });
     }
 
     // Apply payment type filter (OR logic)

@@ -1,7 +1,7 @@
 "use client";
 
 import {useInvoicesStore} from "@/stores";
-import {InvoiceCategory, PaymentType} from "@/types/invoices";
+import {PaymentType} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -20,7 +20,7 @@ import {useTranslations} from "next-intl-selector";
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {TbCards, TbFilter, TbSearch, TbTable, TbX} from "react-icons/tb";
 import type {FilterState} from "../../_hooks/useInvoiceFilters";
-import {computeAvailableCategories, computeAvailableCurrencies, computeAvailablePaymentTypes} from "../../_utils/filterOptions";
+import {computeAvailableClassifications, computeAvailableCurrencies, computeAvailablePaymentTypes} from "../../_utils/filterOptions";
 import {AmountFilterCard} from "./AmountFilterCard";
 import {CategoryFilterCard} from "./CategoryFilterCard";
 import {CurrencyFilterCard} from "./CurrencyFilterCard";
@@ -77,7 +77,7 @@ export default function FilterBar({
   }, [debouncedSearch, filters.search, onFiltersChange]);
 
   const availableCurrencies = useMemo(() => computeAvailableCurrencies(invoices), [invoices]);
-  const availableCategories = useMemo(() => computeAvailableCategories(invoices), [invoices]);
+  const availableClassifications = useMemo(() => computeAvailableClassifications(invoices), [invoices]);
   const availablePaymentTypes = useMemo(() => computeAvailablePaymentTypes(invoices), [invoices]);
 
   const handleSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,31 +92,13 @@ export default function FilterBar({
       dateTo: null,
       amountMin: null,
       amountMax: null,
-      categories: [],
+      classifications: [],
       paymentTypes: [],
       currencies: [],
       sortBy: "date",
       sortOrder: "desc",
     });
   }, [onFiltersChange]);
-
-  const getCategoryLabel = useCallback(
-    (category: InvoiceCategory): string => {
-      switch (category) {
-        case InvoiceCategory.GROCERY:
-          return t((m) => m.pages.invoices.viewInvoices.invoicesView.categories.groceries);
-        case InvoiceCategory.FAST_FOOD:
-          return t((m) => m.pages.invoices.viewInvoices.invoicesView.categories.dining);
-        case InvoiceCategory.HOME_CLEANING:
-          return t((m) => m.pages.invoices.viewInvoices.invoicesView.categories.utilities);
-        case InvoiceCategory.CAR_AUTO:
-          return t((m) => m.pages.invoices.viewInvoices.invoicesView.categories.travel);
-        default:
-          return t((m) => m.pages.invoices.viewInvoices.invoicesView.categories.other);
-      }
-    },
-    [t],
-  );
 
   const getPaymentTypeLabel = useCallback(
     (paymentType: PaymentType): string => {
@@ -156,8 +138,7 @@ export default function FilterBar({
         />
         <CategoryFilterCard
           filters={filters}
-          availableCategories={availableCategories}
-          getCategoryLabel={getCategoryLabel}
+          availableClassifications={availableClassifications}
           onFiltersChange={onFiltersChange}
         />
         <PaymentTypeFilterCard

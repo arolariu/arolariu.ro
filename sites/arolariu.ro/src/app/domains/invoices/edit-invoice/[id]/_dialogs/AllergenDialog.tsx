@@ -1,104 +1,29 @@
 "use client";
 
 /**
- * @fileoverview Dialog for editing allergens on individual products.
- * @module domains/invoices/edit-invoice/[id]/components/dialogs/AllergenDialog
- *
- * @remarks
- * Provides UI for viewing, adding, and removing allergens from products.
- * Includes quick-add buttons for common allergens to streamline data entry.
+ * @fileoverview Read-only evidence dialog for structured product allergen assessments.
+ * @module domains/invoices/edit-invoice/[id]/dialogs/AllergenDialog
  */
 
-import type {Allergen} from "@/types/invoices";
-import {
-  Badge,
-  Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Input,
-  Label,
-  toast,
-} from "@arolariu/components";
+import type {Product} from "@/types/invoices";
+import {Badge, Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import {useCallback, useEffect, useState} from "react";
-import {TbPlus, TbX} from "react-icons/tb";
-import {updateInvoiceProduct} from "../../../_actions/invoices";
+import {TbAlertTriangle} from "react-icons/tb";
+import {getAllergenCodeLabel, getAllergenEvidenceLevelLabel, getAllergenStatusLabel} from "../../../_utils/classificationUtilities";
 import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./AllergenDialog.module.scss";
 
-/**
- * Common allergens for quick-add functionality.
- *
- * @remarks
- * Based on EU Regulation 1169/2011 which mandates declaration of 14 major allergens.
- */
-const COMMON_ALLERGENS: ReadonlyArray<string> = [
-  "Gluten",
-  "Lactose",
-  "Nuts",
-  "Peanuts",
-  "Eggs",
-  "Soy",
-  "Fish",
-  "Shellfish",
-  "Celery",
-  "Mustard",
-  "Sesame",
-  "Lupin",
-  "Molluscs",
-  "Sulfites",
-] as const;
+interface AllergenDialogPayload {
+  readonly product: Product;
+}
+
+function hasAllergenDialogPayload(value: unknown): value is AllergenDialogPayload {
+  return typeof value === "object" && value !== null && "product" in value;
+}
 
 /**
- * Dialog for editing allergens on a single product.
- *
- * @remarks
- * **Rendering Context**: Client Component (`"use client"` directive).
- *
- * **Why Client Component?**
- * - Interactive form with state management (local allergen list)
- * - Toast notifications for user feedback
- * - Dialog open/close state management
- *
- * **Features**:
- * - **View Current Allergens**: Displays all detected allergens with remove buttons
- * - **Quick Add**: Buttons for common allergens (Gluten, Lactose, etc.)
- * - **Custom Add**: Text input for adding custom allergen names
- * - **Remove**: X button on each allergen badge to remove
- * - **Save**: Persists changes via patchInvoice server action
- *
- * **Data Flow**:
- * 1. User opens dialog from ItemsTable row
- * 2. Dialog receives product and invoice via payload
- * 3. User modifies allergens list
- * 4. On save, calls updateProduct with the modified product data
- * 5. Success → page reload to show fresh data
- *
- * **Validation**:
- * - Duplicate allergen names are prevented
- * - Empty allergen names are rejected
- * - Allergen names are trimmed and case-normalized
- *
- * @returns Client-rendered dialog with allergen editing UI
- *
- * @example
- * ```tsx
- * // Opened via ItemsTable allergen button:
- * const {open} = useDialog("EDIT_INVOICE__ALLERGENS", "edit", {
- *   invoice,
- *   product,
- *   productIndex: 0
- * });
- * <Button onClick={open}>Edit Allergens</Button>
- * ```
- *
- * @see {@link useDialog} - Dialog state management hook
- * @see {@link updateProduct} - Server action for persisting changes
- * @see {@link Allergen} - Allergen type definition
+ * Displays the backend assessment exactly as evidence. This intentionally has
+ * no mutation controls: allergen assessments are server-owned analysis output.
  */
 export default function AllergenDialog(): React.JSX.Element | null {
   const t = useTranslations();
@@ -108,164 +33,11 @@ export default function AllergenDialog(): React.JSX.Element | null {
     close,
   } = useDialog("EDIT_INVOICE__ALLERGENS");
 
-  const {invoice, product, productIndex} = payload;
-
-  const [allergens, setAllergens] = useState<Allergen[]>(product?.detectedAllergens ?? []);
-  const [customAllergen, setCustomAllergen] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    setAllergens(product?.detectedAllergens ?? []);
-    setCustomAllergen("");
-    setIsSaving(false);
-  }, [product]);
-
-  /**
-   * Adds a new allergen to the list.
-   *
-   * @param name - The allergen name to add
-   */
-  const handleAddAllergen = useCallback(
-    (name: string) => {
-      const trimmedName = name.trim();
-      if (!trimmedName) {
-        toast.error(t((m) => m.dialogs.invoices.allergenDialog.errors.emptyName));
-        return;
-      }
-
-      // Check for duplicates (case-insensitive)
-      const isDuplicate = allergens.some((a) => a.name.toLowerCase() === trimmedName.toLowerCase());
-      if (isDuplicate) {
-        toast.warning(t((m) => m.dialogs.invoices.allergenDialog.errors.duplicate, {name: trimmedName}));
-        return;
-      }
-
-      const newAllergen: Allergen = {
-        name: trimmedName,
-        description: t((m) => m.dialogs.invoices.allergenDialog.defaultDescription, {name: trimmedName}),
-        learnMoreAddress: "",
-      };
-
-      setAllergens((prev) => [...prev, newAllergen]);
-      setCustomAllergen("");
-      toast.success(t((m) => m.dialogs.invoices.allergenDialog.success.added, {name: trimmedName}));
-    },
-    [allergens, t],
-  );
-
-  /**
-   * Removes an allergen from the list.
-   *
-   * @param index - The index of the allergen to remove
-   */
-  const handleRemoveAllergen = useCallback(
-    (index: number) => {
-      const allergenName = allergens[index]?.name;
-      setAllergens((prev) => prev.filter((_, i) => i !== index));
-      if (allergenName) {
-        toast.success(t((m) => m.dialogs.invoices.allergenDialog.success.removed, {name: allergenName}));
-      }
-    },
-    [allergens, t],
-  );
-
-  /**
-   * Handles Enter key in custom allergen input.
-   */
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLInputElement>) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        handleAddAllergen(customAllergen);
-      }
-    },
-    [handleAddAllergen, customAllergen],
-  );
-
-  /** Updates the custom allergen input field as the user types. */
-  const handleCustomAllergenChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setCustomAllergen(e.target.value);
-  }, []);
-
-  /** Adds the allergen from the custom input field. */
-  const handleAddCustomAllergen = useCallback(() => {
-    handleAddAllergen(customAllergen);
-  }, [handleAddAllergen, customAllergen]);
-
-  /**
-   * Factory: returns a stable remove handler for a specific allergen.
-   * Each allergen badge gets its own callback to avoid re-rendering on unrelated state changes.
-   */
-  const createRemoveAllergenHandler = useCallback(
-    (index: number) => {
-      return () => handleRemoveAllergen(index);
-    },
-    [handleRemoveAllergen],
-  );
-
-  /**
-   * Factory: returns a stable add handler for a specific allergen.
-   * Each quick-add button gets its own callback to avoid re-rendering on unrelated state changes.
-   */
-  const createAddAllergenHandler = useCallback(
-    (name: string) => {
-      return () => handleAddAllergen(name);
-    },
-    [handleAddAllergen],
-  );
-
-  /**
-   * Saves allergen changes via updateInvoiceProduct.
-   */
-  const handleSave = useCallback(async () => {
-    if (!invoice || !product || productIndex === undefined) {
-      toast.error(t((m) => m.dialogs.invoices.allergenDialog.errors.missingData));
-      return;
-    }
-
-    setIsSaving(true);
-
-    try {
-      // Call updateInvoiceProduct with the updated allergens
-      const result = await updateInvoiceProduct({
-        invoiceId: invoice.id,
-        payload: {
-          originalProductName: product.name,
-          updatedProduct: {
-            name: product.name,
-            category: product.category,
-            quantity: product.quantity,
-            quantityUnit: product.quantityUnit,
-            productCode: product.productCode,
-            price: product.price,
-            totalPrice: product.price * product.quantity,
-            metadata: product.metadata,
-            detectedAllergens: allergens,
-          },
-        },
-      });
-
-      if (result.success) {
-        toast.success(t((m) => m.dialogs.invoices.allergenDialog.success.saved));
-        close();
-        // Trigger page refresh to show updated data
-        globalThis.window.location.reload();
-      } else {
-        console.error("Failed to save allergens:", result.error);
-        toast.error(t((m) => m.dialogs.invoices.allergenDialog.errors.saveFailed));
-      }
-    } catch (error) {
-      console.error("Failed to save allergens:", error);
-      toast.error(t((m) => m.dialogs.invoices.allergenDialog.errors.saveFailed));
-    } finally {
-      setIsSaving(false);
-    }
-  }, [invoice, product, productIndex, allergens, close, t]);
-
-  if (!invoice || !product || productIndex === undefined) {
+  if (!hasAllergenDialogPayload(payload)) {
     return null;
   }
 
+  const assessment = payload.product.allergenAssessment;
   return (
     <Dialog
       open={isOpen}
@@ -273,100 +45,46 @@ export default function AllergenDialog(): React.JSX.Element | null {
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t((m) => m.dialogs.invoices.allergenDialog.title)}</DialogTitle>
-          <DialogDescription>{t((m) => m.dialogs.invoices.allergenDialog.description, {productName: product.name})}</DialogDescription>
+          <DialogDescription>
+            {t((m) => m.dialogs.invoices.allergenDialog.description, {productName: payload.product.name})}
+          </DialogDescription>
         </DialogHeader>
-
         <div className={styles["content"]}>
-          {/* Current Allergens */}
-          <div className={styles["section"]}>
-            <Label className={styles["sectionLabel"]}>{t((m) => m.dialogs.invoices.allergenDialog.labels.currentAllergens)}</Label>
-            {allergens.length === 0 ? (
-              <p className={styles["emptyText"]}>{t((m) => m.dialogs.invoices.allergenDialog.empty.noAllergens)}</p>
-            ) : (
-              <div className={styles["allergenList"]}>
-                {allergens.map((allergen, index) => (
-                  <Badge
-                    key={allergen.name}
-                    variant='secondary'
-                    className={styles["allergenBadge"]}>
-                    <span>{allergen.name}</span>
-                    <button
-                      type='button'
-                      onClick={createRemoveAllergenHandler(index)}
-                      className={styles["removeButton"]}
-                      aria-label={t((m) => m.dialogs.invoices.allergenDialog.aria.removeAllergen, {name: allergen.name})}>
-                      <TbX className={styles["removeIcon"]} />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Quick Add Common Allergens */}
-          <div className={styles["section"]}>
-            <Label className={styles["sectionLabel"]}>{t((m) => m.dialogs.invoices.allergenDialog.labels.quickAdd)}</Label>
-            <div className={styles["quickAddGrid"]}>
-              {COMMON_ALLERGENS.map((allergenName) => {
-                const isAdded = allergens.some((a) => a.name.toLowerCase() === allergenName.toLowerCase());
-                return (
-                  <Button
-                    key={allergenName}
-                    variant='outline'
-                    size='sm'
-                    disabled={isAdded}
-                    onClick={createAddAllergenHandler(allergenName)}
-                    className={styles["quickAddButton"]}>
-                    {allergenName}
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Custom Allergen Input */}
-          <div className={styles["section"]}>
-            <Label
-              htmlFor='custom-allergen'
-              className={styles["sectionLabel"]}>
-              {t((m) => m.dialogs.invoices.allergenDialog.labels.customAllergen)}
-            </Label>
-            <div className={styles["inputRow"]}>
-              <Input
-                id='custom-allergen'
-                type='text'
-                value={customAllergen}
-                onChange={handleCustomAllergenChange}
-                onKeyDown={handleKeyDown}
-                placeholder={t((m) => m.dialogs.invoices.allergenDialog.placeholders.customAllergen)}
-                className={styles["customInput"]}
-              />
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={handleAddCustomAllergen}
-                disabled={!customAllergen.trim()}
-                className={styles["addButton"]}>
-                <TbPlus className={styles["addIcon"]} />
-                {t((m) => m.dialogs.invoices.allergenDialog.buttons.add)}
-              </Button>
-            </div>
-          </div>
+          {assessment === null ? (
+            <p className={styles["emptyText"]}>{t((m) => m.dialogs.invoices.allergenDialog.empty.noAllergens)}</p>
+          ) : (
+            <>
+              <p className={styles["sectionLabel"]}>{getAllergenStatusLabel(assessment.status)}</p>
+              {assessment.signals.length === 0 ? null : (
+                <ul className={styles["allergenList"]}>
+                  {assessment.signals.map((signal) => (
+                    <li key={signal.code}>
+                      <Badge
+                        variant='secondary'
+                        className={styles["allergenBadge"]}>
+                        <TbAlertTriangle className={styles["removeIcon"]} />
+                        {getAllergenCodeLabel(signal.code)}
+                      </Badge>
+                      <p className={styles["emptyText"]}>
+                        {getAllergenEvidenceLevelLabel(signal.evidenceLevel)} · {Math.round(signal.confidence * 100)}%
+                      </p>
+                      <ul className={styles["allergenList"]}>
+                        {signal.evidence.map((evidence) => (
+                          <li key={`${evidence.source}-${evidence.value}`}>{evidence.value}</li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
         </div>
-
         <DialogFooter>
           <Button
             variant='outline'
-            onClick={close}
-            disabled={isSaving}>
+            onClick={close}>
             {t((m) => m.dialogs.invoices.allergenDialog.buttons.cancel)}
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={isSaving}>
-            {isSaving
-              ? t((m) => m.dialogs.invoices.allergenDialog.buttons.saving)
-              : t((m) => m.dialogs.invoices.allergenDialog.buttons.save)}
           </Button>
         </DialogFooter>
       </DialogContent>

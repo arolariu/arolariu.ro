@@ -542,7 +542,7 @@ export function isAnalyzeMerchantRequest(value: unknown): value is AnalyzeMercha
  *
  * @remarks
  * This pure resolver mirrors `AnalysisOptionsResolver` and
- * `InvoiceAnalysisOptions` in the backend: fast, balanced, and comprehensive
+ * analysis configuration in the backend: fast, balanced, and comprehensive
  * use their published baselines; an empty override object preserves that named
  * profile; any actual override produces `custom`. It rejects malformed keys,
  * an empty effective set, and the exact invoice dependency closure

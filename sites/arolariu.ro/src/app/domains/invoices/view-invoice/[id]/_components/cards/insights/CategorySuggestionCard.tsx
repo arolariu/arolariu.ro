@@ -1,58 +1,42 @@
 "use client";
 
-import type {InvoiceCategory} from "@/types/invoices";
 import {Button, Card, CardContent, CardHeader, CardTitle, Progress} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import {TbGift, TbHelpCircle} from "react-icons/tb";
-import {extendedCategories, mainCategories} from "../../../_utils/categories";
 import styles from "./CategorySuggestionCard.module.scss";
 
-type CategoryButtonProps = {
-  category: (typeof mainCategories)[number] | (typeof extendedCategories)[number];
+type ClassificationButtonProps = {
+  classification: {readonly code: string; readonly label: string};
   isSelected: boolean;
-  onSelect: (id: InvoiceCategory | string) => void;
-  variant: "main" | "extended";
+  onSelect: (code: string) => void;
 };
 
-function CategoryButton({category, isSelected, onSelect, variant}: Readonly<CategoryButtonProps>): React.JSX.Element {
+function ClassificationButton({classification, isSelected, onSelect}: Readonly<ClassificationButtonProps>): React.JSX.Element {
   const handleClick = useCallback(() => {
-    onSelect(category.id);
-  }, [category.id, onSelect]);
-
-  if (variant === "main") {
-    return (
-      <Button
-        variant='outline'
-        onClick={handleClick}
-        className={`${styles["mainCategoryButton"]} ${category.color} ${isSelected ? styles["mainCategoryButtonSelected"] : ""}`}>
-        {category.icon}
-        <span className={styles["categoryLabel"]}>{category.name}</span>
-      </Button>
-    );
-  }
+    onSelect(classification.code);
+  }, [classification.code, onSelect]);
 
   return (
     <Button
       variant='outline'
       onClick={handleClick}
-      className={`${styles["extendedCategoryButton"]} ${isSelected ? styles["extendedCategoryButtonSelected"] : ""}`}>
-      {category.icon}
-      <span>{category.name}</span>
+      className={`${styles["mainCategoryButton"]} ${isSelected ? styles["mainCategoryButtonSelected"] : ""}`}>
+      <span className={styles["categoryLabel"]}>{classification.label}</span>
     </Button>
   );
 }
 
 export function CategorySuggestionCard(): React.JSX.Element {
-  const [selected, setSelected] = useState<InvoiceCategory | string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
   const t = useTranslations();
 
   // Gamification progress (mock)
   const categorizedCount = 8;
   const goal = 10;
 
-  const handleSelect = useCallback((id: InvoiceCategory | string) => {
-    setSelected(id);
+  const handleSelect = useCallback((code: string) => {
+    setSelected(code);
   }, []);
 
   return (
@@ -72,31 +56,17 @@ export function CategorySuggestionCard(): React.JSX.Element {
 
           {/* Main Categories Grid */}
           <div className={styles["mainGrid"]}>
-            {mainCategories.map((category) => (
-              <CategoryButton
-                key={category.id}
-                category={category}
-                isSelected={selected === category.id}
+            {[
+              {code: "01", label: t((m) => m.cards.invoices.categorySuggestionCard.title)},
+              {code: "11", label: t((m) => m.cards.invoices.categorySuggestionCard.moreCategories)},
+            ].map((classification) => (
+              <ClassificationButton
+                key={classification.code}
+                classification={classification}
+                isSelected={selected === classification.code}
                 onSelect={handleSelect}
-                variant='main'
               />
             ))}
-          </div>
-
-          {/* More Categories Grid */}
-          <div className={styles["moreSection"]}>
-            <p className={styles["moreLabel"]}>{t((m) => m.cards.invoices.categorySuggestionCard.moreCategories)}</p>
-            <div className={styles["moreGrid"]}>
-              {extendedCategories.map((category) => (
-                <CategoryButton
-                  key={category.id}
-                  category={category}
-                  isSelected={selected === category.id}
-                  onSelect={handleSelect}
-                  variant='extended'
-                />
-              ))}
-            </div>
           </div>
 
           {/* Gamification */}

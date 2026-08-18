@@ -5,7 +5,7 @@
 
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
-import {ClassificationSystem} from "@/types/invoices";
+import {ClassificationSystem, type ProductMutation} from "@/types/invoices";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder} from "../../../../../../../tests/helpers";
 
@@ -20,6 +20,18 @@ const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
 const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
 const mockRevalidatePath = vi.mocked((await import("next/cache")).revalidatePath);
 
+function buildProductMutation(overrides: Partial<ProductMutation> = {}): ProductMutation {
+  return {
+    name: "Milk",
+    classification: null,
+    quantity: 1,
+    quantityUnit: "pcs",
+    productCode: "",
+    price: 5.99,
+    ...overrides,
+  };
+}
+
 describe("addInvoiceProduct", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -33,10 +45,9 @@ describe("addInvoiceProduct", () => {
 
   it("posts only the product DTO fields and GPC selection, then revalidates invoice pages", async () => {
     const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const product = {
-      ...TestDataBuilder.build("product", {name: "Milk", price: 5.99}),
+    const product = buildProductMutation({
       classification: {system: ClassificationSystem.Gs1Gpc, code: "10000111"},
-    };
+    });
 
     const result = await addInvoiceProduct({invoiceId, product});
 
@@ -69,7 +80,7 @@ describe("addInvoiceProduct", () => {
 
   it("returns an error result for an invalid invoice id", async () => {
     const invalidId = "not-a-guid";
-    const product = TestDataBuilder.build("product");
+    const product = buildProductMutation();
 
     const result = await addInvoiceProduct({invoiceId: invalidId, product});
 
@@ -82,7 +93,7 @@ describe("addInvoiceProduct", () => {
     mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse({invalid: true}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
     const malformedResponseResult = await addInvoiceProduct({
       invoiceId: "11111111-1111-4111-8111-111111111111",
-      product: TestDataBuilder.build("product"),
+      product: buildProductMutation(),
     });
 
     expect(invalidInputResult).toMatchObject({success: false, error: {code: "VALIDATION_ERROR"}});
@@ -97,7 +108,7 @@ describe("addInvoiceProduct", () => {
     );
 
     const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const product = TestDataBuilder.build("product");
+    const product = buildProductMutation();
 
     const result = await addInvoiceProduct({invoiceId, product});
 
@@ -113,7 +124,7 @@ describe("addInvoiceProduct", () => {
     );
 
     const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const product = TestDataBuilder.build("product");
+    const product = buildProductMutation();
 
     const result = await addInvoiceProduct({invoiceId, product});
 
@@ -127,7 +138,7 @@ describe("addInvoiceProduct", () => {
     mockFetchUser.mockRejectedValue(new Error("Auth service unavailable"));
 
     const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const product = TestDataBuilder.build("product");
+    const product = buildProductMutation();
 
     const result = await addInvoiceProduct({invoiceId, product});
 
@@ -139,7 +150,7 @@ describe("addInvoiceProduct", () => {
     mockFetchWithTimeout.mockRejectedValue(new Error("Network timeout"));
 
     const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const product = TestDataBuilder.build("product");
+    const product = buildProductMutation();
 
     const result = await addInvoiceProduct({invoiceId, product});
 

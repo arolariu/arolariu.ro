@@ -1,83 +1,39 @@
 /**
- * @fileoverview Invoice domain display label utilities.
+ * @fileoverview Label helpers for exact payment-method transport values.
  * @module app/domains/invoices/_utils/labelUtilities
  */
 
-import {InvoiceCategory, PaymentType, ProductCategory} from "@/types/invoices";
+import {PaymentType, type PaymentType as PaymentTypeValue} from "@/types/invoices";
 
-type LabelFallbackOptions = Readonly<{
-  labels?: Readonly<Record<number, string>>;
-  notDefinedLabel?: string;
-  unknownLabel?: string;
-}>;
-
-const PRODUCT_CATEGORY_LABELS: Readonly<Record<number, string>> = {
-  [ProductCategory.BAKED_GOODS]: "Baked Goods",
-  [ProductCategory.GROCERIES]: "Groceries",
-  [ProductCategory.DAIRY]: "Dairy",
-  [ProductCategory.MEAT]: "Meat",
-  [ProductCategory.FISH]: "Fish",
-  [ProductCategory.FRUITS]: "Fruits",
-  [ProductCategory.VEGETABLES]: "Vegetables",
-  [ProductCategory.BEVERAGES]: "Beverages",
-  [ProductCategory.ALCOHOLIC_BEVERAGES]: "Alcoholic Beverages",
-  [ProductCategory.TOBACCO]: "Tobacco",
-  [ProductCategory.CLEANING_SUPPLIES]: "Cleaning Supplies",
-  [ProductCategory.PERSONAL_CARE]: "Personal Care",
-  [ProductCategory.MEDICINE]: "Medicine",
-  [ProductCategory.OTHER]: "Other",
-};
-
-const INVOICE_CATEGORY_LABELS: Readonly<Record<number, string>> = {
-  [InvoiceCategory.GROCERY]: "Grocery",
-  [InvoiceCategory.FAST_FOOD]: "Fast Food",
-  [InvoiceCategory.HOME_CLEANING]: "Home Cleaning",
-  [InvoiceCategory.CAR_AUTO]: "Car & Auto",
-  [InvoiceCategory.OTHER]: "Other",
-};
-
-const PAYMENT_TYPE_LABELS: Readonly<Record<number, string>> = {
+const paymentTypeLabels: Readonly<Record<PaymentTypeValue, string>> = {
   [PaymentType.Unknown]: "Unknown",
   [PaymentType.Cash]: "Cash",
   [PaymentType.Card]: "Card",
   [PaymentType.Transfer]: "Transfer",
-  [PaymentType.MobilePayment]: "Mobile Payment",
+  [PaymentType.MobilePayment]: "Mobile payment",
   [PaymentType.Voucher]: "Voucher",
   [PaymentType.Other]: "Other",
 };
 
-/**
- * Gets the display label for a product category.
- *
- * @param category - Product category numeric value.
- * @param options - Optional labels for context-specific fallbacks.
- * @returns Product category display label.
- */
-export function getProductCategoryLabel(category: number, options: LabelFallbackOptions = {}): string {
-  if (category === ProductCategory.NOT_DEFINED) return options.notDefinedLabel ?? "Uncategorized";
-  if (options.labels?.[category]) return options.labels[category];
-  return PRODUCT_CATEGORY_LABELS[category] ?? options.unknownLabel ?? "Unknown";
+function isPaymentType(value: number): value is PaymentTypeValue {
+  return (
+    value === PaymentType.Unknown
+    || value === PaymentType.Cash
+    || value === PaymentType.Card
+    || value === PaymentType.Transfer
+    || value === PaymentType.MobilePayment
+    || value === PaymentType.Voucher
+    || value === PaymentType.Other
+  );
 }
 
 /**
- * Gets the display label for an invoice category.
+ * Gets the display label for the numeric payment type emitted by the backend.
  *
- * @param category - Invoice category numeric value.
- * @param options - Optional labels for context-specific fallbacks.
- * @returns Invoice category display label.
+ * @param paymentType - Current payment type value.
+ * @param unknownLabel - Localized fallback when a value is unsupported.
+ * @returns The payment method label.
  */
-export function getInvoiceCategoryLabel(category: number, options: LabelFallbackOptions = {}): string {
-  if (category === InvoiceCategory.NOT_DEFINED) return options.notDefinedLabel ?? "Not Defined";
-  if (options.labels?.[category]) return options.labels[category];
-  return INVOICE_CATEGORY_LABELS[category] ?? options.unknownLabel ?? "Not Defined";
-}
-
-/**
- * Gets the display label for a payment type.
- *
- * @param paymentType - Payment type numeric value.
- * @returns Payment type display label.
- */
-export function getPaymentTypeLabel(paymentType: number): string {
-  return PAYMENT_TYPE_LABELS[paymentType] ?? "Unknown";
+export function getPaymentTypeLabel(paymentType: number, unknownLabel = "Unknown"): string {
+  return isPaymentType(paymentType) ? paymentTypeLabels[paymentType] : unknownLabel;
 }

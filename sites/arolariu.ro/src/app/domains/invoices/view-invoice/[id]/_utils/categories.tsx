@@ -1,4 +1,3 @@
-import {InvoiceCategory} from "@/types/invoices";
 import {
   TbBriefcase,
   TbCar,
@@ -31,7 +30,7 @@ import styles from "./categories.module.scss";
  * @property color - CSS classes for hover states and coloring.
  */
 type CategoryOption = Readonly<{
-  id: InvoiceCategory | string;
+  id: string;
   name: string;
   icon: React.ReactNode;
   color: string;
@@ -43,7 +42,7 @@ type CategoryOption = Readonly<{
  * @remarks
  * **Selection Criteria**: These are the most frequent categories used in the application.
  *
- * **Mapping**: Maps directly to `InvoiceCategory` enum values.
+ * **Mapping**: Uses canonical ECOICOP root codes.
  *
  * **Styling**: Each category has distinct hover colors for better visual distinction.
  *
@@ -56,31 +55,31 @@ type CategoryOption = Readonly<{
  */
 export const mainCategories: CategoryOption[] = [
   {
-    id: InvoiceCategory.GROCERY,
+    id: "01",
     name: "Grocery",
     icon: <TbShoppingCart className={styles["iconMain"]} />,
     color: "",
   },
   {
-    id: InvoiceCategory.FAST_FOOD,
+    id: "11",
     name: "Dining",
     icon: <TbToolsKitchen className={styles["iconMain"]} />,
     color: "",
   },
   {
-    id: InvoiceCategory.HOME_CLEANING,
+    id: "05",
     name: "Home",
     icon: <TbHome className={styles["iconMain"]} />,
     color: "",
   },
   {
-    id: InvoiceCategory.CAR_AUTO,
+    id: "07",
     name: "Auto",
     icon: <TbCar className={styles["iconMain"]} />,
     color: "",
   },
   {
-    id: InvoiceCategory.OTHER,
+    id: "12",
     name: "Other",
     icon: <TbPackage className={styles["iconMain"]} />,
     color: "",

@@ -815,6 +815,30 @@
           "title": "Cheapest Nearby"
         },
         "title": "Vehicle Expense Analysis"
+      },
+      "analysisResults": {
+        "unclassified": "Unclassified",
+        "classification": {
+          "analysisOrigin": "Analysis result",
+          "manualOrigin": "Manual selection",
+          "confidence": "Advisory confidence: {confidence}",
+          "evidence": "Available evidence"
+        },
+        "allergens": {
+          "detected": "Signals detected",
+          "noSignals": "No signals in available evidence",
+          "insufficientData": "Insufficient data",
+          "explicit": "Explicit evidence",
+          "inferred": "Inferred evidence",
+          "precautionary": "Precautionary evidence"
+        },
+        "recipes": {
+          "purchasedIngredients": "Purchased ingredients",
+          "pantryStaples": "Assumed pantry staples",
+          "missingOptionalIngredients": "Missing optional ingredients",
+          "steps": "Preparation steps",
+          "warnings": "Allergen warnings"
+        }
       }
     }
   },

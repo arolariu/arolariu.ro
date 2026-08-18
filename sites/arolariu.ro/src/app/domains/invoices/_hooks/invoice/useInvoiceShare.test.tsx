@@ -3,11 +3,18 @@
  * @module app/domains/invoices/_hooks/invoice/useInvoiceShare.test
  */
 
+import type {ServerActionResult} from "@/lib/utils.server";
 import type {Invoice} from "@/types/invoices";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder, invokeHookCallback} from "../../../../../../tests/helpers";
 import {useInvoiceShare} from "./useInvoiceShare";
+
+function toNestedResult<T>(result: ServerActionResult<T>): Promise<ServerActionResult<T>> {
+  return new Promise<ServerActionResult<T>>((resolve) => {
+    resolve(result);
+  });
+}
 
 // Mock dependencies
 vi.mock("@/stores", () => ({
@@ -134,7 +141,7 @@ describe("useInvoiceShare", () => {
     it("adds public sentinel when not present", async () => {
       const updatedInvoice = {...testInvoice, sharedWith: [LAST_GUID]};
       const successResult = TestDataBuilder.actionSuccess<Invoice>(updatedInvoice);
-      mockPatchInvoice.mockReturnValue(successResult);
+      mockPatchInvoice.mockReturnValue(toNestedResult(successResult));
 
       const hookResult = renderHook(() => useInvoiceShare(mockOnComplete));
       const {result} = hookResult;
@@ -162,7 +169,7 @@ describe("useInvoiceShare", () => {
       mockGetEntityById.mockReturnValue(publicInvoice);
 
       const successResult = TestDataBuilder.actionSuccess<Invoice>(publicInvoice);
-      mockPatchInvoice.mockReturnValue(successResult);
+      mockPatchInvoice.mockReturnValue(toNestedResult(successResult));
 
       const {result} = renderHook(() => useInvoiceShare());
 
@@ -212,7 +219,7 @@ describe("useInvoiceShare", () => {
 
       const updatedInvoice = {...publicInvoice, sharedWith: ["user-123"]};
       const successResult = TestDataBuilder.actionSuccess<Invoice>(updatedInvoice);
-      mockPatchInvoice.mockReturnValue(successResult);
+      mockPatchInvoice.mockReturnValue(toNestedResult(successResult));
 
       const {result} = renderHook(() => useInvoiceShare(mockOnComplete));
 
@@ -236,7 +243,7 @@ describe("useInvoiceShare", () => {
 
       const updatedInvoice = {...sharedInvoice, sharedWith: ["user-456"]};
       const successResult = TestDataBuilder.actionSuccess<Invoice>(updatedInvoice);
-      mockPatchInvoice.mockReturnValue(successResult);
+      mockPatchInvoice.mockReturnValue(toNestedResult(successResult));
 
       const {result} = renderHook(() => useInvoiceShare());
 
@@ -644,7 +651,7 @@ describe("useInvoiceShare", () => {
         resolvePatch = resolve;
       });
 
-      mockPatchInvoice.mockReturnValue(patchPromise);
+      mockPatchInvoice.mockImplementation(() => toNestedResult(patchPromise));
 
       const {result} = renderHook(() => useInvoiceShare());
 

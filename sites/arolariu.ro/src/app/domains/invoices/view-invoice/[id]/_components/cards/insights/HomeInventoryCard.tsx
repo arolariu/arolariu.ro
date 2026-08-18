@@ -1,7 +1,6 @@
 "use client";
 
 import {formatCurrency} from "@/lib/utils.generic";
-import {ProductCategory} from "@/types/invoices";
 import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
 import {useLocale} from "next-intl";
 import {useTranslations} from "next-intl-selector";
@@ -33,8 +32,9 @@ export function HomeInventoryCard(): React.JSX.Element {
   const {items, paymentInformation} = invoice;
   const {currency} = paymentInformation;
 
-  // Get cleaning supplies from invoice
-  const cleaningItems = items.filter((i) => i.category === ProductCategory.CLEANING_SUPPLIES);
+  // Product names remain a presentation-only fallback; classifications do not
+  // provide a numeric compatibility mapping.
+  const cleaningItems = items.filter((item) => /clean|detergent|soap|paper|towel/iu.test(item.name));
 
   // Estimate supply levels based on typical usage
   const supplies: SupplyItem[] = [];

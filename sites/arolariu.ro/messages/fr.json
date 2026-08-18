@@ -815,6 +815,30 @@
           "title": "Le moins cher à proximité"
         },
         "title": "Analyse des dépenses du véhicule"
+      },
+      "analysisResults": {
+        "unclassified": "Non classé",
+        "classification": {
+          "analysisOrigin": "Résultat de l’analyse",
+          "manualOrigin": "Sélection manuelle",
+          "confidence": "Confiance indicative : {confidence}",
+          "evidence": "Éléments disponibles"
+        },
+        "allergens": {
+          "detected": "Signaux détectés",
+          "noSignals": "Aucun signal dans les éléments disponibles",
+          "insufficientData": "Données insuffisantes",
+          "explicit": "Éléments explicites",
+          "inferred": "Éléments déduits",
+          "precautionary": "Éléments de précaution"
+        },
+        "recipes": {
+          "purchasedIngredients": "Ingrédients achetés",
+          "pantryStaples": "Produits de base supposés disponibles",
+          "missingOptionalIngredients": "Ingrédients facultatifs manquants",
+          "steps": "Étapes de préparation",
+          "warnings": "Avertissements concernant les allergènes"
+        }
       }
     }
   },

@@ -26,7 +26,7 @@ describe("attachScanToInvoice", () => {
     const invoiceId = "11111111-1111-4111-8111-111111111111";
     const payload = TestDataBuilder.build("createInvoiceScanPayload", {
       location: "https://storage.test/invoices/scan.jpg",
-      additionalMetadata: {page: "1"},
+      metadata: {page: "1"},
     });
 
     const result = await attachScanToInvoice({invoiceId, payload});

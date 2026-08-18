@@ -1,6 +1,5 @@
 "use client";
 
-import {InvoiceCategory} from "@/types/invoices";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
 import {CategorySuggestionCard} from "./CategorySuggestionCard";
 import {DiningCard} from "./DiningCard";
@@ -10,20 +9,20 @@ import {NutritionCard} from "./NutritionCard";
 import {VehicleCard} from "./VehicleCard";
 
 /**
- * Renders a category-specific insight card based on the current invoice's category.
+ * Renders an insight card based on the current invoice's ECOICOP root.
  *
  * @remarks
  * **Rendering Context**: Client Component (`"use client"`).
  *
  * **Component Logic**:
- * - Consumes `InvoiceContext` to get the current invoice category.
+ * - Consumes `InvoiceContext` to get the current invoice classification.
  * - Uses a switch statement to determine the most relevant insight card.
  * - Fallback: Renders `GeneralExpenseCard` for unhandled categories or `CategorySuggestionCard` for undefined ones.
  *
  * **Dependencies**:
  * - Requires `InvoiceContextProvider` to be present in the parent tree.
  *
- * @returns The specific insight card component corresponding to the invoice category.
+ * @returns The specific insight card component corresponding to the invoice classification.
  *
  * @example
  * ```tsx
@@ -31,20 +30,19 @@ import {VehicleCard} from "./VehicleCard";
  * ```
  */
 export function CategoryInsightsCardContainer(): React.JSX.Element {
-  const {
-    invoice: {category},
-  } = useInvoiceContext();
+  const {invoice} = useInvoiceContext();
+  const rootCode = invoice.classification?.hierarchy[0]?.code;
 
-  switch (category) {
-    case InvoiceCategory.GROCERY:
+  switch (rootCode) {
+    case "01":
       return <NutritionCard />;
-    case InvoiceCategory.FAST_FOOD:
+    case "11":
       return <DiningCard />;
-    case InvoiceCategory.HOME_CLEANING:
+    case "05":
       return <HomeInventoryCard />;
-    case InvoiceCategory.CAR_AUTO:
+    case "07":
       return <VehicleCard />;
-    case InvoiceCategory.NOT_DEFINED:
+    case undefined:
       return <CategorySuggestionCard />;
     default:
       return <GeneralExpenseCard />;

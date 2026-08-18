@@ -9,12 +9,8 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
-import {
-  isClassificationSelection,
-  isStandardClassification,
-  type ClassificationSelection,
-  type StandardClassification,
-} from "@/types/invoices";
+import {isClassificationSelection, type ClassificationSelection} from "@/types/invoices";
+import {parseMerchantTransport} from "@/types/invoices/transport";
 import {revalidatePath} from "next/cache";
 
 interface MerchantAddress {
@@ -39,17 +35,7 @@ interface ServerActionInputType {
   readonly payload: MerchantUpdatePayload;
 }
 
-interface MerchantUpdateResponse {
-  readonly id: string;
-  readonly name: string;
-  readonly description: string;
-  readonly classification: StandardClassification | null;
-  readonly address: MerchantAddress;
-  readonly parentCompanyId: string;
-  readonly additionalMetadata: Readonly<Record<string, string>>;
-}
-
-type ServerActionOutputType = ServerActionResult<Readonly<MerchantUpdateResponse>>;
+type ServerActionOutputType = ServerActionResult<Readonly<import("@/types/invoices").Merchant>>;
 
 // .NET ContactInformation stores ordinary strings. This is its runtime String.Length ceiling.
 const MAXIMUM_CONTACT_FIELD_LENGTH = 2_147_483_647;
@@ -105,19 +91,6 @@ function isUpdateMerchantInput(value: unknown): value is ServerActionInputType {
     && hasOnlyKeys(value, ["merchantId", "payload"])
     && isNonBlankString(value["merchantId"])
     && isMerchantUpdatePayload(value["payload"])
-  );
-}
-
-function isMerchantUpdateResponse(value: unknown): value is MerchantUpdateResponse {
-  return (
-    isRecord(value)
-    && isNonBlankString(value["id"])
-    && isNonBlankString(value["name"])
-    && typeof value["description"] === "string"
-    && (value["classification"] === null || isStandardClassification(value["classification"]))
-    && isMerchantAddress(value["address"])
-    && isNonBlankString(value["parentCompanyId"])
-    && isStringRecord(value["additionalMetadata"])
   );
 }
 
@@ -181,7 +154,8 @@ export async function updateMerchant(input: unknown): ServerActionOutputType {
       }
 
       const responseData: unknown = await response.json();
-      if (!isMerchantUpdateResponse(responseData)) {
+      const merchant = parseMerchantTransport(responseData);
+      if (merchant === null) {
         addSpanEvent("bff.request.update-merchant.invalid-response");
         logWithTrace("error", "Merchant update returned an invalid response.", undefined, "server");
         return {
@@ -194,7 +168,7 @@ export async function updateMerchant(input: unknown): ServerActionOutputType {
       }
 
       revalidatePath("/domains/invoices", "layout");
-      return {success: true, data: responseData};
+      return {success: true, data: merchant};
     } catch (error) {
       addSpanEvent("bff.request.update-merchant.error");
       logWithTrace("error", "Merchant update request failed.", undefined, "server");

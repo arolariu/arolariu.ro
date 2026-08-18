@@ -10,7 +10,7 @@ import type {PersistStorage, StorageValue} from "zustand/middleware";
 /**
  * Available tables for segregating persisted data by domain
  */
-export const ZUSTAND_TABLES = ["shared", "invoices", "merchants", "scans"] as const;
+export const ZUSTAND_TABLES = ["shared", "invoices", "merchants", "scans", "invoices-v2", "merchants-v2"] as const;
 
 /**
  * Table name type derived from ZUSTAND_TABLES
@@ -100,6 +100,14 @@ class ZustandDB extends Dexie {
       merchants: "id,parentCompanyId",
       scans: "id,status",
     });
+    this.version(3).stores({
+      shared: "key",
+      invoices: "id,merchantReference",
+      merchants: "id,parentCompanyId",
+      scans: "id,status",
+      "invoices-v2": "id,merchantReference",
+      "merchants-v2": "id,parentCompanyId",
+    });
   }
 }
 
@@ -145,8 +153,12 @@ function getTable<E extends BaseEntity>(db: ZustandDB, tableName: EntityTableNam
   switch (tableName) {
     case "invoices":
       return db.invoices as unknown as Table<E, string>;
+    case "invoices-v2":
+      return db.table<E, string>("invoices-v2");
     case "merchants":
       return db.merchants as unknown as Table<E, string>;
+    case "merchants-v2":
+      return db.table<E, string>("merchants-v2");
     case "scans":
       return db.scans as unknown as Table<E, string>;
     /* v8 ignore next 2 -- TypeScript's EntityTableName exhausts all valid cases; unreachable at runtime */

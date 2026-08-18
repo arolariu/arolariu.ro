@@ -11,7 +11,7 @@
  */
 
 import {useInvoicesStore} from "@/stores";
-import type {Invoice, Recipe} from "@/types/invoices";
+import type {Invoice, RecipeSuggestion} from "@/types/invoices";
 import {useCallback, useState} from "react";
 
 /**
@@ -21,7 +21,7 @@ type HookOutputType = Readonly<{
   /** Whether a recipe add operation is in progress. */
   isAdding: boolean;
   /** Appends a recipe to `invoice.possibleRecipes` in the local invoice store. */
-  addRecipeCallback: (recipe: Recipe) => Promise<Invoice>;
+  addRecipeCallback: (recipe: RecipeSuggestion) => Promise<Invoice>;
 }>;
 
 /**
@@ -51,7 +51,7 @@ export function useRecipeAdd(invoice: Invoice): Readonly<HookOutputType> {
   const [isAdding, setIsAdding] = useState(false);
 
   const addRecipeCallback = useCallback(
-    async (recipe: Recipe): Promise<Invoice> => {
+    async (recipe: RecipeSuggestion): Promise<Invoice> => {
       setIsAdding(true);
       try {
         // TODO: add server side mutation and handle errors with toasts

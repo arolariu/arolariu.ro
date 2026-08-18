@@ -5,19 +5,46 @@
 
 import {ANALYSIS_API_URL, getAnalysisApiRequests, installAnalysisFetchHandler} from "@/../tests/helpers/analysisBoundary";
 import {ClassificationSystem} from "@/types/invoices";
-import {TestDataBuilder} from "../../../../../../tests/helpers";
 import {describe, expect, it} from "vitest";
 import {patchInvoice} from "./patchInvoice";
 
 const invoiceId = "11111111-1111-4111-8111-111111111111";
 
 function createCompleteInvoiceResponse(): Response {
-  return TestDataBuilder.jsonResponse(
-    TestDataBuilder.build("invoice", {
+  return Response.json(
+    {
       id: invoiceId,
+      userIdentifier: "22222222-2222-7222-8222-222222222222",
+      sharedWith: [],
       name: "Updated Invoice",
+      description: "",
       classification: null,
-    }),
+      scans: [],
+      paymentInformation: {
+        transactionDate: "2026-08-17T12:30:00+00:00",
+        paymentType: 200,
+        currency: {name: "Romanian Leu", code: "RON", symbol: "lei"},
+        totalCostAmount: 10,
+        totalTaxAmount: 1,
+        subtotalAmount: 9,
+        tipAmount: 0,
+      },
+      merchantReference: "00000000-0000-0000-0000-000000000000",
+      items: [],
+      possibleRecipes: [],
+      additionalMetadata: {},
+      receiptType: "",
+      countryRegion: "",
+      taxDetails: [],
+      payments: [],
+      isImportant: false,
+      isSoftDeleted: false,
+      createdAt: "2026-08-17T12:00:00+00:00",
+      createdBy: "22222222-2222-7222-8222-222222222222",
+      lastUpdatedAt: "2026-08-17T12:00:00+00:00",
+      lastUpdatedBy: "22222222-2222-7222-8222-222222222222",
+      numberOfUpdates: 0,
+    },
     {status: 202},
   );
 }
@@ -87,7 +114,7 @@ describe("patchInvoice", () => {
     // Arrange
     installAnalysisFetchHandler((request) =>
       request.url === `${ANALYSIS_API_URL}/rest/v1/invoices/${invoiceId}`
-        ? TestDataBuilder.jsonResponse({id: invoiceId, name: "Updated Invoice", description: ""}, {status: 202})
+        ? Response.json({id: invoiceId, name: "Updated Invoice", description: ""}, {status: 202})
         : new Response("Unexpected request", {status: 500}),
     );
 

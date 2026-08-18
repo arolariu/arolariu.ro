@@ -1,195 +1,134 @@
 /**
- * @fileoverview Deterministic test builders for invoice domain entities.
+ * @fileoverview Deterministic builders for canonical invoice-domain contracts.
  * @module tests/helpers/builders/domain
- *
- * @remarks
- * Provides deterministic, test-only builders for creating invoice domain entities.
- * These builders are designed for predictable test scenarios with stable default values.
- *
- * **Design Principles:**
- * - All builders accept partial overrides for flexibility
- * - Default values are deterministic (no random data, stable dates)
- * - Types mirror production domain types exactly
- * - No runtime dependencies (pure TypeScript helpers)
- * - Builders are test-only and must not be imported in production code
- *
- * **Builder Coverage:**
- * - Core entities: Product, Merchant, Invoice, Scan
- * - Value objects: InvoiceScan, Recipe, PaymentInformation
- * - DTOs: CreateInvoiceDtoPayload, CreateInvoiceScanDtoPayload
- * - Enums: InvoiceAnalysisOptions
- *
- * **Usage Context:**
- * - Import builders in `.test.ts` files for invoice/merchant/product/scan tests
- * - Use for unit tests, integration tests, and mock data generation
- * - Complement existing `invoiceDomain.ts` helpers (backward compatible)
- *
- * @example
- * ```typescript
- * import {TestDataBuilder} from '@/tests/helpers';
- *
- * describe('Invoice processing', () => {
- *   it('calculates total correctly', () => {
- *     const product1 = buildProduct({price: 10, quantity: 2});
- *     const product2 = buildProduct({price: 5, quantity: 3});
- *     const invoice = buildInvoice({items: [product1, product2]});
- *
- *     expect(calculateTotal(invoice)).toBe(35);
- *   });
- * });
- * ```
  */
 
-import type {
-  ContactInformation,
-  CreateInvoiceDtoPayload,
-  CreateInvoiceScanDtoPayload,
-  Invoice,
-  InvoiceAnalysisOptions,
-  InvoiceScan,
-  Merchant,
-  PaymentInformation,
-  Product,
-  Recipe,
-} from "../../../src/types/invoices";
 import {
-  InvoiceAnalysisOptions as InvoiceAnalysisOptionsValue,
-  InvoiceCategory,
+  AllergenAssessmentStatus,
+  AllergenCode,
+  AllergenEvidenceLevel,
+  AnalysisProfile,
+  ClassificationOrigin,
+  ClassificationSystem,
   InvoiceScanType,
-  MerchantCategory,
   PaymentType,
-  ProductCategory,
-  RecipeComplexity,
+  RecipeDifficulty,
+  type AllergenAssessment,
+  type AllergenEvidence,
+  type AllergenSignal,
+  type AnalyzeInvoiceRequest,
+  type AnalyzeMerchantRequest,
+  type ClassificationSelection,
+  type ContactInformation,
+  type CreateInvoiceDtoPayload,
+  type CreateInvoiceScanDtoPayload,
+  type Invoice,
+  type InvoiceScan,
+  type Merchant,
+  type PaymentInformation,
+  type Product,
+  type RecipeSuggestion,
+  type StandardClassification,
 } from "../../../src/types/invoices";
 import type {Scan} from "../../../src/types/scans";
-import {ScanStatus, ScanType} from "../../../src/types/scans";
+import {ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, ScanStatus, ScanType} from "../../../src/types/scans";
 
-/**
- * Deterministic date constant for test stability.
- *
- * @remarks
- * All builders use this date by default to ensure predictable test outcomes.
- * Set to a fixed point in time (2026-01-01T00:00:00.000Z).
- */
-const TEST_DATE = new Date("2026-01-01T00:00:00.000Z");
+const testDate = new Date("2026-01-01T00:00:00.000Z");
 
-/**
- * Builds a test Product with deterministic defaults.
- *
- * @param overrides - Partial product properties to override defaults
- * @returns A complete Product object suitable for testing
- *
- * @remarks
- * **Default Values:**
- * - name: "Test Product"
- * - category: GROCERIES
- * - quantity: 1
- * - price: 10.00
- * - Full metadata with confidence: 1.0
- *
- * **Use Cases:**
- * - Invoice line items
- * - Product listing tests
- * - Price calculation tests
- *
- * @example
- * ```typescript
- * const product = buildProduct({name: "Milk", price: 5.50, quantity: 2});
- * expect(product.totalPrice).toBe(11.00);
- * expect(product.category).toBe(ProductCategory.GROCERIES);
- * ```
- */
+/** Builds a canonical standard classification suitable for response tests. */
+export function buildClassification(overrides: Partial<StandardClassification> = {}): StandardClassification {
+  const system = overrides.system ?? ClassificationSystem.EcoicopV2;
+  const code = overrides.code ?? "01.1";
+  const officialLabel = overrides.officialLabel ?? "Food";
+  const origin = overrides.origin ?? ClassificationOrigin.Analysis;
+  return {
+    system,
+    version: "2026.08",
+    code,
+    officialLabel,
+    hierarchy: [{level: "group", code, officialLabel}],
+    origin,
+    confidence: origin === ClassificationOrigin.Manual ? null : 0.9,
+    evidence: [],
+    ...overrides,
+  };
+}
+
+/** Builds an identity-free product response DTO. */
 export function buildProduct(overrides: Partial<Product> = {}): Product {
   const quantity = overrides.quantity ?? 1;
   const price = overrides.price ?? 10;
-  const totalPrice = overrides.totalPrice ?? price * quantity;
-
   return {
     name: "Test Product",
-    category: ProductCategory.GROCERIES,
+    classification: null,
     quantity,
     quantityUnit: "pcs",
     productCode: "",
     price,
-    totalPrice,
-    detectedAllergens: [],
-    metadata: {
-      isEdited: false,
-      isComplete: true,
-      isSoftDeleted: false,
-      confidence: 1.0,
-    },
+    totalPrice: price * quantity,
+    allergenAssessment: null,
+    metadata: {isEdited: false, isComplete: true, isSoftDeleted: false, confidence: 1},
+    ...overrides,
+  };
+}
+
+/** Builds one evidence fragment for a structured allergen assessment. */
+export function buildAllergenEvidence(overrides: Partial<AllergenEvidence> = {}): AllergenEvidence {
+  return {source: "ingredients", value: "Contains milk", ...overrides};
+}
+
+/** Builds one EU-14 allergen signal with reviewable evidence. */
+export function buildAllergenSignal(overrides: Partial<AllergenSignal> = {}): AllergenSignal {
+  return {
+    code: AllergenCode.Milk,
+    evidenceLevel: AllergenEvidenceLevel.Explicit,
+    confidence: 0.9,
+    evidence: [buildAllergenEvidence()],
     ...overrides,
   };
 }
 
 /**
- * Builds test ContactInformation with deterministic defaults.
- *
- * @param overrides - Partial contact properties to override defaults
- * @returns A complete ContactInformation object
- *
- * @remarks
- * Helper for building Merchant address information.
- *
- * @example
- * ```typescript
- * const contact = buildContactInformation({fullName: "Lidl Romania"});
- * expect(contact.address).toBe("123 Test Street, Test City");
- * ```
+ * Builds a complete allergen assessment without turning no-signals into a
+ * food-safety claim.
  */
-function buildContactInformation(overrides: Partial<ContactInformation> = {}): ContactInformation {
+export function buildAllergenAssessment(overrides: Partial<AllergenAssessment> = {}): AllergenAssessment {
+  const status = overrides.status ?? AllergenAssessmentStatus.NoSignals;
+  return {
+    status,
+    signals: status === AllergenAssessmentStatus.Detected ? [buildAllergenSignal()] : [],
+    ...overrides,
+  };
+}
+
+/** Builds public merchant contact information. */
+export function buildContactInformation(overrides: Partial<ContactInformation> = {}): ContactInformation {
   return {
     fullName: "Test Merchant",
-    address: "123 Test Street, Test City",
-    phoneNumber: "+40 21 123 4567",
-    emailAddress: "contact@testmerchant.test",
-    website: "https://testmerchant.test",
+    address: "123 Test Street",
+    phoneNumber: "+40 700 000 000",
+    emailAddress: "merchant@example.test",
+    website: "https://merchant.example.test",
     ...overrides,
   };
 }
 
-/**
- * Builds a test Merchant with deterministic defaults.
- *
- * @param overrides - Partial merchant properties to override defaults
- * @returns A complete Merchant object suitable for testing
- *
- * @remarks
- * **Default Values:**
- * - id: "merchant-test-001"
- * - name: "Test Merchant"
- * - category: SUPERMARKET
- * - Complete contact information
- * - Full IAuditable fields
- *
- * **Use Cases:**
- * - Invoice merchant references
- * - Merchant management tests
- * - Filter/search tests
- *
- * @example
- * ```typescript
- * const merchant = buildMerchant({
- *   id: "merchant-1",
- *   name: "Local Shop",
- *   category: MerchantCategory.LOCAL_SHOP
- * });
- * expect(merchant.category).toBe(MerchantCategory.LOCAL_SHOP);
- * ```
- */
+/** Builds a complete merchant response DTO. */
 export function buildMerchant(overrides: Partial<Merchant> = {}): Merchant {
   return {
-    id: "merchant-test-001",
+    id: "11111111-1111-7111-8111-111111111111",
     name: "Test Merchant",
     description: "Test merchant description",
-    category: MerchantCategory.SUPERMARKET,
+    classification: null,
     address: buildContactInformation(),
-    parentCompanyId: "",
-    createdAt: TEST_DATE,
-    createdBy: "test-user",
-    lastUpdatedAt: TEST_DATE,
-    lastUpdatedBy: "test-user",
+    parentCompanyId: "00000000-0000-0000-0000-000000000000",
+    referencedInvoiceCount: 0,
+    referencedInvoiceIds: [],
+    additionalMetadata: {},
+    createdAt: testDate,
+    createdBy: "22222222-2222-7222-8222-222222222222",
+    lastUpdatedAt: testDate,
+    lastUpdatedBy: "22222222-2222-7222-8222-222222222222",
     numberOfUpdates: 0,
     isImportant: false,
     isSoftDeleted: false,
@@ -197,69 +136,76 @@ export function buildMerchant(overrides: Partial<Merchant> = {}): Merchant {
   };
 }
 
-/**
- * Builds a test InvoiceScan with deterministic defaults.
- *
- * @param overrides - Partial scan properties to override defaults
- * @returns A complete InvoiceScan object
- *
- * @remarks
- * **Default Values:**
- * - scanType: JPEG
- * - location: "https://storage.test/invoice-scan.jpg"
- * - Empty metadata
- *
- * **Use Cases:**
- * - Invoice scan attachments
- * - OCR processing tests
- * - File upload tests
- *
- * @example
- * ```typescript
- * const scan = buildInvoiceScan({
- *   location: "https://cdn.test/receipt.pdf",
- *   scanType: InvoiceScanType.PDF
- * });
- * expect(scan.scanType).toBe(InvoiceScanType.PDF);
- * ```
- */
+/** Builds a public invoice scan response DTO. */
 export function buildInvoiceScan(overrides: Partial<InvoiceScan> = {}): InvoiceScan {
+  return {type: InvoiceScanType.JPEG, location: "https://storage.example.test/receipt.jpg", ...overrides};
+}
+
+/** Builds a structured recipe suggestion. */
+export function buildRecipe(overrides: Partial<RecipeSuggestion> = {}): RecipeSuggestion {
   return {
-    scanType: InvoiceScanType.JPEG,
-    location: "https://storage.test/invoice-scan.jpg",
-    metadata: {},
+    name: "Test recipe",
+    description: "A deterministic recipe suggestion.",
+    servings: 2,
+    preparationMinutes: 10,
+    cookingMinutes: 15,
+    totalMinutes: 25,
+    difficulty: RecipeDifficulty.Easy,
+    purchasedIngredients: [],
+    assumedPantryStaples: [],
+    missingOptionalIngredients: [],
+    steps: [],
+    allergenWarnings: [],
     ...overrides,
   };
 }
 
-/**
- * Builds test PaymentInformation with deterministic defaults.
- *
- * @param overrides - Partial payment properties to override defaults
- * @returns A complete PaymentInformation object
- *
- * @remarks
- * **Default Values:**
- * - transactionDate: TEST_DATE (2026-01-01)
- * - paymentType: Card
- * - currency: RON (Romanian Leu)
- * - totalCostAmount: 10.00
- * - totalTaxAmount: 2.00
- *
- * @example
- * ```typescript
- * const payment = buildPaymentInformation({
- *   totalCostAmount: 100,
- *   paymentType: PaymentType.Cash
- * });
- * expect(payment.currency.code).toBe("RON");
- * ```
- */
-function buildPaymentInformation(overrides: Partial<PaymentInformation> = {}): PaymentInformation {
+/** Builds a valid invoice analysis enqueue request. */
+export function buildInvoiceAnalysisRequest(overrides: Partial<AnalyzeInvoiceRequest> = {}): AnalyzeInvoiceRequest {
+  return {profile: AnalysisProfile.Balanced, overrides: {}, ...overrides};
+}
+
+/** Builds a valid merchant analysis enqueue request. */
+export function buildMerchantAnalysisRequest(overrides: Partial<AnalyzeMerchantRequest> = {}): AnalyzeMerchantRequest {
+  return {profile: AnalysisProfile.Balanced, overrides: {}, ...overrides};
+}
+
+/** Builds a complete public invoice response DTO. */
+export function buildInvoice(overrides: Partial<Invoice> = {}): Invoice {
   return {
-    transactionDate: TEST_DATE,
+    id: "33333333-3333-7333-8333-333333333333",
+    userIdentifier: "22222222-2222-7222-8222-222222222222",
+    sharedWith: [],
+    name: "Test Invoice",
+    description: "Test invoice description",
+    classification: null,
+    scans: [buildInvoiceScan()],
+    paymentInformation: buildPaymentInformation(),
+    merchantReference: "00000000-0000-0000-0000-000000000000",
+    items: [],
+    possibleRecipes: [],
+    additionalMetadata: {},
+    receiptType: "",
+    countryRegion: "",
+    taxDetails: [],
+    payments: [],
+    createdAt: testDate,
+    createdBy: "22222222-2222-7222-8222-222222222222",
+    lastUpdatedAt: testDate,
+    lastUpdatedBy: "22222222-2222-7222-8222-222222222222",
+    numberOfUpdates: 0,
+    isImportant: false,
+    isSoftDeleted: false,
+    ...overrides,
+  };
+}
+
+/** Builds valid payment information. */
+export function buildPaymentInformation(overrides: Partial<PaymentInformation> = {}): PaymentInformation {
+  return {
+    transactionDate: testDate,
     paymentType: PaymentType.Card,
-    currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+    currency: {name: "Romanian Leu", code: "RON", symbol: "lei"},
     totalCostAmount: 10,
     totalTaxAmount: 2,
     subtotalAmount: 8,
@@ -268,265 +214,47 @@ function buildPaymentInformation(overrides: Partial<PaymentInformation> = {}): P
   };
 }
 
-/**
- * Builds a test Recipe with deterministic defaults.
- *
- * @param overrides - Partial recipe properties to override defaults
- * @returns A complete Recipe object
- *
- * @remarks
- * **Default Values:**
- * - name: "Test Recipe"
- * - complexity: Easy
- * - ingredients: ["ingredient1", "ingredient2"]
- * - Times: prep 10 min, cooking 15 min, total 25 min
- *
- * **Use Cases:**
- * - AI-generated recipe suggestions
- * - Recipe filtering tests
- * - Meal planning tests
- *
- * @example
- * ```typescript
- * const recipe = buildRecipe({
- *   name: "Pancakes",
- *   ingredients: ["milk", "eggs", "flour"]
- * });
- * expect(recipe.complexity).toBe(RecipeComplexity.Easy);
- * expect(recipe.approximateTotalDuration).toBe(25);
- * ```
- */
-export function buildRecipe(overrides: Partial<Recipe> = {}): Recipe {
-  return {
-    name: "Test Recipe",
-    description: "A simple test recipe",
-    approximateTotalDuration: 25,
-    complexity: RecipeComplexity.Easy,
-    ingredients: ["ingredient1", "ingredient2"],
-    instructions: "1. Mix ingredients. 2. Cook. 3. Serve.",
-    preparationTime: 10,
-    cookingTime: 15,
-    referenceForMoreDetails: "https://recipes.test/test-recipe",
-    ...overrides,
-  };
-}
-
-/**
- * Builds a test Invoice with deterministic defaults.
- *
- * @param overrides - Partial invoice properties to override defaults
- * @returns A complete Invoice object suitable for testing
- *
- * @remarks
- * **Default Values:**
- * - id: "invoice-test-001"
- * - name: "Test Invoice"
- * - category: GROCERY
- * - Single product (Test Product, 10.00 RON)
- * - Card payment
- * - Single scan
- * - Full IAuditable fields
- * - Empty possibleRecipes
- *
- * **Use Cases:**
- * - Invoice processing tests
- * - API endpoint tests
- * - Business logic validation
- *
- * @example
- * ```typescript
- * const invoice = buildInvoice({
- *   id: "invoice-1",
- *   merchantReference: "merchant-1",
- *   items: [buildProduct({name: "Milk", price: 5})],
- *   scans: [buildInvoiceScan()],
- *   possibleRecipes: [buildRecipe()]
- * });
- * expect(invoice.items).toHaveLength(1);
- * expect(invoice.paymentInformation.totalCostAmount).toBe(10);
- * ```
- */
-export function buildInvoice(overrides: Partial<Invoice> = {}): Invoice {
-  return {
-    id: "invoice-test-001",
-    name: "Test Invoice",
-    description: "Test invoice description",
-    userIdentifier: "test-user",
-    sharedWith: [],
-    category: InvoiceCategory.GROCERY,
-    scans: [buildInvoiceScan()],
-    paymentInformation: buildPaymentInformation(),
-    merchantReference: "merchant-test-001",
-    items: [buildProduct()],
-    possibleRecipes: [],
-    additionalMetadata: {},
-    receiptType: "Itemized",
-    countryRegion: "RO",
-    taxDetails: [],
-    payments: [],
-    createdAt: TEST_DATE,
-    createdBy: "test-user",
-    lastUpdatedAt: TEST_DATE,
-    lastUpdatedBy: "test-user",
-    numberOfUpdates: 0,
-    isImportant: false,
-    isSoftDeleted: false,
-    ...overrides,
-  };
-}
-
-/**
- * Builds a CreateInvoiceScanDtoPayload with deterministic defaults.
- *
- * @param overrides - Partial payload properties to override defaults
- * @returns A complete CreateInvoiceScanDtoPayload
- *
- * @remarks
- * **Default Values:**
- * - type: JPEG
- * - location: "https://storage.test/invoice-scan.jpg"
- * - Empty additionalMetadata
- *
- * **Use Cases:**
- * - API payload tests
- * - Server action tests
- * - Scan upload tests
- *
- * @example
- * ```typescript
- * const payload = buildCreateInvoiceScanPayload({
- *   type: InvoiceScanType.PDF,
- *   location: "https://cdn.test/scan.pdf"
- * });
- * expect(payload.type).toBe(InvoiceScanType.PDF);
- * ```
- */
+/** Builds the legacy create scan input shape consumed by the current create action. */
 export function buildCreateInvoiceScanPayload(overrides: Partial<CreateInvoiceScanDtoPayload> = {}): CreateInvoiceScanDtoPayload {
-  return {
-    type: InvoiceScanType.JPEG,
-    location: "https://storage.test/invoice-scan.jpg",
-    additionalMetadata: {},
-    ...overrides,
-  };
+  return {scanType: InvoiceScanType.JPEG, location: "https://storage.example.test/receipt.jpg", metadata: {}, ...overrides};
 }
 
-/**
- * Builds a CreateInvoiceDtoPayload with deterministic defaults.
- *
- * @param overrides - Partial payload properties to override defaults
- * @returns A complete CreateInvoiceDtoPayload
- *
- * @remarks
- * **Default Values:**
- * - userIdentifier: "test-user"
- * - initialScan: Default InvoiceScan
- * - metadata: Empty object
- *
- * **Use Cases:**
- * - API create invoice tests
- * - Server action tests
- * - Invoice creation validation
- *
- * @example
- * ```typescript
- * const payload = buildCreateInvoicePayload({
- *   userIdentifier: "user-123",
- *   metadata: {isImportant: "true"}
- * });
- * expect(payload.initialScan.location).toBe("https://storage.test/invoice-scan.jpg");
- * ```
- */
+/** Builds the current create invoice input shape. */
 export function buildCreateInvoicePayload(overrides: Partial<CreateInvoiceDtoPayload> = {}): CreateInvoiceDtoPayload {
   return {
-    userIdentifier: "test-user",
-    initialScan: buildInvoiceScan(),
-    metadata: {
-      isImportant: "false",
-      requiresAnalysis: "false",
-    },
+    userIdentifier: "22222222-2222-7222-8222-222222222222",
+    initialScan: buildCreateInvoiceScanPayload(),
+    metadata: {},
     ...overrides,
   };
 }
 
-/**
- * Returns a deterministic InvoiceAnalysisOptions value for testing.
- *
- * @param value - Optional specific analysis option value
- * @returns InvoiceAnalysisOptions value (defaults to CompleteAnalysis)
- *
- * @remarks
- * **Default:** CompleteAnalysis (1)
- *
- * **Use Cases:**
- * - AI analysis tests
- * - Processing configuration tests
- * - Option validation tests
- *
- * @example
- * ```typescript
- * const options = buildInvoiceAnalysisOptions();
- * expect(options).toBe(InvoiceAnalysisOptions.CompleteAnalysis);
- *
- * const noAnalysis = buildInvoiceAnalysisOptions(InvoiceAnalysisOptions.NoAnalysis);
- * expect(noAnalysis).toBe(0);
- * ```
- */
-export function buildInvoiceAnalysisOptions(value?: InvoiceAnalysisOptions): InvoiceAnalysisOptions {
-  return value ?? InvoiceAnalysisOptionsValue.CompleteAnalysis;
-}
-
-/**
- * Builds a standalone Scan with deterministic defaults.
- *
- * @param overrides - Partial scan properties to override defaults
- * @returns A complete Scan object
- *
- * @remarks
- * **Default Values:**
- * - id: "scan-test-001"
- * - userIdentifier: "test-user"
- * - name: "test-scan.jpg"
- * - scanType: JPEG
- * - status: READY
- * - uploadedAt: TEST_DATE
- * - Canonical typed metadata with required fields
- *
- * **Use Cases:**
- * - Scan management tests
- * - Upload workflow tests
- * - Scan list/filter tests
- *
- * @example
- * ```typescript
- * const scan = buildScan({
- *   id: "scan-1",
- *   metadata: {collectionName: "custom-collection"}
- * });
- * expect(scan.id).toBe("scan-1");
- * expect(scan.status).toBe(ScanStatus.READY);
- * expect(scan.metadata.collectionName).toBe("custom-collection");
- * ```
- */
+/** Builds a scan-store record for upload and invoice-create tests. */
 export function buildScan(overrides: Partial<Scan> = {}): Scan {
   return {
-    id: "scan-test-001",
-    userIdentifier: "test-user",
-    name: "test-scan.jpg",
-    blobUrl: "https://storage.test/scans/test-user/test-scan.jpg",
-    mimeType: "image/jpeg",
-    sizeInBytes: 1024,
+    id: "scan-001",
+    userIdentifier: "22222222-2222-7222-8222-222222222222",
+    name: "receipt.jpg",
     scanType: ScanType.JPEG,
-    uploadedAt: TEST_DATE,
     status: ScanStatus.READY,
+    blobUrl: "https://storage.example.test/receipt.jpg",
+    mimeType: "image/jpeg",
+    sizeInBytes: 100,
+    uploadedAt: testDate,
     metadata: {
-      scanId: "scan-test-001",
-      ownerId: "test-user",
-      documentKind: "receipt",
-      documentRole: "primary",
-      status: "ready",
-      uploadedAt: TEST_DATE,
-      uploadedBy: "test-user",
+      scanId: "scan-001",
+      ownerId: "22222222-2222-7222-8222-222222222222",
+      documentKind: ScanDocumentKind.RECEIPT,
+      documentRole: ScanDocumentRole.PRIMARY,
+      status: ScanMetadataStatus.READY,
+      uploadedAt: testDate,
+      uploadedBy: "22222222-2222-7222-8222-222222222222",
     },
     ...overrides,
   };
+}
+
+/** Builds a mutation-safe classification selection. */
+export function buildClassificationSelection(overrides: Partial<ClassificationSelection> = {}): ClassificationSelection {
+  return {system: ClassificationSystem.EcoicopV2, code: "01.1", ...overrides};
 }

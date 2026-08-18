@@ -815,6 +815,30 @@
           "title": "Cel mai ieftin în apropiere"
         },
         "title": "Analiza cheltuielilor vehiculului"
+      },
+      "analysisResults": {
+        "unclassified": "Neclasificat",
+        "classification": {
+          "analysisOrigin": "Rezultat al analizei",
+          "manualOrigin": "Selecție manuală",
+          "confidence": "Încredere orientativă: {confidence}",
+          "evidence": "Dovezi disponibile"
+        },
+        "allergens": {
+          "detected": "Au fost detectate semnale",
+          "noSignals": "Nu există semnale în dovezile disponibile",
+          "insufficientData": "Date insuficiente",
+          "explicit": "Dovezi explicite",
+          "inferred": "Dovezi deduse",
+          "precautionary": "Dovezi de precauție"
+        },
+        "recipes": {
+          "purchasedIngredients": "Ingrediente cumpărate",
+          "pantryStaples": "Produse de bază presupuse în cămară",
+          "missingOptionalIngredients": "Ingrediente opționale lipsă",
+          "steps": "Pași de preparare",
+          "warnings": "Avertismente despre alergeni"
+        }
       }
     }
   },

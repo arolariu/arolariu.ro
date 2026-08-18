@@ -38,7 +38,7 @@
  * @see RFC 1005 - State management patterns (context architecture)
  */
 
-import type {Invoice, InvoiceScan, Merchant, Product, Recipe} from "@/types/invoices";
+import type {Invoice, InvoiceScan, Merchant, Product, RecipeSuggestion} from "@/types/invoices";
 import type {CachedScan} from "@/types/scans";
 import {createContext, use, useMemo, useState, type ReactNode} from "react";
 
@@ -153,10 +153,10 @@ type DialogPayloads = {
   EDIT_INVOICE__MERCHANT: Merchant;
   EDIT_INVOICE__MERCHANT_INVOICES: Merchant;
   EDIT_INVOICE__RECIPE_ADD: undefined;
-  EDIT_INVOICE__RECIPE_UPDATE: {recipe: Recipe};
-  EDIT_INVOICE__RECIPE_DELETE: {recipe: Recipe};
-  EDIT_INVOICE__RECIPE_PREVIEW: {recipe: Recipe};
-  EDIT_INVOICE__RECIPE_SHARE: {recipe: Recipe};
+  EDIT_INVOICE__RECIPE_UPDATE: {recipe: RecipeSuggestion};
+  EDIT_INVOICE__RECIPE_DELETE: {recipe: RecipeSuggestion};
+  EDIT_INVOICE__RECIPE_PREVIEW: {recipe: RecipeSuggestion};
+  EDIT_INVOICE__RECIPE_SHARE: {recipe: RecipeSuggestion};
   EDIT_INVOICE__METADATA: Record<string, string>;
   EDIT_INVOICE__ITEMS: Invoice;
   EDIT_INVOICE__ALLERGENS: {invoice: Invoice; product: Product; productIndex: number};

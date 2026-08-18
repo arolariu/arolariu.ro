@@ -13,7 +13,7 @@
  */
 
 import {useScansStore} from "@/stores";
-import {AnalysisProfile, type ClassificationSelection, InvoiceCategory, PaymentType} from "@/types/invoices";
+import {AnalysisProfile, type ClassificationSelection, PaymentType} from "@/types/invoices";
 import {type CachedScan, ScanMetadataKey, ScanMetadataStatus, ScanStatus} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
@@ -29,11 +29,27 @@ import {scanTypeToInvoiceScanType} from "../../_utils/mimeTypeUtilities";
 type WizardStep = "select-scans" | "details" | "review";
 
 /**
+ * Selects analysis overrides after the manual classification PATCH outcome.
+ *
+ * @remarks
+ * Invoice classification remains enabled when the manual PATCH fails, so a
+ * transient network error cannot silently leave the newly created invoice
+ * without either user-selected or analysis-derived classification.
+ *
+ * @param manualClassificationApplied - Whether the manual classification PATCH succeeded.
+ * @returns Exact enqueue overrides for the analysis request.
+ */
+export function getCreateAnalysisOverrides(
+  manualClassificationApplied: boolean,
+): Readonly<{}> | Readonly<{invoiceClassification: Readonly<{enabled: false}>}> {
+  return manualClassificationApplied ? {invoiceClassification: {enabled: false}} : {};
+}
+
+/**
  * Invoice details form data.
  */
 interface InvoiceDetails {
   name: string;
-  category: InvoiceCategory;
   classification: ClassificationSelection | null;
   paymentType: PaymentType;
   transactionDate: Date;
@@ -61,7 +77,6 @@ interface CreateInvoiceContextValue {
   // Invoice details
   invoiceDetails: InvoiceDetails;
   setName: (name: string) => void;
-  setCategory: (category: InvoiceCategory) => void;
   setClassification: (classification: ClassificationSelection | null) => void;
   setPaymentType: (type: PaymentType) => void;
   setTransactionDate: (date: Date) => void;
@@ -106,7 +121,6 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
   // Invoice details state
   const [invoiceDetails, setInvoiceDetails] = useState<InvoiceDetails>(() => ({
     name: "",
-    category: InvoiceCategory.NOT_DEFINED,
     classification: null,
     paymentType: PaymentType.Unknown,
     transactionDate: new Date(),
@@ -172,10 +186,6 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
     setInvoiceDetails((prev) => ({...prev, name}));
   }, []);
 
-  const setCategory = useCallback((category: InvoiceCategory) => {
-    setInvoiceDetails((prev) => ({...prev, category}));
-  }, []);
-
   const setClassification = useCallback((classification: ClassificationSelection | null) => {
     setInvoiceDetails((prev) => ({...prev, classification}));
   }, []);
@@ -207,7 +217,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       const scanType = scanTypeToInvoiceScanType(firstScan.scanType);
 
       // Create invoice with first scan and ALL invoice details in metadata
-      // Note: All form fields (name, category, paymentType, transactionDate, description)
+      // Note: All form fields (name, paymentType, transactionDate, description)
       // are included in metadata. Backend should extract these to populate top-level Invoice fields.
       const result = await createInvoice({
         initialScan: {
@@ -219,7 +229,6 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
           isImportant: "false",
           requiresAnalysis: "true",
           name: invoiceDetails.name,
-          category: invoiceDetails.category.toString(),
           paymentType: invoiceDetails.paymentType.toString(),
           transactionDate: invoiceDetails.transactionDate.toISOString(),
           description: invoiceDetails.description,
@@ -232,6 +241,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       }
       const invoice = result.data;
 
+      let manualClassificationApplied = false;
       if (invoiceDetails.classification !== null) {
         const classificationResult = await patchInvoice({
           invoiceId: invoice.id,
@@ -239,6 +249,8 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
         });
         if (!classificationResult.success) {
           toast.error(t((m) => m.forms.invoices.createInvoice.notifications.classificationNotSaved));
+        } else {
+          manualClassificationApplied = true;
         }
       }
 
@@ -273,7 +285,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
         invoiceIdentifier: invoice.id,
         request: {
           profile: AnalysisProfile.Comprehensive,
-          overrides: invoiceDetails.classification === null ? {} : {invoiceClassification: {enabled: false}},
+          overrides: getCreateAnalysisOverrides(manualClassificationApplied),
         },
       }).catch(() => null);
 
@@ -305,7 +317,6 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       hasScans: readyScans.length > 0,
       invoiceDetails,
       setName,
-      setCategory,
       setClassification,
       setPaymentType,
       setTransactionDate,
@@ -326,7 +337,6 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       readyScans.length,
       invoiceDetails,
       setName,
-      setCategory,
       setClassification,
       setPaymentType,
       setTransactionDate,

@@ -154,7 +154,13 @@ export default function RenderEditInvoiceScreen(props: Readonly<Props>): React.J
                   <TabsContent
                     value='metadata'
                     className={styles["tabContent"]}>
-                    <MetadataTab metadata={invoice.additionalMetadata} />
+                    <MetadataTab
+                      metadata={Object.fromEntries(
+                        Object.entries(invoice.additionalMetadata).flatMap(([key, value]) => {
+                          return value === null ? [] : [[key, value] as const];
+                        }),
+                      )}
+                    />
                   </TabsContent>
                 </Tabs>
               </motion.div>

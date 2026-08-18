@@ -42,6 +42,7 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Merchant} from "@/types/invoices";
+import {parseMerchantTransport} from "@/types/invoices/transport";
 
 /**
  * Input parameters for the fetchMerchants server action.
@@ -212,8 +213,17 @@ export async function fetchMerchants(_params?: ServerActionInputType): ServerAct
 
       if (response.ok) {
         logWithTrace("info", "Successfully fetched merchants", {}, "server");
-        const data = (await response.json()) as ReadonlyArray<Merchant>;
-        return {success: true, data} as const;
+        const responseData: unknown = await response.json();
+        if (!Array.isArray(responseData)) {
+          return createErrorResult(new Error("Invalid merchant response"), "The merchant response was invalid. Please try again.");
+        }
+
+        const merchants = responseData.map(parseMerchantTransport);
+        if (merchants.some((merchant) => merchant === null)) {
+          return createErrorResult(new Error("Invalid merchant response"), "The merchant response was invalid. Please try again.");
+        }
+
+        return {success: true, data: merchants.filter((merchant): merchant is Merchant => merchant !== null)} as const;
       }
 
       addSpanEvent("bff.request.fetch-merchants.error");

@@ -31,7 +31,8 @@
 import {formatAmount, formatDate} from "@/lib/utils.generic";
 import type {Invoice, Merchant} from "@/types/invoices";
 import {Document, Page, StyleSheet, Text, View} from "@react-pdf/renderer";
-import {getInvoiceCategoryLabel, getPaymentTypeLabel, getProductCategoryLabel} from "../../../../_utils/labelUtilities";
+import {getAllergenCodeLabel, getClassificationSummary} from "../../../../_utils/classificationUtilities";
+import {getPaymentTypeLabel} from "../../../../_utils/labelUtilities";
 
 /**
  * PDF stylesheet with professional design.
@@ -326,8 +327,8 @@ export function InvoicePDF({invoice, merchant}: Readonly<InvoicePDFProps>): Reac
           ) : null}
 
           <View style={styles.infoRow}>
-            <Text style={styles.label}>Category:</Text>
-            <Text style={styles.value}>{getInvoiceCategoryLabel(invoice.category)}</Text>
+            <Text style={styles.label}>Classification:</Text>
+            <Text style={styles.value}>{getClassificationSummary(invoice.classification)}</Text>
           </View>
 
           <View style={styles.infoRow}>
@@ -448,7 +449,7 @@ export function InvoicePDF({invoice, merchant}: Readonly<InvoicePDFProps>): Reac
             <View style={styles.tableHeader}>
               <Text style={[styles.tableCell, styles.tableCellNumber]}>#</Text>
               <Text style={[styles.tableCell, styles.tableCellProduct]}>Product Name</Text>
-              <Text style={[styles.tableCell, styles.tableCellCategory]}>Category</Text>
+              <Text style={[styles.tableCell, styles.tableCellCategory]}>Classification</Text>
               <Text style={[styles.tableCell, styles.tableCellQty]}>Qty</Text>
               <Text style={[styles.tableCell, styles.tableCellUnit]}>Unit</Text>
               <Text style={[styles.tableCell, styles.tableCellPrice]}>Unit Price</Text>
@@ -464,13 +465,13 @@ export function InvoicePDF({invoice, merchant}: Readonly<InvoicePDFProps>): Reac
                 <Text style={[styles.tableCell, styles.tableCellNumber]}>{index + 1}</Text>
                 <View style={[styles.tableCell, styles.tableCellProduct]}>
                   <Text style={styles.productName}>{product.name}</Text>
-                  {product.detectedAllergens.length > 0 ? (
-                    <Text style={styles.allergens}>Allergens: {product.detectedAllergens.map((a) => a.name).join(", ")}</Text>
+                  {product.allergenAssessment?.status === "detected" ? (
+                    <Text style={styles.allergens}>
+                      Signals: {product.allergenAssessment.signals.map((signal) => getAllergenCodeLabel(signal.code)).join(", ")}
+                    </Text>
                   ) : null}
                 </View>
-                <Text style={[styles.tableCell, styles.tableCellCategory]}>
-                  {getProductCategoryLabel(product.category, {notDefinedLabel: "Not Defined", unknownLabel: "Not Defined"})}
-                </Text>
+                <Text style={[styles.tableCell, styles.tableCellCategory]}>{getClassificationSummary(product.classification)}</Text>
                 <Text style={[styles.tableCell, styles.tableCellQty]}>{product.quantity}</Text>
                 <Text style={[styles.tableCell, styles.tableCellUnit]}>{product.quantityUnit || "pcs"}</Text>
                 <Text style={[styles.tableCell, styles.tableCellPrice]}>{formatCurrencyValue(product.price)}</Text>

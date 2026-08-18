@@ -8,7 +8,7 @@
  * Provides UI for changing the GS1 GPC classification of multiple products at once.
  */
 
-import {ClassificationSystem, type ClassificationSelection} from "@/types/invoices";
+import {ClassificationSystem, type ClassificationSelection, type Product, type ProductUpdateSelector} from "@/types/invoices";
 import {Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
@@ -18,6 +18,26 @@ import {updateInvoiceProduct} from "../../../_actions/invoices";
 import {useDialog} from "../../../_contexts/DialogContext";
 import {ClassificationPicker} from "../../../_components/analysis/ClassificationPicker";
 import styles from "./BulkCategoryDialog.module.scss";
+
+/** Builds the deterministic duplicate-safe selector for a persisted product line. */
+function createSelector(invoiceItems: readonly Product[], product: Product): ProductUpdateSelector {
+  const originalProductCode = product.productCode.trim() === "" ? null : product.productCode;
+  const matchingItems = invoiceItems.filter(
+    (item) =>
+      item.name === product.name
+      && item.quantity === product.quantity
+      && item.price === product.price
+      && item.totalPrice === product.totalPrice,
+  );
+  return {
+    originalProductCode,
+    originalName: product.name,
+    originalQuantity: product.quantity,
+    originalUnitPrice: product.price,
+    originalTotalPrice: product.totalPrice,
+    occurrenceOrdinal: originalProductCode === null ? Math.max(matchingItems.indexOf(product), 0) : null,
+  };
+}
 
 /**
  * Dialog for bulk GS1 GPC classification reassignment of products.
@@ -66,7 +86,7 @@ import styles from "./BulkCategoryDialog.module.scss";
  *
  * @see {@link useDialog} - Dialog state management hook
  * @see {@link updateProduct} - Server action for persisting changes
- * @see {@link ProductCategory} - Product category enum
+ * @see {@link StandardClassification} - Canonical product classification
  */
 export default function BulkCategoryDialog(): React.JSX.Element | null {
   const t = useTranslations();
@@ -115,10 +135,14 @@ export default function BulkCategoryDialog(): React.JSX.Element | null {
             const result = await updateInvoiceProduct({
               invoiceId: invoice.id,
               payload: {
-                originalProductName: product.name,
+                selector: createSelector(invoice.items, product),
                 updatedProduct: {
-                  ...product,
+                  name: product.name,
                   classification: selectedClassification,
+                  quantity: product.quantity,
+                  quantityUnit: product.quantityUnit,
+                  productCode: product.productCode,
+                  price: product.price,
                 },
               },
             });

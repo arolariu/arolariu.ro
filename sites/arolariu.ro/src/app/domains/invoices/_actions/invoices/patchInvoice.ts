@@ -1,7 +1,7 @@
 "use server";
 
 /**
- * @fileoverview Strict server action for supported invoice PATCH mutations.
+ * @fileoverview Exact PATCH action for the public invoice contract.
  * @module app/domains/invoices/_actions/invoices/patchInvoice
  */
 
@@ -9,64 +9,52 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "@/lib/utils.server";
-import {
-  InvoiceCategory,
-  InvoiceScanType,
-  PaymentType,
-  ProductCategory,
-  RecipeComplexity,
-  isClassificationSelection,
-  isStandardClassification,
-  type ClassificationSelection,
-  type Invoice,
-  type PaymentInformation,
-  type Product,
-} from "@/types/invoices";
+import {isClassificationSelection, type ClassificationSelection, type Invoice, type PaymentInformation} from "@/types/invoices";
+import {parseInvoiceTransport} from "@/types/invoices/transport";
 import {isStrictRfc3339Timestamp} from "@/types/invoices/transportValidation";
 import {revalidatePath} from "next/cache";
 
 type JsonPrimitive = boolean | number | string | null;
-
 interface JsonObject {
   readonly [key: string]: JsonValue;
 }
+type JsonValue = JsonPrimitive | JsonObject | readonly JsonValue[];
 
-type JsonValue = JsonPrimitive | readonly JsonValue[] | JsonObject;
-
-type PatchPaymentInformation = Omit<PaymentInformation, "transactionDate"> & Readonly<{transactionDate: Date | string}>;
-
-type PatchInvoicePayload = Readonly<{
+/** Exact client-editable PATCH fields accepted by `PatchInvoiceRequestDto`. */
+export interface PatchInvoicePayload {
+  /** New invoice name. */
   readonly name?: string;
+  /** New invoice description. */
   readonly description?: string;
   /**
-   * A manual ECOICOP selection. Null is excluded because the backend treats it
-   * as no change rather than a clear mutation.
+   * A changed manual ECOICOP selection.
+   *
+   * @remarks
+   * Omit this property to retain persisted classification. The current backend
+   * defines `null` as no change, not a clear operation, so callers must never
+   * represent a clear request as `null`.
    */
   readonly classification?: ClassificationSelection;
-  readonly paymentInformation?: PatchPaymentInformation;
+  /** Replacement payment information. */
+  readonly paymentInformation?: Omit<PaymentInformation, "transactionDate"> & Readonly<{transactionDate: Date | string}>;
+  /** Merchant reference to link. */
   readonly merchantReference?: string;
+  /** Importance flag. */
   readonly isImportant?: boolean;
+  /** Replacement sharing list. */
   readonly sharedWith?: readonly string[];
+  /** Safe scalar or structured metadata values for merge semantics. */
   readonly additionalMetadata?: Readonly<Record<string, JsonValue>>;
-}>;
+}
 
-type ServerActionInputType = Readonly<{
+type PatchInvoiceInput = Readonly<{
   readonly invoiceId: string;
   readonly payload: PatchInvoicePayload;
 }>;
 
-type InvoiceTransportPaymentInformation = Omit<PaymentInformation, "transactionDate"> & Readonly<{transactionDate: string}>;
+type ServerActionOutput = ServerActionResult<Readonly<Invoice>>;
 
-type InvoiceTransport = Omit<Invoice, "createdAt" | "lastUpdatedAt" | "paymentInformation">
-  & Readonly<{
-    readonly createdAt: string;
-    readonly lastUpdatedAt: string;
-    readonly paymentInformation: InvoiceTransportPaymentInformation;
-  }>;
-
-type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
-
-const patchPayloadKeys = [
+const patchKeys = [
   "name",
   "description",
   "classification",
@@ -78,24 +66,11 @@ const patchPayloadKeys = [
 ] as const;
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return false;
-  }
-
-  const prototype = Object.getPrototypeOf(value);
-  return prototype === Object.prototype || prototype === null;
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function hasOnlyKeys(record: Readonly<Record<string, unknown>>, allowedKeys: readonly string[]): boolean {
-  return Reflect.ownKeys(record).every((key) => typeof key === "string" && allowedKeys.includes(key));
-}
-
-function hasRequiredKeys(record: Readonly<Record<string, unknown>>, requiredKeys: readonly string[]): boolean {
-  return requiredKeys.every((key) => Object.hasOwn(record, key));
-}
-
-function hasOptionalValue(record: Readonly<Record<string, unknown>>, key: string, predicate: (value: unknown) => boolean): boolean {
-  return !Object.hasOwn(record, key) || predicate(record[key]);
+function hasOnlyKeys(record: Readonly<Record<string, unknown>>, keys: readonly string[]): boolean {
+  return Object.keys(record).every((key) => keys.includes(key));
 }
 
 function isFiniteNumber(value: unknown): value is number {
@@ -107,52 +82,10 @@ function isJsonValue(value: unknown): value is JsonValue {
     return true;
   }
 
-  if (Array.isArray(value)) {
-    return value.every(isJsonValue);
-  }
-
-  return isRecord(value) && Object.values(value).every(isJsonValue);
+  return Array.isArray(value) ? value.every(isJsonValue) : isRecord(value) && Object.values(value).every(isJsonValue);
 }
 
-function isJsonRecord(value: unknown): value is Readonly<Record<string, JsonValue>> {
-  return isRecord(value) && Object.values(value).every(isJsonValue);
-}
-
-function isValidInputDate(value: unknown): value is Date | string {
-  return (value instanceof Date && !Number.isNaN(value.getTime())) || isStrictRfc3339Timestamp(value);
-}
-
-function isPaymentType(value: unknown): value is PaymentType {
-  return typeof value === "number" && Object.values(PaymentType).some((paymentType) => paymentType === value);
-}
-
-function isInvoiceCategory(value: unknown): value is InvoiceCategory {
-  return typeof value === "number" && Object.values(InvoiceCategory).some((category) => category === value);
-}
-
-function isInvoiceScanType(value: unknown): value is InvoiceScanType {
-  return typeof value === "number" && Object.values(InvoiceScanType).some((scanType) => scanType === value);
-}
-
-function isProductCategory(value: unknown): value is ProductCategory {
-  return typeof value === "number" && Object.values(ProductCategory).some((category) => category === value);
-}
-
-function isRecipeComplexity(value: unknown): value is RecipeComplexity {
-  return typeof value === "number" && Object.values(RecipeComplexity).some((complexity) => complexity === value);
-}
-
-function isCurrency(value: unknown): boolean {
-  return (
-    isRecord(value)
-    && hasOnlyKeys(value, ["name", "code", "symbol"])
-    && typeof value["name"] === "string"
-    && typeof value["code"] === "string"
-    && typeof value["symbol"] === "string"
-  );
-}
-
-function isPaymentInformation(value: unknown, isTransactionDate: (value: unknown) => boolean): boolean {
+function isPaymentInformationInput(value: unknown): boolean {
   return (
     isRecord(value)
     && hasOnlyKeys(value, [
@@ -164,18 +97,13 @@ function isPaymentInformation(value: unknown, isTransactionDate: (value: unknown
       "subtotalAmount",
       "tipAmount",
     ])
-    && hasRequiredKeys(value, [
-      "transactionDate",
-      "paymentType",
-      "currency",
-      "totalCostAmount",
-      "totalTaxAmount",
-      "subtotalAmount",
-      "tipAmount",
-    ])
-    && isTransactionDate(value["transactionDate"])
-    && isPaymentType(value["paymentType"])
-    && isCurrency(value["currency"])
+    && (value["transactionDate"] instanceof Date || isStrictRfc3339Timestamp(value["transactionDate"]))
+    && typeof value["paymentType"] === "number"
+    && isRecord(value["currency"])
+    && hasOnlyKeys(value["currency"], ["name", "code", "symbol"])
+    && typeof value["currency"]["name"] === "string"
+    && typeof value["currency"]["code"] === "string"
+    && typeof value["currency"]["symbol"] === "string"
     && isFiniteNumber(value["totalCostAmount"])
     && isFiniteNumber(value["totalTaxAmount"])
     && isFiniteNumber(value["subtotalAmount"])
@@ -183,321 +111,78 @@ function isPaymentInformation(value: unknown, isTransactionDate: (value: unknown
   );
 }
 
-function isClassificationOrNull(value: unknown): boolean {
-  return value === null || isStandardClassification(value);
-}
-
-function isProduct(value: unknown): value is Product {
+function isPatchInvoiceInput(value: unknown): value is PatchInvoiceInput {
   if (
     !isRecord(value)
-    || !hasRequiredKeys(value, [
-      "name",
-      "category",
-      "quantity",
-      "quantityUnit",
-      "productCode",
-      "price",
-      "totalPrice",
-      "detectedAllergens",
-      "metadata",
-    ])
-    || typeof value["name"] !== "string"
-    || !isProductCategory(value["category"])
-    || !isFiniteNumber(value["quantity"])
-    || typeof value["quantityUnit"] !== "string"
-    || typeof value["productCode"] !== "string"
-    || !isFiniteNumber(value["price"])
-    || !isFiniteNumber(value["totalPrice"])
-    || !Array.isArray(value["detectedAllergens"])
-    || !isRecord(value["metadata"])
+    || !hasOnlyKeys(value, ["invoiceId", "payload"])
+    || typeof value["invoiceId"] !== "string"
+    || !isRecord(value["payload"])
+    || !hasOnlyKeys(value["payload"], patchKeys)
   ) {
     return false;
   }
 
-  if (
-    !value["detectedAllergens"].every(
-      (allergen) =>
-        isRecord(allergen)
-        && hasOnlyKeys(allergen, ["name", "description", "learnMoreAddress"])
-        && typeof allergen["name"] === "string"
-        && typeof allergen["description"] === "string"
-        && typeof allergen["learnMoreAddress"] === "string",
-    )
-  ) {
-    return false;
+  const payload = value["payload"];
+  return (
+    (payload["name"] === undefined || typeof payload["name"] === "string")
+    && (payload["description"] === undefined || typeof payload["description"] === "string")
+    && (payload["classification"] === undefined || isClassificationSelection(payload["classification"]))
+    && (payload["paymentInformation"] === undefined || isPaymentInformationInput(payload["paymentInformation"]))
+    && (payload["merchantReference"] === undefined || typeof payload["merchantReference"] === "string")
+    && (payload["isImportant"] === undefined || typeof payload["isImportant"] === "boolean")
+    && (payload["sharedWith"] === undefined
+      || (Array.isArray(payload["sharedWith"]) && payload["sharedWith"].every((identifier) => typeof identifier === "string")))
+    && (payload["additionalMetadata"] === undefined
+      || (isRecord(payload["additionalMetadata"]) && Object.values(payload["additionalMetadata"]).every(isJsonValue)))
+  );
+}
+
+function serializePayload(payload: PatchInvoicePayload): PatchInvoicePayload {
+  if (payload.paymentInformation === undefined) {
+    return payload;
   }
 
-  const metadata = value["metadata"];
-  return (
-    hasOnlyKeys(metadata, ["isEdited", "isComplete", "isSoftDeleted", "confidence"])
-    && typeof metadata["isEdited"] === "boolean"
-    && typeof metadata["isComplete"] === "boolean"
-    && typeof metadata["isSoftDeleted"] === "boolean"
-    && isFiniteNumber(metadata["confidence"])
-    && (!Object.hasOwn(value, "classification") || isClassificationOrNull(value["classification"]))
-  );
-}
-
-function isInvoiceScan(value: unknown): boolean {
-  return (
-    isRecord(value)
-    && hasOnlyKeys(value, ["scanType", "location", "metadata"])
-    && hasRequiredKeys(value, ["scanType", "location", "metadata"])
-    && isInvoiceScanType(value["scanType"])
-    && typeof value["location"] === "string"
-    && isRecord(value["metadata"])
-    && Object.values(value["metadata"]).every((metadata) => typeof metadata === "string" || typeof metadata === "object")
-  );
-}
-
-function isRecipe(value: unknown): boolean {
-  return (
-    isRecord(value)
-    && hasOnlyKeys(value, [
-      "name",
-      "description",
-      "approximateTotalDuration",
-      "complexity",
-      "ingredients",
-      "instructions",
-      "preparationTime",
-      "cookingTime",
-      "referenceForMoreDetails",
-    ])
-    && hasRequiredKeys(value, [
-      "name",
-      "description",
-      "approximateTotalDuration",
-      "complexity",
-      "ingredients",
-      "instructions",
-      "preparationTime",
-      "cookingTime",
-      "referenceForMoreDetails",
-    ])
-    && typeof value["name"] === "string"
-    && typeof value["description"] === "string"
-    && isFiniteNumber(value["approximateTotalDuration"])
-    && isRecipeComplexity(value["complexity"])
-    && Array.isArray(value["ingredients"])
-    && value["ingredients"].every((ingredient) => typeof ingredient === "string")
-    && typeof value["instructions"] === "string"
-    && isFiniteNumber(value["preparationTime"])
-    && isFiniteNumber(value["cookingTime"])
-    && typeof value["referenceForMoreDetails"] === "string"
-  );
-}
-
-function isTaxDetail(value: unknown): boolean {
-  return (
-    isRecord(value)
-    && hasOnlyKeys(value, ["amount", "rate", "netAmount", "description"])
-    && hasRequiredKeys(value, ["amount", "rate", "netAmount", "description"])
-    && isFiniteNumber(value["amount"])
-    && isFiniteNumber(value["rate"])
-    && isFiniteNumber(value["netAmount"])
-    && typeof value["description"] === "string"
-  );
-}
-
-function isPaymentDetail(value: unknown): boolean {
-  return (
-    isRecord(value)
-    && hasOnlyKeys(value, ["method", "amount"])
-    && hasRequiredKeys(value, ["method", "amount"])
-    && typeof value["method"] === "string"
-    && isFiniteNumber(value["amount"])
-  );
-}
-
-function isPatchInvoicePayload(value: unknown): value is PatchInvoicePayload {
-  return (
-    isRecord(value)
-    && hasOnlyKeys(value, patchPayloadKeys)
-    && hasOptionalValue(value, "name", (entry) => typeof entry === "string")
-    && hasOptionalValue(value, "description", (entry) => typeof entry === "string")
-    && hasOptionalValue(value, "classification", isClassificationSelection)
-    && hasOptionalValue(value, "paymentInformation", (entry) => isPaymentInformation(entry, isValidInputDate))
-    && hasOptionalValue(value, "merchantReference", (entry) => typeof entry === "string")
-    && hasOptionalValue(value, "isImportant", (entry) => typeof entry === "boolean")
-    && hasOptionalValue(value, "sharedWith", (entry) => Array.isArray(entry) && entry.every((identifier) => typeof identifier === "string"))
-    && hasOptionalValue(value, "additionalMetadata", isJsonRecord)
-  );
-}
-
-function isPatchInvoiceInput(value: unknown): value is ServerActionInputType {
-  return (
-    isRecord(value)
-    && hasOnlyKeys(value, ["invoiceId", "payload"])
-    && hasRequiredKeys(value, ["invoiceId", "payload"])
-    && typeof value["invoiceId"] === "string"
-    && isPatchInvoicePayload(value["payload"])
-  );
-}
-
-function isInvoiceTransport(value: unknown): value is InvoiceTransport {
-  const numberOfUpdates = isRecord(value) ? value["numberOfUpdates"] : undefined;
-  if (
-    !isRecord(value)
-    || !hasRequiredKeys(value, [
-      "id",
-      "name",
-      "description",
-      "userIdentifier",
-      "sharedWith",
-      "category",
-      "scans",
-      "paymentInformation",
-      "merchantReference",
-      "items",
-      "possibleRecipes",
-      "additionalMetadata",
-      "receiptType",
-      "countryRegion",
-      "taxDetails",
-      "payments",
-      "createdAt",
-      "createdBy",
-      "lastUpdatedAt",
-      "lastUpdatedBy",
-      "numberOfUpdates",
-      "isImportant",
-      "isSoftDeleted",
-    ])
-    || typeof value["id"] !== "string"
-    || typeof value["name"] !== "string"
-    || typeof value["description"] !== "string"
-    || typeof value["userIdentifier"] !== "string"
-    || !Array.isArray(value["sharedWith"])
-    || !value["sharedWith"].every((identifier) => typeof identifier === "string")
-    || !isInvoiceCategory(value["category"])
-    || !Array.isArray(value["scans"])
-    || !value["scans"].every(isInvoiceScan)
-    || !isPaymentInformation(value["paymentInformation"], isStrictRfc3339Timestamp)
-    || typeof value["merchantReference"] !== "string"
-    || !Array.isArray(value["items"])
-    || !value["items"].every(isProduct)
-    || !Array.isArray(value["possibleRecipes"])
-    || !value["possibleRecipes"].every(isRecipe)
-    || !isRecord(value["additionalMetadata"])
-    || !Object.values(value["additionalMetadata"]).every((metadata) => typeof metadata === "string")
-    || typeof value["receiptType"] !== "string"
-    || typeof value["countryRegion"] !== "string"
-    || !Array.isArray(value["taxDetails"])
-    || !value["taxDetails"].every(isTaxDetail)
-    || !Array.isArray(value["payments"])
-    || !value["payments"].every(isPaymentDetail)
-    || !isStrictRfc3339Timestamp(value["createdAt"])
-    || typeof value["createdBy"] !== "string"
-    || !isStrictRfc3339Timestamp(value["lastUpdatedAt"])
-    || typeof value["lastUpdatedBy"] !== "string"
-    || typeof numberOfUpdates !== "number"
-    || !Number.isInteger(numberOfUpdates)
-    || numberOfUpdates < 0
-    || typeof value["isImportant"] !== "boolean"
-    || typeof value["isSoftDeleted"] !== "boolean"
-  ) {
-    return false;
-  }
-
-  return !Object.hasOwn(value, "classification") || isClassificationOrNull(value["classification"]);
-}
-
-function parseInvoiceTransport(transport: InvoiceTransport): Invoice {
-  const transactionDate = new Date(transport.paymentInformation.transactionDate);
-  const createdAt = new Date(transport.createdAt);
-  const lastUpdatedAt = new Date(transport.lastUpdatedAt);
-  const {transactionDate: _transportTransactionDate, ...paymentInformation} = transport.paymentInformation;
-
+  const transactionDate = payload.paymentInformation.transactionDate;
   return {
-    id: transport.id,
-    name: transport.name,
-    description: transport.description,
-    userIdentifier: transport.userIdentifier,
-    sharedWith: [...transport.sharedWith],
-    category: transport.category,
-    scans: [...transport.scans],
-    paymentInformation: {...paymentInformation, transactionDate},
-    merchantReference: transport.merchantReference,
-    items: [...transport.items],
-    possibleRecipes: [...transport.possibleRecipes],
-    additionalMetadata: {...transport.additionalMetadata},
-    receiptType: transport.receiptType,
-    countryRegion: transport.countryRegion,
-    taxDetails: [...transport.taxDetails],
-    payments: [...transport.payments],
-    createdAt,
-    createdBy: transport.createdBy,
-    lastUpdatedAt,
-    lastUpdatedBy: transport.lastUpdatedBy,
-    numberOfUpdates: transport.numberOfUpdates,
-    isImportant: transport.isImportant,
-    isSoftDeleted: transport.isSoftDeleted,
-    ...(transport.classification === undefined ? {} : {classification: transport.classification}),
-  };
-}
-
-function createValidationResult(): Awaited<ServerActionOutputType> {
-  return {
-    success: false,
-    error: {
-      code: "VALIDATION_ERROR",
-      message: "Invoice patch request is invalid.",
+    ...payload,
+    paymentInformation: {
+      ...payload.paymentInformation,
+      transactionDate: transactionDate instanceof Date ? transactionDate.toISOString() : transactionDate,
     },
   };
 }
 
 /**
- * Patches only backend-supported invoice fields and validates the full response.
+ * Sends a validated non-destructive invoice patch.
  *
- * @remarks
- * The action rejects unknown outer and payload keys before authentication,
- * forwards only the safe PATCH DTO contract, and parses the returned transport
- * object before cache invalidation. Manual classification clearing is excluded
- * until the backend offers explicit clear semantics.
- *
- * @param input - Untrusted invoice identifier and exact supported patch payload.
- * @returns A validated updated invoice or a safe server-action error result.
+ * @param input - The invoice identifier and exact supported PATCH fields.
+ * @returns The fully parsed invoice response or a safe action error.
  */
-export async function patchInvoice(input: unknown): ServerActionOutputType {
+export async function patchInvoice(input: unknown): Promise<ServerActionOutput> {
   return withSpan("api.actions.invoices.patchInvoice", async () => {
     if (!isPatchInvoiceInput(input)) {
-      addSpanEvent("bff.request.patch-invoice.validation-error");
-      return createValidationResult();
+      return {success: false, error: {code: "VALIDATION_ERROR", message: "Invoice patch request is invalid."}};
     }
 
-    const {invoiceId, payload} = input;
     try {
-      validateStringIsGuidType(invoiceId, "invoiceId");
-      if (payload.merchantReference !== undefined) {
-        validateStringIsGuidType(payload.merchantReference, "merchantReference");
+      validateStringIsGuidType(input.invoiceId, "invoiceId");
+      if (input.payload.merchantReference !== undefined) {
+        validateStringIsGuidType(input.payload.merchantReference, "merchantReference");
       }
-      for (const sharedUserIdentifier of payload.sharedWith ?? []) {
-        validateStringIsGuidType(sharedUserIdentifier, "sharedWith");
-      }
+      input.payload.sharedWith?.forEach((identifier) => validateStringIsGuidType(identifier, "sharedWith"));
     } catch {
-      addSpanEvent("bff.request.patch-invoice.validation-error");
-      return createValidationResult();
+      return {success: false, error: {code: "VALIDATION_ERROR", message: "Invoice patch request is invalid."}};
     }
 
     try {
-      addSpanEvent("bff.user.jwt.fetch.start");
-      const {userJwt: authToken} = await fetchBFFUserFromAuthService();
-      addSpanEvent("bff.user.jwt.fetch.complete");
-
-      addSpanEvent("bff.request.patch-invoice.start");
-      const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}`, {
+      const {userJwt} = await fetchBFFUserFromAuthService();
+      const response = await fetchWithTimeout(`/rest/v1/invoices/${input.invoiceId}`, {
         method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        headers: {Authorization: `Bearer ${userJwt}`, "Content-Type": "application/json"},
+        body: JSON.stringify(serializePayload(input.payload)),
       });
-      addSpanEvent("bff.request.patch-invoice.complete");
 
       if (!response.ok) {
-        addSpanEvent("bff.request.patch-invoice.error", {"http.response.status_code": response.status});
         return {
           success: false,
           error: {
@@ -511,27 +196,19 @@ export async function patchInvoice(input: unknown): ServerActionOutputType {
         };
       }
 
-      const responseData: unknown = await response.json();
-      if (!isInvoiceTransport(responseData)) {
+      const invoice = parseInvoiceTransport(await response.json());
+      if (invoice === null) {
         addSpanEvent("bff.request.patch-invoice.invalid-response");
-        logWithTrace("error", "Invoice patch returned an invalid response.", undefined, "server");
-        return {
-          success: false,
-          error: {
-            code: "SERVER_ERROR",
-            message: "The invoice update response was invalid. Please try again.",
-          },
-        };
+        logWithTrace("error", "Invoice PATCH returned an invalid public DTO.", undefined, "server");
+        return {success: false, error: {code: "SERVER_ERROR", message: "The invoice update response was invalid. Please try again."}};
       }
 
-      const invoice = parseInvoiceTransport(responseData);
-      revalidatePath(`/domains/invoices/edit-invoice/${invoiceId}`, "page");
-      revalidatePath(`/domains/invoices/view-invoice/${invoiceId}`, "page");
+      revalidatePath(`/domains/invoices/edit-invoice/${input.invoiceId}`, "page");
+      revalidatePath(`/domains/invoices/view-invoice/${input.invoiceId}`, "page");
       return {success: true, data: invoice};
     } catch (error) {
       addSpanEvent("bff.request.patch-invoice.error");
-      logWithTrace("error", "Invoice patch request failed.", undefined, "server");
       return createErrorResult(error, "Unable to update the invoice. Please try again.");
     }
-  }) satisfies ServerActionOutputType;
+  });
 }

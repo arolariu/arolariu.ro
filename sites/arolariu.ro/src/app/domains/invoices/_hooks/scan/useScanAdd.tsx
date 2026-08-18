@@ -107,9 +107,9 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
         await attachScanToInvoice({
           invoiceId,
           payload: {
-            type: args.type,
+            scanType: args.type,
             location: data.scan.blobUrl,
-            additionalMetadata: {
+            metadata: {
               sourceScanId: data.scan.id,
               sourceOwnerId: data.scan.userIdentifier,
               displayName: args.fileName,

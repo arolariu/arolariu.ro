@@ -6,7 +6,7 @@
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
 import type {Merchant} from "@/types/invoices";
-import {MerchantCategory} from "@/types/invoices";
+import {ClassificationSystem} from "@/types/invoices";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder} from "../../../../../../tests/helpers";
 
@@ -18,9 +18,33 @@ const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
 
 describe("fetchMerchants", () => {
   const mockMerchants: Merchant[] = [
-    TestDataBuilder.build("merchant", {id: "merchant-1", name: "Supermarket A", category: MerchantCategory.SUPERMARKET}),
-    TestDataBuilder.build("merchant", {id: "merchant-2", name: "Local Shop B", category: MerchantCategory.LOCAL_SHOP}),
-    TestDataBuilder.build("merchant", {id: "merchant-3", name: "Online Store C", category: MerchantCategory.ONLINE_SHOP}),
+    TestDataBuilder.build("merchant", {
+      id: "merchant-1",
+      name: "Supermarket A",
+      classification: TestDataBuilder.build("classification", {
+        system: ClassificationSystem.Nace21,
+        code: "G",
+        officialLabel: "Wholesale and retail trade",
+      }),
+    }),
+    TestDataBuilder.build("merchant", {
+      id: "merchant-2",
+      name: "Local Shop B",
+      classification: TestDataBuilder.build("classification", {
+        system: ClassificationSystem.Nace21,
+        code: "I",
+        officialLabel: "Accommodation and food service activities",
+      }),
+    }),
+    TestDataBuilder.build("merchant", {
+      id: "merchant-3",
+      name: "Online Store C",
+      classification: TestDataBuilder.build("classification", {
+        system: ClassificationSystem.Nace21,
+        code: "J",
+        officialLabel: "Information and communication",
+      }),
+    }),
   ];
 
   beforeEach(() => {

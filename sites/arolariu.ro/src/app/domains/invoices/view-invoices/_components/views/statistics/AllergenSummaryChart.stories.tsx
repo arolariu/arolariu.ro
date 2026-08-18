@@ -53,8 +53,7 @@ export const Default: Story = {
 };
 
 /**
- * Empty state - no allergens detected.
- * Displays positive checkmark message when products are allergen-free.
+ * Empty state with no assessment signals.
  */
 export const Empty: Story = {
   args: {
@@ -78,7 +77,9 @@ export const SingleInvoice: Story = {
  */
 export const HighWarningLevels: Story = {
   args: {
-    data: computeAllergenFrequency(mockInvoices.filter((inv) => inv.items.some((item) => item.detectedAllergens.length > 0))),
+    data: computeAllergenFrequency(
+      mockInvoices.filter((invoice) => invoice.items.some((item) => item.allergenAssessment?.status === "detected")),
+    ),
   },
 };
 
@@ -89,7 +90,9 @@ export const HighWarningLevels: Story = {
 export const GlutenFocused: Story = {
   args: {
     data: computeAllergenFrequency(
-      mockInvoices.filter((inv) => inv.items.some((item) => item.detectedAllergens.some((a) => a.name.toLowerCase().includes("gluten")))),
+      mockInvoices.filter((invoice) =>
+        invoice.items.some((item) => item.allergenAssessment?.signals.some((signal) => signal.code === "cerealsContainingGluten")),
+      ),
     ),
   },
 };
@@ -101,7 +104,9 @@ export const GlutenFocused: Story = {
 export const DairyFocused: Story = {
   args: {
     data: computeAllergenFrequency(
-      mockInvoices.filter((inv) => inv.items.some((item) => item.detectedAllergens.some((a) => a.name.toLowerCase().includes("lactose")))),
+      mockInvoices.filter((invoice) =>
+        invoice.items.some((item) => item.allergenAssessment?.signals.some((signal) => signal.code === "milk")),
+      ),
     ),
   },
 };

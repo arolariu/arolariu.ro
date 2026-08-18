@@ -205,9 +205,9 @@ async function attachScanToInvoice(
   authToken: string,
 ): Promise<Readonly<{success: true}> | Readonly<{success: false; code: ServerActionErrorCode}>> {
   const payload: CreateInvoiceScanDtoPayload = {
-    type: scanTypeToInvoiceScanType(scan.scanType),
+    scanType: scanTypeToInvoiceScanType(scan.scanType),
     location: scan.blobUrl,
-    additionalMetadata: {
+    metadata: {
       sourceScanId: scan.metadata.scanId,
       sourceOwnerId: scan.metadata.ownerId,
       documentKind: scan.metadata.documentKind,

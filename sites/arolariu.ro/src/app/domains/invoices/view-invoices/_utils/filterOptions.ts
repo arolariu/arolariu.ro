@@ -1,77 +1,80 @@
 /**
- * @fileoverview Pure derivers for the available filter-option lists shown in
- * the invoice filter panel.
- * @module sites/arolariu.ro/src/app/domains/invoices/view-invoices/_utils/filterOptions
- *
- * @remarks
- * All three helpers operate on the FULL (unfiltered) invoice array. This is a
- * deliberate UX decision so that filtering down to (say) Cash doesn't hide the
- * Card chip — the user can always switch between any value they've ever used.
- *
- * Ordering: frequency-desc primary; ties broken by the natural tie-break for
- * the data type (alphabetic for currency codes, ascending numeric for the
- * enum values used by category and payment type).
+ * @fileoverview Dynamic filter options derived only from canonical DTO data.
+ * @module domains/invoices/view-invoices/utils/filterOptions
  */
 
-import type {Invoice, InvoiceCategory, PaymentType} from "@/types/invoices";
+import type {Invoice, PaymentType} from "@/types/invoices";
 
-const DEFAULT_CURRENCY_CODE = "RON";
+const defaultCurrencyCode = "RON";
 
-function buildFrequencyMap<K>(values: Iterable<K>): Map<K, number> {
-  const map = new Map<K, number>();
-  for (const v of values) {
-    map.set(v, (map.get(v) ?? 0) + 1);
-  }
-  return map;
+/** Stable classification option used by filter controls and URL state. */
+export interface ClassificationFilterOption {
+  /** Stable `system:code` URL key. */
+  readonly key: string;
+  /** Official label supplied by the backend taxonomy projection. */
+  readonly label: string;
+  /** Canonical root code for ECOICOP grouping. */
+  readonly rootCode: string;
 }
 
-/**
- * Returns the unique ISO 4217 currency codes present in the user's invoices,
- * ordered by frequency descending with ties broken alphabetically. Invoices
- * whose `currency.code` is empty are bucketed under `"RON"` (matches the
- * codebase-wide default established in `_utils/statistics.ts`).
- */
-export function computeAvailableCurrencies(invoices: ReadonlyArray<Invoice>): ReadonlyArray<string> {
-  const codes = invoices.map((i) => i.paymentInformation.currency?.code || DEFAULT_CURRENCY_CODE);
-  const freq = buildFrequencyMap(codes);
-  return [...freq.entries()]
-    .toSorted((a, b) => {
-      const freqDelta = b[1] - a[1];
-      if (freqDelta !== 0) return freqDelta;
-      return a[0].localeCompare(b[0]);
-    })
+function stableKey(system: string, code: string): string {
+  return `${system}:${code}`;
+}
+
+function byFrequencyThenLabel<T extends {readonly label: string}>(entries: readonly [T, number][]): readonly T[] {
+  return [...entries]
+    .toSorted(([left, leftCount], [right, rightCount]) => rightCount - leftCount || left.label.localeCompare(right.label))
+    .map(([option]) => option);
+}
+
+/** Returns currencies observed in the supplied public invoice responses. */
+export function computeAvailableCurrencies(invoices: readonly Invoice[]): readonly string[] {
+  const counts = new Map<string, number>();
+  invoices.forEach((invoice) => {
+    const code = invoice.paymentInformation.currency.code || defaultCurrencyCode;
+    counts.set(code, (counts.get(code) ?? 0) + 1);
+  });
+  return [...counts.entries()]
+    .toSorted(([left, leftCount], [right, rightCount]) => rightCount - leftCount || left.localeCompare(right))
     .map(([code]) => code);
 }
 
 /**
- * Returns the unique `InvoiceCategory` enum values present in the user's
- * invoices, ordered by frequency descending with ties broken by ascending
- * enum ordinal (numeric value).
+ * Returns classification options from present, classified invoices only.
+ *
+ * @remarks
+ * Null classifications are deliberately excluded: absence is not a taxonomy
+ * option and never gets converted into a fake numeric category.
  */
-export function computeAvailableCategories(invoices: ReadonlyArray<Invoice>): ReadonlyArray<InvoiceCategory> {
-  const values = invoices.map((i) => i.category);
-  const freq = buildFrequencyMap(values);
-  return [...freq.entries()]
-    .toSorted((a, b) => {
-      const freqDelta = b[1] - a[1];
-      if (freqDelta !== 0) return freqDelta;
-      return (a[0] as number) - (b[0] as number);
-    })
-    .map(([cat]) => cat);
+export function computeAvailableClassifications(invoices: readonly Invoice[]): readonly ClassificationFilterOption[] {
+  const counts = new Map<string, {option: ClassificationFilterOption; count: number}>();
+  invoices.forEach((invoice) => {
+    const classification = invoice.classification;
+    if (classification === null) return;
+    const key = stableKey(classification.system, classification.code);
+    const rootCode = classification.hierarchy[0]?.code ?? classification.code;
+    const existing = counts.get(key);
+    counts.set(key, {
+      option: {key, label: classification.officialLabel, rootCode},
+      count: (existing?.count ?? 0) + 1,
+    });
+  });
+  return byFrequencyThenLabel([...counts.values()].map(({option, count}) => [option, count]));
 }
 
-/**
- * Returns the unique `PaymentType` enum values present in the user's invoices,
- * ordered by frequency descending with ties broken by ascending enum ordinal.
- */
-export function computeAvailablePaymentTypes(invoices: ReadonlyArray<Invoice>): ReadonlyArray<PaymentType> {
-  const values = invoices.map((i) => i.paymentInformation.paymentType);
-  const freq = buildFrequencyMap(values);
-  return [...freq.entries()]
-    .toSorted((a, b) => {
-      const freqDelta = b[1] - a[1];
-      if (freqDelta !== 0) return freqDelta;
-      return (a[0] as number) - (b[0] as number);
-    })
-    .map(([pt]) => pt);
+/** Returns payment types observed in invoice DTOs. */
+export function computeAvailablePaymentTypes(invoices: readonly Invoice[]): readonly PaymentType[] {
+  const counts = new Map<PaymentType, number>();
+  invoices.forEach((invoice) => {
+    const type = invoice.paymentInformation.paymentType;
+    counts.set(type, (counts.get(type) ?? 0) + 1);
+  });
+  return [...counts.entries()]
+    .toSorted(([left, leftCount], [right, rightCount]) => rightCount - leftCount || left - right)
+    .map(([type]) => type);
+}
+
+/** Builds the stable URL filter key for a canonical classification. */
+export function toClassificationFilterKey(system: string, code: string): string {
+  return stableKey(system, code);
 }
