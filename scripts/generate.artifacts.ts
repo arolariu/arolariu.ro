@@ -15,7 +15,13 @@ import {EOL, tmpdir} from "node:os";
 import {basename, dirname, join, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {promisify} from "node:util";
-import type {NodePackageDependencyType, NodePackageInformation} from "./types";
+import type {
+  ArtifactClassificationSystem,
+  NodePackageDependencyType,
+  NodePackageInformation,
+  TaxonomyArtifact,
+  TaxonomyArtifactNode,
+} from "./types";
 
 const executeFile = promisify(execFile);
 
@@ -37,31 +43,6 @@ export const FILE_NAMES = {
   ECOICOP_V2: "ecoicop-v2.min.json",
   NACE_2_1: "nace-2.1.min.json",
 } as const satisfies Readonly<Record<ArtifactClassificationSystem, string>>;
-
-/** Classification systems supported by generated artifacts. */
-export type ArtifactClassificationSystem = "GS1_GPC" | "ECOICOP_V2" | "NACE_2_1";
-
-/** Single normalized taxonomy node. */
-export interface TaxonomyArtifactNode {
-  readonly code: string;
-  readonly officialLabel: string;
-  readonly level: string;
-  readonly parentCode: string | null;
-  readonly hierarchyCodes: readonly string[];
-  readonly hierarchyLabels: readonly string[];
-  readonly definition: string | null;
-  readonly searchText: string;
-}
-
-/** Versioned taxonomy artifact consumed by the API and the website. */
-export interface TaxonomyArtifact {
-  readonly system: ArtifactClassificationSystem;
-  readonly version: string;
-  readonly sourceUrl: string;
-  readonly generatedAt: string;
-  readonly attribution: string;
-  readonly nodes: readonly TaxonomyArtifactNode[];
-}
 
 /** Shape used by the official GS1 GPC JSON document. */
 export interface GpcSourceNode {

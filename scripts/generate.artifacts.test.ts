@@ -32,7 +32,7 @@ import {
   writeMirroredArtifacts,
 } from "./generate.artifacts.ts";
 import {parseCommandLineOptions} from "./generate.ts";
-import type {TaxonomyArtifact, TaxonomyArtifactNode} from "./generate.artifacts.ts";
+import type {TaxonomyArtifact, TaxonomyArtifactNode} from "./types";
 
 const temporaryDirectories: string[] = [];
 
