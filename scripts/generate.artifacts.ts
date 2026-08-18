@@ -11,6 +11,88 @@
 
 import {inflateRawSync} from "node:zlib";
 
+/** Shape used by the official GS1 GPC JSON document. */
+export interface GpcSourceNode {
+  readonly Level: number;
+  readonly Code: number;
+  readonly Title: string;
+  readonly Definition: string | null;
+  readonly DefinitionExcludes: string | null;
+  readonly Active: boolean;
+  readonly Childs: readonly GpcSourceNode[];
+}
+
+/** Root shape of the official GS1 GPC JSON document. */
+export interface GpcSourceDocument {
+  readonly LanguageCode: string;
+  readonly DateUtc: string;
+  readonly Schema: readonly GpcSourceNode[];
+}
+
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function requireString(record: Readonly<Record<string, unknown>>, key: string, context: string): string {
+  const value = record[key];
+  if (typeof value !== "string") throw new Error(`${context} ${key} must be a string.`);
+  return value;
+}
+
+function optionalString(record: Readonly<Record<string, unknown>>, key: string, context: string): string | null {
+  const value = record[key];
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "string") throw new Error(`${context} ${key} must be a string or null.`);
+  return value;
+}
+
+function requireNumber(record: Readonly<Record<string, unknown>>, key: string, context: string): number {
+  const value = record[key];
+  if (typeof value !== "number" || !Number.isFinite(value)) throw new Error(`${context} ${key} must be a number.`);
+  return value;
+}
+
+function requireBoolean(record: Readonly<Record<string, unknown>>, key: string, context: string): boolean {
+  const value = record[key];
+  if (typeof value !== "boolean") throw new Error(`${context} ${key} must be a boolean.`);
+  return value;
+}
+
+function parseGpcNode(value: unknown): GpcSourceNode {
+  if (!isRecord(value)) throw new Error("GPC node must be an object.");
+  const children = value["Childs"];
+  if (!Array.isArray(children)) throw new Error("GPC node Childs must be an array.");
+
+  return {
+    Level: requireNumber(value, "Level", "GPC node"),
+    Code: requireNumber(value, "Code", "GPC node"),
+    Title: requireString(value, "Title", "GPC node"),
+    Definition: optionalString(value, "Definition", "GPC node"),
+    DefinitionExcludes: optionalString(value, "DefinitionExcludes", "GPC node"),
+    Active: requireBoolean(value, "Active", "GPC node"),
+    Childs: children.map((child: unknown) => parseGpcNode(child)),
+  };
+}
+
+/**
+ * Parses and validates the official GS1 GPC JSON document.
+ *
+ * @param value - Untrusted parsed JSON.
+ * @returns Strongly typed source document.
+ * @throws {Error} When any required field is missing or has the wrong type.
+ */
+export function parseGpcDocument(value: unknown): GpcSourceDocument {
+  if (!isRecord(value)) throw new Error("GPC document must be an object.");
+  const schema = value["Schema"];
+  if (!Array.isArray(schema)) throw new Error("GPC document Schema must be an array.");
+
+  return {
+    LanguageCode: requireString(value, "LanguageCode", "GPC document"),
+    DateUtc: requireString(value, "DateUtc", "GPC document"),
+    Schema: schema.map((node: unknown) => parseGpcNode(node)),
+  };
+}
+
 /**
  * Extracts a single entry from a ZIP archive by file-name suffix.
  *

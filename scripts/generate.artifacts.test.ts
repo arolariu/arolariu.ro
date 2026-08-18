@@ -5,7 +5,7 @@
 
 import {deflateRawSync} from "node:zlib";
 import {describe, expect, it} from "vitest";
-import {extractZipEntry} from "./generate.artifacts.ts";
+import {extractZipEntry, parseGpcDocument} from "./generate.artifacts.ts";
 
 /** Minimal ZIP entry description used by the archive builder below. */
 interface ZipEntryInput {
@@ -108,5 +108,80 @@ describe("extractZipEntry", () => {
     const archive = createZipArchive([{name: "data EN.json", contents: "x", method: 12}]);
 
     expect(() => extractZipEntry(archive, " EN.json")).toThrow("Unsupported ZIP compression method 12");
+  });
+});
+
+describe("parseGpcDocument", () => {
+  const validNode = {
+    Level: 1,
+    Code: 50000000,
+    Title: "Food/Beverage/Tobacco",
+    Definition: "Includes any food product.",
+    DefinitionExcludes: null,
+    Active: true,
+    Childs: [],
+  };
+
+  it("parses a well-formed document", () => {
+    const parsed = parseGpcDocument({LanguageCode: "EN", DateUtc: "2026-05-01", Schema: [validNode]});
+
+    expect(parsed.LanguageCode).toBe("EN");
+    expect(parsed.Schema).toHaveLength(1);
+    expect(parsed.Schema[0]?.Code).toBe(50000000);
+    expect(parsed.Schema[0]?.Definition).toBe("Includes any food product.");
+  });
+
+  it("accepts a null definition", () => {
+    const parsed = parseGpcDocument({
+      LanguageCode: "EN",
+      DateUtc: "2026-05-01",
+      Schema: [{...validNode, Definition: null}],
+    });
+
+    expect(parsed.Schema[0]?.Definition).toBeNull();
+  });
+
+  it("parses nested children recursively", () => {
+    const parsed = parseGpcDocument({
+      LanguageCode: "EN",
+      DateUtc: "2026-05-01",
+      Schema: [{...validNode, Childs: [{...validNode, Level: 2, Code: 50100000, Title: "Bread"}]}],
+    });
+
+    expect(parsed.Schema[0]?.Childs[0]?.Title).toBe("Bread");
+  });
+
+  it("throws when the root is not an object", () => {
+    expect(() => parseGpcDocument("nope")).toThrow("GPC document must be an object.");
+  });
+
+  it("throws when Schema is not an array", () => {
+    expect(() => parseGpcDocument({LanguageCode: "EN", DateUtc: "2026-05-01", Schema: {}})).toThrow(
+      "GPC document Schema must be an array.",
+    );
+  });
+
+  it("throws when a required string field is missing", () => {
+    expect(() => parseGpcDocument({DateUtc: "2026-05-01", Schema: []})).toThrow(
+      "GPC document LanguageCode must be a string.",
+    );
+  });
+
+  it("throws when a node code is not a number", () => {
+    expect(() =>
+      parseGpcDocument({LanguageCode: "EN", DateUtc: "2026-05-01", Schema: [{...validNode, Code: "50000000"}]}),
+    ).toThrow("GPC node Code must be a number.");
+  });
+
+  it("throws when a node Active flag is not a boolean", () => {
+    expect(() =>
+      parseGpcDocument({LanguageCode: "EN", DateUtc: "2026-05-01", Schema: [{...validNode, Active: "yes"}]}),
+    ).toThrow("GPC node Active must be a boolean.");
+  });
+
+  it("throws when Childs is not an array", () => {
+    expect(() =>
+      parseGpcDocument({LanguageCode: "EN", DateUtc: "2026-05-01", Schema: [{...validNode, Childs: null}]}),
+    ).toThrow("GPC node Childs must be an array.");
   });
 });
