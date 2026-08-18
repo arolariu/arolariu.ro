@@ -115,12 +115,10 @@ type ServerActionOutputType = ServerActionResult<void>;
  * @see {@link ServerActionResult} - Result type wrapper
  */
 export async function deleteInvoiceMetadata({invoiceId, key}: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{deleteInvoiceMetadata}}, with:", {invoiceId, key});
-
   return withSpan("api.actions.invoices.deleteInvoiceMetadata", async () => {
     try {
       // Step 0. Validate invoice identifier is valid GUID
-      logWithTrace("info", "Validating identifier is valid...", {invoiceId, key}, "server");
+      logWithTrace("info", "invoice.metadata.delete.validate", undefined, "server");
       validateStringIsGuidType(invoiceId, "invoiceId");
 
       // Step 1. Fetch user JWT for authentication
@@ -131,7 +129,7 @@ export async function deleteInvoiceMetadata({invoiceId, key}: ServerActionInputT
 
       // Step 2. Make the API request to delete the metadata key
       addSpanEvent("bff.request.delete-invoice-metadata.start");
-      logWithTrace("info", "Making API request to delete invoice metadata...", {invoiceId, key}, "server");
+      logWithTrace("info", "invoice.metadata.delete.start", undefined, "server");
       const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}/metadata`, {
         method: "DELETE",
         headers: {
@@ -143,24 +141,23 @@ export async function deleteInvoiceMetadata({invoiceId, key}: ServerActionInputT
       addSpanEvent("bff.request.delete-invoice-metadata.complete");
 
       if (response.ok) {
-        logWithTrace("info", "Successfully deleted invoice metadata...", {invoiceId, key}, "server");
+        logWithTrace("info", "invoice.metadata.delete.complete", undefined, "server");
         return {success: true, data: undefined} as const;
       }
 
-      const errorText = await response.text();
-      const internalMessage = `Failed to delete invoice metadata: ${response.status} ${response.statusText}`;
-      logWithTrace("warn", internalMessage, {invoiceId, key, errorText}, "server");
+      logWithTrace("warn", "invoice.metadata.delete.rejected", {httpStatus: response.status}, "server");
       const userMessage =
         response.status >= 500
           ? "A server error occurred while deleting the invoice metadata. Please try again later."
           : "Failed to delete the invoice metadata. Please try again.";
-      return createErrorResult(new Error(internalMessage), userMessage);
-    } catch (error: unknown) {
+      return {
+        success: false,
+        error: {code: response.status >= 500 ? "SERVER_ERROR" : "UNKNOWN_ERROR", message: userMessage, status: response.status},
+      };
+    } catch (error) {
       addSpanEvent("bff.request.delete-invoice-metadata.error");
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error deleting invoice metadata", {error, invoiceId, key}, "server");
-      console.error("Error deleting invoice metadata:", error);
-      return createErrorResult(new Error(errorMessage));
+      logWithTrace("error", "invoice.metadata.delete.failed", {errorCode: "NETWORK_ERROR"}, "server");
+      return createErrorResult(error, "Unable to delete invoice metadata. Please try again.");
     }
   }) satisfies ServerActionOutputType;
 }

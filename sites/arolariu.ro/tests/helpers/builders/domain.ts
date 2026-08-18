@@ -214,16 +214,22 @@ export function buildPaymentInformation(overrides: Partial<PaymentInformation> =
   };
 }
 
-/** Builds the legacy create scan input shape consumed by the current create action. */
+/** Builds the exact create scan DTO accepted by the backend. */
 export function buildCreateInvoiceScanPayload(overrides: Partial<CreateInvoiceScanDtoPayload> = {}): CreateInvoiceScanDtoPayload {
-  return {scanType: InvoiceScanType.JPEG, location: "https://storage.example.test/receipt.jpg", metadata: {}, ...overrides};
+  return {type: InvoiceScanType.JPEG, location: "https://storage.example.test/receipt.jpg", metadata: {}, ...overrides};
 }
 
-/** Builds the current create invoice input shape. */
+/** Builds the exact ownership-free create invoice DTO. */
 export function buildCreateInvoicePayload(overrides: Partial<CreateInvoiceDtoPayload> = {}): CreateInvoiceDtoPayload {
   return {
-    userIdentifier: "22222222-2222-7222-8222-222222222222",
-    initialScan: buildCreateInvoiceScanPayload(),
+    name: "Receipt",
+    description: null,
+    classification: null,
+    paymentInformation: buildPaymentInformation(),
+    merchantReference: null,
+    isImportant: false,
+    scans: [buildCreateInvoiceScanPayload()],
+    items: null,
     metadata: {},
     ...overrides,
   };

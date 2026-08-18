@@ -40,12 +40,6 @@ function createDeferred<T>(): Readonly<{
   return {promise, resolve: resolveDeferred};
 }
 
-function toNestedResult<T>(result: ServerActionResult<T>): Promise<ServerActionResult<T>> {
-  return new Promise<ServerActionResult<T>>((resolve) => {
-    resolve(result);
-  });
-}
-
 function mockInvoiceStore(updateEntity = vi.fn()): void {
   TestDataBuilder.mockEntityStoreSelector(mockUseInvoicesStore, TestDataBuilder.entityStore({updateEntity}));
 }
@@ -91,7 +85,7 @@ describe("useProductAdd", () => {
 
   it("sets isAdding true while the server action is pending", async () => {
     const deferred = createDeferred<Awaited<ServerActionResult<Product>>>();
-    mockAddInvoiceProduct.mockImplementation(() => toNestedResult(deferred.promise));
+    mockAddInvoiceProduct.mockImplementation(() => deferred.promise);
 
     const {result} = renderHook(() => useProductAdd({invoice}));
 
@@ -113,8 +107,8 @@ describe("useProductAdd", () => {
   });
 
   it("throws server action failures and skips the local update", async () => {
-    mockAddInvoiceProduct.mockReturnValueOnce(
-      toNestedResult(TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Failed to add product"})),
+    mockAddInvoiceProduct.mockResolvedValueOnce(
+      await TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Failed to add product"}),
     );
 
     const {result} = renderHook(() => useProductAdd({invoice}));

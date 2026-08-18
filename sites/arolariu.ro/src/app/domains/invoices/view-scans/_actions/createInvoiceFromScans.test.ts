@@ -10,6 +10,7 @@ import {
   installAnalysisFetchHandler,
   type AnalysisFetchRequest,
 } from "@/../tests/helpers/analysisBoundary";
+import {createInvoiceBuilder} from "@/data/mocks/invoice";
 import type {Scan} from "@/types/scans";
 import {ScanStatus, ScanType} from "@/types/scans";
 import {beforeEach, describe, expect, it, vi} from "vitest";
@@ -69,7 +70,7 @@ function acceptedAnalysisResponse(): Response {
 }
 
 function createdInvoiceResponse(): Response {
-  return new Response(JSON.stringify({id: invoiceIdentifier, userIdentifier: "user-1"}), {status: 201});
+  return Response.json(createInvoiceBuilder().withId(invoiceIdentifier).build(), {status: 201});
 }
 
 function createSecondScan(): Scan {

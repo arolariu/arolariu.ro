@@ -14,7 +14,7 @@
       "action": "/domains/invoices/upload-scans/",
       "accept": {
         "application/pdf": [".pdf"],
-        "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp", ".heic", ".heif"]
+        "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp", ".heif"]
       }
     }
   ],

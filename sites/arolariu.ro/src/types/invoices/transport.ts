@@ -30,14 +30,17 @@ type MerchantTransport = Omit<Merchant, "createdAt" | "lastUpdatedAt">
     readonly lastUpdatedAt: string;
   }>;
 
-const scanTypeValues: readonly number[] = [
+const scanTypeValues: ReadonlySet<number> = new Set([
   InvoiceScanType.JPG,
   InvoiceScanType.JPEG,
   InvoiceScanType.PNG,
   InvoiceScanType.PDF,
   InvoiceScanType.OTHER,
   InvoiceScanType.UNKNOWN,
-];
+  InvoiceScanType.BMP,
+  InvoiceScanType.TIFF,
+  InvoiceScanType.HEIF,
+]);
 const paymentTypeValues: readonly number[] = Object.values(PaymentType);
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
@@ -63,7 +66,7 @@ function isFiniteNumber(value: unknown): value is number {
 }
 
 function isNonNegativeInteger(value: unknown): value is number {
-  return typeof value === "number" && Number.isInteger(value) && value >= 0;
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 }
 
 function isInvoiceScan(value: unknown): value is InvoiceScan {
@@ -71,7 +74,7 @@ function isInvoiceScan(value: unknown): value is InvoiceScan {
     isRecord(value)
     && hasExactKeys(value, ["type", "location"])
     && typeof value["type"] === "number"
-    && scanTypeValues.includes(value["type"])
+    && scanTypeValues.has(value["type"])
     && isString(value["location"])
   );
 }

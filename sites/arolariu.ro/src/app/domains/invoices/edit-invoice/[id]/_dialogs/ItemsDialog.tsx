@@ -6,9 +6,10 @@
  */
 
 import {ClassificationPicker} from "@/app/domains/invoices/_components/analysis/ClassificationPicker";
-import {addInvoiceProduct, updateInvoiceProduct} from "@/app/domains/invoices/_actions/invoices";
+import {addInvoiceProduct, deleteInvoiceProduct, updateInvoiceProduct} from "@/app/domains/invoices/_actions/invoices";
 import {
   ClassificationSystem,
+  createProductSelectors as buildProductSelectors,
   toClassificationSelection,
   type ClassificationSelection,
   type Product,
@@ -42,11 +43,10 @@ import styles from "./ItemsDialog.module.scss";
 interface EditableProduct {
   readonly mutation: ProductMutation;
   readonly selector: ProductUpdateSelector | null;
+  readonly original: Product | null;
+  readonly originalIndex: number | null;
   readonly classificationDirty: boolean;
-}
-
-function selectorKey(product: Product): string {
-  return `${product.name}\u0000${product.quantity}\u0000${product.price}\u0000${product.totalPrice}`;
+  readonly isRemoved: boolean;
 }
 
 /**
@@ -54,20 +54,7 @@ function selectorKey(product: Product): string {
  * ordinal in the backend's invoice collection order.
  */
 export function createProductSelectors(products: readonly Product[]): readonly ProductUpdateSelector[] {
-  const occurrences = new Map<string, number>();
-  return products.map((product) => {
-    const key = selectorKey(product);
-    const occurrenceOrdinal = occurrences.get(key) ?? 0;
-    occurrences.set(key, occurrenceOrdinal + 1);
-    return {
-      originalProductCode: product.productCode.trim() === "" ? null : product.productCode,
-      originalName: product.name,
-      originalQuantity: product.quantity,
-      originalUnitPrice: product.price,
-      originalTotalPrice: product.totalPrice,
-      occurrenceOrdinal: product.productCode.trim() === "" ? occurrenceOrdinal : null,
-    };
-  });
+  return buildProductSelectors(products);
 }
 
 function toMutation(product: Product): ProductMutation {
@@ -114,7 +101,10 @@ export default function ItemsDialog(): React.JSX.Element {
     return invoice.items.map((product, index) => ({
       mutation: toMutation(product),
       selector: selectors[index] ?? null,
+      original: product,
+      originalIndex: index,
       classificationDirty: false,
+      isRemoved: false,
     }));
   }, [invoice.items]);
   const [items, setItems] = useState<readonly EditableProduct[]>(initialItems);
@@ -132,7 +122,7 @@ export default function ItemsDialog(): React.JSX.Element {
     (index: number) => (event: React.ChangeEvent<HTMLInputElement>) => {
       const item = items[index];
       if (item === undefined) return;
-      const value = event.target.value;
+      const {value} = event.target;
       const mutation =
         event.target.name === "name"
           ? {...item.mutation, name: value}
@@ -163,31 +153,43 @@ export default function ItemsDialog(): React.JSX.Element {
       {
         mutation: {name: "", classification: null, quantity: 1, quantityUnit: "", productCode: "", price: 0},
         selector: null,
+        original: null,
+        originalIndex: null,
         classificationDirty: false,
+        isRemoved: false,
       },
     ]);
   }, []);
 
   const handleRemove = useCallback((index: number) => {
-    setItems((previous) => previous.filter((_, itemIndex) => itemIndex !== index));
+    setItems((previous) => previous.map((item, itemIndex) => (itemIndex === index ? {...item, isRemoved: true} : item)));
   }, []);
 
   const handleSave = useCallback(async () => {
     setIsSaving(true);
     try {
-      for (const [index, item] of items.entries()) {
+      const persistedItems = items
+        .filter(
+          (item): item is EditableProduct & Readonly<{selector: ProductUpdateSelector; original: Product; originalIndex: number}> =>
+            item.selector !== null && item.original !== null && item.originalIndex !== null,
+        )
+        .sort((left, right) => right.originalIndex - left.originalIndex);
+
+      // Process the original collection in reverse order. This preserves every
+      // duplicate occurrence selector after a later duplicate is changed or
+      // removed, instead of relying on a shifted rendered index.
+      for (const item of persistedItems) {
+        if (item.isRemoved) {
+          const deletion = await deleteInvoiceProduct({invoiceId: invoice.id, selector: item.selector});
+          if (!deletion.success) throw new Error("Product deletion failed");
+          continue;
+        }
+
         if (item.mutation.name.trim() === "" || item.mutation.quantity <= 0) {
           throw new Error("Invalid item");
         }
 
-        if (item.selector === null) {
-          const result = await addInvoiceProduct({invoiceId: invoice.id, product: item.mutation});
-          if (!result.success) throw new Error("Product creation failed");
-          continue;
-        }
-
-        const original = invoice.items[index];
-        if (original !== undefined && !isMutationDirty(original, item)) continue;
+        if (!isMutationDirty(item.original, item)) continue;
         const result = await updateInvoiceProduct({
           invoiceId: invoice.id,
           payload: {
@@ -201,6 +203,15 @@ export default function ItemsDialog(): React.JSX.Element {
         if (!result.success) throw new Error("Product update failed");
       }
 
+      for (const item of items.filter((candidate) => candidate.selector === null && !candidate.isRemoved)) {
+        if (item.mutation.name.trim() === "" || item.mutation.quantity <= 0) {
+          throw new Error("Invalid item");
+        }
+
+        const result = await addInvoiceProduct({invoiceId: invoice.id, product: item.mutation});
+        if (!result.success) throw new Error("Product creation failed");
+      }
+
       close();
       router.refresh();
     } catch {
@@ -208,7 +219,7 @@ export default function ItemsDialog(): React.JSX.Element {
     } finally {
       setIsSaving(false);
     }
-  }, [close, invoice.id, invoice.items, items, router, t]);
+  }, [close, invoice.id, items, router, t]);
 
   return (
     <Dialog
@@ -231,52 +242,53 @@ export default function ItemsDialog(): React.JSX.Element {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item, index) => (
-                <TableRow
-                  key={item.selector === null ? `new-${index}` : `${item.selector.originalName}-${item.selector.occurrenceOrdinal}`}>
-                  <TableCell>
-                    <Input
-                      name='name'
-                      value={item.mutation.name}
-                      onChange={handleValueChange(index)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <ClassificationPicker
-                      system={ClassificationSystem.Gs1Gpc}
-                      value={item.mutation.classification}
-                      onChange={handleClassification(index)}
-                      disabled={isSaving}
-                      allowClear={item.selector === null}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      name='quantity'
-                      type='number'
-                      value={item.mutation.quantity}
-                      onChange={handleValueChange(index)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      name='price'
-                      type='number'
-                      value={item.mutation.price}
-                      onChange={handleValueChange(index)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      onClick={() => handleRemove(index)}
-                      aria-label={t((m) => m.dialogs.invoices.itemsDialog.aria.deleteItem, {name: item.mutation.name})}>
-                      <TbTrash />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {items.map((item, index) =>
+                item.isRemoved ? null : (
+                  <TableRow key={item.originalIndex === null ? `new-${index}` : `persisted-${item.originalIndex}`}>
+                    <TableCell>
+                      <Input
+                        name='name'
+                        value={item.mutation.name}
+                        onChange={handleValueChange(index)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <ClassificationPicker
+                        system={ClassificationSystem.Gs1Gpc}
+                        value={item.mutation.classification}
+                        onChange={handleClassification(index)}
+                        disabled={isSaving}
+                        allowClear={item.selector === null}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        name='quantity'
+                        type='number'
+                        value={item.mutation.quantity}
+                        onChange={handleValueChange(index)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        name='price'
+                        type='number'
+                        value={item.mutation.price}
+                        onChange={handleValueChange(index)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        onClick={() => handleRemove(index)}
+                        aria-label={t((m) => m.dialogs.invoices.itemsDialog.aria.deleteItem, {name: item.mutation.name})}>
+                        <TbTrash />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ),
+              )}
             </TableBody>
           </Table>
           <Button

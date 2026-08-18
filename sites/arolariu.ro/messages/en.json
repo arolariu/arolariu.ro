@@ -854,12 +854,11 @@
         "dropzone": {
           "dragAndDrop": "Drag & drop a file here",
           "dropHere": "Drop the file here...",
-          "formats": "JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF (max 10MB)",
+          "formats": "JPG, JPEG, PNG, BMP, TIFF, HEIF, PDF (max 10MB)",
           "orClickBrowse": "or click to browse"
         },
         "scanType": {
           "bmp": "BMP image",
-          "heic": "HEIC image",
           "heif": "HEIF image",
           "jpeg": "JPEG image",
           "label": "Scan type",
@@ -2990,7 +2989,7 @@
           "formats": {
             "documentExtensions": ".pdf",
             "documents": "Documents",
-            "imageExtensions": ".jpg, .jpeg, .png, .bmp, .tif, .tiff, .heif, .heic",
+            "imageExtensions": ".jpg, .jpeg, .png, .bmp, .tif, .tiff, .heif",
             "images": "Images",
             "maxSize": "Maximum file size: 10MB per file",
             "title": "Supported Formats"
@@ -3048,14 +3047,14 @@
           "compact": {
             "dropActive": "Drop files to add them",
             "dropInactive": "Drag files here or click to browse",
-            "subtitle": "JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF up to 10MB"
+            "subtitle": "JPG, JPEG, PNG, BMP, TIFF, HEIF, PDF up to 10MB"
           },
           "dragCount": "{count, plural, one {# file} other {# files}}",
           "empty": {
             "chooseFiles": "Choose Files",
             "dropActive": "Drop files to upload",
             "dropInactive": "Click or drag files to upload",
-            "formats": "Supported formats: JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF (max 10MB each)",
+            "formats": "Supported formats: JPG, JPEG, PNG, BMP, TIFF, HEIF, PDF (max 10MB each)",
             "note": "You can select multiple files.",
             "pasteHint": "Tip: you can also paste an image from your clipboard (Ctrl+V).",
             "title": "Drag and drop your files here"

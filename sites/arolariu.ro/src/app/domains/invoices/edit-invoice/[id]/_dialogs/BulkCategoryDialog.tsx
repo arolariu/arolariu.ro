@@ -8,7 +8,13 @@
  * Provides UI for changing the GS1 GPC classification of multiple products at once.
  */
 
-import {ClassificationSystem, type ClassificationSelection, type Product, type ProductUpdateSelector} from "@/types/invoices";
+import {
+  ClassificationSystem,
+  createProductSelector,
+  type ClassificationSelection,
+  type Product,
+  type ProductUpdateSelector,
+} from "@/types/invoices";
 import {Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
@@ -20,23 +26,8 @@ import {ClassificationPicker} from "../../../_components/analysis/Classification
 import styles from "./BulkCategoryDialog.module.scss";
 
 /** Builds the deterministic duplicate-safe selector for a persisted product line. */
-function createSelector(invoiceItems: readonly Product[], product: Product): ProductUpdateSelector {
-  const originalProductCode = product.productCode.trim() === "" ? null : product.productCode;
-  const matchingItems = invoiceItems.filter(
-    (item) =>
-      item.name === product.name
-      && item.quantity === product.quantity
-      && item.price === product.price
-      && item.totalPrice === product.totalPrice,
-  );
-  return {
-    originalProductCode,
-    originalName: product.name,
-    originalQuantity: product.quantity,
-    originalUnitPrice: product.price,
-    originalTotalPrice: product.totalPrice,
-    occurrenceOrdinal: originalProductCode === null ? Math.max(matchingItems.indexOf(product), 0) : null,
-  };
+export function createSelector(invoiceItems: readonly Product[], productIndex: number): ProductUpdateSelector {
+  return createProductSelector(invoiceItems, productIndex);
 }
 
 /**
@@ -121,21 +112,29 @@ export default function BulkCategoryDialog(): React.JSX.Element | null {
     setIsSaving(true);
     setUpdateProgress({current: 0, total: selectedProducts.length});
 
-    const errors: string[] = [];
     let successCount = 0;
+    let failureCount = 0;
 
     try {
-      // Update each product individually
-      for (let i = 0; i < selectedProducts.length; i++) {
-        const product = selectedProducts[i];
+      const originalIndexes = [...selectedIndices].sort((left, right) => right - left);
+      // Mutate later collection rows first so duplicate occurrence ordinals
+      // remain valid for each earlier stable selector.
+      for (let i = 0; i < originalIndexes.length; i++) {
+        const productIndex = originalIndexes[i];
+        if (productIndex === undefined) {
+          failureCount++;
+          continue;
+        }
+
+        const product = invoice.items[productIndex];
         if (product) {
-          setUpdateProgress({current: i + 1, total: selectedProducts.length});
+          setUpdateProgress({current: i + 1, total: originalIndexes.length});
 
           try {
             const result = await updateInvoiceProduct({
               invoiceId: invoice.id,
               payload: {
-                selector: createSelector(invoice.items, product),
+                selector: createSelector(invoice.items, productIndex),
                 updatedProduct: {
                   name: product.name,
                   classification: selectedClassification,
@@ -150,17 +149,16 @@ export default function BulkCategoryDialog(): React.JSX.Element | null {
             if (result.success) {
               successCount++;
             } else {
-              errors.push(`${product.name}: ${result.error}`);
+              failureCount++;
             }
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "Unknown error";
-            errors.push(`${product.name}: ${errorMessage}`);
+          } catch {
+            failureCount++;
           }
         }
       }
 
       // Show summary toast
-      if (errors.length === 0) {
+      if (failureCount === 0) {
         toast.success(t((m) => m.dialogs.invoices.bulkCategoryDialog.success.saved, {count: successCount}));
         close();
         router.refresh();
@@ -168,7 +166,7 @@ export default function BulkCategoryDialog(): React.JSX.Element | null {
         toast.warning(
           t((m) => m.dialogs.invoices.bulkCategoryDialog.success.partialSuccess, {
             success: String(successCount),
-            failed: String(errors.length),
+            failed: String(failureCount),
           }),
         );
       } else {

@@ -35,7 +35,7 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createBlobUploadTarget} from "@/lib/azure/storageClient";
 import {createErrorResult, ServerActionResult} from "@/lib/utils.server";
 import {ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, type ScanMetadata} from "@/types/scans";
-import {deriveBlobExtension} from "../../_utils/mimeTypeUtilities";
+import {deriveBlobExtension, isHeicScanFileName, isHeicScanMimeType, isSupportedScanMimeType} from "../../_utils/mimeTypeUtilities";
 import {writeBlobMetadata} from "../../_utils/metadataUtilities";
 
 /**
@@ -144,9 +144,21 @@ function generateScanId(): string {
  * ```
  */
 export async function createScanUploadTarget(input: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{createScanUploadTarget}}");
-
   return withSpan("api.actions.scans.createScanUploadTarget", async () => {
+    if (isHeicScanMimeType(input.mimeType) || isHeicScanFileName(input.fileName)) {
+      return {
+        success: false,
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "This scan format is not supported. Convert HEIC images to HEIF before uploading.",
+        },
+      };
+    }
+
+    if (!isSupportedScanMimeType(input.mimeType)) {
+      return {success: false, error: {code: "VALIDATION_ERROR", message: "This scan format is not supported."}};
+    }
+
     try {
       // Step 1. Fetch authenticated user
       addSpanEvent("bff.user.fetch.start");
@@ -181,7 +193,7 @@ export async function createScanUploadTarget(input: ServerActionInputType): Serv
 
       // Step 5. Create blob upload target with metadata
       addSpanEvent("blob.upload.target.create");
-      logWithTrace("info", "Creating blob upload target with metadata", {blobName, scanId}, "server");
+      logWithTrace("info", "scan.upload-target.create", undefined, "server");
 
       const uploadTarget = await createBlobUploadTarget({
         storageEndpoint,
@@ -207,10 +219,8 @@ export async function createScanUploadTarget(input: ServerActionInputType): Serv
       } as const;
     } catch (error: unknown) {
       addSpanEvent("upload.target.creation.error");
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Failed to create upload target", {error}, "server");
-      console.error("Failed to create upload target:", error);
-      return createErrorResult(new Error(errorMessage));
+      logWithTrace("error", "scan.upload-target.failed", {errorCode: "NETWORK_ERROR"}, "server");
+      return createErrorResult(error, "Unable to prepare the scan upload. Please try again.");
     }
   }) satisfies ServerActionOutputType;
 }

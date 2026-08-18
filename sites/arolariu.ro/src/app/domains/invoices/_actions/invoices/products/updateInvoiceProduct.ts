@@ -9,7 +9,13 @@ import {addSpanEvent, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "@/lib/utils.server";
-import {isClassificationSelection, type Product, type ProductMutation, type ProductUpdateSelector} from "@/types/invoices";
+import {
+  isClassificationSelection,
+  isProductUpdateSelector,
+  type Product,
+  type ProductMutation,
+  type ProductUpdateSelector,
+} from "@/types/invoices";
 import {parseProductTransport} from "@/types/invoices/transport";
 import {revalidatePath} from "next/cache";
 
@@ -30,38 +36,6 @@ function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 function hasExactKeys(record: Readonly<Record<string, unknown>>, keys: readonly string[]): boolean {
   const actualKeys = Object.keys(record);
   return actualKeys.length === keys.length && actualKeys.every((key) => keys.includes(key));
-}
-
-function isNullableString(value: unknown): value is string | null {
-  return typeof value === "string" || value === null;
-}
-
-function isNullableNonNegativeNumber(value: unknown): value is number | null {
-  return value === null || (typeof value === "number" && Number.isFinite(value) && value >= 0);
-}
-
-function isNullableOccurrenceOrdinal(value: unknown): value is number | null {
-  return value === null || (typeof value === "number" && Number.isInteger(value) && value >= 0);
-}
-
-function isSelector(value: unknown): value is ProductUpdateSelector {
-  return (
-    isRecord(value)
-    && hasExactKeys(value, [
-      "originalProductCode",
-      "originalName",
-      "originalQuantity",
-      "originalUnitPrice",
-      "originalTotalPrice",
-      "occurrenceOrdinal",
-    ])
-    && isNullableString(value["originalProductCode"])
-    && isNullableString(value["originalName"])
-    && isNullableNonNegativeNumber(value["originalQuantity"])
-    && isNullableNonNegativeNumber(value["originalUnitPrice"])
-    && isNullableNonNegativeNumber(value["originalTotalPrice"])
-    && isNullableOccurrenceOrdinal(value["occurrenceOrdinal"])
-  );
 }
 
 function isProductMutation(value: unknown): value is ProductMutation {
@@ -87,7 +61,7 @@ function isUpdateProductInput(value: unknown): value is UpdateProductInput {
     && typeof value["invoiceId"] === "string"
     && isRecord(value["payload"])
     && hasExactKeys(value["payload"], ["selector", "updatedProduct"])
-    && isSelector(value["payload"]["selector"])
+    && isProductUpdateSelector(value["payload"]["selector"])
     && isProductMutation(value["payload"]["updatedProduct"])
   );
 }
@@ -98,7 +72,7 @@ function isUpdateProductInput(value: unknown): value is UpdateProductInput {
  * @param input - Invoice ID, immutable original selector, and changed values.
  * @returns The complete parsed product response or a safe action error.
  */
-export async function updateInvoiceProduct(input: unknown): Promise<ServerActionResult<Readonly<Product>>> {
+export async function updateInvoiceProduct(input: unknown): ServerActionResult<Readonly<Product>> {
   return withSpan("api.actions.invoices.updateInvoiceProduct", async () => {
     if (!isUpdateProductInput(input)) {
       return {success: false, error: {code: "VALIDATION_ERROR", message: "Product update request is invalid."}};
@@ -136,7 +110,8 @@ export async function updateInvoiceProduct(input: unknown): Promise<ServerAction
         };
       }
 
-      const product = parseProductTransport(await response.json());
+      const responseBody: unknown = await response.json();
+      const product = parseProductTransport(responseBody);
       if (product === null) {
         addSpanEvent("bff.request.update-invoice-product.invalid-response");
         return {success: false, error: {code: "SERVER_ERROR", message: "The product update response was invalid. Please try again."}};

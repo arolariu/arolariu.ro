@@ -8,11 +8,19 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionErrorCode, type ServerActionResult} from "@/lib/utils.server";
-import {AnalysisProfile, type CreateInvoiceDtoPayload, type CreateInvoiceScanDtoPayload, type Invoice} from "@/types/invoices";
+import {
+  AnalysisProfile,
+  InvoiceScanType,
+  PaymentType,
+  type CreateInvoiceDtoPayload,
+  type CreateInvoiceScanDtoPayload,
+  type Invoice,
+} from "@/types/invoices";
+import {parseInvoiceTransport} from "@/types/invoices/transport";
 import {type Scan, ScanMetadataKey, ScanMetadataStatus} from "@/types/scans";
 import {analyzeInvoice} from "../../_actions/invoices";
 import {updateScan} from "../../_actions/scans";
-import {scanTypeToInvoiceScanType} from "../../_utils/mimeTypeUtilities";
+import {isHeicScanMimeType, scanTypeToInvoiceScanType} from "../../_utils/mimeTypeUtilities";
 
 /** Client-safe message for an unavailable invoice-creation operation. */
 const CREATE_INVOICES_FAILURE_MESSAGE = "Unable to create invoices. Please try again.";
@@ -134,48 +142,85 @@ function createSafeFailureMessage(code: ServerActionErrorCode): string {
  * Creates the request body for an invoice's first scan.
  *
  * @param scan - Scan selected by the authenticated user.
- * @param userIdentifier - Authenticated user identifier.
  * @returns Backend invoice-create payload.
  */
-function createInvoicePayload(scan: Scan, userIdentifier: string): CreateInvoiceDtoPayload {
+function createInvoicePayload(scan: Scan): CreateInvoiceDtoPayload {
   return {
-    userIdentifier,
-    initialScan: {
-      scanType: scanTypeToInvoiceScanType(scan.scanType),
-      location: scan.blobUrl,
-      metadata: {
-        sourceScanId: scan.metadata.scanId,
-        sourceOwnerId: scan.metadata.ownerId,
-        documentKind: scan.metadata.documentKind,
-        documentRole: scan.metadata.documentRole,
-        uploadedAt: scan.metadata.uploadedAt.toISOString(),
+    name: scan.name.replace(/\.[^/.]+$/u, "").trim() || "Invoice",
+    description: null,
+    classification: null,
+    paymentInformation: {
+      transactionDate: scan.uploadedAt,
+      paymentType: PaymentType.Unknown,
+      currency: {name: "Romanian Leu", code: "RON", symbol: "lei"},
+      totalCostAmount: 0,
+      totalTaxAmount: 0,
+      subtotalAmount: 0,
+      tipAmount: 0,
+    },
+    merchantReference: null,
+    isImportant: false,
+    scans: [
+      {
+        type: scanTypeToInvoiceScanType(scan.scanType),
+        location: scan.blobUrl,
+        metadata: {
+          sourceScanId: scan.metadata.scanId,
+          documentKind: scan.metadata.documentKind,
+          documentRole: scan.metadata.documentRole,
+          uploadedAt: scan.metadata.uploadedAt.toISOString(),
+        },
       },
-    },
-    metadata: {
-      isImportant: "false",
-      requiresAnalysis: "true",
-      sourceScanId: scan.id,
-    },
+    ],
+    items: null,
+    metadata: {sourceScanId: scan.id},
   };
+}
+
+function isSupportedInvoiceScan(scan: Scan): boolean {
+  return (
+    !isHeicScanMimeType(scan.mimeType)
+    && (
+      [
+        InvoiceScanType.JPG,
+        InvoiceScanType.JPEG,
+        InvoiceScanType.PNG,
+        InvoiceScanType.PDF,
+        InvoiceScanType.BMP,
+        InvoiceScanType.TIFF,
+        InvoiceScanType.HEIF,
+      ] as readonly InvoiceScanType[]
+    ).includes(scanTypeToInvoiceScanType(scan.scanType))
+  );
 }
 
 /**
  * Creates one invoice without exposing backend error content.
  *
  * @param scan - Scan that becomes the invoice's initial attachment.
- * @param userIdentifier - Authenticated user identifier.
  * @param authToken - Authenticated API token.
  * @returns The created invoice or a stable failure code.
  */
-async function createSingleInvoice(scan: Scan, userIdentifier: string, authToken: string): Promise<InvoiceRequestResult> {
+async function createSingleInvoice(scan: Scan, authToken: string): Promise<InvoiceRequestResult> {
+  if (!isSupportedInvoiceScan(scan)) {
+    return {success: false, code: "VALIDATION_ERROR"};
+  }
+
   try {
+    const payload = createInvoicePayload(scan);
     const response = await fetchWithTimeout("/rest/v1/invoices", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${authToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(createInvoicePayload(scan, userIdentifier)),
+      body: JSON.stringify({
+        ...payload,
+        paymentInformation: {
+          ...payload.paymentInformation,
+          transactionDate: scan.uploadedAt.toISOString(),
+        },
+      }),
     });
 
     if (!response.ok) {
@@ -184,7 +229,14 @@ async function createSingleInvoice(scan: Scan, userIdentifier: string, authToken
       return {success: false, code};
     }
 
-    return {success: true, invoice: (await response.json()) as Invoice};
+    const responseBody: unknown = await response.json();
+    const invoice = parseInvoiceTransport(responseBody);
+    if (invoice === null) {
+      logSafeOperation("warn", "invoice.create.invalid-response", {errorCode: "SERVER_ERROR"});
+      return {success: false, code: "SERVER_ERROR"};
+    }
+
+    return {success: true, invoice};
   } catch {
     logSafeOperation("error", "invoice.create.failed", {errorCode: "NETWORK_ERROR"});
     return {success: false, code: "NETWORK_ERROR"};
@@ -204,12 +256,15 @@ async function attachScanToInvoice(
   scan: Scan,
   authToken: string,
 ): Promise<Readonly<{success: true}> | Readonly<{success: false; code: ServerActionErrorCode}>> {
+  if (!isSupportedInvoiceScan(scan)) {
+    return {success: false, code: "VALIDATION_ERROR"};
+  }
+
   const payload: CreateInvoiceScanDtoPayload = {
-    scanType: scanTypeToInvoiceScanType(scan.scanType),
+    type: scanTypeToInvoiceScanType(scan.scanType),
     location: scan.blobUrl,
     metadata: {
       sourceScanId: scan.metadata.scanId,
-      sourceOwnerId: scan.metadata.ownerId,
       documentKind: scan.metadata.documentKind,
       documentRole: scan.metadata.documentRole,
       attachedAt: new Date().toISOString(),
@@ -312,7 +367,7 @@ async function createInvoicesInSingleMode(scans: ReadonlyArray<Scan>, userIdenti
   const result: CreationResult = {invoices: [], convertedScanIds: [], errors: [], analysis: []};
 
   for (const scan of scans) {
-    const invoiceResult = await createSingleInvoice(scan, userIdentifier, authToken);
+    const invoiceResult = await createSingleInvoice(scan, authToken);
     if (!invoiceResult.success) {
       result.errors.push({scanId: scan.id, code: invoiceResult.code});
       continue;
@@ -347,7 +402,7 @@ async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, userIdentif
     };
   }
 
-  const initialInvoice = await createSingleInvoice(firstScan, userIdentifier, authToken);
+  const initialInvoice = await createSingleInvoice(firstScan, authToken);
   if (!initialInvoice.success) {
     return {
       invoices: [],

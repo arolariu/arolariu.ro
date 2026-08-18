@@ -854,12 +854,11 @@
         "dropzone": {
           "dragAndDrop": "Trage și plasează un fișier aici",
           "dropHere": "Plasează fișierul aici...",
-          "formats": "JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF (max 10MB)",
+          "formats": "JPG, JPEG, PNG, BMP, TIFF, HEIF, PDF (max 10MB)",
           "orClickBrowse": "sau apasă pentru a răsfoi"
         },
         "scanType": {
           "bmp": "Imagine BMP",
-          "heic": "Imagine HEIC",
           "heif": "Imagine HEIF",
           "jpeg": "Imagine JPEG",
           "label": "Tip scanare",
@@ -2990,7 +2989,7 @@
           "formats": {
             "documentExtensions": ".pdf",
             "documents": "Documente",
-            "imageExtensions": ".jpg, .jpeg, .png, .bmp, .tif, .tiff, .heif, .heic",
+            "imageExtensions": ".jpg, .jpeg, .png, .bmp, .tif, .tiff, .heif",
             "images": "Imagini",
             "maxSize": "Dimensiune maximă: 10MB per fișier",
             "title": "Formate Acceptate"
@@ -3039,13 +3038,13 @@
           "compact": {
             "dropActive": "Plasează fișierele pentru a le adăuga",
             "dropInactive": "Trage fișiere aici sau fă clic pentru a naviga",
-            "subtitle": "JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF până la 10MB"
+            "subtitle": "JPG, JPEG, PNG, BMP, TIFF, HEIF, PDF până la 10MB"
           },
           "empty": {
             "chooseFiles": "Alege fișiere",
             "dropActive": "Plasează fișierele pentru încărcare",
             "dropInactive": "Fă clic sau trage fișiere pentru încărcare",
-            "formats": "Formate acceptate: JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF (maxim 10MB fiecare)",
+            "formats": "Formate acceptate: JPG, JPEG, PNG, BMP, TIFF, HEIF, PDF (maxim 10MB fiecare)",
             "note": "Poți selecta mai multe fișiere.",
             "pasteHint": "Sfat: poți lipi o imagine direct din clipboard (Ctrl+V).",
             "title": "Trage și plasează fișierele aici"

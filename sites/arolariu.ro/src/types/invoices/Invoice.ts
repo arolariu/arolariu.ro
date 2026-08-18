@@ -20,7 +20,6 @@ export const InvoiceScanType = {
   BMP: 6,
   TIFF: 7,
   HEIF: 8,
-  HEIC: 9,
 } as const;
 
 /** Union of backend scan-type values. */
@@ -94,21 +93,39 @@ export interface UpdateInvoiceDtoPayload {
 /** Minimal scan input retained for the create-invoice request contract. */
 export interface CreateInvoiceScanDtoPayload {
   /** Scan type supplied during creation. */
-  readonly scanType: InvoiceScanType;
+  readonly type: InvoiceScanType;
   /** Uploaded scan location. */
   readonly location: string;
   /** Safe scan metadata accepted during creation. */
-  readonly metadata: Readonly<Record<string, string>>;
+  readonly metadata: Readonly<Record<string, string | number | boolean | null>>;
 }
 
-/** Current create-invoice request data used by the create flow. */
+/**
+ * Exact POST invoice payload supported by `CreateInvoiceRequestDto`.
+ *
+ * @remarks
+ * Ownership is derived exclusively from the authenticated token. This payload
+ * must never include a user identifier or server-owned analysis state.
+ */
 export interface CreateInvoiceDtoPayload {
-  /** User identifier from the authenticated create flow. */
-  readonly userIdentifier: string;
-  /** First receipt scan. */
-  readonly initialScan: CreateInvoiceScanDtoPayload;
-  /** Safe creation metadata. */
-  readonly metadata: Readonly<Record<string, string>>;
+  /** User-entered invoice name. */
+  readonly name: string;
+  /** Optional user-entered invoice description. */
+  readonly description: string | null;
+  /** Optional manual ECOICOP v2 selection. */
+  readonly classification: ClassificationSelection | null;
+  /** Optional user-entered payment information. */
+  readonly paymentInformation: PaymentInformation | null;
+  /** Optional existing merchant association. */
+  readonly merchantReference: string | null;
+  /** Whether the invoice is marked important. */
+  readonly isImportant: boolean;
+  /** One or more supported receipt scans. */
+  readonly scans: readonly CreateInvoiceScanDtoPayload[];
+  /** Optional user-entered manual product lines. */
+  readonly items: readonly import("./Product").CreateProductDtoPayload[] | null;
+  /** Safe client-defined metadata. */
+  readonly metadata: Readonly<Record<string, string | number | boolean | null>> | null;
 }
 
 /** Invoice deletion action input. */

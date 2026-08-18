@@ -103,6 +103,13 @@ export {
   type ProductUpdateSelector,
   type UpdateProductDtoPayload,
 } from "./Product";
+export {
+  createProductSelector,
+  createProductSelectors,
+  isProductUpdateSelector,
+  normalizeProductCode,
+  normalizeProductName,
+} from "./productSelector";
 export {RecipeDifficulty, isRecipeDifficulty, isRecipeIngredient, isRecipeSuggestion, isRecipeStep} from "./Recipe";
 export type {
   CreateRecipeDtoPayload,

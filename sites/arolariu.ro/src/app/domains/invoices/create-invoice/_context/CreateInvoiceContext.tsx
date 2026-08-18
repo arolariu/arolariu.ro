@@ -19,7 +19,7 @@ import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
 import {createContext, useCallback, useContext, useMemo, useState, type ReactNode} from "react";
-import {analyzeInvoice, createInvoice, patchInvoice} from "../../_actions/invoices";
+import {analyzeInvoice, createInvoice} from "../../_actions/invoices";
 import {updateScan} from "../../_actions/scans";
 import {scanTypeToInvoiceScanType} from "../../_utils/mimeTypeUtilities";
 
@@ -206,33 +206,41 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
   const createInvoiceWithScans = useCallback(async () => {
     setIsCreating(true);
     try {
-      // Use first scan as initial scan for invoice creation
-      const [firstScan] = selectedScans;
-      if (!firstScan) {
+      if (selectedScans.length === 0) {
         toast.error(t((m) => m.forms.invoices.createInvoice.notifications.createFailed));
         return;
       }
 
-      // Derive the invoice scan type through the centralized MIME utility.
-      const scanType = scanTypeToInvoiceScanType(firstScan.scanType);
-
-      // Create invoice with first scan and ALL invoice details in metadata
-      // Note: All form fields (name, paymentType, transactionDate, description)
-      // are included in metadata. Backend should extract these to populate top-level Invoice fields.
+      // Send every user-editable creation field in the backend DTO's top-level
+      // contract. Ownership is intentionally absent: the authenticated token is
+      // the backend's only source of the invoice owner.
       const result = await createInvoice({
-        initialScan: {
-          scanType,
-          location: firstScan.blobUrl,
-          metadata: {},
+        name: invoiceDetails.name,
+        description: invoiceDetails.description.trim() === "" ? null : invoiceDetails.description,
+        classification: invoiceDetails.classification,
+        paymentInformation: {
+          transactionDate: invoiceDetails.transactionDate,
+          paymentType: invoiceDetails.paymentType,
+          currency: {name: "Romanian Leu", code: "RON", symbol: "lei"},
+          totalCostAmount: 0,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
         },
-        metadata: {
-          isImportant: "false",
-          requiresAnalysis: "true",
-          name: invoiceDetails.name,
-          paymentType: invoiceDetails.paymentType.toString(),
-          transactionDate: invoiceDetails.transactionDate.toISOString(),
-          description: invoiceDetails.description,
-        },
+        merchantReference: null,
+        isImportant: false,
+        scans: selectedScans.map((scan) => ({
+          type: scanTypeToInvoiceScanType(scan.scanType),
+          location: scan.blobUrl,
+          metadata: {
+            sourceScanId: scan.metadata.scanId,
+            documentKind: scan.metadata.documentKind,
+            documentRole: scan.metadata.documentRole,
+            uploadedAt: scan.metadata.uploadedAt.toISOString(),
+          },
+        })),
+        items: null,
+        metadata: {source: "create-invoice"},
       });
 
       if (!result.success) {
@@ -241,18 +249,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       }
       const invoice = result.data;
 
-      let manualClassificationApplied = false;
-      if (invoiceDetails.classification !== null) {
-        const classificationResult = await patchInvoice({
-          invoiceId: invoice.id,
-          payload: {classification: invoiceDetails.classification},
-        });
-        if (!classificationResult.success) {
-          toast.error(t((m) => m.forms.invoices.createInvoice.notifications.classificationNotSaved));
-        } else {
-          manualClassificationApplied = true;
-        }
-      }
+      const manualClassificationApplied = invoiceDetails.classification !== null;
 
       // Mark scans as used in local store (immediate UI update)
       const scanIds = selectedScans.map((s) => s.id);
@@ -301,7 +298,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
     } finally {
       setIsCreating(false);
     }
-  }, [selectedScans, invoiceDetails, markScansAsUsedByInvoice, router]);
+  }, [selectedScans, invoiceDetails, markScansAsUsedByInvoice, router, t]);
 
   const contextValue: CreateInvoiceContextValue = useMemo(
     () => ({

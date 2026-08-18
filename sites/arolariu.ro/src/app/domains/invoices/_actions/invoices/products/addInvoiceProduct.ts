@@ -57,7 +57,7 @@ function isAddProductInput(value: unknown): value is AddProductInput {
  * @param input - Parent invoice ID and product mutation fields.
  * @returns Parsed product DTO or a safe action error.
  */
-export async function addInvoiceProduct(input: unknown): Promise<ServerActionResult<Readonly<Product>>> {
+export async function addInvoiceProduct(input: unknown): ServerActionResult<Readonly<Product>> {
   return withSpan("api.actions.invoices.addInvoiceProduct", async () => {
     if (!isAddProductInput(input)) {
       return {success: false, error: {code: "VALIDATION_ERROR", message: "Product creation request is invalid."}};
@@ -86,7 +86,8 @@ export async function addInvoiceProduct(input: unknown): Promise<ServerActionRes
         };
       }
 
-      const product = parseProductTransport(await response.json());
+      const responseBody: unknown = await response.json();
+      const product = parseProductTransport(responseBody);
       if (product === null) {
         return {success: false, error: {code: "SERVER_ERROR", message: "The product response was invalid. Please try again."}};
       }

@@ -42,4 +42,40 @@ describe("createProductSelectors", () => {
 
     expect(selectors[0]).toMatchObject({originalProductCode: "5940000000001", occurrenceOrdinal: null});
   });
+
+  it("uses code normalization and a stable occurrence for duplicate product codes", () => {
+    const selectors = createProductSelectors([
+      {...duplicateProduct, productCode: " sku-42 "},
+      {...duplicateProduct, productCode: "SKU-42"},
+    ]);
+
+    expect(selectors).toEqual([
+      {
+        originalProductCode: " sku-42 ",
+        originalName: null,
+        originalQuantity: null,
+        originalUnitPrice: null,
+        originalTotalPrice: null,
+        occurrenceOrdinal: 0,
+      },
+      {
+        originalProductCode: "SKU-42",
+        originalName: null,
+        originalQuantity: null,
+        originalUnitPrice: null,
+        originalTotalPrice: null,
+        occurrenceOrdinal: 1,
+      },
+    ]);
+  });
+
+  it("collapses whitespace and casing before finding duplicate snapshot occurrences", () => {
+    const selectors = createProductSelectors([
+      {...duplicateProduct, name: " Wholemeal   bread "},
+      {...duplicateProduct, name: "wholemeal bread"},
+    ]);
+
+    expect(selectors[0]?.occurrenceOrdinal).toBe(0);
+    expect(selectors[1]?.occurrenceOrdinal).toBe(1);
+  });
 });

@@ -55,13 +55,10 @@ export async function createJwtToken(payload: Readonly<JWTPayload>, secret: Read
       // Set span attributes for JWT creation
       span.setAttributes({
         "jwt.algorithm": "HS256",
-        "jwt.subject": payload["sub"] ?? "unknown",
-        "jwt.issuer": payload["iss"] ?? "unknown",
-        "jwt.audience": payload["aud"] ?? "unknown",
       });
 
       addSpanEvent("jwt.signing.start");
-      logWithTrace("debug", "Creating JWT token", {subject: payload["sub"]}, "server");
+      logWithTrace("debug", "jwt.signing.start", undefined, "server");
 
       // Convert the base64-encoded secret to Uint8Array
       const secretKey = new TextEncoder().encode(secret);
@@ -77,14 +74,13 @@ export async function createJwtToken(payload: Readonly<JWTPayload>, secret: Read
         "jwt.duration_ms": duration,
       });
 
-      logWithTrace("info", "JWT token created successfully", {subject: payload["sub"], duration}, "server");
+      logWithTrace("info", "jwt.signing.complete", {duration}, "server");
 
       return jwt;
-    } catch (error) {
-      recordSpanError(error, "Failed to create JWT token");
-      const errorMessage = error instanceof Error ? error.message : "Failed to create JWT token";
-      logWithTrace("error", "JWT token creation failed", {error: errorMessage}, "server");
-      throw new Error(errorMessage, {cause: error});
+    } catch {
+      recordSpanError(new Error("JWT token creation failed"), "JWT token creation failed");
+      logWithTrace("error", "jwt.signing.failed", undefined, "server");
+      throw new Error("JWT token creation failed");
     }
   });
 }

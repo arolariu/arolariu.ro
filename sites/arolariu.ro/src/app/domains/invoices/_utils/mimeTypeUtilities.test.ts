@@ -30,8 +30,8 @@ describe("mimeTypeUtilities", () => {
       expect(normalizeScanMimeType("image/tif")).toBe("image/tiff");
     });
 
-    it("should normalize HEIC with uppercase", () => {
-      expect(normalizeScanMimeType("IMAGE/HEIC")).toBe("image/heic");
+    it("should reject HEIC with uppercase", () => {
+      expect(normalizeScanMimeType("IMAGE/HEIC")).toBeNull();
     });
 
     it("should return null for unknown input", () => {
@@ -82,16 +82,12 @@ describe("mimeTypeUtilities", () => {
       expect(ACCEPTED_SCAN_MIME_TYPES).toContain("image/heif");
     });
 
-    it("should include canonical forms for HEIC", () => {
-      expect(ACCEPTED_SCAN_MIME_TYPES).toContain("image/heic");
-    });
-
     it("should include canonical forms for PDF", () => {
       expect(ACCEPTED_SCAN_MIME_TYPES).toContain("application/pdf");
     });
 
-    it("should have exactly 7 supported MIME types", () => {
-      expect(ACCEPTED_SCAN_MIME_TYPES.length).toBe(7);
+    it("should have exactly 6 supported MIME types", () => {
+      expect(ACCEPTED_SCAN_MIME_TYPES.length).toBe(6);
     });
 
     it("should not expose Set mutating methods", () => {
@@ -134,16 +130,12 @@ describe("mimeTypeUtilities", () => {
       expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toContain("heif");
     });
 
-    it("should include heic extension", () => {
-      expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toContain("heic");
-    });
-
     it("should include pdf extension", () => {
       expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toContain("pdf");
     });
 
-    it("should have exactly 9 supported extensions", () => {
-      expect(ACCEPTED_SCAN_FILE_EXTENSIONS.length).toBe(9);
+    it("should have exactly 8 supported extensions", () => {
+      expect(ACCEPTED_SCAN_FILE_EXTENSIONS.length).toBe(8);
     });
 
     it("should not expose Set mutating methods", () => {
@@ -222,8 +214,8 @@ describe("mimeTypeUtilities", () => {
       expect(mimeTypeToScanType("image/heif")).toBe(ScanType.HEIF);
     });
 
-    it("should map image/heic to ScanType.HEIC", () => {
-      expect(mimeTypeToScanType("image/heic")).toBe(ScanType.HEIC);
+    it("should reject image/heic", () => {
+      expect(mimeTypeToScanType("image/heic")).toBe(ScanType.OTHER);
     });
 
     it("should map application/pdf to ScanType.PDF", () => {
@@ -260,8 +252,8 @@ describe("mimeTypeUtilities", () => {
       expect(mimeTypeToInvoiceScanType("image/heif")).toBe(InvoiceScanType.HEIF);
     });
 
-    it("should map image/heic to InvoiceScanType.HEIC", () => {
-      expect(mimeTypeToInvoiceScanType("image/heic")).toBe(InvoiceScanType.HEIC);
+    it("should reject image/heic", () => {
+      expect(mimeTypeToInvoiceScanType("image/heic")).toBe(InvoiceScanType.UNKNOWN);
     });
 
     it("should map application/pdf to InvoiceScanType.PDF", () => {
@@ -296,10 +288,6 @@ describe("mimeTypeUtilities", () => {
 
     it("should map ScanType.HEIF to InvoiceScanType.HEIF", () => {
       expect(scanTypeToInvoiceScanType(ScanType.HEIF)).toBe(InvoiceScanType.HEIF);
-    });
-
-    it("should map ScanType.HEIC to InvoiceScanType.HEIC", () => {
-      expect(scanTypeToInvoiceScanType(ScanType.HEIC)).toBe(InvoiceScanType.HEIC);
     });
 
     it("should map ScanType.PDF to InvoiceScanType.PDF", () => {
@@ -340,8 +328,8 @@ describe("mimeTypeUtilities", () => {
       expect(getMimeTypeForExtension("heif")).toBe("image/heif");
     });
 
-    it("should map heic to image/heic", () => {
-      expect(getMimeTypeForExtension("heic")).toBe("image/heic");
+    it("should reject heic", () => {
+      expect(getMimeTypeForExtension("heic")).toBeNull();
     });
 
     it("should map pdf to application/pdf", () => {
@@ -376,6 +364,7 @@ describe("mimeTypeUtilities", () => {
 
     it("should return false for unsupported MIME types", () => {
       expect(isSupportedScanMimeType("image/gif")).toBe(false);
+      expect(isSupportedScanMimeType("image/heic")).toBe(false);
       expect(isSupportedScanMimeType("text/plain")).toBe(false);
     });
 
@@ -404,6 +393,7 @@ describe("mimeTypeUtilities", () => {
     it("should return false for unsupported extensions", () => {
       expect(isSupportedScanExtension("txt")).toBe(false);
       expect(isSupportedScanExtension("gif")).toBe(false);
+      expect(isSupportedScanExtension("heic")).toBe(false);
     });
   });
 });

@@ -21,7 +21,7 @@ export async function fetchAaaSUserFromAuthService(): Promise<{isAuthenticated: 
     const isAuthenticated = user !== null;
     return {isAuthenticated, user} as const;
   } catch (error) {
-    console.error(">>> Error fetching user from Auth Service:", error);
+    console.error("auth.user.fetch.failed");
     throw error;
   }
 }
@@ -95,7 +95,7 @@ export async function fetchBFFUserFromAuthService(): Promise<Readonly<UserInform
       return userInformation;
     }
   } catch (error) {
-    console.error(">>> Error fetching user from BFF:", error);
+    console.error("auth.bff-token.fetch.failed");
     throw error;
   }
 }

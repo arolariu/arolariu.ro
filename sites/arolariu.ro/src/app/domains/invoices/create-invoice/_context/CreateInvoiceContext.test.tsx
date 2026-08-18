@@ -25,6 +25,10 @@ let setName: ((name: string) => void) | null = null;
 let setClassification: ((classification: ClassificationSelection | null) => void) | null = null;
 let currentClassification: ClassificationSelection | null = null;
 
+function createdInvoiceResponse(): Response {
+  return Response.json(buildInvoice({id: invoiceIdentifier, name: "Receipt", description: ""}), {status: 201});
+}
+
 /**
  * Exposes the context methods under test without mocking the context or actions.
  *
@@ -111,7 +115,7 @@ describe("CreateInvoiceContext durable analysis enqueue", () => {
         });
       }
 
-      return new Response(JSON.stringify({id: invoiceIdentifier, userIdentifier: "user-1"}), {status: 201});
+      return createdInvoiceResponse();
     });
     const scan = createScan();
     useScansStore.getState().setScans([scan]);
@@ -155,7 +159,7 @@ describe("CreateInvoiceContext durable analysis enqueue", () => {
     installAnalysisFetchHandler((requestAtBoundary) =>
       requestAtBoundary.url.endsWith("/analyze")
         ? new Response("raw backend body that must remain private", {status: 503})
-        : new Response(JSON.stringify({id: invoiceIdentifier, userIdentifier: "user-1"}), {status: 201}),
+        : createdInvoiceResponse(),
     );
     const scan = createScan();
     useScansStore.getState().setScans([scan]);
@@ -191,7 +195,7 @@ describe("CreateInvoiceContext durable analysis enqueue", () => {
         return new Response(JSON.stringify(buildInvoice({id: invoiceIdentifier, name: "Receipt", description: ""})), {status: 200});
       }
 
-      return new Response(JSON.stringify({id: invoiceIdentifier, userIdentifier: "user-1"}), {status: 201});
+      return createdInvoiceResponse();
     });
     const scan = createScan();
     useScansStore.getState().setScans([scan]);
@@ -214,10 +218,10 @@ describe("CreateInvoiceContext durable analysis enqueue", () => {
     });
 
     // Assert
-    const patchRequest = getAnalysisApiRequests().find((request) => request.init?.method === "PATCH");
+    const createRequest = getAnalysisApiRequests().find((request) => request.init?.method === "POST" && request.url.endsWith("/invoices"));
     const analysisRequest = getAnalysisApiRequests().find((request) => request.url.endsWith("/analyze"));
-    expect(patchRequest).toBeDefined();
-    expect(patchRequest?.init?.body).toBe(JSON.stringify({classification: {system: ClassificationSystem.EcoicopV2, code: "01.1"}}));
+    expect(createRequest).toBeDefined();
+    expect(createRequest?.init?.body).toContain(JSON.stringify({system: ClassificationSystem.EcoicopV2, code: "01.1"}));
     expect(analysisRequest?.init?.body).toBe(
       JSON.stringify({
         profile: "comprehensive",

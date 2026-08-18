@@ -43,8 +43,8 @@ function validateSingleFile(file: File): UploadBatchValidationResult["invalidFil
 
 describe("upload format policy", () => {
   it("exposes an input accept string that matches all accepted extensions", () => {
-    expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toEqual(["jpg", "jpeg", "png", "bmp", "tif", "tiff", "heif", "heic", "pdf"]);
-    expect(SCAN_UPLOAD_INPUT_ACCEPT).toBe(".jpg,.jpeg,.png,.bmp,.tif,.tiff,.heif,.heic,.pdf");
+    expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toEqual(["jpg", "jpeg", "png", "bmp", "tif", "tiff", "heif", "pdf"]);
+    expect(SCAN_UPLOAD_INPUT_ACCEPT).toBe(".jpg,.jpeg,.png,.bmp,.tif,.tiff,.heif,.pdf");
   });
 });
 
@@ -60,13 +60,22 @@ describe("validateUploadFile", () => {
       createFile("receipt.png", "image/png"),
       createFile("receipt.bmp", "image/bmp"),
       createFile("receipt.heif", "image/heif"),
-      createFile("receipt.heic", "image/heic"),
       createFile("receipt.tif", "image/tiff"),
       createFile("receipt-empty.tiff", ""),
       createFile("receipt.tiff", "image/tiff"),
     ];
 
     expect(files.map((file) => validateSingleFile(file))).toEqual(files.map((file) => ({isValid: true, file})));
+  });
+
+  it("rejects HEIC before an upload target can be requested", () => {
+    const file = createFile("receipt.heic", "image/heic");
+
+    expect(validateSingleFile(file)).toEqual({
+      isValid: false,
+      file,
+      reason: "unsupported-extension",
+    });
   });
 
   it("rejects binary files because upload-scans only accepts scan document formats", () => {

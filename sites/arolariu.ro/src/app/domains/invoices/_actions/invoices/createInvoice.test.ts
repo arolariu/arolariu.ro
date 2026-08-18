@@ -1,204 +1,186 @@
 /**
- * @fileoverview Real-boundary tests for invoice creation server actions.
+ * @fileoverview Native-boundary tests for strict invoice creation.
  * @module app/domains/invoices/_actions/invoices/createInvoice.test
  */
 
-import {analysisClerk} from "@/../tests/helpers/analysisClerk";
 import {
   ANALYSIS_API_URL,
   getAnalysisApiRequests,
   installAnalysisFetchHandler,
   type AnalysisFetchRequest,
 } from "@/../tests/helpers/analysisBoundary";
-import {EMPTY_GUID} from "@/lib/utils.generic";
-import {InvoiceScanType} from "@/types/invoices";
+import {createInvoiceBuilder} from "@/data/mocks/invoice";
+import {ClassificationSystem, InvoiceScanType, PaymentType, type CreateInvoiceDtoPayload} from "@/types/invoices";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {createInvoice} from "./createInvoice";
 
+const invoiceIdentifier = "11111111-1111-4111-8111-111111111111";
 let apiHandler: (request: AnalysisFetchRequest) => Response | Promise<Response>;
 
-function getOnlyApiRequest(): AnalysisFetchRequest {
-  const requestAtBoundary = getAnalysisApiRequests()[0];
-  if (!requestAtBoundary) {
-    throw new Error("Expected the real action to send an API request.");
-  }
-
-  return requestAtBoundary;
+function createPayload(overrides: Partial<CreateInvoiceDtoPayload> = {}): CreateInvoiceDtoPayload {
+  return {
+    name: "Weekly groceries",
+    description: "User-entered receipt note",
+    classification: {system: ClassificationSystem.EcoicopV2, code: "01.1"},
+    paymentInformation: {
+      transactionDate: new Date("2026-08-18T00:00:00.000Z"),
+      paymentType: PaymentType.Card,
+      currency: {name: "Romanian Leu", code: "RON", symbol: "lei"},
+      totalCostAmount: 12.5,
+      totalTaxAmount: 2,
+      subtotalAmount: 10,
+      tipAmount: 0.5,
+    },
+    merchantReference: "22222222-2222-4222-8222-222222222222",
+    isImportant: true,
+    scans: [
+      {
+        type: InvoiceScanType.HEIF,
+        location: "https://storage.test/scan.heif",
+        metadata: {source: "upload"},
+      },
+    ],
+    items: [
+      {
+        name: "Bread",
+        classification: {system: ClassificationSystem.Gs1Gpc, code: "10000045"},
+        quantity: 1,
+        quantityUnit: "pcs",
+        productCode: "5940000000001",
+        price: 12.5,
+      },
+    ],
+    metadata: {source: "create-invoice", imported: false},
+    ...overrides,
+  };
 }
 
-function getRequestPayload(requestAtBoundary: AnalysisFetchRequest): unknown {
-  if (typeof requestAtBoundary.init?.body !== "string") {
-    throw new Error("Expected the real action to send a JSON request body.");
-  }
+function createdInvoiceResponse(): Response {
+  return Response.json(createInvoiceBuilder().withId(invoiceIdentifier).build(), {status: 201});
+}
 
-  return JSON.parse(requestAtBoundary.init.body) as unknown;
+function getOnlyApiRequest(): AnalysisFetchRequest {
+  const request = getAnalysisApiRequests().at(-1);
+  if (request === undefined) {
+    throw new Error("Expected a native API request.");
+  }
+  return request;
 }
 
 describe("createInvoice", () => {
   beforeEach(() => {
-    apiHandler = () => new Response(JSON.stringify({id: "11111111-1111-4111-8111-111111111111"}), {status: 201});
-    installAnalysisFetchHandler((requestAtBoundary) => apiHandler(requestAtBoundary));
+    apiHandler = () => createdInvoiceResponse();
+    installAnalysisFetchHandler((request) => apiHandler(request));
   });
 
-  it("posts a creation payload with the real guest userIdentifier when missing", async () => {
+  it("omits ownership and posts every client-editable field in the exact create DTO", async () => {
     // Arrange
-    const payload = {
-      initialScan: {
-        scanType: InvoiceScanType.JPEG,
-        location: "https://storage.test/scan.jpg",
-        metadata: {},
-      },
-      metadata: {isImportant: "false", requiresAnalysis: "true"},
-    };
+    const payload = createPayload();
 
     // Act
     const result = await createInvoice(payload);
 
     // Assert
     expect(result.success).toBe(true);
-    const requestAtBoundary = getOnlyApiRequest();
-    expect(requestAtBoundary).toMatchObject({
+    const request = getOnlyApiRequest();
+    expect(request).toMatchObject({
       url: `${ANALYSIS_API_URL}/rest/v1/invoices`,
-      init: expect.objectContaining({
-        method: "POST",
-        headers: expect.objectContaining({
-          Authorization: expect.stringMatching(/^Bearer /u),
-          "Content-Type": "application/json",
-        }),
-      }),
+      init: expect.objectContaining({method: "POST", headers: expect.objectContaining({"Content-Type": "application/json"})}),
     });
-    expect(getRequestPayload(requestAtBoundary)).toMatchObject({userIdentifier: EMPTY_GUID});
+    expect(request.init?.body).toBe(
+      JSON.stringify({
+        ...payload,
+        paymentInformation: {
+          ...payload.paymentInformation,
+          transactionDate: payload.paymentInformation?.transactionDate.toISOString(),
+        },
+      }),
+    );
+    expect(request.init?.body).not.toContain("userIdentifier");
   });
 
-  it("preserves an explicit userIdentifier in the payload", async () => {
+  it("returns only a fully revived Date-rich invoice response", async () => {
+    // Act
+    const result = await createInvoice(createPayload());
+
+    // Assert
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.id).toBe(invoiceIdentifier);
+      expect(result.data.createdAt).toBeInstanceOf(Date);
+      expect(result.data.lastUpdatedAt).toBeInstanceOf(Date);
+      expect(result.data.paymentInformation.transactionDate).toBeInstanceOf(Date);
+    }
+  });
+
+  it("rejects a partial creation response instead of caching an identifier-shaped value", async () => {
+    // Arrange
+    apiHandler = () => Response.json({id: invoiceIdentifier}, {status: 201});
+
+    // Act
+    const result = await createInvoice(createPayload());
+
+    // Assert
+    expect(result).toEqual({
+      success: false,
+      error: {code: "SERVER_ERROR", message: "The invoice response was invalid. Please try again."},
+    });
+  });
+
+  it("rejects malformed timestamp and unknown-key creation responses", async () => {
+    // Arrange
+    const malformedDate = createInvoiceBuilder().withId(invoiceIdentifier).build();
+    apiHandler = () =>
+      Response.json(
+        {
+          ...malformedDate,
+          createdAt: "not-a-date",
+          unexpected: true,
+        },
+        {status: 201},
+      );
+
+    // Act
+    const result = await createInvoice(createPayload());
+
+    // Assert
+    expect(result).toMatchObject({success: false, error: {code: "SERVER_ERROR"}});
+  });
+
+  it("rejects HEIC transport values before creating a request", async () => {
     // Arrange
     const payload = {
-      userIdentifier: "custom-user-id",
-      initialScan: {
-        scanType: InvoiceScanType.JPEG,
-        location: "https://storage.test/scan.jpg",
-        metadata: {},
-      },
-      metadata: {isImportant: "false", requiresAnalysis: "true"},
+      ...createPayload(),
+      scans: [{type: 9, location: "https://storage.test/scan.heic", metadata: {}}],
     };
 
     // Act
-    await createInvoice(payload);
+    const result = await createInvoice(payload);
 
     // Assert
-    expect(getRequestPayload(getOnlyApiRequest())).toMatchObject({userIdentifier: "custom-user-id"});
+    expect(result).toMatchObject({success: false, error: {code: "VALIDATION_ERROR"}});
+    expect(getAnalysisApiRequests()).toHaveLength(0);
   });
 
-  it("returns a stable server-error result without reading or exposing the backend body", async () => {
+  it("does not read, log, or return a rejected response body or submitted SAS URL", async () => {
     // Arrange
-    const sensitiveBackendBody = "OCR text: card 4111 1111 1111 1111; provider response";
-    const rejectedResponse = new Response(sensitiveBackendBody, {status: 500, statusText: "Internal Server Error"});
-    const readResponseBody = vi.spyOn(rejectedResponse, "text");
+    const sensitiveBody = "provider OCR output for ocr@example.test";
+    const sensitiveUrl = "https://storage.test/scan.jpg?sig=sensitive";
+    const rejectedResponse = new Response(sensitiveBody, {status: 500});
+    const readBody = vi.spyOn(rejectedResponse, "text");
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const consoleInfo = vi.spyOn(console, "info").mockImplementation(() => undefined);
     apiHandler = () => rejectedResponse;
 
     // Act
-    const result = await createInvoice({});
+    const result = await createInvoice(
+      createPayload({scans: [{type: InvoiceScanType.JPEG, location: sensitiveUrl, metadata: {ocr: "sensitive"}}]}),
+    );
 
     // Assert
-    expect(result).toEqual({
-      success: false,
-      error: {
-        code: "SERVER_ERROR",
-        message: "Invoice creation is temporarily unavailable. Please try again.",
-        status: 500,
-      },
-    });
-    expect(JSON.stringify(result)).not.toContain(sensitiveBackendBody);
-    expect(readResponseBody).not.toHaveBeenCalled();
-  });
-
-  it("returns a stable validation result for non-5xx responses", async () => {
-    // Arrange
-    apiHandler = () => new Response(null, {status: 400, statusText: "Bad Request"});
-
-    // Act
-    const result = await createInvoice({});
-
-    // Assert
-    expect(result).toEqual({
-      success: false,
-      error: {
-        code: "VALIDATION_ERROR",
-        message: "Unable to create invoice with the provided details.",
-        status: 400,
-      },
-    });
-  });
-
-  it("preserves an authentication rejection as a stable auth result", async () => {
-    // Arrange
-    apiHandler = () => new Response(null, {status: 401, statusText: "Unauthorized"});
-
-    // Act
-    const result = await createInvoice({});
-
-    // Assert
-    expect(result).toEqual({
-      success: false,
-      error: {
-        code: "AUTH_ERROR",
-        message: "You are not authorized to create invoices.",
-        status: 401,
-      },
-    });
-  });
-
-  it("does not expose an authentication exception message", async () => {
-    // Arrange
-    const sensitiveException = "authorization provider token for user@example.test";
-    analysisClerk.auth.mockRejectedValue(new Error(sensitiveException));
-
-    // Act
-    const result = await createInvoice({});
-
-    // Assert
-    expect(result).toMatchObject({success: false, error: {code: "NETWORK_ERROR", message: "Unable to create invoice. Please try again."}});
-    expect(JSON.stringify(result)).not.toContain(sensitiveException);
-  });
-
-  it("does not log or return a submitted SAS URL, OCR text, or backend exception", async () => {
-    // Arrange
-    const fakeSasUrl = "https://storage.example.test/invoices/scan.jpg?sv=2025-01-01&sig=fake-sensitive-signature";
-    const fakeOcrText = "OCR: customer email ocr-customer@example.test";
-    const fakeBackendBody = "provider response: internal reasoning";
-    const sensitiveException = `${fakeOcrText}; ${fakeBackendBody}`;
-    const consoleInfoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    apiHandler = () => Promise.reject(new Error(sensitiveException));
-
-    // Act
-    const result = await createInvoice({
-      initialScan: {
-        scanType: InvoiceScanType.JPEG,
-        location: fakeSasUrl,
-        metadata: {},
-      },
-      metadata: {isImportant: "false", requiresAnalysis: "true", ocrPreview: fakeOcrText},
-    });
-
-    // Assert
-    expect(result).toMatchObject({success: false, error: {code: "NETWORK_ERROR", message: "Unable to create invoice. Please try again."}});
-    const capturedOutput = JSON.stringify([...consoleInfoSpy.mock.calls, ...consoleErrorSpy.mock.calls, result]);
-    for (const sensitiveValue of [fakeSasUrl, fakeOcrText, fakeBackendBody, sensitiveException]) {
-      expect(capturedOutput).not.toContain(sensitiveValue);
-    }
-    consoleInfoSpy.mockRestore();
-    consoleErrorSpy.mockRestore();
-  });
-
-  it("returns a fallback error message when native fetch throws a non-Error", async () => {
-    // Arrange
-    apiHandler = () => Promise.reject({code: "TIMEOUT"});
-
-    // Act
-    const result = await createInvoice({});
-
-    // Assert
-    expect(result).toMatchObject({success: false, error: {message: "Unable to create invoice. Please try again."}});
+    expect(readBody).not.toHaveBeenCalled();
+    const output = JSON.stringify([result, ...consoleError.mock.calls, ...consoleInfo.mock.calls]);
+    expect(output).not.toContain(sensitiveBody);
+    expect(output).not.toContain(sensitiveUrl);
   });
 });

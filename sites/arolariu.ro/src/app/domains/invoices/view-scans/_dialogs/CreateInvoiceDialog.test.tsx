@@ -4,6 +4,7 @@
  */
 
 import {useDialogs} from "@/app/domains/invoices/_contexts/DialogContext";
+import {createInvoiceBuilder} from "@/data/mocks/invoice";
 import {useInvoicesStore, useScansStore} from "@/stores";
 import type {CachedScan} from "@/types/scans";
 import {ScanStatus, ScanType} from "@/types/scans";
@@ -63,6 +64,10 @@ function queuedAnalysisResponse(): Response {
     }),
     {status: 202},
   );
+}
+
+function createdInvoiceResponse(): Response {
+  return Response.json(createInvoiceBuilder().withId(invoiceIdentifier).build(), {status: 201});
 }
 
 function DialogScenario(): React.JSX.Element {
@@ -142,7 +147,7 @@ describe("CreateInvoiceDialog", () => {
 
     // Act
     await act(async () => {
-      resolveInvoiceCreation?.(new Response(JSON.stringify({id: invoiceIdentifier, userIdentifier: "user-1"}), {status: 201}));
+      resolveInvoiceCreation?.(createdInvoiceResponse());
       await Promise.resolve();
     });
 
@@ -164,7 +169,7 @@ describe("CreateInvoiceDialog", () => {
     // Arrange
     installAnalysisFetchHandler((request) => {
       if (request.url === `${ANALYSIS_API_URL}/rest/v1/invoices`) {
-        return new Response(JSON.stringify({id: invoiceIdentifier, userIdentifier: "user-1"}), {status: 201});
+        return createdInvoiceResponse();
       }
 
       if (request.url === `${ANALYSIS_API_URL}/rest/v1/invoices/${invoiceIdentifier}/analyze`) {
