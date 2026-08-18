@@ -11,10 +11,13 @@ import {describe, expect, it} from "vitest";
 
 import {
   assertMirroredContentsIdentical,
+  buildTaxonomyArtifactGenerationCommand,
   buildHierarchy,
   extractZipEntry,
   flattenGpcSchema,
+  generateTaxonomyArtifacts,
   parseGpcDocument,
+  main,
   writeMirroredArtifacts,
 } from "./generate.artifacts.ts";
 import type {TaxonomyArtifact, TaxonomyArtifactNode} from "./generate.artifacts.ts";
@@ -84,6 +87,10 @@ function createZipArchive(entries: readonly ZipEntryInput[]): Uint8Array {
   eocd.writeUInt32LE(localSection.length, 16);
 
   return new Uint8Array(Buffer.concat([localSection, centralSection, eocd]));
+}
+
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
 }
 
 describe("extractZipEntry", () => {
@@ -430,5 +437,112 @@ describe("assertMirroredContentsIdentical", () => {
     expect(() => assertMirroredContentsIdentical("nace-2.1.min.json", "x", ["y"])).toThrow(
       "Mirrored artifact 'nace-2.1.min.json' was not written identically.",
     );
+  });
+});
+
+describe("generateTaxonomyArtifacts", () => {
+  const gpcDocument = {
+    LanguageCode: "EN",
+    DateUtc: "2026-05-01",
+    Schema: [
+      {
+        Level: 1,
+        Code: 50000000,
+        Title: "Food",
+        Definition: null,
+        DefinitionExcludes: null,
+        Active: true,
+        Childs: [
+          {
+            Level: 2,
+            Code: 50190000,
+            Title: "Baked Goods",
+            Definition: null,
+            DefinitionExcludes: null,
+            Active: true,
+            Childs: [],
+          },
+        ],
+      },
+    ],
+  };
+
+  function createGpcResponse(document: unknown, name = "GPC as of May 2026 EN.json"): Response {
+    const archive = createZipArchive([{name, contents: JSON.stringify(document), method: 8}]);
+    return new Response(toArrayBuffer(archive), {status: 200});
+  }
+
+  it("downloads, normalizes and mirrors the GPC artifact", async () => {
+    const base = await mkdtemp(join(tmpdir(), "arolariu-artifacts-"));
+    const roots = [join(base, "api"), join(base, "web")];
+    const fetchImpl = (async () => createGpcResponse(gpcDocument)) as unknown as typeof fetch;
+
+    const written = await generateTaxonomyArtifacts(fetchImpl, roots);
+
+    expect(written).toHaveLength(2);
+    const contents = await readFile(written[0] ?? "", "utf8");
+    const parsed: unknown = JSON.parse(contents);
+    expect(parsed).toMatchObject({
+      system: "GS1_GPC",
+      version: "2026-05",
+      sourceUrl: "https://ref.gs1.org/standards/gpc/2026-05/",
+      attribution: "GS1 Global Product Classification (GPC), May 2026 release.",
+    });
+    expect((parsed as {nodes: readonly unknown[]}).nodes).toHaveLength(2);
+  });
+
+  it("requests the pinned GS1 release URL", async () => {
+    const base = await mkdtemp(join(tmpdir(), "arolariu-artifacts-"));
+    const requested: string[] = [];
+    const fetchImpl = (async (input: string) => {
+      requested.push(String(input));
+      return createGpcResponse(gpcDocument);
+    }) as unknown as typeof fetch;
+
+    await generateTaxonomyArtifacts(fetchImpl, [join(base, "api")]);
+
+    expect(requested).toEqual(["https://ref.gs1.org/standards/gpc/2026-05/"]);
+  });
+
+  it("throws when the download fails", async () => {
+    const fetchImpl = (async () => new Response("nope", {status: 503, statusText: "Service Unavailable"})) as unknown as typeof fetch;
+
+    await expect(generateTaxonomyArtifacts(fetchImpl, [])).rejects.toThrow(
+      "GPC download failed with HTTP 503 Service Unavailable.",
+    );
+  });
+
+  it("throws when the archive holds a non-English dataset", async () => {
+    const base = await mkdtemp(join(tmpdir(), "arolariu-artifacts-"));
+    const fetchImpl = (async () => createGpcResponse({...gpcDocument, LanguageCode: "FR"})) as unknown as typeof fetch;
+
+    await expect(generateTaxonomyArtifacts(fetchImpl, [join(base, "api")])).rejects.toThrow(
+      "Expected English GPC data but received 'FR'.",
+    );
+  });
+});
+
+describe("main", () => {
+  it("returns exit code zero and reports written paths", async () => {
+    const base = await mkdtemp(join(tmpdir(), "arolariu-artifacts-"));
+    const document = {
+      LanguageCode: "EN",
+      DateUtc: "2026-05-01",
+      Schema: [{Level: 1, Code: 50000000, Title: "Food", Definition: null, DefinitionExcludes: null, Active: true, Childs: []}],
+    };
+    const archive = createZipArchive([{name: "GPC EN.json", contents: JSON.stringify(document), method: 8}]);
+    const fetchImpl = (async () => new Response(toArrayBuffer(archive), {status: 200})) as unknown as typeof fetch;
+
+    await expect(main(fetchImpl, [join(base, "api")])).resolves.toBe(0);
+  });
+});
+
+describe("buildTaxonomyArtifactGenerationCommand", () => {
+  it("targets the current Node executable and this module", () => {
+    const command = buildTaxonomyArtifactGenerationCommand();
+
+    expect(command.command).toBe(process.execPath);
+    expect(command.args).toHaveLength(1);
+    expect(command.args[0]).toMatch(/generate\.artifacts\.ts$/u);
   });
 });

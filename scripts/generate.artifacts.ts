@@ -12,6 +12,7 @@
 import {inflateRawSync} from "node:zlib";
 import {mkdir, readFile, writeFile} from "node:fs/promises";
 import {resolve} from "node:path";
+import {fileURLToPath} from "node:url";
 
 const GPC_LEVELS: Readonly<Record<number, string>> = {
   1: "segment",
@@ -391,3 +392,92 @@ export function extractZipEntry(zip: Uint8Array, suffix: string): Uint8Array {
 
   throw new Error(`ZIP entry ending with '${suffix}' was not found.`);
 }
+
+const GPC_SOURCE = "https://ref.gs1.org/standards/gpc/2026-05/";
+const GPC_VERSION = "2026-05";
+const GPC_ATTRIBUTION = "GS1 Global Product Classification (GPC), May 2026 release.";
+
+async function createGpcArtifact(fetchImpl: typeof fetch, generatedAt: string): Promise<TaxonomyArtifact> {
+  const response = await fetchImpl(GPC_SOURCE, {headers: {Accept: "application/zip"}});
+  if (!response.ok) {
+    throw new Error(`GPC download failed with HTTP ${response.status} ${response.statusText}.`);
+  }
+
+  const archive = new Uint8Array(await response.arrayBuffer());
+  const jsonBytes = extractZipEntry(archive, " EN.json");
+  const parsed: unknown = JSON.parse(Buffer.from(jsonBytes).toString("utf8"));
+  const source = parseGpcDocument(parsed);
+  if (source.LanguageCode !== "EN") {
+    throw new Error(`Expected English GPC data but received '${source.LanguageCode}'.`);
+  }
+
+  return {
+    system: "GS1_GPC",
+    version: GPC_VERSION,
+    sourceUrl: GPC_SOURCE,
+    generatedAt,
+    attribution: GPC_ATTRIBUTION,
+    nodes: flattenGpcSchema(source.Schema),
+  };
+}
+
+/**
+ * Downloads every supported taxonomy and writes mirrored runtime artifacts.
+ *
+ * @param fetchImpl - Fetch implementation; injected in tests to avoid network access.
+ * @param outputRoots - Output roots; defaults to the API and website runtime directories.
+ * @returns Absolute paths written.
+ * @throws {Error} When a download fails, a source document is invalid, or validation fails.
+ */
+export async function generateTaxonomyArtifacts(
+  fetchImpl: typeof fetch = fetch,
+  outputRoots: readonly string[] = OUTPUT_ROOTS,
+): Promise<readonly string[]> {
+  const generatedAt = new Date().toISOString();
+  const gpc = await createGpcArtifact(fetchImpl, generatedAt);
+  return writeMirroredArtifacts(FILE_NAMES.GS1_GPC, gpc, outputRoots);
+}
+
+/**
+ * Runs taxonomy artifact generation and reports the written paths.
+ *
+ * @param fetchImpl - Fetch implementation; injected in tests to avoid network access.
+ * @param outputRoots - Output roots; defaults to the API and website runtime directories.
+ * @returns Process exit code; zero on success.
+ */
+export async function main(
+  fetchImpl: typeof fetch = fetch,
+  outputRoots: readonly string[] = OUTPUT_ROOTS,
+): Promise<number> {
+  const outputs = await generateTaxonomyArtifacts(fetchImpl, outputRoots);
+  console.info(`Generated ${outputs.length} taxonomy artifact file(s).`);
+  for (const output of outputs) console.info(`  - ${output}`);
+  return 0;
+}
+
+/**
+ * Builds a platform-safe command for invoking this generator through the current Node.js executable.
+ *
+ * @remarks
+ * Container and compose helpers use this so generation never depends on a shell or on
+ * `npm` being present on `PATH`.
+ *
+ * @returns Shell-independent command and arguments.
+ */
+export function buildTaxonomyArtifactGenerationCommand(): Readonly<{command: string; args: readonly string[]}> {
+  return {
+    command: process.execPath,
+    args: [fileURLToPath(import.meta.url)],
+  };
+}
+
+/* v8 ignore start -- CLI bootstrap: exercised by `npm run generate:artifacts`, not by unit tests. */
+if (import.meta.main) {
+  try {
+    process.exitCode = await main();
+  } catch (error: unknown) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  }
+}
+/* v8 ignore stop */
