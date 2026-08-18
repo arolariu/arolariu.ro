@@ -286,7 +286,8 @@ export async function writeMirroredArtifacts(
   await Promise.all(
     paths.map(async (path, index) => {
       const root = outputRoots[index];
-      if (root === undefined) throw new Error(`Output root for '${path}' was not found.`);
+      /* v8 ignore next 2 -- unreachable: paths and outputRoots are mapped from the same array with no mutation between passes. */
+    if (root === undefined) throw new Error(`Output root for '${path}' was not found.`);
       await mkdir(root, {recursive: true});
       await writeFile(path, contents, "utf8");
     }),

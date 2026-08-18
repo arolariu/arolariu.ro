@@ -7,7 +7,12 @@ import {deflateRawSync} from "node:zlib";
 import {mkdtemp, readFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
-import {describe, expect, it} from "vitest";
+import {afterEach, describe, expect, it, vi} from "vitest";
+
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs/promises")>();
+  return {...actual, readFile: vi.fn(actual.readFile)};
+});
 import {buildHierarchy, extractZipEntry, flattenGpcSchema, parseGpcDocument, writeMirroredArtifacts} from "./generate.artifacts.ts";
 import type {TaxonomyArtifact, TaxonomyArtifactNode} from "./generate.artifacts.ts";
 
@@ -309,6 +314,9 @@ describe("buildHierarchy", () => {
 
 
 describe("writeMirroredArtifacts", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
   const validNode: TaxonomyArtifactNode = {
     code: "50000000",
     officialLabel: "Food",
