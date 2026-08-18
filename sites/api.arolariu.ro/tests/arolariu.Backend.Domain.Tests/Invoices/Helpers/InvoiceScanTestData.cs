@@ -19,7 +19,7 @@ internal static class InvoiceScanTestData
       new LocalOptions
       {
         StorageAccountName = "unit-tests",
-        StorageAccountEndpoint = "https://unit-tests.arolariu.ro/scans",
+        StorageAccountEndpoint = "https://unit-tests.arolariu.ro",
       });
 
   /// <summary>
@@ -29,7 +29,7 @@ internal static class InvoiceScanTestData
   public static InvoiceScan First() =>
     new(
       ScanType.JPG,
-      new Uri("https://unit-tests.arolariu.ro/scans/receipt-1.jpg"),
+      new Uri("https://unit-tests.arolariu.ro/invoices/scans/receipt-1.jpg"),
       null);
 
   /// <summary>
@@ -39,7 +39,7 @@ internal static class InvoiceScanTestData
   public static InvoiceScan Second() =>
     new(
       ScanType.JPG,
-      new Uri("https://unit-tests.arolariu.ro/scans/receipt-2.jpg"),
+      new Uri("https://unit-tests.arolariu.ro/invoices/scans/receipt-2.jpg"),
       null);
 }
 

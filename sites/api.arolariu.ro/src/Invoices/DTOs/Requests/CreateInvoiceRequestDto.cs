@@ -101,7 +101,7 @@ public readonly record struct CreateInvoiceRequestDto(
   /// </para>
   /// </remarks>
   /// <param name="serverOwnerIdentifier">The non-empty owner identifier resolved from the authenticated request claim.</param>
-  /// <param name="storageOptions">The configured Azure storage account and upload-container endpoint.</param>
+  /// <param name="storageOptions">The configured Azure Blob storage service-root endpoint.</param>
   /// <returns>
   /// A new <see cref="Invoice"/> instance initialized with the validated client fields and server-derived ownership.
   /// </returns>
@@ -158,7 +158,7 @@ public readonly record struct CreateInvoiceRequestDto(
   /// <summary>
   /// Validates the client-controlled part of the creation transport without consulting authentication state.
   /// </summary>
-  /// <param name="storageOptions">The configured Azure storage account and upload-container endpoint.</param>
+  /// <param name="storageOptions">The configured Azure Blob storage service-root endpoint.</param>
   /// <param name="validationErrors">
   /// Field-keyed validation failures. The collection is empty when this method returns <see langword="true"/>.
   /// </param>

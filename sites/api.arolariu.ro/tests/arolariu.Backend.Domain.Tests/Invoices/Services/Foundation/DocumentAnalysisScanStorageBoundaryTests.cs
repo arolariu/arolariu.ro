@@ -9,6 +9,7 @@ using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.DocumentAnalysis;
+using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -26,15 +27,15 @@ public sealed class DocumentAnalysisScanStorageBoundaryTests
   /// </summary>
   /// <param name="location">The prohibited scan location.</param>
   [TestMethod]
-  [DataRow("http://invoiceuploads.blob.core.windows.net/invoice-scans/receipt.jpg")]
-  [DataRow("file:///invoice-scans/receipt.jpg")]
-  [DataRow("ftp://invoiceuploads.blob.core.windows.net/invoice-scans/receipt.jpg")]
-  [DataRow("https://invoiceuploads.blob.core.windows.net.attacker.test/invoice-scans/receipt.jpg")]
-  [DataRow("https://otheruploads.blob.core.windows.net/invoice-scans/receipt.jpg")]
+  [DataRow("http://invoiceuploads.blob.core.windows.net/invoices/receipt.jpg")]
+  [DataRow("file:///invoices/receipt.jpg")]
+  [DataRow("ftp://invoiceuploads.blob.core.windows.net/invoices/receipt.jpg")]
+  [DataRow("https://invoiceuploads.blob.core.windows.net.attacker.test/invoices/receipt.jpg")]
+  [DataRow("https://otheruploads.blob.core.windows.net/invoices/receipt.jpg")]
   [DataRow("https://invoiceuploads.blob.core.windows.net/other-container/receipt.jpg")]
-  [DataRow("https://untrusted-user@invoiceuploads.blob.core.windows.net/invoice-scans/receipt.jpg")]
-  [DataRow("https://invoiceuploads.blob.core.windows.net/invoice-scans/receipt.jpg#fragment")]
-  [DataRow("https://invoiceuploads.blob.core.windows.net:8443/invoice-scans/receipt.jpg")]
+  [DataRow("https://untrusted-user@invoiceuploads.blob.core.windows.net/invoices/receipt.jpg")]
+  [DataRow("https://invoiceuploads.blob.core.windows.net/invoices/receipt.jpg#fragment")]
+  [DataRow("https://invoiceuploads.blob.core.windows.net:8443/invoices/receipt.jpg")]
   public async Task ExtractInvoiceAsync_UnapprovedLocation_DoesNotInvokeDocumentIntelligence(string location)
   {
     // Arrange
@@ -67,11 +68,11 @@ public sealed class DocumentAnalysisScanStorageBoundaryTests
       new ScanStorageOptionsManager());
     var approvedScan = new InvoiceScan(
       ScanType.JPG,
-      new Uri("https://invoiceuploads.blob.core.windows.net/invoice-scans/approved.jpg"),
+      new Uri("https://invoiceuploads.blob.core.windows.net/invoices/approved.jpg"),
       Metadata: null);
     var unapprovedScan = new InvoiceScan(
       ScanType.JPG,
-      new Uri("http://invoiceuploads.blob.core.windows.net/invoice-scans/unapproved.jpg"),
+      new Uri("http://invoiceuploads.blob.core.windows.net/invoices/unapproved.jpg"),
       Metadata: null);
 
     // Act
@@ -82,13 +83,48 @@ public sealed class DocumentAnalysisScanStorageBoundaryTests
     broker.VerifyNoOtherCalls();
   }
 
+  /// <summary>
+  /// Verifies a configured loopback Azurite scan reaches Document Intelligence after local-boundary validation.
+  /// </summary>
+  [TestMethod]
+  public async Task ExtractInvoiceAsync_LoopbackAzuriteInvoiceScan_InvokesDocumentIntelligence()
+  {
+    // Arrange
+    Uri scanLocation = new("http://127.0.0.1:10000/devstoreaccount1/invoices/scans/receipt.jpg");
+    var broker = new Mock<IDocumentIntelligenceBroker>(MockBehavior.Strict);
+    broker
+      .Setup(candidate => candidate.AnalyzeReceiptAsync(scanLocation, It.IsAny<CancellationToken>()))
+      .Returns(() => ValueTask.FromResult(ReceiptDocumentTestData.Document()));
+    var service = new DocumentAnalysisFoundationService(
+      broker.Object,
+      NullLoggerFactory.Instance,
+      new AzuriteStorageOptionsManager());
+    var scan = new InvoiceScan(ScanType.JPG, scanLocation, Metadata: null);
+
+    // Act
+    _ = await service.ExtractInvoiceAsync([scan], CancellationToken.None).ConfigureAwait(false);
+
+    // Assert
+    broker.Verify(candidate => candidate.AnalyzeReceiptAsync(scanLocation, It.IsAny<CancellationToken>()), Times.Once);
+  }
+
   private sealed class ScanStorageOptionsManager : IOptionsManager
   {
     public ApplicationOptions GetApplicationOptions() =>
       new LocalOptions
       {
         StorageAccountName = "invoiceuploads",
-        StorageAccountEndpoint = "https://invoiceuploads.blob.core.windows.net/invoice-scans",
+        StorageAccountEndpoint = "https://invoiceuploads.blob.core.windows.net",
+      };
+  }
+
+  private sealed class AzuriteStorageOptionsManager : IOptionsManager
+  {
+    public ApplicationOptions GetApplicationOptions() =>
+      new LocalOptions
+      {
+        StorageAccountName = "devstoreaccount1",
+        StorageAccountEndpoint = "http://127.0.0.1:10000/devstoreaccount1",
       };
   }
 }

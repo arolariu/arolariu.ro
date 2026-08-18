@@ -28,9 +28,11 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 /// document it as an input type; clients must convert it to HEIF before submitting the scan.
 /// </para>
 /// <para>
-/// <b>Storage:</b> The <see cref="Location"/> URI must point to the configured HTTPS Azure Blob upload container.
-/// The scan must be uploaded to storage before creating this DTO. SAS query parameters are retained for the
-/// provider but are never included in telemetry.
+/// <b>Storage:</b> The <see cref="Location"/> URI must point to a non-empty blob path in the backend-owned
+/// <c>invoices</c> container beneath the configured Azure Blob service root. HTTPS is required for production
+/// storage; HTTP is accepted only for an explicitly configured loopback Azurite service root. The scan must be
+/// uploaded to storage before creating this DTO. SAS query parameters are retained for the provider but are never
+/// included in telemetry.
 /// </para>
 /// <para>
 /// <b>AI Processing:</b> After adding a scan, trigger analysis via the
@@ -43,7 +45,8 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 /// </param>
 /// <param name="Location">
 /// The URI where the scan image/document is stored. Required.
-/// Must be a valid HTTPS URI within the configured Azure Blob upload container. A SAS query is permitted.
+/// Must be a URI within the configured Azure Blob service root's <c>invoices</c> container. A SAS query is
+/// permitted.
 /// </param>
 /// <param name="Metadata">
 /// Optional metadata associated with this scan. May include:
@@ -90,7 +93,7 @@ public readonly record struct CreateInvoiceScanRequestDto(
   /// If immutability is required, the caller should provide a copy.
   /// </para>
   /// </remarks>
-  /// <param name="storageOptions">The configured Azure storage account and upload-container endpoint.</param>
+  /// <param name="storageOptions">The configured Azure Blob storage service-root endpoint.</param>
   /// <returns>
   /// A new <see cref="InvoiceScan"/> instance ready to be added to an invoice.
   /// </returns>
@@ -110,7 +113,7 @@ public readonly record struct CreateInvoiceScanRequestDto(
   /// <summary>
   /// Validates the scan input before it is persisted or submitted to Document Intelligence.
   /// </summary>
-  /// <param name="storageOptions">The configured Azure storage account and upload-container endpoint.</param>
+  /// <param name="storageOptions">The configured Azure Blob storage service-root endpoint.</param>
   /// <param name="validationErrors">
   /// A field-keyed collection of validation failures. The collection is empty when the method returns
   /// <see langword="true"/>.

@@ -33,7 +33,7 @@ public sealed class InvoiceEndpointsTelemetryPrivacyTests
   {
     // Arrange
     const string scanSasSentinel =
-      "https://invoiceuploads.blob.core.windows.net/invoice-scans/receipt.jpg?sv=2026-08-06&sig=FAKE-SAS-SENTINEL";
+      "https://invoiceuploads.blob.core.windows.net/invoices/receipt.jpg?sv=2026-08-06&sig=FAKE-SAS-SENTINEL";
     const string productNameSentinel = "PRIVATE-PRODUCT-SENTINEL";
     const string merchantNameSentinel = "PRIVATE-MERCHANT-SENTINEL";
 
@@ -119,7 +119,7 @@ public sealed class InvoiceEndpointsTelemetryPrivacyTests
       new LocalOptions
       {
         StorageAccountName = "invoiceuploads",
-        StorageAccountEndpoint = "https://invoiceuploads.blob.core.windows.net/invoice-scans",
+        StorageAccountEndpoint = "https://invoiceuploads.blob.core.windows.net",
       };
   }
 }

@@ -207,7 +207,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     [
       new CreateInvoiceScanRequestDto(
         ScanType.JPG,
-        new Uri("https://example.test/invoice-scans/receipt.jpg"),
+        new Uri("https://example.test/invoices/receipt.jpg"),
         Metadata: null),
     ],
     Items: null,
@@ -222,7 +222,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
       new LocalOptions
       {
         StorageAccountName = "example",
-        StorageAccountEndpoint = "https://example.test/invoice-scans",
+        StorageAccountEndpoint = "https://example.test",
       };
   }
 
@@ -755,7 +755,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
       [
         new CreateInvoiceScanRequestDto(
           ScanType.JPG,
-          new Uri("http://example.test/invoice-scans/receipt.jpg"),
+          new Uri("http://example.test/invoices/receipt.jpg"),
           Metadata: null),
       ],
     };
@@ -782,7 +782,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
     var request = new CreateInvoiceScanRequestDto(
       ScanType.JPG,
-      new Uri("http://example.test/invoice-scans/receipt.jpg"),
+      new Uri("http://example.test/invoices/receipt.jpg"),
       Metadata: null);
 
     // Act

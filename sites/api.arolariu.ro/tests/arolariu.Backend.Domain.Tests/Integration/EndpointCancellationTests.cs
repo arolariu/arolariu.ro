@@ -74,7 +74,7 @@ public sealed class EndpointCancellationTests
       new LocalOptions
       {
         StorageAccountName = "example",
-        StorageAccountEndpoint = "https://example.com/invoice-scans",
+        StorageAccountEndpoint = "https://example.com",
       };
   }
 
@@ -257,7 +257,7 @@ public sealed class EndpointCancellationTests
       [
         new arolariu.Backend.Domain.Invoices.DTOs.Requests.CreateInvoiceScanRequestDto(
         arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.ScanType.JPG,
-        new Uri("https://example.com/invoice-scans/invoice.jpg"),
+        new Uri("https://example.com/invoices/invoice.jpg"),
         null),
       ],
       Items: null,
@@ -305,7 +305,7 @@ public sealed class EndpointCancellationTests
       [
         new arolariu.Backend.Domain.Invoices.DTOs.Requests.CreateInvoiceScanRequestDto(
         arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.ScanType.JPG,
-        new Uri("https://example.com/invoice-scans/invoice.jpg"),
+        new Uri("https://example.com/invoices/invoice.jpg"),
         null),
       ],
       Items: null,

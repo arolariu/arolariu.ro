@@ -52,8 +52,8 @@ public sealed class CreateInvoiceRequestDtoTests
       IsImportant: true,
       Scans:
       [
-        new CreateInvoiceScanRequestDto(ScanType.BMP, new Uri("https://example.test/invoice-scans/receipt.bmp"), null),
-        new CreateInvoiceScanRequestDto(ScanType.HEIF, new Uri("https://example.test/invoice-scans/receipt.heif"), null),
+        new CreateInvoiceScanRequestDto(ScanType.BMP, new Uri("https://example.test/invoices/receipt.bmp"), null),
+        new CreateInvoiceScanRequestDto(ScanType.HEIF, new Uri("https://example.test/invoices/receipt.heif"), null),
       ],
       Items:
       [
@@ -129,7 +129,7 @@ public sealed class CreateInvoiceRequestDtoTests
         "scans": [
           {
             "type": 6,
-            "location": "https://example.test/invoice-scans/receipt.bmp",
+            "location": "https://example.test/invoices/receipt.bmp",
             "metadata": {}
           }
         ],
@@ -183,7 +183,7 @@ public sealed class CreateInvoiceRequestDtoTests
     // Arrange
     var request = new CreateInvoiceScanRequestDto(
       Type: (ScanType)9,
-      Location: new Uri("https://example.test/invoice-scans/receipt.heic"),
+      Location: new Uri("https://example.test/invoices/receipt.heic"),
       Metadata: null);
 
     // Act
@@ -199,6 +199,6 @@ public sealed class CreateInvoiceRequestDtoTests
     new()
     {
       StorageAccountName = "example",
-      StorageAccountEndpoint = "https://example.test/invoice-scans",
+      StorageAccountEndpoint = "https://example.test",
     };
 }
