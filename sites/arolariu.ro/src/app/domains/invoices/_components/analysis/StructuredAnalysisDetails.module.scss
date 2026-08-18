@@ -1,0 +1,79 @@
+@use "../../../../../styles/abstracts" as *;
+
+.classification,
+.assessment {
+  @include spaced-children(space(2));
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: space(2);
+}
+
+.meta {
+  @include text-muted("xs");
+}
+
+.hierarchy,
+.evidence,
+.signals {
+  @include spaced-children(space(1));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.signal {
+  border-left: 2px solid color("warning");
+  padding-left: space(3);
+}
+
+.signalHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: space(2);
+}
+
+.evidenceItem {
+  @include text-muted("xs");
+}
+
+.warningBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: space(1);
+}
+
+.unclassified,
+.notAssessed,
+.emptyState {
+  @include text-muted("sm");
+}
+
+.recipe {
+  @include spaced-children(space(4));
+}
+
+.recipeSection {
+  @include spaced-children(space(2));
+}
+
+.recipeTitle {
+  font-size: font-size("sm");
+  font-weight: font-weight("semibold");
+}
+
+.recipeList {
+  @include spaced-children(space(1));
+  margin: 0;
+  padding-left: space(5);
+}
+
+.recipeMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(2);
+}

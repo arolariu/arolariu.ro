@@ -20,11 +20,17 @@
  */
 
 import type {Invoice, Merchant, Product} from "@/types/invoices";
-import {InvoiceCategory, MerchantCategory, PaymentType, ProductCategory} from "@/types/invoices";
+import {PaymentType} from "@/types/invoices";
 import type {ContactInformation} from "@/types/invoices/Merchant";
 import type {PaymentInformation} from "@/types/invoices/Payment";
 import type {CachedScan, Scan} from "@/types/scans";
 import {ScanStatus, ScanType} from "@/types/scans";
+import {
+  buildContactInformation as buildDomainContactInformation,
+  buildInvoice as buildDomainInvoice,
+  buildMerchant as buildDomainMerchant,
+  buildProduct as buildDomainProduct,
+} from "./builders/domain";
 
 /**
  * Utility type to make readonly properties mutable for test fixtures.
@@ -118,27 +124,11 @@ export function createTextResponse(text: string, init: Readonly<{status: number;
  * ```typescript
  * const product = buildProduct({name: "Test Item", quantity: 2});
  * expect(product.totalPrice).toBe(10);
- * expect(product.category).toBe(ProductCategory.GROCERIES);
+ * expect(product.classification).not.toBeNull();
  * ```
  */
 export function buildProduct(overrides: Partial<Product> = {}): Product {
-  return {
-    name: "Coffee",
-    category: ProductCategory.GROCERIES,
-    quantity: 1,
-    quantityUnit: "pcs",
-    productCode: "",
-    price: 10,
-    totalPrice: 10,
-    detectedAllergens: [],
-    metadata: {
-      isEdited: false,
-      isComplete: true,
-      isSoftDeleted: false,
-      confidence: 1.0,
-    },
-    ...overrides,
-  };
+  return buildDomainProduct({name: "Coffee", ...overrides});
 }
 
 /**
@@ -192,32 +182,16 @@ export function buildPaymentInformation(overrides: Partial<PaymentInformation> =
  * ```
  */
 export function buildInvoice(overrides: Partial<Invoice> = {}): Invoice {
-  return {
+  return buildDomainInvoice({
     id: "11111111-1111-4111-8111-111111111111",
     name: "Test invoice",
-    description: "Test invoice description",
     userIdentifier: "user-1",
-    sharedWith: [],
-    category: InvoiceCategory.GROCERY,
     scans: [],
     paymentInformation: buildPaymentInformation(),
     merchantReference: "merchant-1",
     items: [buildProduct()],
-    possibleRecipes: [],
-    additionalMetadata: {},
-    receiptType: "Itemized",
-    countryRegion: "RO",
-    taxDetails: [],
-    payments: [],
-    createdAt: new Date("2026-01-01T00:00:00.000Z"),
-    createdBy: "user-1",
-    lastUpdatedAt: new Date("2026-01-01T00:00:00.000Z"),
-    lastUpdatedBy: "user-1",
-    numberOfUpdates: 0,
-    isImportant: false,
-    isSoftDeleted: false,
     ...overrides,
-  };
+  });
 }
 
 /**
@@ -227,14 +201,7 @@ export function buildInvoice(overrides: Partial<Invoice> = {}): Invoice {
  * @returns A complete ContactInformation object
  */
 export function buildContactInformation(overrides: Partial<ContactInformation> = {}): ContactInformation {
-  return {
-    fullName: "Test Merchant Corp",
-    address: "123 Test Street, Bucharest, Romania",
-    phoneNumber: "+40 21 123 4567",
-    emailAddress: "contact@testmerchant.ro",
-    website: "https://testmerchant.ro",
-    ...overrides,
-  };
+  return buildDomainContactInformation({address: "123 Test Street, Bucharest, Romania", ...overrides});
 }
 
 /**
@@ -258,26 +225,17 @@ export function buildContactInformation(overrides: Partial<ContactInformation> =
  *   name: "Lidl"
  * });
  *
- * expect(merchant.category).toBe(MerchantCategory.SUPERMARKET);
+ * expect(merchant.classification).not.toBeNull();
  * ```
  */
 export function buildMerchant(overrides: Partial<Merchant> = {}): Merchant {
-  return {
+  return buildDomainMerchant({
     id: "22222222-2222-4222-8222-222222222222",
     name: "Test merchant",
-    description: "Test merchant description",
-    category: MerchantCategory.SUPERMARKET,
     address: buildContactInformation(),
     parentCompanyId: "",
-    createdAt: new Date("2026-01-01T00:00:00.000Z"),
-    createdBy: "user-1",
-    lastUpdatedAt: new Date("2026-01-01T00:00:00.000Z"),
-    lastUpdatedBy: "user-1",
-    numberOfUpdates: 0,
-    isImportant: false,
-    isSoftDeleted: false,
     ...overrides,
-  };
+  });
 }
 
 /**

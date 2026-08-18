@@ -8,6 +8,7 @@ import {access, mkdir} from "node:fs/promises";
 import {resolve} from "node:path";
 import {setTimeout as delay} from "node:timers/promises";
 import {fileURLToPath} from "node:url";
+import {buildTaxonomyArtifactGenerationCommand} from "../generate.artifacts.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runSharedPreflight} from "./preflight.ts";
 import {defaultRunner, formatCommand, type CommandRunner} from "./process.ts";
@@ -79,9 +80,19 @@ export function buildSelfhostPlan(inputs: SelfhostPlanInputs): readonly RuntimeC
   ];
 }
 
-async function runCommandOrThrow(runner: CommandRunner, command: RuntimeCommand): Promise<void> {
+/**
+ * Determines whether the requested selfhost action needs generated taxonomy artifacts.
+ *
+ * @param action - Requested selfhost action.
+ * @returns `true` only for start operations that build the API and website images.
+ */
+export function shouldGenerateTaxonomyArtifacts(action: SelfhostAction): boolean {
+  return action === "start";
+}
+
+async function runCommandOrThrow(runner: CommandRunner, command: RuntimeCommand, cwd: string = "infra/Local"): Promise<void> {
   console.log(`$ ${formatCommand(command)}`);
-  const result = await runner.run(command, {cwd: "infra/Local", stdio: "tee"});
+  const result = await runner.run(command, {cwd, stdio: "tee"});
   if (result.code !== 0) {
     throw new ContainerRuntimeError(`Command failed: ${formatCommand(command)}\n${result.output}`);
   }
@@ -129,7 +140,17 @@ async function postCosmosResource(url: string, body: unknown): Promise<void> {
   }
 }
 
-async function bootstrapCosmos(): Promise<void> {
+/**
+ * Creates the `primary` Cosmos database plus its `invoices`, `merchants`, and
+ * `analysisRuns` containers against the local emulator's data-plane REST API.
+ *
+ * @remarks
+ * Exported for unit testing via a stubbed global `fetch` — no live emulator
+ * is contacted in tests. `analysisRuns` sets `defaultTtl: -1` so item-level
+ * `ttl` (stamped only on completed/failed runs) is honored, mirroring the
+ * Bicep and Aspire AppHost provisioning of the same container.
+ */
+export async function bootstrapCosmos(): Promise<void> {
   try {
     await postCosmosResource("http://localhost:8081/dbs", {id: "primary"});
     await postCosmosResource("http://localhost:8081/dbs/primary/colls", {
@@ -139,6 +160,11 @@ async function bootstrapCosmos(): Promise<void> {
     await postCosmosResource("http://localhost:8081/dbs/primary/colls", {
       id: "merchants",
       partitionKey: {paths: ["/ParentCompanyId"], kind: "Hash"},
+    });
+    await postCosmosResource("http://localhost:8081/dbs/primary/colls", {
+      id: "analysisRuns",
+      partitionKey: {paths: ["/bucket"], kind: "Hash"},
+      defaultTtl: -1,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -231,8 +257,9 @@ export async function runSelfhost(action: SelfhostAction, runner: CommandRunner 
 
   await runSharedPreflight(adapter, runner);
 
-  if (action === "start") {
+  if (shouldGenerateTaxonomyArtifacts(action)) {
     getRequiredSqlPassword();
+    await runCommandOrThrow(runner, buildTaxonomyArtifactGenerationCommand(), ".");
     await ensureHttpsCertificates(runner);
     await writeSelfhostTraefikConfig();
   }

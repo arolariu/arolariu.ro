@@ -72,6 +72,21 @@ public partial class MerchantOrchestrationService : IMerchantOrchestrationServic
   }).ConfigureAwait(false);
   #endregion
 
+  #region Find Merchant By Normalized Name API
+  /// <inheritdoc/>
+  public async Task<Merchant?> FindMerchantByNormalizedNameObject(string normalizedName, CancellationToken cancellationToken) =>
+  await TryCatchAsync(async () =>
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(FindMerchantByNormalizedNameObject));
+
+    Merchant? merchant = await merchantStorage
+      .FindMerchantByNormalizedNameObject(normalizedName, cancellationToken)
+      .ConfigureAwait(false);
+
+    return merchant;
+  }).ConfigureAwait(false);
+  #endregion
+
   #region Read Merchant API
   /// <inheritdoc/>
   public async Task<Merchant> ReadMerchantObject(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>

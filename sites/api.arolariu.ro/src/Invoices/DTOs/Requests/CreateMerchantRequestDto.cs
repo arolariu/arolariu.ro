@@ -77,7 +77,7 @@ public readonly record struct CreateMerchantRequestDto(
   /// <b>ID Generation:</b> A new <see cref="Guid"/> is generated for the merchant.
   /// </para>
   /// <para>
-  /// <b>Category Default:</b> The category is set to <see cref="MerchantCategory.OTHER"/>
+  /// <b>Classification Default:</b> The classification is left unset
   /// and should be refined through subsequent updates or AI classification.
   /// </para>
   /// <para>
@@ -95,7 +95,6 @@ public readonly record struct CreateMerchantRequestDto(
     {
       id = Guid.NewGuid(),
       Address = new ContactInformation(),
-      Category = MerchantCategory.OTHER,
       CreatedAt = DateTime.UtcNow,
       Description = Description,
       Name = Name,

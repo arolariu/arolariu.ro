@@ -6,8 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DTOs;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 
 using Microsoft.Extensions.Logging;
@@ -19,54 +17,50 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 /// </summary>
 public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 {
-  private readonly IInvoiceAnalysisFoundationService invoiceAnalysisFoundationService;
+  private readonly IInvoiceScanStorageFoundationService invoiceScanStorageFoundationService;
   private readonly IInvoiceStorageFoundationService invoiceStorageFoundationService;
   private readonly ILogger<IInvoiceOrchestrationService> logger;
 
   /// <summary>
   /// Constructor.
   /// </summary>
-  /// <param name="invoiceAnalysisFoundationService"></param>
-  /// <param name="invoiceStorageFoundationService"></param>
-  /// <param name="loggerFactory"></param>
+  /// <param name="invoiceStorageFoundationService">The invoice storage foundation service.</param>
+  /// <param name="invoiceScanStorageFoundationService">
+  /// The foundation service that validates trusted storage properties before scan persistence.
+  /// </param>
+  /// <param name="loggerFactory">The logger factory used to create the orchestration logger.</param>
   public InvoiceOrchestrationService(
-    IInvoiceAnalysisFoundationService invoiceAnalysisFoundationService,
     IInvoiceStorageFoundationService invoiceStorageFoundationService,
+    IInvoiceScanStorageFoundationService invoiceScanStorageFoundationService,
     ILoggerFactory loggerFactory)
   {
-    ArgumentNullException.ThrowIfNull(invoiceAnalysisFoundationService);
     ArgumentNullException.ThrowIfNull(invoiceStorageFoundationService);
+    ArgumentNullException.ThrowIfNull(invoiceScanStorageFoundationService);
 
-    this.invoiceAnalysisFoundationService = invoiceAnalysisFoundationService;
     this.invoiceStorageFoundationService = invoiceStorageFoundationService;
+    this.invoiceScanStorageFoundationService = invoiceScanStorageFoundationService;
     logger = loggerFactory.CreateLogger<IInvoiceOrchestrationService>();
   }
 
-  #region Analyze Invoice API
-  /// <inheritdoc/>
-  public async Task AnalyzeInvoiceWithOptions(AnalysisOptions options, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
-  await TryCatchAsync(async () =>
+  /// <summary>
+  /// Initializes a test-only orchestration instance for non-storage workflow unit tests.
+  /// </summary>
+  /// <remarks>
+  /// This internal constructor is available only to the Invoices test assembly. Application composition must provide
+  /// the trusted scan-storage foundation through the public constructor.
+  /// </remarks>
+  /// <param name="invoiceStorageFoundationService">The mocked invoice storage foundation.</param>
+  /// <param name="loggerFactory">The logger factory used by the unit test.</param>
+  internal InvoiceOrchestrationService(
+    IInvoiceStorageFoundationService invoiceStorageFoundationService,
+    ILoggerFactory loggerFactory)
+    : this(
+      invoiceStorageFoundationService,
+      new DeterministicTestInvoiceScanStorageFoundationService(),
+      loggerFactory)
   {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceWithOptions));
-    Invoice currentInvoice = await invoiceStorageFoundationService
-      .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
+  }
 
-    cancellationToken.ThrowIfCancellationRequested();
-
-    Invoice analyzedInvoice = await invoiceAnalysisFoundationService
-      .AnalyzeInvoiceAsync(options, currentInvoice, cancellationToken)
-      .ConfigureAwait(false);
-
-    // Last safe boundary: past this point the AI spend is already incurred, so cancelling
-    // here would waste it. Before it, abandoning costs nothing but the read.
-    cancellationToken.ThrowIfCancellationRequested();
-
-    await invoiceStorageFoundationService
-      .UpdateInvoiceObject(analyzedInvoice, invoiceIdentifier, userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
-  }).ConfigureAwait(false);
-  #endregion
 
   #region Create Invoice API
   /// <inheritdoc/>
@@ -74,11 +68,41 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceObject));
+    await invoiceScanStorageFoundationService
+      .ValidateInvoiceScansAsync(invoice.Scans, cancellationToken)
+      .ConfigureAwait(false);
+
     await invoiceStorageFoundationService
       .CreateInvoiceObject(invoice, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
     return invoice;
   }).ConfigureAwait(false);
+  #endregion
+
+  #region Attach Invoice Scan API
+  /// <inheritdoc/>
+  public async Task<Invoice> AttachInvoiceScanAsync(
+    InvoiceScan scan,
+    Guid invoiceIdentifier,
+    Guid? userIdentifier,
+    CancellationToken cancellationToken) =>
+    await TryCatchAsync(async () =>
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(AttachInvoiceScanAsync));
+
+      await invoiceScanStorageFoundationService
+        .ValidateInvoiceScanAsync(scan, cancellationToken)
+        .ConfigureAwait(false);
+
+      Invoice invoice = await invoiceStorageFoundationService
+        .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
+        .ConfigureAwait(false);
+      invoice.Scans.Add(scan);
+
+      return await invoiceStorageFoundationService
+        .UpdateInvoiceObject(invoice, invoiceIdentifier, userIdentifier, cancellationToken)
+        .ConfigureAwait(false);
+    }).ConfigureAwait(false);
   #endregion
 
   #region Delete Invoice API
@@ -131,4 +155,16 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
     return updatedInvoiceObject;
   }).ConfigureAwait(false);
   #endregion
+
+  private sealed class DeterministicTestInvoiceScanStorageFoundationService
+    : IInvoiceScanStorageFoundationService
+  {
+    public Task ValidateInvoiceScanAsync(InvoiceScan scan, CancellationToken cancellationToken) =>
+      Task.CompletedTask;
+
+    public Task ValidateInvoiceScansAsync(
+      IEnumerable<InvoiceScan> scans,
+      CancellationToken cancellationToken) =>
+      Task.CompletedTask;
+  }
 }

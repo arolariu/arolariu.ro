@@ -6,12 +6,13 @@
  *
  * @remarks
  * Wraps the delete-product server action and mirrors successful removals in the
- * invoices Zustand store. Local removal uses exact product-name equality, while
- * the backend action may use broader matching semantics.
+ * invoices Zustand store. The hook derives the backend's identity-free selector
+ * from the immutable collection index and removes only that same occurrence
+ * after the server confirms the mutation.
  */
 
 import {useInvoicesStore} from "@/stores";
-import type {Invoice} from "@/types/invoices/Invoice";
+import {createProductSelector, type Invoice} from "@/types/invoices";
 import {useCallback, useState} from "react";
 import {deleteInvoiceProduct as removeProductServerSide} from "../../_actions/invoices";
 
@@ -21,8 +22,8 @@ import {deleteInvoiceProduct as removeProductServerSide} from "../../_actions/in
 type HookOutputType = Readonly<{
   /** Whether a removal operation is in progress. */
   isRemoving: boolean;
-  /** Removes a product by name through the server action and local invoice store. */
-  removeProductCallback: (productName: string) => Promise<void>;
+  /** Removes the product at one immutable invoice collection index. */
+  removeProductCallback: (productIndex: number) => Promise<void>;
 }>;
 
 /**
@@ -35,7 +36,7 @@ type HookOutputType = Readonly<{
  * ```tsx
  * const {isRemoving, removeProductCallback} = useProductRemove(invoice);
  *
- * await removeProductCallback("Zuzu Milk 2% 1 Liter");
+ * await removeProductCallback(0);
  * ```
  */
 export function useProductRemove(invoice: Invoice): Readonly<HookOutputType> {
@@ -43,15 +44,21 @@ export function useProductRemove(invoice: Invoice): Readonly<HookOutputType> {
   const removeProductClientSide = useInvoicesStore((state) => state.updateEntity);
 
   const removeProductCallback = useCallback(
-    async (productName: string): Promise<void> => {
+    async (productIndex: number): Promise<void> => {
       setIsRemoving(true);
       try {
-        const result = await removeProductServerSide({invoiceId: invoice.id, productName});
+        const selectedProduct = invoice.items[productIndex];
+        if (selectedProduct === undefined) {
+          throw new Error("The selected product no longer exists.");
+        }
+
+        const selector = createProductSelector(invoice.items, productIndex);
+        const result = await removeProductServerSide({invoiceId: invoice.id, selector});
         if (!result.success) {
           throw new Error(result.error.message);
         }
         removeProductClientSide(invoice.id, {
-          items: invoice.items.filter((item) => item.name !== productName),
+          items: invoice.items.filter((_item, index) => index !== productIndex),
         });
       } finally {
         setIsRemoving(false);

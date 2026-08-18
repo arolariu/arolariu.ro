@@ -4,9 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 /// <summary>
@@ -36,8 +39,9 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// outside of testing scenarios.
 /// </para>
 /// <para>
-/// <b>Content:</b> Includes complete invoice data: line items, scans (OCR sources),
-/// AI-generated recipes, shared access list, payment details, and extensible metadata.
+/// <b>Content:</b> Includes complete rendering data for line items, scan references, structured analysis output,
+/// receipt extraction, payment details, audit fields, and safe extensible metadata. Internal prompts, raw OCR,
+/// analysis runs, leases, and persistence-only values are deliberately excluded.
 /// </para>
 /// </remarks>
 /// <param name="Id">
@@ -55,16 +59,16 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// <param name="Description">
 /// A detailed description of the invoice contents. Never null; may be empty string.
 /// </param>
-/// <param name="Category">
-/// The invoice category classification. Defaults to <see cref="InvoiceCategory.NOT_DEFINED"/>
-/// until AI analysis categorizes the invoice.
+/// <param name="Classification">
+/// The standardised ECOICOP classification assigned to this invoice. Null until a manual selection or an analysis
+/// run categorizes the invoice.
 /// </param>
 /// <param name="Scans">
-/// Collection of invoice scan records (photos, PDFs). Each scan includes URI and metadata.
-/// Empty if no scans have been uploaded.
+/// Collection of invoice scan references (photos, PDFs). Each scan includes only the format and authorized location;
+/// raw scan metadata is not returned.
 /// </param>
 /// <param name="PaymentInformation">
-/// Payment details including currency code, total amount, tax breakdown, and payment method.
+/// Public payment details including currency, total amount, subtotal, tax, tip, and payment method.
 /// </param>
 /// <param name="MerchantReference">
 /// Reference to an associated merchant entity. <see cref="Guid.Empty"/> if
@@ -75,12 +79,24 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// invoices before OCR analysis extracts products.
 /// </param>
 /// <param name="PossibleRecipes">
-/// Collection of AI-inferred recipes based on invoice items. Populated after analysis.
-/// Empty if analysis not performed or no recipes detected.
+/// Collection of structured recipe suggestions based on invoice items. Empty if analysis did not generate recipes
+/// or successfully generated an empty result.
 /// </param>
 /// <param name="AdditionalMetadata">
-/// Extensible key-value metadata dictionary for custom fields. Keys are case-sensitive strings;
-/// values are serializable objects. Empty dictionary if no custom metadata.
+/// Extensible safe scalar metadata dictionary for custom fields. Values preserve nullability and are materialized as
+/// strings; non-scalar values are excluded rather than exposing raw processing artifacts.
+/// </param>
+/// <param name="ReceiptType">
+/// The receipt type extracted from the source document, or an empty string when it was not determined.
+/// </param>
+/// <param name="CountryRegion">
+/// The country or region extracted from the source document, or an empty string when it was not determined.
+/// </param>
+/// <param name="TaxDetails">
+/// Structured receipt tax lines. Empty when no granular tax details were extracted.
+/// </param>
+/// <param name="Payments">
+/// Structured receipt payment records. Empty when no granular payment records were extracted.
 /// </param>
 /// <param name="IsImportant">
 /// Flag indicating user-marked importance for filtering/sorting. Defaults to <c>false</c>.
@@ -120,25 +136,29 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct InvoiceResponseDto(
-  Guid Id,
-  Guid UserIdentifier,
-  IReadOnlyCollection<Guid> SharedWith,
-  string Name,
-  string Description,
-  InvoiceCategory Category,
-  IReadOnlyCollection<InvoiceScan> Scans,
-  PaymentInformation PaymentInformation,
-  Guid MerchantReference,
-  IReadOnlyCollection<ProductResponseDto> Items,
-  IReadOnlyCollection<Recipe> PossibleRecipes,
-  IReadOnlyDictionary<string, object> AdditionalMetadata,
-  bool IsImportant,
-  bool IsSoftDeleted,
-  DateTimeOffset CreatedAt,
-  Guid CreatedBy,
-  DateTimeOffset LastUpdatedAt,
-  Guid LastUpdatedBy,
-  int NumberOfUpdates)
+  [property: JsonPropertyName("id")] Guid Id,
+  [property: JsonPropertyName("userIdentifier")] Guid UserIdentifier,
+  [property: JsonPropertyName("sharedWith")] IReadOnlyCollection<Guid> SharedWith,
+  [property: JsonPropertyName("name")] string Name,
+  [property: JsonPropertyName("description")] string Description,
+  [property: JsonPropertyName("classification")] StandardClassificationResponseDto? Classification,
+  [property: JsonPropertyName("scans")] IReadOnlyCollection<InvoiceScanResponseDto> Scans,
+  [property: JsonPropertyName("paymentInformation")] PaymentInformationResponseDto PaymentInformation,
+  [property: JsonPropertyName("merchantReference")] Guid MerchantReference,
+  [property: JsonPropertyName("items")] IReadOnlyCollection<ProductResponseDto> Items,
+  [property: JsonPropertyName("possibleRecipes")] IReadOnlyCollection<RecipeSuggestionResponseDto> PossibleRecipes,
+  [property: JsonPropertyName("additionalMetadata")] IReadOnlyDictionary<string, string?> AdditionalMetadata,
+  [property: JsonPropertyName("receiptType")] string ReceiptType,
+  [property: JsonPropertyName("countryRegion")] string CountryRegion,
+  [property: JsonPropertyName("taxDetails")] IReadOnlyCollection<TaxDetailResponseDto> TaxDetails,
+  [property: JsonPropertyName("payments")] IReadOnlyCollection<PaymentDetailResponseDto> Payments,
+  [property: JsonPropertyName("isImportant")] bool IsImportant,
+  [property: JsonPropertyName("isSoftDeleted")] bool IsSoftDeleted,
+  [property: JsonPropertyName("createdAt")] DateTimeOffset CreatedAt,
+  [property: JsonPropertyName("createdBy")] Guid CreatedBy,
+  [property: JsonPropertyName("lastUpdatedAt")] DateTimeOffset LastUpdatedAt,
+  [property: JsonPropertyName("lastUpdatedBy")] Guid LastUpdatedBy,
+  [property: JsonPropertyName("numberOfUpdates")] int NumberOfUpdates)
 {
   /// <summary>
   /// Creates an <see cref="InvoiceResponseDto"/> from a domain <see cref="Invoice"/> aggregate.
@@ -152,8 +172,9 @@ public readonly record struct InvoiceResponseDto(
   /// <b>Collection Handling:</b> All collections are converted to read-only snapshots:
   /// <list type="bullet">
   ///   <item><description>Items are mapped through <see cref="ProductResponseDto.FromProduct"/></description></item>
+  ///   <item><description>Nested values are projected to dedicated response DTOs rather than leaking domain types</description></item>
   ///   <item><description>Collections use <c>ToList().AsReadOnly()</c> for immutability</description></item>
-  ///   <item><description>Metadata dictionary is copied to prevent external mutation</description></item>
+  ///   <item><description>Metadata is copied into a read-only safe-scalar dictionary</description></item>
   /// </list>
   /// </para>
   /// <para>
@@ -191,13 +212,17 @@ public readonly record struct InvoiceResponseDto(
       SharedWith: invoice.SharedWith.ToList().AsReadOnly(),
       Name: invoice.Name,
       Description: invoice.Description,
-      Category: invoice.Category,
-      Scans: invoice.Scans.ToList().AsReadOnly(),
-      PaymentInformation: invoice.PaymentInformation,
+      Classification: StandardClassificationResponseDto.FromStandardClassification(invoice.Classification),
+      Scans: invoice.Scans.Select(InvoiceScanResponseDto.FromInvoiceScan).ToList().AsReadOnly(),
+      PaymentInformation: PaymentInformationResponseDto.FromPaymentInformation(invoice.PaymentInformation),
       MerchantReference: invoice.MerchantReference,
       Items: invoice.Items.Select(ProductResponseDto.FromProduct).ToList().AsReadOnly(),
-      PossibleRecipes: invoice.PossibleRecipes.ToList().AsReadOnly(),
-      AdditionalMetadata: new Dictionary<string, object>(invoice.AdditionalMetadata),
+      PossibleRecipes: invoice.PossibleRecipes.Select(RecipeSuggestionResponseDto.FromRecipeSuggestion).ToList().AsReadOnly(),
+      AdditionalMetadata: InvoiceMetadataProjector.CreatePublicSnapshot(invoice.AdditionalMetadata),
+      ReceiptType: invoice.ReceiptType,
+      CountryRegion: invoice.CountryRegion,
+      TaxDetails: invoice.TaxDetails.Select(TaxDetailResponseDto.FromTaxDetail).ToList().AsReadOnly(),
+      Payments: invoice.Payments.Select(PaymentDetailResponseDto.FromPaymentDetail).ToList().AsReadOnly(),
       IsImportant: invoice.IsImportant,
       IsSoftDeleted: invoice.IsSoftDeleted,
       CreatedAt: invoice.CreatedAt,
@@ -206,4 +231,5 @@ public readonly record struct InvoiceResponseDto(
       LastUpdatedBy: invoice.LastUpdatedBy,
       NumberOfUpdates: invoice.NumberOfUpdates);
   }
+
 }

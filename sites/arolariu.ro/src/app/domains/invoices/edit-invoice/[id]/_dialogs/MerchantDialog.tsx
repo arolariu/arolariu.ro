@@ -1,9 +1,7 @@
 "use client";
 
-import {formatEnum} from "@/lib/utils.generic";
-import {type Merchant, MerchantCategory} from "@/types/invoices";
+import {ClassificationSystem, toClassificationSelection, type ClassificationSelection} from "@/types/invoices";
 import {
-  Badge,
   Button,
   Dialog,
   DialogContent,
@@ -14,10 +12,16 @@ import {
   TableBody,
   TableCell,
   TableRow,
+  toast,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
+import {useRouter} from "next/navigation";
+import {useCallback, useEffect, useState} from "react";
 import {TbBuilding, TbMapPin, TbPhone} from "react-icons/tb";
+import {updateMerchant} from "../../../_actions/merchants";
 import {useDialog} from "../../../_contexts/DialogContext";
+import {ClassificationPicker} from "../../../_components/analysis/ClassificationPicker";
+import {ClassificationProvenance} from "../../../_components/analysis/StructuredAnalysisDetails";
 import styles from "./MerchantDialog.module.scss";
 
 /**
@@ -27,7 +31,8 @@ import styles from "./MerchantDialog.module.scss";
  * **Rendering Context**: Client Component (uses `useDialog` hook).
  *
  * **Merchant Details Displayed**:
- * - **Name**: Business name with category badge
+ * - **Name**: Business name
+ * - **Classification**: Manual NACE 2.1 code selection and save state
  * - **Address**: Physical location with map pin icon
  * - **Phone**: Contact number with phone icon
  *
@@ -37,7 +42,7 @@ import styles from "./MerchantDialog.module.scss";
  * **Visual Design**:
  * - Profile-style header with merchant icon in primary-tinted circle
  * - Table layout for structured detail presentation
- * - Category badge derived from `MerchantCategory` const-object
+ * - Server-backed taxonomy picker preserving a full merchant PUT payload
  *
  * **Dialog Integration**: Uses `useDialog` hook with `INVOICE_MERCHANT` type.
  * Payload contains the full `Merchant` object.
@@ -56,10 +61,10 @@ import styles from "./MerchantDialog.module.scss";
  *
  * @see {@link MerchantCard} - Parent component that opens this dialog
  * @see {@link Merchant} - Merchant type definition
- * @see {@link MerchantCategory} - Category const-object for badge display
  */
 export default function MerchantDialog(): React.JSX.Element {
   const t = useTranslations();
+  const router = useRouter();
   const {
     currentDialog: {payload},
     isOpen,
@@ -67,7 +72,59 @@ export default function MerchantDialog(): React.JSX.Element {
   } = useDialog("EDIT_INVOICE__MERCHANT");
 
   const merchant = payload;
-  const merchantCategoryAsString = formatEnum(MerchantCategory, merchant.category) || "NOT_DEFINED";
+  const [classification, setClassification] = useState<ClassificationSelection | null>(() =>
+    toClassificationSelection(merchant.classification),
+  );
+  const [hasClassificationChange, setHasClassificationChange] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+  const hasCompleteMerchantPayload = merchant.additionalMetadata !== undefined;
+
+  useEffect(() => {
+    setClassification(toClassificationSelection(merchant.classification));
+    setHasClassificationChange(false);
+    setSaveError(false);
+  }, [merchant]);
+
+  const handleSaveClassification = useCallback(async (): Promise<void> => {
+    const additionalMetadata = merchant.additionalMetadata;
+    if (additionalMetadata === undefined) {
+      setSaveError(true);
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError(false);
+    const parentCompanyId = merchant.parentCompanyId.trim().length === 0 ? null : merchant.parentCompanyId;
+    try {
+      const result = await updateMerchant({
+        merchantId: merchant.id,
+        payload: {
+          name: merchant.name,
+          description: merchant.description,
+          classification,
+          address: merchant.address,
+          parentCompanyId,
+          additionalMetadata,
+        },
+      });
+
+      if (!result.success) {
+        setSaveError(true);
+        toast.error(t((messages) => messages.dialogs.invoices.merchantDialog.errors.saveFailed));
+        return;
+      }
+
+      toast.success(t((messages) => messages.dialogs.invoices.merchantDialog.success.classificationSaved));
+      setHasClassificationChange(false);
+      router.refresh();
+    } catch {
+      setSaveError(true);
+      toast.error(t((messages) => messages.dialogs.invoices.merchantDialog.errors.saveFailed));
+    } finally {
+      setIsSaving(false);
+    }
+  }, [classification, merchant, router, t]);
 
   return (
     <Dialog
@@ -88,11 +145,6 @@ export default function MerchantDialog(): React.JSX.Element {
             </div>
             <div>
               <h3 className={styles["merchantName"]}>{merchant.name}</h3>
-              <Badge
-                variant='outline'
-                className={styles["categoryBadge"]}>
-                {merchantCategoryAsString}
-              </Badge>
             </div>
           </div>
 
@@ -118,6 +170,30 @@ export default function MerchantDialog(): React.JSX.Element {
               </TableRow>
             </TableBody>
           </Table>
+          <div className={styles["classificationSection"]}>
+            <ClassificationProvenance classification={merchant.classification} />
+            <ClassificationPicker
+              system={ClassificationSystem.Nace21}
+              value={classification}
+              onChange={(value) => {
+                setClassification(value);
+                setHasClassificationChange(true);
+              }}
+              disabled={isSaving || !hasCompleteMerchantPayload}
+              allowClear={false}
+            />
+            {saveError || !hasCompleteMerchantPayload ? (
+              <p
+                className={styles["saveError"]}
+                role='alert'>
+                {t((messages) =>
+                  !hasCompleteMerchantPayload
+                    ? messages.dialogs.invoices.merchantDialog.errors.missingUpdateData
+                    : messages.dialogs.invoices.merchantDialog.errors.saveFailed,
+                )}
+              </p>
+            ) : null}
+          </div>
         </div>
 
         <div className={styles["footer"]}>
@@ -125,6 +201,15 @@ export default function MerchantDialog(): React.JSX.Element {
             type='button'
             className={styles["mapsButton"]}>
             {t((m) => m.dialogs.invoices.merchantDialog.buttons.openInMaps)}
+          </Button>
+          <Button
+            type='button'
+            disabled={isSaving || !hasClassificationChange || !hasCompleteMerchantPayload}
+            className={styles["mapsButton"]}
+            onClick={handleSaveClassification}>
+            {isSaving
+              ? t((messages) => messages.dialogs.invoices.merchantDialog.buttons.savingClassification)
+              : t((messages) => messages.dialogs.invoices.merchantDialog.buttons.saveClassification)}
           </Button>
         </div>
       </DialogContent>

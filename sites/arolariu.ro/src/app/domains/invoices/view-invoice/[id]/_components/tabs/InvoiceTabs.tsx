@@ -67,7 +67,13 @@ export function InvoiceTabs(): React.JSX.Element {
           <TabsContent
             value='info'
             className={styles["tabsContent"]}>
-            <MetadataTab metadata={invoice.additionalMetadata} />
+            <MetadataTab
+              metadata={Object.fromEntries(
+                Object.entries(invoice.additionalMetadata).flatMap(([key, value]) => {
+                  return value === null ? [] : [[key, value] as const];
+                }),
+              )}
+            />
           </TabsContent>
         </CardContent>
       </Tabs>

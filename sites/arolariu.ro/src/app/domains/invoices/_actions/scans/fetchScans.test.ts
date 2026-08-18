@@ -260,7 +260,7 @@ describe("fetchScans", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toBe("Unauthorized");
+      expect(result.error.message).toBe("Failed to fetch scans. Please try again.");
     }
   });
 
@@ -317,6 +317,27 @@ describe("fetchScans", () => {
     }
   });
 
+  it("does not emit blob names or parsing exceptions when invalid metadata is skipped", async () => {
+    const sensitiveBlobName = "scans/user-123/private-receipt.jpg";
+    mockListBlobObjects.mockResolvedValue([
+      {
+        name: sensitiveBlobName,
+        url: "https://storage.test/invoices/scans/user-123/private-receipt.jpg?sig=secret",
+        metadata: {},
+        contentType: "image/jpeg",
+        contentLength: 1024,
+      },
+    ]);
+
+    await fetchScans();
+
+    const telemetry = JSON.stringify(mockLogWithTrace.mock.calls);
+    expect(telemetry).not.toContain(sensitiveBlobName);
+    expect(telemetry).not.toContain("secret");
+    expect(telemetry).toContain("scan.fetch.metadata-invalid");
+    expect(telemetry).toContain("VALIDATION_ERROR");
+  });
+
   it("should handle detached scans", async () => {
     const mockBlobs = [
       {
@@ -360,7 +381,7 @@ describe("fetchScans", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toContain("Storage connection failed");
+      expect(result.error.message).toBe("Failed to fetch scans. Please try again.");
     }
   });
 });

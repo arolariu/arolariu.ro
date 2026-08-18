@@ -34,12 +34,11 @@ import {selectorFromPath} from "next-intl-selector";
  * **Rendering Context:** Client Component (requires useState, useMemo).
  *
  * @see {@link useInvoiceContext} for data access
- * @see {@link InvoiceCategory} for category enum
+ * @see {@link StandardClassification} for canonical invoice taxonomy data
  * @see {@link Product} for product structure
  * @see {@link ProductMetadata} for completeness flags
  */
 
-import {InvoiceCategory, ProductCategory} from "@/types/invoices";
 import {
   Button,
   Card,
@@ -218,9 +217,9 @@ export function InvoiceHealthScore(): React.JSX.Element {
     const paymentPoints = hasCompletePayment ? 15 : 0;
 
     // Factor 6: Categories assigned (10 points)
-    const categorizedProducts = items.filter((item) => item.category !== ProductCategory.NOT_DEFINED).length;
-    const categoryRatio = totalItems > 0 ? categorizedProducts / totalItems : 0;
-    const categoryPoints = Math.round(categoryRatio * 10);
+    const classifiedProducts = items.filter((item) => item.classification !== null).length;
+    const classificationRatio = totalItems > 0 ? classifiedProducts / totalItems : 0;
+    const classificationPoints = Math.round(classificationRatio * 10);
 
     // Factor 7: Recipes generated (10 points)
     const hasRecipes = invoice.possibleRecipes.length > 0;
@@ -263,9 +262,9 @@ export function InvoiceHealthScore(): React.JSX.Element {
       {
         key: "categoriesAssigned",
         maxPoints: 10,
-        earnedPoints: categoryPoints,
-        achieved: categoryRatio === 1,
-        detail: totalItems > 0 ? `${Math.round(categoryRatio * 100)}%` : undefined,
+        earnedPoints: classificationPoints,
+        achieved: classificationRatio === 1,
+        detail: totalItems > 0 ? `${Math.round(classificationRatio * 100)}%` : undefined,
       },
       {
         key: "recipesGenerated",
@@ -326,8 +325,8 @@ export function InvoiceHealthScore(): React.JSX.Element {
       });
     }
 
-    if (totalItems > 0 && categoryRatio < 1) {
-      const uncategorizedCount = totalItems - categorizedProducts;
+    if (totalItems > 0 && classificationRatio < 1) {
+      const uncategorizedCount = totalItems - classifiedProducts;
       improvementSuggestions.push({
         key: "uncategorizedProducts",
         icon: TbAlertCircle,

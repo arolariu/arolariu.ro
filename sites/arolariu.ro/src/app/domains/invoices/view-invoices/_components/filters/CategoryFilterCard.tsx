@@ -1,6 +1,11 @@
 "use client";
 
-import type {InvoiceCategory} from "@/types/invoices";
+/**
+ * @fileoverview Canonical invoice-classification filter chips.
+ * @module domains/invoices/view-invoices/components/filters/CategoryFilterCard
+ */
+
+import type {ClassificationFilterOption} from "../../_utils/filterOptions";
 import {Badge} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo} from "react";
@@ -8,68 +13,61 @@ import type {FilterState} from "../../_hooks/useInvoiceFilters";
 import styles from "./DynamicChipFilterCard.module.scss";
 import {FilterCardFrame} from "./FilterCardFrame";
 
-type Props = Readonly<{
+interface Props {
   readonly filters: FilterState;
-  readonly availableCategories: ReadonlyArray<InvoiceCategory>;
-  readonly getCategoryLabel: (category: InvoiceCategory) => string;
+  readonly availableClassifications: readonly ClassificationFilterOption[];
   readonly onFiltersChange: (filters: Partial<FilterState>) => void;
-}>;
+}
 
-/**
- * Category chip card for invoice filters.
- *
- * @param props - Current filters, available categories, label formatter, and filter updater.
- * @returns The rendered category card, or `null` when no options exist.
- */
-export function CategoryFilterCard({
-  filters,
-  availableCategories,
-  getCategoryLabel,
-  onFiltersChange,
-}: Readonly<Props>): React.JSX.Element | null {
+/** Renders dynamic official-label classification chips with stable URL keys. */
+export function CategoryFilterCard({filters, availableClassifications, onFiltersChange}: Readonly<Props>): React.JSX.Element | null {
   const t = useTranslations();
-  const isCategoryActive = filters.categories.length > 0;
-
-  const activeValue = useMemo((): string | null => {
-    if (!isCategoryActive) return null;
-    return filters.categories.map((category) => getCategoryLabel(category as InvoiceCategory)).join(", ");
-  }, [filters.categories, getCategoryLabel, isCategoryActive]);
-
-  const handleCategoryToggle = useCallback(
-    (category: InvoiceCategory) => {
-      const newCategories = filters.categories.includes(category)
-        ? filters.categories.filter((candidate) => candidate !== category)
-        : [...filters.categories, category];
-      onFiltersChange({categories: newCategories});
+  const active = filters.classifications.length > 0;
+  const activeValue = useMemo(
+    () =>
+      availableClassifications
+        .filter((option) => filters.classifications.includes(option.key))
+        .map((option) => option.label)
+        .join(", "),
+    [availableClassifications, filters.classifications],
+  );
+  const toggleClassification = useCallback(
+    (key: string) => {
+      const classifications = filters.classifications.includes(key)
+        ? filters.classifications.filter((candidate) => candidate !== key)
+        : [...filters.classifications, key];
+      onFiltersChange({classifications});
     },
-    [filters.categories, onFiltersChange],
+    [filters.classifications, onFiltersChange],
   );
 
-  if (availableCategories.length === 0) return null;
+  if (availableClassifications.length === 0) return null;
 
   return (
     <FilterCardFrame
       title={<>📂 {t((m) => m.forms.invoices.filters.categories)}</>}
-      active={isCategoryActive}
+      active={active}
       activeValue={activeValue}
       inactiveLabel={t((m) => m.forms.invoices.filters.anyValue)}
       dynamicHintLabel={t((m) => m.forms.invoices.filters.dynamicHint)}>
       <div className={styles["categoryChips"]}>
-        {availableCategories.map((category) => (
-          <button
-            key={category}
-            type='button'
-            aria-pressed={filters.categories.includes(category)}
-            className={styles["chipButton"]}
-            // eslint-disable-next-line react/jsx-no-bind -- category is a stable enum value from availableCategories
-            onClick={() => handleCategoryToggle(category)}>
-            <Badge
-              variant={filters.categories.includes(category) ? "default" : "outline"}
-              className={styles["categoryChip"]}>
-              {getCategoryLabel(category)}
-            </Badge>
-          </button>
-        ))}
+        {availableClassifications.map((option) => {
+          const selected = filters.classifications.includes(option.key);
+          return (
+            <button
+              key={option.key}
+              type='button'
+              aria-pressed={selected}
+              className={styles["chipButton"]}
+              onClick={() => toggleClassification(option.key)}>
+              <Badge
+                variant={selected ? "default" : "outline"}
+                className={styles["categoryChip"]}>
+                {option.label} ({option.rootCode})
+              </Badge>
+            </button>
+          );
+        })}
       </div>
     </FilterCardFrame>
   );

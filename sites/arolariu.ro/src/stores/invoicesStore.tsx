@@ -14,7 +14,7 @@ import {createEntityStore} from "./createEntityStore";
  * @remarks
  * - State: `entities`, `selectedEntities`, `hasHydrated` — see {@link EntityStore}.
  * - Actions: full CRUD + selection API inherited from the factory.
- * - Persistence: IndexedDB table `invoices`, rehydrates each `Invoice` as an individual row.
+ * - Persistence: IndexedDB table `invoices-v2`, clean-slate structured DTO cache.
  * - DevTools: enabled in development, disabled in production.
  *
  * @example
@@ -24,7 +24,7 @@ import {createEntityStore} from "./createEntityStore";
  * ```
  */
 export const useInvoicesStore = createEntityStore<Invoice>({
-  tableName: "invoices",
+  tableName: "invoices-v2",
   storeName: "InvoicesStore",
-  persistName: "invoices-store",
+  persistName: "invoices-store-v2",
 });

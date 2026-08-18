@@ -16,7 +16,7 @@
  * - Case-insensitive handling of MIME types and extensions
  *
  * **Supported Formats:**
- * - Images: JPEG, PNG, BMP, TIFF, HEIF, HEIC
+ * - Images: JPEG, PNG, BMP, TIFF, HEIF
  * - Documents: PDF
  *
  * @example
@@ -59,7 +59,6 @@ import {type ScanType, ScanType as ScanTypeEnum} from "@/types/scans";
  * - `image/bmp` - Bitmap images (alias: x-ms-bmp)
  * - `image/tiff` - TIFF images (aliases: tif, x-tiff)
  * - `image/heif` - High Efficiency Image Format
- * - `image/heic` - High Efficiency Image Codec
  * - `application/pdf` - PDF documents
  *
  * @example
@@ -69,15 +68,7 @@ import {type ScanType, ScanType as ScanTypeEnum} from "@/types/scans";
  * }
  * ```
  */
-export const ACCEPTED_SCAN_MIME_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/bmp",
-  "image/tiff",
-  "image/heif",
-  "image/heic",
-  "application/pdf",
-] as const;
+export const ACCEPTED_SCAN_MIME_TYPES = ["image/jpeg", "image/png", "image/bmp", "image/tiff", "image/heif", "application/pdf"] as const;
 
 /**
  * Immutable array of accepted file extensions for invoice scans.
@@ -93,7 +84,6 @@ export const ACCEPTED_SCAN_MIME_TYPES = [
  * - `bmp` - Bitmap images
  * - `tif`, `tiff` - TIFF images
  * - `heif` - High Efficiency Image Format
- * - `heic` - High Efficiency Image Codec
  * - `pdf` - PDF documents
  *
  * @example
@@ -104,7 +94,7 @@ export const ACCEPTED_SCAN_MIME_TYPES = [
  * }
  * ```
  */
-export const ACCEPTED_SCAN_FILE_EXTENSIONS = ["jpg", "jpeg", "png", "bmp", "tif", "tiff", "heif", "heic", "pdf"] as const;
+export const ACCEPTED_SCAN_FILE_EXTENSIONS = ["jpg", "jpeg", "png", "bmp", "tif", "tiff", "heif", "pdf"] as const;
 
 /**
  * Internal Set for efficient MIME type lookups.
@@ -159,7 +149,6 @@ const EXTENSION_TO_MIME: Readonly<Record<string, string>> = {
   tif: "image/tiff",
   tiff: "image/tiff",
   heif: "image/heif",
-  heic: "image/heic",
   pdf: "application/pdf",
 };
 
@@ -178,7 +167,6 @@ const MIME_TO_SCAN_TYPE: Readonly<Record<string, ScanType>> = {
   "image/bmp": ScanTypeEnum.BMP,
   "image/tiff": ScanTypeEnum.TIFF,
   "image/heif": ScanTypeEnum.HEIF,
-  "image/heic": ScanTypeEnum.HEIC,
   "application/pdf": ScanTypeEnum.PDF,
 };
 
@@ -198,7 +186,6 @@ const MIME_TO_INVOICE_SCAN_TYPE: Readonly<Record<string, InvoiceScanType>> = {
   "image/bmp": InvoiceScanTypeEnum.BMP,
   "image/tiff": InvoiceScanTypeEnum.TIFF,
   "image/heif": InvoiceScanTypeEnum.HEIF,
-  "image/heic": InvoiceScanTypeEnum.HEIC,
   "application/pdf": InvoiceScanTypeEnum.PDF,
 };
 
@@ -217,7 +204,6 @@ const SCAN_TYPE_TO_INVOICE_SCAN_TYPE: Readonly<Record<string, InvoiceScanType>> 
   [ScanTypeEnum.BMP]: InvoiceScanTypeEnum.BMP,
   [ScanTypeEnum.TIFF]: InvoiceScanTypeEnum.TIFF,
   [ScanTypeEnum.HEIF]: InvoiceScanTypeEnum.HEIF,
-  [ScanTypeEnum.HEIC]: InvoiceScanTypeEnum.HEIC,
   [ScanTypeEnum.PDF]: InvoiceScanTypeEnum.PDF,
   [ScanTypeEnum.OTHER]: InvoiceScanTypeEnum.UNKNOWN,
 };
@@ -251,6 +237,26 @@ const SCAN_TYPE_TO_INVOICE_SCAN_TYPE: Readonly<Record<string, InvoiceScanType>> 
  */
 export function normalizeScanMimeType(mimeType: string): string | null {
   return normalizeMimeTypeWithAliases(mimeType, MIME_TYPE_ALIASES, _ACCEPTED_SCAN_MIME_TYPES_SET);
+}
+
+/**
+ * Determines whether a MIME type identifies an unsupported HEIC image.
+ *
+ * @param mimeType - Candidate MIME type from a browser file or persisted scan.
+ * @returns Whether the value is the HEIC MIME type after whitespace/case normalization.
+ */
+export function isHeicScanMimeType(mimeType: string): boolean {
+  return mimeType.trim().toLowerCase() === "image/heic";
+}
+
+/**
+ * Determines whether a filename has the unsupported HEIC extension.
+ *
+ * @param fileName - Candidate browser filename.
+ * @returns Whether the filename's final extension is HEIC.
+ */
+export function isHeicScanFileName(fileName: string): boolean {
+  return extractFileExtension(fileName) === "heic";
 }
 
 /**

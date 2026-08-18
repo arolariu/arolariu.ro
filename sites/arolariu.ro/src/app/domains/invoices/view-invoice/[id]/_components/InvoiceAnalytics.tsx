@@ -4,6 +4,7 @@ import {useUserInformation} from "@/hooks";
 import {useInvoicesStore} from "@/stores";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
+import {useLocale} from "next-intl";
 import {useMemo} from "react";
 import {TbChartBar, TbTrendingUp} from "react-icons/tb";
 import {useInvoiceContext} from "../_context/InvoiceContext";
@@ -29,6 +30,7 @@ import styles from "./InvoiceAnalytics.module.scss";
 
 export function InvoiceAnalytics(): React.JSX.Element {
   const t = useTranslations();
+  const locale = useLocale();
   const {invoice, merchant} = useInvoiceContext();
   const {
     userInformation: {userIdentifier},
@@ -39,15 +41,25 @@ export function InvoiceAnalytics(): React.JSX.Element {
 
   const isOwner = invoice.userIdentifier === userIdentifier;
   const currency = invoice.paymentInformation.currency.symbol;
-  const categoryData = getCategorySpending(invoice.items);
+  const unclassifiedLabel = t((m) => m.cards.invoices.analysisResults.unclassified);
+  const categoryData = getCategorySpending(invoice.items, unclassifiedLabel);
   const priceData = getPriceDistribution(invoice.items);
   const quantityData = getQuantityAnalysis(invoice.items);
   const summary = getInvoiceSummary(invoice);
 
   // Memoize comparison analytics (computed from all cached invoices)
-  const trendData = useMemo(() => getSpendingTrend(invoice, allInvoices), [invoice, allInvoices]);
+  const trendData = useMemo(
+    () =>
+      getSpendingTrend(invoice, allInvoices, locale, (count) =>
+        t((m) => m.pages.invoices.viewInvoice.invoiceAnalytics.invoiceCount, {count}),
+      ),
+    [allInvoices, invoice, locale, t],
+  );
   const comparisonStats = useMemo(() => getComparisonStats(invoice, allInvoices), [invoice, allInvoices]);
-  const categoryComparison = useMemo(() => getCategoryComparison(invoice, allInvoices), [invoice, allInvoices]);
+  const categoryComparison = useMemo(
+    () => getCategoryComparison(invoice, allInvoices, unclassifiedLabel),
+    [invoice, allInvoices, unclassifiedLabel],
+  );
   const merchantBreakdown = useMemo(() => getMerchantBreakdown(allInvoices), [allInvoices]);
 
   // Check if we have enough data for meaningful comparisons

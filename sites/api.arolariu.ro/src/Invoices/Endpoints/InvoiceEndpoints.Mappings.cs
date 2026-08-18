@@ -8,7 +8,7 @@ using arolariu.Backend.Common.Http;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
-using arolariu.Backend.Domain.Invoices.DTOs;
+using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.DTOs.Responses;
 
@@ -517,19 +517,25 @@ public static partial class InvoiceEndpoints
   }
 
   /// <summary>
-  /// Registers invoice analysis endpoints (computational enrichment and AI / OCR driven classification).
+  /// Registers the analysis enqueue endpoints for both analyzable aggregates.
   /// </summary>
   /// <remarks>
-  /// <para><b>Operation:</b> Current surface exposes a single POST analyze route performing synchronous orchestration then returning <c>202 Accepted</c>.</para>
-  /// <para><b>Backlog:</b> Potential evolution to long‑running asynchronous workflow (introduce operation status resource, webhooks or push notifications).</para>
+  /// <para><b>Operation:</b> Both routes are pure enqueue operations. They validate the target, persist a durable
+  /// analysis run, and return <c>202 Accepted</c> immediately. No OCR or generative work runs on the request thread,
+  /// so the ordinary CRUD write timeout applies rather than a long analysis budget.</para>
+  /// <para><b>Location header:</b> The accepted response points at the analyzed target, because the target - not the
+  /// run - is the resource a client polls for the applied outcome.</para>
   /// <para><b>Charging / Billing:</b> Includes <c>402 PaymentRequired</c> problem mapping placeholder for future usage-based billing enforcement.</para>
-  /// <para><b>Idempotency:</b> Re-analysis overwrites prior enrichment; idempotent only when source inputs have not changed.</para>
+  /// <para><b>Idempotency:</b> Each call enqueues a new run; concurrent runs against the same target resolve
+  /// last-write-wins on the target aggregate.</para>
   /// </remarks>
   /// <param name="router">Route builder instance.</param>
-  private static void MapInvoiceAnalysisEndpoints(this IEndpointRouteBuilder router) => router // Analyze a specific invoice, given its identifier.
+  private static void MapInvoiceAnalysisEndpoints(this IEndpointRouteBuilder router)
+  {
+    router // Enqueue an analysis run for a specific invoice, given its identifier.
       .MapPost("/invoices/{id}/analyze", AnalyzeInvoiceAsync)
       .Accepts<AnalyzeInvoiceRequestDto>("application/json")
-      .Produces<InvoiceResponseDto>(StatusCodes.Status202Accepted)
+      .Produces<AnalysisAcceptedResponseDto>(StatusCodes.Status202Accepted)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status402PaymentRequired)
@@ -537,9 +543,27 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .WithName(nameof(AnalyzeInvoiceAsync))
       .RequireAuthorization()
       .RequireRateLimiting(RateLimitPolicies.AnalysisOperations)
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
+
+    router // Enqueue an analysis run for a specific merchant, given its identifier.
+      .MapPost("/merchants/{id}/analyze", AnalyzeMerchantAsync)
+      .Accepts<AnalyzeMerchantRequestDto>("application/json")
+      .Produces<AnalysisAcceptedResponseDto>(StatusCodes.Status202Accepted)
+      .ProducesValidationProblem()
+      .ProducesProblem(StatusCodes.Status401Unauthorized)
+      .ProducesProblem(StatusCodes.Status402PaymentRequired)
+      .ProducesProblem(StatusCodes.Status403Forbidden)
+      .ProducesProblem(StatusCodes.Status404NotFound)
+      .ProducesProblem(StatusCodes.Status429TooManyRequests)
+      .ProducesProblem(StatusCodes.Status500InternalServerError)
       .ProducesProblem(StatusCodes.Status504GatewayTimeout)
-      .WithRequestTimeout(RequestTimeoutPolicies.Analysis);
+      .WithName(nameof(AnalyzeMerchantAsync))
+      .RequireAuthorization()
+      .RequireRateLimiting(RateLimitPolicies.AnalysisOperations)
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
+  }
 }

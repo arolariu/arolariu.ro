@@ -52,6 +52,7 @@ import {NodeSDK} from "@opentelemetry/sdk-node";
 import {BatchLogRecordProcessor, LoggerProvider} from "@opentelemetry/sdk-logs";
 import {BatchSpanProcessor} from "@opentelemetry/sdk-trace-node";
 import {parseSuppressionFlag, shouldSuppressTelemetry, SUPPRESSION_ENV_VAR} from "@/lib/telemetry/healthPolicy";
+import {sanitizeLogAttributes, sanitizeLogMessage} from "@/lib/telemetry/logSanitizer";
 
 // #endregion
 
@@ -1341,14 +1342,16 @@ export function logWithTrace(level: LogLevel, message: string, attributes?: Reco
   const currentSpan = trace.getActiveSpan();
   const spanContext = currentSpan?.spanContext();
 
+  const safeMessage = sanitizeLogMessage(message);
+  const safeAttributes = sanitizeLogAttributes(attributes);
   const logEntry: LogEntry = {
     timestamp: new Date().toISOString(),
     level,
-    message,
+    message: safeMessage,
     traceId: spanContext?.traceId,
     spanId: spanContext?.spanId,
     context: renderContext,
-    ...attributes,
+    ...safeAttributes,
   };
 
   const severityNumberByLevel: Record<LogLevel, number> = {
@@ -1360,23 +1363,19 @@ export function logWithTrace(level: LogLevel, message: string, attributes?: Reco
 
   const normalizedAttributes: Record<string, boolean | number | string> = {};
   for (const [key, value] of Object.entries({
-    ...attributes,
+    ...safeAttributes,
     "app.log.context": renderContext,
     "app.log.trace_id": spanContext?.traceId,
     "app.log.span_id": spanContext?.spanId,
   }) as Array<[string, unknown]>) {
-    if (value instanceof Error) {
-      normalizedAttributes[key] = value.message;
-    } else if (typeof value === "boolean" || typeof value === "number" || typeof value === "string") {
+    if (typeof value === "boolean" || typeof value === "number" || typeof value === "string") {
       normalizedAttributes[key] = value;
-    } else if (value !== undefined) {
-      normalizedAttributes[key] = JSON.stringify(value);
     }
   }
 
   websiteLogger?.emit({
     attributes: normalizedAttributes,
-    body: message,
+    body: safeMessage,
     context: context.active(),
     observedTimestamp: Date.now(),
     severityNumber: severityNumberByLevel[level],

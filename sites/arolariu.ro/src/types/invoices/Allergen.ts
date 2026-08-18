@@ -1,139 +1,166 @@
 /**
- * @fileoverview Allergen type definitions for food safety and dietary tracking.
+ * @fileoverview Strict structured allergen-assessment contracts.
  * @module types/invoices/Allergen
  *
  * @remarks
- * This module defines allergen types used for tracking food allergens in
- * products. Allergens are detected during AI analysis of invoice items and
- * help users identify potentially harmful ingredients.
- *
- * **Regulatory Context:**
- * Allergen tracking aligns with EU Regulation 1169/2011 which mandates
- * declaration of 14 major allergens in food products.
- *
- * **Data Source:**
- * Allergen data is populated through:
- * 1. AI-powered product label analysis
- * 2. Product database lookups (barcode matching)
- * 3. Manual user annotations
- *
- * @see {@link Product} for how allergens are attached to products
+ * These values mirror the API's EU-14 assessment response. An assessment is
+ * evidence, not a food-safety certification: neither an empty signal list nor
+ * a `noSignals` status means a product is allergen-free.
  */
 
 /**
- * Represents a food allergen detected in a product.
- *
- * @remarks
- * Allergens are identified during invoice processing and attached to
- * individual products. Each allergen provides educational information
- * to help users understand potential health impacts.
- *
- * **Common Allergens:**
- * - Gluten (wheat, rye, barley)
- * - Dairy (milk, lactose)
- * - Nuts (peanuts, tree nuts)
- * - Shellfish, eggs, soy, etc.
- *
- * **UI Display:**
- * Allergens are displayed with warning icons in the product detail view.
- * The `learnMoreAddress` links to authoritative health resources.
- *
- * @example
- * ```typescript
- * const glutenAllergen: Allergen = {
- *   name: "Gluten",
- *   description: "Found in wheat, rye, barley, and related grains",
- *   learnMoreAddress: "https://www.who.int/allergens/gluten"
- * };
- *
- * // Check if product contains allergens
- * const hasAllergens = product.detectedAllergens.length > 0;
- * ```
- *
- * @see {@link Product.detectedAllergens} for allergen attachment
+ * Published outcomes for a completed allergen assessment.
  */
-export type Allergen = {
-  /** The name of the allergen. */
-  name: string;
+export const AllergenAssessmentStatus = {
+  Detected: "detected",
+  NoSignals: "noSignals",
+  InsufficientData: "insufficientData",
+} as const;
 
-  /** A description of the allergen. */
-  description: string;
-
-  /** A URL to learn more about the allergen. */
-  learnMoreAddress: string;
-};
+/** Union of exact backend allergen-assessment status strings. */
+export type AllergenAssessmentStatusValue = (typeof AllergenAssessmentStatus)[keyof typeof AllergenAssessmentStatus];
 
 /**
- * DTO payload for creating a new allergen entry.
- *
- * @remarks
- * **Partial Fields:**
- * All fields are optional during creation as allergens may be
- * partially identified by AI and enriched later.
- *
- * **Validation:**
- * If `learnMoreAddress` is provided, it must be a valid HTTPS URL
- * pointing to a trusted health information source.
- *
- * @example
- * ```typescript
- * const payload: CreateAllergenDtoPayload = {
- *   name: "Peanuts",
- *   description: "Tree nut allergen"
- * };
- * ```
- *
- * @see {@link Allergen} for the created entity structure
+ * EU Regulation 1169/2011 Annex II (EU-14) allergen codes.
  */
-export type CreateAllergenDtoPayload = Partial<Allergen>;
+export const AllergenCode = {
+  CerealsContainingGluten: "cerealsContainingGluten",
+  Crustaceans: "crustaceans",
+  Eggs: "eggs",
+  Fish: "fish",
+  Peanuts: "peanuts",
+  Soybeans: "soybeans",
+  Milk: "milk",
+  Nuts: "nuts",
+  Celery: "celery",
+  Mustard: "mustard",
+  Sesame: "sesame",
+  SulphurDioxideAndSulphites: "sulphurDioxideAndSulphites",
+  Lupin: "lupin",
+  Molluscs: "molluscs",
+} as const;
+
+/** Union of exact backend EU-14 allergen code strings. */
+export type AllergenCodeValue = (typeof AllergenCode)[keyof typeof AllergenCode];
 
 /**
- * DTO payload for updating an existing allergen entry.
- *
- * @remarks
- * **Partial Updates:**
- * Only provided fields are updated. Omitted fields retain current values.
- *
- * **Use Cases:**
- * - Correcting AI-detected allergen information
- * - Adding missing descriptions or references
- * - Updating educational resource links
- *
- * @example
- * ```typescript
- * const updatePayload: UpdateAllergenDtoPayload = {
- *   description: "Updated description with more details",
- *   learnMoreAddress: "https://new-resource.example.com"
- * };
- * ```
- *
- * @see {@link Allergen} for the entity structure
+ * Evidence strengths returned for an allergen signal.
  */
-export type UpdateAllergenDtoPayload = Partial<Allergen>;
+export const AllergenEvidenceLevel = {
+  Explicit: "explicit",
+  Inferred: "inferred",
+  Precautionary: "precautionary",
+} as const;
+
+/** Union of exact backend allergen-evidence strings. */
+export type AllergenEvidenceLevelValue = (typeof AllergenEvidenceLevel)[keyof typeof AllergenEvidenceLevel];
+
+/** One user-readable source fragment supporting a detected signal. */
+export interface AllergenEvidence {
+  /** Stable source key supplied by the analysis pipeline. */
+  readonly source: string;
+  /** Source content retained for evidence review. */
+  readonly value: string;
+}
+
+/** One EU-14 signal with advisory confidence and evidence. */
+export interface AllergenSignal {
+  /** The EU-14 allergen code. */
+  readonly code: AllergenCodeValue;
+  /** The strength of available evidence. */
+  readonly evidenceLevel: AllergenEvidenceLevelValue;
+  /** Bounded advisory confidence from zero through one. */
+  readonly confidence: number;
+  /** Evidence fragments supporting this signal. */
+  readonly evidence: readonly AllergenEvidence[];
+}
 
 /**
- * DTO payload for deleting an allergen entry.
+ * The complete outcome of a product allergen assessment.
  *
  * @remarks
- * Allergens are identified by name for deletion since they don't have
- * a separate GUID identifier. The name must exactly match the existing
- * allergen entry (case-sensitive).
- *
- * **Cascade Behavior:**
- * Deleting an allergen removes it from the master list but does NOT
- * remove references from products. Products retain historical allergen
- * data for audit purposes.
- *
- * @example
- * ```typescript
- * const deletePayload: DeleteAllergenDtoPayload = {
- *   name: "Gluten"
- * };
- * ```
- *
- * @see {@link Allergen} for the entity being deleted
+ * `signals` is empty for `noSignals` and `insufficientData`; callers must
+ * render `status` rather than deriving a safety claim from the array.
  */
-export type DeleteAllergenDtoPayload = {
-  /** The name of the allergen. */
-  readonly name: string;
-};
+export interface AllergenAssessment {
+  /** The explicit assessment outcome. */
+  readonly status: AllergenAssessmentStatusValue;
+  /** Signals returned when the status is `detected`. */
+  readonly signals: readonly AllergenSignal[];
+}
+
+const assessmentStatusValues: readonly string[] = Object.values(AllergenAssessmentStatus);
+const allergenCodeValues: readonly string[] = Object.values(AllergenCode);
+const evidenceLevelValues: readonly string[] = Object.values(AllergenEvidenceLevel);
+
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasExactKeys(record: Readonly<Record<string, unknown>>, keys: readonly string[]): boolean {
+  const actualKeys = Object.keys(record);
+  return actualKeys.length === keys.length && actualKeys.every((key) => keys.includes(key));
+}
+
+function isNonBlankString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+/** Determines whether a transport value is an exact allergen-assessment status. */
+export function isAllergenAssessmentStatus(value: unknown): value is AllergenAssessmentStatusValue {
+  return typeof value === "string" && assessmentStatusValues.includes(value);
+}
+
+/** Determines whether a transport value is an exact EU-14 allergen code. */
+export function isAllergenCode(value: unknown): value is AllergenCodeValue {
+  return typeof value === "string" && allergenCodeValues.includes(value);
+}
+
+/** Determines whether a transport value is an exact allergen evidence level. */
+export function isAllergenEvidenceLevel(value: unknown): value is AllergenEvidenceLevelValue {
+  return typeof value === "string" && evidenceLevelValues.includes(value);
+}
+
+/** Determines whether a value is one exact allergen evidence object. */
+export function isAllergenEvidence(value: unknown): value is AllergenEvidence {
+  return (
+    isRecord(value) && hasExactKeys(value, ["source", "value"]) && isNonBlankString(value["source"]) && isNonBlankString(value["value"])
+  );
+}
+
+/** Determines whether a value is one complete structured allergen signal. */
+export function isAllergenSignal(value: unknown): value is AllergenSignal {
+  return (
+    isRecord(value)
+    && hasExactKeys(value, ["code", "evidenceLevel", "confidence", "evidence"])
+    && isAllergenCode(value["code"])
+    && isAllergenEvidenceLevel(value["evidenceLevel"])
+    && typeof value["confidence"] === "number"
+    && Number.isFinite(value["confidence"])
+    && value["confidence"] >= 0
+    && value["confidence"] <= 1
+    && Array.isArray(value["evidence"])
+    && value["evidence"].every(isAllergenEvidence)
+  );
+}
+
+/**
+ * Determines whether a value is a complete structured allergen assessment.
+ *
+ * @remarks
+ * The API always emits both keys. A detected outcome must contain at least one
+ * signal; non-detected outcomes must not contain signals that imply detection.
+ */
+export function isAllergenAssessment(value: unknown): value is AllergenAssessment {
+  if (
+    !isRecord(value)
+    || !hasExactKeys(value, ["status", "signals"])
+    || !isAllergenAssessmentStatus(value["status"])
+    || !Array.isArray(value["signals"])
+    || !value["signals"].every(isAllergenSignal)
+  ) {
+    return false;
+  }
+
+  return value["status"] === AllergenAssessmentStatus.Detected ? value["signals"].length > 0 : value["signals"].length === 0;
+}

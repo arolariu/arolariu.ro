@@ -67,7 +67,13 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {uploadBlobObject} from "@/lib/azure/storageClient";
 import {convertBase64ToBlob, createErrorResult, type ServerActionResult} from "@/lib/utils.server";
 import {type Scan, ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, ScanStatus} from "@/types/scans";
-import {deriveBlobExtension, mimeTypeToScanType} from "../../_utils/mimeTypeUtilities";
+import {
+  deriveBlobExtension,
+  isHeicScanFileName,
+  isHeicScanMimeType,
+  isSupportedScanMimeType,
+  mimeTypeToScanType,
+} from "../../_utils/mimeTypeUtilities";
 import {writeBlobMetadata} from "../../_utils/metadataUtilities";
 
 /**
@@ -174,13 +180,25 @@ function generateScanId(): string {
  * ```
  */
 export async function createScan({base64Data, fileName, mimeType}: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{createScan}}, with fileName:", fileName);
-
   return withSpan("api.actions.scans.createScan", async () => {
+    if (isHeicScanMimeType(mimeType) || isHeicScanFileName(fileName)) {
+      return {
+        success: false,
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "This scan format is not supported. Convert HEIC images to HEIF before uploading.",
+        },
+      };
+    }
+
+    if (!isSupportedScanMimeType(mimeType)) {
+      return {success: false, error: {code: "VALIDATION_ERROR", message: "This scan format is not supported."}};
+    }
+
     try {
       // Step 1. Fetch user from auth service
       addSpanEvent("bff.user.fetch.start");
-      logWithTrace("info", "Fetching BFF user for authentication", {}, "server");
+      logWithTrace("info", "scan.create.start", undefined, "server");
       const {userIdentifier} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.fetch.complete");
 
@@ -197,7 +215,7 @@ export async function createScan({base64Data, fileName, mimeType}: ServerActionI
 
       // Step 4. Upload the blob to Azure Storage
       addSpanEvent("azure.blob.create.start");
-      logWithTrace("info", "Creating scan in Azure Blob Storage", {blobName}, "server");
+      logWithTrace("info", "scan.upload.start", undefined, "server");
 
       const originalFile = await convertBase64ToBlob(base64Data);
       const arrayBuffer = await originalFile.arrayBuffer();
@@ -226,7 +244,7 @@ export async function createScan({base64Data, fileName, mimeType}: ServerActionI
       });
       addSpanEvent("azure.blob.upload.complete");
 
-      logWithTrace("info", "Successfully created scan in Azure", {scanId}, "server");
+      logWithTrace("info", "scan.upload.complete", undefined, "server");
 
       // Step 5. Construct and return the Scan entity
       const scan: Scan = {
@@ -251,10 +269,8 @@ export async function createScan({base64Data, fileName, mimeType}: ServerActionI
       } as const;
     } catch (error: unknown) {
       addSpanEvent("scan.create.error");
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error creating scan", {error}, "server");
-      console.error("Error creating scan:", error);
-      return createErrorResult(new Error(errorMessage));
+      logWithTrace("error", "scan.upload.failed", {errorCode: "NETWORK_ERROR"}, "server");
+      return createErrorResult(error, "Unable to upload the scan. Please try again.");
     }
   }) satisfies ServerActionOutputType;
 }

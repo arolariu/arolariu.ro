@@ -7,12 +7,14 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Common.Telemetry.Tracing;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
-using arolariu.Backend.Domain.Invoices.DTOs;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
+using arolariu.Backend.Domain.Invoices.Services.Processing.AnalysisService;
 
 using Microsoft.Extensions.Logging;
 
@@ -46,32 +48,6 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
     logger = loggerFactory.CreateLogger<IInvoiceProcessingService>();
   }
 
-  #region Analyze Invoice API
-  /// <inheritdoc/>
-  public async Task AnalyzeInvoice(AnalysisOptions options, Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
-  await TryCatchAsync(async () =>
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoice));
-    var sw = Stopwatch.StartNew();
-
-    try
-    {
-      await invoiceOrchestrationService
-        .AnalyzeInvoiceWithOptions(options, identifier, userIdentifier, cancellationToken)
-        .ConfigureAwait(false);
-
-      sw.Stop();
-      InvoiceMetrics.RecordOperation("analyze", "invoice", "success", sw.Elapsed.TotalMilliseconds);
-      InvoiceMetrics.RecordAnalysis("success", sw.Elapsed.TotalMilliseconds);
-    }
-    catch
-    {
-      sw.Stop();
-      InvoiceMetrics.RecordAnalysis("failure", sw.Elapsed.TotalMilliseconds);
-      throw;
-    }
-  }).ConfigureAwait(false);
-  #endregion
 
   #region Create Invoice API
   /// <inheritdoc/>
@@ -254,6 +230,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   public async Task AddProduct(Product product, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
+    ArgumentNullException.ThrowIfNull(product);
+
     using var activity = InvoicePackageTracing.StartActivity(nameof(AddProduct));
     var invoice = await invoiceOrchestrationService
       .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
@@ -264,6 +242,48 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
     await invoiceOrchestrationService
       .UpdateInvoiceObject(invoice, invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
+  }).ConfigureAwait(false);
+  #endregion
+
+  #region Update Product API
+  /// <inheritdoc/>
+  public async Task<Product> UpdateProduct(
+    ProductUpdateSelector selector,
+    Product updatedProduct,
+    Guid invoiceIdentifier,
+    Guid? userIdentifier,
+    CancellationToken cancellationToken) =>
+  await TryCatchAsync(async () =>
+  {
+    ArgumentNullException.ThrowIfNull(selector);
+    ArgumentNullException.ThrowIfNull(updatedProduct);
+
+    using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateProduct));
+    activity?.SetInvoiceContext(invoiceIdentifier, userIdentifier);
+    selector.Validate();
+    activity?.SetTag(
+      "product.selector.strategy",
+      selector.UsesOriginalProductCode ? "product_code" : "composite_snapshot");
+
+    var invoice = await invoiceOrchestrationService
+      .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
+      .ConfigureAwait(false);
+
+    Product persistedProduct = selector.SelectPersistedProduct(
+      invoice.Items,
+      invoiceIdentifier,
+      out int matchingProductCount);
+    activity?.SetTag("product.selector.match_count", matchingProductCount);
+
+    persistedProduct.ApplyClientUpdate(updatedProduct);
+    invoice.PreserveUntouchedProductClassifications = true;
+
+    await invoiceOrchestrationService
+      .UpdateInvoiceObject(invoice, invoiceIdentifier, userIdentifier, cancellationToken)
+      .ConfigureAwait(false);
+
+    activity?.SetTag("result.product_found", true);
+    return persistedProduct;
   }).ConfigureAwait(false);
   #endregion
 
@@ -303,49 +323,43 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Delete Product API
   /// <inheritdoc/>
-  public async Task DeleteProduct(string productName, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
+  public async Task DeleteProduct(
+    ProductUpdateSelector selector,
+    Guid invoiceIdentifier,
+    Guid? userIdentifier,
+    CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
+    ArgumentNullException.ThrowIfNull(selector);
+
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteProduct));
+    activity?.SetInvoiceContext(invoiceIdentifier, userIdentifier);
+    selector.Validate();
+    activity?.SetTag(
+      "product.selector.strategy",
+      selector.UsesOriginalProductCode ? "product_code" : "composite_snapshot");
+
     var invoice = await invoiceOrchestrationService
       .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
 
-    var product = invoice.Items.FirstOrDefault(
-      p => p.Name is not null && p.Name.Contains(productName, StringComparison.InvariantCultureIgnoreCase),
-      new Product());
+    Product persistedProduct = selector.SelectPersistedProduct(
+      invoice.Items,
+      invoiceIdentifier,
+      out int matchingProductCount);
+    activity?.SetTag("product.selector.match_count", matchingProductCount);
 
-    var newInvoice = invoice;
-    newInvoice.Items.Remove(product);
+    if (!invoice.Items.Remove(persistedProduct))
+    {
+      throw new ProductNotFoundException(invoiceIdentifier);
+    }
 
-    var currentInvoice = await invoiceOrchestrationService
+    invoice.PreserveUntouchedProductClassifications = true;
+
+    await invoiceOrchestrationService
       .UpdateInvoiceObject(invoice, invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
-
-    return currentInvoice;
-  }).ConfigureAwait(false);
-
-  /// <inheritdoc/>
-  public async Task DeleteProduct(Product product, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
-  await TryCatchAsync(async () =>
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteProduct));
-    var invoice = await invoiceOrchestrationService
-      .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
-
-    var foundProduct = invoice.Items.FirstOrDefault(
-      p => p.Name is not null && p.Name.Contains(product.Name, StringComparison.InvariantCultureIgnoreCase),
-      new Product());
-
-    var newInvoice = invoice;
-    newInvoice.Items.Remove(product);
-
-    var currentInvoice = await invoiceOrchestrationService
-      .UpdateInvoiceObject(newInvoice, invoiceIdentifier, userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
-
-    return currentInvoice;
+    activity?.SetTag("result.product_found", true);
   }).ConfigureAwait(false);
   #endregion
 
@@ -375,13 +389,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceScan));
-    var invoice = await invoiceOrchestrationService
-      .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
-    invoice.Scans.Add(scan);
-
     await invoiceOrchestrationService
-      .UpdateInvoiceObject(invoice, invoiceIdentifier, userIdentifier, cancellationToken)
+      .AttachInvoiceScanAsync(scan, invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
   }).ConfigureAwait(false);
   #endregion

@@ -2,6 +2,10 @@ namespace arolariu.Backend.Domain.Invoices;
 
 using System;
 
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysis;
+
 using Microsoft.Extensions.Logging;
 
 /// <summary>
@@ -41,6 +45,92 @@ public static partial class Log
   /// <param name="exceptionMessage"></param>
   [LoggerMessage(300_103, LogLevel.Error, "The invoice processing service encountered a service exception: {exceptionMessage}")]
   public static partial void LogInvoiceProcessingServiceException(this ILogger logger, string exceptionMessage);
+  #endregion
+
+  #region Processing Service Logging Methods (Analysis Processing Service)
+  /// <summary>
+  /// Logs a validation exception raised by the analysis processing service.
+  /// </summary>
+  /// <param name="logger">The logger.</param>
+  [LoggerMessage(300_200, LogLevel.Error, "The analysis processing service encountered a validation exception.")]
+  public static partial void LogAnalysisProcessingValidationException(this ILogger logger);
+
+  /// <summary>
+  /// Logs a dependency exception raised by the analysis processing service.
+  /// </summary>
+  /// <param name="logger">The logger.</param>
+  [LoggerMessage(300_201, LogLevel.Error, "The analysis processing service encountered a dependency exception.")]
+  public static partial void LogAnalysisProcessingDependencyException(this ILogger logger);
+
+  /// <summary>
+  /// Logs a dependency validation exception raised by the analysis processing service.
+  /// </summary>
+  /// <param name="logger">The logger.</param>
+  [LoggerMessage(300_202, LogLevel.Error, "The analysis processing service encountered a dependency validation exception.")]
+  public static partial void LogAnalysisProcessingDependencyValidationException(this ILogger logger);
+
+  /// <summary>
+  /// Logs a service exception raised by the analysis processing service.
+  /// </summary>
+  /// <param name="logger">The logger.</param>
+  [LoggerMessage(300_203, LogLevel.Error, "The analysis processing service encountered a service exception.")]
+  public static partial void LogAnalysisProcessingServiceException(this ILogger logger);
+
+  /// <summary>
+  /// Logs the loss of an analysis run lease while the run was still executing.
+  /// </summary>
+  /// <param name="logger">The logger.</param>
+  /// <param name="runId">The identifier of the affected run.</param>
+  [LoggerMessage(300_210, LogLevel.Warning, "The analysis run '{runId}' lost its lease during execution.")]
+  public static partial void LogAnalysisProcessingLeaseLost(this ILogger logger, Guid runId);
+
+  /// <summary>
+  /// Logs a failure to persist the analyzed target of an analysis run.
+  /// </summary>
+  /// <param name="logger">The logger.</param>
+  /// <param name="runId">The identifier of the affected run.</param>
+  [LoggerMessage(300_211, LogLevel.Error, "The analysis run '{runId}' could not persist its analyzed target.")]
+  public static partial void LogAnalysisProcessingTargetPersistenceFailed(this ILogger logger, Guid runId);
+
+  /// <summary>
+  /// Logs the durable failure of an analysis run.
+  /// </summary>
+  /// <param name="logger">The logger.</param>
+  /// <param name="runId">The identifier of the affected run.</param>
+  /// <param name="failureReason">The bounded failure reason recorded for the run.</param>
+  [LoggerMessage(300_212, LogLevel.Error, "The analysis run '{runId}' was marked as failed with reason '{failureReason}'.")]
+  public static partial void LogAnalysisProcessingRunFailed(
+    this ILogger logger,
+    Guid runId,
+    AnalysisFailureReason failureReason);
+
+  /// <summary>
+  /// Logs an unexpected failure inside the analysis worker's polling loop.
+  /// </summary>
+  /// <param name="logger">The logger.</param>
+  [LoggerMessage(300_213, LogLevel.Error, "The analysis worker iteration failed and will retry.")]
+  public static partial void LogAnalysisWorkerIterationFailed(this ILogger logger);
+
+  /// <summary>
+  /// Logs the analysis worker starting its polling loop.
+  /// </summary>
+  /// <param name="logger">The logger.</param>
+  [LoggerMessage(300_214, LogLevel.Information, "The analysis worker started polling for queued runs.")]
+  public static partial void LogAnalysisWorkerStarted(this ILogger logger);
+
+  /// <summary>
+  /// Logs a failure to ensure the durable analysis run store during worker startup.
+  /// </summary>
+  /// <param name="logger">The logger.</param>
+  [LoggerMessage(300_215, LogLevel.Error, "The analysis worker could not ensure the durable run store.")]
+  public static partial void LogAnalysisWorkerStoreInitializationFailed(this ILogger logger);
+
+  /// <summary>
+  /// Logs a best-effort queue-depth refresh failure without exposing provider failure content.
+  /// </summary>
+  /// <param name="logger">The logger.</param>
+  [LoggerMessage(300_216, LogLevel.Warning, "The analysis queue-depth refresh failed; the previous gauge sample remains until it expires.")]
+  public static partial void LogAnalysisQueueDepthRefreshFailed(this ILogger logger);
   #endregion
 
   #region Orchestration Services Logging Methods (Invoice + Merchant)
@@ -108,6 +198,34 @@ public static partial class Log
   /// <param name="exceptionMessage"></param>
   [LoggerMessage(200_203, LogLevel.Error, "The merchant orchestration service encountered a service exception: {exceptionMessage}")]
   public static partial void LogMerchantOrchestrationServiceException(this ILogger logger, string exceptionMessage);
+
+  /// <summary>
+  /// Auto-generated method for logging the analysis orchestration validation exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  [LoggerMessage(200_300, LogLevel.Error, "The analysis orchestration service encountered a validation exception.")]
+  public static partial void LogAnalysisOrchestrationValidationException(this ILogger logger);
+
+  /// <summary>
+  /// Auto-generated method for logging the analysis orchestration dependency exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  [LoggerMessage(200_301, LogLevel.Error, "The analysis orchestration service encountered a dependency exception.")]
+  public static partial void LogAnalysisOrchestrationDependencyException(this ILogger logger);
+
+  /// <summary>
+  /// Auto-generated method for logging the analysis orchestration dependency validation exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  [LoggerMessage(200_302, LogLevel.Error, "The analysis orchestration service encountered a dependency validation exception.")]
+  public static partial void LogAnalysisOrchestrationDependencyValidationException(this ILogger logger);
+
+  /// <summary>
+  /// Auto-generated method for logging the analysis orchestration service exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  [LoggerMessage(200_303, LogLevel.Error, "The analysis orchestration service encountered a service exception.")]
+  public static partial void LogAnalysisOrchestrationServiceException(this ILogger logger);
   #endregion
 
   #region Foundation Services Logging Methods (Invoice + Merchant)
@@ -221,6 +339,96 @@ public static partial class Log
   [LoggerMessage(100_303, LogLevel.Error, "The merchant storage service encountered a service exception: {exceptionMessage}")]
   public static partial void LogMerchantStorageServiceException(this ILogger logger, string exceptionMessage);
   #endregion
+
+  #region Analysis Run Foundation Logging Methods
+  /// <summary>
+  /// Auto-generated method for logging the analysis run validation exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  [LoggerMessage(100_400, LogLevel.Error, "The analysis run service encountered a validation exception.")]
+  public static partial void LogAnalysisRunValidationException(this ILogger logger);
+
+  /// <summary>
+  /// Auto-generated method for logging the analysis run dependency exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  [LoggerMessage(100_401, LogLevel.Error, "The analysis run service encountered a dependency exception.")]
+  public static partial void LogAnalysisRunDependencyException(this ILogger logger);
+
+  /// <summary>
+  /// Auto-generated method for logging the analysis run dependency validation exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  [LoggerMessage(100_402, LogLevel.Error, "The analysis run service encountered a dependency validation exception.")]
+  public static partial void LogAnalysisRunDependencyValidationException(this ILogger logger);
+
+  /// <summary>
+  /// Auto-generated method for logging the analysis run service exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  [LoggerMessage(100_403, LogLevel.Error, "The analysis run service encountered a service exception.")]
+  public static partial void LogAnalysisRunServiceException(this ILogger logger);
+  #endregion
+
+  #region Document Analysis Foundation Logging Methods
+  /// <summary>
+  /// Auto-generated method for logging the document analysis validation exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  [LoggerMessage(100_410, LogLevel.Error, "The document analysis service encountered a validation exception.")]
+  public static partial void LogDocumentAnalysisValidationException(this ILogger logger);
+
+  /// <summary>
+  /// Auto-generated method for logging the document analysis dependency exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  [LoggerMessage(100_411, LogLevel.Error, "The document analysis service encountered a dependency exception.")]
+  public static partial void LogDocumentAnalysisDependencyException(this ILogger logger);
+
+  /// <summary>
+  /// Auto-generated method for logging the document analysis dependency validation exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  [LoggerMessage(100_412, LogLevel.Error, "The document analysis service encountered a dependency validation exception.")]
+  public static partial void LogDocumentAnalysisDependencyValidationException(this ILogger logger);
+
+  /// <summary>
+  /// Auto-generated method for logging the document analysis service exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  [LoggerMessage(100_413, LogLevel.Error, "The document analysis service encountered a service exception.")]
+  public static partial void LogDocumentAnalysisServiceException(this ILogger logger);
+  #endregion
+
+  #region Generative Analysis Foundation Logging Methods
+  /// <summary>
+  /// Auto-generated method for logging the generative analysis validation exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  [LoggerMessage(100_420, LogLevel.Error, "The generative analysis service encountered a validation exception.")]
+  public static partial void LogGenerativeAnalysisValidationException(this ILogger logger);
+
+  /// <summary>
+  /// Auto-generated method for logging the generative analysis dependency exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  [LoggerMessage(100_421, LogLevel.Error, "The generative analysis service encountered a dependency exception.")]
+  public static partial void LogGenerativeAnalysisDependencyException(this ILogger logger);
+
+  /// <summary>
+  /// Auto-generated method for logging the generative analysis dependency validation exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  [LoggerMessage(100_422, LogLevel.Error, "The generative analysis service encountered a dependency validation exception.")]
+  public static partial void LogGenerativeAnalysisDependencyValidationException(this ILogger logger);
+
+  /// <summary>
+  /// Auto-generated method for logging the generative analysis service exception.
+  /// </summary>
+  /// <param name="logger"></param>
+  [LoggerMessage(100_423, LogLevel.Error, "The generative analysis service encountered a service exception.")]
+  public static partial void LogGenerativeAnalysisServiceException(this ILogger logger);
+  #endregion
   #endregion
 
   #region General Validation and Exception Logging Methods
@@ -275,6 +483,169 @@ public static partial class Log
   /// </summary>
   [LoggerMessage(400_106, LogLevel.Warning, "[Classifier] Skipping unrecognized allergen '{AllergenName}' for product '{ProductName}'")]
   public static partial void LogAllergenUnrecognizedSkipped(this ILogger logger, string allergenName, string productName);
+
+  #endregion
+
+  #region Analysis Pipeline Observability Logging Methods
+  // NOTE: every log method below accepts only bounded, non-sensitive dimensions: run identifiers (GUIDs), the
+  // AnalysisTargetType / AnalysisCapability / AnalysisOutcome / AnalysisFailureReason / ClassificationSystem enums,
+  // model identifiers, and numeric counts or durations. None accept product names, merchant names, OCR text, scan
+  // URLs, prompts, or model responses. See AnalysisTelemetryTests.AnalysisLogMethods_NeverAcceptSensitiveParameters.
+
+  /// <summary>
+  /// Logs an analysis run being accepted into the durable queue.
+  /// </summary>
+  /// <param name="logger">The logger instance.</param>
+  /// <param name="runId">The analysis run identifier.</param>
+  /// <param name="targetType">The analysis target type.</param>
+  [LoggerMessage(300_220, LogLevel.Information, "Analysis run '{runId}' of target type '{targetType}' was queued.")]
+  public static partial void LogAnalysisRunQueued(this ILogger logger, Guid runId, AnalysisTargetType targetType);
+
+  /// <summary>
+  /// Logs how long an analysis run waited in queue before being claimed by a worker.
+  /// </summary>
+  /// <param name="logger">The logger instance.</param>
+  /// <param name="runId">The analysis run identifier.</param>
+  /// <param name="targetType">The analysis target type.</param>
+  /// <param name="waitMs">How long the run waited in queue, in milliseconds.</param>
+  [LoggerMessage(300_221, LogLevel.Information, "Analysis run '{runId}' of target type '{targetType}' waited {waitMs} ms before being claimed.")]
+  public static partial void LogAnalysisQueueWaitObserved(this ILogger logger, Guid runId, AnalysisTargetType targetType, double waitMs);
+
+  /// <summary>
+  /// Logs the terminal outcome and duration of an analysis run.
+  /// </summary>
+  /// <param name="logger">The logger instance.</param>
+  /// <param name="runId">The analysis run identifier.</param>
+  /// <param name="targetType">The analysis target type.</param>
+  /// <param name="outcome">The terminal outcome.</param>
+  /// <param name="durationMs">Duration in milliseconds from claim to completion.</param>
+  [LoggerMessage(300_222, LogLevel.Information, "Analysis run '{runId}' of target type '{targetType}' completed with outcome '{outcome}' in {durationMs} ms.")]
+  public static partial void LogAnalysisRunOutcomeObserved(this ILogger logger, Guid runId, AnalysisTargetType targetType, AnalysisOutcome outcome, double durationMs);
+
+  /// <summary>
+  /// Logs the bounded failure reason attributed to a failed analysis run.
+  /// </summary>
+  /// <param name="logger">The logger instance.</param>
+  /// <param name="runId">The analysis run identifier.</param>
+  /// <param name="targetType">The analysis target type.</param>
+  /// <param name="failureReason">The bounded failure reason.</param>
+  [LoggerMessage(300_223, LogLevel.Warning, "Analysis run '{runId}' of target type '{targetType}' failed with reason '{failureReason}'.")]
+  public static partial void LogAnalysisRunFailureReasonObserved(this ILogger logger, Guid runId, AnalysisTargetType targetType, AnalysisFailureReason failureReason);
+
+  /// <summary>
+  /// Logs the outcome and duration of a single analysis capability invocation.
+  /// </summary>
+  /// <param name="logger">The logger instance.</param>
+  /// <param name="runId">The analysis run identifier.</param>
+  /// <param name="capability">The analysis capability.</param>
+  /// <param name="outcome">The outcome.</param>
+  /// <param name="durationMs">Duration in milliseconds.</param>
+  [LoggerMessage(300_224, LogLevel.Information, "Analysis run '{runId}' capability '{capability}' completed with outcome '{outcome}' in {durationMs} ms.")]
+  public static partial void LogAnalysisCapabilityOutcomeObserved(this ILogger logger, Guid runId, AnalysisCapability capability, AnalysisOutcome outcome, double durationMs);
+
+  /// <summary>
+  /// Logs the bounded failure reason attributed to a failed analysis capability invocation.
+  /// </summary>
+  /// <param name="logger">The logger instance.</param>
+  /// <param name="runId">The analysis run identifier.</param>
+  /// <param name="capability">The analysis capability.</param>
+  /// <param name="failureReason">The bounded failure reason.</param>
+  [LoggerMessage(300_225, LogLevel.Warning, "Analysis run '{runId}' capability '{capability}' failed with reason '{failureReason}'.")]
+  public static partial void LogAnalysisCapabilityFailureReasonObserved(this ILogger logger, Guid runId, AnalysisCapability capability, AnalysisFailureReason failureReason);
+
+  /// <summary>
+  /// Logs a transient-failure retry attempt for an analysis capability call.
+  /// </summary>
+  /// <param name="logger">The logger instance.</param>
+  /// <param name="capability">The analysis capability.</param>
+  /// <param name="attempt">The 1-based retry attempt number.</param>
+  [LoggerMessage(300_226, LogLevel.Warning, "Analysis capability '{capability}' is retrying after a transient dependency failure (attempt {attempt}).")]
+  public static partial void LogAnalysisCapabilityRetryAttempted(this ILogger logger, AnalysisCapability capability, int attempt);
+
+  /// <summary>
+  /// Logs an AI content filter or refusal event for an analysis capability call.
+  /// </summary>
+  /// <param name="logger">The logger instance.</param>
+  /// <param name="capability">The analysis capability.</param>
+  [LoggerMessage(300_227, LogLevel.Warning, "Analysis capability '{capability}' was blocked by a provider content filter or refusal.")]
+  public static partial void LogAnalysisContentFilterOrRefusalTriggered(this ILogger logger, AnalysisCapability capability);
+
+  /// <summary>
+  /// Logs an invalid structured output event for an analysis capability call.
+  /// </summary>
+  /// <param name="logger">The logger instance.</param>
+  /// <param name="capability">The analysis capability.</param>
+  [LoggerMessage(300_228, LogLevel.Warning, "Analysis capability '{capability}' returned structured output that violated the published contract.")]
+  public static partial void LogAnalysisInvalidStructuredOutputDetected(this ILogger logger, AnalysisCapability capability);
+
+  /// <summary>
+  /// Logs a taxonomy code validation failure encountered during analysis or manual classification.
+  /// </summary>
+  /// <param name="logger">The logger instance.</param>
+  /// <param name="classificationSystem">The classification system whose code failed validation.</param>
+  [LoggerMessage(300_229, LogLevel.Warning, "A taxonomy code failed validation against classification system '{classificationSystem}'.")]
+  public static partial void LogAnalysisTaxonomyValidationFailed(this ILogger logger, ClassificationSystem classificationSystem);
+
+  /// <summary>
+  /// Logs the recovery of an analysis run whose previous worker lease expired.
+  /// </summary>
+  /// <param name="logger">The logger instance.</param>
+  /// <param name="runId">The analysis run identifier.</param>
+  /// <param name="targetType">The analysis target type.</param>
+  /// <param name="attemptCount">The run's total claim/recovery attempt count after this recovery.</param>
+  [LoggerMessage(300_230, LogLevel.Warning, "Analysis run '{runId}' of target type '{targetType}' was recovered from an expired lease (attempt {attemptCount}).")]
+  public static partial void LogAnalysisLeaseRecovered(this ILogger logger, Guid runId, AnalysisTargetType targetType, int attemptCount);
+
+  /// <summary>
+  /// Logs an in-flight analysis run losing its worker lease because renewal failed.
+  /// </summary>
+  /// <param name="logger">The logger instance.</param>
+  /// <param name="runId">The analysis run identifier.</param>
+  /// <param name="targetType">The analysis target type.</param>
+  [LoggerMessage(300_231, LogLevel.Warning, "Analysis run '{runId}' of target type '{targetType}' lost its worker lease and was aborted before persistence.")]
+  public static partial void LogAnalysisLeaseLost(this ILogger logger, Guid runId, AnalysisTargetType targetType);
+
+  /// <summary>
+  /// Logs bounded non-sensitive token usage metadata observed for a successful generative analysis capability call.
+  /// </summary>
+  /// <param name="logger">The logger instance.</param>
+  /// <param name="telemetryMetadata">The trusted bounded capability, schema, prompt, and taxonomy metadata.</param>
+  /// <param name="modelId">The normalized bounded model identifier.</param>
+  /// <param name="inputTokens">The input token count, when available.</param>
+  /// <param name="outputTokens">The output token count, when available.</param>
+  internal static void LogAnalysisTokenUsageObserved(
+    this ILogger logger,
+    GenerativeTelemetryMetadata telemetryMetadata,
+    string modelId,
+    long? inputTokens,
+    long? outputTokens)
+  {
+    ArgumentNullException.ThrowIfNull(logger);
+
+    LogAnalysisTokenUsageObservedCore(
+      logger,
+      telemetryMetadata.Capability,
+      modelId,
+      telemetryMetadata.SchemaVersion,
+      telemetryMetadata.PromptVersion,
+      telemetryMetadata.TaxonomyVersion,
+      inputTokens,
+      outputTokens);
+  }
+
+  [LoggerMessage(
+    300_232,
+    LogLevel.Information,
+    "Analysis capability '{capability}' used model '{modelId}' with schema '{schemaVersion}', prompt '{promptVersion}', taxonomy '{taxonomyVersion}' ({inputTokens} input / {outputTokens} output tokens; outcome success).")]
+  private static partial void LogAnalysisTokenUsageObservedCore(
+    ILogger logger,
+    AnalysisCapability capability,
+    string modelId,
+    string schemaVersion,
+    string promptVersion,
+    string taxonomyVersion,
+    long? inputTokens,
+    long? outputTokens);
 
   #endregion
 }

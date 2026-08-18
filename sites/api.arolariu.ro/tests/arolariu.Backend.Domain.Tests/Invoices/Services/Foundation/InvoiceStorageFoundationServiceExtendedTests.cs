@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
@@ -27,6 +28,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 public sealed class InvoiceStorageFoundationServiceExtendedTests
 {
   private readonly Mock<IInvoiceNoSqlBroker> mockBroker;
+  private readonly Mock<ITaxonomyBroker> mockTaxonomyBroker;
   private readonly Mock<ILoggerFactory> mockLoggerFactory;
   private readonly Mock<ILogger<IInvoiceStorageFoundationService>> mockLogger;
   private readonly InvoiceStorageFoundationService service;
@@ -37,6 +39,7 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
   public InvoiceStorageFoundationServiceExtendedTests()
   {
     mockBroker = new Mock<IInvoiceNoSqlBroker>();
+    mockTaxonomyBroker = new Mock<ITaxonomyBroker>();
     mockLoggerFactory = new Mock<ILoggerFactory>();
     mockLogger = new Mock<ILogger<IInvoiceStorageFoundationService>>();
 
@@ -44,9 +47,7 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
         .Setup(factory => factory.CreateLogger(It.IsAny<string>()))
         .Returns(mockLogger.Object);
 
-    service = new InvoiceStorageFoundationService(
-        mockBroker.Object,
-        mockLoggerFactory.Object);
+    service = new InvoiceStorageFoundationService(mockBroker.Object, mockTaxonomyBroker.Object, mockLoggerFactory.Object);
   }
 
   #region CreateInvoiceObject Extended Tests

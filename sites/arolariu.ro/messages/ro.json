@@ -372,6 +372,7 @@
       "nutritionCard": {
         "allergens": {
           "foundInItems": "Găsit în {count} articol(e)",
+          "noItems": "Nu există articole pe factură disponibile pentru evaluarea alergenilor.",
           "title": "Alergeni detectați"
         },
         "composition": {
@@ -437,8 +438,7 @@
       },
       "recipeCard": {
         "buttons": {
-          "viewRecipe": "Vezi rețeta",
-          "visitReference": "Vizitează referința"
+          "viewRecipe": "Vezi rețeta"
         },
         "complexity": {
           "easy": "Complexitate ușoară",
@@ -563,10 +563,15 @@
       "statistics": {
         "allergenSummary": {
           "ariaLabel": "Rezumat frecvență alergeni",
-          "description": "Expunerea la alergeni în produse",
-          "empty": "Niciun alergen detectat în achizițiile tale",
+          "description": "Semnale din evaluările alergenilor pentru produsele evaluate",
+          "empty": "Nu există semnale din evaluarea alergenilor. Acoperirea este afișată mai jos.",
+          "coverage": {
+            "assessed": "Dovezi evaluate",
+            "insufficientData": "Date insuficiente",
+            "notAssessed": "Neevaluat"
+          },
           "stats": {
-            "ofTotal": "din total",
+            "ofAssessedProducts": "din produsele evaluate",
             "products": "produse"
           },
           "title": "Rezumat Alergeni"
@@ -654,6 +659,12 @@
           "empty": "Nu sunt date disponibile despre comercianți",
           "labels": {
             "totalSpent": "Total Cheltuit"
+          },
+          "merchantNace": {
+            "title": "Sectoare comercianți",
+            "description": "Cheltuieli grupate după secțiunea canonică NACE 2.1",
+            "empty": "Niciun comerciant asociat nu are încă o secțiune NACE canonică.",
+            "metadata": "{invoices} facturi · {merchants} comercianți"
           },
           "title": "Comercianți de Top",
           "tooltip": {
@@ -815,6 +826,58 @@
           "title": "Cel mai ieftin în apropiere"
         },
         "title": "Analiza cheltuielilor vehiculului"
+      },
+      "analysisResults": {
+        "unclassified": "Neclasificat",
+        "classification": {
+          "analysisOrigin": "Rezultat al analizei",
+          "manualOrigin": "Selecție manuală",
+          "confidence": "Încredere orientativă: {confidence}",
+          "evidence": "Dovezi disponibile",
+          "root": "Rădăcină: {label} ({code})"
+        },
+        "allergens": {
+          "detected": "Au fost detectate semnale",
+          "noSignals": "Nu există semnale în dovezile disponibile",
+          "insufficientData": "Date insuficiente",
+          "explicit": "Dovezi explicite",
+          "inferred": "Dovezi deduse",
+          "precautionary": "Dovezi de precauție",
+          "notAssessed": "Neevaluat",
+          "confidence": "Încredere orientativă: {confidence}%",
+          "codes": {
+            "cerealsContainingGluten": "Cereale care conțin gluten",
+            "crustaceans": "Crustacee",
+            "eggs": "Ouă",
+            "fish": "Pește",
+            "peanuts": "Arahide",
+            "soybeans": "Soia",
+            "milk": "Lapte",
+            "nuts": "Nuci",
+            "celery": "Țelină",
+            "mustard": "Muștar",
+            "sesame": "Susan",
+            "sulphurDioxideAndSulphites": "Dioxid de sulf și sulfiți",
+            "lupin": "Lupin",
+            "molluscs": "Moluște"
+          }
+        },
+        "recipes": {
+          "difficulty": {
+            "easy": "Ușoară",
+            "medium": "Medie",
+            "hard": "Dificilă"
+          },
+          "purchasedIngredients": "Ingrediente cumpărate",
+          "pantryStaples": "Produse de bază presupuse în cămară",
+          "missingOptionalIngredients": "Ingrediente opționale lipsă",
+          "steps": "Pași de preparare",
+          "warnings": "Avertismente despre alergeni",
+          "servings": "{count} porții",
+          "preparationMinutes": "Pregătire: {minutes} min",
+          "cookingMinutes": "Gătire: {minutes} min",
+          "totalMinutes": "Total: {minutes} min"
+        }
       }
     }
   },
@@ -830,12 +893,11 @@
         "dropzone": {
           "dragAndDrop": "Trage și plasează un fișier aici",
           "dropHere": "Plasează fișierul aici...",
-          "formats": "JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF (max 10MB)",
+          "formats": "JPG, JPEG, PNG, BMP, TIFF, HEIF, PDF (max 10MB)",
           "orClickBrowse": "sau apasă pentru a răsfoi"
         },
         "scanType": {
           "bmp": "Imagine BMP",
-          "heic": "Imagine HEIC",
           "heif": "Imagine HEIF",
           "jpeg": "Imagine JPEG",
           "label": "Tip scanare",
@@ -862,9 +924,9 @@
           "saving": "Se salvează..."
         },
         "defaultDescription": "Conține {name}",
-        "description": "Gestionează alergenii pentru {productName}",
+        "description": "Examinează dovezile evaluării pentru {productName}",
         "empty": {
-          "noAllergens": "Niciun alergen detectat"
+          "noAllergens": "Neevaluat"
         },
         "errors": {
           "duplicate": "Alergenul {name} este deja adăugat",
@@ -885,113 +947,7 @@
           "removed": "Alergen eliminat: {name}",
           "saved": "Alergenii au fost actualizați cu succes"
         },
-        "title": "Editează Alergeni"
-      },
-      "analyzeDialog": {
-        "analysisSteps": {
-          "analyzingWithAi": "Se analizează cu IA...",
-          "categorizingItems": "Se categorisesc articolele...",
-          "finalizingResults": "Se finalizează rezultatele...",
-          "preparingDocument": "Se pregătește documentul...",
-          "processing": "Se procesează...",
-          "runningOcrExtraction": "Se rulează extracția OCR..."
-        },
-        "analyzing": {
-          "progressComplete": "{progress}% complet",
-          "title": "Se analizează factura"
-        },
-        "badges": {
-          "recommended": "Recomandat"
-        },
-        "buttons": {
-          "analyzing": "Se analizează...",
-          "cancel": "Anulează",
-          "startAnalysis": "Pornește analiza"
-        },
-        "enhancements": {
-          "priceComparison": {
-            "description": "Compară prețurile cu date istorice",
-            "label": "Comparare prețuri"
-          },
-          "quickExtract": {
-            "description": "Prioritizează viteza în locul acurateței",
-            "label": "Mod de extragere rapidă"
-          },
-          "savingsTips": {
-            "description": "Primește recomandări de economisire cu IA",
-            "label": "Sugestii de economisire"
-          }
-        },
-        "header": {
-          "description": "Configurează o analiză cu IA pentru factura",
-          "title": "Analizează factura"
-        },
-        "options": {
-          "completeAnalysis": {
-            "description": "Analiză completă cu IA ce include toate datele facturii, articolele și informațiile comerciantului.",
-            "estimatedTime": "2-3 min",
-            "features": {
-              "itemCategorization": "Categorisirea articolelor",
-              "merchantIdentification": "Identificarea comerciantului",
-              "ocrExtraction": "Extracție OCR",
-              "priceAnalysis": "Analiza prețurilor",
-              "receiptValidation": "Validarea bonului"
-            },
-            "title": "Analiză completă"
-          },
-          "invoiceOnly": {
-            "description": "Analizează informațiile de bază ale facturii precum totaluri, date și detalii de plată.",
-            "estimatedTime": "30-60 sec",
-            "features": {
-              "dateParsing": "Interpretarea datelor",
-              "paymentMethodDetection": "Detectarea metodei de plată",
-              "totalExtraction": "Extracția totalului"
-            },
-            "title": "Doar datele facturii"
-          },
-          "itemsOnly": {
-            "description": "Se concentrează pe extragerea și categorisirea articolelor individuale din factură.",
-            "estimatedTime": "1-2 min",
-            "features": {
-              "categoryAssignment": "Atribuirea categoriilor",
-              "itemExtraction": "Extracția articolelor",
-              "pricePerItem": "Preț per articol",
-              "quantityDetection": "Detectarea cantității"
-            },
-            "title": "Analiza articolelor"
-          },
-          "merchantOnly": {
-            "description": "Identifică și analizează informațiile comerciantului, inclusiv locația și categoria.",
-            "estimatedTime": "30-45 sec",
-            "features": {
-              "businessCategory": "Categoria afacerii",
-              "contactInfo": "Informații de contact",
-              "locationExtraction": "Extracția locației",
-              "merchantIdentification": "Identificarea comerciantului"
-            },
-            "title": "Analiza comerciantului"
-          }
-        },
-        "sections": {
-          "analysisType": "Tip analiză",
-          "enhancementsOptional": "Îmbunătățiri (opțional)",
-          "includedFeatures": "Funcționalități incluse"
-        },
-        "summary": {
-          "enhancementsSelected": "+ {count} îmbunătățire(i)",
-          "estimatedTime": "Durată estimată",
-          "noEnhancementsSelected": "Nicio îmbunătățire selectată"
-        },
-        "toasts": {
-          "analysisComplete": {
-            "description": "Factura ta a fost analizată cu succes.",
-            "title": "Analiză finalizată"
-          },
-          "analysisFailed": {
-            "description": "Nu am putut analiza factura ta. Te rugăm să încerci din nou.",
-            "title": "Analiza a eșuat"
-          }
-        }
+        "title": "Evaluare alergeni"
       },
       "bulkCategoryDialog": {
         "buttons": {
@@ -999,30 +955,30 @@
           "save": "Aplică Tuturor",
           "saving": "Se salvează..."
         },
-        "description": "{count, plural, one {Schimbă categoria pentru # produs} other {Schimbă categoria pentru # produse}}",
+        "description": "{count, plural, one {Schimbă clasificarea GS1 GPC pentru # produs} other {Schimbă clasificarea GS1 GPC pentru # produse}}",
         "errors": {
           "allFailed": "Toate produsele nu au putut fi actualizate",
           "missingData": "Date lipsă",
           "noProducts": "Niciun produs selectat",
-          "saveFailed": "Eroare la actualizarea categoriilor"
+          "saveFailed": "Eroare la actualizarea clasificărilor"
         },
         "labels": {
           "andMore": "...și încă {count}",
-          "newCategory": "Categorie Nouă",
+          "newCategory": "Clasificare GS1 GPC nouă",
           "progress": "Progres",
           "selectedProducts": "Produse Selectate"
         },
         "placeholders": {
-          "selectCategory": "Selectează o categorie"
+          "selectCategory": "Selectează o clasificare"
         },
         "progress": {
           "updating": "Se actualizeaza {current} din {total}..."
         },
         "success": {
           "partialSuccess": "{success} produse actualizate, {failed} esuate",
-          "saved": "{count, plural, one {Categoria actualizată pentru # produs} other {Categoria actualizată pentru # produse}}"
+          "saved": "{count, plural, one {Clasificarea actualizată pentru # produs} other {Clasificarea actualizată pentru # produse}}"
         },
-        "title": "Schimbă Categoria"
+        "title": "Schimbă clasificarea"
       },
       "createInvoiceDialog": {
         "batchMode": {
@@ -1032,19 +988,18 @@
         "buttons": {
           "cancel": "Anulare",
           "close": "Închide",
-          "createMultiple": "Pornește analiza pentru {count} scanări",
-          "createSingle": "Pornește analiza"
+          "createMultiple": "Creează {count} facturi",
+          "createSingle": "Creează factura"
         },
         "chooseMode": "Alegeți Modul de Creare",
         "complete": {
-          "description": "Factura dvs. este gata pentru vizualizare și editare.",
-          "descriptionPlural": "Facturile dvs. sunt gata pentru vizualizare și editare.",
+          "analysisNotQueued": "Facturile au fost create, dar analiza nu a putut fi pusă în coadă. Puteți reîncerca analiza din pagina facturii.",
+          "analysisQueued": "Analiza a fost pusă în coadă. Rezultatele vor apărea după finalizare.",
+          "description": "Factura dvs. a fost creată și este gata pentru vizualizare și editare.",
+          "descriptionPlural": "Facturile dvs. au fost create și sunt gata pentru vizualizare și editare.",
           "errorsLabel": "Scanări Eșuate:",
           "failureDescription": "Nu am putut crea nicio factură. Vă rugăm să revedeți erorile de mai jos și să încercați din nou.",
           "failureTitle": "Creare Eșuată",
-          "nextSteps": "Pași următori:",
-          "nextStepsDescription": "Revizuiți factura, verificați datele extrase și faceți orice modificări necesare. Puteți solicita și analiza AI pentru informații despre cheltuieli.",
-          "nextStepsDescriptionPlural": "Revizuiți facturile, verificați datele extrase și faceți orice modificări necesare. Puteți solicita și analiza AI pentru informații despre cheltuieli.",
           "partialDescription": "Unele scanări nu au putut fi procesate. Facturile create cu succes sunt gata pentru vizualizare.",
           "partialTitle": "{created} din {total} Facturi Create",
           "retryButton": "Încearcă Din Nou",
@@ -1054,22 +1009,15 @@
           "viewButtonPlural": "Vizualizați Facturile"
         },
         "creating": {
-          "processing": "Se procesează {count} scanare...",
-          "processingPlural": "Se procesează {count} scanări...",
-          "step1Description": "Se trimit scanările către serverele noastre",
-          "step1Title": "Se încarcă scanările",
-          "step2Description": "Se configurează structurile de date ale facturilor",
-          "step2Title": "Se creează înregistrările facturilor",
-          "step3Description": "Se pregătesc facturile pentru vizualizare",
-          "step3Title": "Finalizare",
+          "description": "Se creează factura. Analiza va fi pusă în coadă înainte de a continua.",
           "title": "Se creează Factura",
           "titlePlural": "Se creează Facturile"
         },
-        "description": "Transformă scanările în date structurate de factură.",
+        "description": "Creează facturi din scanările selectate. Analiza este pusă în coadă după creare.",
         "errors": {
-          "createFailed": "Nu s-au putut crea facturile: {message}",
-          "partialFail": "Nu s-au putut crea {count} facturi",
-          "unknown": "Eroare necunoscută"
+          "createFailed": "Facturile nu au putut fi create. Vă rugăm să încercați din nou.",
+          "creationFailed": "Această factură nu a putut fi creată.",
+          "partialFail": "Nu s-au putut crea {count} facturi"
         },
         "selectedScans": "Scanări Selectate",
         "singleMode": {
@@ -1077,11 +1025,11 @@
           "title": "O factură per scanare"
         },
         "singleScanInfo": {
-          "description": "AI-ul nostru va analiza scanarea dvs. și va extrage automat detaliile comerciantului, articolele, prețurile și totalurile. Puteți revizui și edita rezultatele ulterior.",
+          "description": "Analiza va fi pusă în coadă după crearea facturii. Se poate finaliza după ce părăsiți acest dialog.",
           "title": "Ce se întâmplă în continuare?"
         },
-        "title": "Pornește analiza AI",
-        "titlePlural": "Pornește analiza AI",
+        "title": "Creează Factura",
+        "titlePlural": "Creează Facturi",
         "totalSize": "total"
       },
       "deleteInvoiceDialog": {
@@ -1250,9 +1198,13 @@
           "cancel": "Anulează",
           "next": "Următor",
           "previous": "Anterior",
+          "saving": "Se salvează…",
           "saveChanges": "Salvează changes"
         },
         "description": "Actualizează cantitățile, prețurile sau adaugă articole noi în această factură",
+        "errors": {
+          "saveFailed": "Modificările articolelor nu au putut fi salvate. Încercați din nou."
+        },
         "footer": {
           "itemsFound": "{total} articole găsite (se afișează {shown})",
           "itemsTotal": "{count, plural, one {# articol în total} few {# articole în total} other {# de articole în total}}",
@@ -1260,6 +1212,7 @@
         },
         "table": {
           "actions": "Acțiuni",
+          "classification": "Clasificare GS1 GPC",
           "item": "Articol",
           "price": "Preț",
           "quantity": "Cantitate",
@@ -1270,7 +1223,9 @@
       },
       "merchantDialog": {
         "buttons": {
-          "openInMaps": "Deschide în Maps"
+          "openInMaps": "Deschide în Maps",
+          "saveClassification": "Salvează clasificarea",
+          "savingClassification": "Se salvează clasificarea…"
         },
         "description": "Informații despre {merchantName}",
         "fields": {
@@ -1278,7 +1233,14 @@
           "parentCompany": "Companie mamă",
           "phone": "Telefon"
         },
+        "errors": {
+          "missingUpdateData": "Această înregistrare de comerciant este incompletă și nu poate fi actualizată în siguranță.",
+          "saveFailed": "Clasificarea comerciantului nu a putut fi salvată. Încercați din nou."
+        },
         "noMerchantLinked": "Niciun comerciant asociat acestei facturi",
+        "success": {
+          "classificationSaved": "Clasificarea comerciantului a fost salvată."
+        },
         "title": "Detalii comerciant"
       },
       "merchantReceiptsDialog": {
@@ -2108,6 +2070,75 @@
   },
   "forms": {
     "invoices": {
+      "analysis": {
+        "buttons": {
+          "start": "Pornește analiza",
+          "submitting": "Se trimite cererea…"
+        },
+        "capabilities": {
+          "allergenAssessment": "Evaluarea alergenilor",
+          "documentExtraction": "Extragerea documentului",
+          "invoiceClassification": "Clasificarea facturii",
+          "invoiceSummary": "Rezumatul facturii",
+          "merchantResolution": "Identificarea comerciantului",
+          "productClassification": "Clasificarea produselor",
+          "recipeGeneration": "Generarea rețetelor"
+        },
+        "descriptions": {
+          "invoice": "Alege profilul și capabilitățile pentru această analiză a facturii puse în coadă.",
+          "merchant": "Alege profilul și capabilitățile pentru această analiză a comerciantului pusă în coadă.",
+          "profiles": "Un profil oferă un set inițial valid de capabilități."
+        },
+        "dialog": {
+          "cancel": "Închide",
+          "description": "Alege ce să pui în coadă. Rezultatele vor apărea după reîmprospătarea paginii.",
+          "title": "Analizează factura"
+        },
+        "invoice": {
+          "capabilitiesLegend": "Capabilități pentru analiza facturii",
+          "profileLegend": "Profil de analiză",
+          "title": "Analiza facturii"
+        },
+        "merchant": {
+          "capabilitiesLegend": "Capabilități pentru analiza comerciantului",
+          "profileLegend": "Profil de analiză",
+          "title": "Analiza comerciantului"
+        },
+        "merchantCapabilities": {
+          "descriptionGeneration": "Generează descrierea comerciantului",
+          "naceClassification": "Clasificare NACE"
+        },
+        "panel": {
+          "description": "Pune în coadă o cerere de analiză; rezultatele vor apărea după reîmprospătarea paginii.",
+          "title": "Analiză AI"
+        },
+        "profiles": {
+          "balanced": "Echilibrat",
+          "comprehensive": "Complet",
+          "fast": "Rapid"
+        },
+        "status": {
+          "queued": "Analiza este în coadă. Pagina se va reîmprospăta automat; procesarea poate continua și după aceea.",
+          "submitting": "Se trimite cererea de analiză."
+        }
+      },
+      "classificationPicker": {
+        "clear": "Șterge {system}",
+        "empty": "Nu a fost găsită nicio clasificare corespunzătoare.",
+        "error": "Căutarea clasificărilor nu este disponibilă. Încercați din nou.",
+        "loading": "Se caută clasificări…",
+        "minimumCharacters": "Introduceți cel puțin {count} caractere pentru căutare.",
+        "placeholder": "Selectați o clasificare",
+        "result": "{code}: {label}",
+        "searchPlaceholder": "Căutați un cod sau o etichetă oficială",
+        "selectedCode": "{system}: {code}",
+        "selectedResult": "{code}: {label}",
+        "systems": {
+          "ecoicopV2": "Clasificare ECOICOP v2",
+          "gs1Gpc": "Clasificare GS1 GPC",
+          "nace21": "Clasificare NACE 2.1"
+        }
+      },
       "createInvoice": {
         "detailsForm": {
           "fields": {
@@ -2167,6 +2198,14 @@
           "subtitle": "Urmați pașii de mai jos pentru a crea o factură nouă din scanările dvs.",
           "title": "Creare factură"
         },
+        "notifications": {
+          "analysisNotQueued": "Factura a fost creată, dar analiza nu a putut fi pusă în coadă. O puteți reîncerca din pagina facturii.",
+          "classificationNotSaved": "Factura a fost creată, dar clasificarea sa nu a putut fi salvată. O puteți reîncerca din pagina facturii.",
+          "createFailed": "Factura nu a putut fi creată. Vă rugăm să încercați din nou.",
+          "createdAndAnalysisQueued": "Factura a fost creată. Analiza a fost pusă în coadă.",
+          "attachmentFinalizationFailed": "Factura a fost creată, dar {count} actualizări ale atașamentelor scanărilor trebuie finalizate. Reîncercați înainte de a părăsi această pagină.",
+          "attachmentFinalizationFailed": "Factura a fost creată, dar {count} actualizări ale atașamentelor scanărilor trebuie finalizate. Reîncercați înainte de a părăsi această pagină."
+        },
         "metadata": {
           "description": "Creați o factură nouă din scanările încărcate.",
           "title": "Sistem de gestionare a facturilor - Creare factură"
@@ -2179,8 +2218,12 @@
           "actions": {
             "create": "Creează factură",
             "creating": "Se creează factura...",
-            "hint": "Factura va fi creată și scanările selectate vor fi încărcate."
+            "hint": "Factura va fi creată și scanările selectate vor fi încărcate.",
+            "retryAttachmentFinalization": "Reîncearcă finalizarea atașamentelor",
+            "retryAttachmentFinalization": "Reîncearcă finalizarea atașamentelor"
           },
+          "classificationFallback": "{system}: {code}",
+          "classificationResult": "{code}: {label}",
           "categories": {
             "carAuto": "Auto și vehicule",
             "fastFood": "Restaurante",
@@ -2201,6 +2244,7 @@
           "sections": {
             "details": {
               "category": "Categorie",
+              "classification": "Clasificare",
               "description": "Descriere",
               "name": "Nume",
               "paymentType": "Metodă de plată",
@@ -2775,6 +2819,10 @@
             "createFirstRecipe": "Creează prima ta rețetă",
             "generate": "Generează"
           },
+          "tabs": {
+            "possibleRecipes": "Rețete posibile",
+            "additionalInfo": "Informații suplimentare"
+          },
           "emptyState": {
             "noRecipesAvailable": "Nu există încă rețete disponibile"
           },
@@ -2988,7 +3036,7 @@
           "formats": {
             "documentExtensions": ".pdf",
             "documents": "Documente",
-            "imageExtensions": ".jpg, .jpeg, .png, .bmp, .tif, .tiff, .heif, .heic",
+            "imageExtensions": ".jpg, .jpeg, .png, .bmp, .tif, .tiff, .heif",
             "images": "Imagini",
             "maxSize": "Dimensiune maximă: 10MB per fișier",
             "title": "Formate Acceptate"
@@ -3037,13 +3085,13 @@
           "compact": {
             "dropActive": "Plasează fișierele pentru a le adăuga",
             "dropInactive": "Trage fișiere aici sau fă clic pentru a naviga",
-            "subtitle": "JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF până la 10MB"
+            "subtitle": "JPG, JPEG, PNG, BMP, TIFF, HEIF, PDF până la 10MB"
           },
           "empty": {
             "chooseFiles": "Alege fișiere",
             "dropActive": "Plasează fișierele pentru încărcare",
             "dropInactive": "Fă clic sau trage fișiere pentru încărcare",
-            "formats": "Formate acceptate: JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF (maxim 10MB fiecare)",
+            "formats": "Formate acceptate: JPG, JPEG, PNG, BMP, TIFF, HEIF, PDF (maxim 10MB fiecare)",
             "note": "Poți selecta mai multe fișiere.",
             "pasteHint": "Sfat: poți lipi o imagine direct din clipboard (Ctrl+V).",
             "title": "Trage și plasează fișierele aici"
@@ -3065,55 +3113,6 @@
         }
       },
       "viewInvoice": {
-        "analysisPanel": {
-          "analyzing": {
-            "progress": "{progress}% completat",
-            "title": "Se analizează..."
-          },
-          "buttons": {
-            "reanalyze": "Re-analizează Factura"
-          },
-          "description": "Re-analizează această factură cu AI pentru a extrage sau actualiza datele",
-          "labels": {
-            "analysisComplete": "Analiză Completă — Toate datele au fost extrase",
-            "granularOptions": "Sau alege o analiză specifică",
-            "lastAnalyzed": "Ultima Analiză",
-            "updates": "{count, plural, one {# actualizare} other {# actualizări}}"
-          },
-          "options": {
-            "completeAnalysis": "Analiză Completă",
-            "invoiceOnly": "Doar Factura",
-            "itemsOnly": "Doar Articole",
-            "merchantOnly": "Doar Comerciant"
-          },
-          "steps": {
-            "analyzing": "Se analizează cu AI...",
-            "complete": "Analiză completă!",
-            "extracting": "Se rulează extragerea OCR...",
-            "finalizing": "Se finalizează rezultatele...",
-            "preparing": "Se pregătește documentul...",
-            "processing": "Se procesează articolele..."
-          },
-          "tip": "Sfat Rapid: Analiza completă durează 30-60 secunde, dar oferă cele mai precise rezultate.",
-          "title": "Analiză AI",
-          "toasts": {
-            "error": {
-              "description": "Nu s-a putut analiza factura. Vă rugăm să încercați din nou mai târziu.",
-              "title": "Analiză Eșuată"
-            },
-            "success": {
-              "description": "Factura a fost re-analizată cu succes cu date actualizate.",
-              "title": "Analiză Completă"
-            }
-          },
-          "tooltips": {
-            "completeAnalysis": "Extragere OCR completă + procesare AI a tuturor datelor facturii",
-            "invoiceOnly": "Re-extrage informații de bază ale facturii (dată, total, plată)",
-            "itemsOnly": "Re-categorizează și analizează doar articolele individuale",
-            "merchantOnly": "Re-identifică comerciantul și datele de locație",
-            "reanalyze": "Declanșează re-analiza completă cu toate caracteristicile AI"
-          }
-        },
         "categoryComparisonChart": {
           "description": "Factura aceasta vs media ta",
           "labels": {
@@ -3127,10 +3126,25 @@
           "copySuccess": "Rezumat copiat în clipboard",
           "copySummary": {
             "description": "Copiază rezumatul text în clipboard",
+            "labels": {
+              "invoice": "Factură",
+              "merchant": "Comerciant",
+              "date": "Dată",
+              "total": "Total",
+              "items": "Articole"
+            },
+            "notAvailable": "Indisponibil",
             "title": "Copiază Rezumat"
           },
           "csv": {
             "description": "Descarcă articolele ca foaie de calcul",
+            "headers": {
+              "productName": "Nume produs",
+              "quantity": "Cantitate",
+              "price": "Preț",
+              "total": "Total",
+              "category": "Categorie"
+            },
             "title": "Exportă ca CSV"
           },
           "csvError": "Eroare la exportul CSV",
@@ -3156,6 +3170,58 @@
           "printError": "Eroare la deschiderea dialogului de printare",
           "printSuccess": "Dialog de printare deschis",
           "title": "Exportă Factură"
+        },
+        "pdf": {
+          "reportTitle": "Raport factură",
+          "generatedOn": "Generat la {date}",
+          "invoiceInformation": "Informații factură",
+          "invoiceName": "Nume factură",
+          "description": "Descriere",
+          "classification": "Clasificare",
+          "invoiceIdentifier": "ID factură",
+          "transactionDate": "Data tranzacției",
+          "receiptType": "Tip bon",
+          "merchantInformation": "Informații comerciant",
+          "merchantName": "Nume comerciant",
+          "unknownMerchant": "Comerciant neasociat",
+          "fullName": "Nume complet",
+          "address": "Adresă",
+          "phone": "Telefon",
+          "paymentSummary": "Rezumat plată",
+          "subtotal": "Subtotal",
+          "tax": "Taxă",
+          "tip": "Bacșiș",
+          "total": "Total",
+          "currency": "Monedă",
+          "paymentMethod": "Metodă de plată",
+          "items": "Articole",
+          "number": "#",
+          "product": "Produs",
+          "quantity": "Cantitate",
+          "unitPrice": "Preț unitar",
+          "productSignals": "Semnale",
+          "allergenAssessment": "Evaluare alergeni",
+          "classificationHierarchy": "Ierarhie clasificare",
+          "difficulty": {
+            "easy": "Ușoară",
+            "medium": "Medie",
+            "hard": "Ridicată"
+          },
+          "recipeDifficulty": "Dificultate: {difficulty}",
+          "paymentTypes": {
+            "unknown": "Necunoscută",
+            "cash": "Numerar",
+            "card": "Card",
+            "transfer": "Transfer bancar",
+            "mobilePayment": "Plată mobilă",
+            "voucher": "Voucher",
+            "other": "Altă metodă"
+          },
+          "analysisSummary": "Rezumat analiză",
+          "numberOfItems": "Număr articole",
+          "numberOfScans": "Număr scanări",
+          "recipes": "Sugestii de rețete",
+          "page": "Pagina {current} din {total}"
         },
         "healthScore": {
           "cta": {
@@ -3205,6 +3271,7 @@
             "compare": "Comparație",
             "current": "Factura curentă"
           },
+          "invoiceCount": "{count, plural, one {# factură} few {# facturi} other {# de facturi}}",
           "title": "Analize și insight-uri"
         },
         "invoiceGuestBanner": {
@@ -5360,6 +5427,16 @@
   },
   "toasts": {
     "invoices": {
+      "analysis": {
+        "failed": {
+          "description": "Cererea de analiză nu a fost acceptată. Încearcă din nou.",
+          "title": "Analiza nu a putut fi pornită"
+        },
+        "started": {
+          "description": "Analiza este în coadă. Pagina se va reîmprospăta automat; procesarea poate continua și după aceea.",
+          "title": "Analiza este în coadă"
+        }
+      },
       "useInvoiceDelete": {
         "bulkDeleteError": "Ștergerea a eșuat pentru {count} facturi.",
         "bulkDeletePartial": "Șterse {successCount}; eșuate {failureCount}.",

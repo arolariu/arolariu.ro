@@ -1,6 +1,6 @@
 "use client";
 
-import {Product, ProductCategory} from "@/types/invoices";
+import type {Product} from "@/types/invoices";
 import {Alert, AlertDescription, AlertTitle, Badge, Button} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
@@ -10,7 +10,7 @@ import styles from "./GuidedEditBanner.module.scss";
 
 type Props = Readonly<{
   /** The invoice items to analyze for completeness */
-  readonly items: Product[];
+  readonly items: readonly Product[];
   /** Callback to scroll to the first item needing attention */
   readonly onReviewAll?: () => void;
 }>;
@@ -24,7 +24,7 @@ type Props = Readonly<{
  * **Purpose**: Surfaces products requiring manual review after AI analysis:
  * - Products with `metadata.isComplete === false`
  * - Products with low OCR confidence (`metadata.confidence < 0.7`)
- * - Products with `category === ProductCategory.NOT_DEFINED`
+ * - Products without a canonical GPC classification
  * - Products with empty `name`
  *
  * **Dismissal Behavior**:
@@ -59,7 +59,6 @@ type Props = Readonly<{
  * ```
  *
  * @see {@link Product} - Product type with metadata
- * @see {@link ProductCategory} - Product category enum
  */
 export default function GuidedEditBanner({items, onReviewAll}: Props): React.JSX.Element | null {
   const t = useTranslations();
@@ -95,7 +94,7 @@ export default function GuidedEditBanner({items, onReviewAll}: Props): React.JSX
       }
 
       // Check for uncategorized products
-      if (item.category === ProductCategory.NOT_DEFINED) {
+      if (item.classification === null) {
         uncategorized.push(item);
       }
 

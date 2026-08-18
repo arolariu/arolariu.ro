@@ -1,8 +1,8 @@
 namespace arolariu.Backend.Domain.Invoices.DTOs.Responses;
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
@@ -23,22 +23,16 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 /// where the original scan image/document is stored.
 /// </para>
 /// <para>
-/// <b>Metadata:</b> May contain OCR confidence scores, extraction timestamps, or other
-/// processing artifacts from the Document Intelligence service.
+/// <b>Privacy:</b> Omits scan metadata because it can contain raw OCR and persistence-only processing artifacts.
 /// </para>
 /// </remarks>
 /// <param name="Type">
-/// The scan format type. Supported types include JPG, PNG, PDF, TIFF.
+/// The scan format type. Document Intelligence-supported types are JPG/JPEG, PNG, BMP, TIFF, HEIF, and PDF.
+/// Values use the stable numeric <see cref="ScanType"/> transport contract.
 /// Determines how the scan is processed during analysis.
 /// </param>
 /// <param name="Location">
-/// The URI location where the scan is stored. Must be a valid, accessible URI.
-/// Typically an Azure Blob Storage URL with SAS token for authorized access.
-/// </param>
-/// <param name="Metadata">
-/// Optional key-value metadata associated with this scan. May include:
-/// OCR confidence scores, extraction timestamps, page counts (for PDFs), or custom fields.
-/// Null if no metadata is associated.
+/// The authorized URI location where the scan can be viewed by the caller.
 /// </param>
 /// <example>
 /// <code>
@@ -55,9 +49,8 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct InvoiceScanResponseDto(
-  ScanType Type,
-  Uri Location,
-  IReadOnlyDictionary<string, object>? Metadata)
+  [property: JsonPropertyName("type")] ScanType Type,
+  [property: JsonPropertyName("location")] Uri Location)
 {
   /// <summary>
   /// Creates an <see cref="InvoiceScanResponseDto"/> from a domain <see cref="InvoiceScan"/>.
@@ -65,11 +58,8 @@ public readonly record struct InvoiceScanResponseDto(
   /// <remarks>
   /// <para>
   /// <b>Factory Pattern:</b> Preferred method for creating DTOs from domain objects.
-  /// Ensures consistent mapping and proper handling of nullable metadata.
-  /// </para>
-  /// <para>
-  /// <b>Metadata Copying:</b> If metadata exists, a new dictionary is created to prevent
-  /// external mutation of the original domain object's data.
+  /// Ensures the response contains only the scan fields required for rendering.
+  /// Scan metadata is deliberately excluded because it may contain raw OCR or persistence-only artifacts.
   /// </para>
   /// </remarks>
   /// <param name="scan">
@@ -80,6 +70,5 @@ public readonly record struct InvoiceScanResponseDto(
   /// </returns>
   public static InvoiceScanResponseDto FromInvoiceScan(InvoiceScan scan) => new(
     Type: scan.Type,
-    Location: scan.Location,
-    Metadata: scan.Metadata is not null ? new Dictionary<string, object>(scan.Metadata) : null);
+    Location: scan.Location);
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import {formatCurrency, formatDate, formatEnum} from "@/lib/utils.generic";
+import {formatCurrency, formatDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
-import {InvoiceCategory, type Invoice} from "@/types/invoices";
+import type {Invoice} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -215,8 +215,8 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
               <span className={styles["printOnly"]}>{invoice.id}</span>
             </TableCell>
             <TableCell>
-              <Badge variant={invoice.category % 200 === 0 ? "default" : "secondary"}>
-                {formatEnum(InvoiceCategory, invoice.category) || "NOT_DEFINED"}
+              <Badge variant={invoice.classification === null ? "secondary" : "default"}>
+                {invoice.classification?.officialLabel ?? t((m) => m.cards.invoices.analysisResults.unclassified)}
               </Badge>
             </TableCell>
             <TableCell>

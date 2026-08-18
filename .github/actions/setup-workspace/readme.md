@@ -65,7 +65,7 @@ Use [`setup-tooling`](../setup-tooling/readme.md) directly when a job needs only
 | Input | Default | Runs |
 |-------|---------|------|
 | `run-generate` | `false` | `npm run generate <generate-args>` |
-| `generate-args` | `/e /a /g /i` | — |
+| `generate-args` | `/e /a /g /i /artifacts` | — |
 | `run-build-components` | `false` | `npm run build:components` |
 
 ### Input validation

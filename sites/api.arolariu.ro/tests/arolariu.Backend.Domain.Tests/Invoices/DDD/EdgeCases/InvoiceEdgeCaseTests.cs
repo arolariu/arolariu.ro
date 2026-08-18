@@ -8,6 +8,7 @@ using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Tests.Builders;
 
@@ -342,28 +343,33 @@ public sealed class InvoiceEdgeCaseTests
   }
 
   /// <summary>
-  /// Verifies Product handles multiple allergens.
+  /// Verifies Product carries a multi-signal allergen assessment.
   /// </summary>
   [TestMethod]
-  public void Product_MultipleAllergens_HandlesCorrectly()
+  public void Product_MultipleAllergenSignals_HandlesCorrectly()
   {
     // Arrange
-    var allergens = new List<Allergen>
-        {
-            new Allergen { Name = "Gluten" },
-            new Allergen { Name = "Dairy" },
-            new Allergen { Name = "Nuts" },
-            new Allergen { Name = "Soy" },
-            new Allergen { Name = "Eggs" }
-        };
+    var runIdentifier = Guid.NewGuid();
+    var signals = new List<AllergenSignal>
+    {
+      BuildSignal(AllergenCode.CerealsContainingGluten),
+      BuildSignal(AllergenCode.Milk),
+      BuildSignal(AllergenCode.Nuts),
+      BuildSignal(AllergenCode.Soybeans),
+      BuildSignal(AllergenCode.Eggs),
+    };
+
     var product = new Product
     {
-      DetectedAllergens = allergens
+      AllergenAssessment = AllergenAssessment.Detected(runIdentifier, signals)
     };
 
     // Assert
-    Assert.AreEqual(5, product.DetectedAllergens.Count());
+    Assert.AreEqual(5, product.AllergenAssessment!.Signals.Count);
   }
+
+  private static AllergenSignal BuildSignal(AllergenCode code) =>
+    new(code, AllergenEvidenceLevel.Explicit, 0.9, [new AllergenEvidence("product-name", code.ToString())]);
 
   #endregion
 
@@ -593,79 +599,6 @@ public sealed class InvoiceEdgeCaseTests
 
   #endregion
 
-  #region Recipe Edge Cases
-
-  /// <summary>
-  /// Verifies Recipe handles negative duration.
-  /// </summary>
-  [TestMethod]
-  public void Recipe_NegativeDuration_IsAllowed()
-  {
-    // Arrange
-    var recipe = new Recipe
-    {
-      Name = "Instant Recipe",
-      ApproximateTotalDuration = -1
-    };
-
-    // Assert
-    Assert.AreEqual(-1, recipe.ApproximateTotalDuration);
-  }
-
-  /// <summary>
-  /// Verifies Recipe handles very large duration.
-  /// </summary>
-  [TestMethod]
-  public void Recipe_VeryLargeDuration_IsAllowed()
-  {
-    // Arrange
-    var recipe = new Recipe
-    {
-      Name = "Slow Cooked Recipe",
-      ApproximateTotalDuration = int.MaxValue
-    };
-
-    // Assert
-    Assert.AreEqual(int.MaxValue, recipe.ApproximateTotalDuration);
-  }
-
-  /// <summary>
-  /// Verifies Recipe handles empty ingredients list.
-  /// </summary>
-  [TestMethod]
-  public void Recipe_EmptyIngredients_IsValid()
-  {
-    // Arrange
-    var recipe = new Recipe
-    {
-      Name = "No Ingredient Recipe",
-      Ingredients = new List<string>()
-    };
-
-    // Assert
-    Assert.IsEmpty(recipe.Ingredients);
-  }
-
-  /// <summary>
-  /// Verifies Recipe handles many ingredients.
-  /// </summary>
-  [TestMethod]
-  public void Recipe_ManyIngredients_HandlesCorrectly()
-  {
-    // Arrange
-    var ingredients = Enumerable.Range(0, 100).Select(i => $"Ingredient {i}").ToList();
-    var recipe = new Recipe
-    {
-      Name = "Complex Recipe",
-      Ingredients = ingredients
-    };
-
-    // Assert
-    Assert.AreEqual(100, recipe.Ingredients.Count);
-  }
-
-  #endregion
-
   #region InvoiceScan Edge Cases
 
   /// <summary>
@@ -720,46 +653,6 @@ public sealed class InvoiceEdgeCaseTests
     Assert.AreEqual("test", scan.Metadata["stringValue"]);
     Assert.AreEqual(42, scan.Metadata["intValue"]);
     Assert.AreEqual(true, scan.Metadata["boolValue"]);
-  }
-
-  #endregion
-
-  #region Allergen Edge Cases
-
-  /// <summary>
-  /// Verifies Allergen handles special characters in name.
-  /// </summary>
-  [TestMethod]
-  public void Allergen_SpecialCharactersInName_IsAllowed()
-  {
-    // Arrange
-    var allergen = new Allergen
-    {
-      Name = "Gluten (wheat-derived)",
-      Description = "Contains <wheat> & derivatives"
-    };
-
-    // Assert
-    Assert.IsTrue(allergen.Name.Contains('(', StringComparison.Ordinal));
-    Assert.IsTrue(allergen.Description.Contains('&', StringComparison.Ordinal));
-  }
-
-  /// <summary>
-  /// Verifies Allergen handles international characters.
-  /// </summary>
-  [TestMethod]
-  public void Allergen_InternationalCharacters_IsAllowed()
-  {
-    // Arrange
-    var allergen = new Allergen
-    {
-      Name = "Nüsse und Mandeln",
-      Description = "Alergeny: 日本語 中文"
-    };
-
-    // Assert
-    Assert.IsTrue(allergen.Name.Contains('ü', StringComparison.Ordinal));
-    Assert.IsTrue(allergen.Description.Contains("日本語", StringComparison.Ordinal));
   }
 
   #endregion

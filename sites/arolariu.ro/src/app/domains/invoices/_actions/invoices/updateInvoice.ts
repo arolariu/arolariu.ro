@@ -1,150 +1,76 @@
 "use server";
 
 /**
- * @fileoverview Server action for full invoice updates (HTTP POST).
+ * @fileoverview Exact PUT action for complete invoice replacement.
  * @module app/domains/invoices/_actions/invoices/updateInvoice
- *
- * @remarks
- * Provides a POST endpoint wrapper for replacing an entire invoice resource.
- * Unlike PATCH operations which update specific fields, this action replaces
- * the entire invoice with the provided data.
- *
- * **Use Cases**:
- * - Bulk updates where multiple fields change simultaneously
- * - Form submissions with complete invoice data
- * - Sync operations requiring full resource replacement
- *
- * **Comparison with patchInvoice**:
- * | Aspect          | updateInvoice (POST) | patchInvoice (PATCH) |
- * |-----------------|----------------------|----------------------|
- * | Payload         | Full invoice object  | Partial fields only  |
- * | Semantics       | Replace entire       | Merge with existing  |
- * | Validation      | All fields required  | Optional fields OK   |
- *
- * @see {@link patchInvoice} for partial updates
- * @see {@link fetchInvoice} for retrieving invoice data before update
  */
 
-import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import {withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
-import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
-import type {Invoice} from "@/types/invoices";
+import {createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "@/lib/utils.server";
+import type {Invoice, UpdateInvoiceDtoPayload} from "@/types/invoices";
+import {parseInvoiceTransport} from "@/types/invoices/transport";
 
-type ServerActionInputType = Readonly<{
-  /** The identifier of the invoice to update. */
-  invoiceId: string;
-  /** The complete invoice object to replace the existing one. */
-  invoice: Invoice;
+type UpdateInvoiceInput = Readonly<{
+  /** URL invoice identifier. */
+  readonly invoiceId: string;
+  /** Exact `UpdateInvoiceRequestDto` client payload. */
+  readonly invoice: UpdateInvoiceDtoPayload;
 }>;
 
-type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
-
 /**
- * Server action that performs a full update (POST) on an invoice.
+ * Replaces invoice-editable values using the backend's PUT DTO.
  *
- * @remarks
- * **HTTP Method**: POST
- * **Endpoint**: `/rest/v1/invoices/{invoiceId}`
- *
- * **Update Semantics**:
- * - Replaces the entire invoice resource with the provided data
- * - All fields from the provided invoice object are written
- * - The invoice ID in the URL must match `invoice.id`
- *
- * **Validation**:
- * - `invoiceId` must be a valid GUID
- * - `invoice` object must be provided and non-null
- * - `invoice.id` must match the `invoiceId` parameter
- *
- * **Error Handling**:
- * Returns a result object with `success` flag instead of throwing,
- * making it easier to handle errors in UI components.
- *
- * @param input - The invoice ID and complete invoice object.
- * @param input.invoiceId - UUIDv4 of the invoice to replace.
- * @param input.invoice - Complete invoice payload that replaces the existing resource.
- * @returns A result object containing the updated invoice, or an error result when validation, authorization, or the backend request fails.
- *
- * @example
- * ```typescript
- * // Fetch, modify, and update the entire invoice
- * const invoiceResult = await fetchInvoice({invoiceId});
- * if (!invoiceResult.success) {
- *   throw new Error(invoiceResult.error);
- * }
- *
- * const invoice = invoiceResult.data;
- * const updatedInvoice = {
- *   ...invoice,
- *   name: "Updated Invoice Name",
- *   description: "New description",
- *   items: [...invoice.items, newItem],
- * };
- *
- * const result = await updateInvoice({
- *   invoiceId: invoice.id,
- *   invoice: updatedInvoice,
- * });
- *
- * if (result.success) {
- *   console.log("Updated:", result.data);
- * } else {
- *   console.error("Failed:", result.error);
- * }
- * ```
- *
- * @see {@link patchInvoice} for partial updates (when only changing a few fields)
- * @see {@link fetchInvoice} for retrieving invoice data before update
+ * @param input - Invoice path identifier and complete replacement payload.
+ * @returns Parsed invoice DTO or a safe action error.
  */
-export async function updateInvoice({invoiceId, invoice}: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{updateInvoice}}, with:", {invoiceId, invoiceName: invoice?.name});
-
+export async function updateInvoice({invoiceId, invoice}: UpdateInvoiceInput): Promise<ServerActionResult<Readonly<Invoice>>> {
   return withSpan("api.actions.invoices.updateInvoice", async () => {
     try {
-      // Step 0. Validate invoice identifier is valid GUID
-      logWithTrace("info", "Validating invoice identifier is valid...", {invoiceId}, "server");
       validateStringIsGuidType(invoiceId, "invoiceId");
-
-      // Step 1. Fetch user JWT for authentication
-      addSpanEvent("bff.user.jwt.fetch.start");
-      logWithTrace("info", "Fetching BFF user JWT for authentication...", {}, "server");
-      const {userJwt: authToken} = await fetchBFFUserFromAuthService();
-      addSpanEvent("bff.user.jwt.fetch.complete");
-
-      // Step 2. Make the API request to update the invoice
-      addSpanEvent("bff.request.update-invoice.start");
-      logWithTrace("info", "Making API request to update invoice...", {invoiceId}, "server");
-      const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(invoice),
-      });
-      addSpanEvent("bff.request.update-invoice.complete");
-
-      if (response.ok) {
-        logWithTrace("info", "Successfully updated invoice", {invoiceId}, "server");
-        const updatedInvoice = (await response.json()) as Invoice;
-        return {success: true, data: updatedInvoice} as const;
+      if (invoice.id !== invoiceId) {
+        return {success: false, error: {code: "VALIDATION_ERROR", message: "Invoice update request is invalid."}};
       }
 
-      const errorText = await response.text();
-      const internalMessage = `Failed to update invoice: ${response.status} ${response.statusText} - ${errorText}`;
-      logWithTrace("warn", internalMessage, {invoiceId, errorText}, "server");
-      const userMessage =
-        response.status >= 500
-          ? "A server error occurred. Please try again later."
-          : "Failed to update the invoice. Please check your input and try again.";
-      return createErrorResult(new Error(internalMessage), userMessage);
-    } catch (error: unknown) {
-      addSpanEvent("bff.request.update-invoice.error");
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error updating the invoice", {error, invoiceId}, "server");
-      console.error("Error updating the invoice:", error);
-      return createErrorResult(new Error(errorMessage));
+      const {userJwt} = await fetchBFFUserFromAuthService();
+      const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}`, {
+        method: "PUT",
+        headers: {Authorization: `Bearer ${userJwt}`, "Content-Type": "application/json"},
+        body: JSON.stringify({
+          name: invoice.name,
+          description: invoice.description,
+          classification: invoice.classification,
+          paymentInformation: {
+            ...invoice.paymentInformation,
+            transactionDate: invoice.paymentInformation.transactionDate.toISOString(),
+          },
+          merchantReference: invoice.merchantReference,
+          isImportant: invoice.isImportant,
+          additionalMetadata: invoice.additionalMetadata,
+        }),
+      });
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: {
+            code: mapHttpStatusToErrorCode(response.status),
+            message:
+              response.status >= 500
+                ? "A server error occurred. Please try again later."
+                : "Failed to update the invoice. Please check your input and try again.",
+            status: response.status,
+          },
+        };
+      }
+
+      const parsedInvoice = parseInvoiceTransport(await response.json());
+      return parsedInvoice === null
+        ? {success: false, error: {code: "SERVER_ERROR", message: "The invoice update response was invalid. Please try again."}}
+        : {success: true, data: parsedInvoice};
+    } catch (error) {
+      return createErrorResult(error, "Unable to update the invoice. Please try again.");
     }
-  }) satisfies ServerActionOutputType;
+  });
 }

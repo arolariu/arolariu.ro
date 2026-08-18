@@ -104,14 +104,13 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
           throw new Error(t((m) => m.toasts.invoices.useScanAdd.uploadFailed, {status}));
         }
 
-        await attachScanToInvoice({
+        const attachment = await attachScanToInvoice({
           invoiceId,
           payload: {
             type: args.type,
             location: data.scan.blobUrl,
-            additionalMetadata: {
+            metadata: {
               sourceScanId: data.scan.id,
-              sourceOwnerId: data.scan.userIdentifier,
               displayName: args.fileName,
               documentKind: ScanDocumentKind.RECEIPT,
               documentRole: ScanDocumentRole.SUPPLEMENT,
@@ -121,15 +120,14 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
             },
           },
         });
+        if (!attachment.success) {
+          throw new Error(t((m) => m.toasts.invoices.useScanAdd.addError));
+        }
 
         toast.success(t((m) => m.toasts.invoices.useScanAdd.addSuccess));
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        toast.error(
-          t((m) => m.toasts.invoices.useScanAdd.addError),
-          {description: message},
-        );
-        throw error;
+      } catch {
+        toast.error(t((m) => m.toasts.invoices.useScanAdd.addError));
+        throw new Error(t((m) => m.toasts.invoices.useScanAdd.addError));
       } finally {
         setIsAdding(false);
       }

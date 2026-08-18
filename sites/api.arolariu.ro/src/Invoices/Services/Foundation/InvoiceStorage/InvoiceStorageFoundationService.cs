@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
 using Microsoft.Extensions.Logging;
@@ -18,19 +19,26 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundationService
 {
   private readonly IInvoiceNoSqlBroker invoiceNoSqlBroker;
+  private readonly ITaxonomyBroker taxonomyBroker;
   private readonly ILogger<IInvoiceStorageFoundationService> logger;
 
   /// <summary>
-  /// Constructor.
+  /// Initializes a new instance of the <see cref="InvoiceStorageFoundationService"/> class.
   /// </summary>
-  /// <param name="invoiceNoSqlBroker"></param>
-  /// <param name="loggerFactory"></param>
+  /// <param name="invoiceNoSqlBroker">The NoSQL persistence broker for invoice aggregates.</param>
+  /// <param name="taxonomyBroker">The canonical taxonomy broker used to canonicalize classifications before persistence.</param>
+  /// <param name="loggerFactory">The logger factory used to create the service logger.</param>
+  /// <exception cref="ArgumentNullException">Thrown when any required dependency is null.</exception>
   public InvoiceStorageFoundationService(
     IInvoiceNoSqlBroker invoiceNoSqlBroker,
+    ITaxonomyBroker taxonomyBroker,
     ILoggerFactory loggerFactory)
   {
     ArgumentNullException.ThrowIfNull(invoiceNoSqlBroker);
+    ArgumentNullException.ThrowIfNull(taxonomyBroker);
+    ArgumentNullException.ThrowIfNull(loggerFactory);
     this.invoiceNoSqlBroker = invoiceNoSqlBroker;
+    this.taxonomyBroker = taxonomyBroker;
     this.logger = loggerFactory.CreateLogger<IInvoiceStorageFoundationService>();
   }
 
@@ -41,6 +49,7 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceObject));
     ValidateInvoiceInformationIsValid(invoice);
+    CanonicalizeInvoiceClassifications(invoice);
 
     await invoiceNoSqlBroker
       .CreateInvoiceAsync(invoice, cancellationToken)
@@ -83,6 +92,11 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
     ValidateIdentifierIsSet(invoiceIdentifier);
+    ValidateInvoiceInformationIsValid(updatedInvoice);
+    CanonicalizeInvoiceClassifications(
+      updatedInvoice,
+      updatedInvoice.PreserveUntouchedProductClassifications);
+    updatedInvoice.PreserveUntouchedProductClassifications = false;
 
     var newInvoice = await invoiceNoSqlBroker
       .UpdateInvoiceAsync(invoiceIdentifier, updatedInvoice, cancellationToken)

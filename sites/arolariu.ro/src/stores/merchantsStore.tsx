@@ -18,7 +18,7 @@ import {createEntityStore} from "./createEntityStore";
  * - Actions: full CRUD (`upsertEntity`, `removeEntity`, `updateEntity`), selection
  *   (`toggleEntitySelection`, `setSelectedEntities`, `clearSelectedEntities`),
  *   lookup (`getEntityById`), and `setEntities` / `clearEntities`.
- * - Persistence: IndexedDB table `merchants`.
+ * - Persistence: IndexedDB table `merchants-v2`, clean-slate structured DTO cache.
  *
  * @example
  * ```tsx
@@ -26,7 +26,7 @@ import {createEntityStore} from "./createEntityStore";
  * ```
  */
 export const useMerchantsStore = createEntityStore<Merchant>({
-  tableName: "merchants",
+  tableName: "merchants-v2",
   storeName: "MerchantsStore",
-  persistName: "merchants-store",
+  persistName: "merchants-store-v2",
 });

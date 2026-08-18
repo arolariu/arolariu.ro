@@ -372,6 +372,7 @@
       "nutritionCard": {
         "allergens": {
           "foundInItems": "Trouvé dans {count} article(s)",
+          "noItems": "Aucun article de la facture n’est disponible pour l’évaluation des allergènes.",
           "title": "Allergènes détectés"
         },
         "composition": {
@@ -437,8 +438,7 @@
       },
       "recipeCard": {
         "buttons": {
-          "viewRecipe": "Voir la recette",
-          "visitReference": "Visiter la référence"
+          "viewRecipe": "Voir la recette"
         },
         "complexity": {
           "easy": "Complexité facile",
@@ -563,10 +563,15 @@
       "statistics": {
         "allergenSummary": {
           "ariaLabel": "Résumé de la fréquence des allergènes",
-          "description": "Exposition aux allergènes dans vos produits",
-          "empty": "Aucun allergène détecté dans vos achats",
+          "description": "Signaux d’évaluation des allergènes dans les produits évalués",
+          "empty": "Aucun signal d’évaluation des allergènes n’est disponible. La couverture est affichée ci-dessous.",
+          "coverage": {
+            "assessed": "Éléments évalués",
+            "insufficientData": "Données insuffisantes",
+            "notAssessed": "Non évalué"
+          },
           "stats": {
-            "ofTotal": "du total",
+            "ofAssessedProducts": "des produits évalués",
             "products": "produits"
           },
           "title": "Résumé des allergènes"
@@ -654,6 +659,12 @@
           "empty": "Aucune donnée de marchand disponible",
           "labels": {
             "totalSpent": "Total dépensé"
+          },
+          "merchantNace": {
+            "title": "Secteurs des commerçants",
+            "description": "Dépenses regroupées par section NACE 2.1 canonique",
+            "empty": "Aucun commerçant associé ne possède encore de section NACE canonique.",
+            "metadata": "{invoices} factures · {merchants} commerçants"
           },
           "title": "Principaux commerçants",
           "tooltip": {
@@ -815,6 +826,58 @@
           "title": "Le moins cher à proximité"
         },
         "title": "Analyse des dépenses du véhicule"
+      },
+      "analysisResults": {
+        "unclassified": "Non classé",
+        "classification": {
+          "analysisOrigin": "Résultat de l’analyse",
+          "manualOrigin": "Sélection manuelle",
+          "confidence": "Confiance indicative : {confidence}",
+          "evidence": "Éléments disponibles",
+          "root": "Racine : {label} ({code})"
+        },
+        "allergens": {
+          "detected": "Signaux détectés",
+          "noSignals": "Aucun signal dans les éléments disponibles",
+          "insufficientData": "Données insuffisantes",
+          "explicit": "Éléments explicites",
+          "inferred": "Éléments déduits",
+          "precautionary": "Éléments de précaution",
+          "notAssessed": "Non évalué",
+          "confidence": "Confiance indicative : {confidence} %",
+          "codes": {
+            "cerealsContainingGluten": "Céréales contenant du gluten",
+            "crustaceans": "Crustacés",
+            "eggs": "Œufs",
+            "fish": "Poissons",
+            "peanuts": "Arachides",
+            "soybeans": "Soja",
+            "milk": "Lait",
+            "nuts": "Fruits à coque",
+            "celery": "Céleri",
+            "mustard": "Moutarde",
+            "sesame": "Sésame",
+            "sulphurDioxideAndSulphites": "Dioxyde de soufre et sulfites",
+            "lupin": "Lupin",
+            "molluscs": "Mollusques"
+          }
+        },
+        "recipes": {
+          "difficulty": {
+            "easy": "Facile",
+            "medium": "Moyenne",
+            "hard": "Difficile"
+          },
+          "purchasedIngredients": "Ingrédients achetés",
+          "pantryStaples": "Produits de base supposés disponibles",
+          "missingOptionalIngredients": "Ingrédients facultatifs manquants",
+          "steps": "Étapes de préparation",
+          "warnings": "Avertissements concernant les allergènes",
+          "servings": "{count} portions",
+          "preparationMinutes": "Préparation : {minutes} min",
+          "cookingMinutes": "Cuisson : {minutes} min",
+          "totalMinutes": "Total : {minutes} min"
+        }
       }
     }
   },
@@ -830,12 +893,11 @@
         "dropzone": {
           "dragAndDrop": "Glissez-déposez un fichier ici",
           "dropHere": "Déposez le fichier ici...",
-          "formats": "JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF (max 10 Mo)",
+          "formats": "JPG, JPEG, PNG, BMP, TIFF, HEIF, PDF (max 10 Mo)",
           "orClickBrowse": "ou cliquez pour parcourir"
         },
         "scanType": {
           "bmp": "Image BMP",
-          "heic": "Image HEIC",
           "heif": "Image HEIF",
           "jpeg": "Image JPEG",
           "label": "Type de scan",
@@ -862,9 +924,9 @@
           "saving": "Enregistrement..."
         },
         "defaultDescription": "Contient {name}",
-        "description": "Gérer les allergènes pour {productName}",
+        "description": "Examiner les éléments de l’évaluation pour {productName}",
         "empty": {
-          "noAllergens": "Aucun allergène détecté"
+          "noAllergens": "Non évalué"
         },
         "errors": {
           "duplicate": "L''allergène {name} a déjà été ajouté",
@@ -885,113 +947,7 @@
           "removed": "Allergène retiré : {name}",
           "saved": "Allergènes mis à jour avec succès"
         },
-        "title": "Modifier les allergènes"
-      },
-      "analyzeDialog": {
-        "analysisSteps": {
-          "analyzingWithAi": "Analyse avec l'IA...",
-          "categorizingItems": "Catégorisation des articles...",
-          "finalizingResults": "Finalisation des résultats...",
-          "preparingDocument": "Préparation du document...",
-          "processing": "Traitement...",
-          "runningOcrExtraction": "Exécution de l'extraction OCR..."
-        },
-        "analyzing": {
-          "progressComplete": "{progress}% terminé",
-          "title": "Analyse de la facture"
-        },
-        "badges": {
-          "recommended": "Recommandé"
-        },
-        "buttons": {
-          "analyzing": "Analyse en cours...",
-          "cancel": "Annuler",
-          "startAnalysis": "Démarrer l'analyse"
-        },
-        "enhancements": {
-          "priceComparison": {
-            "description": "Comparer les prix avec les données historiques",
-            "label": "Comparaison des prix"
-          },
-          "quickExtract": {
-            "description": "Prioriser la vitesse plutôt que la précision",
-            "label": "Mode extraction rapide"
-          },
-          "savingsTips": {
-            "description": "Obtenir des recommandations d'économies par IA",
-            "label": "Suggestions d'économies"
-          }
-        },
-        "header": {
-          "description": "Configurer une analyse alimentée par IA pour la facture",
-          "title": "Analyser la facture"
-        },
-        "options": {
-          "completeAnalysis": {
-            "description": "Analyse IA complète incluant toutes les données de la facture, les articles et les informations du commerçant.",
-            "estimatedTime": "2-3 min",
-            "features": {
-              "itemCategorization": "Catégorisation des articles",
-              "merchantIdentification": "Identification du commerçant",
-              "ocrExtraction": "Extraction OCR",
-              "priceAnalysis": "Analyse des prix",
-              "receiptValidation": "Validation du reçu"
-            },
-            "title": "Analyse complète"
-          },
-          "invoiceOnly": {
-            "description": "Analyser les informations de base de la facture comme les totaux, dates et détails de paiement.",
-            "estimatedTime": "30-60 s",
-            "features": {
-              "dateParsing": "Analyse des dates",
-              "paymentMethodDetection": "Détection du mode de paiement",
-              "totalExtraction": "Extraction du total"
-            },
-            "title": "Données de facture uniquement"
-          },
-          "itemsOnly": {
-            "description": "Se concentrer sur l'extraction et la catégorisation des lignes d'articles de la facture.",
-            "estimatedTime": "1-2 min",
-            "features": {
-              "categoryAssignment": "Attribution des catégories",
-              "itemExtraction": "Extraction des articles",
-              "pricePerItem": "Prix par article",
-              "quantityDetection": "Détection des quantités"
-            },
-            "title": "Analyse des articles"
-          },
-          "merchantOnly": {
-            "description": "Identifier et analyser les informations du commerçant, y compris localisation et catégorie.",
-            "estimatedTime": "30-45 s",
-            "features": {
-              "businessCategory": "Catégorie commerciale",
-              "contactInfo": "Coordonnées",
-              "locationExtraction": "Extraction de la localisation",
-              "merchantIdentification": "Identification du commerçant"
-            },
-            "title": "Analyse du commerçant"
-          }
-        },
-        "sections": {
-          "analysisType": "Type d'analyse",
-          "enhancementsOptional": "Améliorations (optionnel)",
-          "includedFeatures": "Fonctionnalités incluses"
-        },
-        "summary": {
-          "enhancementsSelected": "+ {count} amélioration(s)",
-          "estimatedTime": "Durée estimée",
-          "noEnhancementsSelected": "Aucune amélioration sélectionnée"
-        },
-        "toasts": {
-          "analysisComplete": {
-            "description": "Votre facture a été analysée avec succès.",
-            "title": "Analyse terminée"
-          },
-          "analysisFailed": {
-            "description": "Nous n'avons pas pu analyser votre facture. Veuillez réessayer.",
-            "title": "Échec de l'analyse"
-          }
-        }
+        "title": "Évaluation des allergènes"
       },
       "bulkCategoryDialog": {
         "buttons": {
@@ -999,30 +955,30 @@
           "save": "Appliquer à tous",
           "saving": "Enregistrement..."
         },
-        "description": "{count, plural, one {Changer la catégorie pour # produit} other {Changer la catégorie pour # produits}}",
+        "description": "{count, plural, one {Modifier la classification GS1 GPC de # produit} other {Modifier la classification GS1 GPC de # produits}}",
         "errors": {
           "allFailed": "Echec de la mise a jour de tous les produits",
           "missingData": "Données manquantes",
           "noProducts": "Aucun produit sélectionné",
-          "saveFailed": "Échec de la mise à jour des catégories"
+          "saveFailed": "Échec de la mise à jour des classifications"
         },
         "labels": {
           "andMore": "...et {count} de plus",
-          "newCategory": "Nouvelle catégorie",
+          "newCategory": "Nouvelle classification GS1 GPC",
           "progress": "Progression",
           "selectedProducts": "Produits sélectionnés"
         },
         "placeholders": {
-          "selectCategory": "Sélectionner une catégorie"
+          "selectCategory": "Sélectionner une classification"
         },
         "progress": {
           "updating": "Mise a jour {current} sur {total}..."
         },
         "success": {
           "partialSuccess": "{success} produits mis a jour, {failed} echoues",
-          "saved": "{count, plural, one {Catégorie mise à jour pour # produit} other {Catégorie mise à jour pour # produits}}"
+          "saved": "{count, plural, one {Classification mise à jour pour # produit} other {Classification mise à jour pour # produits}}"
         },
-        "title": "Changer de catégorie"
+        "title": "Changer la classification"
       },
       "createInvoiceDialog": {
         "batchMode": {
@@ -1032,19 +988,18 @@
         "buttons": {
           "cancel": "Annuler",
           "close": "Fermer",
-          "createMultiple": "Lancer l'analyse sur {count} scans",
-          "createSingle": "Lancer l'analyse"
+          "createMultiple": "Créer {count} factures",
+          "createSingle": "Créer la facture"
         },
         "chooseMode": "Choisir le Mode de Création",
         "complete": {
-          "description": "Votre facture est prête à être consultée et modifiée.",
-          "descriptionPlural": "Vos factures sont prêtes à être consultées et modifiées.",
+          "analysisNotQueued": "Les factures ont été créées, mais l’analyse n’a pas pu être mise en file d’attente. Vous pouvez réessayer l’analyse depuis la page de la facture.",
+          "analysisQueued": "L’analyse a été mise en file d’attente. Les résultats apparaîtront une fois terminée.",
+          "description": "Votre facture a été créée et est prête à être consultée et modifiée.",
+          "descriptionPlural": "Vos factures ont été créées et sont prêtes à être consultées et modifiées.",
           "errorsLabel": "Scans échoués :",
           "failureDescription": "Nous n'avons pas pu créer de factures. Veuillez vérifier les erreurs ci-dessous et réessayer.",
           "failureTitle": "Échec de la création",
-          "nextSteps": "Prochaines étapes :",
-          "nextStepsDescription": "Examinez votre facture, vérifiez les données extraites et effectuez les modifications nécessaires. Vous pouvez également demander une analyse IA pour des informations sur vos dépenses.",
-          "nextStepsDescriptionPlural": "Examinez vos factures, vérifiez les données extraites et effectuez les modifications nécessaires. Vous pouvez également demander une analyse IA pour des informations sur vos dépenses.",
           "partialDescription": "Certains scans n'ont pas pu être traités. Les factures créées avec succès sont prêtes à être consultées.",
           "partialTitle": "{created} factures créées sur {total}",
           "retryButton": "Réessayer",
@@ -1054,22 +1009,15 @@
           "viewButtonPlural": "Voir les Factures"
         },
         "creating": {
-          "processing": "Traitement de {count} scan...",
-          "processingPlural": "Traitement de {count} scans...",
-          "step1Description": "Envoi de vos scans vers nos serveurs",
-          "step1Title": "Téléchargement des scans",
-          "step2Description": "Configuration des structures de données de factures",
-          "step2Title": "Création des enregistrements de factures",
-          "step3Description": "Préparation des factures pour la visualisation",
-          "step3Title": "Finalisation",
+          "description": "Création de votre facture. L’analyse sera mise en file d’attente avant de continuer.",
           "title": "Création de Votre Facture",
           "titlePlural": "Création de Vos Factures"
         },
-        "description": "Transformez vos scans en données de facture structurées.",
+        "description": "Créez des factures à partir de vos scans sélectionnés. L’analyse est mise en file d’attente après la création.",
         "errors": {
-          "createFailed": "Échec de la création des factures : {message}",
-          "partialFail": "Échec de la création de {count} facture(s)",
-          "unknown": "Erreur inconnue"
+          "createFailed": "Impossible de créer les factures. Veuillez réessayer.",
+          "creationFailed": "Cette facture n’a pas pu être créée.",
+          "partialFail": "Échec de la création de {count} facture(s)"
         },
         "selectedScans": "Scans Sélectionnés",
         "singleMode": {
@@ -1077,11 +1025,11 @@
           "title": "Une facture par scan"
         },
         "singleScanInfo": {
-          "description": "Notre IA analysera votre scan et extraira automatiquement les détails du commerçant, les articles, les prix et les totaux. Vous pourrez examiner et modifier les résultats par la suite.",
+          "description": "L’analyse sera mise en file d’attente après la création de la facture. Elle peut se terminer après avoir quitté cette boîte de dialogue.",
           "title": "Que se passe-t-il ensuite ?"
         },
-        "title": "Lancer l'analyse IA",
-        "titlePlural": "Lancer l'analyse IA",
+        "title": "Créer la facture",
+        "titlePlural": "Créer des factures",
         "totalSize": "total"
       },
       "deleteInvoiceDialog": {
@@ -1250,9 +1198,13 @@
           "cancel": "Annuler",
           "next": "Suivant",
           "previous": "Précédent",
+          "saving": "Enregistrement…",
           "saveChanges": "Enregistrer changes"
         },
         "description": "Mettez à jour les quantités, les prix ou ajoutez de nouveaux articles à cette facture",
+        "errors": {
+          "saveFailed": "Les modifications des articles n’ont pas pu être enregistrées. Veuillez réessayer."
+        },
         "footer": {
           "itemsFound": "{total} articles trouvés (affichage de {shown})",
           "itemsTotal": "{count, plural, one {# article au total} other {# articles au total}}",
@@ -1260,6 +1212,7 @@
         },
         "table": {
           "actions": "Opérations",
+          "classification": "Classification GS1 GPC",
           "item": "Article",
           "price": "Prix",
           "quantity": "Quantité",
@@ -1270,7 +1223,9 @@
       },
       "merchantDialog": {
         "buttons": {
-          "openInMaps": "Ouvrir dans Maps"
+          "openInMaps": "Ouvrir dans Maps",
+          "saveClassification": "Enregistrer la classification",
+          "savingClassification": "Enregistrement de la classification…"
         },
         "description": "Informations sur {merchantName}",
         "fields": {
@@ -1278,7 +1233,14 @@
           "parentCompany": "Société mère",
           "phone": "Téléphone"
         },
+        "errors": {
+          "missingUpdateData": "Cette fiche commerçant est incomplète et ne peut pas être mise à jour en toute sécurité.",
+          "saveFailed": "La classification du commerçant n’a pas pu être enregistrée. Veuillez réessayer."
+        },
         "noMerchantLinked": "Aucun commerçant lié à cette facture",
+        "success": {
+          "classificationSaved": "Classification du commerçant enregistrée."
+        },
         "title": "Détails du commerçant"
       },
       "merchantReceiptsDialog": {
@@ -2108,6 +2070,75 @@
   },
   "forms": {
     "invoices": {
+      "analysis": {
+        "buttons": {
+          "start": "Démarrer l’analyse",
+          "submitting": "Envoi de la demande…"
+        },
+        "capabilities": {
+          "allergenAssessment": "Évaluation des allergènes",
+          "documentExtraction": "Extraction du document",
+          "invoiceClassification": "Classification de la facture",
+          "invoiceSummary": "Résumé de la facture",
+          "merchantResolution": "Identification du commerçant",
+          "productClassification": "Classification des produits",
+          "recipeGeneration": "Génération de recettes"
+        },
+        "descriptions": {
+          "invoice": "Choisissez le profil et les capacités de cette analyse de facture mise en file d’attente.",
+          "merchant": "Choisissez le profil et les capacités de cette analyse de commerçant mise en file d’attente.",
+          "profiles": "Un profil fournit un ensemble initial valide de capacités."
+        },
+        "dialog": {
+          "cancel": "Fermer",
+          "description": "Choisissez ce qui doit être mis en file d’attente. Les résultats apparaîtront après l’actualisation de la page.",
+          "title": "Analyser la facture"
+        },
+        "invoice": {
+          "capabilitiesLegend": "Capacités d’analyse de la facture",
+          "profileLegend": "Profil d’analyse",
+          "title": "Analyse de la facture"
+        },
+        "merchant": {
+          "capabilitiesLegend": "Capacités d’analyse du commerçant",
+          "profileLegend": "Profil d’analyse",
+          "title": "Analyse du commerçant"
+        },
+        "merchantCapabilities": {
+          "descriptionGeneration": "Générer la description du commerçant",
+          "naceClassification": "Classification NACE"
+        },
+        "panel": {
+          "description": "Mettez une demande d’analyse en file d’attente ; les résultats apparaîtront après l’actualisation de la page.",
+          "title": "Analyse IA"
+        },
+        "profiles": {
+          "balanced": "Équilibré",
+          "comprehensive": "Complet",
+          "fast": "Rapide"
+        },
+        "status": {
+          "queued": "L’analyse est en file d’attente. Cette page s’actualisera automatiquement ; le traitement peut se poursuivre ensuite.",
+          "submitting": "Envoi de la demande d’analyse."
+        }
+      },
+      "classificationPicker": {
+        "clear": "Effacer {system}",
+        "empty": "Aucune classification correspondante n’a été trouvée.",
+        "error": "La recherche de classifications est indisponible. Veuillez réessayer.",
+        "loading": "Recherche de classifications…",
+        "minimumCharacters": "Saisissez au moins {count} caractères pour effectuer une recherche.",
+        "placeholder": "Sélectionner une classification",
+        "result": "{code} : {label}",
+        "searchPlaceholder": "Rechercher un code ou un libellé officiel",
+        "selectedCode": "{system} : {code}",
+        "selectedResult": "{code} : {label}",
+        "systems": {
+          "ecoicopV2": "Classification ECOICOP v2",
+          "gs1Gpc": "Classification GS1 GPC",
+          "nace21": "Classification NACE 2.1"
+        }
+      },
       "createInvoice": {
         "detailsForm": {
           "fields": {
@@ -2167,6 +2198,14 @@
           "subtitle": "Suivez les étapes ci-dessous pour créer une nouvelle facture à partir de vos numérisations",
           "title": "Créer une facture"
         },
+        "notifications": {
+          "analysisNotQueued": "La facture a été créée, mais l’analyse n’a pas pu être mise en file d’attente. Vous pouvez la réessayer depuis la page de la facture.",
+          "classificationNotSaved": "La facture a été créée, mais sa classification n’a pas pu être enregistrée. Vous pouvez réessayer depuis la page de la facture.",
+          "createFailed": "Impossible de créer la facture. Veuillez réessayer.",
+          "createdAndAnalysisQueued": "La facture a été créée. L’analyse a été mise en file d’attente.",
+          "attachmentFinalizationFailed": "La facture a été créée, mais {count} mises à jour des pièces jointes numérisées doivent encore être finalisées. Réessayez avant de quitter cette page.",
+          "attachmentFinalizationFailed": "La facture a été créée, mais {count} mises à jour des pièces jointes numérisées doivent encore être finalisées. Réessayez avant de quitter cette page."
+        },
         "metadata": {
           "description": "Créez une nouvelle facture à partir de vos numérisations téléchargées.",
           "title": "Système de gestion des factures - Créer une facture"
@@ -2179,8 +2218,12 @@
           "actions": {
             "create": "Créer la facture",
             "creating": "Création de la facture...",
-            "hint": "Ceci créera la facture et téléchargera les numérisations sélectionnées."
+            "hint": "Ceci créera la facture et téléchargera les numérisations sélectionnées.",
+            "retryAttachmentFinalization": "Réessayer la finalisation des pièces jointes",
+            "retryAttachmentFinalization": "Réessayer la finalisation des pièces jointes"
           },
+          "classificationFallback": "{system} : {code}",
+          "classificationResult": "{code} : {label}",
           "categories": {
             "carAuto": "Auto et véhicule",
             "fastFood": "Restauration",
@@ -2201,6 +2244,7 @@
           "sections": {
             "details": {
               "category": "Catégorie",
+              "classification": "Classification",
               "description": "Description",
               "name": "Nom",
               "paymentType": "Mode de paiement",
@@ -2775,6 +2819,10 @@
             "createFirstRecipe": "Créer votre première recette",
             "generate": "Générer"
           },
+          "tabs": {
+            "possibleRecipes": "Recettes possibles",
+            "additionalInfo": "Informations supplémentaires"
+          },
           "emptyState": {
             "noRecipesAvailable": "Aucune recette disponible pour le moment"
           },
@@ -2988,7 +3036,7 @@
           "formats": {
             "documentExtensions": ".pdf",
             "documents": "Documents",
-            "imageExtensions": ".jpg, .jpeg, .png, .bmp, .tif, .tiff, .heif, .heic",
+            "imageExtensions": ".jpg, .jpeg, .png, .bmp, .tif, .tiff, .heif",
             "images": "Images",
             "maxSize": "Taille maximale du fichier : 10 Mo par fichier",
             "title": "Formats Pris en Charge"
@@ -3037,13 +3085,13 @@
           "compact": {
             "dropActive": "Déposez les fichiers pour les ajouter",
             "dropInactive": "Glissez des fichiers ici ou cliquez pour parcourir",
-            "subtitle": "JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF jusqu'à 10 Mo"
+            "subtitle": "JPG, JPEG, PNG, BMP, TIFF, HEIF, PDF jusqu'à 10 Mo"
           },
           "empty": {
             "chooseFiles": "Choisir des fichiers",
             "dropActive": "Déposez les fichiers pour les téléverser",
             "dropInactive": "Cliquez ou glissez des fichiers pour les téléverser",
-            "formats": "Formats pris en charge : JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF (10 Mo max chacun)",
+            "formats": "Formats pris en charge : JPG, JPEG, PNG, BMP, TIFF, HEIF, PDF (10 Mo max chacun)",
             "note": "Vous pouvez sélectionner plusieurs fichiers.",
             "pasteHint": "Astuce : vous pouvez aussi coller une image depuis le presse-papiers (Ctrl+V).",
             "title": "Glissez-déposez vos fichiers ici"
@@ -3065,55 +3113,6 @@
         }
       },
       "viewInvoice": {
-        "analysisPanel": {
-          "analyzing": {
-            "progress": "{progress}% terminé",
-            "title": "Analyse en cours..."
-          },
-          "buttons": {
-            "reanalyze": "Réanalyser la facture"
-          },
-          "description": "Réanalyser cette facture avec l'IA pour extraire ou mettre à jour les données",
-          "labels": {
-            "analysisComplete": "Analyse terminée — Toutes les données ont été extraites",
-            "granularOptions": "Ou choisissez une analyse spécifique",
-            "lastAnalyzed": "Dernière analyse",
-            "updates": "{count, plural, one {# mise à jour} other {# mises à jour}}"
-          },
-          "options": {
-            "completeAnalysis": "Analyse complète",
-            "invoiceOnly": "Facture uniquement",
-            "itemsOnly": "Articles uniquement",
-            "merchantOnly": "Commerçant uniquement"
-          },
-          "steps": {
-            "analyzing": "Analyse en cours avec l'IA...",
-            "complete": "Analyse terminée !",
-            "extracting": "Extraction OCR en cours...",
-            "finalizing": "Finalisation des résultats...",
-            "preparing": "Préparation du document...",
-            "processing": "Traitement des articles..."
-          },
-          "tip": "Astuce : L'analyse complète prend 30 à 60 secondes mais fournit les résultats les plus précis.",
-          "title": "Analyse IA",
-          "toasts": {
-            "error": {
-              "description": "Impossible d'analyser la facture. Veuillez réessayer plus tard.",
-              "title": "Échec de l'analyse"
-            },
-            "success": {
-              "description": "La facture a été réanalysée avec succès avec des données mises à jour.",
-              "title": "Analyse terminée"
-            }
-          },
-          "tooltips": {
-            "completeAnalysis": "Extraction OCR complète + traitement IA de toutes les données de la facture",
-            "invoiceOnly": "Réextraire les informations de base de la facture (date, total, paiement)",
-            "itemsOnly": "Recatégoriser et analyser uniquement les articles",
-            "merchantOnly": "Réidentifier le commerçant et les données de localisation",
-            "reanalyze": "Relancer l'analyse complète avec toutes les fonctionnalités IA"
-          }
-        },
         "categoryComparisonChart": {
           "description": "Cette facture vs votre moyenne",
           "labels": {
@@ -3127,10 +3126,25 @@
           "copySuccess": "Résumé copié dans le presse-papiers",
           "copySummary": {
             "description": "Copier le résumé texte dans le presse-papiers",
+            "labels": {
+              "invoice": "Facture",
+              "merchant": "Commerçant",
+              "date": "Date",
+              "total": "Total",
+              "items": "Articles"
+            },
+            "notAvailable": "Indisponible",
             "title": "Copier le résumé"
           },
           "csv": {
             "description": "Télécharger les articles sous forme de feuille de calcul",
+            "headers": {
+              "productName": "Nom du produit",
+              "quantity": "Quantité",
+              "price": "Prix",
+              "total": "Total",
+              "category": "Catégorie"
+            },
             "title": "Exporter en CSV"
           },
           "csvError": "Échec de l'export CSV",
@@ -3156,6 +3170,58 @@
           "printError": "Échec de l'ouverture de la boîte de dialogue d'impression",
           "printSuccess": "Boîte de dialogue d'impression ouverte",
           "title": "Exporter la facture"
+        },
+        "pdf": {
+          "reportTitle": "Rapport de facture",
+          "generatedOn": "Généré le {date}",
+          "invoiceInformation": "Informations sur la facture",
+          "invoiceName": "Nom de la facture",
+          "description": "Description",
+          "classification": "Classification",
+          "invoiceIdentifier": "ID de la facture",
+          "transactionDate": "Date de transaction",
+          "receiptType": "Type de reçu",
+          "merchantInformation": "Informations sur le commerçant",
+          "merchantName": "Nom du commerçant",
+          "unknownMerchant": "Commerçant non associé",
+          "fullName": "Nom complet",
+          "address": "Adresse",
+          "phone": "Téléphone",
+          "paymentSummary": "Résumé du paiement",
+          "subtotal": "Sous-total",
+          "tax": "Taxe",
+          "tip": "Pourboire",
+          "total": "Total",
+          "currency": "Devise",
+          "paymentMethod": "Méthode de paiement",
+          "items": "Articles",
+          "number": "#",
+          "product": "Produit",
+          "quantity": "Quantité",
+          "unitPrice": "Prix unitaire",
+          "productSignals": "Signaux",
+          "allergenAssessment": "Évaluation des allergènes",
+          "classificationHierarchy": "Hiérarchie de classification",
+          "difficulty": {
+            "easy": "Facile",
+            "medium": "Moyenne",
+            "hard": "Difficile"
+          },
+          "recipeDifficulty": "Difficulté : {difficulty}",
+          "paymentTypes": {
+            "unknown": "Inconnu",
+            "cash": "Espèces",
+            "card": "Carte",
+            "transfer": "Virement bancaire",
+            "mobilePayment": "Paiement mobile",
+            "voucher": "Bon",
+            "other": "Autre"
+          },
+          "analysisSummary": "Résumé de l’analyse",
+          "numberOfItems": "Nombre d’articles",
+          "numberOfScans": "Nombre de scans",
+          "recipes": "Suggestions de recettes",
+          "page": "Page {current} sur {total}"
         },
         "healthScore": {
           "cta": {
@@ -3205,6 +3271,7 @@
             "compare": "Comparaison",
             "current": "Cette facture"
           },
+          "invoiceCount": "{count, plural, one {# facture} other {# factures}}",
           "title": "Analyses et insights"
         },
         "invoiceGuestBanner": {
@@ -5360,6 +5427,16 @@
   },
   "toasts": {
     "invoices": {
+      "analysis": {
+        "failed": {
+          "description": "La demande d’analyse n’a pas été acceptée. Veuillez réessayer.",
+          "title": "L’analyse n’a pas pu démarrer"
+        },
+        "started": {
+          "description": "L’analyse est en file d’attente. Cette page s’actualisera automatiquement ; le traitement peut se poursuivre ensuite.",
+          "title": "Analyse mise en file d’attente"
+        }
+      },
       "useInvoiceDelete": {
         "bulkDeleteError": "Échec de la suppression de {count} factures.",
         "bulkDeletePartial": "Supprimées : {successCount} ; échouées : {failureCount}.",

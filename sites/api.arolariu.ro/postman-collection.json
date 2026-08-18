@@ -936,7 +936,7 @@
                 }
               ]
             },
-            "description": "Remove a product from the invoice by rawName.",
+            "description": "Remove one product from the invoice using its deterministic identity-free selector.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
               "host": [
@@ -952,7 +952,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"productName\": \"Lapte Zuzu\"\n}",
+              "raw": "{\n  \"selector\": {\n    \"originalProductCode\": \"MLK001\",\n    \"originalName\": null,\n    \"originalQuantity\": null,\n    \"originalUnitPrice\": null,\n    \"originalTotalPrice\": null,\n    \"occurrenceOrdinal\": null\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"

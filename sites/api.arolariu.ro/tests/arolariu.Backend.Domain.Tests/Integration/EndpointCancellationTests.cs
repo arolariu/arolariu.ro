@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Http;
+using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.Endpoints;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
 
@@ -62,6 +63,19 @@ public sealed class EndpointCancellationTests
     var identity = new ClaimsIdentity(claims, authenticationType: "TestAuth");
     context.User = new ClaimsPrincipal(identity);
     return new HttpContextAccessor { HttpContext = context };
+  }
+
+  private static CancellationStorageOptionsManager CreateStorageOptionsManager() =>
+    new CancellationStorageOptionsManager();
+
+  private sealed class CancellationStorageOptionsManager : IOptionsManager
+  {
+    public ApplicationOptions GetApplicationOptions() =>
+      new LocalOptions
+      {
+        StorageAccountName = "example",
+        StorageAccountEndpoint = "https://example.com",
+      };
   }
 
   // ---------------------------------------------------------------------------
@@ -233,18 +247,31 @@ public sealed class EndpointCancellationTests
       .ThrowsAsync(new OperationCanceledException());
 
     var invoiceDto = new arolariu.Backend.Domain.Invoices.DTOs.Requests.CreateInvoiceRequestDto(
-      UserIdentifier: Guid.NewGuid(),
-      InitialScan: new arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.InvoiceScan(
+      Name: "Cancellation test invoice",
+      Description: string.Empty,
+      Classification: null,
+      PaymentInformation: null,
+      MerchantReference: null,
+      IsImportant: false,
+      Scans:
+      [
+        new arolariu.Backend.Domain.Invoices.DTOs.Requests.CreateInvoiceScanRequestDto(
         arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.ScanType.JPG,
-        new Uri("https://example.com/invoice.jpg"),
+        new Uri("https://example.com/invoices/invoice.jpg"),
         null),
+      ],
+      Items: null,
       Metadata: null);
 
     // No IHttpRequestTimeoutFeature → client disconnect path.
     var accessor = CreateAuthenticatedContextAccessor();
 
     var result = await InvoiceEndpoints
-      .CreateNewInvoiceAsync(processing.Object, accessor, invoiceDto)
+      .CreateNewInvoiceAsync(
+        processing.Object,
+        CreateStorageOptionsManager(),
+        accessor,
+        invoiceDto)
       .ConfigureAwait(true);
 
     var statusResult = Assert.IsInstanceOfType<IStatusCodeHttpResult>(result);
@@ -268,21 +295,40 @@ public sealed class EndpointCancellationTests
       .ThrowsAsync(new OperationCanceledException());
 
     var invoiceDto = new arolariu.Backend.Domain.Invoices.DTOs.Requests.CreateInvoiceRequestDto(
-      UserIdentifier: Guid.NewGuid(),
-      InitialScan: new arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.InvoiceScan(
+      Name: "Timeout test invoice",
+      Description: string.Empty,
+      Classification: null,
+      PaymentInformation: null,
+      MerchantReference: null,
+      IsImportant: false,
+      Scans:
+      [
+        new arolariu.Backend.Domain.Invoices.DTOs.Requests.CreateInvoiceScanRequestDto(
         arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.ScanType.JPG,
-        new Uri("https://example.com/invoice.jpg"),
+        new Uri("https://example.com/invoices/invoice.jpg"),
         null),
+      ],
+      Items: null,
       Metadata: null);
 
     using var timeoutFeature = new StubTimeoutFeature();
     var context = new DefaultHttpContext();
     context.RequestServices = new ServiceCollection().BuildServiceProvider();
     context.Features.Set<IHttpRequestTimeoutFeature>(timeoutFeature);
+    context.User = new ClaimsPrincipal(
+      new ClaimsIdentity(
+      [
+        new Claim("userIdentifier", Guid.NewGuid().ToString()),
+      ],
+      authenticationType: "TestAuth"));
     var accessor = new HttpContextAccessor { HttpContext = context };
 
     var result = await InvoiceEndpoints
-      .CreateNewInvoiceAsync(processing.Object, accessor, invoiceDto)
+      .CreateNewInvoiceAsync(
+        processing.Object,
+        CreateStorageOptionsManager(),
+        accessor,
+        invoiceDto)
       .ConfigureAwait(true);
 
     // IHttpRequestTimeoutFeature present with cancelled token → server timeout.

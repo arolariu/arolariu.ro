@@ -81,6 +81,41 @@ public static partial class InvoiceEndpoints
   }
 
   /// <summary>
+  /// Safely resolves a non-empty invoice owner identifier from the authenticated request principal.
+  /// </summary>
+  /// <remarks>
+  /// This is the non-throwing counterpart used at creation boundaries. It follows the established
+  /// <c>userIdentifier</c> claim convention while allowing the endpoint to return a validation response for a
+  /// missing or malformed claim instead of treating request identity as client-controlled data.
+  /// </remarks>
+  /// <param name="httpContextAccessor">Accessor exposing the current request principal.</param>
+  /// <param name="userIdentifier">The resolved non-empty user identifier when the method returns <see langword="true"/>.</param>
+  /// <returns><see langword="true"/> when a valid non-empty <c>userIdentifier</c> claim is present; otherwise, <see langword="false"/>.</returns>
+  private static bool TryRetrieveUserIdentifierClaimFromPrincipal(
+    IHttpContextAccessor httpContextAccessor,
+    out Guid userIdentifier)
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(TryRetrieveUserIdentifierClaimFromPrincipal));
+    userIdentifier = Guid.Empty;
+
+    var principal = httpContextAccessor.HttpContext?.User ?? new ClaimsPrincipal(new ClaimsIdentity());
+    Claim? userIdentifierClaim = principal.Claims.FirstOrDefault(claim => claim.Type == "userIdentifier");
+
+    bool hasValidClaim = userIdentifierClaim is not null
+      && Guid.TryParse(userIdentifierClaim.Value, out userIdentifier)
+      && userIdentifier != Guid.Empty;
+
+    activity?.SetTag("user.claim.valid", hasValidClaim);
+
+    if (hasValidClaim)
+    {
+      return true;
+    }
+
+    return false;
+  }
+
+  /// <summary>
   /// Determines whether the authenticated principal possesses elevated (super user) privileges.
   /// </summary>
   /// <remarks>

@@ -1,137 +1,271 @@
 "use server";
 
 /**
- * @fileoverview Server action for creating new invoice entities.
+ * @fileoverview Strict server action for creating invoices.
  * @module app/domains/invoices/_actions/invoices/createInvoice
  *
  * @remarks
- * This is the primary entry point for invoice creation in the system.
- * It orchestrates the initial invoice entity creation with an attached scan.
- *
- * **Typical Workflow**:
- * 1. Upload scan via {@link createScan} (from `@/app/domains/invoices/_actions/scans`)
- * 2. Create invoice with scan URL via this action
- * 3. Optionally trigger analysis via {@link analyzeInvoice}
- *
- * **Required Fields**:
- * - `initialScan`: First scan attachment (uploaded to Azure Blob)
- * - `metadata`: Must include `isImportant` and `requiresAnalysis` flags
- *
- * @see {@link createScan} for uploading scans first (from `@/app/domains/invoices/_actions/scans`)
- * @see {@link CreateInvoiceDtoPayload} for full payload structure
+ * The backend derives invoice ownership from the authenticated token. This
+ * action validates only the client-editable creation DTO and never accepts or
+ * forwards an owner identifier.
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {createErrorResult, fetchWithTimeout, ServerActionResult} from "@/lib/utils.server";
-import type {CreateInvoiceDtoPayload, Invoice} from "@/types/invoices";
+import {getStorageAccountName, isApprovedInvoiceScanLocation} from "@/lib/azure/storageLocationPolicy";
+import {createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "@/lib/utils.server";
+import {
+  InvoiceScanType,
+  PaymentType,
+  isClassificationSelection,
+  type CreateInvoiceDtoPayload,
+  type Invoice,
+  type PaymentInformation,
+} from "@/types/invoices";
+import {parseInvoiceTransport} from "@/types/invoices/transport";
+import {isHeicScanFileName} from "../../_utils/mimeTypeUtilities";
+
+type CreateInvoiceInput = Readonly<CreateInvoiceDtoPayload>;
+type MetadataValue = string | number | boolean | null;
+const paymentTypeValues = new Set<unknown>(Object.values(PaymentType));
+
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasExactKeys(record: Readonly<Record<string, unknown>>, keys: readonly string[]): boolean {
+  const actualKeys = Object.keys(record);
+  return actualKeys.length === keys.length && actualKeys.every((key) => keys.includes(key));
+}
+
+function isMetadata(value: unknown): value is Readonly<Record<string, MetadataValue>> {
+  return (
+    isRecord(value)
+    && Object.entries(value).every(
+      ([key, entry]) =>
+        key.trim() !== "" && (typeof entry === "string" || typeof entry === "number" || typeof entry === "boolean" || entry === null),
+    )
+  );
+}
+
+function isSupportedInvoiceScanType(value: unknown): value is InvoiceScanType {
+  return (
+    value === InvoiceScanType.JPG
+    || value === InvoiceScanType.JPEG
+    || value === InvoiceScanType.PNG
+    || value === InvoiceScanType.PDF
+    || value === InvoiceScanType.BMP
+    || value === InvoiceScanType.TIFF
+    || value === InvoiceScanType.HEIF
+  );
+}
+
+function isCreateScan(
+  value: unknown,
+): value is Readonly<{type: InvoiceScanType; location: string; metadata: Readonly<Record<string, MetadataValue>>}> {
+  if (!isRecord(value) || !hasExactKeys(value, ["type", "location", "metadata"]) || !isSupportedInvoiceScanType(value["type"])) {
+    return false;
+  }
+
+  if (typeof value["location"] !== "string" || !isMetadata(value["metadata"])) {
+    return false;
+  }
+
+  return true;
+}
+
+function isPaymentInformation(value: unknown): value is PaymentInformation {
+  return (
+    isRecord(value)
+    && hasExactKeys(value, [
+      "transactionDate",
+      "paymentType",
+      "currency",
+      "totalCostAmount",
+      "totalTaxAmount",
+      "subtotalAmount",
+      "tipAmount",
+    ])
+    && value["transactionDate"] instanceof Date
+    && !Number.isNaN(value["transactionDate"].valueOf())
+    && paymentTypeValues.has(value["paymentType"])
+    && isRecord(value["currency"])
+    && hasExactKeys(value["currency"], ["name", "code", "symbol"])
+    && typeof value["currency"]["name"] === "string"
+    && typeof value["currency"]["code"] === "string"
+    && typeof value["currency"]["symbol"] === "string"
+    && ["totalCostAmount", "totalTaxAmount", "subtotalAmount", "tipAmount"].every(
+      (key) => typeof value[key] === "number" && Number.isFinite(value[key]) && (value[key] as number) >= 0,
+    )
+    && (value["totalTaxAmount"] as number) <= (value["totalCostAmount"] as number)
+  );
+}
+
+function isCreateProduct(value: unknown): boolean {
+  return (
+    isRecord(value)
+    && hasExactKeys(value, ["name", "classification", "quantity", "quantityUnit", "productCode", "price"])
+    && typeof value["name"] === "string"
+    && (value["classification"] === null || isClassificationSelection(value["classification"]))
+    && typeof value["quantity"] === "number"
+    && Number.isFinite(value["quantity"])
+    && value["quantity"] >= 0
+    && typeof value["quantityUnit"] === "string"
+    && typeof value["productCode"] === "string"
+    && typeof value["price"] === "number"
+    && Number.isFinite(value["price"])
+    && value["price"] >= 0
+  );
+}
+
+function hasValidCreateInvoiceFields(value: Readonly<Record<string, unknown>>): boolean {
+  return (
+    typeof value["name"] === "string"
+    && value["name"].trim() !== ""
+    && (typeof value["description"] === "string" || value["description"] === null)
+    && (value["classification"] === null || isClassificationSelection(value["classification"]))
+    && (value["paymentInformation"] === null || isPaymentInformation(value["paymentInformation"]))
+    && (typeof value["merchantReference"] === "string" || value["merchantReference"] === null)
+    && typeof value["isImportant"] === "boolean"
+  );
+}
+
+function hasValidCreateInvoiceCollections(value: Readonly<Record<string, unknown>>): boolean {
+  return (
+    Array.isArray(value["scans"])
+    && value["scans"].length > 0
+    && value["scans"].every((scan) => isCreateScan(scan))
+    && (value["items"] === null || (Array.isArray(value["items"]) && value["items"].every((item) => isCreateProduct(item))))
+    && (value["metadata"] === null || isMetadata(value["metadata"]))
+  );
+}
+
+function isCreateInvoiceInput(value: unknown): value is CreateInvoiceInput {
+  if (
+    !isRecord(value)
+    || !hasExactKeys(value, [
+      "name",
+      "description",
+      "classification",
+      "paymentInformation",
+      "merchantReference",
+      "isImportant",
+      "scans",
+      "items",
+      "metadata",
+    ])
+  ) {
+    return false;
+  }
+
+  return hasValidCreateInvoiceFields(value) && hasValidCreateInvoiceCollections(value);
+}
+
+function hasApprovedScanLocations(payload: CreateInvoiceInput, storageServiceRoot: string): boolean {
+  const storageAccountName = getStorageAccountName(storageServiceRoot);
+  return (
+    storageAccountName !== null
+    && payload.scans.every((scan) => {
+      try {
+        return (
+          !isHeicScanFileName(new URL(scan.location).pathname)
+          && isApprovedInvoiceScanLocation({
+            location: scan.location,
+            storageServiceRoot,
+            storageAccountName,
+          })
+        );
+      } catch {
+        return false;
+      }
+    })
+  );
+}
+
+function serializeCreateInvoicePayload(payload: CreateInvoiceInput): Omit<CreateInvoiceInput, "paymentInformation">
+  & Readonly<{
+    paymentInformation: (Omit<PaymentInformation, "transactionDate"> & Readonly<{transactionDate: string}>) | null;
+  }> {
+  return {
+    ...payload,
+    paymentInformation:
+      payload.paymentInformation === null
+        ? null
+        : {
+            ...payload.paymentInformation,
+            transactionDate: payload.paymentInformation.transactionDate.toISOString(),
+          },
+  };
+}
+
+function createSafeCreateInvoiceMessage(status: number): string {
+  if (status === 401 || status === 403) {
+    return "You are not authorized to create invoices.";
+  }
+
+  if (status === 400 || status === 422) {
+    return "Unable to create invoice with the provided details.";
+  }
+
+  return status >= 500 ? "Invoice creation is temporarily unavailable. Please try again." : "Unable to create invoice. Please try again.";
+}
 
 /**
- * Input type allowing partial payload (userIdentifier is auto-filled from auth).
+ * Creates an invoice from the exact client-editable creation DTO.
+ *
+ * @param input - Untrusted complete create DTO; owner identity is intentionally absent.
+ * @returns A fully parsed Date-rich invoice response or a client-safe action error.
  */
-type ServerActionInputType = Readonly<Partial<CreateInvoiceDtoPayload>>;
-
-/**
- * Returns the newly created Invoice entity with generated ID.
- */
-type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
-
-/**
- * Creates a new invoice entity in the backend system.
- *
- * @remarks
- * **Execution Context**: Server-side only (Next.js server action).
- *
- * **Authentication**: Automatically fetches JWT and user ID from Clerk.
- * If `userIdentifier` is not provided in payload, it's automatically
- * populated from the authenticated user.
- *
- * **Side Effects**:
- * - Creates new invoice aggregate in database
- * - Emits OpenTelemetry spans for tracing
- * - Associates invoice with authenticated user
- *
- * **Validation**:
- * - Backend validates all required fields
- * - Scan URL must be a valid Azure Blob URL
- *
- * @param payload - Partial invoice creation payload; `userIdentifier` is filled from the authenticated session when omitted.
- * @param payload.userIdentifier - Optional user GUID. The authenticated user's identifier is used when this is not provided.
- * @param payload.initialScan - Initial scan reference with type, location, and metadata for the new invoice.
- * @param payload.metadata - Creation metadata, including flags such as `isImportant` and `requiresAnalysis`.
- * @returns A result object containing the created invoice with its generated identifier, or an error result.
- *
- * @example
- * ```typescript
- * import {createInvoice} from "@/app/domains/invoices/_actions/invoices/createInvoice";
- * import {InvoiceScanType} from "@/types/invoices";
- *
- * const result = await createInvoice({
- *   initialScan: {
- *     scanType: InvoiceScanType.Photo,
- *     location: "https://storage.blob.core.windows.net/invoices/scan.jpg",
- *     metadata: {}
- *   },
- *   metadata: {
- *     isImportant: "false",
- *     requiresAnalysis: "true"
- *   }
- * });
- *
- * if (result.success) {
- *   console.log("Created invoice:", result.data.id);
- * } else {
- *   console.error("Failed to create invoice:", result.error);
- * }
- * ```
- *
- * @see {@link Invoice} for the returned entity structure
- */
-export async function createInvoice(payload: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{createInvoice}}, with:", {payload});
-
+export async function createInvoice(input: unknown): ServerActionResult<Readonly<Invoice>> {
   return withSpan("api.actions.invoices.createInvoice", async () => {
-    try {
-      // Step 1. Fetch user JWT for authentication
-      addSpanEvent("bff.user.jwt.fetch.start");
-      logWithTrace("info", "Fetching BFF user JWT for authentication...", {}, "server");
-      const {userIdentifier, userJwt: authToken} = await fetchBFFUserFromAuthService();
-      addSpanEvent("bff.user.jwt.fetch.complete");
+    if (!isCreateInvoiceInput(input)) {
+      return {success: false, error: {code: "VALIDATION_ERROR", message: "Invoice creation request is invalid."}};
+    }
 
-      // Step 2. Make the API request to create the invoice
+    try {
       addSpanEvent("bff.invoice.create.start");
-      logWithTrace("info", "Making API request to create invoice...", {}, "server");
+      const storageServiceRoot = await fetchConfigurationValue("Endpoints:Storage:Blob");
+      if (!hasApprovedScanLocations(input, storageServiceRoot)) {
+        addSpanEvent("bff.invoice.create.rejected", {errorCode: "VALIDATION_ERROR"});
+        logWithTrace("warn", "invoice.create.rejected", {errorCode: "VALIDATION_ERROR"}, "server");
+        return {success: false, error: {code: "VALIDATION_ERROR", message: "Invoice creation request is invalid."}};
+      }
+      const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       const response = await fetchWithTimeout("/rest/v1/invoices", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: payload.userIdentifier ? JSON.stringify(payload) : JSON.stringify({...payload, userIdentifier}),
+        body: JSON.stringify(serializeCreateInvoicePayload(input)),
       });
-      addSpanEvent("bff.invoice.create.complete");
 
-      if (response.ok) {
-        logWithTrace("info", "Successfully created invoice entity...", {}, "server");
-        const data = (await response.json()) as Invoice;
-        return {success: true, data} as const;
+      if (!response.ok) {
+        const code = mapHttpStatusToErrorCode(response.status);
+        addSpanEvent("bff.invoice.create.rejected", {httpStatus: response.status, errorCode: code});
+        logWithTrace("warn", "invoice.create.rejected", {httpStatus: response.status, errorCode: code}, "server");
+        return {
+          success: false,
+          error: {code, message: createSafeCreateInvoiceMessage(response.status), status: response.status},
+        };
       }
 
-      addSpanEvent("bff.invoice.create.error");
-      const errorText = await response.text();
-      const internalMessage = `Failed to create invoice: ${response.status} ${response.statusText}`;
-      logWithTrace("warn", internalMessage, {errorText}, "server");
-      const userMessage =
-        response.status >= 500
-          ? "A server error occurred. Please try again later."
-          : "Failed to create the invoice. Please check your input and try again.";
-      return createErrorResult(new Error(internalMessage), userMessage);
-    } catch (error: unknown) {
-      addSpanEvent("bff.invoice.create.error");
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error creating the invoice entity...", {error}, "server");
-      console.error("Error creating the invoice entity:", error);
-      return createErrorResult(new Error(errorMessage));
+      const responseBody: unknown = await response.json();
+      const invoice = parseInvoiceTransport(responseBody);
+      if (invoice === null) {
+        addSpanEvent("bff.invoice.create.invalid-response");
+        logWithTrace("warn", "invoice.create.invalid-response", undefined, "server");
+        return {success: false, error: {code: "SERVER_ERROR", message: "The invoice response was invalid. Please try again."}};
+      }
+
+      addSpanEvent("bff.invoice.create.complete");
+      logWithTrace("info", "invoice.create.complete", undefined, "server");
+      return {success: true, data: invoice};
+    } catch (error) {
+      addSpanEvent("bff.invoice.create.failed");
+      logWithTrace("error", "invoice.create.failed", {errorCode: "NETWORK_ERROR"}, "server");
+      return createErrorResult(error, "Unable to create invoice. Please try again.");
     }
-  }) satisfies ServerActionOutputType;
+  });
 }

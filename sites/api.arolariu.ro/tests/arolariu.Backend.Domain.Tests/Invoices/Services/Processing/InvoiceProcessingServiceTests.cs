@@ -94,72 +94,6 @@ public sealed class InvoiceProcessingServiceTests
 
   #endregion
 
-  #region AnalyzeInvoice Tests
-
-  /// <summary>
-  /// Validates successful invoice analysis execution.
-  /// </summary>
-  [TestMethod]
-  public async Task AnalyzeInvoice_ValidInput_CallsOrchestrationService()
-  {
-    // Arrange
-    var options = AnalysisOptions.CompleteAnalysis;
-    var invoiceId = Guid.NewGuid();
-    var userId = Guid.NewGuid();
-
-    mockInvoiceOrchestrationService
-        .Setup(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, userId, It.IsAny<CancellationToken>()))
-        .Returns(Task.CompletedTask);
-
-    // Act
-    await processingService.AnalyzeInvoice(options, invoiceId, userId, CancellationToken.None);
-
-    // Assert
-    mockInvoiceOrchestrationService.Verify(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
-  }
-
-  /// <summary>
-  /// Validates orchestration dependency exception is wrapped into processing dependency exception.
-  /// </summary>
-  [TestMethod]
-  public async Task AnalyzeInvoice_OrchestrationDependencyException_ThrowsProcessingDependencyException()
-  {
-    // Arrange
-    var options = AnalysisOptions.CompleteAnalysis;
-    var invoiceId = Guid.NewGuid();
-    var innerException = new InvalidOperationException("Database error");
-    var orchException = new InvoiceOrchestrationDependencyException(innerException);
-
-    mockInvoiceOrchestrationService
-        .Setup(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, null, It.IsAny<CancellationToken>()))
-        .ThrowsAsync(orchException);
-
-    // Act & Assert
-    await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceDependencyException>(() =>
-        processingService.AnalyzeInvoice(options, invoiceId, null, CancellationToken.None));
-  }
-
-  /// <summary>
-  /// Validates generic exception is wrapped into processing service exception.
-  /// </summary>
-  [TestMethod]
-  public async Task AnalyzeInvoice_GenericException_ThrowsProcessingServiceException()
-  {
-    // Arrange
-    var options = AnalysisOptions.CompleteAnalysis;
-    var invoiceId = Guid.NewGuid();
-
-    mockInvoiceOrchestrationService
-        .Setup(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, null, It.IsAny<CancellationToken>()))
-        .ThrowsAsync(new InvalidOperationException("Unexpected error"));
-
-    // Act & Assert
-    await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceException>(() =>
-        processingService.AnalyzeInvoice(options, invoiceId, null, CancellationToken.None));
-  }
-
-  #endregion
-
   #region CreateInvoice Tests
 
   /// <summary>
@@ -440,7 +374,6 @@ public sealed class InvoiceProcessingServiceTests
     mockInvoiceOrchestrationService
         .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(invoice);
-
     mockInvoiceOrchestrationService
         .Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(invoice);
@@ -450,7 +383,9 @@ public sealed class InvoiceProcessingServiceTests
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
-    mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
+    mockInvoiceOrchestrationService.Verify(
+      s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()),
+      Times.Once);
   }
 
   #endregion
@@ -534,43 +469,23 @@ public sealed class InvoiceProcessingServiceTests
   #region DeleteProduct Tests
 
   /// <summary>
-  /// Validates successful product deletion by name.
+  /// Validates successful product deletion by a deterministic snapshot.
   /// </summary>
   [TestMethod]
-  public async Task DeleteProductByName_ExistingProduct_RemovesFromInvoice()
-  {
-    // Arrange
-    var invoiceId = Guid.NewGuid();
-    var userId = Guid.NewGuid();
-    var invoice = InvoiceBuilder.CreateRandomInvoice();
-    var productName = invoice.Items.First().Name;
-
-    mockInvoiceOrchestrationService
-        .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(invoice);
-
-    mockInvoiceOrchestrationService
-        .Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(invoice);
-
-    // Act
-    await processingService.DeleteProduct(productName, invoiceId, userId, CancellationToken.None);
-
-    // Assert
-    mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
-  }
-
-  /// <summary>
-  /// Validates successful product deletion by product object.
-  /// </summary>
-  [TestMethod]
-  public async Task DeleteProductByObject_ExistingProduct_RemovesFromInvoice()
+  public async Task DeleteProduct_ExistingSnapshot_RemovesFromInvoice()
   {
     // Arrange
     var invoiceId = Guid.NewGuid();
     var userId = Guid.NewGuid();
     var invoice = InvoiceBuilder.CreateRandomInvoice();
     var product = invoice.Items.First();
+    var selector = new ProductUpdateSelector(
+      OriginalProductCode: null,
+      OriginalName: product.Name,
+      OriginalQuantity: product.Quantity,
+      OriginalUnitPrice: product.Price,
+      OriginalTotalPrice: product.TotalPrice,
+      OccurrenceOrdinal: null);
 
     mockInvoiceOrchestrationService
         .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
@@ -581,7 +496,42 @@ public sealed class InvoiceProcessingServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    await processingService.DeleteProduct(product, invoiceId, userId, CancellationToken.None);
+    await processingService.DeleteProduct(selector, invoiceId, userId, CancellationToken.None);
+
+    // Assert
+    mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
+  }
+
+  /// <summary>
+  /// Validates successful product deletion by product code.
+  /// </summary>
+  [TestMethod]
+  public async Task DeleteProduct_ExistingProductCode_RemovesFromInvoice()
+  {
+    // Arrange
+    var invoiceId = Guid.NewGuid();
+    var userId = Guid.NewGuid();
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    var product = invoice.Items.First();
+    product.ProductCode = "product-code";
+    var selector = new ProductUpdateSelector(
+      OriginalProductCode: "product-code",
+      OriginalName: null,
+      OriginalQuantity: null,
+      OriginalUnitPrice: null,
+      OriginalTotalPrice: null,
+      OccurrenceOrdinal: null);
+
+    mockInvoiceOrchestrationService
+        .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
+        .ReturnsAsync(invoice);
+
+    mockInvoiceOrchestrationService
+        .Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()))
+        .ReturnsAsync(invoice);
+
+    // Act
+    await processingService.DeleteProduct(selector, invoiceId, userId, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
@@ -604,18 +554,16 @@ public sealed class InvoiceProcessingServiceTests
     var scan = new InvoiceScan(ScanType.JPG, new Uri("https://example.com/scan.jpg"), null);
 
     mockInvoiceOrchestrationService
-        .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(invoice);
-
-    mockInvoiceOrchestrationService
-        .Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()))
+        .Setup(s => s.AttachInvoiceScanAsync(scan, invoiceId, userId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(invoice);
 
     // Act
     await processingService.CreateInvoiceScan(scan, invoiceId, userId, CancellationToken.None);
 
     // Assert
-    mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
+    mockInvoiceOrchestrationService.Verify(
+      s => s.AttachInvoiceScanAsync(scan, invoiceId, userId, It.IsAny<CancellationToken>()),
+      Times.Once);
   }
 
   #endregion

@@ -58,7 +58,6 @@ public static class ActivityExtensions
   private const string InvoiceTotalAmountKey = "invoice.total_amount";
   private const string InvoiceCurrencyKey = "invoice.currency";
   private const string MerchantIdKey = "merchant.id";
-  private const string MerchantNameKey = "merchant.name";
   private const string UserIdKey = "user.id";
 
   // Error semantic conventions
@@ -169,15 +168,10 @@ public static class ActivityExtensions
   /// </summary>
   /// <param name="activity">The activity to enrich.</param>
   /// <param name="merchantId">The merchant identifier.</param>
-  /// <param name="merchantName">Optional merchant name for display purposes.</param>
   /// <returns>The enriched activity for method chaining.</returns>
-  public static Activity? SetMerchantContext(this Activity? activity, Guid merchantId, string? merchantName = null)
+  public static Activity? SetMerchantContext(this Activity? activity, Guid merchantId)
   {
     activity?.SetTag(MerchantIdKey, merchantId.ToString());
-    if (!string.IsNullOrWhiteSpace(merchantName))
-    {
-      activity?.SetTag(MerchantNameKey, merchantName);
-    }
     return activity;
   }
 

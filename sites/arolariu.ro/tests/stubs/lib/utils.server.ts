@@ -20,13 +20,7 @@ import {vi} from "vitest";
 export type JwtVerificationResult = {valid: true; payload: Record<string, unknown>} | {valid: false; error: string};
 
 export type ServerActionErrorCode =
-  | "NETWORK_ERROR"
-  | "TIMEOUT_ERROR"
-  | "AUTH_ERROR"
-  | "NOT_FOUND"
-  | "VALIDATION_ERROR"
-  | "SERVER_ERROR"
-  | "UNKNOWN_ERROR";
+  "NETWORK_ERROR" | "TIMEOUT_ERROR" | "AUTH_ERROR" | "NOT_FOUND" | "VALIDATION_ERROR" | "SERVER_ERROR" | "UNKNOWN_ERROR";
 
 export type ServerActionResult<T> = Readonly<
   | {success: true; data: T; error?: never}
@@ -128,7 +122,7 @@ export async function createErrorResult<T>(error: unknown, defaultMessage?: stri
       success: false,
       error: {
         code: isTimeout ? "TIMEOUT_ERROR" : "NETWORK_ERROR",
-        message: error.message,
+        message: defaultMessage ?? (isTimeout ? "The request timed out. Please try again." : "A network error occurred. Please try again."),
         ...(status === undefined ? {} : {status}),
       },
     } as const;
@@ -140,7 +134,7 @@ export async function createErrorResult<T>(error: unknown, defaultMessage?: stri
     success: false,
     error: {
       code: "UNKNOWN_ERROR",
-      message: defaultMessage ?? (typeof error === "string" ? error : "An unknown error occurred"),
+      message: defaultMessage ?? "An unexpected error occurred. Please try again.",
       ...(status === undefined ? {} : {status}),
     },
   } as const;

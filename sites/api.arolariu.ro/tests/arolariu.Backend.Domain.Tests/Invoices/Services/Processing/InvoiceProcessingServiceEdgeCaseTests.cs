@@ -11,7 +11,10 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.O
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Orchestration;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions;
 using arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
@@ -82,7 +85,9 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
     await service.AddProduct(product, invoiceId, userId, CancellationToken.None);
 
     // Assert
-    mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
+    mockInvoiceOrchestrationService.Verify(
+      s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()),
+      Times.Once);
   }
 
   /// <summary>
@@ -107,7 +112,377 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
     await service.AddProduct(product, invoiceId, null, CancellationToken.None);
 
     // Assert
-    mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);
+    mockInvoiceOrchestrationService.Verify(
+      s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, null, It.IsAny<CancellationToken>()),
+      Times.Once);
+  }
+
+  /// <summary>
+  /// Verifies that sequential manual edits select the first and second indistinguishable products repeatedly.
+  /// </summary>
+  [TestMethod]
+  public async Task UpdateProduct_SequentialDuplicateEdits_UpdatesFirstAndSecondRepeatedly()
+  {
+    // Arrange
+    var invoiceId = Guid.NewGuid();
+    var first = new Product { Name = "Instant Coffee", Quantity = 1m, Price = 10m };
+    var second = new Product { Name = "Instant Coffee", Quantity = 1m, Price = 10m };
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    invoice.Items = [first, second];
+
+    mockInvoiceOrchestrationService
+      .Setup(service => service.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+    mockInvoiceOrchestrationService
+      .Setup(service => service.UpdateInvoiceObject(invoice, invoiceId, null, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+
+    var originalSnapshot = new ProductUpdateSelector(
+      OriginalProductCode: null,
+      OriginalName: "  instant   coffee ",
+      OriginalQuantity: 1m,
+      OriginalUnitPrice: 10m,
+      OriginalTotalPrice: 10m,
+      OccurrenceOrdinal: 0);
+
+    // Act
+    await service.UpdateProduct(
+      originalSnapshot,
+      new Product { Name = "Instant Coffee", ProductCode = "first-edited", Quantity = 1m, Price = 10m },
+      invoiceId,
+      null,
+      CancellationToken.None);
+    await service.UpdateProduct(
+      originalSnapshot with { OccurrenceOrdinal = 1 },
+      new Product { Name = "Instant Coffee", ProductCode = "second-edited", Quantity = 1m, Price = 10m },
+      invoiceId,
+      null,
+      CancellationToken.None);
+    await service.UpdateProduct(
+      originalSnapshot with { OccurrenceOrdinal = 1 },
+      new Product { Name = "Instant Coffee", ProductCode = "second-edited-again", Quantity = 1m, Price = 10m },
+      invoiceId,
+      null,
+      CancellationToken.None);
+
+    // Assert
+    Assert.AreEqual("first-edited", first.ProductCode);
+    Assert.AreEqual("second-edited-again", second.ProductCode);
+    mockInvoiceOrchestrationService.Verify(
+      service => service.UpdateInvoiceObject(invoice, invoiceId, null, It.IsAny<CancellationToken>()),
+      Times.Exactly(3));
+  }
+
+  /// <summary>
+  /// Verifies that a nonblank original product code takes precedence over the composite snapshot.
+  /// </summary>
+  [TestMethod]
+  public async Task UpdateProduct_OriginalProductCodeProvided_PrefersCodeMatch()
+  {
+    // Arrange
+    var invoiceId = Guid.NewGuid();
+    var nonMatchingCodeProduct = new Product
+    {
+      Name = "Coffee",
+      ProductCode = "other-code",
+      Quantity = 1m,
+      Price = 10m,
+    };
+    var codeMatchedProduct = new Product
+    {
+      Name = "Different Coffee",
+      ProductCode = "target-code",
+      Quantity = 9m,
+      Price = 99m,
+    };
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    invoice.Items = [nonMatchingCodeProduct, codeMatchedProduct];
+
+    mockInvoiceOrchestrationService
+      .Setup(service => service.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+    mockInvoiceOrchestrationService
+      .Setup(service => service.UpdateInvoiceObject(invoice, invoiceId, null, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+
+    var selector = new ProductUpdateSelector(
+      OriginalProductCode: " target-code ",
+      OriginalName: null,
+      OriginalQuantity: null,
+      OriginalUnitPrice: null,
+      OriginalTotalPrice: null,
+      OccurrenceOrdinal: null);
+
+    // Act
+    Product updated = await service.UpdateProduct(
+      selector,
+      new Product { Name = "Selected by code", Quantity = 2m, Price = 5m },
+      invoiceId,
+      null,
+      CancellationToken.None);
+
+    // Assert
+    Assert.AreSame(codeMatchedProduct, updated);
+    Assert.AreEqual("Coffee", nonMatchingCodeProduct.Name);
+    Assert.AreEqual("Selected by code", codeMatchedProduct.Name);
+  }
+
+  /// <summary>
+  /// Verifies that an occurrence ordinal beyond the matching set fails without an aggregate write.
+  /// </summary>
+  [TestMethod]
+  public async Task UpdateProduct_OccurrenceOrdinalOutOfRange_ThrowsTypedErrorWithoutWriting()
+  {
+    // Arrange
+    var invoiceId = Guid.NewGuid();
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    invoice.Items =
+    [
+      new Product { Name = "Coffee", Quantity = 1m, Price = 10m },
+      new Product { Name = "Coffee", Quantity = 1m, Price = 10m },
+    ];
+
+    mockInvoiceOrchestrationService
+      .Setup(service => service.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+
+    var selector = new ProductUpdateSelector(
+      OriginalProductCode: null,
+      OriginalName: "Coffee",
+      OriginalQuantity: 1m,
+      OriginalUnitPrice: 10m,
+      OriginalTotalPrice: 10m,
+      OccurrenceOrdinal: 2);
+
+    // Act + Assert
+    InvoiceProcessingServiceValidationException exception =
+      await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceValidationException>(() =>
+        service.UpdateProduct(
+          selector,
+          new Product { Name = "Replacement", Quantity = 1m, Price = 10m },
+          invoiceId,
+          null,
+          CancellationToken.None));
+
+    Assert.IsInstanceOfType<ProductUpdateSelectorOccurrenceOutOfRangeException>(exception.InnerException);
+    mockInvoiceOrchestrationService.Verify(
+      service => service.UpdateInvoiceObject(
+        It.IsAny<Invoice>(),
+        It.IsAny<Guid>(),
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()),
+      Times.Never);
+  }
+
+  /// <summary>
+  /// Verifies that indistinguishable composite matches require an explicit occurrence ordinal.
+  /// </summary>
+  [TestMethod]
+  public async Task UpdateProduct_IndistinguishableCompositeWithoutOrdinal_ThrowsTypedAmbiguousErrorWithoutWriting()
+  {
+    // Arrange
+    var invoiceId = Guid.NewGuid();
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    invoice.Items =
+    [
+      new Product { Name = "Coffee", Quantity = 1m, Price = 10m },
+      new Product { Name = "Coffee", Quantity = 1m, Price = 10m },
+    ];
+
+    mockInvoiceOrchestrationService
+      .Setup(service => service.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+
+    var selector = new ProductUpdateSelector(
+      OriginalProductCode: null,
+      OriginalName: "Coffee",
+      OriginalQuantity: 1m,
+      OriginalUnitPrice: 10m,
+      OriginalTotalPrice: 10m,
+      OccurrenceOrdinal: null);
+
+    // Act + Assert
+    InvoiceProcessingServiceValidationException exception =
+      await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceValidationException>(() =>
+        service.UpdateProduct(
+          selector,
+          new Product { Name = "Replacement", Quantity = 1m, Price = 10m },
+          invoiceId,
+          null,
+          CancellationToken.None));
+
+    Assert.IsInstanceOfType<ProductUpdateSelectorAmbiguousException>(exception.InnerException);
+    mockInvoiceOrchestrationService.Verify(
+      service => service.UpdateInvoiceObject(
+        It.IsAny<Invoice>(),
+        It.IsAny<Guid>(),
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()),
+      Times.Never);
+  }
+
+  /// <summary>
+  /// Verifies that no item is selected when the immutable composite snapshot does not match.
+  /// </summary>
+  [TestMethod]
+  public async Task UpdateProduct_CompositeSnapshotMismatch_ThrowsTypedNotFoundWithoutWriting()
+  {
+    // Arrange
+    var invoiceId = Guid.NewGuid();
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    invoice.Items = [new Product { Name = "Coffee", Quantity = 1m, Price = 10m }];
+
+    mockInvoiceOrchestrationService
+      .Setup(service => service.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+
+    var selector = new ProductUpdateSelector(
+      OriginalProductCode: null,
+      OriginalName: "Coffee",
+      OriginalQuantity: 1m,
+      OriginalUnitPrice: 9m,
+      OriginalTotalPrice: 9m,
+      OccurrenceOrdinal: null);
+
+    // Act + Assert
+    InvoiceProcessingServiceException exception =
+      await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceException>(() =>
+        service.UpdateProduct(
+          selector,
+          new Product { Name = "Replacement", Quantity = 1m, Price = 10m },
+          invoiceId,
+          null,
+          CancellationToken.None));
+
+    Assert.IsInstanceOfType<ProductNotFoundException>(exception.InnerException);
+    mockInvoiceOrchestrationService.Verify(
+      service => service.UpdateInvoiceObject(
+        It.IsAny<Invoice>(),
+        It.IsAny<Guid>(),
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()),
+      Times.Never);
+  }
+
+  /// <summary>
+  /// Verifies that a selected item retains server-owned state and writes the aggregate once.
+  /// </summary>
+  [TestMethod]
+  public async Task UpdateProduct_CodeSelection_PreservesServerStateAndWritesOnce()
+  {
+    // Arrange
+    var invoiceId = Guid.NewGuid();
+    var classification = new StandardClassification(
+      ClassificationSystem.Gs1Gpc,
+      "analysis-v1",
+      "10000025",
+      "Original classification",
+      [new ClassificationNode("brick", "10000025", "Original classification")],
+      ClassificationOrigin.Analysis,
+      confidence: 0.94,
+      evidence: [new ClassificationEvidence("analysis.product", "Whole Milk")]);
+    var persistedProduct = new Product
+    {
+      Name = "Whole Milk",
+      ProductCode = "persisted-code",
+      Quantity = 1m,
+      Price = 8m,
+      Classification = classification,
+      AllergenAssessment = AllergenAssessment.NoSignals(Guid.NewGuid()),
+      Metadata = new ProductMetadata
+      {
+        IsComplete = true,
+        IsSoftDeleted = true,
+        Confidence = 0.91,
+      },
+    };
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    invoice.Items = [persistedProduct];
+
+    mockInvoiceOrchestrationService
+      .Setup(service => service.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+    mockInvoiceOrchestrationService
+      .Setup(service => service.UpdateInvoiceObject(invoice, invoiceId, null, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+
+    var selector = new ProductUpdateSelector(
+      OriginalProductCode: "persisted-code",
+      OriginalName: null,
+      OriginalQuantity: null,
+      OriginalUnitPrice: null,
+      OriginalTotalPrice: null,
+      OccurrenceOrdinal: null);
+
+    // Act
+    Product updated = await service.UpdateProduct(
+      selector,
+      new Product
+      {
+        Name = "Organic Whole Milk",
+        ProductCode = "replacement-code",
+        Quantity = 3m,
+        QuantityUnit = "L",
+        Price = 11m,
+      },
+      invoiceId,
+      null,
+      CancellationToken.None);
+
+    // Assert
+    Assert.AreSame(persistedProduct, updated);
+    Assert.AreEqual("Organic Whole Milk", persistedProduct.Name);
+    Assert.AreEqual("replacement-code", persistedProduct.ProductCode);
+    Assert.AreEqual(3m, persistedProduct.Quantity);
+    Assert.AreEqual("L", persistedProduct.QuantityUnit);
+    Assert.AreEqual(11m, persistedProduct.Price);
+    Assert.AreSame(classification, persistedProduct.Classification);
+    Assert.AreEqual(AllergenAssessmentStatus.NoSignals, persistedProduct.AllergenAssessment!.Status);
+    Assert.IsTrue(persistedProduct.Metadata.IsEdited);
+    Assert.IsTrue(persistedProduct.Metadata.IsComplete);
+    Assert.IsTrue(persistedProduct.Metadata.IsSoftDeleted);
+    Assert.AreEqual(0.91, persistedProduct.Metadata.Confidence);
+    mockInvoiceOrchestrationService.Verify(
+      service => service.UpdateInvoiceObject(invoice, invoiceId, null, It.IsAny<CancellationToken>()),
+      Times.Once);
+  }
+
+  /// <summary>
+  /// Verifies that a malformed numeric snapshot is rejected before loading or writing an invoice.
+  /// </summary>
+  [TestMethod]
+  public async Task UpdateProduct_NegativeOriginalQuantity_ThrowsTypedValidationWithoutReading()
+  {
+    // Arrange
+    var selector = new ProductUpdateSelector(
+      OriginalProductCode: null,
+      OriginalName: "Coffee",
+      OriginalQuantity: -1m,
+      OriginalUnitPrice: 10m,
+      OriginalTotalPrice: -10m,
+      OccurrenceOrdinal: null);
+
+    // Act + Assert
+    InvoiceProcessingServiceValidationException exception =
+      await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceValidationException>(() =>
+        service.UpdateProduct(
+          selector,
+          new Product { Name = "Replacement", Quantity = 1m, Price = 10m },
+          Guid.NewGuid(),
+          null,
+          CancellationToken.None));
+
+    Assert.IsInstanceOfType<ProductUpdateSelectorValidationException>(exception.InnerException);
+    mockInvoiceOrchestrationService.Verify(
+      service => service.ReadInvoiceObject(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()),
+      Times.Never);
+    mockInvoiceOrchestrationService.Verify(
+      service => service.UpdateInvoiceObject(
+        It.IsAny<Invoice>(),
+        It.IsAny<Guid>(),
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()),
+      Times.Never);
   }
 
   /// <summary>
@@ -181,59 +556,203 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   }
 
   /// <summary>
-  /// Validates deleting a product by name.
+  /// Verifies that sequential duplicate deletions remove the requested current occurrence each time.
   /// </summary>
   [TestMethod]
-  public async Task DeleteProduct_ValidProductName_DeletesSuccessfully()
+  public async Task DeleteProduct_SequentialDuplicateSnapshots_RemovesIntendedRows()
   {
     // Arrange
-    var productName = "Test Product";
     var invoiceId = Guid.NewGuid();
-    var userId = Guid.NewGuid();
+    var first = new Product { Name = "Instant Coffee", Quantity = 1m, Price = 10m };
+    var second = new Product { Name = "Instant Coffee", Quantity = 1m, Price = 10m };
+    var third = new Product { Name = "Instant Coffee", Quantity = 1m, Price = 10m };
     var invoice = InvoiceBuilder.CreateRandomInvoice();
-    invoice.Items.Clear();
-    invoice.Items.Add(new Product { Name = productName });
+    invoice.Items = [first, second, third];
+    var selector = new ProductUpdateSelector(
+      OriginalProductCode: null,
+      OriginalName: " instant   coffee ",
+      OriginalQuantity: 1m,
+      OriginalUnitPrice: 10m,
+      OriginalTotalPrice: 10m,
+      OccurrenceOrdinal: 1);
 
     mockInvoiceOrchestrationService
-        .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(invoice);
+      .Setup(service => service.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
     mockInvoiceOrchestrationService
-        .Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(invoice);
+      .Setup(service => service.UpdateInvoiceObject(invoice, invoiceId, null, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
 
     // Act
-    await service.DeleteProduct(productName, invoiceId, userId, CancellationToken.None);
+    await service.DeleteProduct(selector, invoiceId, null, CancellationToken.None);
+    await service.DeleteProduct(selector, invoiceId, null, CancellationToken.None);
 
     // Assert
-    mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
+    CollectionAssert.AreEqual(new List<Product> { first }, invoice.Items.ToList());
+    mockInvoiceOrchestrationService.Verify(
+      service => service.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()),
+      Times.Exactly(2));
+    mockInvoiceOrchestrationService.Verify(
+      service => service.UpdateInvoiceObject(invoice, invoiceId, null, It.IsAny<CancellationToken>()),
+      Times.Exactly(2));
   }
 
   /// <summary>
-  /// Validates deleting a product by product object.
+  /// Verifies that an occurrence ordinal selects the intended product when product codes are duplicated.
   /// </summary>
   [TestMethod]
-  public async Task DeleteProduct_ByProductObject_DeletesSuccessfully()
+  public async Task DeleteProduct_DuplicateProductCodesWithOrdinal_RemovesSpecifiedRow()
   {
     // Arrange
-    var product = new Product { Name = "Test Product" };
     var invoiceId = Guid.NewGuid();
-    var userId = Guid.NewGuid();
+    var other = new Product { Name = "Other", ProductCode = "other-code", Quantity = 1m, Price = 10m };
+    var firstDuplicate = new Product { Name = "First", ProductCode = "duplicate-code", Quantity = 1m, Price = 10m };
+    var secondDuplicate = new Product { Name = "Second", ProductCode = "duplicate-code", Quantity = 2m, Price = 20m };
     var invoice = InvoiceBuilder.CreateRandomInvoice();
-    invoice.Items.Clear();
-    invoice.Items.Add(product);
+    invoice.Items = [other, firstDuplicate, secondDuplicate];
+    var selector = new ProductUpdateSelector(
+      OriginalProductCode: " duplicate-code ",
+      OriginalName: null,
+      OriginalQuantity: null,
+      OriginalUnitPrice: null,
+      OriginalTotalPrice: null,
+      OccurrenceOrdinal: 1);
 
     mockInvoiceOrchestrationService
-        .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(invoice);
+      .Setup(service => service.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
     mockInvoiceOrchestrationService
-        .Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(invoice);
+      .Setup(service => service.UpdateInvoiceObject(invoice, invoiceId, null, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
 
     // Act
-    await service.DeleteProduct(product, invoiceId, userId, CancellationToken.None);
+    await service.DeleteProduct(selector, invoiceId, null, CancellationToken.None);
 
     // Assert
-    mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
+    CollectionAssert.AreEqual(new List<Product> { other, firstDuplicate }, invoice.Items.ToList());
+    mockInvoiceOrchestrationService.Verify(
+      service => service.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()),
+      Times.Once);
+    mockInvoiceOrchestrationService.Verify(
+      service => service.UpdateInvoiceObject(invoice, invoiceId, null, It.IsAny<CancellationToken>()),
+      Times.Once);
+  }
+
+  /// <summary>
+  /// Verifies that an unmatched product deletion produces a typed not-found error without an aggregate write.
+  /// </summary>
+  [TestMethod]
+  public async Task DeleteProduct_CompositeSnapshotMismatch_ThrowsTypedNotFoundWithoutWriting()
+  {
+    // Arrange
+    var invoiceId = Guid.NewGuid();
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    invoice.Items = [new Product { Name = "Coffee", Quantity = 1m, Price = 10m }];
+    var selector = new ProductUpdateSelector(
+      OriginalProductCode: null,
+      OriginalName: "Coffee",
+      OriginalQuantity: 1m,
+      OriginalUnitPrice: 9m,
+      OriginalTotalPrice: 9m,
+      OccurrenceOrdinal: null);
+
+    mockInvoiceOrchestrationService
+      .Setup(service => service.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+
+    // Act + Assert
+    InvoiceProcessingServiceException exception =
+      await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceException>(() =>
+        service.DeleteProduct(selector, invoiceId, null, CancellationToken.None));
+
+    Assert.IsInstanceOfType<ProductNotFoundException>(exception.InnerException);
+    mockInvoiceOrchestrationService.Verify(
+      service => service.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()),
+      Times.Once);
+    mockInvoiceOrchestrationService.Verify(
+      service => service.UpdateInvoiceObject(
+        It.IsAny<Invoice>(),
+        It.IsAny<Guid>(),
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()),
+      Times.Never);
+  }
+
+  /// <summary>
+  /// Verifies that an out-of-range occurrence is rejected after loading but before writing the aggregate.
+  /// </summary>
+  [TestMethod]
+  public async Task DeleteProduct_OccurrenceOrdinalOutOfRange_ThrowsTypedValidationWithoutWriting()
+  {
+    // Arrange
+    var invoiceId = Guid.NewGuid();
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    invoice.Items =
+    [
+      new Product { Name = "Coffee", Quantity = 1m, Price = 10m },
+      new Product { Name = "Coffee", Quantity = 1m, Price = 10m },
+    ];
+    var selector = new ProductUpdateSelector(
+      OriginalProductCode: null,
+      OriginalName: "Coffee",
+      OriginalQuantity: 1m,
+      OriginalUnitPrice: 10m,
+      OriginalTotalPrice: 10m,
+      OccurrenceOrdinal: 2);
+
+    mockInvoiceOrchestrationService
+      .Setup(service => service.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+
+    // Act + Assert
+    InvoiceProcessingServiceValidationException exception =
+      await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceValidationException>(() =>
+        service.DeleteProduct(selector, invoiceId, null, CancellationToken.None));
+
+    Assert.IsInstanceOfType<ProductUpdateSelectorOccurrenceOutOfRangeException>(exception.InnerException);
+    mockInvoiceOrchestrationService.Verify(
+      service => service.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()),
+      Times.Once);
+    mockInvoiceOrchestrationService.Verify(
+      service => service.UpdateInvoiceObject(
+        It.IsAny<Invoice>(),
+        It.IsAny<Guid>(),
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()),
+      Times.Never);
+  }
+
+  /// <summary>
+  /// Verifies that malformed selector input is rejected before loading or writing an invoice.
+  /// </summary>
+  [TestMethod]
+  public async Task DeleteProduct_NegativeOriginalQuantity_ThrowsTypedValidationWithoutReading()
+  {
+    // Arrange
+    var selector = new ProductUpdateSelector(
+      OriginalProductCode: null,
+      OriginalName: "Coffee",
+      OriginalQuantity: -1m,
+      OriginalUnitPrice: 10m,
+      OriginalTotalPrice: -10m,
+      OccurrenceOrdinal: null);
+
+    // Act + Assert
+    InvoiceProcessingServiceValidationException exception =
+      await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceValidationException>(() =>
+        service.DeleteProduct(selector, Guid.NewGuid(), null, CancellationToken.None));
+
+    Assert.IsInstanceOfType<ProductUpdateSelectorValidationException>(exception.InnerException);
+    mockInvoiceOrchestrationService.Verify(
+      service => service.ReadInvoiceObject(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()),
+      Times.Never);
+    mockInvoiceOrchestrationService.Verify(
+      service => service.UpdateInvoiceObject(
+        It.IsAny<Invoice>(),
+        It.IsAny<Guid>(),
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()),
+      Times.Never);
   }
 
   /// <summary>
@@ -277,17 +796,16 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
     var invoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockInvoiceOrchestrationService
-        .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(invoice);
-    mockInvoiceOrchestrationService
-        .Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()))
+        .Setup(s => s.AttachInvoiceScanAsync(scan, invoiceId, userId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(invoice);
 
     // Act
     await service.CreateInvoiceScan(scan, invoiceId, userId, CancellationToken.None);
 
     // Assert
-    mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
+    mockInvoiceOrchestrationService.Verify(
+      s => s.AttachInvoiceScanAsync(scan, invoiceId, userId, It.IsAny<CancellationToken>()),
+      Times.Once);
   }
 
   /// <summary>
@@ -350,17 +868,16 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
     var invoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockInvoiceOrchestrationService
-        .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(invoice);
-    mockInvoiceOrchestrationService
-        .Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, null, It.IsAny<CancellationToken>()))
+        .Setup(s => s.AttachInvoiceScanAsync(scan, invoiceId, null, It.IsAny<CancellationToken>()))
         .ReturnsAsync(invoice);
 
     // Act
     await service.CreateInvoiceScan(scan, invoiceId, null, CancellationToken.None);
 
     // Assert
-    mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);
+    mockInvoiceOrchestrationService.Verify(
+      s => s.AttachInvoiceScanAsync(scan, invoiceId, null, It.IsAny<CancellationToken>()),
+      Times.Once);
   }
 
   #endregion
@@ -699,17 +1216,22 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   public async Task DeleteProduct_OrchestrationValidationException_ThrowsProcessingValidationException()
   {
     // Arrange
-    var productName = "Test";
     var invoiceId = Guid.NewGuid();
+    var selector = new ProductUpdateSelector(
+      OriginalProductCode: "test-product",
+      OriginalName: null,
+      OriginalQuantity: null,
+      OriginalUnitPrice: null,
+      OriginalTotalPrice: null,
+      OccurrenceOrdinal: null);
 
-    // Note: DeleteProduct calls ReadInvoiceObject without userIdentifier param
     mockInvoiceOrchestrationService
         .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new InvoiceOrchestrationValidationException(new InvalidOperationException("Validation error")));
 
     // Act & Assert
     await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceValidationException>(() =>
-        service.DeleteProduct(productName, invoiceId, null, CancellationToken.None));
+        service.DeleteProduct(selector, invoiceId, null, CancellationToken.None));
   }
 
   /// <summary>
@@ -760,7 +1282,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
     var invoiceId = Guid.NewGuid();
 
     mockInvoiceOrchestrationService
-        .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
+        .Setup(s => s.AttachInvoiceScanAsync(scan, invoiceId, null, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
@@ -886,72 +1408,6 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
     {
       Assert.IsNotNull(r);
     }
-  }
-
-  #endregion
-
-  #region Analysis Tests
-
-  /// <summary>
-  /// Validates invoice analysis with valid options.
-  /// </summary>
-  [TestMethod]
-  public async Task AnalyzeInvoice_ValidOptions_AnalyzesSuccessfully()
-  {
-    // Arrange
-    var options = new AnalysisOptions();
-    var invoiceId = Guid.NewGuid();
-    var userId = Guid.NewGuid();
-
-    mockInvoiceOrchestrationService
-        .Setup(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, userId, It.IsAny<CancellationToken>()))
-        .Returns(Task.CompletedTask);
-
-    // Act
-    await service.AnalyzeInvoice(options, invoiceId, userId, CancellationToken.None);
-
-    // Assert
-    mockInvoiceOrchestrationService.Verify(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
-  }
-
-  /// <summary>
-  /// Validates invoice analysis with null user identifier.
-  /// </summary>
-  [TestMethod]
-  public async Task AnalyzeInvoice_NullUserIdentifier_AnalyzesSuccessfully()
-  {
-    // Arrange
-    var options = new AnalysisOptions();
-    var invoiceId = Guid.NewGuid();
-
-    mockInvoiceOrchestrationService
-        .Setup(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, null, It.IsAny<CancellationToken>()))
-        .Returns(Task.CompletedTask);
-
-    // Act
-    await service.AnalyzeInvoice(options, invoiceId, null, CancellationToken.None);
-
-    // Assert
-    mockInvoiceOrchestrationService.Verify(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, null, It.IsAny<CancellationToken>()), Times.Once);
-  }
-
-  /// <summary>
-  /// Validates orchestration dependency exception during analysis is wrapped.
-  /// </summary>
-  [TestMethod]
-  public async Task AnalyzeInvoice_OrchestrationDependencyException_ThrowsProcessingDependencyException()
-  {
-    // Arrange
-    var options = new AnalysisOptions();
-    var invoiceId = Guid.NewGuid();
-
-    mockInvoiceOrchestrationService
-        .Setup(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, null, It.IsAny<CancellationToken>()))
-        .ThrowsAsync(new InvoiceOrchestrationDependencyException(new InvalidOperationException("Dependency error")));
-
-    // Act & Assert
-    await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceDependencyException>(() =>
-        service.AnalyzeInvoice(options, invoiceId, null, CancellationToken.None));
   }
 
   #endregion

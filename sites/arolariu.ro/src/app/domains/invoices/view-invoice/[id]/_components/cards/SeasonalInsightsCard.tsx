@@ -1,9 +1,9 @@
 "use client";
 
 import {toRON} from "@/lib/currency";
-import {formatCurrency, formatEnum, toSafeDate} from "@/lib/utils.generic";
+import {formatCurrency, toSafeDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
-import {ProductCategory, type Invoice} from "@/types/invoices";
+import type {Invoice} from "@/types/invoices";
 import {Card, CardContent, CardHeader, CardTitle, Progress} from "@arolariu/components";
 import {useLocale, type TranslationValues} from "next-intl";
 import {selectorFromPath, useTranslations} from "next-intl-selector";
@@ -23,12 +23,18 @@ type Insight = {
 type SeasonalTranslateFn = (key: string, values?: TranslationValues) => string;
 
 /**
- * Calculate category spending totals from invoice items.
+ * Calculates canonical GPC group spending totals from invoice items.
  */
-function calculateCategorySpending(invoice: Invoice): Record<ProductCategory, number> {
-  const categorySpending: Record<ProductCategory, number> = {} as Record<ProductCategory, number>;
+function calculateCategorySpending(invoice: Invoice): Map<string, {label: string; amount: number}> {
+  const categorySpending = new Map<string, {label: string; amount: number}>();
   for (const item of invoice.items) {
-    categorySpending[item.category] = (categorySpending[item.category] || 0) + item.totalPrice;
+    const group =
+      item.classification?.hierarchy.find((node) => node.level.toLocaleLowerCase("en-US") === "segment")
+      ?? item.classification?.hierarchy.find((node) => node.level.toLocaleLowerCase("en-US") === "family")
+      ?? item.classification?.hierarchy[0];
+    const key = group === undefined || item.classification === null ? "unclassified" : `${item.classification.system}:${group.code}`;
+    const existing = categorySpending.get(key) ?? {label: group?.officialLabel ?? "Unclassified", amount: 0};
+    categorySpending.set(key, {...existing, amount: existing.amount + item.totalPrice});
   }
   return categorySpending;
 }
@@ -36,23 +42,21 @@ function calculateCategorySpending(invoice: Invoice): Record<ProductCategory, nu
 /**
  * Calculate historical average spending by category from real invoices.
  */
-function calculateHistoricalAverage(invoices: ReadonlyArray<Invoice>): Record<ProductCategory, {total: number; count: number}> {
-  const historicalAvg: Record<ProductCategory, {total: number; count: number}> = {} as Record<
-    ProductCategory,
-    {total: number; count: number}
-  >;
+function calculateHistoricalAverage(invoices: ReadonlyArray<Invoice>): Map<string, {total: number; count: number}> {
+  const historicalAvg = new Map<string, {total: number; count: number}>();
 
   for (const inv of invoices) {
     for (const item of inv.items) {
       if (item.metadata.isSoftDeleted) {
         // Skip soft-deleted items
       } else {
-        const {category, totalPrice} = item;
-        if (!historicalAvg[category]) {
-          historicalAvg[category] = {total: 0, count: 0};
-        }
-        historicalAvg[category].total += totalPrice ?? 0;
-        historicalAvg[category].count += 1;
+        const group =
+          item.classification?.hierarchy.find((node) => node.level.toLocaleLowerCase("en-US") === "segment")
+          ?? item.classification?.hierarchy.find((node) => node.level.toLocaleLowerCase("en-US") === "family")
+          ?? item.classification?.hierarchy[0];
+        const key = group === undefined || item.classification === null ? "unclassified" : `${item.classification.system}:${group.code}`;
+        const existing = historicalAvg.get(key) ?? {total: 0, count: 0};
+        historicalAvg.set(key, {total: existing.total + item.totalPrice, count: existing.count + 1});
       }
     }
   }
@@ -63,26 +67,25 @@ function calculateHistoricalAverage(invoices: ReadonlyArray<Invoice>): Record<Pr
  * Detect spending spikes compared to historical averages.
  */
 function detectSpendingSpikes(
-  categorySpending: Record<ProductCategory, number>,
-  historicalAvg: Record<ProductCategory, {total: number; count: number}>,
+  categorySpending: ReadonlyMap<string, {label: string; amount: number}>,
+  historicalAvg: ReadonlyMap<string, {total: number; count: number}>,
   translate: SeasonalTranslateFn,
 ): Insight[] {
   const insights: Insight[] = [];
-  for (const [cat, amount] of Object.entries(categorySpending)) {
-    const category = Number.parseInt(cat, 10) as ProductCategory;
-    const avg = historicalAvg[category];
+  for (const [classificationKey, data] of categorySpending.entries()) {
+    const avg = historicalAvg.get(classificationKey);
     const hasValidAverage = avg && avg.count > 0;
 
     if (hasValidAverage) {
       const avgAmount = avg.total / avg.count;
-      const percentChange = ((amount - avgAmount) / avgAmount) * 100;
+      const percentChange = ((data.amount - avgAmount) / avgAmount) * 100;
       const isSignificantSpike = percentChange > 100;
 
       if (isSignificantSpike) {
         insights.push({
-          id: `spike-${category}`,
+          id: `spike-${classificationKey}`,
           icon: <TbTrendingUp className={styles["iconSm"]} />,
-          title: translate("insights.spike.title", {category: formatEnum(ProductCategory, category) as string}),
+          title: translate("insights.spike.title", {category: data.label}),
           description: translate("insights.spike.description", {percent: percentChange.toFixed(0)}),
           type: "warning",
         });

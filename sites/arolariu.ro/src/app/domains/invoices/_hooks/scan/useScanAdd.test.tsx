@@ -177,9 +177,8 @@ describe("useScanAdd", () => {
         payload: {
           type: InvoiceScanType.PNG,
           location: scanBlobUrl,
-          additionalMetadata: {
+          metadata: {
             sourceScanId: "99999999-9999-4999-8999-999999999999",
-            sourceOwnerId: "user-1",
             displayName: "receipt.png",
             documentKind: "receipt",
             documentRole: "supplement",
@@ -188,7 +187,6 @@ describe("useScanAdd", () => {
           },
         },
       });
-      expect(attachCall?.payload.additionalMetadata["attachedAt"]).toBeDefined();
       expect(mockToast.success).toHaveBeenCalledWith("Scan added successfully");
       expect(result.current.isAdding).toBe(false);
     });

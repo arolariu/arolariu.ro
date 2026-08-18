@@ -7,7 +7,9 @@ using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Tests.Builders;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -62,7 +64,7 @@ public sealed class EntityTests
   /// Verifies Invoice default category is NOT_DEFINED.
   /// </summary>
   [TestMethod]
-  public void Invoice_DefaultCategory_IsNotDefined()
+  public void Invoice_DefaultClassification_IsUnclassified()
   {
     // Arrange
     var invoice = new Invoice
@@ -72,7 +74,7 @@ public sealed class EntityTests
     };
 
     // Assert
-    Assert.AreEqual(InvoiceCategory.NOT_DEFINED, invoice.Category);
+    Assert.IsNull(invoice.Classification);
   }
 
   /// <summary>
@@ -93,27 +95,37 @@ public sealed class EntityTests
   }
 
   /// <summary>
-  /// Verifies Invoice category can be set to different values.
+  /// Verifies Invoice classification can be set to a standard taxonomy classification.
   /// </summary>
   [TestMethod]
-  [DataRow(InvoiceCategory.NOT_DEFINED)]
-  [DataRow(InvoiceCategory.GROCERY)]
-  [DataRow(InvoiceCategory.FAST_FOOD)]
-  [DataRow(InvoiceCategory.HOME_CLEANING)]
-  [DataRow(InvoiceCategory.CAR_AUTO)]
-  [DataRow(InvoiceCategory.OTHER)]
-  public void Invoice_SetCategory_CategoryIsSet(InvoiceCategory category)
+  public void Invoice_SetClassification_ClassificationIsSet()
   {
     // Arrange
+    var classification = ClassificationTestData.Ecoicop("01.1", "Food");
+
     var invoice = new Invoice
     {
       id = Guid.NewGuid(),
       UserIdentifier = Guid.NewGuid(),
-      Category = category
+      Classification = classification
     };
 
     // Assert
-    Assert.AreEqual(category, invoice.Category);
+    Assert.AreEqual(classification, invoice.Classification);
+    Assert.AreEqual(ClassificationSystem.EcoicopV2, invoice.Classification!.System);
+  }
+
+  /// <summary>
+  /// Verifies Invoice classification defaults to unclassified.
+  /// </summary>
+  [TestMethod]
+  public void Invoice_DefaultClassification_IsNull()
+  {
+    // Arrange
+    var invoice = new Invoice { id = Guid.NewGuid(), UserIdentifier = Guid.NewGuid() };
+
+    // Assert
+    Assert.IsNull(invoice.Classification);
   }
 
   /// <summary>
@@ -265,11 +277,11 @@ public sealed class EntityTests
     {
       id = Guid.NewGuid(),
       UserIdentifier = Guid.NewGuid(),
-      PossibleRecipes = new List<Recipe>
-            {
-                new Recipe { Name = "Recipe 1", Complexity = RecipeComplexity.EASY },
-                new Recipe { Name = "Recipe 2", Complexity = RecipeComplexity.HARD }
-            }
+      PossibleRecipes = new List<RecipeSuggestion>
+      {
+        BuildRecipe("Recipe 1", RecipeDifficulty.Easy),
+        BuildRecipe("Recipe 2", RecipeDifficulty.Hard),
+      }
     };
 
     // Assert
@@ -385,7 +397,7 @@ public sealed class EntityTests
     {
       id = Guid.NewGuid(),
       Name = "Test Merchant",
-      Category = MerchantCategory.SUPERMARKET,
+      Classification = ClassificationTestData.Nace("47.11", "Retail sale in non-specialised stores"),
       ParentCompanyId = Guid.NewGuid()
     };
 
@@ -393,20 +405,20 @@ public sealed class EntityTests
     Assert.IsNotNull(merchant);
     Assert.AreNotEqual(Guid.Empty, merchant.id);
     Assert.AreEqual("Test Merchant", merchant.Name);
-    Assert.AreEqual(MerchantCategory.SUPERMARKET, merchant.Category);
+    Assert.AreEqual("47.11", merchant.Classification!.Code);
   }
 
   /// <summary>
-  /// Verifies Merchant default category is OTHER.
+  /// Verifies Merchant default classification is unclassified.
   /// </summary>
   [TestMethod]
-  public void Merchant_DefaultCategory_IsOther()
+  public void Merchant_DefaultClassification_IsUnclassified()
   {
     // Arrange
     var merchant = new Merchant();
 
     // Assert
-    Assert.AreEqual(MerchantCategory.OTHER, merchant.Category);
+    Assert.IsNull(merchant.Classification);
   }
 
   /// <summary>
@@ -475,22 +487,32 @@ public sealed class EntityTests
   }
 
   /// <summary>
-  /// Verifies MerchantCategory can be set on Merchant.
+  /// Verifies a standard classification can be set on Merchant.
   /// </summary>
   [TestMethod]
-  [DataRow(MerchantCategory.NOT_DEFINED)]
-  [DataRow(MerchantCategory.LOCAL_SHOP)]
-  [DataRow(MerchantCategory.SUPERMARKET)]
-  [DataRow(MerchantCategory.HYPERMARKET)]
-  [DataRow(MerchantCategory.ONLINE_SHOP)]
-  [DataRow(MerchantCategory.OTHER)]
-  public void MerchantCategory_CanBeSetOnMerchant(MerchantCategory category)
+  public void MerchantClassification_CanBeSetOnMerchant()
   {
     // Arrange
-    var merchant = new Merchant { Category = category };
+    var classification = ClassificationTestData.Nace("47.11", "Retail sale in non-specialised stores");
+
+    var merchant = new Merchant { Classification = classification };
 
     // Assert
-    Assert.AreEqual(category, merchant.Category);
+    Assert.AreEqual(classification, merchant.Classification);
+    Assert.AreEqual(ClassificationSystem.Nace21, merchant.Classification!.System);
+  }
+
+  /// <summary>
+  /// Verifies Merchant classification defaults to unclassified.
+  /// </summary>
+  [TestMethod]
+  public void MerchantClassification_DefaultsToNull()
+  {
+    // Arrange
+    var merchant = new Merchant();
+
+    // Assert
+    Assert.IsNull(merchant.Classification);
   }
 
   /// <summary>
@@ -703,6 +725,9 @@ public sealed class EntityTests
   [DataRow(ScanType.PDF)]
   [DataRow(ScanType.OTHER)]
   [DataRow(ScanType.UNKNOWN)]
+  [DataRow(ScanType.BMP)]
+  [DataRow(ScanType.TIFF)]
+  [DataRow(ScanType.HEIF)]
   public void ScanType_AllValues_AreDefined(ScanType scanType)
   {
     // Assert
@@ -719,6 +744,9 @@ public sealed class EntityTests
   [DataRow("PDF")]
   [DataRow("OTHER")]
   [DataRow("UNKNOWN")]
+  [DataRow("BMP")]
+  [DataRow("TIFF")]
+  [DataRow("HEIF")]
   public void ScanType_ParseFromString_ReturnsCorrectValue(string scanTypeName)
   {
     // Act
@@ -730,63 +758,46 @@ public sealed class EntityTests
 
   #endregion
 
-  #region InvoiceCategory Enum Tests
+  #region ClassificationSystem Enum Tests
 
   /// <summary>
-  /// Verifies InvoiceCategory enum has NOT_DEFINED as valid value.
+  /// Verifies ClassificationSystem enum has EcoicopV2 as a valid value.
   /// </summary>
   [TestMethod]
-  public void InvoiceCategory_NotDefined_IsDefined()
+  public void ClassificationSystem_Ecoicop_IsDefined()
   {
     // Assert
-    Assert.IsTrue(Enum.IsDefined<InvoiceCategory>(InvoiceCategory.NOT_DEFINED));
+    Assert.IsTrue(Enum.IsDefined<ClassificationSystem>(ClassificationSystem.EcoicopV2));
   }
 
   /// <summary>
-  /// Verifies InvoiceCategory has multiple category options.
+  /// Verifies every classification system backing the cutover taxonomy is defined.
   /// </summary>
   [TestMethod]
-  [DataRow(InvoiceCategory.NOT_DEFINED)]
-  [DataRow(InvoiceCategory.GROCERY)]
-  [DataRow(InvoiceCategory.FAST_FOOD)]
-  [DataRow(InvoiceCategory.HOME_CLEANING)]
-  [DataRow(InvoiceCategory.CAR_AUTO)]
-  [DataRow(InvoiceCategory.OTHER)]
-  public void InvoiceCategory_AllValues_AreDefined(InvoiceCategory category)
+  [DataRow(ClassificationSystem.EcoicopV2)]
+  [DataRow(ClassificationSystem.Gs1Gpc)]
+  [DataRow(ClassificationSystem.Nace21)]
+  public void ClassificationSystem_AllValues_AreDefined(ClassificationSystem system)
   {
     // Assert
-    Assert.IsTrue(Enum.IsDefined<InvoiceCategory>(category));
+    Assert.IsTrue(Enum.IsDefined<ClassificationSystem>(system));
   }
 
   #endregion
 
-  #region MerchantCategory Enum Tests
-
-  /// <summary>
-  /// Verifies MerchantCategory enum has OTHER as valid value.
-  /// </summary>
-  [TestMethod]
-  public void MerchantCategory_Other_IsDefined()
-  {
-    // Assert
-    Assert.IsTrue(Enum.IsDefined<MerchantCategory>(MerchantCategory.OTHER));
-  }
-
-  /// <summary>
-  /// Verifies MerchantCategory has multiple category options.
-  /// </summary>
-  [TestMethod]
-  [DataRow(MerchantCategory.NOT_DEFINED)]
-  [DataRow(MerchantCategory.LOCAL_SHOP)]
-  [DataRow(MerchantCategory.SUPERMARKET)]
-  [DataRow(MerchantCategory.HYPERMARKET)]
-  [DataRow(MerchantCategory.ONLINE_SHOP)]
-  [DataRow(MerchantCategory.OTHER)]
-  public void MerchantCategory_AllValues_AreDefined(MerchantCategory category)
-  {
-    // Assert
-    Assert.IsTrue(Enum.IsDefined<MerchantCategory>(category));
-  }
-
-  #endregion
+  private static RecipeSuggestion BuildRecipe(string name, RecipeDifficulty difficulty) =>
+    new(
+      name,
+      $"{name} description.",
+      2,
+      10,
+      20,
+      30,
+      difficulty,
+      [new RecipeIngredient("Flour", "500 g", null)],
+      [new RecipeIngredient("Salt", "1 tsp", null)],
+      [],
+      [new RecipeStep(1, "Mix everything.", null)],
+      [],
+      Guid.NewGuid());
 }

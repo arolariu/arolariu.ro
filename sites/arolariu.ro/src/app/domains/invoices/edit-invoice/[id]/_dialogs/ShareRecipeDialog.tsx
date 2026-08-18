@@ -26,7 +26,7 @@ export default function ShareRecipeDialog(): React.JSX.Element {
     close,
   } = useDialog("EDIT_INVOICE__RECIPE_SHARE", "share");
   const recipe = payload?.recipe ?? null;
-  const shareUrl = recipe?.referenceForMoreDetails.trim() ?? "";
+  const shareUrl = recipe === null ? "" : [recipe.name, recipe.description, ...recipe.steps.map((step) => step.instruction)].join("\n");
 
   const handleCopy = useCallback(async () => {
     if (!shareUrl) {

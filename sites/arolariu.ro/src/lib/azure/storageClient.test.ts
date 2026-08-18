@@ -96,7 +96,7 @@ describe("storageClient", () => {
       const original = process.env["AZURE_CLIENT_ID"];
       delete process.env["AZURE_CLIENT_ID"];
       try {
-        const client = await createBlobClient("http://azurite:10000/devstoreaccount1");
+        const client = await createBlobClient("http://localhost:10000/devstoreaccount1");
         expect(mockFromConnectionString).toHaveBeenCalledOnce();
         expect(client).toBeDefined();
       } finally {
@@ -114,8 +114,8 @@ describe("storageClient", () => {
       const original = process.env["AZURE_CLIENT_ID"];
       process.env["AZURE_CLIENT_ID"] = "test-client-id";
       try {
-        await expect(createBlobClient("http://azurite:10000/devstoreaccount1")).rejects.toThrow(
-          "HTTP storage endpoints are not allowed in production",
+        await expect(createBlobClient("http://localhost:10000/devstoreaccount1")).rejects.toThrow(
+          "HTTP storage endpoints are allowed only for configured loopback Azurite",
         );
       } finally {
         if (original !== undefined) {
@@ -123,6 +123,18 @@ describe("storageClient", () => {
         } else {
           delete process.env["AZURE_CLIENT_ID"];
         }
+      }
+    });
+
+    it("rejects non-loopback HTTP even when no managed identity is configured", async () => {
+      const original = process.env["AZURE_CLIENT_ID"];
+      delete process.env["AZURE_CLIENT_ID"];
+      try {
+        await expect(createBlobClient("http://azurite:10000/devstoreaccount1")).rejects.toThrow(
+          "HTTP storage endpoints are allowed only for configured loopback Azurite",
+        );
+      } finally {
+        if (original !== undefined) process.env["AZURE_CLIENT_ID"] = original;
       }
     });
   });
@@ -141,7 +153,7 @@ describe("storageClient", () => {
       delete process.env["AZURE_CLIENT_ID"];
       try {
         const result = await createBlobUploadTarget({
-          storageEndpoint: "http://azurite:10000/devstoreaccount1",
+          storageEndpoint: "http://localhost:10000/devstoreaccount1",
           containerName: "test-container",
           blobName: "test-blob.jpg",
           contentType: "image/jpeg",
@@ -228,7 +240,7 @@ describe("storageClient", () => {
       try {
         const content = new Uint8Array([1, 2, 3]);
         const result = await uploadBlobObject({
-          storageEndpoint: "http://azurite:10000/devstoreaccount1",
+          storageEndpoint: "http://localhost:10000/devstoreaccount1",
           containerName: "test-container",
           blobName: "test-blob.jpg",
           content,
@@ -289,7 +301,7 @@ describe("storageClient", () => {
       delete process.env["AZURE_CLIENT_ID"];
       try {
         const result = await listBlobObjects({
-          storageEndpoint: "http://azurite:10000/devstoreaccount1",
+          storageEndpoint: "http://localhost:10000/devstoreaccount1",
           containerName: "test-container",
           prefix: "prefix/",
           includeMetadata: true,
@@ -329,7 +341,7 @@ describe("storageClient", () => {
       delete process.env["AZURE_CLIENT_ID"];
       try {
         const result = await getBlobObject({
-          storageEndpoint: "http://azurite:10000/devstoreaccount1",
+          storageEndpoint: "http://localhost:10000/devstoreaccount1",
           containerName: "test-container",
           blobName: "test-blob.jpg",
         });
@@ -371,7 +383,7 @@ describe("storageClient", () => {
       try {
         const content = new Uint8Array([4, 5, 6]);
         const result = await updateBlobObject({
-          storageEndpoint: "http://azurite:10000/devstoreaccount1",
+          storageEndpoint: "http://localhost:10000/devstoreaccount1",
           containerName: "test-container",
           blobName: "test-blob.jpg",
           content,
@@ -412,7 +424,7 @@ describe("storageClient", () => {
       delete process.env["AZURE_CLIENT_ID"];
       try {
         const result = await updateBlobObject({
-          storageEndpoint: "http://azurite:10000/devstoreaccount1",
+          storageEndpoint: "http://localhost:10000/devstoreaccount1",
           containerName: "test-container",
           blobName: "test-blob.jpg",
           metadata: {status: "processed"},
@@ -442,7 +454,7 @@ describe("storageClient", () => {
       delete process.env["AZURE_CLIENT_ID"];
       try {
         const result = await deleteBlobObject({
-          storageEndpoint: "http://azurite:10000/devstoreaccount1",
+          storageEndpoint: "http://localhost:10000/devstoreaccount1",
           containerName: "test-container",
           blobName: "test-blob.jpg",
         });
@@ -494,7 +506,7 @@ describe("storageClient", () => {
       delete process.env["AZURE_CLIENT_ID"];
       try {
         const result = await resolveBlobObjectByMetadata({
-          storageEndpoint: "http://azurite:10000/devstoreaccount1",
+          storageEndpoint: "http://localhost:10000/devstoreaccount1",
           containerName: "test-container",
           prefix: "prefix/",
           predicate: (blob) => blob.metadata["status"] === "processed",
@@ -536,7 +548,7 @@ describe("storageClient", () => {
       delete process.env["AZURE_CLIENT_ID"];
       try {
         const result = await resolveBlobObjectByMetadata({
-          storageEndpoint: "http://azurite:10000/devstoreaccount1",
+          storageEndpoint: "http://localhost:10000/devstoreaccount1",
           containerName: "test-container",
           prefix: "prefix/",
           predicate: (blob) => blob.metadata["status"] === "processed",

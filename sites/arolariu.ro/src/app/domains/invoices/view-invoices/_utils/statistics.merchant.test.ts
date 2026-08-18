@@ -5,7 +5,7 @@
 
 import {describe, expect, it} from "vitest";
 
-// Import types
+import {buildInvoice, buildPaymentInformation, buildProduct} from "../../../../../../tests/helpers/builders/domain";
 import type {Invoice} from "@/types/invoices";
 
 // Import functions to test
@@ -21,35 +21,22 @@ let invoiceIdCounter = 0;
  */
 function createMockInvoice(merchantId: string, amount: number, date: Date, itemCount: number = 0): Invoice {
   const invoiceId = `test-invoice-${merchantId}-${invoiceIdCounter++}`;
-  return {
+  return buildInvoice({
     id: invoiceId,
     name: `Invoice ${merchantId}`,
-    description: "Test invoice",
     createdAt: date,
     lastUpdatedAt: date,
-    userIdentifier: "user-123",
     merchantReference: merchantId,
-    category: 0,
-    scans: [],
-    paymentInformation: {
-      transactionDate: date,
-      totalCostAmount: amount,
-      currency: {code: "RON", symbol: "RON", name: "Romanian Leu"},
-      currencyCode: "RON",
-      paymentType: 200,
-      isValid: true,
-    },
-    items: Array.from({length: itemCount}, (_, index) => ({
-      id: `product-${invoiceId}-${index}`,
-      name: `Product ${index}`,
-      productIdentifier: `prod-${invoiceId}-${index}`,
-      quantity: 1,
-      unitPrice: amount / Math.max(1, itemCount),
-      totalPrice: amount,
-      category: null,
-    })),
-    possibleRecipes: [],
-  } as unknown as Invoice;
+    paymentInformation: {...buildPaymentInformation(), transactionDate: date, totalCostAmount: amount},
+    items: Array.from({length: itemCount}, (_, index) =>
+      buildProduct({
+        name: `Product ${index}`,
+        quantity: 1,
+        price: amount / Math.max(1, itemCount),
+        totalPrice: amount / Math.max(1, itemCount),
+      }),
+    ),
+  });
 }
 
 describe("Merchant Analytics", () => {

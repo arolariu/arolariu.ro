@@ -1,0 +1,351 @@
+/**
+ * @fileoverview Real-module durable-analysis tests for the create-invoice context.
+ * @module app/domains/invoices/create-invoice/_context/CreateInvoiceContext.test
+ */
+
+import {analysisRouter} from "@/../tests/helpers/analysisNavigation";
+import {ANALYSIS_API_URL, getAnalysisApiRequests, installAnalysisFetchHandler} from "@/../tests/helpers/analysisBoundary";
+import {useScansStore} from "@/stores";
+import {ClassificationSystem, type ClassificationSelection} from "@/types/invoices";
+import type {CachedScan} from "@/types/scans";
+import {ScanStatus, ScanType} from "@/types/scans";
+import {act, render, screen, waitFor} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import {beforeEach, describe, expect, it, vi} from "vitest";
+import {AnalysisTestProvider} from "../../../../../../tests/helpers/analysis";
+import {buildInvoice} from "../../../../../../tests/helpers/builders/domain";
+import InvoiceDetailsForm from "../_components/InvoiceDetailsForm";
+import {CreateInvoiceProvider, useCreateInvoiceContext} from "./CreateInvoiceContext";
+
+const invoiceIdentifier = "11111111-1111-4111-8111-111111111111";
+const {mockUpdateScan} = vi.hoisted(() => ({mockUpdateScan: vi.fn()}));
+
+vi.mock("../../_actions/scans", () => ({
+  updateScan: mockUpdateScan,
+}));
+
+let invokeCreateInvoiceWithScans: (() => Promise<void>) | null = null;
+let invokeRetryAttachmentFinalization: (() => Promise<void>) | null = null;
+let selectScan: ((scan: CachedScan) => void) | null = null;
+let setName: ((name: string) => void) | null = null;
+let setClassification: ((classification: ClassificationSelection | null) => void) | null = null;
+let currentClassification: ClassificationSelection | null = null;
+let pendingAttachmentScanIds: ReadonlyArray<string> | null = null;
+
+function createdInvoiceResponse(): Response {
+  return Response.json(buildInvoice({id: invoiceIdentifier, name: "Receipt", description: ""}), {status: 201});
+}
+
+/**
+ * Exposes the context methods under test without mocking the context or actions.
+ *
+ * @returns A non-visual context probe.
+ */
+function ContextProbe(): React.JSX.Element {
+  const context = useCreateInvoiceContext();
+  invokeCreateInvoiceWithScans = context.createInvoiceWithScans;
+  invokeRetryAttachmentFinalization = context.retryAttachmentFinalization;
+  selectScan = context.toggleScan;
+  setName = context.setName;
+  setClassification = context.setClassification;
+  currentClassification = context.invoiceDetails.classification;
+  pendingAttachmentScanIds = context.attachmentFinalization?.pendingScanIds ?? null;
+  return <div />;
+}
+
+function createScan(): CachedScan {
+  return {
+    id: "scan-1",
+    blobUrl: "https://storage.analysis.test/invoices/scans/user-1/scan-1.jpg",
+    name: "receipt.jpg",
+    userIdentifier: "user-1",
+    mimeType: "image/jpeg",
+    sizeInBytes: 1024,
+    scanType: ScanType.JPEG,
+    uploadedAt: new Date("2026-08-17T19:40:42.187Z"),
+    cachedAt: new Date("2026-08-17T19:40:42.187Z"),
+    status: ScanStatus.READY,
+    metadata: {
+      scanId: "scan-1",
+      ownerId: "user-1",
+      displayName: "receipt.jpg",
+      documentKind: "receipt",
+      documentRole: "primary",
+      status: "ready",
+      uploadedAt: new Date("2026-08-17T19:40:42.187Z"),
+      uploadedBy: "user-1",
+    },
+  } satisfies CachedScan;
+}
+
+function acceptedAnalysisResponse(hasManualClassification = false): Response {
+  return new Response(
+    JSON.stringify({
+      runId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      targetType: "invoice",
+      targetId: invoiceIdentifier,
+      status: "queued",
+      profile: hasManualClassification ? "custom" : "comprehensive",
+      acceptedCapabilities: hasManualClassification
+        ? ["documentExtraction", "merchantResolution", "invoiceSummary", "productClassification", "allergenAssessment", "recipeGeneration"]
+        : [
+            "documentExtraction",
+            "merchantResolution",
+            "invoiceSummary",
+            "productClassification",
+            "allergenAssessment",
+            "invoiceClassification",
+            "recipeGeneration",
+          ],
+      acceptedAt: "2026-08-17T19:40:42.187Z",
+    }),
+    {status: 202},
+  );
+}
+
+describe("CreateInvoiceContext durable analysis enqueue", () => {
+  beforeEach(() => {
+    analysisRouter.push.mockReset();
+    invokeCreateInvoiceWithScans = null;
+    selectScan = null;
+    setName = null;
+    setClassification = null;
+    currentClassification = null;
+    pendingAttachmentScanIds = null;
+    invokeRetryAttachmentFinalization = null;
+    useScansStore.getState().clearScans();
+    mockUpdateScan.mockResolvedValue({
+      success: true,
+      data: {
+        scan: createScan(),
+      },
+    });
+  });
+
+  it("waits for the durable analysis acknowledgement before navigating away from invoice creation", async () => {
+    // Arrange
+    let resolveAcknowledgement: ((response: Response) => void) | undefined;
+    installAnalysisFetchHandler((requestAtBoundary) => {
+      if (requestAtBoundary.url.endsWith("/analyze")) {
+        return new Promise<Response>((resolve) => {
+          resolveAcknowledgement = resolve;
+        });
+      }
+
+      return createdInvoiceResponse();
+    });
+    const scan = createScan();
+    useScansStore.getState().setScans([scan]);
+    render(
+      <AnalysisTestProvider>
+        <CreateInvoiceProvider>
+          <ContextProbe />
+        </CreateInvoiceProvider>
+      </AnalysisTestProvider>,
+    );
+    act(() => {
+      selectScan?.(scan);
+      setName?.("Receipt");
+    });
+
+    // Act
+    let creation: Promise<void> | undefined;
+    act(() => {
+      creation = invokeCreateInvoiceWithScans?.();
+    });
+    await waitFor(() => {
+      expect(getAnalysisApiRequests()).toContainEqual(
+        expect.objectContaining({
+          url: `${ANALYSIS_API_URL}/rest/v1/invoices/${invoiceIdentifier}/analyze`,
+          init: expect.objectContaining({method: "POST"}),
+        }),
+      );
+    });
+
+    // Assert
+    expect(analysisRouter.push).not.toHaveBeenCalled();
+    expect(mockUpdateScan).toHaveBeenCalledWith({
+      scanId: scan.id,
+      metadataAdd: {status: "attached", attachedTo: invoiceIdentifier},
+    });
+    await act(async () => {
+      resolveAcknowledgement?.(acceptedAnalysisResponse());
+      await creation;
+    });
+    expect(analysisRouter.push).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${invoiceIdentifier}`);
+  });
+
+  it("keeps a created invoice in retryable attachment finalization without enqueueing analysis or navigating", async () => {
+    // Arrange
+    installAnalysisFetchHandler(() => createdInvoiceResponse());
+    const scan = createScan();
+    useScansStore.getState().setScans([scan]);
+    mockUpdateScan.mockResolvedValueOnce({
+      success: false,
+      error: {code: "NETWORK_ERROR", message: "Unable to update the scan. Please try again."},
+    });
+    render(
+      <AnalysisTestProvider>
+        <CreateInvoiceProvider>
+          <ContextProbe />
+        </CreateInvoiceProvider>
+      </AnalysisTestProvider>,
+    );
+    act(() => {
+      selectScan?.(scan);
+      setName?.("Receipt");
+    });
+
+    // Act
+    await act(async () => {
+      await invokeCreateInvoiceWithScans?.();
+    });
+
+    // Assert
+    expect(pendingAttachmentScanIds).toEqual([scan.id]);
+    expect(getAnalysisApiRequests().some((request) => request.url.endsWith("/analyze"))).toBe(false);
+    expect(analysisRouter.push).not.toHaveBeenCalled();
+  });
+
+  it("reconciles only failed attachment updates before enqueueing and navigating without another invoice create", async () => {
+    // Arrange
+    installAnalysisFetchHandler((requestAtBoundary) =>
+      requestAtBoundary.url.endsWith("/analyze") ? acceptedAnalysisResponse() : createdInvoiceResponse(),
+    );
+    const scan = createScan();
+    useScansStore.getState().setScans([scan]);
+    mockUpdateScan
+      .mockResolvedValueOnce({
+        success: false,
+        error: {code: "NETWORK_ERROR", message: "Unable to update the scan. Please try again."},
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        data: {scan},
+      });
+    render(
+      <AnalysisTestProvider>
+        <CreateInvoiceProvider>
+          <ContextProbe />
+        </CreateInvoiceProvider>
+      </AnalysisTestProvider>,
+    );
+    act(() => {
+      selectScan?.(scan);
+      setName?.("Receipt");
+    });
+    await act(async () => {
+      await invokeCreateInvoiceWithScans?.();
+    });
+
+    // Act
+    await act(async () => {
+      await invokeRetryAttachmentFinalization?.();
+    });
+
+    // Assert
+    expect(mockUpdateScan).toHaveBeenCalledTimes(2);
+    expect(getAnalysisApiRequests().filter((request) => request.url.endsWith("/invoices"))).toHaveLength(1);
+    expect(getAnalysisApiRequests().filter((request) => request.url.endsWith("/analyze"))).toHaveLength(1);
+    expect(analysisRouter.push).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${invoiceIdentifier}`);
+    expect(pendingAttachmentScanIds).toBeNull();
+  });
+
+  it("keeps the created invoice and navigation when durable analysis enqueue is rejected", async () => {
+    // Arrange
+    installAnalysisFetchHandler((requestAtBoundary) =>
+      requestAtBoundary.url.endsWith("/analyze")
+        ? new Response("raw backend body that must remain private", {status: 503})
+        : createdInvoiceResponse(),
+    );
+    const scan = createScan();
+    useScansStore.getState().setScans([scan]);
+    render(
+      <AnalysisTestProvider>
+        <CreateInvoiceProvider>
+          <ContextProbe />
+        </CreateInvoiceProvider>
+      </AnalysisTestProvider>,
+    );
+    act(() => {
+      selectScan?.(scan);
+      setName?.("Receipt");
+    });
+
+    // Act
+    await act(async () => {
+      await invokeCreateInvoiceWithScans?.();
+    });
+
+    // Assert
+    expect(analysisRouter.push).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${invoiceIdentifier}`);
+  });
+
+  it("persists a selected ECOICOP selection and disables only invoice classification during comprehensive analysis", async () => {
+    // Arrange
+    installAnalysisFetchHandler((requestAtBoundary) => {
+      if (requestAtBoundary.url.endsWith("/analyze")) {
+        return acceptedAnalysisResponse(true);
+      }
+
+      if (requestAtBoundary.init?.method === "PATCH") {
+        return new Response(JSON.stringify(buildInvoice({id: invoiceIdentifier, name: "Receipt", description: ""})), {status: 200});
+      }
+
+      return createdInvoiceResponse();
+    });
+    const scan = createScan();
+    useScansStore.getState().setScans([scan]);
+    render(
+      <AnalysisTestProvider>
+        <CreateInvoiceProvider>
+          <ContextProbe />
+        </CreateInvoiceProvider>
+      </AnalysisTestProvider>,
+    );
+    act(() => {
+      selectScan?.(scan);
+      setName?.("Receipt");
+      setClassification?.({system: ClassificationSystem.EcoicopV2, code: "01.1"});
+    });
+
+    // Act
+    await act(async () => {
+      await invokeCreateInvoiceWithScans?.();
+    });
+
+    // Assert
+    const createRequest = getAnalysisApiRequests().find((request) => request.init?.method === "POST" && request.url.endsWith("/invoices"));
+    const analysisRequest = getAnalysisApiRequests().find((request) => request.url.endsWith("/analyze"));
+    expect(createRequest).toBeDefined();
+    expect(createRequest?.init?.body).toContain(JSON.stringify({system: ClassificationSystem.EcoicopV2, code: "01.1"}));
+    expect(analysisRequest?.init?.body).toBe(
+      JSON.stringify({
+        profile: "comprehensive",
+        overrides: {invoiceClassification: {enabled: false}},
+      }),
+    );
+  });
+
+  it("allows a staged ECOICOP selection to be cleared before it is persisted", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    render(
+      <AnalysisTestProvider>
+        <CreateInvoiceProvider>
+          <ContextProbe />
+          <InvoiceDetailsForm />
+        </CreateInvoiceProvider>
+      </AnalysisTestProvider>,
+    );
+    act(() => {
+      setClassification?.({system: ClassificationSystem.EcoicopV2, code: "01.1"});
+    });
+
+    // Act
+    await user.click(screen.getByRole("button", {name: "Clear ECOICOP v2 classification"}));
+
+    // Assert
+    expect(currentClassification).toBeNull();
+  });
+});

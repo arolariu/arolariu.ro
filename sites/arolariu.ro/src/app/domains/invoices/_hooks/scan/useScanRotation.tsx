@@ -162,9 +162,8 @@ export function useScanRotation(scan: CachedScan): Readonly<HookOutputType> {
         } else {
           toast.error(t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateError));
         }
-      } catch (error) {
+      } catch {
         toast.error(t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateError));
-        console.error("Error rotating scan:", error);
       } finally {
         setIsRotating(false);
       }

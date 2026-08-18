@@ -5,14 +5,18 @@ import type {ServerActionResult} from "../../../src/lib/utils.server";
 import type {BaseEntity, EntityStore} from "../../../src/stores/createEntityStore";
 import type {UserInformation} from "../../../src/types";
 import type {
+  AllergenAssessment,
+  AnalyzeInvoiceRequest,
+  AnalyzeMerchantRequest,
+  ClassificationSelection,
   CreateInvoiceDtoPayload,
   CreateInvoiceScanDtoPayload,
   Invoice,
-  InvoiceAnalysisOptions,
   InvoiceScan,
   Merchant,
   Product,
-  Recipe,
+  RecipeSuggestion,
+  StandardClassification,
 } from "../../../src/types/invoices";
 import type {Scan} from "../../../src/types/scans";
 import {
@@ -25,10 +29,14 @@ import {buildBlobServiceClientMock, buildBlockBlobClientMock, buildContainerClie
 import {
   buildCreateInvoicePayload,
   buildCreateInvoiceScanPayload,
+  buildAllergenAssessment,
+  buildClassification,
+  buildClassificationSelection,
   buildInvoice,
-  buildInvoiceAnalysisOptions,
+  buildInvoiceAnalysisRequest,
   buildInvoiceScan,
   buildMerchant,
+  buildMerchantAnalysisRequest,
   buildProduct,
   buildRecipe,
   buildScan,
@@ -46,28 +54,36 @@ import {buildEntityStoreState, mockEntityStoreSelector} from "./stores";
 
 export type TestDataKind =
   | "invoice"
+  | "classification"
+  | "classificationSelection"
+  | "allergenAssessment"
   | "product"
   | "merchant"
   | "recipe"
   | "invoiceScan"
   | "createInvoicePayload"
   | "createInvoiceScanPayload"
+  | "invoiceAnalysisRequest"
+  | "merchantAnalysisRequest"
   | "scan"
-  | "invoiceAnalysisOptions"
   | "userInformation"
   | "authenticatedUserInformation"
   | "anonymousUserInformation";
 
 export class TestDataBuilder {
   public static build(kind: "invoice", overrides?: Partial<Invoice>): Invoice;
+  public static build(kind: "classification", overrides?: Partial<StandardClassification>): StandardClassification;
+  public static build(kind: "classificationSelection", overrides?: Partial<ClassificationSelection>): ClassificationSelection;
+  public static build(kind: "allergenAssessment", overrides?: Partial<AllergenAssessment>): AllergenAssessment;
   public static build(kind: "product", overrides?: Partial<Product>): Product;
   public static build(kind: "merchant", overrides?: Partial<Merchant>): Merchant;
-  public static build(kind: "recipe", overrides?: Partial<Recipe>): Recipe;
+  public static build(kind: "recipe", overrides?: Partial<RecipeSuggestion>): RecipeSuggestion;
   public static build(kind: "invoiceScan", overrides?: Partial<InvoiceScan>): InvoiceScan;
   public static build(kind: "createInvoicePayload", overrides?: Partial<CreateInvoiceDtoPayload>): CreateInvoiceDtoPayload;
   public static build(kind: "createInvoiceScanPayload", overrides?: Partial<CreateInvoiceScanDtoPayload>): CreateInvoiceScanDtoPayload;
+  public static build(kind: "invoiceAnalysisRequest", overrides?: Partial<AnalyzeInvoiceRequest>): AnalyzeInvoiceRequest;
+  public static build(kind: "merchantAnalysisRequest", overrides?: Partial<AnalyzeMerchantRequest>): AnalyzeMerchantRequest;
   public static build(kind: "scan", overrides?: Partial<Scan>): Scan;
-  public static build(kind: "invoiceAnalysisOptions", value?: InvoiceAnalysisOptions): InvoiceAnalysisOptions;
   public static build(kind: "userInformation", overrides?: UserInformationOverrides): UserInformation;
   public static build(kind: "authenticatedUserInformation", overrides?: UserInformationOverrides): UserInformation;
   public static build(kind: "anonymousUserInformation"): UserInformation;
@@ -75,22 +91,30 @@ export class TestDataBuilder {
     switch (kind) {
       case "invoice":
         return buildInvoice(overrides as Partial<Invoice> | undefined);
+      case "classification":
+        return buildClassification(overrides as Partial<StandardClassification> | undefined);
+      case "classificationSelection":
+        return buildClassificationSelection(overrides as Partial<ClassificationSelection> | undefined);
+      case "allergenAssessment":
+        return buildAllergenAssessment(overrides as Partial<AllergenAssessment> | undefined);
       case "product":
         return buildProduct(overrides as Partial<Product> | undefined);
       case "merchant":
         return buildMerchant(overrides as Partial<Merchant> | undefined);
       case "recipe":
-        return buildRecipe(overrides as Partial<Recipe> | undefined);
+        return buildRecipe(overrides as Partial<RecipeSuggestion> | undefined);
       case "invoiceScan":
         return buildInvoiceScan(overrides as Partial<InvoiceScan> | undefined);
       case "createInvoicePayload":
         return buildCreateInvoicePayload(overrides as Partial<CreateInvoiceDtoPayload> | undefined);
       case "createInvoiceScanPayload":
         return buildCreateInvoiceScanPayload(overrides as Partial<CreateInvoiceScanDtoPayload> | undefined);
+      case "invoiceAnalysisRequest":
+        return buildInvoiceAnalysisRequest(overrides as Partial<AnalyzeInvoiceRequest> | undefined);
+      case "merchantAnalysisRequest":
+        return buildMerchantAnalysisRequest(overrides as Partial<AnalyzeMerchantRequest> | undefined);
       case "scan":
         return buildScan(overrides as Partial<Scan> | undefined);
-      case "invoiceAnalysisOptions":
-        return buildInvoiceAnalysisOptions(overrides as InvoiceAnalysisOptions | undefined);
       case "userInformation":
         return buildUserInformation(overrides as UserInformationOverrides | undefined);
       case "authenticatedUserInformation":

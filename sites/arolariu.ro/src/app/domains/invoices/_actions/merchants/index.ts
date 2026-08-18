@@ -3,19 +3,21 @@
  * @module app/domains/invoices/_actions/merchants
  *
  * @remarks
- * This module provides read-only server actions for fetching merchant information.
- * All operations require JWT authentication and execute server-side only.
+ * This module provides authenticated merchant retrieval actions and a durable
+ * analysis enqueue action. All operations execute server-side only.
  *
  * **Exported Actions:**
  * - {@link fetchMerchant} - Fetch a single merchant by ID
  * - {@link fetchMerchants} - Fetch all merchants for the authenticated user
+ * - {@link analyzeMerchant} - Enqueue asynchronous merchant analysis
+ * - {@link updateMerchant} - Replace a merchant and its manual NACE selection
  *
  * **Shared Characteristics:**
  * - **Authentication**: All actions require valid JWT token via `fetchBFFUserFromAuthService`
  * - **Validation**: GUID validation via `validateStringIsGuidType` for merchant IDs
  * - **Error Handling**: Returns `ServerActionResult` wrapper with user-friendly messages
- * - **HTTP Methods**: All operations use GET (read-only)
- * - **Cache Strategy**: No cache revalidation (read operations don't mutate data)
+ * - **HTTP Methods**: Retrieval uses GET; `analyzeMerchant` uses POST to enqueue work
+ * - **Cache Strategy**: Retrieval does not revalidate; enqueue acceptance does not wait for analysis completion
  * - **OpenTelemetry**: All operations emit spans and events for observability
  *
  * **Data Access Patterns:**
@@ -63,4 +65,9 @@
 // #region Merchant server-side queries (fetch single/multiple)
 export {fetchMerchant} from "./fetchMerchant";
 export {fetchMerchants} from "./fetchMerchants";
+// #endregion
+
+// #region Merchant server-side mutations and analysis
+export {analyzeMerchant} from "./analyzeMerchant";
+export {updateMerchant} from "./updateMerchant";
 // #endregion

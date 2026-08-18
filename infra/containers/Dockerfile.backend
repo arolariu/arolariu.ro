@@ -98,6 +98,11 @@ ARG VERSION
 # Copy the full source tree AFTER restore
 COPY sites/api.arolariu.ro/src/ ./src/
 
+# Fail fast when the versioned runtime taxonomy artifacts were not generated.
+RUN test -s src/Invoices/Resources/Taxonomies/gpc-2026-05.min.json \
+    && test -s src/Invoices/Resources/Taxonomies/ecoicop-v2.min.json \
+    && test -s src/Invoices/Resources/Taxonomies/nace-2.1.min.json
+
 # Build with assembly versioning
 RUN dotnet build src/Core/arolariu.Backend.Core.csproj \
     --no-restore \

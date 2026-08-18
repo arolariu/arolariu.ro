@@ -50,13 +50,11 @@ type ServerActionOutputType = ServerActionResult<void>;
  * @returns ServerActionResult with success status (void data on success)
  */
 export async function deleteScan({scanId}: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{deleteScan}}, with scanId:", scanId);
-
   return withSpan("api.actions.scans.deleteScan", async () => {
     try {
       // Step 1. Fetch user from auth service
       addSpanEvent("bff.user.fetch.start");
-      logWithTrace("info", "Fetching BFF user for authentication", {}, "server");
+      logWithTrace("info", "scan.delete.requested", undefined, "server");
       const {userIdentifier} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.fetch.complete");
 
@@ -86,8 +84,8 @@ export async function deleteScan({scanId}: ServerActionInputType): ServerActionO
 
       if (!blobObject) {
         addSpanEvent("scan.not.found");
-        logWithTrace("warn", "Scan not found", {scanId}, "server");
-        return createErrorResult(new Error(`Scan with ID "${scanId}" not found.`));
+        logWithTrace("warn", "scan.delete.not-found", undefined, "server");
+        return {success: false, error: {code: "NOT_FOUND", message: "Scan not found."}};
       }
 
       // Step 4. Validate ownership
@@ -95,13 +93,13 @@ export async function deleteScan({scanId}: ServerActionInputType): ServerActionO
 
       if (scanMetadata.ownerId !== userIdentifier) {
         addSpanEvent("authorization.failed");
-        logWithTrace("warn", "User not authorized to delete scan", {scanId, ownerId: scanMetadata.ownerId}, "server");
-        return createErrorResult(new Error("You are not authorized to delete this scan."));
+        logWithTrace("warn", "scan.delete.unauthorized", undefined, "server");
+        return {success: false, error: {code: "AUTH_ERROR", message: "You are not authorized to delete this scan."}};
       }
 
       // Step 5. Delete the blob
       addSpanEvent("azure.blob.delete.start");
-      logWithTrace("info", "Deleting scan from Azure Blob Storage", {blobName: blobObject.name}, "server");
+      logWithTrace("info", "scan.delete.start", undefined, "server");
       const deleteResponse = await deleteBlobObject({
         storageEndpoint,
         containerName,
@@ -110,21 +108,17 @@ export async function deleteScan({scanId}: ServerActionInputType): ServerActionO
       addSpanEvent("azure.blob.delete.complete");
 
       if (deleteResponse.succeeded || !deleteResponse.errorCode) {
-        logWithTrace("info", "Successfully deleted scan", {scanId}, "server");
+        logWithTrace("info", "scan.delete.complete", undefined, "server");
         return {success: true, data: undefined} as const;
       }
 
       addSpanEvent("azure.blob.delete.error");
-      const errorText = `Error code: ${deleteResponse.errorCode}`;
-      const internalMessage = `Failed to delete scan: ${errorText}`;
-      logWithTrace("warn", internalMessage, {scanId, errorText}, "server");
-      return createErrorResult(new Error(internalMessage), "Failed to delete the scan. Please try again.");
-    } catch (error: unknown) {
+      logWithTrace("warn", "scan.delete.rejected", {errorCode: "SERVER_ERROR"}, "server");
+      return {success: false, error: {code: "SERVER_ERROR", message: "Unable to delete the scan. Please try again."}};
+    } catch (error) {
       addSpanEvent("scan.delete.error");
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error deleting scan", {error}, "server");
-      console.error("Error deleting scan:", error);
-      return createErrorResult(new Error(errorMessage));
+      logWithTrace("error", "scan.delete.failed", {errorCode: "NETWORK_ERROR"}, "server");
+      return createErrorResult(error, "Unable to delete the scan. Please try again.");
     }
   }) satisfies ServerActionOutputType;
 }

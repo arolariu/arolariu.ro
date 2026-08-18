@@ -1,552 +1,164 @@
 /**
- * @fileoverview Product mock builder for testing and development.
+ * @fileoverview Fluent test builder for complete canonical product DTOs.
  * @module data/mocks/product
- *
- * @remarks
- * Provides fluent builder pattern for creating realistic product/item test data.
- *
- * **Key Features:**
- * - Fluent API for product configuration
- * - Faker.js integration for realistic product data
- * - Category-based product classification
- * - Support for pricing, quantities, and allergen tracking
- * - Metadata for product state (completion, editing, deletion)
- * - Batch generation with unique properties
- *
- * @see {@link ProductBuilder} - Main builder class
- * @see {@link generateRandomProduct} - Quick random generation
  */
 
-import {type Allergen, type Product, type ProductCategory} from "@/types/invoices";
-import {faker} from "@faker-js/faker";
+import {
+  AllergenAssessmentStatus,
+  AllergenCode,
+  AllergenEvidenceLevel,
+  ClassificationOrigin,
+  ClassificationSystem,
+  type AllergenAssessment,
+  type Product,
+  type ProductMetadata,
+  type StandardClassification,
+} from "@/types/invoices";
 
-/**
- * Fluent builder for creating mock Product objects with customizable properties.
- *
- * @remarks
- * **Design Pattern**: Implements the Builder pattern for flexible object construction.
- *
- * **Default Initialization:**
- * - Random product names from faker.commerce
- * - Random prices between $0.50 and $100.00
- * - Random quantities (1-10 units)
- * - Random product codes (8-character alphanumeric)
- * - Random categories (0-13 range)
- * - Random quantity units (kg, g, l, ml, pcs, unit)
- * - Calculated totalPrice (price × quantity)
- * - Empty allergen arrays by default
- * - Incomplete, unedited, non-deleted metadata state
- *
- * **Method Chaining:**
- * All `with*()` methods return `this` for fluent API usage.
- *
- * **Batch Building:**
- * Use `buildMany()` to create multiple products with unique properties.
- *
- * @example
- * ```typescript
- * // Basic usage
- * const product = new ProductBuilder()
- *   .withName("Organic Bananas")
- *   .withCategory(ProductCategory.FOOD)
- *   .withPrice(2.99)
- *   .withQuantity(5)
- *   .build();
- * ```
- *
- * @example
- * ```typescript
- * // With allergens
- * const product = new ProductBuilder()
- *   .withName("Peanut Butter")
- *   .withDetectedAllergens([Allergen.PEANUTS, Allergen.TREE_NUTS])
- *   .build();
- * ```
- */
+function createProductCode(index: number): string {
+  return `MOCK${String(index).padStart(4, "0")}`;
+}
+
+function buildGpcClassification(): StandardClassification {
+  const code = "10000234";
+  return {
+    system: ClassificationSystem.Gs1Gpc,
+    version: "2026.08",
+    code,
+    officialLabel: "Milk",
+    hierarchy: [
+      {level: "segment", code: "10000000", officialLabel: "Food/Beverage/Tobacco"},
+      {level: "family", code: "10000200", officialLabel: "Dairy products"},
+      {level: "brick", code, officialLabel: "Milk"},
+    ],
+    origin: ClassificationOrigin.Analysis,
+    confidence: 0.9,
+    evidence: [],
+  };
+}
+
+function buildDetectedAssessment(): AllergenAssessment {
+  return {
+    status: AllergenAssessmentStatus.Detected,
+    signals: [
+      {
+        code: AllergenCode.Milk,
+        evidenceLevel: AllergenEvidenceLevel.Explicit,
+        confidence: 0.9,
+        evidence: [{source: "ingredients", value: "milk"}],
+      },
+    ],
+  };
+}
+
+/** Builds complete product DTOs without legacy category or allergen aliases. */
 export class ProductBuilder {
-  private product: Product;
+  private value: Product;
 
-  /**
-   * Creates a new ProductBuilder with default random values.
-   *
-   * @remarks
-   * **Initialization Strategy:**
-   * - Generates random product names using faker.commerce
-   * - Creates random prices between $0.50 and $100.00 (2 decimal places)
-   * - Sets random quantities (1-10 units)
-   * - Generates 8-character alphanumeric product codes
-   * - Assigns random categories (0-13 enum range)
-   * - Selects random quantity units (kg, g, l, ml, pcs, unit)
-   * - Auto-calculates totalPrice (price × quantity)
-   * - Initializes empty allergen arrays
-   * - Sets metadata to incomplete, unedited, not deleted
-   *
-   * @example
-   * ```typescript
-   * const builder = new ProductBuilder();
-   * const product = builder.build();
-   * // Result: Product with random but realistic data
-   * ```
-   */
-  constructor() {
-    const price = faker.number.float({min: 0.5, max: 100, multipleOf: 0.01});
-    const quantity = faker.number.int({min: 1, max: 10});
-
-    this.product = {
-      name: faker.commerce.productName(),
-      productCode: faker.string.alphanumeric(8).toUpperCase(),
-      category: faker.number.int({min: 0, max: 13}) as ProductCategory,
+  public constructor() {
+    const price = 10;
+    const quantity = 1;
+    this.value = {
+      name: "Mock Product",
+      classification: buildGpcClassification(),
+      productCode: createProductCode(1),
       price,
       quantity,
-      quantityUnit: faker.helpers.arrayElement(["kg", "g", "l", "ml", "pcs", "unit"]),
+      quantityUnit: "pcs",
       totalPrice: price * quantity,
-      detectedAllergens: [],
-      metadata: {
-        isComplete: false,
-        isEdited: false,
-        isSoftDeleted: false,
-        confidence: faker.number.float({min: 0.7, max: 1, multipleOf: 0.01}),
-      },
+      allergenAssessment: null,
+      metadata: {isComplete: true, isEdited: false, isSoftDeleted: false, confidence: 0.9},
     };
   }
 
-  /**
-   * Sets the product name.
-   *
-   * @param name - Product name
-   * @returns The ProductBuilder instance for method chaining
-   *
-   * @remarks
-   * Product names should be clean and human-readable for display and searching.
-   *
-   * @example
-   * ```typescript
-   * const product = new ProductBuilder()
-   *   .withName("Organic Bananas")
-   *   .build();
-   * ```
-   */
-  withName(name: string): this {
-    this.product.name = name;
+  public withName(name: string): this {
+    this.value = {...this.value, name};
     return this;
   }
 
-  /**
-   * Sets the product code or barcode identifier.
-   *
-   * @param code - SKU, EAN, UPC, or other product identifier
-   * @returns The ProductBuilder instance for method chaining
-   *
-   * @example
-   * ```typescript
-   * const product = new ProductBuilder()
-   *   .withProductCode("1234567890123") // EAN-13 barcode
-   *   .build();
-   * ```
-   */
-  withProductCode(code: string): this {
-    this.product.productCode = code;
+  public withProductCode(productCode: string): this {
+    this.value = {...this.value, productCode};
     return this;
   }
 
-  /**
-   * Sets the product category classification.
-   *
-   * @param category - ProductCategory enum value
-   * @returns The ProductBuilder instance for method chaining
-   *
-   * @example
-   * ```typescript
-   * const product = new ProductBuilder()
-   *   .withCategory(ProductCategory.FOOD)
-   *   .build();
-   * ```
-   *
-   * @see {@link ProductCategory} for available categories
-   */
-  withCategory(category: ProductCategory): this {
-    this.product.category = category;
+  /** Assigns the complete canonical GS1 GPC classification, or clears it. */
+  public withClassification(classification: StandardClassification | null): this {
+    this.value = {...this.value, classification};
     return this;
   }
 
-  /**
-   * Sets the unit price and recalculates total price.
-   *
-   * @param price - Price per unit (must be non-negative)
-   * @returns The ProductBuilder instance for method chaining
-   *
-   * @remarks
-   * **Side Effect:** Automatically recalculates `totalPrice = price × quantity`.
-   *
-   * @example
-   * ```typescript
-   * const product = new ProductBuilder()
-   *   .withPrice(2.99)
-   *   .withQuantity(3)
-   *   .build();
-   * // totalPrice = 8.97
-   * ```
-   */
-  withPrice(price: number): this {
-    this.product.price = price;
-    this.product.totalPrice = price * this.product.quantity;
+  public withPrice(price: number): this {
+    this.value = {...this.value, price, totalPrice: price * this.value.quantity};
     return this;
   }
 
-  /**
-   * Sets the quantity and recalculates total price.
-   *
-   * @param quantity - Number of units purchased (must be positive)
-   * @returns The ProductBuilder instance for method chaining
-   *
-   * @remarks
-   * **Side Effect:** Automatically recalculates `totalPrice = price × quantity`.
-   *
-   * @example
-   * ```typescript
-   * const product = new ProductBuilder()
-   *   .withPrice(1.50)
-   *   .withQuantity(10)
-   *   .build();
-   * // totalPrice = 15.00
-   * ```
-   */
-  withQuantity(quantity: number): this {
-    this.product.quantity = quantity;
-    this.product.totalPrice = this.product.price * quantity;
+  public withQuantity(quantity: number): this {
+    this.value = {...this.value, quantity, totalPrice: quantity * this.value.price};
     return this;
   }
 
-  /**
-   * Sets the measurement unit for quantity.
-   *
-   * @param unit - Measurement unit (e.g., "kg", "pcs", "l", "ml")
-   * @returns The ProductBuilder instance for method chaining
-   *
-   * @example
-   * ```typescript
-   * const product = new ProductBuilder()
-   *   .withQuantity(2.5)
-   *   .withQuantityUnit("kg")
-   *   .build();
-   * ```
-   */
-  withQuantityUnit(unit: string): this {
-    this.product.quantityUnit = unit;
+  public withQuantityUnit(quantityUnit: string): this {
+    this.value = {...this.value, quantityUnit};
     return this;
   }
 
-  /**
-   * Overrides the total price without automatic recalculation.
-   *
-   * @param totalPrice - Final price to set directly
-   * @returns The ProductBuilder instance for method chaining
-   *
-   * @remarks
-   * **Use Case:** When the total price includes discounts or doesn't equal price × quantity.
-   *
-   * @example
-   * ```typescript
-   * const product = new ProductBuilder()
-   *   .withPrice(10)
-   *   .withQuantity(3)
-   *   .withTotalPrice(25) // Discounted from 30
-   *   .build();
-   * ```
-   */
-  withTotalPrice(totalPrice: number): this {
-    this.product.totalPrice = totalPrice;
+  public withTotalPrice(totalPrice: number): this {
+    this.value = {...this.value, totalPrice};
     return this;
   }
 
-  /**
-   * Sets the list of detected allergens for this product.
-   *
-   * @param allergens - Array of Allergen enum values
-   * @returns The ProductBuilder instance for method chaining
-   *
-   * @example
-   * ```typescript
-   * const product = new ProductBuilder()
-   *   .withName("Peanut Butter")
-   *   .withDetectedAllergens([Allergen.PEANUTS, Allergen.TREE_NUTS])
-   *   .build();
-   * ```
-   *
-   * @see {@link Allergen} for available allergen types
-   */
-  withDetectedAllergens(allergens: Allergen[]): this {
-    this.product.detectedAllergens = allergens;
+  /** Sets the reviewable assessment result; no-signals remains non-safety evidence. */
+  public withAllergenAssessment(allergenAssessment: AllergenAssessment | null): this {
+    this.value = {...this.value, allergenAssessment};
     return this;
   }
 
-  /**
-   * Generates random allergens for testing purposes.
-   *
-   * @param count - Number of allergens to generate (defaults to random 0-3)
-   * @returns The ProductBuilder instance for method chaining
-   *
-   * @remarks
-   * Randomly selects from common allergen names including gluten, nuts, dairy, eggs, etc.
-   *
-   * @example
-   * ```typescript
-   * const product = new ProductBuilder()
-   *   .withRandomAllergens(2) // Exactly 2 allergens
-   *   .build();
-   * ```
-   */
-  withRandomAllergens(count?: number): this {
-    const allergenNames = [
-      "gluten",
-      "crustaceans",
-      "eggs",
-      "fish",
-      "peanuts",
-      "soybeans",
-      "milk",
-      "nuts",
-      "celery",
-      "mustard",
-      "sesame seeds",
-      "sulphur dioxide",
-      "lupin",
-      "molluscs",
-    ];
+  /** Adds one deterministic detected assessment for presentation fixtures. */
+  public withDetectedAllergenSignals(): this {
+    return this.withAllergenAssessment(buildDetectedAssessment());
+  }
 
-    const allergenCount = count ?? faker.number.int({min: 0, max: 3});
-    const selectedAllergenNames = faker.helpers.arrayElements(allergenNames, allergenCount);
-    this.product.detectedAllergens = selectedAllergenNames.map((allergenName) => ({
-      name: allergenName,
-      description: faker.lorem.sentence(),
-      learnMoreAddress: faker.internet.url(),
-    }));
+  public withMetadata(metadata: Partial<ProductMetadata>): this {
+    this.value = {...this.value, metadata: {...this.value.metadata, ...metadata}};
     return this;
   }
 
-  /**
-   * Sets custom metadata flags for the product.
-   *
-   * @param metadata - Flags for completion, edit status, soft deletion, and OCR confidence
-   * @returns The ProductBuilder instance for method chaining
-   *
-   * @remarks
-   * **Metadata Properties:**
-   * - `isComplete`: Product information is fully populated
-   * - `isEdited`: Product has been manually modified by user
-   * - `isSoftDeleted`: Product is marked for deletion but not removed
-   * - `confidence`: OCR confidence score (0.0 to 1.0)
-   *
-   * @example
-   * ```typescript
-   * const product = new ProductBuilder()
-   *   .withMetadata({
-   *     isComplete: true,
-   *     isEdited: false,
-   *     isSoftDeleted: false,
-   *     confidence: 0.95
-   *   })
-   *   .build();
-   * ```
-   */
-  withMetadata(metadata: {isComplete?: boolean; isEdited?: boolean; isSoftDeleted?: boolean; confidence?: number}): this {
-    this.product.metadata = {
-      ...this.product.metadata,
-      ...metadata,
+  public build(): Product {
+    return {
+      ...this.value,
+      metadata: {...this.value.metadata},
+      classification:
+        this.value.classification === null ? null : {...this.value.classification, hierarchy: [...this.value.classification.hierarchy]},
+      allergenAssessment:
+        this.value.allergenAssessment === null
+          ? null
+          : {...this.value.allergenAssessment, signals: [...this.value.allergenAssessment.signals]},
     };
-    return this;
   }
 
-  /**
-   * Builds and returns the configured Product object.
-   *
-   * @returns A new Product object with all configured properties
-   *
-   * @remarks
-   * Creates a shallow copy of the internal product object to prevent mutations.
-   *
-   * @example
-   * ```typescript
-   * const product = new ProductBuilder()
-   *   .withName("Apple Juice")
-   *   .withCategory(ProductCategory.BEVERAGES)
-   *   .build();
-   * ```
-   */
-  build(): Product {
-    return {...this.product};
-  }
-
-  /**
-   * Builds multiple Product objects with unique properties.
-   *
-   * @param count - Number of product objects to generate
-   * @returns Array of Product objects with randomized names and codes
-   *
-   * @remarks
-   * Each generated product has unique name and productCode.
-   * All other properties remain consistent from the builder configuration.
-   *
-   * @example
-   * ```typescript
-   * const products = new ProductBuilder()
-   *   .withCategory(ProductCategory.FOOD)
-   *   .withPrice(5.99)
-   *   .buildMany(15); // 15 food products at $5.99 each
-   * ```
-   */
-  buildMany(count: number): Product[] {
-    return Array.from({length: count}, () => {
-      // Generate new unique identifiers for each instance
-      const product = this.build();
-      product.productCode = faker.string.alphanumeric(8).toUpperCase();
-      product.name = `${product.name} ${faker.string.nanoid(5)}`;
-      return product;
-    });
+  public buildMany(count: number): Product[] {
+    return Array.from({length: count}, (_, index) =>
+      this.withName(`Mock Product ${index + 1}`)
+        .withProductCode(createProductCode(index + 1))
+        .build(),
+    );
   }
 }
 
-/**
- * Factory function that creates a new ProductBuilder instance.
- *
- * @returns A new ProductBuilder with default random values
- *
- * @remarks
- * Convenience function providing a more functional programming style than `new ProductBuilder()`.
- *
- * @example
- * ```typescript
- * const product = createProductBuilder()
- *   .withName("Chocolate Bar")
- *   .build();
- * ```
- */
+/** Creates a fluent canonical product builder. */
 export function createProductBuilder(): ProductBuilder {
   return new ProductBuilder();
 }
 
-/**
- * Generates a single random Product with realistic data and allergens.
- *
- * @returns A randomly configured Product object with random allergens
- *
- * @remarks
- * **Use Cases:**
- * - Quick test data generation
- * - Seeding development databases
- * - Populating UI prototypes
- *
- * **Randomization:**
- * - All properties use faker.js for realistic values
- * - Random allergens (0-3) are automatically added
- * - Prices, quantities, and categories are randomized
- *
- * @example
- * ```typescript
- * const product = generateRandomProduct();
- * // Result: {
- * //   name: "Ergonomic Frozen Hat",
- * //   productCode: "ABC12345",
- * //   category: ProductCategory.FOOD,
- * //   price: 12.34,
- * //   quantity: 3,
- * //   detectedAllergens: [{name: "gluten", ...}],
- * //   ...
- * // }
- * ```
- *
- * @see {@link generateRandomProducts} for batch generation
- */
+/** Generates one complete deterministic product DTO. */
 export function generateRandomProduct(): Product {
-  return new ProductBuilder().withRandomAllergens().build();
+  return new ProductBuilder().build();
 }
 
-/**
- * Generates multiple random Products with realistic data.
- *
- * @param count - Number of products to generate
- * @returns Array of randomly configured Product objects
- *
- * @remarks
- * Each product is independently randomized with unique properties and allergens.
- *
- * **Performance:**
- * - Efficient for large datasets (uses array generation)
- * - Each product has distinct faker-generated values
- *
- * @example
- * ```typescript
- * const products = generateRandomProducts(100);
- * // Returns 100 unique products with random data
- * ```
- *
- * @example
- * ```typescript
- * // Seed invoice with random products
- * const items = generateRandomProducts(25);
- * const invoice = new InvoiceBuilder()
- *   .withItems(items)
- *   .build();
- * ```
- *
- * @see {@link generateRandomProduct} for single product generation
- */
+/** Generates complete deterministic product DTOs. */
 export function generateRandomProducts(count: number): Product[] {
-  return Array.from({length: count}, generateRandomProduct);
+  return new ProductBuilder().buildMany(count);
 }
 
-/**
- * Pre-built mock product for consistent testing.
- *
- * @remarks
- * **Use Case:** Use when you need a deterministic product across test cases.
- *
- * **Characteristics:**
- * - Name: "Test Product"
- * - Price: $9.99
- * - Quantity: 2 units
- * - Total: $19.98
- * - Other properties are faker-generated but deterministic
- *
- * @example
- * ```typescript
- * import {mockProduct} from "@/data/mocks";
- *
- * it("should calculate tax correctly", () => {
- *   const tax = calculateTax(mockProduct.totalPrice);
- *   expect(tax).toBeCloseTo(1.99, 2);
- * });
- * ```
- */
 export const mockProduct = new ProductBuilder().withName("Test Product").withPrice(9.99).withQuantity(2).build();
-
-/**
- * Pre-built list of 10 mock products for testing collections.
- *
- * @remarks
- * **Use Case:** Use when testing list rendering, filtering, or batch operations.
- *
- * **Characteristics:**
- * - Contains 10 distinct products
- * - Each with unique randomized properties and allergens
- * - Fixed for a given execution (deterministic)
- *
- * @example
- * ```typescript
- * import {mockProductList} from "@/data/mocks";
- *
- * it("should render product list", () => {
- *   render(<ProductList products={mockProductList} />);
- *   expect(screen.getAllByRole("listitem")).toHaveLength(10);
- * });
- * ```
- *
- * @example
- * ```typescript
- * // Test filtering by category
- * const foodProducts = mockProductList.filter(
- *   p => p.category === ProductCategory.FOOD
- * );
- * ```
- */
 export const mockProductList = generateRandomProducts(10);

@@ -10,6 +10,7 @@
 import "server-only";
 
 import {BlobSASPermissions, BlobServiceClient, type BlockBlobClient, generateBlobSASQueryParameters} from "@azure/storage-blob";
+import {getStorageAccountName, isApprovedInvoiceScanLocation} from "./storageLocationPolicy";
 
 /**
  * Well-known Azurite development storage connection string prefix.
@@ -37,6 +38,14 @@ export function rewriteAzuriteUrl(url: string): string {
   return url.replace(AZURITE_DOCKER_ORIGIN, AZURITE_HOST_ORIGIN);
 }
 
+function parseStorageEndpoint(storageEndpoint: string): URL {
+  try {
+    return new URL(storageEndpoint);
+  } catch {
+    throw new Error("Storage endpoint must be an absolute HTTPS or loopback Azurite URL.");
+  }
+}
+
 /**
  * Creates a BlobServiceClient for the given storage endpoint.
  *
@@ -45,12 +54,26 @@ export function rewriteAzuriteUrl(url: string): string {
  * - **HTTPS endpoints** (Azure): uses Managed Identity via `getAzureCredential()`.
  */
 export async function createBlobClient(storageEndpoint: string): Promise<BlobServiceClient> {
-  if (storageEndpoint.startsWith("http://")) {
-    if (process.env["AZURE_CLIENT_ID"]) {
-      throw new Error("HTTP storage endpoints are not allowed in production. Use HTTPS.");
+  const endpoint = parseStorageEndpoint(storageEndpoint);
+
+  if (endpoint.protocol === "http:") {
+    const storageAccountName = getStorageAccountName(storageEndpoint);
+    const isLoopbackAzurite =
+      storageAccountName !== null
+      && isApprovedInvoiceScanLocation({
+        location: `${storageEndpoint.replace(/\/$/u, "")}/invoices/health-check`,
+        storageServiceRoot: storageEndpoint,
+        storageAccountName,
+      });
+    if (process.env["AZURE_CLIENT_ID"] || !isLoopbackAzurite) {
+      throw new Error("HTTP storage endpoints are allowed only for configured loopback Azurite.");
     }
     const connStr = `${AZURITE_CONN_PREFIX}${storageEndpoint};`;
     return BlobServiceClient.fromConnectionString(connStr);
+  }
+
+  if (endpoint.protocol !== "https:") {
+    throw new Error("Storage endpoint must use HTTPS.");
   }
 
   const {getAzureCredential} = await import("@/lib/azure/credentials");

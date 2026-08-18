@@ -1,10 +1,12 @@
 namespace arolariu.Backend.Domain.Invoices.DTOs.Responses;
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 /// <summary>
@@ -24,26 +26,26 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// from the invoice via OCR, used for display, aggregation, and analytics.
 /// </para>
 /// <para>
-/// <b>Computed Fields:</b> <see cref="TotalPrice"/> is computed as
-/// <c>Quantity × Price</c> and stored for consistency.
+/// <b>Computed Fields:</b> <see cref="TotalPrice"/> is returned from the domain's
+/// <c>Quantity × Price</c> computation.
 /// </para>
 /// <para>
-/// <b>Allergen Detection:</b> The <see cref="DetectedAllergens"/> collection is
-/// populated by AI analysis and may include common allergens like gluten, lactose,
-/// nuts, etc.
+/// <b>Allergen Detection:</b> The <see cref="AllergenAssessment"/> section is
+/// populated by analysis runs and may include only canonical EU-14 signals such
+/// as cereals containing gluten, milk, nuts, crustaceans, and molluscs.
 /// </para>
 /// </remarks>
 /// <param name="Name">
 /// The name of the product as extracted from the invoice via OCR.
 /// Used for display, aggregation, allergen inference heuristics and recipe matching.
 /// </param>
-/// <param name="Category">
-/// Product category classification (e.g., Dairy, Meat, Beverages).
-/// Defaults to <see cref="ProductCategory.NOT_DEFINED"/> if AI classification was not performed.
+/// <param name="Classification">
+/// The standardised GPC classification assigned to this line item.
+/// Null when the line item has not been classified yet.
 /// </param>
 /// <param name="Quantity">
-/// The quantity of product units purchased. Always positive.
-/// Decimal to support fractional quantities (e.g., 1.5 kg of produce).
+/// The quantity of product units purchased. Non-negative; zero may represent
+/// incomplete receipt extraction. Decimal supports fractional quantities (e.g., 1.5 kg of produce).
 /// </param>
 /// <param name="QuantityUnit">
 /// The unit of measure (e.g., "kg", "L", "buc", "pcs").
@@ -58,12 +60,14 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// </param>
 /// <param name="TotalPrice">
 /// Computed extended line total (<c>Quantity × Price</c>).
-/// May differ slightly from simple multiplication due to rounding on the original invoice.
+/// Derived by the domain product from the non-negative quantity and price.
 /// </param>
-/// <param name="DetectedAllergens">
-/// Collection of allergens detected by AI analysis. Common values include:
-/// Gluten, Lactose, Nuts, Eggs, Soy, Fish, Shellfish.
-/// Empty collection if no allergens detected or analysis not performed.
+/// <param name="AllergenAssessment">
+/// The structured EU-14 allergen assessment produced by an analysis run. Signals
+/// use canonical members such as cereals containing gluten, milk, nuts, eggs,
+/// soybeans, fish, crustaceans, and molluscs.
+/// Null when no allergen assessment has been produced yet. An assessment carries its own status,
+/// so an empty signal list is never ambiguous.
 /// </param>
 /// <param name="Metadata">
 /// Nested metadata containing edit status, completeness, soft-deletion flag,
@@ -78,25 +82,25 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// // Displaying product info
 /// Console.WriteLine($"{dto.Name}: {dto.Quantity} {dto.QuantityUnit} @ {dto.Price:C}");
 /// Console.WriteLine($"Total: {dto.TotalPrice:C}");
-/// if (dto.DetectedAllergens.Any())
-///     Console.WriteLine($"Allergens: {string.Join(", ", dto.DetectedAllergens)}");
+/// if (dto.AllergenAssessment is not null)
+///     Console.WriteLine($"Allergens: {dto.AllergenAssessment.Status}");
 /// </code>
 /// </example>
 /// <seealso cref="Product"/>
-/// <seealso cref="ProductCategory"/>
-/// <seealso cref="Allergen"/>
+/// <seealso cref="StandardClassification"/>
+/// <seealso cref="AllergenAssessment"/>
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct ProductResponseDto(
-  string Name,
-  ProductCategory Category,
-  decimal Quantity,
-  string QuantityUnit,
-  string ProductCode,
-  decimal Price,
-  decimal TotalPrice,
-  IReadOnlyCollection<Allergen> DetectedAllergens,
-  ProductMetadataDto Metadata)
+  [property: JsonPropertyName("name")] string Name,
+  [property: JsonPropertyName("classification")] StandardClassificationResponseDto? Classification,
+  [property: JsonPropertyName("quantity")] decimal Quantity,
+  [property: JsonPropertyName("quantityUnit")] string QuantityUnit,
+  [property: JsonPropertyName("productCode")] string ProductCode,
+  [property: JsonPropertyName("price")] decimal Price,
+  [property: JsonPropertyName("totalPrice")] decimal TotalPrice,
+  [property: JsonPropertyName("allergenAssessment")] AllergenAssessmentResponseDto? AllergenAssessment,
+  [property: JsonPropertyName("metadata")] ProductMetadataDto Metadata)
 {
   /// <summary>
   /// Creates a <see cref="ProductResponseDto"/> from a domain <see cref="Product"/> value object.
@@ -107,9 +111,8 @@ public readonly record struct ProductResponseDto(
   /// Ensures consistent mapping and proper handling of collection types.
   /// </para>
   /// <para>
-  /// <b>Allergen Collection:</b> If the source allergens collection is already
-  /// <see cref="IReadOnlyCollection{T}"/>, it is used directly. Otherwise, a new
-  /// read-only list is created for immutability.
+  /// <b>Allergen Assessment:</b> The immutable assessment value object is passed through by
+  /// reference; it is already a snapshot and cannot be mutated by callers.
   /// </para>
   /// <para>
   /// <b>Metadata:</b> The product's <see cref="ProductMetadataDto"/> is preserved as a nested
@@ -130,15 +133,13 @@ public readonly record struct ProductResponseDto(
     ArgumentNullException.ThrowIfNull(product);
     return new(
       Name: product.Name,
-      Category: product.Category,
+      Classification: StandardClassificationResponseDto.FromStandardClassification(product.Classification),
       Quantity: product.Quantity,
       QuantityUnit: product.QuantityUnit,
       ProductCode: product.ProductCode,
       Price: product.Price,
       TotalPrice: product.TotalPrice,
-      DetectedAllergens: product.DetectedAllergens is IReadOnlyCollection<Allergen> readOnly
-        ? readOnly
-        : new List<Allergen>(product.DetectedAllergens).AsReadOnly(),
+      AllergenAssessment: AllergenAssessmentResponseDto.FromAllergenAssessment(product.AllergenAssessment),
       Metadata: new ProductMetadataDto(
         IsEdited: product.Metadata.IsEdited,
         IsComplete: product.Metadata.IsComplete,
@@ -153,7 +154,7 @@ public readonly record struct ProductResponseDto(
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct ProductMetadataDto(
-  bool IsEdited,
-  bool IsComplete,
-  bool IsSoftDeleted,
-  double Confidence);
+  [property: JsonPropertyName("isEdited")] bool IsEdited,
+  [property: JsonPropertyName("isComplete")] bool IsComplete,
+  [property: JsonPropertyName("isSoftDeleted")] bool IsSoftDeleted,
+  [property: JsonPropertyName("confidence")] double Confidence);

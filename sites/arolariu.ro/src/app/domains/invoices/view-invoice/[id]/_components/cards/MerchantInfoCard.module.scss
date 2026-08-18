@@ -4,16 +4,20 @@
   display: flex;
   align-items: center;
   gap: space(2);
+  min-inline-size: 0;
 }
 
 .infoRowStart {
   display: flex;
   align-items: flex-start;
   gap: space(2);
+  min-inline-size: 0;
 }
 
 .infoText {
+  min-inline-size: 0;
   font-size: font-size("sm");
+  overflow-wrap: anywhere;
 }
 
 .websiteLink {
@@ -47,6 +51,11 @@
   display: flex;
   flex-direction: column;
   gap: space(2);
+}
+
+.analysisSection {
+  min-inline-size: 0;
+  padding-block: space(1);
 }
 
 .sectionHeader {
@@ -125,9 +134,10 @@
 }
 
 .categorySegment {
+  flex: 1 1 0;
   height: 100%;
   background: linear-gradient(135deg, var(--ac-chart-1) 0%, var(--ac-chart-2) 100%);
-  border-right: 1px solid color("background");
+  border-inline-end: 1px solid color("background");
   transition: all duration("normal") ease-out;
 
   &:hover {
@@ -135,7 +145,7 @@
   }
 
   &:last-child {
-    border-right: none;
+    border-inline-end: none;
   }
 }
 

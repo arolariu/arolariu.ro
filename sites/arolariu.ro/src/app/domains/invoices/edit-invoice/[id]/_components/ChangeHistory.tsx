@@ -23,12 +23,11 @@
 
 import {useEditInvoiceContext} from "@/app/domains/invoices/edit-invoice/[id]/_context/EditInvoiceContext";
 import {formatRelativeTime} from "@/lib/utils.generic";
-import {InvoiceCategory} from "@/types/invoices";
 import {Badge} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useMemo} from "react";
 import {TbCalendar, TbCheck, TbCircleDot, TbClock, TbFileText, TbTag, TbWallet} from "react-icons/tb";
-import {getInvoiceCategoryLabel} from "../../../_utils/labelUtilities";
+import {getClassificationSummary} from "../../../_utils/classificationUtilities";
 import styles from "./ChangeHistory.module.scss";
 
 /**
@@ -48,16 +47,6 @@ interface ChangeHistoryItem {
   /** Icon to display */
   readonly icon: React.ReactNode;
 }
-
-const CHANGE_HISTORY_CATEGORY_LABEL_OPTIONS = {
-  labels: {
-    [InvoiceCategory.FAST_FOOD]: "Dining",
-    [InvoiceCategory.HOME_CLEANING]: "Home",
-    [InvoiceCategory.CAR_AUTO]: "Auto",
-  },
-  notDefinedLabel: "Uncategorized",
-  unknownLabel: "Unknown",
-} as const;
 
 /**
  * Change history timeline component showing invoice modifications.
@@ -92,14 +81,17 @@ export default function ChangeHistory(): React.JSX.Element {
       });
     }
 
-    if (pendingChanges.category) {
-      const oldCategory = getInvoiceCategoryLabel(invoice.category, CHANGE_HISTORY_CATEGORY_LABEL_OPTIONS);
-      const newCategory = getInvoiceCategoryLabel(pendingChanges.category, CHANGE_HISTORY_CATEGORY_LABEL_OPTIONS);
+    if (pendingChanges.classification) {
+      const oldClassification = getClassificationSummary(
+        invoice.classification,
+        t((m) => m.cards.invoices.analysisResults.unclassified),
+      );
+      const newClassification = `${pendingChanges.classification.system}: ${pendingChanges.classification.code}`;
       items.push({
-        id: "pending-category",
+        id: "pending-classification",
         type: "pending",
         title: t((m) => m.pages.invoices.editInvoice.changeHistory.changes.categoryUpdated),
-        description: `${oldCategory} → ${newCategory}`,
+        description: `${oldClassification} → ${newClassification}`,
         timestamp: new Date(),
         icon: <TbTag className={styles["timelineIcon"]} />,
       });

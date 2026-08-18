@@ -26,9 +26,10 @@ describe("useRecipeAdd", () => {
   const testRecipe = TestDataBuilder.build("recipe", {
     name: "Test Recipe",
     description: "A test recipe description",
-    ingredients: ["ingredient1", "ingredient2"],
-    instructions: "step1\nstep2",
-    cookingTime: 30,
+    purchasedIngredients: [{name: "ingredient1", quantity: "1", preparation: null}],
+    steps: [{sequence: 1, instruction: "Cook the ingredients.", notes: null}],
+    cookingMinutes: 30,
+    totalMinutes: 40,
   });
   const testInvoice = TestDataBuilder.build("invoice", {
     id: "11111111-1111-4111-8111-111111111111",
@@ -81,9 +82,10 @@ describe("useRecipeAdd", () => {
       const existingRecipe = TestDataBuilder.build("recipe", {
         name: "Existing Recipe",
         description: "Existing description",
-        ingredients: ["existing"],
-        instructions: "step",
-        cookingTime: 20,
+        purchasedIngredients: [{name: "existing", quantity: "1", preparation: null}],
+        steps: [{sequence: 1, instruction: "Cook.", notes: null}],
+        cookingMinutes: 20,
+        totalMinutes: 30,
       });
 
       const invoiceWithRecipes = TestDataBuilder.build("invoice", {
@@ -108,9 +110,10 @@ describe("useRecipeAdd", () => {
       const recipe1 = TestDataBuilder.build("recipe", {
         name: "Duplicate Name",
         description: "First version",
-        ingredients: ["ing1"],
-        instructions: "step1",
-        cookingTime: 10,
+        purchasedIngredients: [{name: "ing1", quantity: "1", preparation: null}],
+        steps: [{sequence: 1, instruction: "Cook.", notes: null}],
+        cookingMinutes: 10,
+        totalMinutes: 20,
       });
 
       const invoiceWithRecipe = TestDataBuilder.build("invoice", {
@@ -218,10 +221,18 @@ describe("useRecipeAdd", () => {
       const complexRecipe = TestDataBuilder.build("recipe", {
         name: "Complex Recipe",
         description: "Detailed description",
-        ingredients: ["ing1", "ing2", "ing3"],
-        instructions: "step1\nstep2\nstep3\nstep4",
-        cookingTime: 60,
-        preparationTime: 15,
+        purchasedIngredients: [
+          {name: "ing1", quantity: "1", preparation: null},
+          {name: "ing2", quantity: "1", preparation: null},
+          {name: "ing3", quantity: "1", preparation: null},
+        ],
+        steps: [
+          {sequence: 1, instruction: "Prepare.", notes: null},
+          {sequence: 2, instruction: "Cook.", notes: null},
+        ],
+        cookingMinutes: 60,
+        preparationMinutes: 15,
+        totalMinutes: 75,
       });
 
       const hookResult = renderHook(() => useRecipeAdd(testInvoice));
@@ -239,10 +250,11 @@ describe("useRecipeAdd", () => {
     it("handles recipe with minimal required fields", async () => {
       const minimalRecipe = TestDataBuilder.build("recipe", {
         name: "Minimal Recipe",
-        description: "",
-        ingredients: [],
-        instructions: "",
-        cookingTime: 0,
+        description: "Minimal structured recipe.",
+        purchasedIngredients: [],
+        steps: [],
+        cookingMinutes: 0,
+        totalMinutes: 10,
       });
 
       const hookResult = renderHook(() => useRecipeAdd(testInvoice));
@@ -263,17 +275,19 @@ describe("useRecipeAdd", () => {
       const recipe1 = TestDataBuilder.build("recipe", {
         name: "Recipe 1",
         description: "First",
-        ingredients: ["a"],
-        instructions: "1",
-        cookingTime: 10,
+        purchasedIngredients: [{name: "a", quantity: "1", preparation: null}],
+        steps: [{sequence: 1, instruction: "Cook.", notes: null}],
+        cookingMinutes: 10,
+        totalMinutes: 20,
       });
 
       const recipe2 = TestDataBuilder.build("recipe", {
         name: "Recipe 2",
         description: "Second",
-        ingredients: ["b"],
-        instructions: "2",
-        cookingTime: 20,
+        purchasedIngredients: [{name: "b", quantity: "1", preparation: null}],
+        steps: [{sequence: 1, instruction: "Cook.", notes: null}],
+        cookingMinutes: 20,
+        totalMinutes: 30,
       });
 
       const {result, rerender} = renderHook(({invoice}) => useRecipeAdd(invoice), {initialProps: {invoice: testInvoice}});

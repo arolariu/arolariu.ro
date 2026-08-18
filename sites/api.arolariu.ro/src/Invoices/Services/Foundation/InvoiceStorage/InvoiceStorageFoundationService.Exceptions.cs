@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Common.Exceptions;
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
@@ -73,6 +75,10 @@ public partial class InvoiceStorageFoundationService
       or InvoicePaymentInformationNotCorrectException
       or InvoiceTimeInformationNotCorrectException
       or InvoicePhotoLocationNotCorrectException
+      or TaxonomyCodeNotFoundException
+      => LogAndWrapValidation(exception),
+
+    IValidationException
       => LogAndWrapValidation(exception),
 
     InvoiceNotFoundException

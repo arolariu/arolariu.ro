@@ -8,12 +8,15 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Http;
+using arolariu.Backend.Common.Options;
 using arolariu.Backend.Common.Telemetry.Tracing;
 using arolariu.Backend.Domain.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.DTOs.Responses;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
+using arolariu.Backend.Domain.Invoices.Services.Processing.AnalysisService;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -26,6 +29,7 @@ public static partial class InvoiceEndpoints
   #region CRUD operations for the Invoice Standard Endpoints
   internal static async partial Task<IResult> CreateNewInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
+    IOptionsManager optionsManager,
     IHttpContextAccessor httpContext,
     CreateInvoiceRequestDto invoiceDto)
   {
@@ -40,21 +44,31 @@ public static partial class InvoiceEndpoints
         .SetLayerContext("Endpoint", nameof(InvoiceEndpoints))
         .SetOperationType("CRUD.Create");
 
-      if (invoiceDto.UserIdentifier == Guid.Empty)
+      if (!TryRetrieveUserIdentifierClaimFromPrincipal(httpContext, out Guid serverOwnerIdentifier))
       {
-        activity?.SetTag("validation.failed", "UserIdentifier is required");
+        activity?.SetTag("validation.failed", true);
+        activity?.SetTag("validation.reason", "missing_user_identifier");
         return TypedResults.ValidationProblem(
           new Dictionary<string, string[]>
           {
-            ["UserIdentifier"] = ["User identifier is required and cannot be empty."]
+            ["userIdentifier"] = ["An authenticated user identifier claim is required."]
           });
       }
 
-      var invoice = invoiceDto.ToInvoice();
+      ApplicationOptions storageOptions = optionsManager.GetApplicationOptions();
+
+      if (!invoiceDto.TryValidate(storageOptions, out Dictionary<string, string[]> validationErrors))
+      {
+        activity?.SetTag("validation.failed", true);
+        activity?.SetTag("validation.reason", "invoice_transport");
+        return TypedResults.ValidationProblem(validationErrors);
+      }
+
+      var invoice = invoiceDto.ToInvoice(serverOwnerIdentifier, storageOptions);
       activity?.SetInvoiceContext(invoice.id, invoice.UserIdentifier);
 
       await invoiceProcessingService
-        .CreateInvoice(invoice, null, writeScope.Token)
+        .CreateInvoice(invoice, serverOwnerIdentifier, writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoice created successfully");
@@ -433,6 +447,8 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("Product.Add");
       }
 
+      var productEntity = product.ToProduct();
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
@@ -444,9 +460,6 @@ public static partial class InvoiceEndpoints
         activity?.SetTag("result.found", false);
         return TypedResults.NotFound();
       }
-
-      var productEntity = product.ToProduct();
-      activity?.SetTag("product.name", productEntity.Name);
 
       await invoiceProcessingService
         .AddProduct(productEntity, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
@@ -532,19 +545,13 @@ public static partial class InvoiceEndpoints
 
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
-      activity?.SetTag("product.name", productDto.ProductName);
-
-      var possibleProduct = await invoiceProcessingService
-        .GetProduct(productDto.ProductName, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
-        .ConfigureAwait(false);
-      if (possibleProduct is null)
-      {
-        activity?.SetTag("result.found", false);
-        return TypedResults.NotFound();
-      }
+      var selector = productDto.ToSelector();
+      activity?.SetTag(
+        "product.selector.strategy",
+        selector.UsesOriginalProductCode ? "product_code" : "composite_snapshot");
 
       await invoiceProcessingService
-        .DeleteProduct(productDto.ProductName, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+        .DeleteProduct(selector, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Product removed from invoice");
@@ -583,35 +590,19 @@ public static partial class InvoiceEndpoints
 
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
-      activity?.SetTag("product.original_name", productInformation.OriginalProductName);
+      var selector = productInformation.ToSelector();
+      var productEntity = productInformation.ToProduct();
+      activity?.SetTag(
+        "product.selector.strategy",
+        selector.UsesOriginalProductCode ? "product_code" : "composite_snapshot");
 
-      var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
-        .ConfigureAwait(false);
-      if (possibleInvoice is null)
-      {
-        activity?.SetTag("result.invoice_found", false);
-        return TypedResults.NotFound();
-      }
-
-      var possibleProduct = await invoiceProcessingService
-        .GetProduct(productInformation.OriginalProductName, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
-        .ConfigureAwait(false);
-      if (possibleProduct is null)
-      {
-        activity?.SetTag("result.product_found", false);
-        return TypedResults.NotFound();
-      }
-
-      await invoiceProcessingService
-        .DeleteProduct(possibleProduct, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
-        .ConfigureAwait(false);
-
-      var updatedProduct = productInformation.ToProduct();
-      activity?.SetTag("product.new_name", updatedProduct.Name);
-
-      await invoiceProcessingService
-        .AddProduct(updatedProduct, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+      var updatedProduct = await invoiceProcessingService
+        .UpdateProduct(
+          selector,
+          productEntity,
+          id,
+          potentialUserIdentifier,
+          writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Product updated in invoice");
@@ -728,7 +719,7 @@ public static partial class InvoiceEndpoints
       }
 
       var merchant = merchantDto.ToMerchant();
-      activity?.SetMerchantContext(merchant.id, merchant.Name);
+      activity?.SetMerchantContext(merchant.id);
       activity?.SetTag("merchant.parent_company_id", merchant.ParentCompanyId.ToString());
 
       possibleInvoice.MerchantReference = merchant.id;
@@ -833,6 +824,7 @@ public static partial class InvoiceEndpoints
 
   internal static async partial Task<IResult> CreateInvoiceScanAsync(
     IInvoiceProcessingService invoiceProcessingService,
+    IOptionsManager optionsManager,
     IHttpContextAccessor httpContext,
     Guid id,
     CreateInvoiceScanRequestDto invoiceScanDto)
@@ -850,26 +842,24 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("Scan.Create");
       }
 
+      ApplicationOptions storageOptions = optionsManager.GetApplicationOptions();
+
+      if (!invoiceScanDto.TryValidate(storageOptions, out Dictionary<string, string[]> validationErrors))
+      {
+        activity?.SetTag("validation.failed", true);
+        activity?.SetTag("validation.reason", "scan_transport");
+        return TypedResults.ValidationProblem(validationErrors);
+      }
+
+      InvoiceScan convertedScan = invoiceScanDto.ToInvoiceScan(storageOptions);
+      activity?.SetTag("scan.type", convertedScan.Type.ToString());
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
-      var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
-        .ConfigureAwait(false);
-      if (possibleInvoice is null)
-      {
-        activity?.SetTag("result.found", false);
-        return TypedResults.NotFound();
-      }
-
-      InvoiceScan convertedScan = invoiceScanDto.ToInvoiceScan();
-      activity?.SetTag("scan.location", convertedScan.Location.ToString());
-
-      possibleInvoice.Scans.Add(convertedScan);
-
       await invoiceProcessingService
-          .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
-          .ConfigureAwait(false);
+        .CreateInvoiceScan(convertedScan, id, potentialUserIdentifier, writeScope.Token)
+        .ConfigureAwait(false);
 
       activity?.RecordSuccess("Scan added to invoice");
       return TypedResults.Created($"/rest/v1/invoices/{id}/scans", InvoiceScanResponseDto.FromInvoiceScan(convertedScan));
@@ -961,9 +951,8 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      // URL-decode the scan location field to handle URL-encoded characters
+      // URL-decode the scan location field to handle URL-encoded characters.
       var decodedScanLocation = Uri.UnescapeDataString(scanLocationField);
-      activity?.SetTag("scan.location", decodedScanLocation);
 
       var possibleScan = possibleInvoice.Scans
          .FirstOrDefault(scan => scan.Location.ToString() == decodedScanLocation, InvoiceScan.Default());
@@ -1021,9 +1010,10 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      activity?.SetTag("metadata.count", possibleInvoice.AdditionalMetadata.Count);
+      var publicMetadata = InvoiceMetadataProjector.CreatePublicSnapshot(possibleInvoice.AdditionalMetadata);
+      activity?.SetTag("metadata.count", publicMetadata.Count);
       activity?.RecordSuccess();
-      return TypedResults.Ok(value: possibleInvoice.AdditionalMetadata);
+      return TypedResults.Ok(value: publicMetadata);
     }
     catch (OperationCanceledException)
     {
@@ -1056,6 +1046,8 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("Metadata.Patch");
       }
 
+      invoiceMetadataPatch.Validate();
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
@@ -1074,9 +1066,10 @@ public static partial class InvoiceEndpoints
         .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
-      activity?.SetTag("metadata.count", updatedInvoice.AdditionalMetadata.Count);
+      var publicMetadata = InvoiceMetadataProjector.CreatePublicSnapshot(updatedInvoice.AdditionalMetadata);
+      activity?.SetTag("metadata.count", publicMetadata.Count);
       activity?.RecordSuccess("Metadata patched");
-      return TypedResults.Accepted($"/rest/v1/invoices/{id}/metadata", updatedInvoice.AdditionalMetadata);
+      return TypedResults.Accepted($"/rest/v1/invoices/{id}/metadata", publicMetadata);
     }
     catch (OperationCanceledException)
     {
@@ -1171,7 +1164,6 @@ public static partial class InvoiceEndpoints
 
       var merchant = merchantDto.ToMerchant();
       activity?.SetMerchantContext(merchant.id);
-      activity?.SetTag("merchant.name", merchant.Name);
 
       await invoiceProcessingService
           .CreateMerchant(merchant, null, writeScope.Token)
@@ -1265,7 +1257,6 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      activity?.SetTag("merchant.name", possibleMerchant.Name);
       activity?.RecordSuccess();
       return TypedResults.Ok(MerchantResponseDto.FromMerchant(possibleMerchant));
     }
@@ -1303,20 +1294,12 @@ public static partial class InvoiceEndpoints
       _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetMerchantContext(id);
 
-      var possibleMerchant = await invoiceProcessingService
-        .ReadMerchant(id, merchantPayload.ParentCompanyId, cancellationToken: writeScope.Token)
-        .ConfigureAwait(false);
-      if (possibleMerchant is null)
-      {
-        activity?.SetTag("result.found", false);
-        return TypedResults.NotFound();
-      }
-
-      var updatedMerchant = merchantPayload.ToMerchant(id);
-      activity?.SetTag("merchant.name", updatedMerchant.Name);
-
-      await invoiceProcessingService
-        .UpdateMerchant(updatedMerchant, id, updatedMerchant.ParentCompanyId, cancellationToken: writeScope.Token)
+      var updatedMerchant = await invoiceProcessingService
+        .UpdateMerchant(
+          merchantPayload.ToMerchant(id),
+          id,
+          parentCompanyId: null,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Merchant updated");
@@ -1670,72 +1653,6 @@ public static partial class InvoiceEndpoints
   }
   #endregion
 
-  #region Analysis operations
-  internal static async partial Task<IResult> AnalyzeInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    AnalyzeInvoiceRequestDto options)
-  {
-    using var writeScope = RequestCancellation.ForWrite(
-      httpContext.HttpContext!,
-      RequestCancellation.AnalysisWriteBudget);
-
-    try
-    {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceAsync), ActivityKind.Server);
-      if (activity is not null)
-      {
-        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
-        activity.SetOperationType("Invoice.Analyze");
-      }
-
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
-      activity?.SetInvoiceContext(id, potentialUserIdentifier);
-
-      // Set analysis options on the span
-      var analysisOptions = options.ToAnalysisOptions();
-      activity?.SetTag("analysis.mode", analysisOptions.ToString());
-
-      var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier, writeScope.Token)
-        .ConfigureAwait(false);
-      if (possibleInvoice is null)
-      {
-        activity?.SetTag("result.found", false);
-        return TypedResults.NotFound();
-      }
-
-      await invoiceProcessingService
-        .AnalyzeInvoice(analysisOptions, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
-        .ConfigureAwait(false);
-
-      var analyzedInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier, writeScope.Token)
-        .ConfigureAwait(false);
-
-      if (analyzedInvoice is null)
-      {
-        activity?.SetTag("result.analyzed", false);
-        return TypedResults.NotFound();
-      }
-
-      activity?.SetTag("result.items_count", analyzedInvoice.Items.Count);
-      activity?.RecordSuccess("Invoice analyzed");
-      return TypedResults.Accepted($"/rest/v1/invoices/{id}", InvoiceResponseDto.FromInvoice(analyzedInvoice));
-    }
-    catch (OperationCanceledException)
-    {
-      return HandleCancellation(httpContext.HttpContext!, writeScope, "analyze", "invoice");
-    }
-    catch (Exception ex)
-    {
-      Activity.Current?.RecordException(ex);
-      Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
-    }
-  }
-  #endregion
 
   #region Cancellation helpers
   /// <summary>
@@ -1776,4 +1693,3 @@ public static partial class InvoiceEndpoints
   }
   #endregion
 }
-

@@ -125,7 +125,7 @@ export default function RemoveScanDialog(): React.JSX.Element {
             <ScanCard
               media={{
                 src: scan.location,
-                mediaKind: scan.scanType === InvoiceScanType.PDF ? "pdf" : "image",
+                mediaKind: scan.type === InvoiceScanType.PDF ? "pdf" : "image",
                 alt: t((m) => m.dialogs.invoices.removeScanDialog.scanAlt, {index: String(currentScanNumber)}),
               }}
               title={t((m) => m.dialogs.invoices.removeScanDialog.scanCaption, {index: String(currentScanNumber)})}

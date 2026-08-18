@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 
@@ -25,7 +26,7 @@ internal static class InvoiceBuilder
     UserIdentifier = Guid.NewGuid(),
     Name = GetRandomString(),
     Description = GetRandomString(),
-    Category = InvoiceCategory.FAST_FOOD,
+    Classification = ClassificationTestData.Ecoicop("01.1", "Food"),
     Scans = [],
     IsImportant = Random.Next(0, 2) == 1,
     CreatedBy = Guid.NewGuid(),
@@ -53,7 +54,7 @@ internal static class InvoiceBuilder
       UserIdentifier = userIdentifier ?? invoice.UserIdentifier,
       Name = name ?? invoice.Name,
       Description = description ?? invoice.Description,
-      Category = invoice.Category,
+      Classification = invoice.Classification,
       Scans = invoice.Scans,
       IsImportant = invoice.IsImportant,
       CreatedBy = invoice.CreatedBy,
@@ -94,16 +95,12 @@ internal static class InvoiceBuilder
       products.Add(new Product
       {
         Name = GetRandomString(),
-        Category = ProductCategory.FISH,
+        Classification = ClassificationTestData.Gpc("10000025", "Fish - Prepared/Processed"),
         Quantity = (decimal)(Random.NextDouble() * 100),
         QuantityUnit = GetRandomString(),
         ProductCode = GetRandomString(),
         Price = (decimal)(Random.NextDouble() * 1000),
-        DetectedAllergens =
-        [
-          new Allergen { Name = "Gluten", Description = "Gluten allergen" },
-          new Allergen { Name = "Dairy", Description = "Dairy allergen" }
-        ]
+        AllergenAssessment = AllergenAssessment.NoSignals(Guid.NewGuid())
       });
     }
 

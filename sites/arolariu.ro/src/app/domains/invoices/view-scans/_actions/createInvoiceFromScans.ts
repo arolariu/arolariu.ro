@@ -1,32 +1,31 @@
 "use server";
 
 /**
- * @fileoverview Server action for creating invoices from selected scans.
+ * @fileoverview Creates invoice records from selected scans and durably enqueues analysis.
  * @module app/domains/invoices/view-scans/_actions/createInvoiceFromScans
- *
- * @remarks
- * This is a composite server action specific to the view-scans workflow.
- * It converts standalone scans into invoice entities. Supports two modes:
- * - **Single mode**: Each scan becomes a separate invoice
- * - **Batch mode**: Multiple scans combined into one invoice
- *
- * **Workflow**:
- * 1. User selects scans in `/view-scans`
- * 2. User chooses single or batch mode
- * 3. This action creates invoice(s) using existing scan URLs
- * 4. Scans are marked as archived after successful creation
- *
- * @see {@link fetchScans} for retrieving scans
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
-import {type CreateInvoiceDtoPayload, type CreateInvoiceScanDtoPayload, type Invoice, InvoiceAnalysisOptions} from "@/types/invoices";
-import {type Scan, ScanMetadataStatus, ScanMetadataKey} from "@/types/scans";
+import {fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionErrorCode, type ServerActionResult} from "@/lib/utils.server";
+import {
+  AnalysisProfile,
+  InvoiceScanType,
+  PaymentType,
+  type CreateInvoiceDtoPayload,
+  type CreateInvoiceScanDtoPayload,
+  type Invoice,
+} from "@/types/invoices";
+import {parseInvoiceTransport} from "@/types/invoices/transport";
+import {type Scan, ScanMetadataStatus} from "@/types/scans";
 import {analyzeInvoice} from "../../_actions/invoices";
 import {updateScan} from "../../_actions/scans";
-import {scanTypeToInvoiceScanType} from "../../_utils/mimeTypeUtilities";
+import {isHeicScanMimeType, scanTypeToInvoiceScanType} from "../../_utils/mimeTypeUtilities";
+
+/** Client-safe message for an unavailable invoice-creation operation. */
+const CREATE_INVOICES_FAILURE_MESSAGE = "Unable to create invoices. Please try again.";
+/** Client-safe message for unauthenticated invoice creation. */
+const CREATE_INVOICES_AUTH_MESSAGE = "You must be authenticated to create invoices.";
 
 /**
  * Input parameters for creating invoices from scans.
@@ -34,366 +33,464 @@ import {scanTypeToInvoiceScanType} from "../../_utils/mimeTypeUtilities";
 type CreateInvoiceFromScansInput = Readonly<{
   /** The scans to convert to invoices. */
   scans: ReadonlyArray<Scan>;
-  /**
-   * Creation mode:
-   * - "single": Each scan becomes a separate invoice
-   * - "batch": All scans combined into one invoice
-   */
+  /** Whether scans create individual invoices or one invoice with attachments. */
   mode: "single" | "batch";
 }>;
 
 /**
- * Response from the create invoice operation.
+ * Safe per-scan creation failure returned to the client.
+ *
+ * Backend error bodies, exception messages, OCR output, and scan locations are
+ * deliberately excluded from this contract.
  */
-type CreateInvoiceFromScansOutput = Promise<
-  Readonly<{
-    /** Successfully created invoices */
-    invoices: Invoice[];
-    /** IDs of scans that were successfully converted */
-    convertedScanIds: string[];
-    /** Errors encountered during creation */
-    errors: Array<{scanId: string; error: string}>;
-  }>
->;
+type ScanCreationFailure = Readonly<{
+  /** Identifier of the selected scan that could not be converted. */
+  scanId: string;
+  /** Stable category of the failed operation. */
+  code: ServerActionErrorCode;
+}>;
 
 /**
- * Creates a single invoice from a scan.
+ * Safe durable-enqueue outcome for a created invoice.
  */
-async function createSingleInvoice(scan: Scan, userIdentifier: string, authToken: string): Promise<Invoice> {
-  const payload: CreateInvoiceDtoPayload = {
-    userIdentifier,
-    initialScan: {
-      scanType: scanTypeToInvoiceScanType(scan.scanType),
-      location: scan.blobUrl,
-      metadata: {
-        sourceScanId: scan.metadata.scanId,
-        sourceOwnerId: scan.metadata.ownerId,
-        documentKind: scan.metadata.documentKind,
-        documentRole: scan.metadata.documentRole,
-        uploadedAt: scan.metadata.uploadedAt.toISOString(),
-      },
-    },
-    metadata: {
-      isImportant: "false",
-      requiresAnalysis: "true",
-      sourceScanId: scan.id,
-    },
-  };
+type AnalysisEnqueueOutcome =
+  | Readonly<{
+      /** Created invoice identifier. */
+      invoiceIdentifier: string;
+      /** The analysis service durably accepted the work with HTTP 202. */
+      status: "queued";
+    }>
+  | Readonly<{
+      /** Created invoice identifier. */
+      invoiceIdentifier: string;
+      /** The invoice exists, but its analysis request was not accepted. */
+      status: "not_queued";
+      /** Stable category of the enqueue rejection. */
+      errorCode: ServerActionErrorCode;
+    }>;
 
-  const response = await fetchWithTimeout("/rest/v1/invoices", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${authToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+/**
+ * Successful invoice-conversion data.
+ */
+type CreateInvoicesFromScansData = Readonly<{
+  /** Invoices created by the operation. */
+  invoices: ReadonlyArray<Invoice>;
+  /** Selected scan IDs that were successfully attached to invoices. */
+  convertedScanIds: ReadonlyArray<string>;
+  /** Client-safe per-scan creation or attachment failures. */
+  errors: ReadonlyArray<ScanCreationFailure>;
+  /** Durable analysis enqueue outcome for each created invoice. */
+  analysis: ReadonlyArray<AnalysisEnqueueOutcome>;
+}>;
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to create invoice: ${response.status} - ${errorText}`);
-  }
+/** Result for the create-invoices-from-scans server action. */
+type CreateInvoiceFromScansOutput = ServerActionResult<CreateInvoicesFromScansData>;
 
-  return response.json() as Promise<Invoice>;
-}
+/**
+ * Internal result for one invoice-creation request.
+ */
+type InvoiceRequestResult = Readonly<{success: true; invoice: Invoice}> | Readonly<{success: false; code: ServerActionErrorCode}>;
 
-/** Result type for invoice creation operations */
+/**
+ * Internal aggregate used while processing one mode.
+ */
 type CreationResult = {
   invoices: Invoice[];
   convertedScanIds: string[];
-  errors: Array<{scanId: string; error: string}>;
+  errors: ScanCreationFailure[];
+  analysis: AnalysisEnqueueOutcome[];
 };
 
 /**
- * Attaches an additional scan to an existing invoice.
+ * Logs a bounded operation event without input, response-body, or exception data.
+ *
+ * @param level - Structured log severity.
+ * @param operation - Bounded operation name.
+ * @param attributes - Safe HTTP status and error-code attributes.
  */
-async function attachScanToInvoice(invoiceId: string, scan: Scan, authToken: string): Promise<void> {
+function logSafeOperation(
+  level: "info" | "warn" | "error",
+  operation: string,
+  attributes: Readonly<{httpStatus?: number; errorCode?: ServerActionErrorCode}> = {},
+): void {
+  logWithTrace(level, operation, attributes, "server");
+}
+
+/**
+ * Resolves a stable client-safe message for an action-level creation failure.
+ *
+ * @param code - Stable error category.
+ * @returns A client-safe message with no backend content.
+ */
+function createSafeFailureMessage(code: ServerActionErrorCode): string {
+  if (code === "AUTH_ERROR") {
+    return CREATE_INVOICES_AUTH_MESSAGE;
+  }
+
+  if (code === "VALIDATION_ERROR") {
+    return "Unable to create invoices with the provided details.";
+  }
+
+  if (code === "SERVER_ERROR") {
+    return "Invoice creation is temporarily unavailable. Please try again.";
+  }
+
+  return CREATE_INVOICES_FAILURE_MESSAGE;
+}
+
+/**
+ * Creates the request body for an invoice's first scan.
+ *
+ * @param scan - Scan selected by the authenticated user.
+ * @returns Backend invoice-create payload.
+ */
+function createInvoicePayload(scan: Scan): CreateInvoiceDtoPayload {
+  return {
+    name: scan.name.replace(/\.[^/.]+$/u, "").trim() || "Invoice",
+    description: null,
+    classification: null,
+    paymentInformation: {
+      transactionDate: scan.uploadedAt,
+      paymentType: PaymentType.Unknown,
+      currency: {name: "Romanian Leu", code: "RON", symbol: "lei"},
+      totalCostAmount: 0,
+      totalTaxAmount: 0,
+      subtotalAmount: 0,
+      tipAmount: 0,
+    },
+    merchantReference: null,
+    isImportant: false,
+    scans: [
+      {
+        type: scanTypeToInvoiceScanType(scan.scanType),
+        location: scan.blobUrl,
+        metadata: {
+          sourceScanId: scan.metadata.scanId,
+          documentKind: scan.metadata.documentKind,
+          documentRole: scan.metadata.documentRole,
+          uploadedAt: scan.metadata.uploadedAt.toISOString(),
+        },
+      },
+    ],
+    items: null,
+    metadata: {sourceScanId: scan.id},
+  };
+}
+
+function isSupportedInvoiceScan(scan: Scan): boolean {
+  return (
+    !isHeicScanMimeType(scan.mimeType)
+    && (
+      [
+        InvoiceScanType.JPG,
+        InvoiceScanType.JPEG,
+        InvoiceScanType.PNG,
+        InvoiceScanType.PDF,
+        InvoiceScanType.BMP,
+        InvoiceScanType.TIFF,
+        InvoiceScanType.HEIF,
+      ] as readonly InvoiceScanType[]
+    ).includes(scanTypeToInvoiceScanType(scan.scanType))
+  );
+}
+
+/**
+ * Creates one invoice without exposing backend error content.
+ *
+ * @param scan - Scan that becomes the invoice's initial attachment.
+ * @param authToken - Authenticated API token.
+ * @returns The created invoice or a stable failure code.
+ */
+async function createSingleInvoice(scan: Scan, authToken: string): Promise<InvoiceRequestResult> {
+  if (!isSupportedInvoiceScan(scan)) {
+    return {success: false, code: "VALIDATION_ERROR"};
+  }
+
+  try {
+    const payload = createInvoicePayload(scan);
+    const response = await fetchWithTimeout("/rest/v1/invoices", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...payload,
+        paymentInformation: {
+          ...payload.paymentInformation,
+          transactionDate: scan.uploadedAt.toISOString(),
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const code = mapHttpStatusToErrorCode(response.status);
+      logSafeOperation("warn", "invoice.create.rejected", {httpStatus: response.status, errorCode: code});
+      return {success: false, code};
+    }
+
+    const responseBody: unknown = await response.json();
+    const invoice = parseInvoiceTransport(responseBody);
+    if (invoice === null) {
+      logSafeOperation("warn", "invoice.create.invalid-response", {errorCode: "SERVER_ERROR"});
+      return {success: false, code: "SERVER_ERROR"};
+    }
+
+    return {success: true, invoice};
+  } catch {
+    logSafeOperation("error", "invoice.create.failed", {errorCode: "NETWORK_ERROR"});
+    return {success: false, code: "NETWORK_ERROR"};
+  }
+}
+
+/**
+ * Attaches a selected scan to an already-created batch invoice.
+ *
+ * @param invoiceIdentifier - Invoice receiving the attachment.
+ * @param scan - Scan to attach.
+ * @param authToken - Authenticated API token.
+ * @returns A stable success or failure result.
+ */
+async function attachScanToInvoice(
+  invoiceIdentifier: string,
+  scan: Scan,
+  authToken: string,
+): Promise<Readonly<{success: true}> | Readonly<{success: false; code: ServerActionErrorCode}>> {
+  if (!isSupportedInvoiceScan(scan)) {
+    return {success: false, code: "VALIDATION_ERROR"};
+  }
+
   const payload: CreateInvoiceScanDtoPayload = {
     type: scanTypeToInvoiceScanType(scan.scanType),
     location: scan.blobUrl,
-    additionalMetadata: {
+    metadata: {
       sourceScanId: scan.metadata.scanId,
-      sourceOwnerId: scan.metadata.ownerId,
       documentKind: scan.metadata.documentKind,
       documentRole: scan.metadata.documentRole,
       attachedAt: new Date().toISOString(),
     },
   };
 
-  const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}/scans`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${authToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to attach scan to invoice: ${response.status} - ${errorText}`);
-  }
-}
-
-/**
- * Process a single scan to create an individual invoice.
- * Returns success/failure result without throwing.
- */
-async function processSingleScan(
-  scan: Scan,
-  userIdentifier: string,
-  authToken: string,
-): Promise<{success: true; invoice: Invoice} | {success: false; error: string}> {
   try {
-    const invoice = await createSingleInvoice(scan, userIdentifier, authToken);
-    logWithTrace("info", `Created invoice ${invoice.id} from scan ${scan.id}`, {}, "server");
-    // Fire-and-forget auto-analysis after successful creation
-    analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {
-      console.error("Background invoice analysis failed:", error);
+    const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceIdentifier}/scans`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
     });
-    return {success: true, invoice};
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    logWithTrace("error", `Failed to create invoice from scan ${scan.id}`, {error}, "server");
-    return {success: false, error: errorMessage};
+
+    if (!response.ok) {
+      const code = mapHttpStatusToErrorCode(response.status);
+      logSafeOperation("warn", "invoice.scan.attach.rejected", {httpStatus: response.status, errorCode: code});
+      return {success: false, code};
+    }
+
+    return {success: true};
+  } catch {
+    logSafeOperation("error", "invoice.scan.attach.failed", {errorCode: "NETWORK_ERROR"});
+    return {success: false, code: "NETWORK_ERROR"};
   }
 }
 
 /**
- * Creates invoices in single mode - one invoice per scan.
+ * Awaits only the analysis service's durable HTTP 202 acknowledgement.
+ *
+ * @param invoiceIdentifier - Created invoice for which to enqueue analysis.
+ * @returns A client-safe enqueue outcome; this never waits for worker completion.
  */
-async function createInvoicesInSingleMode(scans: ReadonlyArray<Scan>, userIdentifier: string, authToken: string): Promise<CreationResult> {
-  addSpanEvent("bff.invoices.create.single.start");
-  logWithTrace("info", `Creating ${scans.length} individual invoices`, {count: scans.length}, "server");
+async function enqueueInvoiceAnalysis(invoiceIdentifier: string): Promise<AnalysisEnqueueOutcome> {
+  try {
+    const result = await analyzeInvoice({
+      invoiceIdentifier,
+      request: {profile: AnalysisProfile.Comprehensive, overrides: {}},
+    });
 
-  const invoices: Invoice[] = [];
-  const convertedScanIds: string[] = [];
-  const errors: Array<{scanId: string; error: string}> = [];
-  const scanToInvoiceMap = new Map<string, Invoice>();
+    if (result.success) {
+      logSafeOperation("info", "invoice.analysis.enqueue.accepted");
+      return {invoiceIdentifier, status: "queued"};
+    }
+
+    logSafeOperation("warn", "invoice.analysis.enqueue.rejected", {errorCode: result.error.code});
+    return {invoiceIdentifier, status: "not_queued", errorCode: result.error.code};
+  } catch {
+    logSafeOperation("error", "invoice.analysis.enqueue.failed", {errorCode: "NETWORK_ERROR"});
+    return {invoiceIdentifier, status: "not_queued", errorCode: "NETWORK_ERROR"};
+  }
+}
+
+/**
+ * Persists the blob-metadata projection after the invoice API has durably
+ * attached the scan. The invoice API attachment is the authoritative source
+ * for this conversion flow, so analysis may follow that durable attachment;
+ * this projection is nevertheless awaited before the action completes.
+ *
+ * @param scan - Attached scan.
+ * @param invoice - Invoice that owns the scan.
+ * @returns A stable metadata reconciliation outcome.
+ */
+async function persistAttachmentMetadata(
+  scan: Scan,
+  invoice: Invoice,
+): Promise<Readonly<{success: true}> | Readonly<{success: false; code: ServerActionErrorCode}>> {
+  try {
+    const result = await updateScan({
+      scanId: scan.id,
+      metadataAdd: {
+        status: ScanMetadataStatus.ATTACHED,
+        attachedTo: invoice.id,
+      },
+    });
+    if (result.success) {
+      return {success: true};
+    }
+
+    logSafeOperation("warn", "scan.attachment-metadata.rejected", {errorCode: result.error.code});
+    return {success: false, code: result.error.code};
+  } catch {
+    logSafeOperation("warn", "scan.attachment-metadata.failed", {errorCode: "NETWORK_ERROR"});
+    return {success: false, code: "NETWORK_ERROR"};
+  }
+}
+
+/**
+ * Processes selected scans as independent invoices.
+ *
+ * @param scans - Selected scans.
+ * @param userIdentifier - Authenticated user identifier.
+ * @param authToken - Authenticated API token.
+ * @returns Successful creations, safe per-scan failures, and enqueue outcomes.
+ */
+async function createInvoicesInSingleMode(scans: ReadonlyArray<Scan>, authToken: string): Promise<CreationResult> {
+  const result: CreationResult = {invoices: [], convertedScanIds: [], errors: [], analysis: []};
 
   for (const scan of scans) {
-    const result = await processSingleScan(scan, userIdentifier, authToken);
-    if (result.success) {
-      invoices.push(result.invoice);
-      convertedScanIds.push(scan.id);
-      scanToInvoiceMap.set(scan.id, result.invoice);
+    const invoiceResult = await createSingleInvoice(scan, authToken);
+    if (!invoiceResult.success) {
+      result.errors.push({scanId: scan.id, code: invoiceResult.code});
     } else {
-      errors.push({scanId: scan.id, error: result.error});
+      result.invoices.push(invoiceResult.invoice);
+      result.convertedScanIds.push(scan.id);
+      result.analysis.push(await enqueueInvoiceAnalysis(invoiceResult.invoice.id));
+      await persistAttachmentMetadata(scan, invoiceResult.invoice);
     }
   }
 
-  // Mark successfully converted scans as attached (best-effort)
-  if (convertedScanIds.length > 0) {
-    const convertedSet = new Set(convertedScanIds);
-    const convertedScans = scans.filter((s) => convertedSet.has(s.id));
-
-    // Each scan was converted to its own invoice, mark with explicit mapping
-    for (const scan of convertedScans) {
-      const invoice = scanToInvoiceMap.get(scan.id);
-      if (invoice) {
-        updateScan({
-          scanId: scan.id,
-          metadataAdd: {
-            status: ScanMetadataStatus.ATTACHED,
-            attachedAt: new Date(),
-            attachedBy: userIdentifier,
-            attachedTo: invoice.id,
-          },
-          metadataRemove: [
-            ScanMetadataKey.DETACHED_AT,
-            ScanMetadataKey.DETACHED_BY,
-            ScanMetadataKey.DETACHED_FROM,
-            ScanMetadataKey.ARCHIVED_AT,
-            ScanMetadataKey.ARCHIVED_BY,
-          ],
-        }).catch((error) => {
-          console.warn("Failed to mark scan as attached (non-critical):", error);
-        });
-      }
-    }
-  }
-
-  addSpanEvent("bff.invoices.create.single.complete");
-  return {invoices, convertedScanIds, errors};
+  return result;
 }
 
 /**
- * Attaches remaining scans to an invoice in batch mode.
+ * Processes selected scans as one invoice with additional attachments.
+ *
+ * @param scans - Selected scans.
+ * @param userIdentifier - Authenticated user identifier.
+ * @param authToken - Authenticated API token.
+ * @returns Successful creation, safe per-scan failures, and enqueue outcome.
  */
-async function attachRemainingScans(
-  invoiceId: string,
-  scans: ReadonlyArray<Scan>,
-  authToken: string,
-): Promise<{convertedScanIds: string[]; errors: Array<{scanId: string; error: string}>}> {
-  const convertedScanIds: string[] = [];
-  const errors: Array<{scanId: string; error: string}> = [];
-
-  for (let i = 1; i < scans.length; i++) {
-    const scan = scans[i];
-    if (scan) {
-      try {
-        await attachScanToInvoice(invoiceId, scan, authToken);
-        convertedScanIds.push(scan.id);
-        logWithTrace("info", `Attached scan ${scan.id} to invoice ${invoiceId}`, {}, "server");
-      } catch (attachError) {
-        const attachErrorMessage = attachError instanceof Error ? attachError.message : "Unknown error";
-        errors.push({scanId: scan.id, error: attachErrorMessage});
-        logWithTrace("error", `Failed to attach scan ${scan.id} to invoice ${invoiceId}`, {error: attachError}, "server");
-      }
-    }
-  }
-
-  return {convertedScanIds, errors};
-}
-
-/**
- * Creates a single invoice with multiple scans in batch mode.
- */
-async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, userIdentifier: string, authToken: string): Promise<CreationResult> {
-  addSpanEvent("bff.invoice.create.batch.start");
-  logWithTrace("info", `Creating batch invoice from ${scans.length} scans`, {count: scans.length}, "server");
-
+async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, authToken: string): Promise<CreationResult> {
   const [firstScan] = scans;
   if (!firstScan) {
-    throw new Error("No scans provided for batch creation");
-  }
-
-  try {
-    // Create invoice with first scan
-    const invoice = await createSingleInvoice(firstScan, userIdentifier, authToken);
-    logWithTrace("info", `Created invoice ${invoice.id} with initial scan ${firstScan.id}`, {}, "server");
-
-    // Attach remaining scans
-    const {convertedScanIds, errors} = await attachRemainingScans(invoice.id, scans, authToken);
-
-    logWithTrace(
-      "info",
-      `Created batch invoice ${invoice.id} with ${convertedScanIds.length + 1} scans attached`,
-      {invoiceId: invoice.id, scansAttached: convertedScanIds.length + 1},
-      "server",
-    );
-
-    // Mark successfully converted scans as attached (best-effort)
-    const allConvertedSet = new Set([firstScan.id, ...convertedScanIds]);
-    const convertedScans = scans.filter((s) => allConvertedSet.has(s.id));
-
-    for (const scan of convertedScans) {
-      updateScan({
-        scanId: scan.id,
-        metadataAdd: {
-          status: ScanMetadataStatus.ATTACHED,
-          attachedAt: new Date(),
-          attachedBy: userIdentifier,
-          attachedTo: invoice.id,
-        },
-        metadataRemove: [
-          ScanMetadataKey.DETACHED_AT,
-          ScanMetadataKey.DETACHED_BY,
-          ScanMetadataKey.DETACHED_FROM,
-          ScanMetadataKey.ARCHIVED_AT,
-          ScanMetadataKey.ARCHIVED_BY,
-        ],
-      }).catch((error) => {
-        console.warn("Failed to mark scan as attached (non-critical):", error);
-      });
-    }
-
-    // Fire-and-forget auto-analysis after successful batch creation
-    analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {
-      console.error("Background invoice analysis failed:", error);
-    });
-
-    addSpanEvent("bff.invoice.create.batch.complete");
     return {
-      invoices: [invoice],
-      convertedScanIds: [firstScan.id, ...convertedScanIds],
-      errors,
+      invoices: [],
+      convertedScanIds: [],
+      errors: [],
+      analysis: [],
     };
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    logWithTrace("error", "Failed to create batch invoice", {error}, "server");
-
-    // In batch mode, initial creation failure affects all scans
-    const errors = scans.map((scan) => ({scanId: scan.id, error: errorMessage}));
-    addSpanEvent("bff.invoice.create.batch.complete");
-    return {invoices: [], convertedScanIds: [], errors};
   }
+
+  const initialInvoice = await createSingleInvoice(firstScan, authToken);
+  if (!initialInvoice.success) {
+    return {
+      invoices: [],
+      convertedScanIds: [],
+      errors: scans.map((scan) => ({scanId: scan.id, code: initialInvoice.code})),
+      analysis: [],
+    };
+  }
+
+  const result: CreationResult = {
+    invoices: [initialInvoice.invoice],
+    convertedScanIds: [firstScan.id],
+    errors: [],
+    analysis: [],
+  };
+
+  for (const scan of scans.slice(1)) {
+    const attachment = await attachScanToInvoice(initialInvoice.invoice.id, scan, authToken);
+    if (attachment.success) {
+      result.convertedScanIds.push(scan.id);
+    } else {
+      result.errors.push({scanId: scan.id, code: attachment.code});
+    }
+  }
+
+  result.analysis.push(await enqueueInvoiceAnalysis(initialInvoice.invoice.id));
+  const convertedScans = scans.filter((candidate) => result.convertedScanIds.includes(candidate.id));
+  for (const scan of convertedScans) {
+    await persistAttachmentMetadata(scan, initialInvoice.invoice);
+  }
+
+  return result;
 }
 
 /**
- * Creates invoices from selected scans.
+ * Creates invoices from selected scans and awaits each durable analysis enqueue acknowledgement.
  *
  * @remarks
- * **Execution Context**: Server-side only (Next.js server action).
+ * This action waits for the invoice API and the analysis API's HTTP 202 response,
+ * but it never polls or waits for OCR, provider, or worker completion. It returns
+ * an explicit failure result for authentication and request-level failures; a
+ * rejected analysis enqueue remains a partial success because the invoice exists.
  *
- * **Authentication**: Automatically fetches user from auth service.
- *
- * **Single Mode**:
- * Each scan becomes an independent invoice. If one fails, others continue.
- *
- * **Batch Mode**:
- * Creates a single invoice with the first scan as the initial scan,
- * then attaches all additional scans to the same invoice. If an attachment
- * fails, the error is logged but other attachments continue.
- *
- * **Error Handling**:
- * In single mode, errors are collected per scan. Successfully created
- * invoices are returned even if some fail.
- *
- * **Side Effects**: Emits OpenTelemetry spans for tracing.
- *
- * @param input - Creation parameters
- * @returns Object with created invoices, converted scan IDs, and errors
- *
- * @example
- * ```typescript
- * // Single mode - one invoice per scan
- * const result = await createInvoiceFromScans({
- *   scans: selectedScans,
- *   mode: "single"
- * });
- *
- * // Archive converted scans
- * scansStore.archiveScans(result.convertedScanIds);
- *
- * // Add new invoices to store
- * result.invoices.forEach(inv => invoicesStore.upsertInvoice(inv));
- * ```
+ * @param input - Selected scans and invoice-creation mode.
+ * @returns Created invoices, safe conversion failures, and durable enqueue outcomes.
  */
 export async function createInvoiceFromScans({scans, mode}: CreateInvoiceFromScansInput): CreateInvoiceFromScansOutput {
-  console.info(">>> Executing server action::createInvoiceFromScans");
-
   return withSpan("api.actions.scans.createInvoiceFromScans", async () => {
     try {
-      // Step 1. Fetch user JWT for authentication
-      addSpanEvent("bff.user.jwt.fetch.start");
-      logWithTrace("info", "Fetching BFF user JWT for authentication", {}, "server");
+      addSpanEvent("bff.invoices.create.start");
       const {userIdentifier, userJwt: authToken} = await fetchBFFUserFromAuthService();
-      addSpanEvent("bff.user.jwt.fetch.complete");
-
       if (!userIdentifier) {
-        throw new Error("User must be authenticated to create invoices");
+        addSpanEvent("bff.invoices.create.auth-error");
+        logSafeOperation("warn", "invoice.create-from-scans.unauthenticated", {errorCode: "AUTH_ERROR"});
+        return {
+          success: false,
+          error: {code: "AUTH_ERROR", message: CREATE_INVOICES_AUTH_MESSAGE},
+        } as const;
       }
 
-      // Step 2. Create invoices based on mode
+      if (mode === "batch" && scans.length === 0) {
+        return {
+          success: false,
+          error: {code: "VALIDATION_ERROR", message: "Select at least one scan to create an invoice."},
+        } as const;
+      }
+
       const result =
-        mode === "single"
-          ? await createInvoicesInSingleMode(scans, userIdentifier, authToken)
-          : await createInvoicesInBatchMode(scans, userIdentifier, authToken);
+        mode === "single" ? await createInvoicesInSingleMode(scans, authToken) : await createInvoicesInBatchMode(scans, authToken);
 
-      logWithTrace(
-        "info",
-        `Completed invoice creation: ${result.invoices.length} created, ${result.errors.length} errors`,
-        {created: result.invoices.length, errors: result.errors.length},
-        "server",
-      );
+      if (result.invoices.length === 0 && result.errors.length > 0) {
+        const [firstFailure] = result.errors;
+        const errorCode = firstFailure?.code ?? "UNKNOWN_ERROR";
+        addSpanEvent("bff.invoices.create.rejected", {errorCode});
+        logSafeOperation("warn", "invoice.create-from-scans.rejected", {errorCode});
+        return {
+          success: false,
+          error: {code: errorCode, message: createSafeFailureMessage(errorCode)},
+        } as const;
+      }
 
-      return result;
-    } catch (error) {
+      addSpanEvent("bff.invoices.create.complete");
+      logSafeOperation("info", "invoice.create-from-scans.complete");
+      return {success: true, data: result} as const;
+    } catch {
       addSpanEvent("bff.invoices.create.error");
-      logWithTrace("error", "Error creating invoices from scans", {error}, "server");
-      console.error("Error creating invoices from scans:", error);
-      throw error;
+      logSafeOperation("error", "invoice.create-from-scans.failed", {errorCode: "NETWORK_ERROR"});
+      return {
+        success: false,
+        error: {code: "NETWORK_ERROR", message: CREATE_INVOICES_FAILURE_MESSAGE},
+      } as const;
     }
-  });
+  }) satisfies CreateInvoiceFromScansOutput;
 }

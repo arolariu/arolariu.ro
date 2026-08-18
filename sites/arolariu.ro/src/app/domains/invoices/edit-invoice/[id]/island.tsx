@@ -3,6 +3,7 @@
 import type {Invoice, Merchant} from "@/types/invoices";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {motion, type Variants} from "motion/react";
+import {useTranslations} from "next-intl-selector";
 import {TbShoppingCart, TbToolsKitchen} from "react-icons/tb";
 import DialogContainer from "../../_contexts/DialogContainer";
 import {DialogProvider} from "../../_contexts/DialogContext";
@@ -84,6 +85,7 @@ type Props = Readonly<{
  */
 export default function RenderEditInvoiceScreen(props: Readonly<Props>): React.JSX.Element {
   const {invoice, merchant} = props;
+  const t = useTranslations();
 
   const containerVariants: Variants = {
     hidden: {opacity: 0},
@@ -135,13 +137,13 @@ export default function RenderEditInvoiceScreen(props: Readonly<Props>): React.J
                       value='recipes'
                       className={styles["cursorPointer"]}>
                       <TbToolsKitchen className={styles["tabIconSm"]} />
-                      Possible Recipes
+                      {t((m) => m.pages.invoices.editInvoice.recipesTab.tabs.possibleRecipes)}
                     </TabsTrigger>
                     <TabsTrigger
                       value='metadata'
                       className={styles["cursorPointer"]}>
                       <TbShoppingCart className={styles["tabIconSm"]} />
-                      Additional Info
+                      {t((m) => m.pages.invoices.editInvoice.recipesTab.tabs.additionalInfo)}
                     </TabsTrigger>
                   </TabsList>
 
@@ -154,7 +156,13 @@ export default function RenderEditInvoiceScreen(props: Readonly<Props>): React.J
                   <TabsContent
                     value='metadata'
                     className={styles["tabContent"]}>
-                    <MetadataTab metadata={invoice.additionalMetadata} />
+                    <MetadataTab
+                      metadata={Object.fromEntries(
+                        Object.entries(invoice.additionalMetadata).flatMap(([key, value]) => {
+                          return value === null ? [] : [[key, value] as const];
+                        }),
+                      )}
+                    />
                   </TabsContent>
                 </Tabs>
               </motion.div>

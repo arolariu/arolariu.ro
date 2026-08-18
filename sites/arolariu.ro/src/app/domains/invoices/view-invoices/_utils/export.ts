@@ -30,17 +30,12 @@ function exportToJson(invoices: ReadonlyArray<Invoice>, options: InvoiceExportRe
   const jsonSpaces = prettyPrint ? 2 : 0;
 
   const jsonValue = invoices.map((invoice) => {
-    const copy = structuredClone(invoice);
-    if (!includeMerchant) {
-      copy.merchantReference = "";
-    }
-    if (!includeMetadata) {
-      copy.additionalMetadata = {};
-    }
-    if (!includeProducts) {
-      copy.items = [];
-    }
-    return copy;
+    return {
+      ...invoice,
+      merchantReference: includeMerchant ? invoice.merchantReference : "",
+      additionalMetadata: includeMetadata ? invoice.additionalMetadata : {},
+      items: includeProducts ? invoice.items : [],
+    };
   });
 
   const json = JSON.stringify(jsonValue, null, jsonSpaces);

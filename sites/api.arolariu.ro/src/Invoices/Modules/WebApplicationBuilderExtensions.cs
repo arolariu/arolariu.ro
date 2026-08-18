@@ -5,21 +5,33 @@ using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Options;
-using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
-using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.AnalysisRunBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.BlobStorageBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.GenerativeAiBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.AnalysisRuns;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.DocumentAnalysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
+using arolariu.Backend.Domain.Invoices.Services.Orchestration.AnalysisService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
+using arolariu.Backend.Domain.Invoices.Services.Processing.AnalysisService;
+using arolariu.Backend.Domain.Invoices.Workers;
+
+using Azure;
+using Azure.AI.OpenAI;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
@@ -28,6 +40,9 @@ using Microsoft.Extensions.DependencyInjection;
 [ExcludeFromCodeCoverage] // This class is not tested because it is a simple extension class.
 public static class WebApplicationBuilderExtensions
 {
+  /// <summary>The OpenTelemetry activity source name emitted by the generative analysis pipeline.</summary>
+  private const string AnalysisTelemetrySourceName = "arolariu.Backend.Domain.Invoices.Analysis";
+
   /// <summary>
   /// Adds invoices domain configurations to the WebApplicationBuilder instance.
   /// </summary>
@@ -102,22 +117,54 @@ public static class WebApplicationBuilderExtensions
       options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
     });
 
+    // Generative AI client. A single long-lived Azure OpenAI client is shared; the Microsoft.Extensions.AI chat
+    // client wraps it so brokers depend on the provider-agnostic abstraction rather than the Azure SDK.
+    services.AddSingleton<AzureOpenAIClient>(serviceProvider =>
+    {
+      ApplicationOptions options = serviceProvider.GetRequiredService<IOptionsManager>().GetApplicationOptions();
+
+      return new AzureOpenAIClient(
+        endpoint: new Uri(options.CognitiveServicesEndpoint),
+        credential: new AzureKeyCredential(options.CognitiveServicesKey));
+    });
+
+    services
+      .AddChatClient(serviceProvider =>
+      {
+        var azureClient = serviceProvider.GetRequiredService<AzureOpenAIClient>();
+        return azureClient.GetChatClient(InvoiceMetrics.ConfiguredGenerativeModelIdentifier).AsIChatClient();
+      })
+      .UseOpenTelemetry(
+        sourceName: AnalysisTelemetrySourceName,
+        configure: options => options.EnableSensitiveData = false);
+
     // Broker services:
-    services.AddScoped<IClassifierBroker, AzureClassifierBroker>();
-    services.AddScoped<IFormRecognizerBroker, AzureFormRecognizerBroker>();
+    services.AddScoped<IDocumentIntelligenceBroker, AzureDocumentIntelligenceBroker>();
+    services.AddScoped<IInvoiceBlobStorageBroker, AzureInvoiceBlobStorageBroker>();
     services.AddScoped<IInvoiceNoSqlBroker, InvoiceNoSqlBroker>();
+    services.AddScoped<IAnalysisRunBroker, CosmosAnalysisRunBroker>();
+    services.AddScoped<IGenerativeAiBroker, MicrosoftExtensionsAiBroker>();
+    services.AddSingleton<ITaxonomyBroker, JsonTaxonomyBroker>();
     services.AddScoped<ITranslatorBroker, AzureTranslatorBroker>();
 
     // Foundation services:
+    services.AddScoped<IAnalysisRunFoundationService, AnalysisRunFoundationService>();
+    services.AddScoped<IDocumentAnalysisFoundationService, DocumentAnalysisFoundationService>();
+    services.AddScoped<IGenerativeAnalysisFoundationService, GenerativeAnalysisFoundationService>();
     services.AddScoped<IInvoiceStorageFoundationService, InvoiceStorageFoundationService>();
-    services.AddScoped<IInvoiceAnalysisFoundationService, InvoiceAnalysisFoundationService>();
+    services.AddScoped<IInvoiceScanStorageFoundationService, InvoiceScanStorageFoundationService>();
     services.AddScoped<IMerchantStorageFoundationService, MerchantStorageFoundationService>();
 
     // Orchestration services:
+    services.AddScoped<IAnalysisOrchestrationService, AnalysisOrchestrationService>();
     services.AddScoped<IInvoiceOrchestrationService, InvoiceOrchestrationService>();
     services.AddScoped<IMerchantOrchestrationService, MerchantOrchestrationService>();
 
     // Processing services:
+    services.AddScoped<IAnalysisProcessingService, AnalysisProcessingService>();
     services.AddScoped<IInvoiceProcessingService, InvoiceProcessingService>();
+
+    // Hosted workers:
+    services.AddHostedService<AnalysisWorker>();
   }
 }

@@ -1,147 +1,125 @@
 "use server";
 
 /**
- * @fileoverview Server action for attaching additional scans to existing invoices.
+ * @fileoverview Strict server action for attaching a supported invoice scan.
  * @module app/domains/invoices/_actions/invoices/scans/attachScanToInvoice
- *
- * @remarks
- * Allows users to add supplementary scans to an invoice after initial creation.
- * This is useful for:
- * - Multi-page invoices
- * - Receipt attachments
- * - Supporting documentation
- *
- * **Workflow**:
- * 1. Upload scan to Azure Blob via {@link createScan} from `@/app/domains/invoices/_actions/scans`
- * 2. Attach the uploaded scan URL to the invoice via this action
- *
- * @see {@link createScan} for uploading new scans
- * @see {@link CreateInvoiceScanDtoPayload} for scan payload structure
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {getStorageAccountName, isApprovedInvoiceScanLocation} from "@/lib/azure/storageLocationPolicy";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
-import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
-import type {CreateInvoiceScanDtoPayload} from "@/types/invoices";
+import {createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "@/lib/utils.server";
+import {InvoiceScanType, type CreateInvoiceScanDtoPayload} from "@/types/invoices";
+import {isHeicScanFileName} from "../../../_utils/mimeTypeUtilities";
+
+type AttachScanInput = Readonly<{readonly invoiceId: string; readonly payload: CreateInvoiceScanDtoPayload}>;
+type MetadataValue = string | number | boolean | null;
+
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isSupportedScanType(value: unknown): value is InvoiceScanType {
+  return (
+    value === InvoiceScanType.JPG
+    || value === InvoiceScanType.JPEG
+    || value === InvoiceScanType.PNG
+    || value === InvoiceScanType.PDF
+    || value === InvoiceScanType.BMP
+    || value === InvoiceScanType.TIFF
+    || value === InvoiceScanType.HEIF
+  );
+}
+
+function isMetadata(value: unknown): value is Readonly<Record<string, MetadataValue>> {
+  return (
+    isRecord(value)
+    && Object.entries(value).every(
+      ([key, entry]) =>
+        key.trim() !== "" && (typeof entry === "string" || typeof entry === "number" || typeof entry === "boolean" || entry === null),
+    )
+  );
+}
+
+function isAttachScanInput(value: unknown): value is AttachScanInput {
+  return (
+    isRecord(value)
+    && Object.keys(value).length === 2
+    && typeof value["invoiceId"] === "string"
+    && isRecord(value["payload"])
+    && Object.keys(value["payload"]).length === 3
+    && isSupportedScanType(value["payload"]["type"])
+    && typeof value["payload"]["location"] === "string"
+    && isMetadata(value["payload"]["metadata"])
+  );
+}
+
+function hasApprovedScanLocation(input: AttachScanInput, storageServiceRoot: string): boolean {
+  const storageAccountName = getStorageAccountName(storageServiceRoot);
+  try {
+    return (
+      storageAccountName !== null
+      && !isHeicScanFileName(new URL(input.payload.location).pathname)
+      && isApprovedInvoiceScanLocation({
+        location: input.payload.location,
+        storageServiceRoot,
+        storageAccountName,
+      })
+    );
+  } catch {
+    return false;
+  }
+}
 
 /**
- * Input parameters for attaching a scan to an invoice.
+ * Attaches a supported scan without forwarding response content or raw errors.
  *
- * @property invoiceId - UUIDv4 of the target invoice
- * @property payload - Scan details including type, location URL, and metadata
+ * @param input - Untrusted invoice identifier and exact scan DTO.
+ * @returns A safe attachment result.
  */
-type ServerActionInputType = Readonly<{
-  /** The ID of the invoice to attach the scan to. */
-  readonly invoiceId: string;
-  /** The scan payload containing type, location, and metadata. */
-  readonly payload: CreateInvoiceScanDtoPayload;
-}>;
-
-/**
- * Output type indicating async completion with no return value.
- */
-type ServerActionOutputType = ServerActionResult<void>;
-
-/**
- * Attaches a new scan to an existing invoice entity.
- *
- * @remarks
- * **Execution Context**: Server-side only (Next.js server action).
- *
- * **Authentication**: Automatically fetches JWT from Clerk auth service.
- *
- * **Scan Types**:
- * - `Photo`: Camera capture of physical receipt
- * - `Document`: PDF or scanned document
- * - `Screenshot`: Digital receipt capture
- *
- * **Side Effects**:
- * - Emits OpenTelemetry spans for tracing
- * - Updates invoice aggregate with new scan reference
- * - May trigger re-analysis if configured
- *
- * **Error Handling**: Returns a `ServerActionResult<void>` instead of throwing directly.
- *
- * @param input - The invoice ID and scan payload.
- * @param input.invoiceId - UUIDv4 of the invoice to attach the scan to.
- * @param input.payload - Scan details, including type, Azure Blob URL, and optional metadata.
- * @returns A result object with void data on success, or an error result when validation, authorization, or the backend request fails.
- *
- * @example
- * ```typescript
- * import {attachScanToInvoice} from "@/app/domains/invoices/_actions/invoices/scans/attachScanToInvoice";
- * import {InvoiceScanType} from "@/types/invoices";
- *
- * const result = await attachScanToInvoice({
- *   invoiceId: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
- *   payload: {
- *     type: InvoiceScanType.Photo,
- *     location: "https://storage.blob.core.windows.net/invoices/scan.jpg",
- *     additionalMetadata: { page: "2" }
- *   }
- * });
- *
- * if (!result.success) {
- *   console.error("Failed to attach scan:", result.error);
- * }
- * ```
- *
- * @see {@link createScan} for uploading the scan file first (from `@/app/domains/invoices/_actions/scans`)
- */
-export async function attachScanToInvoice({invoiceId, payload}: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{attachScanToInvoice}}, with:", {invoiceId, payload});
-
+export async function attachScanToInvoice(input: unknown): ServerActionResult<void> {
   return withSpan("api.actions.invoices.attachScanToInvoice", async () => {
+    if (!isAttachScanInput(input)) {
+      return {
+        success: false,
+        error: {code: "VALIDATION_ERROR", message: "This scan format is not supported. Convert HEIC images to HEIF before attaching."},
+      };
+    }
+
     try {
-      // Step 0. Validate invoice identifier is valid GUID
-      logWithTrace("info", "Validating identifier is valid...", {invoiceId}, "server");
-      validateStringIsGuidType(invoiceId, "invoiceId");
-
-      // Step 1. Fetch user JWT for authentication
-      addSpanEvent("bff.user.jwt.fetch.start");
-      logWithTrace("info", "Fetching BFF user JWT for authentication...", {}, "server");
+      validateStringIsGuidType(input.invoiceId, "invoiceId");
+      const storageServiceRoot = await fetchConfigurationValue("Endpoints:Storage:Blob");
+      if (!hasApprovedScanLocation(input, storageServiceRoot)) {
+        addSpanEvent("bff.invoice.scan.attach.rejected", {errorCode: "VALIDATION_ERROR"});
+        logWithTrace("warn", "invoice.scan.attach.rejected", {errorCode: "VALIDATION_ERROR"}, "server");
+        return {
+          success: false,
+          error: {code: "VALIDATION_ERROR", message: "This scan format is not supported. Convert HEIC images to HEIF before attaching."},
+        };
+      }
       const {userJwt: authToken} = await fetchBFFUserFromAuthService();
-      addSpanEvent("bff.user.jwt.fetch.complete");
-
-      // Step 2. Make the API request to attach the invoice scan
-      addSpanEvent("bff.request.attach-scan.start");
-      logWithTrace("info", "Making API request to attach invoice scan...", {invoiceId}, "server");
-      const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}/scans`, {
+      const response = await fetchWithTimeout(`/rest/v1/invoices/${input.invoiceId}/scans`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        headers: {Authorization: `Bearer ${authToken}`, "Content-Type": "application/json"},
+        body: JSON.stringify(input.payload),
       });
-      addSpanEvent("bff.request.attach-scan.complete");
 
-      if (response.ok) {
-        logWithTrace("info", "Successfully attached scan to invoice...", {invoiceId}, "server");
-        return {success: true, data: undefined} as const;
+      if (!response.ok) {
+        const code = mapHttpStatusToErrorCode(response.status);
+        addSpanEvent("bff.invoice.scan.attach.rejected", {httpStatus: response.status, errorCode: code});
+        logWithTrace("warn", "invoice.scan.attach.rejected", {httpStatus: response.status, errorCode: code}, "server");
+        return {success: false, error: {code, message: "Unable to attach the scan. Please try again.", status: response.status}};
       }
 
-      addSpanEvent("bff.request.attach-scan.error");
-      const errorText = await response.text();
-      const internalMessage = `Failed to attach invoice scan: ${response.status} ${response.statusText}`;
-      const userMessage = (() => {
-        if (response.status === 404) {
-          return "Invoice not found. Please refresh and try again.";
-        }
-        if (response.status === 400) {
-          return "Invalid scan data. Please check the scan details and try again.";
-        }
-        return "An unexpected error occurred while attaching the scan. Please try again.";
-      })();
-      logWithTrace("error", internalMessage, {invoiceId, errorText}, "server");
-      return createErrorResult(new Error(internalMessage), userMessage);
-    } catch (error: unknown) {
-      addSpanEvent("bff.request.attach-scan.error");
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error attaching the invoice scan", {error: errorMessage, invoiceId}, "server");
-      console.error("Error attaching the invoice scan:", errorMessage, error);
-      return createErrorResult(new Error(errorMessage));
+      addSpanEvent("bff.invoice.scan.attach.complete");
+      logWithTrace("info", "invoice.scan.attach.complete", undefined, "server");
+      return {success: true, data: undefined};
+    } catch (error) {
+      addSpanEvent("bff.invoice.scan.attach.failed");
+      logWithTrace("error", "invoice.scan.attach.failed", {errorCode: "NETWORK_ERROR"}, "server");
+      return createErrorResult(error, "Unable to attach the scan. Please try again.");
     }
-  }) satisfies ServerActionOutputType;
+  });
 }

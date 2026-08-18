@@ -4,9 +4,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 
 /// <summary>
 /// Response DTO representing a merchant entity returned from the API.
@@ -40,9 +42,9 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// <param name="Description">
 /// A detailed description of the merchant. May be empty if not provided.
 /// </param>
-/// <param name="Category">
-/// Business category classification (e.g., Grocery, Restaurant, Pharmacy).
-/// Defaults to <see cref="MerchantCategory.NOT_DEFINED"/> if unclassified.
+/// <param name="Classification">
+/// The standardised NACE classification assigned to this merchant.
+/// Null when the merchant has not been classified yet.
 /// </param>
 /// <param name="Address">
 /// Structured contact and address information including street, city, postal code,
@@ -94,33 +96,33 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// MerchantResponseDto dto = MerchantResponseDto.FromMerchant(domainMerchant);
 ///
 /// // Displaying merchant summary
-/// Console.WriteLine($"Merchant: {dto.Name} ({dto.Category})");
+/// Console.WriteLine($"Merchant: {dto.Name} ({dto.Classification?.OfficialLabel})");
 /// Console.WriteLine($"Invoices: {dto.ReferencedInvoiceCount}");
 /// Console.WriteLine($"Last updated: {dto.LastUpdatedAt:u}");
 /// </code>
 /// </example>
 /// <seealso cref="Merchant"/>
-/// <seealso cref="MerchantCategory"/>
+/// <seealso cref="StandardClassification"/>
 /// <seealso cref="ContactInformation"/>
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct MerchantResponseDto(
-  Guid Id,
-  string Name,
-  string Description,
-  MerchantCategory Category,
-  ContactInformation Address,
-  Guid ParentCompanyId,
-  int ReferencedInvoiceCount,
-  IReadOnlyCollection<Guid> ReferencedInvoiceIds,
-  IReadOnlyDictionary<string, string> AdditionalMetadata,
-  bool IsImportant,
-  bool IsSoftDeleted,
-  DateTimeOffset CreatedAt,
-  Guid CreatedBy,
-  DateTimeOffset LastUpdatedAt,
-  Guid LastUpdatedBy,
-  int NumberOfUpdates)
+  [property: JsonPropertyName("id")] Guid Id,
+  [property: JsonPropertyName("name")] string Name,
+  [property: JsonPropertyName("description")] string Description,
+  [property: JsonPropertyName("classification")] StandardClassificationResponseDto? Classification,
+  [property: JsonPropertyName("address")] ContactInformationResponseDto Address,
+  [property: JsonPropertyName("parentCompanyId")] Guid ParentCompanyId,
+  [property: JsonPropertyName("referencedInvoiceCount")] int ReferencedInvoiceCount,
+  [property: JsonPropertyName("referencedInvoiceIds")] IReadOnlyCollection<Guid> ReferencedInvoiceIds,
+  [property: JsonPropertyName("additionalMetadata")] IReadOnlyDictionary<string, string> AdditionalMetadata,
+  [property: JsonPropertyName("isImportant")] bool IsImportant,
+  [property: JsonPropertyName("isSoftDeleted")] bool IsSoftDeleted,
+  [property: JsonPropertyName("createdAt")] DateTimeOffset CreatedAt,
+  [property: JsonPropertyName("createdBy")] Guid CreatedBy,
+  [property: JsonPropertyName("lastUpdatedAt")] DateTimeOffset LastUpdatedAt,
+  [property: JsonPropertyName("lastUpdatedBy")] Guid LastUpdatedBy,
+  [property: JsonPropertyName("numberOfUpdates")] int NumberOfUpdates)
 {
   /// <summary>
   /// Creates a <see cref="MerchantResponseDto"/> from a domain <see cref="Merchant"/> entity.
@@ -151,8 +153,8 @@ public readonly record struct MerchantResponseDto(
       Id: merchant.id,
       Name: merchant.Name,
       Description: merchant.Description,
-      Category: merchant.Category,
-      Address: merchant.Address,
+      Classification: StandardClassificationResponseDto.FromStandardClassification(merchant.Classification),
+      Address: ContactInformationResponseDto.FromContactInformation(merchant.Address),
       ParentCompanyId: merchant.ParentCompanyId,
       ReferencedInvoiceCount: merchant.ReferencedInvoices.Count,
       ReferencedInvoiceIds: merchant.ReferencedInvoices.ToList().AsReadOnly(),

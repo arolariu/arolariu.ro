@@ -17,7 +17,7 @@ export function BudgetImpactCard(): React.JSX.Element {
   const {currency} = paymentInformation;
 
   const {monthlyBudget, totalSpent, remaining, percentUsed, thisInvoicePercent, daysRemaining, dailyAllowance, isOverBudget, monthName} =
-    computeBudgetImpact(paymentInformation);
+    computeBudgetImpact(paymentInformation, locale);
 
   // Determine daily allowance trend icon
   const getDailyAllowanceIcon = (): React.JSX.Element => {

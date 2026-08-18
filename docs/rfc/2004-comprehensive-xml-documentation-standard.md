@@ -429,7 +429,7 @@ Link to related types, methods, properties, and members.
 /// </para>
 /// <para>
 /// <b>Sentinel Defaults:</b> <see cref="Guid.Empty"/> for <c>UserIdentifier</c> and <c>MerchantReference</c>,
-/// <see cref="InvoiceCategory.NOT_DEFINED"/> for <c>Category</c>, and <see cref="InvoiceScan.Default()"/>
+/// an unclassified invoice value for <c>Classification</c>, and <see cref="InvoiceScan.Default()"/>
 /// for <c>Scan</c> indicate an unenriched or unlinked state.
 /// </para>
 /// </remarks>

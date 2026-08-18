@@ -9,6 +9,10 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Exceptions;
 using arolariu.Backend.Common.Http;
+using arolariu.Backend.Common.Options;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.Endpoints;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
@@ -174,6 +178,54 @@ public sealed class InvoiceEndpointsStatusCodeTests
     return new HttpContextAccessor { HttpContext = httpContext };
   }
 
+  private static HttpContextAccessor CreateContextAccessorWithUserIdentifierClaim(string? userIdentifierClaimValue)
+  {
+    var claims = new List<Claim>();
+
+    if (userIdentifierClaimValue is not null)
+    {
+      claims.Add(new Claim("userIdentifier", userIdentifierClaimValue));
+    }
+
+    var httpContext = new DefaultHttpContext
+    {
+      User = new ClaimsPrincipal(new ClaimsIdentity(claims, authenticationType: "TestAuth")),
+      RequestServices = new ServiceCollection().BuildServiceProvider(),
+    };
+
+    return new HttpContextAccessor { HttpContext = httpContext };
+  }
+
+  private static CreateInvoiceRequestDto CreateValidInvoiceRequest() => new(
+    Name: "Creation contract test invoice",
+    Description: string.Empty,
+    Classification: null,
+    PaymentInformation: null,
+    MerchantReference: null,
+    IsImportant: false,
+    Scans:
+    [
+      new CreateInvoiceScanRequestDto(
+        ScanType.JPG,
+        new Uri("https://example.test/invoices/receipt.jpg"),
+        Metadata: null),
+    ],
+    Items: null,
+    Metadata: null);
+
+  private static EndpointStorageOptionsManager CreateStorageOptionsManager() =>
+    new EndpointStorageOptionsManager();
+
+  private sealed class EndpointStorageOptionsManager : IOptionsManager
+  {
+    public ApplicationOptions GetApplicationOptions() =>
+      new LocalOptions
+      {
+        StorageAccountName = "example",
+        StorageAccountEndpoint = "https://example.test",
+      };
+  }
+
   private static Mock<IInvoiceProcessingService> CreateServiceMockThatThrowsOnRead(Exception exceptionToThrow)
   {
     var mock = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
@@ -207,6 +259,222 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var problem = Assert.IsExactInstanceOfType<ProblemHttpResult>(result);
     return problem.ProblemDetails;
   }
+  #endregion
+
+  #region DELETE /rest/v1/invoices/{id}/products status code tests
+  /// <summary>
+  /// Verifies that a product deletion delegates one deterministic selector to processing and maps a typed not-found
+  /// error to HTTP 404 without separately retrieving the product.
+  /// </summary>
+  [TestMethod]
+  public async Task RemoveProductFromInvoiceAsync_WhenServiceThrowsProductNotFound_Returns404()
+  {
+    // Arrange
+    var invoiceIdentifier = Guid.NewGuid();
+    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    mockService
+      .Setup(service => service.DeleteProduct(
+        It.Is<ProductUpdateSelector>(selector =>
+          selector.OriginalName == "Missing product"
+          && selector.OriginalQuantity == 1m
+          && selector.OriginalUnitPrice == 1m
+          && selector.OriginalTotalPrice == 1m
+          && selector.OccurrenceOrdinal == 0),
+        invoiceIdentifier,
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new ProductNotFoundException(invoiceIdentifier));
+    var accessor = CreateAuthenticatedContextAccessor();
+    var request = new DeleteProductRequestDto(
+      Selector: new ProductUpdateSelectorDto(
+        OriginalProductCode: null,
+        OriginalName: "Missing product",
+        OriginalQuantity: 1m,
+        OriginalUnitPrice: 1m,
+        OriginalTotalPrice: 1m,
+        OccurrenceOrdinal: 0));
+
+    // Act
+    IResult result = await InvoiceEndpoints
+      .RemoveProductFromInvoiceAsync(mockService.Object, accessor, invoiceIdentifier, request)
+      .ConfigureAwait(false);
+
+    // Assert
+    Assert.AreEqual(StatusCodes.Status404NotFound, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.NotFound, GetProblemDetails(result).Type);
+    mockService.Verify(
+      service => service.DeleteProduct(
+        It.IsAny<ProductUpdateSelector>(),
+        invoiceIdentifier,
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()),
+      Times.Once);
+  }
+
+  /// <summary>
+  /// Verifies that an out-of-range product deletion selector maps to HTTP 400.
+  /// </summary>
+  [TestMethod]
+  public async Task RemoveProductFromInvoiceAsync_WhenServiceThrowsOccurrenceOutOfRange_Returns400()
+  {
+    // Arrange
+    var invoiceIdentifier = Guid.NewGuid();
+    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    mockService
+      .Setup(service => service.DeleteProduct(
+        It.IsAny<ProductUpdateSelector>(),
+        invoiceIdentifier,
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()))
+      .ThrowsAsync(
+        new ProductUpdateSelectorOccurrenceOutOfRangeException(
+          invoiceIdentifier,
+          occurrenceOrdinal: 2,
+          matchingProductCount: 2));
+    var accessor = CreateAuthenticatedContextAccessor();
+    var request = new DeleteProductRequestDto(
+      Selector: new ProductUpdateSelectorDto(
+        OriginalProductCode: "duplicate-code",
+        OriginalName: null,
+        OriginalQuantity: null,
+        OriginalUnitPrice: null,
+        OriginalTotalPrice: null,
+        OccurrenceOrdinal: 2));
+
+    // Act
+    IResult result = await InvoiceEndpoints
+      .RemoveProductFromInvoiceAsync(mockService.Object, accessor, invoiceIdentifier, request)
+      .ConfigureAwait(false);
+
+    // Assert
+    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.Validation, GetProblemDetails(result).Type);
+  }
+
+  /// <summary>
+  /// Verifies that an omitted deletion selector maps to HTTP 400 before processing is invoked.
+  /// </summary>
+  [TestMethod]
+  public async Task RemoveProductFromInvoiceAsync_WhenSelectorIsMissing_Returns400()
+  {
+    // Arrange
+    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    var accessor = CreateAuthenticatedContextAccessor();
+    var request = new DeleteProductRequestDto(Selector: null);
+
+    // Act
+    IResult result = await InvoiceEndpoints
+      .RemoveProductFromInvoiceAsync(mockService.Object, accessor, Guid.NewGuid(), request)
+      .ConfigureAwait(false);
+
+    // Assert
+    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.Validation, GetProblemDetails(result).Type);
+    mockService.VerifyNoOtherCalls();
+  }
+
+  #endregion
+
+  #region PUT /rest/v1/invoices/{id}/products status code tests
+  /// <summary>
+  /// Verifies that an unmatched product update reaches the endpoint as a typed 404 response and does not require
+  /// the endpoint to separately load, delete, and append invoice products.
+  /// </summary>
+  [TestMethod]
+  public async Task UpdateProductInInvoiceAsync_WhenServiceThrowsProductNotFound_Returns404()
+  {
+    // Arrange
+    var invoiceIdentifier = Guid.NewGuid();
+    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    mockService
+      .Setup(service => service.UpdateProduct(
+        It.Is<ProductUpdateSelector>(selector =>
+          selector.OriginalName == "Missing product"
+          && selector.OriginalQuantity == 1m
+          && selector.OriginalUnitPrice == 1m
+          && selector.OriginalTotalPrice == 1m),
+        It.IsAny<Product>(),
+        invoiceIdentifier,
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new ProductNotFoundException(invoiceIdentifier));
+    var accessor = CreateAuthenticatedContextAccessor();
+    var request = new UpdateProductRequestDto(
+      Selector: new ProductUpdateSelectorDto(
+        OriginalProductCode: null,
+        OriginalName: "Missing product",
+        OriginalQuantity: 1m,
+        OriginalUnitPrice: 1m,
+        OriginalTotalPrice: 1m,
+        OccurrenceOrdinal: null),
+      Name: "Replacement",
+      Classification: null,
+      Quantity: 1,
+      QuantityUnit: "pcs",
+      ProductCode: null,
+      Price: 1m);
+
+    // Act
+    IResult result = await InvoiceEndpoints
+      .UpdateProductInInvoiceAsync(mockService.Object, accessor, invoiceIdentifier, request)
+      .ConfigureAwait(false);
+
+    // Assert
+    Assert.AreEqual(StatusCodes.Status404NotFound, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.NotFound, GetProblemDetails(result).Type);
+    mockService.Verify(
+      service => service.UpdateProduct(
+        It.IsAny<ProductUpdateSelector>(),
+        It.IsAny<Product>(),
+        invoiceIdentifier,
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()),
+      Times.Once);
+  }
+
+  /// <summary>
+  /// Verifies that an ambiguous identity-free product selector reaches clients as a typed validation response.
+  /// </summary>
+  [TestMethod]
+  public async Task UpdateProductInInvoiceAsync_WhenServiceThrowsAmbiguousSelector_Returns400()
+  {
+    // Arrange
+    var invoiceIdentifier = Guid.NewGuid();
+    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    mockService
+      .Setup(service => service.UpdateProduct(
+        It.IsAny<ProductUpdateSelector>(),
+        It.IsAny<Product>(),
+        invoiceIdentifier,
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new ProductUpdateSelectorAmbiguousException(invoiceIdentifier, matchingProductCount: 2));
+    var accessor = CreateAuthenticatedContextAccessor();
+    var request = new UpdateProductRequestDto(
+      Selector: new ProductUpdateSelectorDto(
+        OriginalProductCode: null,
+        OriginalName: "Duplicate product",
+        OriginalQuantity: 1m,
+        OriginalUnitPrice: 1m,
+        OriginalTotalPrice: 1m,
+        OccurrenceOrdinal: null),
+      Name: "Replacement",
+      Classification: null,
+      Quantity: 1m,
+      QuantityUnit: "pcs",
+      ProductCode: null,
+      Price: 1m);
+
+    // Act
+    IResult result = await InvoiceEndpoints
+      .UpdateProductInInvoiceAsync(mockService.Object, accessor, invoiceIdentifier, request)
+      .ConfigureAwait(false);
+
+    // Assert
+    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.Validation, GetProblemDetails(result).Type);
+  }
+
   #endregion
 
   #region GET /rest/v1/invoices/{id} status code tests
@@ -351,26 +619,179 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
   #region POST /rest/v1/invoices validation tests
   /// <summary>
-  /// Verifies that the endpoint rejects a request with an empty user identifier by returning
-  /// 400 Bad Request <em>before</em> invoking the processing service (endpoint-level validation).
+  /// Verifies that the endpoint rejects a request without an authenticated owner claim before invoking processing.
   /// </summary>
   [TestMethod]
-  public async Task CreateNewInvoiceAsync_WhenUserIdentifierIsEmpty_Returns400ValidationProblem()
+  public async Task CreateNewInvoiceAsync_WhenOwnerClaimIsMissing_Returns400ValidationProblem()
   {
-    // Arrange - endpoint-level validation runs BEFORE any service call, so the mock
-    // is never invoked. The strict mock ensures any unexpected call would fail the test.
+    // Arrange
+    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    var accessor = CreateContextAccessorWithUserIdentifierClaim(userIdentifierClaimValue: null);
+
+    // Act
+    var result = await InvoiceEndpoints
+      .CreateNewInvoiceAsync(
+        mockService.Object,
+        CreateStorageOptionsManager(),
+        accessor,
+        CreateValidInvoiceRequest())
+;
+
+    // Assert
+    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
+    mockService.VerifyNoOtherCalls();
+  }
+
+  /// <summary>
+  /// Verifies that malformed owner claims cannot select an invoice partition or enter the processing layer.
+  /// </summary>
+  [TestMethod]
+  public async Task CreateNewInvoiceAsync_WhenOwnerClaimIsInvalid_Returns400ValidationProblem()
+  {
+    // Arrange
+    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    var accessor = CreateContextAccessorWithUserIdentifierClaim("not-a-guid");
+
+    // Act
+    var result = await InvoiceEndpoints
+      .CreateNewInvoiceAsync(
+        mockService.Object,
+        CreateStorageOptionsManager(),
+        accessor,
+        CreateValidInvoiceRequest())
+;
+
+    // Assert
+    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
+    mockService.VerifyNoOtherCalls();
+  }
+
+  /// <summary>
+  /// Verifies the authenticated claim owner, not request content, is persisted and used as the create partition.
+  /// </summary>
+  [TestMethod]
+  public async Task CreateNewInvoiceAsync_WhenOwnerClaimIsValid_PersistsClaimOwnerAndPartition()
+  {
+    // Arrange
+    Guid ownerIdentifier = Guid.NewGuid();
+    Invoice? persistedInvoice = null;
+    Guid? persistedPartitionIdentifier = null;
+    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    mockService
+      .Setup(service => service.CreateInvoice(
+        It.IsAny<Invoice>(),
+        ownerIdentifier,
+        It.IsAny<CancellationToken>()))
+      .Callback<Invoice, Guid?, CancellationToken>((invoice, partitionIdentifier, _) =>
+      {
+        persistedInvoice = invoice;
+        persistedPartitionIdentifier = partitionIdentifier;
+      })
+      .Returns(Task.CompletedTask);
+
+    // Act
+    var result = await InvoiceEndpoints
+      .CreateNewInvoiceAsync(
+        mockService.Object,
+        CreateStorageOptionsManager(),
+        CreateAuthenticatedContextAccessor(ownerIdentifier),
+        CreateValidInvoiceRequest())
+;
+
+    // Assert
+    Assert.AreEqual(StatusCodes.Status201Created, GetStatusCode(result));
+    Assert.IsNotNull(persistedInvoice);
+    Assert.AreEqual(ownerIdentifier, persistedInvoice.UserIdentifier);
+    Assert.AreEqual(ownerIdentifier, persistedInvoice.CreatedBy);
+    Assert.AreEqual(ownerIdentifier, persistedPartitionIdentifier);
+    mockService.Verify(
+      service => service.CreateInvoice(
+        It.Is<Invoice>(invoice => invoice.UserIdentifier == ownerIdentifier),
+        ownerIdentifier,
+        It.IsAny<CancellationToken>()),
+      Times.Once);
+  }
+
+  /// <summary>
+  /// Verifies the scan-attach boundary rejects HEIC's undocumented numeric value before it reads or updates an invoice.
+  /// </summary>
+  [TestMethod]
+  public async Task CreateInvoiceScanAsync_WhenScanTypeIsUnsupported_Returns400ValidationProblem()
+  {
+    // Arrange
     var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
     var accessor = CreateAuthenticatedContextAccessor();
-
-    var invalidDto = new CreateInvoiceRequestDto(
-      UserIdentifier: Guid.Empty,
-      InitialScan: default,
+    var request = new CreateInvoiceScanRequestDto(
+      Type: (ScanType)9,
+      Location: new Uri("https://example.test/receipt.heic"),
       Metadata: null);
 
     // Act
     var result = await InvoiceEndpoints
-      .CreateNewInvoiceAsync(mockService.Object, accessor, invalidDto)
+      .CreateInvoiceScanAsync(
+        mockService.Object,
+        CreateStorageOptionsManager(),
+        accessor,
+        Guid.NewGuid(),
+        request)
 ;
+
+    // Assert
+    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
+    mockService.VerifyNoOtherCalls();
+  }
+
+  /// <summary>
+  /// Verifies invoice creation rejects an unapproved scan URI before calling processing.
+  /// </summary>
+  [TestMethod]
+  public async Task CreateNewInvoiceAsync_WhenScanLocationIsUnapproved_Returns400ValidationProblem()
+  {
+    // Arrange
+    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    var request = CreateValidInvoiceRequest() with
+    {
+      Scans =
+      [
+        new CreateInvoiceScanRequestDto(
+          ScanType.JPG,
+          new Uri("http://example.test/invoices/receipt.jpg"),
+          Metadata: null),
+      ],
+    };
+
+    // Act
+    var result = await InvoiceEndpoints.CreateNewInvoiceAsync(
+      mockService.Object,
+      CreateStorageOptionsManager(),
+      CreateAuthenticatedContextAccessor(),
+      request);
+
+    // Assert
+    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
+    mockService.VerifyNoOtherCalls();
+  }
+
+  /// <summary>
+  /// Verifies scan attachment rejects an unapproved scan URI before reading or updating an invoice.
+  /// </summary>
+  [TestMethod]
+  public async Task CreateInvoiceScanAsync_WhenScanLocationIsUnapproved_Returns400ValidationProblem()
+  {
+    // Arrange
+    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    var request = new CreateInvoiceScanRequestDto(
+      ScanType.JPG,
+      new Uri("http://example.test/invoices/receipt.jpg"),
+      Metadata: null);
+
+    // Act
+    var result = await InvoiceEndpoints.CreateInvoiceScanAsync(
+      mockService.Object,
+      CreateStorageOptionsManager(),
+      CreateAuthenticatedContextAccessor(),
+      Guid.CreateVersion7(),
+      request);
 
     // Assert
     Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));

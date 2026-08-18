@@ -1,7 +1,7 @@
 "use client";
 
 import {usePaginationWithSearch} from "@/hooks";
-import type {Recipe} from "@/types/invoices";
+import type {RecipeSuggestion} from "@/types/invoices";
 import {
   Button,
   Card,
@@ -24,7 +24,7 @@ import RecipeCard from "../../_cards/RecipeCard";
 import styles from "./RecipesTab.module.scss";
 
 type Props = {
-  recipes: Recipe[];
+  recipes: readonly RecipeSuggestion[];
 };
 
 /**
@@ -148,7 +148,7 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
         <CardContent>
           {paginatedItems.length > 0 ? (
             <div className={styles["recipesGrid"]}>
-              {recipes.map((recipe) => (
+              {paginatedItems.map((recipe) => (
                 <RecipeCard
                   key={recipe.name}
                   recipe={recipe}

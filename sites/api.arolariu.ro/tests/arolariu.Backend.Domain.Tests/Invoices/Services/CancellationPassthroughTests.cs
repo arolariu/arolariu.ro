@@ -4,17 +4,17 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
-using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
+using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
+using arolariu.Backend.Domain.Invoices.Services.Orchestration.AnalysisService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
-using arolariu.Backend.Domain.Invoices.DTOs;
+using arolariu.Backend.Domain.Invoices.Services.Processing.AnalysisService;
 using arolariu.Backend.Domain.Tests.Builders;
 
 using Microsoft.Extensions.Logging.Abstractions;
@@ -32,7 +32,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 public sealed class CancellationPassthroughTests
 {
   private static InvoiceStorageFoundationService CreateStorageService(Mock<IInvoiceNoSqlBroker> broker) =>
-    new(broker.Object, NullLoggerFactory.Instance);
+    new(broker.Object, new Mock<ITaxonomyBroker>().Object, NullLoggerFactory.Instance);
 
   /// <summary>
   /// Verifies that <see cref="InvoiceStorageFoundationService.ReadInvoiceObject"/> propagates
@@ -102,8 +102,7 @@ public sealed class CancellationPassthroughTests
       .Setup(s => s.ReadInvoiceObject(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new OperationCanceledException());
 
-    var analysis = new Mock<IInvoiceAnalysisFoundationService>();
-    var service = new InvoiceOrchestrationService(analysis.Object, storage.Object, NullLoggerFactory.Instance);
+    var service = new InvoiceOrchestrationService(storage.Object, NullLoggerFactory.Instance);
 
     await Assert.ThrowsExactlyAsync<OperationCanceledException>(
       () => service.ReadInvoiceObject(Guid.NewGuid(), null, CancellationToken.None)).ConfigureAwait(true);
@@ -144,88 +143,85 @@ public sealed class CancellationPassthroughTests
       .Setup(b => b.ReadMerchantAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new OperationCanceledException());
 
-    var service = new MerchantStorageFoundationService(broker.Object, NullLoggerFactory.Instance);
+    var service = new MerchantStorageFoundationService(
+      broker.Object,
+      new Mock<ITaxonomyBroker>().Object,
+      NullLoggerFactory.Instance);
 
     await Assert.ThrowsExactlyAsync<OperationCanceledException>(
       () => service.ReadMerchantObject(Guid.NewGuid(), null, CancellationToken.None)).ConfigureAwait(true);
   }
 
   /// <summary>
-  /// Verifies that <see cref="InvoiceOrchestrationService.AnalyzeInvoiceWithOptions"/> does not
-  /// persist the result when cancellation is requested after the analysis stage completes.
+  /// Verifies that queueing an analysis run propagates <see cref="OperationCanceledException"/> raised by the
+  /// orchestration layer instead of reclassifying it into a processing fault.
   /// </summary>
   [TestMethod]
-  public async Task AnalyzeInvoiceWithOptions_WhenCancelledAfterAnalysis_DoesNotPersistTheResult()
+  public async Task QueueInvoiceAnalysisAsync_WhenOrchestrationCancels_PropagatesOperationCanceledException()
   {
-    var invoice = InvoiceBuilder.CreateRandomInvoice();
-    using var cts = new CancellationTokenSource();
+    var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>();
+    invoiceOrchestration
+      .Setup(o => o.ReadInvoiceObject(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new OperationCanceledException());
 
-    var storage = new Mock<IInvoiceStorageFoundationService>();
-    storage
-      .Setup(s => s.ReadInvoiceObject(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
-      .ReturnsAsync(invoice);
+    var analysisOrchestration = new Mock<IAnalysisOrchestrationService>();
 
-    var analysis = new Mock<IInvoiceAnalysisFoundationService>();
-    analysis
-      .Setup(a => a.AnalyzeInvoiceAsync(It.IsAny<AnalysisOptions>(), It.IsAny<Invoice>(), It.IsAny<CancellationToken>()))
-      .ReturnsAsync(() =>
-      {
-        // Simulate the client giving up while the AI stage was running.
-        cts.Cancel();
-        return invoice;
-      });
+    var service = new AnalysisProcessingService(
+      invoiceOrchestration.Object,
+      new Mock<IMerchantOrchestrationService>().Object,
+      analysisOrchestration.Object,
+      NullLoggerFactory.Instance);
 
-    var service = new InvoiceOrchestrationService(analysis.Object, storage.Object, NullLoggerFactory.Instance);
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(
+      () => service.QueueInvoiceAnalysisAsync(
+        Guid.NewGuid(),
+        Guid.NewGuid(),
+        new AnalyzeInvoiceRequestDto(),
+        CancellationToken.None)).ConfigureAwait(true);
 
-    await Assert.ThrowsAsync<OperationCanceledException>(
-      () => service.AnalyzeInvoiceWithOptions(AnalysisOptions.CompleteAnalysis, Guid.NewGuid(), null, cts.Token))
-      .ConfigureAwait(true);
-
-    storage.Verify(
-      s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()),
+    analysisOrchestration.Verify(
+      o => o.QueueInvoiceRunAsync(
+        It.IsAny<Guid>(),
+        It.IsAny<Guid>(),
+        It.IsAny<arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts.InvoiceAnalysisOptions>(),
+        It.IsAny<string>(),
+        It.IsAny<CancellationToken>()),
       Times.Never,
-      "The update must not run once the request was abandoned mid-pipeline.");
+      "A cancelled request must never leave a queued run behind.");
   }
 
   /// <summary>
-  /// Verifies that <see cref="InvoiceAnalysisFoundationService.AnalyzeInvoiceAsync"/> does not
-  /// invoke the GPT stage when cancellation is requested after the OCR stage completes.
-  /// This checkpoint is the load-bearing guard that prevents both expensive AI stages from
-  /// running after the caller has already given up.
+  /// Verifies that the worker entry point propagates cancellation without claiming a run.
   /// </summary>
+  /// <remarks>
+  /// <para>This is the load-bearing guard that keeps host shutdown from stranding a claimed run under a lease that
+  /// no live worker is renewing.</para>
+  /// </remarks>
   [TestMethod]
-  public async Task AnalyzeInvoiceAsync_WhenCancelledAfterOcrStage_DoesNotInvokeGptStage()
+  public async Task TryExecuteNextRunAsync_WhenAlreadyCancelled_DoesNotClaimARun()
   {
-    var invoice = InvoiceBuilder.CreateRandomInvoice();
-    using var cts = new CancellationTokenSource();
+    var analysisOrchestration = new Mock<IAnalysisOrchestrationService>();
 
-    var ocrBroker = new Mock<IFormRecognizerBroker>();
-    ocrBroker
-      .Setup(b => b.PerformOcrAnalysisOnSingleInvoice(It.IsAny<Invoice>(), It.IsAny<AnalysisOptions>()))
-      .Returns<Invoice, AnalysisOptions>((inv, _) =>
-      {
-        // Simulate the caller giving up while OCR was running.
-#pragma warning disable CA1849 // CancelAsync is not awaitable inside a ValueTask factory callback
-        cts.Cancel();
-#pragma warning restore CA1849
-        return ValueTask.FromResult(inv);
-      });
-
-    var classifierBroker = new Mock<IClassifierBroker>();
-
-    var service = new InvoiceAnalysisFoundationService(
-      classifierBroker.Object,
-      ocrBroker.Object,
+    var service = new AnalysisProcessingService(
+      new Mock<IInvoiceOrchestrationService>().Object,
+      new Mock<IMerchantOrchestrationService>().Object,
+      analysisOrchestration.Object,
       NullLoggerFactory.Instance);
 
-    await Assert.ThrowsAsync<OperationCanceledException>(
-      () => service.AnalyzeInvoiceAsync(AnalysisOptions.CompleteAnalysis, invoice, cts.Token))
-      .ConfigureAwait(true);
+    using var cts = new CancellationTokenSource();
+    await cts.CancelAsync().ConfigureAwait(true);
 
-    classifierBroker.Verify(
-      b => b.PerformGptAnalysisOnSingleInvoice(It.IsAny<Invoice>(), It.IsAny<AnalysisOptions>()),
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(
+      () => service.TryExecuteNextRunAsync("worker-1", cts.Token)).ConfigureAwait(true);
+
+    analysisOrchestration.Verify(
+      o => o.ClaimNextRunAsync(
+        It.IsAny<string>(),
+        It.IsAny<DateTimeOffset>(),
+        It.IsAny<TimeSpan>(),
+        It.IsAny<CancellationToken>()),
       Times.Never,
-      "The GPT stage must not run once the caller has abandoned the request after OCR completed.");
+      "A run must not be claimed once the host has begun shutting down.");
   }
 
   /// <summary>

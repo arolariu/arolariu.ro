@@ -3,7 +3,7 @@
  * @module sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_types/invoice
  */
 
-import {InvoiceCategory, ProductCategory} from "@/types/invoices";
+import type {StandardClassification} from "@/types/invoices";
 
 // Simplified historical invoice summary for analytics
 export type HistoricalInvoiceSummary = {
@@ -13,6 +13,6 @@ export type HistoricalInvoiceSummary = {
   totalAmount: number;
   itemCount: number;
   merchantName: string;
-  category: InvoiceCategory;
-  categoryBreakdown: Record<ProductCategory, number>;
+  classification: StandardClassification | null;
+  classificationBreakdown: Readonly<Record<string, number>>;
 };
