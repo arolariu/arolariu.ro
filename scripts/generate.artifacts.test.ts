@@ -98,6 +98,25 @@ function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
 }
 
+function createFetch(
+  responseFactory: (input: string | URL | Request, init?: RequestInit) => Response | Promise<Response>,
+): typeof fetch {
+  return async (input, init) => responseFactory(input, init);
+}
+
+function readNodes(value: unknown): readonly unknown[] {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new TypeError("Generated taxonomy artifact must be an object.");
+  }
+
+  const nodes = Reflect.get(value, "nodes");
+  if (!Array.isArray(nodes)) {
+    throw new TypeError("Generated taxonomy artifact nodes must be an array.");
+  }
+
+  return nodes;
+}
+
 describe("extractZipEntry", () => {
   it("extracts a deflate-compressed entry by suffix", () => {
     const archive = createZipArchive([
@@ -228,6 +247,12 @@ describe("parseGpcDocument", () => {
     );
   });
 
+  it("throws when a required string field is blank", () => {
+    expect(() => parseGpcDocument({LanguageCode: "   ", DateUtc: "2026-05-01", Schema: []})).toThrow(
+      "GPC document LanguageCode must be a non-empty string.",
+    );
+  });
+
   it("throws when a node code is not a number", () => {
     expect(() =>
       parseGpcDocument({LanguageCode: "EN", DateUtc: "2026-05-01", Schema: [{...validNode, Code: "50000000"}]}),
@@ -300,6 +325,18 @@ describe("flattenGpcSchema", () => {
     expect(leaf?.searchText).toContain("bread");
     expect(leaf?.searchText).toContain("includes any bread product.");
     expect(leaf?.searchText).toContain("bakery");
+  });
+
+  it("normalizes accents and punctuation in search text", () => {
+    const [node] = flattenGpcSchema([
+      {
+        ...brick,
+        Title: "Crème—Brûlée",
+        Definition: "Ready-to-eat; chilled!",
+      },
+    ]);
+
+    expect(node?.searchText).toBe("10000266 creme brulee ready to eat chilled");
   });
 
   it("skips inactive nodes and their descendants", () => {
@@ -542,7 +579,7 @@ describe("generateTaxonomyArtifacts", () => {
   it("downloads, normalizes and mirrors the GPC artifact", async () => {
     const base = await mkdtemp(join(tmpdir(), "arolariu-artifacts-"));
     const roots = [join(base, "api"), join(base, "web")];
-    const fetchImpl = (async () => createGpcResponse(gpcDocument)) as unknown as typeof fetch;
+    const fetchImpl = createFetch(() => createGpcResponse(gpcDocument));
 
     const written = await generateTaxonomyArtifacts(fetchImpl, roots);
 
@@ -555,16 +592,16 @@ describe("generateTaxonomyArtifacts", () => {
       sourceUrl: "https://ref.gs1.org/standards/gpc/2026-05/",
       attribution: "GS1 Global Product Classification (GPC), May 2026 release.",
     });
-    expect((parsed as {nodes: readonly unknown[]}).nodes).toHaveLength(2);
+    expect(readNodes(parsed)).toHaveLength(2);
   });
 
   it("requests the pinned GS1 release URL", async () => {
     const base = await mkdtemp(join(tmpdir(), "arolariu-artifacts-"));
     const requested: string[] = [];
-    const fetchImpl = (async (input: string) => {
+    const fetchImpl = createFetch((input) => {
       requested.push(String(input));
       return createGpcResponse(gpcDocument);
-    }) as unknown as typeof fetch;
+    });
 
     await generateTaxonomyArtifacts(fetchImpl, [join(base, "api")]);
 
@@ -572,7 +609,7 @@ describe("generateTaxonomyArtifacts", () => {
   });
 
   it("throws when the download fails", async () => {
-    const fetchImpl = (async () => new Response("nope", {status: 503, statusText: "Service Unavailable"})) as unknown as typeof fetch;
+    const fetchImpl = createFetch(() => new Response("nope", {status: 503, statusText: "Service Unavailable"}));
 
     await expect(generateTaxonomyArtifacts(fetchImpl, [])).rejects.toThrow(
       "GPC download failed with HTTP 503 Service Unavailable.",
@@ -581,7 +618,7 @@ describe("generateTaxonomyArtifacts", () => {
 
   it("throws when the archive holds a non-English dataset", async () => {
     const base = await mkdtemp(join(tmpdir(), "arolariu-artifacts-"));
-    const fetchImpl = (async () => createGpcResponse({...gpcDocument, LanguageCode: "FR"})) as unknown as typeof fetch;
+    const fetchImpl = createFetch(() => createGpcResponse({...gpcDocument, LanguageCode: "FR"}));
 
     await expect(generateTaxonomyArtifacts(fetchImpl, [join(base, "api")])).rejects.toThrow(
       "Expected English GPC data but received 'FR'.",
@@ -598,7 +635,7 @@ describe("main", () => {
       Schema: [{Level: 1, Code: 50000000, Title: "Food", Definition: null, DefinitionExcludes: null, Active: true, Childs: []}],
     };
     const archive = createZipArchive([{name: "GPC EN.json", contents: JSON.stringify(document), method: 8}]);
-    const fetchImpl = (async () => new Response(toArrayBuffer(archive), {status: 200})) as unknown as typeof fetch;
+    const fetchImpl = createFetch(() => new Response(toArrayBuffer(archive), {status: 200}));
 
     await expect(main(fetchImpl, [join(base, "api")])).resolves.toBe(0);
   });

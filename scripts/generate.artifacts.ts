@@ -81,6 +81,7 @@ function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 function requireString(record: Readonly<Record<string, unknown>>, key: string, context: string): string {
   const value = record[key];
   if (typeof value !== "string") throw new Error(`${context} ${key} must be a string.`);
+  if (value.trim().length === 0) throw new Error(`${context} ${key} must be a non-empty string.`);
   return value;
 }
 
@@ -122,9 +123,13 @@ function parseGpcNode(value: unknown): GpcSourceNode {
 function normalizeText(...parts: readonly (string | null | undefined)[]): string {
   return parts
     .filter((part): part is string => typeof part === "string" && part.trim().length > 0)
-    .map((part) => part.trim().toLowerCase())
     .join(" ")
-    .replaceAll(/\s+/gu, " ");
+    .normalize("NFKD")
+    .replace(/\p{Mark}+/gu, "")
+    .toLocaleLowerCase("en")
+    .replace(/[^\p{Letter}\p{Number}.]+/gu, " ")
+    .trim()
+    .replace(/\s+/gu, " ");
 }
 
 /**
