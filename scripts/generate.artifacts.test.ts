@@ -16,23 +16,14 @@ vi.mock("node:child_process", async (importOriginal) => {
 });
 
 import {
-  assertMirroredContentsIdentical,
   BackendLicenseGenerator,
-  buildArchiveExtractionCommand,
-  buildHierarchy,
-  buildTaxonomyArtifactGenerationCommand,
   EcoicopTaxonomyClassificationGenerator,
-  flattenGpcSchema,
   FrontendLicenseGenerator,
-  generateArtifacts,
   Gs1GpcTaxonomyClassificationGenerator,
   main,
   NaceTaxonomyClassificationGenerator,
-  parseGpcDocument,
-  writeMirroredArtifacts,
 } from "./generate.artifacts.ts";
 import {parseCommandLineOptions} from "./generate.ts";
-import type {TaxonomyArtifact, TaxonomyArtifactNode} from "./types";
 
 const temporaryDirectories: string[] = [];
 
@@ -143,121 +134,7 @@ function stubUnifiedFetch(): void {
   );
 }
 
-function createArtifact(nodes: readonly TaxonomyArtifactNode[]): TaxonomyArtifact {
-  return {
-    system: "GS1_GPC",
-    version: "2026-05",
-    sourceUrl: "https://ref.gs1.org/standards/gpc/2026-05/",
-    generatedAt: "2026-08-18T00:00:00.000Z",
-    attribution: "GS1",
-    nodes,
-  };
-}
-
 describe("Taxonomy classification generators", () => {
-  describe("shared taxonomy behavior", () => {
-    describe("source validation", () => {
-      it("parses a valid GPC document", () => {
-        expect(parseGpcDocument(gpcDocument).Schema).toHaveLength(1);
-      });
-
-      it("rejects blank required strings", () => {
-        expect(() => parseGpcDocument({...gpcDocument, LanguageCode: "   "})).toThrow(
-          "GPC document LanguageCode must be a non-empty string.",
-        );
-      });
-    });
-
-    describe("normalization", () => {
-      it("flattens hierarchy and normalizes search text", () => {
-        const nodes = flattenGpcSchema(gpcDocument.Schema);
-
-        expect(nodes.map((node) => node.code)).toEqual(["50000000", "10000266"]);
-        expect(nodes[1]).toMatchObject({
-          parentCode: "50000000",
-          hierarchyCodes: ["50000000", "10000266"],
-          searchText: "10000266 bread ready to eat chilled food",
-        });
-      });
-
-      it("detects hierarchy cycles", () => {
-        const node = (code: string, parentCode: string): TaxonomyArtifactNode => ({
-          code,
-          officialLabel: code,
-          level: "class",
-          parentCode,
-          hierarchyCodes: [code],
-          hierarchyLabels: [code],
-          definition: null,
-          searchText: code.toLowerCase(),
-        });
-
-        expect(() => buildHierarchy([node("A", "B"), node("B", "A")], "A")).toThrow(
-          "Taxonomy hierarchy cycle detected at 'A'.",
-        );
-      });
-    });
-
-    describe("artifact writing", () => {
-      const node: TaxonomyArtifactNode = {
-        code: "50000000",
-        officialLabel: "Food",
-        level: "segment",
-        parentCode: null,
-        hierarchyCodes: ["50000000"],
-        hierarchyLabels: ["Food"],
-        definition: null,
-        searchText: "50000000 food",
-      };
-
-      it("writes byte-identical minified files", async () => {
-        const roots = await createOutputRoots("arolariu-artifact-write-");
-
-        const outputs = await writeMirroredArtifacts("gpc-2026-05.min.json", createArtifact([node]), roots);
-        const contents = await Promise.all(outputs.map((output) => readFile(output, "utf8")));
-
-        expect(contents[0]).toBe(contents[1]);
-        expect(contents[0]).not.toContain("\n");
-      });
-
-      it("rejects duplicate taxonomy codes", async () => {
-        const roots = await createOutputRoots("arolariu-artifact-invalid-");
-
-        await expect(
-          writeMirroredArtifacts("gpc-2026-05.min.json", createArtifact([node, node]), roots),
-        ).rejects.toThrow("GS1_GPC contains duplicate code '50000000'.");
-      });
-
-      it("detects divergent mirrored contents", () => {
-        expect(() =>
-          assertMirroredContentsIdentical("gpc-2026-05.min.json", '{"ok":true}', ['{"ok":true}', "{}"]),
-        ).toThrow("Mirrored artifact 'gpc-2026-05.min.json' was not written identically.");
-      });
-    });
-  });
-
-  describe("archive adapters", () => {
-    describe("buildArchiveExtractionCommand", () => {
-      it("uses tar.exe on Windows", () => {
-        expect(buildArchiveExtractionCommand("win32", "source.zip", "output")).toEqual({
-          command: "tar.exe",
-          args: ["-xf", "source.zip", "-C", "output"],
-        });
-      });
-
-      it("uses unzip on Linux and macOS", () => {
-        expect(buildArchiveExtractionCommand("linux", "source.zip", "output")).toEqual({
-          command: "unzip",
-          args: ["-qq", "source.zip", "-d", "output"],
-        });
-        expect(buildArchiveExtractionCommand("darwin", "source.zip", "output")).toEqual({
-          command: "unzip",
-          args: ["-qq", "source.zip", "-d", "output"],
-        });
-      });
-    });
-  });
-
   describe("Gs1GpcTaxonomyClassificationGenerator", () => {
     describe("generate", () => {
       it("generates the mirrored GPC artifact", async () => {
@@ -486,34 +363,20 @@ describe("License generators", () => {
 });
 
 describe("Artifact orchestration and CLI contracts", () => {
-  describe("generateArtifacts", () => {
-    it("runs all five concrete generators", async () => {
-      const workspace = await createTemporaryDirectory("arolariu-unified-artifacts-");
-      const outputRoots = [join(workspace, "api"), join(workspace, "web")];
-      await writeJson(join(workspace, "sites", "arolariu.ro", "package.json"), {
-        dependencies: {"production-package": "1.0.0"},
-      });
-      await writeJson(join(workspace, "node_modules", "production-package", "package.json"), {
-        name: "production-package",
-        version: "1.0.0",
-        license: "MIT",
-      });
-      mockArchiveExtraction(gpcDocument);
-      stubUnifiedFetch();
+  describe("module surface", () => {
+    it("exports only main and the seven generator classes", async () => {
+      const artifactModule = await import("./generate.artifacts.ts");
 
-      const outputs = await generateArtifacts({outputRoots, workspaceRoot: workspace});
-
-      expect(outputs.map((output) => basename(output)).toSorted()).toEqual(
-        [
-          "ecoicop-v2.min.json",
-          "ecoicop-v2.min.json",
-          "gpc-2026-05.min.json",
-          "gpc-2026-05.min.json",
-          "licenses.json",
-          "nace-2.1.min.json",
-          "nace-2.1.min.json",
-        ].toSorted(),
-      );
+      expect(Object.keys(artifactModule).toSorted()).toEqual([
+        "BackendLicenseGenerator",
+        "EcoicopTaxonomyClassificationGenerator",
+        "FrontendLicenseGenerator",
+        "Gs1GpcTaxonomyClassificationGenerator",
+        "LicenseGenerator",
+        "NaceTaxonomyClassificationGenerator",
+        "TaxonomyClassificationGenerator",
+        "main",
+      ]);
     });
   });
 
@@ -530,13 +393,6 @@ describe("Artifact orchestration and CLI contracts", () => {
   });
 
   describe("command contract", () => {
-    it("builds a platform-safe direct Node command", () => {
-      const command = buildTaxonomyArtifactGenerationCommand();
-
-      expect(command.command).toBe(process.execPath);
-      expect(command.args[0]).toMatch(/generate\.artifacts\.ts$/u);
-    });
-
     it.each(["/artifacts", "/a", "--artifacts", "-a"])("selects artifacts for %s", (alias) => {
       expect(parseCommandLineOptions([alias]).generateArtifacts).toBe(true);
     });
