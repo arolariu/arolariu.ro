@@ -61,6 +61,11 @@ RUN dotnet restore src/Core/arolariu.Backend.Core.csproj
 # 4. Copy the full source tree AFTER restore
 COPY . .
 
+# Fail fast when host-side taxonomy generation was skipped.
+RUN test -s src/Invoices/Resources/Taxonomies/gpc-2026-05.min.json \
+  && test -s src/Invoices/Resources/Taxonomies/ecoicop-v2.min.json \
+  && test -s src/Invoices/Resources/Taxonomies/nace-2.1.min.json
+
 RUN dotnet build src/Core/arolariu.Backend.Core.csproj \
   --no-restore \
   -c "$BUILD_CONFIGURATION" \

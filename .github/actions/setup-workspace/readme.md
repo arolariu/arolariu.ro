@@ -68,6 +68,9 @@ Use [`setup-tooling`](../setup-tooling/readme.md) directly when a job needs only
 | `generate-args` | `/e /a /g /i` | — |
 | `run-build-components` | `false` | `npm run build:components` |
 
+The `/a` generator flag produces the mirrored taxonomy artifacts and frontend
+license document required by API and website build paths.
+
 ### Input validation
 
 The action fails fast, before installing anything, when a dependent task is

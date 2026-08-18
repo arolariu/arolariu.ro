@@ -5,7 +5,8 @@
 
 import {describe, expect, it} from "vitest";
 import {getContainerAdapter} from "./adapters.ts";
-import {buildImageBuildCommand, buildImageRunCommand, runImageCli} from "./image.ts";
+import {buildImageBuildCommand, buildImageRunCommand, requiresTaxonomyArtifacts, runImageCli} from "./image.ts";
+import {buildArtifactGenerationCommand} from "./preflight.ts";
 import type {CommandRunner} from "./process.ts";
 
 describe("buildImageBuildCommand", () => {
@@ -20,6 +21,23 @@ describe("buildImageBuildCommand", () => {
     expect(command).toEqual({
       command: "podman",
       args: ["build", "-f", "infra/containers/Dockerfile.frontend", "-t", "arolariu-frontend", "--build-arg", "VERSION=local", "."],
+    });
+  });
+
+  describe("taxonomy artifact generation", () => {
+    it("uses the current Node executable and unified artifact alias", () => {
+      expect(buildArtifactGenerationCommand()).toEqual({
+        command: process.execPath,
+        args: [expect.stringMatching(/scripts[\\/]generate\.ts$/u), "/a"],
+      });
+    });
+
+    it.each(["frontend", "backend"] as const)("requires artifacts for %s images", (target) => {
+      expect(requiresTaxonomyArtifacts(target)).toBe(true);
+    });
+
+    it.each(["cv", "exp"] as const)("does not require artifacts for %s images", (target) => {
+      expect(requiresTaxonomyArtifacts(target)).toBe(false);
     });
   });
 });

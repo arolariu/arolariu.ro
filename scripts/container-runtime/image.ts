@@ -6,12 +6,12 @@
 import {resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
-import {runSharedPreflight} from "./preflight.ts";
+import {runArtifactGeneration, runSharedPreflight} from "./preflight.ts";
 import {defaultRunner, formatCommand, type CommandRunner} from "./process.ts";
 import {resolveContainerEngine} from "./selection.ts";
 import {exitWithError} from "./types.ts";
 
-type ImageTarget = "frontend" | "backend" | "cv" | "exp";
+export type ImageTarget = "frontend" | "backend" | "cv" | "exp";
 
 /** Options for building a local image with the selected engine. */
 export interface ImageBuildOptions {
@@ -50,6 +50,16 @@ function parseTarget(argv: readonly string[]): ImageTarget {
   }
 
   throw new Error("Use --target frontend|backend|cv|exp");
+}
+
+/**
+ * Determines whether an image consumes generated taxonomy artifacts.
+ *
+ * @param target - Image target.
+ * @returns `true` for frontend and backend images.
+ */
+export function requiresTaxonomyArtifacts(target: ImageTarget): boolean {
+  return target === "frontend" || target === "backend";
 }
 
 /**
@@ -98,6 +108,10 @@ export async function runImageCli(runner: CommandRunner = defaultRunner): Promis
   const tag = `arolariu-${target}`;
 
   if (action === "build") {
+    if (requiresTaxonomyArtifacts(target)) {
+      await runArtifactGeneration(runner);
+    }
+
     await runImageCommand(
       runner,
       buildImageBuildCommand(adapter, {dockerfile: dockerfilesByTarget[target], tag, context: ".", buildArgs: {VERSION: "local"}}),

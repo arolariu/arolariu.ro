@@ -9,7 +9,7 @@ import {resolve} from "node:path";
 import {setTimeout as delay} from "node:timers/promises";
 import {fileURLToPath} from "node:url";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
-import {runSharedPreflight} from "./preflight.ts";
+import {runArtifactGeneration, runSharedPreflight} from "./preflight.ts";
 import {defaultRunner, formatCommand, type CommandRunner} from "./process.ts";
 import {resolveContainerEngine} from "./selection.ts";
 import {removeSelfhostTraefikConfig, writeSelfhostTraefikConfig} from "./traefik.ts";
@@ -41,6 +41,16 @@ export type SelfhostAction = "start" | "stop" | "logs";
 export interface SelfhostPlanInputs {
   readonly action: SelfhostAction;
   readonly adapter: ContainerRuntimeAdapter;
+}
+
+/**
+ * Determines whether a selfhost action builds artifact-consuming images.
+ *
+ * @param action - Selfhost action.
+ * @returns `true` only for start.
+ */
+export function shouldGenerateTaxonomyArtifacts(action: SelfhostAction): boolean {
+  return action === "start";
 }
 
 function composeFile(adapter: ContainerRuntimeAdapter, file: string, args: readonly string[]): RuntimeCommand {
@@ -232,6 +242,7 @@ export async function runSelfhost(action: SelfhostAction, runner: CommandRunner 
   await runSharedPreflight(adapter, runner);
 
   if (action === "start") {
+    await runArtifactGeneration(runner);
     getRequiredSqlPassword();
     await ensureHttpsCertificates(runner);
     await writeSelfhostTraefikConfig();
