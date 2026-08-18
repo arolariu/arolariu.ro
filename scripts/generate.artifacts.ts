@@ -9,10 +9,14 @@
  * local setup, CI, and container builds before compilation.
  */
 
-import {inflateRawSync} from "node:zlib";
-import {mkdir, readFile, writeFile} from "node:fs/promises";
-import {resolve} from "node:path";
+import {execFile} from "node:child_process";
+import {glob, mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
+import {tmpdir} from "node:os";
+import {join, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
+import {promisify} from "node:util";
+
+const executeFile = promisify(execFile);
 
 const GPC_LEVELS: Readonly<Record<number, string>> = {
   1: "segment",
@@ -92,6 +96,34 @@ export class BackendLicenseGenerator extends LicenseGenerator {
   public override async generate(): Promise<readonly string[]> {
     return [];
   }
+}
+
+/** Shell-independent command used to extract a ZIP archive. */
+export interface ArchiveExtractionCommand {
+  readonly command: string;
+  readonly args: readonly string[];
+}
+
+/**
+ * Builds the platform-specific ZIP extraction command.
+ *
+ * @param platform - Node platform identifier.
+ * @param archivePath - ZIP archive path.
+ * @param outputDirectory - Destination directory.
+ * @returns Executable and argument list.
+ */
+export function buildArchiveExtractionCommand(
+  platform: NodeJS.Platform,
+  archivePath: string,
+  outputDirectory: string,
+): ArchiveExtractionCommand {
+  return platform === "win32"
+    ? {command: "tar.exe", args: ["-xf", archivePath, "-C", outputDirectory]}
+    : {command: "unzip", args: ["-qq", archivePath, "-d", outputDirectory]};
+}
+
+function hasErrorCode(error: unknown): error is Error & Readonly<{code: string}> {
+  return error instanceof Error && "code" in error && typeof Reflect.get(error, "code") === "string";
 }
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
@@ -353,128 +385,108 @@ export async function writeMirroredArtifacts(
   return paths;
 }
 
-/**
- * Extracts a single entry from a ZIP archive by file-name suffix.
- *
- * @remarks
- * Implements just enough of the ZIP specification to locate a central-directory entry
- * and inflate its payload, avoiding a third-party archive dependency.
- *
- * @param zip - Complete ZIP archive bytes.
- * @param suffix - File-name suffix used to select the archive entry.
- * @returns Uncompressed entry bytes.
- * @throws {Error} When the archive is malformed, the entry is absent, or the entry uses
- * a compression method other than stored (0) or deflate (8).
- */
-export function extractZipEntry(zip: Uint8Array, suffix: string): Uint8Array {
-  const buffer = Buffer.from(zip);
-  const eocdSignature = 0x06054b50;
-  const centralSignature = 0x02014b50;
-  const localSignature = 0x04034b50;
+/** Extracts one entry from a ZIP archive by delegating to the host operating system. */
+export class SystemArchiveExtractor {
+  /**
+   * Extracts one archive entry selected by suffix.
+   *
+   * @param archive - Complete ZIP bytes.
+   * @param suffix - File-name suffix used to select the extracted entry.
+   * @returns Extracted file bytes.
+   */
+  public async extractEntry(archive: Uint8Array, suffix: string): Promise<Uint8Array> {
+    const temporaryRoot = await mkdtemp(join(tmpdir(), "arolariu-taxonomy-"));
+    const archivePath = join(temporaryRoot, "source.zip");
+    const outputDirectory = join(temporaryRoot, "extracted");
+    const extractionCommand = buildArchiveExtractionCommand(process.platform, archivePath, outputDirectory);
 
-  let eocdOffset = -1;
-  for (let offset = buffer.length - 22; offset >= Math.max(0, buffer.length - 65_557); offset--) {
-    if (buffer.readUInt32LE(offset) === eocdSignature) {
-      eocdOffset = offset;
-      break;
-    }
-  }
-  if (eocdOffset < 0) throw new Error("ZIP end-of-central-directory record was not found.");
+    try {
+      await mkdir(outputDirectory, {recursive: true});
+      await writeFile(archivePath, archive);
 
-  const entryCount = buffer.readUInt16LE(eocdOffset + 10);
-  let centralOffset = buffer.readUInt32LE(eocdOffset + 16);
-
-  for (let index = 0; index < entryCount; index++) {
-    if (buffer.readUInt32LE(centralOffset) !== centralSignature) {
-      throw new Error(`Invalid ZIP central directory entry at offset ${centralOffset}.`);
-    }
-
-    const compressionMethod = buffer.readUInt16LE(centralOffset + 10);
-    const compressedSize = buffer.readUInt32LE(centralOffset + 20);
-    const fileNameLength = buffer.readUInt16LE(centralOffset + 28);
-    const extraLength = buffer.readUInt16LE(centralOffset + 30);
-    const commentLength = buffer.readUInt16LE(centralOffset + 32);
-    const localOffset = buffer.readUInt32LE(centralOffset + 42);
-    const fileName = buffer.subarray(centralOffset + 46, centralOffset + 46 + fileNameLength).toString("utf8");
-
-    if (fileName.endsWith(suffix)) {
-      if (buffer.readUInt32LE(localOffset) !== localSignature) {
-        throw new Error(`Invalid ZIP local header for ${fileName}.`);
+      try {
+        await executeFile(extractionCommand.command, [...extractionCommand.args]);
+      } catch (error: unknown) {
+        if (hasErrorCode(error) && error.code === "ENOENT") {
+          throw new Error(
+            `Required archive extractor '${extractionCommand.command}' was not found on '${process.platform}'.`,
+            {cause: error},
+          );
+        }
+        throw error;
       }
 
-      const localNameLength = buffer.readUInt16LE(localOffset + 26);
-      const localExtraLength = buffer.readUInt16LE(localOffset + 28);
-      const dataOffset = localOffset + 30 + localNameLength + localExtraLength;
-      const compressed = buffer.subarray(dataOffset, dataOffset + compressedSize);
+      const matchingPaths: string[] = [];
+      for await (const extractedPath of glob("**/*", {cwd: outputDirectory})) {
+        if (extractedPath.endsWith(suffix)) matchingPaths.push(extractedPath);
+      }
 
-      if (compressionMethod === 0) return compressed;
-      if (compressionMethod === 8) return inflateRawSync(compressed);
-      throw new Error(`Unsupported ZIP compression method ${compressionMethod} for ${fileName}.`);
+      if (matchingPaths.length === 0) {
+        throw new Error(`Extracted archive entry ending with '${suffix}' was not found.`);
+      }
+      if (matchingPaths.length > 1) {
+        throw new Error(`Extracted archive contains multiple entries ending with '${suffix}'.`);
+      }
+
+      const matchingPath = matchingPaths[0];
+      if (matchingPath === undefined) {
+        throw new Error(`Extracted archive entry ending with '${suffix}' was not found.`);
+      }
+
+      return new Uint8Array(await readFile(join(outputDirectory, matchingPath)));
+    } finally {
+      await rm(temporaryRoot, {recursive: true, force: true});
     }
-
-    centralOffset += 46 + fileNameLength + extraLength + commentLength;
   }
-
-  throw new Error(`ZIP entry ending with '${suffix}' was not found.`);
 }
 
 const GPC_SOURCE = "https://ref.gs1.org/standards/gpc/2026-05/";
 const GPC_VERSION = "2026-05";
 const GPC_ATTRIBUTION = "GS1 Global Product Classification (GPC), May 2026 release.";
 
-async function createGpcArtifact(fetchImpl: typeof fetch, generatedAt: string): Promise<TaxonomyArtifact> {
-  const response = await fetchImpl(GPC_SOURCE, {headers: {Accept: "application/zip"}});
-  if (!response.ok) {
-    throw new Error(`GPC download failed with HTTP ${response.status} ${response.statusText}.`);
+/** Generates the official GS1 GPC taxonomy artifact. */
+export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificationGenerator {
+  /** Creates the generator. */
+  public constructor(private readonly outputRoots: readonly string[] = OUTPUT_ROOTS) {
+    super();
   }
 
-  const archive = new Uint8Array(await response.arrayBuffer());
-  const jsonBytes = extractZipEntry(archive, " EN.json");
-  const parsed: unknown = JSON.parse(Buffer.from(jsonBytes).toString("utf8"));
-  const source = parseGpcDocument(parsed);
-  if (source.LanguageCode !== "EN") {
-    throw new Error(`Expected English GPC data but received '${source.LanguageCode}'.`);
+  /** Downloads, validates, normalizes, and writes the GPC artifact. */
+  public override async generate(): Promise<readonly string[]> {
+    const response = await fetch(GPC_SOURCE, {headers: {Accept: "application/zip"}});
+    if (!response.ok) {
+      throw new Error(`GPC download failed with HTTP ${response.status} ${response.statusText}.`);
+    }
+
+    const archive = new Uint8Array(await response.arrayBuffer());
+    const jsonBytes = await new SystemArchiveExtractor().extractEntry(archive, " EN.json");
+    const parsed: unknown = JSON.parse(Buffer.from(jsonBytes).toString("utf8"));
+    const source = parseGpcDocument(parsed);
+    if (source.LanguageCode !== "EN") {
+      throw new Error(`Expected English GPC data but received '${source.LanguageCode}'.`);
+    }
+
+    const artifact: TaxonomyArtifact = {
+      system: "GS1_GPC",
+      version: GPC_VERSION,
+      sourceUrl: GPC_SOURCE,
+      generatedAt: new Date().toISOString(),
+      attribution: GPC_ATTRIBUTION,
+      nodes: flattenGpcSchema(source.Schema),
+    };
+
+    return writeMirroredArtifacts(FILE_NAMES.GS1_GPC, artifact, this.outputRoots);
   }
-
-  return {
-    system: "GS1_GPC",
-    version: GPC_VERSION,
-    sourceUrl: GPC_SOURCE,
-    generatedAt,
-    attribution: GPC_ATTRIBUTION,
-    nodes: flattenGpcSchema(source.Schema),
-  };
-}
-
-/**
- * Downloads every supported taxonomy and writes mirrored runtime artifacts.
- *
- * @param fetchImpl - Fetch implementation; injected in tests to avoid network access.
- * @param outputRoots - Output roots; defaults to the API and website runtime directories.
- * @returns Absolute paths written.
- * @throws {Error} When a download fails, a source document is invalid, or validation fails.
- */
-export async function generateTaxonomyArtifacts(
-  fetchImpl: typeof fetch = fetch,
-  outputRoots: readonly string[] = OUTPUT_ROOTS,
-): Promise<readonly string[]> {
-  const generatedAt = new Date().toISOString();
-  const gpc = await createGpcArtifact(fetchImpl, generatedAt);
-  return writeMirroredArtifacts(FILE_NAMES.GS1_GPC, gpc, outputRoots);
 }
 
 /**
  * Runs taxonomy artifact generation and reports the written paths.
  *
- * @param fetchImpl - Fetch implementation; injected in tests to avoid network access.
  * @param outputRoots - Output roots; defaults to the API and website runtime directories.
  * @returns Process exit code; zero on success.
  */
-export async function main(
-  fetchImpl: typeof fetch = fetch,
-  outputRoots: readonly string[] = OUTPUT_ROOTS,
-): Promise<number> {
-  const outputs = await generateTaxonomyArtifacts(fetchImpl, outputRoots);
+export async function main(outputRoots: readonly string[] = OUTPUT_ROOTS): Promise<number> {
+  const outputs = await new Gs1GpcTaxonomyClassificationGenerator(outputRoots).generate();
   console.info(`Generated ${outputs.length} taxonomy artifact file(s).`);
   for (const output of outputs) console.info(`  - ${output}`);
   return 0;

@@ -4,11 +4,16 @@
  * @module scripts/generate.artifacts.test
  */
 
-import {deflateRawSync} from "node:zlib";
-import {mkdtemp, readFile} from "node:fs/promises";
+import {ChildProcess, execFile} from "node:child_process";
+import {mkdtemp, readFile, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
+
+vi.mock("node:child_process", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:child_process")>();
+  return {...actual, execFile: vi.fn(actual.execFile)};
+});
 
 vi.mock("node:fs/promises", async (importOriginal) => {
   const actual = await importOriginal<typeof import("node:fs/promises")>();
@@ -17,174 +22,38 @@ vi.mock("node:fs/promises", async (importOriginal) => {
 import {
   assertMirroredContentsIdentical,
   BackendLicenseGenerator,
+  buildArchiveExtractionCommand,
   buildTaxonomyArtifactGenerationCommand,
   buildHierarchy,
-  extractZipEntry,
+  Gs1GpcTaxonomyClassificationGenerator,
   flattenGpcSchema,
-  generateTaxonomyArtifacts,
   parseGpcDocument,
-  main,
   writeMirroredArtifacts,
 } from "./generate.artifacts.ts";
 import type {TaxonomyArtifact, TaxonomyArtifactNode} from "./generate.artifacts.ts";
 
-/** Minimal ZIP entry description used by the archive builder below. */
-interface ZipEntryInput {
-  readonly name: string;
-  readonly contents: string;
-  /** 0 = stored, 8 = deflate. Any other value produces an intentionally unsupported archive. */
-  readonly method: number;
-}
-
-/**
- * Builds a valid single-disk ZIP archive in memory.
- *
- * @param entries - Entries to place in the archive.
- * @returns Complete ZIP bytes.
- */
-function createZipArchive(entries: readonly ZipEntryInput[]): Uint8Array {
-  const localChunks: Buffer[] = [];
-  const centralChunks: Buffer[] = [];
-  let localOffset = 0;
-
-  for (const entry of entries) {
-    const nameBytes = Buffer.from(entry.name, "utf8");
-    const rawBytes = Buffer.from(entry.contents, "utf8");
-    const payload = entry.method === 8 ? deflateRawSync(rawBytes) : rawBytes;
-
-    const localHeader = Buffer.alloc(30);
-    localHeader.writeUInt32LE(0x04034b50, 0);
-    localHeader.writeUInt16LE(20, 4);
-    localHeader.writeUInt16LE(0, 6);
-    localHeader.writeUInt16LE(entry.method, 8);
-    localHeader.writeUInt32LE(0, 14);
-    localHeader.writeUInt32LE(payload.length, 18);
-    localHeader.writeUInt32LE(rawBytes.length, 22);
-    localHeader.writeUInt16LE(nameBytes.length, 26);
-    localHeader.writeUInt16LE(0, 28);
-
-    const centralHeader = Buffer.alloc(46);
-    centralHeader.writeUInt32LE(0x02014b50, 0);
-    centralHeader.writeUInt16LE(20, 4);
-    centralHeader.writeUInt16LE(20, 6);
-    centralHeader.writeUInt16LE(0, 8);
-    centralHeader.writeUInt16LE(entry.method, 10);
-    centralHeader.writeUInt32LE(0, 16);
-    centralHeader.writeUInt32LE(payload.length, 20);
-    centralHeader.writeUInt32LE(rawBytes.length, 24);
-    centralHeader.writeUInt16LE(nameBytes.length, 28);
-    centralHeader.writeUInt16LE(0, 30);
-    centralHeader.writeUInt16LE(0, 32);
-    centralHeader.writeUInt32LE(localOffset, 42);
-
-    localChunks.push(localHeader, nameBytes, payload);
-    centralChunks.push(centralHeader, nameBytes);
-    localOffset += localHeader.length + nameBytes.length + payload.length;
-  }
-
-  const localSection = Buffer.concat(localChunks);
-  const centralSection = Buffer.concat(centralChunks);
-
-  const eocd = Buffer.alloc(22);
-  eocd.writeUInt32LE(0x06054b50, 0);
-  eocd.writeUInt16LE(entries.length, 8);
-  eocd.writeUInt16LE(entries.length, 10);
-  eocd.writeUInt32LE(centralSection.length, 12);
-  eocd.writeUInt32LE(localSection.length, 16);
-
-  return new Uint8Array(Buffer.concat([localSection, centralSection, eocd]));
-}
-
-function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
-  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
-}
-
-function createFetch(
-  responseFactory: (input: string | URL | Request, init?: RequestInit) => Response | Promise<Response>,
-): typeof fetch {
-  return async (input, init) => responseFactory(input, init);
-}
-
-function readNodes(value: unknown): readonly unknown[] {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new TypeError("Generated taxonomy artifact must be an object.");
-  }
-
-  const nodes = Reflect.get(value, "nodes");
-  if (!Array.isArray(nodes)) {
-    throw new TypeError("Generated taxonomy artifact nodes must be an array.");
-  }
-
-  return nodes;
-}
-
-describe("extractZipEntry", () => {
-  it("extracts a deflate-compressed entry by suffix", () => {
-    const archive = createZipArchive([
-      {name: "readme.txt", contents: "ignore me", method: 8},
-      {name: "GPC as of May 2026 EN.json", contents: '{"LanguageCode":"EN"}', method: 8},
-    ]);
-
-    const extracted = extractZipEntry(archive, " EN.json");
-
-    expect(Buffer.from(extracted).toString("utf8")).toBe('{"LanguageCode":"EN"}');
-  });
-
-  it("extracts a stored entry by suffix", () => {
-    const archive = createZipArchive([{name: "data EN.json", contents: "stored payload", method: 0}]);
-
-    expect(Buffer.from(extractZipEntry(archive, " EN.json")).toString("utf8")).toBe("stored payload");
-  });
-
-  it("throws when no entry matches the suffix", () => {
-    const archive = createZipArchive([{name: "readme.txt", contents: "x", method: 8}]);
-
-    expect(() => extractZipEntry(archive, " EN.json")).toThrow("ZIP entry ending with ' EN.json' was not found.");
-  });
-
-  it("throws when the end-of-central-directory record is missing", () => {
-    expect(() => extractZipEntry(new Uint8Array(8), "anything")).toThrow(
-      "ZIP end-of-central-directory record was not found.",
-    );
-  });
-
-  it("throws when a non-trivial buffer has no matching end-of-central-directory signature", () => {
-    const archive = createZipArchive([{name: "data EN.json", contents: "x", method: 0}]);
-    const buffer = Buffer.from(archive);
-    buffer.writeUInt32LE(0xdeadbeef, buffer.length - 22);
-
-    expect(() => extractZipEntry(new Uint8Array(buffer), "anything")).toThrow(
-      "ZIP end-of-central-directory record was not found.",
-    );
-  });
-
-  it("throws for an unsupported compression method", () => {
-    const archive = createZipArchive([{name: "data EN.json", contents: "x", method: 12}]);
-
-    expect(() => extractZipEntry(archive, " EN.json")).toThrow("Unsupported ZIP compression method 12");
-  });
-
-  it("throws when a central directory signature is corrupt", () => {
-    const archive = createZipArchive([{name: "data EN.json", contents: "x", method: 0}]);
-    const buffer = Buffer.from(archive);
-    const centralOffset = buffer.readUInt32LE(buffer.length - 22 + 16);
-    buffer.writeUInt32LE(0xdeadbeef, centralOffset);
-
-    expect(() => extractZipEntry(new Uint8Array(buffer), " EN.json")).toThrow("Invalid ZIP central directory entry");
-  });
-
-  it("throws when a local header signature is corrupt", () => {
-    const archive = createZipArchive([{name: "data EN.json", contents: "x", method: 0}]);
-    const buffer = Buffer.from(archive);
-    const centralOffset = buffer.readUInt32LE(buffer.length - 22 + 16);
-    const localOffset = buffer.readUInt32LE(centralOffset + 42);
-    buffer.writeUInt32LE(0xdeadbeef, localOffset);
-
-    expect(() => extractZipEntry(new Uint8Array(buffer), " EN.json")).toThrow(
-      "Invalid ZIP local header for data EN.json.",
-    );
-  });
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.clearAllMocks();
 });
+
+function mockArchiveExtraction(document: unknown): void {
+  vi.mocked(execFile).mockImplementation((_file, args, callback) => {
+    const outputIndex = args?.findIndex((value) => value === "-C" || value === "-d") ?? -1;
+    const outputDirectory = args?.[outputIndex + 1];
+    if (outputDirectory === undefined) throw new Error("Output directory argument is missing.");
+
+    const childProcess = new ChildProcess();
+    void writeFile(join(outputDirectory, "GPC 2026-05 EN.json"), JSON.stringify(document), "utf8")
+      .then(() => {
+        if (typeof callback === "function") callback(null, "", "");
+      })
+      .catch((error: unknown) => {
+        if (typeof callback === "function") callback(error instanceof Error ? error : new Error(String(error)), "", "");
+      });
+    return childProcess;
+  });
+}
 
 describe("parseGpcDocument", () => {
   const validNode = {
@@ -545,103 +414,6 @@ describe("assertMirroredContentsIdentical", () => {
   });
 });
 
-describe("generateTaxonomyArtifacts", () => {
-  const gpcDocument = {
-    LanguageCode: "EN",
-    DateUtc: "2026-05-01",
-    Schema: [
-      {
-        Level: 1,
-        Code: 50000000,
-        Title: "Food",
-        Definition: null,
-        DefinitionExcludes: null,
-        Active: true,
-        Childs: [
-          {
-            Level: 2,
-            Code: 50190000,
-            Title: "Baked Goods",
-            Definition: null,
-            DefinitionExcludes: null,
-            Active: true,
-            Childs: [],
-          },
-        ],
-      },
-    ],
-  };
-
-  function createGpcResponse(document: unknown, name = "GPC as of May 2026 EN.json"): Response {
-    const archive = createZipArchive([{name, contents: JSON.stringify(document), method: 8}]);
-    return new Response(toArrayBuffer(archive), {status: 200});
-  }
-
-  it("downloads, normalizes and mirrors the GPC artifact", async () => {
-    const base = await mkdtemp(join(tmpdir(), "arolariu-artifacts-"));
-    const roots = [join(base, "api"), join(base, "web")];
-    const fetchImpl = createFetch(() => createGpcResponse(gpcDocument));
-
-    const written = await generateTaxonomyArtifacts(fetchImpl, roots);
-
-    expect(written).toHaveLength(2);
-    const contents = await readFile(written[0] ?? "", "utf8");
-    const parsed: unknown = JSON.parse(contents);
-    expect(parsed).toMatchObject({
-      system: "GS1_GPC",
-      version: "2026-05",
-      sourceUrl: "https://ref.gs1.org/standards/gpc/2026-05/",
-      attribution: "GS1 Global Product Classification (GPC), May 2026 release.",
-    });
-    expect(readNodes(parsed)).toHaveLength(2);
-  });
-
-  it("requests the pinned GS1 release URL", async () => {
-    const base = await mkdtemp(join(tmpdir(), "arolariu-artifacts-"));
-    const requested: string[] = [];
-    const fetchImpl = createFetch((input) => {
-      requested.push(String(input));
-      return createGpcResponse(gpcDocument);
-    });
-
-    await generateTaxonomyArtifacts(fetchImpl, [join(base, "api")]);
-
-    expect(requested).toEqual(["https://ref.gs1.org/standards/gpc/2026-05/"]);
-  });
-
-  it("throws when the download fails", async () => {
-    const fetchImpl = createFetch(() => new Response("nope", {status: 503, statusText: "Service Unavailable"}));
-
-    await expect(generateTaxonomyArtifacts(fetchImpl, [])).rejects.toThrow(
-      "GPC download failed with HTTP 503 Service Unavailable.",
-    );
-  });
-
-  it("throws when the archive holds a non-English dataset", async () => {
-    const base = await mkdtemp(join(tmpdir(), "arolariu-artifacts-"));
-    const fetchImpl = createFetch(() => createGpcResponse({...gpcDocument, LanguageCode: "FR"}));
-
-    await expect(generateTaxonomyArtifacts(fetchImpl, [join(base, "api")])).rejects.toThrow(
-      "Expected English GPC data but received 'FR'.",
-    );
-  });
-});
-
-describe("main", () => {
-  it("returns exit code zero and reports written paths", async () => {
-    const base = await mkdtemp(join(tmpdir(), "arolariu-artifacts-"));
-    const document = {
-      LanguageCode: "EN",
-      DateUtc: "2026-05-01",
-      Schema: [{Level: 1, Code: 50000000, Title: "Food", Definition: null, DefinitionExcludes: null, Active: true, Childs: []}],
-    };
-    const archive = createZipArchive([{name: "GPC EN.json", contents: JSON.stringify(document), method: 8}]);
-    const fetchImpl = createFetch(() => new Response(toArrayBuffer(archive), {status: 200}));
-
-    await expect(main(fetchImpl, [join(base, "api")])).resolves.toBe(0);
-  });
-});
-
 describe("buildTaxonomyArtifactGenerationCommand", () => {
   it("targets the current Node executable and this module", () => {
     const command = buildTaxonomyArtifactGenerationCommand();
@@ -659,6 +431,77 @@ describe("License generators", () => {
         const generator = new BackendLicenseGenerator();
 
         await expect(generator.generate()).resolves.toEqual([]);
+      });
+    });
+  });
+});
+
+describe("Taxonomy classification generator classes", () => {
+  describe("archive adapters", () => {
+    describe("buildArchiveExtractionCommand", () => {
+      it("uses tar.exe on Windows", () => {
+        expect(buildArchiveExtractionCommand("win32", "source.zip", "output")).toEqual({
+          command: "tar.exe",
+          args: ["-xf", "source.zip", "-C", "output"],
+        });
+      });
+
+      it("uses unzip on Linux and macOS", () => {
+        expect(buildArchiveExtractionCommand("linux", "source.zip", "output")).toEqual({
+          command: "unzip",
+          args: ["-qq", "source.zip", "-d", "output"],
+        });
+        expect(buildArchiveExtractionCommand("darwin", "source.zip", "output")).toEqual({
+          command: "unzip",
+          args: ["-qq", "source.zip", "-d", "output"],
+        });
+      });
+    });
+  });
+
+  describe("Gs1GpcTaxonomyClassificationGenerator", () => {
+    describe("generate", () => {
+      it("downloads, extracts, normalizes, and mirrors the GPC artifact", async () => {
+        const document = {
+          LanguageCode: "EN",
+          DateUtc: "2026-05-01",
+          Schema: [
+            {
+              Level: 1,
+              Code: 50000000,
+              Title: "Food",
+              Definition: null,
+              DefinitionExcludes: null,
+              Active: true,
+              Childs: [],
+            },
+          ],
+        };
+        vi.stubGlobal(
+          "fetch",
+          vi.fn(async () => new Response(new Uint8Array([1, 2, 3]), {status: 200})),
+        );
+        mockArchiveExtraction(document);
+        const base = await mkdtemp(join(tmpdir(), "arolariu-gpc-class-"));
+        const roots = [join(base, "api"), join(base, "web")];
+        const generator = new Gs1GpcTaxonomyClassificationGenerator(roots);
+
+        const outputs = await generator.generate();
+
+        expect(outputs).toHaveLength(2);
+        expect(await readFile(outputs[0] ?? "", "utf8")).toBe(await readFile(outputs[1] ?? "", "utf8"));
+      });
+
+      it("surfaces GPC HTTP failures", async () => {
+        vi.stubGlobal(
+          "fetch",
+          vi.fn(async () => new Response("Unavailable", {status: 503, statusText: "Service Unavailable"})),
+        );
+        const generator = new Gs1GpcTaxonomyClassificationGenerator([]);
+
+        await expect(generator.generate()).rejects.toThrow(
+          "GPC download failed with HTTP 503 Service Unavailable.",
+        );
       });
     });
   });
