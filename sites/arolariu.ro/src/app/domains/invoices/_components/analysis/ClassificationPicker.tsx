@@ -8,6 +8,7 @@
 import {searchClassifications} from "@/app/domains/invoices/_actions/analysis/searchClassifications";
 import {
   ClassificationSystem,
+  normalizeClassificationSearchQuery,
   type ClassificationSearchResult,
   type ClassificationSelection,
   type ClassificationSystem as ClassificationSystemValue,
@@ -91,6 +92,34 @@ export function createLatestRequestController(): Readonly<{
 }
 
 /**
+ * Provides request sequencing that invalidates stale work on dependency changes.
+ *
+ * @remarks
+ * ClassificationPicker uses this hook to ensure an older server-action success
+ * or error cannot overwrite a newer query, a new taxonomy system, or unmounted
+ * UI.
+ *
+ * @param invalidationKey - Taxonomy system whose change makes pending work stale.
+ * @returns A stable monotonic request controller for the mounted component.
+ */
+export function useLatestRequestController(invalidationKey: ClassificationSystemValue): Readonly<{
+  begin: () => number;
+  invalidate: () => void;
+  isLatest: (requestId: number) => boolean;
+}> {
+  const controllerReference = useRef(createLatestRequestController());
+
+  useEffect(() => {
+    controllerReference.current.invalidate();
+    return () => {
+      controllerReference.current.invalidate();
+    };
+  }, [invalidationKey]);
+
+  return controllerReference.current;
+}
+
+/**
  * Builds the bounded server-action input for a normalized picker query.
  *
  * @param system - Taxonomy system to query.
@@ -117,14 +146,12 @@ interface ClassificationPickerProps {
   readonly onChange: (value: ClassificationSelection | null) => void;
   /** Prevents opening, searching, selection, and clearing. */
   readonly disabled?: boolean;
+  /** Whether this integration has a backend-supported clear operation. @defaultValue true */
+  readonly allowClear?: boolean;
 }
 
 function normalizeQuery(query: string): string {
-  return query.trim().replaceAll(/\s+/gu, " ");
-}
-
-function supportsClear(system: ClassificationSystemValue): boolean {
-  return system !== ClassificationSystem.EcoicopV2;
+  return normalizeClassificationSearchQuery(query);
 }
 
 /**
@@ -132,14 +159,20 @@ function supportsClear(system: ClassificationSystemValue): boolean {
  *
  * @remarks
  * Search requests are intentionally sent only to the bounded server action and
- * contain a system, normalized query, and a cap of twenty results. The ECOICOP
- * integration does not show a clear affordance because its current PATCH DTO
- * treats null as "no change", rather than a valid clear operation.
+ * contain a system, normalized query, and a cap of twenty results. Clearability
+ * is an explicit parent decision because mutation contracts, rather than
+ * taxonomy systems, determine whether a null selection is meaningful.
  *
  * @param props - Picker configuration and controlled selection value.
  * @returns A searchable combobox with canonical result projections.
  */
-export function ClassificationPicker({system, value, onChange, disabled = false}: Readonly<ClassificationPickerProps>): React.JSX.Element {
+export function ClassificationPicker({
+  system,
+  value,
+  onChange,
+  disabled = false,
+  allowClear = true,
+}: Readonly<ClassificationPickerProps>): React.JSX.Element {
   const t = useTranslations();
   const inputId = useId();
   const labelId = useId();
@@ -148,7 +181,7 @@ export function ClassificationPicker({system, value, onChange, disabled = false}
   const triggerReference = useRef<HTMLButtonElement | null>(null);
   const mountedReference = useRef(true);
   const debounceReference = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const requestControllerReference = useRef(createLatestRequestController());
+  const requestController = useLatestRequestController(system);
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -188,8 +221,8 @@ export function ClassificationPicker({system, value, onChange, disabled = false}
       debounceReference.current = null;
     }
 
-    requestControllerReference.current.invalidate();
-  }, []);
+    requestController.invalidate();
+  }, [requestController]);
 
   const selectResult = useCallback(
     (result: ClassificationSearchResult): void => {
@@ -210,7 +243,7 @@ export function ClassificationPicker({system, value, onChange, disabled = false}
 
       void searchClassifications(createClassificationSearchInput(system, normalizedQuery))
         .then((result) => {
-          if (!mountedReference.current || !requestControllerReference.current.isLatest(requestId)) {
+          if (!mountedReference.current || !requestController.isLatest(requestId)) {
             return;
           }
 
@@ -226,7 +259,7 @@ export function ClassificationPicker({system, value, onChange, disabled = false}
           });
         })
         .catch(() => {
-          if (!mountedReference.current || !requestControllerReference.current.isLatest(requestId)) {
+          if (!mountedReference.current || !requestController.isLatest(requestId)) {
             return;
           }
 
@@ -236,7 +269,7 @@ export function ClassificationPicker({system, value, onChange, disabled = false}
           });
         });
     },
-    [startTransition, system],
+    [requestController, startTransition, system],
   );
 
   const handleQueryChange = useCallback(
@@ -252,17 +285,17 @@ export function ClassificationPicker({system, value, onChange, disabled = false}
         return;
       }
 
-      const requestId = requestControllerReference.current.begin();
+      const requestId = requestController.begin();
       debounceReference.current = setTimeout(() => {
         debounceReference.current = null;
-        if (!mountedReference.current || !requestControllerReference.current.isLatest(requestId)) {
+        if (!mountedReference.current || !requestController.isLatest(requestId)) {
           return;
         }
 
         executeSearch(normalizedQuery, requestId);
       }, SEARCH_DEBOUNCE_MS);
     },
-    [clearPendingWork, executeSearch],
+    [clearPendingWork, executeSearch, requestController],
   );
 
   const handleInputKeyDown = useCallback(
@@ -341,7 +374,7 @@ export function ClassificationPicker({system, value, onChange, disabled = false}
   const hasSearchableQuery = normalizedQuery.length >= MINIMUM_QUERY_LENGTH;
   const activeResult = searchState.results.at(highlightedIndex);
   const activeDescendant = activeResult === undefined ? undefined : `${listboxId}-${activeResult.code}`;
-  const clearAllowed = value !== null && supportsClear(system);
+  const clearAllowed = allowClear && value !== null;
 
   return (
     <div className={styles["field"]}>

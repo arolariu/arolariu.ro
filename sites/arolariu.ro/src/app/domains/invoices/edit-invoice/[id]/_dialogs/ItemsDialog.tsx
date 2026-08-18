@@ -1,7 +1,13 @@
 "use client";
 
 import {usePaginationWithSearch} from "@/hooks";
-import {ClassificationSystem, type ClassificationSelection, type Product, ProductCategory} from "@/types/invoices";
+import {
+  ClassificationSystem,
+  toClassificationSelection,
+  type ClassificationSelection,
+  type Product,
+  ProductCategory,
+} from "@/types/invoices";
 import {
   Button,
   Dialog,
@@ -38,7 +44,7 @@ type EditableProduct = Omit<Product, "classification">
 function toEditableProduct(product: Product): EditableProduct {
   return {
     ...product,
-    classification: product.classification ?? null,
+    classification: toClassificationSelection(product.classification),
     originalProductName: product.name,
   };
 }
@@ -322,6 +328,7 @@ export default function ItemsDialog(): React.JSX.Element {
                           value={item.classification}
                           onChange={handleClassificationChangeAtIndex(absoluteIndex)}
                           disabled={isSaving}
+                          allowClear={false}
                         />
                       </TableCell>
                       <TableCell className={styles["cellCenter"]}>

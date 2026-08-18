@@ -157,6 +157,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
                 system={ClassificationSystem.EcoicopV2}
                 value={invoiceDetails.classification}
                 onChange={setClassification}
+                allowClear
               />
             </div>
 

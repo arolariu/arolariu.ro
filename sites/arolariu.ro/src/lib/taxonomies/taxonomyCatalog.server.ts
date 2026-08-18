@@ -18,6 +18,7 @@ import {
   ClassificationSystem,
   isClassificationSystem,
   isTaxonomyArtifact,
+  normalizeClassificationSearchQuery,
   type ClassificationSearchResult,
   type ClassificationSystem as ClassificationSystemType,
   type SearchClassificationsInput,
@@ -85,13 +86,7 @@ const expectedSystems: readonly ClassificationSystemType[] = [
  * @returns Lowercase, diacritic-free, whitespace-normalized text.
  */
 export function normalizeTaxonomySearchText(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLocaleLowerCase("en-US")
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
-    .trim()
-    .replace(/\s+/gu, " ");
+  return normalizeClassificationSearchQuery(value);
 }
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {

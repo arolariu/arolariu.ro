@@ -81,4 +81,25 @@ describe("searchClassifications", () => {
     expect(blankQueryResult).toMatchObject({success: false, error: {code: "VALIDATION_ERROR"}});
     expect(excessiveLimitResult).toMatchObject({success: false, error: {code: "VALIDATION_ERROR"}});
   });
+
+  it("rejects queries that normalize to fewer than two searchable characters", async () => {
+    // Act
+    const whitespaceResult = await searchClassifications({
+      system: ClassificationSystem.EcoicopV2,
+      query: "  a  ",
+    });
+    const combiningMarkResult = await searchClassifications({
+      system: ClassificationSystem.EcoicopV2,
+      query: "\u0301a",
+    });
+    const punctuationResult = await searchClassifications({
+      system: ClassificationSystem.EcoicopV2,
+      query: " ! ",
+    });
+
+    // Assert
+    for (const result of [whitespaceResult, combiningMarkResult, punctuationResult]) {
+      expect(result).toMatchObject({success: false, error: {code: "VALIDATION_ERROR"}});
+    }
+  });
 });

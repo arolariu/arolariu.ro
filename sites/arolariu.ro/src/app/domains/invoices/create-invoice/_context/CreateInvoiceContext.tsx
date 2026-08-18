@@ -271,7 +271,10 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       // from terminating the enqueue request before it reaches durable storage.
       const analysisResult = await analyzeInvoice({
         invoiceIdentifier: invoice.id,
-        request: {profile: AnalysisProfile.Comprehensive, overrides: {}},
+        request: {
+          profile: AnalysisProfile.Comprehensive,
+          overrides: invoiceDetails.classification === null ? {} : {invoiceClassification: {enabled: false}},
+        },
       }).catch(() => null);
 
       if (analysisResult?.success) {

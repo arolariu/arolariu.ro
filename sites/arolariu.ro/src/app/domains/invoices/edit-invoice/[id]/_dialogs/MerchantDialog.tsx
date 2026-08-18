@@ -1,6 +1,6 @@
 "use client";
 
-import {ClassificationSystem, type ClassificationSelection} from "@/types/invoices";
+import {ClassificationSystem, toClassificationSelection, type ClassificationSelection} from "@/types/invoices";
 import {
   Button,
   Dialog,
@@ -71,14 +71,16 @@ export default function MerchantDialog(): React.JSX.Element {
   } = useDialog("EDIT_INVOICE__MERCHANT");
 
   const merchant = payload;
-  const [classification, setClassification] = useState<ClassificationSelection | null>(merchant.classification ?? null);
+  const [classification, setClassification] = useState<ClassificationSelection | null>(() =>
+    toClassificationSelection(merchant.classification),
+  );
   const [hasClassificationChange, setHasClassificationChange] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const hasCompleteMerchantPayload = merchant.additionalMetadata !== undefined;
 
   useEffect(() => {
-    setClassification(merchant.classification ?? null);
+    setClassification(toClassificationSelection(merchant.classification));
     setHasClassificationChange(false);
     setSaveError(false);
   }, [merchant]);
@@ -176,6 +178,7 @@ export default function MerchantDialog(): React.JSX.Element {
                 setHasClassificationChange(true);
               }}
               disabled={isSaving || !hasCompleteMerchantPayload}
+              allowClear={false}
             />
             {saveError || !hasCompleteMerchantPayload ? (
               <p

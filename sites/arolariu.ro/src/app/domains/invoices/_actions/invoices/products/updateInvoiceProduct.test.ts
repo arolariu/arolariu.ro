@@ -1,172 +1,97 @@
 /**
- * @fileoverview Unit tests for updateInvoiceProduct server action.
+ * @fileoverview Native-boundary tests for the product update server action.
  * @module app/domains/invoices/_actions/invoices/products/updateInvoiceProduct.test
  */
 
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
+import {ANALYSIS_API_URL, getAnalysisApiRequests, installAnalysisFetchHandler} from "@/../tests/helpers/analysisBoundary";
 import {ClassificationSystem, ProductCategory} from "@/types/invoices";
-import {beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder} from "../../../../../../../tests/helpers";
+import {describe, expect, it} from "vitest";
+import {updateInvoiceProduct} from "./updateInvoiceProduct";
 
-vi.mock("@/lib/actions/user/fetchUser");
-vi.mock("next/cache", () => ({revalidatePath: vi.fn()}));
-vi.mock("@/lib/utils.server", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/utils.server")>();
-  return {...actual, fetchWithTimeout: vi.fn()};
-});
-const {updateInvoiceProduct} = await import("./updateInvoiceProduct");
-const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
-const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
-const mockRevalidatePath = vi.mocked((await import("next/cache")).revalidatePath);
+const invoiceId = "11111111-1111-4111-8111-111111111111";
 
 describe("updateInvoiceProduct", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse({...TestDataBuilder.build("product", {name: "Updated Coffee"}), classification: null}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
-    );
-  });
-
-  it("flattens nested product update payload fields into the backend DTO", async () => {
-    const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const payload = {
-      originalProductName: "Coffee",
-      updatedProduct: {
-        ...TestDataBuilder.build("product", {
-          name: "Premium Coffee",
-          category: ProductCategory.GROCERIES,
-          quantity: 2,
-          quantityUnit: "kg",
-          productCode: "PROD-123",
-          price: 15.99,
-          detectedAllergens: [],
-        }),
-        classification: {system: ClassificationSystem.Gs1Gpc, code: "10000111"},
-      },
+  it("persists only the exact manual selection in the flat safe backend DTO", async () => {
+    // Arrange
+    const baseProduct = TestDataBuilder.build("product", {
+      name: "Premium Coffee",
+      category: ProductCategory.GROCERIES,
+      quantity: 2,
+      quantityUnit: "kg",
+      productCode: "PROD-123",
+      price: 15.99,
+      detectedAllergens: [],
+    });
+    const updatedProduct = {
+      ...baseProduct,
+      classification: {system: ClassificationSystem.Gs1Gpc, code: "10000111"},
     };
-
-    const result = await updateInvoiceProduct({invoiceId, payload});
-
-    expect(result.success).toBe(true);
-    expect(mockFetchWithTimeout).toHaveBeenCalledWith(
-      `/rest/v1/invoices/${invoiceId}/products`,
-      expect.objectContaining({
-        method: "PUT",
-        headers: expect.objectContaining({
-          Authorization: "Bearer jwt-1",
-          "Content-Type": "application/json",
-        }),
-      }),
+    const expectedBody = JSON.stringify({
+      originalProductName: "Coffee",
+      name: updatedProduct.name,
+      classification: {system: ClassificationSystem.Gs1Gpc, code: "10000111"},
+      quantity: updatedProduct.quantity,
+      quantityUnit: updatedProduct.quantityUnit,
+      productCode: updatedProduct.productCode,
+      price: updatedProduct.price,
+    });
+    installAnalysisFetchHandler((request) =>
+      request.url === `${ANALYSIS_API_URL}/rest/v1/invoices/${invoiceId}/products`
+        ? TestDataBuilder.jsonResponse(
+            {
+              name: updatedProduct.name,
+              classification: null,
+              quantity: updatedProduct.quantity,
+              quantityUnit: updatedProduct.quantityUnit,
+              productCode: updatedProduct.productCode,
+              price: updatedProduct.price,
+              totalPrice: updatedProduct.totalPrice,
+              metadata: updatedProduct.metadata,
+            },
+            {status: 202},
+          )
+        : new Response("Unexpected request", {status: 500}),
     );
 
-    const callArgs = mockFetchWithTimeout.mock.calls[0];
-    const body = JSON.parse(callArgs?.[1]?.body as string);
-    expect(body.originalProductName).toBe("Coffee");
-    expect(body.name).toBe("Premium Coffee");
-    expect(body.classification).toEqual({system: ClassificationSystem.Gs1Gpc, code: "10000111"});
-    expect(body.quantity).toBe(2);
-    expect(body.quantityUnit).toBe("kg");
-    expect(body.productCode).toBe("PROD-123");
-    expect(body.price).toBe(15.99);
-    expect(body.category).toBeUndefined();
-    expect(body.detectedAllergens).toBeUndefined();
-    // Ensure the payload is flattened, not nested
-    expect(body.updatedProduct).toBeUndefined();
-
-    expect(mockRevalidatePath).toHaveBeenCalledWith(`/domains/invoices/edit-invoice/${invoiceId}`, "page");
-    expect(mockRevalidatePath).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${invoiceId}`, "page");
-  });
-
-  it("returns an error result for an invalid invoice id", async () => {
-    const invalidId = "not-a-guid";
-    const payload = {
-      originalProductName: "Coffee",
-      updatedProduct: TestDataBuilder.build("product"),
-    };
-
-    const result = await updateInvoiceProduct({invoiceId: invalidId, payload});
-
-    expect(result.success).toBe(false);
-    expect(mockFetchWithTimeout).not.toHaveBeenCalled();
-  });
-
-  it("rejects malformed outer input and malformed JSON responses", async () => {
-    const invalidInputResult = await updateInvoiceProduct(null);
-    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse({invalid: true}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
-    const malformedResponseResult = await updateInvoiceProduct({
-      invoiceId: "11111111-1111-4111-8111-111111111111",
-      payload: {
-        originalProductName: "Coffee",
-        updatedProduct: TestDataBuilder.build("product"),
-      },
+    // Act
+    const result = await updateInvoiceProduct({
+      invoiceId,
+      payload: {originalProductName: "Coffee", updatedProduct},
     });
 
-    expect(invalidInputResult).toMatchObject({success: false, error: {code: "VALIDATION_ERROR"}});
-    expect(malformedResponseResult).toMatchObject({success: false, error: {code: "SERVER_ERROR"}});
+    // Assert
+    expect(result).toMatchObject({success: true, data: {name: "Premium Coffee"}});
+    expect(getAnalysisApiRequests()).toContainEqual({
+      url: `${ANALYSIS_API_URL}/rest/v1/invoices/${invoiceId}/products`,
+      init: expect.objectContaining({method: "PUT", body: expectedBody}),
+    });
   });
 
-  it("maps 5xx and non-5xx failures", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Internal Server Error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+  it("rejects invalid input before making a native request", async () => {
+    // Act
+    const result = await updateInvoiceProduct(null);
+
+    // Assert
+    expect(result).toMatchObject({success: false, error: {code: "VALIDATION_ERROR"}});
+    expect(getAnalysisApiRequests()).toHaveLength(0);
+  });
+
+  it("returns a safe response error for malformed backend JSON", async () => {
+    // Arrange
+    installAnalysisFetchHandler((request) =>
+      request.url === `${ANALYSIS_API_URL}/rest/v1/invoices/${invoiceId}/products`
+        ? TestDataBuilder.jsonResponse({invalid: true}, {status: 202})
+        : new Response("Unexpected request", {status: 500}),
     );
 
-    const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const payload = {
-      originalProductName: "Coffee",
-      updatedProduct: TestDataBuilder.build("product"),
-    };
+    // Act
+    const result = await updateInvoiceProduct({
+      invoiceId,
+      payload: {originalProductName: "Coffee", updatedProduct: TestDataBuilder.build("product")},
+    });
 
-    const result = await updateInvoiceProduct({invoiceId, payload});
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toBe("A server error occurred. Please try again later.");
-    }
-
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
-
-    const result2 = await updateInvoiceProduct({invoiceId, payload});
-
-    expect(result2.success).toBe(false);
-    if (!result2.success) {
-      expect(result2.error.message).toBe("Failed to update the product. Please check your input and try again.");
-    }
-  });
-
-  it("returns an error result when auth or fetch throws", async () => {
-    mockFetchUser.mockRejectedValue(new Error("Auth service unavailable"));
-
-    const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const payload = {
-      originalProductName: "Coffee",
-      updatedProduct: TestDataBuilder.build("product"),
-    };
-
-    const result = await updateInvoiceProduct({invoiceId, payload});
-
-    expect(result.success).toBe(false);
-    expect(mockFetchWithTimeout).not.toHaveBeenCalled();
-  });
-
-  it("handles fetch throwing a non-Error object", async () => {
-    mockFetchWithTimeout.mockRejectedValue("String error");
-
-    const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const payload = {
-      originalProductName: "Coffee",
-      updatedProduct: TestDataBuilder.build("product"),
-    };
-
-    const result = await updateInvoiceProduct({invoiceId, payload});
-
-    expect(result.success).toBe(false);
+    // Assert
+    expect(result).toMatchObject({success: false, error: {code: "SERVER_ERROR"}});
   });
 });

@@ -208,6 +208,7 @@ export default function BulkCategoryDialog(): React.JSX.Element | null {
                 setHasClassificationChoice(true);
               }}
               disabled={isSaving}
+              allowClear={false}
             />
           </div>
 

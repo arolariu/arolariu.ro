@@ -28,6 +28,7 @@
 
 import type {NamedEntity} from "../DDD";
 import type {PaymentDetail, PaymentInformation, Product, Recipe, TaxDetail} from "./index.ts";
+import type {StandardClassification} from "./Classification";
 
 /**
  * Represents the AI analysis options for invoice processing.
@@ -304,6 +305,15 @@ export type InvoiceScan = {
  * @see {@link Recipe} for AI-generated recipe suggestions
  */
 export interface Invoice extends NamedEntity<string> {
+  /**
+   * The canonical ECOICOP classification returned by the backend, when available.
+   *
+   * @remarks
+   * Mutation requests use a reduced system/code selection. The richer canonical
+   * value remains server-owned and is never placed in editable selection state.
+   */
+  classification?: StandardClassification | null;
+
   /**
    * The user identifier, usually represents the user that created the invoice.
    * It is a GUIDv4 formatted identifier string.

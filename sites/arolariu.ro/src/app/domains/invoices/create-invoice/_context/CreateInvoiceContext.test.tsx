@@ -9,9 +9,11 @@ import {useScansStore} from "@/stores";
 import {ClassificationSystem, type ClassificationSelection} from "@/types/invoices";
 import type {CachedScan} from "@/types/scans";
 import {ScanStatus, ScanType} from "@/types/scans";
-import {act, render, waitFor} from "@testing-library/react";
+import {act, render, screen, waitFor} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {beforeEach, describe, expect, it} from "vitest";
 import {AnalysisTestProvider} from "../../../../../../tests/helpers/analysis";
+import InvoiceDetailsForm from "../_components/InvoiceDetailsForm";
 import {CreateInvoiceProvider, useCreateInvoiceContext} from "./CreateInvoiceContext";
 
 const invoiceIdentifier = "11111111-1111-4111-8111-111111111111";
@@ -20,6 +22,7 @@ let invokeCreateInvoiceWithScans: (() => Promise<void>) | null = null;
 let selectScan: ((scan: CachedScan) => void) | null = null;
 let setName: ((name: string) => void) | null = null;
 let setClassification: ((classification: ClassificationSelection | null) => void) | null = null;
+let currentClassification: ClassificationSelection | null = null;
 
 /**
  * Exposes the context methods under test without mocking the context or actions.
@@ -32,6 +35,7 @@ function ContextProbe(): React.JSX.Element {
   selectScan = context.toggleScan;
   setName = context.setName;
   setClassification = context.setClassification;
+  currentClassification = context.invoiceDetails.classification;
   return <div />;
 }
 
@@ -60,23 +64,25 @@ function createScan(): CachedScan {
   } satisfies CachedScan;
 }
 
-function acceptedAnalysisResponse(): Response {
+function acceptedAnalysisResponse(hasManualClassification = false): Response {
   return new Response(
     JSON.stringify({
       runId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
       targetType: "invoice",
       targetId: invoiceIdentifier,
       status: "queued",
-      profile: "comprehensive",
-      acceptedCapabilities: [
-        "documentExtraction",
-        "merchantResolution",
-        "invoiceSummary",
-        "productClassification",
-        "allergenAssessment",
-        "invoiceClassification",
-        "recipeGeneration",
-      ],
+      profile: hasManualClassification ? "custom" : "comprehensive",
+      acceptedCapabilities: hasManualClassification
+        ? ["documentExtraction", "merchantResolution", "invoiceSummary", "productClassification", "allergenAssessment", "recipeGeneration"]
+        : [
+            "documentExtraction",
+            "merchantResolution",
+            "invoiceSummary",
+            "productClassification",
+            "allergenAssessment",
+            "invoiceClassification",
+            "recipeGeneration",
+          ],
       acceptedAt: "2026-08-17T19:40:42.187Z",
     }),
     {status: 202},
@@ -90,6 +96,7 @@ describe("CreateInvoiceContext durable analysis enqueue", () => {
     selectScan = null;
     setName = null;
     setClassification = null;
+    currentClassification = null;
     useScansStore.getState().clearScans();
   });
 
@@ -172,11 +179,11 @@ describe("CreateInvoiceContext durable analysis enqueue", () => {
     expect(analysisRouter.push).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${invoiceIdentifier}`);
   });
 
-  it("patches a selected ECOICOP selection after the invoice is created", async () => {
+  it("persists a selected ECOICOP selection and disables only invoice classification during comprehensive analysis", async () => {
     // Arrange
     installAnalysisFetchHandler((requestAtBoundary) => {
       if (requestAtBoundary.url.endsWith("/analyze")) {
-        return acceptedAnalysisResponse();
+        return acceptedAnalysisResponse(true);
       }
 
       if (requestAtBoundary.init?.method === "PATCH") {
@@ -207,7 +214,36 @@ describe("CreateInvoiceContext durable analysis enqueue", () => {
 
     // Assert
     const patchRequest = getAnalysisApiRequests().find((request) => request.init?.method === "PATCH");
+    const analysisRequest = getAnalysisApiRequests().find((request) => request.url.endsWith("/analyze"));
     expect(patchRequest).toBeDefined();
     expect(patchRequest?.init?.body).toBe(JSON.stringify({classification: {system: ClassificationSystem.EcoicopV2, code: "01.1"}}));
+    expect(analysisRequest?.init?.body).toBe(
+      JSON.stringify({
+        profile: "comprehensive",
+        overrides: {invoiceClassification: {enabled: false}},
+      }),
+    );
+  });
+
+  it("allows a staged ECOICOP selection to be cleared before it is persisted", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    render(
+      <AnalysisTestProvider>
+        <CreateInvoiceProvider>
+          <ContextProbe />
+          <InvoiceDetailsForm />
+        </CreateInvoiceProvider>
+      </AnalysisTestProvider>,
+    );
+    act(() => {
+      setClassification?.({system: ClassificationSystem.EcoicopV2, code: "01.1"});
+    });
+
+    // Act
+    await user.click(screen.getByRole("button", {name: "Clear ECOICOP v2 classification"}));
+
+    // Assert
+    expect(currentClassification).toBeNull();
   });
 });

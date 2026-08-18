@@ -52,6 +52,22 @@ export interface ClassificationSelection {
 }
 
 /**
+ * Reduces a persisted canonical classification to its mutation-safe selection.
+ *
+ * @remarks
+ * Canonical classifications include server-owned labels, evidence, provenance,
+ * and taxonomy-version data. Update DTOs deliberately accept only the
+ * user-selected system and code, so edit state must not retain or resend the
+ * richer canonical object.
+ *
+ * @param classification - Persisted canonical classification, when available.
+ * @returns An exact system/code selection, or null when no classification exists.
+ */
+export function toClassificationSelection(classification: StandardClassification | null | undefined): ClassificationSelection | null {
+  return classification === null || classification === undefined ? null : {system: classification.system, code: classification.code};
+}
+
+/**
  * Represents one canonical node in a classification hierarchy.
  */
 export interface ClassificationNode {
@@ -163,7 +179,7 @@ export interface ClassificationSearchResult extends ClassificationSelection {
 export interface SearchClassificationsInput {
   /** The taxonomy artifact to search. */
   readonly system: ClassificationSystem;
-  /** A non-empty user query matched against canonical codes and labels. */
+  /** A query with at least two normalized searchable characters. */
   readonly query: string;
   /** Optional result cap in the inclusive range 1 through 50. */
   readonly limit?: number;
@@ -183,6 +199,22 @@ function isStringArray(value: unknown): value is readonly string[] {
 
 function hasOnlyKeys(record: Readonly<Record<string, unknown>>, allowedKeys: readonly string[]): boolean {
   return Object.keys(record).every((key) => allowedKeys.includes(key));
+}
+
+/**
+ * Normalizes a user taxonomy query for Unicode-safe bounded searches.
+ *
+ * @param query - Raw user-entered taxonomy query.
+ * @returns Lowercase, diacritic-free searchable text with normalized spacing.
+ */
+export function normalizeClassificationSearchQuery(query: string): string {
+  return query
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLocaleLowerCase("en-US")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()
+    .replace(/\s+/gu, " ");
 }
 
 /**
@@ -407,6 +439,10 @@ export function isSearchClassificationsInput(value: unknown): value is SearchCla
     || !isClassificationSystem(value["system"])
     || !isNonBlankString(value["query"])
   ) {
+    return false;
+  }
+
+  if (normalizeClassificationSearchQuery(value["query"]).length < 2) {
     return false;
   }
 

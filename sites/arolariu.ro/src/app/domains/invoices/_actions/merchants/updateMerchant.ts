@@ -51,12 +51,19 @@ interface MerchantUpdateResponse {
 
 type ServerActionOutputType = ServerActionResult<Readonly<MerchantUpdateResponse>>;
 
+// .NET ContactInformation stores ordinary strings. This is its runtime String.Length ceiling.
+const MAXIMUM_CONTACT_FIELD_LENGTH = 2_147_483_647;
+
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function isNonBlankString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+function isContactString(value: unknown): value is string {
+  return typeof value === "string" && value.length <= MAXIMUM_CONTACT_FIELD_LENGTH;
 }
 
 function hasOnlyKeys(record: Readonly<Record<string, unknown>>, allowedKeys: readonly string[]): boolean {
@@ -67,11 +74,11 @@ function isMerchantAddress(value: unknown): value is MerchantAddress {
   return (
     isRecord(value)
     && hasOnlyKeys(value, ["fullName", "address", "phoneNumber", "emailAddress", "website"])
-    && isNonBlankString(value["fullName"])
-    && isNonBlankString(value["address"])
-    && isNonBlankString(value["phoneNumber"])
-    && isNonBlankString(value["emailAddress"])
-    && isNonBlankString(value["website"])
+    && isContactString(value["fullName"])
+    && isContactString(value["address"])
+    && isContactString(value["phoneNumber"])
+    && isContactString(value["emailAddress"])
+    && isContactString(value["website"])
   );
 }
 
@@ -84,7 +91,7 @@ function isMerchantUpdatePayload(value: unknown): value is MerchantUpdatePayload
     isRecord(value)
     && hasOnlyKeys(value, ["name", "description", "classification", "address", "parentCompanyId", "additionalMetadata"])
     && isNonBlankString(value["name"])
-    && typeof value["description"] === "string"
+    && isNonBlankString(value["description"])
     && (value["classification"] === null || isClassificationSelection(value["classification"]))
     && isMerchantAddress(value["address"])
     && (value["parentCompanyId"] === null || isNonBlankString(value["parentCompanyId"]))

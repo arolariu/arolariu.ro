@@ -7,30 +7,37 @@ import {searchClassifications} from "@/app/domains/invoices/_actions/analysis/se
 import {ClassificationSystem, type ClassificationSelection} from "@/types/invoices";
 import {act, render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {useCallback, useEffect, useState} from "react";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {AnalysisTestProvider} from "../../../../../../tests/helpers/analysis";
 import {
   ClassificationPicker,
   classificationSearchReducer,
   createClassificationSearchInput,
-  createLatestRequestController,
+  useLatestRequestController,
 } from "./ClassificationPicker";
 
 interface Deferred<TValue> {
   readonly promise: Promise<TValue>;
   readonly resolve: (value: TValue) => void;
+  readonly reject: (reason?: unknown) => void;
 }
 
 function createDeferred<TValue>(): Deferred<TValue> {
   let resolvePromise: ((value: TValue) => void) | undefined;
-  const promise = new Promise<TValue>((resolve) => {
+  let rejectPromise: ((reason?: unknown) => void) | undefined;
+  const promise = new Promise<TValue>((resolve, reject) => {
     resolvePromise = resolve;
+    rejectPromise = reject;
   });
 
   return {
     promise,
     resolve: (value) => {
       resolvePromise?.(value);
+    },
+    reject: (reason) => {
+      rejectPromise?.(reason);
     },
   };
 }
@@ -39,6 +46,7 @@ function renderPicker(
   value: ClassificationSelection | null = null,
   onChange: (selection: ClassificationSelection | null) => void = vi.fn(),
   disabled = false,
+  allowClear?: boolean,
 ): void {
   render(
     <AnalysisTestProvider>
@@ -47,14 +55,60 @@ function renderPicker(
         value={value}
         onChange={onChange}
         disabled={disabled}
+        allowClear={allowClear}
       />
     </AnalysisTestProvider>,
   );
 }
 
+interface LatestRequestConsumerProps {
+  readonly system: ClassificationSystem;
+  readonly onCommit: (state: string) => void;
+}
+
+let startLatestRequest: ((operation: Promise<string>) => void) | null = null;
+
+/**
+ * Renders the same latest-request hook used by ClassificationPicker with
+ * externally controlled promises for real React concurrency coverage.
+ */
+function LatestRequestConsumer({system, onCommit}: Readonly<LatestRequestConsumerProps>): React.JSX.Element {
+  const requestController = useLatestRequestController(system);
+  const [state, setState] = useState("idle");
+
+  useEffect(() => {
+    setState("idle");
+  }, [system]);
+
+  const start = useCallback(
+    (operation: Promise<string>): void => {
+      const requestId = requestController.begin();
+      setState("loading");
+      void operation
+        .then((result) => {
+          if (requestController.isLatest(requestId)) {
+            setState(`success:${result}`);
+            onCommit(`success:${result}`);
+          }
+        })
+        .catch(() => {
+          if (requestController.isLatest(requestId)) {
+            setState("error");
+            onCommit("error");
+          }
+        });
+    },
+    [onCommit, requestController],
+  );
+
+  startLatestRequest = start;
+  return <output aria-label='latest request state'>{state}</output>;
+}
+
 describe("ClassificationPicker", () => {
   beforeEach(() => {
     vi.useRealTimers();
+    startLatestRequest = null;
   });
 
   it("does not search before two normalized characters", async () => {
@@ -121,33 +175,108 @@ describe("ClassificationPicker", () => {
     expect(onChange).toHaveBeenCalledWith({system: ClassificationSystem.Gs1Gpc, code: selectedCode});
   });
 
-  it("keeps only the newest controlled asynchronous request result", async () => {
+  it("keeps only the newest controlled asynchronous request result in rendered hook state", async () => {
     // Arrange
-    const controller = createLatestRequestController();
     const older = createDeferred<string>();
     const newer = createDeferred<string>();
-    const accepted: string[] = [];
-    const olderRequest = controller.begin();
-    void older.promise.then((result) => {
-      if (controller.isLatest(olderRequest)) accepted.push(result);
-    });
-    const newerRequest = controller.begin();
-    void newer.promise.then((result) => {
-      if (controller.isLatest(newerRequest)) accepted.push(result);
-    });
+    const onCommit = vi.fn();
+    render(
+      <LatestRequestConsumer
+        system={ClassificationSystem.Gs1Gpc}
+        onCommit={onCommit}
+      />,
+    );
 
     // Act
-    newer.resolve("new");
-    await newer.promise;
-    older.resolve("old");
-    await older.promise;
-    await Promise.resolve();
+    act(() => {
+      startLatestRequest?.(older.promise);
+      startLatestRequest?.(newer.promise);
+    });
+    await act(async () => {
+      newer.resolve("new");
+      await newer.promise;
+    });
+    await act(async () => {
+      older.resolve("old");
+      await older.promise;
+    });
 
     // Assert
-    expect(accepted).toEqual(["new"]);
+    expect(screen.getByLabelText("latest request state")).toHaveTextContent("success:new");
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith("success:new");
   });
 
-  it("emits null when a clearable selection is cleared", async () => {
+  it("does not let a stale error replace a newer rendered success", async () => {
+    // Arrange
+    const older = createDeferred<string>();
+    const newer = createDeferred<string>();
+    const onCommit = vi.fn();
+    render(
+      <LatestRequestConsumer
+        system={ClassificationSystem.Gs1Gpc}
+        onCommit={onCommit}
+      />,
+    );
+
+    // Act
+    act(() => {
+      startLatestRequest?.(older.promise);
+      startLatestRequest?.(newer.promise);
+    });
+    await act(async () => {
+      newer.resolve("new");
+      await newer.promise;
+    });
+    await act(async () => {
+      older.reject(new Error("stale failure"));
+      await older.promise.catch(() => undefined);
+    });
+
+    // Assert
+    expect(screen.getByLabelText("latest request state")).toHaveTextContent("success:new");
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith("success:new");
+  });
+
+  it("invalidates pending work when the taxonomy system changes or the consumer unmounts", async () => {
+    // Arrange
+    const pendingSystemRequest = createDeferred<string>();
+    const pendingUnmountRequest = createDeferred<string>();
+    const onCommit = vi.fn();
+    const {rerender, unmount} = render(
+      <LatestRequestConsumer
+        system={ClassificationSystem.Gs1Gpc}
+        onCommit={onCommit}
+      />,
+    );
+
+    // Act
+    act(() => {
+      startLatestRequest?.(pendingSystemRequest.promise);
+    });
+    rerender(
+      <LatestRequestConsumer
+        system={ClassificationSystem.Nace21}
+        onCommit={onCommit}
+      />,
+    );
+    await act(async () => {
+      pendingSystemRequest.resolve("obsolete-system");
+      await pendingSystemRequest.promise;
+    });
+    act(() => {
+      startLatestRequest?.(pendingUnmountRequest.promise);
+    });
+    unmount();
+    await act(async () => {
+      pendingUnmountRequest.resolve("unmounted");
+      await pendingUnmountRequest.promise;
+    });
+
+    // Assert
+    expect(onCommit).not.toHaveBeenCalled();
+  });
+
+  it("emits null when the default clearable selection is cleared", async () => {
     // Arrange
     const onChange = vi.fn<(selection: ClassificationSelection | null) => void>();
     renderPicker({system: ClassificationSystem.Gs1Gpc, code: "70000000"}, onChange);
@@ -158,6 +287,14 @@ describe("ClassificationPicker", () => {
 
     // Assert
     expect(onChange).toHaveBeenCalledWith(null);
+  });
+
+  it("hides the clear operation when a persisted integration disallows clearing", () => {
+    // Arrange
+    renderPicker({system: ClassificationSystem.Gs1Gpc, code: "70000000"}, vi.fn(), false, false);
+
+    // Assert
+    expect(screen.queryByRole("button", {name: "Clear GS1 GPC classification"})).not.toBeInTheDocument();
   });
 
   it("provides combobox, listbox, and keyboard option selection semantics", async () => {
@@ -191,11 +328,9 @@ describe("ClassificationPicker", () => {
 
   it("models loading, error, empty, disabled, unmount, and system-change safeguards", async () => {
     // Arrange
-    const initialState = {status: "idle", requestId: 1, results: []} as const;
-    const requestController = createLatestRequestController();
-    const requestId = requestController.begin();
-    const errorState = classificationSearchReducer(initialState, {type: "error", requestId, error: "failed"});
-    const staleErrorState = classificationSearchReducer(errorState, {type: "error", requestId: requestId - 1, error: "older"});
+    const initialState = {status: "idle", requestId: 2, results: []} as const;
+    const errorState = classificationSearchReducer(initialState, {type: "error", requestId: 2, error: "failed"});
+    const staleErrorState = classificationSearchReducer(errorState, {type: "error", requestId: 1, error: "older"});
     renderPicker(null, vi.fn(), true);
 
     // Assert
@@ -239,6 +374,5 @@ describe("ClassificationPicker", () => {
       </AnalysisTestProvider>,
     );
     unmount();
-    expect(requestController.isLatest(requestId)).toBe(true);
   });
 });

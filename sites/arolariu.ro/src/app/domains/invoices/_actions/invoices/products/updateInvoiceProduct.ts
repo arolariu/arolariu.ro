@@ -5,32 +5,22 @@
  * @module app/domains/invoices/_actions/invoices/products/updateInvoiceProduct
  *
  * @remarks
- * Provides server-side product management functionality for modifying existing line items
- * in invoices. This operation updates a single product within the invoice's items collection
- * without requiring full collection reconstruction.
+ * Provides server-side product management for one persisted invoice line item.
  *
  * **Key Features:**
  * - Server-side execution with authentication
  * - GUID validation for invoice identifiers
- * - Product identification by original name (case-insensitive substring match)
+ * - Product identification by normalized original name
  * - Automatic cache revalidation for edit/view pages
  * - OpenTelemetry instrumentation for observability
  * - Structured error handling with user-friendly messages
  *
- * **Update Strategy:**
- * - The target product is located by `originalProductName` using a
- *   **case-insensitive substring match** on the backend
- *   (`String.Contains` with `InvariantCultureIgnoreCase`). Pass the full name
- *   to avoid matching the wrong item when names share a common substring.
- * - The backend implements "update" as a **delete + add** sequence: the matched
- *   product is removed and a brand-new product is constructed from the
- *   `updatedProduct` payload via `UpdateProductRequestDto.ToProduct()`. No
- *   server-side edit flag (`metadata.isEdited`) is set on this code path — the
- *   new product gets fresh default metadata.
- * - Therefore the payload must contain **all** product fields you want
- *   preserved; any field omitted will revert to its default value
- *   (empty string, `0`, empty allergen list, etc.).
- * - The endpoint responds with HTTP **202 Accepted** + the updated product.
+ * **Classification Preservation:**
+ * - Callers submit only an optional `{system, code}` GS1 GPC selection.
+ * - A null selection retains the persisted canonical classification, including
+ *   server-owned version, evidence, provenance, and confidence fields.
+ * - The backend mutates the selected line item in place, retaining analysis and
+ *   workflow state while marking the item as manually edited.
  *
  * @see {@link addInvoiceProduct} - Sibling action for adding products
  * @see {@link deleteInvoiceProduct} - Sibling action for deleting products
@@ -64,16 +54,12 @@ type ServerActionInputType = Readonly<{
   /** The product update payload containing identifier and new data. */
   readonly payload: Readonly<{
     /**
-     * The current name of the product to update. Backend performs a
-     * case-insensitive substring match (`String.Contains` with
-     * `InvariantCultureIgnoreCase`); pass the full product name to avoid
-     * accidentally matching an unrelated item.
+     * The current product name used by the backend's normalized exact matcher.
      */
     readonly originalProductName: string;
     /**
-     * The complete updated product data. All fields you want preserved must
-     * be present — the backend constructs a fresh product from this payload
-     * (delete + add), so omitted fields revert to defaults.
+     * Client-editable product values and an optional reduced GS1 GPC selection.
+     * Server-owned analysis and workflow state is retained by the backend.
      */
     readonly updatedProduct: Omit<Product, "classification"> & Readonly<{classification?: ClassificationSelection | null}>;
   }>;
@@ -197,30 +183,23 @@ function toProduct(input: ServerActionInputType["payload"]["updatedProduct"], re
  * endpoint with both originalProductName and updatedProduct in request body as JSON.
  *
  * **Product Identification:**
- * Products are located by `originalProductName` using a **case-insensitive
- * substring match** on the backend (`String.Contains` with
- * `InvariantCultureIgnoreCase`). The first item whose name contains the
- * supplied string wins. Pass the full product name to avoid accidentally
- * targeting an unrelated item that shares a substring.
+ * Products are located by a normalized exact match on `originalProductName`.
  *
  * **Update Strategy:**
- * - Backend implements update as **delete + add**: the matched product is
- *   removed from the invoice and a new product is built from the payload via
- *   `UpdateProductRequestDto.ToProduct()`, then added back.
- * - Because the new product is constructed from scratch, **all** fields you
- *   want preserved must be present in `updatedProduct`. Omitted fields land
- *   on their default values (empty string, `0`, empty allergen list).
- * - The new product carries fresh default metadata. There is no server-side
- *   `metadata.isEdited` flag set on this code path.
+ * - The backend changes only client-editable commercial fields in the matched
+ *   persisted product and marks it as edited.
+ * - The optional reduced selection is canonicalized server-side. A null
+ *   selection preserves the existing canonical classification and its evidence.
  * - Product name may change (`updatedProduct.name` can differ from
  *   `originalProductName`).
  * - The response status is HTTP **202 Accepted**.
  *
  * **Wire Format:**
  * The backend DTO (`UpdateProductRequestDto`) is **flat**, not nested. This
- * action flattens the input `payload` before sending so the wire body looks
- * like `{ originalProductName, name, category, quantity, quantityUnit,
- * productCode, price, detectedAllergens }`.
+ * action flattens the input `payload` before sending the safe DTO:
+ * `{ originalProductName, name, classification, quantity, quantityUnit,
+ * productCode, price }`. Category, allergen, metadata, and canonical
+ * classification-display fields are server-owned and never sent on this wire.
  *
  * **Cache Revalidation:**
  * On successful update, automatically revalidates Next.js cache for:
@@ -247,27 +226,24 @@ function toProduct(input: ServerActionInputType["payload"]["updatedProduct"], re
  * @param params - The input parameters object.
  * @param params.invoiceId - The UUID of the invoice containing the product. Must be a valid UUIDv4 string.
  * @param params.payload - The update payload containing originalProductName and updatedProduct.
- * @param params.payload.originalProductName - The current product name used for the backend's case-insensitive substring match.
- * @param params.payload.updatedProduct - The complete updated product data; omitted fields are reset by the backend's delete-and-add flow.
+ * @param params.payload.originalProductName - Current product name used by the normalized backend matcher.
+ * @param params.payload.updatedProduct - Client-editable product data and an optional `{system, code}` GS1 GPC selection.
  * @returns A result object containing the updated product on success, or an error result when validation, authorization, or the backend request fails.
  *
  * @example
  * ```typescript
- * // Update product allergens
+ * // Correct commercial fields and select a canonical GS1 GPC code
  * const result = await updateInvoiceProduct({
  *   invoiceId: "123e4567-e89b-12d3-a456-426614174000",
  *   payload: {
  *     originalProductName: "Zuzu Milk 2% 1 Liter",
  *     updatedProduct: {
  *       name: "Zuzu Milk 2% 1 Liter",
- *       category: ProductCategory.DAIRY,
  *       quantity: 2,
  *       quantityUnit: "pcs",
+ *       productCode: "5941234567890",
  *       price: 8.99,
- *       detectedAllergens: [
- *         { name: "Lactose", description: "Milk sugar", learnMoreAddress: "" },
- *         { name: "Milk Protein", description: "Casein and whey proteins", learnMoreAddress: "" }
- *       ]
+ *       classification: {system: ClassificationSystem.Gs1Gpc, code: "10000111"}
  *     }
  *   }
  * });
@@ -281,18 +257,18 @@ function toProduct(input: ServerActionInputType["payload"]["updatedProduct"], re
  *
  * @example
  * ```typescript
- * // Update product category and price
- * const categoryResult = await updateInvoiceProduct({
+ * // Correct a price without replacing a server-owned classification
+ * const priceResult = await updateInvoiceProduct({
  *   invoiceId: "123e4567-e89b-12d3-a456-426614174000",
  *   payload: {
  *     originalProductName: "Gala Apples",
  *     updatedProduct: {
  *       name: "Organic Gala Apples", // Name can be changed
- *       category: ProductCategory.FRUITS,
  *       quantity: 3,
  *       quantityUnit: "kg",
- *       price: 15.99, // Price updated
- *       detectedAllergens: []
+ *       productCode: "",
+ *       price: 15.99,
+ *       classification: null
  *     }
  *   }
  * });
