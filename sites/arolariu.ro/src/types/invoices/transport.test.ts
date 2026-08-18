@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {parseInvoiceTransport} from "./transport";
+import {parseInvoiceTransport, parseMerchantTransport} from "./transport";
 
 const richInvoiceResponse = {
   id: "11111111-1111-7111-8111-111111111111",
@@ -90,6 +90,31 @@ const richInvoiceResponse = {
   numberOfUpdates: 7,
 };
 
+const richMerchantResponse = {
+  id: "66666666-6666-7666-8666-666666666666",
+  name: "Bakery",
+  description: "A local bakery",
+  classification: null,
+  address: {
+    fullName: "Bakery SRL",
+    address: "Main Street 1",
+    phoneNumber: "",
+    emailAddress: "",
+    website: "",
+  },
+  parentCompanyId: "00000000-0000-0000-0000-000000000000",
+  referencedInvoiceCount: 1,
+  referencedInvoiceIds: ["11111111-1111-7111-8111-111111111111"],
+  additionalMetadata: {},
+  isImportant: false,
+  isSoftDeleted: false,
+  createdAt: "2026-08-17T12:00:00+00:00",
+  createdBy: "00000000-0000-0000-0000-000000000000",
+  lastUpdatedAt: "2026-08-18T12:00:00+00:00",
+  lastUpdatedBy: "77777777-7777-7777-8777-777777777777",
+  numberOfUpdates: 2,
+};
+
 describe("parseInvoiceTransport", () => {
   it("parses the complete rich API DTO and converts timestamps to dates", () => {
     const invoice = parseInvoiceTransport(richInvoiceResponse);
@@ -113,5 +138,118 @@ describe("parseInvoiceTransport", () => {
         ],
       }),
     ).toBeNull();
+  });
+
+  it("rejects malformed GUIDs while allowing documented empty references", () => {
+    expect(parseInvoiceTransport({...richInvoiceResponse, id: "invoice-001"})).toBeNull();
+    expect(parseInvoiceTransport({...richInvoiceResponse, userIdentifier: "user-001"})).toBeNull();
+    expect(parseInvoiceTransport({...richInvoiceResponse, sharedWith: ["shared-user-001"]})).toBeNull();
+    expect(parseInvoiceTransport({...richInvoiceResponse, merchantReference: "merchant-001"})).toBeNull();
+    expect(parseInvoiceTransport({...richInvoiceResponse, createdBy: "creator-001"})).toBeNull();
+    expect(parseInvoiceTransport({...richInvoiceResponse, lastUpdatedBy: "editor-001"})).toBeNull();
+
+    expect(
+      parseInvoiceTransport({
+        ...richInvoiceResponse,
+        userIdentifier: "00000000-0000-0000-0000-000000000000",
+        merchantReference: "00000000-0000-0000-0000-000000000000",
+        createdBy: "00000000-0000-0000-0000-000000000000",
+      }),
+    ).not.toBeNull();
+  });
+
+  it("rejects negative currency, payment, tax, and product values", () => {
+    expect(
+      parseInvoiceTransport({
+        ...richInvoiceResponse,
+        paymentInformation: {...richInvoiceResponse.paymentInformation, totalCostAmount: -0.01},
+      }),
+    ).toBeNull();
+    expect(
+      parseInvoiceTransport({
+        ...richInvoiceResponse,
+        taxDetails: [{...richInvoiceResponse.taxDetails[0], amount: -0.01}],
+      }),
+    ).toBeNull();
+    expect(
+      parseInvoiceTransport({
+        ...richInvoiceResponse,
+        payments: [{...richInvoiceResponse.payments[0], amount: -0.01}],
+      }),
+    ).toBeNull();
+    expect(
+      parseInvoiceTransport({
+        ...richInvoiceResponse,
+        items: [{...richInvoiceResponse.items[0], quantity: -1}],
+      }),
+    ).toBeNull();
+    expect(
+      parseInvoiceTransport({
+        ...richInvoiceResponse,
+        items: [{...richInvoiceResponse.items[0], price: -1}],
+      }),
+    ).toBeNull();
+    expect(
+      parseInvoiceTransport({
+        ...richInvoiceResponse,
+        items: [{...richInvoiceResponse.items[0], totalPrice: -1}],
+      }),
+    ).toBeNull();
+  });
+
+  it("does not invent a tax-rate relationship that the backend does not enforce", () => {
+    expect(
+      parseInvoiceTransport({
+        ...richInvoiceResponse,
+        taxDetails: [{...richInvoiceResponse.taxDetails[0], rate: -5}],
+      }),
+    ).not.toBeNull();
+  });
+
+  it("rejects non-finite and out-of-domain decimal JSON values", () => {
+    const infinityEquivalent: unknown = JSON.parse("1e999");
+
+    expect(
+      parseInvoiceTransport({
+        ...richInvoiceResponse,
+        paymentInformation: {...richInvoiceResponse.paymentInformation, totalCostAmount: Number.NaN},
+      }),
+    ).toBeNull();
+    expect(
+      parseInvoiceTransport({
+        ...richInvoiceResponse,
+        paymentInformation: {...richInvoiceResponse.paymentInformation, totalCostAmount: Number.POSITIVE_INFINITY},
+      }),
+    ).toBeNull();
+    expect(
+      parseInvoiceTransport({
+        ...richInvoiceResponse,
+        paymentInformation: {...richInvoiceResponse.paymentInformation, totalCostAmount: infinityEquivalent},
+      } as unknown),
+    ).toBeNull();
+    expect(
+      parseInvoiceTransport({
+        ...richInvoiceResponse,
+        paymentInformation: {...richInvoiceResponse.paymentInformation, totalCostAmount: Number.MAX_VALUE},
+      }),
+    ).toBeNull();
+  });
+
+  it("rejects a line total that the backend could not have computed", () => {
+    expect(
+      parseInvoiceTransport({
+        ...richInvoiceResponse,
+        items: [{...richInvoiceResponse.items[0], totalPrice: 11}],
+      }),
+    ).toBeNull();
+  });
+
+  it("validates every exposed merchant and invoice-reference GUID", () => {
+    expect(parseMerchantTransport(richMerchantResponse)?.id).toBe(richMerchantResponse.id);
+    expect(parseMerchantTransport({...richMerchantResponse, id: "merchant-001"})).toBeNull();
+    expect(parseMerchantTransport({...richMerchantResponse, parentCompanyId: "parent-001"})).toBeNull();
+    expect(parseMerchantTransport({...richMerchantResponse, referencedInvoiceIds: ["invoice-001"]})).toBeNull();
+    expect(parseMerchantTransport({...richMerchantResponse, createdBy: "creator-001"})).toBeNull();
+    expect(parseMerchantTransport({...richMerchantResponse, lastUpdatedBy: "editor-001"})).toBeNull();
   });
 });

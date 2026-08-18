@@ -15,7 +15,7 @@ import {type ContactInformation, type Merchant} from "./Merchant";
 import {PaymentType, type PaymentDetail, type PaymentInformation, type TaxDetail} from "./Payment";
 import {type Product, type ProductMetadata} from "./Product";
 import {isRecipeSuggestion} from "./Recipe";
-import {isStrictRfc3339Timestamp} from "./transportValidation";
+import {isGuid, isStrictRfc3339Timestamp} from "./transportValidation";
 
 type TransportPaymentInformation = Omit<PaymentInformation, "transactionDate"> & Readonly<{transactionDate: string}>;
 type InvoiceTransport = Omit<Invoice, "createdAt" | "lastUpdatedAt" | "paymentInformation">
@@ -42,6 +42,9 @@ const scanTypeValues: ReadonlySet<number> = new Set([
   InvoiceScanType.HEIF,
 ]);
 const paymentTypeValues: readonly number[] = Object.values(PaymentType);
+const emptyGuid = "00000000-0000-0000-0000-000000000000";
+const maximumDecimalValue = Number("79228162514264337593543950335");
+const maximumInt32Value = 2_147_483_647;
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -65,8 +68,20 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+function isBoundedDecimal(value: unknown): value is number {
+  return isFiniteNumber(value) && Math.abs(value) <= maximumDecimalValue;
+}
+
+function isNonNegativeDecimal(value: unknown): value is number {
+  return isBoundedDecimal(value) && value >= 0;
+}
+
 function isNonNegativeInteger(value: unknown): value is number {
-  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 && value <= maximumInt32Value;
+}
+
+function isNonEmptyGuid(value: unknown): value is string {
+  return isGuid(value) && value.toLocaleLowerCase("en-US") !== emptyGuid;
 }
 
 function isInvoiceScan(value: unknown): value is InvoiceScan {
@@ -105,10 +120,10 @@ function isPaymentInformation(value: unknown): value is TransportPaymentInformat
     && typeof value["paymentType"] === "number"
     && paymentTypeValues.includes(value["paymentType"])
     && isCurrency(value["currency"])
-    && isFiniteNumber(value["totalCostAmount"])
-    && isFiniteNumber(value["totalTaxAmount"])
-    && isFiniteNumber(value["subtotalAmount"])
-    && isFiniteNumber(value["tipAmount"])
+    && isNonNegativeDecimal(value["totalCostAmount"])
+    && isNonNegativeDecimal(value["totalTaxAmount"])
+    && isNonNegativeDecimal(value["subtotalAmount"])
+    && isNonNegativeDecimal(value["tipAmount"])
   );
 }
 
@@ -119,10 +134,22 @@ function isProductMetadata(value: unknown): value is ProductMetadata {
     && typeof value["isEdited"] === "boolean"
     && typeof value["isComplete"] === "boolean"
     && typeof value["isSoftDeleted"] === "boolean"
-    && isFiniteNumber(value["confidence"])
+    && isNonNegativeDecimal(value["confidence"])
     && value["confidence"] >= 0
     && value["confidence"] <= 1
   );
+}
+
+function hasComputedProductTotal(value: Readonly<Record<string, unknown>>): boolean {
+  const {quantity, price, totalPrice} = value;
+
+  if (!isNonNegativeDecimal(quantity) || !isNonNegativeDecimal(price) || !isNonNegativeDecimal(totalPrice)) {
+    return false;
+  }
+
+  const computedTotal = quantity * price;
+  const roundingAllowance = Number.EPSILON * Math.max(1, Math.abs(computedTotal), Math.abs(totalPrice)) * 4;
+  return Math.abs(totalPrice - computedTotal) <= roundingAllowance;
 }
 
 /** Determines whether a value is an exact product response DTO. */
@@ -142,11 +169,12 @@ export function isProductTransport(value: unknown): value is Product {
     ])
     && isString(value["name"])
     && (value["classification"] === null || isStandardClassification(value["classification"]))
-    && isFiniteNumber(value["quantity"])
+    && isNonNegativeDecimal(value["quantity"])
     && isString(value["quantityUnit"])
     && isString(value["productCode"])
-    && isFiniteNumber(value["price"])
-    && isFiniteNumber(value["totalPrice"])
+    && isNonNegativeDecimal(value["price"])
+    && isNonNegativeDecimal(value["totalPrice"])
+    && hasComputedProductTotal(value)
     && (value["allergenAssessment"] === null || isAllergenAssessment(value["allergenAssessment"]))
     && isProductMetadata(value["metadata"])
   );
@@ -156,80 +184,89 @@ function isTaxDetail(value: unknown): value is TaxDetail {
   return (
     isRecord(value)
     && hasExactKeys(value, ["amount", "rate", "netAmount", "description"])
-    && isFiniteNumber(value["amount"])
-    && isFiniteNumber(value["rate"])
-    && isFiniteNumber(value["netAmount"])
+    && isNonNegativeDecimal(value["amount"])
+    && isBoundedDecimal(value["rate"])
+    && isNonNegativeDecimal(value["netAmount"])
     && isString(value["description"])
   );
 }
 
 function isPaymentDetail(value: unknown): value is PaymentDetail {
-  return isRecord(value) && hasExactKeys(value, ["method", "amount"]) && isString(value["method"]) && isFiniteNumber(value["amount"]);
+  return isRecord(value) && hasExactKeys(value, ["method", "amount"]) && isString(value["method"]) && isNonNegativeDecimal(value["amount"]);
 }
 
 function isStringOrNullRecord(value: unknown): value is Readonly<Record<string, string | null>> {
   return isRecord(value) && Object.values(value).every((entry) => isString(entry) || entry === null);
 }
 
-/** Determines whether a value is the full exact invoice response DTO. */
-export function isInvoiceTransport(value: unknown): value is InvoiceTransport {
+const invoiceTransportKeys = [
+  "id",
+  "userIdentifier",
+  "sharedWith",
+  "name",
+  "description",
+  "classification",
+  "scans",
+  "paymentInformation",
+  "merchantReference",
+  "items",
+  "possibleRecipes",
+  "additionalMetadata",
+  "receiptType",
+  "countryRegion",
+  "taxDetails",
+  "payments",
+  "isImportant",
+  "isSoftDeleted",
+  "createdAt",
+  "createdBy",
+  "lastUpdatedAt",
+  "lastUpdatedBy",
+  "numberOfUpdates",
+] as const;
+
+function hasValidInvoiceScalars(value: Readonly<Record<string, unknown>>): boolean {
   return (
-    isRecord(value)
-    && hasExactKeys(value, [
-      "id",
-      "userIdentifier",
-      "sharedWith",
-      "name",
-      "description",
-      "classification",
-      "scans",
-      "paymentInformation",
-      "merchantReference",
-      "items",
-      "possibleRecipes",
-      "additionalMetadata",
-      "receiptType",
-      "countryRegion",
-      "taxDetails",
-      "payments",
-      "isImportant",
-      "isSoftDeleted",
-      "createdAt",
-      "createdBy",
-      "lastUpdatedAt",
-      "lastUpdatedBy",
-      "numberOfUpdates",
-    ])
-    && isString(value["id"])
-    && isString(value["userIdentifier"])
-    && Array.isArray(value["sharedWith"])
-    && value["sharedWith"].every(isString)
+    isNonEmptyGuid(value["id"])
+    && isGuid(value["userIdentifier"])
     && isString(value["name"])
     && isString(value["description"])
     && (value["classification"] === null || isStandardClassification(value["classification"]))
+    && isPaymentInformation(value["paymentInformation"])
+    && isGuid(value["merchantReference"])
+    && isStringOrNullRecord(value["additionalMetadata"])
+    && isString(value["receiptType"])
+    && isString(value["countryRegion"])
+    && typeof value["isImportant"] === "boolean"
+    && typeof value["isSoftDeleted"] === "boolean"
+    && isStrictRfc3339Timestamp(value["createdAt"])
+    && isGuid(value["createdBy"])
+    && isStrictRfc3339Timestamp(value["lastUpdatedAt"])
+    && isNonEmptyGuid(value["lastUpdatedBy"])
+    && isNonNegativeInteger(value["numberOfUpdates"])
+  );
+}
+
+function hasValidInvoiceCollections(value: Readonly<Record<string, unknown>>): boolean {
+  return (
+    Array.isArray(value["sharedWith"])
+    && value["sharedWith"].every(isNonEmptyGuid)
     && Array.isArray(value["scans"])
     && value["scans"].every(isInvoiceScan)
-    && isPaymentInformation(value["paymentInformation"])
-    && isString(value["merchantReference"])
     && Array.isArray(value["items"])
     && value["items"].every(isProductTransport)
     && Array.isArray(value["possibleRecipes"])
     && value["possibleRecipes"].every(isRecipeSuggestion)
-    && isStringOrNullRecord(value["additionalMetadata"])
-    && isString(value["receiptType"])
-    && isString(value["countryRegion"])
     && Array.isArray(value["taxDetails"])
     && value["taxDetails"].every(isTaxDetail)
     && Array.isArray(value["payments"])
     && value["payments"].every(isPaymentDetail)
-    && typeof value["isImportant"] === "boolean"
-    && typeof value["isSoftDeleted"] === "boolean"
-    && isStrictRfc3339Timestamp(value["createdAt"])
-    && isString(value["createdBy"])
-    && isStrictRfc3339Timestamp(value["lastUpdatedAt"])
-    && isString(value["lastUpdatedBy"])
-    && isNonNegativeInteger(value["numberOfUpdates"])
   );
+}
+
+/** Determines whether a value is the full exact invoice response DTO. */
+export function isInvoiceTransport(value: unknown): value is InvoiceTransport {
+  return isRecord(value) && hasExactKeys(value, invoiceTransportKeys) && hasValidInvoiceScalars(value) && hasValidInvoiceCollections(value);
 }
 
 /** Parses an exact invoice DTO or returns null when the transport boundary is invalid. */
@@ -287,22 +324,22 @@ export function isMerchantTransport(value: unknown): value is MerchantTransport 
       "lastUpdatedBy",
       "numberOfUpdates",
     ])
-    && isString(value["id"])
+    && isNonEmptyGuid(value["id"])
     && isString(value["name"])
     && isString(value["description"])
     && (value["classification"] === null || isStandardClassification(value["classification"]))
     && isContactInformation(value["address"])
-    && isString(value["parentCompanyId"])
+    && isGuid(value["parentCompanyId"])
     && isNonNegativeInteger(value["referencedInvoiceCount"])
     && Array.isArray(value["referencedInvoiceIds"])
-    && value["referencedInvoiceIds"].every(isString)
+    && value["referencedInvoiceIds"].every(isNonEmptyGuid)
     && isStringRecord(value["additionalMetadata"])
     && typeof value["isImportant"] === "boolean"
     && typeof value["isSoftDeleted"] === "boolean"
     && isStrictRfc3339Timestamp(value["createdAt"])
-    && isString(value["createdBy"])
+    && isGuid(value["createdBy"])
     && isStrictRfc3339Timestamp(value["lastUpdatedAt"])
-    && isString(value["lastUpdatedBy"])
+    && isNonEmptyGuid(value["lastUpdatedBy"])
     && isNonNegativeInteger(value["numberOfUpdates"])
   );
 }

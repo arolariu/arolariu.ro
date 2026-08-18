@@ -372,6 +372,7 @@
       "nutritionCard": {
         "allergens": {
           "foundInItems": "Found in {count} item(s)",
+          "noItems": "No invoice items are available for allergen assessment.",
           "title": "Allergens Detected"
         },
         "composition": {
@@ -562,15 +563,15 @@
       "statistics": {
         "allergenSummary": {
           "ariaLabel": "Allergen frequency summary",
-          "description": "Allergen exposure across products",
-          "empty": "No allergen signals were found in the assessed evidence.",
+          "description": "Allergen assessment signals across assessed products",
+          "empty": "No allergen assessment signals are available. Coverage is shown below.",
           "coverage": {
             "assessed": "Assessed evidence",
             "insufficientData": "Insufficient data",
             "notAssessed": "Not assessed"
           },
           "stats": {
-            "ofTotal": "of total",
+            "ofAssessedProducts": "of assessed products",
             "products": "products"
           },
           "title": "Allergen Summary"
@@ -3171,11 +3172,28 @@
           "quantity": "Quantity",
           "unitPrice": "Unit price",
           "productSignals": "Signals",
+          "allergenAssessment": "Allergen assessment",
+          "classificationHierarchy": "Classification hierarchy",
+          "difficulty": {
+            "easy": "Easy",
+            "medium": "Medium",
+            "hard": "Hard"
+          },
+          "recipeDifficulty": "Difficulty: {difficulty}",
+          "paymentTypes": {
+            "unknown": "Unknown",
+            "cash": "Cash",
+            "card": "Card",
+            "transfer": "Bank transfer",
+            "mobilePayment": "Mobile payment",
+            "voucher": "Voucher",
+            "other": "Other"
+          },
           "analysisSummary": "Analysis summary",
           "numberOfItems": "Number of items",
           "numberOfScans": "Number of scans",
           "recipes": "Recipe suggestions",
-          "page": "Page {page}"
+          "page": "Page {current} of {total}"
         },
         "healthScore": {
           "cta": {

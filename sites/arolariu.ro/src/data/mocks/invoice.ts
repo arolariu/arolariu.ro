@@ -16,8 +16,13 @@ import {
   type RecipeSuggestion,
   type StandardClassification,
 } from "@/types/invoices";
-import {faker} from "@faker-js/faker";
 import {generateRandomProducts} from "./product";
+
+const fixtureDate = new Date("2026-01-15T12:00:00.000Z");
+
+function createInvoiceIdentifier(index: number): string {
+  return `11111111-1111-7111-8111-${String(index).padStart(12, "0")}`;
+}
 
 function buildEcoicopClassification(): StandardClassification {
   return {
@@ -38,19 +43,19 @@ function buildEcoicopClassification(): StandardClassification {
 
 function buildPaymentInformation(): PaymentInformation {
   return {
-    transactionDate: faker.date.recent(),
+    transactionDate: fixtureDate,
     paymentType: PaymentType.Card,
     currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
-    totalCostAmount: 100,
-    totalTaxAmount: 19,
-    subtotalAmount: 81,
+    totalCostAmount: 0,
+    totalTaxAmount: 0,
+    subtotalAmount: 0,
     tipAmount: 0,
   };
 }
 
-function buildRecipe(): RecipeSuggestion {
+function buildRecipe(index: number): RecipeSuggestion {
   return {
-    name: "Mock recipe",
+    name: `Mock recipe ${index + 1}`,
     description: "A complete structured mock recipe.",
     servings: 2,
     preparationMinutes: 10,
@@ -70,17 +75,16 @@ export class InvoiceBuilder {
   private value: Invoice;
 
   public constructor() {
-    const now = faker.date.recent();
     this.value = {
-      id: faker.string.uuid(),
+      id: createInvoiceIdentifier(1),
       name: "Mock Invoice",
-      description: faker.lorem.sentence(),
-      userIdentifier: faker.string.uuid(),
+      description: "A deterministic invoice fixture.",
+      userIdentifier: "22222222-2222-7222-8222-222222222222",
       sharedWith: [],
       classification: buildEcoicopClassification(),
-      scans: [{type: InvoiceScanType.JPEG, location: faker.internet.url()}],
+      scans: [{type: InvoiceScanType.JPEG, location: "https://storage.example.test/mock-receipt.jpg"}],
       paymentInformation: buildPaymentInformation(),
-      merchantReference: faker.string.uuid(),
+      merchantReference: "33333333-3333-7333-8333-333333333333",
       items: [],
       possibleRecipes: [],
       additionalMetadata: {},
@@ -88,10 +92,10 @@ export class InvoiceBuilder {
       countryRegion: "RO",
       taxDetails: [],
       payments: [],
-      createdAt: now,
-      createdBy: faker.string.uuid(),
-      lastUpdatedAt: now,
-      lastUpdatedBy: faker.string.uuid(),
+      createdAt: fixtureDate,
+      createdBy: "22222222-2222-7222-8222-222222222222",
+      lastUpdatedAt: fixtureDate,
+      lastUpdatedBy: "22222222-2222-7222-8222-222222222222",
       numberOfUpdates: 0,
       isImportant: false,
       isSoftDeleted: false,
@@ -142,7 +146,18 @@ export class InvoiceBuilder {
     return this;
   }
   public withItems(items: readonly Product[]): this {
-    this.value = {...this.value, items};
+    const totalPrice = items.reduce((total, item) => total + item.totalPrice, 0);
+    this.value = {
+      ...this.value,
+      items,
+      paymentInformation: {
+        ...this.value.paymentInformation,
+        totalCostAmount: totalPrice,
+        totalTaxAmount: 0,
+        subtotalAmount: totalPrice,
+        tipAmount: 0,
+      },
+    };
     return this;
   }
   public withPaymentInformation(paymentInformation: PaymentInformation): this {
@@ -173,10 +188,15 @@ export class InvoiceBuilder {
     return this.withItems(generateRandomProducts(count));
   }
   public withRandomScans(count = 1): this {
-    return this.withScans(Array.from({length: count}, () => ({type: InvoiceScanType.JPEG, location: faker.internet.url()})));
+    return this.withScans(
+      Array.from({length: count}, (_, index) => ({
+        type: InvoiceScanType.JPEG,
+        location: `https://storage.example.test/mock-receipt-${index + 1}.jpg`,
+      })),
+    );
   }
   public withRandomRecipes(count = 1): this {
-    return this.withPossibleRecipes(Array.from({length: count}, buildRecipe));
+    return this.withPossibleRecipes(Array.from({length: count}, (_, index) => buildRecipe(index)));
   }
 
   public build(): Invoice {
@@ -193,7 +213,7 @@ export class InvoiceBuilder {
   }
 
   public buildMany(count: number): Invoice[] {
-    return Array.from({length: count}, () => this.withId(faker.string.uuid()).build());
+    return Array.from({length: count}, (_, index) => this.withId(createInvoiceIdentifier(index + 1)).build());
   }
 }
 
@@ -201,13 +221,13 @@ export class InvoiceBuilder {
 export function createInvoiceBuilder(): InvoiceBuilder {
   return new InvoiceBuilder();
 }
-/** Generates a complete canonical invoice DTO. */
+/** Generates a complete deterministic invoice DTO. */
 export function generateRandomInvoice(): Invoice {
   return new InvoiceBuilder().build();
 }
-/** Generates complete canonical invoice DTOs. */
+/** Generates complete deterministic invoice DTOs. */
 export function generateRandomInvoices(count: number): Invoice[] {
-  return Array.from({length: count}, generateRandomInvoice);
+  return new InvoiceBuilder().buildMany(count);
 }
 
 export const mockInvoice = new InvoiceBuilder().withName("Test Invoice").withRandomItems(3).build();

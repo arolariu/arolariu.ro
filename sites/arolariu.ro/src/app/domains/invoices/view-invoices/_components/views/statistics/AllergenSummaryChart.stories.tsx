@@ -1,6 +1,6 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {computeAllergenFrequency} from "../../../_utils/statistics";
-import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
+import {computeAllergenStatistics} from "../../../_utils/statistics";
+import {mockInvoices, singleInvoice, unassessedInvoices} from "./__mocks__/mockInvoices";
 import {AllergenSummaryChart} from "./AllergenSummaryChart";
 
 /**
@@ -8,15 +8,15 @@ import {AllergenSummaryChart} from "./AllergenSummaryChart";
  *
  * ## Features
  * - Compact card grid layout
- * - Color-coded warning levels (high/medium/low)
+ * - Color-coded assessment signal-frequency levels
  * - Shows product count and percentage
  * - Alert icons for visibility
- * - Positive empty state message
+ * - Honest empty-state coverage
  *
  * ## Use Cases
- * - Dietary risk assessment
- * - Allergen exposure tracking
- * - Product safety awareness
+ * - Assessment signal review
+ * - EU-14 signal frequency tracking
+ * - Assessment coverage review
  */
 const meta = {
   title: "Invoices/Statistics/AllergenSummaryChart",
@@ -26,7 +26,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Visualizes allergen occurrences across all products to help users identify dietary risks. Uses color-coded warning levels (red ≥20%, yellow 10-19%, blue <10%) and displays product count with percentage.",
+          "Visualizes EU-14 assessment signals across assessed products. Signal frequencies use assessed-product coverage and never imply an allergen-free result when evidence is unavailable.",
       },
     },
   },
@@ -42,91 +42,81 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * Default view with diverse allergens.
- * Shows common allergens found across all products (gluten, lactose, etc.).
- */
-export const Default: Story = {
-  args: {
-    data: computeAllergenFrequency(mockInvoices),
-  },
-};
+function RenderAllergenSummaryStory({invoices}: Readonly<{invoices: typeof mockInvoices}>): React.JSX.Element {
+  const statistics = computeAllergenStatistics(invoices);
+  return (
+    <AllergenSummaryChart
+      data={statistics.frequencies}
+      coverage={{
+        assessedProductCount: statistics.assessedProductCount,
+        insufficientDataProductCount: statistics.insufficientDataProductCount,
+        unassessedProductCount: statistics.unassessedProductCount,
+        totalProductCount: statistics.totalProductCount,
+      }}
+    />
+  );
+}
+
+function createStory(invoices: typeof mockInvoices): Story {
+  const statistics = computeAllergenStatistics(invoices);
+  return {
+    args: {
+      data: statistics.frequencies,
+      coverage: {
+        assessedProductCount: statistics.assessedProductCount,
+        insufficientDataProductCount: statistics.insufficientDataProductCount,
+        unassessedProductCount: statistics.unassessedProductCount,
+        totalProductCount: statistics.totalProductCount,
+      },
+    },
+    render: () => <RenderAllergenSummaryStory invoices={invoices} />,
+  };
+}
 
 /**
- * Empty state with no assessment signals.
+ * Default view with assessed products and distinct EU-14 signals.
  */
-export const Empty: Story = {
-  args: {
-    data: computeAllergenFrequency(emptyInvoices),
-  },
-};
+export const Default: Story = createStory(mockInvoices);
 
 /**
- * Single invoice - limited allergen data.
- * Shows allergen summary for one invoice's products.
+ * Empty signal state with incomplete and missing assessment coverage.
  */
-export const SingleInvoice: Story = {
-  args: {
-    data: computeAllergenFrequency(singleInvoice),
-  },
-};
+export const Empty: Story = createStory(unassessedInvoices);
 
 /**
- * High warning levels - many allergens.
- * Demonstrates chart with multiple high-frequency allergens (≥20%).
+ * Single invoice with one reviewed EU-14 assessment.
  */
-export const HighWarningLevels: Story = {
-  args: {
-    data: computeAllergenFrequency(
-      mockInvoices.filter((invoice) => invoice.items.some((item) => item.allergenAssessment?.status === "detected")),
-    ),
-  },
-};
+export const SingleInvoice: Story = createStory(singleInvoice);
 
 /**
- * Gluten-heavy products.
- * Shows scenario where gluten is the dominant allergen.
+ * A high-frequency assessment signal.
  */
-export const GlutenFocused: Story = {
-  args: {
-    data: computeAllergenFrequency(
-      mockInvoices.filter((invoice) =>
-        invoice.items.some((item) => item.allergenAssessment?.signals.some((signal) => signal.code === "cerealsContainingGluten")),
-      ),
-    ),
-  },
-};
+export const HighSignalFrequency: Story = createStory(
+  mockInvoices.filter((invoice) => invoice.items.some((item) => item.allergenAssessment?.status === "detected")),
+);
 
 /**
- * Dairy allergens prominent.
- * Emphasizes lactose/dairy-related allergens.
+ * Cereals-containing-gluten assessment signal.
  */
-export const DairyFocused: Story = {
-  args: {
-    data: computeAllergenFrequency(
-      mockInvoices.filter((invoice) =>
-        invoice.items.some((item) => item.allergenAssessment?.signals.some((signal) => signal.code === "milk")),
-      ),
-    ),
-  },
-};
+export const CerealsContainingGluten: Story = createStory(
+  mockInvoices.filter((invoice) =>
+    invoice.items.some((item) => item.allergenAssessment?.signals.some((signal) => signal.code === "cerealsContainingGluten")),
+  ),
+);
 
 /**
- * Few allergens - low diversity.
- * Shows chart with only 1-2 allergen types.
+ * Milk assessment signal.
  */
-export const FewAllergens: Story = {
-  args: {
-    data: computeAllergenFrequency(mockInvoices.slice(0, 2)),
-  },
-};
+export const Milk: Story = createStory(
+  mockInvoices.filter((invoice) => invoice.items.some((item) => item.allergenAssessment?.signals.some((signal) => signal.code === "milk"))),
+);
 
 /**
- * Medium warning levels.
- * Demonstrates allergens in the 10-19% range (yellow warnings).
+ * A focused reviewed-product subset.
  */
-export const MediumWarnings: Story = {
-  args: {
-    data: computeAllergenFrequency(mockInvoices.slice(2, 8)),
-  },
-};
+export const FocusedSignals: Story = createStory(mockInvoices.slice(0, 2));
+
+/**
+ * A reviewed subset with mixed detected and no-signal outcomes.
+ */
+export const MixedAssessmentCoverage: Story = createStory(mockInvoices.slice(1));

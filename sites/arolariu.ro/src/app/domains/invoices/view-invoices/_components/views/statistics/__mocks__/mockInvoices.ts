@@ -64,12 +64,6 @@ export function createMockProduct(overrides: Partial<Product> = {}): Product {
   return buildProduct({classification: milkClassification, ...overrides});
 }
 
-export const MOCK_MERCHANTS = {
-  LIDL: "merchant-lidl-001",
-  KAUFLAND: "merchant-kaufland-001",
-  MCDONALD: "merchant-mcdonald-001",
-} as const;
-
 const detectedMilk = buildAllergenAssessment({
   status: AllergenAssessmentStatus.Detected,
   signals: [
@@ -82,17 +76,38 @@ const detectedMilk = buildAllergenAssessment({
   ],
 });
 
+const detectedCerealsContainingGluten = buildAllergenAssessment({
+  status: AllergenAssessmentStatus.Detected,
+  signals: [
+    {
+      code: AllergenCode.CerealsContainingGluten,
+      evidenceLevel: "explicit",
+      confidence: 0.94,
+      evidence: [{source: "ingredients", value: "wheat"}],
+    },
+  ],
+});
+
 export const mockInvoices: Invoice[] = [
   createMockInvoice({
-    id: "invoice-001",
+    id: "11111111-1111-7111-8111-111111111111",
     name: "Weekly groceries",
-    merchantReference: MOCK_MERCHANTS.LIDL,
-    items: [createMockProduct({name: "Milk", totalPrice: 13, allergenAssessment: detectedMilk})],
+    merchantReference: "aaaaaaaa-aaaa-7aaa-8aaa-aaaaaaaaaaaa",
+    paymentInformation: {
+      transactionDate: new Date("2026-01-15T12:00:00.000Z"),
+      paymentType: PaymentType.Card,
+      currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      totalCostAmount: 13,
+      totalTaxAmount: 2,
+      subtotalAmount: 11,
+      tipAmount: 0,
+    },
+    items: [createMockProduct({name: "Milk", quantity: 1, price: 13, totalPrice: 13, allergenAssessment: detectedMilk})],
   }),
   createMockInvoice({
-    id: "invoice-002",
+    id: "22222222-2222-7222-8222-222222222222",
     name: "Restaurant meal",
-    merchantReference: MOCK_MERCHANTS.MCDONALD,
+    merchantReference: "bbbbbbbb-bbbb-7bbb-8bbb-bbbbbbbbbbbb",
     classification: diningClassification,
     paymentInformation: {
       transactionDate: new Date("2026-02-15T12:00:00.000Z"),
@@ -103,12 +118,20 @@ export const mockInvoices: Invoice[] = [
       subtotalAmount: 37,
       tipAmount: 0,
     },
-    items: [createMockProduct({name: "Meal", totalPrice: 45, allergenAssessment: null})],
+    items: [
+      createMockProduct({
+        name: "Wholemeal meal",
+        quantity: 1,
+        price: 45,
+        totalPrice: 45,
+        allergenAssessment: detectedCerealsContainingGluten,
+      }),
+    ],
   }),
   createMockInvoice({
-    id: "invoice-003",
+    id: "33333333-3333-7333-8333-333333333333",
     name: "Second groceries",
-    merchantReference: MOCK_MERCHANTS.KAUFLAND,
+    merchantReference: "cccccccc-cccc-7ccc-8ccc-cccccccccccc",
     paymentInformation: {
       transactionDate: new Date("2026-03-15T12:00:00.000Z"),
       paymentType: PaymentType.Cash,
@@ -118,7 +141,41 @@ export const mockInvoices: Invoice[] = [
       subtotalAmount: 21,
       tipAmount: 0,
     },
-    items: [createMockProduct({name: "Cheese", totalPrice: 25, allergenAssessment: detectedMilk})],
+    items: [
+      createMockProduct({
+        name: "Cheese",
+        quantity: 1,
+        price: 25,
+        totalPrice: 25,
+        allergenAssessment: buildAllergenAssessment({status: AllergenAssessmentStatus.NoSignals}),
+      }),
+    ],
+  }),
+];
+
+export const unassessedInvoices: Invoice[] = [
+  createMockInvoice({
+    id: "44444444-4444-7444-8444-444444444444",
+    name: "Unassessed groceries",
+    paymentInformation: {
+      transactionDate: new Date("2026-04-15T12:00:00.000Z"),
+      paymentType: PaymentType.Card,
+      currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      totalCostAmount: 20,
+      totalTaxAmount: 0,
+      subtotalAmount: 20,
+      tipAmount: 0,
+    },
+    items: [
+      createMockProduct({name: "Unknown item", quantity: 1, price: 10, totalPrice: 10, allergenAssessment: null}),
+      createMockProduct({
+        name: "Incomplete item",
+        quantity: 1,
+        price: 10,
+        totalPrice: 10,
+        allergenAssessment: buildAllergenAssessment({status: AllergenAssessmentStatus.InsufficientData}),
+      }),
+    ],
   }),
 ];
 

@@ -30,6 +30,7 @@
  */
 
 import {formatAmount, formatDate} from "@/lib/utils.generic";
+import {PaymentType, RecipeDifficulty} from "@/types/invoices";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, toast} from "@arolariu/components";
 import {pdf} from "@react-pdf/renderer";
 import {useLocale} from "next-intl";
@@ -40,6 +41,10 @@ import {useDialog} from "../../../_contexts/DialogContext";
 import {InvoicePDF} from "../_components/export/InvoicePDF";
 import {useInvoiceContext} from "../_context/InvoiceContext";
 import styles from "./ExportDialog.module.scss";
+
+function assertUnreachable(value: never): never {
+  throw new Error(String(value));
+}
 
 /**
  * Export Dialog component with multiple export format options.
@@ -277,7 +282,11 @@ Items: ${invoice.items.length}
             product: t((m) => m.pages.invoices.viewInvoice.pdf.product),
             quantity: t((m) => m.pages.invoices.viewInvoice.pdf.quantity),
             unitPrice: t((m) => m.pages.invoices.viewInvoice.pdf.unitPrice),
-            productSignals: t((m) => m.pages.invoices.viewInvoice.pdf.productSignals),
+            allergenAssessment: t((m) => m.pages.invoices.viewInvoice.pdf.allergenAssessment),
+            allergenNotAssessed: t((m) => m.cards.invoices.analysisResults.allergens.notAssessed),
+            allergenStatus: (status) => t((m) => m.cards.invoices.analysisResults.allergens[status]),
+            allergenCode: (code) => t((m) => m.cards.invoices.analysisResults.allergens.codes[code]),
+            allergenEvidenceLevel: (evidenceLevel) => t((m) => m.cards.invoices.analysisResults.allergens[evidenceLevel]),
             analysisSummary: t((m) => m.pages.invoices.viewInvoice.pdf.analysisSummary),
             numberOfItems: t((m) => m.pages.invoices.viewInvoice.pdf.numberOfItems),
             numberOfScans: t((m) => m.pages.invoices.viewInvoice.pdf.numberOfScans),
@@ -296,8 +305,48 @@ Items: ${invoice.items.length}
             classificationAnalysisOrigin: t((m) => m.cards.invoices.analysisResults.classification.analysisOrigin),
             classificationManualOrigin: t((m) => m.cards.invoices.analysisResults.classification.manualOrigin),
             classificationConfidence: (confidence) => t((m) => m.cards.invoices.analysisResults.classification.confidence, {confidence}),
+            classificationHierarchy: t((m) => m.pages.invoices.viewInvoice.pdf.classificationHierarchy),
+            classificationEvidence: t((m) => m.cards.invoices.analysisResults.classification.evidence),
             unclassified: t((m) => m.cards.invoices.analysisResults.unclassified),
-            page: (page) => t((m) => m.pages.invoices.viewInvoice.pdf.page, {page: String(page)}),
+            paymentType: (paymentType) => {
+              switch (paymentType) {
+                case PaymentType.Unknown:
+                  return t((m) => m.pages.invoices.viewInvoice.pdf.paymentTypes.unknown);
+                case PaymentType.Cash:
+                  return t((m) => m.pages.invoices.viewInvoice.pdf.paymentTypes.cash);
+                case PaymentType.Card:
+                  return t((m) => m.pages.invoices.viewInvoice.pdf.paymentTypes.card);
+                case PaymentType.Transfer:
+                  return t((m) => m.pages.invoices.viewInvoice.pdf.paymentTypes.transfer);
+                case PaymentType.MobilePayment:
+                  return t((m) => m.pages.invoices.viewInvoice.pdf.paymentTypes.mobilePayment);
+                case PaymentType.Voucher:
+                  return t((m) => m.pages.invoices.viewInvoice.pdf.paymentTypes.voucher);
+                case PaymentType.Other:
+                  return t((m) => m.pages.invoices.viewInvoice.pdf.paymentTypes.other);
+                default:
+                  return assertUnreachable(paymentType);
+              }
+            },
+            recipeDifficulty: (difficulty) => {
+              switch (difficulty) {
+                case RecipeDifficulty.Easy:
+                  return t((m) => m.pages.invoices.viewInvoice.pdf.recipeDifficulty, {
+                    difficulty: t((m) => m.pages.invoices.viewInvoice.pdf.difficulty.easy),
+                  });
+                case RecipeDifficulty.Medium:
+                  return t((m) => m.pages.invoices.viewInvoice.pdf.recipeDifficulty, {
+                    difficulty: t((m) => m.pages.invoices.viewInvoice.pdf.difficulty.medium),
+                  });
+                case RecipeDifficulty.Hard:
+                  return t((m) => m.pages.invoices.viewInvoice.pdf.recipeDifficulty, {
+                    difficulty: t((m) => m.pages.invoices.viewInvoice.pdf.difficulty.hard),
+                  });
+                default:
+                  return assertUnreachable(difficulty);
+              }
+            },
+            page: (current, total) => t((m) => m.pages.invoices.viewInvoice.pdf.page, {current: String(current), total: String(total)}),
           }}
         />,
       ).toBlob();

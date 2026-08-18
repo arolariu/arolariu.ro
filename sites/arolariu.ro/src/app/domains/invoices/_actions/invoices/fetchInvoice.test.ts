@@ -27,4 +27,20 @@ describe("fetchInvoice", () => {
     expect(readBody).not.toHaveBeenCalled();
     expect(JSON.stringify(result)).not.toContain(sensitiveBody);
   });
+
+  it("rejects a malformed invoice response before it can reach client state", async () => {
+    installAnalysisFetchHandler(() =>
+      Response.json({
+        ...createInvoiceBuilder().withId(invoiceId).build(),
+        merchantReference: "merchant-001",
+      }),
+    );
+
+    const result = await fetchInvoice({invoiceId});
+
+    expect(result).toEqual({
+      success: false,
+      error: {code: "SERVER_ERROR", message: "The invoice response was invalid. Please try again."},
+    });
+  });
 });

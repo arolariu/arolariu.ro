@@ -1,21 +1,21 @@
 "use client";
 
 /**
- * @fileoverview Allergen Summary Chart - displays allergen frequencies with warning badges.
+ * @fileoverview Allergen assessment signal frequencies with evidence coverage.
  * @module app/domains/invoices/view-invoices/_components/views/statistics/AllergenSummaryChart
  *
  * @remarks
  * This component visualizes allergen occurrences across all products to help users
- * identify dietary risks and allergen exposure patterns.
+ * review assessment signals and their evidentiary coverage.
  *
  * **Features:**
  * - Compact card layout with allergen badges
- * - Color-coded warning levels based on frequency
+ * - Color-coded signal-frequency levels
  * - Shows product count and percentage
  * - Responsive grid layout
  *
  * **Empty State:**
- * Displays a positive message when no allergens are detected.
+ * Reports assessment coverage without asserting an outcome when no signals exist.
  */
 
 import {formatAmount} from "@/lib/utils.generic";
@@ -29,7 +29,7 @@ import styles from "./AllergenSummaryChart.module.scss";
 type Props = {
   /** Detected-signal frequencies using assessed-product coverage as their denominator. */
   readonly data: readonly AllergenFrequency[];
-  /** Separate assessment coverage so empty signal results cannot imply safety. */
+  /** Separate assessment coverage so empty signal results cannot overstate the evidence. */
   readonly coverage?: Omit<AllergenStatistics, "frequencies">;
 };
 
@@ -41,12 +41,12 @@ const EMPTY_COVERAGE: Omit<AllergenStatistics, "frequencies"> = {
 };
 
 /**
- * Determines the warning level based on allergen frequency percentage.
+ * Determines the signal-frequency level based on assessed-product percentage.
  *
  * @param percentage - Percentage of products containing the allergen
- * @returns Warning level: "high", "medium", or "low"
+ * @returns Signal level: "high", "medium", or "low"
  */
-function getWarningLevel(percentage: number): "high" | "medium" | "low" {
+function getSignalLevel(percentage: number): "high" | "medium" | "low" {
   if (percentage >= 20) return "high";
   if (percentage >= 10) return "medium";
   return "low";
@@ -60,11 +60,11 @@ function getWarningLevel(percentage: number): "high" | "medium" | "low" {
  */
 function AllergenCard({allergen}: {readonly allergen: AllergenFrequency}): React.JSX.Element {
   const t = useTranslations();
-  const warningLevel = getWarningLevel(allergen.percentage);
+  const signalLevel = getSignalLevel(allergen.percentage);
 
   return (
     <div
-      className={`${styles["allergenCard"]} ${styles[warningLevel]}`}
+      className={`${styles["allergenCard"]} ${styles[signalLevel]}`}
       role='listitem'>
       <div className={styles["allergenHeader"]}>
         <div className={styles["allergenIcon"]}>
@@ -86,7 +86,7 @@ function AllergenCard({allergen}: {readonly allergen: AllergenFrequency}): React
         </div>
         <div className={styles["statItem"]}>
           <span className={styles["statValue"]}>{formatAmount(allergen.percentage, "en-US", 1)}%</span>
-          <span className={styles["statLabel"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.stats.ofTotal)}</span>
+          <span className={styles["statLabel"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.stats.ofAssessedProducts)}</span>
         </div>
       </div>
     </div>
@@ -94,7 +94,7 @@ function AllergenCard({allergen}: {readonly allergen: AllergenFrequency}): React
 }
 
 /**
- * Renders a compact summary of allergen frequencies across all products.
+ * Renders a compact summary of allergen assessment signals across products.
  *
  * @remarks
  * **Performance:**
@@ -108,9 +108,9 @@ function AllergenCard({allergen}: {readonly allergen: AllergenFrequency}): React
  * - Keyboard navigation support
  *
  * **Color Scheme:**
- * - High (≥20%): Red warning
- * - Medium (10-19%): Yellow warning
- * - Low (<10%): Blue info
+ * - High (≥20%): Red signal-frequency emphasis
+ * - Medium (10-19%): Yellow signal-frequency emphasis
+ * - Low (<10%): Blue signal-frequency emphasis
  *
  * @param data - Allergen frequencies sorted by product count
  * @returns Grid of allergen cards

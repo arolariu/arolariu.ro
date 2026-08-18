@@ -14,7 +14,10 @@ import {
   type ProductMetadata,
   type StandardClassification,
 } from "@/types/invoices";
-import {faker} from "@faker-js/faker";
+
+function createProductCode(index: number): string {
+  return `MOCK${String(index).padStart(4, "0")}`;
+}
 
 function buildGpcClassification(): StandardClassification {
   const code = "10000234";
@@ -53,12 +56,12 @@ export class ProductBuilder {
   private value: Product;
 
   public constructor() {
-    const price = faker.number.float({min: 0.5, max: 100, multipleOf: 0.01});
-    const quantity = faker.number.int({min: 1, max: 10});
+    const price = 10;
+    const quantity = 1;
     this.value = {
-      name: faker.commerce.productName(),
+      name: "Mock Product",
       classification: buildGpcClassification(),
-      productCode: faker.string.alphanumeric(8).toUpperCase(),
+      productCode: createProductCode(1),
       price,
       quantity,
       quantityUnit: "pcs",
@@ -134,7 +137,11 @@ export class ProductBuilder {
   }
 
   public buildMany(count: number): Product[] {
-    return Array.from({length: count}, () => this.withProductCode(faker.string.alphanumeric(8).toUpperCase()).build());
+    return Array.from({length: count}, (_, index) =>
+      this.withName(`Mock Product ${index + 1}`)
+        .withProductCode(createProductCode(index + 1))
+        .build(),
+    );
   }
 }
 
@@ -143,14 +150,14 @@ export function createProductBuilder(): ProductBuilder {
   return new ProductBuilder();
 }
 
-/** Generates one complete randomized product DTO. */
+/** Generates one complete deterministic product DTO. */
 export function generateRandomProduct(): Product {
   return new ProductBuilder().build();
 }
 
-/** Generates complete randomized product DTOs. */
+/** Generates complete deterministic product DTOs. */
 export function generateRandomProducts(count: number): Product[] {
-  return Array.from({length: count}, generateRandomProduct);
+  return new ProductBuilder().buildMany(count);
 }
 
 export const mockProduct = new ProductBuilder().withName("Test Product").withPrice(9.99).withQuantity(2).build();

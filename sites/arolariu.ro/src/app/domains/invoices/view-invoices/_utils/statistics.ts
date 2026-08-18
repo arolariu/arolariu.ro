@@ -1449,21 +1449,20 @@ export type TopProduct = {
 };
 
 /**
- * Allergen frequency aggregate for dietary tracking.
+ * Allergen assessment signal-frequency aggregate for dietary tracking.
  *
  * @remarks
- * Counts allergen occurrences across all products to help users identify
- * allergen exposure in their purchases.
+ * Counts detected EU-14 assessment signals across assessed products.
  *
  * **Use Case:**
- * Useful for dietary restrictions, health tracking, and allergen awareness.
+ * Useful for evidence review, dietary restrictions, and allergen awareness.
  *
  * @example
  * ```typescript
  * const allergens = computeAllergenFrequency(invoices);
  * // Returns: [
- * //   { name: "Lactose", description: "Found in dairy products", productCount: 34, percentage: 12.3 },
- * //   { name: "Gluten", description: "Found in wheat products", productCount: 28, percentage: 10.1 }
+ * //   { name: "milk", description: "milk", productCount: 34, percentage: 12.3 },
+ * //   { name: "cerealsContainingGluten", description: "wheat", productCount: 28, percentage: 10.1 }
  * // ]
  * ```
  */
@@ -1474,7 +1473,7 @@ export type AllergenFrequency = {
   description: string;
   /** Number of products containing this allergen */
   productCount: number;
-  /** Percentage of total products */
+  /** Percentage of assessed products */
   percentage: number;
 };
 
@@ -1682,7 +1681,7 @@ export function computeTopProducts(invoices: ReadonlyArray<Invoice>, topN = 10):
  * The description is taken from the first occurrence of each allergen.
  *
  * **Percentage Calculation:**
- * Percentage is computed as (products with allergen / total products) * 100.
+ * Percentage is computed as (products with a signal / assessed products) * 100.
  *
  * **Soft Delete Handling:**
  * Products with `metadata.isSoftDeleted = true` are excluded.

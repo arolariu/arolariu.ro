@@ -48,4 +48,26 @@ describe("addInvoiceProduct", () => {
     expect(result).toMatchObject({success: false, error: {code: "VALIDATION_ERROR"}});
     expect(getAnalysisApiRequests()).toHaveLength(0);
   });
+
+  it("rejects a negative product response before it can reach client state", async () => {
+    installAnalysisFetchHandler(() =>
+      Response.json(
+        {
+          ...product,
+          classification: null,
+          totalPrice: -10,
+          allergenAssessment: null,
+          metadata: {isEdited: true, isComplete: true, isSoftDeleted: false, confidence: 1},
+        },
+        {status: 201},
+      ),
+    );
+
+    const result = await addInvoiceProduct({invoiceId, product});
+
+    expect(result).toEqual({
+      success: false,
+      error: {code: "SERVER_ERROR", message: "The product response was invalid. Please try again."},
+    });
+  });
 });

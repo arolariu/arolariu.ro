@@ -18,6 +18,10 @@ describe("ProductBuilder", () => {
   });
 
   it("builds complete independent products", () => {
-    expect(generateRandomProducts(3)).toHaveLength(3);
+    const products = generateRandomProducts(3);
+
+    expect(products).toHaveLength(3);
+    expect(products).toEqual(generateRandomProducts(3));
+    expect(products.map((product) => product.totalPrice)).toEqual(products.map((product) => product.quantity * product.price));
   });
 });

@@ -26,13 +26,13 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// from the invoice via OCR, used for display, aggregation, and analytics.
 /// </para>
 /// <para>
-/// <b>Computed Fields:</b> <see cref="TotalPrice"/> is computed as
-/// <c>Quantity × Price</c> and stored for consistency.
+/// <b>Computed Fields:</b> <see cref="TotalPrice"/> is returned from the domain's
+/// <c>Quantity × Price</c> computation.
 /// </para>
 /// <para>
 /// <b>Allergen Detection:</b> The <see cref="AllergenAssessment"/> section is
-/// populated by analysis runs and may include common allergens like gluten, lactose,
-/// nuts, etc.
+/// populated by analysis runs and may include only canonical EU-14 signals such
+/// as cereals containing gluten, milk, nuts, crustaceans, and molluscs.
 /// </para>
 /// </remarks>
 /// <param name="Name">
@@ -44,8 +44,8 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// Null when the line item has not been classified yet.
 /// </param>
 /// <param name="Quantity">
-/// The quantity of product units purchased. Always positive.
-/// Decimal to support fractional quantities (e.g., 1.5 kg of produce).
+/// The quantity of product units purchased. Non-negative; zero may represent
+/// incomplete receipt extraction. Decimal supports fractional quantities (e.g., 1.5 kg of produce).
 /// </param>
 /// <param name="QuantityUnit">
 /// The unit of measure (e.g., "kg", "L", "buc", "pcs").
@@ -60,11 +60,12 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// </param>
 /// <param name="TotalPrice">
 /// Computed extended line total (<c>Quantity × Price</c>).
-/// May differ slightly from simple multiplication due to rounding on the original invoice.
+/// Derived by the domain product from the non-negative quantity and price.
 /// </param>
 /// <param name="AllergenAssessment">
-/// The structured allergen assessment produced by an analysis run. Common signals include:
-/// Gluten, Lactose, Nuts, Eggs, Soy, Fish, Shellfish.
+/// The structured EU-14 allergen assessment produced by an analysis run. Signals
+/// use canonical members such as cereals containing gluten, milk, nuts, eggs,
+/// soybeans, fish, crustaceans, and molluscs.
 /// Null when no allergen assessment has been produced yet. An assessment carries its own status,
 /// so an empty signal list is never ambiguous.
 /// </param>

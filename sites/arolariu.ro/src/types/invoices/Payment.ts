@@ -74,10 +74,11 @@ export type PaymentType = (typeof PaymentType)[keyof typeof PaymentType];
  * including timing, method, amounts, and currency. This is a value object
  * embedded within the Invoice aggregate.
  *
- * **Invariants:**
- * - `totalCostAmount` must be non-negative
- * - `totalTaxAmount` must not exceed `totalCostAmount`
- * - `totalCostAmount` should equal sum of product totals (within rounding tolerance)
+ * **Transport invariants:**
+ * - Each monetary amount is non-negative
+ * - Receipt extraction may populate amounts independently; consumers must not
+ *   infer tax, item-total, or settlement-total relationships that the backend
+ *   does not enforce
  *
  * **Date Handling:**
  * `transactionDate` is extracted from invoice OCR or defaults to upload time.

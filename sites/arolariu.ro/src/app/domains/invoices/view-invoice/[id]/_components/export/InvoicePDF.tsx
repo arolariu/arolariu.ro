@@ -6,7 +6,18 @@
  */
 
 import {formatAmount, formatDate} from "@/lib/utils.generic";
-import type {Invoice, Merchant, StandardClassification} from "@/types/invoices";
+import type {
+  AllergenAssessment,
+  AllergenAssessmentStatusValue,
+  AllergenCodeValue,
+  AllergenEvidenceLevelValue,
+  Invoice,
+  Merchant,
+  PaymentType,
+  Product,
+  RecipeDifficultyValue,
+  StandardClassification,
+} from "@/types/invoices";
 import {Document, Page, StyleSheet, Text, View} from "@react-pdf/renderer";
 import {formatClassificationConfidence, getClassificationRoot, getClassificationSummary} from "../../../../_utils/classificationUtilities";
 
@@ -63,7 +74,11 @@ export type InvoicePdfLabels = Readonly<{
   product: string;
   quantity: string;
   unitPrice: string;
-  productSignals: string;
+  allergenAssessment: string;
+  allergenNotAssessed: string;
+  allergenStatus: (status: AllergenAssessmentStatusValue) => string;
+  allergenCode: (code: AllergenCodeValue) => string;
+  allergenEvidenceLevel: (evidenceLevel: AllergenEvidenceLevelValue) => string;
   analysisSummary: string;
   numberOfItems: string;
   numberOfScans: string;
@@ -81,8 +96,12 @@ export type InvoicePdfLabels = Readonly<{
   classificationAnalysisOrigin: string;
   classificationManualOrigin: string;
   classificationConfidence: (confidence: string) => string;
+  classificationHierarchy: string;
+  classificationEvidence: string;
   unclassified: string;
-  page: (page: number) => string;
+  paymentType: (paymentType: PaymentType) => string;
+  recipeDifficulty: (difficulty: RecipeDifficultyValue) => string;
+  page: (page: number, totalPages: number) => string;
 }>;
 
 type InvoicePDFProps = Readonly<{
@@ -108,7 +127,27 @@ function classificationLines(classification: StandardClassification | null, labe
     ...(root === null ? [] : [labels.classificationRoot(root.officialLabel, root.code)]),
     classification.origin === "Manual" ? labels.classificationManualOrigin : labels.classificationAnalysisOrigin,
     ...(confidence === null ? [] : [labels.classificationConfidence(confidence)]),
+    labels.classificationHierarchy,
     ...classification.hierarchy.map((node) => `${node.officialLabel} (${node.code})`),
+    ...(classification.evidence.length === 0
+      ? []
+      : [labels.classificationEvidence, ...classification.evidence.map((evidence) => `${evidence.source}: ${evidence.value}`)]),
+  ];
+}
+
+function allergenAssessmentLines(assessment: AllergenAssessment | null, labels: InvoicePdfLabels): readonly string[] {
+  if (assessment === null) {
+    return [labels.allergenNotAssessed];
+  }
+
+  return [
+    labels.allergenStatus(assessment.status),
+    ...assessment.signals.map(
+      (signal) =>
+        `${labels.allergenCode(signal.code)} (${labels.allergenEvidenceLevel(signal.evidenceLevel)}): ${signal.evidence
+          .map((evidence) => `${evidence.source}: ${evidence.value}`)
+          .join("; ")}`,
+    ),
   ];
 }
 
@@ -137,11 +176,12 @@ function RecipeSection({
 
 /** Renders all public invoice data with explicit classification, allergen, and recipe provenance. */
 export function InvoicePDF({invoice, merchant, locale, labels}: InvoicePDFProps): React.JSX.Element {
-  const activeProducts = invoice.items.filter((product) => !product.metadata.isSoftDeleted);
-  const currency = invoice.paymentInformation.currency;
+  const {items, paymentInformation} = invoice;
+  const activeProducts = items.filter((product) => !product.metadata.isSoftDeleted);
+  const {currency, paymentType, subtotalAmount, tipAmount, totalCostAmount, totalTaxAmount, transactionDate} = paymentInformation;
   const formatCurrency = (amount: number): string => `${currency.symbol}${formatAmount(amount, locale)}`;
   const generatedAt = formatDate(new Date(), {locale, year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit"});
-  const transactionDate = formatDate(invoice.paymentInformation.transactionDate, {locale, year: "numeric", month: "long", day: "numeric"});
+  const formattedTransactionDate = formatDate(transactionDate, {locale, year: "numeric", month: "long", day: "numeric"});
 
   return (
     <Document>
@@ -175,7 +215,7 @@ export function InvoicePDF({invoice, merchant, locale, labels}: InvoicePDFProps)
           />
           <PdfRow
             label={labels.transactionDate}
-            value={transactionDate}
+            value={formattedTransactionDate}
           />
           {invoice.receiptType === "" ? null : (
             <PdfRow
@@ -223,19 +263,19 @@ export function InvoicePDF({invoice, merchant, locale, labels}: InvoicePDFProps)
           <Text style={styles.sectionTitle}>{labels.paymentSummary}</Text>
           <PdfRow
             label={labels.subtotal}
-            value={formatCurrency(invoice.paymentInformation.subtotalAmount)}
+            value={formatCurrency(subtotalAmount)}
           />
           <PdfRow
             label={labels.tax}
-            value={formatCurrency(invoice.paymentInformation.totalTaxAmount)}
+            value={formatCurrency(totalTaxAmount)}
           />
           <PdfRow
             label={labels.tip}
-            value={formatCurrency(invoice.paymentInformation.tipAmount)}
+            value={formatCurrency(tipAmount)}
           />
           <PdfRow
             label={labels.total}
-            value={formatCurrency(invoice.paymentInformation.totalCostAmount)}
+            value={formatCurrency(totalCostAmount)}
           />
           <PdfRow
             label={labels.currency}
@@ -243,16 +283,14 @@ export function InvoicePDF({invoice, merchant, locale, labels}: InvoicePDFProps)
           />
           <PdfRow
             label={labels.paymentMethod}
-            value={String(invoice.paymentInformation.paymentType)}
+            value={labels.paymentType(paymentType)}
           />
         </View>
 
-        <View
-          style={styles.footer}
-          fixed>
-          <Text>{labels.page(1)}</Text>
-          <Text>{invoice.id}</Text>
-        </View>
+        <PdfFooter
+          invoiceIdentifier={invoice.id}
+          labels={labels}
+        />
       </Page>
 
       <Page
@@ -269,23 +307,14 @@ export function InvoicePDF({invoice, merchant, locale, labels}: InvoicePDFProps)
         </View>
         {activeProducts.map((product, index) => (
           <View
-            key={`${product.productCode}-${product.name}-${index}`}
+            key={getProductRowKey(product, index)}
             style={styles.tableRow}>
             <Text style={styles.number}>{index + 1}</Text>
             <View style={styles.product}>
               <Text>{product.name}</Text>
-              {product.allergenAssessment === null ? null : (
-                <Text style={styles.evidence}>
-                  {product.allergenAssessment.status}
-                  {product.allergenAssessment.signals.length === 0
-                    ? ""
-                    : ` — ${labels.productSignals}: ${product.allergenAssessment.signals
-                        .map(
-                          (signal) => `${signal.code} (${signal.evidenceLevel}): ${signal.evidence.map((item) => item.value).join("; ")}`,
-                        )
-                        .join(", ")}`}
-                </Text>
-              )}
+              <Text style={styles.evidence}>
+                {labels.allergenAssessment}: {allergenAssessmentLines(product.allergenAssessment, labels).join(" — ")}
+              </Text>
             </View>
             <View style={styles.classification}>
               {classificationLines(product.classification, labels).map((line) => (
@@ -321,6 +350,7 @@ export function InvoicePDF({invoice, merchant, locale, labels}: InvoicePDFProps)
                 style={styles.recipe}>
                 <Text>{recipe.name}</Text>
                 <Text style={styles.muted}>{recipe.description}</Text>
+                <Text>{labels.recipeDifficulty(recipe.difficulty)}</Text>
                 <Text>{labels.servings(recipe.servings)}</Text>
                 <Text>{labels.preparationMinutes(recipe.preparationMinutes)}</Text>
                 <Text>{labels.cookingMinutes(recipe.cookingMinutes)}</Text>
@@ -350,19 +380,17 @@ export function InvoicePDF({invoice, merchant, locale, labels}: InvoicePDFProps)
                 </View>
                 {recipe.allergenWarnings.length === 0 ? null : (
                   <Text>
-                    {labels.allergenWarnings}: {recipe.allergenWarnings.join(", ")}
+                    {labels.allergenWarnings}: {recipe.allergenWarnings.map((warning) => labels.allergenCode(warning)).join(", ")}
                   </Text>
                 )}
               </View>
             ))}
           </View>
         )}
-        <View
-          style={styles.footer}
-          fixed>
-          <Text>{labels.page(2)}</Text>
-          <Text>{invoice.id}</Text>
-        </View>
+        <PdfFooter
+          invoiceIdentifier={invoice.id}
+          labels={labels}
+        />
       </Page>
     </Document>
   );
@@ -386,6 +414,26 @@ function PdfLines({label, values}: Readonly<{label: string; values: readonly str
           <Text key={value}>{value}</Text>
         ))}
       </View>
+    </View>
+  );
+}
+
+function getProductRowKey(product: Product, occurrence: number): string {
+  return `${product.productCode}-${product.name}-${occurrence}`;
+}
+
+function PdfFooter({invoiceIdentifier, labels}: Readonly<{invoiceIdentifier: string; labels: InvoicePdfLabels}>): React.JSX.Element {
+  function renderPage({pageNumber, totalPages}: Readonly<{pageNumber: number; totalPages: number}>): string {
+    return labels.page(pageNumber, totalPages);
+  }
+
+  return (
+    <View
+      style={styles.footer}
+      fixed>
+      {/* eslint-disable-next-line react/jsx-no-bind -- React-PDF invokes this dynamic page footer callback. */}
+      <Text render={renderPage} />
+      <Text>{invoiceIdentifier}</Text>
     </View>
   );
 }

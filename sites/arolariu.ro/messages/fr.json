@@ -372,6 +372,7 @@
       "nutritionCard": {
         "allergens": {
           "foundInItems": "Trouvé dans {count} article(s)",
+          "noItems": "Aucun article de la facture n’est disponible pour l’évaluation des allergènes.",
           "title": "Allergènes détectés"
         },
         "composition": {
@@ -562,15 +563,15 @@
       "statistics": {
         "allergenSummary": {
           "ariaLabel": "Résumé de la fréquence des allergènes",
-          "description": "Exposition aux allergènes dans vos produits",
-          "empty": "Aucun signal d’allergène n’a été trouvé dans les éléments évalués.",
+          "description": "Signaux d’évaluation des allergènes dans les produits évalués",
+          "empty": "Aucun signal d’évaluation des allergènes n’est disponible. La couverture est affichée ci-dessous.",
           "coverage": {
             "assessed": "Éléments évalués",
             "insufficientData": "Données insuffisantes",
             "notAssessed": "Non évalué"
           },
           "stats": {
-            "ofTotal": "du total",
+            "ofAssessedProducts": "des produits évalués",
             "products": "produits"
           },
           "title": "Résumé des allergènes"
@@ -3171,11 +3172,28 @@
           "quantity": "Quantité",
           "unitPrice": "Prix unitaire",
           "productSignals": "Signaux",
+          "allergenAssessment": "Évaluation des allergènes",
+          "classificationHierarchy": "Hiérarchie de classification",
+          "difficulty": {
+            "easy": "Facile",
+            "medium": "Moyenne",
+            "hard": "Difficile"
+          },
+          "recipeDifficulty": "Difficulté : {difficulty}",
+          "paymentTypes": {
+            "unknown": "Inconnu",
+            "cash": "Espèces",
+            "card": "Carte",
+            "transfer": "Virement bancaire",
+            "mobilePayment": "Paiement mobile",
+            "voucher": "Bon",
+            "other": "Autre"
+          },
           "analysisSummary": "Résumé de l’analyse",
           "numberOfItems": "Nombre d’articles",
           "numberOfScans": "Nombre de scans",
           "recipes": "Suggestions de recettes",
-          "page": "Page {page}"
+          "page": "Page {current} sur {total}"
         },
         "healthScore": {
           "cta": {

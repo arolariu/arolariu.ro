@@ -372,6 +372,7 @@
       "nutritionCard": {
         "allergens": {
           "foundInItems": "Găsit în {count} articol(e)",
+          "noItems": "Nu există articole pe factură disponibile pentru evaluarea alergenilor.",
           "title": "Alergeni detectați"
         },
         "composition": {
@@ -562,15 +563,15 @@
       "statistics": {
         "allergenSummary": {
           "ariaLabel": "Rezumat frecvență alergeni",
-          "description": "Expunerea la alergeni în produse",
-          "empty": "Nu au fost găsite semnale de alergeni în dovezile evaluate.",
+          "description": "Semnale din evaluările alergenilor pentru produsele evaluate",
+          "empty": "Nu există semnale din evaluarea alergenilor. Acoperirea este afișată mai jos.",
           "coverage": {
             "assessed": "Dovezi evaluate",
             "insufficientData": "Date insuficiente",
             "notAssessed": "Neevaluat"
           },
           "stats": {
-            "ofTotal": "din total",
+            "ofAssessedProducts": "din produsele evaluate",
             "products": "produse"
           },
           "title": "Rezumat Alergeni"
@@ -3171,11 +3172,28 @@
           "quantity": "Cantitate",
           "unitPrice": "Preț unitar",
           "productSignals": "Semnale",
+          "allergenAssessment": "Evaluare alergeni",
+          "classificationHierarchy": "Ierarhie clasificare",
+          "difficulty": {
+            "easy": "Ușoară",
+            "medium": "Medie",
+            "hard": "Ridicată"
+          },
+          "recipeDifficulty": "Dificultate: {difficulty}",
+          "paymentTypes": {
+            "unknown": "Necunoscută",
+            "cash": "Numerar",
+            "card": "Card",
+            "transfer": "Transfer bancar",
+            "mobilePayment": "Plată mobilă",
+            "voucher": "Voucher",
+            "other": "Altă metodă"
+          },
           "analysisSummary": "Rezumat analiză",
           "numberOfItems": "Număr articole",
           "numberOfScans": "Număr scanări",
           "recipes": "Sugestii de rețete",
-          "page": "Pagina {page}"
+          "page": "Pagina {current} din {total}"
         },
         "healthScore": {
           "cta": {

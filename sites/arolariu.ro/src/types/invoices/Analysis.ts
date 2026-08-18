@@ -9,7 +9,7 @@
  * backend acknowledgement JSON.
  */
 
-import {isStrictRfc3339Timestamp} from "./transportValidation";
+import {isGuid, isStrictRfc3339Timestamp} from "./transportValidation";
 
 /**
  * Published analysis profiles accepted by invoice and merchant enqueue requests.
@@ -243,10 +243,6 @@ function hasOnlyKeys(record: Readonly<Record<string, unknown>>, allowedKeys: rea
 
 function hasOwnKey(record: Readonly<Record<string, unknown>>, key: string): boolean {
   return Object.hasOwn(record, key);
-}
-
-function isGuid(value: unknown): value is string {
-  return typeof value === "string" && /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/iu.test(value);
 }
 
 function hasOptionalValue(record: Readonly<Record<string, unknown>>, key: string, isValidValue: (value: unknown) => boolean): boolean {

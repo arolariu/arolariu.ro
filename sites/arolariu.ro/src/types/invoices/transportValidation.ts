@@ -5,6 +5,7 @@
 
 const rfc3339Pattern =
   /^(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})T(?<hour>\d{2}):(?<minute>\d{2}):(?<second>\d{2})(?:\.\d+)?(?:Z|[+-](?<offsetHour>\d{2}):(?<offsetMinute>\d{2}))$/u;
+const guidPattern = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/iu;
 
 function isLeapYear(year: number): boolean {
   return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
@@ -22,6 +23,16 @@ function daysInMonth(year: number, month: number): number {
     default:
       return 31;
   }
+}
+
+/**
+ * Determines whether a transport value is a canonical GUID string.
+ *
+ * @param value - Untrusted transport value.
+ * @returns Whether the value has the standard 8-4-4-4-12 GUID shape.
+ */
+export function isGuid(value: unknown): value is string {
+  return typeof value === "string" && guidPattern.test(value);
 }
 
 /**
