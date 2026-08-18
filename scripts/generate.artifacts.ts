@@ -33,10 +33,11 @@ const OUTPUT_ROOTS = [
 /** @internal */
 export const FILE_NAMES = {
   GS1_GPC: "gpc-2026-05.min.json",
+  ECOICOP_V2: "ecoicop-v2.min.json",
 } as const satisfies Readonly<Record<ArtifactClassificationSystem, string>>;
 
 /** Classification systems supported by generated artifacts. */
-export type ArtifactClassificationSystem = "GS1_GPC";
+export type ArtifactClassificationSystem = "GS1_GPC" | "ECOICOP_V2";
 
 /** Single normalized taxonomy node. */
 export interface TaxonomyArtifactNode {
@@ -76,6 +77,14 @@ export interface GpcSourceDocument {
   readonly LanguageCode: string;
   readonly DateUtc: string;
   readonly Schema: readonly GpcSourceNode[];
+}
+
+/** Simplified SPARQL row used by taxonomy normalization. */
+export interface SparqlBindingInput {
+  readonly concept: string;
+  readonly notation: string;
+  readonly label: string;
+  readonly broader: string | null;
 }
 
 /** Generates one classification taxonomy and writes its runtime artifacts. */
@@ -182,6 +191,29 @@ function normalizeText(...parts: readonly (string | null | undefined)[]): string
     .replace(/[^\p{Letter}\p{Number}.]+/gu, " ")
     .trim()
     .replace(/\s+/gu, " ");
+}
+
+function stripCodePrefix(label: string, notation: string): string {
+  const trimmed = label.trim();
+  if (!trimmed.startsWith(notation)) return trimmed;
+  const withoutNotation = trimmed
+    .slice(notation.length)
+    .replace(/^[\s:–—-]+/u, "")
+    .trim();
+  return withoutNotation.length > 0 ? withoutNotation : trimmed;
+}
+
+function getEuLevel(system: Exclude<ArtifactClassificationSystem, "GS1_GPC">, code: string): string {
+  if (system === "ECOICOP_V2") {
+    const segmentCount = code.split(".").length;
+    return ["division", "group", "class", "subclass"][segmentCount - 1] ?? `level-${segmentCount}`;
+  }
+
+  if (/^[A-Z]$/u.test(code)) return "section";
+  if (/^\d{2}$/u.test(code)) return "division";
+  if (/^\d{2}\.\d$/u.test(code)) return "group";
+  if (/^\d{2}\.\d{2}$/u.test(code)) return "class";
+  return "code";
 }
 
 /**
@@ -294,6 +326,114 @@ export function buildHierarchy(nodes: readonly TaxonomyArtifactNode[], code: str
       ...hierarchy.map((node) => node.officialLabel),
     ),
   };
+}
+
+const SPARQL_ENDPOINT = "https://publications.europa.eu/webapi/rdf/sparql";
+const ECOICOP_SCHEME = "http://data.europa.eu/ed1/ecoicop2/ecoicop2";
+const SPARQL_PAGE_SIZE = 5_000;
+const EU_ATTRIBUTION =
+  "European Union, Publications Office of the European Union, reused under the European Commission reuse policy.";
+
+function createSparqlQuery(scheme: string, offset: number): string {
+  return `
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+SELECT ?concept ?notation ?label ?broader WHERE {
+  ?concept skos:inScheme <${scheme}> ;
+           skos:notation ?notation ;
+           skos:prefLabel ?label .
+  OPTIONAL { ?concept skos:broader ?broader . }
+  FILTER(lang(?label) = "en")
+}
+ORDER BY ?notation
+LIMIT ${SPARQL_PAGE_SIZE}
+OFFSET ${offset}`;
+}
+
+function readBindingValue(binding: Readonly<Record<string, unknown>>, key: string, required: boolean): string | null {
+  const valueRecord = binding[key];
+  if (valueRecord === undefined) {
+    if (!required) return null;
+    throw new TypeError(`SPARQL binding '${key}' is required.`);
+  }
+
+  if (!isRecord(valueRecord)) throw new TypeError(`SPARQL binding '${key}' must be an object.`);
+  const value = valueRecord["value"];
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new TypeError(`SPARQL binding '${key}'.value must be a non-empty string.`);
+  }
+  return value;
+}
+
+function parseSparqlResponse(value: unknown): readonly SparqlBindingInput[] {
+  if (!isRecord(value)) throw new TypeError("SPARQL response must be an object.");
+  const results = value["results"];
+  if (!isRecord(results)) throw new TypeError("SPARQL response.results must be an object.");
+  const bindings = results["bindings"];
+  if (!Array.isArray(bindings)) throw new TypeError("SPARQL response.results.bindings must be an array.");
+
+  return bindings.map((bindingValue, index) => {
+    if (!isRecord(bindingValue)) throw new TypeError(`SPARQL binding[${index}] must be an object.`);
+    return {
+      concept: readBindingValue(bindingValue, "concept", true) ?? "",
+      notation: readBindingValue(bindingValue, "notation", true) ?? "",
+      label: readBindingValue(bindingValue, "label", true) ?? "",
+      broader: readBindingValue(bindingValue, "broader", false),
+    };
+  });
+}
+
+async function fetchSparqlBindings(scheme: string): Promise<readonly SparqlBindingInput[]> {
+  const bindings: SparqlBindingInput[] = [];
+
+  for (let offset = 0; ; offset += SPARQL_PAGE_SIZE) {
+    const url = new URL(SPARQL_ENDPOINT);
+    url.searchParams.set("query", createSparqlQuery(scheme, offset));
+    url.searchParams.set("format", "application/sparql-results+json");
+
+    const response = await fetch(url, {headers: {Accept: "application/sparql-results+json"}});
+    if (!response.ok) {
+      throw new Error(`SPARQL request failed with HTTP ${response.status} ${response.statusText}.`);
+    }
+
+    const payload: unknown = await response.json();
+    const page = parseSparqlResponse(payload);
+    bindings.push(...page);
+    if (page.length < SPARQL_PAGE_SIZE) break;
+  }
+
+  return bindings;
+}
+
+function normalizeSparqlBindings(
+  system: Exclude<ArtifactClassificationSystem, "GS1_GPC">,
+  version: string,
+  bindings: readonly SparqlBindingInput[],
+): readonly TaxonomyArtifactNode[] {
+  if (version.trim().length === 0) throw new Error("Taxonomy version must not be empty.");
+
+  const codeByConcept = new Map(bindings.map((binding) => [binding.concept, binding.notation] as const));
+  const provisional = bindings.map<TaxonomyArtifactNode>((binding) => {
+    const label = stripCodePrefix(binding.label, binding.notation);
+    const parentCode = binding.broader === null ? null : codeByConcept.get(binding.broader);
+    if (binding.broader !== null && parentCode === undefined) {
+      throw new Error(`Unresolved parent '${binding.broader}' for taxonomy code '${binding.notation}'.`);
+    }
+
+    return {
+      code: binding.notation,
+      officialLabel: label,
+      level: getEuLevel(system, binding.notation),
+      parentCode,
+      hierarchyCodes: [],
+      hierarchyLabels: [],
+      definition: null,
+      searchText: normalizeText(binding.notation, label),
+    };
+  });
+
+  return provisional
+    .map((node) => buildHierarchy(provisional, node.code))
+    .toSorted((left, right) => left.code.localeCompare(right.code, "en", {numeric: true}));
 }
 
 
@@ -476,6 +616,29 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
     };
 
     return writeMirroredArtifacts(FILE_NAMES.GS1_GPC, artifact, this.outputRoots);
+  }
+}
+
+/** Generates the official ECOICOP v2 taxonomy artifact. */
+export class EcoicopTaxonomyClassificationGenerator extends TaxonomyClassificationGenerator {
+  /** Creates the generator. */
+  public constructor(private readonly outputRoots: readonly string[] = OUTPUT_ROOTS) {
+    super();
+  }
+
+  /** Downloads, validates, normalizes, and writes the ECOICOP artifact. */
+  public override async generate(): Promise<readonly string[]> {
+    const bindings = await fetchSparqlBindings(ECOICOP_SCHEME);
+    const artifact: TaxonomyArtifact = {
+      system: "ECOICOP_V2",
+      version: "2",
+      sourceUrl: `${SPARQL_ENDPOINT}#${ECOICOP_SCHEME}`,
+      generatedAt: new Date().toISOString(),
+      attribution: EU_ATTRIBUTION,
+      nodes: normalizeSparqlBindings("ECOICOP_V2", "2", bindings),
+    };
+
+    return writeMirroredArtifacts(FILE_NAMES.ECOICOP_V2, artifact, this.outputRoots);
   }
 }
 

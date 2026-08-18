@@ -7,7 +7,7 @@
 import {ChildProcess, execFile} from "node:child_process";
 import {mkdtemp, readFile, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
-import {join} from "node:path";
+import {basename, join} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 vi.mock("node:child_process", async (importOriginal) => {
@@ -25,6 +25,7 @@ import {
   buildArchiveExtractionCommand,
   buildTaxonomyArtifactGenerationCommand,
   buildHierarchy,
+  EcoicopTaxonomyClassificationGenerator,
   Gs1GpcTaxonomyClassificationGenerator,
   flattenGpcSchema,
   parseGpcDocument,
@@ -53,6 +54,20 @@ function mockArchiveExtraction(document: unknown): void {
       });
     return childProcess;
   });
+}
+
+function readArtifactNodes(contents: string): readonly unknown[] {
+  const parsed: unknown = JSON.parse(contents);
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    throw new TypeError("Generated taxonomy artifact must be an object.");
+  }
+
+  const nodes = Reflect.get(parsed, "nodes");
+  if (!Array.isArray(nodes)) {
+    throw new TypeError("Generated taxonomy artifact nodes must be an array.");
+  }
+
+  return nodes;
 }
 
 describe("parseGpcDocument", () => {
@@ -501,6 +516,97 @@ describe("Taxonomy classification generator classes", () => {
 
         await expect(generator.generate()).rejects.toThrow(
           "GPC download failed with HTTP 503 Service Unavailable.",
+        );
+      });
+    });
+  });
+
+  describe("EcoicopTaxonomyClassificationGenerator", () => {
+    describe("generate", () => {
+      it("generates a mirrored ECOICOP v2 artifact", async () => {
+        vi.stubGlobal(
+          "fetch",
+          vi.fn(async () =>
+            Response.json({
+              results: {
+                bindings: [
+                  {
+                    concept: {value: "eco:01"},
+                    notation: {value: "01"},
+                    label: {value: "01 Food and non-alcoholic beverages"},
+                  },
+                  {
+                    concept: {value: "eco:011"},
+                    notation: {value: "01.1"},
+                    label: {value: "01.1 Food"},
+                    broader: {value: "eco:01"},
+                  },
+                ],
+              },
+            }),
+          ),
+        );
+        const base = await mkdtemp(join(tmpdir(), "arolariu-ecoicop-class-"));
+        const roots = [join(base, "api"), join(base, "web")];
+        const generator = new EcoicopTaxonomyClassificationGenerator(roots);
+
+        const outputs = await generator.generate();
+
+        expect(outputs.map((output) => basename(output))).toEqual(["ecoicop-v2.min.json", "ecoicop-v2.min.json"]);
+        expect(readArtifactNodes(await readFile(outputs[0] ?? "", "utf8"))[1]).toMatchObject({
+          code: "01.1",
+          officialLabel: "Food",
+          hierarchyCodes: ["01", "01.1"],
+        });
+      });
+
+      it("continues SPARQL pagination until a short page is returned", async () => {
+        const firstPage = Array.from({length: 5_000}, (_, index) => ({
+          concept: {value: `eco:${index}`},
+          notation: {value: String(index).padStart(4, "0")},
+          label: {value: `Label ${index}`},
+        }));
+        const fetchMock = vi
+          .fn()
+          .mockResolvedValueOnce(Response.json({results: {bindings: firstPage}}))
+          .mockResolvedValueOnce(
+            Response.json({
+              results: {
+                bindings: [{concept: {value: "eco:final"}, notation: {value: "9999.1"}, label: {value: "Final"}}],
+              },
+            }),
+          );
+        vi.stubGlobal("fetch", fetchMock);
+        const base = await mkdtemp(join(tmpdir(), "arolariu-ecoicop-pages-"));
+        const generator = new EcoicopTaxonomyClassificationGenerator([join(base, "api")]);
+
+        await generator.generate();
+
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+      });
+
+      it("rejects a present broader binding without a value", async () => {
+        vi.stubGlobal(
+          "fetch",
+          vi.fn(async () =>
+            Response.json({
+              results: {
+                bindings: [
+                  {
+                    concept: {value: "eco:01"},
+                    notation: {value: "01"},
+                    label: {value: "Food"},
+                    broader: {type: "uri"},
+                  },
+                ],
+              },
+            }),
+          ),
+        );
+        const generator = new EcoicopTaxonomyClassificationGenerator([]);
+
+        await expect(generator.generate()).rejects.toThrow(
+          "SPARQL binding 'broader'.value must be a non-empty string.",
         );
       });
     });
