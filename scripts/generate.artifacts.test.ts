@@ -128,10 +128,41 @@ describe("extractZipEntry", () => {
     );
   });
 
+  it("throws when a non-trivial buffer has no matching end-of-central-directory signature", () => {
+    const archive = createZipArchive([{name: "data EN.json", contents: "x", method: 0}]);
+    const buffer = Buffer.from(archive);
+    buffer.writeUInt32LE(0xdeadbeef, buffer.length - 22);
+
+    expect(() => extractZipEntry(new Uint8Array(buffer), "anything")).toThrow(
+      "ZIP end-of-central-directory record was not found.",
+    );
+  });
+
   it("throws for an unsupported compression method", () => {
     const archive = createZipArchive([{name: "data EN.json", contents: "x", method: 12}]);
 
     expect(() => extractZipEntry(archive, " EN.json")).toThrow("Unsupported ZIP compression method 12");
+  });
+
+  it("throws when a central directory signature is corrupt", () => {
+    const archive = createZipArchive([{name: "data EN.json", contents: "x", method: 0}]);
+    const buffer = Buffer.from(archive);
+    const centralOffset = buffer.readUInt32LE(buffer.length - 22 + 16);
+    buffer.writeUInt32LE(0xdeadbeef, centralOffset);
+
+    expect(() => extractZipEntry(new Uint8Array(buffer), " EN.json")).toThrow("Invalid ZIP central directory entry");
+  });
+
+  it("throws when a local header signature is corrupt", () => {
+    const archive = createZipArchive([{name: "data EN.json", contents: "x", method: 0}]);
+    const buffer = Buffer.from(archive);
+    const centralOffset = buffer.readUInt32LE(buffer.length - 22 + 16);
+    const localOffset = buffer.readUInt32LE(centralOffset + 42);
+    buffer.writeUInt32LE(0xdeadbeef, localOffset);
+
+    expect(() => extractZipEntry(new Uint8Array(buffer), " EN.json")).toThrow(
+      "Invalid ZIP local header for data EN.json.",
+    );
   });
 });
 
@@ -179,6 +210,12 @@ describe("parseGpcDocument", () => {
     expect(() => parseGpcDocument("nope")).toThrow("GPC document must be an object.");
   });
 
+  it("throws when a schema node is not an object", () => {
+    expect(() => parseGpcDocument({LanguageCode: "EN", DateUtc: "2026-05-01", Schema: ["nope"]})).toThrow(
+      "GPC node must be an object.",
+    );
+  });
+
   it("throws when Schema is not an array", () => {
     expect(() => parseGpcDocument({LanguageCode: "EN", DateUtc: "2026-05-01", Schema: {}})).toThrow(
       "GPC document Schema must be an array.",
@@ -195,6 +232,18 @@ describe("parseGpcDocument", () => {
     expect(() =>
       parseGpcDocument({LanguageCode: "EN", DateUtc: "2026-05-01", Schema: [{...validNode, Code: "50000000"}]}),
     ).toThrow("GPC node Code must be a number.");
+  });
+
+  it("throws when a node code is NaN", () => {
+    expect(() =>
+      parseGpcDocument({LanguageCode: "EN", DateUtc: "2026-05-01", Schema: [{...validNode, Code: Number.NaN}]}),
+    ).toThrow("GPC node Code must be a number.");
+  });
+
+  it("throws when a node Definition is neither a string nor null", () => {
+    expect(() =>
+      parseGpcDocument({LanguageCode: "EN", DateUtc: "2026-05-01", Schema: [{...validNode, Definition: 123}]}),
+    ).toThrow("GPC node Definition must be a string or null.");
   });
 
   it("throws when a node Active flag is not a boolean", () => {
