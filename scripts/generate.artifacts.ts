@@ -262,11 +262,39 @@ function validateArtifact(artifact: TaxonomyArtifact): void {
 }
 
 /**
+ * Asserts that every mirrored copy read back from disk matches what was written.
+ *
+ * @remarks
+ * Extracted as a pure function so the divergence path is directly unit-testable.
+ * Mocking `node:fs/promises` does not intercept the generator's own import under
+ * Vitest, so exercising this branch through `writeMirroredArtifacts` is not possible.
+ *
+ * @param fileName - Generated artifact file name, used only for the error message.
+ * @param contents - The exact string that was written to every output root.
+ * @param writtenContents - Contents read back from each output root.
+ * @throws {Error} When any read-back copy differs from `contents`.
+ */
+export function assertMirroredContentsIdentical(
+  fileName: string,
+  contents: string,
+  writtenContents: readonly string[],
+): void {
+  if (writtenContents.some((value) => value !== contents)) {
+    throw new Error(`Mirrored artifact '${fileName}' was not written identically.`);
+  }
+}
+
+/**
  * Writes the same minified artifact into each runtime output directory.
  *
  * @remarks
  * The artifact is validated before any write, and every written file is read back and
  * compared so the API and website copies are provably byte-identical.
+ *
+ * If one output root fails mid-write the sibling write is not rolled back, so a failed
+ * run can leave the roots divergent on disk. Generated artifacts are git-ignored and
+ * regenerated on every build, and container builds assert their presence, so the next
+ * successful run restores the invariant.
  *
  * @param fileName - Generated artifact file name.
  * @param artifact - Artifact to validate and write.
@@ -286,17 +314,15 @@ export async function writeMirroredArtifacts(
   await Promise.all(
     paths.map(async (path, index) => {
       const root = outputRoots[index];
-      /* v8 ignore next 2 -- unreachable: paths and outputRoots are mapped from the same array with no mutation between passes. */
-    if (root === undefined) throw new Error(`Output root for '${path}' was not found.`);
+      /* v8 ignore next -- unreachable: paths and outputRoots are mapped from the same array with no mutation between passes. */
+      if (root === undefined) throw new Error(`Output root for '${path}' was not found.`);
       await mkdir(root, {recursive: true});
       await writeFile(path, contents, "utf8");
     }),
   );
 
   const writtenContents = await Promise.all(paths.map((path) => readFile(path, "utf8")));
-  if (writtenContents.some((value) => value !== contents)) {
-    throw new Error(`Mirrored artifact '${fileName}' was not written identically.`);
-  }
+  assertMirroredContentsIdentical(fileName, contents, writtenContents);
 
   return paths;
 }

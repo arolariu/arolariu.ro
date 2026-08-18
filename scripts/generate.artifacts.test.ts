@@ -7,13 +7,16 @@ import {deflateRawSync} from "node:zlib";
 import {mkdtemp, readFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
-import {afterEach, describe, expect, it, vi} from "vitest";
+import {describe, expect, it} from "vitest";
 
-vi.mock("node:fs/promises", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("node:fs/promises")>();
-  return {...actual, readFile: vi.fn(actual.readFile)};
-});
-import {buildHierarchy, extractZipEntry, flattenGpcSchema, parseGpcDocument, writeMirroredArtifacts} from "./generate.artifacts.ts";
+import {
+  assertMirroredContentsIdentical,
+  buildHierarchy,
+  extractZipEntry,
+  flattenGpcSchema,
+  parseGpcDocument,
+  writeMirroredArtifacts,
+} from "./generate.artifacts.ts";
 import type {TaxonomyArtifact, TaxonomyArtifactNode} from "./generate.artifacts.ts";
 
 /** Minimal ZIP entry description used by the archive builder below. */
@@ -314,9 +317,6 @@ describe("buildHierarchy", () => {
 
 
 describe("writeMirroredArtifacts", () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
   const validNode: TaxonomyArtifactNode = {
     code: "50000000",
     officialLabel: "Food",
@@ -407,6 +407,28 @@ describe("writeMirroredArtifacts", () => {
 
     await expect(writeMirroredArtifacts("gpc-2026-05.min.json", artifact([broken]), roots)).rejects.toThrow(
       "GS1_GPC hierarchy for '50000000' has mismatched code and label lengths.",
+    );
+  });
+});
+
+describe("assertMirroredContentsIdentical", () => {
+  it("accepts copies that all match what was written", () => {
+    expect(() => assertMirroredContentsIdentical("gpc-2026-05.min.json", '{"a":1}', ['{"a":1}', '{"a":1}'])).not.toThrow();
+  });
+
+  it("accepts an empty read-back set", () => {
+    expect(() => assertMirroredContentsIdentical("gpc-2026-05.min.json", '{"a":1}', [])).not.toThrow();
+  });
+
+  it("throws when any copy diverges from what was written", () => {
+    expect(() => assertMirroredContentsIdentical("gpc-2026-05.min.json", '{"a":1}', ['{"a":1}', "{}"])).toThrow(
+      "Mirrored artifact 'gpc-2026-05.min.json' was not written identically.",
+    );
+  });
+
+  it("names the offending artifact in the error", () => {
+    expect(() => assertMirroredContentsIdentical("nace-2.1.min.json", "x", ["y"])).toThrow(
+      "Mirrored artifact 'nace-2.1.min.json' was not written identically.",
     );
   });
 });
