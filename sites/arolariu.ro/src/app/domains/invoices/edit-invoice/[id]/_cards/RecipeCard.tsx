@@ -5,7 +5,7 @@
  * @module domains/invoices/edit-invoice/[id]/cards/RecipeCard
  */
 
-import {type RecipeSuggestion} from "@/types/invoices";
+import {RecipeDifficulty, type RecipeSuggestion} from "@/types/invoices";
 import {RecipeSuggestionDetails} from "../../../_components/analysis/StructuredAnalysisDetails";
 import {
   Badge,
@@ -25,6 +25,12 @@ import {useTranslations} from "next-intl-selector";
 import {TbEdit, TbLayoutBottombarExpand, TbSeparatorHorizontal, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./RecipeCard.module.scss";
+
+const RECIPE_DIFFICULTY_KEYS = {
+  [RecipeDifficulty.Easy]: "easy",
+  [RecipeDifficulty.Medium]: "medium",
+  [RecipeDifficulty.Hard]: "hard",
+} as const;
 
 interface Props {
   /** Structured recipe returned by the analysis API. */
@@ -46,7 +52,9 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
       <CardHeader className={styles["cardHeader"]}>
         <CardTitle>
           <h3 className={styles["title"]}>{recipe.name}</h3>
-          <Badge className={styles["complexityBadge"]}>{recipe.difficulty}</Badge>
+          <Badge className={styles["complexityBadge"]}>
+            {t((m) => m.cards.invoices.analysisResults.recipes.difficulty[RECIPE_DIFFICULTY_KEYS[recipe.difficulty]])}
+          </Badge>
         </CardTitle>
         <CardAction className={styles["cardAction"]}>
           <DropdownMenu>

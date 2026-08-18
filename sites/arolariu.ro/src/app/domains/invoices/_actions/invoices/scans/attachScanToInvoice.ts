@@ -6,10 +6,13 @@
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {getStorageAccountName, isApprovedInvoiceScanLocation} from "@/lib/azure/storageLocationPolicy";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "@/lib/utils.server";
 import {InvoiceScanType, type CreateInvoiceScanDtoPayload} from "@/types/invoices";
+import {isHeicScanFileName} from "../../../_utils/mimeTypeUtilities";
 
 type AttachScanInput = Readonly<{readonly invoiceId: string; readonly payload: CreateInvoiceScanDtoPayload}>;
 type MetadataValue = string | number | boolean | null;
@@ -41,21 +44,30 @@ function isMetadata(value: unknown): value is Readonly<Record<string, MetadataVa
 }
 
 function isAttachScanInput(value: unknown): value is AttachScanInput {
-  if (
-    !isRecord(value)
-    || Object.keys(value).length !== 2
-    || typeof value["invoiceId"] !== "string"
-    || !isRecord(value["payload"])
-    || Object.keys(value["payload"]).length !== 3
-    || !isSupportedScanType(value["payload"]["type"])
-    || typeof value["payload"]["location"] !== "string"
-    || !isMetadata(value["payload"]["metadata"])
-  ) {
-    return false;
-  }
+  return (
+    isRecord(value)
+    && Object.keys(value).length === 2
+    && typeof value["invoiceId"] === "string"
+    && isRecord(value["payload"])
+    && Object.keys(value["payload"]).length === 3
+    && isSupportedScanType(value["payload"]["type"])
+    && typeof value["payload"]["location"] === "string"
+    && isMetadata(value["payload"]["metadata"])
+  );
+}
 
+function hasApprovedScanLocation(input: AttachScanInput, storageServiceRoot: string): boolean {
+  const storageAccountName = getStorageAccountName(storageServiceRoot);
   try {
-    return new URL(value["payload"]["location"]).protocol === "https:";
+    return (
+      storageAccountName !== null
+      && !isHeicScanFileName(new URL(input.payload.location).pathname)
+      && isApprovedInvoiceScanLocation({
+        location: input.payload.location,
+        storageServiceRoot,
+        storageAccountName,
+      })
+    );
   } catch {
     return false;
   }
@@ -78,6 +90,15 @@ export async function attachScanToInvoice(input: unknown): ServerActionResult<vo
 
     try {
       validateStringIsGuidType(input.invoiceId, "invoiceId");
+      const storageServiceRoot = await fetchConfigurationValue("Endpoints:Storage:Blob");
+      if (!hasApprovedScanLocation(input, storageServiceRoot)) {
+        addSpanEvent("bff.invoice.scan.attach.rejected", {errorCode: "VALIDATION_ERROR"});
+        logWithTrace("warn", "invoice.scan.attach.rejected", {errorCode: "VALIDATION_ERROR"}, "server");
+        return {
+          success: false,
+          error: {code: "VALIDATION_ERROR", message: "This scan format is not supported. Convert HEIC images to HEIF before attaching."},
+        };
+      }
       const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       const response = await fetchWithTimeout(`/rest/v1/invoices/${input.invoiceId}/scans`, {
         method: "POST",

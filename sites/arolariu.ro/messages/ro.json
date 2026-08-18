@@ -863,6 +863,11 @@
           }
         },
         "recipes": {
+          "difficulty": {
+            "easy": "Ușoară",
+            "medium": "Medie",
+            "hard": "Dificilă"
+          },
           "purchasedIngredients": "Ingrediente cumpărate",
           "pantryStaples": "Produse de bază presupuse în cămară",
           "missingOptionalIngredients": "Ingrediente opționale lipsă",
@@ -2197,7 +2202,9 @@
           "analysisNotQueued": "Factura a fost creată, dar analiza nu a putut fi pusă în coadă. O puteți reîncerca din pagina facturii.",
           "classificationNotSaved": "Factura a fost creată, dar clasificarea sa nu a putut fi salvată. O puteți reîncerca din pagina facturii.",
           "createFailed": "Factura nu a putut fi creată. Vă rugăm să încercați din nou.",
-          "createdAndAnalysisQueued": "Factura a fost creată. Analiza a fost pusă în coadă."
+          "createdAndAnalysisQueued": "Factura a fost creată. Analiza a fost pusă în coadă.",
+          "attachmentFinalizationFailed": "Factura a fost creată, dar {count} actualizări ale atașamentelor scanărilor trebuie finalizate. Reîncercați înainte de a părăsi această pagină.",
+          "attachmentFinalizationFailed": "Factura a fost creată, dar {count} actualizări ale atașamentelor scanărilor trebuie finalizate. Reîncercați înainte de a părăsi această pagină."
         },
         "metadata": {
           "description": "Creați o factură nouă din scanările încărcate.",
@@ -2211,7 +2218,9 @@
           "actions": {
             "create": "Creează factură",
             "creating": "Se creează factura...",
-            "hint": "Factura va fi creată și scanările selectate vor fi încărcate."
+            "hint": "Factura va fi creată și scanările selectate vor fi încărcate.",
+            "retryAttachmentFinalization": "Reîncearcă finalizarea atașamentelor",
+            "retryAttachmentFinalization": "Reîncearcă finalizarea atașamentelor"
           },
           "classificationFallback": "{system}: {code}",
           "classificationResult": "{code}: {label}",
@@ -2810,6 +2819,10 @@
             "createFirstRecipe": "Creează prima ta rețetă",
             "generate": "Generează"
           },
+          "tabs": {
+            "possibleRecipes": "Rețete posibile",
+            "additionalInfo": "Informații suplimentare"
+          },
           "emptyState": {
             "noRecipesAvailable": "Nu există încă rețete disponibile"
           },
@@ -3113,10 +3126,25 @@
           "copySuccess": "Rezumat copiat în clipboard",
           "copySummary": {
             "description": "Copiază rezumatul text în clipboard",
+            "labels": {
+              "invoice": "Factură",
+              "merchant": "Comerciant",
+              "date": "Dată",
+              "total": "Total",
+              "items": "Articole"
+            },
+            "notAvailable": "Indisponibil",
             "title": "Copiază Rezumat"
           },
           "csv": {
             "description": "Descarcă articolele ca foaie de calcul",
+            "headers": {
+              "productName": "Nume produs",
+              "quantity": "Cantitate",
+              "price": "Preț",
+              "total": "Total",
+              "category": "Categorie"
+            },
             "title": "Exportă ca CSV"
           },
           "csvError": "Eroare la exportul CSV",
@@ -3243,6 +3271,7 @@
             "compare": "Comparație",
             "current": "Factura curentă"
           },
+          "invoiceCount": "{count, plural, one {# factură} few {# facturi} other {# de facturi}}",
           "title": "Analize și insight-uri"
         },
         "invoiceGuestBanner": {

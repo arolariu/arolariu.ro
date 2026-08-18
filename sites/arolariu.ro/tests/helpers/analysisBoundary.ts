@@ -26,7 +26,7 @@ function createConfigResponse(name: string): Response {
     name === "Endpoints:Service:Api"
       ? ANALYSIS_API_URL
       : name === "Endpoints:Storage:Blob"
-        ? "http://storage.analysis.test"
+        ? "https://storage.analysis.test"
         : "analysis-test-jwt-secret";
 
   return new Response(

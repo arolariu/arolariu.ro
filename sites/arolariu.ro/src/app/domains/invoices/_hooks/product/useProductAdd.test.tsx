@@ -3,8 +3,8 @@
  * @module app/domains/invoices/_hooks/product/useProductAdd.test
  */
 
-import type {ServerActionResult} from "@/lib/utils.server";
-import type {Product} from "@/types/invoices";
+import {getAnalysisApiRequests, installAnalysisFetchHandler} from "@/../tests/helpers/analysisBoundary";
+import type {Product, ProductMutation} from "@/types/invoices";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder, invokeHookCallback} from "../../../../../../tests/helpers";
@@ -14,15 +14,9 @@ vi.mock("@/stores", () => ({
   useInvoicesStore: vi.fn(),
 }));
 
-vi.mock("../../_actions/invoices", () => ({
-  addInvoiceProduct: vi.fn(),
-}));
-
 const {useInvoicesStore} = await import("@/stores");
-const {addInvoiceProduct} = await import("../../_actions/invoices");
 
 const mockUseInvoicesStore = vi.mocked(useInvoicesStore);
-const mockAddInvoiceProduct = vi.mocked(addInvoiceProduct);
 
 function createDeferred<T>(): Readonly<{
   promise: Promise<T>;
@@ -46,7 +40,14 @@ function mockInvoiceStore(updateEntity = vi.fn()): void {
 
 describe("useProductAdd", () => {
   const existingProduct = TestDataBuilder.build("product", {name: "Coffee"});
-  const productToAdd = TestDataBuilder.build("product", {name: "Milk", price: 7, totalPrice: 7});
+  const productToAdd = {
+    name: "Milk",
+    classification: null,
+    quantity: 1,
+    quantityUnit: "pcs",
+    productCode: "",
+    price: 7,
+  } satisfies ProductMutation;
   const addedProduct = TestDataBuilder.build("product", {name: "Milk", price: 7, totalPrice: 7, productCode: "server-id"});
   const invoice = TestDataBuilder.build("invoice", {items: [existingProduct]});
   const mockUpdateEntity = vi.fn();
@@ -54,7 +55,9 @@ describe("useProductAdd", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockInvoiceStore(mockUpdateEntity);
-    mockAddInvoiceProduct.mockResolvedValue({success: true, data: addedProduct});
+    installAnalysisFetchHandler((request) =>
+      request.url.endsWith("/products") ? Response.json(addedProduct, {status: 201}) : new Response(null),
+    );
   });
 
   afterEach(() => {
@@ -74,18 +77,20 @@ describe("useProductAdd", () => {
     const returnedProduct = await invokeHookCallback(hookResult, (current) => current.addProductCallback(productToAdd));
 
     expect(returnedProduct).toEqual(addedProduct);
-    expect(mockAddInvoiceProduct).toHaveBeenCalledWith({
-      invoiceId: invoice.id,
-      product: productToAdd,
-    });
+    expect(getAnalysisApiRequests()).toContainEqual(
+      expect.objectContaining({
+        url: expect.stringMatching(/\/products$/u),
+        init: expect.objectContaining({body: JSON.stringify(productToAdd), method: "POST"}),
+      }),
+    );
     expect(mockUpdateEntity).toHaveBeenCalledWith(invoice.id, {
       items: [existingProduct, addedProduct],
     });
   });
 
   it("sets isAdding true while the server action is pending", async () => {
-    const deferred = createDeferred<Awaited<ServerActionResult<Product>>>();
-    mockAddInvoiceProduct.mockImplementation(() => deferred.promise);
+    const deferred = createDeferred<Response>();
+    installAnalysisFetchHandler((request) => (request.url.endsWith("/products") ? deferred.promise : new Response(null)));
 
     const {result} = renderHook(() => useProductAdd({invoice}));
 
@@ -98,7 +103,7 @@ describe("useProductAdd", () => {
       expect(result.current.isAdding).toBe(true);
     });
 
-    deferred.resolve({success: true, data: addedProduct});
+    deferred.resolve(Response.json(addedProduct, {status: 201}));
     await act(async () => {
       await addPromise;
     });
@@ -107,28 +112,28 @@ describe("useProductAdd", () => {
   });
 
   it("throws server action failures and skips the local update", async () => {
-    mockAddInvoiceProduct.mockResolvedValueOnce(
-      await TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Failed to add product"}),
-    );
+    installAnalysisFetchHandler((request) => (request.url.endsWith("/products") ? new Response(null, {status: 400}) : new Response(null)));
 
     const {result} = renderHook(() => useProductAdd({invoice}));
 
     await expect(async () => {
       await result.current.addProductCallback(productToAdd);
-    }).rejects.toThrow("Failed to add product");
+    }).rejects.toThrow("Failed to add the product. Please check your input and try again.");
 
     expect(mockUpdateEntity).not.toHaveBeenCalled();
     expect(result.current.isAdding).toBe(false);
   });
 
   it("surfaces thrown server errors and resets adding state", async () => {
-    mockAddInvoiceProduct.mockRejectedValue(new Error("Network failure"));
+    installAnalysisFetchHandler((request) =>
+      request.url.endsWith("/products") ? Promise.reject(new Error("Network failure")) : new Response(null),
+    );
 
     const {result} = renderHook(() => useProductAdd({invoice}));
 
     await expect(async () => {
       await result.current.addProductCallback(productToAdd);
-    }).rejects.toThrow("Network failure");
+    }).rejects.toThrow("Unable to add the product. Please try again.");
 
     expect(mockUpdateEntity).not.toHaveBeenCalled();
     expect(result.current.isAdding).toBe(false);
@@ -148,7 +153,7 @@ describe("useProductAdd", () => {
       await result.current.addProductCallback(productToAdd);
     }).rejects.toThrow(localUpdateError);
 
-    expect(mockAddInvoiceProduct).toHaveBeenCalledOnce();
+    expect(getAnalysisApiRequests().filter((request) => request.url.endsWith("/products"))).toHaveLength(1);
     expect(result.current.isAdding).toBe(false);
   });
 });

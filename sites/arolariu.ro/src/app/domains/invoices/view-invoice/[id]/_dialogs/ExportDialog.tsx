@@ -116,7 +116,13 @@ export function ExportDialog(): React.JSX.Element {
   const handleExportCSV = useCallback((): void => {
     try {
       // CSV Headers
-      const headers = ["Product Name", "Quantity", "Price", "Total", "Category"];
+      const headers = [
+        t((m) => m.pages.invoices.viewInvoice.export.csv.headers.productName),
+        t((m) => m.pages.invoices.viewInvoice.export.csv.headers.quantity),
+        t((m) => m.pages.invoices.viewInvoice.export.csv.headers.price),
+        t((m) => m.pages.invoices.viewInvoice.export.csv.headers.total),
+        t((m) => m.pages.invoices.viewInvoice.export.csv.headers.category),
+      ];
       const csvRows = [headers.join(",")];
 
       // CSV Rows - one per product
@@ -144,8 +150,7 @@ export function ExportDialog(): React.JSX.Element {
 
       toast.success(t((m) => m.pages.invoices.viewInvoice.export.csvSuccess));
       close();
-    } catch (error) {
-      console.error("Failed to export CSV:", error);
+    } catch {
       toast.error(t((m) => m.pages.invoices.viewInvoice.export.csvError));
     }
   }, [invoice, close, t]);
@@ -179,8 +184,7 @@ export function ExportDialog(): React.JSX.Element {
 
       toast.success(t((m) => m.pages.invoices.viewInvoice.export.jsonSuccess));
       close();
-    } catch (error) {
-      console.error("Failed to export JSON:", error);
+    } catch {
       toast.error(t((m) => m.pages.invoices.viewInvoice.export.jsonError));
     }
   }, [invoice, close, t]);
@@ -203,23 +207,26 @@ export function ExportDialog(): React.JSX.Element {
    */
   const handleCopySummary = useCallback(async (): Promise<void> => {
     try {
-      const paymentDate = formatDate(invoice.paymentInformation.transactionDate, {locale: "en-US"});
-      const summary = `
-Invoice: ${invoice.name}
-Merchant: ${merchant?.name ?? "N/A"}
-Date: ${paymentDate}
-Total: $${formatAmount(invoice.paymentInformation.totalCostAmount)}
-Items: ${invoice.items.length}
-      `.trim();
+      const paymentDate = formatDate(invoice.paymentInformation.transactionDate, {locale});
+      const summary = [
+        `${t((m) => m.pages.invoices.viewInvoice.export.copySummary.labels.invoice)}: ${invoice.name}`,
+        `${t((m) => m.pages.invoices.viewInvoice.export.copySummary.labels.merchant)}: ${
+          merchant?.name ?? t((m) => m.pages.invoices.viewInvoice.export.copySummary.notAvailable)
+        }`,
+        `${t((m) => m.pages.invoices.viewInvoice.export.copySummary.labels.date)}: ${paymentDate}`,
+        `${t((m) => m.pages.invoices.viewInvoice.export.copySummary.labels.total)}: ${formatAmount(
+          invoice.paymentInformation.totalCostAmount,
+        )}`,
+        `${t((m) => m.pages.invoices.viewInvoice.export.copySummary.labels.items)}: ${invoice.items.length}`,
+      ].join("\n");
 
       await navigator.clipboard.writeText(summary);
       toast.success(t((m) => m.pages.invoices.viewInvoice.export.copySuccess));
       close();
-    } catch (error) {
-      console.error("Failed to copy summary:", error);
+    } catch {
       toast.error(t((m) => m.pages.invoices.viewInvoice.export.copyError));
     }
-  }, [invoice, merchant, close, t]);
+  }, [close, invoice, locale, merchant, t]);
 
   /**
    * Handles exporting invoice as a professional PDF document.

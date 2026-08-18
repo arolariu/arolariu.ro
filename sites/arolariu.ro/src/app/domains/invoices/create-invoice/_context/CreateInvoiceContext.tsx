@@ -13,8 +13,8 @@
  */
 
 import {useScansStore} from "@/stores";
-import {AnalysisProfile, type ClassificationSelection, PaymentType} from "@/types/invoices";
-import {type CachedScan, ScanMetadataKey, ScanMetadataStatus, ScanStatus} from "@/types/scans";
+import {AnalysisProfile, type ClassificationSelection, type Invoice, PaymentType} from "@/types/invoices";
+import {type CachedScan, ScanMetadataStatus, ScanStatus} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
@@ -57,6 +57,29 @@ interface InvoiceDetails {
 }
 
 /**
+ * Retryable attachment work for an invoice that was created successfully.
+ *
+ * The invoice is deliberately retained so retrying never creates another
+ * invoice. Only scans whose blob metadata update did not complete are retried.
+ */
+type PendingAttachmentFinalization = Readonly<{
+  readonly invoice: Invoice;
+  readonly pendingScans: ReadonlyArray<CachedScan>;
+  readonly manualClassificationApplied: boolean;
+}>;
+
+/** Safe UI projection of a retryable attachment-finalization state. */
+type AttachmentFinalizationState = Readonly<{
+  readonly invoiceId: string;
+  readonly pendingScanIds: ReadonlyArray<string>;
+}>;
+
+type AttachmentReconciliationResult = Readonly<{
+  readonly completedScanIds: ReadonlyArray<string>;
+  readonly pendingScans: ReadonlyArray<CachedScan>;
+}>;
+
+/**
  * Context value type definition.
  */
 interface CreateInvoiceContextValue {
@@ -85,6 +108,8 @@ interface CreateInvoiceContextValue {
   // Invoice creation
   isCreating: boolean;
   createInvoiceWithScans: () => Promise<void>;
+  attachmentFinalization: AttachmentFinalizationState | null;
+  retryAttachmentFinalization: () => Promise<void>;
 }
 
 /**
@@ -117,6 +142,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
   const [currentStep, setCurrentStep] = useState<WizardStep>("select-scans");
   const [selectedScans, setSelectedScans] = useState<CachedScan[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [pendingAttachmentFinalization, setPendingAttachmentFinalization] = useState<PendingAttachmentFinalization | null>(null);
 
   // Invoice details state
   const [invoiceDetails, setInvoiceDetails] = useState<InvoiceDetails>(() => ({
@@ -202,8 +228,105 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
     setInvoiceDetails((prev) => ({...prev, description}));
   }, []);
 
+  /**
+   * Persists one authoritative attachment marker for every selected scan.
+   *
+   * @remarks
+   * Every update is awaited. A rejected result and a thrown external-boundary
+   * error both remain retryable rather than being suppressed.
+   */
+  const reconcileScanAttachments = useCallback(
+    async (invoice: Invoice, scansToReconcile: ReadonlyArray<CachedScan>): Promise<AttachmentReconciliationResult> => {
+      const outcomes = await Promise.all(
+        scansToReconcile.map(async (scan) => {
+          try {
+            const result = await updateScan({
+              scanId: scan.id,
+              metadataAdd: {
+                status: ScanMetadataStatus.ATTACHED,
+                attachedTo: invoice.id,
+              },
+            });
+            return {scan, succeeded: result.success} as const;
+          } catch {
+            return {scan, succeeded: false} as const;
+          }
+        }),
+      );
+
+      return {
+        completedScanIds: outcomes.filter((outcome) => outcome.succeeded).map((outcome) => outcome.scan.id),
+        pendingScans: outcomes.filter((outcome) => !outcome.succeeded).map((outcome) => outcome.scan),
+      };
+    },
+    [],
+  );
+
+  /**
+   * Enqueues durable analysis only after all attachment metadata is reconciled.
+   */
+  const enqueueAnalysisAndNavigate = useCallback(
+    async (invoice: Invoice, manualClassificationApplied: boolean): Promise<void> => {
+      const analysisResult = await analyzeInvoice({
+        invoiceIdentifier: invoice.id,
+        request: {
+          profile: AnalysisProfile.Comprehensive,
+          overrides: getCreateAnalysisOverrides(manualClassificationApplied),
+        },
+      }).catch(() => null);
+
+      if (analysisResult?.success) {
+        toast.success(t((m) => m.forms.invoices.createInvoice.notifications.createdAndAnalysisQueued));
+      } else {
+        toast.error(t((m) => m.forms.invoices.createInvoice.notifications.analysisNotQueued));
+      }
+
+      router.push(`/domains/invoices/view-invoice/${invoice.id}`);
+    },
+    [router, t],
+  );
+
+  /**
+   * Retries only attachment metadata that failed after a successful invoice create.
+   */
+  const retryAttachmentFinalization = useCallback(async (): Promise<void> => {
+    if (pendingAttachmentFinalization === null) {
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const reconciliation = await reconcileScanAttachments(
+        pendingAttachmentFinalization.invoice,
+        pendingAttachmentFinalization.pendingScans,
+      );
+      if (reconciliation.pendingScans.length > 0) {
+        setPendingAttachmentFinalization({
+          ...pendingAttachmentFinalization,
+          pendingScans: reconciliation.pendingScans,
+        });
+        toast.error(
+          t((m) => m.forms.invoices.createInvoice.notifications.attachmentFinalizationFailed, {
+            count: String(reconciliation.pendingScans.length),
+          }),
+        );
+        return;
+      }
+
+      setPendingAttachmentFinalization(null);
+      await enqueueAnalysisAndNavigate(pendingAttachmentFinalization.invoice, pendingAttachmentFinalization.manualClassificationApplied);
+    } finally {
+      setIsCreating(false);
+    }
+  }, [enqueueAnalysisAndNavigate, pendingAttachmentFinalization, reconcileScanAttachments, t]);
+
   // Create invoice orchestration
   const createInvoiceWithScans = useCallback(async () => {
+    if (pendingAttachmentFinalization !== null) {
+      await retryAttachmentFinalization();
+      return;
+    }
+
     setIsCreating(true);
     try {
       if (selectedScans.length === 0) {
@@ -251,54 +374,53 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
 
       const manualClassificationApplied = invoiceDetails.classification !== null;
 
-      // Mark scans as used in local store (immediate UI update)
+      // The invoice has already associated these scans. Mark the local store now
+      // so a retry cannot create a duplicate invoice while metadata is reconciled.
       const scanIds = selectedScans.map((s) => s.id);
       markScansAsUsedByInvoice(scanIds, invoice.id);
 
-      // Persist attachment metadata to blob storage (fire-and-forget)
-      for (const scan of selectedScans) {
-        updateScan({
-          scanId: scan.id,
-          metadataAdd: {
-            status: ScanMetadataStatus.ATTACHED,
-            attachedAt: new Date(),
-            attachedBy: invoice.userIdentifier,
-            attachedTo: invoice.id,
-          },
-          metadataRemove: [
-            ScanMetadataKey.DETACHED_AT,
-            ScanMetadataKey.DETACHED_BY,
-            ScanMetadataKey.DETACHED_FROM,
-            ScanMetadataKey.ARCHIVED_AT,
-            ScanMetadataKey.ARCHIVED_BY,
-          ],
-        }).catch(() => undefined);
+      const reconciliation = await reconcileScanAttachments(invoice, selectedScans);
+      if (reconciliation.pendingScans.length > 0) {
+        setPendingAttachmentFinalization({
+          invoice,
+          pendingScans: reconciliation.pendingScans,
+          manualClassificationApplied,
+        });
+        toast.error(
+          t((m) => m.forms.invoices.createInvoice.notifications.attachmentFinalizationFailed, {
+            count: String(reconciliation.pendingScans.length),
+          }),
+        );
+        return;
       }
 
-      // Await only the analysis endpoint's durable HTTP 202 acknowledgement.
-      // This never waits for OCR or worker completion, but prevents navigation
-      // from terminating the enqueue request before it reaches durable storage.
-      const analysisResult = await analyzeInvoice({
-        invoiceIdentifier: invoice.id,
-        request: {
-          profile: AnalysisProfile.Comprehensive,
-          overrides: getCreateAnalysisOverrides(manualClassificationApplied),
-        },
-      }).catch(() => null);
-
-      if (analysisResult?.success) {
-        toast.success(t((m) => m.forms.invoices.createInvoice.notifications.createdAndAnalysisQueued));
-      } else {
-        toast.error(t((m) => m.forms.invoices.createInvoice.notifications.analysisNotQueued));
-      }
-
-      router.push(`/domains/invoices/view-invoice/${invoice.id}`);
+      await enqueueAnalysisAndNavigate(invoice, manualClassificationApplied);
     } catch {
       toast.error(t((m) => m.forms.invoices.createInvoice.notifications.createFailed));
     } finally {
       setIsCreating(false);
     }
-  }, [selectedScans, invoiceDetails, markScansAsUsedByInvoice, router, t]);
+  }, [
+    enqueueAnalysisAndNavigate,
+    invoiceDetails,
+    markScansAsUsedByInvoice,
+    pendingAttachmentFinalization,
+    reconcileScanAttachments,
+    retryAttachmentFinalization,
+    selectedScans,
+    t,
+  ]);
+
+  const attachmentFinalization = useMemo<AttachmentFinalizationState | null>(
+    () =>
+      pendingAttachmentFinalization === null
+        ? null
+        : {
+            invoiceId: pendingAttachmentFinalization.invoice.id,
+            pendingScanIds: pendingAttachmentFinalization.pendingScans.map((scan) => scan.id),
+          },
+    [pendingAttachmentFinalization],
+  );
 
   const contextValue: CreateInvoiceContextValue = useMemo(
     () => ({
@@ -320,6 +442,8 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       setDescription,
       isCreating,
       createInvoiceWithScans,
+      attachmentFinalization,
+      retryAttachmentFinalization,
     }),
     [
       currentStep,
@@ -340,6 +464,8 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       setDescription,
       isCreating,
       createInvoiceWithScans,
+      attachmentFinalization,
+      retryAttachmentFinalization,
     ],
   );
 

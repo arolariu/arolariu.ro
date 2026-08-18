@@ -36,7 +36,7 @@ function createPayload(overrides: Partial<CreateInvoiceDtoPayload> = {}): Create
     scans: [
       {
         type: InvoiceScanType.HEIF,
-        location: "https://storage.test/scan.heif",
+        location: "https://storage.analysis.test/invoices/scans/scan.heif",
         metadata: {source: "upload"},
       },
     ],
@@ -151,7 +151,7 @@ describe("createInvoice", () => {
     // Arrange
     const payload = {
       ...createPayload(),
-      scans: [{type: 9, location: "https://storage.test/scan.heic", metadata: {}}],
+      scans: [{type: 9, location: "https://storage.analysis.test/invoices/scans/scan.heic", metadata: {}}],
     };
 
     // Act
@@ -165,7 +165,7 @@ describe("createInvoice", () => {
   it("does not read, log, or return a rejected response body or submitted SAS URL", async () => {
     // Arrange
     const sensitiveBody = "provider OCR output for ocr@example.test";
-    const sensitiveUrl = "https://storage.test/scan.jpg?sig=sensitive";
+    const sensitiveUrl = "https://storage.analysis.test/invoices/scans/scan.jpg?sig=sensitive";
     const rejectedResponse = new Response(sensitiveBody, {status: 500});
     const readBody = vi.spyOn(rejectedResponse, "text");
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
@@ -182,5 +182,16 @@ describe("createInvoice", () => {
     const output = JSON.stringify([result, ...consoleError.mock.calls, ...consoleInfo.mock.calls]);
     expect(output).not.toContain(sensitiveBody);
     expect(output).not.toContain(sensitiveUrl);
+  });
+
+  it("rejects a scan location outside the configured invoices container before creating a request", async () => {
+    const result = await createInvoice(
+      createPayload({
+        scans: [{type: InvoiceScanType.JPEG, location: "https://storage.analysis.test/other/scan.jpg", metadata: {}}],
+      }),
+    );
+
+    expect(result).toMatchObject({success: false, error: {code: "VALIDATION_ERROR"}});
+    expect(getAnalysisApiRequests()).toHaveLength(0);
   });
 });

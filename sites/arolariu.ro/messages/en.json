@@ -863,6 +863,11 @@
           }
         },
         "recipes": {
+          "difficulty": {
+            "easy": "Easy",
+            "medium": "Medium",
+            "hard": "Hard"
+          },
           "purchasedIngredients": "Purchased ingredients",
           "pantryStaples": "Assumed pantry staples",
           "missingOptionalIngredients": "Missing optional ingredients",
@@ -2197,7 +2202,8 @@
           "analysisNotQueued": "Invoice created, but analysis could not be queued. You can retry it from the invoice page.",
           "classificationNotSaved": "The invoice was created, but its classification could not be saved. You can retry from the invoice page.",
           "createFailed": "Unable to create the invoice. Please try again.",
-          "createdAndAnalysisQueued": "Invoice created. Analysis was queued."
+          "createdAndAnalysisQueued": "Invoice created. Analysis was queued.",
+          "attachmentFinalizationFailed": "Invoice created, but {count} scan attachment updates still need to be finalized. Retry before leaving this page."
         },
         "metadata": {
           "description": "Create a new invoice from your uploaded scans.",
@@ -2211,7 +2217,8 @@
           "actions": {
             "create": "Create Invoice",
             "creating": "Creating invoice...",
-            "hint": "This will create the invoice and upload the selected scans."
+            "hint": "This will create the invoice and upload the selected scans.",
+            "retryAttachmentFinalization": "Retry attachment finalization"
           },
           "classificationFallback": "{system}: {code}",
           "classificationResult": "{code}: {label}",
@@ -2810,6 +2817,10 @@
             "createFirstRecipe": "Create Your First Recipe",
             "generate": "Generate"
           },
+          "tabs": {
+            "possibleRecipes": "Possible Recipes",
+            "additionalInfo": "Additional Info"
+          },
           "emptyState": {
             "noRecipesAvailable": "No recipes available yet"
           },
@@ -3113,10 +3124,25 @@
           "copySuccess": "Summary copied to clipboard",
           "copySummary": {
             "description": "Copy text summary to clipboard",
+            "labels": {
+              "invoice": "Invoice",
+              "merchant": "Merchant",
+              "date": "Date",
+              "total": "Total",
+              "items": "Items"
+            },
+            "notAvailable": "Not available",
             "title": "Copy Summary"
           },
           "csv": {
             "description": "Download items as spreadsheet",
+            "headers": {
+              "productName": "Product Name",
+              "quantity": "Quantity",
+              "price": "Price",
+              "total": "Total",
+              "category": "Category"
+            },
             "title": "Export as CSV"
           },
           "csvError": "Failed to export CSV",
@@ -3243,6 +3269,7 @@
             "compare": "Comparison",
             "current": "This Invoice"
           },
+          "invoiceCount": "{count, plural, one {# invoice} other {# invoices}}",
           "title": "Analytics & Insights"
         },
         "invoiceGuestBanner": {

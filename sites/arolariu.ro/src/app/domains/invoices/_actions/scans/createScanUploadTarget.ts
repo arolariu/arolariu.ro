@@ -162,7 +162,7 @@ export async function createScanUploadTarget(input: ServerActionInputType): Serv
     try {
       // Step 1. Fetch authenticated user
       addSpanEvent("bff.user.fetch.start");
-      logWithTrace("info", "Fetching BFF user for authentication", {}, "server");
+      logWithTrace("info", "scan.upload-target.start", undefined, "server");
       const {userIdentifier} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.fetch.complete");
 

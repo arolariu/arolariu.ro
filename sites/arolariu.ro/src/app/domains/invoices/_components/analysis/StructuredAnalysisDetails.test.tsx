@@ -53,14 +53,10 @@ const analysisClassification: StandardClassification = {
 
 describe("StructuredAnalysisDetails", () => {
   it.each([
-    ["not assessed", null, "cards.invoices.analysisResults.allergens.notAssessed"],
-    ["no signals", {status: AllergenAssessmentStatus.NoSignals, signals: []}, "cards.invoices.analysisResults.allergens.noSignals"],
-    [
-      "insufficient data",
-      {status: AllergenAssessmentStatus.InsufficientData, signals: []},
-      "cards.invoices.analysisResults.allergens.insufficientData",
-    ],
-    ["detected", detectedAssessment, "cards.invoices.analysisResults.allergens.detected"],
+    ["not assessed", null, "Not assessed"],
+    ["no signals", {status: AllergenAssessmentStatus.NoSignals, signals: []}, "No signals in available evidence"],
+    ["insufficient data", {status: AllergenAssessmentStatus.InsufficientData, signals: []}, "Insufficient data"],
+    ["detected", detectedAssessment, "Signals detected"],
   ] as const)("renders the honest %s allergen state", (_name, assessment, expected) => {
     renderWithLocale(<AllergenAssessmentDetails assessment={assessment} />);
 
@@ -70,9 +66,9 @@ describe("StructuredAnalysisDetails", () => {
   it("renders detected EU-14 code, evidence level, confidence, and evidence text", () => {
     renderWithLocale(<AllergenAssessmentDetails assessment={detectedAssessment} />);
 
-    expect(screen.getByText("cards.invoices.analysisResults.allergens.codes.milk")).toBeInTheDocument();
-    expect(screen.getByText(/cards.invoices.analysisResults.allergens.explicit/)).toBeInTheDocument();
-    expect(screen.getByText(/cards.invoices.analysisResults.allergens.confidence/)).toBeInTheDocument();
+    expect(screen.getByText("Milk")).toBeInTheDocument();
+    expect(screen.getByText(/Explicit evidence/)).toBeInTheDocument();
+    expect(screen.getByText(/Advisory confidence: 95%/)).toBeInTheDocument();
     expect(screen.getByText("ingredients: milk")).toBeInTheDocument();
   });
 
@@ -84,17 +80,17 @@ describe("StructuredAnalysisDetails", () => {
   it("renders canonical classification provenance without inventing manual confidence", () => {
     const rendered = renderWithLocale(<ClassificationProvenance classification={analysisClassification} />);
 
-    expect(screen.getByText("cards.invoices.analysisResults.classification.analysisOrigin")).toBeInTheDocument();
-    expect(screen.getByText(/cards.invoices.analysisResults.classification.confidence/)).toBeInTheDocument();
-    expect(screen.getByText("cards.invoices.analysisResults.classification.root")).toBeInTheDocument();
+    expect(screen.getByText("Analysis result")).toBeInTheDocument();
+    expect(screen.getByText(/Advisory confidence: 80%/)).toBeInTheDocument();
+    expect(screen.getByText("Root: Food/Beverage/Tobacco (10000000)")).toBeInTheDocument();
 
     rendered.unmount();
     renderWithLocale(
       <ClassificationProvenance classification={{...analysisClassification, origin: ClassificationOrigin.Manual, confidence: null}} />,
     );
 
-    expect(screen.getByText("cards.invoices.analysisResults.classification.manualOrigin")).toBeInTheDocument();
-    expect(screen.queryByText(/cards.invoices.analysisResults.classification.confidence/)).toBeNull();
+    expect(screen.getByText("Manual selection")).toBeInTheDocument();
+    expect(screen.queryByText(/Advisory confidence/)).toBeNull();
   });
 
   it("renders complete recipe groups, timing, ordered steps, and warnings", () => {
@@ -109,11 +105,12 @@ describe("StructuredAnalysisDetails", () => {
       />,
     );
 
-    expect(screen.getByText("cards.invoices.analysisResults.recipes.purchasedIngredients")).toBeInTheDocument();
-    expect(screen.getByText("cards.invoices.analysisResults.recipes.pantryStaples")).toBeInTheDocument();
-    expect(screen.getByText("cards.invoices.analysisResults.recipes.missingOptionalIngredients")).toBeInTheDocument();
-    expect(screen.getByText("cards.invoices.analysisResults.recipes.steps")).toBeInTheDocument();
-    expect(screen.getByText("cards.invoices.analysisResults.recipes.warnings")).toBeInTheDocument();
-    expect(screen.getByText("cards.invoices.analysisResults.recipes.totalMinutes")).toBeInTheDocument();
+    expect(screen.getByText("Easy")).toBeInTheDocument();
+    expect(screen.getByText("Purchased ingredients")).toBeInTheDocument();
+    expect(screen.getByText("Assumed pantry staples")).toBeInTheDocument();
+    expect(screen.getByText("Missing optional ingredients")).toBeInTheDocument();
+    expect(screen.getByText("Preparation steps")).toBeInTheDocument();
+    expect(screen.getByText("Allergen warnings")).toBeInTheDocument();
+    expect(screen.getByText("Total: 25 min")).toBeInTheDocument();
   });
 });

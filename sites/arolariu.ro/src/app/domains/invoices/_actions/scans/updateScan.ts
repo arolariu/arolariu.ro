@@ -25,27 +25,42 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {resolveBlobObjectByMetadata, updateBlobObject} from "@/lib/azure/storageClient";
-import {convertBase64ToBlob, createErrorResult, type ServerActionResult} from "@/lib/utils.server";
+import {convertBase64ToBlob, type ServerActionResult} from "@/lib/utils.server";
 import {revalidatePath} from "next/cache";
-import {type Scan, type ScanMetadata, ScanMetadataKey, ScanStatus} from "@/types/scans";
-import {mimeTypeToScanType} from "../../_utils/mimeTypeUtilities";
+import {type Scan, type ScanMetadata, ScanDocumentKind, ScanDocumentRole, ScanMetadataKey, ScanMetadataStatus} from "@/types/scans";
+import {isHeicScanMimeType, isSupportedScanMimeType, mimeTypeToScanType} from "../../_utils/mimeTypeUtilities";
 import {readBlobMetadata, writeBlobMetadata} from "../../_utils/metadataUtilities";
 
 /**
- * Input parameters for updating a scan.
+ * Exact caller-controlled metadata fields for a scan update.
+ *
+ * Server-owned identity, upload, and lifecycle-audit fields never cross this
+ * boundary. Attachment actor and timestamp fields are derived on the server.
  */
-type ServerActionInputType = Readonly<{
-  /** Scan ID to locate and update */
+type MutableMetadataPatch = Readonly<{
+  /** User-visible scan name. */
+  readonly displayName?: string;
+  /** User-controlled grouping label. */
+  readonly collectionName?: string;
+  /** Document classification selected by the user. */
+  readonly documentKind?: ScanDocumentKind;
+  /** Document role selected by the user. */
+  readonly documentRole?: ScanDocumentRole;
+  /** Lifecycle state requested by the authorized workflow. */
+  readonly status?: ScanMetadataStatus;
+  /** Invoice identifier associated with an attachment workflow. */
+  readonly attachedTo?: string;
+}>;
+
+/** Validated outer request accepted by the update action. */
+type ValidatedUpdateScanInput = Readonly<{
   scanId: string;
-  /** Optional content replacement */
   scanObject?: Readonly<{
     base64Data: string;
     mediaType: string;
   }>;
-  /** Metadata fields to add or update */
-  metadataAdd?: Partial<ScanMetadata>;
-  /** Metadata keys to remove */
-  metadataRemove?: ReadonlyArray<ScanMetadataKey>;
+  metadataAdd?: MutableMetadataPatch;
+  metadataRemove: ReadonlyArray<"displayName" | "collectionName" | "attachedTo">;
 }>;
 
 /**
@@ -58,20 +73,183 @@ type ServerActionOutputType = ServerActionResult<
   }>
 >;
 
+const MAXIMUM_METADATA_VALUE_LENGTH = 512;
+const MAXIMUM_BASE64_DATA_LENGTH = 14 * 1024 * 1024;
+const MUTABLE_METADATA_KEYS = new Set<keyof MutableMetadataPatch>([
+  ScanMetadataKey.DISPLAY_NAME,
+  ScanMetadataKey.COLLECTION_NAME,
+  ScanMetadataKey.DOCUMENT_KIND,
+  ScanMetadataKey.DOCUMENT_ROLE,
+  ScanMetadataKey.STATUS,
+  ScanMetadataKey.ATTACHED_TO,
+]);
+const DOCUMENT_KIND_VALUES = new Set<string>(Object.values(ScanDocumentKind));
+const DOCUMENT_ROLE_VALUES = new Set<string>(Object.values(ScanDocumentRole));
+const METADATA_STATUS_VALUES = new Set<string>(Object.values(ScanMetadataStatus));
+
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasOnlyKnownKeys(value: Readonly<Record<string, unknown>>, keys: readonly string[]): boolean {
+  return Object.keys(value).every((key) => keys.includes(key));
+}
+
+function isBoundedNonBlankString(value: unknown): value is string {
+  return typeof value === "string" && value.trim() !== "" && value.length <= MAXIMUM_METADATA_VALUE_LENGTH;
+}
+
+function isRemovableMetadataKey(value: unknown): value is ValidatedUpdateScanInput["metadataRemove"][number] {
+  return value === ScanMetadataKey.DISPLAY_NAME || value === ScanMetadataKey.COLLECTION_NAME || value === ScanMetadataKey.ATTACHED_TO;
+}
+
+function isMutableMetadataPatch(value: unknown): value is MutableMetadataPatch {
+  if (!isRecord(value) || !hasOnlyKnownKeys(value, [...MUTABLE_METADATA_KEYS])) {
+    return false;
+  }
+
+  const displayName = value[ScanMetadataKey.DISPLAY_NAME];
+  const collectionName = value[ScanMetadataKey.COLLECTION_NAME];
+  const documentKind = value[ScanMetadataKey.DOCUMENT_KIND];
+  const documentRole = value[ScanMetadataKey.DOCUMENT_ROLE];
+  const status = value[ScanMetadataKey.STATUS];
+  const attachedTo = value[ScanMetadataKey.ATTACHED_TO];
+
+  return (
+    (displayName === undefined || isBoundedNonBlankString(displayName))
+    && (collectionName === undefined || isBoundedNonBlankString(collectionName))
+    && (documentKind === undefined || (typeof documentKind === "string" && DOCUMENT_KIND_VALUES.has(documentKind)))
+    && (documentRole === undefined || (typeof documentRole === "string" && DOCUMENT_ROLE_VALUES.has(documentRole)))
+    && (status === undefined || (typeof status === "string" && METADATA_STATUS_VALUES.has(status)))
+    && (attachedTo === undefined || isBoundedNonBlankString(attachedTo))
+  );
+}
+
+function isMetadataRemovalList(value: unknown): value is ValidatedUpdateScanInput["metadataRemove"] {
+  return Array.isArray(value) && value.every(isRemovableMetadataKey) && new Set(value).size === value.length;
+}
+
+function isScanObject(value: unknown): value is ValidatedUpdateScanInput["scanObject"] {
+  return (
+    isRecord(value)
+    && Object.keys(value).length === 2
+    && Object.hasOwn(value, "base64Data")
+    && Object.hasOwn(value, "mediaType")
+    && typeof value["base64Data"] === "string"
+    && value["base64Data"].length > 0
+    && value["base64Data"].length <= MAXIMUM_BASE64_DATA_LENGTH
+    && typeof value["mediaType"] === "string"
+    && !isHeicScanMimeType(value["mediaType"])
+    && isSupportedScanMimeType(value["mediaType"])
+  );
+}
+
+function isUpdateScanInput(value: unknown): value is ValidatedUpdateScanInput {
+  return (
+    isRecord(value)
+    && hasOnlyKnownKeys(value, ["scanId", "scanObject", "metadataAdd", "metadataRemove"])
+    && isBoundedNonBlankString(value["scanId"])
+    && (!Object.hasOwn(value, "scanObject") || isScanObject(value["scanObject"]))
+    && (!Object.hasOwn(value, "metadataAdd") || isMutableMetadataPatch(value["metadataAdd"]))
+    && (!Object.hasOwn(value, "metadataRemove") || isMetadataRemovalList(value["metadataRemove"]))
+  );
+}
+
+function includesRemoval(
+  metadataRemove: ValidatedUpdateScanInput["metadataRemove"],
+  key: ValidatedUpdateScanInput["metadataRemove"][number],
+): boolean {
+  return metadataRemove.includes(key);
+}
+
+/**
+ * Merges validated caller metadata while writing immutable fields last.
+ *
+ * @param currentMetadata - Metadata read from the blob before mutation.
+ * @param patch - Exact mutable patch from the caller.
+ * @param metadataRemove - Validated optional metadata removals.
+ * @param userIdentifier - Authenticated actor for server-owned audit fields.
+ * @returns Complete metadata ready for provider serialization.
+ */
+function resolveOptionalMetadataValue(
+  currentValue: string | undefined,
+  patchedValue: string | undefined,
+  metadataRemove: ValidatedUpdateScanInput["metadataRemove"],
+  key: ValidatedUpdateScanInput["metadataRemove"][number],
+): string | undefined {
+  if (patchedValue !== undefined) {
+    return patchedValue;
+  }
+
+  return includesRemoval(metadataRemove, key) ? undefined : currentValue;
+}
+
+function createFinalMetadata(
+  currentMetadata: ScanMetadata,
+  patch: MutableMetadataPatch | undefined,
+  metadataRemove: ValidatedUpdateScanInput["metadataRemove"],
+  userIdentifier: string,
+): ScanMetadata {
+  const status = patch?.status ?? currentMetadata.status;
+  const now = new Date();
+  const isAttached = status === ScanMetadataStatus.ATTACHED;
+  const displayName = resolveOptionalMetadataValue(
+    currentMetadata.displayName,
+    patch?.displayName,
+    metadataRemove,
+    ScanMetadataKey.DISPLAY_NAME,
+  );
+  const collectionName = resolveOptionalMetadataValue(
+    currentMetadata.collectionName,
+    patch?.collectionName,
+    metadataRemove,
+    ScanMetadataKey.COLLECTION_NAME,
+  );
+  const attachedTo = resolveOptionalMetadataValue(
+    currentMetadata.attachedTo,
+    patch?.attachedTo,
+    metadataRemove,
+    ScanMetadataKey.ATTACHED_TO,
+  );
+
+  return {
+    ...(displayName ? {displayName} : {}),
+    ...(collectionName ? {collectionName} : {}),
+    documentKind: patch?.documentKind ?? currentMetadata.documentKind,
+    documentRole: patch?.documentRole ?? currentMetadata.documentRole,
+    status,
+    ...(isAttached && attachedTo ? {attachedTo} : {}),
+    ...(isAttached ? {attachedAt: currentMetadata.attachedAt ?? now, attachedBy: currentMetadata.attachedBy ?? userIdentifier} : {}),
+    // Server-owned metadata is written last so no caller patch can overwrite it.
+    scanId: currentMetadata.scanId,
+    ownerId: currentMetadata.ownerId,
+    uploadedAt: currentMetadata.uploadedAt,
+    uploadedBy: currentMetadata.uploadedBy,
+    lastModifiedAt: now,
+    lastModifiedBy: userIdentifier,
+  };
+}
+
 /**
  * Updates scan blob content and/or metadata by scanId.
  *
  * @param input - Update parameters with scanId, optional content, and metadata patch
  * @returns A result object containing the updated scan entity on success
  */
-export async function updateScan({scanId, scanObject, metadataAdd, metadataRemove = []}: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{updateScan}}, with scanId:", scanId);
-
+export async function updateScan(input: unknown): ServerActionOutputType {
   return withSpan("api.actions.scans.updateScan", async () => {
+    if (!isUpdateScanInput(input)) {
+      addSpanEvent("scan.update.rejected", {errorCode: "VALIDATION_ERROR"});
+      logWithTrace("warn", "scan.update.rejected", {errorCode: "VALIDATION_ERROR"}, "server");
+      return {success: false, error: {code: "VALIDATION_ERROR", message: "Scan update request is invalid."}};
+    }
+
+    const {scanId, scanObject, metadataAdd} = input;
+    const metadataRemove = input.metadataRemove ?? [];
     try {
       // Step 1. Fetch user from auth service
       addSpanEvent("bff.user.fetch.start");
-      logWithTrace("info", "Fetching BFF user for authentication", {}, "server");
+      logWithTrace("info", "scan.update.start", undefined, "server");
       const {userIdentifier} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.fetch.complete");
 
@@ -99,8 +277,8 @@ export async function updateScan({scanId, scanObject, metadataAdd, metadataRemov
 
       if (!blobObject) {
         addSpanEvent("scan.not.found");
-        logWithTrace("warn", "Scan not found", {scanId}, "server");
-        return createErrorResult(new Error(`Scan with ID "${scanId}" not found.`));
+        logWithTrace("warn", "scan.update.not-found", {errorCode: "NOT_FOUND"}, "server");
+        return {success: false, error: {code: "NOT_FOUND", message: "Scan not found."}};
       }
 
       // Step 4. Parse and validate current metadata
@@ -108,50 +286,18 @@ export async function updateScan({scanId, scanObject, metadataAdd, metadataRemov
 
       if (currentMetadata.ownerId !== userIdentifier) {
         addSpanEvent("authorization.failed");
-        logWithTrace("warn", "User not authorized to update scan", {scanId, ownerId: currentMetadata.ownerId}, "server");
-        return createErrorResult(new Error("You are not authorized to update this scan."));
+        logWithTrace("warn", "scan.update.unauthorized", {errorCode: "AUTH_ERROR"}, "server");
+        return {success: false, error: {code: "AUTH_ERROR", message: "You are not authorized to update this scan."}};
       }
 
       // Step 5. Apply metadata patch
-      const patchedMetadata: Partial<ScanMetadata> = {...currentMetadata};
-
-      // Remove specified keys
-      for (const key of metadataRemove) {
-        const isImmutableKey =
-          key === ScanMetadataKey.SCAN_ID
-          || key === ScanMetadataKey.OWNER_ID
-          || key === ScanMetadataKey.UPLOADED_AT
-          || key === ScanMetadataKey.UPLOADED_BY;
-        if (!isImmutableKey) {
-          delete patchedMetadata[key];
-        }
-      }
-
-      // Add/update specified fields
-      if (metadataAdd) {
-        Object.assign(patchedMetadata, metadataAdd);
-      }
-
-      // Construct final metadata with lifecycle tracking
-      // Ensure all required fields are present
-      const finalMetadata: ScanMetadata = {
-        scanId: currentMetadata.scanId,
-        ownerId: currentMetadata.ownerId,
-        uploadedAt: currentMetadata.uploadedAt,
-        uploadedBy: currentMetadata.uploadedBy,
-        documentKind: patchedMetadata.documentKind ?? currentMetadata.documentKind,
-        documentRole: patchedMetadata.documentRole ?? currentMetadata.documentRole,
-        status: patchedMetadata.status ?? currentMetadata.status,
-        ...patchedMetadata,
-        lastModifiedAt: new Date(),
-        lastModifiedBy: userIdentifier,
-      };
+      const finalMetadata = createFinalMetadata(currentMetadata, metadataAdd, metadataRemove, userIdentifier);
 
       const updatedBlobMetadata = writeBlobMetadata(finalMetadata);
 
       // Step 6. Update blob content and/or metadata
       addSpanEvent("azure.blob.update.start");
-      logWithTrace("info", "Updating scan in Azure Blob Storage", {blobName: blobObject.name}, "server");
+      logWithTrace("info", "scan.update.storage.start", undefined, "server");
 
       const contentType = scanObject?.mediaType;
       const content: Uint8Array | undefined = await (async () => {
@@ -174,7 +320,7 @@ export async function updateScan({scanId, scanObject, metadataAdd, metadataRemov
       });
       addSpanEvent("azure.blob.update.complete");
 
-      logWithTrace("info", "Successfully updated scan in Azure", {scanId}, "server");
+      logWithTrace("info", "scan.update.complete", undefined, "server");
       revalidatePath("/domains/invoices/view-scans", "page");
 
       // Step 7. Construct and return updated Scan entity
@@ -187,7 +333,7 @@ export async function updateScan({scanId, scanObject, metadataAdd, metadataRemov
         sizeInBytes: updatedBlob.contentLength,
         scanType: mimeTypeToScanType(updatedBlob.contentType),
         uploadedAt: finalMetadata.uploadedAt,
-        status: finalMetadata.status as ScanStatus,
+        status: finalMetadata.status,
         metadata: finalMetadata,
       };
 
@@ -195,12 +341,10 @@ export async function updateScan({scanId, scanObject, metadataAdd, metadataRemov
         success: true,
         data: {scan},
       } as const;
-    } catch (error: unknown) {
+    } catch {
       addSpanEvent("scan.update.error");
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error updating scan", {error}, "server");
-      console.error("Error updating scan:", error);
-      return createErrorResult(new Error(errorMessage));
+      logWithTrace("error", "scan.update.failed", {errorCode: "NETWORK_ERROR"}, "server");
+      return {success: false, error: {code: "NETWORK_ERROR", message: "Unable to update the scan. Please try again."}};
     }
   }) satisfies ServerActionOutputType;
 }

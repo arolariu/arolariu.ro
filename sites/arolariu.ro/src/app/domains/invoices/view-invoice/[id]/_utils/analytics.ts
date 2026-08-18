@@ -139,7 +139,12 @@ export type SpendingTrendData = {
  * - Highlights the month containing the current invoice
  * - Returns empty array if allInvoices has fewer than 2 invoices
  */
-export function getSpendingTrend(currentInvoice: Invoice, allInvoices: ReadonlyArray<Invoice>): SpendingTrendData[] {
+export function getSpendingTrend(
+  currentInvoice: Invoice,
+  allInvoices: ReadonlyArray<Invoice>,
+  locale: string,
+  formatInvoiceCount: (count: number) => string,
+): SpendingTrendData[] {
   // Need at least 2 invoices for meaningful trend data
   if (allInvoices.length < 2) {
     return [];
@@ -197,10 +202,10 @@ export function getSpendingTrend(currentInvoice: Invoice, allInvoices: ReadonlyA
   return Array.from(monthlyData.entries())
     .toSorted(([_keyA, dataA], [_keyB, dataB]) => dataA.date.getTime() - dataB.date.getTime())
     .map(([monthKey, data]) => ({
-      date: data.date.toLocaleDateString("en-US", {month: "short", year: "numeric"}),
+      date: data.date.toLocaleDateString(locale, {month: "short", year: "numeric"}),
       amount: Math.round(data.amount * 100) / 100,
       isCurrent: monthKey === currentMonthKey,
-      name: `${data.count} invoice${data.count > 1 ? "s" : ""}`,
+      name: formatInvoiceCount(data.count),
       invoices: data.invoiceDetails,
     }));
 }
@@ -478,7 +483,7 @@ export type BudgetImpact = {
   isNearLimit: boolean;
 };
 
-export function computeBudgetImpact(paymentInformation: PaymentInformation): BudgetImpact {
+export function computeBudgetImpact(paymentInformation: PaymentInformation, locale: string): BudgetImpact {
   const {totalCostAmount, transactionDate} = paymentInformation;
 
   // Simulated budget data
@@ -498,7 +503,7 @@ export function computeBudgetImpact(paymentInformation: PaymentInformation): Bud
   // Determine status
   const isOverBudget = remaining < 0;
   const isNearLimit = percentUsed > 80 && !isOverBudget;
-  const monthName = new Intl.DateTimeFormat("en-US", {month: "long"}).format(today);
+  const monthName = new Intl.DateTimeFormat(locale, {month: "long"}).format(today);
 
   return {
     monthName,
@@ -746,7 +751,7 @@ export function getSpendingIntensityClass(amount: number, maxAmount: number): st
 /**
  * Gets a human-readable weekday name.
  */
-export function getWeekdayName(weekday: number, locale = "en-US"): string {
+export function getWeekdayName(weekday: number, locale: string): string {
   const date = new Date(2024, 0, 7 + weekday); // Jan 7, 2024 is a Sunday
   return new Intl.DateTimeFormat(locale, {weekday: "long"}).format(date);
 }

@@ -259,7 +259,7 @@ describe("updateScan", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toBe("Unauthorized");
+      expect(result.error.message).toBe("Unable to update the scan. Please try again.");
     }
   });
 
@@ -294,7 +294,7 @@ describe("updateScan", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toContain("Update failed");
+      expect(result.error.message).toBe("Unable to update the scan. Please try again.");
     }
   });
 
@@ -369,5 +369,75 @@ describe("updateScan", () => {
     const updateCall = mockUpdateBlobObject.mock.calls[0]?.[0];
     expect(updateCall?.metadata?.["lastModifiedBy"]).toBe("user-123");
     expect(updateCall?.metadata?.["lastModifiedAt"]).toBeDefined();
+  });
+
+  it("rejects reserved metadata ownership overwrite attempts without calling Azure update", async () => {
+    mockResolveBlobObjectByMetadata.mockResolvedValue({
+      name: "scans/user-123/scan_123.jpg",
+      url: "https://storage.test/invoices/scans/user-123/scan_123.jpg",
+      metadata: {
+        scanId: "scan-123",
+        ownerId: "user-123",
+        documentKind: "receipt",
+        documentRole: "primary",
+        status: "ready",
+        uploadedAt: "2024-01-01T00:00:00.000Z",
+        uploadedBy: "user-123",
+      },
+      contentType: "image/jpeg",
+      contentLength: 1024,
+    });
+
+    const result = await updateScan({
+      scanId: "scan-123",
+      metadataAdd: {
+        ownerId: "attacker",
+      },
+    });
+
+    expect(result).toMatchObject({success: false, error: {code: "VALIDATION_ERROR"}});
+    expect(mockResolveBlobObjectByMetadata).not.toHaveBeenCalled();
+    expect(mockUpdateBlobObject).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    {scanId: "scan-123", metadataAdd: {unknownMetadata: "unexpected"}},
+    {scanId: "scan-123", metadataAdd: {displayName: {nested: "not-a-scalar"}}},
+    {scanId: "scan-123", metadataAdd: {displayName: "x".repeat(513)}},
+    {scanId: "scan-123", metadataRemove: ["ownerId"]},
+  ])("rejects unknown, non-scalar, oversized, and reserved metadata patches", async (input) => {
+    const result = await updateScan(input);
+
+    expect(result).toMatchObject({success: false, error: {code: "VALIDATION_ERROR"}});
+    expect(mockResolveBlobObjectByMetadata).not.toHaveBeenCalled();
+    expect(mockUpdateBlobObject).not.toHaveBeenCalled();
+  });
+
+  it("does not emit scan identity, owner, blob, URL, or raw error values through telemetry", async () => {
+    const sensitiveBlobUrl = "https://storage.test/invoices/scans/user-123/private.jpg?sig=secret";
+    mockResolveBlobObjectByMetadata.mockResolvedValue({
+      name: "scans/user-123/private.jpg",
+      url: sensitiveBlobUrl,
+      metadata: {
+        scanId: "private-scan-123",
+        ownerId: "user-123",
+        documentKind: "receipt",
+        documentRole: "primary",
+        status: "ready",
+        uploadedAt: "2024-01-01T00:00:00.000Z",
+        uploadedBy: "user-123",
+      },
+      contentType: "image/jpeg",
+      contentLength: 1024,
+    });
+    mockUpdateBlobObject.mockRejectedValue(new Error("provider response with secret details"));
+
+    await updateScan({scanId: "private-scan-123", metadataAdd: {displayName: "receipt.jpg"}});
+
+    const telemetry = JSON.stringify(mockLogWithTrace.mock.calls);
+    for (const sensitiveValue of ["private-scan-123", "user-123", "private.jpg", "storage.test", "secret", "provider response"]) {
+      expect(telemetry).not.toContain(sensitiveValue);
+    }
+    expect(telemetry).toContain("NETWORK_ERROR");
   });
 });

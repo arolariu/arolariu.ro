@@ -39,7 +39,8 @@ const PAYMENT_TYPE_KEYS: Record<number, "unknown" | "cash" | "card" | "transfer"
  */
 export default function ReviewStep(): React.JSX.Element {
   const t = useTranslations();
-  const {selectedScans, invoiceDetails, isCreating, createInvoiceWithScans} = useCreateInvoiceContext();
+  const {selectedScans, invoiceDetails, isCreating, createInvoiceWithScans, attachmentFinalization, retryAttachmentFinalization} =
+    useCreateInvoiceContext();
   const format = useFormatter();
 
   return (
@@ -162,24 +163,44 @@ export default function ReviewStep(): React.JSX.Element {
 
       {/* Create Button */}
       <div className={styles["createSection"]}>
-        <Button
-          size='lg'
-          onClick={createInvoiceWithScans}
-          disabled={isCreating}
-          className={styles["createButton"]}>
-          {isCreating ? (
-            <>
-              <Spinner className={styles["spinner"]} />
-              {t((m) => m.forms.invoices.createInvoice.reviewStep.actions.creating)}
-            </>
-          ) : (
-            <>
-              <TbSparkles />
-              {t((m) => m.forms.invoices.createInvoice.reviewStep.actions.create)}
-            </>
-          )}
-        </Button>
-        <p className={styles["createHint"]}>{t((m) => m.forms.invoices.createInvoice.reviewStep.actions.hint)}</p>
+        {attachmentFinalization === null ? (
+          <>
+            <Button
+              size='lg'
+              onClick={createInvoiceWithScans}
+              disabled={isCreating}
+              className={styles["createButton"]}>
+              {isCreating ? (
+                <>
+                  <Spinner className={styles["spinner"]} />
+                  {t((m) => m.forms.invoices.createInvoice.reviewStep.actions.creating)}
+                </>
+              ) : (
+                <>
+                  <TbSparkles />
+                  {t((m) => m.forms.invoices.createInvoice.reviewStep.actions.create)}
+                </>
+              )}
+            </Button>
+            <p className={styles["createHint"]}>{t((m) => m.forms.invoices.createInvoice.reviewStep.actions.hint)}</p>
+          </>
+        ) : (
+          <div role='alert'>
+            <p className={styles["createHint"]}>
+              {t((m) => m.forms.invoices.createInvoice.notifications.attachmentFinalizationFailed, {
+                count: String(attachmentFinalization.pendingScanIds.length),
+              })}
+            </p>
+            <Button
+              size='lg'
+              onClick={retryAttachmentFinalization}
+              disabled={isCreating}
+              className={styles["createButton"]}>
+              {isCreating ? <Spinner className={styles["spinner"]} /> : <TbSparkles />}
+              {t((m) => m.forms.invoices.createInvoice.reviewStep.actions.retryAttachmentFinalization)}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

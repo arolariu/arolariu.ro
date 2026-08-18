@@ -11,7 +11,9 @@
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {getStorageAccountName, isApprovedInvoiceScanLocation} from "@/lib/azure/storageLocationPolicy";
 import {createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "@/lib/utils.server";
 import {
   InvoiceScanType,
@@ -22,6 +24,7 @@ import {
   type PaymentInformation,
 } from "@/types/invoices";
 import {parseInvoiceTransport} from "@/types/invoices/transport";
+import {isHeicScanFileName} from "../../_utils/mimeTypeUtilities";
 
 type CreateInvoiceInput = Readonly<CreateInvoiceDtoPayload>;
 type MetadataValue = string | number | boolean | null;
@@ -58,7 +61,9 @@ function isSupportedInvoiceScanType(value: unknown): value is InvoiceScanType {
   );
 }
 
-function isCreateScan(value: unknown): boolean {
+function isCreateScan(
+  value: unknown,
+): value is Readonly<{type: InvoiceScanType; location: string; metadata: Readonly<Record<string, MetadataValue>>}> {
   if (!isRecord(value) || !hasExactKeys(value, ["type", "location", "metadata"]) || !isSupportedInvoiceScanType(value["type"])) {
     return false;
   }
@@ -67,11 +72,7 @@ function isCreateScan(value: unknown): boolean {
     return false;
   }
 
-  try {
-    return new URL(value["location"]).protocol === "https:";
-  } catch {
-    return false;
-  }
+  return true;
 }
 
 function isPaymentInformation(value: unknown): value is PaymentInformation {
@@ -161,6 +162,27 @@ function isCreateInvoiceInput(value: unknown): value is CreateInvoiceInput {
   return hasValidCreateInvoiceFields(value) && hasValidCreateInvoiceCollections(value);
 }
 
+function hasApprovedScanLocations(payload: CreateInvoiceInput, storageServiceRoot: string): boolean {
+  const storageAccountName = getStorageAccountName(storageServiceRoot);
+  return (
+    storageAccountName !== null
+    && payload.scans.every((scan) => {
+      try {
+        return (
+          !isHeicScanFileName(new URL(scan.location).pathname)
+          && isApprovedInvoiceScanLocation({
+            location: scan.location,
+            storageServiceRoot,
+            storageAccountName,
+          })
+        );
+      } catch {
+        return false;
+      }
+    })
+  );
+}
+
 function serializeCreateInvoicePayload(payload: CreateInvoiceInput): Omit<CreateInvoiceInput, "paymentInformation">
   & Readonly<{
     paymentInformation: (Omit<PaymentInformation, "transactionDate"> & Readonly<{transactionDate: string}>) | null;
@@ -203,6 +225,12 @@ export async function createInvoice(input: unknown): ServerActionResult<Readonly
 
     try {
       addSpanEvent("bff.invoice.create.start");
+      const storageServiceRoot = await fetchConfigurationValue("Endpoints:Storage:Blob");
+      if (!hasApprovedScanLocations(input, storageServiceRoot)) {
+        addSpanEvent("bff.invoice.create.rejected", {errorCode: "VALIDATION_ERROR"});
+        logWithTrace("warn", "invoice.create.rejected", {errorCode: "VALIDATION_ERROR"}, "server");
+        return {success: false, error: {code: "VALIDATION_ERROR", message: "Invoice creation request is invalid."}};
+      }
       const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       const response = await fetchWithTimeout("/rest/v1/invoices", {
         method: "POST",

@@ -198,7 +198,7 @@ export async function createScan({base64Data, fileName, mimeType}: ServerActionI
     try {
       // Step 1. Fetch user from auth service
       addSpanEvent("bff.user.fetch.start");
-      logWithTrace("info", "Fetching BFF user for authentication", {}, "server");
+      logWithTrace("info", "scan.create.start", undefined, "server");
       const {userIdentifier} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.fetch.complete");
 

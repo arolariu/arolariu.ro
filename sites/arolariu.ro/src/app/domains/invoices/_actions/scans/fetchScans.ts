@@ -74,13 +74,11 @@ type ServerActionOutputType = ServerActionResult<ReadonlyArray<Scan>>;
  * ```
  */
 export async function fetchScans({includeArchived = false}: ServerActionInputType = {}): ServerActionOutputType {
-  console.info(">>> Executing server action {{fetchScans}}, with includeArchived:", includeArchived);
-
   return withSpan("api.actions.scans.fetchScans", async () => {
     try {
       // Step 1. Fetch user from auth service
       addSpanEvent("bff.user.fetch.start");
-      logWithTrace("info", "Fetching BFF user for authentication", {}, "server");
+      logWithTrace("info", "scan.fetch.start", undefined, "server");
       const {userIdentifier} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.fetch.complete");
 
@@ -92,7 +90,6 @@ export async function fetchScans({includeArchived = false}: ServerActionInputTyp
 
       // Step 3. List blobs with user prefix
       addSpanEvent("azure.blob.list.start");
-      logWithTrace("info", "Listing scans from Azure Blob Storage", {userIdentifier}, "server");
       const prefix = `scans/${userIdentifier}/`;
       const scans: Scan[] = [];
 
@@ -130,13 +127,8 @@ export async function fetchScans({includeArchived = false}: ServerActionInputTyp
 
             scans.push(scan);
           }
-        } catch (blobProcessingError) {
-          logWithTrace(
-            "warn",
-            "Skipping scan due to processing error",
-            {blobName: blob.name, error: String(blobProcessingError)},
-            "server",
-          );
+        } catch {
+          logWithTrace("warn", "scan.fetch.metadata-invalid", {errorCode: "VALIDATION_ERROR"}, "server");
         }
       }
       addSpanEvent("azure.blob.list.complete");
@@ -144,17 +136,15 @@ export async function fetchScans({includeArchived = false}: ServerActionInputTyp
       // Step 4. Sort by upload date (newest first)
       scans.sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
 
-      logWithTrace("info", `Successfully fetched ${scans.length} scans`, {count: scans.length}, "server");
+      logWithTrace("info", "scan.fetch.complete", {count: scans.length}, "server");
       return {
         success: true,
         data: scans,
       } as const;
-    } catch (error: unknown) {
+    } catch {
       addSpanEvent("scans.fetch.error");
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error fetching scans from Azure", {error}, "server");
-      console.error("Error fetching scans:", error);
-      return createErrorResult(new Error(errorMessage), "Failed to fetch scans. Please try again.");
+      logWithTrace("error", "scan.fetch.failed", {errorCode: "NETWORK_ERROR"}, "server");
+      return createErrorResult(new Error("Scan fetch failed."), "Failed to fetch scans. Please try again.");
     }
   }) satisfies ServerActionOutputType;
 }

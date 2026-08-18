@@ -10,6 +10,7 @@ import {
   AllergenCode,
   AllergenEvidenceLevel,
   ClassificationOrigin,
+  RecipeDifficulty,
   type AllergenAssessment,
   type AllergenCodeValue,
   type RecipeSuggestion,
@@ -20,6 +21,12 @@ import {useTranslations} from "next-intl-selector";
 import {TbAlertTriangle} from "react-icons/tb";
 import {formatClassificationConfidence, getClassificationRoot} from "../../_utils/classificationUtilities";
 import styles from "./StructuredAnalysisDetails.module.scss";
+
+const RECIPE_DIFFICULTY_KEYS = {
+  [RecipeDifficulty.Easy]: "easy",
+  [RecipeDifficulty.Medium]: "medium",
+  [RecipeDifficulty.Hard]: "hard",
+} as const;
 
 type ClassificationProvenanceProps = Readonly<{
   /** Canonical classification to display, or null before classification. */
@@ -36,7 +43,7 @@ type AllergenAssessmentDetailsProps = Readonly<{
 }>;
 
 /** Resolves a localized EU-14 allergen label without presenting a safety claim. */
-export function AllergenCodeLabel({code}: Readonly<{code: AllergenCodeValue}>): React.JSX.Element {
+export function AllergenCodeLabel({code}: Readonly<{code: AllergenCodeValue}>): React.JSX.Element | null {
   const t = useTranslations();
   switch (code) {
     case AllergenCode.CerealsContainingGluten:
@@ -67,6 +74,8 @@ export function AllergenCodeLabel({code}: Readonly<{code: AllergenCodeValue}>): 
       return <>{t((m) => m.cards.invoices.analysisResults.allergens.codes.lupin)}</>;
     case AllergenCode.Molluscs:
       return <>{t((m) => m.cards.invoices.analysisResults.allergens.codes.molluscs)}</>;
+    default:
+      return null;
   }
 }
 
@@ -74,7 +83,7 @@ function AllergenStatusLabel({
   status,
 }: Readonly<{
   status: Exclude<AllergenAssessment["status"], typeof AllergenAssessmentStatus.Detected> | typeof AllergenAssessmentStatus.Detected;
-}>): React.JSX.Element {
+}>): React.JSX.Element | null {
   const t = useTranslations();
   switch (status) {
     case AllergenAssessmentStatus.Detected:
@@ -83,12 +92,14 @@ function AllergenStatusLabel({
       return <>{t((m) => m.cards.invoices.analysisResults.allergens.noSignals)}</>;
     case AllergenAssessmentStatus.InsufficientData:
       return <>{t((m) => m.cards.invoices.analysisResults.allergens.insufficientData)}</>;
+    default:
+      return null;
   }
 }
 
 function AllergenEvidenceLevelLabel({
   evidenceLevel,
-}: Readonly<{evidenceLevel: AllergenAssessment["signals"][number]["evidenceLevel"]}>): React.JSX.Element {
+}: Readonly<{evidenceLevel: AllergenAssessment["signals"][number]["evidenceLevel"]}>): React.JSX.Element | null {
   const t = useTranslations();
   switch (evidenceLevel) {
     case AllergenEvidenceLevel.Explicit:
@@ -97,6 +108,8 @@ function AllergenEvidenceLevelLabel({
       return <>{t((m) => m.cards.invoices.analysisResults.allergens.inferred)}</>;
     case AllergenEvidenceLevel.Precautionary:
       return <>{t((m) => m.cards.invoices.analysisResults.allergens.precautionary)}</>;
+    default:
+      return null;
   }
 }
 
@@ -233,7 +246,7 @@ export function RecipeSuggestionDetails({recipe}: Readonly<{recipe: RecipeSugges
   return (
     <div className={styles["recipe"]}>
       <div className={styles["recipeMeta"]}>
-        <Badge>{recipe.difficulty}</Badge>
+        <Badge>{t((m) => m.cards.invoices.analysisResults.recipes.difficulty[RECIPE_DIFFICULTY_KEYS[recipe.difficulty]])}</Badge>
         <span>{t((m) => m.cards.invoices.analysisResults.recipes.servings, {count: String(recipe.servings)})}</span>
         <span>{t((m) => m.cards.invoices.analysisResults.recipes.preparationMinutes, {minutes: String(recipe.preparationMinutes)})}</span>
         <span>{t((m) => m.cards.invoices.analysisResults.recipes.cookingMinutes, {minutes: String(recipe.cookingMinutes)})}</span>

@@ -17,7 +17,7 @@ import {
   type Invoice,
 } from "@/types/invoices";
 import {parseInvoiceTransport} from "@/types/invoices/transport";
-import {type Scan, ScanMetadataKey, ScanMetadataStatus} from "@/types/scans";
+import {type Scan, ScanMetadataStatus} from "@/types/scans";
 import {analyzeInvoice} from "../../_actions/invoices";
 import {updateScan} from "../../_actions/scans";
 import {isHeicScanMimeType, scanTypeToInvoiceScanType} from "../../_utils/mimeTypeUtilities";
@@ -321,38 +321,37 @@ async function enqueueInvoiceAnalysis(invoiceIdentifier: string): Promise<Analys
 }
 
 /**
- * Persists attachment metadata without allowing a non-critical metadata update
- * to change the completed invoice or durable analysis result.
+ * Persists the blob-metadata projection after the invoice API has durably
+ * attached the scan. The invoice API attachment is the authoritative source
+ * for this conversion flow, so analysis may follow that durable attachment;
+ * this projection is nevertheless awaited before the action completes.
  *
  * @param scan - Attached scan.
  * @param invoice - Invoice that owns the scan.
- * @param userIdentifier - Authenticated user identifier.
+ * @returns A stable metadata reconciliation outcome.
  */
-function persistAttachmentMetadata(scan: Scan, invoice: Invoice, userIdentifier: string): void {
-  void updateScan({
-    scanId: scan.id,
-    metadataAdd: {
-      status: ScanMetadataStatus.ATTACHED,
-      attachedAt: new Date(),
-      attachedBy: userIdentifier,
-      attachedTo: invoice.id,
-    },
-    metadataRemove: [
-      ScanMetadataKey.DETACHED_AT,
-      ScanMetadataKey.DETACHED_BY,
-      ScanMetadataKey.DETACHED_FROM,
-      ScanMetadataKey.ARCHIVED_AT,
-      ScanMetadataKey.ARCHIVED_BY,
-    ],
-  })
-    .then((result) => {
-      if (!result.success) {
-        logSafeOperation("warn", "scan.attachment-metadata.rejected", {errorCode: result.error.code});
-      }
-    })
-    .catch(() => {
-      logSafeOperation("warn", "scan.attachment-metadata.failed", {errorCode: "NETWORK_ERROR"});
+async function persistAttachmentMetadata(
+  scan: Scan,
+  invoice: Invoice,
+): Promise<Readonly<{success: true}> | Readonly<{success: false; code: ServerActionErrorCode}>> {
+  try {
+    const result = await updateScan({
+      scanId: scan.id,
+      metadataAdd: {
+        status: ScanMetadataStatus.ATTACHED,
+        attachedTo: invoice.id,
+      },
     });
+    if (result.success) {
+      return {success: true};
+    }
+
+    logSafeOperation("warn", "scan.attachment-metadata.rejected", {errorCode: result.error.code});
+    return {success: false, code: result.error.code};
+  } catch {
+    logSafeOperation("warn", "scan.attachment-metadata.failed", {errorCode: "NETWORK_ERROR"});
+    return {success: false, code: "NETWORK_ERROR"};
+  }
 }
 
 /**
@@ -363,21 +362,19 @@ function persistAttachmentMetadata(scan: Scan, invoice: Invoice, userIdentifier:
  * @param authToken - Authenticated API token.
  * @returns Successful creations, safe per-scan failures, and enqueue outcomes.
  */
-async function createInvoicesInSingleMode(scans: ReadonlyArray<Scan>, userIdentifier: string, authToken: string): Promise<CreationResult> {
+async function createInvoicesInSingleMode(scans: ReadonlyArray<Scan>, authToken: string): Promise<CreationResult> {
   const result: CreationResult = {invoices: [], convertedScanIds: [], errors: [], analysis: []};
 
   for (const scan of scans) {
     const invoiceResult = await createSingleInvoice(scan, authToken);
     if (!invoiceResult.success) {
       result.errors.push({scanId: scan.id, code: invoiceResult.code});
-      continue;
+    } else {
+      result.invoices.push(invoiceResult.invoice);
+      result.convertedScanIds.push(scan.id);
+      result.analysis.push(await enqueueInvoiceAnalysis(invoiceResult.invoice.id));
+      await persistAttachmentMetadata(scan, invoiceResult.invoice);
     }
-
-    const analysis = await enqueueInvoiceAnalysis(invoiceResult.invoice.id);
-    result.invoices.push(invoiceResult.invoice);
-    result.convertedScanIds.push(scan.id);
-    result.analysis.push(analysis);
-    persistAttachmentMetadata(scan, invoiceResult.invoice, userIdentifier);
   }
 
   return result;
@@ -391,8 +388,8 @@ async function createInvoicesInSingleMode(scans: ReadonlyArray<Scan>, userIdenti
  * @param authToken - Authenticated API token.
  * @returns Successful creation, safe per-scan failures, and enqueue outcome.
  */
-async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, userIdentifier: string, authToken: string): Promise<CreationResult> {
-  const firstScan = scans[0];
+async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, authToken: string): Promise<CreationResult> {
+  const [firstScan] = scans;
   if (!firstScan) {
     return {
       invoices: [],
@@ -429,8 +426,9 @@ async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, userIdentif
   }
 
   result.analysis.push(await enqueueInvoiceAnalysis(initialInvoice.invoice.id));
-  for (const scan of scans.filter((candidate) => result.convertedScanIds.includes(candidate.id))) {
-    persistAttachmentMetadata(scan, initialInvoice.invoice, userIdentifier);
+  const convertedScans = scans.filter((candidate) => result.convertedScanIds.includes(candidate.id));
+  for (const scan of convertedScans) {
+    await persistAttachmentMetadata(scan, initialInvoice.invoice);
   }
 
   return result;
@@ -470,12 +468,10 @@ export async function createInvoiceFromScans({scans, mode}: CreateInvoiceFromSca
       }
 
       const result =
-        mode === "single"
-          ? await createInvoicesInSingleMode(scans, userIdentifier, authToken)
-          : await createInvoicesInBatchMode(scans, userIdentifier, authToken);
+        mode === "single" ? await createInvoicesInSingleMode(scans, authToken) : await createInvoicesInBatchMode(scans, authToken);
 
       if (result.invoices.length === 0 && result.errors.length > 0) {
-        const firstFailure = result.errors[0];
+        const [firstFailure] = result.errors;
         const errorCode = firstFailure?.code ?? "UNKNOWN_ERROR";
         addSpanEvent("bff.invoices.create.rejected", {errorCode});
         logSafeOperation("warn", "invoice.create-from-scans.rejected", {errorCode});

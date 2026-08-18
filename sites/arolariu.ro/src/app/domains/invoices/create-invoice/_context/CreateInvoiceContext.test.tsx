@@ -11,19 +11,26 @@ import type {CachedScan} from "@/types/scans";
 import {ScanStatus, ScanType} from "@/types/scans";
 import {act, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {beforeEach, describe, expect, it} from "vitest";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import {AnalysisTestProvider} from "../../../../../../tests/helpers/analysis";
 import {buildInvoice} from "../../../../../../tests/helpers/builders/domain";
 import InvoiceDetailsForm from "../_components/InvoiceDetailsForm";
 import {CreateInvoiceProvider, useCreateInvoiceContext} from "./CreateInvoiceContext";
 
 const invoiceIdentifier = "11111111-1111-4111-8111-111111111111";
+const {mockUpdateScan} = vi.hoisted(() => ({mockUpdateScan: vi.fn()}));
+
+vi.mock("../../_actions/scans", () => ({
+  updateScan: mockUpdateScan,
+}));
 
 let invokeCreateInvoiceWithScans: (() => Promise<void>) | null = null;
+let invokeRetryAttachmentFinalization: (() => Promise<void>) | null = null;
 let selectScan: ((scan: CachedScan) => void) | null = null;
 let setName: ((name: string) => void) | null = null;
 let setClassification: ((classification: ClassificationSelection | null) => void) | null = null;
 let currentClassification: ClassificationSelection | null = null;
+let pendingAttachmentScanIds: ReadonlyArray<string> | null = null;
 
 function createdInvoiceResponse(): Response {
   return Response.json(buildInvoice({id: invoiceIdentifier, name: "Receipt", description: ""}), {status: 201});
@@ -37,17 +44,19 @@ function createdInvoiceResponse(): Response {
 function ContextProbe(): React.JSX.Element {
   const context = useCreateInvoiceContext();
   invokeCreateInvoiceWithScans = context.createInvoiceWithScans;
+  invokeRetryAttachmentFinalization = context.retryAttachmentFinalization;
   selectScan = context.toggleScan;
   setName = context.setName;
   setClassification = context.setClassification;
   currentClassification = context.invoiceDetails.classification;
+  pendingAttachmentScanIds = context.attachmentFinalization?.pendingScanIds ?? null;
   return <div />;
 }
 
 function createScan(): CachedScan {
   return {
     id: "scan-1",
-    blobUrl: "https://storage.example.test/scan-1.jpg",
+    blobUrl: "https://storage.analysis.test/invoices/scans/user-1/scan-1.jpg",
     name: "receipt.jpg",
     userIdentifier: "user-1",
     mimeType: "image/jpeg",
@@ -102,7 +111,15 @@ describe("CreateInvoiceContext durable analysis enqueue", () => {
     setName = null;
     setClassification = null;
     currentClassification = null;
+    pendingAttachmentScanIds = null;
+    invokeRetryAttachmentFinalization = null;
     useScansStore.getState().clearScans();
+    mockUpdateScan.mockResolvedValue({
+      success: true,
+      data: {
+        scan: createScan(),
+      },
+    });
   });
 
   it("waits for the durable analysis acknowledgement before navigating away from invoice creation", async () => {
@@ -147,11 +164,91 @@ describe("CreateInvoiceContext durable analysis enqueue", () => {
 
     // Assert
     expect(analysisRouter.push).not.toHaveBeenCalled();
+    expect(mockUpdateScan).toHaveBeenCalledWith({
+      scanId: scan.id,
+      metadataAdd: {status: "attached", attachedTo: invoiceIdentifier},
+    });
     await act(async () => {
       resolveAcknowledgement?.(acceptedAnalysisResponse());
       await creation;
     });
     expect(analysisRouter.push).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${invoiceIdentifier}`);
+  });
+
+  it("keeps a created invoice in retryable attachment finalization without enqueueing analysis or navigating", async () => {
+    // Arrange
+    installAnalysisFetchHandler(() => createdInvoiceResponse());
+    const scan = createScan();
+    useScansStore.getState().setScans([scan]);
+    mockUpdateScan.mockResolvedValueOnce({
+      success: false,
+      error: {code: "NETWORK_ERROR", message: "Unable to update the scan. Please try again."},
+    });
+    render(
+      <AnalysisTestProvider>
+        <CreateInvoiceProvider>
+          <ContextProbe />
+        </CreateInvoiceProvider>
+      </AnalysisTestProvider>,
+    );
+    act(() => {
+      selectScan?.(scan);
+      setName?.("Receipt");
+    });
+
+    // Act
+    await act(async () => {
+      await invokeCreateInvoiceWithScans?.();
+    });
+
+    // Assert
+    expect(pendingAttachmentScanIds).toEqual([scan.id]);
+    expect(getAnalysisApiRequests().some((request) => request.url.endsWith("/analyze"))).toBe(false);
+    expect(analysisRouter.push).not.toHaveBeenCalled();
+  });
+
+  it("reconciles only failed attachment updates before enqueueing and navigating without another invoice create", async () => {
+    // Arrange
+    installAnalysisFetchHandler((requestAtBoundary) =>
+      requestAtBoundary.url.endsWith("/analyze") ? acceptedAnalysisResponse() : createdInvoiceResponse(),
+    );
+    const scan = createScan();
+    useScansStore.getState().setScans([scan]);
+    mockUpdateScan
+      .mockResolvedValueOnce({
+        success: false,
+        error: {code: "NETWORK_ERROR", message: "Unable to update the scan. Please try again."},
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        data: {scan},
+      });
+    render(
+      <AnalysisTestProvider>
+        <CreateInvoiceProvider>
+          <ContextProbe />
+        </CreateInvoiceProvider>
+      </AnalysisTestProvider>,
+    );
+    act(() => {
+      selectScan?.(scan);
+      setName?.("Receipt");
+    });
+    await act(async () => {
+      await invokeCreateInvoiceWithScans?.();
+    });
+
+    // Act
+    await act(async () => {
+      await invokeRetryAttachmentFinalization?.();
+    });
+
+    // Assert
+    expect(mockUpdateScan).toHaveBeenCalledTimes(2);
+    expect(getAnalysisApiRequests().filter((request) => request.url.endsWith("/invoices"))).toHaveLength(1);
+    expect(getAnalysisApiRequests().filter((request) => request.url.endsWith("/analyze"))).toHaveLength(1);
+    expect(analysisRouter.push).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${invoiceIdentifier}`);
+    expect(pendingAttachmentScanIds).toBeNull();
   });
 
   it("keeps the created invoice and navigation when durable analysis enqueue is rejected", async () => {

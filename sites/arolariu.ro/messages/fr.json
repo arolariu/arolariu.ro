@@ -863,6 +863,11 @@
           }
         },
         "recipes": {
+          "difficulty": {
+            "easy": "Facile",
+            "medium": "Moyenne",
+            "hard": "Difficile"
+          },
           "purchasedIngredients": "Ingrédients achetés",
           "pantryStaples": "Produits de base supposés disponibles",
           "missingOptionalIngredients": "Ingrédients facultatifs manquants",
@@ -2197,7 +2202,9 @@
           "analysisNotQueued": "La facture a été créée, mais l’analyse n’a pas pu être mise en file d’attente. Vous pouvez la réessayer depuis la page de la facture.",
           "classificationNotSaved": "La facture a été créée, mais sa classification n’a pas pu être enregistrée. Vous pouvez réessayer depuis la page de la facture.",
           "createFailed": "Impossible de créer la facture. Veuillez réessayer.",
-          "createdAndAnalysisQueued": "La facture a été créée. L’analyse a été mise en file d’attente."
+          "createdAndAnalysisQueued": "La facture a été créée. L’analyse a été mise en file d’attente.",
+          "attachmentFinalizationFailed": "La facture a été créée, mais {count} mises à jour des pièces jointes numérisées doivent encore être finalisées. Réessayez avant de quitter cette page.",
+          "attachmentFinalizationFailed": "La facture a été créée, mais {count} mises à jour des pièces jointes numérisées doivent encore être finalisées. Réessayez avant de quitter cette page."
         },
         "metadata": {
           "description": "Créez une nouvelle facture à partir de vos numérisations téléchargées.",
@@ -2211,7 +2218,9 @@
           "actions": {
             "create": "Créer la facture",
             "creating": "Création de la facture...",
-            "hint": "Ceci créera la facture et téléchargera les numérisations sélectionnées."
+            "hint": "Ceci créera la facture et téléchargera les numérisations sélectionnées.",
+            "retryAttachmentFinalization": "Réessayer la finalisation des pièces jointes",
+            "retryAttachmentFinalization": "Réessayer la finalisation des pièces jointes"
           },
           "classificationFallback": "{system} : {code}",
           "classificationResult": "{code} : {label}",
@@ -2810,6 +2819,10 @@
             "createFirstRecipe": "Créer votre première recette",
             "generate": "Générer"
           },
+          "tabs": {
+            "possibleRecipes": "Recettes possibles",
+            "additionalInfo": "Informations supplémentaires"
+          },
           "emptyState": {
             "noRecipesAvailable": "Aucune recette disponible pour le moment"
           },
@@ -3113,10 +3126,25 @@
           "copySuccess": "Résumé copié dans le presse-papiers",
           "copySummary": {
             "description": "Copier le résumé texte dans le presse-papiers",
+            "labels": {
+              "invoice": "Facture",
+              "merchant": "Commerçant",
+              "date": "Date",
+              "total": "Total",
+              "items": "Articles"
+            },
+            "notAvailable": "Indisponible",
             "title": "Copier le résumé"
           },
           "csv": {
             "description": "Télécharger les articles sous forme de feuille de calcul",
+            "headers": {
+              "productName": "Nom du produit",
+              "quantity": "Quantité",
+              "price": "Prix",
+              "total": "Total",
+              "category": "Catégorie"
+            },
             "title": "Exporter en CSV"
           },
           "csvError": "Échec de l'export CSV",
@@ -3243,6 +3271,7 @@
             "compare": "Comparaison",
             "current": "Cette facture"
           },
+          "invoiceCount": "{count, plural, one {# facture} other {# factures}}",
           "title": "Analyses et insights"
         },
         "invoiceGuestBanner": {
