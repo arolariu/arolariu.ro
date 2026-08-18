@@ -4,7 +4,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
-/// Thrown when a product update selector matches multiple products without an occurrence ordinal.
+/// Thrown when a product selector matches multiple products without an occurrence ordinal.
 /// </summary>
 [ExcludeFromCodeCoverage]
 public sealed class ProductUpdateSelectorAmbiguousException : ProductUpdateSelectorValidationException
@@ -42,7 +42,7 @@ public sealed class ProductUpdateSelectorAmbiguousException : ProductUpdateSelec
   /// <param name="matchingProductCount">The number of products matched by the selector.</param>
   public ProductUpdateSelectorAmbiguousException(Guid invoiceIdentifier, int matchingProductCount)
     : base(
-      $"The product update selector matched {matchingProductCount} products in invoice '{invoiceIdentifier}'. "
+      $"The product selector matched {matchingProductCount} products in invoice '{invoiceIdentifier}'. "
       + "Provide a zero-based occurrence ordinal.")
   {
     InvoiceIdentifier = invoiceIdentifier;

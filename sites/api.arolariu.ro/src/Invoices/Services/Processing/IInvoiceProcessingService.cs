@@ -165,22 +165,22 @@ public interface IInvoiceProcessingService
 
   #region Delete Invoice Product API
   /// <summary>
-  /// Deletes a product from an invoice by name.
+  /// Deletes exactly one selected product from an invoice and writes the aggregate once.
   /// </summary>
-  /// <param name="productName">Product name.</param>
+  /// <remarks>
+  /// The identity-free <paramref name="selector"/> first prefers an original product code. Without one, it uses the
+  /// original normalized name, quantity, unit price, and total price. An occurrence ordinal is required only while
+  /// multiple persisted products remain indistinguishable under that preferred selector.
+  /// </remarks>
+  /// <param name="selector">The transient identity-free selector for the persisted product to remove.</param>
   /// <param name="invoiceIdentifier">Invoice id.</param>
   /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
-  Task DeleteProduct(string productName, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
-
-  /// <summary>
-  /// Deletes a product from an invoice using the product value object.
-  /// </summary>
-  /// <param name="product">Product instance to remove (matched by identifying fields).</param>
-  /// <param name="invoiceIdentifier">Invoice id.</param>
-  /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
-  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
-  Task DeleteProduct(Product product, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
+  Task DeleteProduct(
+    ProductUpdateSelector selector,
+    Guid invoiceIdentifier,
+    Guid? userIdentifier,
+    CancellationToken cancellationToken);
   #endregion
 
   #region Create Invoice Scan API

@@ -1,15 +1,17 @@
 namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions;
 
 /// <summary>
-/// Identifies one mutable invoice product without assigning a persistent product identity.
+/// Identifies one invoice product for a mutation without assigning persistent identity.
 /// </summary>
 /// <remarks>
 /// <para>
-/// A selector captures the product's immutable client-side snapshot before an edit. A nonblank
+/// A selector captures the product's immutable client-side snapshot before a mutation. A nonblank
 /// <see cref="OriginalProductCode"/> is the strongest discriminator. If no such code exists, the
 /// normalized name, quantity, unit price, and total price form the composite discriminator.
 /// </para>
@@ -19,11 +21,11 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions;
 /// persisted, or used as an analysis correlation identity.
 /// </para>
 /// </remarks>
-/// <param name="OriginalProductCode">The product code before the edit, when the product had one.</param>
-/// <param name="OriginalName">The product name before the edit when selecting by composite snapshot.</param>
-/// <param name="OriginalQuantity">The product quantity before the edit when selecting by composite snapshot.</param>
-/// <param name="OriginalUnitPrice">The product unit price before the edit when selecting by composite snapshot.</param>
-/// <param name="OriginalTotalPrice">The product total price before the edit when selecting by composite snapshot.</param>
+/// <param name="OriginalProductCode">The product code before the mutation, when the product had one.</param>
+/// <param name="OriginalName">The product name before the mutation when selecting by composite snapshot.</param>
+/// <param name="OriginalQuantity">The product quantity before the mutation when selecting by composite snapshot.</param>
+/// <param name="OriginalUnitPrice">The product unit price before the mutation when selecting by composite snapshot.</param>
+/// <param name="OriginalTotalPrice">The product total price before the mutation when selecting by composite snapshot.</param>
 /// <param name="OccurrenceOrdinal">The zero-based occurrence among currently matching products, when needed.</param>
 public sealed record ProductUpdateSelector(
   string? OriginalProductCode,
@@ -63,7 +65,7 @@ public sealed record ProductUpdateSelector(
       if (!UsesOriginalProductCode)
       {
         throw new ProductUpdateSelectorValidationException(
-          "A product update selector requires an original product code or a complete original snapshot.");
+          "A product selector requires an original product code or a complete original snapshot.");
       }
 
       return;
@@ -100,6 +102,65 @@ public sealed record ProductUpdateSelector(
         "Original product quantity and unit price are outside the supported numeric range.",
         exception);
     }
+  }
+
+  /// <summary>
+  /// Selects exactly one persisted product from an invoice item collection.
+  /// </summary>
+  /// <remarks>
+  /// Product-code precedence, composite-snapshot matching, duplicate ambiguity, and ordinal
+  /// range validation are centralized here so every product mutation shares identical
+  /// identity-free selection semantics.
+  /// </remarks>
+  /// <param name="products">The persisted product collection to inspect.</param>
+  /// <param name="invoiceIdentifier">The owning invoice identifier used by typed errors.</param>
+  /// <param name="matchingProductCount">Receives the number of products matched by the preferred discriminator.</param>
+  /// <returns>The exact persisted product selected for the caller's mutation.</returns>
+  /// <exception cref="ProductNotFoundException">
+  /// Thrown when no persisted product satisfies this selector.
+  /// </exception>
+  /// <exception cref="ProductUpdateSelectorAmbiguousException">
+  /// Thrown when multiple products match and no occurrence ordinal was supplied.
+  /// </exception>
+  /// <exception cref="ProductUpdateSelectorOccurrenceOutOfRangeException">
+  /// Thrown when the supplied occurrence ordinal exceeds the matching products.
+  /// </exception>
+  internal Product SelectPersistedProduct(
+    IEnumerable<Product> products,
+    Guid invoiceIdentifier,
+    out int matchingProductCount)
+  {
+    ArgumentNullException.ThrowIfNull(products);
+
+    List<Product> matchedProducts = products
+      .Where(product => product is not null && Matches(product))
+      .ToList();
+    matchingProductCount = matchedProducts.Count;
+
+    if (matchingProductCount == 0)
+    {
+      throw new ProductNotFoundException(invoiceIdentifier);
+    }
+
+    if (OccurrenceOrdinal is int occurrenceOrdinal)
+    {
+      if (occurrenceOrdinal >= matchingProductCount)
+      {
+        throw new ProductUpdateSelectorOccurrenceOutOfRangeException(
+          invoiceIdentifier,
+          occurrenceOrdinal,
+          matchingProductCount);
+      }
+
+      return matchedProducts[occurrenceOrdinal];
+    }
+
+    if (matchingProductCount > 1)
+    {
+      throw new ProductUpdateSelectorAmbiguousException(invoiceIdentifier, matchingProductCount);
+    }
+
+    return matchedProducts[0];
   }
 
   /// <summary>

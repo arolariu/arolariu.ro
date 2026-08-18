@@ -4,7 +4,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
-/// Thrown when a product update selector's occurrence ordinal is outside its matching set.
+/// Thrown when a product selector's occurrence ordinal is outside its matching set.
 /// </summary>
 [ExcludeFromCodeCoverage]
 public sealed class ProductUpdateSelectorOccurrenceOutOfRangeException : ProductUpdateSelectorValidationException

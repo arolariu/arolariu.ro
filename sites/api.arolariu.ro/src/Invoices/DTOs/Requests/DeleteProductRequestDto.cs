@@ -4,37 +4,37 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions;
+
 /// <summary>
 /// Request DTO for removing a product line item from an invoice.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>Purpose:</b> Identifies a product for removal from an invoice's item collection.
-/// Typically used to remove incorrectly added items or duplicate entries.
+/// <b>Product Identification:</b> <see cref="Selector"/> deterministically identifies one
+/// identity-free persisted product. It prefers the original product code, otherwise uses an
+/// immutable commercial snapshot and, only where necessary, an occurrence ordinal.
 /// </para>
 /// <para>
 /// <b>Immutability:</b> This is a <c>readonly record struct</c> ensuring thread-safety
 /// and value semantics for equality comparisons.
 /// </para>
-/// <para>
-/// <b>Soft Delete:</b> By default, deletion marks the product's <c>Metadata.IsSoftDeleted</c>
-/// flag as <c>true</c> rather than physically removing it. This preserves audit history
-/// and allows for potential recovery.
-/// </para>
-/// <para>
-/// <b>Recalculation:</b> After deletion, the invoice's <c>PaymentInformation.TotalAmount</c>
-/// should be recalculated to exclude the deleted product.
-/// </para>
 /// </remarks>
-/// <param name="ProductName">
-/// The name of the product to delete. Required.
-/// Matched against existing product <c>Name</c> values using a case-insensitive
-/// substring comparison in the current service implementation.
+/// <param name="Selector">
+/// The transient selector for the persisted product before it is removed.
 /// </param>
 /// <example>
 /// <code>
-/// // Remove a product by its name
-/// var request = new DeleteProductRequestDto(ProductName: "LAPTE ZUZU 1L");
+/// // Remove the second otherwise-identical product.
+/// var request = new DeleteProductRequestDto(
+///   Selector: new ProductUpdateSelectorDto(
+///     OriginalProductCode: null,
+///     OriginalName: "LAPTE ZUZU 1L",
+///     OriginalQuantity: 2,
+///     OriginalUnitPrice: 8.99m,
+///     OriginalTotalPrice: 17.98m,
+///     OccurrenceOrdinal: 1));
 ///
 /// // Service layer handles the actual deletion
 /// await invoiceService.DeleteProductAsync(invoiceId, request);
@@ -45,4 +45,16 @@ using System.Diagnostics.CodeAnalysis;
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct DeleteProductRequestDto(
-  [Required] string ProductName);
+  [Required] ProductUpdateSelectorDto? Selector)
+{
+  /// <summary>
+  /// Converts this DTO's transient transport selector into the domain selector used during processing.
+  /// </summary>
+  /// <returns>The identity-free selector for one persisted product.</returns>
+  /// <exception cref="ProductUpdateSelectorValidationException">
+  /// Thrown when the request omits its required selector.
+  /// </exception>
+  public ProductUpdateSelector ToSelector() =>
+    Selector?.ToDomainSelector()
+      ?? throw new ProductUpdateSelectorValidationException("A product deletion selector is required.");
+}

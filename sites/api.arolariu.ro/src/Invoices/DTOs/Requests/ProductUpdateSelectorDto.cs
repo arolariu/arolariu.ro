@@ -7,7 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 /// <summary>
-/// Transport selector for deterministically locating one identity-free invoice product before an update.
+/// Transport selector for deterministically locating one identity-free invoice product before a mutation.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -16,7 +16,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// multiple products, <see cref="OccurrenceOrdinal"/> selects one in invoice collection order.
 /// </para>
 /// <para>
-/// The selector is consumed only during the update request. It is never persisted on <see cref="Product"/>
+/// The selector is consumed only during the request mutation. It is never persisted on <see cref="Product"/>
 /// and does not create a product identifier.
 /// </para>
 /// </remarks>
@@ -37,9 +37,9 @@ public readonly record struct ProductUpdateSelectorDto(
   [Range(0, int.MaxValue)] int? OccurrenceOrdinal)
 {
   /// <summary>
-  /// Converts this transport selector to the transient domain selector used by processing.
+  /// Converts this transport selector to the transient domain selector used by processing mutations.
   /// </summary>
-  /// <returns>The identity-free selector for one product update operation.</returns>
+  /// <returns>The identity-free selector for one product mutation operation.</returns>
   public ProductUpdateSelector ToDomainSelector() => new(
     OriginalProductCode,
     OriginalName,

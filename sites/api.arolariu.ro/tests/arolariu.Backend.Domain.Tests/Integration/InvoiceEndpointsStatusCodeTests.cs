@@ -247,6 +247,120 @@ public sealed class InvoiceEndpointsStatusCodeTests
   }
   #endregion
 
+  #region DELETE /rest/v1/invoices/{id}/products status code tests
+  /// <summary>
+  /// Verifies that a product deletion delegates one deterministic selector to processing and maps a typed not-found
+  /// error to HTTP 404 without separately retrieving the product.
+  /// </summary>
+  [TestMethod]
+  public async Task RemoveProductFromInvoiceAsync_WhenServiceThrowsProductNotFound_Returns404()
+  {
+    // Arrange
+    var invoiceIdentifier = Guid.NewGuid();
+    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    mockService
+      .Setup(service => service.DeleteProduct(
+        It.Is<ProductUpdateSelector>(selector =>
+          selector.OriginalName == "Missing product"
+          && selector.OriginalQuantity == 1m
+          && selector.OriginalUnitPrice == 1m
+          && selector.OriginalTotalPrice == 1m
+          && selector.OccurrenceOrdinal == 0),
+        invoiceIdentifier,
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new ProductNotFoundException(invoiceIdentifier));
+    var accessor = CreateAuthenticatedContextAccessor();
+    var request = new DeleteProductRequestDto(
+      Selector: new ProductUpdateSelectorDto(
+        OriginalProductCode: null,
+        OriginalName: "Missing product",
+        OriginalQuantity: 1m,
+        OriginalUnitPrice: 1m,
+        OriginalTotalPrice: 1m,
+        OccurrenceOrdinal: 0));
+
+    // Act
+    IResult result = await InvoiceEndpoints
+      .RemoveProductFromInvoiceAsync(mockService.Object, accessor, invoiceIdentifier, request)
+      .ConfigureAwait(false);
+
+    // Assert
+    Assert.AreEqual(StatusCodes.Status404NotFound, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.NotFound, GetProblemDetails(result).Type);
+    mockService.Verify(
+      service => service.DeleteProduct(
+        It.IsAny<ProductUpdateSelector>(),
+        invoiceIdentifier,
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()),
+      Times.Once);
+  }
+
+  /// <summary>
+  /// Verifies that an out-of-range product deletion selector maps to HTTP 400.
+  /// </summary>
+  [TestMethod]
+  public async Task RemoveProductFromInvoiceAsync_WhenServiceThrowsOccurrenceOutOfRange_Returns400()
+  {
+    // Arrange
+    var invoiceIdentifier = Guid.NewGuid();
+    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    mockService
+      .Setup(service => service.DeleteProduct(
+        It.IsAny<ProductUpdateSelector>(),
+        invoiceIdentifier,
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()))
+      .ThrowsAsync(
+        new ProductUpdateSelectorOccurrenceOutOfRangeException(
+          invoiceIdentifier,
+          occurrenceOrdinal: 2,
+          matchingProductCount: 2));
+    var accessor = CreateAuthenticatedContextAccessor();
+    var request = new DeleteProductRequestDto(
+      Selector: new ProductUpdateSelectorDto(
+        OriginalProductCode: "duplicate-code",
+        OriginalName: null,
+        OriginalQuantity: null,
+        OriginalUnitPrice: null,
+        OriginalTotalPrice: null,
+        OccurrenceOrdinal: 2));
+
+    // Act
+    IResult result = await InvoiceEndpoints
+      .RemoveProductFromInvoiceAsync(mockService.Object, accessor, invoiceIdentifier, request)
+      .ConfigureAwait(false);
+
+    // Assert
+    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.Validation, GetProblemDetails(result).Type);
+  }
+
+  /// <summary>
+  /// Verifies that an omitted deletion selector maps to HTTP 400 before processing is invoked.
+  /// </summary>
+  [TestMethod]
+  public async Task RemoveProductFromInvoiceAsync_WhenSelectorIsMissing_Returns400()
+  {
+    // Arrange
+    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    var accessor = CreateAuthenticatedContextAccessor();
+    var request = new DeleteProductRequestDto(Selector: null);
+
+    // Act
+    IResult result = await InvoiceEndpoints
+      .RemoveProductFromInvoiceAsync(mockService.Object, accessor, Guid.NewGuid(), request)
+      .ConfigureAwait(false);
+
+    // Assert
+    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.Validation, GetProblemDetails(result).Type);
+    mockService.VerifyNoOtherCalls();
+  }
+
+  #endregion
+
   #region PUT /rest/v1/invoices/{id}/products status code tests
   /// <summary>
   /// Verifies that an unmatched product update reaches the endpoint as a typed 404 response and does not require

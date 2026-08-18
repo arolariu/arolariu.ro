@@ -6,7 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using arolariu.Backend.Common.Exceptions;
 
 /// <summary>
-/// Thrown when a transient product update selector is structurally or numerically invalid.
+/// Thrown when a transient product selector is structurally or numerically invalid.
 /// </summary>
 /// <remarks>
 /// Implements <see cref="IValidationException"/> so selector failures are reported as caller-correctable

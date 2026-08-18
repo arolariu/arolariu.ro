@@ -468,43 +468,23 @@ public sealed class InvoiceProcessingServiceTests
   #region DeleteProduct Tests
 
   /// <summary>
-  /// Validates successful product deletion by name.
+  /// Validates successful product deletion by a deterministic snapshot.
   /// </summary>
   [TestMethod]
-  public async Task DeleteProductByName_ExistingProduct_RemovesFromInvoice()
-  {
-    // Arrange
-    var invoiceId = Guid.NewGuid();
-    var userId = Guid.NewGuid();
-    var invoice = InvoiceBuilder.CreateRandomInvoice();
-    var productName = invoice.Items.First().Name;
-
-    mockInvoiceOrchestrationService
-        .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(invoice);
-
-    mockInvoiceOrchestrationService
-        .Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(invoice);
-
-    // Act
-    await processingService.DeleteProduct(productName, invoiceId, userId, CancellationToken.None);
-
-    // Assert
-    mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
-  }
-
-  /// <summary>
-  /// Validates successful product deletion by product object.
-  /// </summary>
-  [TestMethod]
-  public async Task DeleteProductByObject_ExistingProduct_RemovesFromInvoice()
+  public async Task DeleteProduct_ExistingSnapshot_RemovesFromInvoice()
   {
     // Arrange
     var invoiceId = Guid.NewGuid();
     var userId = Guid.NewGuid();
     var invoice = InvoiceBuilder.CreateRandomInvoice();
     var product = invoice.Items.First();
+    var selector = new ProductUpdateSelector(
+      OriginalProductCode: null,
+      OriginalName: product.Name,
+      OriginalQuantity: product.Quantity,
+      OriginalUnitPrice: product.Price,
+      OriginalTotalPrice: product.TotalPrice,
+      OccurrenceOrdinal: null);
 
     mockInvoiceOrchestrationService
         .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
@@ -515,7 +495,42 @@ public sealed class InvoiceProcessingServiceTests
         .ReturnsAsync(invoice);
 
     // Act
-    await processingService.DeleteProduct(product, invoiceId, userId, CancellationToken.None);
+    await processingService.DeleteProduct(selector, invoiceId, userId, CancellationToken.None);
+
+    // Assert
+    mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
+  }
+
+  /// <summary>
+  /// Validates successful product deletion by product code.
+  /// </summary>
+  [TestMethod]
+  public async Task DeleteProduct_ExistingProductCode_RemovesFromInvoice()
+  {
+    // Arrange
+    var invoiceId = Guid.NewGuid();
+    var userId = Guid.NewGuid();
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    var product = invoice.Items.First();
+    product.ProductCode = "product-code";
+    var selector = new ProductUpdateSelector(
+      OriginalProductCode: "product-code",
+      OriginalName: null,
+      OriginalQuantity: null,
+      OriginalUnitPrice: null,
+      OriginalTotalPrice: null,
+      OccurrenceOrdinal: null);
+
+    mockInvoiceOrchestrationService
+        .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
+        .ReturnsAsync(invoice);
+
+    mockInvoiceOrchestrationService
+        .Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()))
+        .ReturnsAsync(invoice);
+
+    // Act
+    await processingService.DeleteProduct(selector, invoiceId, userId, CancellationToken.None);
 
     // Assert
     mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);

@@ -322,17 +322,17 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice from which to remove the product.</param>
-  /// <param name="productDto">The DTO containing the product identifier to remove.</param>
+  /// <param name="productDto">The DTO containing the deterministic product selector to remove.</param>
   /// <returns>A task representing the asynchronous operation, indicating the result of the removal.</returns>
   [SwaggerOperation(
     Summary = "Removes a product from a specific invoice in the system.",
-    Description = "This endpoint removes a product identified by its name from a specific invoice. " +
-    "The operation checks if the invoice exists and if the product is present in the invoice. " +
-    "If successful, the product is removed from the invoice's product list.",
+    Description = "This endpoint removes one deterministically selected product from a specific invoice. " +
+    "A product code takes precedence; otherwise the original normalized commercial snapshot and occurrence ordinal " +
+    "identify the exact line item. If successful, the product is removed from the invoice's product list.",
     OperationId = nameof(RemoveProductFromInvoiceAsync),
     Tags = [EndpointNameTag])]
   [SwaggerResponse(StatusCodes.Status204NoContent, "The product was successfully removed from the invoice.")]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided product name is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The product selector is invalid, ambiguous, or out of range.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice or the product was not found.", typeof(ProblemDetails))]
@@ -347,7 +347,7 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("The product identifier to remove.", Required = true)] DeleteProductRequestDto productDto);
+    [FromBody, SwaggerRequestBody("The deterministic product selector to remove.", Required = true)] DeleteProductRequestDto productDto);
   #endregion
 
   #region HTTP PUT /rest/v1/invoices/{id}/products
@@ -1060,4 +1060,3 @@ public static partial class InvoiceEndpoints
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("The analysis profile and capability overrides.", Required = true)] AnalyzeMerchantRequestDto request);
 }
-

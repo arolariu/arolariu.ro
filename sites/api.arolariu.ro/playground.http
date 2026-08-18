@@ -199,13 +199,20 @@ Content-Type: application/json
 
 ### Remove Product from Invoice
 # Remove a product from the invoice.
-# Product is identified by rawName in the request body.
+# Product selection prefers originalProductCode; otherwise provide the complete original snapshot.
 DELETE {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}/products
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "rawName": "Fresh Milk 1L"
+  "selector": {
+    "originalProductCode": null,
+    "originalName": "Fresh Milk 1L",
+    "originalQuantity": 1,
+    "originalUnitPrice": 8.50,
+    "originalTotalPrice": 8.50,
+    "occurrenceOrdinal": 0
+  }
 }
 
 ###############################################################################

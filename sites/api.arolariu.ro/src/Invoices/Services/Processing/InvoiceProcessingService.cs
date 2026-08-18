@@ -267,39 +267,11 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
       .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
 
-    List<Product> matchedProducts = invoice.Items
-      .Where(product => product is not null && selector.Matches(product))
-      .ToList();
-    activity?.SetTag("product.selector.match_count", matchedProducts.Count);
-
-    if (matchedProducts.Count == 0)
-    {
-      activity?.SetTag("result.product_found", false);
-      throw new ProductNotFoundException(invoiceIdentifier);
-    }
-
-    Product persistedProduct;
-    if (selector.OccurrenceOrdinal is int occurrenceOrdinal)
-    {
-      if (occurrenceOrdinal >= matchedProducts.Count)
-      {
-        throw new ProductUpdateSelectorOccurrenceOutOfRangeException(
-          invoiceIdentifier,
-          occurrenceOrdinal,
-          matchedProducts.Count);
-      }
-
-      persistedProduct = matchedProducts[occurrenceOrdinal];
-    }
-    else
-    {
-      if (matchedProducts.Count > 1)
-      {
-        throw new ProductUpdateSelectorAmbiguousException(invoiceIdentifier, matchedProducts.Count);
-      }
-
-      persistedProduct = matchedProducts[0];
-    }
+    Product persistedProduct = selector.SelectPersistedProduct(
+      invoice.Items,
+      invoiceIdentifier,
+      out int matchingProductCount);
+    activity?.SetTag("product.selector.match_count", matchingProductCount);
 
     persistedProduct.ApplyClientUpdate(updatedProduct);
     invoice.PreserveUntouchedProductClassifications = true;
@@ -349,50 +321,43 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Delete Product API
   /// <inheritdoc/>
-  public async Task DeleteProduct(string productName, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
+  public async Task DeleteProduct(
+    ProductUpdateSelector selector,
+    Guid invoiceIdentifier,
+    Guid? userIdentifier,
+    CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
+    ArgumentNullException.ThrowIfNull(selector);
+
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteProduct));
+    activity?.SetInvoiceContext(invoiceIdentifier, userIdentifier);
+    selector.Validate();
+    activity?.SetTag(
+      "product.selector.strategy",
+      selector.UsesOriginalProductCode ? "product_code" : "composite_snapshot");
+
     var invoice = await invoiceOrchestrationService
       .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
 
-    var product = invoice.Items.FirstOrDefault(
-      p => p.Name is not null && p.Name.Contains(productName, StringComparison.InvariantCultureIgnoreCase),
-      new Product());
+    Product persistedProduct = selector.SelectPersistedProduct(
+      invoice.Items,
+      invoiceIdentifier,
+      out int matchingProductCount);
+    activity?.SetTag("product.selector.match_count", matchingProductCount);
 
-    var newInvoice = invoice;
-    newInvoice.Items.Remove(product);
-
-    var currentInvoice = await invoiceOrchestrationService
-      .UpdateInvoiceObject(invoice, invoiceIdentifier, userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
-
-    return currentInvoice;
-  }).ConfigureAwait(false);
-
-  /// <inheritdoc/>
-  public async Task DeleteProduct(Product product, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
-  await TryCatchAsync(async () =>
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteProduct));
-    var invoice = await invoiceOrchestrationService
-      .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
-
-    Product? foundProduct = invoice.Items.FirstOrDefault(
-      p => p.Name is not null && p.Name.Contains(product.Name, StringComparison.InvariantCultureIgnoreCase));
-
-    if (foundProduct is not null)
+    if (!invoice.Items.Remove(persistedProduct))
     {
-      invoice.Items.Remove(foundProduct);
+      throw new ProductNotFoundException(invoiceIdentifier);
     }
 
-    var currentInvoice = await invoiceOrchestrationService
+    invoice.PreserveUntouchedProductClassifications = true;
+
+    await invoiceOrchestrationService
       .UpdateInvoiceObject(invoice, invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
-
-    return currentInvoice;
+    activity?.SetTag("result.product_found", true);
   }).ConfigureAwait(false);
   #endregion
 
