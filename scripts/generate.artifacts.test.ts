@@ -5,7 +5,8 @@
 
 import {deflateRawSync} from "node:zlib";
 import {describe, expect, it} from "vitest";
-import {extractZipEntry, flattenGpcSchema, parseGpcDocument} from "./generate.artifacts.ts";
+import {buildHierarchy, extractZipEntry, flattenGpcSchema, parseGpcDocument} from "./generate.artifacts.ts";
+import type {TaxonomyArtifactNode} from "./generate.artifacts.ts";
 
 /** Minimal ZIP entry description used by the archive builder below. */
 interface ZipEntryInput {
@@ -252,5 +253,53 @@ describe("flattenGpcSchema", () => {
 
   it("trims titles", () => {
     expect(flattenGpcSchema([{...brick, Title: "  Bread  "}])[0]?.officialLabel).toBe("Bread");
+  });
+});
+
+describe("buildHierarchy", () => {
+  const node = (code: string, label: string, parentCode: string | null): TaxonomyArtifactNode => ({
+    code,
+    officialLabel: label,
+    level: "class",
+    parentCode,
+    hierarchyCodes: [code],
+    hierarchyLabels: [label],
+    definition: null,
+    searchText: label.toLowerCase(),
+  });
+
+  const nodes = [node("A", "Alpha", null), node("B", "Beta", "A"), node("C", "Gamma", "B")];
+
+  it("rebuilds the full ancestry from parent links", () => {
+    const resolved = buildHierarchy(nodes, "C");
+
+    expect(resolved.hierarchyCodes).toEqual(["A", "B", "C"]);
+    expect(resolved.hierarchyLabels).toEqual(["Alpha", "Beta", "Gamma"]);
+  });
+
+  it("returns a root node unchanged in hierarchy terms", () => {
+    const resolved = buildHierarchy(nodes, "A");
+
+    expect(resolved.hierarchyCodes).toEqual(["A"]);
+  });
+
+  it("recomputes search text across the ancestry", () => {
+    expect(buildHierarchy(nodes, "C").searchText).toBe("c gamma alpha beta gamma");
+  });
+
+  it("throws when the requested code is absent", () => {
+    expect(() => buildHierarchy(nodes, "Z")).toThrow("Taxonomy code 'Z' was not found.");
+  });
+
+  it("throws when a parent reference is dangling", () => {
+    expect(() => buildHierarchy([node("B", "Beta", "A")], "B")).toThrow(
+      "Taxonomy parent 'A' for 'B' was not found.",
+    );
+  });
+
+  it("throws when the parent chain contains a cycle", () => {
+    const cyclic = [node("A", "Alpha", "B"), node("B", "Beta", "A")];
+
+    expect(() => buildHierarchy(cyclic, "A")).toThrow("Taxonomy hierarchy cycle detected at 'A'.");
   });
 });

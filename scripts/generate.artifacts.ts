@@ -183,6 +183,50 @@ export function flattenGpcSchema(schema: readonly GpcSourceNode[]): readonly Tax
 }
 
 /**
+ * Resolves a node and rebuilds its full hierarchy by walking parent links.
+ *
+ * @param nodes - Normalized nodes containing the target and all of its ancestors.
+ * @param code - Node code to resolve.
+ * @returns The node with a rebuilt hierarchy and recomputed search text.
+ * @throws {Error} When the code is absent, a parent reference dangles, or the parent
+ * chain contains a cycle.
+ */
+export function buildHierarchy(nodes: readonly TaxonomyArtifactNode[], code: string): TaxonomyArtifactNode {
+  const nodesByCode = new Map(nodes.map((node) => [node.code, node] as const));
+  const selected = nodesByCode.get(code);
+  if (selected === undefined) throw new Error(`Taxonomy code '${code}' was not found.`);
+
+  const hierarchy: TaxonomyArtifactNode[] = [];
+  const visited = new Set<string>();
+  let current: TaxonomyArtifactNode | undefined = selected;
+
+  while (current !== undefined) {
+    if (visited.has(current.code)) throw new Error(`Taxonomy hierarchy cycle detected at '${current.code}'.`);
+    visited.add(current.code);
+    hierarchy.unshift(current);
+
+    if (current.parentCode === null) break;
+    const parent = nodesByCode.get(current.parentCode);
+    if (parent === undefined) {
+      throw new Error(`Taxonomy parent '${current.parentCode}' for '${current.code}' was not found.`);
+    }
+    current = parent;
+  }
+
+  return {
+    ...selected,
+    hierarchyCodes: hierarchy.map((node) => node.code),
+    hierarchyLabels: hierarchy.map((node) => node.officialLabel),
+    searchText: normalizeText(
+      selected.code,
+      selected.officialLabel,
+      selected.definition,
+      ...hierarchy.map((node) => node.officialLabel),
+    ),
+  };
+}
+
+/**
  * Extracts a single entry from a ZIP archive by file-name suffix.
  *
  * @remarks
