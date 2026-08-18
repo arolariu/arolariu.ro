@@ -26,6 +26,7 @@
  */
 
 import type {Allergen} from "./index.ts";
+import type {StandardClassification} from "./Classification";
 
 /**
  * Tracks the editing and lifecycle state of a product.
@@ -175,6 +176,15 @@ export type ProductCategory = (typeof ProductCategory)[keyof typeof ProductCateg
 export interface Product {
   /** The name of the product. */
   name: string;
+
+  /**
+   * The canonical GS1 GPC classification, when resolved by the backend.
+   *
+   * @remarks
+   * Manual mutation requests accept only a system/code selection; the backend
+   * resolves this richer persisted shape before returning it to the client.
+   */
+  classification?: StandardClassification | null;
 
   /** The category of the product. */
   category: ProductCategory;

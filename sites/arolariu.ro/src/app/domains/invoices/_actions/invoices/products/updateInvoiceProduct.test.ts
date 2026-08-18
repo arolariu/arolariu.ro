@@ -5,12 +5,16 @@
 
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
-import {ProductCategory} from "@/types/invoices";
+import {ClassificationSystem, ProductCategory} from "@/types/invoices";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder} from "../../../../../../../tests/helpers";
 
 vi.mock("@/lib/actions/user/fetchUser");
 vi.mock("next/cache", () => ({revalidatePath: vi.fn()}));
+vi.mock("@/lib/utils.server", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/utils.server")>();
+  return {...actual, fetchWithTimeout: vi.fn()};
+});
 const {updateInvoiceProduct} = await import("./updateInvoiceProduct");
 const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
 const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
@@ -21,7 +25,7 @@ describe("updateInvoiceProduct", () => {
     vi.clearAllMocks();
     mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
     mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse(TestDataBuilder.build("product", {name: "Updated Coffee"})) as Awaited<
+      TestDataBuilder.jsonResponse({...TestDataBuilder.build("product", {name: "Updated Coffee"}), classification: null}) as Awaited<
         ReturnType<typeof fetchWithTimeout>
       >,
     );
@@ -31,15 +35,18 @@ describe("updateInvoiceProduct", () => {
     const invoiceId = "11111111-1111-4111-8111-111111111111";
     const payload = {
       originalProductName: "Coffee",
-      updatedProduct: TestDataBuilder.build("product", {
-        name: "Premium Coffee",
-        category: ProductCategory.GROCERIES,
-        quantity: 2,
-        quantityUnit: "kg",
-        productCode: "PROD-123",
-        price: 15.99,
-        detectedAllergens: [],
-      }),
+      updatedProduct: {
+        ...TestDataBuilder.build("product", {
+          name: "Premium Coffee",
+          category: ProductCategory.GROCERIES,
+          quantity: 2,
+          quantityUnit: "kg",
+          productCode: "PROD-123",
+          price: 15.99,
+          detectedAllergens: [],
+        }),
+        classification: {system: ClassificationSystem.Gs1Gpc, code: "10000111"},
+      },
     };
 
     const result = await updateInvoiceProduct({invoiceId, payload});
@@ -60,12 +67,13 @@ describe("updateInvoiceProduct", () => {
     const body = JSON.parse(callArgs?.[1]?.body as string);
     expect(body.originalProductName).toBe("Coffee");
     expect(body.name).toBe("Premium Coffee");
-    expect(body.category).toBe(ProductCategory.GROCERIES);
+    expect(body.classification).toEqual({system: ClassificationSystem.Gs1Gpc, code: "10000111"});
     expect(body.quantity).toBe(2);
     expect(body.quantityUnit).toBe("kg");
     expect(body.productCode).toBe("PROD-123");
     expect(body.price).toBe(15.99);
-    expect(body.detectedAllergens).toEqual([]);
+    expect(body.category).toBeUndefined();
+    expect(body.detectedAllergens).toBeUndefined();
     // Ensure the payload is flattened, not nested
     expect(body.updatedProduct).toBeUndefined();
 
@@ -86,6 +94,21 @@ describe("updateInvoiceProduct", () => {
     expect(mockFetchWithTimeout).not.toHaveBeenCalled();
   });
 
+  it("rejects malformed outer input and malformed JSON responses", async () => {
+    const invalidInputResult = await updateInvoiceProduct(null);
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse({invalid: true}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+    const malformedResponseResult = await updateInvoiceProduct({
+      invoiceId: "11111111-1111-4111-8111-111111111111",
+      payload: {
+        originalProductName: "Coffee",
+        updatedProduct: TestDataBuilder.build("product"),
+      },
+    });
+
+    expect(invalidInputResult).toMatchObject({success: false, error: {code: "VALIDATION_ERROR"}});
+    expect(malformedResponseResult).toMatchObject({success: false, error: {code: "SERVER_ERROR"}});
+  });
+
   it("maps 5xx and non-5xx failures", async () => {
     mockFetchWithTimeout.mockResolvedValue(
       TestDataBuilder.textResponse("Internal Server Error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
@@ -103,8 +126,7 @@ describe("updateInvoiceProduct", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toContain("500");
-      expect(result.error.message).toContain("Failed to update product");
+      expect(result.error.message).toBe("A server error occurred. Please try again later.");
     }
 
     mockFetchWithTimeout.mockResolvedValue(
@@ -115,8 +137,7 @@ describe("updateInvoiceProduct", () => {
 
     expect(result2.success).toBe(false);
     if (!result2.success) {
-      expect(result2.error.message).toContain("400");
-      expect(result2.error.message).toContain("Failed to update product");
+      expect(result2.error.message).toBe("Failed to update the product. Please check your input and try again.");
     }
   });
 

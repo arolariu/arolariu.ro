@@ -893,30 +893,30 @@
           "save": "Aplică Tuturor",
           "saving": "Se salvează..."
         },
-        "description": "{count, plural, one {Schimbă categoria pentru # produs} other {Schimbă categoria pentru # produse}}",
+        "description": "{count, plural, one {Schimbă clasificarea GS1 GPC pentru # produs} other {Schimbă clasificarea GS1 GPC pentru # produse}}",
         "errors": {
           "allFailed": "Toate produsele nu au putut fi actualizate",
           "missingData": "Date lipsă",
           "noProducts": "Niciun produs selectat",
-          "saveFailed": "Eroare la actualizarea categoriilor"
+          "saveFailed": "Eroare la actualizarea clasificărilor"
         },
         "labels": {
           "andMore": "...și încă {count}",
-          "newCategory": "Categorie Nouă",
+          "newCategory": "Clasificare GS1 GPC nouă",
           "progress": "Progres",
           "selectedProducts": "Produse Selectate"
         },
         "placeholders": {
-          "selectCategory": "Selectează o categorie"
+          "selectCategory": "Selectează o clasificare"
         },
         "progress": {
           "updating": "Se actualizeaza {current} din {total}..."
         },
         "success": {
           "partialSuccess": "{success} produse actualizate, {failed} esuate",
-          "saved": "{count, plural, one {Categoria actualizată pentru # produs} other {Categoria actualizată pentru # produse}}"
+          "saved": "{count, plural, one {Clasificarea actualizată pentru # produs} other {Clasificarea actualizată pentru # produse}}"
         },
-        "title": "Schimbă Categoria"
+        "title": "Schimbă clasificarea"
       },
       "createInvoiceDialog": {
         "batchMode": {
@@ -1136,9 +1136,13 @@
           "cancel": "Anulează",
           "next": "Următor",
           "previous": "Anterior",
+          "saving": "Se salvează…",
           "saveChanges": "Salvează changes"
         },
         "description": "Actualizează cantitățile, prețurile sau adaugă articole noi în această factură",
+        "errors": {
+          "saveFailed": "Modificările articolelor nu au putut fi salvate. Încercați din nou."
+        },
         "footer": {
           "itemsFound": "{total} articole găsite (se afișează {shown})",
           "itemsTotal": "{count, plural, one {# articol în total} few {# articole în total} other {# de articole în total}}",
@@ -1146,6 +1150,7 @@
         },
         "table": {
           "actions": "Acțiuni",
+          "classification": "Clasificare GS1 GPC",
           "item": "Articol",
           "price": "Preț",
           "quantity": "Cantitate",
@@ -1156,7 +1161,9 @@
       },
       "merchantDialog": {
         "buttons": {
-          "openInMaps": "Deschide în Maps"
+          "openInMaps": "Deschide în Maps",
+          "saveClassification": "Salvează clasificarea",
+          "savingClassification": "Se salvează clasificarea…"
         },
         "description": "Informații despre {merchantName}",
         "fields": {
@@ -1164,7 +1171,14 @@
           "parentCompany": "Companie mamă",
           "phone": "Telefon"
         },
+        "errors": {
+          "missingUpdateData": "Această înregistrare de comerciant este incompletă și nu poate fi actualizată în siguranță.",
+          "saveFailed": "Clasificarea comerciantului nu a putut fi salvată. Încercați din nou."
+        },
         "noMerchantLinked": "Niciun comerciant asociat acestei facturi",
+        "success": {
+          "classificationSaved": "Clasificarea comerciantului a fost salvată."
+        },
         "title": "Detalii comerciant"
       },
       "merchantReceiptsDialog": {
@@ -2046,6 +2060,23 @@
           "submitting": "Se trimite cererea de analiză."
         }
       },
+      "classificationPicker": {
+        "clear": "Șterge {system}",
+        "empty": "Nu a fost găsită nicio clasificare corespunzătoare.",
+        "error": "Căutarea clasificărilor nu este disponibilă. Încercați din nou.",
+        "loading": "Se caută clasificări…",
+        "minimumCharacters": "Introduceți cel puțin {count} caractere pentru căutare.",
+        "placeholder": "Selectați o clasificare",
+        "result": "{code}: {label}",
+        "searchPlaceholder": "Căutați un cod sau o etichetă oficială",
+        "selectedCode": "{system}: {code}",
+        "selectedResult": "{code}: {label}",
+        "systems": {
+          "ecoicopV2": "Clasificare ECOICOP v2",
+          "gs1Gpc": "Clasificare GS1 GPC",
+          "nace21": "Clasificare NACE 2.1"
+        }
+      },
       "createInvoice": {
         "detailsForm": {
           "fields": {
@@ -2107,6 +2138,7 @@
         },
         "notifications": {
           "analysisNotQueued": "Factura a fost creată, dar analiza nu a putut fi pusă în coadă. O puteți reîncerca din pagina facturii.",
+          "classificationNotSaved": "Factura a fost creată, dar clasificarea sa nu a putut fi salvată. O puteți reîncerca din pagina facturii.",
           "createFailed": "Factura nu a putut fi creată. Vă rugăm să încercați din nou.",
           "createdAndAnalysisQueued": "Factura a fost creată. Analiza a fost pusă în coadă."
         },
@@ -2124,6 +2156,8 @@
             "creating": "Se creează factura...",
             "hint": "Factura va fi creată și scanările selectate vor fi încărcate."
           },
+          "classificationFallback": "{system}: {code}",
+          "classificationResult": "{code}: {label}",
           "categories": {
             "carAuto": "Auto și vehicule",
             "fastFood": "Restaurante",
@@ -2144,6 +2178,7 @@
           "sections": {
             "details": {
               "category": "Categorie",
+              "classification": "Clasificare",
               "description": "Descriere",
               "name": "Nume",
               "paymentType": "Metodă de plată",

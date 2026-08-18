@@ -13,13 +13,13 @@
  */
 
 import {useScansStore} from "@/stores";
-import {AnalysisProfile, InvoiceCategory, PaymentType} from "@/types/invoices";
+import {AnalysisProfile, type ClassificationSelection, InvoiceCategory, PaymentType} from "@/types/invoices";
 import {type CachedScan, ScanMetadataKey, ScanMetadataStatus, ScanStatus} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
 import {createContext, useCallback, useContext, useMemo, useState, type ReactNode} from "react";
-import {analyzeInvoice, createInvoice} from "../../_actions/invoices";
+import {analyzeInvoice, createInvoice, patchInvoice} from "../../_actions/invoices";
 import {updateScan} from "../../_actions/scans";
 import {scanTypeToInvoiceScanType} from "../../_utils/mimeTypeUtilities";
 
@@ -34,6 +34,7 @@ type WizardStep = "select-scans" | "details" | "review";
 interface InvoiceDetails {
   name: string;
   category: InvoiceCategory;
+  classification: ClassificationSelection | null;
   paymentType: PaymentType;
   transactionDate: Date;
   description: string;
@@ -61,6 +62,7 @@ interface CreateInvoiceContextValue {
   invoiceDetails: InvoiceDetails;
   setName: (name: string) => void;
   setCategory: (category: InvoiceCategory) => void;
+  setClassification: (classification: ClassificationSelection | null) => void;
   setPaymentType: (type: PaymentType) => void;
   setTransactionDate: (date: Date) => void;
   setDescription: (desc: string) => void;
@@ -105,6 +107,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
   const [invoiceDetails, setInvoiceDetails] = useState<InvoiceDetails>(() => ({
     name: "",
     category: InvoiceCategory.NOT_DEFINED,
+    classification: null,
     paymentType: PaymentType.Unknown,
     transactionDate: new Date(),
     description: "",
@@ -173,6 +176,10 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
     setInvoiceDetails((prev) => ({...prev, category}));
   }, []);
 
+  const setClassification = useCallback((classification: ClassificationSelection | null) => {
+    setInvoiceDetails((prev) => ({...prev, classification}));
+  }, []);
+
   const setPaymentType = useCallback((paymentType: PaymentType) => {
     setInvoiceDetails((prev) => ({...prev, paymentType}));
   }, []);
@@ -224,6 +231,16 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
         return;
       }
       const invoice = result.data;
+
+      if (invoiceDetails.classification !== null) {
+        const classificationResult = await patchInvoice({
+          invoiceId: invoice.id,
+          payload: {classification: invoiceDetails.classification},
+        });
+        if (!classificationResult.success) {
+          toast.error(t((m) => m.forms.invoices.createInvoice.notifications.classificationNotSaved));
+        }
+      }
 
       // Mark scans as used in local store (immediate UI update)
       const scanIds = selectedScans.map((s) => s.id);
@@ -286,6 +303,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       invoiceDetails,
       setName,
       setCategory,
+      setClassification,
       setPaymentType,
       setTransactionDate,
       setDescription,
@@ -306,6 +324,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       invoiceDetails,
       setName,
       setCategory,
+      setClassification,
       setPaymentType,
       setTransactionDate,
       setDescription,

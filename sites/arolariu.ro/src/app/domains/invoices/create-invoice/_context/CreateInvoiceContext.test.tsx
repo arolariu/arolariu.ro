@@ -6,6 +6,7 @@
 import {analysisRouter} from "@/../tests/helpers/analysisNavigation";
 import {ANALYSIS_API_URL, getAnalysisApiRequests, installAnalysisFetchHandler} from "@/../tests/helpers/analysisBoundary";
 import {useScansStore} from "@/stores";
+import {ClassificationSystem, type ClassificationSelection} from "@/types/invoices";
 import type {CachedScan} from "@/types/scans";
 import {ScanStatus, ScanType} from "@/types/scans";
 import {act, render, waitFor} from "@testing-library/react";
@@ -18,6 +19,7 @@ const invoiceIdentifier = "11111111-1111-4111-8111-111111111111";
 let invokeCreateInvoiceWithScans: (() => Promise<void>) | null = null;
 let selectScan: ((scan: CachedScan) => void) | null = null;
 let setName: ((name: string) => void) | null = null;
+let setClassification: ((classification: ClassificationSelection | null) => void) | null = null;
 
 /**
  * Exposes the context methods under test without mocking the context or actions.
@@ -29,6 +31,7 @@ function ContextProbe(): React.JSX.Element {
   invokeCreateInvoiceWithScans = context.createInvoiceWithScans;
   selectScan = context.toggleScan;
   setName = context.setName;
+  setClassification = context.setClassification;
   return <div />;
 }
 
@@ -86,6 +89,7 @@ describe("CreateInvoiceContext durable analysis enqueue", () => {
     invokeCreateInvoiceWithScans = null;
     selectScan = null;
     setName = null;
+    setClassification = null;
     useScansStore.getState().clearScans();
   });
 
@@ -166,5 +170,44 @@ describe("CreateInvoiceContext durable analysis enqueue", () => {
 
     // Assert
     expect(analysisRouter.push).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${invoiceIdentifier}`);
+  });
+
+  it("patches a selected ECOICOP selection after the invoice is created", async () => {
+    // Arrange
+    installAnalysisFetchHandler((requestAtBoundary) => {
+      if (requestAtBoundary.url.endsWith("/analyze")) {
+        return acceptedAnalysisResponse();
+      }
+
+      if (requestAtBoundary.init?.method === "PATCH") {
+        return new Response(JSON.stringify({id: invoiceIdentifier, name: "Receipt", description: ""}), {status: 200});
+      }
+
+      return new Response(JSON.stringify({id: invoiceIdentifier, userIdentifier: "user-1"}), {status: 201});
+    });
+    const scan = createScan();
+    useScansStore.getState().setScans([scan]);
+    render(
+      <AnalysisTestProvider>
+        <CreateInvoiceProvider>
+          <ContextProbe />
+        </CreateInvoiceProvider>
+      </AnalysisTestProvider>,
+    );
+    act(() => {
+      selectScan?.(scan);
+      setName?.("Receipt");
+      setClassification?.({system: ClassificationSystem.EcoicopV2, code: "01.1"});
+    });
+
+    // Act
+    await act(async () => {
+      await invokeCreateInvoiceWithScans?.();
+    });
+
+    // Assert
+    const patchRequest = getAnalysisApiRequests().find((request) => request.init?.method === "PATCH");
+    expect(patchRequest).toBeDefined();
+    expect(patchRequest?.init?.body).toBe(JSON.stringify({classification: {system: ClassificationSystem.EcoicopV2, code: "01.1"}}));
   });
 });

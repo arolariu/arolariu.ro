@@ -20,28 +20,64 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
-import type {Invoice, InvoiceCategory, PaymentInformation, Product, Recipe} from "@/types/invoices";
+import {
+  isClassificationSelection,
+  type ClassificationSelection,
+  type Invoice,
+  type InvoiceCategory,
+  type PaymentInformation,
+  type Product,
+  type Recipe,
+} from "@/types/invoices";
 import {revalidatePath} from "next/cache";
 
 type ServerActionInputType = Readonly<{
   /** The identifier of the invoice to patch. */
-  invoiceId: string;
+  readonly invoiceId: string;
   /** The partial update payload. */
-  payload: {
-    name?: string;
-    description?: string;
-    category?: InvoiceCategory;
-    paymentInformation?: PaymentInformation;
-    merchantReference?: string;
-    isImportant?: boolean;
-    sharedWith?: string[];
-    additionalMetadata?: Record<string, unknown>;
-    items?: Product[];
-    possibleRecipes?: Recipe[];
+  readonly payload: {
+    readonly name?: string;
+    readonly description?: string;
+    /**
+     * A manual ECOICOP selection. Null is deliberately excluded: the backend
+     * treats null as "no change" for invoice PATCH requests and cannot clear it.
+     */
+    readonly classification?: ClassificationSelection;
+    readonly category?: InvoiceCategory;
+    readonly paymentInformation?: PaymentInformation;
+    readonly merchantReference?: string;
+    readonly isImportant?: boolean;
+    readonly sharedWith?: string[];
+    readonly additionalMetadata?: Record<string, unknown>;
+    readonly items?: Product[];
+    readonly possibleRecipes?: Recipe[];
   };
 }>;
 
 type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
+
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isPatchInvoicePayload(value: unknown): value is ServerActionInputType["payload"] {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  const classification = value["classification"];
+  return classification === undefined || isClassificationSelection(classification);
+}
+
+function isPatchInvoiceInput(value: unknown): value is ServerActionInputType {
+  return isRecord(value) && typeof value["invoiceId"] === "string" && isPatchInvoicePayload(value["payload"]);
+}
+
+function isInvoiceResponse(value: unknown): value is Invoice {
+  return (
+    isRecord(value) && typeof value["id"] === "string" && typeof value["name"] === "string" && typeof value["description"] === "string"
+  );
+}
 
 /**
  * Server action that performs a partial update (PATCH) on an invoice.
@@ -86,24 +122,31 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  * });
  * ```
  */
-export async function patchInvoice({invoiceId, payload}: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{patchInvoice}}, with:", {invoiceId, payload});
-
+export async function patchInvoice(input: unknown): ServerActionOutputType {
   return withSpan("api.actions.invoices.patchInvoice", async () => {
     try {
+      if (!isPatchInvoiceInput(input)) {
+        addSpanEvent("bff.request.patch-invoice.validation-error");
+        return {
+          success: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Invoice patch request is invalid.",
+          },
+        };
+      }
+
+      const {invoiceId, payload} = input;
       // Step 0. Validate invoice identifier is valid GUID
-      logWithTrace("info", "Validating identifier is valid...", {invoiceId}, "server");
       validateStringIsGuidType(invoiceId, "invoiceId");
 
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
-      logWithTrace("info", "Fetching BFF user JWT for authentication...", {}, "server");
       const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
       // Step 2. Make the API request to patch the invoice
       addSpanEvent("bff.request.patch-invoice.start");
-      logWithTrace("info", "Making API request to patch invoice...", {invoiceId}, "server");
       const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}`, {
         method: "PATCH",
         headers: {
@@ -115,28 +158,35 @@ export async function patchInvoice({invoiceId, payload}: ServerActionInputType):
       addSpanEvent("bff.request.patch-invoice.complete");
 
       if (response.ok) {
-        logWithTrace("info", "Successfully patched invoice...", {invoiceId}, "server");
-        const invoice = (await response.json()) as Invoice;
+        const invoice: unknown = await response.json();
+        if (!isInvoiceResponse(invoice)) {
+          addSpanEvent("bff.request.patch-invoice.invalid-response");
+          return {
+            success: false,
+            error: {
+              code: "SERVER_ERROR",
+              message: "The invoice update response was invalid. Please try again.",
+            },
+          };
+        }
+
         revalidatePath(`/domains/invoices/edit-invoice/${invoiceId}`, "page");
         revalidatePath(`/domains/invoices/view-invoice/${invoiceId}`, "page");
         return {success: true, data: invoice} as const;
       }
 
       addSpanEvent("bff.request.patch-invoice.error");
-      const errorText = await response.text();
       const internalMessage = `Failed to update invoice: ${response.status} ${response.statusText}`;
-      logWithTrace("warn", internalMessage, {invoiceId, errorText}, "server");
+      logWithTrace("warn", internalMessage, {httpStatus: response.status}, "server");
       const userMessage =
         response.status >= 500
           ? "A server error occurred. Please try again later."
           : "Failed to update the invoice. Please check your input and try again.";
       return createErrorResult(new Error(internalMessage), userMessage);
-    } catch (error: unknown) {
+    } catch (error) {
       addSpanEvent("bff.request.patch-invoice.error");
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error patching the invoice", {error, invoiceId}, "server");
-      console.error("Error patching the invoice:", error);
-      return createErrorResult(new Error(errorMessage));
+      logWithTrace("error", "Invoice patch request failed.", undefined, "server");
+      return createErrorResult(error, "Unable to update the invoice. Please try again.");
     }
   }) satisfies ServerActionOutputType;
 }

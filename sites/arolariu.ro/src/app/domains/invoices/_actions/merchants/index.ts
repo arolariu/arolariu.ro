@@ -10,6 +10,7 @@
  * - {@link fetchMerchant} - Fetch a single merchant by ID
  * - {@link fetchMerchants} - Fetch all merchants for the authenticated user
  * - {@link analyzeMerchant} - Enqueue asynchronous merchant analysis
+ * - {@link updateMerchant} - Replace a merchant and its manual NACE selection
  *
  * **Shared Characteristics:**
  * - **Authentication**: All actions require valid JWT token via `fetchBFFUserFromAuthService`
@@ -68,4 +69,5 @@ export {fetchMerchants} from "./fetchMerchants";
 
 // #region Merchant server-side mutations and analysis
 export {analyzeMerchant} from "./analyzeMerchant";
+export {updateMerchant} from "./updateMerchant";
 // #endregion

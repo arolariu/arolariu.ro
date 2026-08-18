@@ -5,11 +5,16 @@
 
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
+import {ClassificationSystem} from "@/types/invoices";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder} from "../../../../../../../tests/helpers";
 
 vi.mock("@/lib/actions/user/fetchUser");
 vi.mock("next/cache", () => ({revalidatePath: vi.fn()}));
+vi.mock("@/lib/utils.server", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/utils.server")>();
+  return {...actual, fetchWithTimeout: vi.fn()};
+});
 const {addInvoiceProduct} = await import("./addInvoiceProduct");
 const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
 const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
@@ -20,13 +25,18 @@ describe("addInvoiceProduct", () => {
     vi.clearAllMocks();
     mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
     mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse(TestDataBuilder.build("product")) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+      TestDataBuilder.jsonResponse({...TestDataBuilder.build("product"), classification: null}) as Awaited<
+        ReturnType<typeof fetchWithTimeout>
+      >,
     );
   });
 
-  it("posts a product payload and revalidates invoice pages", async () => {
+  it("posts only the product DTO fields and GPC selection, then revalidates invoice pages", async () => {
     const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const product = TestDataBuilder.build("product", {name: "Milk", price: 5.99});
+    const product = {
+      ...TestDataBuilder.build("product", {name: "Milk", price: 5.99}),
+      classification: {system: ClassificationSystem.Gs1Gpc, code: "10000111"},
+    };
 
     const result = await addInvoiceProduct({invoiceId, product});
 
@@ -44,8 +54,14 @@ describe("addInvoiceProduct", () => {
 
     const callArgs = mockFetchWithTimeout.mock.calls[0];
     const body = JSON.parse(callArgs?.[1]?.body as string);
-    expect(body.name).toBe("Milk");
-    expect(body.price).toBe(5.99);
+    expect(body).toEqual({
+      name: "Milk",
+      classification: {system: ClassificationSystem.Gs1Gpc, code: "10000111"},
+      quantity: 1,
+      quantityUnit: "pcs",
+      productCode: "",
+      price: 5.99,
+    });
 
     expect(mockRevalidatePath).toHaveBeenCalledWith(`/domains/invoices/edit-invoice/${invoiceId}`, "page");
     expect(mockRevalidatePath).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${invoiceId}`, "page");
@@ -59,6 +75,18 @@ describe("addInvoiceProduct", () => {
 
     expect(result.success).toBe(false);
     expect(mockFetchWithTimeout).not.toHaveBeenCalled();
+  });
+
+  it("rejects malformed outer input and malformed success responses", async () => {
+    const invalidInputResult = await addInvoiceProduct(null);
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse({invalid: true}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+    const malformedResponseResult = await addInvoiceProduct({
+      invoiceId: "11111111-1111-4111-8111-111111111111",
+      product: TestDataBuilder.build("product"),
+    });
+
+    expect(invalidInputResult).toMatchObject({success: false, error: {code: "VALIDATION_ERROR"}});
+    expect(malformedResponseResult).toMatchObject({success: false, error: {code: "SERVER_ERROR"}});
   });
 
   it("maps 5xx responses to a server-error user message", async () => {
@@ -75,8 +103,7 @@ describe("addInvoiceProduct", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toContain("500");
-      expect(result.error.message).toContain("Failed to add product");
+      expect(result.error.message).toBe("A server error occurred. Please try again later.");
     }
   });
 
@@ -92,8 +119,7 @@ describe("addInvoiceProduct", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toContain("400");
-      expect(result.error.message).toContain("Failed to add product");
+      expect(result.error.message).toBe("Failed to add the product. Please check your input and try again.");
     }
   });
 
@@ -119,7 +145,7 @@ describe("addInvoiceProduct", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toContain("Network timeout");
+      expect(result.error.message).toBe("Unable to add the product. Please try again.");
     }
   });
 

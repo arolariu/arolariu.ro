@@ -893,30 +893,30 @@
           "save": "Appliquer à tous",
           "saving": "Enregistrement..."
         },
-        "description": "{count, plural, one {Changer la catégorie pour # produit} other {Changer la catégorie pour # produits}}",
+        "description": "{count, plural, one {Modifier la classification GS1 GPC de # produit} other {Modifier la classification GS1 GPC de # produits}}",
         "errors": {
           "allFailed": "Echec de la mise a jour de tous les produits",
           "missingData": "Données manquantes",
           "noProducts": "Aucun produit sélectionné",
-          "saveFailed": "Échec de la mise à jour des catégories"
+          "saveFailed": "Échec de la mise à jour des classifications"
         },
         "labels": {
           "andMore": "...et {count} de plus",
-          "newCategory": "Nouvelle catégorie",
+          "newCategory": "Nouvelle classification GS1 GPC",
           "progress": "Progression",
           "selectedProducts": "Produits sélectionnés"
         },
         "placeholders": {
-          "selectCategory": "Sélectionner une catégorie"
+          "selectCategory": "Sélectionner une classification"
         },
         "progress": {
           "updating": "Mise a jour {current} sur {total}..."
         },
         "success": {
           "partialSuccess": "{success} produits mis a jour, {failed} echoues",
-          "saved": "{count, plural, one {Catégorie mise à jour pour # produit} other {Catégorie mise à jour pour # produits}}"
+          "saved": "{count, plural, one {Classification mise à jour pour # produit} other {Classification mise à jour pour # produits}}"
         },
-        "title": "Changer de catégorie"
+        "title": "Changer la classification"
       },
       "createInvoiceDialog": {
         "batchMode": {
@@ -1136,9 +1136,13 @@
           "cancel": "Annuler",
           "next": "Suivant",
           "previous": "Précédent",
+          "saving": "Enregistrement…",
           "saveChanges": "Enregistrer changes"
         },
         "description": "Mettez à jour les quantités, les prix ou ajoutez de nouveaux articles à cette facture",
+        "errors": {
+          "saveFailed": "Les modifications des articles n’ont pas pu être enregistrées. Veuillez réessayer."
+        },
         "footer": {
           "itemsFound": "{total} articles trouvés (affichage de {shown})",
           "itemsTotal": "{count, plural, one {# article au total} other {# articles au total}}",
@@ -1146,6 +1150,7 @@
         },
         "table": {
           "actions": "Opérations",
+          "classification": "Classification GS1 GPC",
           "item": "Article",
           "price": "Prix",
           "quantity": "Quantité",
@@ -1156,7 +1161,9 @@
       },
       "merchantDialog": {
         "buttons": {
-          "openInMaps": "Ouvrir dans Maps"
+          "openInMaps": "Ouvrir dans Maps",
+          "saveClassification": "Enregistrer la classification",
+          "savingClassification": "Enregistrement de la classification…"
         },
         "description": "Informations sur {merchantName}",
         "fields": {
@@ -1164,7 +1171,14 @@
           "parentCompany": "Société mère",
           "phone": "Téléphone"
         },
+        "errors": {
+          "missingUpdateData": "Cette fiche commerçant est incomplète et ne peut pas être mise à jour en toute sécurité.",
+          "saveFailed": "La classification du commerçant n’a pas pu être enregistrée. Veuillez réessayer."
+        },
         "noMerchantLinked": "Aucun commerçant lié à cette facture",
+        "success": {
+          "classificationSaved": "Classification du commerçant enregistrée."
+        },
         "title": "Détails du commerçant"
       },
       "merchantReceiptsDialog": {
@@ -2046,6 +2060,23 @@
           "submitting": "Envoi de la demande d’analyse."
         }
       },
+      "classificationPicker": {
+        "clear": "Effacer {system}",
+        "empty": "Aucune classification correspondante n’a été trouvée.",
+        "error": "La recherche de classifications est indisponible. Veuillez réessayer.",
+        "loading": "Recherche de classifications…",
+        "minimumCharacters": "Saisissez au moins {count} caractères pour effectuer une recherche.",
+        "placeholder": "Sélectionner une classification",
+        "result": "{code} : {label}",
+        "searchPlaceholder": "Rechercher un code ou un libellé officiel",
+        "selectedCode": "{system} : {code}",
+        "selectedResult": "{code} : {label}",
+        "systems": {
+          "ecoicopV2": "Classification ECOICOP v2",
+          "gs1Gpc": "Classification GS1 GPC",
+          "nace21": "Classification NACE 2.1"
+        }
+      },
       "createInvoice": {
         "detailsForm": {
           "fields": {
@@ -2107,6 +2138,7 @@
         },
         "notifications": {
           "analysisNotQueued": "La facture a été créée, mais l’analyse n’a pas pu être mise en file d’attente. Vous pouvez la réessayer depuis la page de la facture.",
+          "classificationNotSaved": "La facture a été créée, mais sa classification n’a pas pu être enregistrée. Vous pouvez réessayer depuis la page de la facture.",
           "createFailed": "Impossible de créer la facture. Veuillez réessayer.",
           "createdAndAnalysisQueued": "La facture a été créée. L’analyse a été mise en file d’attente."
         },
@@ -2124,6 +2156,8 @@
             "creating": "Création de la facture...",
             "hint": "Ceci créera la facture et téléchargera les numérisations sélectionnées."
           },
+          "classificationFallback": "{system} : {code}",
+          "classificationResult": "{code} : {label}",
           "categories": {
             "carAuto": "Auto et véhicule",
             "fastFood": "Restauration",
@@ -2144,6 +2178,7 @@
           "sections": {
             "details": {
               "category": "Catégorie",
+              "classification": "Classification",
               "description": "Description",
               "name": "Nom",
               "paymentType": "Mode de paiement",

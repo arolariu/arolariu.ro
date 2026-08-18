@@ -1,0 +1,146 @@
+@use "../../../../../styles/abstracts" as *;
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+  min-inline-size: 0;
+}
+
+.label {
+  color: color("foreground");
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
+}
+
+.controlRow {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  min-inline-size: 0;
+}
+
+.trigger {
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+  gap: space(2);
+  min-inline-size: 0;
+  text-align: start;
+}
+
+.triggerText,
+.resultLabel,
+.resultPath {
+  overflow-wrap: anywhere;
+}
+
+.triggerText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.triggerIcon {
+  flex: 0 0 auto;
+  inline-size: space(4);
+  block-size: space(4);
+}
+
+.clearButton {
+  flex: 0 0 auto;
+}
+
+.popoverContent {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+  inline-size: min(32rem, calc(100vw - #{space(8)}));
+  max-block-size: min(26rem, calc(100vh - #{space(16)}));
+  overflow: hidden;
+}
+
+.searchInput {
+  inline-size: 100%;
+}
+
+.feedback,
+.feedbackError {
+  margin: 0;
+  padding: space(2);
+  color: color("muted-foreground");
+  font-size: font-size("sm");
+}
+
+.feedbackError {
+  color: color("destructive");
+}
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: space(1);
+  max-block-size: 19rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.result {
+  border-radius: radius("sm");
+
+  &[data-active="true"] {
+    outline: 2px solid color("ring");
+    outline-offset: -2px;
+  }
+}
+
+.resultButton {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  inline-size: 100%;
+  min-block-size: 3.5rem;
+  padding: space(2) space(3);
+  text-align: start;
+  white-space: normal;
+}
+
+.resultHeader {
+  display: flex;
+  gap: space(2);
+  align-items: baseline;
+  min-inline-size: 0;
+}
+
+.resultCode {
+  flex: 0 0 auto;
+  color: color("primary");
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: font-size("xs");
+  font-weight: font-weight("semibold");
+}
+
+.resultLabel {
+  color: color("foreground");
+  font-size: font-size("sm");
+  font-weight: font-weight("medium");
+}
+
+.resultPath {
+  margin-block-start: space(1);
+  color: color("muted-foreground");
+  font-size: font-size("xs");
+  line-height: 1.35;
+}
+
+@media (max-width: 30rem) {
+  .controlRow {
+    align-items: stretch;
+  }
+
+  .trigger {
+    min-block-size: 2.75rem;
+  }
+}

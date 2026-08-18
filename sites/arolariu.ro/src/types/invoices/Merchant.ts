@@ -21,6 +21,7 @@
  */
 
 import type {NamedEntity} from "../DDD";
+import type {StandardClassification} from "./Classification";
 
 /**
  * Categorizes merchants by their business type and scale.
@@ -140,6 +141,11 @@ export interface ContactInformation {
  * @see {@link MerchantCategory} for category options
  */
 export interface Merchant extends NamedEntity<string> {
+  /**
+   * The canonical NACE 2.1 classification, when available from the backend.
+   */
+  classification?: StandardClassification | null;
+
   /** The category of the merchant. */
   category: MerchantCategory;
 
@@ -148,6 +154,16 @@ export interface Merchant extends NamedEntity<string> {
 
   /** The unique identifier of the parent company. */
   parentCompanyId: string;
+
+  /**
+   * Extensible metadata returned by the merchant update endpoint.
+   *
+   * @remarks
+   * The field is optional while legacy cached merchant records are migrated.
+   * Merchant PUT callers must retain it when it is available to avoid clearing
+   * backend metadata.
+   */
+  additionalMetadata?: Readonly<Record<string, string>>;
 }
 
 /**

@@ -1,7 +1,7 @@
 "use client";
 
 import {usePaginationWithSearch} from "@/hooks";
-import {Product, ProductCategory} from "@/types/invoices";
+import {ClassificationSystem, type ClassificationSelection, type Product, ProductCategory} from "@/types/invoices";
 import {
   Button,
   Dialog,
@@ -18,12 +18,37 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  toast,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
+import {useRouter} from "next/navigation";
 import {useCallback, useEffect, useState} from "react";
 import {TbDisc, TbPlus, TbTrash} from "react-icons/tb";
+import {addInvoiceProduct, deleteInvoiceProduct, updateInvoiceProduct} from "../../../_actions/invoices";
 import {useDialog} from "../../../_contexts/DialogContext";
+import {ClassificationPicker} from "../../../_components/analysis/ClassificationPicker";
 import styles from "./ItemsDialog.module.scss";
+
+type EditableProduct = Omit<Product, "classification">
+  & Readonly<{
+    classification: ClassificationSelection | null;
+    originalProductName: string | null;
+  }>;
+
+function toEditableProduct(product: Product): EditableProduct {
+  return {
+    ...product,
+    classification: product.classification ?? null,
+    originalProductName: product.name,
+  };
+}
+
+function toProductMutation(
+  item: EditableProduct,
+): Omit<Product, "classification"> & Readonly<{classification: ClassificationSelection | null}> {
+  const {classification, originalProductName: _originalProductName, ...product} = item;
+  return {...product, classification};
+}
 
 /**
  * Dialog for bulk editing invoice line items with add, modify, and delete operations.
@@ -39,6 +64,7 @@ import styles from "./ItemsDialog.module.scss";
  *
  * **Item Fields**:
  * - `name`: Product name as scanned/entered
+ * - `classification`: Optional manual GS1 GPC code selection
  * - `quantity`: Number of units purchased
  * - `quantityUnit`: Unit of measurement (e.g., "kg", "pcs")
  * - `price`: Unit price
@@ -51,7 +77,7 @@ import styles from "./ItemsDialog.module.scss";
  * Payload contains the full invoice object.
  *
  * **Validation**: New items are created with sensible defaults:
- * - `category`: `ProductCategory.NOT_DEFINED`
+ * - `category`: `ProductCategory.NOT_DEFINED` for legacy compatibility
  * - `quantity`: 1
  * - `price`: 0
  *
@@ -70,6 +96,7 @@ import styles from "./ItemsDialog.module.scss";
  */
 export default function ItemsDialog(): React.JSX.Element {
   const t = useTranslations();
+  const router = useRouter();
   const {
     currentDialog: {payload},
     isOpen,
@@ -79,22 +106,72 @@ export default function ItemsDialog(): React.JSX.Element {
   const invoice = payload;
   const {items} = invoice;
 
-  const [editableItems, setEditableItems] = useState<Product[]>(items);
-  const {currentPage, setCurrentPage, totalPages, paginatedItems, pageSize} = usePaginationWithSearch<Product>({
+  const [editableItems, setEditableItems] = useState<EditableProduct[]>(() => items.map(toEditableProduct));
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+  const {currentPage, setCurrentPage, totalPages, paginatedItems, pageSize} = usePaginationWithSearch<EditableProduct>({
     items: editableItems,
   });
 
   useEffect(() => {
-    setEditableItems(items);
+    setEditableItems(items.map(toEditableProduct));
   }, [items]);
 
-  const handleSaveChanges = useCallback(() => {
-    // TODO: Implement save functionality
-    close();
-  }, [close]);
+  const handleSaveChanges = useCallback(async () => {
+    setIsSaving(true);
+    setSaveError(false);
+
+    try {
+      for (const item of editableItems) {
+        if (item.name.trim().length === 0) {
+          throw new Error("Product name is required.");
+        }
+
+        if (item.originalProductName === null) {
+          const addResult = await addInvoiceProduct({
+            invoiceId: invoice.id,
+            product: toProductMutation(item),
+          });
+          if (!addResult.success) {
+            throw new Error("Product creation failed.");
+          }
+          continue;
+        }
+
+        const updateResult = await updateInvoiceProduct({
+          invoiceId: invoice.id,
+          payload: {
+            originalProductName: item.originalProductName,
+            updatedProduct: toProductMutation(item),
+          },
+        });
+        if (!updateResult.success) {
+          throw new Error("Product update failed.");
+        }
+      }
+
+      for (const originalItem of items) {
+        const exists = editableItems.some((item) => item.originalProductName === originalItem.name);
+        if (!exists) {
+          const deleteResult = await deleteInvoiceProduct({invoiceId: invoice.id, productName: originalItem.name});
+          if (!deleteResult.success) {
+            throw new Error("Product deletion failed.");
+          }
+        }
+      }
+
+      close();
+      router.refresh();
+    } catch {
+      setSaveError(true);
+      toast.error(t(selectorFromPath("dialogs.invoices.itemsDialog.errors.saveFailed")));
+    } finally {
+      setIsSaving(false);
+    }
+  }, [close, editableItems, invoice.id, items, router, t]);
 
   const handleAddNewItem = useCallback(() => {
-    const newItem: Product = {
+    const newItem: EditableProduct = {
       name: "",
       category: ProductCategory.NOT_DEFINED,
       detectedAllergens: [],
@@ -109,16 +186,30 @@ export default function ItemsDialog(): React.JSX.Element {
       quantity: 1,
       quantityUnit: "",
       price: 0,
+      classification: null,
+      originalProductName: null,
     };
     setEditableItems((prev) => [...prev, newItem]);
   }, [setEditableItems]);
 
   const handleDeleteItem = useCallback(
-    (item: Product) => () => {
+    (item: EditableProduct) => () => {
       // eslint-disable-next-line sonarjs/no-nested-functions -- Curried callback pattern required for item-specific delete handler
       setEditableItems((prev) => prev.filter((i) => i !== item));
     },
     [setEditableItems],
+  );
+
+  const handleClassificationChangeAtIndex = useCallback(
+    (index: number) => (classification: ClassificationSelection | null) => {
+      setEditableItems((previousItems) => {
+        const item = previousItems.at(index);
+        return item === undefined
+          ? previousItems
+          : [...previousItems.slice(0, index), {...item, classification}, ...previousItems.slice(index + 1)];
+      });
+    },
+    [],
   );
 
   /**
@@ -143,7 +234,7 @@ export default function ItemsDialog(): React.JSX.Element {
           }
 
           // Use specific property assignments with functional approach
-          const getUpdatedItem = (): Product => {
+          const getUpdatedItem = (): EditableProduct => {
             switch (name) {
               case "name":
                 return {...currentItem, name: value};
@@ -201,6 +292,7 @@ export default function ItemsDialog(): React.JSX.Element {
               <TableHeader>
                 <TableRow className={styles["headerRow"]}>
                   <TableHead className={styles["tableHeader"]}>{t((m) => m.dialogs.invoices.itemsDialog.table.item)}</TableHead>
+                  <TableHead className={styles["tableHeader"]}>{t((m) => m.dialogs.invoices.itemsDialog.table.classification)}</TableHead>
                   <TableHead className={styles["tableHeaderCenter"]}>{t((m) => m.dialogs.invoices.itemsDialog.table.quantity)}</TableHead>
                   <TableHead className={styles["tableHeaderCenter"]}>{t((m) => m.dialogs.invoices.itemsDialog.table.unit)}</TableHead>
                   <TableHead className={styles["tableHeaderRight"]}>{t((m) => m.dialogs.invoices.itemsDialog.table.price)}</TableHead>
@@ -222,6 +314,14 @@ export default function ItemsDialog(): React.JSX.Element {
                           value={item.name}
                           onChange={handleValueChangeAtIndex(absoluteIndex)}
                           className={styles["nameInput"]}
+                        />
+                      </TableCell>
+                      <TableCell className={styles["cellClassification"]}>
+                        <ClassificationPicker
+                          system={ClassificationSystem.Gs1Gpc}
+                          value={item.classification}
+                          onChange={handleClassificationChangeAtIndex(absoluteIndex)}
+                          disabled={isSaving}
                         />
                       </TableCell>
                       <TableCell className={styles["cellCenter"]}>
@@ -259,7 +359,8 @@ export default function ItemsDialog(): React.JSX.Element {
                           aria-label={t((m) => m.dialogs.invoices.itemsDialog.aria.deleteItem, {
                             name: item.name || t((m) => m.dialogs.invoices.itemsDialog.aria.unnamedItem),
                           })}
-                          onClick={handleDeleteItem(item)}>
+                          onClick={handleDeleteItem(item)}
+                          disabled={isSaving}>
                           <TbTrash className={styles["trashIcon"]} />
                         </Button>
                       </TableCell>
@@ -271,7 +372,7 @@ export default function ItemsDialog(): React.JSX.Element {
                 <TableRow className={styles["headerRow"]}>
                   <TableHead
                     className={styles["tableHeader"]}
-                    colSpan={2}>
+                    colSpan={3}>
                     <span
                       role='status'
                       aria-live='polite'
@@ -316,6 +417,13 @@ export default function ItemsDialog(): React.JSX.Element {
               </TableFooter>
             </Table>
           </div>
+          {saveError ? (
+            <p
+              className={styles["saveError"]}
+              role='alert'>
+              {t(selectorFromPath("dialogs.invoices.itemsDialog.errors.saveFailed"))}
+            </p>
+          ) : null}
 
           {/* Controls */}
           <div className={styles["controls"]}>
@@ -345,9 +453,12 @@ export default function ItemsDialog(): React.JSX.Element {
           </Button>
           <Button
             aria-label={t((m) => m.dialogs.invoices.itemsDialog.aria.save)}
-            onClick={handleSaveChanges}>
+            onClick={handleSaveChanges}
+            disabled={isSaving}>
             <TbDisc className={styles["buttonIcon"]} />
-            {t((m) => m.dialogs.invoices.itemsDialog.buttons.saveChanges)}
+            {isSaving
+              ? t((m) => m.dialogs.invoices.itemsDialog.buttons.saving)
+              : t((m) => m.dialogs.invoices.itemsDialog.buttons.saveChanges)}
           </Button>
         </DialogFooter>
       </DialogContent>

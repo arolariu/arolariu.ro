@@ -5,12 +5,17 @@
 
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
+import {ClassificationSystem} from "@/types/invoices";
 import {revalidatePath} from "next/cache";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder} from "../../../../../../tests/helpers";
 
 vi.mock("@/lib/actions/user/fetchUser");
 vi.mock("next/cache");
+vi.mock("@/lib/utils.server", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/utils.server")>();
+  return {...actual, fetchWithTimeout: vi.fn()};
+});
 const {patchInvoice} = await import("./patchInvoice");
 const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
 const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
@@ -30,7 +35,10 @@ describe("patchInvoice", () => {
   });
 
   it("patches a partial invoice payload and revalidates invoice pages", async () => {
-    const payload = {name: "Updated Invoice"};
+    const payload = {
+      name: "Updated Invoice",
+      classification: {system: ClassificationSystem.EcoicopV2, code: "01.1"},
+    };
 
     const result = await patchInvoice({invoiceId, payload});
 
@@ -61,8 +69,20 @@ describe("patchInvoice", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toContain("invoiceId");
+      expect(result.error.message).toBe("Unable to update the invoice. Please try again.");
     }
+  });
+
+  it("rejects malformed classification input and malformed JSON responses", async () => {
+    const malformedInput = await patchInvoice({
+      invoiceId,
+      payload: {classification: {system: "INVALID", code: "01.1"}},
+    });
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse({invalid: true}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+    const malformedResponse = await patchInvoice({invoiceId, payload: {}});
+
+    expect(malformedInput).toMatchObject({success: false, error: {code: "VALIDATION_ERROR"}});
+    expect(malformedResponse).toMatchObject({success: false, error: {code: "SERVER_ERROR"}});
   });
 
   it("returns the server-error user message for 5xx responses", async () => {
@@ -76,8 +96,7 @@ describe("patchInvoice", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toContain("500");
-      expect(result.error.message).toContain("Failed to update invoice");
+      expect(result.error.message).toBe("A server error occurred. Please try again later.");
     }
   });
 
@@ -101,7 +120,7 @@ describe("patchInvoice", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toContain("Auth failed");
+      expect(result.error.message).toBe("Unable to update the invoice. Please try again.");
     }
   });
 
@@ -112,7 +131,7 @@ describe("patchInvoice", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toContain("Network error");
+      expect(result.error.message).toBe("Unable to update the invoice. Please try again.");
     }
   });
 
@@ -123,7 +142,7 @@ describe("patchInvoice", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toContain("An unexpected error occurred");
+      expect(result.error.message).toBe("Unable to update the invoice. Please try again.");
     }
   });
 });

@@ -9,27 +9,17 @@ import {selectorFromPath, useTranslations} from "next-intl-selector";
  * @remarks
  * Displays summary of:
  * - Selected scans (thumbnails)
- * - Invoice details (name, category, payment, date)
+ * - Invoice details (name, classification, payment, date)
  * - Create invoice button with loading state
  */
 
-import {InvoiceCategory, PaymentType} from "@/types/invoices";
+import {isStandardClassification, PaymentType} from "@/types/invoices";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Spinner} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useFormatter} from "next-intl";
-import {TbCalendar, TbCategory, TbCreditCard, TbFileDescription, TbFileInvoice, TbFileTypePdf, TbPhoto, TbSparkles} from "react-icons/tb";
+import {TbCalendar, TbCreditCard, TbFileDescription, TbFileInvoice, TbFileTypePdf, TbPhoto, TbSparkles} from "react-icons/tb";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./ReviewStep.module.scss";
-
-/** Maps InvoiceCategory enum to i18n key suffix. */
-const CATEGORY_KEYS: Record<number, "notDefined" | "grocery" | "fastFood" | "homeCleaning" | "carAuto" | "other"> = {
-  [InvoiceCategory.NOT_DEFINED]: "notDefined",
-  [InvoiceCategory.GROCERY]: "grocery",
-  [InvoiceCategory.FAST_FOOD]: "fastFood",
-  [InvoiceCategory.HOME_CLEANING]: "homeCleaning",
-  [InvoiceCategory.CAR_AUTO]: "carAuto",
-  [InvoiceCategory.OTHER]: "other",
-};
 
 /** Maps PaymentType enum to i18n key suffix. */
 const PAYMENT_TYPE_KEYS: Record<number, "unknown" | "cash" | "card" | "transfer" | "mobilePayment" | "voucher" | "other"> = {
@@ -113,21 +103,26 @@ export default function ReviewStep(): React.JSX.Element {
             <div className={styles["detailValue"]}>{invoiceDetails.name}</div>
           </div>
 
-          <div className={styles["detailRow"]}>
-            <div className={styles["detailLabel"]}>
-              <TbCategory />
-              {t((m) => m.forms.invoices.createInvoice.reviewStep.sections.details.category)}
+          {invoiceDetails.classification !== null ? (
+            <div className={styles["detailRow"]}>
+              <div className={styles["detailLabel"]}>
+                {t((m) => m.forms.invoices.createInvoice.reviewStep.sections.details.classification)}
+              </div>
+              <div className={styles["detailValue"]}>
+                <Badge variant='outline'>
+                  {isStandardClassification(invoiceDetails.classification)
+                    ? t((m) => m.forms.invoices.createInvoice.reviewStep.classificationResult, {
+                        code: invoiceDetails.classification.code,
+                        label: invoiceDetails.classification.officialLabel,
+                      })
+                    : t((m) => m.forms.invoices.createInvoice.reviewStep.classificationFallback, {
+                        system: invoiceDetails.classification.system,
+                        code: invoiceDetails.classification.code,
+                      })}
+                </Badge>
+              </div>
             </div>
-            <div className={styles["detailValue"]}>
-              <Badge variant='outline'>
-                {t(
-                  selectorFromPath(
-                    `forms.invoices.createInvoice.reviewStep.categories.${CATEGORY_KEYS[invoiceDetails.category] ?? "notDefined"}`,
-                  ),
-                )}
-              </Badge>
-            </div>
-          </div>
+          ) : null}
 
           <div className={styles["detailRow"]}>
             <div className={styles["detailLabel"]}>

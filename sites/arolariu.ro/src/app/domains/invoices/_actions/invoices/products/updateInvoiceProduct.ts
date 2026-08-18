@@ -42,7 +42,13 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
-import type {Product} from "@/types/invoices";
+import {
+  isClassificationSelection,
+  isStandardClassification,
+  type ClassificationSelection,
+  type Product,
+  type StandardClassification,
+} from "@/types/invoices";
 import {revalidatePath} from "next/cache";
 
 /**
@@ -69,7 +75,7 @@ type ServerActionInputType = Readonly<{
      * be present — the backend constructs a fresh product from this payload
      * (delete + add), so omitted fields revert to defaults.
      */
-    readonly updatedProduct: Product;
+    readonly updatedProduct: Omit<Product, "classification"> & Readonly<{classification?: ClassificationSelection | null}>;
   }>;
 }>;
 
@@ -80,7 +86,100 @@ type ServerActionInputType = Readonly<{
  * Returns a ServerActionResult with the updated product (including server-generated metadata) on success.
  * On failure, includes error details and user-friendly message.
  */
+interface ProductMutationResponse {
+  readonly name: string;
+  readonly classification: StandardClassification | null;
+  readonly quantity: number;
+  readonly quantityUnit: string;
+  readonly productCode: string;
+  readonly price: number;
+  readonly totalPrice: number;
+  readonly metadata: Product["metadata"];
+}
+
 type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
+
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isProductInput(value: unknown): value is Product {
+  if (
+    !isRecord(value)
+    || typeof value["name"] !== "string"
+    || typeof value["category"] !== "number"
+    || typeof value["quantity"] !== "number"
+    || typeof value["quantityUnit"] !== "string"
+    || typeof value["productCode"] !== "string"
+    || typeof value["price"] !== "number"
+    || typeof value["totalPrice"] !== "number"
+    || !Array.isArray(value["detectedAllergens"])
+    || !isRecord(value["metadata"])
+  ) {
+    return false;
+  }
+
+  const metadata = value["metadata"];
+  return (
+    typeof metadata["isEdited"] === "boolean"
+    && typeof metadata["isComplete"] === "boolean"
+    && typeof metadata["isSoftDeleted"] === "boolean"
+    && typeof metadata["confidence"] === "number"
+  );
+}
+
+function isProductMutationResponse(value: unknown): value is ProductMutationResponse {
+  if (
+    !isRecord(value)
+    || typeof value["name"] !== "string"
+    || (value["classification"] !== null && !isStandardClassification(value["classification"]))
+    || typeof value["quantity"] !== "number"
+    || typeof value["quantityUnit"] !== "string"
+    || typeof value["productCode"] !== "string"
+    || typeof value["price"] !== "number"
+    || typeof value["totalPrice"] !== "number"
+    || !isRecord(value["metadata"])
+  ) {
+    return false;
+  }
+
+  const metadata = value["metadata"];
+  return (
+    typeof metadata["isEdited"] === "boolean"
+    && typeof metadata["isComplete"] === "boolean"
+    && typeof metadata["isSoftDeleted"] === "boolean"
+    && typeof metadata["confidence"] === "number"
+  );
+}
+
+function isUpdateInvoiceProductInput(value: unknown): value is ServerActionInputType {
+  if (
+    !isRecord(value)
+    || typeof value["invoiceId"] !== "string"
+    || !isRecord(value["payload"])
+    || typeof value["payload"]["originalProductName"] !== "string"
+    || !isProductInput(value["payload"]["updatedProduct"])
+  ) {
+    return false;
+  }
+
+  const classification = value["payload"]["updatedProduct"]["classification"];
+  return classification === undefined || classification === null || isClassificationSelection(classification);
+}
+
+function toProduct(input: ServerActionInputType["payload"]["updatedProduct"], response: ProductMutationResponse): Product {
+  return {
+    ...input,
+    name: response.name,
+    classification: response.classification,
+    quantity: response.quantity,
+    quantityUnit: response.quantityUnit,
+    productCode: response.productCode,
+    price: response.price,
+    totalPrice: response.totalPrice,
+    metadata: response.metadata,
+  };
+}
 
 /**
  * Updates an existing product in an invoice's line items via the backend API.
@@ -206,18 +305,26 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  * @see {@link ServerActionResult} - Result type wrapper
  * @see {@link Product} - Product type definition
  */
-export async function updateInvoiceProduct({invoiceId, payload}: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{updateInvoiceProduct}}, with:", {invoiceId, payload});
-
+export async function updateInvoiceProduct(input: unknown): ServerActionOutputType {
   return withSpan("api.actions.invoices.updateInvoiceProduct", async () => {
     try {
+      if (!isUpdateInvoiceProductInput(input)) {
+        addSpanEvent("bff.request.update-invoice-product.validation-error");
+        return {
+          success: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Product update request is invalid.",
+          },
+        };
+      }
+
+      const {invoiceId, payload} = input;
       // Step 0. Validate input is correct
-      logWithTrace("info", "Validating input for updateInvoiceProduct", {invoiceId, payload}, "server");
       validateStringIsGuidType(invoiceId, "invoiceId");
 
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
-      logWithTrace("info", "Fetching BFF user JWT for authentication", {}, "server");
       const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
@@ -230,16 +337,14 @@ export async function updateInvoiceProduct({invoiceId, payload}: ServerActionInp
       const requestBody = {
         originalProductName,
         name: updatedProduct.name,
-        category: updatedProduct.category,
+        classification: updatedProduct.classification ?? null,
         quantity: updatedProduct.quantity,
         quantityUnit: updatedProduct.quantityUnit,
         productCode: updatedProduct.productCode,
         price: updatedProduct.price,
-        detectedAllergens: updatedProduct.detectedAllergens,
       } as const;
 
       addSpanEvent("bff.request.update-invoice-product.start");
-      logWithTrace("info", "Making API request to update product in invoice", {invoiceId}, "server");
       const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}/products`, {
         method: "PUT",
         headers: {
@@ -251,31 +356,38 @@ export async function updateInvoiceProduct({invoiceId, payload}: ServerActionInp
       addSpanEvent("bff.request.update-invoice-product.complete");
 
       if (response.ok) {
-        logWithTrace("info", "Successfully updated product in invoice", {invoiceId}, "server");
-        const product = (await response.json()) as Product;
+        const product: unknown = await response.json();
+        if (!isProductMutationResponse(product)) {
+          addSpanEvent("bff.request.update-invoice-product.invalid-response");
+          return {
+            success: false,
+            error: {
+              code: "SERVER_ERROR",
+              message: "The product update response was invalid. Please try again.",
+            },
+          };
+        }
+
         revalidatePath(`/domains/invoices/edit-invoice/${invoiceId}`, "page");
         revalidatePath(`/domains/invoices/view-invoice/${invoiceId}`, "page");
         return {
           success: true,
-          data: product,
+          data: toProduct(updatedProduct, product),
         } as const;
       }
 
       addSpanEvent("bff.request.update-invoice-product.error");
-      const errorText = await response.text();
-      const internalMessage = `Failed to update product: ${response.status} ${response.statusText} - ${errorText}`;
-      logWithTrace("warn", internalMessage, {invoiceId, errorText}, "server");
+      const internalMessage = `Failed to update product: ${response.status} ${response.statusText}`;
+      logWithTrace("warn", internalMessage, {httpStatus: response.status}, "server");
       const userMessage =
         response.status >= 500
           ? "A server error occurred. Please try again later."
           : "Failed to update the product. Please check your input and try again.";
       return createErrorResult(new Error(internalMessage), userMessage);
-    } catch (error: unknown) {
+    } catch (error) {
       addSpanEvent("bff.request.update-invoice-product.error");
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error updating product in invoice", {error, invoiceId}, "server");
-      console.error("Error updating product in invoice:", error);
-      return createErrorResult(new Error(errorMessage));
+      logWithTrace("error", "Product update request failed.", undefined, "server");
+      return createErrorResult(error, "Unable to update the product. Please try again.");
     }
   }) satisfies ServerActionOutputType;
 }

@@ -1,40 +1,26 @@
 "use client";
 
 /**
- * @fileoverview Dialog for bulk category reassignment of products.
+ * @fileoverview Dialog for bulk GS1 GPC classification reassignment of products.
  * @module domains/invoices/edit-invoice/[id]/components/dialogs/BulkCategoryDialog
  *
  * @remarks
- * Provides UI for changing the category of multiple products at once.
+ * Provides UI for changing the GS1 GPC classification of multiple products at once.
  */
 
-import type {ProductCategory} from "@/types/invoices";
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  toast,
-} from "@arolariu/components";
+import {ClassificationSystem, type ClassificationSelection} from "@/types/invoices";
+import {Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
-import {useCallback, useMemo, useState} from "react";
+import {useCallback, useState} from "react";
 import {TbTag} from "react-icons/tb";
 import {updateInvoiceProduct} from "../../../_actions/invoices";
 import {useDialog} from "../../../_contexts/DialogContext";
+import {ClassificationPicker} from "../../../_components/analysis/ClassificationPicker";
 import styles from "./BulkCategoryDialog.module.scss";
 
 /**
- * Dialog for bulk category reassignment of products.
+ * Dialog for bulk GS1 GPC classification reassignment of products.
  *
  * @remarks
  * **Rendering Context**: Client Component (`"use client"` directive).
@@ -45,7 +31,7 @@ import styles from "./BulkCategoryDialog.module.scss";
  * - Dialog open/close state management
  *
  * **Features**:
- * - **Category Selection**: Dropdown with all ProductCategory enum values
+ * - **Classification Selection**: Server-backed GS1 GPC combobox
  * - **Preview**: Shows count of products to be updated
  * - **Progress Tracking**: Shows "Updating X/Y products..." during save
  * - **Batch Update**: Updates all selected products via individual updateProduct calls
@@ -56,14 +42,14 @@ import styles from "./BulkCategoryDialog.module.scss";
  * 1. User selects multiple products in ItemsTable
  * 2. User clicks "Change Category" button
  * 3. Dialog receives selected products and invoice via payload
- * 4. User selects new category
+ * 4. User selects or clears the new GS1 GPC classification
  * 5. On save, calls updateProduct for each selected product sequentially
  * 6. Progress indicator shows "Updating X/Y products..."
  * 7. Success → page reload to show fresh data
  *
  * **Validation**:
  * - At least one product must be selected
- * - Category must be selected before saving
+ * - A classification choice (including clear) must be made before saving
  *
  * @returns Client-rendered dialog with category selection UI
  *
@@ -93,53 +79,16 @@ export default function BulkCategoryDialog(): React.JSX.Element | null {
 
   const {invoice, selectedProducts, selectedIndices} = payload;
 
-  const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
+  const [selectedClassification, setSelectedClassification] = useState<ClassificationSelection | null>(null);
+  const [hasClassificationChoice, setHasClassificationChoice] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [updateProgress, setUpdateProgress] = useState<{current: number; total: number} | null>(null);
-
-  /**
-   * Gets all ProductCategory enum values for the dropdown.
-   */
-  const categoryOptions = useMemo(() => {
-    // Import ProductCategory dynamically since it's a numeric enum
-    const ProductCategory = {
-      NOT_DEFINED: 0,
-      BAKED_GOODS: 100,
-      GROCERIES: 200,
-      DAIRY: 300,
-      MEAT: 400,
-      FISH: 500,
-      FRUITS: 600,
-      VEGETABLES: 700,
-      BEVERAGES: 800,
-      ALCOHOLIC_BEVERAGES: 900,
-      TOBACCO: 1000,
-      CLEANING_SUPPLIES: 1100,
-      PERSONAL_CARE: 1200,
-      MEDICINE: 1300,
-      OTHER: 9999,
-    };
-
-    return Object.entries(ProductCategory)
-      .filter(([key]) => Number.isNaN(Number(key)))
-      .map(([key, value]) => ({
-        label: key.replaceAll("_", " "),
-        value: value as number,
-      }));
-  }, []);
-
-  /**
-   * Handles category selection change.
-   */
-  const handleCategoryChange = useCallback((value: string) => {
-    setSelectedCategory(Number(value) as ProductCategory);
-  }, []);
 
   /**
    * Saves category changes via updateProduct for each selected product.
    */
   const handleSave = useCallback(async () => {
-    if (!invoice || !selectedProducts || !selectedIndices || selectedCategory === null) {
+    if (!invoice || !selectedProducts || !selectedIndices || !hasClassificationChoice) {
       toast.error(t((m) => m.dialogs.invoices.bulkCategoryDialog.errors.missingData));
       return;
     }
@@ -168,15 +117,8 @@ export default function BulkCategoryDialog(): React.JSX.Element | null {
               payload: {
                 originalProductName: product.name,
                 updatedProduct: {
-                  name: product.name,
-                  category: selectedCategory,
-                  quantity: product.quantity,
-                  quantityUnit: product.quantityUnit,
-                  productCode: product.productCode,
-                  price: product.price,
-                  totalPrice: product.price * product.quantity,
-                  metadata: product.metadata,
-                  detectedAllergens: product.detectedAllergens,
+                  ...product,
+                  classification: selectedClassification,
                 },
               },
             });
@@ -205,19 +147,16 @@ export default function BulkCategoryDialog(): React.JSX.Element | null {
             failed: String(errors.length),
           }),
         );
-        console.error("Some products failed to update:", errors);
       } else {
         toast.error(t((m) => m.dialogs.invoices.bulkCategoryDialog.errors.allFailed));
-        console.error("All products failed to update:", errors);
       }
-    } catch (error) {
-      console.error("Failed to update categories:", error);
+    } catch {
       toast.error(t((m) => m.dialogs.invoices.bulkCategoryDialog.errors.saveFailed));
     } finally {
       setIsSaving(false);
       setUpdateProgress(null);
     }
-  }, [invoice, selectedProducts, selectedIndices, selectedCategory, close, router, t]);
+  }, [hasClassificationChoice, invoice, selectedClassification, selectedProducts, selectedIndices, close, router, t]);
 
   if (!invoice || selectedProducts.length === 0 || selectedIndices.length === 0) {
     return null;
@@ -238,7 +177,7 @@ export default function BulkCategoryDialog(): React.JSX.Element | null {
         <div className={styles["content"]}>
           {/* Selected Products Preview */}
           <div className={styles["section"]}>
-            <Label className={styles["sectionLabel"]}>{t((m) => m.dialogs.invoices.bulkCategoryDialog.labels.selectedProducts)}</Label>
+            <div className={styles["sectionLabel"]}>{t((m) => m.dialogs.invoices.bulkCategoryDialog.labels.selectedProducts)}</div>
             <div className={styles["productList"]}>
               {selectedProducts.slice(0, 5).map((product) => (
                 <div
@@ -255,38 +194,27 @@ export default function BulkCategoryDialog(): React.JSX.Element | null {
             </div>
           </div>
 
-          {/* Category Selection */}
+          {/* GS1 GPC classification selection */}
           <div className={styles["section"]}>
-            <Label
-              htmlFor='category-select'
-              className={styles["sectionLabel"]}>
+            <div className={styles["sectionLabel"]}>
               <TbTag className={styles["labelIcon"]} />
               {t((m) => m.dialogs.invoices.bulkCategoryDialog.labels.newCategory)}
-            </Label>
-            <Select
-              value={selectedCategory === null ? undefined : String(selectedCategory)}
-              onValueChange={handleCategoryChange}>
-              <SelectTrigger
-                id='category-select'
-                className={styles["categoryTrigger"]}>
-                <SelectValue placeholder={t((m) => m.dialogs.invoices.bulkCategoryDialog.placeholders.selectCategory)} />
-              </SelectTrigger>
-              <SelectContent>
-                {categoryOptions.map((option) => (
-                  <SelectItem
-                    key={option.value}
-                    value={String(option.value)}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            </div>
+            <ClassificationPicker
+              system={ClassificationSystem.Gs1Gpc}
+              value={selectedClassification}
+              onChange={(value) => {
+                setSelectedClassification(value);
+                setHasClassificationChoice(true);
+              }}
+              disabled={isSaving}
+            />
           </div>
 
           {/* Progress Indicator */}
           {updateProgress ? (
             <div className={styles["section"]}>
-              <Label className={styles["sectionLabel"]}>{t((m) => m.dialogs.invoices.bulkCategoryDialog.labels.progress)}</Label>
+              <div className={styles["sectionLabel"]}>{t((m) => m.dialogs.invoices.bulkCategoryDialog.labels.progress)}</div>
               <p className={styles["progressText"]}>
                 {t((m) => m.dialogs.invoices.bulkCategoryDialog.progress.updating, {
                   current: String(updateProgress.current),
@@ -306,7 +234,7 @@ export default function BulkCategoryDialog(): React.JSX.Element | null {
           </Button>
           <Button
             onClick={handleSave}
-            disabled={isSaving || selectedCategory === null}>
+            disabled={isSaving || !hasClassificationChoice}>
             {isSaving
               ? t((m) => m.dialogs.invoices.bulkCategoryDialog.buttons.saving)
               : t((m) => m.dialogs.invoices.bulkCategoryDialog.buttons.save)}
