@@ -4,8 +4,8 @@
  */
 
 import {execFile} from "node:child_process";
-import {glob, mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
-import {EOL, tmpdir} from "node:os";
+import {access, glob, mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
+import {tmpdir} from "node:os";
 import {basename, dirname, join, resolve} from "node:path";
 import {promisify} from "node:util";
 import {MonorepositoryConsoleLogger, MonorepositoryLogger} from "./common/logger.ts";
@@ -190,16 +190,15 @@ export abstract class TaxonomyClassificationGenerator {
   /**
    * Rebuilds the root-to-node hierarchy for one provisional node.
    *
-   * @param nodes - Complete provisional taxonomy node collection.
+   * @param nodesByCode - Complete provisional taxonomy nodes keyed by code.
    * @param code - Selected node code.
    * @returns Selected node with complete hierarchy and normalized search text.
    * @throws {Error} When the code is absent, a parent is missing, or a cycle exists.
    */
   protected buildHierarchy(
-    nodes: readonly TaxonomyArtifactNode[],
+    nodesByCode: ReadonlyMap<string, TaxonomyArtifactNode>,
     code: string,
   ): TaxonomyArtifactNode {
-    const nodesByCode = new Map(nodes.map((node) => [node.code, node] as const));
     const selected = nodesByCode.get(code);
     if (selected === undefined) throw new Error(`Taxonomy code '${code}' was not found.`);
 
@@ -305,7 +304,31 @@ export abstract class TaxonomyClassificationGenerator {
           `${artifact.system} hierarchy for '${node.code}' has mismatched code and label lengths.`,
         );
       }
+
+      const rebuilt = this.buildHierarchy(nodesByCode, node.code);
+      if (
+        !this.arraysEqual(node.hierarchyCodes, rebuilt.hierarchyCodes) ||
+        !this.arraysEqual(node.hierarchyLabels, rebuilt.hierarchyLabels)
+      ) {
+        throw new Error(
+          `${artifact.system} hierarchy for '${node.code}' does not match its parent chain.`,
+        );
+      }
     }
+  }
+
+  /**
+   * Compares two readonly string arrays by value and order.
+   *
+   * @param left - First array.
+   * @param right - Second array.
+   * @returns `true` when both arrays contain the same ordered values.
+   */
+  private arraysEqual(left: readonly string[], right: readonly string[]): boolean {
+    return (
+      left.length === right.length &&
+      left.every((value, index) => value === right[index])
+    );
   }
 }
 
@@ -332,6 +355,9 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
 
   /** File name written to every runtime output root. */
   static readonly #fileName = "gpc-2026-05.min.json";
+
+  /** Exact full-taxonomy JSON entry in the pinned GS1 archive. */
+  static readonly #archiveEntryName = "GPC as of May 2026 (2026-05-20) EN.json";
 
   /** Required GS1 attribution stored with the generated artifact. */
   static readonly #attribution =
@@ -378,7 +404,10 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
       }
 
       const archive = new Uint8Array(await response.arrayBuffer());
-      const jsonBytes = await new SystemArchiveExtractor().extractEntry(archive, " EN.json");
+      const jsonBytes = await new SystemArchiveExtractor().extractEntry(
+        archive,
+        Gs1GpcTaxonomyClassificationGenerator.#archiveEntryName,
+      );
       const parsed: unknown = JSON.parse(Buffer.from(jsonBytes).toString("utf8"));
       const nodes = this.parseDocument(parsed);
       this.logger.debug(`[GPC] Normalized ${nodes.length} taxonomy node(s).`);
@@ -420,7 +449,10 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
     if (languageCode !== "EN") {
       throw new Error(`Expected English GPC data but received '${languageCode}'.`);
     }
-    this.requireString(document, "DateUtc", "GPC document");
+    const releaseDate = this.requireString(document, "DateUtc", "GPC document");
+    if (!this.belongsToPinnedRelease(releaseDate)) {
+      throw new Error("GPC source DateUtc must belong to the pinned 2026-05 release.");
+    }
 
     const schema = document["Schema"];
     if (!Array.isArray(schema)) throw new TypeError("GPC document Schema must be an array.");
@@ -471,6 +503,25 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
 
     for (const root of schema) visit(root, []);
     return nodes;
+  }
+
+  /**
+   * Determines whether a source date belongs to the pinned May 2026 release.
+   *
+   * @param value - Source `DateUtc` value in ISO or day/month/year format.
+   * @returns `true` when the date identifies May 2026.
+   */
+  private belongsToPinnedRelease(value: string): boolean {
+    const isoDate = /^(?<year>\d{4})-(?<month>\d{2})-\d{2}/u.exec(value);
+    if (isoDate?.groups !== undefined) {
+      return isoDate.groups["year"] === "2026" && isoDate.groups["month"] === "05";
+    }
+
+    const dayMonthYear = /^\d{1,2}\/(?<month>\d{1,2})\/(?<year>\d{4})$/u.exec(value);
+    return (
+      dayMonthYear?.groups?.["year"] === "2026" &&
+      Number(dayMonthYear.groups["month"]) === 5
+    );
   }
 }
 
@@ -699,12 +750,15 @@ OFFSET ${offset}`;
       bindings.map((binding) => [binding.concept, binding.notation] as const),
     );
     const provisional = bindings.map<TaxonomyArtifactNode>((binding) => {
-      const parentCode =
-        binding.broader === null ? null : codeByConcept.get(binding.broader);
-      if (binding.broader !== null && parentCode === undefined) {
-        throw new Error(
-          `Unresolved parent '${binding.broader}' for taxonomy code '${binding.notation}'.`,
-        );
+      let parentCode: string | null = null;
+      if (binding.broader !== null) {
+        const resolvedParentCode = codeByConcept.get(binding.broader);
+        if (resolvedParentCode === undefined) {
+          throw new Error(
+            `Unresolved parent '${binding.broader}' for taxonomy code '${binding.notation}'.`,
+          );
+        }
+        parentCode = resolvedParentCode;
       }
       const label = this.stripCodePrefix(binding.label, binding.notation);
       const segmentCount = binding.notation.split(".").length;
@@ -723,8 +777,9 @@ OFFSET ${offset}`;
       };
     });
 
+    const nodesByCode = new Map(provisional.map((node) => [node.code, node] as const));
     return provisional
-      .map((node) => this.buildHierarchy(provisional, node.code))
+      .map((node) => this.buildHierarchy(nodesByCode, node.code))
       .toSorted((left, right) =>
         left.code.localeCompare(right.code, "en", {numeric: true}),
       );
@@ -967,12 +1022,15 @@ OFFSET ${offset}`;
       bindings.map((binding) => [binding.concept, binding.notation] as const),
     );
     const provisional = bindings.map<TaxonomyArtifactNode>((binding) => {
-      const parentCode =
-        binding.broader === null ? null : codeByConcept.get(binding.broader);
-      if (binding.broader !== null && parentCode === undefined) {
-        throw new Error(
-          `Unresolved parent '${binding.broader}' for taxonomy code '${binding.notation}'.`,
-        );
+      let parentCode: string | null = null;
+      if (binding.broader !== null) {
+        const resolvedParentCode = codeByConcept.get(binding.broader);
+        if (resolvedParentCode === undefined) {
+          throw new Error(
+            `Unresolved parent '${binding.broader}' for taxonomy code '${binding.notation}'.`,
+          );
+        }
+        parentCode = resolvedParentCode;
       }
       const label = this.stripCodePrefix(binding.label, binding.notation);
 
@@ -988,8 +1046,9 @@ OFFSET ${offset}`;
       };
     });
 
+    const nodesByCode = new Map(provisional.map((node) => [node.code, node] as const));
     return provisional
-      .map((node) => this.buildHierarchy(provisional, node.code))
+      .map((node) => this.buildHierarchy(nodesByCode, node.code))
       .toSorted((left, right) =>
         left.code.localeCompare(right.code, "en", {numeric: true}),
       );
@@ -1190,7 +1249,7 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
     try {
       this.logger.info("[Frontend licenses] Reading the frontend dependency manifest.");
       const declaredDependencies = await this.readDeclaredDependencies();
-      const manifestPaths = await this.findInstalledManifestPaths();
+      const manifestPaths = await this.findInstalledManifestPaths(declaredDependencies);
       this.logger.debug(
         `[Frontend licenses] Discovered ${manifestPaths.length} direct installed package manifest(s).`,
       );
@@ -1219,11 +1278,9 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
         "arolariu.ro",
         "licenses.json",
       );
-      const sortedPackages = new Map<
-        NodePackageDependencyType,
-        readonly NodePackageInformation[]
-      >();
-      for (const [dependencyType, packageInformation] of groupedPackages) {
+      const sortedPackages = new Map<NodePackageDependencyType, readonly NodePackageInformation[]>();
+      for (const dependencyType of ["production", "development", "peer"] as const) {
+        const packageInformation = groupedPackages.get(dependencyType) ?? [];
         sortedPackages.set(
           dependencyType,
           packageInformation.toSorted((left, right) =>
@@ -1236,7 +1293,7 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
       await mkdir(dirname(outputPath), {recursive: true});
       await writeFile(
         outputPath,
-        `${JSON.stringify(Object.fromEntries(sortedPackages))}${EOL}`,
+        `${JSON.stringify(Object.fromEntries(sortedPackages))}\n`,
         "utf8",
       );
       this.logger.success("[Frontend licenses] Generated 1 artifact file(s).");
@@ -1281,17 +1338,58 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
   /**
    * Finds direct installed package manifests, including scoped packages.
    *
-   * @returns Absolute direct package-manifest paths.
+   * @param declaredDependencies - Frontend dependency names grouped by type.
+   * @returns Absolute direct package-manifest paths in declared dependency order.
+   * @throws {Error} When a declared package cannot be resolved.
    */
-  private async findInstalledManifestPaths(): Promise<readonly string[]> {
-    const nodeModulesRoot = join(this.workspaceRoot, "node_modules");
+  private async findInstalledManifestPaths(
+    declaredDependencies: ReadonlyMap<NodePackageDependencyType, readonly string[]>,
+  ): Promise<readonly string[]> {
+    const packageNames = [
+      ...new Set(
+        ["production", "development", "peer"].flatMap(
+          (dependencyType) =>
+            declaredDependencies.get(dependencyType as NodePackageDependencyType) ?? [],
+        ),
+      ),
+    ];
     const paths: string[] = [];
-    for await (const manifestPath of glob(
-      ["*/package.json", "@*/*/package.json"],
-      {cwd: nodeModulesRoot},
-    )) {
-      paths.push(join(nodeModulesRoot, manifestPath));
+    const unresolvedPackageNames: string[] = [];
+
+    for (const packageName of packageNames) {
+      const relativeManifestPath = join(...packageName.split("/"), "package.json");
+      const candidates = [
+        join(this.workspaceRoot, "node_modules", relativeManifestPath),
+        join(
+          this.workspaceRoot,
+          "sites",
+          "arolariu.ro",
+          "node_modules",
+          relativeManifestPath,
+        ),
+      ];
+      let resolvedPath: string | undefined;
+
+      for (const candidate of candidates) {
+        try {
+          await access(candidate);
+          resolvedPath = candidate;
+          break;
+        } catch (error: unknown) {
+          if (!(this.isRecord(error) && error["code"] === "ENOENT")) throw error;
+        }
+      }
+
+      if (resolvedPath === undefined) unresolvedPackageNames.push(packageName);
+      else paths.push(resolvedPath);
     }
+
+    if (unresolvedPackageNames.length > 0) {
+      throw new Error(
+        `Unable to resolve declared frontend package manifest(s): ${unresolvedPackageNames.toSorted().join(", ")}.`,
+      );
+    }
+
     return paths;
   }
 
@@ -1360,9 +1458,13 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
       this.readDependencyMap(manifest, "devDependencies", manifestPath),
       this.readDependencyMap(manifest, "peerDependencies", manifestPath),
     ];
-    const dependents = dependencyMaps.flatMap((dependencies) =>
-      Object.entries(dependencies).map(([name, version]) => ({name, version})),
-    );
+    const dependentsByName = new Map<string, string>();
+    for (const dependencies of dependencyMaps) {
+      for (const [name, version] of Object.entries(dependencies)) {
+        dependentsByName.set(name, version);
+      }
+    }
+    const dependents = [...dependentsByName].map(([name, version]) => ({name, version}));
 
     return {
       dependencyType,
@@ -1457,14 +1559,14 @@ class SystemArchiveExtractor {
    * Extracts one archive entry selected by suffix.
    *
    * @param archive - Complete ZIP archive bytes.
-   * @param suffix - File-name suffix identifying the desired entry.
+   * @param entryName - Exact extracted file name identifying the desired entry.
    * @returns Extracted entry bytes.
    * @throws {Error} When the platform tool is missing, extraction fails, or the
    * matching entry is missing or ambiguous.
    */
   public async extractEntry(
     archive: Uint8Array,
-    suffix: string,
+    entryName: string,
   ): Promise<Uint8Array> {
     const temporaryRoot = await mkdtemp(join(tmpdir(), "arolariu-taxonomy-"));
     const archivePath = join(temporaryRoot, "source.zip");
@@ -1492,21 +1594,19 @@ class SystemArchiveExtractor {
 
       const matchingPaths: string[] = [];
       for await (const extractedPath of glob("**/*", {cwd: outputDirectory})) {
-        if (extractedPath.endsWith(suffix)) matchingPaths.push(extractedPath);
+        if (basename(extractedPath) === entryName) matchingPaths.push(extractedPath);
       }
 
       if (matchingPaths.length === 0) {
-        throw new Error(`Extracted archive entry ending with '${suffix}' was not found.`);
+        throw new Error(`Extracted archive entry '${entryName}' was not found.`);
       }
       if (matchingPaths.length > 1) {
-        throw new Error(
-          `Extracted archive contains multiple entries ending with '${suffix}'.`,
-        );
+        throw new Error(`Extracted archive contains multiple entries named '${entryName}'.`);
       }
 
       const matchingPath = matchingPaths[0];
       if (matchingPath === undefined) {
-        throw new Error(`Extracted archive entry ending with '${suffix}' was not found.`);
+        throw new Error(`Extracted archive entry '${entryName}' was not found.`);
       }
 
       return new Uint8Array(await readFile(join(outputDirectory, matchingPath)));

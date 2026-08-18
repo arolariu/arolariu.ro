@@ -5,6 +5,7 @@
  */
 
 import {ChildProcess, execFile} from "node:child_process";
+import type {ExecFileException} from "node:child_process";
 import {mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {basename, dirname, join} from "node:path";
@@ -23,9 +24,11 @@ import {
   Gs1GpcTaxonomyClassificationGenerator,
   main,
   NaceTaxonomyClassificationGenerator,
+  TaxonomyClassificationGenerator,
 } from "./generate.artifacts.ts";
 import {MonorepositoryConsoleLogger} from "./common/logger.ts";
 import {parseCommandLineOptions} from "./generate.ts";
+import type {TaxonomyArtifact} from "./types";
 
 /**
  * Owns external-boundary mocks, fixtures, temporary paths, and output readers
@@ -130,20 +133,43 @@ class ArtifactGeneratorTestHarness {
    * @param document - GPC document written into the mocked extraction directory.
    */
   public mockArchiveExtraction(document: unknown = this.gpcDocument): void {
-    vi.mocked(execFile).mockImplementation((_file, args, callback) => {
-      const outputIndex = args?.findIndex((value) => value === "-C" || value === "-d") ?? -1;
-      const outputDirectory = args?.[outputIndex + 1];
+    vi.mocked(execFile).mockImplementation((...arguments_) => {
+      const commandArguments = arguments_.find(
+        (argument): argument is readonly string[] =>
+          Array.isArray(argument) && argument.every((value) => typeof value === "string"),
+      );
+      const callback = arguments_.find(
+        (
+          argument,
+        ): argument is (
+          error: ExecFileException | null,
+          stdout: string | Buffer,
+          stderr: string | Buffer,
+        ) => void => typeof argument === "function",
+      );
+      const outputIndex =
+        commandArguments?.findIndex((value) => value === "-C" || value === "-d") ?? -1;
+      const outputDirectory = commandArguments?.[outputIndex + 1];
       if (outputDirectory === undefined) throw new Error("Output directory argument is missing.");
 
       const childProcess = new ChildProcess();
-      void writeFile(join(outputDirectory, "GPC 2026-05 EN.json"), JSON.stringify(document), "utf8")
+      void Promise.all([
+        writeFile(
+          join(outputDirectory, "GPC as of May 2026 (2026-05-20) EN.json"),
+          JSON.stringify(document),
+          "utf8",
+        ),
+        writeFile(
+          join(outputDirectory, "Delta - GPC as of May 2026 (20260520 v 20251127) EN.json"),
+          JSON.stringify(document),
+          "utf8",
+        ),
+      ])
         .then(() => {
-          if (typeof callback === "function") callback(null, "", "");
+          callback?.(null, "", "");
         })
         .catch((error: unknown) => {
-          if (typeof callback === "function") {
-            callback(error instanceof Error ? error : new Error(String(error)), "", "");
-          }
+          callback?.(error instanceof Error ? error : new Error(String(error)), "", "");
         });
       return childProcess;
     });
@@ -298,6 +324,71 @@ describe("Taxonomy classification generators", () => {
           failure,
         );
         harness.expectMessage("error", "⛔ [GPC] GPC unavailable");
+      });
+
+      it("rejects a source document outside the pinned release month", async () => {
+        vi.stubGlobal("fetch", vi.fn(async () => new Response(new Uint8Array([1]), {status: 200})));
+        harness.mockArchiveExtraction({...harness.gpcDocument, DateUtc: "2025-04-01"});
+        const roots = await harness.createOutputRoots("arolariu-gpc-date-");
+
+        await expect(new Gs1GpcTaxonomyClassificationGenerator(roots).generate()).rejects.toThrow(
+          "GPC source DateUtc must belong to the pinned 2026-05 release.",
+        );
+      });
+    });
+  });
+
+  describe("TaxonomyClassificationGenerator", () => {
+    describe("artifact validation", () => {
+      it("rejects hierarchy arrays that disagree with the parent chain", async () => {
+        class TaxonomyGeneratorProbe extends TaxonomyClassificationGenerator {
+          public constructor(outputRoots: readonly string[]) {
+            super(outputRoots);
+          }
+
+          public override async generate(): Promise<readonly string[]> {
+            return [];
+          }
+
+          public async write(artifact: Readonly<TaxonomyArtifact>): Promise<readonly string[]> {
+            return this.writeArtifact("probe.json", artifact);
+          }
+        }
+
+        const roots = await harness.createOutputRoots("arolariu-hierarchy-validation-");
+        const generator = new TaxonomyGeneratorProbe(roots);
+
+        await expect(
+          generator.write({
+            system: "NACE_2_1",
+            version: "2.1",
+            sourceUrl: "https://example.test",
+            generatedAt: "2026-08-19T00:00:00.000Z",
+            attribution: "Test",
+            nodes: [
+              {
+                code: "A",
+                officialLabel: "Root",
+                level: "section",
+                parentCode: null,
+                hierarchyCodes: ["A"],
+                hierarchyLabels: ["Root"],
+                definition: null,
+                searchText: "a root",
+              },
+              {
+                code: "01",
+                officialLabel: "Child",
+                level: "division",
+                parentCode: "A",
+                hierarchyCodes: ["01"],
+                hierarchyLabels: ["Child"],
+                definition: null,
+                searchText: "01 child",
+              },
+            ],
+          }),
+        ).rejects.toThrow("NACE_2_1 hierarchy for '01' does not match its parent chain.");
       });
     });
   });
@@ -500,6 +591,70 @@ describe("License generators", () => {
         await expect(new FrontendLicenseGenerator(workspace).generate()).rejects.toThrow(
           `Package manifest '${manifestPath}' field 'description' must be a string.`,
         );
+      });
+
+      it("fails when a declared frontend dependency cannot be resolved", async () => {
+        const workspace = await harness.createTemporaryDirectory("arolariu-license-missing-");
+        await harness.writeJson(join(workspace, "sites", "arolariu.ro", "package.json"), {
+          dependencies: {"missing-package": "1.0.0"},
+        });
+
+        await expect(new FrontendLicenseGenerator(workspace).generate()).rejects.toThrow(
+          "Unable to resolve declared frontend package manifest(s): missing-package.",
+        );
+      });
+
+      it("writes fixed dependency-group order and a platform-independent newline", async () => {
+        const workspace = await harness.createTemporaryDirectory("arolariu-license-deterministic-");
+        await harness.writeJson(join(workspace, "sites", "arolariu.ro", "package.json"), {
+          dependencies: {"z-production": "1.0.0"},
+          devDependencies: {"m-development": "1.0.0"},
+          peerDependencies: {"a-peer": "1.0.0"},
+        });
+        for (const packageName of ["z-production", "m-development", "a-peer"]) {
+          await harness.writeJson(join(workspace, "node_modules", packageName, "package.json"), {
+            name: packageName,
+            version: "1.0.0",
+          });
+        }
+
+        const [output] = await new FrontendLicenseGenerator(workspace).generate();
+        const contents = await readFile(output ?? "", "utf8");
+
+        expect(contents.startsWith('{"production":')).toBe(true);
+        expect(contents.indexOf('"development"')).toBeGreaterThan(
+          contents.indexOf('"production"'),
+        );
+        expect(contents.indexOf('"peer"')).toBeGreaterThan(contents.indexOf('"development"'));
+        expect(contents.endsWith("\n")).toBe(true);
+        expect(contents.endsWith("\r\n")).toBe(false);
+      });
+
+      it("deduplicates dependent package names using the last declared version", async () => {
+        const workspace = await harness.createTemporaryDirectory("arolariu-license-dependents-");
+        await harness.writeJson(join(workspace, "sites", "arolariu.ro", "package.json"), {
+          dependencies: {"package-with-overlap": "1.0.0"},
+        });
+        await harness.writeJson(
+          join(workspace, "node_modules", "package-with-overlap", "package.json"),
+          {
+            name: "package-with-overlap",
+            version: "1.0.0",
+            dependencies: {shared: "^1.0.0"},
+            devDependencies: {shared: "^2.0.0"},
+            peerDependencies: {shared: "^3.0.0"},
+          },
+        );
+
+        const [output] = await new FrontendLicenseGenerator(workspace).generate();
+        const [packageInformation] = harness.readObjectArray(
+          await readFile(output ?? "", "utf8"),
+          "production",
+        );
+
+        expect(packageInformation).toMatchObject({
+          dependents: [{name: "shared", version: "^3.0.0"}],
+        });
       });
     });
   });

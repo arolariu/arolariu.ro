@@ -84,7 +84,7 @@ export async function main(options: Readonly<CommandLineOptions>): Promise<numbe
   }
 
   if (generateArtifacts) {
-    console.log(styleText("cyan", "🏷️ Running official taxonomy artifacts generator..."));
+    console.log(styleText("cyan", "🏷️ Running taxonomy and license artifact generator..."));
     await import("./generate.artifacts.ts").then((module) => module.main());
     tasksExecuted++;
   }
