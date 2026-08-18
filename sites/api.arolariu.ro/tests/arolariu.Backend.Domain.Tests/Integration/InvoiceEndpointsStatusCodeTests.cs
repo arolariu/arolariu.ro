@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Exceptions;
 using arolariu.Backend.Common.Http;
+using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions;
@@ -206,11 +207,24 @@ public sealed class InvoiceEndpointsStatusCodeTests
     [
       new CreateInvoiceScanRequestDto(
         ScanType.JPG,
-        new Uri("https://example.test/receipt.jpg"),
+        new Uri("https://example.test/invoice-scans/receipt.jpg"),
         Metadata: null),
     ],
     Items: null,
     Metadata: null);
+
+  private static EndpointStorageOptionsManager CreateStorageOptionsManager() =>
+    new EndpointStorageOptionsManager();
+
+  private sealed class EndpointStorageOptionsManager : IOptionsManager
+  {
+    public ApplicationOptions GetApplicationOptions() =>
+      new LocalOptions
+      {
+        StorageAccountName = "example",
+        StorageAccountEndpoint = "https://example.test/invoice-scans",
+      };
+  }
 
   private static Mock<IInvoiceProcessingService> CreateServiceMockThatThrowsOnRead(Exception exceptionToThrow)
   {
@@ -616,7 +630,11 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     // Act
     var result = await InvoiceEndpoints
-      .CreateNewInvoiceAsync(mockService.Object, accessor, CreateValidInvoiceRequest())
+      .CreateNewInvoiceAsync(
+        mockService.Object,
+        CreateStorageOptionsManager(),
+        accessor,
+        CreateValidInvoiceRequest())
 ;
 
     // Assert
@@ -636,7 +654,11 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     // Act
     var result = await InvoiceEndpoints
-      .CreateNewInvoiceAsync(mockService.Object, accessor, CreateValidInvoiceRequest())
+      .CreateNewInvoiceAsync(
+        mockService.Object,
+        CreateStorageOptionsManager(),
+        accessor,
+        CreateValidInvoiceRequest())
 ;
 
     // Assert
@@ -671,6 +693,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var result = await InvoiceEndpoints
       .CreateNewInvoiceAsync(
         mockService.Object,
+        CreateStorageOptionsManager(),
         CreateAuthenticatedContextAccessor(ownerIdentifier),
         CreateValidInvoiceRequest())
 ;
@@ -705,8 +728,70 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     // Act
     var result = await InvoiceEndpoints
-      .CreateInvoiceScanAsync(mockService.Object, accessor, Guid.NewGuid(), request)
+      .CreateInvoiceScanAsync(
+        mockService.Object,
+        CreateStorageOptionsManager(),
+        accessor,
+        Guid.NewGuid(),
+        request)
 ;
+
+    // Assert
+    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
+    mockService.VerifyNoOtherCalls();
+  }
+
+  /// <summary>
+  /// Verifies invoice creation rejects an unapproved scan URI before calling processing.
+  /// </summary>
+  [TestMethod]
+  public async Task CreateNewInvoiceAsync_WhenScanLocationIsUnapproved_Returns400ValidationProblem()
+  {
+    // Arrange
+    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    var request = CreateValidInvoiceRequest() with
+    {
+      Scans =
+      [
+        new CreateInvoiceScanRequestDto(
+          ScanType.JPG,
+          new Uri("http://example.test/invoice-scans/receipt.jpg"),
+          Metadata: null),
+      ],
+    };
+
+    // Act
+    var result = await InvoiceEndpoints.CreateNewInvoiceAsync(
+      mockService.Object,
+      CreateStorageOptionsManager(),
+      CreateAuthenticatedContextAccessor(),
+      request);
+
+    // Assert
+    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
+    mockService.VerifyNoOtherCalls();
+  }
+
+  /// <summary>
+  /// Verifies scan attachment rejects an unapproved scan URI before reading or updating an invoice.
+  /// </summary>
+  [TestMethod]
+  public async Task CreateInvoiceScanAsync_WhenScanLocationIsUnapproved_Returns400ValidationProblem()
+  {
+    // Arrange
+    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    var request = new CreateInvoiceScanRequestDto(
+      ScanType.JPG,
+      new Uri("http://example.test/invoice-scans/receipt.jpg"),
+      Metadata: null);
+
+    // Act
+    var result = await InvoiceEndpoints.CreateInvoiceScanAsync(
+      mockService.Object,
+      CreateStorageOptionsManager(),
+      CreateAuthenticatedContextAccessor(),
+      Guid.CreateVersion7(),
+      request);
 
     // Assert
     Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));

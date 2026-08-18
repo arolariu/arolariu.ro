@@ -28,7 +28,8 @@ public sealed class DocumentAnalysisValidationAndHelperTests
   {
     var service = new DocumentAnalysisFoundationService(
       new ScriptedDocumentIntelligenceBroker(ReceiptDocumentTestData.Document()),
-      NullLoggerFactory.Instance);
+      NullLoggerFactory.Instance,
+      InvoiceScanTestData.CreateOptionsManager());
 
     await Assert.ThrowsExactlyAsync<AnalysisFoundationValidationException>(
       () => service.ExtractInvoiceAsync(null!, CancellationToken.None));
@@ -42,7 +43,8 @@ public sealed class DocumentAnalysisValidationAndHelperTests
   {
     var service = new DocumentAnalysisFoundationService(
       new ScriptedDocumentIntelligenceBroker(ReceiptDocumentTestData.Document()),
-      NullLoggerFactory.Instance);
+      NullLoggerFactory.Instance,
+      InvoiceScanTestData.CreateOptionsManager());
 
     await Assert.ThrowsExactlyAsync<AnalysisFoundationValidationException>(
       () => service.ExtractInvoiceAsync([], CancellationToken.None));
@@ -56,7 +58,8 @@ public sealed class DocumentAnalysisValidationAndHelperTests
   {
     var service = new DocumentAnalysisFoundationService(
       new ScriptedDocumentIntelligenceBroker(ReceiptDocumentTestData.Document()),
-      NullLoggerFactory.Instance);
+      NullLoggerFactory.Instance,
+      InvoiceScanTestData.CreateOptionsManager());
 
     await Assert.ThrowsExactlyAsync<AnalysisFoundationValidationException>(
       () => service.ExtractInvoiceAsync([InvoiceScan.Default()], CancellationToken.None));
@@ -71,7 +74,8 @@ public sealed class DocumentAnalysisValidationAndHelperTests
     var scan = new InvoiceScan(ScanType.JPG, new Uri("receipt.jpg", UriKind.Relative), null);
     var service = new DocumentAnalysisFoundationService(
       new ScriptedDocumentIntelligenceBroker(ReceiptDocumentTestData.Document()),
-      NullLoggerFactory.Instance);
+      NullLoggerFactory.Instance,
+      InvoiceScanTestData.CreateOptionsManager());
 
     await Assert.ThrowsExactlyAsync<AnalysisFoundationValidationException>(
       () => service.ExtractInvoiceAsync([scan], CancellationToken.None));
@@ -86,7 +90,10 @@ public sealed class DocumentAnalysisValidationAndHelperTests
     var broker = new ScriptedDocumentIntelligenceBroker(
       new ScriptedDocumentIntelligenceBroker.ScriptedDocumentResponse(null, TimeSpan.Zero, null));
 
-    var service = new DocumentAnalysisFoundationService(broker, NullLoggerFactory.Instance);
+    var service = new DocumentAnalysisFoundationService(
+      broker,
+      NullLoggerFactory.Instance,
+      InvoiceScanTestData.CreateOptionsManager());
 
     await Assert.ThrowsExactlyAsync<AnalysisFoundationValidationException>(
       () => service.ExtractInvoiceAsync([InvoiceScanTestData.First()], CancellationToken.None));
@@ -100,7 +107,8 @@ public sealed class DocumentAnalysisValidationAndHelperTests
   {
     var service = new DocumentAnalysisFoundationService(
       new ScriptedDocumentIntelligenceBroker(ReceiptDocumentTestData.Page("Milk", 1.0m)),
-      NullLoggerFactory.Instance);
+      NullLoggerFactory.Instance,
+      InvoiceScanTestData.CreateOptionsManager());
 
     var result = await service.ExtractInvoiceAsync([InvoiceScanTestData.First()], CancellationToken.None);
 
@@ -218,5 +226,4 @@ public sealed class DocumentAnalysisValidationAndHelperTests
   private static TValue ReadProperty<TValue>(object instance, string propertyName) =>
     (TValue)instance.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(instance)!;
 }
-
 

@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
+using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
@@ -26,7 +27,7 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// </para>
 /// <para>
 /// <b>Ownership:</b> The transport never accepts a user identifier. The endpoint obtains the owner from the
-/// authenticated <c>userIdentifier</c> claim and supplies it to <see cref="ToInvoice(Guid)"/>.
+/// authenticated <c>userIdentifier</c> claim and supplies it to <see cref="ToInvoice(Guid, ApplicationOptions)"/>.
 /// </para>
 /// <para>
 /// <b>Document Intelligence:</b> Each scan must be a supported input type. HEIC must be converted to HEIF before
@@ -67,7 +68,7 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 ///     Items: null,
 ///     Metadata: new Dictionary&lt;string, object&gt; { ["source"] = "mobile-app" });
 ///
-/// var invoice = request.ToInvoice(serverOwnerIdentifier);
+/// var invoice = request.ToInvoice(serverOwnerIdentifier, storageOptions);
 /// await invoiceService.CreateAsync(invoice);
 /// </code>
 /// </example>
@@ -100,19 +101,20 @@ public readonly record struct CreateInvoiceRequestDto(
   /// </para>
   /// </remarks>
   /// <param name="serverOwnerIdentifier">The non-empty owner identifier resolved from the authenticated request claim.</param>
+  /// <param name="storageOptions">The configured Azure storage account and upload-container endpoint.</param>
   /// <returns>
   /// A new <see cref="Invoice"/> instance initialized with the validated client fields and server-derived ownership.
   /// </returns>
   /// <exception cref="ArgumentException">Thrown when client-editable fields violate the creation contract.</exception>
   /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="serverOwnerIdentifier"/> is empty.</exception>
-  public Invoice ToInvoice(Guid serverOwnerIdentifier)
+  public Invoice ToInvoice(Guid serverOwnerIdentifier, ApplicationOptions storageOptions)
   {
-    ValidateOrThrow(serverOwnerIdentifier);
+    ValidateOrThrow(serverOwnerIdentifier, storageOptions);
 
     var scans = new List<InvoiceScan>(Scans.Count);
     foreach (CreateInvoiceScanRequestDto scan in Scans)
     {
-      scans.Add(scan.ToInvoiceScan());
+      scans.Add(scan.ToInvoiceScan(storageOptions));
     }
 
     var items = new List<Product>(Items?.Count ?? 0);
@@ -156,12 +158,16 @@ public readonly record struct CreateInvoiceRequestDto(
   /// <summary>
   /// Validates the client-controlled part of the creation transport without consulting authentication state.
   /// </summary>
+  /// <param name="storageOptions">The configured Azure storage account and upload-container endpoint.</param>
   /// <param name="validationErrors">
   /// Field-keyed validation failures. The collection is empty when this method returns <see langword="true"/>.
   /// </param>
   /// <returns><see langword="true"/> when the request can be mapped into an invoice; otherwise, <see langword="false"/>.</returns>
-  public bool TryValidate(out Dictionary<string, string[]> validationErrors)
+  public bool TryValidate(
+    ApplicationOptions storageOptions,
+    out Dictionary<string, string[]> validationErrors)
   {
+    ArgumentNullException.ThrowIfNull(storageOptions);
     validationErrors = new Dictionary<string, string[]>(StringComparer.Ordinal);
 
     if (string.IsNullOrWhiteSpace(Name))
@@ -179,14 +185,14 @@ public readonly record struct CreateInvoiceRequestDto(
     }
 
     ValidatePaymentInformation(PaymentInformation, validationErrors);
-    ValidateScans(validationErrors);
+    ValidateScans(storageOptions, validationErrors);
     ValidateItems(validationErrors);
     ValidateMetadata(validationErrors);
 
     return validationErrors.Count == 0;
   }
 
-  private void ValidateOrThrow(Guid serverOwnerIdentifier)
+  private void ValidateOrThrow(Guid serverOwnerIdentifier, ApplicationOptions storageOptions)
   {
     if (serverOwnerIdentifier == Guid.Empty)
     {
@@ -196,7 +202,7 @@ public readonly record struct CreateInvoiceRequestDto(
         "The server-derived invoice owner identifier must not be empty.");
     }
 
-    if (!TryValidate(out Dictionary<string, string[]> validationErrors))
+    if (!TryValidate(storageOptions, out Dictionary<string, string[]> validationErrors))
     {
       throw new ArgumentException(
         string.Join(" ", validationErrors.Values.SelectMany(static errors => errors)));
@@ -251,7 +257,9 @@ public readonly record struct CreateInvoiceRequestDto(
     }
   }
 
-  private void ValidateScans(Dictionary<string, string[]> validationErrors)
+  private void ValidateScans(
+    ApplicationOptions storageOptions,
+    Dictionary<string, string[]> validationErrors)
   {
     if (Scans is null || Scans.Count == 0)
     {
@@ -262,7 +270,7 @@ public readonly record struct CreateInvoiceRequestDto(
     int index = 0;
     foreach (CreateInvoiceScanRequestDto scan in Scans)
     {
-      if (!scan.TryValidate(out Dictionary<string, string[]> scanValidationErrors))
+      if (!scan.TryValidate(storageOptions, out Dictionary<string, string[]> scanValidationErrors))
       {
         foreach (var (field, errors) in scanValidationErrors)
         {

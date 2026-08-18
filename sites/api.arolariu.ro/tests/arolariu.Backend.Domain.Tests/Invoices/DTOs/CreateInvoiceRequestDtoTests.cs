@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text.Json;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
+using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
@@ -51,8 +52,8 @@ public sealed class CreateInvoiceRequestDtoTests
       IsImportant: true,
       Scans:
       [
-        new CreateInvoiceScanRequestDto(ScanType.BMP, new Uri("https://example.test/receipt.bmp"), null),
-        new CreateInvoiceScanRequestDto(ScanType.HEIF, new Uri("https://example.test/receipt.heif"), null),
+        new CreateInvoiceScanRequestDto(ScanType.BMP, new Uri("https://example.test/invoice-scans/receipt.bmp"), null),
+        new CreateInvoiceScanRequestDto(ScanType.HEIF, new Uri("https://example.test/invoice-scans/receipt.heif"), null),
       ],
       Items:
       [
@@ -71,7 +72,7 @@ public sealed class CreateInvoiceRequestDtoTests
       });
 
     // Act
-    Invoice invoice = request.ToInvoice(serverOwnerIdentifier);
+    Invoice invoice = request.ToInvoice(serverOwnerIdentifier, CreateStorageOptions());
 
     // Assert
     Assert.AreEqual(serverOwnerIdentifier, invoice.UserIdentifier);
@@ -128,7 +129,7 @@ public sealed class CreateInvoiceRequestDtoTests
         "scans": [
           {
             "type": 6,
-            "location": "https://example.test/receipt.bmp",
+            "location": "https://example.test/invoice-scans/receipt.bmp",
             "metadata": {}
           }
         ],
@@ -141,7 +142,7 @@ public sealed class CreateInvoiceRequestDtoTests
 
     // Act
     CreateInvoiceRequestDto request = JsonSerializer.Deserialize<CreateInvoiceRequestDto>(payload, ApiJsonOptions);
-    Invoice invoice = request.ToInvoice(serverOwnerIdentifier);
+    Invoice invoice = request.ToInvoice(serverOwnerIdentifier, CreateStorageOptions());
     using JsonDocument serializedRequest = JsonDocument.Parse(JsonSerializer.Serialize(request, ApiJsonOptions));
 
     // Assert
@@ -182,15 +183,22 @@ public sealed class CreateInvoiceRequestDtoTests
     // Arrange
     var request = new CreateInvoiceScanRequestDto(
       Type: (ScanType)9,
-      Location: new Uri("https://example.test/receipt.heic"),
+      Location: new Uri("https://example.test/invoice-scans/receipt.heic"),
       Metadata: null);
 
     // Act
-    bool isValid = request.TryValidate(out Dictionary<string, string[]> validationErrors);
+    bool isValid = request.TryValidate(CreateStorageOptions(), out Dictionary<string, string[]> validationErrors);
 
     // Assert
     Assert.IsFalse(isValid);
     Assert.HasCount(1, validationErrors);
     Assert.IsTrue(validationErrors.ContainsKey(nameof(CreateInvoiceScanRequestDto.Type)));
   }
+
+  private static LocalOptions CreateStorageOptions() =>
+    new()
+    {
+      StorageAccountName = "example",
+      StorageAccountEndpoint = "https://example.test/invoice-scans",
+    };
 }

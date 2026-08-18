@@ -42,7 +42,10 @@ public sealed class DocumentAnalysisFoundationServiceTests
         ReceiptDocumentTestData.Page("Milk", 1m, "Bread", 2m),
         delay: TimeSpan.FromMilliseconds(10)));
 
-    var service = new DocumentAnalysisFoundationService(broker, NullLoggerFactory.Instance);
+    var service = new DocumentAnalysisFoundationService(
+      broker,
+      NullLoggerFactory.Instance,
+      InvoiceScanTestData.CreateOptionsManager());
 
     var result = await service.ExtractInvoiceAsync(
       [InvoiceScanTestData.First(), InvoiceScanTestData.Second()],
@@ -88,7 +91,10 @@ public sealed class DocumentAnalysisFoundationServiceTests
           ReceiptDocumentTestData.Tender("cash", 1.00m),
         ]));
 
-    var service = new DocumentAnalysisFoundationService(broker, NullLoggerFactory.Instance);
+    var service = new DocumentAnalysisFoundationService(
+      broker,
+      NullLoggerFactory.Instance,
+      InvoiceScanTestData.CreateOptionsManager());
 
     var result = await service.ExtractInvoiceAsync(
       [InvoiceScanTestData.First(), InvoiceScanTestData.Second()],
@@ -115,7 +121,10 @@ public sealed class DocumentAnalysisFoundationServiceTests
           ReceiptDocumentTestData.Product("Invalid", -1m, "pcs", "BAD", 3.00m, totalPrice: 3.00m),
         ]));
 
-    var service = new DocumentAnalysisFoundationService(broker, NullLoggerFactory.Instance);
+    var service = new DocumentAnalysisFoundationService(
+      broker,
+      NullLoggerFactory.Instance,
+      InvoiceScanTestData.CreateOptionsManager());
 
     var result = await service.ExtractInvoiceAsync([InvoiceScanTestData.First()], CancellationToken.None);
 
@@ -141,7 +150,10 @@ public sealed class DocumentAnalysisFoundationServiceTests
         ReceiptDocumentTestData.Page("Milk", 1m),
         delay: TimeSpan.FromMilliseconds(250)));
 
-    var service = new DocumentAnalysisFoundationService(broker, NullLoggerFactory.Instance);
+    var service = new DocumentAnalysisFoundationService(
+      broker,
+      NullLoggerFactory.Instance,
+      InvoiceScanTestData.CreateOptionsManager());
 
     await Assert.ThrowsExactlyAsync<TaskCanceledException>(
       () => service.ExtractInvoiceAsync([InvoiceScanTestData.First()], cts.Token));
@@ -156,7 +168,10 @@ public sealed class DocumentAnalysisFoundationServiceTests
     var broker = new ScriptedDocumentIntelligenceBroker(
       ScriptedDocumentIntelligenceBroker.Failure(new RequestFailedException(status: 400, message: "bad request")));
 
-    var service = new DocumentAnalysisFoundationService(broker, NullLoggerFactory.Instance);
+    var service = new DocumentAnalysisFoundationService(
+      broker,
+      NullLoggerFactory.Instance,
+      InvoiceScanTestData.CreateOptionsManager());
 
     var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyValidationException>(
       () => service.ExtractInvoiceAsync([InvoiceScanTestData.First()], CancellationToken.None));
@@ -173,7 +188,10 @@ public sealed class DocumentAnalysisFoundationServiceTests
     var broker = new ScriptedDocumentIntelligenceBroker(
       ScriptedDocumentIntelligenceBroker.Failure(new RequestFailedException(status: 429, message: "rate limited")));
 
-    var service = new DocumentAnalysisFoundationService(broker, NullLoggerFactory.Instance);
+    var service = new DocumentAnalysisFoundationService(
+      broker,
+      NullLoggerFactory.Instance,
+      InvoiceScanTestData.CreateOptionsManager());
 
     var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
       () => service.ExtractInvoiceAsync([InvoiceScanTestData.First()], CancellationToken.None));
@@ -191,7 +209,10 @@ public sealed class DocumentAnalysisFoundationServiceTests
       ScriptedDocumentIntelligenceBroker.Failure(
         new InvalidStructuredOutputException("provider output violated the receipt contract")));
 
-    var service = new DocumentAnalysisFoundationService(broker, NullLoggerFactory.Instance);
+    var service = new DocumentAnalysisFoundationService(
+      broker,
+      NullLoggerFactory.Instance,
+      InvoiceScanTestData.CreateOptionsManager());
 
     var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
       () => service.ExtractInvoiceAsync([InvoiceScanTestData.First()], CancellationToken.None));

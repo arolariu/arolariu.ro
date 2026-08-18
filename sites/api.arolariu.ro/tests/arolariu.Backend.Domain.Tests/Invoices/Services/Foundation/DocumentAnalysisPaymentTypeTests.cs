@@ -47,7 +47,10 @@ public sealed class DocumentAnalysisPaymentTypeTests
           ReceiptDocumentTestData.Tender(method, 15.50m),
         ]));
 
-    var service = new DocumentAnalysisFoundationService(broker, NullLoggerFactory.Instance);
+    var service = new DocumentAnalysisFoundationService(
+      broker,
+      NullLoggerFactory.Instance,
+      InvoiceScanTestData.CreateOptionsManager());
 
     var result = await service.ExtractInvoiceAsync([InvoiceScanTestData.First()], CancellationToken.None);
 
@@ -61,7 +64,10 @@ public sealed class DocumentAnalysisPaymentTypeTests
   public async Task ExtractInvoiceAsync_WithoutPaymentLines_DeterminesUnknownPaymentType()
   {
     var broker = new ScriptedDocumentIntelligenceBroker(ReceiptDocumentTestData.Document());
-    var service = new DocumentAnalysisFoundationService(broker, NullLoggerFactory.Instance);
+    var service = new DocumentAnalysisFoundationService(
+      broker,
+      NullLoggerFactory.Instance,
+      InvoiceScanTestData.CreateOptionsManager());
 
     var result = await service.ExtractInvoiceAsync([InvoiceScanTestData.First()], CancellationToken.None);
 
@@ -81,7 +87,10 @@ public sealed class DocumentAnalysisPaymentTypeTests
           ReceiptDocumentTestData.Tender(" ", 0.0m),
         ]));
 
-    var service = new DocumentAnalysisFoundationService(broker, NullLoggerFactory.Instance);
+    var service = new DocumentAnalysisFoundationService(
+      broker,
+      NullLoggerFactory.Instance,
+      InvoiceScanTestData.CreateOptionsManager());
 
     var result = await service.ExtractInvoiceAsync([InvoiceScanTestData.First()], CancellationToken.None);
 

@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Http;
+using arolariu.Backend.Common.Options;
 using arolariu.Backend.Common.Telemetry.Tracing;
 using arolariu.Backend.Domain.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -28,6 +29,7 @@ public static partial class InvoiceEndpoints
   #region CRUD operations for the Invoice Standard Endpoints
   internal static async partial Task<IResult> CreateNewInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
+    IOptionsManager optionsManager,
     IHttpContextAccessor httpContext,
     CreateInvoiceRequestDto invoiceDto)
   {
@@ -44,7 +46,8 @@ public static partial class InvoiceEndpoints
 
       if (!TryRetrieveUserIdentifierClaimFromPrincipal(httpContext, out Guid serverOwnerIdentifier))
       {
-        activity?.SetTag("validation.failed", "Authenticated userIdentifier claim is required");
+        activity?.SetTag("validation.failed", true);
+        activity?.SetTag("validation.reason", "missing_user_identifier");
         return TypedResults.ValidationProblem(
           new Dictionary<string, string[]>
           {
@@ -52,13 +55,16 @@ public static partial class InvoiceEndpoints
           });
       }
 
-      if (!invoiceDto.TryValidate(out Dictionary<string, string[]> validationErrors))
+      ApplicationOptions storageOptions = optionsManager.GetApplicationOptions();
+
+      if (!invoiceDto.TryValidate(storageOptions, out Dictionary<string, string[]> validationErrors))
       {
-        activity?.SetTag("validation.failed", "Invoice creation transport is invalid");
+        activity?.SetTag("validation.failed", true);
+        activity?.SetTag("validation.reason", "invoice_transport");
         return TypedResults.ValidationProblem(validationErrors);
       }
 
-      var invoice = invoiceDto.ToInvoice(serverOwnerIdentifier);
+      var invoice = invoiceDto.ToInvoice(serverOwnerIdentifier, storageOptions);
       activity?.SetInvoiceContext(invoice.id, invoice.UserIdentifier);
 
       await invoiceProcessingService
@@ -454,8 +460,6 @@ public static partial class InvoiceEndpoints
       }
 
       var productEntity = product.ToProduct();
-      activity?.SetTag("product.name", productEntity.Name);
-
       await invoiceProcessingService
         .AddProduct(productEntity, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
@@ -599,7 +603,6 @@ public static partial class InvoiceEndpoints
           writeScope.Token)
         .ConfigureAwait(false);
 
-      activity?.SetTag("product.new_name", updatedProduct.Name);
       activity?.RecordSuccess("Product updated in invoice");
       return TypedResults.Accepted($"/rest/v1/invoices/{id}/products", value: ProductResponseDto.FromProduct(updatedProduct));
     }
@@ -714,7 +717,7 @@ public static partial class InvoiceEndpoints
       }
 
       var merchant = merchantDto.ToMerchant();
-      activity?.SetMerchantContext(merchant.id, merchant.Name);
+      activity?.SetMerchantContext(merchant.id);
       activity?.SetTag("merchant.parent_company_id", merchant.ParentCompanyId.ToString());
 
       possibleInvoice.MerchantReference = merchant.id;
@@ -819,6 +822,7 @@ public static partial class InvoiceEndpoints
 
   internal static async partial Task<IResult> CreateInvoiceScanAsync(
     IInvoiceProcessingService invoiceProcessingService,
+    IOptionsManager optionsManager,
     IHttpContextAccessor httpContext,
     Guid id,
     CreateInvoiceScanRequestDto invoiceScanDto)
@@ -836,9 +840,12 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("Scan.Create");
       }
 
-      if (!invoiceScanDto.TryValidate(out Dictionary<string, string[]> validationErrors))
+      ApplicationOptions storageOptions = optionsManager.GetApplicationOptions();
+
+      if (!invoiceScanDto.TryValidate(storageOptions, out Dictionary<string, string[]> validationErrors))
       {
-        activity?.SetTag("validation.failed", "Invoice scan transport is invalid");
+        activity?.SetTag("validation.failed", true);
+        activity?.SetTag("validation.reason", "scan_transport");
         return TypedResults.ValidationProblem(validationErrors);
       }
 
@@ -854,8 +861,8 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      InvoiceScan convertedScan = invoiceScanDto.ToInvoiceScan();
-      activity?.SetTag("scan.location", convertedScan.Location.ToString());
+      InvoiceScan convertedScan = invoiceScanDto.ToInvoiceScan(storageOptions);
+      activity?.SetTag("scan.type", convertedScan.Type.ToString());
 
       possibleInvoice.Scans.Add(convertedScan);
 
@@ -953,9 +960,8 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      // URL-decode the scan location field to handle URL-encoded characters
+      // URL-decode the scan location field to handle URL-encoded characters.
       var decodedScanLocation = Uri.UnescapeDataString(scanLocationField);
-      activity?.SetTag("scan.location", decodedScanLocation);
 
       var possibleScan = possibleInvoice.Scans
          .FirstOrDefault(scan => scan.Location.ToString() == decodedScanLocation, InvoiceScan.Default());
@@ -1163,7 +1169,6 @@ public static partial class InvoiceEndpoints
 
       var merchant = merchantDto.ToMerchant();
       activity?.SetMerchantContext(merchant.id);
-      activity?.SetTag("merchant.name", merchant.Name);
 
       await invoiceProcessingService
           .CreateMerchant(merchant, null, writeScope.Token)
@@ -1257,7 +1262,6 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      activity?.SetTag("merchant.name", possibleMerchant.Name);
       activity?.RecordSuccess();
       return TypedResults.Ok(MerchantResponseDto.FromMerchant(possibleMerchant));
     }
@@ -1303,7 +1307,6 @@ public static partial class InvoiceEndpoints
           cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
-      activity?.SetTag("merchant.name", updatedMerchant.Name);
       activity?.RecordSuccess("Merchant updated");
       return TypedResults.Accepted($"/rest/v1/merchants/{id}", MerchantResponseDto.FromMerchant(updatedMerchant));
     }

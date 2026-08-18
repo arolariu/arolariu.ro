@@ -73,7 +73,10 @@ internal sealed class AnalysisPipelineHarness
       taxonomyBroker,
       NullLoggerFactory.Instance);
     var analysisRunFoundation = new AnalysisRunFoundationService(RunBroker, NullLoggerFactory.Instance);
-    var documentFoundation = new DocumentAnalysisFoundationService(DocumentBroker, NullLoggerFactory.Instance);
+    var documentFoundation = new DocumentAnalysisFoundationService(
+      DocumentBroker,
+      NullLoggerFactory.Instance,
+      InvoiceScanTestData.CreateOptionsManager());
     var generativeFoundation = new GenerativeAnalysisFoundationService(
       GenerativeBroker,
       taxonomyBroker,
@@ -136,7 +139,7 @@ internal sealed class AnalysisPipelineHarness
 
     if (invoice.Scans.Count == 0)
     {
-      invoice.Scans.Add(new InvoiceScan(ScanType.JPG, new Uri("https://example.test/receipt.jpg"), Metadata: null));
+      invoice.Scans.Add(InvoiceScanTestData.First());
     }
 
     AggregateBroker.Invoices[invoice.id] = invoice;

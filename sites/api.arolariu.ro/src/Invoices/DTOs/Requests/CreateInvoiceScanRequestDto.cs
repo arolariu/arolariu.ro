@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
+using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
 /// <summary>
@@ -27,8 +28,9 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 /// document it as an input type; clients must convert it to HEIF before submitting the scan.
 /// </para>
 /// <para>
-/// <b>Storage:</b> The <see cref="Location"/> URI should point to Azure Blob Storage.
-/// The scan must be uploaded to storage before creating this DTO.
+/// <b>Storage:</b> The <see cref="Location"/> URI must point to the configured HTTPS Azure Blob upload container.
+/// The scan must be uploaded to storage before creating this DTO. SAS query parameters are retained for the
+/// provider but are never included in telemetry.
 /// </para>
 /// <para>
 /// <b>AI Processing:</b> After adding a scan, trigger analysis via the
@@ -41,7 +43,7 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 /// </param>
 /// <param name="Location">
 /// The URI where the scan image/document is stored. Required.
-/// Must be a valid, accessible URI (typically Azure Blob Storage with SAS token).
+/// Must be a valid HTTPS URI within the configured Azure Blob upload container. A SAS query is permitted.
 /// </param>
 /// <param name="Metadata">
 /// Optional metadata associated with this scan. May include:
@@ -62,7 +64,7 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 ///     Location: blobUri,
 ///     Metadata: new Dictionary&lt;string, object&gt; { ["pageNumber"] = 2 });
 ///
-/// var scan = request.ToInvoiceScan();
+/// var scan = request.ToInvoiceScan(storageOptions);
 /// invoice.Scans.Add(scan);
 /// </code>
 /// </example>
@@ -88,17 +90,18 @@ public readonly record struct CreateInvoiceScanRequestDto(
   /// If immutability is required, the caller should provide a copy.
   /// </para>
   /// </remarks>
+  /// <param name="storageOptions">The configured Azure storage account and upload-container endpoint.</param>
   /// <returns>
   /// A new <see cref="InvoiceScan"/> instance ready to be added to an invoice.
   /// </returns>
   /// <exception cref="ArgumentException">Thrown when the scan cannot be processed by Document Intelligence.</exception>
-  public InvoiceScan ToInvoiceScan()
+  public InvoiceScan ToInvoiceScan(ApplicationOptions storageOptions)
   {
-    if (!TryValidate(out Dictionary<string, string[]> validationErrors))
+    if (!TryValidate(storageOptions, out Dictionary<string, string[]> validationErrors))
     {
       throw new ArgumentException(
         string.Join(" ", validationErrors.Values.SelectMany(static errors => errors)),
-        nameof(CreateInvoiceScanRequestDto));
+        nameof(storageOptions));
     }
 
     return new(Type, Location, Metadata);
@@ -107,13 +110,17 @@ public readonly record struct CreateInvoiceScanRequestDto(
   /// <summary>
   /// Validates the scan input before it is persisted or submitted to Document Intelligence.
   /// </summary>
+  /// <param name="storageOptions">The configured Azure storage account and upload-container endpoint.</param>
   /// <param name="validationErrors">
   /// A field-keyed collection of validation failures. The collection is empty when the method returns
   /// <see langword="true"/>.
   /// </param>
   /// <returns><see langword="true"/> when this request can enter the document analysis pipeline; otherwise, <see langword="false"/>.</returns>
-  public bool TryValidate(out Dictionary<string, string[]> validationErrors)
+  public bool TryValidate(
+    ApplicationOptions storageOptions,
+    out Dictionary<string, string[]> validationErrors)
   {
+    ArgumentNullException.ThrowIfNull(storageOptions);
     validationErrors = new Dictionary<string, string[]>(StringComparer.Ordinal);
 
     if (!Enum.IsDefined(Type) || !InvoiceScan.IsSupportedByDocumentIntelligence(Type))
@@ -124,9 +131,12 @@ public readonly record struct CreateInvoiceScanRequestDto(
       ];
     }
 
-    if (Location is null || !Location.IsAbsoluteUri)
+    if (!InvoiceScanStorageLocationPolicy.TryValidate(
+      Location,
+      storageOptions,
+      out string locationValidationMessage))
     {
-      validationErrors[nameof(Location)] = ["Scan location must be an absolute URI."];
+      validationErrors[nameof(Location)] = [locationValidationMessage];
     }
 
     return validationErrors.Count == 0;

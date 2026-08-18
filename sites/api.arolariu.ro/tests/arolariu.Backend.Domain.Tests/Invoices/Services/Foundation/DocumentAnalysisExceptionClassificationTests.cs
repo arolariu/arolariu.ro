@@ -159,25 +159,33 @@ public sealed class DocumentAnalysisExceptionClassificationTests
   }
 
   /// <summary>
-  /// Verifies provider exception content, including a scan SAS URI and receipt text, cannot reach logs or activities.
+  /// Verifies provider exception content, including scan, product, merchant, and receipt sentinels, cannot reach logs
+  /// or activities.
   /// </summary>
   [TestMethod]
   public async Task ExtractInvoiceAsync_WhenProviderExceptionContainsSensitiveContent_ExcludesItFromTelemetry()
   {
-    const string sensitiveSentinel =
-      "https://scan.example.test/receipt.jpg?sv=2026-08-06&sig=FAKE-SAS&receipt=PRIVATE-RECEIPT-TEXT";
+    const string scanSasSentinel =
+      "https://scan.example.test/receipt.jpg?sv=2026-08-06&sig=FAKE-SAS";
+    const string productNameSentinel = "PRIVATE-PRODUCT-SENTINEL";
+    const string merchantNameSentinel = "PRIVATE-MERCHANT-SENTINEL";
+    string sensitiveSentinel =
+      $"{scanSasSentinel}&receipt=PRIVATE-RECEIPT-TEXT&product={productNameSentinel}&merchant={merchantNameSentinel}";
     using var capture = new AnalysisTelemetryPrivacyCapture();
     using ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(capture));
     using var activities = new InvoiceActivityRecorder();
     var service = new DocumentAnalysisFoundationService(
       new ScriptedDocumentIntelligenceBroker(
         ScriptedDocumentIntelligenceBroker.Failure(new HttpRequestException(sensitiveSentinel))),
-      loggerFactory);
+      loggerFactory,
+      InvoiceScanTestData.CreateOptionsManager());
 
     await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
       () => service.ExtractInvoiceAsync([InvoiceScanTestData.First()], CancellationToken.None));
 
-    capture.AssertSurfaceExcludes(activities, sensitiveSentinel);
+    capture.AssertSurfaceExcludes(activities, scanSasSentinel);
+    capture.AssertSurfaceExcludes(activities, productNameSentinel);
+    capture.AssertSurfaceExcludes(activities, merchantNameSentinel);
   }
 
   /// <summary>
@@ -197,5 +205,6 @@ public sealed class DocumentAnalysisExceptionClassificationTests
   private static DocumentAnalysisFoundationService CreateServiceThrowing(Exception exception) =>
     new(
       new ScriptedDocumentIntelligenceBroker(ScriptedDocumentIntelligenceBroker.Failure(exception)),
-      NullLoggerFactory.Instance);
+      NullLoggerFactory.Instance,
+      InvoiceScanTestData.CreateOptionsManager());
 }

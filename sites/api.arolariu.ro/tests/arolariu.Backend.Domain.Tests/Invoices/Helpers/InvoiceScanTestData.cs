@@ -2,6 +2,7 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using System;
 
+using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
 /// <summary>
@@ -9,6 +10,18 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 /// </summary>
 internal static class InvoiceScanTestData
 {
+  /// <summary>
+  /// Creates storage options that approve the deterministic scan fixtures in this test assembly.
+  /// </summary>
+  /// <returns>A fixed options manager for document-analysis tests.</returns>
+  internal static IOptionsManager CreateOptionsManager() =>
+    new InvoiceScanTestOptionsManager(
+      new LocalOptions
+      {
+        StorageAccountName = "unit-tests",
+        StorageAccountEndpoint = "https://unit-tests.arolariu.ro/scans",
+      });
+
   /// <summary>
   /// Creates the first deterministic invoice scan fixture.
   /// </summary>
@@ -28,4 +41,13 @@ internal static class InvoiceScanTestData
       ScanType.JPG,
       new Uri("https://unit-tests.arolariu.ro/scans/receipt-2.jpg"),
       null);
+}
+
+/// <summary>
+/// Provides fixed application options to document-analysis unit tests.
+/// </summary>
+internal sealed class InvoiceScanTestOptionsManager(ApplicationOptions options) : IOptionsManager
+{
+  /// <inheritdoc/>
+  public ApplicationOptions GetApplicationOptions() => options;
 }

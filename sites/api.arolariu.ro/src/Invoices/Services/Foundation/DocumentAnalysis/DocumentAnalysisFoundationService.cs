@@ -6,10 +6,12 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
+using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
 using Microsoft.Extensions.Logging;
 
@@ -22,21 +24,26 @@ public sealed partial class DocumentAnalysisFoundationService : IDocumentAnalysi
 {
   private readonly IDocumentIntelligenceBroker documentIntelligenceBroker;
   private readonly ILogger<IDocumentAnalysisFoundationService> logger;
+  private readonly IOptionsManager optionsManager;
 
   /// <summary>
   /// Initializes a new instance of the <see cref="DocumentAnalysisFoundationService"/> class.
   /// </summary>
   /// <param name="documentIntelligenceBroker">The provider-neutral document-intelligence broker.</param>
   /// <param name="loggerFactory">The logger factory used to create the service logger.</param>
+  /// <param name="optionsManager">The storage configuration used to approve scan locations before provider calls.</param>
   public DocumentAnalysisFoundationService(
     IDocumentIntelligenceBroker documentIntelligenceBroker,
-    ILoggerFactory loggerFactory)
+    ILoggerFactory loggerFactory,
+    IOptionsManager optionsManager)
   {
     ArgumentNullException.ThrowIfNull(documentIntelligenceBroker);
     ArgumentNullException.ThrowIfNull(loggerFactory);
+    ArgumentNullException.ThrowIfNull(optionsManager);
 
     this.documentIntelligenceBroker = documentIntelligenceBroker;
     logger = loggerFactory.CreateLogger<IDocumentAnalysisFoundationService>();
+    this.optionsManager = optionsManager;
   }
 
   /// <inheritdoc/>
@@ -48,13 +55,19 @@ public sealed partial class DocumentAnalysisFoundationService : IDocumentAnalysi
       {
         using var activity = InvoicePackageTracing.StartActivity(nameof(ExtractInvoiceAsync));
         ValidateScansAreSet(scans);
+        ApplicationOptions storageOptions = optionsManager.GetApplicationOptions();
 
         var extractionTasks = new Task<IndexedReceiptDocument>[scans.Count];
 
         for (int index = 0; index < scans.Count; index++)
         {
           InvoiceScan scan = scans[index];
-          ValidateScanIsUsable(scan, index);
+          ValidateScanIsUsable(scan, index, storageOptions);
+        }
+
+        for (int index = 0; index < scans.Count; index++)
+        {
+          InvoiceScan scan = scans[index];
           extractionTasks[index] = AnalyzeScanAsync(scan, index, cancellationToken);
         }
 

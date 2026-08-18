@@ -181,7 +181,8 @@ public sealed class AnalysisProcessingQueueDepthResilienceTests
     var analysisRunFoundation = new AnalysisRunFoundationService(runBroker, NullLoggerFactory.Instance);
     var documentFoundation = new DocumentAnalysisFoundationService(
       new UnusedDocumentIntelligenceBroker(),
-      NullLoggerFactory.Instance);
+      NullLoggerFactory.Instance,
+      InvoiceScanTestData.CreateOptionsManager());
     var generativeFoundation = new GenerativeAnalysisFoundationService(
       new RejectingGenerativeAiBroker(),
       TaxonomyBrokerTestFactory.Create(),
