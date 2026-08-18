@@ -9,10 +9,11 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Exceptions;
 using arolariu.Backend.Common.Http;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.Endpoints;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -223,15 +224,25 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
     mockService
       .Setup(service => service.UpdateProduct(
-        "Missing product",
-        It.IsAny<arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Product>(),
+        It.Is<ProductUpdateSelector>(selector =>
+          selector.OriginalName == "Missing product"
+          && selector.OriginalQuantity == 1m
+          && selector.OriginalUnitPrice == 1m
+          && selector.OriginalTotalPrice == 1m),
+        It.IsAny<Product>(),
         invoiceIdentifier,
         It.IsAny<Guid?>(),
         It.IsAny<CancellationToken>()))
       .ThrowsAsync(new ProductNotFoundException(invoiceIdentifier));
     var accessor = CreateAuthenticatedContextAccessor();
     var request = new UpdateProductRequestDto(
-      OriginalProductName: "Missing product",
+      Selector: new ProductUpdateSelectorDto(
+        OriginalProductCode: null,
+        OriginalName: "Missing product",
+        OriginalQuantity: 1m,
+        OriginalUnitPrice: 1m,
+        OriginalTotalPrice: 1m,
+        OccurrenceOrdinal: null),
       Name: "Replacement",
       Classification: null,
       Quantity: 1,
@@ -249,12 +260,55 @@ public sealed class InvoiceEndpointsStatusCodeTests
     Assert.AreEqual(ProblemTypeUris.NotFound, GetProblemDetails(result).Type);
     mockService.Verify(
       service => service.UpdateProduct(
-        "Missing product",
-        It.IsAny<arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Product>(),
+        It.IsAny<ProductUpdateSelector>(),
+        It.IsAny<Product>(),
         invoiceIdentifier,
         It.IsAny<Guid?>(),
         It.IsAny<CancellationToken>()),
       Times.Once);
+  }
+
+  /// <summary>
+  /// Verifies that an ambiguous identity-free product selector reaches clients as a typed validation response.
+  /// </summary>
+  [TestMethod]
+  public async Task UpdateProductInInvoiceAsync_WhenServiceThrowsAmbiguousSelector_Returns400()
+  {
+    // Arrange
+    var invoiceIdentifier = Guid.NewGuid();
+    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    mockService
+      .Setup(service => service.UpdateProduct(
+        It.IsAny<ProductUpdateSelector>(),
+        It.IsAny<Product>(),
+        invoiceIdentifier,
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new ProductUpdateSelectorAmbiguousException(invoiceIdentifier, matchingProductCount: 2));
+    var accessor = CreateAuthenticatedContextAccessor();
+    var request = new UpdateProductRequestDto(
+      Selector: new ProductUpdateSelectorDto(
+        OriginalProductCode: null,
+        OriginalName: "Duplicate product",
+        OriginalQuantity: 1m,
+        OriginalUnitPrice: 1m,
+        OriginalTotalPrice: 1m,
+        OccurrenceOrdinal: null),
+      Name: "Replacement",
+      Classification: null,
+      Quantity: 1m,
+      QuantityUnit: "pcs",
+      ProductCode: null,
+      Price: 1m);
+
+    // Act
+    IResult result = await InvoiceEndpoints
+      .UpdateProductInInvoiceAsync(mockService.Object, accessor, invoiceIdentifier, request)
+      .ConfigureAwait(false);
+
+    // Assert
+    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.Validation, GetProblemDetails(result).Type);
   }
 
   #endregion

@@ -123,18 +123,19 @@ public interface IInvoiceProcessingService
   /// Applies a client product update to one persisted line item and writes its invoice aggregate once.
   /// </summary>
   /// <remarks>
-  /// The target is the first line item whose normalized name exactly matches <paramref name="originalProductName"/>.
-  /// Duplicate matches use invoice collection order (FIFO) so no adjacent duplicate is replaced or appended.
+  /// The identity-free <paramref name="selector"/> first prefers an original product code. Without one, it uses the
+  /// original normalized name, quantity, unit price, and total price. An occurrence ordinal is required only while
+  /// multiple persisted products remain indistinguishable under that preferred selector.
   /// Server-owned enrichment and workflow fields are retained by the persisted line item.
   /// </remarks>
-  /// <param name="originalProductName">The current client-visible name identifying the line item.</param>
+  /// <param name="selector">The transient identity-free selector for one persisted line item.</param>
   /// <param name="updatedProduct">The client-editable values to apply to the selected line item.</param>
   /// <param name="invoiceIdentifier">Target invoice identifier.</param>
   /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>The updated persisted line item after the aggregate write path has canonicalized it.</returns>
   Task<Product> UpdateProduct(
-    string originalProductName,
+    ProductUpdateSelector selector,
     Product updatedProduct,
     Guid invoiceIdentifier,
     Guid? userIdentifier,

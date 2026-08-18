@@ -585,11 +585,14 @@ public static partial class InvoiceEndpoints
 
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
-      activity?.SetTag("product.original_name", productInformation.OriginalProductName);
+      var selector = productInformation.ToSelector();
+      activity?.SetTag(
+        "product.selector.strategy",
+        selector.UsesOriginalProductCode ? "product_code" : "composite_snapshot");
 
       var updatedProduct = await invoiceProcessingService
         .UpdateProduct(
-          productInformation.OriginalProductName,
+          selector,
           productInformation.ToProduct(),
           id,
           potentialUserIdentifier,

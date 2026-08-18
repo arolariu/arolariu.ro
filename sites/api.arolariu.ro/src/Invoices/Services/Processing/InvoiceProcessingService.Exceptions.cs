@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Common.Exceptions;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing;
@@ -66,6 +67,7 @@ public partial class InvoiceProcessingService
       => CreateAndLogDependencyException(merchantDependency.InnerException ?? merchantDependency),
     MerchantOrchestrationServiceException merchantService
       => CreateAndLogServiceException(merchantService.InnerException ?? merchantService),
+    Exception validation when validation is IValidationException => CreateAndLogValidationException(validation),
     _ => CreateAndLogServiceException(exception),
   };
   #endregion

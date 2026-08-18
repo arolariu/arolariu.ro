@@ -246,33 +246,59 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   #region Update Product API
   /// <inheritdoc/>
   public async Task<Product> UpdateProduct(
-    string originalProductName,
+    ProductUpdateSelector selector,
     Product updatedProduct,
     Guid invoiceIdentifier,
     Guid? userIdentifier,
     CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
+    ArgumentNullException.ThrowIfNull(selector);
     ArgumentNullException.ThrowIfNull(updatedProduct);
 
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateProduct));
     activity?.SetInvoiceContext(invoiceIdentifier, userIdentifier);
+    selector.Validate();
+    activity?.SetTag(
+      "product.selector.strategy",
+      selector.UsesOriginalProductCode ? "product_code" : "composite_snapshot");
 
     var invoice = await invoiceOrchestrationService
       .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
 
-    string normalizedOriginalName = ExtractedProductReconciler.NormalizeName(originalProductName);
-    Product? persistedProduct = invoice.Items.FirstOrDefault(product =>
-      string.Equals(
-        ExtractedProductReconciler.NormalizeName(product.Name),
-        normalizedOriginalName,
-        StringComparison.Ordinal));
+    List<Product> matchedProducts = invoice.Items
+      .Where(product => product is not null && selector.Matches(product))
+      .ToList();
+    activity?.SetTag("product.selector.match_count", matchedProducts.Count);
 
-    if (persistedProduct is null)
+    if (matchedProducts.Count == 0)
     {
       activity?.SetTag("result.product_found", false);
       throw new ProductNotFoundException(invoiceIdentifier);
+    }
+
+    Product persistedProduct;
+    if (selector.OccurrenceOrdinal is int occurrenceOrdinal)
+    {
+      if (occurrenceOrdinal >= matchedProducts.Count)
+      {
+        throw new ProductUpdateSelectorOccurrenceOutOfRangeException(
+          invoiceIdentifier,
+          occurrenceOrdinal,
+          matchedProducts.Count);
+      }
+
+      persistedProduct = matchedProducts[occurrenceOrdinal];
+    }
+    else
+    {
+      if (matchedProducts.Count > 1)
+      {
+        throw new ProductUpdateSelectorAmbiguousException(invoiceIdentifier, matchedProducts.Count);
+      }
+
+      persistedProduct = matchedProducts[0];
     }
 
     persistedProduct.ApplyClientUpdate(updatedProduct);

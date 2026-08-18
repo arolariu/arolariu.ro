@@ -1,15 +1,15 @@
 namespace arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions;
 using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 
 /// <summary>
-/// Request DTO for updating client-editable fields of an existing product within an invoice.
+/// Request DTO for updating client-editable fields of one selected product within an invoice.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -21,22 +21,21 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// and value semantics for equality comparisons.
 /// </para>
 /// <para>
-/// <b>Product Identification:</b> Products within an invoice are identified by their
-/// normalized <see cref="OriginalProductName"/>. Duplicate names are selected FIFO in
-/// invoice collection order, and the selected persisted item is mutated in place.
+/// <b>Product Identification:</b> <see cref="Selector"/> deterministically identifies one
+/// identity-free persisted product. It prefers the original product code, otherwise uses an
+/// immutable commercial snapshot and, only where necessary, an occurrence ordinal.
 /// </para>
 /// <para>
 /// <b>Preservation:</b> Allergen assessments, analysis metadata, workflow flags, and
 /// a classification not explicitly replaced by a manual selection remain unchanged.
 /// </para>
 /// </remarks>
-/// <param name="OriginalProductName">
-/// The current name of the product to update. Required.
-/// Used to locate the product within the invoice's item collection.
+/// <param name="Selector">
+/// The transient selector for the persisted product before client-editable fields are changed.
 /// </param>
 /// <param name="Name">
 /// The new name for the product. Required.
-/// May be the same as <see cref="OriginalProductName"/> if only other fields change.
+/// May be the same as <see cref="Selector"/>'s original name if only other fields change.
 /// </param>
 /// <param name="Classification">
 /// The optional new manual GPC classification selection. Null retains the persisted canonical
@@ -59,7 +58,13 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// <code>
 /// // Fix OCR error in product name and price
 /// var request = new UpdateProductRequestDto(
-///     OriginalProductName: "LAPTE ZU2U 1L",  // OCR misread
+///     Selector: new ProductUpdateSelectorDto(
+///         OriginalProductCode: null,
+///         OriginalName: "LAPTE ZU2U 1L",
+///         OriginalQuantity: 2,
+///         OriginalUnitPrice: 8.99m,
+///         OriginalTotalPrice: 17.98m,
+///         OccurrenceOrdinal: null),
 ///     Name: "LAPTE ZUZU 1L",                 // Corrected
 ///     Classification: new ClassificationSelectionDto(ClassificationSystem.Gs1Gpc, "10000025"),
 ///     Quantity: 2,
@@ -76,7 +81,7 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct UpdateProductRequestDto(
-  [Required] string OriginalProductName,
+  [Required] ProductUpdateSelectorDto? Selector,
   [Required] string Name,
   ClassificationSelectionDto? Classification,
   decimal Quantity,
@@ -85,12 +90,23 @@ public readonly record struct UpdateProductRequestDto(
   decimal Price)
 {
   /// <summary>
+  /// Converts this DTO's transient transport selector into the domain selector used during processing.
+  /// </summary>
+  /// <returns>The identity-free selector for one persisted product.</returns>
+  /// <exception cref="ProductUpdateSelectorValidationException">
+  /// Thrown when the request omits its required selector.
+  /// </exception>
+  public ProductUpdateSelector ToSelector() =>
+    Selector?.ToDomainSelector()
+      ?? throw new ProductUpdateSelectorValidationException("A product update selector is required.");
+
+  /// <summary>
   /// Converts this DTO to the client-editable portion of a <see cref="Product"/> update.
   /// </summary>
   /// <remarks>
   /// <para>
-  /// <b>Note:</b> The <see cref="OriginalProductName"/> is not included in the
-  /// returned product—it is only used for deterministic identification during the update operation.
+  /// <b>Note:</b> The selector is not included in the returned product—it is only used for
+  /// deterministic identification during the update operation.
   /// </para>
   /// <para>
   /// <b>Null Handling:</b> Optional string fields are converted to empty strings.
