@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * @fileoverview Tests for the monorepo taxonomy artifact generator.
  * @module scripts/generate.artifacts.test
@@ -7,8 +8,12 @@ import {deflateRawSync} from "node:zlib";
 import {mkdtemp, readFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
-import {describe, expect, it} from "vitest";
+import {afterEach, describe, expect, it, vi} from "vitest";
 
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs/promises")>();
+  return {...actual, readFile: vi.fn(actual.readFile)};
+});
 import {
   assertMirroredContentsIdentical,
   buildTaxonomyArtifactGenerationCommand,
@@ -324,6 +329,10 @@ describe("buildHierarchy", () => {
 
 
 describe("writeMirroredArtifacts", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   const validNode: TaxonomyArtifactNode = {
     code: "50000000",
     officialLabel: "Food",
@@ -414,6 +423,15 @@ describe("writeMirroredArtifacts", () => {
 
     await expect(writeMirroredArtifacts("gpc-2026-05.min.json", artifact([broken]), roots)).rejects.toThrow(
       "GS1_GPC hierarchy for '50000000' has mismatched code and label lengths.",
+    );
+  });
+
+  it("rejects when a mirrored copy does not match what was written", async () => {
+    const roots = await createRoots();
+    vi.mocked(readFile).mockResolvedValueOnce("{}");
+
+    await expect(writeMirroredArtifacts("gpc-2026-05.min.json", artifact([validNode]), roots)).rejects.toThrow(
+      "Mirrored artifact 'gpc-2026-05.min.json' was not written identically.",
     );
   });
 });
