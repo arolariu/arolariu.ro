@@ -39,6 +39,25 @@
  */
 export type {Allergen, CreateAllergenDtoPayload, DeleteAllergenDtoPayload, UpdateAllergenDtoPayload} from "./Allergen";
 
+/** Canonical taxonomy classification contracts and runtime guards. */
+export {
+  ClassificationOrigin,
+  ClassificationSystem,
+  isClassificationOrigin,
+  isClassificationSystem,
+  isSearchClassificationsInput,
+  isTaxonomyArtifact,
+  normalizeClassificationSearchQuery,
+  type ClassificationEvidence,
+  type ClassificationNode,
+  type ClassificationSearchResult,
+  type ClassificationSelection,
+  type SearchClassificationsInput,
+  type StandardClassification,
+  type TaxonomyArtifact,
+  type TaxonomyArtifactNode,
+} from "./Classification";
+
 /**
  * Invoice aggregate root and related types.
  * The core entity of the invoices bounded context.
