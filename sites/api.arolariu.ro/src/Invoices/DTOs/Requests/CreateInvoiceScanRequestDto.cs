@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
@@ -22,7 +23,8 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 /// </para>
 /// <para>
 /// <b>Supported Formats:</b> See <see cref="ScanType"/> for supported formats:
-/// JPG, PNG, PDF (single page recommended), TIFF.
+/// JPG/JPEG, PNG, BMP, TIFF, HEIF, and PDF. HEIC is not accepted because Azure Document Intelligence does not
+/// document it as an input type; clients must convert it to HEIF before submitting the scan.
 /// </para>
 /// <para>
 /// <b>Storage:</b> The <see cref="Location"/> URI should point to Azure Blob Storage.
@@ -89,5 +91,44 @@ public readonly record struct CreateInvoiceScanRequestDto(
   /// <returns>
   /// A new <see cref="InvoiceScan"/> instance ready to be added to an invoice.
   /// </returns>
-  public InvoiceScan ToInvoiceScan() => new(Type, Location, Metadata);
+  /// <exception cref="ArgumentException">Thrown when the scan cannot be processed by Document Intelligence.</exception>
+  public InvoiceScan ToInvoiceScan()
+  {
+    if (!TryValidate(out Dictionary<string, string[]> validationErrors))
+    {
+      throw new ArgumentException(
+        string.Join(" ", validationErrors.Values.SelectMany(static errors => errors)),
+        nameof(CreateInvoiceScanRequestDto));
+    }
+
+    return new(Type, Location, Metadata);
+  }
+
+  /// <summary>
+  /// Validates the scan input before it is persisted or submitted to Document Intelligence.
+  /// </summary>
+  /// <param name="validationErrors">
+  /// A field-keyed collection of validation failures. The collection is empty when the method returns
+  /// <see langword="true"/>.
+  /// </param>
+  /// <returns><see langword="true"/> when this request can enter the document analysis pipeline; otherwise, <see langword="false"/>.</returns>
+  public bool TryValidate(out Dictionary<string, string[]> validationErrors)
+  {
+    validationErrors = new Dictionary<string, string[]>(StringComparer.Ordinal);
+
+    if (!Enum.IsDefined(Type) || !InvoiceScan.IsSupportedByDocumentIntelligence(Type))
+    {
+      validationErrors[nameof(Type)] =
+      [
+        "Scan type must be one of JPG, JPEG, PNG, PDF, BMP, TIFF, or HEIF.",
+      ];
+    }
+
+    if (Location is null || !Location.IsAbsoluteUri)
+    {
+      validationErrors[nameof(Location)] = ["Scan location must be an absolute URI."];
+    }
+
+    return validationErrors.Count == 0;
+  }
 }

@@ -42,21 +42,27 @@ public static partial class InvoiceEndpoints
         .SetLayerContext("Endpoint", nameof(InvoiceEndpoints))
         .SetOperationType("CRUD.Create");
 
-      if (invoiceDto.UserIdentifier == Guid.Empty)
+      if (!TryRetrieveUserIdentifierClaimFromPrincipal(httpContext, out Guid serverOwnerIdentifier))
       {
-        activity?.SetTag("validation.failed", "UserIdentifier is required");
+        activity?.SetTag("validation.failed", "Authenticated userIdentifier claim is required");
         return TypedResults.ValidationProblem(
           new Dictionary<string, string[]>
           {
-            ["UserIdentifier"] = ["User identifier is required and cannot be empty."]
+            ["userIdentifier"] = ["An authenticated user identifier claim is required."]
           });
       }
 
-      var invoice = invoiceDto.ToInvoice();
+      if (!invoiceDto.TryValidate(out Dictionary<string, string[]> validationErrors))
+      {
+        activity?.SetTag("validation.failed", "Invoice creation transport is invalid");
+        return TypedResults.ValidationProblem(validationErrors);
+      }
+
+      var invoice = invoiceDto.ToInvoice(serverOwnerIdentifier);
       activity?.SetInvoiceContext(invoice.id, invoice.UserIdentifier);
 
       await invoiceProcessingService
-        .CreateInvoice(invoice, null, writeScope.Token)
+        .CreateInvoice(invoice, serverOwnerIdentifier, writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoice created successfully");
@@ -834,6 +840,12 @@ public static partial class InvoiceEndpoints
       {
         activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
         activity.SetOperationType("Scan.Create");
+      }
+
+      if (!invoiceScanDto.TryValidate(out Dictionary<string, string[]> validationErrors))
+      {
+        activity?.SetTag("validation.failed", "Invoice scan transport is invalid");
+        return TypedResults.ValidationProblem(validationErrors);
       }
 
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);

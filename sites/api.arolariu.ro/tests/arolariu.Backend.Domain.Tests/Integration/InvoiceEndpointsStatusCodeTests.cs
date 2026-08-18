@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Exceptions;
 using arolariu.Backend.Common.Http;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
@@ -175,6 +176,41 @@ public sealed class InvoiceEndpointsStatusCodeTests
     };
     return new HttpContextAccessor { HttpContext = httpContext };
   }
+
+  private static HttpContextAccessor CreateContextAccessorWithUserIdentifierClaim(string? userIdentifierClaimValue)
+  {
+    var claims = new List<Claim>();
+
+    if (userIdentifierClaimValue is not null)
+    {
+      claims.Add(new Claim("userIdentifier", userIdentifierClaimValue));
+    }
+
+    var httpContext = new DefaultHttpContext
+    {
+      User = new ClaimsPrincipal(new ClaimsIdentity(claims, authenticationType: "TestAuth")),
+      RequestServices = new ServiceCollection().BuildServiceProvider(),
+    };
+
+    return new HttpContextAccessor { HttpContext = httpContext };
+  }
+
+  private static CreateInvoiceRequestDto CreateValidInvoiceRequest() => new(
+    Name: "Creation contract test invoice",
+    Description: string.Empty,
+    Classification: null,
+    PaymentInformation: null,
+    MerchantReference: null,
+    IsImportant: false,
+    Scans:
+    [
+      new CreateInvoiceScanRequestDto(
+        ScanType.JPG,
+        new Uri("https://example.test/receipt.jpg"),
+        Metadata: null),
+    ],
+    Items: null,
+    Metadata: null);
 
   private static Mock<IInvoiceProcessingService> CreateServiceMockThatThrowsOnRead(Exception exceptionToThrow)
   {
@@ -455,25 +491,107 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
   #region POST /rest/v1/invoices validation tests
   /// <summary>
-  /// Verifies that the endpoint rejects a request with an empty user identifier by returning
-  /// 400 Bad Request <em>before</em> invoking the processing service (endpoint-level validation).
+  /// Verifies that the endpoint rejects a request without an authenticated owner claim before invoking processing.
   /// </summary>
   [TestMethod]
-  public async Task CreateNewInvoiceAsync_WhenUserIdentifierIsEmpty_Returns400ValidationProblem()
+  public async Task CreateNewInvoiceAsync_WhenOwnerClaimIsMissing_Returns400ValidationProblem()
   {
-    // Arrange - endpoint-level validation runs BEFORE any service call, so the mock
-    // is never invoked. The strict mock ensures any unexpected call would fail the test.
+    // Arrange
+    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    var accessor = CreateContextAccessorWithUserIdentifierClaim(userIdentifierClaimValue: null);
+
+    // Act
+    var result = await InvoiceEndpoints
+      .CreateNewInvoiceAsync(mockService.Object, accessor, CreateValidInvoiceRequest())
+;
+
+    // Assert
+    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
+    mockService.VerifyNoOtherCalls();
+  }
+
+  /// <summary>
+  /// Verifies that malformed owner claims cannot select an invoice partition or enter the processing layer.
+  /// </summary>
+  [TestMethod]
+  public async Task CreateNewInvoiceAsync_WhenOwnerClaimIsInvalid_Returns400ValidationProblem()
+  {
+    // Arrange
+    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    var accessor = CreateContextAccessorWithUserIdentifierClaim("not-a-guid");
+
+    // Act
+    var result = await InvoiceEndpoints
+      .CreateNewInvoiceAsync(mockService.Object, accessor, CreateValidInvoiceRequest())
+;
+
+    // Assert
+    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
+    mockService.VerifyNoOtherCalls();
+  }
+
+  /// <summary>
+  /// Verifies the authenticated claim owner, not request content, is persisted and used as the create partition.
+  /// </summary>
+  [TestMethod]
+  public async Task CreateNewInvoiceAsync_WhenOwnerClaimIsValid_PersistsClaimOwnerAndPartition()
+  {
+    // Arrange
+    Guid ownerIdentifier = Guid.NewGuid();
+    Invoice? persistedInvoice = null;
+    Guid? persistedPartitionIdentifier = null;
+    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    mockService
+      .Setup(service => service.CreateInvoice(
+        It.IsAny<Invoice>(),
+        ownerIdentifier,
+        It.IsAny<CancellationToken>()))
+      .Callback<Invoice, Guid?, CancellationToken>((invoice, partitionIdentifier, _) =>
+      {
+        persistedInvoice = invoice;
+        persistedPartitionIdentifier = partitionIdentifier;
+      })
+      .Returns(Task.CompletedTask);
+
+    // Act
+    var result = await InvoiceEndpoints
+      .CreateNewInvoiceAsync(
+        mockService.Object,
+        CreateAuthenticatedContextAccessor(ownerIdentifier),
+        CreateValidInvoiceRequest())
+;
+
+    // Assert
+    Assert.AreEqual(StatusCodes.Status201Created, GetStatusCode(result));
+    Assert.IsNotNull(persistedInvoice);
+    Assert.AreEqual(ownerIdentifier, persistedInvoice.UserIdentifier);
+    Assert.AreEqual(ownerIdentifier, persistedInvoice.CreatedBy);
+    Assert.AreEqual(ownerIdentifier, persistedPartitionIdentifier);
+    mockService.Verify(
+      service => service.CreateInvoice(
+        It.Is<Invoice>(invoice => invoice.UserIdentifier == ownerIdentifier),
+        ownerIdentifier,
+        It.IsAny<CancellationToken>()),
+      Times.Once);
+  }
+
+  /// <summary>
+  /// Verifies the scan-attach boundary rejects HEIC's undocumented numeric value before it reads or updates an invoice.
+  /// </summary>
+  [TestMethod]
+  public async Task CreateInvoiceScanAsync_WhenScanTypeIsUnsupported_Returns400ValidationProblem()
+  {
+    // Arrange
     var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
     var accessor = CreateAuthenticatedContextAccessor();
-
-    var invalidDto = new CreateInvoiceRequestDto(
-      UserIdentifier: Guid.Empty,
-      InitialScan: default,
+    var request = new CreateInvoiceScanRequestDto(
+      Type: (ScanType)9,
+      Location: new Uri("https://example.test/receipt.heic"),
       Metadata: null);
 
     // Act
     var result = await InvoiceEndpoints
-      .CreateNewInvoiceAsync(mockService.Object, accessor, invalidDto)
+      .CreateInvoiceScanAsync(mockService.Object, accessor, Guid.NewGuid(), request)
 ;
 
     // Assert

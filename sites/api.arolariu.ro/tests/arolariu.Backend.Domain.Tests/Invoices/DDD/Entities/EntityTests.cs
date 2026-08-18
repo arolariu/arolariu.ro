@@ -725,6 +725,9 @@ public sealed class EntityTests
   [DataRow(ScanType.PDF)]
   [DataRow(ScanType.OTHER)]
   [DataRow(ScanType.UNKNOWN)]
+  [DataRow(ScanType.BMP)]
+  [DataRow(ScanType.TIFF)]
+  [DataRow(ScanType.HEIF)]
   public void ScanType_AllValues_AreDefined(ScanType scanType)
   {
     // Assert
@@ -741,6 +744,9 @@ public sealed class EntityTests
   [DataRow("PDF")]
   [DataRow("OTHER")]
   [DataRow("UNKNOWN")]
+  [DataRow("BMP")]
+  [DataRow("TIFF")]
+  [DataRow("HEIF")]
   public void ScanType_ParseFromString_ReturnsCorrectValue(string scanTypeName)
   {
     // Act

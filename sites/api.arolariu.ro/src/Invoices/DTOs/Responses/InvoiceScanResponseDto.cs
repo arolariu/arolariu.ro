@@ -27,7 +27,8 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 /// </para>
 /// </remarks>
 /// <param name="Type">
-/// The scan format type. Supported types include JPG, PNG, PDF, TIFF.
+/// The scan format type. Document Intelligence-supported types are JPG/JPEG, PNG, BMP, TIFF, HEIF, and PDF.
+/// Values use the stable numeric <see cref="ScanType"/> transport contract.
 /// Determines how the scan is processed during analysis.
 /// </param>
 /// <param name="Location">
