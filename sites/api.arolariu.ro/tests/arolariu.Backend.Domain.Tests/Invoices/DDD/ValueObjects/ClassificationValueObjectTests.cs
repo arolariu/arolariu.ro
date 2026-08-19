@@ -114,6 +114,22 @@ public sealed class ClassificationValueObjectTests
     Assert.ThrowsExactly<JsonException>(() => JsonSerializer.Deserialize<ClassificationSystem>("1"));
   }
 
+  /// <summary>Verifies minimal classification selections normalize their code.</summary>
+  [TestMethod]
+  public void ClassificationSelection_ValidInput_TrimsCode()
+  {
+    var selection = new ClassificationSelection(ClassificationSystem.EcoicopV2, " 01.1 ");
+
+    Assert.AreEqual(ClassificationSystem.EcoicopV2, selection.System);
+    Assert.AreEqual("01.1", selection.Code);
+  }
+
+  /// <summary>Verifies minimal classification selections reject blank codes.</summary>
+  [TestMethod]
+  public void ClassificationSelection_BlankCode_ThrowsArgumentException() =>
+    Assert.ThrowsExactly<ArgumentException>(() =>
+      new ClassificationSelection(ClassificationSystem.Gs1Gpc, " "));
+
   /// <summary>
   /// Creates a stable analysis classification for structural equality assertions.
   /// </summary>
