@@ -31,7 +31,8 @@ public interface IClassifierBroker
   /// Performs GPT-backed enrichment of a single <see cref="Invoice"/> aggregate according to supplied analysis options.
   /// </summary>
   /// <remarks>
-  /// <para><b>Behavior:</b> Applies sequential LLM prompts (name, description, product category + allergens, invoice recipes, invoice category).
+  /// <para><b>Behavior:</b> Applies LLM prompts for name, description, product allergens,
+  /// invoice recipes, and OCR fallback values.
   /// Each failure (e.g. content filter) degrades gracefully by supplying an empty / default value so downstream processing can continue.</para>
   /// <para><b>Partial Failure Handling:</b> Individual prompt failures DO NOT abort the pipeline; missing enrichment fields are left empty / default.</para>
   /// <para><b>Thread Safety:</b> Implementations SHOULD treat the underlying client as thread-safe (AzureOpenAIClient is internally safe for concurrent usage).</para>

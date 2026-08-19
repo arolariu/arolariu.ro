@@ -22,8 +22,8 @@ using Microsoft.Extensions.Logging;
 /// <para><b>Role (The Standard):</b> Implements the <see cref="IClassifierBroker"/> abstraction by issuing chat completion
 /// requests to Azure AI Foundry (Cognitive Services) model router and mapping raw responses back into domain objects. Provides ONLY translation and graceful
 /// degradation — NO orchestration, persistence, retry policy, caching, or domain validation (handled upstream).</para>
-/// <para><b>Enrichment Pipeline:</b> Parallelizes LLM calls into 3 batches (when enabled by <see cref="AnalysisOptions"/>): 
-/// Batch 1 (invoice name + description), Batch 2 (all product categories + allergens), Batch 3 (possible recipes + invoice category). 
+/// <para><b>Enrichment Pipeline:</b> Parallelizes LLM calls into batches for invoice text,
+/// product allergens, recipes, and OCR fallback values.
 /// Each prompt failure (e.g. content filter rejection) results in a default / empty fallback without aborting the remaining steps.</para>
 /// <para><b>Resilience:</b> Catches <c>ClientResultException</c> (Azure SDK) per step and converts it to silent fallback (empty string /
 /// default enum / empty collection) to keep a best-effort enrichment model. Upstream layers MAY introduce logging or metrics decorators.</para>
@@ -74,7 +74,8 @@ public sealed partial class AzureClassifierBroker : IClassifierBroker
   /// Executes the full enrichment sequence over a single invoice aggregate.
   /// </summary>
   /// <remarks>
-  /// <para><b>Sequence (Parallelized):</b> Batch 1: Name + Description (parallel) -> Batch 2: All products (category + allergens per product in parallel) -> Batch 3: Recipes + Invoice category (parallel).</para>
+  /// <para><b>Sequence (Parallelized):</b> Batch 1 generates name and description,
+  /// batch 2 enriches product allergens, and batch 3 generates recipes.</para>
   /// <para><b>Performance:</b> Parallelizes 24+ sequential API calls into 3 parallel batches, reducing latency from ~40s to ~12-15s for typical 10-item invoices.</para>
   /// <para><b>Graceful Degradation:</b> Each discrete LLM call is isolated; on content filter or transient provider exception the step
   /// yields a default and processing continues. No aggregate rollback is attempted.</para>
@@ -114,18 +115,13 @@ public sealed partial class AzureClassifierBroker : IClassifierBroker
     await Task.WhenAll(productTasks).ConfigureAwait(false);
     #endregion
 
-    // Batch 3: Post-classification (parallel — recipes + category)
-    #region Generate possible recipes and invoice category.
-    var recipesTask = GenerateInvoiceRecipes(invoice);
-    var categoryTask = GenerateInvoiceCategory(invoice);
-    await Task.WhenAll(recipesTask, categoryTask).ConfigureAwait(false);
-
-    var possibleRecipesCollection = await recipesTask.ConfigureAwait(false);
+    // Batch 3: Generate possible recipes.
+    #region Generate possible recipes.
+    var possibleRecipesCollection = await GenerateInvoiceRecipes(invoice).ConfigureAwait(false);
     foreach (var recipe in possibleRecipesCollection)
     {
       invoice.PossibleRecipes.Add(recipe);
     }
-    invoice.Category = await categoryTask.ConfigureAwait(false);
     #endregion
 
     // Batch 4: GPT fallback for empty OCR fields (parallel when applicable)

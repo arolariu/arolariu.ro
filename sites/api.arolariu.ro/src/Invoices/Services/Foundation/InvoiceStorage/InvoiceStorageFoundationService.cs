@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
 using Microsoft.Extensions.Logging;
@@ -18,19 +19,25 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundationService
 {
   private readonly IInvoiceNoSqlBroker invoiceNoSqlBroker;
+  private readonly ITaxonomyBroker taxonomyBroker;
   private readonly ILogger<IInvoiceStorageFoundationService> logger;
 
   /// <summary>
   /// Constructor.
   /// </summary>
   /// <param name="invoiceNoSqlBroker"></param>
+  /// <param name="taxonomyBroker"></param>
   /// <param name="loggerFactory"></param>
   public InvoiceStorageFoundationService(
     IInvoiceNoSqlBroker invoiceNoSqlBroker,
+    ITaxonomyBroker taxonomyBroker,
     ILoggerFactory loggerFactory)
   {
     ArgumentNullException.ThrowIfNull(invoiceNoSqlBroker);
+    ArgumentNullException.ThrowIfNull(taxonomyBroker);
+    ArgumentNullException.ThrowIfNull(loggerFactory);
     this.invoiceNoSqlBroker = invoiceNoSqlBroker;
+    this.taxonomyBroker = taxonomyBroker;
     this.logger = loggerFactory.CreateLogger<IInvoiceStorageFoundationService>();
   }
 
@@ -41,6 +48,7 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceObject));
     ValidateInvoiceInformationIsValid(invoice);
+    CanonicalizeInvoiceClassification(invoice);
 
     await invoiceNoSqlBroker
       .CreateInvoiceAsync(invoice, cancellationToken)
@@ -83,6 +91,7 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
     ValidateIdentifierIsSet(invoiceIdentifier);
+    CanonicalizeInvoiceClassification(updatedInvoice);
 
     var newInvoice = await invoiceNoSqlBroker
       .UpdateInvoiceAsync(invoiceIdentifier, updatedInvoice, cancellationToken)

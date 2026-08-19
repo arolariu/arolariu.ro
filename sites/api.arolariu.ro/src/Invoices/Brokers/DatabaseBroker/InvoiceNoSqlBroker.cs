@@ -7,6 +7,7 @@ using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.Modules.ValueConverters;
 
@@ -74,7 +75,9 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 
       #region Base types
       entity.Property(i => i.Name).HasConversion<string>();
-      entity.Property(i => i.Category).HasConversion<string>();
+      entity.Property(i => i.Classification)
+        .ToJsonProperty("Classification")
+        .HasConversion(new ValueConverterForValueObjectOf<StandardClassification>());
       entity.Property(i => i.CreatedBy).HasConversion<string>();
       entity.Property(i => i.IsImportant).HasConversion<bool>();
       entity.Property(i => i.IsSoftDeleted).HasConversion<bool>();

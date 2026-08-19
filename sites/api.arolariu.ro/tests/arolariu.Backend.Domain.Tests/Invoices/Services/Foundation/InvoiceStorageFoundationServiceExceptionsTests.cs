@@ -9,6 +9,7 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
+using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -29,7 +30,10 @@ public class InvoiceStorageFoundationServiceExceptionsTests
   /// <summary>Initializes a new instance of the <see cref="InvoiceStorageFoundationServiceExceptionsTests"/> class.</summary>
   public InvoiceStorageFoundationServiceExceptionsTests()
   {
-    _sut = new InvoiceStorageFoundationService(_broker.Object, NullLoggerFactory.Instance);
+    _sut = new InvoiceStorageFoundationService(
+      _broker.Object,
+      TaxonomyBrokerTestFactory.Create(),
+      NullLoggerFactory.Instance);
   }
 
   /// <summary>Verifies that an <see cref="InvoiceNotFoundException"/> from the broker is wrapped into an <see cref="InvoiceFoundationDependencyValidationException"/>.</summary>

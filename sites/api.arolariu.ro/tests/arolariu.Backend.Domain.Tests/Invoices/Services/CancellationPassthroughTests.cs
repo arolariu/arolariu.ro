@@ -16,6 +16,7 @@ using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
 using arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Tests.Builders;
+using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -32,7 +33,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 public sealed class CancellationPassthroughTests
 {
   private static InvoiceStorageFoundationService CreateStorageService(Mock<IInvoiceNoSqlBroker> broker) =>
-    new(broker.Object, NullLoggerFactory.Instance);
+    new(broker.Object, TaxonomyBrokerTestFactory.Create(), NullLoggerFactory.Instance);
 
   /// <summary>
   /// Verifies that <see cref="InvoiceStorageFoundationService.ReadInvoiceObject"/> propagates

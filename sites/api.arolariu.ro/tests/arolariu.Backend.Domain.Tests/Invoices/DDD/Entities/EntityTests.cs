@@ -7,8 +7,10 @@ using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Tests.Builders;
+using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -59,10 +61,10 @@ public sealed class EntityTests
   }
 
   /// <summary>
-  /// Verifies Invoice default category is NOT_DEFINED.
+  /// Verifies Invoice defaults to an unclassified state.
   /// </summary>
   [TestMethod]
-  public void Invoice_DefaultCategory_IsNotDefined()
+  public void Invoice_DefaultClassification_IsNull()
   {
     // Arrange
     var invoice = new Invoice
@@ -72,7 +74,7 @@ public sealed class EntityTests
     };
 
     // Assert
-    Assert.AreEqual(InvoiceCategory.NOT_DEFINED, invoice.Category);
+    Assert.IsNull(invoice.Classification);
   }
 
   /// <summary>
@@ -93,27 +95,25 @@ public sealed class EntityTests
   }
 
   /// <summary>
-  /// Verifies Invoice category can be set to different values.
+  /// Verifies Invoice classification stores a canonical ECOICOP snapshot.
   /// </summary>
   [TestMethod]
-  [DataRow(InvoiceCategory.NOT_DEFINED)]
-  [DataRow(InvoiceCategory.GROCERY)]
-  [DataRow(InvoiceCategory.FAST_FOOD)]
-  [DataRow(InvoiceCategory.HOME_CLEANING)]
-  [DataRow(InvoiceCategory.CAR_AUTO)]
-  [DataRow(InvoiceCategory.OTHER)]
-  public void Invoice_SetCategory_CategoryIsSet(InvoiceCategory category)
+  public void Invoice_SetClassification_ClassificationIsSet()
   {
-    // Arrange
+    StandardClassification classification = TaxonomyBrokerTestFactory.Create().Resolve(
+      ClassificationSystem.EcoicopV2,
+      TaxonomyBrokerTestFactory.EcoicopCode,
+      ClassificationOrigin.Manual,
+      null,
+      []);
     var invoice = new Invoice
     {
       id = Guid.NewGuid(),
       UserIdentifier = Guid.NewGuid(),
-      Category = category
+      Classification = classification
     };
 
-    // Assert
-    Assert.AreEqual(category, invoice.Category);
+    Assert.AreSame(classification, invoice.Classification);
   }
 
   /// <summary>
@@ -726,36 +726,6 @@ public sealed class EntityTests
 
     // Assert
     Assert.IsTrue(Enum.IsDefined<ScanType>(parsed));
-  }
-
-  #endregion
-
-  #region InvoiceCategory Enum Tests
-
-  /// <summary>
-  /// Verifies InvoiceCategory enum has NOT_DEFINED as valid value.
-  /// </summary>
-  [TestMethod]
-  public void InvoiceCategory_NotDefined_IsDefined()
-  {
-    // Assert
-    Assert.IsTrue(Enum.IsDefined<InvoiceCategory>(InvoiceCategory.NOT_DEFINED));
-  }
-
-  /// <summary>
-  /// Verifies InvoiceCategory has multiple category options.
-  /// </summary>
-  [TestMethod]
-  [DataRow(InvoiceCategory.NOT_DEFINED)]
-  [DataRow(InvoiceCategory.GROCERY)]
-  [DataRow(InvoiceCategory.FAST_FOOD)]
-  [DataRow(InvoiceCategory.HOME_CLEANING)]
-  [DataRow(InvoiceCategory.CAR_AUTO)]
-  [DataRow(InvoiceCategory.OTHER)]
-  public void InvoiceCategory_AllValues_AreDefined(InvoiceCategory category)
-  {
-    // Assert
-    Assert.IsTrue(Enum.IsDefined<InvoiceCategory>(category));
   }
 
   #endregion
