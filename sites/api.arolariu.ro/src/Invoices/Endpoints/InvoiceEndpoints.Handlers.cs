@@ -1300,7 +1300,7 @@ public static partial class InvoiceEndpoints
       Merchant updatedMerchant = merchantPayload.ToMerchant(id);
       updatedMerchant.Classification ??= existingMerchant.Classification;
 
-      var updatedMerchant = await invoiceManagementService
+      Merchant persistedMerchant = await invoiceManagementService
         .UpdateMerchant(
           updatedMerchant,
           id,
@@ -1309,7 +1309,7 @@ public static partial class InvoiceEndpoints
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Merchant updated");
-      return TypedResults.Accepted($"/rest/v1/merchants/{id}", MerchantResponseDto.FromMerchant(updatedMerchant));
+      return TypedResults.Accepted($"/rest/v1/merchants/{id}", MerchantResponseDto.FromMerchant(persistedMerchant));
     }
     catch (OperationCanceledException)
     {
