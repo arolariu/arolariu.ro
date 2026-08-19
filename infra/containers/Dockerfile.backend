@@ -98,6 +98,11 @@ ARG VERSION
 # Copy the full source tree AFTER restore
 COPY sites/api.arolariu.ro/src/ ./src/
 
+# Fail fast when host-side taxonomy generation was skipped.
+RUN test "$(find src/Invoices/Resources/Taxonomies -maxdepth 1 -type f -name 'gpc-*.min.json' -size +0c | wc -l)" -eq 1 \
+    && test "$(find src/Invoices/Resources/Taxonomies -maxdepth 1 -type f -name 'ecoicop-*.min.json' -size +0c | wc -l)" -eq 1 \
+    && test "$(find src/Invoices/Resources/Taxonomies -maxdepth 1 -type f -name 'nace-*.min.json' -size +0c | wc -l)" -eq 1
+
 # Build with assembly versioning
 RUN dotnet build src/Core/arolariu.Backend.Core.csproj \
     --no-restore \

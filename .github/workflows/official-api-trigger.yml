@@ -109,10 +109,12 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          node: 'false'
-          install-node-deps: 'false'
+          node: 'true'
+          install-node-deps: 'true'
           dotnet: 'true'
           install-dotnet-deps: 'true'
+          run-generate: 'true'
+          generate-args: '/a'
 
       - name: 🧪 Running unit tests...
         working-directory: .
@@ -184,6 +186,14 @@ jobs:
           echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "└────────────────────────────────────────────────────────────┘"
           echo "::endgroup::"
+
+      - name: 📦 Setup workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          node: 'true'
+          install-node-deps: 'true'
+          run-generate: 'true'
+          generate-args: '/a'
 
       - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@v3

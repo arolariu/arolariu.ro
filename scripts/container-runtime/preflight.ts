@@ -3,12 +3,40 @@
  * @module scripts/container-runtime/preflight
  */
 
-import type {ContainerRuntimeAdapter} from "./adapters.ts";
-import type {CommandRunner} from "./process.ts";
+import {resolve} from "node:path";
+import type {ContainerRuntimeAdapter, RuntimeCommand} from "./adapters.ts";
+import {formatCommand, type CommandRunner} from "./process.ts";
 import {ContainerRuntimeError} from "./types.ts";
 
 /** Fixed ports used by local Aspire and selfhost resources. */
 export const requiredLocalPorts = [3000, 3002, 4173, 5000, 5002, 6379, 8081, 8082, 10000] as const;
+
+/**
+ * Builds the host command that generates taxonomy and license artifacts.
+ *
+ * @returns Platform-safe Node command using the unified `/a` alias.
+ */
+export function buildArtifactGenerationCommand(): RuntimeCommand {
+  return {
+    command: process.execPath,
+    args: [resolve("scripts/generate.ts"), "/a"],
+  };
+}
+
+/**
+ * Generates required artifacts before local frontend/backend container builds.
+ *
+ * @param runner - Command runner used to execute the generator.
+ * @throws {ContainerRuntimeError} When generation fails.
+ */
+export async function runArtifactGeneration(runner: CommandRunner): Promise<void> {
+  const command = buildArtifactGenerationCommand();
+  console.log(`$ ${formatCommand(command)}`);
+  const result = await runner.run(command, {stdio: "tee"});
+  if (result.code !== 0) {
+    throw new ContainerRuntimeError(`Artifact generation failed. Output: ${result.output.trim()}`);
+  }
+}
 
 /**
  * Verifies a required CLI tool is available.

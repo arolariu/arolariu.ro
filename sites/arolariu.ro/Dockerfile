@@ -74,6 +74,11 @@ COPY packages/components/ ./packages/components/
 # Copy the website source
 COPY sites/arolariu.ro/ ./sites/arolariu.ro/
 
+# Fail fast when host-side taxonomy generation was skipped.
+RUN test "$(find sites/arolariu.ro/src/data/taxonomies -maxdepth 1 -type f -name 'gpc-*.min.json' -size +0c | wc -l)" -eq 1 \
+  && test "$(find sites/arolariu.ro/src/data/taxonomies -maxdepth 1 -type f -name 'ecoicop-*.min.json' -size +0c | wc -l)" -eq 1 \
+  && test "$(find sites/arolariu.ro/src/data/taxonomies -maxdepth 1 -type f -name 'nace-*.min.json' -size +0c | wc -l)" -eq 1
+
 # Build the website
 WORKDIR /app/sites/arolariu.ro
 RUN npm run build

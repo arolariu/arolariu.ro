@@ -5,7 +5,7 @@
 
 import {afterEach, describe, expect, it} from "vitest";
 import {getContainerAdapter} from "./adapters.ts";
-import {buildSelfhostPlan, getRequiredSqlPassword} from "./selfhost.ts";
+import {buildSelfhostPlan, getRequiredSqlPassword, shouldGenerateTaxonomyArtifacts} from "./selfhost.ts";
 
 const originalSqlPassword = process.env["MSSQL_SA_PASSWORD"];
 
@@ -67,6 +67,16 @@ describe("getRequiredSqlPassword", () => {
     process.env["MSSQL_SA_PASSWORD"] = "local-strong-password";
 
     expect(getRequiredSqlPassword()).toBe("local-strong-password");
+  });
+
+  describe("shouldGenerateTaxonomyArtifacts", () => {
+    it("generates artifacts before selfhost start", () => {
+      expect(shouldGenerateTaxonomyArtifacts("start")).toBe(true);
+    });
+
+    it.each(["stop", "logs"] as const)("does not generate artifacts for %s", (action) => {
+      expect(shouldGenerateTaxonomyArtifacts(action)).toBe(false);
+    });
   });
 
   it("rejects a missing SQL password", () => {
