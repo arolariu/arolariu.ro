@@ -56,7 +56,9 @@ public sealed class InvoiceStorageFoundationServiceTests
   [TestMethod]
   public void Constructor_NullBroker_ThrowsArgumentNullException() =>
       Assert.ThrowsExactly<ArgumentNullException>(() =>
-          new InvoiceStorageFoundationService(null!, mockLoggerFactory.Object));
+          new InvoiceStorageFoundationService(
+            null!,
+            mockLoggerFactory.Object));
 
   /// <summary>
   /// Validates successful instantiation with all valid dependencies.

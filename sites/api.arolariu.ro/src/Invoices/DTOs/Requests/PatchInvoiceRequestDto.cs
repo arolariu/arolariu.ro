@@ -26,7 +26,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// <list type="bullet">
 ///   <item><description>Null values preserve the original field value.</description></item>
 ///   <item><description><see cref="Guid.Empty"/> for <c>MerchantReference</c> means "no change".</description></item>
-///   <item><description><see cref="InvoiceCategory.NOT_DEFINED"/> means "no change".</description></item>
+///   <item><description>A null classification selection means "no change".</description></item>
 ///   <item><description>Empty or whitespace strings for Name/Description mean "no change".</description></item>
 /// </list>
 /// </para>
@@ -45,10 +45,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// </param>
 /// <param name="Description">
 /// Optional new description. Null or whitespace preserves the existing description.
-/// </param>
-/// <param name="Category">
-/// Optional new category classification. Null or <see cref="InvoiceCategory.NOT_DEFINED"/>
-/// preserves the existing category.
 /// </param>
 /// <param name="PaymentInformation">
 /// Optional new payment information. Null preserves the existing payment details.
@@ -75,7 +71,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// var request = new PatchInvoiceRequestDto(
 ///     Name: "Updated Name",
 ///     Description: null,  // Keep existing
-///     Category: null,     // Keep existing
 ///     PaymentInformation: null,
 ///     MerchantReference: null,
 ///     IsImportant: true,
@@ -92,7 +87,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 public readonly record struct PatchInvoiceRequestDto(
   string? Name,
   string? Description,
-  InvoiceCategory? Category,
   PaymentInformation? PaymentInformation,
   Guid? MerchantReference,
   bool? IsImportant,
@@ -112,7 +106,7 @@ public readonly record struct PatchInvoiceRequestDto(
   /// <list type="bullet">
   ///   <item><description><see cref="Name"/>: Applied only if non-null and non-whitespace.</description></item>
   ///   <item><description><see cref="Description"/>: Applied only if non-null and non-whitespace.</description></item>
-  ///   <item><description><see cref="Category"/>: Applied only if has value and not <c>NOT_DEFINED</c>.</description></item>
+  ///   <item><description>The existing classification is always preserved.</description></item>
   ///   <item><description><see cref="PaymentInformation"/>: Applied only if non-null.</description></item>
   ///   <item><description><see cref="MerchantReference"/>: Applied only if has value and not <c>Empty</c>.</description></item>
   ///   <item><description><see cref="IsImportant"/>: Applied only if has value.</description></item>
@@ -147,7 +141,7 @@ public readonly record struct PatchInvoiceRequestDto(
       UserIdentifier = existing.UserIdentifier,
       Name = !string.IsNullOrWhiteSpace(Name) ? Name : existing.Name,
       Description = !string.IsNullOrWhiteSpace(Description) ? Description : existing.Description,
-      Category = Category.HasValue && Category.Value != InvoiceCategory.NOT_DEFINED ? Category.Value : existing.Category,
+      Classification = existing.Classification,
       PaymentInformation = PaymentInformation ?? existing.PaymentInformation,
       MerchantReference = MerchantReference.HasValue && MerchantReference.Value != Guid.Empty
         ? MerchantReference.Value

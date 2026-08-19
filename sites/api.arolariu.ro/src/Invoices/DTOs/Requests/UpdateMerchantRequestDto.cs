@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 
 /// <summary>
 /// Request DTO for full merchant replacement operations (HTTP PUT semantics).
@@ -35,9 +36,6 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// <param name="Description">
 /// The new detailed description. Required. Replaces the existing description.
 /// </param>
-/// <param name="Category">
-/// The new category classification. Replaces the existing category.
-/// </param>
 /// <param name="Address">
 /// The new structured contact and address information.
 /// Null creates an empty <see cref="ContactInformation"/> instance.
@@ -55,7 +53,6 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// var request = new UpdateMerchantRequestDto(
 ///     Name: "Kaufland Iasi Pacurari",
 ///     Description: "Updated description with new hours",
-///     Category: MerchantCategory.GROCERY,
 ///     Address: new ContactInformation { City = "Iasi", Country = "Romania" },
 ///     ParentCompanyId: parentId,
 ///     AdditionalMetadata: new Dictionary&lt;string, string&gt; { ["storeCode"] = "IS001" });
@@ -71,7 +68,6 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 public readonly record struct UpdateMerchantRequestDto(
   [Required] string Name,
   [Required] string Description,
-  MerchantCategory Category,
   ContactInformation? Address,
   Guid? ParentCompanyId,
   IDictionary<string, string>? AdditionalMetadata)
@@ -100,17 +96,22 @@ public readonly record struct UpdateMerchantRequestDto(
   /// <param name="merchantId">
   /// The existing merchant identifier to preserve. Must match an existing merchant.
   /// </param>
+  /// <param name="existingClassification">
+  /// The canonical classification to preserve during replacement.
+  /// </param>
   /// <returns>
   /// A fully populated <see cref="Merchant"/> instance ready for persistence.
   /// </returns>
-  public Merchant ToMerchant(Guid merchantId)
+  public Merchant ToMerchant(
+    Guid merchantId,
+    StandardClassification? existingClassification)
   {
     var merchant = new Merchant
     {
       id = merchantId,
       Name = Name,
       Description = Description,
-      Category = Category,
+      Classification = existingClassification,
       Address = Address ?? new ContactInformation(),
       ParentCompanyId = ParentCompanyId ?? Guid.Empty,
     };

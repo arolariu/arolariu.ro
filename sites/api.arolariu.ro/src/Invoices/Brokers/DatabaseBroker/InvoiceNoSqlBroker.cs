@@ -74,7 +74,6 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 
       #region Base types
       entity.Property(i => i.Name).HasConversion<string>();
-      entity.Property(i => i.Category).HasConversion<string>();
       entity.Property(i => i.CreatedBy).HasConversion<string>();
       entity.Property(i => i.IsImportant).HasConversion<bool>();
       entity.Property(i => i.IsSoftDeleted).HasConversion<bool>();
@@ -99,10 +98,6 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 
         items.Property(item => item.Name)
         .ToJsonProperty("Name")
-        .HasConversion<string>();
-
-        items.Property(item => item.Category)
-        .ToJsonProperty("Category")
         .HasConversion<string>();
 
         items.Property(item => item.Quantity)
@@ -200,7 +195,6 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 
       #region Base types
       entity.Property(i => i.Name).HasConversion<string>();
-      entity.Property(i => i.Category).HasConversion<string>();
       entity.Property(i => i.CreatedBy).HasConversion<string>();
       entity.Property(i => i.IsImportant).HasConversion<bool>();
       entity.Property(i => i.IsSoftDeleted).HasConversion<bool>();

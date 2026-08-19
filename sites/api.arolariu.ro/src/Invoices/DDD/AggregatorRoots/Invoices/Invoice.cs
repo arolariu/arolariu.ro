@@ -7,6 +7,7 @@ using System.Text.Json.Serialization;
 
 using arolariu.Backend.Common.DDD.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 /// <summary>
@@ -19,8 +20,8 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// no de-duplication or concurrency token; last writer wins on updates. Future optimization may introduce distinct filtering.</para>
 /// <para><b>Soft Delete Lifecycle:</b> When soft-deleted at the storage layer, the invoice and each contained product are marked; queries exclude
 /// soft-deleted entities unless explicitly overridden. See service layer deletion logic for cascade behavior.</para>
-/// <para><b>Sentinel Defaults:</b> <c>Guid.Empty</c> for <c>UserIdentifier</c> and <c>MerchantReference</c>, <c>InvoiceCategory.NOT_DEFINED</c> for <c>Category</c>,
-/// and <c>InvoiceScan.Default()</c> for <c>Scans</c> indicate an unenriched or unlinked state. These SHOULD be replaced by upstream enrichment / user input
+/// <para><b>Sentinel Defaults:</b> <c>Guid.Empty</c> for <c>UserIdentifier</c> and <c>MerchantReference</c>, <see langword="null"/> for
+/// <c>Classification</c>, and <c>InvoiceScan.Default()</c> for <c>Scans</c> indicate an unenriched or unlinked state. These SHOULD be replaced by upstream enrichment / user input
 /// flows prior to final analytical usage.</para>
 /// <para><b>Merge Semantics:</b> See <see cref="Merge(Invoice, Invoice)"/> for partial update precedence rules.</para>
 /// <para><b>Thread-safety:</b> Not thread-safe. Do not share instances across threads without external synchronization.</para>
@@ -45,10 +46,11 @@ public sealed class Invoice : NamedEntity<Guid>
   public ICollection<Guid> SharedWith { get; init; } = [];
 
   /// <summary>
-  /// The invoice category.
+  /// The canonical ECOICOP classification assigned to the invoice.
   /// </summary>
+  /// <remarks><see langword="null"/> means that the invoice is unclassified.</remarks>
   [JsonPropertyOrder(5)]
-  public InvoiceCategory Category { get; set; } = InvoiceCategory.NOT_DEFINED;
+  public StandardClassification? Classification { get; set; }
 
   /// <summary>
   /// The invoice scan value object.
@@ -166,7 +168,7 @@ public sealed class Invoice : NamedEntity<Guid>
   /// <term>Field</term><term>Partial Considered Non-Default When</term><term>Merge Behavior</term><term>Notes</term>
   /// </listheader>
   /// <item><term>UserIdentifier</term><term>!= Guid.Empty</term><term>Replace</term><term>Owner transfer possible; no authorization guard here.</term></item>
-  /// <item><term>Category</term><term>!= InvoiceCategory.NOT_DEFINED</term><term>Replace</term><term>Category enrichment applied late.</term></item>
+  /// <item><term>Classification</term><term>Not null</term><term>Replace</term><term>Classification enrichment applied late.</term></item>
   /// <item><term>Name</term><term>!IsNullOrWhiteSpace</term><term>Replace</term><term>Whitespace-only ignored.</term></item>
   /// <item><term>Description</term><term>!IsNullOrWhiteSpace</term><term>Replace</term><term>Trimming not currently applied.</term></item>
   /// <item><term>IsImportant</term><term>Value differs</term><term>Replace</term><term>Boolean toggle recognized.</term></item>
@@ -191,7 +193,7 @@ public sealed class Invoice : NamedEntity<Guid>
     {
       id = original.id, // The identifier remains the same.
       UserIdentifier = partialUpdates.UserIdentifier != Guid.Empty ? partialUpdates.UserIdentifier : original.UserIdentifier,
-      Category = partialUpdates.Category != InvoiceCategory.NOT_DEFINED ? partialUpdates.Category : original.Category,
+      Classification = partialUpdates.Classification ?? original.Classification,
       Name = !string.IsNullOrWhiteSpace(partialUpdates.Name) ? partialUpdates.Name : original.Name,
       Description = !string.IsNullOrWhiteSpace(partialUpdates.Description) ? partialUpdates.Description : original.Description,
       IsImportant = partialUpdates.IsImportant != original.IsImportant ? partialUpdates.IsImportant : original.IsImportant,

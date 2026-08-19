@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 /// <summary>
@@ -38,9 +39,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// The new name for the product. Required.
 /// May be the same as <see cref="OriginalProductName"/> if only other fields change.
 /// </param>
-/// <param name="Category">
-/// The product category classification. Replaces the existing category.
-/// </param>
 /// <param name="Quantity">
 /// The new quantity of product units. Must be positive.
 /// </param>
@@ -62,7 +60,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// var request = new UpdateProductRequestDto(
 ///     OriginalProductName: "LAPTE ZU2U 1L",  // OCR misread
 ///     Name: "LAPTE ZUZU 1L",                 // Corrected
-///     Category: ProductCategory.DAIRY,
 ///     Quantity: 2,
 ///     QuantityUnit: "buc",
 ///     ProductCode: "5941234567890",
@@ -80,7 +77,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 public readonly record struct UpdateProductRequestDto(
   [Required] string OriginalProductName,
   [Required] string Name,
-  ProductCategory Category,
   decimal Quantity,
   string? QuantityUnit,
   string? ProductCode,
@@ -103,10 +99,13 @@ public readonly record struct UpdateProductRequestDto(
   /// <returns>
   /// A new <see cref="Product"/> instance with the updated values.
   /// </returns>
-  public Product ToProduct() => new()
+  /// <param name="existingClassification">
+  /// The canonical classification to preserve during replacement.
+  /// </param>
+  public Product ToProduct(StandardClassification? existingClassification) => new()
   {
     Name = Name,
-    Category = Category,
+    Classification = existingClassification,
     Quantity = Quantity,
     QuantityUnit = QuantityUnit ?? string.Empty,
     ProductCode = ProductCode ?? string.Empty,

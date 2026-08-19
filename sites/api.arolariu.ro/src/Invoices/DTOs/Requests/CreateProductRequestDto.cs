@@ -21,8 +21,9 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// and value semantics for equality comparisons.
 /// </para>
 /// <para>
-/// <b>AI Enrichment:</b> After creation, the product may be enriched by AI analysis
-/// to populate <see cref="Category"/> and <see cref="DetectedAllergens"/> if not provided.
+/// <b>Enrichment:</b> The current legacy analysis flow may enrich
+/// <see cref="DetectedAllergens"/>. The product remains unclassified until the
+/// later manual or structured-analysis classification flow is introduced.
 /// </para>
 /// <para>
 /// <b>Total Price:</b> The total price is computed automatically as
@@ -32,10 +33,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// <param name="Name">
 /// The product name as it appears on the receipt. Required.
 /// This will be used as the product's display name.
-/// </param>
-/// <param name="Category">
-/// The product category classification. Defaults to <see cref="ProductCategory.NOT_DEFINED"/>
-/// if not specified. May be auto-classified by AI analysis.
 /// </param>
 /// <param name="Quantity">
 /// The quantity of product units. Must be positive.
@@ -60,7 +57,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// <code>
 /// var request = new CreateProductRequestDto(
 ///     Name: "Milk 1L (LAPTE ZUZU)",
-///     Category: ProductCategory.DAIRY,
 ///     Quantity: 2,
 ///     QuantityUnit: "buc",
 ///     ProductCode: "5941234567890",
@@ -72,13 +68,11 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// </code>
 /// </example>
 /// <seealso cref="Product"/>
-/// <seealso cref="ProductCategory"/>
 /// <seealso cref="Allergen"/>
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct CreateProductRequestDto(
   [Required] string Name,
-  ProductCategory Category,
   decimal Quantity,
   string? QuantityUnit,
   string? ProductCode,
@@ -104,7 +98,7 @@ public readonly record struct CreateProductRequestDto(
   public Product ToProduct() => new()
   {
     Name = Name,
-    Category = Category,
+    Classification = null,
     Quantity = Quantity,
     QuantityUnit = QuantityUnit ?? string.Empty,
     ProductCode = ProductCode ?? string.Empty,

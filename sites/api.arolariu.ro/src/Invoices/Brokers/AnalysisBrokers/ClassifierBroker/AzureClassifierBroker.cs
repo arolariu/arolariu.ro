@@ -22,11 +22,11 @@ using Microsoft.Extensions.Logging;
 /// <para><b>Role (The Standard):</b> Implements the <see cref="IClassifierBroker"/> abstraction by issuing chat completion
 /// requests to Azure AI Foundry (Cognitive Services) model router and mapping raw responses back into domain objects. Provides ONLY translation and graceful
 /// degradation — NO orchestration, persistence, retry policy, caching, or domain validation (handled upstream).</para>
-/// <para><b>Enrichment Pipeline:</b> Parallelizes LLM calls into 3 batches (when enabled by <see cref="AnalysisOptions"/>): 
-/// Batch 1 (invoice name + description), Batch 2 (all product categories + allergens), Batch 3 (possible recipes + invoice category). 
+/// <para><b>Enrichment Pipeline:</b> Parallelizes LLM calls into batches for invoice text,
+/// product allergens, recipes, and OCR fallback values.
 /// Each prompt failure (e.g. content filter rejection) results in a default / empty fallback without aborting the remaining steps.</para>
-/// <para><b>Resilience:</b> Catches <c>ClientResultException</c> (Azure SDK) per step and converts it to silent fallback (empty string /
-/// default enum / empty collection) to keep a best-effort enrichment model. Upstream layers MAY introduce logging or metrics decorators.</para>
+/// <para><b>Resilience:</b> Catches <c>ClientResultException</c> (Azure SDK) per step and converts it to silent fallback (empty string or
+/// empty collection) to keep a best-effort enrichment model. Upstream layers MAY introduce logging or metrics decorators.</para>
 /// <para><b>Determinism:</b> Non-deterministic by design; repeated executions can yield variant textual outputs. Upstream caching or
 /// freeze-on-first-success strategies SHOULD be applied if immutability is desired.</para>
 /// <para><b>Thread Safety:</b> Reuses a single <see cref="AzureOpenAIClient"/> instance which is thread-safe; the class itself contains no mutable shared state.</para>
@@ -48,7 +48,7 @@ public sealed partial class AzureClassifierBroker : IClassifierBroker
   /// <para>Throws fast on null dependency to fail early in composition root.</para>
   /// </remarks>
   /// <param name="optionsManager">Abstraction supplying strongly typed application options (MUST NOT be null).</param>
-  /// <param name="loggerFactory">Logger factory for creating category-specific loggers (MUST NOT be null).</param>
+  /// <param name="loggerFactory">Logger factory for creating the broker logger (MUST NOT be null).</param>
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="optionsManager"/> or <paramref name="loggerFactory"/> is null.</exception>
   public AzureClassifierBroker(IOptionsManager optionsManager, ILoggerFactory loggerFactory)
   {
@@ -74,7 +74,8 @@ public sealed partial class AzureClassifierBroker : IClassifierBroker
   /// Executes the full enrichment sequence over a single invoice aggregate.
   /// </summary>
   /// <remarks>
-  /// <para><b>Sequence (Parallelized):</b> Batch 1: Name + Description (parallel) -> Batch 2: All products (category + allergens per product in parallel) -> Batch 3: Recipes + Invoice category (parallel).</para>
+  /// <para><b>Sequence (Parallelized):</b> Batch 1 generates name and description,
+  /// batch 2 enriches product allergens, and batch 3 generates recipes.</para>
   /// <para><b>Performance:</b> Parallelizes 24+ sequential API calls into 3 parallel batches, reducing latency from ~40s to ~12-15s for typical 10-item invoices.</para>
   /// <para><b>Graceful Degradation:</b> Each discrete LLM call is isolated; on content filter or transient provider exception the step
   /// yields a default and processing continues. No aggregate rollback is attempted.</para>
@@ -101,31 +102,23 @@ public sealed partial class AzureClassifierBroker : IClassifierBroker
     invoice.Name = await nameTask.ConfigureAwait(false);
     invoice.Description = await descriptionTask.ConfigureAwait(false);
 
-    // Batch 2: Per-product classification (all products in parallel, category + allergens in parallel per product)
-    #region Generate possible products
+    // Batch 2: Per-product allergen enrichment.
+    #region Enrich product allergens
     var productTasks = invoice.Items.Select(async product =>
     {
-      var categoryTask = GenerateProductCategory(product);
-      var allergensTask = GenerateProductAllergens(product);
-      await Task.WhenAll(categoryTask, allergensTask).ConfigureAwait(false);
-      product.Category = await categoryTask.ConfigureAwait(false);
-      product.DetectedAllergens = await allergensTask.ConfigureAwait(false);
+      product.DetectedAllergens =
+        await GenerateProductAllergens(product).ConfigureAwait(false);
     });
     await Task.WhenAll(productTasks).ConfigureAwait(false);
     #endregion
 
-    // Batch 3: Post-classification (parallel — recipes + category)
-    #region Generate possible recipes and invoice category.
-    var recipesTask = GenerateInvoiceRecipes(invoice);
-    var categoryTask = GenerateInvoiceCategory(invoice);
-    await Task.WhenAll(recipesTask, categoryTask).ConfigureAwait(false);
-
-    var possibleRecipesCollection = await recipesTask.ConfigureAwait(false);
+    // Batch 3: Generate possible recipes.
+    #region Generate possible recipes.
+    var possibleRecipesCollection = await GenerateInvoiceRecipes(invoice).ConfigureAwait(false);
     foreach (var recipe in possibleRecipesCollection)
     {
       invoice.PossibleRecipes.Add(recipe);
     }
-    invoice.Category = await categoryTask.ConfigureAwait(false);
     #endregion
 
     // Batch 4: GPT fallback for empty OCR fields (parallel when applicable)
@@ -158,17 +151,17 @@ public sealed partial class AzureClassifierBroker : IClassifierBroker
   }
 
   /// <summary>
-  /// Executes merchant enrichment sequence including category classification and description generation.
+  /// Executes merchant description enrichment.
   /// </summary>
   /// <remarks>
-  /// <para><b>Sequence:</b> Category classification -> Description generation.</para>
-  /// <para><b>Graceful Degradation:</b> Failures yield default category (OTHER) and empty description.</para>
+  /// <para><b>Sequence:</b> Generates a concise merchant description.</para>
+  /// <para><b>Graceful Degradation:</b> Failures leave description metadata unchanged.</para>
   /// <para><b>Mutation:</b> Operates on supplied <paramref name="merchant"/> in-place (returns same reference).</para>
   /// <para><b>Integration Point:</b> Should be called from <c>MerchantOrchestrationService</c> during merchant 
-  /// creation/update flows to ensure category is populated before persistence.</para>
+  /// creation/update flows when description enrichment is requested.</para>
   /// </remarks>
   /// <param name="merchant">Merchant entity to enrich (MUST NOT be null; MUST have Name populated).</param>
-  /// <returns>Mutated merchant entity (same instance) with enriched category and description.</returns>
+  /// <returns>Mutated merchant entity (same instance) with enriched description metadata.</returns>
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="merchant"/> is null.</exception>
   public async ValueTask<Merchant> PerformGptAnalysisOnSingleMerchant(Merchant merchant)
   {
@@ -177,36 +170,17 @@ public sealed partial class AzureClassifierBroker : IClassifierBroker
 #pragma warning disable CA1031 // Do not catch general exception types - intentional for graceful degradation contract
     try
     {
-      merchant.Category = await GenerateMerchantCategory(merchant).ConfigureAwait(false);
+      var description = await GenerateMerchantDescription(merchant).ConfigureAwait(false);
+      if (!string.IsNullOrWhiteSpace(description))
+      {
+        merchant.AdditionalMetadata["ai.description"] = description;
+      }
     }
     catch (Exception ex)
     {
-      logger.LogGptMethodFailedWithContext(nameof(GenerateMerchantCategory), merchant.Name, ex.Message);
-      // Graceful degradation: default to OTHER on any failure (including non-ClientResultException)
-      merchant.Category = MerchantCategory.OTHER;
+      logger.LogGptMethodFailedWithContext(nameof(GenerateMerchantDescription), merchant.Name, ex.Message);
     }
 #pragma warning restore CA1031 // Do not catch general exception types
-
-    // Generate description for non-OTHER categories or for OTHER merchants with a known name
-    if (merchant.Category != MerchantCategory.OTHER || !string.IsNullOrWhiteSpace(merchant.Name))
-    {
-#pragma warning disable CA1031 // Do not catch general exception types - intentional for graceful degradation contract
-      try
-      {
-        var description = await GenerateMerchantDescription(merchant).ConfigureAwait(false);
-        if (!string.IsNullOrWhiteSpace(description))
-        {
-          merchant.AdditionalMetadata["ai.description"] = description;
-        }
-      }
-      catch (Exception ex)
-      {
-        logger.LogGptMethodFailedWithContext(nameof(GenerateMerchantDescription), merchant.Name, ex.Message);
-        // Graceful degradation: skip description on any failure (including non-ClientResultException)
-        // No action needed - description remains absent from metadata
-      }
-#pragma warning restore CA1031 // Do not catch general exception types
-    }
 
     return merchant;
   }

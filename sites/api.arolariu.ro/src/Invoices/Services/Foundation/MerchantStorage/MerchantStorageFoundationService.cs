@@ -31,6 +31,7 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
     ILoggerFactory loggerFactory)
   {
     ArgumentNullException.ThrowIfNull(invoiceNoSqlBroker);
+    ArgumentNullException.ThrowIfNull(loggerFactory);
     this.invoiceNoSqlBroker = invoiceNoSqlBroker;
     this.logger = loggerFactory.CreateLogger<IMerchantStorageFoundationService>();
   }

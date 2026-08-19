@@ -56,7 +56,9 @@ public sealed class MerchantStorageFoundationServiceTests
   [TestMethod]
   public void Constructor_NullBroker_ThrowsArgumentNullException() =>
       Assert.ThrowsExactly<ArgumentNullException>(() =>
-          new MerchantStorageFoundationService(null!, mockLoggerFactory.Object));
+          new MerchantStorageFoundationService(
+            null!,
+            mockLoggerFactory.Object));
 
   /// <summary>
   /// Validates successful instantiation with all valid dependencies.

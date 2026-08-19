@@ -301,141 +301,6 @@ public sealed class ProductExtendedTests
 
   #endregion
 
-  #region Product Category Tests
-
-  /// <summary>
-  /// Validates Category can be set.
-  /// </summary>
-  [TestMethod]
-  public void Product_SetCategory_StoresValue()
-  {
-    // Arrange
-    var product = new Product();
-
-    // Act
-    product.Category = ProductCategory.GROCERIES;
-
-    // Assert
-    Assert.AreEqual(ProductCategory.GROCERIES, product.Category);
-  }
-
-  /// <summary>
-  /// Validates all ProductCategory enum values are valid.
-  /// </summary>
-  [TestMethod]
-  public void Product_AllCategoryValues_AreValid()
-  {
-    // Arrange
-    var categories = Enum.GetValues<ProductCategory>();
-
-    // Act & Assert
-    foreach (var category in categories)
-    {
-      var product = new Product { Category = category };
-      Assert.AreEqual(category, product.Category);
-    }
-  }
-
-  /// <summary>
-  /// Validates default ProductCategory.
-  /// </summary>
-  [TestMethod]
-  public void Product_DefaultCategory_IsOther()
-  {
-    // Arrange & Act
-    var product = new Product();
-
-    // Assert
-    Assert.AreEqual(ProductCategory.OTHER, product.Category);
-  }
-
-  /// <summary>
-  /// Validates ProductCategory.NOT_DEFINED exists.
-  /// </summary>
-  [TestMethod]
-  public void ProductCategory_NotDefined_Exists()
-  {
-    Assert.IsTrue(Enum.IsDefined<ProductCategory>(ProductCategory.NOT_DEFINED));
-  }
-
-  /// <summary>
-  /// Validates ProductCategory.BEVERAGES exists.
-  /// </summary>
-  [TestMethod]
-  public void ProductCategory_Beverages_Exists()
-  {
-    Assert.IsTrue(Enum.IsDefined<ProductCategory>(ProductCategory.BEVERAGES));
-  }
-
-  /// <summary>
-  /// Validates ProductCategory.CLEANING_SUPPLIES exists.
-  /// </summary>
-  [TestMethod]
-  public void ProductCategory_CleaningSupplies_Exists()
-  {
-    Assert.IsTrue(Enum.IsDefined<ProductCategory>(ProductCategory.CLEANING_SUPPLIES));
-  }
-
-  /// <summary>
-  /// Validates ProductCategory.OTHER exists.
-  /// </summary>
-  [TestMethod]
-  public void ProductCategory_Other_Exists()
-  {
-    Assert.IsTrue(Enum.IsDefined<ProductCategory>(ProductCategory.OTHER));
-  }
-
-  /// <summary>
-  /// Validates ProductCategory enum has expected values.
-  /// </summary>
-  [TestMethod]
-  public void ProductCategory_HasExpectedValueCount()
-  {
-    // Arrange
-    var values = Enum.GetValues<ProductCategory>();
-
-    // Assert - Should have multiple categories (14 total)
-    Assert.IsTrue(values.Length >= 14);
-  }
-
-  /// <summary>
-  /// Validates ProductCategory.DAIRY exists.
-  /// </summary>
-  [TestMethod]
-  public void ProductCategory_Dairy_Exists()
-  {
-    Assert.IsTrue(Enum.IsDefined<ProductCategory>(ProductCategory.DAIRY));
-  }
-
-  /// <summary>
-  /// Validates ProductCategory.MEAT exists.
-  /// </summary>
-  [TestMethod]
-  public void ProductCategory_Meat_Exists()
-  {
-    Assert.IsTrue(Enum.IsDefined<ProductCategory>(ProductCategory.MEAT));
-  }
-
-  /// <summary>
-  /// Validates ProductCategory.FRUITS exists.
-  /// </summary>
-  [TestMethod]
-  public void ProductCategory_Fruits_Exists()
-  {
-    Assert.IsTrue(Enum.IsDefined<ProductCategory>(ProductCategory.FRUITS));
-  }
-
-  /// <summary>
-  /// Validates ProductCategory.VEGETABLES exists.
-  /// </summary>
-  [TestMethod]
-  public void ProductCategory_Vegetables_Exists()
-  {
-    Assert.IsTrue(Enum.IsDefined<ProductCategory>(ProductCategory.VEGETABLES));
-  }
-
-  #endregion
-
   #region Product Default Value Tests
 
   /// <summary>
@@ -750,7 +615,6 @@ public sealed class ProductExtendedTests
     var product = new Product
     {
       Name = "MONSTER ENERGY 500ML",
-      Category = ProductCategory.BEVERAGES,
       Quantity = 2,
       QuantityUnit = "pcs",
       ProductCode = "5449000131805",
@@ -760,7 +624,7 @@ public sealed class ProductExtendedTests
 
     // Assert
     Assert.AreEqual("MONSTER ENERGY 500ML", product.Name);
-    Assert.AreEqual(ProductCategory.BEVERAGES, product.Category);
+    Assert.IsNull(product.Classification);
     Assert.AreEqual(2, product.Quantity);
     Assert.AreEqual("pcs", product.QuantityUnit);
     Assert.AreEqual("5449000131805", product.ProductCode);

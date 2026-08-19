@@ -30,6 +30,7 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
     ILoggerFactory loggerFactory)
   {
     ArgumentNullException.ThrowIfNull(invoiceNoSqlBroker);
+    ArgumentNullException.ThrowIfNull(loggerFactory);
     this.invoiceNoSqlBroker = invoiceNoSqlBroker;
     this.logger = loggerFactory.CreateLogger<IInvoiceStorageFoundationService>();
   }

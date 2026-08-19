@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -11,13 +12,13 @@ using Microsoft.EntityFrameworkCore;
 /// Represents a single invoice line item (product) enriched via OCR and AI classification pipelines.
 /// </summary>
 /// <remarks>
-/// <para>Encapsulates product name (<c>Name</c>), categorical classification
-/// (<c>Category</c>), quantitative details (<c>Quantity</c>, <c>QuantityUnit</c>), commercial identifiers (<c>ProductCode</c>), pricing
+/// <para>Encapsulates product name (<c>Name</c>), canonical classification
+/// (<c>Classification</c>), quantitative details (<c>Quantity</c>, <c>QuantityUnit</c>), commercial identifiers (<c>ProductCode</c>), pricing
 /// (<c>Price</c>, computed <c>TotalPrice</c>) and enrichment artifacts (<c>DetectedAllergens</c>, <c>Metadata</c>).</para>
 /// <para><b>Lifecycle:</b> Instances are owned by the containing <see cref="Invoices"/> aggregate and are persisted as embedded documents
 /// (Cosmos owned collection). They SHOULD NOT be shared across invoice aggregates.</para>
-/// <para><b>Classification:</b> <c>Category</c> and <c>DetectedAllergens</c> may be progressively enriched; initial ingestion often sets
-/// <c>Category = ProductCategory.NOT_DEFINED</c> and an empty allergen list.</para>
+/// <para><b>Classification:</b> <c>Classification</c> and <c>DetectedAllergens</c> may be progressively enriched; initial ingestion uses
+/// a null classification and an empty allergen list.</para>
 /// <para><b>Thread-safety:</b> Not thread-safe; mutate only within the aggregate's modification workflow.</para>
 /// </remarks>
 [Owned]
@@ -28,10 +29,10 @@ public class Product
   [JsonPropertyOrder(0)]
   public string Name { get; set; } = string.Empty;
 
-  /// <summary>Domain classification for the product.</summary>
-  /// <remarks><para>Defaults to <see cref="ProductCategory.NOT_DEFINED"/> or <see cref="ProductCategory.OTHER"/> when enrichment has not resolved a concrete category.</para></remarks>
+  /// <summary>Gets or sets the canonical GS1 GPC classification for the product.</summary>
+  /// <remarks><see langword="null"/> means that the product is unclassified.</remarks>
   [JsonPropertyOrder(1)]
-  public ProductCategory Category { get; set; } = ProductCategory.OTHER;
+  public StandardClassification? Classification { get; set; }
 
   /// <summary>Quantity of the product associated with the unit indicated by <see cref="QuantityUnit"/>.</summary>
   /// <remarks><para>Must be non-negative. Zero often indicates an OCR failure and SHOULD be corrected upstream.</para></remarks>

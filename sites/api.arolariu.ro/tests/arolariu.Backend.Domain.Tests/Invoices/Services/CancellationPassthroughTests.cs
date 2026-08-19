@@ -144,7 +144,9 @@ public sealed class CancellationPassthroughTests
       .Setup(b => b.ReadMerchantAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new OperationCanceledException());
 
-    var service = new MerchantStorageFoundationService(broker.Object, NullLoggerFactory.Instance);
+    var service = new MerchantStorageFoundationService(
+      broker.Object,
+      NullLoggerFactory.Instance);
 
     await Assert.ThrowsExactlyAsync<OperationCanceledException>(
       () => service.ReadMerchantObject(Guid.NewGuid(), null, CancellationToken.None)).ConfigureAwait(true);

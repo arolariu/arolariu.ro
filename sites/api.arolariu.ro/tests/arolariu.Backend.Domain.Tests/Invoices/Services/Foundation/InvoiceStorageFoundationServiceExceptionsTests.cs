@@ -29,7 +29,9 @@ public class InvoiceStorageFoundationServiceExceptionsTests
   /// <summary>Initializes a new instance of the <see cref="InvoiceStorageFoundationServiceExceptionsTests"/> class.</summary>
   public InvoiceStorageFoundationServiceExceptionsTests()
   {
-    _sut = new InvoiceStorageFoundationService(_broker.Object, NullLoggerFactory.Instance);
+    _sut = new InvoiceStorageFoundationService(
+      _broker.Object,
+      NullLoggerFactory.Instance);
   }
 
   /// <summary>Verifies that an <see cref="InvoiceNotFoundException"/> from the broker is wrapped into an <see cref="InvoiceFoundationDependencyValidationException"/>.</summary>

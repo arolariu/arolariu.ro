@@ -25,7 +25,7 @@ internal static class InvoiceBuilder
     UserIdentifier = Guid.NewGuid(),
     Name = GetRandomString(),
     Description = GetRandomString(),
-    Category = InvoiceCategory.FAST_FOOD,
+    Classification = null,
     Scans = [],
     IsImportant = Random.Next(0, 2) == 1,
     CreatedBy = Guid.NewGuid(),
@@ -53,7 +53,7 @@ internal static class InvoiceBuilder
       UserIdentifier = userIdentifier ?? invoice.UserIdentifier,
       Name = name ?? invoice.Name,
       Description = description ?? invoice.Description,
-      Category = invoice.Category,
+      Classification = invoice.Classification,
       Scans = invoice.Scans,
       IsImportant = invoice.IsImportant,
       CreatedBy = invoice.CreatedBy,
@@ -94,7 +94,7 @@ internal static class InvoiceBuilder
       products.Add(new Product
       {
         Name = GetRandomString(),
-        Category = ProductCategory.FISH,
+        Classification = null,
         Quantity = (decimal)(Random.NextDouble() * 100),
         QuantityUnit = GetRandomString(),
         ProductCode = GetRandomString(),
@@ -123,4 +123,3 @@ internal static class InvoiceBuilder
 
   private static DateTimeOffset GetRandomDateTimeOffset() => DateTimeOffset.Now.AddDays(-Random.Next(0, 365));
 }
-

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 /// <summary>
@@ -37,9 +38,8 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// The name of the product as extracted from the invoice via OCR.
 /// Used for display, aggregation, allergen inference heuristics and recipe matching.
 /// </param>
-/// <param name="Category">
-/// Product category classification (e.g., Dairy, Meat, Beverages).
-/// Defaults to <see cref="ProductCategory.NOT_DEFINED"/> if AI classification was not performed.
+/// <param name="Classification">
+/// The canonical GS1 GPC classification, or null while the product is unclassified.
 /// </param>
 /// <param name="Quantity">
 /// The quantity of product units purchased. Always positive.
@@ -83,13 +83,13 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// </code>
 /// </example>
 /// <seealso cref="Product"/>
-/// <seealso cref="ProductCategory"/>
+/// <seealso cref="StandardClassification"/>
 /// <seealso cref="Allergen"/>
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct ProductResponseDto(
   string Name,
-  ProductCategory Category,
+  StandardClassification? Classification,
   decimal Quantity,
   string QuantityUnit,
   string ProductCode,
@@ -130,7 +130,7 @@ public readonly record struct ProductResponseDto(
     ArgumentNullException.ThrowIfNull(product);
     return new(
       Name: product.Name,
-      Category: product.Category,
+      Classification: product.Classification,
       Quantity: product.Quantity,
       QuantityUnit: product.QuantityUnit,
       ProductCode: product.ProductCode,

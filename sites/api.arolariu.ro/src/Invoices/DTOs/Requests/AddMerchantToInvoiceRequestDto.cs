@@ -38,10 +38,6 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// A detailed description of the merchant. Required.
 /// May include operating hours, specialties, or other relevant information.
 /// </param>
-/// <param name="Category">
-/// The merchant category classification (e.g., Grocery, Restaurant, Pharmacy).
-/// Defaults to <see cref="MerchantCategory.NOT_DEFINED"/> if not specified.
-/// </param>
 /// <param name="Address">
 /// Optional structured contact and address information including street,
 /// city, postal code, country, phone, and email.
@@ -55,7 +51,6 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// var request = new AddMerchantToInvoiceRequestDto(
 ///     Name: "Kaufland Iasi Pacurari",
 ///     Description: "Hypermarket in Iasi, open 07:00-22:00",
-///     Category: MerchantCategory.GROCERY,
 ///     Address: new ContactInformation { City = "Iasi", Country = "Romania" },
 ///     ParentCompanyId: parentCompanyGuid);
 ///
@@ -64,14 +59,12 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// </code>
 /// </example>
 /// <seealso cref="Merchant"/>
-/// <seealso cref="MerchantCategory"/>
 /// <seealso cref="ContactInformation"/>
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct AddMerchantToInvoiceRequestDto(
   [Required] string Name,
   [Required] string Description,
-  MerchantCategory Category,
   ContactInformation? Address,
   Guid? ParentCompanyId)
 {
@@ -102,7 +95,7 @@ public readonly record struct AddMerchantToInvoiceRequestDto(
     id = Guid.NewGuid(),
     Name = Name,
     Description = Description,
-    Category = Category,
+    Classification = null,
     Address = Address ?? new ContactInformation(),
     ParentCompanyId = ParentCompanyId ?? Guid.Empty,
     CreatedAt = DateTime.UtcNow,
