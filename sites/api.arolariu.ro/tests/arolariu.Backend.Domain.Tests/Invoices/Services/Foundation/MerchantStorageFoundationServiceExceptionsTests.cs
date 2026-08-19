@@ -9,6 +9,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
+using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -29,7 +30,10 @@ public class MerchantStorageFoundationServiceExceptionsTests
   /// <summary>Initializes a new instance of the <see cref="MerchantStorageFoundationServiceExceptionsTests"/> class.</summary>
   public MerchantStorageFoundationServiceExceptionsTests()
   {
-    _sut = new MerchantStorageFoundationService(_broker.Object, NullLoggerFactory.Instance);
+    _sut = new MerchantStorageFoundationService(
+      _broker.Object,
+      TaxonomyBrokerTestFactory.Create(),
+      NullLoggerFactory.Instance);
   }
 
   /// <summary>Verifies that a <see cref="MerchantNotFoundException"/> from the broker is wrapped into a <see cref="MerchantFoundationServiceDependencyValidationException"/>.</summary>

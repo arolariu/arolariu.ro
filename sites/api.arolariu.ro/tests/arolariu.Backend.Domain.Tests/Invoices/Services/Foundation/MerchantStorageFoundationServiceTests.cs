@@ -8,8 +8,11 @@ using System.Threading.Tasks;
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
 using arolariu.Backend.Domain.Tests.Builders;
+using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Microsoft.Extensions.Logging;
 
@@ -45,6 +48,7 @@ public sealed class MerchantStorageFoundationServiceTests
 
     service = new MerchantStorageFoundationService(
         mockBroker.Object,
+        TaxonomyBrokerTestFactory.Create(),
         mockLoggerFactory.Object);
   }
 
@@ -56,7 +60,10 @@ public sealed class MerchantStorageFoundationServiceTests
   [TestMethod]
   public void Constructor_NullBroker_ThrowsArgumentNullException() =>
       Assert.ThrowsExactly<ArgumentNullException>(() =>
-          new MerchantStorageFoundationService(null!, mockLoggerFactory.Object));
+          new MerchantStorageFoundationService(
+            null!,
+            TaxonomyBrokerTestFactory.Create(),
+            mockLoggerFactory.Object));
 
   /// <summary>
   /// Validates successful instantiation with all valid dependencies.
@@ -67,6 +74,7 @@ public sealed class MerchantStorageFoundationServiceTests
     // Arrange & Act
     var svc = new MerchantStorageFoundationService(
         mockBroker.Object,
+        TaxonomyBrokerTestFactory.Create(),
         mockLoggerFactory.Object);
 
     // Assert
@@ -76,6 +84,113 @@ public sealed class MerchantStorageFoundationServiceTests
   #endregion
 
   #region CreateMerchantObject Tests
+
+  /// <summary>Verifies a pending NACE selection is canonicalized before persistence.</summary>
+  [TestMethod]
+  public async Task CreateMerchantObject_PendingNaceSelection_PersistsCanonicalClassification()
+  {
+    Merchant merchant = MerchantTestDataBuilder.CreateRandomMerchant();
+    merchant.Classification = null;
+    merchant.PendingClassificationSelection =
+      new ClassificationSelection(
+        ClassificationSystem.Nace21,
+        TaxonomyBrokerTestFactory.NaceCode);
+
+    mockBroker
+      .Setup(broker => broker.CreateMerchantAsync(
+        merchant,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(merchant);
+
+    await service.CreateMerchantObject(
+      merchant,
+      merchant.ParentCompanyId,
+      CancellationToken.None);
+
+    Assert.AreEqual(ClassificationSystem.Nace21, merchant.Classification?.System);
+    Assert.AreEqual(TaxonomyBrokerTestFactory.NaceCode, merchant.Classification?.Code);
+    Assert.IsNull(merchant.PendingClassificationSelection);
+  }
+
+  /// <summary>Verifies merchants reject non-NACE selections before persistence.</summary>
+  [TestMethod]
+  public async Task CreateMerchantObject_GpcSelection_ThrowsValidationWithoutWriting()
+  {
+    Merchant merchant = MerchantTestDataBuilder.CreateRandomMerchant();
+    merchant.PendingClassificationSelection =
+      new ClassificationSelection(
+        ClassificationSystem.Gs1Gpc,
+        TaxonomyBrokerTestFactory.GpcCode);
+
+    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceValidationException>(() =>
+      service.CreateMerchantObject(
+        merchant,
+        merchant.ParentCompanyId,
+        CancellationToken.None));
+
+    mockBroker.Verify(
+      broker => broker.CreateMerchantAsync(
+        It.IsAny<Merchant>(),
+        It.IsAny<CancellationToken>()),
+      Times.Never);
+  }
+
+  /// <summary>Verifies unknown NACE codes preserve not-found semantics.</summary>
+  [TestMethod]
+  public async Task CreateMerchantObject_UnknownNaceCode_PropagatesNotFoundWithoutWriting()
+  {
+    Merchant merchant = MerchantTestDataBuilder.CreateRandomMerchant();
+    merchant.PendingClassificationSelection =
+      new ClassificationSelection(ClassificationSystem.Nace21, "missing");
+
+    await Assert.ThrowsExactlyAsync<TaxonomyCodeNotFoundException>(() =>
+      service.CreateMerchantObject(
+        merchant,
+        merchant.ParentCompanyId,
+        CancellationToken.None));
+
+    mockBroker.Verify(
+      broker => broker.CreateMerchantAsync(
+        It.IsAny<Merchant>(),
+        It.IsAny<CancellationToken>()),
+      Times.Never);
+  }
+
+  /// <summary>Verifies untouched merchant snapshots are not re-resolved.</summary>
+  [TestMethod]
+  public async Task UpdateMerchantObject_ExistingClassificationWithoutPending_PreservesSnapshot()
+  {
+    Merchant merchant = MerchantTestDataBuilder.CreateRandomMerchant();
+    StandardClassification classification = TaxonomyBrokerTestFactory.Create().Resolve(
+      ClassificationSystem.Nace21,
+      TaxonomyBrokerTestFactory.NaceCode,
+      ClassificationOrigin.Manual,
+      null,
+      []);
+    merchant.Classification = classification;
+    merchant.PendingClassificationSelection = null;
+
+    mockBroker
+      .Setup(broker => broker.ReadMerchantAsync(
+        merchant.id,
+        merchant.ParentCompanyId,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(merchant);
+    mockBroker
+      .Setup(broker => broker.UpdateMerchantAsync(
+        merchant,
+        merchant,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(merchant);
+
+    Merchant result = await service.UpdateMerchantObject(
+      merchant,
+      merchant.id,
+      merchant.ParentCompanyId,
+      CancellationToken.None);
+
+    Assert.AreSame(classification, result.Classification);
+  }
 
   /// <summary>
   /// Validates successful merchant creation through foundation layer.

@@ -151,17 +151,17 @@ public sealed partial class AzureClassifierBroker : IClassifierBroker
   }
 
   /// <summary>
-  /// Executes merchant enrichment sequence including category classification and description generation.
+  /// Executes merchant description enrichment.
   /// </summary>
   /// <remarks>
-  /// <para><b>Sequence:</b> Category classification -> Description generation.</para>
-  /// <para><b>Graceful Degradation:</b> Failures yield default category (OTHER) and empty description.</para>
+  /// <para><b>Sequence:</b> Generates a concise merchant description.</para>
+  /// <para><b>Graceful Degradation:</b> Failures leave description metadata unchanged.</para>
   /// <para><b>Mutation:</b> Operates on supplied <paramref name="merchant"/> in-place (returns same reference).</para>
   /// <para><b>Integration Point:</b> Should be called from <c>MerchantOrchestrationService</c> during merchant 
-  /// creation/update flows to ensure category is populated before persistence.</para>
+  /// creation/update flows when description enrichment is requested.</para>
   /// </remarks>
   /// <param name="merchant">Merchant entity to enrich (MUST NOT be null; MUST have Name populated).</param>
-  /// <returns>Mutated merchant entity (same instance) with enriched category and description.</returns>
+  /// <returns>Mutated merchant entity (same instance) with enriched description metadata.</returns>
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="merchant"/> is null.</exception>
   public async ValueTask<Merchant> PerformGptAnalysisOnSingleMerchant(Merchant merchant)
   {
@@ -170,36 +170,17 @@ public sealed partial class AzureClassifierBroker : IClassifierBroker
 #pragma warning disable CA1031 // Do not catch general exception types - intentional for graceful degradation contract
     try
     {
-      merchant.Category = await GenerateMerchantCategory(merchant).ConfigureAwait(false);
+      var description = await GenerateMerchantDescription(merchant).ConfigureAwait(false);
+      if (!string.IsNullOrWhiteSpace(description))
+      {
+        merchant.AdditionalMetadata["ai.description"] = description;
+      }
     }
     catch (Exception ex)
     {
-      logger.LogGptMethodFailedWithContext(nameof(GenerateMerchantCategory), merchant.Name, ex.Message);
-      // Graceful degradation: default to OTHER on any failure (including non-ClientResultException)
-      merchant.Category = MerchantCategory.OTHER;
+      logger.LogGptMethodFailedWithContext(nameof(GenerateMerchantDescription), merchant.Name, ex.Message);
     }
 #pragma warning restore CA1031 // Do not catch general exception types
-
-    // Generate description for non-OTHER categories or for OTHER merchants with a known name
-    if (merchant.Category != MerchantCategory.OTHER || !string.IsNullOrWhiteSpace(merchant.Name))
-    {
-#pragma warning disable CA1031 // Do not catch general exception types - intentional for graceful degradation contract
-      try
-      {
-        var description = await GenerateMerchantDescription(merchant).ConfigureAwait(false);
-        if (!string.IsNullOrWhiteSpace(description))
-        {
-          merchant.AdditionalMetadata["ai.description"] = description;
-        }
-      }
-      catch (Exception ex)
-      {
-        logger.LogGptMethodFailedWithContext(nameof(GenerateMerchantDescription), merchant.Name, ex.Message);
-        // Graceful degradation: skip description on any failure (including non-ClientResultException)
-        // No action needed - description remains absent from metadata
-      }
-#pragma warning restore CA1031 // Do not catch general exception types
-    }
 
     return merchant;
   }

@@ -380,12 +380,17 @@ public sealed class EntityTests
   [TestMethod]
   public void Merchant_Creation_WithValidProperties_Succeeds()
   {
-    // Act
+    StandardClassification classification = TaxonomyBrokerTestFactory.Create().Resolve(
+      ClassificationSystem.Nace21,
+      TaxonomyBrokerTestFactory.NaceCode,
+      ClassificationOrigin.Manual,
+      null,
+      []);
     var merchant = new Merchant
     {
       id = Guid.NewGuid(),
       Name = "Test Merchant",
-      Category = MerchantCategory.SUPERMARKET,
+      Classification = classification,
       ParentCompanyId = Guid.NewGuid()
     };
 
@@ -393,20 +398,20 @@ public sealed class EntityTests
     Assert.IsNotNull(merchant);
     Assert.AreNotEqual(Guid.Empty, merchant.id);
     Assert.AreEqual("Test Merchant", merchant.Name);
-    Assert.AreEqual(MerchantCategory.SUPERMARKET, merchant.Category);
+    Assert.AreSame(classification, merchant.Classification);
   }
 
   /// <summary>
-  /// Verifies Merchant default category is OTHER.
+  /// Verifies Merchant defaults to an unclassified state.
   /// </summary>
   [TestMethod]
-  public void Merchant_DefaultCategory_IsOther()
+  public void Merchant_DefaultClassification_IsNull()
   {
     // Arrange
     var merchant = new Merchant();
 
     // Assert
-    Assert.AreEqual(MerchantCategory.OTHER, merchant.Category);
+    Assert.IsNull(merchant.Classification);
   }
 
   /// <summary>
@@ -472,25 +477,6 @@ public sealed class EntityTests
     Assert.AreEqual("Test Store", merchant.Address.FullName);
     Assert.AreEqual("123 Main St", merchant.Address.Address);
     Assert.AreEqual("+1234567890", merchant.Address.PhoneNumber);
-  }
-
-  /// <summary>
-  /// Verifies MerchantCategory can be set on Merchant.
-  /// </summary>
-  [TestMethod]
-  [DataRow(MerchantCategory.NOT_DEFINED)]
-  [DataRow(MerchantCategory.LOCAL_SHOP)]
-  [DataRow(MerchantCategory.SUPERMARKET)]
-  [DataRow(MerchantCategory.HYPERMARKET)]
-  [DataRow(MerchantCategory.ONLINE_SHOP)]
-  [DataRow(MerchantCategory.OTHER)]
-  public void MerchantCategory_CanBeSetOnMerchant(MerchantCategory category)
-  {
-    // Arrange
-    var merchant = new Merchant { Category = category };
-
-    // Assert
-    Assert.AreEqual(category, merchant.Category);
   }
 
   /// <summary>
@@ -730,33 +716,4 @@ public sealed class EntityTests
 
   #endregion
 
-  #region MerchantCategory Enum Tests
-
-  /// <summary>
-  /// Verifies MerchantCategory enum has OTHER as valid value.
-  /// </summary>
-  [TestMethod]
-  public void MerchantCategory_Other_IsDefined()
-  {
-    // Assert
-    Assert.IsTrue(Enum.IsDefined<MerchantCategory>(MerchantCategory.OTHER));
-  }
-
-  /// <summary>
-  /// Verifies MerchantCategory has multiple category options.
-  /// </summary>
-  [TestMethod]
-  [DataRow(MerchantCategory.NOT_DEFINED)]
-  [DataRow(MerchantCategory.LOCAL_SHOP)]
-  [DataRow(MerchantCategory.SUPERMARKET)]
-  [DataRow(MerchantCategory.HYPERMARKET)]
-  [DataRow(MerchantCategory.ONLINE_SHOP)]
-  [DataRow(MerchantCategory.OTHER)]
-  public void MerchantCategory_AllValues_AreDefined(MerchantCategory category)
-  {
-    // Assert
-    Assert.IsTrue(Enum.IsDefined<MerchantCategory>(category));
-  }
-
-  #endregion
 }

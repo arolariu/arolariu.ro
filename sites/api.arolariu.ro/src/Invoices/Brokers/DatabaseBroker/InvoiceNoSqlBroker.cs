@@ -203,7 +203,9 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 
       #region Base types
       entity.Property(i => i.Name).HasConversion<string>();
-      entity.Property(i => i.Category).HasConversion<string>();
+      entity.Property(merchant => merchant.Classification)
+        .ToJsonProperty("Classification")
+        .HasConversion(new ValueConverterForValueObjectOf<StandardClassification>());
       entity.Property(i => i.CreatedBy).HasConversion<string>();
       entity.Property(i => i.IsImportant).HasConversion<bool>();
       entity.Property(i => i.IsSoftDeleted).HasConversion<bool>();

@@ -44,16 +44,16 @@ public interface IClassifierBroker
   ValueTask<Invoice> PerformGptAnalysisOnSingleInvoice(Invoice invoice, AnalysisOptions options);
 
   /// <summary>
-  /// Performs GPT-backed enrichment of a single <see cref="Merchant"/> entity, populating category and description.
+  /// Performs GPT-backed description enrichment of a single <see cref="Merchant"/> entity.
   /// </summary>
   /// <remarks>
-  /// <para><b>Behavior:</b> Applies LLM prompts to classify merchant category and generate a concise description.</para>
-  /// <para><b>Graceful Degradation:</b> Prompt failures result in default values (OTHER category, empty description) without throwing.</para>
+  /// <para><b>Behavior:</b> Applies an LLM prompt to generate a concise description.</para>
+  /// <para><b>Graceful Degradation:</b> Prompt failures leave description metadata unchanged.</para>
   /// <para><b>Intended Usage:</b> Should be called from merchant orchestration service after merchant creation/discovery.</para>
   /// <para><b>Thread Safety:</b> Thread-safe (AzureOpenAIClient is internally safe for concurrent usage).</para>
   /// </remarks>
   /// <param name="merchant">Merchant entity to enrich (MUST NOT be null; MUST have Name populated).</param>
-  /// <returns>Mutated merchant instance with Category and enriched metadata.</returns>
+  /// <returns>Mutated merchant instance with enriched metadata.</returns>
   /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="merchant"/> is null.</exception>
   ValueTask<Merchant> PerformGptAnalysisOnSingleMerchant(Merchant merchant);
 }

@@ -11,6 +11,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
 using arolariu.Backend.Domain.Tests.Builders;
+using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Microsoft.Extensions.Logging;
 
@@ -46,6 +47,7 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
 
     service = new MerchantStorageFoundationService(
         mockBroker.Object,
+        TaxonomyBrokerTestFactory.Create(),
         mockLoggerFactory.Object);
   }
 

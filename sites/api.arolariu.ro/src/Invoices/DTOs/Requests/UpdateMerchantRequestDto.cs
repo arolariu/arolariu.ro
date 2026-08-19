@@ -35,8 +35,8 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// <param name="Description">
 /// The new detailed description. Required. Replaces the existing description.
 /// </param>
-/// <param name="Category">
-/// The new category classification. Replaces the existing category.
+/// <param name="Classification">
+/// Optional manual NACE classification selection. Null clears the classification.
 /// </param>
 /// <param name="Address">
 /// The new structured contact and address information.
@@ -55,7 +55,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// var request = new UpdateMerchantRequestDto(
 ///     Name: "Kaufland Iasi Pacurari",
 ///     Description: "Updated description with new hours",
-///     Category: MerchantCategory.GROCERY,
+///     Classification: null,
 ///     Address: new ContactInformation { City = "Iasi", Country = "Romania" },
 ///     ParentCompanyId: parentId,
 ///     AdditionalMetadata: new Dictionary&lt;string, string&gt; { ["storeCode"] = "IS001" });
@@ -71,7 +71,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 public readonly record struct UpdateMerchantRequestDto(
   [Required] string Name,
   [Required] string Description,
-  MerchantCategory Category,
+  ClassificationSelectionDto? Classification,
   ContactInformation? Address,
   Guid? ParentCompanyId,
   IDictionary<string, string>? AdditionalMetadata)
@@ -110,7 +110,8 @@ public readonly record struct UpdateMerchantRequestDto(
       id = merchantId,
       Name = Name,
       Description = Description,
-      Category = Category,
+      Classification = null,
+      PendingClassificationSelection = Classification?.ToSelection(),
       Address = Address ?? new ContactInformation(),
       ParentCompanyId = ParentCompanyId ?? Guid.Empty,
     };

@@ -6,12 +6,13 @@ using System.Text.Json.Serialization;
 
 using arolariu.Backend.Common.DDD.Contracts;
 using arolariu.Backend.Common.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 
 /// <summary>
 /// Represents a merchant (vendor / store) referenced by one or more invoices within the invoicing bounded context.
 /// </summary>
 /// <remarks>
-/// <para>Encapsulates classification (<c>Category</c>), location/contact data (<c>Address</c>), hierarchical grouping (<c>ParentCompanyId</c>)
+/// <para>Encapsulates classification (<c>Classification</c>), location/contact data (<c>Address</c>), hierarchical grouping (<c>ParentCompanyId</c>)
 /// and reverse references from invoices (<c>ReferencedInvoices</c>) for analytic aggregation.</para>
 /// <para><b>Identity:</b> Assigned at creation time (random GUID). Future optimization may migrate to Version 7 GUID for chronological sorting.</para>
 /// <para><b>Relationships:</b> Not an aggregate root for invoices (invoices own the relationship by storing <c>MerchantReference</c>). This type acts
@@ -29,10 +30,15 @@ public sealed class Merchant : NamedEntity<Guid>
   [JsonPropertyOrder(0)]
   public override Guid id { get; init; } = Guid.NewGuid();
 
-  /// <summary>Domain classification used for analytics, grouping and enrichment heuristics.</summary>
-  /// <remarks><para>Defaults to <see cref="MerchantCategory.OTHER"/> when unclassified. Downstream enrichment processes SHOULD minimize long-term usage of OTHER.</para></remarks>
+  /// <summary>Gets or sets the canonical NACE classification used for analytics and grouping.</summary>
+  /// <remarks><see langword="null"/> means that the merchant is unclassified.</remarks>
   [JsonPropertyOrder(3)]
-  public MerchantCategory Category { get; set; } = MerchantCategory.OTHER;
+  public StandardClassification? Classification { get; set; }
+
+  /// <summary>Gets or sets the pending manual selection for the next persistence operation.</summary>
+  [System.Text.Json.Serialization.JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  internal ClassificationSelection? PendingClassificationSelection { get; set; }
 
   /// <summary>Structured contact / address information.</summary>
   /// <remarks><para>Represents a value object snapshot. Entire object is typically replaced on update; no deep merge semantics currently.</para></remarks>
