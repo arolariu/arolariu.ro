@@ -41,14 +41,8 @@ public static partial class InvoiceEndpoints
   /// <param name="router">Route builder used during startup; MUST NOT be null.</param>
   private static void MapStandardInvoiceEndpoints(this IEndpointRouteBuilder router)
   {
-    Func<
-      Services.Management.IInvoiceManagementService,
-      IHttpContextAccessor,
-      CreateInvoiceRequestDto,
-      Task<IResult>> createInvoiceHandler = CreateNewInvoiceAsync;
-
     router // Create a new invoice for the authenticated user (claims read via IHttpContextAccessor).
-      .MapPost("/invoices", createInvoiceHandler)
+      .MapPost("/invoices", CreateNewInvoiceAsync)
       .Accepts<CreateInvoiceRequestDto>("application/json")
       .Produces<InvoiceResponseDto>(StatusCodes.Status201Created)
       .ProducesValidationProblem()
