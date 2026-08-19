@@ -11,6 +11,7 @@ using arolariu.Backend.Common.Http;
 using arolariu.Backend.Common.Telemetry.Tracing;
 using arolariu.Backend.Domain.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.DTOs.Responses;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
@@ -265,7 +266,10 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      var updatedInvoiceEntity = invoicePayload.ToInvoice(id, potentialUserIdentifier);
+      var updatedInvoiceEntity = invoicePayload.ToInvoice(
+        id,
+        potentialUserIdentifier,
+        possibleInvoice.Classification);
 
       // Preserve scans from the original invoice (scans are managed through dedicated endpoints)
       foreach (var scan in possibleInvoice.Scans)
@@ -594,20 +598,22 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      var possibleProduct = await invoiceProcessingService
-        .GetProduct(productInformation.OriginalProductName, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
-        .ConfigureAwait(false);
-      if (possibleProduct is null)
+      var updatedItems = possibleInvoice.Items.ToList();
+      int productIndex = updatedItems.FindIndex(product =>
+        product.Name is not null
+        && product.Name.Contains(
+          productInformation.OriginalProductName,
+          StringComparison.InvariantCultureIgnoreCase));
+      if (productIndex < 0)
       {
         activity?.SetTag("result.product_found", false);
         return TypedResults.NotFound();
       }
 
-      var updatedProduct = productInformation.ToProduct();
+      Product existingProduct = updatedItems[productIndex];
+      var updatedProduct = productInformation.ToProduct(existingProduct.Classification);
       activity?.SetTag("product.new_name", updatedProduct.Name);
 
-      var updatedItems = possibleInvoice.Items.ToList();
-      int productIndex = updatedItems.IndexOf(possibleProduct);
       updatedItems[productIndex] = updatedProduct;
       possibleInvoice.Items = updatedItems;
 
@@ -1317,7 +1323,9 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      var updatedMerchant = merchantPayload.ToMerchant(id);
+      var updatedMerchant = merchantPayload.ToMerchant(
+        id,
+        possibleMerchant.Classification);
       activity?.SetTag("merchant.name", updatedMerchant.Name);
 
       await invoiceProcessingService

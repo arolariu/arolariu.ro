@@ -12,15 +12,12 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class ProductClassificationDtoTests
 {
-  /// <summary>Verifies create selections remain unresolved until invoice persistence.</summary>
+  /// <summary>Verifies new products remain unclassified.</summary>
   [TestMethod]
-  public void CreateToProduct_GpcSelection_SetsPendingSelectionOnly()
+  public void CreateToProduct_NewProduct_IsUnclassified()
   {
     var request = new CreateProductRequestDto(
       "Milk",
-      new ClassificationSelectionDto(
-        ClassificationSystem.Gs1Gpc,
-        TaxonomyBrokerTestFactory.GpcCode),
       1,
       "pcs",
       "",
@@ -30,29 +27,30 @@ public sealed class ProductClassificationDtoTests
     Product product = request.ToProduct();
 
     Assert.IsNull(product.Classification);
-    Assert.AreEqual(
-      ClassificationSystem.Gs1Gpc,
-      product.PendingClassificationSelection?.System);
   }
 
-  /// <summary>Verifies a null PUT selection produces an unclassified product.</summary>
+  /// <summary>Verifies product replacement preserves the existing canonical snapshot.</summary>
   [TestMethod]
-  public void UpdateToProduct_NullSelection_LeavesProductUnclassified()
+  public void UpdateToProduct_ExistingClassification_PreservesSnapshot()
   {
+    StandardClassification classification = TaxonomyBrokerTestFactory.Create().Resolve(
+      ClassificationSystem.Gs1Gpc,
+      TaxonomyBrokerTestFactory.GpcCode,
+      ClassificationOrigin.Manual,
+      null,
+      []);
     var request = new UpdateProductRequestDto(
       "Milk",
       "Milk",
-      null,
       1,
       "pcs",
       "",
       8.5m,
       []);
 
-    Product product = request.ToProduct();
+    Product product = request.ToProduct(classification);
 
-    Assert.IsNull(product.Classification);
-    Assert.IsNull(product.PendingClassificationSelection);
+    Assert.AreSame(classification, product.Classification);
   }
 
   /// <summary>Verifies response mapping exposes the complete GPC snapshot.</summary>

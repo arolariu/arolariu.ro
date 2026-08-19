@@ -16,52 +16,35 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class InvoiceClassificationDtoTests
 {
-  /// <summary>Verifies PUT selections remain unresolved until the storage Foundation.</summary>
+  /// <summary>Verifies invoice replacement preserves the existing canonical snapshot.</summary>
   [TestMethod]
-  public void UpdateToInvoice_Selection_SetsPendingSelectionOnly()
+  public void UpdateToInvoice_ExistingClassification_PreservesSnapshot()
   {
-    var request = new UpdateInvoiceRequestDto(
-      "Groceries",
-      "Weekly shop",
-      new ClassificationSelectionDto(
-        ClassificationSystem.EcoicopV2,
-        TaxonomyBrokerTestFactory.EcoicopCode),
-      new PaymentInformation(),
-      null,
-      false,
-      null);
-
-    Invoice invoice = request.ToInvoice(Guid.NewGuid(), Guid.NewGuid());
-
-    Assert.IsNull(invoice.Classification);
-    Assert.IsNotNull(invoice.PendingClassificationSelection);
-    Assert.AreEqual(
+    StandardClassification classification = TaxonomyBrokerTestFactory.Create().Resolve(
       ClassificationSystem.EcoicopV2,
-      invoice.PendingClassificationSelection.System);
-  }
-
-  /// <summary>Verifies a null PUT selection produces an unclassified invoice.</summary>
-  [TestMethod]
-  public void UpdateToInvoice_NullSelection_LeavesInvoiceUnclassified()
-  {
+      TaxonomyBrokerTestFactory.EcoicopCode,
+      ClassificationOrigin.Manual,
+      null,
+      []);
     var request = new UpdateInvoiceRequestDto(
       "Groceries",
       "Weekly shop",
-      null,
       new PaymentInformation(),
       null,
       false,
       null);
 
-    Invoice invoice = request.ToInvoice(Guid.NewGuid(), Guid.NewGuid());
+    Invoice invoice = request.ToInvoice(
+      Guid.NewGuid(),
+      Guid.NewGuid(),
+      classification);
 
-    Assert.IsNull(invoice.Classification);
-    Assert.IsNull(invoice.PendingClassificationSelection);
+    Assert.AreSame(classification, invoice.Classification);
   }
 
-  /// <summary>Verifies PATCH null preserves the existing canonical snapshot.</summary>
+  /// <summary>Verifies PATCH preserves the existing canonical snapshot.</summary>
   [TestMethod]
-  public void PatchApplyTo_NullSelection_PreservesClassification()
+  public void PatchApplyTo_ExistingClassification_PreservesSnapshot()
   {
     Invoice existing = InvoiceBuilder.CreateRandomInvoice();
     StandardClassification classification = TaxonomyBrokerTestFactory.Create().Resolve(
@@ -78,13 +61,11 @@ public sealed class InvoiceClassificationDtoTests
       null,
       null,
       null,
-      null,
       null);
 
     Invoice patched = request.ApplyTo(existing, Guid.NewGuid());
-
     Assert.AreSame(classification, patched.Classification);
-    Assert.IsNull(patched.PendingClassificationSelection);
+    Assert.AreSame(classification, patched.Classification);
   }
 
   /// <summary>Verifies response mapping exposes the complete canonical snapshot.</summary>

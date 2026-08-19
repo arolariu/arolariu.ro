@@ -34,11 +34,6 @@ public class Product
   [JsonPropertyOrder(1)]
   public StandardClassification? Classification { get; set; }
 
-  /// <summary>Gets or sets the pending manual selection for the next invoice write.</summary>
-  [System.Text.Json.Serialization.JsonIgnore]
-  [Newtonsoft.Json.JsonIgnore]
-  internal ClassificationSelection? PendingClassificationSelection { get; set; }
-
   /// <summary>Quantity of the product associated with the unit indicated by <see cref="QuantityUnit"/>.</summary>
   /// <remarks><para>Must be non-negative. Zero often indicates an OCR failure and SHOULD be corrected upstream.</para></remarks>
   [JsonPropertyOrder(2)]

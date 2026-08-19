@@ -10,6 +10,9 @@ using System.Threading.Tasks;
 using arolariu.Backend.Common.Exceptions;
 using arolariu.Backend.Common.Http;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.Endpoints;
@@ -572,7 +575,18 @@ public sealed class InvoiceEndpointsStatusCodeTests
   {
     Guid invoiceId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
-    var original = new Product {Name = "Old Milk", Quantity = 1, Price = 8.5m};
+    StandardClassification classification = CreateClassification(
+      ClassificationSystem.Gs1Gpc,
+      "2026-05",
+      "10000025",
+      "Food or beverage products");
+    var original = new Product
+    {
+      Name = "Old Milk",
+      Quantity = 1,
+      Price = 8.5m,
+      Classification = classification,
+    };
     var invoice = new Invoice
     {
       id = invoiceId,
@@ -582,7 +596,6 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var request = new UpdateProductRequestDto(
       "Old Milk",
       "New Milk",
-      null,
       2,
       "pcs",
       "",
@@ -596,13 +609,6 @@ public sealed class InvoiceEndpointsStatusCodeTests
         userId,
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(invoice);
-    service
-      .Setup(candidate => candidate.GetProduct(
-        "Old Milk",
-        invoiceId,
-        userId,
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync(original);
     service
       .Setup(candidate => candidate.UpdateInvoice(
         It.IsAny<Invoice>(),
@@ -624,7 +630,137 @@ public sealed class InvoiceEndpointsStatusCodeTests
     Product persistedProduct = Assert.ContainsSingle(capturedInvoice.Items);
     Assert.AreEqual("New Milk", persistedProduct.Name);
     Assert.AreEqual(2m, persistedProduct.Quantity);
+    Assert.AreSame(classification, persistedProduct.Classification);
+    service.Verify(
+      candidate => candidate.GetProduct(
+        It.IsAny<string>(),
+        It.IsAny<Guid>(),
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()),
+      Times.Never);
   }
+  #endregion
+
+  #region Replacement classification preservation tests
+  /// <summary>Verifies invoice PUT preserves the stored canonical classification.</summary>
+  [TestMethod]
+  public async Task UpdateSpecificInvoiceAsync_ExistingClassification_PreservesSnapshot()
+  {
+    Guid invoiceId = Guid.NewGuid();
+    Guid userId = Guid.NewGuid();
+    StandardClassification classification = CreateClassification(
+      ClassificationSystem.EcoicopV2,
+      "2",
+      "01.1",
+      "Food products");
+    var invoice = new Invoice
+    {
+      id = invoiceId,
+      UserIdentifier = userId,
+      Classification = classification,
+    };
+    var request = new UpdateInvoiceRequestDto(
+      "Groceries",
+      "Weekly shop",
+      new PaymentInformation(),
+      null,
+      false,
+      null);
+    var service = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    Invoice? capturedInvoice = null;
+    service
+      .Setup(candidate => candidate.ReadInvoice(
+        invoiceId,
+        userId,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+    service
+      .Setup(candidate => candidate.UpdateInvoice(
+        It.IsAny<Invoice>(),
+        invoiceId,
+        userId,
+        It.IsAny<CancellationToken>()))
+      .Callback<Invoice, Guid, Guid?, CancellationToken>(
+        (updated, _, _, _) => capturedInvoice = updated)
+      .ReturnsAsync((Invoice updated, Guid _, Guid? _, CancellationToken _) => updated);
+
+    IResult result = await InvoiceEndpoints.UpdateSpecificInvoiceAsync(
+      service.Object,
+      CreateAuthenticatedContextAccessor(userId),
+      invoiceId,
+      request);
+
+    Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
+    Assert.IsNotNull(capturedInvoice);
+    Assert.AreSame(classification, capturedInvoice.Classification);
+  }
+
+  /// <summary>Verifies merchant PUT preserves the stored canonical classification.</summary>
+  [TestMethod]
+  public async Task UpdateSpecificMerchantAsync_ExistingClassification_PreservesSnapshot()
+  {
+    Guid merchantId = Guid.NewGuid();
+    Guid parentCompanyId = Guid.NewGuid();
+    StandardClassification classification = CreateClassification(
+      ClassificationSystem.Nace21,
+      "2.1",
+      "47.11",
+      "Retail sale in non-specialised stores");
+    var merchant = new Merchant
+    {
+      id = merchantId,
+      ParentCompanyId = parentCompanyId,
+      Classification = classification,
+    };
+    var request = new UpdateMerchantRequestDto(
+      "Store",
+      "Description",
+      null,
+      parentCompanyId,
+      null);
+    var service = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    Merchant? capturedMerchant = null;
+    service
+      .Setup(candidate => candidate.ReadMerchant(
+        merchantId,
+        parentCompanyId,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(merchant);
+    service
+      .Setup(candidate => candidate.UpdateMerchant(
+        It.IsAny<Merchant>(),
+        merchantId,
+        parentCompanyId,
+        It.IsAny<CancellationToken>()))
+      .Callback<Merchant, Guid, Guid?, CancellationToken>(
+        (updated, _, _, _) => capturedMerchant = updated)
+      .ReturnsAsync((Merchant updated, Guid _, Guid? _, CancellationToken _) => updated);
+
+    IResult result = await InvoiceEndpoints.UpdateSpecificMerchantAsync(
+      service.Object,
+      CreateAuthenticatedContextAccessor(),
+      merchantId,
+      request);
+
+    Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
+    Assert.IsNotNull(capturedMerchant);
+    Assert.AreSame(classification, capturedMerchant.Classification);
+  }
+
+  private static StandardClassification CreateClassification(
+    ClassificationSystem system,
+    string version,
+    string code,
+    string label) =>
+    new(
+      system,
+      version,
+      code,
+      label,
+      [new ClassificationNode("leaf", code, label)],
+      ClassificationOrigin.Manual,
+      null,
+      []);
   #endregion
 
   #region ProblemDetails traceId extension tests

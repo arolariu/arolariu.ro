@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
-using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 using Microsoft.Extensions.Logging;
@@ -20,25 +19,20 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 public partial class MerchantStorageFoundationService : IMerchantStorageFoundationService
 {
   private readonly IInvoiceNoSqlBroker invoiceNoSqlBroker;
-  private readonly ITaxonomyBroker taxonomyBroker;
   private readonly ILogger<IMerchantStorageFoundationService> logger;
 
   /// <summary>
   /// Public constructor.
   /// </summary>
   /// <param name="invoiceNoSqlBroker"></param>
-  /// <param name="taxonomyBroker"></param>
   /// <param name="loggerFactory"></param>
   public MerchantStorageFoundationService(
     IInvoiceNoSqlBroker invoiceNoSqlBroker,
-    ITaxonomyBroker taxonomyBroker,
     ILoggerFactory loggerFactory)
   {
     ArgumentNullException.ThrowIfNull(invoiceNoSqlBroker);
-    ArgumentNullException.ThrowIfNull(taxonomyBroker);
     ArgumentNullException.ThrowIfNull(loggerFactory);
     this.invoiceNoSqlBroker = invoiceNoSqlBroker;
-    this.taxonomyBroker = taxonomyBroker;
     this.logger = loggerFactory.CreateLogger<IMerchantStorageFoundationService>();
   }
 
@@ -49,7 +43,6 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchantObject));
     ValidateMerchantIdentifierIsSet(merchant.id);
-    CanonicalizeMerchantClassification(merchant);
 
     await invoiceNoSqlBroker
       .CreateMerchantAsync(merchant, cancellationToken)
@@ -105,7 +98,6 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantObject));
-    CanonicalizeMerchantClassification(updatedMerchant);
     var currentMerchant = await invoiceNoSqlBroker.ReadMerchantAsync(merchantIdentifier, parentCompanyId, cancellationToken).ConfigureAwait(false);
     ArgumentNullException.ThrowIfNull(currentMerchant);
 

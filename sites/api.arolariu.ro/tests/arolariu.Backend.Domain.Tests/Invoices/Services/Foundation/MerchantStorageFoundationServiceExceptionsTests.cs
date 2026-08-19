@@ -9,7 +9,6 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
-using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -32,7 +31,6 @@ public class MerchantStorageFoundationServiceExceptionsTests
   {
     _sut = new MerchantStorageFoundationService(
       _broker.Object,
-      TaxonomyBrokerTestFactory.Create(),
       NullLoggerFactory.Instance);
   }
 

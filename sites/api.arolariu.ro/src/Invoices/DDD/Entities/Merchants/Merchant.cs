@@ -35,11 +35,6 @@ public sealed class Merchant : NamedEntity<Guid>
   [JsonPropertyOrder(3)]
   public StandardClassification? Classification { get; set; }
 
-  /// <summary>Gets or sets the pending manual selection for the next persistence operation.</summary>
-  [System.Text.Json.Serialization.JsonIgnore]
-  [Newtonsoft.Json.JsonIgnore]
-  internal ClassificationSelection? PendingClassificationSelection { get; set; }
-
   /// <summary>Structured contact / address information.</summary>
   /// <remarks><para>Represents a value object snapshot. Entire object is typically replaced on update; no deep merge semantics currently.</para></remarks>
   [JsonPropertyOrder(4)]

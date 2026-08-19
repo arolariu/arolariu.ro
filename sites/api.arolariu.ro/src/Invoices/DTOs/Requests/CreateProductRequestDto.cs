@@ -33,9 +33,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// The product name as it appears on the receipt. Required.
 /// This will be used as the product's display name.
 /// </param>
-/// <param name="Classification">
-/// Optional manual GS1 GPC classification selection.
-/// </param>
 /// <param name="Quantity">
 /// The quantity of product units. Must be positive.
 /// Supports decimal for fractional quantities (e.g., 1.5 kg).
@@ -59,7 +56,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// <code>
 /// var request = new CreateProductRequestDto(
 ///     Name: "Milk 1L (LAPTE ZUZU)",
-///     Classification: null,
 ///     Quantity: 2,
 ///     QuantityUnit: "buc",
 ///     ProductCode: "5941234567890",
@@ -71,13 +67,11 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// </code>
 /// </example>
 /// <seealso cref="Product"/>
-/// <seealso cref="ClassificationSelectionDto"/>
 /// <seealso cref="Allergen"/>
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct CreateProductRequestDto(
   [Required] string Name,
-  ClassificationSelectionDto? Classification,
   decimal Quantity,
   string? QuantityUnit,
   string? ProductCode,
@@ -104,7 +98,6 @@ public readonly record struct CreateProductRequestDto(
   {
     Name = Name,
     Classification = null,
-    PendingClassificationSelection = Classification?.ToSelection(),
     Quantity = Quantity,
     QuantityUnit = QuantityUnit ?? string.Empty,
     ProductCode = ProductCode ?? string.Empty,

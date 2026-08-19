@@ -11,7 +11,6 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 using arolariu.Backend.Domain.Tests.Builders;
-using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Microsoft.Extensions.Logging;
 
@@ -47,7 +46,6 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
 
     service = new InvoiceStorageFoundationService(
         mockBroker.Object,
-        TaxonomyBrokerTestFactory.Create(),
         mockLoggerFactory.Object);
   }
 

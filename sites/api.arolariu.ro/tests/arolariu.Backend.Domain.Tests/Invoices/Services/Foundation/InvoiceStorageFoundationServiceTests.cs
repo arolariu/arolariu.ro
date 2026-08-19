@@ -2,19 +2,14 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Services.Foundation;
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptions.Inner;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 using arolariu.Backend.Domain.Tests.Builders;
-using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Microsoft.Extensions.Logging;
 
@@ -50,7 +45,6 @@ public sealed class InvoiceStorageFoundationServiceTests
 
     service = new InvoiceStorageFoundationService(
         mockBroker.Object,
-        TaxonomyBrokerTestFactory.Create(),
         mockLoggerFactory.Object);
   }
 
@@ -64,7 +58,6 @@ public sealed class InvoiceStorageFoundationServiceTests
       Assert.ThrowsExactly<ArgumentNullException>(() =>
           new InvoiceStorageFoundationService(
             null!,
-            TaxonomyBrokerTestFactory.Create(),
             mockLoggerFactory.Object));
 
   /// <summary>
@@ -76,7 +69,6 @@ public sealed class InvoiceStorageFoundationServiceTests
     // Arrange & Act
     var svc = new InvoiceStorageFoundationService(
         mockBroker.Object,
-        TaxonomyBrokerTestFactory.Create(),
         mockLoggerFactory.Object);
 
     // Assert
@@ -86,102 +78,6 @@ public sealed class InvoiceStorageFoundationServiceTests
   #endregion
 
   #region CreateInvoiceObject Tests
-
-  /// <summary>Verifies a pending ECOICOP selection is canonicalized before persistence.</summary>
-  [TestMethod]
-  public async Task CreateInvoiceObject_PendingEcoicopSelection_PersistsCanonicalClassification()
-  {
-    Invoice invoice = InvoiceBuilder.CreateRandomInvoice();
-    invoice.Classification = null;
-    invoice.PendingClassificationSelection =
-      new ClassificationSelection(
-        ClassificationSystem.EcoicopV2,
-        TaxonomyBrokerTestFactory.EcoicopCode);
-
-    mockBroker
-      .Setup(broker => broker.CreateInvoiceAsync(invoice, It.IsAny<CancellationToken>()))
-      .ReturnsAsync(invoice);
-
-    await service.CreateInvoiceObject(
-      invoice,
-      invoice.UserIdentifier,
-      CancellationToken.None);
-
-    Assert.IsNotNull(invoice.Classification);
-    Assert.AreEqual(ClassificationSystem.EcoicopV2, invoice.Classification.System);
-    Assert.AreEqual(TaxonomyBrokerTestFactory.EcoicopCode, invoice.Classification.Code);
-    Assert.IsNull(invoice.PendingClassificationSelection);
-  }
-
-  /// <summary>Verifies the invoice surface rejects non-ECOICOP selections.</summary>
-  [TestMethod]
-  public async Task CreateInvoiceObject_GpcSelection_ThrowsValidationExceptionWithoutWriting()
-  {
-    Invoice invoice = InvoiceBuilder.CreateRandomInvoice();
-    invoice.PendingClassificationSelection =
-      new ClassificationSelection(
-        ClassificationSystem.Gs1Gpc,
-        TaxonomyBrokerTestFactory.GpcCode);
-
-    await Assert.ThrowsExactlyAsync<InvoiceFoundationValidationException>(() =>
-      service.CreateInvoiceObject(
-        invoice,
-        invoice.UserIdentifier,
-        CancellationToken.None));
-
-    mockBroker.Verify(
-      broker => broker.CreateInvoiceAsync(
-        It.IsAny<Invoice>(),
-        It.IsAny<CancellationToken>()),
-      Times.Never);
-  }
-
-  /// <summary>Verifies untouched canonical snapshots are not re-resolved.</summary>
-  [TestMethod]
-  public async Task CreateInvoiceObject_ExistingClassificationWithoutPending_PreservesSnapshot()
-  {
-    Invoice invoice = InvoiceBuilder.CreateRandomInvoice();
-    StandardClassification classification = TaxonomyBrokerTestFactory.Create().Resolve(
-      ClassificationSystem.EcoicopV2,
-      TaxonomyBrokerTestFactory.EcoicopCode,
-      ClassificationOrigin.Manual,
-      null,
-      []);
-    invoice.Classification = classification;
-    invoice.PendingClassificationSelection = null;
-
-    mockBroker
-      .Setup(broker => broker.CreateInvoiceAsync(invoice, It.IsAny<CancellationToken>()))
-      .ReturnsAsync(invoice);
-
-    await service.CreateInvoiceObject(
-      invoice,
-      invoice.UserIdentifier,
-      CancellationToken.None);
-
-    Assert.AreSame(classification, invoice.Classification);
-  }
-
-  /// <summary>Verifies unknown ECOICOP codes preserve not-found semantics.</summary>
-  [TestMethod]
-  public async Task CreateInvoiceObject_UnknownEcoicopCode_PropagatesNotFoundWithoutWriting()
-  {
-    Invoice invoice = InvoiceBuilder.CreateRandomInvoice();
-    invoice.PendingClassificationSelection =
-      new ClassificationSelection(ClassificationSystem.EcoicopV2, "missing");
-
-    await Assert.ThrowsExactlyAsync<TaxonomyCodeNotFoundException>(() =>
-      service.CreateInvoiceObject(
-        invoice,
-        invoice.UserIdentifier,
-        CancellationToken.None));
-
-    mockBroker.Verify(
-      broker => broker.CreateInvoiceAsync(
-        It.IsAny<Invoice>(),
-        It.IsAny<CancellationToken>()),
-      Times.Never);
-  }
 
   /// <summary>
   /// Validates successful invoice creation through foundation layer.
@@ -485,115 +381,6 @@ public sealed class InvoiceStorageFoundationServiceTests
   #endregion
 
   #region UpdateInvoiceObject Tests
-
-  /// <summary>Verifies pending product selections are canonicalized before invoice persistence.</summary>
-  [TestMethod]
-  public async Task UpdateInvoiceObject_PendingProductSelection_PersistsCanonicalGpc()
-  {
-    Invoice invoice = InvoiceBuilder.CreateRandomInvoice();
-    Product product = invoice.Items.First();
-    product.Classification = null;
-    product.PendingClassificationSelection =
-      new ClassificationSelection(
-        ClassificationSystem.Gs1Gpc,
-        TaxonomyBrokerTestFactory.GpcCode);
-
-    mockBroker
-      .Setup(broker => broker.UpdateInvoiceAsync(
-        invoice.id,
-        invoice,
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync(invoice);
-
-    await service.UpdateInvoiceObject(
-      invoice,
-      invoice.id,
-      invoice.UserIdentifier,
-      CancellationToken.None);
-
-    Assert.AreEqual(ClassificationSystem.Gs1Gpc, product.Classification?.System);
-    Assert.AreEqual(TaxonomyBrokerTestFactory.GpcCode, product.Classification?.Code);
-    Assert.IsNull(product.PendingClassificationSelection);
-  }
-
-  /// <summary>Verifies untouched product classification snapshots retain their version and evidence.</summary>
-  [TestMethod]
-  public async Task UpdateInvoiceObject_ExistingProductClassificationWithoutPending_PreservesSnapshot()
-  {
-    Invoice invoice = InvoiceBuilder.CreateRandomInvoice();
-    Product product = invoice.Items.First();
-    StandardClassification classification = TaxonomyBrokerTestFactory.Create().Resolve(
-      ClassificationSystem.Gs1Gpc,
-      TaxonomyBrokerTestFactory.GpcCode,
-      ClassificationOrigin.Manual,
-      null,
-      []);
-    product.Classification = classification;
-    product.PendingClassificationSelection = null;
-
-    mockBroker
-      .Setup(broker => broker.UpdateInvoiceAsync(
-        invoice.id,
-        invoice,
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync(invoice);
-
-    await service.UpdateInvoiceObject(
-      invoice,
-      invoice.id,
-      invoice.UserIdentifier,
-      CancellationToken.None);
-
-    Assert.AreSame(classification, product.Classification);
-  }
-
-  /// <summary>Verifies products reject non-GPC selections before persistence.</summary>
-  [TestMethod]
-  public async Task UpdateInvoiceObject_EcoicopProductSelection_ThrowsValidationWithoutWriting()
-  {
-    Invoice invoice = InvoiceBuilder.CreateRandomInvoice();
-    invoice.Items.First().PendingClassificationSelection =
-      new ClassificationSelection(
-        ClassificationSystem.EcoicopV2,
-        TaxonomyBrokerTestFactory.EcoicopCode);
-
-    await Assert.ThrowsExactlyAsync<InvoiceFoundationValidationException>(() =>
-      service.UpdateInvoiceObject(
-        invoice,
-        invoice.id,
-        invoice.UserIdentifier,
-        CancellationToken.None));
-
-    mockBroker.Verify(
-      broker => broker.UpdateInvoiceAsync(
-        It.IsAny<Guid>(),
-        It.IsAny<Invoice>(),
-        It.IsAny<CancellationToken>()),
-      Times.Never);
-  }
-
-  /// <summary>Verifies unknown GPC codes preserve not-found semantics.</summary>
-  [TestMethod]
-  public async Task UpdateInvoiceObject_UnknownGpcCode_PropagatesNotFoundWithoutWriting()
-  {
-    Invoice invoice = InvoiceBuilder.CreateRandomInvoice();
-    invoice.Items.First().PendingClassificationSelection =
-      new ClassificationSelection(ClassificationSystem.Gs1Gpc, "missing");
-
-    await Assert.ThrowsExactlyAsync<TaxonomyCodeNotFoundException>(() =>
-      service.UpdateInvoiceObject(
-        invoice,
-        invoice.id,
-        invoice.UserIdentifier,
-        CancellationToken.None));
-
-    mockBroker.Verify(
-      broker => broker.UpdateInvoiceAsync(
-        It.IsAny<Guid>(),
-        It.IsAny<Invoice>(),
-        It.IsAny<CancellationToken>()),
-      Times.Never);
-  }
 
   /// <summary>
   /// Validates successful invoice update through foundation layer.

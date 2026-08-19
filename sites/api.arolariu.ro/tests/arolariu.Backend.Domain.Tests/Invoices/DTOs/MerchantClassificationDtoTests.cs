@@ -14,25 +14,19 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class MerchantClassificationDtoTests
 {
-  /// <summary>Verifies add-to-invoice selections remain unresolved until persistence.</summary>
+  /// <summary>Verifies newly linked merchants remain unclassified.</summary>
   [TestMethod]
-  public void AddMerchantToInvoice_NaceSelection_SetsPendingSelectionOnly()
+  public void AddMerchantToInvoice_NewMerchant_IsUnclassified()
   {
     var request = new AddMerchantToInvoiceRequestDto(
       "Store",
       "Description",
-      new ClassificationSelectionDto(
-        ClassificationSystem.Nace21,
-        TaxonomyBrokerTestFactory.NaceCode),
       null,
       null);
 
     Merchant merchant = request.ToMerchant();
 
     Assert.IsNull(merchant.Classification);
-    Assert.AreEqual(
-      ClassificationSystem.Nace21,
-      merchant.PendingClassificationSelection?.System);
   }
 
   /// <summary>Verifies standalone merchant creation remains unclassified.</summary>
@@ -48,22 +42,26 @@ public sealed class MerchantClassificationDtoTests
     Assert.IsNull(request.ToMerchant().Classification);
   }
 
-  /// <summary>Verifies a null PUT selection clears the merchant classification.</summary>
+  /// <summary>Verifies merchant replacement preserves the existing canonical snapshot.</summary>
   [TestMethod]
-  public void UpdateMerchant_NullSelection_LeavesMerchantUnclassified()
+  public void UpdateMerchant_ExistingClassification_PreservesSnapshot()
   {
+    StandardClassification classification = TaxonomyBrokerTestFactory.Create().Resolve(
+      ClassificationSystem.Nace21,
+      TaxonomyBrokerTestFactory.NaceCode,
+      ClassificationOrigin.Manual,
+      null,
+      []);
     var request = new UpdateMerchantRequestDto(
       "Store",
       "Description",
       null,
       null,
-      null,
       null);
 
-    Merchant merchant = request.ToMerchant(Guid.NewGuid());
+    Merchant merchant = request.ToMerchant(Guid.NewGuid(), classification);
 
-    Assert.IsNull(merchant.Classification);
-    Assert.IsNull(merchant.PendingClassificationSelection);
+    Assert.AreSame(classification, merchant.Classification);
   }
 
   /// <summary>Verifies response mapping exposes the complete canonical NACE snapshot.</summary>

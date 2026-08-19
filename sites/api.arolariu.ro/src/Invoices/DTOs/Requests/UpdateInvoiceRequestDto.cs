@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 
 /// <summary>
 /// Request DTO for full invoice replacement operations (HTTP PUT semantics).
@@ -38,9 +39,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// A detailed description of the invoice. Required, but may be empty.
 /// Useful for notes, context, or search purposes.
 /// </param>
-/// <param name="Classification">
-/// Optional manual ECOICOP classification selection. Null leaves the invoice unclassified.
-/// </param>
 /// <param name="PaymentInformation">
 /// Payment details including currency, total amount, tax, and payment method.
 /// Required for proper financial tracking and reporting.
@@ -62,7 +60,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// var request = new UpdateInvoiceRequestDto(
 ///     Name: "Updated Invoice Name",
 ///     Description: "Monthly groceries",
-///     Classification: null,
 ///     PaymentInformation: new PaymentInformation(Currency.RON, 150.50m, 28.60m, PaymentMethod.Card),
 ///     MerchantReference: merchantId,
 ///     IsImportant: true,
@@ -80,7 +77,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 public readonly record struct UpdateInvoiceRequestDto(
   [Required] string Name,
   [Required] string Description,
-  ClassificationSelectionDto? Classification,
   PaymentInformation PaymentInformation,
   Guid? MerchantReference,
   bool IsImportant,
@@ -110,10 +106,16 @@ public readonly record struct UpdateInvoiceRequestDto(
   /// <param name="userIdentifier">
   /// The owner's user identifier. Used for authorization and partitioning.
   /// </param>
+  /// <param name="existingClassification">
+  /// The canonical classification to preserve during replacement.
+  /// </param>
   /// <returns>
   /// A fully populated <see cref="Invoice"/> instance ready for persistence.
   /// </returns>
-  public Invoice ToInvoice(Guid invoiceId, Guid userIdentifier)
+  public Invoice ToInvoice(
+    Guid invoiceId,
+    Guid userIdentifier,
+    StandardClassification? existingClassification)
   {
     var invoice = new Invoice
     {
@@ -121,8 +123,7 @@ public readonly record struct UpdateInvoiceRequestDto(
       UserIdentifier = userIdentifier,
       Name = Name,
       Description = Description,
-      Classification = null,
-      PendingClassificationSelection = Classification?.ToSelection(),
+      Classification = existingClassification,
       PaymentInformation = PaymentInformation,
       MerchantReference = MerchantReference ?? Guid.Empty,
       IsImportant = IsImportant,

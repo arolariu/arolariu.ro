@@ -9,7 +9,6 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
-using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -32,7 +31,6 @@ public class InvoiceStorageFoundationServiceExceptionsTests
   {
     _sut = new InvoiceStorageFoundationService(
       _broker.Object,
-      TaxonomyBrokerTestFactory.Create(),
       NullLoggerFactory.Instance);
   }
 

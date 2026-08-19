@@ -53,13 +53,6 @@ public sealed class Invoice : NamedEntity<Guid>
   public StandardClassification? Classification { get; set; }
 
   /// <summary>
-  /// Gets or sets the pending manual classification selection for the next persistence operation.
-  /// </summary>
-  [System.Text.Json.Serialization.JsonIgnore]
-  [Newtonsoft.Json.JsonIgnore]
-  internal ClassificationSelection? PendingClassificationSelection { get; set; }
-
-  /// <summary>
   /// The invoice scan value object.
   /// </summary>
   [JsonPropertyOrder(6)]
@@ -201,7 +194,6 @@ public sealed class Invoice : NamedEntity<Guid>
       id = original.id, // The identifier remains the same.
       UserIdentifier = partialUpdates.UserIdentifier != Guid.Empty ? partialUpdates.UserIdentifier : original.UserIdentifier,
       Classification = partialUpdates.Classification ?? original.Classification,
-      PendingClassificationSelection = partialUpdates.PendingClassificationSelection,
       Name = !string.IsNullOrWhiteSpace(partialUpdates.Name) ? partialUpdates.Name : original.Name,
       Description = !string.IsNullOrWhiteSpace(partialUpdates.Description) ? partialUpdates.Description : original.Description,
       IsImportant = partialUpdates.IsImportant != original.IsImportant ? partialUpdates.IsImportant : original.IsImportant,

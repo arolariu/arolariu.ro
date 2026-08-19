@@ -10,7 +10,6 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
-using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.DTOs.Responses;
 using arolariu.Backend.Domain.Tests.Builders;
 using arolariu.Backend.Domain.Tests.Invoices.Helpers;
@@ -132,27 +131,6 @@ public sealed class ClassificationPersistenceSerializationTests
     Assert.IsNull(merchant.Classification);
   }
 
-  /// <summary>Verifies pending mutation state cannot escape through API or Cosmos serialization.</summary>
-  [TestMethod]
-  public void PendingSelection_IsExcludedFromApiAndCosmosSerialization()
-  {
-    var invoice = new Invoice
-    {
-      id = Guid.NewGuid(),
-      UserIdentifier = Guid.NewGuid(),
-      PendingClassificationSelection =
-        new ClassificationSelection(
-          ClassificationSystem.EcoicopV2,
-          TaxonomyBrokerTestFactory.EcoicopCode),
-    };
-
-    string cosmosJson = JsonConvert.SerializeObject(invoice);
-    string apiJson = System.Text.Json.JsonSerializer.Serialize(invoice);
-
-    Assert.IsFalse(cosmosJson.Contains("PendingClassificationSelection", StringComparison.Ordinal));
-    Assert.IsFalse(apiJson.Contains("pendingClassificationSelection", StringComparison.Ordinal));
-  }
-
   /// <summary>Verifies API responses retain canonical string enum wire values.</summary>
   [TestMethod]
   public void ApiResponse_Classification_UsesCanonicalStringWireValues()
@@ -172,63 +150,6 @@ public sealed class ClassificationPersistenceSerializationTests
 
     StringAssert.Contains(json, "\"classification\":", StringComparison.Ordinal);
     StringAssert.Contains(json, "\"system\":\"ECOICOP_V2\"", StringComparison.Ordinal);
-  }
-
-  /// <summary>Verifies full classifications cannot be deserialized as request selections.</summary>
-  [TestMethod]
-  public void ApiRequest_ClassificationWithCanonicalMetadata_IsRejected()
-  {
-    string json = """
-      {
-        "name": "Groceries",
-        "description": "Weekly shop",
-        "classification": {
-          "system": "ECOICOP_V2",
-          "code": "01.1",
-          "officialLabel": "Caller controlled"
-        },
-        "paymentInformation": {},
-        "merchantReference": null,
-        "isImportant": false,
-        "additionalMetadata": null
-      }
-      """;
-
-    Assert.ThrowsExactly<System.Text.Json.JsonException>(() =>
-      System.Text.Json.JsonSerializer.Deserialize<UpdateInvoiceRequestDto>(
-        json,
-        WebJsonOptions));
-  }
-
-  /// <summary>Verifies API requests expose only system and code for classification input.</summary>
-  [TestMethod]
-  public void ApiRequest_Classification_ContainsOnlySystemAndCode()
-  {
-    var request = new UpdateInvoiceRequestDto(
-      "Groceries",
-      "Weekly shop",
-      new ClassificationSelectionDto(
-        ClassificationSystem.EcoicopV2,
-        TaxonomyBrokerTestFactory.EcoicopCode),
-      new PaymentInformation(),
-      null,
-      false,
-      null);
-
-    string json = System.Text.Json.JsonSerializer.Serialize(
-      request,
-      WebJsonOptions);
-
-    StringAssert.Contains(json, "\"classification\":", StringComparison.Ordinal);
-    StringAssert.Contains(json, "\"system\":\"ECOICOP_V2\"", StringComparison.Ordinal);
-    StringAssert.Contains(
-      json,
-      $"\"code\":\"{TaxonomyBrokerTestFactory.EcoicopCode}\"",
-      StringComparison.Ordinal);
-    Assert.IsFalse(json.Contains("officialLabel", StringComparison.Ordinal));
-    Assert.IsFalse(json.Contains("hierarchy", StringComparison.Ordinal));
-    Assert.IsFalse(json.Contains("confidence", StringComparison.Ordinal));
-    Assert.IsFalse(json.Contains("evidence", StringComparison.Ordinal));
   }
 
   private static T RoundTrip<T>(T value)
