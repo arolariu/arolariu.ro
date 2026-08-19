@@ -108,11 +108,8 @@ public sealed class AzureStorageQueueBroker : IQueueBroker
         cancellationToken)
       .ConfigureAwait(false);
 
-    return receipt with
-    {
-      PopReceipt = response.Value.PopReceipt,
-      NextVisibleAt = response.Value.NextVisibleOn,
-    };
+    receipt.UpdateVisibility(response.Value.PopReceipt, response.Value.NextVisibleOn);
+    return receipt;
   }
 
   /// <inheritdoc/>

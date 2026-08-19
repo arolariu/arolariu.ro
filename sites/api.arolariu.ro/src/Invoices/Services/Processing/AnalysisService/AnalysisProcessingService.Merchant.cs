@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 
-using arolariu.Backend.Domain.Invoices.DDD.Analysis.Aggregates;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
@@ -16,28 +15,26 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 public sealed partial class AnalysisProcessingService
 {
   /// <inheritdoc/>
-  public async Task<MerchantAnalysisExecutionResult> ExecuteMerchantRunAsync(
-    AnalysisRun run,
+  public async Task<MerchantAnalysisExecutionResult> ExecuteMerchantAnalysisAsync(
+    AnalysisQueueMessage message,
     Merchant merchant,
-    string leaseOwner,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(ExecuteMerchantRunAsync));
-      ArgumentNullException.ThrowIfNull(run);
+      using var activity = InvoicePackageTracing.StartActivity(nameof(ExecuteMerchantAnalysisAsync));
+      ArgumentNullException.ThrowIfNull(message);
       ArgumentNullException.ThrowIfNull(merchant);
-      ArgumentException.ThrowIfNullOrWhiteSpace(leaseOwner);
-      activity?.SetTag("analysis.run_id", run.Id.ToString());
-      activity?.SetTag("analysis.target_id", run.TargetId.ToString());
+      activity?.SetTag("analysis.correlation_id", message.CorrelationId.ToString());
+      activity?.SetTag("analysis.target_id", message.TargetId.ToString());
 
       cancellationToken.ThrowIfCancellationRequested();
 
-      if (run.TargetType != AnalysisTargetType.Merchant || run.MerchantOptions is null)
+      if (message.TargetType != AnalysisTargetType.Merchant || message.MerchantOptions is null)
       {
-        return CreateMerchantFailureResult(run, "INVALID_RUN_CONFIGURATION", AnalysisFailureReason.Validation);
+        return CreateMerchantFailureResult(message, AnalysisFailureReason.Validation);
       }
 
-      MerchantAnalysisOptions options = run.MerchantOptions;
+      MerchantAnalysisOptions options = message.MerchantOptions;
       var completedCapabilities = new ConcurrentQueue<AnalysisCapability>();
 
       MerchantClassificationResult? classification = null;
@@ -46,9 +43,12 @@ public sealed partial class AnalysisProcessingService
       if (options.MerchantClassification)
       {
         classification = await ExecuteBestEffortAsync(
-          run,
+          message,
           AnalysisCapability.MerchantClassification,
-          () => classificationOrchestrationService.ClassifyMerchantAsync(merchant, run.Id, cancellationToken),
+          () => classificationOrchestrationService.ClassifyMerchantAsync(
+            merchant,
+            message.CorrelationId,
+            cancellationToken),
           completedCapabilities)
           .ConfigureAwait(false);
       }
@@ -56,26 +56,27 @@ public sealed partial class AnalysisProcessingService
       if (options.DescriptionGeneration)
       {
         description = await ExecuteBestEffortAsync(
-          run,
+          message,
           AnalysisCapability.DescriptionGeneration,
-          () => analysisOrchestrationService.GenerateMerchantDescriptionAsync(merchant, run.Id, cancellationToken),
+          () => analysisOrchestrationService.GenerateMerchantDescriptionAsync(
+            merchant,
+            message.CorrelationId,
+            cancellationToken),
           completedCapabilities)
           .ConfigureAwait(false);
       }
 
       var patch = new MerchantAnalysisPatch(classification, description);
 
-      return new MerchantAnalysisExecutionResult(run, patch, [.. completedCapabilities]);
+      return new MerchantAnalysisExecutionResult(message, patch, [.. completedCapabilities]);
     }).ConfigureAwait(false);
 
   private static MerchantAnalysisExecutionResult CreateMerchantFailureResult(
-    AnalysisRun run,
-    string failureCode,
+    AnalysisQueueMessage message,
     AnalysisFailureReason failureReason) =>
     new(
-      run,
+      message,
       new MerchantAnalysisPatch(null, null),
       CompletedCapabilities: [],
-      FailureCode: failureCode,
       FailureReason: failureReason);
 }

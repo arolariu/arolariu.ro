@@ -2,13 +2,12 @@ namespace arolariu.Backend.Domain.Invoices.Services.Management;
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Exceptions;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DDD.Analysis.Aggregates;
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
@@ -24,18 +23,25 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 /// <summary>
 /// Routes endpoint and worker requests into CRUD or analysis processing, and coordinates cross-processing analysis persistence.
 /// </summary>
-public sealed partial class InvoiceManagementService(
-  ICrudProcessingService crudProcessingService,
-  IAnalysisProcessingService analysisProcessingService) : IInvoiceManagementService
+public sealed partial class InvoiceManagementService : IInvoiceManagementService
 {
-  private const string TargetPersistenceFailureCode = "TARGET_PERSISTENCE_FAILED";
-  private const string TargetNotFoundFailureCode = "TARGET_NOT_FOUND";
-  private const string UnsupportedTargetTypeFailureCode = "UNSUPPORTED_TARGET_TYPE";
+  private const long MaximumDequeueCount = 5;
+  private readonly ICrudProcessingService crudProcessingService;
+  private readonly IAnalysisProcessingService analysisProcessingService;
 
-  private readonly ICrudProcessingService crudProcessingService =
-    crudProcessingService ?? throw new ArgumentNullException(nameof(crudProcessingService));
-  private readonly IAnalysisProcessingService analysisProcessingService =
-    analysisProcessingService ?? throw new ArgumentNullException(nameof(analysisProcessingService));
+  /// <summary>
+  /// Initializes a new instance of the <see cref="InvoiceManagementService"/> class.
+  /// </summary>
+  public InvoiceManagementService(
+    ICrudProcessingService crudProcessingService,
+    IAnalysisProcessingService analysisProcessingService)
+  {
+    ArgumentNullException.ThrowIfNull(crudProcessingService);
+    ArgumentNullException.ThrowIfNull(analysisProcessingService);
+
+    this.crudProcessingService = crudProcessingService;
+    this.analysisProcessingService = analysisProcessingService;
+  }
 
   /// <inheritdoc/>
   public async Task CreateInvoice(Invoice invoice, Guid? userIdentifier, CancellationToken cancellationToken) =>
@@ -278,11 +284,11 @@ public sealed partial class InvoiceManagementService(
     }).ConfigureAwait(false);
 
   /// <inheritdoc/>
-  public async Task EnsureAnalysisStoreAsync(CancellationToken cancellationToken) =>
+  public async Task EnsureAnalysisQueueAsync(CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(EnsureAnalysisStoreAsync));
-      await analysisProcessingService.EnsureAnalysisStoreAsync(cancellationToken).ConfigureAwait(false);
+      using var activity = InvoicePackageTracing.StartActivity(nameof(EnsureAnalysisQueueAsync));
+      await analysisProcessingService.EnsureAnalysisQueueAsync(cancellationToken).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
   /// <inheritdoc/>
@@ -324,189 +330,146 @@ public sealed partial class InvoiceManagementService(
     }).ConfigureAwait(false);
 
   /// <inheritdoc/>
-  public async Task<bool> TryExecuteNextRunAsync(string leaseOwner, CancellationToken cancellationToken) =>
+  public async Task<bool> TryExecuteNextAnalysisAsync(CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(TryExecuteNextRunAsync));
-      AnalysisRun? claimed = await analysisProcessingService.ClaimNextRunAsync(leaseOwner, cancellationToken).ConfigureAwait(false);
+      using var activity = InvoicePackageTracing.StartActivity(nameof(TryExecuteNextAnalysisAsync));
+      AnalysisQueueReceipt? receipt = await analysisProcessingService
+        .ReceiveNextAnalysisAsync(cancellationToken)
+        .ConfigureAwait(false);
 
-      if (claimed is null)
+      if (receipt is null)
       {
         return false;
       }
 
-      return await analysisProcessingService
-        .ExecuteWithLeaseHeartbeatAsync(
-          claimed,
-          leaseOwner,
-          leaseToken => ExecuteClaimedRunAsync(claimed, leaseOwner, leaseToken),
+      AnalysisFailureReason? failureReason = await analysisProcessingService
+        .ExecuteWithVisibilityRenewalAsync(
+          receipt,
+          renewalToken => ExecuteAnalysisAttemptAsync(receipt.Message, renewalToken),
           cancellationToken)
         .ConfigureAwait(false);
-    }).ConfigureAwait(false);
 
-  private async Task<bool> ExecuteClaimedRunAsync(
-    AnalysisRun claimed,
-    string leaseOwner,
-    CancellationToken cancellationToken)
-  {
-    switch (claimed.TargetType)
-    {
-      case AnalysisTargetType.Invoice:
-        return await ExecuteInvoiceRunAsync(claimed, leaseOwner, cancellationToken).ConfigureAwait(false);
-
-      case AnalysisTargetType.Merchant:
-        return await ExecuteMerchantRunAsync(claimed, leaseOwner, cancellationToken).ConfigureAwait(false);
-
-      default:
+      if (!failureReason.HasValue || receipt.DequeueCount >= MaximumDequeueCount)
+      {
         await analysisProcessingService
-          .FailRunExecutionAsync(
-            new FailedAnalysisExecutionResult(claimed, UnsupportedTargetTypeFailureCode, AnalysisFailureReason.UnsupportedTarget),
-            leaseOwner,
+          .DeleteAnalysisAsync(
+            receipt,
+            failureReason,
             cancellationToken)
           .ConfigureAwait(false);
-        return true;
-    }
-  }
+      }
 
-  [SuppressMessage(
+      return true;
+    }).ConfigureAwait(false);
+
+  [System.Diagnostics.CodeAnalysis.SuppressMessage(
     "Design",
     "CA1031:Do not catch general exception types",
-    Justification = "Any persistence failure after successful analysis must fail the durable run explicitly.")]
-  private async Task<bool> ExecuteInvoiceRunAsync(
-    AnalysisRun claimed,
-    string leaseOwner,
+    Justification = "Every queue attempt must be reduced to a bounded failure reason so Azure Queue can apply retry or terminal deletion policy.")]
+  private async Task<AnalysisFailureReason?> ExecuteAnalysisAttemptAsync(
+    AnalysisQueueMessage message,
     CancellationToken cancellationToken)
   {
-    Invoice invoice;
-
     try
     {
-      invoice = await crudProcessingService
-        .ReadInvoice(claimed.TargetId, claimed.TargetPartitionIdentifier ?? claimed.RequestedBy, cancellationToken)
-        .ConfigureAwait(false);
-    }
-    catch (Exception exception) when (ContainsExceptionMarker<INotFoundException>(exception))
-    {
-      await FailMissingTargetAsync(claimed, leaseOwner, cancellationToken).ConfigureAwait(false);
-      return true;
-    }
-
-    InvoiceAnalysisExecutionResult executionResult = await analysisProcessingService
-      .ExecuteInvoiceRunAsync(claimed, invoice, leaseOwner, cancellationToken)
-      .ConfigureAwait(false);
-
-    if (executionResult.Failed)
-    {
-      await analysisProcessingService
-        .FailRunExecutionAsync(executionResult, leaseOwner, cancellationToken)
-        .ConfigureAwait(false);
-      return true;
-    }
-
-    try
-    {
-      InvoiceAnalysisExecutionResult persisted = await crudProcessingService
-        .PersistInvoiceAnalysisAsync(executionResult, cancellationToken)
-        .ConfigureAwait(false);
-
-      await analysisProcessingService
-        .CompleteRunExecutionAsync(persisted, leaseOwner, cancellationToken)
-        .ConfigureAwait(false);
-
-      return true;
+      return message.TargetType switch
+      {
+        AnalysisTargetType.Invoice
+          => await ExecuteInvoiceAnalysisAsync(message, cancellationToken).ConfigureAwait(false),
+        AnalysisTargetType.Merchant
+          => await ExecuteMerchantAnalysisAsync(message, cancellationToken).ConfigureAwait(false),
+        _ => AnalysisFailureReason.UnsupportedTarget,
+      };
     }
     catch (OperationCanceledException)
     {
       throw;
     }
-    catch (Exception)
+    catch (Exception exception)
     {
-      await analysisProcessingService
-        .FailRunExecutionAsync(
-          new FailedAnalysisExecutionResult(claimed, TargetPersistenceFailureCode, AnalysisFailureReason.TargetPersistence),
-          leaseOwner,
-          cancellationToken)
-        .ConfigureAwait(false);
-
-      return true;
+      return ResolveFailureReason(exception);
     }
   }
 
-  [SuppressMessage(
-    "Design",
-    "CA1031:Do not catch general exception types",
-    Justification = "Any persistence failure after successful analysis must fail the durable run explicitly.")]
-  private async Task<bool> ExecuteMerchantRunAsync(
-    AnalysisRun claimed,
-    string leaseOwner,
+  private async Task<AnalysisFailureReason?> ExecuteInvoiceAnalysisAsync(
+    AnalysisQueueMessage message,
     CancellationToken cancellationToken)
   {
-    Merchant merchant;
-
-    try
-    {
-      merchant = await crudProcessingService
-        .ReadMerchant(claimed.TargetId, claimed.TargetPartitionIdentifier, cancellationToken)
-        .ConfigureAwait(false);
-    }
-    catch (Exception exception) when (ContainsExceptionMarker<INotFoundException>(exception))
-    {
-      await FailMissingTargetAsync(claimed, leaseOwner, cancellationToken).ConfigureAwait(false);
-      return true;
-    }
-
-    MerchantAnalysisExecutionResult executionResult = await analysisProcessingService
-      .ExecuteMerchantRunAsync(claimed, merchant, leaseOwner, cancellationToken)
-      .ConfigureAwait(false);
-
-    if (executionResult.Failed)
-    {
-      await analysisProcessingService
-        .FailRunExecutionAsync(executionResult, leaseOwner, cancellationToken)
-        .ConfigureAwait(false);
-      return true;
-    }
-
-    try
-    {
-      MerchantAnalysisExecutionResult persisted = await crudProcessingService
-        .PersistMerchantAnalysisAsync(executionResult, cancellationToken)
-        .ConfigureAwait(false);
-
-      await analysisProcessingService
-        .CompleteRunExecutionAsync(persisted, leaseOwner, cancellationToken)
-        .ConfigureAwait(false);
-
-      return true;
-    }
-    catch (OperationCanceledException)
-    {
-      throw;
-    }
-    catch (Exception)
-    {
-      await analysisProcessingService
-        .FailRunExecutionAsync(
-          new FailedAnalysisExecutionResult(claimed, TargetPersistenceFailureCode, AnalysisFailureReason.TargetPersistence),
-          leaseOwner,
-          cancellationToken)
-        .ConfigureAwait(false);
-
-      return true;
-    }
-  }
-
-  private async Task FailMissingTargetAsync(
-    AnalysisRun claimed,
-    string leaseOwner,
-    CancellationToken cancellationToken) =>
-    await analysisProcessingService
-      .FailRunExecutionAsync(
-        new FailedAnalysisExecutionResult(
-          claimed,
-          TargetNotFoundFailureCode,
-          AnalysisFailureReason.DependencyValidation),
-        leaseOwner,
+    Invoice invoice = await crudProcessingService
+      .ReadInvoice(
+        message.TargetId,
+        message.TargetPartitionIdentifier ?? message.RequestedBy,
         cancellationToken)
       .ConfigureAwait(false);
+
+    InvoiceAnalysisExecutionResult executionResult = await analysisProcessingService
+      .ExecuteInvoiceAnalysisAsync(message, invoice, cancellationToken)
+      .ConfigureAwait(false);
+
+    if (executionResult.Failed)
+    {
+      return executionResult.FailureReason;
+    }
+
+    _ = await crudProcessingService
+      .PersistInvoiceAnalysisAsync(executionResult, cancellationToken)
+      .ConfigureAwait(false);
+
+    return null;
+  }
+
+  private async Task<AnalysisFailureReason?> ExecuteMerchantAnalysisAsync(
+    AnalysisQueueMessage message,
+    CancellationToken cancellationToken)
+  {
+    Merchant merchant = await crudProcessingService
+      .ReadMerchant(message.TargetId, message.TargetPartitionIdentifier, cancellationToken)
+      .ConfigureAwait(false);
+
+    MerchantAnalysisExecutionResult executionResult = await analysisProcessingService
+      .ExecuteMerchantAnalysisAsync(message, merchant, cancellationToken)
+      .ConfigureAwait(false);
+
+    if (executionResult.Failed)
+    {
+      return executionResult.FailureReason;
+    }
+
+    _ = await crudProcessingService
+      .PersistMerchantAnalysisAsync(executionResult, cancellationToken)
+      .ConfigureAwait(false);
+
+    return null;
+  }
+
+  private static AnalysisFailureReason ResolveFailureReason(Exception exception)
+  {
+    if (ContainsExceptionMarker<INotFoundException>(exception))
+    {
+      return AnalysisFailureReason.DependencyValidation;
+    }
+
+    if (ContainsExceptionMarker<ITimeoutException>(exception))
+    {
+      return AnalysisFailureReason.Dependency;
+    }
+
+    if (ContainsExceptionMarker<IDependencyValidationException>(exception))
+    {
+      return AnalysisFailureReason.DependencyValidation;
+    }
+
+    if (ContainsExceptionMarker<IDependencyException>(exception))
+    {
+      return AnalysisFailureReason.Dependency;
+    }
+
+    if (ContainsExceptionMarker<IValidationException>(exception))
+    {
+      return AnalysisFailureReason.Validation;
+    }
+
+    return AnalysisFailureReason.TargetPersistence;
+  }
 }

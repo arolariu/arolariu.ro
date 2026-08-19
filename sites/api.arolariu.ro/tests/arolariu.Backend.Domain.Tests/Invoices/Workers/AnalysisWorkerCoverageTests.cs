@@ -136,7 +136,7 @@ public sealed class AnalysisWorkerCoverageTests
   /// </summary>
   private sealed class FakeAnalysisProcessingService(StartupFailureProbe probe) : WorkerManagementServiceBase
   {
-    public override Task EnsureAnalysisStoreAsync(CancellationToken cancellationToken)
+    public override Task EnsureAnalysisQueueAsync(CancellationToken cancellationToken)
     {
       probe.Events.Enqueue("ensure-store");
 
@@ -162,7 +162,7 @@ public sealed class AnalysisWorkerCoverageTests
       CancellationToken cancellationToken) =>
         throw new NotSupportedException();
 
-    public override Task<bool> TryExecuteNextRunAsync(string leaseOwner, CancellationToken cancellationToken)
+    public override Task<bool> TryExecuteNextAnalysisAsync(CancellationToken cancellationToken)
     {
       probe.Events.Enqueue("try-execute");
       probe.SignalIteration();
@@ -170,4 +170,3 @@ public sealed class AnalysisWorkerCoverageTests
     }
   }
 }
-

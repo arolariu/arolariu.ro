@@ -2,7 +2,6 @@ namespace arolariu.Backend.Domain.Invoices.Workers;
 
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -33,7 +32,6 @@ public sealed class AnalysisWorker : BackgroundService
   private readonly IServiceScopeFactory serviceScopeFactory;
   private readonly ILogger<AnalysisWorker> logger;
   private readonly TimeSpan idleDelay;
-  private readonly string workerId;
 
   /// <summary>
   /// Initializes a new instance of the <see cref="AnalysisWorker"/> class.
@@ -70,9 +68,6 @@ public sealed class AnalysisWorker : BackgroundService
     this.serviceScopeFactory = serviceScopeFactory;
     this.logger = logger;
     this.idleDelay = idleDelay;
-    this.workerId = string.Create(
-      CultureInfo.InvariantCulture,
-      $"{Environment.MachineName}-{Environment.ProcessId}-{Guid.CreateVersion7()}");
   }
 
   /// <inheritdoc/>
@@ -98,7 +93,7 @@ public sealed class AnalysisWorker : BackgroundService
         await using (scope.ConfigureAwait(false))
         {
           var processing = scope.ServiceProvider.GetRequiredService<IInvoiceManagementService>();
-          processed = await processing.TryExecuteNextRunAsync(workerId, stoppingToken).ConfigureAwait(false);
+          processed = await processing.TryExecuteNextAnalysisAsync(stoppingToken).ConfigureAwait(false);
         }
       }
       catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -140,7 +135,7 @@ public sealed class AnalysisWorker : BackgroundService
       await using (scope.ConfigureAwait(false))
       {
         var processing = scope.ServiceProvider.GetRequiredService<IInvoiceManagementService>();
-        await processing.EnsureAnalysisStoreAsync(stoppingToken).ConfigureAwait(false);
+        await processing.EnsureAnalysisQueueAsync(stoppingToken).ConfigureAwait(false);
       }
     }
     catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

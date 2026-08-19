@@ -48,7 +48,7 @@ public static partial class InvoiceEndpoints
         .QueueInvoiceAnalysisAsync(id, potentialUserIdentifier, request, writeScope.Token)
         .ConfigureAwait(false);
 
-      activity?.SetTag("analysis.run_id", acceptedRun.RunId.ToString());
+      activity?.SetTag("analysis.message_id", acceptedRun.MessageId);
       activity?.RecordSuccess("Invoice analysis run queued");
 
       // The Location header points at the analyzed target, because the target is what the client polls for the
@@ -93,7 +93,7 @@ public static partial class InvoiceEndpoints
         .QueueMerchantAnalysisAsync(id, potentialUserIdentifier, request, writeScope.Token)
         .ConfigureAwait(false);
 
-      activity?.SetTag("analysis.run_id", acceptedRun.RunId.ToString());
+      activity?.SetTag("analysis.message_id", acceptedRun.MessageId);
       activity?.RecordSuccess("Merchant analysis run queued");
 
       return TypedResults.Accepted($"/rest/v1/merchants/{id}", acceptedRun);

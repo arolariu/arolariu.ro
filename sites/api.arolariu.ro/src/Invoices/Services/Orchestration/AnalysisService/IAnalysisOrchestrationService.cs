@@ -6,129 +6,69 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DDD.Analysis.Aggregates;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
-using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 /// <summary>
-/// Defines the orchestration-layer boundary for durable analysis runs and non-classification capabilities.
+/// Defines queue lifecycle and non-classification analysis capability coordination.
 /// </summary>
 public interface IAnalysisOrchestrationService
 {
-  /// <summary>
-  /// Ensures the durable analysis-run store exists.
-  /// </summary>
-  Task EnsureRunStoreAsync(CancellationToken cancellationToken);
+  /// <summary>Ensures the backend-owned analysis queue exists.</summary>
+  Task EnsureQueueAsync(CancellationToken cancellationToken);
 
-  /// <summary>
-  /// Queues a durable invoice analysis run with already-resolved effective options.
-  /// </summary>
-  Task<AnalysisRun> QueueInvoiceRunAsync(
-    Guid invoiceId,
-    Guid ownerIdentifier,
-    InvoiceAnalysisOptions options,
-    string traceId,
+  /// <summary>Enqueues one analysis message and returns Azure Queue's message identifier.</summary>
+  Task<string> EnqueueAnalysisAsync(
+    AnalysisQueueMessage message,
     CancellationToken cancellationToken);
 
-  /// <summary>
-  /// Queues a durable merchant analysis run with already-resolved effective options.
-  /// </summary>
-  Task<AnalysisRun> QueueMerchantRunAsync(
-    Guid merchantId,
-    Guid ownerIdentifier,
-    Guid parentCompanyId,
-    MerchantAnalysisOptions options,
-    string traceId,
+  /// <summary>Receives at most one visible analysis message.</summary>
+  Task<AnalysisQueueReceipt?> ReceiveAnalysisAsync(
+    TimeSpan visibilityTimeout,
     CancellationToken cancellationToken);
 
-  /// <summary>
-  /// Claims the next available durable analysis run.
-  /// </summary>
-  Task<AnalysisRun?> ClaimNextRunAsync(
-    string leaseOwner,
-    DateTimeOffset now,
-    TimeSpan leaseDuration,
+  /// <summary>Renews one received analysis message's visibility timeout.</summary>
+  Task<AnalysisQueueReceipt> RenewAnalysisVisibilityAsync(
+    AnalysisQueueReceipt receipt,
+    TimeSpan visibilityTimeout,
     CancellationToken cancellationToken);
 
-  /// <summary>
-  /// Counts currently pending durable runs by target type.
-  /// </summary>
-  Task<IReadOnlyDictionary<AnalysisTargetType, long>> CountPendingRunsAsync(
-    DateTimeOffset now,
+  /// <summary>Deletes one completed or terminally failed analysis message.</summary>
+  Task DeleteAnalysisAsync(
+    AnalysisQueueReceipt receipt,
     CancellationToken cancellationToken);
 
-  /// <summary>
-  /// Renews the lease of a claimed durable run.
-  /// </summary>
-  Task RenewRunLeaseAsync(
-    Guid runId,
-    string leaseOwner,
-    DateTimeOffset now,
-    TimeSpan leaseDuration,
-    CancellationToken cancellationToken);
-
-  /// <summary>
-  /// Marks a claimed durable run as completed.
-  /// </summary>
-  Task CompleteRunAsync(
-    Guid runId,
-    string leaseOwner,
-    IReadOnlyCollection<AnalysisCapability> completedCapabilities,
-    DateTimeOffset completedAt,
-    CancellationToken cancellationToken);
-
-  /// <summary>
-  /// Marks a claimed durable run as failed.
-  /// </summary>
-  Task FailRunAsync(
-    Guid runId,
-    string leaseOwner,
-    string failureCode,
-    DateTimeOffset failedAt,
-    CancellationToken cancellationToken);
-
-  /// <summary>
-  /// Extracts typed receipt data from already-approved invoice scans.
-  /// </summary>
+  /// <summary>Extracts typed receipt data from invoice scans.</summary>
   Task<ReceiptExtractionResult> ExtractInvoiceAsync(
     IReadOnlyList<InvoiceScan> scans,
     CancellationToken cancellationToken);
 
-  /// <summary>
-  /// Generates an invoice summary from transient product analysis inputs.
-  /// </summary>
+  /// <summary>Generates an invoice summary.</summary>
   Task<InvoiceSummaryResult> GenerateInvoiceSummaryAsync(
     IReadOnlyList<ProductAnalysisInput> products,
-    Guid sourceRunId,
+    Guid correlationId,
     CancellationToken cancellationToken);
 
-  /// <summary>
-  /// Assesses allergens for transient product analysis inputs.
-  /// </summary>
+  /// <summary>Assesses allergens for classified products.</summary>
   Task<ProductAllergenAssessmentResult> AssessAllergensAsync(
     IReadOnlyList<ProductAnalysisInput> products,
     ProductClassificationResult classifications,
-    Guid sourceRunId,
+    Guid correlationId,
     CancellationToken cancellationToken);
 
-  /// <summary>
-  /// Generates recipe suggestions from classified and allergen-assessed products.
-  /// </summary>
+  /// <summary>Generates recipe suggestions.</summary>
   Task<RecipeGenerationResult> GenerateRecipesAsync(
     IReadOnlyList<ProductAnalysisInput> products,
     ProductClassificationResult classifications,
     ProductAllergenAssessmentResult allergens,
     int maximumRecipes,
-    Guid sourceRunId,
+    Guid correlationId,
     CancellationToken cancellationToken);
 
-  /// <summary>
-  /// Generates a merchant description from merchant evidence.
-  /// </summary>
+  /// <summary>Generates a merchant description.</summary>
   Task<MerchantDescriptionResult> GenerateMerchantDescriptionAsync(
     Merchant merchant,
-    Guid sourceRunId,
+    Guid correlationId,
     CancellationToken cancellationToken);
 }

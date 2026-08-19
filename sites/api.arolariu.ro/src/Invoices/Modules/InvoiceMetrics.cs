@@ -211,65 +211,65 @@ public static class InvoiceMetrics
     Meter.CreateObservableGauge(
       "invoices.analysis.queue.depth",
       ObserveAnalysisQueueDepth,
-      "runs",
-      "Current depth of the durable analysis run queue.");
+      "messages",
+      "Current depth of the analysis message queue.");
 
   /// <summary>
-  /// Count of analysis runs accepted into the durable queue.
+  /// Count of analysis messages accepted into the queue.
   /// Tags: <c>target_type</c> (invoice, merchant, product).
   /// </summary>
-  public static readonly Counter<long> AnalysisRunsQueued =
-    Meter.CreateCounter<long>("invoices.analysis.queue.enqueued", "runs", "Analysis runs accepted into the durable queue.");
+  public static readonly Counter<long> AnalysisMessagesQueued =
+    Meter.CreateCounter<long>("invoices.analysis.queue.enqueued", "messages", "Analysis messages accepted into the queue.");
 
   /// <summary>
-  /// Time an analysis run waited in queue before being claimed by a worker, in milliseconds.
+  /// Time an analysis message waited in queue before being received by a worker, in milliseconds.
   /// Tags: <c>target_type</c> (invoice, merchant, product).
   /// </summary>
   public static readonly Histogram<double> AnalysisQueueWaitDuration =
-    Meter.CreateHistogram<double>("invoices.analysis.queue.wait", "ms", "Time an analysis run waited in queue before being claimed.");
+    Meter.CreateHistogram<double>("invoices.analysis.queue.wait", "ms", "Time an analysis message waited before being received.");
 
   /// <summary>
-  /// Records an analysis run being accepted into the durable queue.
+  /// Records an analysis message being accepted into the queue.
   /// </summary>
   /// <param name="targetType">The analysis target type.</param>
-  public static void RecordAnalysisRunQueued(AnalysisTargetType targetType) =>
-    AnalysisRunsQueued.Add(1, new KeyValuePair<string, object?>(TargetTypeTag, ToTag(targetType)));
+  public static void RecordAnalysisMessageQueued(AnalysisTargetType targetType) =>
+    AnalysisMessagesQueued.Add(1, new KeyValuePair<string, object?>(TargetTypeTag, ToTag(targetType)));
 
   /// <summary>
-  /// Records an analysis run leaving the queue because a worker claimed it for the first time, along with how
+  /// Records an analysis message leaving the queue because a worker received it, along with how
   /// long it waited.
   /// </summary>
   /// <param name="targetType">The analysis target type.</param>
-  /// <param name="waitDurationMs">How long the run waited in queue before being claimed, in milliseconds.</param>
-  public static void RecordAnalysisRunClaimed(AnalysisTargetType targetType, double waitDurationMs) =>
+  /// <param name="waitDurationMs">How long the message waited in queue before being received, in milliseconds.</param>
+  public static void RecordAnalysisMessageReceived(AnalysisTargetType targetType, double waitDurationMs) =>
     AnalysisQueueWaitDuration.Record(waitDurationMs, new KeyValuePair<string, object?>(TargetTypeTag, ToTag(targetType)));
 
   /// <summary>
-  /// Publishes an observed durable pending-run count so the queue-depth gauge reports real store state.
+  /// Publishes an observed pending-message count so the queue-depth gauge reports real store state.
   /// </summary>
   /// <param name="targetType">The analysis target type the count belongs to.</param>
-  /// <param name="pendingRunCount">The number of runs awaiting a worker for that target type.</param>
-  /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="pendingRunCount"/> is negative.</exception>
-  public static void PublishAnalysisQueueDepth(AnalysisTargetType targetType, long pendingRunCount)
-    => PublishAnalysisQueueDepth(targetType, pendingRunCount, DateTimeOffset.UtcNow, DefaultQueueDepthMaximumAge);
+  /// <param name="pendingMessageCount">The number of messages awaiting a worker for that target type.</param>
+  /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="pendingMessageCount"/> is negative.</exception>
+  public static void PublishAnalysisQueueDepth(AnalysisTargetType targetType, long pendingMessageCount)
+    => PublishAnalysisQueueDepth(targetType, pendingMessageCount, DateTimeOffset.UtcNow, DefaultQueueDepthMaximumAge);
 
   /// <summary>
-  /// Publishes an observed durable pending-run count with an explicit bounded-freshness window.
+  /// Publishes an observed pending-message count with an explicit bounded-freshness window.
   /// </summary>
   /// <param name="targetType">The analysis target type the count belongs to.</param>
-  /// <param name="pendingRunCount">The number of runs awaiting a worker for that target type.</param>
+  /// <param name="pendingMessageCount">The number of messages awaiting a worker for that target type.</param>
   /// <param name="observedAt">The instant the durable count was observed.</param>
   /// <param name="maximumAge">How long the observable gauge may report this count.</param>
-  /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="pendingRunCount"/> is negative or <paramref name="maximumAge"/> is not positive.</exception>
+  /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="pendingMessageCount"/> is negative or <paramref name="maximumAge"/> is not positive.</exception>
   internal static void PublishAnalysisQueueDepth(
     AnalysisTargetType targetType,
-    long pendingRunCount,
+    long pendingMessageCount,
     DateTimeOffset observedAt,
     TimeSpan maximumAge)
   {
-    ArgumentOutOfRangeException.ThrowIfNegative(pendingRunCount);
+    ArgumentOutOfRangeException.ThrowIfNegative(pendingMessageCount);
     ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(maximumAge, TimeSpan.Zero);
-    AnalysisQueueDepthSnapshot[ToTag(targetType)] = new QueueDepthSample(pendingRunCount, observedAt.Add(maximumAge));
+    AnalysisQueueDepthSnapshot[ToTag(targetType)] = new QueueDepthSample(pendingMessageCount, observedAt.Add(maximumAge));
   }
 
   /// <summary>
@@ -287,50 +287,50 @@ public static class InvoiceMetrics
   /// <summary>
   /// Captures one durable queue-depth observation and the deadline after which it must no longer be exported.
   /// </summary>
-  /// <param name="PendingRunCount">The pending run count from the durable store.</param>
+  /// <param name="PendingRunCount">The pending message count from the queue.</param>
   /// <param name="ExpiresAt">The instant after which the gauge omits this sample.</param>
   private sealed record QueueDepthSample(long PendingRunCount, DateTimeOffset ExpiresAt);
 
   #endregion
 
-  #region Analysis Pipeline — Run Telemetry
+  #region Analysis Pipeline — Message Telemetry
 
   /// <summary>
-  /// Counts terminal analysis run outcomes.
+  /// Counts terminal analysis message outcomes.
   /// Tags: <c>target_type</c> (invoice, merchant, product), <c>outcome</c> (success, partial, failure), optionally <c>failure.reason</c>.
   /// </summary>
-  public static readonly Counter<long> AnalysisRunOutcomes =
-    Meter.CreateCounter<long>("invoices.analysis.runs", "runs", "Analysis run completions with outcome.");
+  public static readonly Counter<long> AnalysisMessageOutcomes =
+    Meter.CreateCounter<long>("invoices.analysis.messages", "messages", "Analysis message completions with outcome.");
 
   /// <summary>
-  /// Duration of an analysis run from claim to terminal outcome, in milliseconds.
+  /// Duration of an analysis message attempt, in milliseconds.
   /// Tags: <c>target_type</c>, <c>outcome</c>, optionally <c>failure.reason</c>.
   /// </summary>
-  public static readonly Histogram<double> AnalysisRunDuration =
-    Meter.CreateHistogram<double>("invoices.analysis.run.duration", "ms", "Analysis run duration from claim to completion.");
+  public static readonly Histogram<double> AnalysisMessageDuration =
+    Meter.CreateHistogram<double>("invoices.analysis.message.duration", "ms", "Analysis message attempt duration.");
 
   /// <summary>
   /// Total number of analysis runs recovered from an expired worker lease.
   /// Tags: <c>target_type</c>, <c>attempt</c> (recovery attempt count).
   /// </summary>
   public static readonly Counter<long> AnalysisLeaseRecovered =
-    Meter.CreateCounter<long>("invoices.analysis.lease.recovered", "events", "Analysis runs recovered from an expired worker lease.");
+    Meter.CreateCounter<long>("invoices.analysis.lease.recovered", "events", "Analysis messages recovered after visibility expiration.");
 
   /// <summary>
   /// Total number of analysis runs whose in-flight worker lease could no longer be renewed.
   /// Tags: <c>target_type</c>.
   /// </summary>
   public static readonly Counter<long> AnalysisLeaseLost =
-    Meter.CreateCounter<long>("invoices.analysis.lease.lost", "events", "Analysis runs whose in-flight worker lease could not be renewed.");
+    Meter.CreateCounter<long>("invoices.analysis.lease.lost", "events", "Analysis messages whose visibility could not be renewed.");
 
   /// <summary>
-  /// Records the terminal outcome and duration of an analysis run.
+  /// Records the terminal outcome and duration of an analysis message attempt.
   /// </summary>
   /// <param name="targetType">The analysis target type.</param>
   /// <param name="outcome">The terminal outcome.</param>
   /// <param name="durationMs">Duration in milliseconds from claim to completion.</param>
   /// <param name="failureReason">Optional bounded failure reason.</param>
-  public static void RecordAnalysisRunOutcome(
+  public static void RecordAnalysisMessageOutcome(
     AnalysisTargetType targetType,
     AnalysisOutcome outcome,
     double durationMs,
@@ -342,15 +342,15 @@ public static class InvoiceMetrics
       tags.Add(FailureReasonTag, ToTag(failureReason.Value));
     }
 
-    AnalysisRunOutcomes.Add(1, tags);
-    AnalysisRunDuration.Record(durationMs, tags);
+    AnalysisMessageOutcomes.Add(1, tags);
+    AnalysisMessageDuration.Record(durationMs, tags);
   }
 
   /// <summary>
-  /// Records the recovery of an analysis run whose previous worker lease expired.
+  /// Records the recovery of an analysis message whose previous visibility timeout expired.
   /// </summary>
   /// <param name="targetType">The analysis target type.</param>
-  /// <param name="attemptCount">The run's total claim/recovery attempt count after this recovery.</param>
+  /// <param name="attemptCount">The message dequeue count after recovery.</param>
   public static void RecordAnalysisLeaseRecovered(AnalysisTargetType targetType, int attemptCount) =>
     AnalysisLeaseRecovered.Add(1, new TagList { { TargetTypeTag, ToTag(targetType) }, { "attempt", attemptCount } });
 

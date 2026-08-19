@@ -89,13 +89,13 @@ public sealed class AnalysisWorkerRemainingBranchCoverageTests
   /// </summary>
   private sealed class FakeAnalysisProcessingService(WorkerDelayProbe probe) : WorkerManagementServiceBase
   {
-    public override Task EnsureAnalysisStoreAsync(CancellationToken cancellationToken)
+    public override Task EnsureAnalysisQueueAsync(CancellationToken cancellationToken)
     {
       probe.Events.Enqueue("ensure-store");
       return Task.CompletedTask;
     }
 
-    public override Task<bool> TryExecuteNextRunAsync(string leaseOwner, CancellationToken cancellationToken) =>
+    public override Task<bool> TryExecuteNextAnalysisAsync(CancellationToken cancellationToken) =>
       Task.FromResult(probe.NextProcessedValue());
   }
 }

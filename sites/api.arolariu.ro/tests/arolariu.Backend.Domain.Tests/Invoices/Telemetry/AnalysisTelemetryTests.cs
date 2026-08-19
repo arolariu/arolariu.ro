@@ -58,10 +58,10 @@ public sealed class AnalysisTelemetryTests
   /// published as an observable gauge instead. What enqueue owns is the monotonic arrival rate.
   /// </remarks>
   [TestMethod]
-  public void RecordAnalysisRunQueued_ValidTargetType_IncrementsEnqueueCounter()
+  public void RecordAnalysisMessageQueued_ValidTargetType_IncrementsEnqueueCounter()
   {
     var measurements = CaptureMeasurements(
-      () => InvoiceMetrics.RecordAnalysisRunQueued(AnalysisTargetType.Invoice),
+      () => InvoiceMetrics.RecordAnalysisMessageQueued(AnalysisTargetType.Invoice),
       "invoices.analysis.queue.enqueued");
 
     var measurement = measurements.Single();
@@ -74,13 +74,13 @@ public sealed class AnalysisTelemetryTests
   /// durable-store sampler.
   /// </summary>
   [TestMethod]
-  public void RecordAnalysisRunQueued_ValidTargetType_DoesNotMutateQueueDepth()
+  public void RecordAnalysisMessageQueued_ValidTargetType_DoesNotMutateQueueDepth()
   {
     InvoiceMetrics.ResetAnalysisQueueDepth();
     try
     {
       var measurements = CaptureMeasurements(
-        () => InvoiceMetrics.RecordAnalysisRunQueued(AnalysisTargetType.Invoice),
+        () => InvoiceMetrics.RecordAnalysisMessageQueued(AnalysisTargetType.Invoice),
         "invoices.analysis.queue.depth");
 
       Assert.AreEqual(0, measurements.Count);
@@ -95,13 +95,13 @@ public sealed class AnalysisTelemetryTests
   /// Verifies that claiming an analysis run records the queue wait duration and leaves the depth gauge untouched.
   /// </summary>
   [TestMethod]
-  public void RecordAnalysisRunClaimed_ValidTargetType_RecordsWaitWithoutMutatingDepth()
+  public void RecordAnalysisMessageReceived_ValidTargetType_RecordsWaitWithoutMutatingDepth()
   {
     InvoiceMetrics.ResetAnalysisQueueDepth();
     try
     {
       var measurements = CaptureMeasurements(
-        () => InvoiceMetrics.RecordAnalysisRunClaimed(AnalysisTargetType.Merchant, 42.5),
+        () => InvoiceMetrics.RecordAnalysisMessageReceived(AnalysisTargetType.Merchant, 42.5),
         "invoices.analysis.queue.depth",
         "invoices.analysis.queue.wait");
 
@@ -245,22 +245,22 @@ public sealed class AnalysisTelemetryTests
 
   #endregion
 
-  #region Run Telemetry
+  #region Message Telemetry
 
   /// <summary>
   /// Verifies that recording a successful run outcome, without a failure reason, records the outcome and
   /// duration but does not attach a <c>failure.reason</c> tag.
   /// </summary>
   [TestMethod]
-  public void RecordAnalysisRunOutcome_SuccessWithoutFailureReason_OmitsFailureReasonTag()
+  public void RecordAnalysisMessageOutcome_SuccessWithoutFailureReason_OmitsFailureReasonTag()
   {
     var measurements = CaptureMeasurements(
-      () => InvoiceMetrics.RecordAnalysisRunOutcome(AnalysisTargetType.Invoice, AnalysisOutcome.Success, 1234.0),
-      "invoices.analysis.runs",
-      "invoices.analysis.run.duration");
+      () => InvoiceMetrics.RecordAnalysisMessageOutcome(AnalysisTargetType.Invoice, AnalysisOutcome.Success, 1234.0),
+      "invoices.analysis.messages",
+      "invoices.analysis.message.duration");
 
-    var outcome = measurements.Single(m => m.InstrumentName == "invoices.analysis.runs");
-    var duration = measurements.Single(m => m.InstrumentName == "invoices.analysis.run.duration");
+    var outcome = measurements.Single(m => m.InstrumentName == "invoices.analysis.messages");
+    var duration = measurements.Single(m => m.InstrumentName == "invoices.analysis.message.duration");
 
     Assert.AreEqual(1L, outcome.Value);
     AssertTag(outcome.Tags, "target_type", "invoice");
@@ -276,19 +276,19 @@ public sealed class AnalysisTelemetryTests
   /// <c>failure.reason</c> tag to both the counter and the duration histogram.
   /// </summary>
   [TestMethod]
-  public void RecordAnalysisRunOutcome_FailureWithFailureReason_AttachesFailureReasonTag()
+  public void RecordAnalysisMessageOutcome_FailureWithFailureReason_AttachesFailureReasonTag()
   {
     var measurements = CaptureMeasurements(
-      () => InvoiceMetrics.RecordAnalysisRunOutcome(
+      () => InvoiceMetrics.RecordAnalysisMessageOutcome(
         AnalysisTargetType.Invoice,
         AnalysisOutcome.Failure,
         987.0,
         AnalysisFailureReason.Taxonomy),
-      "invoices.analysis.runs",
-      "invoices.analysis.run.duration");
+      "invoices.analysis.messages",
+      "invoices.analysis.message.duration");
 
-    var outcome = measurements.Single(m => m.InstrumentName == "invoices.analysis.runs");
-    var duration = measurements.Single(m => m.InstrumentName == "invoices.analysis.run.duration");
+    var outcome = measurements.Single(m => m.InstrumentName == "invoices.analysis.messages");
+    var duration = measurements.Single(m => m.InstrumentName == "invoices.analysis.message.duration");
 
     AssertTag(outcome.Tags, "outcome", "failure");
     AssertTag(outcome.Tags, "failure.reason", "taxonomy");
@@ -299,11 +299,11 @@ public sealed class AnalysisTelemetryTests
   /// Verifies that a partial run outcome is recorded with the bounded <c>partial</c> tag value.
   /// </summary>
   [TestMethod]
-  public void RecordAnalysisRunOutcome_Partial_RecordsPartialOutcomeTag()
+  public void RecordAnalysisMessageOutcome_Partial_RecordsPartialOutcomeTag()
   {
     var measurements = CaptureMeasurements(
-      () => InvoiceMetrics.RecordAnalysisRunOutcome(AnalysisTargetType.Product, AnalysisOutcome.Partial, 10.0),
-      "invoices.analysis.runs");
+      () => InvoiceMetrics.RecordAnalysisMessageOutcome(AnalysisTargetType.Product, AnalysisOutcome.Partial, 10.0),
+      "invoices.analysis.messages");
 
     AssertTag(measurements.Single().Tags, "outcome", "partial");
     AssertTag(measurements.Single().Tags, "target_type", "product");
@@ -615,65 +615,18 @@ public sealed class AnalysisTelemetryTests
   /// Verifies that logging a queued run records the run identifier and target type under event id 300220.
   /// </summary>
   [TestMethod]
-  public void LogAnalysisRunQueued_ValidParameters_RecordsRunIdAndTargetType()
+  public void LogAnalysisMessageQueued_ValidParameters_RecordsCorrelationIdAndTargetType()
   {
     var logger = new CapturingLogger();
-    var runId = Guid.NewGuid();
+    var correlationId = Guid.NewGuid();
 
-    logger.LogAnalysisRunQueued(runId, AnalysisTargetType.Invoice);
+    logger.LogAnalysisMessageQueued(correlationId, AnalysisTargetType.Invoice);
 
     var entry = logger.Entries.Single();
     Assert.AreEqual(300_220, entry.EventId.Id);
     Assert.AreEqual(LogLevel.Information, entry.Level);
-    AssertProperty(entry.Properties, "runId", runId);
+    AssertProperty(entry.Properties, "correlationId", correlationId);
     AssertProperty(entry.Properties, "targetType", AnalysisTargetType.Invoice);
-  }
-
-  /// <summary>
-  /// Verifies that logging an observed queue wait records the wait duration.
-  /// </summary>
-  [TestMethod]
-  public void LogAnalysisQueueWaitObserved_ValidParameters_RecordsWaitDuration()
-  {
-    var logger = new CapturingLogger();
-
-    logger.LogAnalysisQueueWaitObserved(Guid.NewGuid(), AnalysisTargetType.Merchant, 31.5);
-
-    var entry = logger.Entries.Single();
-    Assert.AreEqual(300_221, entry.EventId.Id);
-    AssertProperty(entry.Properties, "waitMs", 31.5);
-  }
-
-  /// <summary>
-  /// Verifies that logging a run outcome records the outcome and duration.
-  /// </summary>
-  [TestMethod]
-  public void LogAnalysisRunOutcomeObserved_ValidParameters_RecordsOutcomeAndDuration()
-  {
-    var logger = new CapturingLogger();
-
-    logger.LogAnalysisRunOutcomeObserved(Guid.NewGuid(), AnalysisTargetType.Invoice, AnalysisOutcome.Success, 900.0);
-
-    var entry = logger.Entries.Single();
-    Assert.AreEqual(300_222, entry.EventId.Id);
-    AssertProperty(entry.Properties, "outcome", AnalysisOutcome.Success);
-    AssertProperty(entry.Properties, "durationMs", 900.0);
-  }
-
-  /// <summary>
-  /// Verifies that logging a run failure reason records it at warning level.
-  /// </summary>
-  [TestMethod]
-  public void LogAnalysisRunFailureReasonObserved_ValidParameters_RecordsReasonAtWarning()
-  {
-    var logger = new CapturingLogger();
-
-    logger.LogAnalysisRunFailureReasonObserved(Guid.NewGuid(), AnalysisTargetType.Merchant, AnalysisFailureReason.LeaseLost);
-
-    var entry = logger.Entries.Single();
-    Assert.AreEqual(300_223, entry.EventId.Id);
-    Assert.AreEqual(LogLevel.Warning, entry.Level);
-    AssertProperty(entry.Properties, "failureReason", AnalysisFailureReason.LeaseLost);
   }
 
   /// <summary>

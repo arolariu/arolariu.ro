@@ -7,8 +7,6 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DDD.Analysis.Aggregates;
-using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 /// <summary>
@@ -58,28 +56,4 @@ internal abstract class DatabaseBrokerTestAdapter : IDatabaseBroker
   public virtual ValueTask DeleteMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
     throw new NotSupportedException();
 
-  public virtual ValueTask EnsureAnalysisQueueAsync(CancellationToken cancellationToken) =>
-    throw new NotSupportedException();
-
-  public virtual ValueTask<AnalysisRun> CreateAnalysisRunAsync(AnalysisRun run, CancellationToken cancellationToken) =>
-    throw new NotSupportedException();
-
-  public virtual ValueTask<AnalysisRun?> ReadAnalysisRunAsync(Guid runId, CancellationToken cancellationToken) =>
-    throw new NotSupportedException();
-
-  public virtual IAsyncEnumerable<AnalysisRun> StreamAnalysisRunClaimCandidatesAsync(
-    DateTimeOffset now,
-    CancellationToken cancellationToken) =>
-    throw new NotSupportedException();
-
-  public virtual ValueTask<IReadOnlyDictionary<AnalysisTargetType, long>> CountPendingAnalysisRunsByTargetTypeAsync(
-    DateTimeOffset now,
-    CancellationToken cancellationToken) =>
-    throw new NotSupportedException();
-
-  public virtual ValueTask<AnalysisRun> ReplaceAnalysisRunAsync(
-    AnalysisRun run,
-    string expectedETag,
-    CancellationToken cancellationToken) =>
-    throw new NotSupportedException();
 }

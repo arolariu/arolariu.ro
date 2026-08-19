@@ -340,36 +340,6 @@ public static partial class Log
   public static partial void LogMerchantStorageServiceException(this ILogger logger, string exceptionMessage);
   #endregion
 
-  #region Analysis Run Foundation Logging Methods
-  /// <summary>
-  /// Auto-generated method for logging the analysis run validation exception.
-  /// </summary>
-  /// <param name="logger"></param>
-  [LoggerMessage(100_400, LogLevel.Error, "The analysis run service encountered a validation exception.")]
-  public static partial void LogAnalysisRunValidationException(this ILogger logger);
-
-  /// <summary>
-  /// Auto-generated method for logging the analysis run dependency exception.
-  /// </summary>
-  /// <param name="logger"></param>
-  [LoggerMessage(100_401, LogLevel.Error, "The analysis run service encountered a dependency exception.")]
-  public static partial void LogAnalysisRunDependencyException(this ILogger logger);
-
-  /// <summary>
-  /// Auto-generated method for logging the analysis run dependency validation exception.
-  /// </summary>
-  /// <param name="logger"></param>
-  [LoggerMessage(100_402, LogLevel.Error, "The analysis run service encountered a dependency validation exception.")]
-  public static partial void LogAnalysisRunDependencyValidationException(this ILogger logger);
-
-  /// <summary>
-  /// Auto-generated method for logging the analysis run service exception.
-  /// </summary>
-  /// <param name="logger"></param>
-  [LoggerMessage(100_403, LogLevel.Error, "The analysis run service encountered a service exception.")]
-  public static partial void LogAnalysisRunServiceException(this ILogger logger);
-  #endregion
-
   #region Document Analysis Foundation Logging Methods
   /// <summary>
   /// Auto-generated method for logging the document analysis validation exception.
@@ -493,44 +463,13 @@ public static partial class Log
   // URLs, prompts, or model responses. See AnalysisTelemetryTests.AnalysisLogMethods_NeverAcceptSensitiveParameters.
 
   /// <summary>
-  /// Logs an analysis run being accepted into the durable queue.
+  /// Logs an analysis message being accepted into the queue.
   /// </summary>
   /// <param name="logger">The logger instance.</param>
-  /// <param name="runId">The analysis run identifier.</param>
+  /// <param name="correlationId">The analysis correlation identifier.</param>
   /// <param name="targetType">The analysis target type.</param>
-  [LoggerMessage(300_220, LogLevel.Information, "Analysis run '{runId}' of target type '{targetType}' was queued.")]
-  public static partial void LogAnalysisRunQueued(this ILogger logger, Guid runId, AnalysisTargetType targetType);
-
-  /// <summary>
-  /// Logs how long an analysis run waited in queue before being claimed by a worker.
-  /// </summary>
-  /// <param name="logger">The logger instance.</param>
-  /// <param name="runId">The analysis run identifier.</param>
-  /// <param name="targetType">The analysis target type.</param>
-  /// <param name="waitMs">How long the run waited in queue, in milliseconds.</param>
-  [LoggerMessage(300_221, LogLevel.Information, "Analysis run '{runId}' of target type '{targetType}' waited {waitMs} ms before being claimed.")]
-  public static partial void LogAnalysisQueueWaitObserved(this ILogger logger, Guid runId, AnalysisTargetType targetType, double waitMs);
-
-  /// <summary>
-  /// Logs the terminal outcome and duration of an analysis run.
-  /// </summary>
-  /// <param name="logger">The logger instance.</param>
-  /// <param name="runId">The analysis run identifier.</param>
-  /// <param name="targetType">The analysis target type.</param>
-  /// <param name="outcome">The terminal outcome.</param>
-  /// <param name="durationMs">Duration in milliseconds from claim to completion.</param>
-  [LoggerMessage(300_222, LogLevel.Information, "Analysis run '{runId}' of target type '{targetType}' completed with outcome '{outcome}' in {durationMs} ms.")]
-  public static partial void LogAnalysisRunOutcomeObserved(this ILogger logger, Guid runId, AnalysisTargetType targetType, AnalysisOutcome outcome, double durationMs);
-
-  /// <summary>
-  /// Logs the bounded failure reason attributed to a failed analysis run.
-  /// </summary>
-  /// <param name="logger">The logger instance.</param>
-  /// <param name="runId">The analysis run identifier.</param>
-  /// <param name="targetType">The analysis target type.</param>
-  /// <param name="failureReason">The bounded failure reason.</param>
-  [LoggerMessage(300_223, LogLevel.Warning, "Analysis run '{runId}' of target type '{targetType}' failed with reason '{failureReason}'.")]
-  public static partial void LogAnalysisRunFailureReasonObserved(this ILogger logger, Guid runId, AnalysisTargetType targetType, AnalysisFailureReason failureReason);
+  [LoggerMessage(300_220, LogLevel.Information, "Analysis message '{correlationId}' of target type '{targetType}' was queued.")]
+  public static partial void LogAnalysisMessageQueued(this ILogger logger, Guid correlationId, AnalysisTargetType targetType);
 
   /// <summary>
   /// Logs the outcome and duration of a single analysis capability invocation.

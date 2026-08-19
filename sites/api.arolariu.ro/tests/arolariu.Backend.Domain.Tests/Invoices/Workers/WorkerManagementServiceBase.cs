@@ -19,7 +19,7 @@ internal abstract class WorkerManagementServiceBase : IInvoiceManagementService
 {
   protected static Exception Unsupported() => new NotSupportedException();
 
-  public virtual Task EnsureAnalysisStoreAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+  public virtual Task EnsureAnalysisQueueAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
   public virtual Task<AnalysisAcceptedResponseDto> QueueInvoiceAnalysisAsync(
     Guid invoiceId,
@@ -33,7 +33,7 @@ internal abstract class WorkerManagementServiceBase : IInvoiceManagementService
     AnalyzeMerchantRequestDto request,
     CancellationToken cancellationToken) => Task.FromException<AnalysisAcceptedResponseDto>(Unsupported());
 
-  public virtual Task<bool> TryExecuteNextRunAsync(string leaseOwner, CancellationToken cancellationToken) => Task.FromResult(false);
+  public virtual Task<bool> TryExecuteNextAnalysisAsync(CancellationToken cancellationToken) => Task.FromResult(false);
 
   public Task CreateInvoice(Invoice invoice, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException(Unsupported());
   public Task<Invoice> ReadInvoice(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException<Invoice>(Unsupported());

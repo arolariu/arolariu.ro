@@ -5,7 +5,7 @@ using System;
 /// <summary>
 /// Carries one received analysis message together with the provider receipt required for visibility renewal and deletion.
 /// </summary>
-public sealed record AnalysisQueueReceipt
+public sealed class AnalysisQueueReceipt
 {
   /// <summary>
   /// Initializes a new analysis queue receipt.
@@ -36,11 +36,18 @@ public sealed record AnalysisQueueReceipt
   public string MessageId { get; }
 
   /// <summary>Gets the latest pop receipt required for update and delete operations.</summary>
-  public string PopReceipt { get; init; }
+  public string PopReceipt { get; private set; }
 
   /// <summary>Gets the number of times Azure Queue has delivered this message.</summary>
   public long DequeueCount { get; }
 
   /// <summary>Gets the next time at which the message becomes visible, when supplied by Azure Queue.</summary>
-  public DateTimeOffset? NextVisibleAt { get; init; }
+  public DateTimeOffset? NextVisibleAt { get; private set; }
+
+  internal void UpdateVisibility(string popReceipt, DateTimeOffset? nextVisibleAt)
+  {
+    ArgumentException.ThrowIfNullOrWhiteSpace(popReceipt);
+    PopReceipt = popReceipt;
+    NextVisibleAt = nextVisibleAt;
+  }
 }

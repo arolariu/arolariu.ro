@@ -27,13 +27,13 @@ public sealed partial class AnalysisOrchestrationService
   /// <inheritdoc/>
   public async Task<InvoiceSummaryResult> GenerateInvoiceSummaryAsync(
     IReadOnlyList<ProductAnalysisInput> products,
-    System.Guid sourceRunId,
+    System.    Guid correlationId,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(GenerateInvoiceSummaryAsync));
       return await generativeAnalysisFoundationService
-        .GenerateInvoiceSummaryAsync(products, sourceRunId, cancellationToken)
+        .GenerateInvoiceSummaryAsync(products, correlationId, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 
@@ -41,13 +41,13 @@ public sealed partial class AnalysisOrchestrationService
   public async Task<ProductAllergenAssessmentResult> AssessAllergensAsync(
     IReadOnlyList<ProductAnalysisInput> products,
     ProductClassificationResult classifications,
-    System.Guid sourceRunId,
+    System.    Guid correlationId,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(AssessAllergensAsync));
       return await generativeAnalysisFoundationService
-        .AssessAllergensAsync(products, classifications, sourceRunId, cancellationToken)
+        .AssessAllergensAsync(products, classifications, correlationId, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 
@@ -57,13 +57,13 @@ public sealed partial class AnalysisOrchestrationService
     ProductClassificationResult classifications,
     ProductAllergenAssessmentResult allergens,
     int maximumRecipes,
-    System.Guid sourceRunId,
+    System.    Guid correlationId,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(GenerateRecipesAsync));
       return await generativeAnalysisFoundationService
-        .GenerateRecipesAsync(products, classifications, allergens, maximumRecipes, sourceRunId, cancellationToken)
+        .GenerateRecipesAsync(products, classifications, allergens, maximumRecipes, correlationId, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 }

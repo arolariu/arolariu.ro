@@ -61,10 +61,10 @@ public sealed class AnalysisWorkerMidIterationCancellationTests
     internal int TryExecuteCalls => Volatile.Read(ref tryExecuteCalls);
 
     /// <inheritdoc/>
-    public override Task EnsureAnalysisStoreAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    public override Task EnsureAnalysisQueueAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
     /// <inheritdoc/>
-    public override async Task<bool> TryExecuteNextRunAsync(string leaseOwner, CancellationToken cancellationToken)
+    public override async Task<bool> TryExecuteNextAnalysisAsync(CancellationToken cancellationToken)
     {
       Interlocked.Increment(ref tryExecuteCalls);
       await cancellationSource.CancelAsync().ConfigureAwait(false);

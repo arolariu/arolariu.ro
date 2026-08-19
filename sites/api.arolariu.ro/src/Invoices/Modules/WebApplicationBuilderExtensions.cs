@@ -10,8 +10,9 @@ using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.GenerativeAnalysisBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.AnalysisRuns;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.AnalysisQueue;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.ClassificationAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.DocumentAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysis;
@@ -144,10 +145,11 @@ public static class WebApplicationBuilderExtensions
     services.AddScoped<IBlobStorageBroker, AzureStorageBlobBroker>();
     services.AddScoped<IDatabaseBroker, CosmosDatabaseBroker>();
     services.AddScoped<IGenerativeAnalysisBroker, MicrosoftExtensionsAnalysisBroker>();
+    services.AddScoped<IQueueBroker, AzureStorageQueueBroker>();
     services.AddSingleton<ITaxonomyBroker, JsonTaxonomyBroker>();
 
     // Foundation services:
-    services.AddScoped<IAnalysisRunFoundationService, AnalysisRunFoundationService>();
+    services.AddScoped<IAnalysisQueueFoundationService, AnalysisQueueFoundationService>();
     services.AddScoped<IClassificationAnalysisFoundationService, ClassificationAnalysisFoundationService>();
     services.AddScoped<IDocumentAnalysisFoundationService, DocumentAnalysisFoundationService>();
     services.AddScoped<IGenerativeAnalysisFoundationService, GenerativeAnalysisFoundationService>();

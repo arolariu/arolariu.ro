@@ -15,7 +15,7 @@ public interface IInvoiceManagementService : ICrudProcessingService
   /// <summary>
   /// Ensures the durable analysis run store exists before queueing or worker execution begins.
   /// </summary>
-  Task EnsureAnalysisStoreAsync(CancellationToken cancellationToken);
+  Task EnsureAnalysisQueueAsync(CancellationToken cancellationToken);
 
   /// <summary>
   /// Validates an invoice target through CRUD processing and then queues a durable invoice analysis run.
@@ -38,5 +38,5 @@ public interface IInvoiceManagementService : ICrudProcessingService
   /// <summary>
   /// Claims, executes, persists, and terminally transitions at most one durable analysis run.
   /// </summary>
-  Task<bool> TryExecuteNextRunAsync(string leaseOwner, CancellationToken cancellationToken);
+  Task<bool> TryExecuteNextAnalysisAsync(CancellationToken cancellationToken);
 }

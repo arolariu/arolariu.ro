@@ -181,7 +181,7 @@ public sealed class AnalysisWorkerTests
 
   private sealed class FakeAnalysisProcessingService(WorkerProbe probe) : WorkerManagementServiceBase
   {
-    public override Task EnsureAnalysisStoreAsync(CancellationToken cancellationToken)
+    public override Task EnsureAnalysisQueueAsync(CancellationToken cancellationToken)
     {
       probe.Events.Enqueue("ensure-store");
       return Task.CompletedTask;
@@ -201,7 +201,7 @@ public sealed class AnalysisWorkerTests
       CancellationToken cancellationToken) =>
         throw new NotSupportedException();
 
-    public override Task<bool> TryExecuteNextRunAsync(string leaseOwner, CancellationToken cancellationToken)
+    public override Task<bool> TryExecuteNextAnalysisAsync(CancellationToken cancellationToken)
     {
       probe.Events.Enqueue("try-execute");
       probe.SignalIteration();

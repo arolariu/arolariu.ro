@@ -9,10 +9,9 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 /// Canonicalizes a caller-supplied analysis option set to its published named-profile preset before a run is queued.
 /// </summary>
 /// <remarks>
-/// <para>Profile resolution happens exactly once, at queue time (see <see cref="IAnalysisOrchestrationService.QueueInvoiceRunAsync"/>
-/// and <see cref="IAnalysisOrchestrationService.QueueMerchantRunAsync"/>). The resolved, effective options are then persisted
-/// verbatim on the queued <c>AnalysisRun</c>; a worker that later claims the run MUST NOT recompute or reinterpret the profile
-/// from current defaults.</para>
+/// <para>Profile resolution happens exactly once before
+/// <see cref="IAnalysisOrchestrationService.EnqueueAnalysisAsync"/>. The resolved options are serialized on the queue
+/// message; a worker MUST NOT recompute or reinterpret the profile from current defaults.</para>
 /// <para><see cref="AnalysisProfile.Custom"/> option sets are always caller-composed and are returned unchanged.</para>
 /// </remarks>
 internal static class AnalysisProfileResolver

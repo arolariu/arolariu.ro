@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DDD.Analysis.Aggregates;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
@@ -21,28 +20,26 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 public sealed partial class AnalysisProcessingService
 {
   /// <inheritdoc/>
-  public async Task<InvoiceAnalysisExecutionResult> ExecuteInvoiceRunAsync(
-    AnalysisRun run,
+  public async Task<InvoiceAnalysisExecutionResult> ExecuteInvoiceAnalysisAsync(
+    AnalysisQueueMessage message,
     Invoice invoice,
-    string leaseOwner,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(ExecuteInvoiceRunAsync));
-      ArgumentNullException.ThrowIfNull(run);
+      using var activity = InvoicePackageTracing.StartActivity(nameof(ExecuteInvoiceAnalysisAsync));
+      ArgumentNullException.ThrowIfNull(message);
       ArgumentNullException.ThrowIfNull(invoice);
-      ArgumentException.ThrowIfNullOrWhiteSpace(leaseOwner);
-      activity?.SetTag("analysis.run_id", run.Id.ToString());
-      activity?.SetTag("analysis.target_id", run.TargetId.ToString());
+      activity?.SetTag("analysis.correlation_id", message.CorrelationId.ToString());
+      activity?.SetTag("analysis.target_id", message.TargetId.ToString());
 
       cancellationToken.ThrowIfCancellationRequested();
 
-      if (run.TargetType != AnalysisTargetType.Invoice || run.InvoiceOptions is null)
+      if (message.TargetType != AnalysisTargetType.Invoice || message.InvoiceOptions is null)
       {
-        return CreateInvoiceFailureResult(run, "INVALID_RUN_CONFIGURATION", AnalysisFailureReason.Validation);
+        return CreateInvoiceFailureResult(message, AnalysisFailureReason.Validation);
       }
 
-      InvoiceAnalysisOptions options = run.InvoiceOptions;
+      InvoiceAnalysisOptions options = message.InvoiceOptions;
       var completedCapabilities = new ConcurrentQueue<AnalysisCapability>();
       IReadOnlyList<ProductAnalysisInput> productInputs = BuildProductInputs(invoice.Items);
 
@@ -57,7 +54,7 @@ public sealed partial class AnalysisProcessingService
       if (options.DocumentExtraction)
       {
         extraction = await ExecuteBestEffortAsync(
-          run,
+          message,
           AnalysisCapability.DocumentExtraction,
           () => analysisOrchestrationService.ExtractInvoiceAsync([.. invoice.Scans], cancellationToken),
           completedCapabilities)
@@ -73,9 +70,12 @@ public sealed partial class AnalysisProcessingService
       if (options.InvoiceSummary)
       {
         summary = await ExecuteBestEffortAsync(
-          run,
+          message,
           AnalysisCapability.InvoiceSummary,
-          () => analysisOrchestrationService.GenerateInvoiceSummaryAsync(productInputs, run.Id, cancellationToken),
+          () => analysisOrchestrationService.GenerateInvoiceSummaryAsync(
+            productInputs,
+            message.CorrelationId,
+            cancellationToken),
           completedCapabilities)
           .ConfigureAwait(false);
       }
@@ -83,7 +83,7 @@ public sealed partial class AnalysisProcessingService
       if (options.ProductClassification)
       {
         productClassification = await ExecuteBestEffortAsync(
-          run,
+          message,
           AnalysisCapability.ProductClassification,
           () => classificationOrchestrationService.ClassifyProductsAsync(productInputs, cancellationToken),
           completedCapabilities)
@@ -93,12 +93,12 @@ public sealed partial class AnalysisProcessingService
       if (options.AllergenAssessment && productClassification is not null)
       {
         allergenAssessment = await ExecuteBestEffortAsync(
-          run,
+          message,
           AnalysisCapability.AllergenAssessment,
           () => analysisOrchestrationService.AssessAllergensAsync(
             productInputs,
             productClassification,
-            run.Id,
+            message.CorrelationId,
             cancellationToken),
           completedCapabilities)
           .ConfigureAwait(false);
@@ -107,12 +107,12 @@ public sealed partial class AnalysisProcessingService
       if (options.InvoiceClassification && extraction is not null && productClassification is not null)
       {
         invoiceClassification = await ExecuteBestEffortAsync(
-          run,
+          message,
           AnalysisCapability.InvoiceClassification,
           () => classificationOrchestrationService.ClassifyInvoiceAsync(
             extraction,
             productClassification,
-            run.Id,
+            message.CorrelationId,
             cancellationToken),
           completedCapabilities)
           .ConfigureAwait(false);
@@ -121,14 +121,14 @@ public sealed partial class AnalysisProcessingService
       if (options.RecipeGeneration && productClassification is not null && allergenAssessment is not null)
       {
         recipeGeneration = await ExecuteBestEffortAsync(
-          run,
+          message,
           AnalysisCapability.RecipeGeneration,
           () => analysisOrchestrationService.GenerateRecipesAsync(
             productInputs,
             productClassification,
             allergenAssessment,
             options.MaximumRecipes,
-            run.Id,
+            message.CorrelationId,
             cancellationToken),
           completedCapabilities)
           .ConfigureAwait(false);
@@ -144,14 +144,14 @@ public sealed partial class AnalysisProcessingService
         recipeGeneration);
 
       return new InvoiceAnalysisExecutionResult(
-        run,
+        message,
         patch,
         merchantCandidate,
         [.. completedCapabilities]);
     }).ConfigureAwait(false);
 
   private async Task<TResult?> ExecuteBestEffortAsync<TResult>(
-    AnalysisRun run,
+    AnalysisQueueMessage message,
     AnalysisCapability capability,
     Func<Task<TResult>> operation,
     ConcurrentQueue<AnalysisCapability> completedCapabilities)
@@ -163,7 +163,7 @@ public sealed partial class AnalysisProcessingService
     {
       TResult result = await operation().ConfigureAwait(false);
       completedCapabilities.Enqueue(capability);
-      RecordCapabilityOutcome(run, capability, AnalysisOutcome.Success, startedAt, failureReason: null);
+      RecordCapabilityOutcome(message, capability, AnalysisOutcome.Success, startedAt, failureReason: null);
       return result;
     }
     catch (OperationCanceledException)
@@ -176,13 +176,13 @@ public sealed partial class AnalysisProcessingService
       or AnalysisOrchestrationDependencyValidationException
       or AnalysisOrchestrationServiceException)
     {
-      RecordCapabilityOutcome(run, capability, AnalysisOutcome.Failure, startedAt, ResolveFailureReason(exception));
+      RecordCapabilityOutcome(message, capability, AnalysisOutcome.Failure, startedAt, ResolveFailureReason(exception));
       return null;
     }
   }
 
   private void RecordCapabilityOutcome(
-    AnalysisRun run,
+    AnalysisQueueMessage message,
     AnalysisCapability capability,
     AnalysisOutcome outcome,
     long startedAtTimestamp,
@@ -191,14 +191,14 @@ public sealed partial class AnalysisProcessingService
     double durationMs = System.Diagnostics.Stopwatch.GetElapsedTime(startedAtTimestamp).TotalMilliseconds;
 
     InvoiceMetrics.RecordCapabilityOutcome(capability, outcome, durationMs, failureReason);
-    logger.LogAnalysisCapabilityOutcomeObserved(run.Id, capability, outcome, durationMs);
+    logger.LogAnalysisCapabilityOutcomeObserved(message.CorrelationId, capability, outcome, durationMs);
 
     if (!failureReason.HasValue)
     {
       return;
     }
 
-    logger.LogAnalysisCapabilityFailureReasonObserved(run.Id, capability, failureReason.Value);
+    logger.LogAnalysisCapabilityFailureReasonObserved(message.CorrelationId, capability, failureReason.Value);
 
     if (failureReason.Value == AnalysisFailureReason.InvalidStructuredOutput)
     {
@@ -258,14 +258,12 @@ public sealed partial class AnalysisProcessingService
   }
 
   private static InvoiceAnalysisExecutionResult CreateInvoiceFailureResult(
-    AnalysisRun run,
-    string failureCode,
+    AnalysisQueueMessage message,
     AnalysisFailureReason failureReason) =>
     new(
-      run,
+      message,
       new InvoiceAnalysisPatch(null, null, null, null, null, null, null),
       MerchantCandidate: null,
       CompletedCapabilities: [],
-      FailureCode: failureCode,
       FailureReason: failureReason);
 }

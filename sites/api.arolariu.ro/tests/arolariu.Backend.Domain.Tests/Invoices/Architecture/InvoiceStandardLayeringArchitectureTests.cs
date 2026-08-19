@@ -8,8 +8,9 @@ using arolariu.Backend.Domain.Invoices.Brokers.BlobStorageBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.GenerativeAnalysisBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.AnalysisRuns;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.AnalysisQueue;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.ClassificationAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.DocumentAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysis;
@@ -73,7 +74,7 @@ public sealed class InvoiceStandardLayeringArchitectureTests
 
     AssertConstructorDependencies(
       typeof(AnalysisOrchestrationService),
-      typeof(IAnalysisRunFoundationService),
+      typeof(IAnalysisQueueFoundationService),
       typeof(IDocumentAnalysisFoundationService),
       typeof(IGenerativeAnalysisFoundationService),
       typeof(ILoggerFactory));
@@ -105,8 +106,8 @@ public sealed class InvoiceStandardLayeringArchitectureTests
       typeof(ILoggerFactory));
 
     AssertConstructorDependencies(
-      typeof(AnalysisRunFoundationService),
-      typeof(IDatabaseBroker),
+      typeof(AnalysisQueueFoundationService),
+      typeof(IQueueBroker),
       typeof(ILoggerFactory));
   }
 

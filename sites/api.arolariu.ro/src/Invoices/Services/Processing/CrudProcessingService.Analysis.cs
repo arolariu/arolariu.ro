@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DDD.Analysis.Aggregates;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
@@ -36,15 +35,18 @@ public partial class CrudProcessingService
       using var activity = InvoicePackageTracing.StartActivity(nameof(PersistInvoiceAnalysisAsync));
       ArgumentNullException.ThrowIfNull(executionResult);
 
-      AnalysisRun run = executionResult.ClaimedRun;
+      AnalysisQueueMessage message = executionResult.Message;
       Invoice invoice = await invoiceOrchestrationService
-        .ReadInvoiceObject(run.TargetId, run.TargetPartitionIdentifier ?? run.RequestedBy, cancellationToken)
+        .ReadInvoiceObject(
+          message.TargetId,
+          message.TargetPartitionIdentifier ?? message.RequestedBy,
+          cancellationToken)
         .ConfigureAwait(false);
 
       ArgumentNullException.ThrowIfNull(invoice);
 
       ResolvedMerchant? resolvedMerchant = await ResolveMerchantForInvoiceAsync(
-        run,
+        message,
         executionResult.MerchantCandidate,
         invoice.id,
         cancellationToken)
@@ -57,7 +59,7 @@ public partial class CrudProcessingService
         patch = patch with { MerchantReferenceUpdate = resolvedMerchant.Merchant.id };
       }
 
-      ApplyInvoicePatch(invoice, patch, run.Id);
+      ApplyInvoicePatch(invoice, patch, message.CorrelationId);
       activity?.SetTag("analysis.patch_has_changes", patch.HasChanges);
 
       if (resolvedMerchant is not null)
@@ -92,9 +94,9 @@ public partial class CrudProcessingService
       using var activity = InvoicePackageTracing.StartActivity(nameof(PersistMerchantAnalysisAsync));
       ArgumentNullException.ThrowIfNull(executionResult);
 
-      AnalysisRun run = executionResult.ClaimedRun;
+      AnalysisQueueMessage message = executionResult.Message;
       Merchant merchant = await merchantOrchestrationService
-        .ReadMerchantObject(run.TargetId, run.TargetPartitionIdentifier, cancellationToken)
+        .ReadMerchantObject(message.TargetId, message.TargetPartitionIdentifier, cancellationToken)
         .ConfigureAwait(false);
 
       ArgumentNullException.ThrowIfNull(merchant);
@@ -102,19 +104,23 @@ public partial class CrudProcessingService
       activity?.SetTag("analysis.patch_has_changes", executionResult.TargetPatch.HasChanges);
 
       await merchantOrchestrationService
-        .UpdateMerchantObject(merchant, merchant.id, run.TargetPartitionIdentifier, cancellationToken)
+        .UpdateMerchantObject(
+          merchant,
+          merchant.id,
+          message.TargetPartitionIdentifier,
+          cancellationToken)
         .ConfigureAwait(false);
 
       return executionResult;
     }).ConfigureAwait(false);
 
   private async Task<ResolvedMerchant?> ResolveMerchantForInvoiceAsync(
-    AnalysisRun run,
+    AnalysisQueueMessage message,
     MerchantCandidate? candidate,
     Guid invoiceIdentifier,
     CancellationToken cancellationToken)
   {
-    if (!run.InvoiceOptions?.MerchantResolution ?? true)
+    if (!message.InvoiceOptions?.MerchantResolution ?? true)
     {
       return null;
     }
@@ -150,7 +156,7 @@ public partial class CrudProcessingService
         Address = candidate.Address,
         PhoneNumber = candidate.PhoneNumber,
       },
-      CreatedBy = run.RequestedBy,
+      CreatedBy = message.RequestedBy,
       CreatedAt = DateTimeOffset.UtcNow,
       ReferencedInvoices = [invoiceIdentifier],
     };

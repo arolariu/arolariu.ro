@@ -13,13 +13,13 @@ public sealed partial class AnalysisOrchestrationService
   /// <inheritdoc/>
   public async Task<MerchantDescriptionResult> GenerateMerchantDescriptionAsync(
     Merchant merchant,
-    System.Guid sourceRunId,
+    System.    Guid correlationId,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(GenerateMerchantDescriptionAsync));
       return await generativeAnalysisFoundationService
-        .GenerateMerchantDescriptionAsync(merchant, sourceRunId, cancellationToken)
+        .GenerateMerchantDescriptionAsync(merchant, correlationId, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 }

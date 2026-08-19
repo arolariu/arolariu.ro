@@ -58,12 +58,9 @@ public sealed partial class AnalysisProcessingService
       => LogAndWrapValidation(exception),
 
     AnalysisOrchestrationDependencyValidationException
-      or AnalysisRunLeaseConflictException
-      or AnalysisRunNotFoundException
       => LogAndWrapDependencyValidation(exception),
 
     AnalysisOrchestrationDependencyException
-      or AnalysisRunCosmosDbRateLimitException
       => LogAndWrapDependency(exception),
 
     _ => LogAndWrapService(exception),

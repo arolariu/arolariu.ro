@@ -90,14 +90,14 @@ public sealed class AnalysisWorkerCancelledStartupTests
     internal int TryExecuteCalls => Volatile.Read(ref tryExecuteCalls);
 
     /// <inheritdoc/>
-    public override Task EnsureAnalysisStoreAsync(CancellationToken cancellationToken)
+    public override Task EnsureAnalysisQueueAsync(CancellationToken cancellationToken)
     {
       Interlocked.Increment(ref ensureStoreCalls);
       return Task.CompletedTask;
     }
 
     /// <inheritdoc/>
-    public override Task<bool> TryExecuteNextRunAsync(string leaseOwner, CancellationToken cancellationToken)
+    public override Task<bool> TryExecuteNextAnalysisAsync(CancellationToken cancellationToken)
     {
       Interlocked.Increment(ref tryExecuteCalls);
       return Task.FromResult(false);
@@ -116,14 +116,14 @@ public sealed class AnalysisWorkerCancelledStartupTests
     internal int TryExecuteCalls => Volatile.Read(ref tryExecuteCalls);
 
     /// <inheritdoc/>
-    public override async Task EnsureAnalysisStoreAsync(CancellationToken cancellationToken)
+    public override async Task EnsureAnalysisQueueAsync(CancellationToken cancellationToken)
     {
       await shutdownSource.CancelAsync().ConfigureAwait(false);
       throw new OperationCanceledException(cancellationToken);
     }
 
     /// <inheritdoc/>
-    public override Task<bool> TryExecuteNextRunAsync(string leaseOwner, CancellationToken cancellationToken)
+    public override Task<bool> TryExecuteNextAnalysisAsync(CancellationToken cancellationToken)
     {
       Interlocked.Increment(ref tryExecuteCalls);
       return Task.FromResult(false);
