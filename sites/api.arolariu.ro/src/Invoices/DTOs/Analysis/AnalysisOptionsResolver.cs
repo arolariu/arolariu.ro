@@ -4,6 +4,7 @@ using System;
 
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
+using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
 /// <summary>
 /// Resolves transport-level analysis profiles and capability overrides into validated domain analysis options.
@@ -20,42 +21,38 @@ internal static class AnalysisOptionsResolver
   /// <summary>
   /// Resolves the effective invoice analysis options for a profile and optional overrides.
   /// </summary>
-  /// <param name="profile">The requested profile, or <see langword="null"/> to use the comprehensive preset.</param>
-  /// <param name="overrides">The optional per-capability overrides.</param>
+  /// <param name="request">The flattened invoice analysis request.</param>
   /// <returns>The effective, validated invoice analysis capability selection.</returns>
   internal static InvoiceAnalysisOptions ResolveInvoiceOptions(
-    AnalysisProfile? profile,
-    InvoiceAnalysisOverridesDto? overrides)
+    InvoiceAnalysisRequestDto request)
   {
-    AnalysisProfile requestedProfile = profile ?? AnalysisProfile.Comprehensive;
+    AnalysisProfile requestedProfile = request.Profile ?? AnalysisProfile.Comprehensive;
 
     if (!Enum.IsDefined(requestedProfile))
     {
-      throw new ArgumentOutOfRangeException(nameof(profile), requestedProfile, "Profile must be a defined analysis profile.");
+      throw new ArgumentOutOfRangeException(nameof(request), requestedProfile, "Profile must be a defined analysis profile.");
     }
 
     if (requestedProfile == AnalysisProfile.Custom)
     {
       throw new ArgumentException(
         "The custom profile is an effective response value and cannot be requested.",
-        nameof(profile));
+        nameof(request));
     }
 
-    if (overrides is null || !HasInvoiceCapabilityOverrides(overrides.Value))
+    if (!HasInvoiceCapabilityOverrides(request))
     {
       return ResolveInvoiceBaseline(requestedProfile);
     }
 
     InvoiceAnalysisOptions baseline = ResolveInvoiceBaseline(requestedProfile);
-    InvoiceAnalysisOverridesDto selection = overrides.Value;
+    bool documentExtraction = request.DocumentExtraction?.Enabled ?? baseline.DocumentExtraction;
+    bool invoiceSummary = request.InvoiceSummary?.Enabled ?? baseline.InvoiceSummary;
+    bool productClassification = request.ProductClassification?.Enabled ?? baseline.ProductClassification;
+    bool allergenAssessment = request.AllergenAssessment?.Enabled ?? baseline.AllergenAssessment;
+    bool invoiceClassification = request.InvoiceClassification?.Enabled ?? baseline.InvoiceClassification;
 
-    bool documentExtraction = selection.DocumentExtraction?.Enabled ?? baseline.DocumentExtraction;
-    bool invoiceSummary = selection.InvoiceSummary?.Enabled ?? baseline.InvoiceSummary;
-    bool productClassification = selection.ProductClassification?.Enabled ?? baseline.ProductClassification;
-    bool allergenAssessment = selection.AllergenAssessment?.Enabled ?? baseline.AllergenAssessment;
-    bool invoiceClassification = selection.InvoiceClassification?.Enabled ?? baseline.InvoiceClassification;
-
-    (bool recipeGeneration, int maximumRecipes) = ResolveRecipeSelection(baseline, selection.RecipeGeneration);
+    (bool recipeGeneration, int maximumRecipes) = ResolveRecipeSelection(baseline, request.RecipeGeneration);
 
     if (!documentExtraction
       && !invoiceSummary
@@ -66,7 +63,7 @@ internal static class AnalysisOptionsResolver
     {
       throw new ArgumentException(
         "An analysis run must enable at least one capability.",
-        nameof(overrides));
+        nameof(request));
     }
 
     return new InvoiceAnalysisOptions(
@@ -83,43 +80,39 @@ internal static class AnalysisOptionsResolver
   /// <summary>
   /// Resolves the effective merchant analysis options for a profile and optional overrides.
   /// </summary>
-  /// <param name="profile">The requested profile, or <see langword="null"/> to use the comprehensive preset.</param>
-  /// <param name="overrides">The optional per-capability overrides.</param>
+  /// <param name="request">The flattened merchant analysis request.</param>
   /// <returns>The effective, validated merchant analysis capability selection.</returns>
   internal static MerchantAnalysisOptions ResolveMerchantOptions(
-    AnalysisProfile? profile,
-    MerchantAnalysisOverridesDto? overrides)
+    MerchantAnalysisRequestDto request)
   {
-    AnalysisProfile requestedProfile = profile ?? AnalysisProfile.Comprehensive;
+    AnalysisProfile requestedProfile = request.Profile ?? AnalysisProfile.Comprehensive;
 
     if (!Enum.IsDefined(requestedProfile))
     {
-      throw new ArgumentOutOfRangeException(nameof(profile), requestedProfile, "Profile must be a defined analysis profile.");
+      throw new ArgumentOutOfRangeException(nameof(request), requestedProfile, "Profile must be a defined analysis profile.");
     }
 
     if (requestedProfile == AnalysisProfile.Custom)
     {
       throw new ArgumentException(
         "The custom profile is an effective response value and cannot be requested.",
-        nameof(profile));
+        nameof(request));
     }
 
-    if (overrides is null || !HasMerchantCapabilityOverrides(overrides.Value))
+    if (!HasMerchantCapabilityOverrides(request))
     {
       return ResolveMerchantBaseline(requestedProfile);
     }
 
     MerchantAnalysisOptions baseline = ResolveMerchantBaseline(requestedProfile);
-    MerchantAnalysisOverridesDto selection = overrides.Value;
-
-    bool merchantClassification = selection.MerchantClassification?.Enabled ?? baseline.MerchantClassification;
-    bool descriptionGeneration = selection.DescriptionGeneration?.Enabled ?? baseline.DescriptionGeneration;
+    bool merchantClassification = request.MerchantClassification?.Enabled ?? baseline.MerchantClassification;
+    bool descriptionGeneration = request.DescriptionGeneration?.Enabled ?? baseline.DescriptionGeneration;
 
     if (!merchantClassification && !descriptionGeneration)
     {
       throw new ArgumentException(
         "An analysis run must enable at least one capability.",
-        nameof(overrides));
+        nameof(request));
     }
 
     return new MerchantAnalysisOptions(
@@ -144,17 +137,17 @@ internal static class AnalysisOptionsResolver
       _ => MerchantAnalysisOptions.Balanced(),
     };
 
-  private static bool HasInvoiceCapabilityOverrides(InvoiceAnalysisOverridesDto overrides) =>
-    overrides.DocumentExtraction is not null
-    || overrides.InvoiceSummary is not null
-    || overrides.ProductClassification is not null
-    || overrides.AllergenAssessment is not null
-    || overrides.InvoiceClassification is not null
-    || overrides.RecipeGeneration is not null;
+  private static bool HasInvoiceCapabilityOverrides(InvoiceAnalysisRequestDto request) =>
+    request.DocumentExtraction is not null
+    || request.InvoiceSummary is not null
+    || request.ProductClassification is not null
+    || request.AllergenAssessment is not null
+    || request.InvoiceClassification is not null
+    || request.RecipeGeneration is not null;
 
-  private static bool HasMerchantCapabilityOverrides(MerchantAnalysisOverridesDto overrides) =>
-    overrides.MerchantClassification is not null
-    || overrides.DescriptionGeneration is not null;
+  private static bool HasMerchantCapabilityOverrides(MerchantAnalysisRequestDto request) =>
+    request.MerchantClassification is not null
+    || request.DescriptionGeneration is not null;
 
   private static (bool RecipeGeneration, int MaximumRecipes) ResolveRecipeSelection(
     InvoiceAnalysisOptions baseline,

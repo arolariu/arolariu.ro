@@ -11,6 +11,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
+using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
@@ -284,7 +285,7 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
   public async Task<AnalysisAcceptedResponseDto> QueueInvoiceAnalysisAsync(
     Guid invoiceId,
     Guid userIdentifier,
-    AnalyzeInvoiceRequestDto request,
+    InvoiceAnalysisRequestDto request,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
@@ -298,7 +299,7 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
   public async Task<AnalysisAcceptedResponseDto> QueueMerchantAnalysisAsync(
     Guid merchantId,
     Guid userIdentifier,
-    AnalyzeMerchantRequestDto request,
+    MerchantAnalysisRequestDto request,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {

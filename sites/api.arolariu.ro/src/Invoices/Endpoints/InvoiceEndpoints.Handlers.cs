@@ -1698,7 +1698,7 @@ public static partial class InvoiceEndpoints
     IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
-    AnalyzeInvoiceRequestDto request)
+    InvoiceAnalysisRequestDto request)
   {
     using var writeScope = RequestCancellation.ForWrite(
       httpContext.HttpContext!,
@@ -1738,7 +1738,7 @@ public static partial class InvoiceEndpoints
     IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
-    AnalyzeMerchantRequestDto request)
+    MerchantAnalysisRequestDto request)
   {
     using var writeScope = RequestCancellation.ForWrite(
       httpContext.HttpContext!,

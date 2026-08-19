@@ -1022,7 +1022,7 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceManagementService invoiceManagementService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("The analysis profile and capability overrides.", Required = true)] AnalyzeInvoiceRequestDto request);
+    [FromBody, SwaggerRequestBody("The analysis profile and capability selections.", Required = true)] InvoiceAnalysisRequestDto request);
 
   /// <summary>
   /// Enqueues an asynchronous analysis run for a specific merchant.
@@ -1058,5 +1058,5 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceManagementService invoiceManagementService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("The analysis profile and capability overrides.", Required = true)] AnalyzeMerchantRequestDto request);
+    [FromBody, SwaggerRequestBody("The analysis profile and capability selections.", Required = true)] MerchantAnalysisRequestDto request);
 }

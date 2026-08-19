@@ -361,7 +361,7 @@ public static partial class InvoiceEndpoints
 
     router
       .MapPost("/invoices/{id}/analyze", AnalyzeInvoiceAsync)
-      .Accepts<AnalyzeInvoiceRequestDto>("application/json")
+      .Accepts<InvoiceAnalysisRequestDto>("application/json")
       .Produces<AnalysisAcceptedResponseDto>(StatusCodes.Status202Accepted)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
@@ -535,7 +535,7 @@ public static partial class InvoiceEndpoints
 
     router
       .MapPost("/merchants/{id}/analyze", AnalyzeMerchantAsync)
-      .Accepts<AnalyzeMerchantRequestDto>("application/json")
+      .Accepts<MerchantAnalysisRequestDto>("application/json")
       .Produces<AnalysisAcceptedResponseDto>(StatusCodes.Status202Accepted)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)

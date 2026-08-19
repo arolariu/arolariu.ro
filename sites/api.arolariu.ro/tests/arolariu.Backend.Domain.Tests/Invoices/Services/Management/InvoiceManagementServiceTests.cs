@@ -12,6 +12,7 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.O
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
+using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.Services.Management;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
 
@@ -33,7 +34,10 @@ public sealed class InvoiceManagementServiceTests
   {
     Guid merchantId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
-    var request = new AnalyzeMerchantRequestDto(AnalysisProfile.Fast, null);
+    var request = new MerchantAnalysisRequestDto(
+      AnalysisProfile.Fast,
+      MerchantClassification: null,
+      DescriptionGeneration: null);
     var processing = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
     processing.Setup(service => service.QueueMerchantAnalysisAsync(
         merchantId,
@@ -60,7 +64,14 @@ public sealed class InvoiceManagementServiceTests
   {
     Guid invoiceId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
-    var request = new AnalyzeInvoiceRequestDto(AnalysisProfile.Fast, null);
+    var request = new InvoiceAnalysisRequestDto(
+      AnalysisProfile.Fast,
+      DocumentExtraction: null,
+      InvoiceSummary: null,
+      ProductClassification: null,
+      AllergenAssessment: null,
+      InvoiceClassification: null,
+      RecipeGeneration: null);
     var accepted = new AnalysisAcceptedResponseDto("message-1", AnalysisTargetType.Invoice, invoiceId);
     var processing = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
     processing.Setup(service => service.QueueInvoiceAnalysisAsync(

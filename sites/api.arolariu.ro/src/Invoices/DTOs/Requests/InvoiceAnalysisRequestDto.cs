@@ -1,9 +1,10 @@
-namespace arolariu.Backend.Domain.Invoices.DTOs.Analysis;
+namespace arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
 using System;
 
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
+using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 
 /// <summary>
 /// Represents the request body accepted by the invoice analyze endpoint.
@@ -13,16 +14,26 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 /// run is always resolved server-side from the authenticated principal, so a caller can never queue analysis on behalf
 /// of another user by editing the payload.</para>
 /// <para><b>Resolution order:</b> the profile (defaulting to <see cref="AnalysisProfile.Comprehensive"/>) resolves the
-/// preset baseline, then actual capability overrides are layered over it. An empty override object preserves the
-/// named profile; one or more capability overrides produce the effective <see cref="AnalysisProfile.Custom"/> profile.
+/// preset baseline, then non-null capability selections are layered over it. All-null capability fields preserve the
+/// named profile; one or more explicit selections produce the effective <see cref="AnalysisProfile.Custom"/> profile.
 /// <see cref="AnalysisProfile.Custom"/> itself is an output-only effective profile and is rejected on requests.</para>
 /// </remarks>
 /// <param name="Profile">The named analysis profile to resolve. Defaults to <see cref="AnalysisProfile.Comprehensive"/>.</param>
-/// <param name="Overrides">Optional per-capability overrides layered over the resolved preset.</param>
+/// <param name="DocumentExtraction">Optional receipt OCR extraction selection.</param>
+/// <param name="InvoiceSummary">Optional invoice summary selection.</param>
+/// <param name="ProductClassification">Optional GS1 GPC classification selection.</param>
+/// <param name="AllergenAssessment">Optional allergen assessment selection.</param>
+/// <param name="InvoiceClassification">Optional ECOICOP classification selection.</param>
+/// <param name="RecipeGeneration">Optional recipe generation selection and result cap.</param>
 [Serializable]
-public readonly record struct AnalyzeInvoiceRequestDto(
+public readonly record struct InvoiceAnalysisRequestDto(
   AnalysisProfile? Profile,
-  InvoiceAnalysisOverridesDto? Overrides)
+  CapabilityToggleDto? DocumentExtraction,
+  CapabilityToggleDto? InvoiceSummary,
+  CapabilityToggleDto? ProductClassification,
+  CapabilityToggleDto? AllergenAssessment,
+  CapabilityToggleDto? InvoiceClassification,
+  RecipeGenerationOverrideDto? RecipeGeneration)
 {
   /// <summary>
   /// Resolves the effective invoice analysis options described by this request.
@@ -37,5 +48,5 @@ public readonly record struct AnalyzeInvoiceRequestDto(
   /// recipe capability is paired with a non-zero recipe count.
   /// </exception>
   public InvoiceAnalysisOptions ToInvoiceAnalysisOptions() =>
-    AnalysisOptionsResolver.ResolveInvoiceOptions(Profile, Overrides);
+    AnalysisOptionsResolver.ResolveInvoiceOptions(this);
 }

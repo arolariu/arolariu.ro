@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 
 /// <summary>
@@ -36,10 +37,8 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// <param name="Description">
 /// The new detailed description. Required. Replaces the existing description.
 /// </param>
-/// <param name="Classification">
-/// The optional new manual NACE classification selection. Null retains the persisted canonical
-/// classification and its analysis evidence.
-/// </param>
+/// <param name="ClassificationSystem">Optional taxonomy system for the manual merchant classification.</param>
+/// <param name="ClassificationCode">Optional taxonomy code for the manual merchant classification.</param>
 /// <param name="Address">
 /// The new structured contact and address information.
 /// Null creates an empty <see cref="ContactInformation"/> instance.
@@ -57,7 +56,8 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// var request = new UpdateMerchantRequestDto(
 ///     Name: "Kaufland Iasi Pacurari",
 ///     Description: "Updated description with new hours",
-///     Classification: new ClassificationSelectionDto(ClassificationSystem.Nace21, "47.11"),
+///     ClassificationSystem: ClassificationSystem.Nace21,
+///     ClassificationCode: "47.11",
 ///     Address: new ContactInformation { City = "Iasi", Country = "Romania" },
 ///     ParentCompanyId: parentId,
 ///     AdditionalMetadata: new Dictionary&lt;string, string&gt; { ["storeCode"] = "IS001" });
@@ -73,7 +73,8 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 public readonly record struct UpdateMerchantRequestDto(
   [Required] string Name,
   [Required] string Description,
-  ClassificationSelectionDto? Classification,
+  ClassificationSystem? ClassificationSystem,
+  string? ClassificationCode,
   ContactInformation? Address,
   Guid? ParentCompanyId,
   IDictionary<string, string>? AdditionalMetadata)
@@ -83,19 +84,22 @@ public readonly record struct UpdateMerchantRequestDto(
   /// </summary>
   /// <param name="Name">The merchant name.</param>
   /// <param name="Description">The merchant description.</param>
-  /// <param name="Classification">The optional manual classification.</param>
+  /// <param name="ClassificationSystem">The optional manual classification system.</param>
+  /// <param name="ClassificationCode">The optional manual classification code.</param>
   /// <param name="Address">The contact information.</param>
   /// <param name="ParentCompanyId">The retained parent-company identifier.</param>
   public UpdateMerchantRequestDto(
     string Name,
     string Description,
-    ClassificationSelectionDto? Classification,
+    ClassificationSystem? ClassificationSystem,
+    string? ClassificationCode,
     ContactInformation? Address,
     Guid? ParentCompanyId)
     : this(
       Name,
       Description,
-      Classification,
+      ClassificationSystem,
+      ClassificationCode,
       Address,
       ParentCompanyId,
       AdditionalMetadata: null)
@@ -107,19 +111,22 @@ public readonly record struct UpdateMerchantRequestDto(
   /// </summary>
   /// <param name="Name">The merchant name.</param>
   /// <param name="Description">The merchant description.</param>
-  /// <param name="Classification">The optional manual classification.</param>
+  /// <param name="ClassificationSystem">The optional manual classification system.</param>
+  /// <param name="ClassificationCode">The optional manual classification code.</param>
   /// <param name="ParentCompanyId">The retained parent-company identifier.</param>
   /// <param name="AdditionalMetadata">Optional metadata.</param>
   public UpdateMerchantRequestDto(
     string Name,
     string Description,
-    ClassificationSelectionDto? Classification,
+    ClassificationSystem? ClassificationSystem,
+    string? ClassificationCode,
     Guid? ParentCompanyId,
     IDictionary<string, string>? AdditionalMetadata)
     : this(
       Name,
       Description,
-      Classification,
+      ClassificationSystem,
+      ClassificationCode,
       Address: null,
       ParentCompanyId,
       AdditionalMetadata)
@@ -160,7 +167,10 @@ public readonly record struct UpdateMerchantRequestDto(
       id = merchantId,
       Name = Name,
       Description = Description,
-      Classification = Classification?.ToManualSelection(),
+      Classification = RequestClassificationMapper.ToManualSelection(
+        ClassificationSystem,
+        ClassificationCode,
+        DDD.ValueObjects.Classifications.ClassificationSystem.Nace21),
       Address = Address ?? new ContactInformation(),
     };
 

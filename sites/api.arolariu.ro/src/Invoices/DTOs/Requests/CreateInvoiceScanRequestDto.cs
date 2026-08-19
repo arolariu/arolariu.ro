@@ -40,7 +40,7 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 /// </para>
 /// <para>
 /// <b>AI Processing:</b> After adding a scan, trigger analysis via the
-/// <see cref="arolariu.Backend.Domain.Invoices.DTOs.Analysis.AnalyzeInvoiceRequestDto"/> to extract data from the new scan.
+/// <see cref="InvoiceAnalysisRequestDto"/> to extract data from the new scan.
 /// </para>
 /// </remarks>
 /// <param name="Type">

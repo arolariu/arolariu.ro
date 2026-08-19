@@ -10,7 +10,6 @@ using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
-using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.DTOs.Responses;
 
@@ -37,7 +36,8 @@ public sealed class CreateInvoiceRequestDtoTests
     var request = new CreateInvoiceRequestDto(
       Name: "Weekly groceries",
       Description: "Fresh produce and pantry supplies",
-      Classification: new ClassificationSelectionDto(ClassificationSystem.EcoicopV2, "01.1.1"),
+      ClassificationSystem: ClassificationSystem.EcoicopV2,
+      ClassificationCode: "01.1.1",
       PaymentInformation: new PaymentInformation
       {
         TransactionDate = transactionDate,
@@ -59,7 +59,8 @@ public sealed class CreateInvoiceRequestDtoTests
       [
         new CreateInvoiceItemRequestDto(
           Name: "Apples",
-          Classification: new ClassificationSelectionDto(ClassificationSystem.Gs1Gpc, "100001"),
+          ClassificationSystem: ClassificationSystem.Gs1Gpc,
+          ClassificationCode: "100001",
           Quantity: 2m,
           QuantityUnit: "kg",
           ProductCode: "APL-01",

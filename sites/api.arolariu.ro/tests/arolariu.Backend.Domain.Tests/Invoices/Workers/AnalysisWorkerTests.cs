@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
+using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.Services.Management;
 using arolariu.Backend.Domain.Invoices.Workers;
 
@@ -190,14 +191,14 @@ public sealed class AnalysisWorkerTests
     public override Task<AnalysisAcceptedResponseDto> QueueInvoiceAnalysisAsync(
       Guid invoiceId,
       Guid userIdentifier,
-      AnalyzeInvoiceRequestDto request,
+      InvoiceAnalysisRequestDto request,
       CancellationToken cancellationToken) =>
         throw new NotSupportedException();
 
     public override Task<AnalysisAcceptedResponseDto> QueueMerchantAnalysisAsync(
       Guid merchantId,
       Guid userIdentifier,
-      AnalyzeMerchantRequestDto request,
+      MerchantAnalysisRequestDto request,
       CancellationToken cancellationToken) =>
         throw new NotSupportedException();
 

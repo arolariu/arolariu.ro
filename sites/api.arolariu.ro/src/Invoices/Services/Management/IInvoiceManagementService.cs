@@ -10,6 +10,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
+using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
 
 /// <summary>
@@ -119,14 +120,14 @@ public interface IInvoiceManagementService
   Task<AnalysisAcceptedResponseDto> QueueInvoiceAnalysisAsync(
     Guid invoiceId,
     Guid userIdentifier,
-    AnalyzeInvoiceRequestDto request,
+    InvoiceAnalysisRequestDto request,
     CancellationToken cancellationToken);
 
   /// <summary>Queues merchant analysis after validating target ownership.</summary>
   Task<AnalysisAcceptedResponseDto> QueueMerchantAnalysisAsync(
     Guid merchantId,
     Guid userIdentifier,
-    AnalyzeMerchantRequestDto request,
+    MerchantAnalysisRequestDto request,
     CancellationToken cancellationToken);
 
   /// <summary>Receives and processes at most one visible analysis message.</summary>

@@ -17,6 +17,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing;
 using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
+using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.AnalysisService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
@@ -552,7 +553,14 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
   {
     Guid invoiceId = Guid.NewGuid();
     Guid userIdentifier = Guid.NewGuid();
-    var request = new AnalyzeInvoiceRequestDto(AnalysisProfile.Fast, Overrides: null);
+    var request = new InvoiceAnalysisRequestDto(
+      AnalysisProfile.Fast,
+      DocumentExtraction: null,
+      InvoiceSummary: null,
+      ProductClassification: null,
+      AllergenAssessment: null,
+      InvoiceClassification: null,
+      RecipeGeneration: null);
     var invoice = new Invoice { id = invoiceId, UserIdentifier = userIdentifier };
     var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
     var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);

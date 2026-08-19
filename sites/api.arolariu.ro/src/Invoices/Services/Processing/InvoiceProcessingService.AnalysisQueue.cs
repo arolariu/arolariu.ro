@@ -13,6 +13,7 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.O
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
+using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.AnalysisService;
 
 using Microsoft.Extensions.Logging;
@@ -36,7 +37,7 @@ public sealed partial class InvoiceProcessingService
   public async Task<AnalysisAcceptedResponseDto> QueueInvoiceAnalysisAsync(
     Guid invoiceId,
     Guid userIdentifier,
-    AnalyzeInvoiceRequestDto request,
+    InvoiceAnalysisRequestDto request,
     CancellationToken cancellationToken) =>
     await TryCatchAnalysisAsync(async () =>
     {
@@ -44,7 +45,7 @@ public sealed partial class InvoiceProcessingService
       _ = await invoiceOrchestrationService
         .ReadInvoiceObject(invoiceId, userIdentifier, cancellationToken)
         .ConfigureAwait(false);
-      InvoiceAnalysisOptions options = AnalysisOptionsResolver.ResolveInvoiceOptions(request.Profile, request.Overrides);
+      InvoiceAnalysisOptions options = request.ToInvoiceAnalysisOptions();
       AnalysisQueueMessage message = AnalysisQueueMessage.CreateInvoice(
         invoiceId,
         userIdentifier,
@@ -65,7 +66,7 @@ public sealed partial class InvoiceProcessingService
   public async Task<AnalysisAcceptedResponseDto> QueueMerchantAnalysisAsync(
     Guid merchantId,
     Guid userIdentifier,
-    AnalyzeMerchantRequestDto request,
+    MerchantAnalysisRequestDto request,
     CancellationToken cancellationToken) =>
     await TryCatchAnalysisAsync(async () =>
     {
@@ -79,7 +80,7 @@ public sealed partial class InvoiceProcessingService
         throw new MerchantForbiddenAccessException(merchantId, userIdentifier);
       }
 
-      MerchantAnalysisOptions options = AnalysisOptionsResolver.ResolveMerchantOptions(request.Profile, request.Overrides);
+      MerchantAnalysisOptions options = request.ToMerchantAnalysisOptions();
       AnalysisQueueMessage message = AnalysisQueueMessage.CreateMerchant(
         merchant.id,
         userIdentifier,

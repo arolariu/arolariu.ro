@@ -37,9 +37,8 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// The required user-facing invoice name. Whitespace-only values are rejected.
 /// </param>
 /// <param name="Description">Optional descriptive text supplied by the client.</param>
-/// <param name="Classification">
-/// Optional manual ECOICOP v2 classification selection. Processing canonicalizes it before persistence.
-/// </param>
+/// <param name="ClassificationSystem">Optional taxonomy system for the manual invoice classification.</param>
+/// <param name="ClassificationCode">Optional taxonomy code for the manual invoice classification.</param>
 /// <param name="PaymentInformation">
 /// Optional client-supplied transaction date, payment type, currency, and monetary amounts. Null uses domain defaults
 /// until document analysis or a later edit provides payment details.
@@ -59,7 +58,8 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// var request = new CreateInvoiceRequestDto(
 ///     Name: "Groceries",
 ///     Description: "Weekly shop",
-///     Classification: null,
+///     ClassificationSystem: null,
+///     ClassificationCode: null,
 ///     PaymentInformation: null,
 ///     MerchantReference: null,
 ///     IsImportant: false,
@@ -78,7 +78,8 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 public readonly record struct CreateInvoiceRequestDto(
   [Required] string Name,
   string? Description,
-  ClassificationSelectionDto? Classification,
+  ClassificationSystem? ClassificationSystem,
+  string? ClassificationCode,
   PaymentInformation? PaymentInformation,
   Guid? MerchantReference,
   bool IsImportant,
@@ -99,7 +100,8 @@ public readonly record struct CreateInvoiceRequestDto(
     : this(
       Name: "Invoice",
       Description: null,
-      Classification: null,
+      ClassificationSystem: null,
+      ClassificationCode: null,
       PaymentInformation: null,
       MerchantReference: null,
       IsImportant: false,
@@ -154,7 +156,10 @@ public readonly record struct CreateInvoiceRequestDto(
       UserIdentifier = serverOwnerIdentifier,
       Name = Name.Trim(),
       Description = Description ?? string.Empty,
-      Classification = Classification?.ToManualSelection(),
+      Classification = RequestClassificationMapper.ToManualSelection(
+        ClassificationSystem,
+        ClassificationCode,
+        DDD.ValueObjects.Classifications.ClassificationSystem.EcoicopV2),
       PaymentInformation = CopyPaymentInformation(PaymentInformation),
       MerchantReference = MerchantReference ?? Guid.Empty,
       IsImportant = IsImportant,
@@ -193,13 +198,17 @@ public readonly record struct CreateInvoiceRequestDto(
       validationErrors[nameof(Name)] = ["Invoice name is required."];
     }
 
-    if (Classification is { System: not ClassificationSystem.EcoicopV2 })
+    if (ClassificationSystem is not null and not DDD.ValueObjects.Classifications.ClassificationSystem.EcoicopV2)
     {
-      validationErrors[nameof(Classification)] = ["Invoice classification must use the ECOICOP v2 system."];
+      validationErrors[nameof(ClassificationSystem)] = ["Invoice classification must use the ECOICOP v2 system."];
     }
-    else if (Classification is { Code: var classificationCode } && string.IsNullOrWhiteSpace(classificationCode))
+    else if (ClassificationSystem is not null && string.IsNullOrWhiteSpace(ClassificationCode))
     {
-      validationErrors[nameof(Classification)] = ["Invoice classification code is required when a classification is supplied."];
+      validationErrors[nameof(ClassificationCode)] = ["Invoice classification code is required when a classification system is supplied."];
+    }
+    else if (ClassificationSystem is null && !string.IsNullOrWhiteSpace(ClassificationCode))
+    {
+      validationErrors[nameof(ClassificationSystem)] = ["Invoice classification system is required when a code is supplied."];
     }
 
     ValidatePaymentInformation(PaymentInformation, validationErrors);
@@ -346,7 +355,8 @@ public readonly record struct CreateInvoiceRequestDto(
 /// product metadata remain server-owned and are initialized by the domain model.
 /// </remarks>
 /// <param name="Name">The required item name.</param>
-/// <param name="Classification">Optional manual GS1 GPC classification selection.</param>
+/// <param name="ClassificationSystem">Optional taxonomy system for the manual product classification.</param>
+/// <param name="ClassificationCode">Optional taxonomy code for the manual product classification.</param>
 /// <param name="Quantity">The non-negative purchased quantity.</param>
 /// <param name="QuantityUnit">The optional unit of measure.</param>
 /// <param name="ProductCode">The optional SKU, barcode, or merchant product code.</param>
@@ -355,7 +365,8 @@ public readonly record struct CreateInvoiceRequestDto(
 [ExcludeFromCodeCoverage]
 public readonly record struct CreateInvoiceItemRequestDto(
   [Required] string Name,
-  ClassificationSelectionDto? Classification,
+  ClassificationSystem? ClassificationSystem,
+  string? ClassificationCode,
   decimal Quantity,
   string? QuantityUnit,
   string? ProductCode,
@@ -364,7 +375,10 @@ public readonly record struct CreateInvoiceItemRequestDto(
   internal Product ToProduct() => new()
   {
     Name = Name.Trim(),
-    Classification = Classification?.ToManualSelection(),
+    Classification = RequestClassificationMapper.ToManualSelection(
+      ClassificationSystem,
+      ClassificationCode,
+      DDD.ValueObjects.Classifications.ClassificationSystem.Gs1Gpc),
     Quantity = Quantity,
     QuantityUnit = QuantityUnit ?? string.Empty,
     ProductCode = ProductCode ?? string.Empty,
@@ -390,13 +404,17 @@ public readonly record struct CreateInvoiceItemRequestDto(
       validationErrors[nameof(Price)] = ["Item price must not be negative."];
     }
 
-    if (Classification is { System: not ClassificationSystem.Gs1Gpc })
+    if (ClassificationSystem is not null and not DDD.ValueObjects.Classifications.ClassificationSystem.Gs1Gpc)
     {
-      validationErrors[nameof(Classification)] = ["Item classification must use the GS1 GPC system."];
+      validationErrors[nameof(ClassificationSystem)] = ["Item classification must use the GS1 GPC system."];
     }
-    else if (Classification is { Code: var classificationCode } && string.IsNullOrWhiteSpace(classificationCode))
+    else if (ClassificationSystem is not null && string.IsNullOrWhiteSpace(ClassificationCode))
     {
-      validationErrors[nameof(Classification)] = ["Item classification code is required when a classification is supplied."];
+      validationErrors[nameof(ClassificationCode)] = ["Item classification code is required when a classification system is supplied."];
+    }
+    else if (ClassificationSystem is null && !string.IsNullOrWhiteSpace(ClassificationCode))
+    {
+      validationErrors[nameof(ClassificationSystem)] = ["Item classification system is required when a code is supplied."];
     }
 
     return validationErrors.Count == 0;

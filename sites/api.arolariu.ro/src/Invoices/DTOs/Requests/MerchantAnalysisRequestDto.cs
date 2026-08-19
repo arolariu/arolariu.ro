@@ -1,9 +1,10 @@
-namespace arolariu.Backend.Domain.Invoices.DTOs.Analysis;
+namespace arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
 using System;
 
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
+using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 
 /// <summary>
 /// Represents the request body accepted by the merchant analyze endpoint.
@@ -16,11 +17,13 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 /// <param name="Profile">
 /// The named analysis profile to resolve. Defaults to <see cref="AnalysisProfile.Comprehensive"/>; custom is output-only.
 /// </param>
-/// <param name="Overrides">Optional per-capability overrides layered over the resolved preset.</param>
+/// <param name="MerchantClassification">Optional NACE classification selection.</param>
+/// <param name="DescriptionGeneration">Optional merchant description generation selection.</param>
 [Serializable]
-public readonly record struct AnalyzeMerchantRequestDto(
+public readonly record struct MerchantAnalysisRequestDto(
   AnalysisProfile? Profile,
-  MerchantAnalysisOverridesDto? Overrides)
+  CapabilityToggleDto? MerchantClassification,
+  CapabilityToggleDto? DescriptionGeneration)
 {
   /// <summary>
   /// Resolves the effective merchant analysis options described by this request.
@@ -30,5 +33,5 @@ public readonly record struct AnalyzeMerchantRequestDto(
   /// Thrown when the resolved capability set is empty or when <see cref="AnalysisProfile.Custom"/> is requested.
   /// </exception>
   public MerchantAnalysisOptions ToMerchantAnalysisOptions() =>
-    AnalysisOptionsResolver.ResolveMerchantOptions(Profile, Overrides);
+    AnalysisOptionsResolver.ResolveMerchantOptions(this);
 }

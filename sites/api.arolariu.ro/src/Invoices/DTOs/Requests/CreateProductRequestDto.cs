@@ -34,10 +34,8 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// The product name as it appears on the receipt. Required.
 /// This will be used as the product's display name.
 /// </param>
-/// <param name="Classification">
-/// Optional manual GPC classification selection (system plus code).
-/// Null leaves the line item unclassified until an analysis run classifies it.
-/// </param>
+/// <param name="ClassificationSystem">Optional taxonomy system for the manual product classification.</param>
+/// <param name="ClassificationCode">Optional taxonomy code for the manual product classification.</param>
 /// <param name="Quantity">
 /// The quantity of product units. Must be positive.
 /// Supports decimal for fractional quantities (e.g., 1.5 kg).
@@ -58,7 +56,8 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// <code>
 /// var request = new CreateProductRequestDto(
 ///     Name: "Milk 1L (LAPTE ZUZU)",
-///     Classification: new ClassificationSelectionDto(ClassificationSystem.Gs1Gpc, "10000025"),
+///     ClassificationSystem: ClassificationSystem.Gs1Gpc,
+///     ClassificationCode: "10000025",
 ///     Quantity: 2,
 ///     QuantityUnit: "buc",
 ///     ProductCode: "5941234567890",
@@ -69,12 +68,12 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// </code>
 /// </example>
 /// <seealso cref="Product"/>
-/// <seealso cref="ClassificationSelectionDto"/>
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct CreateProductRequestDto(
   [Required] string Name,
-  ClassificationSelectionDto? Classification,
+  ClassificationSystem? ClassificationSystem,
+  string? ClassificationCode,
   decimal Quantity,
   string? QuantityUnit,
   string? ProductCode,
@@ -100,7 +99,10 @@ public readonly record struct CreateProductRequestDto(
     new()
     {
       Name = Name?.Trim() ?? string.Empty,
-      Classification = Classification?.ToManualSelection(),
+      Classification = RequestClassificationMapper.ToManualSelection(
+        ClassificationSystem,
+        ClassificationCode,
+        DDD.ValueObjects.Classifications.ClassificationSystem.Gs1Gpc),
       Quantity = Quantity,
       QuantityUnit = QuantityUnit?.Trim() ?? string.Empty,
       ProductCode = ProductCode?.Trim() ?? string.Empty,

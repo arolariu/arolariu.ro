@@ -13,6 +13,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
+using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
 /// <summary>
 /// Processing layer contract for performing higher-cost or multi-step domain operations (enrichment, aggregation, fan‑out mutations) over invoice and merchant aggregates.
@@ -345,14 +346,14 @@ public interface IInvoiceProcessingService
   Task<AnalysisAcceptedResponseDto> QueueInvoiceAnalysisAsync(
     Guid invoiceId,
     Guid userIdentifier,
-    AnalyzeInvoiceRequestDto request,
+    InvoiceAnalysisRequestDto request,
     CancellationToken cancellationToken);
 
   /// <summary>Validates and queues merchant analysis.</summary>
   Task<AnalysisAcceptedResponseDto> QueueMerchantAnalysisAsync(
     Guid merchantId,
     Guid userIdentifier,
-    AnalyzeMerchantRequestDto request,
+    MerchantAnalysisRequestDto request,
     CancellationToken cancellationToken);
 
   /// <summary>Receives at most one visible analysis message.</summary>

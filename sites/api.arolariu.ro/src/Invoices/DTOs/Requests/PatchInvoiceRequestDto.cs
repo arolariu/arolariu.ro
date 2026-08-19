@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 
@@ -27,7 +28,7 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// <list type="bullet">
 ///   <item><description>Null values preserve the original field value.</description></item>
 ///   <item><description><see cref="Guid.Empty"/> for <c>MerchantReference</c> means "no change".</description></item>
-///   <item><description>A null <see cref="Classification"/> means "no change".</description></item>
+///   <item><description>Null classification fields mean "no change".</description></item>
 ///   <item><description>Empty or whitespace strings for Name/Description mean "no change".</description></item>
 /// </list>
 /// </para>
@@ -47,9 +48,8 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// <param name="Description">
 /// Optional new description. Null or whitespace preserves the existing description.
 /// </param>
-/// <param name="Classification">
-/// Optional manual ECOICOP classification selection. Null preserves the existing classification.
-/// </param>
+/// <param name="ClassificationSystem">Optional taxonomy system for the manual invoice classification.</param>
+/// <param name="ClassificationCode">Optional taxonomy code for the manual invoice classification.</param>
 /// <param name="PaymentInformation">
 /// Optional new payment information. Null preserves the existing payment details.
 /// </param>
@@ -75,7 +75,8 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// var request = new PatchInvoiceRequestDto(
 ///     Name: "Updated Name",
 ///     Description: null,  // Keep existing
-///     Classification: null,     // Keep existing
+///     ClassificationSystem: null, // Keep existing
+///     ClassificationCode: null,
 ///     PaymentInformation: null,
 ///     MerchantReference: null,
 ///     IsImportant: true,
@@ -92,7 +93,8 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 public readonly record struct PatchInvoiceRequestDto(
   string? Name,
   string? Description,
-  ClassificationSelectionDto? Classification,
+  ClassificationSystem? ClassificationSystem,
+  string? ClassificationCode,
   PaymentInformation? PaymentInformation,
   Guid? MerchantReference,
   bool? IsImportant,
@@ -112,7 +114,7 @@ public readonly record struct PatchInvoiceRequestDto(
   /// <list type="bullet">
   ///   <item><description><see cref="Name"/>: Applied only if non-null and non-whitespace.</description></item>
   ///   <item><description><see cref="Description"/>: Applied only if non-null and non-whitespace.</description></item>
-  ///   <item><description><see cref="Classification"/>: Applied only when a selection is supplied.</description></item>
+  ///   <item><description>Classification fields: Applied only when a system and code are supplied.</description></item>
   ///   <item><description><see cref="PaymentInformation"/>: Applied only if non-null.</description></item>
   ///   <item><description><see cref="MerchantReference"/>: Applied only if has value and not <c>Empty</c>.</description></item>
   ///   <item><description><see cref="IsImportant"/>: Applied only if has value.</description></item>
@@ -147,7 +149,12 @@ public readonly record struct PatchInvoiceRequestDto(
       UserIdentifier = existing.UserIdentifier,
       Name = !string.IsNullOrWhiteSpace(Name) ? Name : existing.Name,
       Description = !string.IsNullOrWhiteSpace(Description) ? Description : existing.Description,
-      Classification = Classification?.ToManualSelection() ?? existing.Classification,
+      Classification = RequestClassificationMapper
+        .ToManualSelection(
+          ClassificationSystem,
+          ClassificationCode,
+          DDD.ValueObjects.Classifications.ClassificationSystem.EcoicopV2)
+        ?? existing.Classification,
       PaymentInformation = PaymentInformation ?? existing.PaymentInformation,
       MerchantReference = MerchantReference.HasValue && MerchantReference.Value != Guid.Empty
         ? MerchantReference.Value

@@ -565,6 +565,58 @@ public sealed class InvoiceEndpointsStatusCodeTests
   #endregion
 
   #region Product update atomicity tests
+  /// <summary>Verifies a partial classification pair is rejected before Management is invoked.</summary>
+  [TestMethod]
+  public async Task AddProductToInvoiceAsync_ClassificationCodeWithoutSystem_ReturnsBadRequest()
+  {
+    Guid invoiceId = Guid.NewGuid();
+    Guid userId = Guid.NewGuid();
+    var request = new CreateProductRequestDto(
+      Name: "Milk",
+      ClassificationSystem: null,
+      ClassificationCode: "10000025",
+      Quantity: 1m,
+      QuantityUnit: "pcs",
+      ProductCode: null,
+      Price: 8m);
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+
+    IResult result = await InvoiceEndpoints.AddProductToInvoiceAsync(
+      service.Object,
+      CreateAuthenticatedContextAccessor(userId),
+      invoiceId,
+      request);
+
+    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
+    service.VerifyNoOtherCalls();
+  }
+
+  /// <summary>Verifies a wrong-system product classification is rejected before Management is invoked.</summary>
+  [TestMethod]
+  public async Task AddProductToInvoiceAsync_WrongClassificationSystem_ReturnsBadRequest()
+  {
+    Guid invoiceId = Guid.NewGuid();
+    Guid userId = Guid.NewGuid();
+    var request = new CreateProductRequestDto(
+      Name: "Milk",
+      ClassificationSystem: ClassificationSystem.EcoicopV2,
+      ClassificationCode: "01.1",
+      Quantity: 1m,
+      QuantityUnit: "pcs",
+      ProductCode: null,
+      Price: 8m);
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+
+    IResult result = await InvoiceEndpoints.AddProductToInvoiceAsync(
+      service.Object,
+      CreateAuthenticatedContextAccessor(userId),
+      invoiceId,
+      request);
+
+    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
+    service.VerifyNoOtherCalls();
+  }
+
   /// <summary>
   /// Verifies product replacement is submitted as one invoice write so validation
   /// failures cannot persist deletion before addition.
@@ -582,7 +634,8 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var request = new UpdateProductRequestDto(
       OriginalProductName: "Old Milk",
       Name: "New Milk",
-      Classification: null,
+      ClassificationSystem: null,
+      ClassificationCode: null,
       Quantity: 2m,
       QuantityUnit: "pcs",
       ProductCode: string.Empty,
@@ -701,6 +754,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var request = new UpdateMerchantRequestDto(
       "Store",
       "Description",
+      null,
       null,
       parentCompanyId,
       null);
