@@ -103,7 +103,7 @@ public static class WebApplicationBuilderExtensions
       });
     });
 
-    services.AddDbContext<InvoiceNoSqlBroker>(options =>
+    services.AddDbContext<CosmosDatabaseBroker>(options =>
     {
       using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
       string connectionString = new string(optionsManager
@@ -121,7 +121,7 @@ public static class WebApplicationBuilderExtensions
     // Broker services:
     services.AddScoped<IClassifierBroker, AzureClassifierBroker>();
     services.AddScoped<IFormRecognizerBroker, AzureFormRecognizerBroker>();
-    services.AddScoped<IInvoiceNoSqlBroker, InvoiceNoSqlBroker>();
+    services.AddScoped<IDatabaseBroker, CosmosDatabaseBroker>();
     services.AddScoped<ITranslatorBroker, AzureTranslatorBroker>();
     services.AddSingleton<ITaxonomyBroker, JsonTaxonomyBroker>();
 

@@ -17,14 +17,14 @@ using arolariu.Backend.Common.Telemetry.Tracing;
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
 
-public partial class InvoiceNoSqlBroker
+public partial class CosmosDatabaseBroker
 {
   /// <inheritdoc/>
   public async ValueTask<Merchant> CreateMerchantAsync(Merchant merchant, CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchantAsync));
     activity?
-      .SetLayerContext("Broker", nameof(InvoiceNoSqlBroker))
+      .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
       .SetCosmosDbContext("primary", "merchants", "create");
 
     var database = CosmosClient.GetDatabase("primary");
@@ -46,7 +46,7 @@ public partial class InvoiceNoSqlBroker
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantAsync));
     activity?
-      .SetLayerContext("Broker", nameof(InvoiceNoSqlBroker))
+      .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
       .SetCosmosDbContext("primary", "merchants", "read", parentCompanyId?.ToString());
 
     var database = CosmosClient.GetDatabase("primary");
@@ -101,7 +101,7 @@ public partial class InvoiceNoSqlBroker
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantsAsync));
     activity?
-      .SetLayerContext("Broker", nameof(InvoiceNoSqlBroker))
+      .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
       .SetCosmosDbContext("primary", "merchants", "query", parentCompanyId.ToString())
       .SetDbStatement("SELECT * FROM c WHERE c.ParentCompanyId = @parentCompanyId");
 
@@ -141,7 +141,7 @@ public partial class InvoiceNoSqlBroker
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantAsync));
     activity?
-      .SetLayerContext("Broker", nameof(InvoiceNoSqlBroker))
+      .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
       .SetCosmosDbContext("primary", "merchants", "upsert");
 
     var database = CosmosClient.GetDatabase("primary");
@@ -167,7 +167,7 @@ public partial class InvoiceNoSqlBroker
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantAsync));
     activity?
-      .SetLayerContext("Broker", nameof(InvoiceNoSqlBroker))
+      .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
       .SetCosmosDbContext("primary", "merchants", "upsert", currentMerchant?.ParentCompanyId.ToString());
 
     var database = CosmosClient.GetDatabase("primary");
@@ -191,7 +191,7 @@ public partial class InvoiceNoSqlBroker
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchantAsync));
     activity?
-      .SetLayerContext("Broker", nameof(InvoiceNoSqlBroker))
+      .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
       .SetCosmosDbContext("primary", "merchants", "soft_delete", parentCompanyId?.ToString());
 
     var database = CosmosClient.GetDatabase("primary");

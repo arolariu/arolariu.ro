@@ -20,27 +20,27 @@ using Moq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
-/// Comprehensive test suite for <see cref="InvoiceNoSqlBroker"/> merchant operations following project test standards.
+/// Comprehensive test suite for <see cref="CosmosDatabaseBroker"/> merchant operations following project test standards.
 /// Covers CRUD operations, exception pathways and query filtering scenarios. Method names follow
 /// the MethodName_Condition_ExpectedResult pattern by design; CA1707 suppressed accordingly.
 /// </summary>
 [TestClass]
-public sealed partial class MerchantNoSqlBrokerTests : InvoiceNoSqlBrokerTestsBase, IDisposable
+public sealed partial class MerchantNoSqlBrokerTests : CosmosDatabaseBrokerTestsBase, IDisposable
 {
-  private readonly InvoiceNoSqlBroker merchantNoSqlBroker;
-  private readonly DbContextOptions<InvoiceNoSqlBroker> dbContextOptions;
+  private readonly CosmosDatabaseBroker merchantNoSqlBroker;
+  private readonly DbContextOptions<CosmosDatabaseBroker> dbContextOptions;
 
   /// <summary>Initializes a new instance configuring an in-memory Cosmos emulator context.</summary>
   public MerchantNoSqlBrokerTests()
   {
-    dbContextOptions = new DbContextOptionsBuilder<InvoiceNoSqlBroker>()
+    dbContextOptions = new DbContextOptionsBuilder<CosmosDatabaseBroker>()
       .UseCosmos(
         accountEndpoint: "https://localhost:8081/",
         accountKey: "testKey",
         databaseName: "TestDb")
       .Options;
 
-    merchantNoSqlBroker = new InvoiceNoSqlBroker(mockCosmosClient.Object, dbContextOptions);
+    merchantNoSqlBroker = new CosmosDatabaseBroker(mockCosmosClient.Object, dbContextOptions);
   }
 
   /// <summary>Disposes the underlying broker context and suppresses finalization.</summary>

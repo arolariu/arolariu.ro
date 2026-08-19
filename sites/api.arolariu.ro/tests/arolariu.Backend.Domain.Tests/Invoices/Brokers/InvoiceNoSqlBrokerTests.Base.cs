@@ -11,7 +11,7 @@ using Moq;
 /// Initializes mocked <see cref="CosmosClient"/>, <see cref="Database"/> and invoice / merchant containers.
 /// </summary>
 [SuppressMessage("Design", "CA1051", Justification = "Protected readonly fields intentionally exposed for derived test usage.")]
-public abstract class InvoiceNoSqlBrokerTestsBase
+public abstract class CosmosDatabaseBrokerTestsBase
 {
   /// <summary>Mocked top-level Cosmos client used to retrieve database references.</summary>
   protected readonly Mock<CosmosClient> mockCosmosClient;
@@ -23,7 +23,7 @@ public abstract class InvoiceNoSqlBrokerTestsBase
   protected readonly Mock<Container> mockMerchantsContainer;
 
   /// <summary>Initializes the suite of Cosmos mocks and sets up common expectations.</summary>
-  protected InvoiceNoSqlBrokerTestsBase()
+  protected CosmosDatabaseBrokerTestsBase()
   {
     mockCosmosClient = new Mock<CosmosClient>();
     mockDatabase = new Mock<Database>();

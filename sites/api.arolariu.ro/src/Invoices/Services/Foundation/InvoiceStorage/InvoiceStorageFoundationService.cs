@@ -17,7 +17,7 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 /// </summary>
 public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundationService
 {
-  private readonly IInvoiceNoSqlBroker invoiceNoSqlBroker;
+  private readonly IDatabaseBroker invoiceNoSqlBroker;
   private readonly ILogger<IInvoiceStorageFoundationService> logger;
 
   /// <summary>
@@ -26,7 +26,7 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
   /// <param name="invoiceNoSqlBroker"></param>
   /// <param name="loggerFactory"></param>
   public InvoiceStorageFoundationService(
-    IInvoiceNoSqlBroker invoiceNoSqlBroker,
+    IDatabaseBroker invoiceNoSqlBroker,
     ILoggerFactory loggerFactory)
   {
     ArgumentNullException.ThrowIfNull(invoiceNoSqlBroker);

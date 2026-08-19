@@ -6,6 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Aggregates;
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 /// <summary>
@@ -41,7 +43,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// <para><b>Backlog:</b> Pagination / continuation tokens, optimistic concurrency, projection queries (selective field retrieval),
 /// bulk operations (transactional batch for co-partitioned items), telemetry hooks, and soft-delete for merchants.</para>
 /// </remarks>
-public interface IInvoiceNoSqlBroker
+public interface IDatabaseBroker
 {
   #region Invoice Storage Broker
 
@@ -204,5 +206,37 @@ public interface IInvoiceNoSqlBroker
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
   ValueTask DeleteMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken);
+  #endregion
+
+  #region Analysis Queue Broker
+  /// <summary>Ensures the durable analysis queue container exists.</summary>
+  ValueTask EnsureAnalysisQueueAsync(CancellationToken cancellationToken);
+
+  /// <summary>Persists a new durable analysis run.</summary>
+  ValueTask<AnalysisRun> CreateAnalysisRunAsync(
+    AnalysisRun run,
+    CancellationToken cancellationToken);
+
+  /// <summary>Reads a durable analysis run by identifier.</summary>
+  ValueTask<AnalysisRun?> ReadAnalysisRunAsync(
+    Guid runId,
+    CancellationToken cancellationToken);
+
+  /// <summary>Streams queued or expired-lease runs in claim order.</summary>
+  IAsyncEnumerable<AnalysisRun> StreamAnalysisRunClaimCandidatesAsync(
+    DateTimeOffset now,
+    CancellationToken cancellationToken);
+
+  /// <summary>Counts pending runs grouped by target type.</summary>
+  ValueTask<IReadOnlyDictionary<AnalysisTargetType, long>>
+    CountPendingAnalysisRunsByTargetTypeAsync(
+      DateTimeOffset now,
+      CancellationToken cancellationToken);
+
+  /// <summary>Conditionally replaces a durable analysis run.</summary>
+  ValueTask<AnalysisRun> ReplaceAnalysisRunAsync(
+    AnalysisRun run,
+    string expectedETag,
+    CancellationToken cancellationToken);
   #endregion
 }

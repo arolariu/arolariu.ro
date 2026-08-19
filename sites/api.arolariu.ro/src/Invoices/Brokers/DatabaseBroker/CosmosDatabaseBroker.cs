@@ -14,7 +14,7 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore;
 
 /// <summary>
-/// Entity Framework Core (Cosmos provider) context implementing the <see cref="IInvoiceNoSqlBroker"/> contract for invoice and merchant aggregates.
+/// Entity Framework Core (Cosmos provider) context implementing the <see cref="IDatabaseBroker"/> contract for invoice and merchant aggregates.
 /// </summary>
 /// <remarks>
 /// <para><b>Responsibilities:</b> Configures entity-to-container mappings, JSON property names, value conversions for strongly typed / value object
@@ -29,7 +29,7 @@ using Microsoft.EntityFrameworkCore;
 /// <para><b>Thread-safety:</b> Inherits EF Core DbContext non-thread-safe semantics. Scope per logical unit-of-work.</para>
 /// </remarks>
 [ExcludeFromCodeCoverage]
-public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
+public sealed partial class CosmosDatabaseBroker : DbContext, IDatabaseBroker
 {
   /// <summary>
   /// Underlying Azure Cosmos DB client used for low-level container operations (point reads, queries outside EF tracking pipeline in partial implementations).
@@ -47,7 +47,7 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
   /// <param name="client">Shared <see cref="CosmosClient"/> instance (pooled / singleton at composition root).</param>
   /// <param name="options">EF Core options including provider configuration (database name, connection mode).</param>
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="client"/> or <paramref name="options"/> is null.</exception>
-  public InvoiceNoSqlBroker(CosmosClient client, DbContextOptions<InvoiceNoSqlBroker> options) : base(options)
+  public CosmosDatabaseBroker(CosmosClient client, DbContextOptions<CosmosDatabaseBroker> options) : base(options)
   {
     ArgumentNullException.ThrowIfNull(client);
     ArgumentNullException.ThrowIfNull(options);

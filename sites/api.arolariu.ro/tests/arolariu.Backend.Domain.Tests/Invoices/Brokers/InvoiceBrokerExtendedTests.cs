@@ -22,14 +22,14 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class InvoiceBrokerExtendedTests
 {
-  private readonly Mock<IInvoiceNoSqlBroker> mockBroker;
+  private readonly Mock<IDatabaseBroker> mockBroker;
 
   /// <summary>
   /// Initializes test fixtures.
   /// </summary>
   public InvoiceBrokerExtendedTests()
   {
-    mockBroker = new Mock<IInvoiceNoSqlBroker>();
+    mockBroker = new Mock<IDatabaseBroker>();
   }
 
   #region Invoice CRUD Extended Tests

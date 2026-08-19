@@ -31,7 +31,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class CancellationPassthroughTests
 {
-  private static InvoiceStorageFoundationService CreateStorageService(Mock<IInvoiceNoSqlBroker> broker) =>
+  private static InvoiceStorageFoundationService CreateStorageService(Mock<IDatabaseBroker> broker) =>
     new(broker.Object, NullLoggerFactory.Instance);
 
   /// <summary>
@@ -41,7 +41,7 @@ public sealed class CancellationPassthroughTests
   [TestMethod]
   public async Task ReadInvoiceObject_WhenBrokerCancels_PropagatesOperationCanceledException()
   {
-    var broker = new Mock<IInvoiceNoSqlBroker>();
+    var broker = new Mock<IDatabaseBroker>();
     broker
       .Setup(b => b.ReadInvoiceAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new OperationCanceledException());
@@ -59,7 +59,7 @@ public sealed class CancellationPassthroughTests
   [TestMethod]
   public async Task ReadAllInvoiceObjects_WhenBrokerCancels_PropagatesOperationCanceledException()
   {
-    var broker = new Mock<IInvoiceNoSqlBroker>();
+    var broker = new Mock<IDatabaseBroker>();
     broker
       .Setup(b => b.ReadInvoicesAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new TaskCanceledException());
@@ -78,7 +78,7 @@ public sealed class CancellationPassthroughTests
   [TestMethod]
   public async Task CreateInvoiceObject_WhenBrokerCancels_PropagatesOperationCanceledException()
   {
-    var broker = new Mock<IInvoiceNoSqlBroker>();
+    var broker = new Mock<IDatabaseBroker>();
     broker
       .Setup(b => b.CreateInvoiceAsync(It.IsAny<Invoice>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new OperationCanceledException());
@@ -139,7 +139,7 @@ public sealed class CancellationPassthroughTests
   [TestMethod]
   public async Task MerchantStorage_WhenBrokerCancels_PropagatesOperationCanceledException()
   {
-    var broker = new Mock<IInvoiceNoSqlBroker>();
+    var broker = new Mock<IDatabaseBroker>();
     broker
       .Setup(b => b.ReadMerchantAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new OperationCanceledException());

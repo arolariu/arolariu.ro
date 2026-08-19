@@ -16,7 +16,7 @@ using arolariu.Backend.Common.Telemetry.Tracing;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
-public partial class InvoiceNoSqlBroker
+public partial class CosmosDatabaseBroker
 {
   /// <inheritdoc/>
   public async ValueTask<Invoice> CreateInvoiceAsync(Invoice invoice, CancellationToken cancellationToken)
@@ -25,7 +25,7 @@ public partial class InvoiceNoSqlBroker
 
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceAsync));
     activity?
-      .SetLayerContext("Broker", nameof(InvoiceNoSqlBroker))
+      .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
       .SetCosmosDbContext("primary", "invoices", "create", invoice.UserIdentifier.ToString())
       .SetInvoiceContext(invoice.id, invoice.UserIdentifier);
 
@@ -48,7 +48,7 @@ public partial class InvoiceNoSqlBroker
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceAsync));
     activity?
-      .SetLayerContext("Broker", nameof(InvoiceNoSqlBroker))
+      .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
       .SetInvoiceContext(invoiceIdentifier, userIdentifier);
 
     var database = CosmosClient.GetDatabase("primary");
@@ -119,7 +119,7 @@ public partial class InvoiceNoSqlBroker
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoicesAsync));
     activity?
-      .SetLayerContext("Broker", nameof(InvoiceNoSqlBroker))
+      .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
       .SetCosmosDbContext("primary", "invoices", "query", userIdentifier.ToString())
       .SetUserContext(userIdentifier)
       .SetDbStatement("SELECT * FROM c WHERE c.UserIdentifier = @userIdentifier");
@@ -160,7 +160,7 @@ public partial class InvoiceNoSqlBroker
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceAsync));
     activity?
-      .SetLayerContext("Broker", nameof(InvoiceNoSqlBroker))
+      .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
       .SetCosmosDbContext("primary", "invoices", "upsert", updatedInvoice?.UserIdentifier.ToString())
       .SetInvoiceContext(invoiceIdentifier, updatedInvoice?.UserIdentifier);
 
@@ -185,7 +185,7 @@ public partial class InvoiceNoSqlBroker
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceAsync));
     activity?
-      .SetLayerContext("Broker", nameof(InvoiceNoSqlBroker))
+      .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
       .SetCosmosDbContext("primary", "invoices", "upsert", updatedInvoice?.UserIdentifier.ToString())
       .SetInvoiceContext(updatedInvoice?.id ?? Guid.Empty, updatedInvoice?.UserIdentifier);
 
@@ -212,7 +212,7 @@ public partial class InvoiceNoSqlBroker
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceAsync));
     activity?
-      .SetLayerContext("Broker", nameof(InvoiceNoSqlBroker))
+      .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
       .SetInvoiceContext(invoiceIdentifier, userIdentifier);
 
     var database = CosmosClient.GetDatabase("primary");
@@ -292,7 +292,7 @@ public partial class InvoiceNoSqlBroker
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoicesAsync));
     activity?
-      .SetLayerContext("Broker", nameof(InvoiceNoSqlBroker))
+      .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
       .SetCosmosDbContext("primary", "invoices", "batch_soft_delete", userIdentifier.ToString())
       .SetUserContext(userIdentifier)
       .SetDbStatement("SELECT * FROM c WHERE c.UserIdentifier = @userIdentifier");
