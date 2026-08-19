@@ -141,7 +141,7 @@ public static class WebApplicationBuilderExtensions
 
     // Broker services:
     services.AddScoped<IDocumentIntelligenceBroker, AzureDocumentIntelligenceBroker>();
-    services.AddScoped<IInvoiceBlobStorageBroker, AzureInvoiceBlobStorageBroker>();
+    services.AddScoped<IBlobStorageBroker, AzureStorageBlobBroker>();
     services.AddScoped<IDatabaseBroker, CosmosDatabaseBroker>();
     services.AddScoped<IGenerativeAnalysisBroker, MicrosoftExtensionsAnalysisBroker>();
     services.AddSingleton<ITaxonomyBroker, JsonTaxonomyBroker>();

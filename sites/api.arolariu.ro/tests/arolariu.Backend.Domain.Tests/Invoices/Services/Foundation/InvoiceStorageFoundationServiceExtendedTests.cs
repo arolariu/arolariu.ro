@@ -28,7 +28,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 public sealed class InvoiceStorageFoundationServiceExtendedTests
 {
   private readonly Mock<IDatabaseBroker> mockBroker;
-  private readonly Mock<IInvoiceBlobStorageBroker> mockBlobStorageBroker;
+  private readonly Mock<IBlobStorageBroker> mockBlobStorageBroker;
   private readonly Mock<ILoggerFactory> mockLoggerFactory;
   private readonly Mock<ILogger<IInvoiceStorageFoundationService>> mockLogger;
   private readonly InvoiceStorageFoundationService service;
@@ -39,7 +39,7 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
   public InvoiceStorageFoundationServiceExtendedTests()
   {
     mockBroker = new Mock<IDatabaseBroker>();
-    mockBlobStorageBroker = new Mock<IInvoiceBlobStorageBroker>();
+    mockBlobStorageBroker = new Mock<IBlobStorageBroker>();
     mockLoggerFactory = new Mock<ILoggerFactory>();
     mockLogger = new Mock<ILogger<IInvoiceStorageFoundationService>>();
 

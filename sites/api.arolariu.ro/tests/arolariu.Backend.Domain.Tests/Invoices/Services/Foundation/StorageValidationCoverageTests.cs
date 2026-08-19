@@ -161,7 +161,7 @@ public sealed class StorageValidationCoverageTests
   }
 
   private static InvoiceStorageFoundationService CreateInvoiceService(Mock<IDatabaseBroker> broker) =>
-    new(broker.Object, Mock.Of<IInvoiceBlobStorageBroker>(), NullLoggerFactory.Instance);
+    new(broker.Object, Mock.Of<IBlobStorageBroker>(), NullLoggerFactory.Instance);
 
   private static MerchantStorageFoundationService CreateMerchantService(Mock<IDatabaseBroker> broker) =>
     new(broker.Object, NullLoggerFactory.Instance);

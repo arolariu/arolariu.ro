@@ -21,7 +21,7 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundationService
 {
   private readonly IDatabaseBroker invoiceNoSqlBroker;
-  private readonly IInvoiceBlobStorageBroker invoiceBlobStorageBroker;
+  private readonly IBlobStorageBroker invoiceBlobStorageBroker;
   private readonly ILogger<IInvoiceStorageFoundationService> logger;
 
   /// <summary>
@@ -32,7 +32,7 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
   /// <param name="loggerFactory">The logger factory used to create the foundation logger.</param>
   public InvoiceStorageFoundationService(
     IDatabaseBroker invoiceNoSqlBroker,
-    IInvoiceBlobStorageBroker invoiceBlobStorageBroker,
+    IBlobStorageBroker invoiceBlobStorageBroker,
     ILoggerFactory loggerFactory)
   {
     ArgumentNullException.ThrowIfNull(invoiceNoSqlBroker);
@@ -137,7 +137,7 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
     try
     {
       properties = await invoiceBlobStorageBroker
-        .GetPropertiesAsync(scan.ApprovedBlobPath!, cancellationToken)
+        .InspectInvoiceScanAsync(scan.Location, cancellationToken)
         .ConfigureAwait(false);
     }
     catch (Azure.RequestFailedException exception) when (exception.Status == 404)

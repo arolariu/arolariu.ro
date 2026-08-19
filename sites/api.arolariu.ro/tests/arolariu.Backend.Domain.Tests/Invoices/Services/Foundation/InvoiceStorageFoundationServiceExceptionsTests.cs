@@ -25,7 +25,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 public class InvoiceStorageFoundationServiceExceptionsTests
 {
   private readonly Mock<IDatabaseBroker> _broker = new();
-  private readonly Mock<IInvoiceBlobStorageBroker> _blobStorageBroker = new();
+  private readonly Mock<IBlobStorageBroker> _blobStorageBroker = new();
   private readonly InvoiceStorageFoundationService _sut;
 
   /// <summary>Initializes a new instance of the <see cref="InvoiceStorageFoundationServiceExceptionsTests"/> class.</summary>

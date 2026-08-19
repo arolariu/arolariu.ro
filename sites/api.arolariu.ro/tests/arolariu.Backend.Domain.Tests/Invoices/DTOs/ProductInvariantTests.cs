@@ -94,7 +94,7 @@ public sealed class ProductInvariantTests
   {
     // Arrange
     var storageBroker = new Mock<IDatabaseBroker>(MockBehavior.Strict);
-    var blobStorageBroker = new Mock<IInvoiceBlobStorageBroker>(MockBehavior.Strict);
+    var blobStorageBroker = new Mock<IBlobStorageBroker>(MockBehavior.Strict);
     var service = new InvoiceStorageFoundationService(
       storageBroker.Object,
       blobStorageBroker.Object,

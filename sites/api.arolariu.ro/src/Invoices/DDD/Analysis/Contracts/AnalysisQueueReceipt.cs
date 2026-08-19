@@ -36,11 +36,11 @@ public sealed record AnalysisQueueReceipt
   public string MessageId { get; }
 
   /// <summary>Gets the latest pop receipt required for update and delete operations.</summary>
-  public string PopReceipt { get; }
+  public string PopReceipt { get; init; }
 
   /// <summary>Gets the number of times Azure Queue has delivered this message.</summary>
   public long DequeueCount { get; }
 
   /// <summary>Gets the next time at which the message becomes visible, when supplied by Azure Queue.</summary>
-  public DateTimeOffset? NextVisibleAt { get; }
+  public DateTimeOffset? NextVisibleAt { get; init; }
 }

@@ -81,7 +81,7 @@ public sealed class InvoiceStandardLayeringArchitectureTests
     AssertConstructorDependencies(
       typeof(InvoiceStorageFoundationService),
       typeof(IDatabaseBroker),
-      typeof(IInvoiceBlobStorageBroker),
+      typeof(IBlobStorageBroker),
       typeof(ILoggerFactory));
 
     AssertConstructorDependencies(
