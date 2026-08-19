@@ -1297,12 +1297,12 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      Merchant updatedMerchantCandidate = merchantPayload.ToMerchant(id);
-      updatedMerchantCandidate.Classification ??= existingMerchant.Classification;
+      Merchant updatedMerchant = merchantPayload.ToMerchant(id);
+      updatedMerchant.Classification ??= existingMerchant.Classification;
 
       var updatedMerchant = await invoiceManagementService
         .UpdateMerchant(
-          updatedMerchantCandidate,
+          updatedMerchant,
           id,
           existingMerchant.ParentCompanyId,
           cancellationToken: writeScope.Token)

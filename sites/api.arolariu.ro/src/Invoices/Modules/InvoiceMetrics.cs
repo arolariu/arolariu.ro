@@ -42,7 +42,7 @@ using arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysis;
 ///   <item><c>invoices.analysis.taxonomy.validation_failures</c> — Taxonomy code validation failures</item>
 ///   <item><c>invoices.analysis.tokens.input</c> / <c>invoices.analysis.tokens.output</c> — Non-sensitive token usage</item>
 ///   <item><c>invoices.analysis.cost.estimated</c> — Estimated generative model cost in USD, never billing truth</item>
-///   <item><c>invoices.cosmosdb.request_charge</c> — Cosmos DB RU cost distribution (includes the <c>analysisRuns</c> container)</item>
+///   <item><c>invoices.cosmosdb.request_charge</c> — Cosmos DB RU cost distribution for invoice and merchant storage</item>
 /// </list>
 /// <para>
 /// <b>Confidentiality:</b> every analysis instrument in this class accepts only bounded, non-sensitive dimension

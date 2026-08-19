@@ -9,53 +9,37 @@
 
 ## Abstract
 
-This RFC documents the Domain-Driven Design (DDD) architecture used by the
-arolariu.ro .NET 10 modular monolith. The backend separates the Core,
-Authentication, and Invoices bounded contexts and combines aggregates, entities,
-value objects, and domain-specific application services with The Standard's
-flow-forward dependency model.
-
-The completed Invoices refactor exposes one application boundary to HTTP endpoints
-and the background worker:
-
-```text
-Endpoint / Worker
-  -> InvoiceManagementService
-    -> CRUD or Analysis Processing
-      -> approved Orchestrations
-        -> capability Foundations
-          -> Brokers
-```
+This RFC defines the generic Domain-Driven Design (DDD) architecture used by the
+arolariu.ro .NET 10 modular monolith. Bounded contexts organize aggregates,
+entities, value objects, and application services around domain language. The
+service architecture follows a flow-forward dependency model: each role depends
+only on the next approved role, while external-system details remain behind
+Broker contracts.
 
 ---
 
-## Layer diagram
+## Architectural overview
 
 ```mermaid
 flowchart TB
-  Adapters[Endpoints / Analysis Worker]
-  Management[InvoiceManagementService]
-  Crud[CrudProcessingService]
-  Analysis[AnalysisProcessingService]
-  Orchestrations[Approved Orchestration Services]
-  Foundations[Capability Foundation Services]
-  Brokers[Brokers]
-  External[(Cosmos DB · Blob Storage · Document Intelligence<br/>Generative AI · Embedded Taxonomies)]
+  Management[Management Service Layer]
+  Processing[Processing Services Layer]
+  Orchestration[Orchestration Services Layer]
+  Foundation[Foundation Services Layer]
+  Broker[Broker Services Layer]
 
-  Adapters --> Management
-  Management --> Crud
-  Management --> Analysis
-  Crud --> Orchestrations
-  Analysis --> Orchestrations
-  Orchestrations --> Foundations
-  Foundations --> Brokers
-  Brokers --> External
+  Management --> Processing
+  Processing --> Orchestration
+  Orchestration --> Foundation
+  Foundation --> Broker
 
   classDef layer stroke:#e87a3e,stroke-width:1.5px;
-  classDef external stroke-dasharray:4 3;
-  class Adapters,Management,Crud,Analysis,Orchestrations,Foundations,Brokers layer;
-  class External external;
+  class Management,Processing,Orchestration,Foundation,Broker layer;
 ```
+
+The diagram describes architectural roles rather than a specific bounded
+context. Protocol adapters call the Management boundary but are not themselves
+part of the service hierarchy.
 
 ---
 
@@ -73,153 +57,115 @@ Traditional layered architectures often produce:
 
 ### 1.2 Design goals
 
-- Use a consistent ubiquitous language.
-- Keep aggregate invariants with domain models and their approved service boundary.
+- Use a consistent ubiquitous language within each bounded context.
+- Keep aggregate invariants with domain models and approved service boundaries.
 - Make dependency direction and capability ownership explicit.
-- Keep durable work recoverable across process restarts.
+- Preserve recoverability for work that must survive process restarts.
 - Preserve testability through focused interfaces and dependency limits.
 
 ---
 
 ## 2. Technical design
 
-### 2.1 Bounded-context organization
+### 2.1 Bounded contexts
+
+The backend is a modular monolith whose bounded contexts own their domain models,
+contracts, services, and external dependency abstractions. Shared primitives,
+telemetry, options, and HTTP contracts live outside those domain boundaries and
+must not become a route for bypassing the service hierarchy.
+
+Each bounded context may contain:
 
 ```text
-sites/api.arolariu.ro/src/
-├── Core/                         # Application entry point and infrastructure
-├── Common/                       # Shared DDD, telemetry, options, and HTTP contracts
-├── Core.Auth/                    # Authentication bounded context
-└── Invoices/
-    ├── Brokers/                  # External dependency boundaries
-    ├── DDD/
-    │   ├── AggregatorRoots/
-    │   ├── Analysis/             # Durable runs, options, patches, and results
-    │   ├── Entities/
-    │   └── ValueObjects/
-    ├── DTOs/
-    ├── Endpoints/                # HTTP adapters
-    ├── Services/
-    │   ├── Management/           # Single application-facing façade
-    │   ├── Processing/           # CRUD and analysis processing
-    │   ├── Orchestration/        # Approved capability coordination
-    │   └── Foundation/           # Broker-neighboring capability boundaries
-    └── Workers/                  # Durable analysis queue consumer
+BoundedContext/
+├── DDD/                    # Aggregates, entities, value objects, and contracts
+├── Services/
+│   ├── Management/        # Application-facing coordination boundary
+│   ├── Processing/        # Domain computation and workflow sequencing
+│   ├── Orchestration/     # Composition of approved capabilities
+│   └── Foundation/        # Validation and direct dependency classification
+├── Brokers/               # Thin external-system adapters
+├── Endpoints/             # Protocol adapters
+└── Workers/               # Background host adapters
 ```
+
+Not every bounded context requires every adapter type, but service dependencies
+must retain the direction shown in the architectural overview.
 
 ### 2.2 Domain model
 
-The Invoices bounded context currently owns:
+- **Aggregates** define consistency boundaries and protect domain invariants.
+- **Entities** have stable identity and lifecycle within the domain.
+- **Value objects** express immutable concepts through value equality.
+- **Domain contracts** carry provider-neutral inputs and results between approved
+  layers.
 
-- `Invoice`, the aggregate root for invoice state, scans, payment information,
-  products, classifications, recipes, and analysis-derived metadata.
-- `Merchant`, the merchant entity referenced by invoices and partitioned by parent
-  company.
-- `AnalysisRun`, the durable state machine for accepted, claimed, completed, and
-  failed invoice or merchant analysis work.
-- Immutable analysis contracts and patches under `DDD/Analysis/`, which separate
-  capability results from persistence of the target aggregate.
+Cross-aggregate sequencing belongs above aggregate-local behavior. Provider SDK
+types must not become domain contracts.
 
-The source tree does not currently expose explicit invoice domain-event types.
-Cross-aggregate workflows are coordinated through the service graph described below.
+### 2.3 Service responsibilities
 
-### 2.3 Invoice application-service graph
+| Architectural role | Responsibility |
+|---|---|
+| Management Service Layer | Exposes one application-facing boundary and coordinates operations spanning Processing services |
+| Processing Services Layer | Performs domain computation, applies transformations, and sequences approved Orchestrations |
+| Orchestration Services Layer | Composes only the Foundations approved for a workflow |
+| Foundation Services Layer | Validates capability inputs, applies capability policy, and classifies direct Broker failures |
+| Broker Services Layer | Invokes external dependencies and maps provider responses into domain-neutral contracts |
 
-The exact domain dependencies are:
+Sideways dependencies within Foundation or Orchestration are prohibited.
+Processing services do not call Foundations or Brokers directly, and Management
+does not bypass Processing.
 
-| Service | Direct domain dependencies | Count |
-|---|---|---:|
-| `InvoiceManagementService` | `ICrudProcessingService`, `IAnalysisProcessingService` | 2 |
-| `CrudProcessingService` | `IInvoiceOrchestrationService`, `IMerchantOrchestrationService` | 2 |
-| `AnalysisProcessingService` | `IClassificationOrchestrationService`, `IAnalysisOrchestrationService` | 2 |
-| `InvoiceOrchestrationService` | `IInvoiceStorageFoundationService` | 1 |
-| `MerchantOrchestrationService` | `IMerchantStorageFoundationService` | 1 |
-| `ClassificationOrchestrationService` | `IClassificationAnalysisFoundationService`, `IGenerativeAnalysisFoundationService` | 2 |
-| `AnalysisOrchestrationService` | `IAnalysisRunFoundationService`, `IDocumentAnalysisFoundationService`, `IGenerativeAnalysisFoundationService` | 3 |
+### 2.4 Persistence boundaries
 
-`InvoiceManagementService` is the only invoice-domain service consumed by endpoint
-handlers and `AnalysisWorker`. Management delegates simple operations and owns
-cross-processing sequencing. Processing calls only approved orchestration services;
-no processing service reaches a Foundation or Broker directly.
+Persistence Brokers expose only the regions and primitive operations required by
+their bounded context. Partition selection, provider calls, and direct provider
+error translation belong in the Broker. Validation, authorization, aggregate
+coordination, and workflow policy belong in higher layers.
 
-### 2.4 Foundation capability ownership
+The current Invoices persistence boundary contains invoice and merchant regions.
+Analysis durability is not stored in that database boundary.
 
-| Foundation | Broker dependencies | Owned capability |
-|---|---|---|
-| Invoice Storage | `IDatabaseBroker`, `IInvoiceBlobStorageBroker` | Invoice persistence and validation of approved scan blobs |
-| Merchant Storage | `IDatabaseBroker` | Merchant persistence and lookup |
-| Classification Analysis | `ITaxonomyBroker` | Taxonomy search and canonical resolution |
-| Generative Analysis | `IGenerativeAnalysisBroker` | Typed structured generation and retry policy |
-| Document Analysis | `IDocumentIntelligenceBroker` | Receipt extraction from stored scan URIs |
-| Analysis Run | `IDatabaseBroker` | Durable queue, claims, leases, and terminal transitions |
+### 2.5 External capabilities
 
-No Foundation calls another Foundation. Broker implementations remain thin external
-adapters and do not own domain workflow decisions.
-
-### 2.5 Unified Cosmos boundary
-
-`IDatabaseBroker`, implemented by the partial `CosmosDatabaseBroker`, is the single
-Cosmos persistence abstraction for all three regions:
-
-- `invoices`, partitioned by invoice `UserIdentifier`;
-- `merchants`, partitioned by `ParentCompanyId`;
-- `analysisRuns`, partitioned by `/bucket`.
-
-The analysis-run region uses the constant bucket `default`. Queued and running runs
-have no item TTL. Completed and failed runs receive a 30-day item TTL, while the
-container enables per-item TTL with `DefaultTimeToLive = -1`.
-
-Workers claim the oldest queued run or a running run whose lease expired. Claims,
-lease renewals, completion, and failure use immutable `AnalysisRun` transitions and
-Cosmos `_etag` conditional replacement. This prevents two workers from silently
-overwriting the same lease.
-
-### 2.6 Analysis integration stack
-
-The current capability stack is:
-
-- Azure Blob Storage through `IInvoiceBlobStorageBroker` for approved invoice scan
-  property inspection.
-- Azure AI Document Intelligence through `IDocumentIntelligenceBroker`, using the
-  `prebuilt-receipt` model against scan URIs.
-- `Microsoft.Extensions.AI` through `IGenerativeAnalysisBroker` for typed JSON Schema
-  output over an `IChatClient`.
-- Embedded GS1 GPC, ECOICOP v2, and NACE 2.1 artifacts through `ITaxonomyBroker` for
-  deterministic search and canonical classification.
-
-This stack keeps provider mapping in Brokers, validation and retry behavior in
-Foundations, and capability sequencing above the Foundation layer.
+External storage, document extraction, generative analysis, taxonomy data, and
+other integrations are represented by focused Broker contracts. Implementations
+remain replaceable without changing the domain service graph. Foundations own
+provider-independent validation and resilience policy; Orchestrations and
+Processing services own capability composition.
 
 ---
 
 ## 3. Runtime workflows
 
-### 3.1 CRUD
+### 3.1 Request workflow
 
 ```text
-Endpoint
-  -> InvoiceManagementService
-    -> CrudProcessingService
-      -> Invoice or Merchant Orchestration
-        -> corresponding Storage Foundation
-          -> IDatabaseBroker and, for invoice scans, IInvoiceBlobStorageBroker
+Protocol adapter
+  -> Management Service Layer
+    -> Processing Services Layer
+      -> Orchestration Services Layer
+        -> Foundation Services Layer
+          -> Broker Services Layer
 ```
 
-### 3.2 Durable analysis
+Adapters own transport validation, authorization context, request cancellation,
+DTO mapping, and response construction. They resolve the Management contract
+rather than lower-layer contracts.
 
-The analyze endpoint validates the target through CRUD Processing before Analysis
-Processing persists an accepted run. `AnalysisWorker` later resolves only
-`IInvoiceManagementService`, which coordinates:
+### 3.2 Durable analysis workflow
 
-1. Claiming the next run and maintaining its lease through Analysis Processing.
-2. Reading the target through CRUD Processing.
-3. Producing immutable capability results and patches through Analysis Processing.
-4. Persisting invoice, merchant, and relationship changes through CRUD Processing.
-5. Completing the run only after target persistence succeeds, or failing it when the
-   target is missing, capability execution fails terminally, or persistence fails.
+When analysis must survive request completion or process restart, the application
+publishes a provider-neutral message to a backend-owned Azure Queue. A worker
+receives visible messages through the same Management boundary used by request
+adapters. Message visibility provides temporary ownership: successful work is
+deleted, transiently failed work becomes visible for retry, and long-running work
+renews visibility while it executes.
 
-Analysis Processing does not persist invoice or merchant aggregates. Management is
-the cross-processing coordinator that establishes this ordering.
+Queue transport details remain in Broker and Foundation roles. Target loading,
+analysis execution, persistence ordering, and terminal retry policy remain in
+Processing and Management roles.
 
 ---
 
@@ -227,26 +173,24 @@ the cross-processing coordinator that establishes this ordering.
 
 ### 4.1 Single responsibility
 
-- Domain models own state and invariant-preserving transitions.
+- Domain models own state and invariant-preserving behavior.
 - Brokers own provider calls and provider-neutral mapping.
-- Foundations own one storage or analysis capability.
-- Orchestrations compose only their approved Foundations.
-- Processing owns computation and domain transformations.
+- Foundations own one external capability and its validation policy.
+- Orchestrations compose only approved Foundations.
+- Processing services own domain computation and transformations.
 - Management owns application-level sequencing across Processing services.
 - Endpoints and workers remain adapters.
 
 ### 4.2 Interface segregation and dependency inversion
 
-Interfaces are capability-specific: storage, classification, generation, document
-extraction, durable runs, CRUD processing, analysis processing, and management are
-separate contracts. Consumers depend on the narrow abstraction for the next approved
-layer rather than on concrete implementations.
+Contracts are capability-specific. Consumers depend on the narrow abstraction
+for the next approved role rather than concrete implementations or provider SDKs.
 
 ### 4.3 Open/closed and substitution
 
-Provider implementations can be replaced behind Broker contracts without changing
-the domain service graph. Foundation and orchestration contracts likewise permit
-isolated test doubles while preserving dependency direction.
+Provider implementations can be replaced behind Broker contracts without
+changing the service graph. Foundation and Orchestration contracts permit focused
+test doubles while retaining dependency direction.
 
 ---
 
@@ -254,20 +198,21 @@ isolated test doubles while preserving dependency direction.
 
 ### Benefits
 
-- Explicit capability ownership and bounded dependency counts.
-- Recoverable analysis work with optimistic lease coordination.
-- Provider-neutral domain contracts for external analysis systems.
-- One stable application entry point for both request and worker adapters.
+- Explicit capability ownership and constrained dependency direction.
+- Provider-neutral domain contracts.
+- Recoverable asynchronous work without database-owned workflow state.
+- One stable application boundary for request and worker adapters.
 
 ### Costs
 
 - More interfaces and service types than a conventional layered application.
-- Durable analysis requires lifecycle, lease, TTL, and compensation handling.
-- Cross-processing persistence must remain in Management to avoid dependency bypasses.
+- Durable queue processing requires visibility renewal and bounded retry policy.
+- Cross-processing persistence must remain in Management to prevent dependency
+  bypasses.
 
 Microservices and event sourcing remain unnecessary for the current deployment
-scale; the modular-monolith boundary retains those options without introducing their
-operational cost now.
+scale; the modular-monolith boundary retains those options without introducing
+their operational cost.
 
 ---
 
@@ -275,15 +220,16 @@ operational cost now.
 
 Architecture tests should verify:
 
-- endpoints and the worker consume only `IInvoiceManagementService`;
-- the dependency counts in section 2.3;
-- every Foundation-to-Broker ownership rule in section 2.4;
-- no sideways Foundation or Orchestration dependencies;
-- queue creation, claim races, expired-lease recovery, heartbeat renewal, and TTL;
-- Management-coordinated persistence before terminal run completion;
-- exception marker and cancellation propagation through every layer.
+- adapters consume only their bounded context's Management contract;
+- dependencies flow only to the next approved role;
+- no sideways Foundation or Orchestration dependencies exist;
+- each Foundation owns only its approved Broker contracts;
+- durable work covers enqueue, visibility renewal, retry, terminal deletion, and
+  cancellation behavior;
+- exception markers and cancellation propagate through every layer.
 
-The backend coverage target remains 85% or higher for domain and application code.
+The backend coverage target remains 85% or higher for domain and application
+code.
 
 ---
 
@@ -297,7 +243,7 @@ The backend coverage target remains 85% or higher for domain and application cod
 
 ---
 
-**Document Version**: 1.1.0
+**Document Version**: 1.2.0
 **Last Updated**: 2026-08-19
 **Reviewed By**: Alexandru-Razvan Olariu
 **Status**: ✅ Implemented
