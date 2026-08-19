@@ -94,7 +94,7 @@ internal static class InvoiceBuilder
       products.Add(new Product
       {
         Name = GetRandomString(),
-        Category = ProductCategory.FISH,
+        Classification = null,
         Quantity = (decimal)(Random.NextDouble() * 100),
         QuantityUnit = GetRandomString(),
         ProductCode = GetRandomString(),

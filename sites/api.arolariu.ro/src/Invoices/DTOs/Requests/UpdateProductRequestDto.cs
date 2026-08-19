@@ -38,8 +38,8 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// The new name for the product. Required.
 /// May be the same as <see cref="OriginalProductName"/> if only other fields change.
 /// </param>
-/// <param name="Category">
-/// The product category classification. Replaces the existing category.
+/// <param name="Classification">
+/// Optional manual GS1 GPC classification selection. Null clears the classification.
 /// </param>
 /// <param name="Quantity">
 /// The new quantity of product units. Must be positive.
@@ -62,7 +62,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// var request = new UpdateProductRequestDto(
 ///     OriginalProductName: "LAPTE ZU2U 1L",  // OCR misread
 ///     Name: "LAPTE ZUZU 1L",                 // Corrected
-///     Category: ProductCategory.DAIRY,
+///     Classification: null,
 ///     Quantity: 2,
 ///     QuantityUnit: "buc",
 ///     ProductCode: "5941234567890",
@@ -80,7 +80,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 public readonly record struct UpdateProductRequestDto(
   [Required] string OriginalProductName,
   [Required] string Name,
-  ProductCategory Category,
+  ClassificationSelectionDto? Classification,
   decimal Quantity,
   string? QuantityUnit,
   string? ProductCode,
@@ -106,7 +106,8 @@ public readonly record struct UpdateProductRequestDto(
   public Product ToProduct() => new()
   {
     Name = Name,
-    Category = Category,
+    Classification = null,
+    PendingClassificationSelection = Classification?.ToSelection(),
     Quantity = Quantity,
     QuantityUnit = QuantityUnit ?? string.Empty,
     ProductCode = ProductCode ?? string.Empty,

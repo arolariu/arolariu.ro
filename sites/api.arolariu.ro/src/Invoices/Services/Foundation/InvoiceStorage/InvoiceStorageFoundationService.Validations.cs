@@ -6,6 +6,8 @@ using arolariu.Backend.Common.Validators;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions.Inner;
 
 public partial class InvoiceStorageFoundationService
 {
@@ -30,6 +32,32 @@ public partial class InvoiceStorageFoundationService
       confidence: null,
       evidence: []);
     invoice.PendingClassificationSelection = null;
+  }
+
+  private void CanonicalizeProductClassifications(Invoice invoice)
+  {
+    foreach (Product product in invoice.Items)
+    {
+      ClassificationSelection? selection = product.PendingClassificationSelection;
+      if (selection is null)
+      {
+        continue;
+      }
+
+      if (selection.System != ClassificationSystem.Gs1Gpc)
+      {
+        throw new ProductClassificationNotValidException(
+          "Product classification must use GS1 GPC.");
+      }
+
+      product.Classification = taxonomyBroker.Resolve(
+        selection.System,
+        selection.Code,
+        ClassificationOrigin.Manual,
+        confidence: null,
+        evidence: []);
+      product.PendingClassificationSelection = null;
+    }
   }
 
   private static void ValidateIdentifierIsSet(Guid? identifier)

@@ -8,6 +8,7 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptions.Inner;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.Modules;
 
 public partial class InvoiceStorageFoundationService
@@ -72,6 +73,7 @@ public partial class InvoiceStorageFoundationService
     InvoiceIdNotSetException
       or InvoiceDescriptionNotSetException
       or InvoiceClassificationNotValidException
+      or ProductClassificationNotValidException
       or InvoicePaymentInformationNotCorrectException
       or InvoiceTimeInformationNotCorrectException
       or InvoicePhotoLocationNotCorrectException

@@ -102,15 +102,12 @@ public sealed partial class AzureClassifierBroker : IClassifierBroker
     invoice.Name = await nameTask.ConfigureAwait(false);
     invoice.Description = await descriptionTask.ConfigureAwait(false);
 
-    // Batch 2: Per-product classification (all products in parallel, category + allergens in parallel per product)
-    #region Generate possible products
+    // Batch 2: Per-product allergen enrichment.
+    #region Enrich product allergens
     var productTasks = invoice.Items.Select(async product =>
     {
-      var categoryTask = GenerateProductCategory(product);
-      var allergensTask = GenerateProductAllergens(product);
-      await Task.WhenAll(categoryTask, allergensTask).ConfigureAwait(false);
-      product.Category = await categoryTask.ConfigureAwait(false);
-      product.DetectedAllergens = await allergensTask.ConfigureAwait(false);
+      product.DetectedAllergens =
+        await GenerateProductAllergens(product).ConfigureAwait(false);
     });
     await Task.WhenAll(productTasks).ConfigureAwait(false);
     #endregion

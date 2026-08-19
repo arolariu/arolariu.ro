@@ -490,7 +490,7 @@ public sealed class ValueObjectTests
 
     // Assert
     Assert.AreEqual(string.Empty, product.Name);
-    Assert.AreEqual(ProductCategory.OTHER, product.Category);
+    Assert.IsNull(product.Classification);
     Assert.AreEqual(0, product.Quantity);
     Assert.AreEqual(string.Empty, product.QuantityUnit);
     Assert.AreEqual(string.Empty, product.ProductCode);
@@ -510,7 +510,6 @@ public sealed class ValueObjectTests
     var product = new Product
     {
       Name = "MONSTER ENERGY DRINK 500ML",
-      Category = ProductCategory.BEVERAGES,
       Quantity = 2,
       QuantityUnit = "pcs",
       ProductCode = "SKU12345",
@@ -520,7 +519,7 @@ public sealed class ValueObjectTests
 
     // Assert
     Assert.AreEqual("MONSTER ENERGY DRINK 500ML", product.Name);
-    Assert.AreEqual(ProductCategory.BEVERAGES, product.Category);
+    Assert.IsNull(product.Classification);
     Assert.AreEqual(2, product.Quantity);
     Assert.AreEqual("pcs", product.QuantityUnit);
     Assert.AreEqual("SKU12345", product.ProductCode);
@@ -692,48 +691,4 @@ public sealed class ValueObjectTests
 
   #endregion
 
-  #region ProductCategory Enum Tests (if exists)
-
-  /// <summary>
-  /// Verifies ProductCategory.OTHER is the default category.
-  /// </summary>
-  [TestMethod]
-  public void ProductCategory_Default_IsOther()
-  {
-    // Arrange
-    var product = new Product();
-
-    // Assert
-    Assert.AreEqual(ProductCategory.OTHER, product.Category);
-  }
-
-  /// <summary>
-  /// Verifies ProductCategory can be set to different values.
-  /// </summary>
-  [TestMethod]
-  [DataRow(ProductCategory.NOT_DEFINED)]
-  [DataRow(ProductCategory.BAKED_GOODS)]
-  [DataRow(ProductCategory.GROCERIES)]
-  [DataRow(ProductCategory.DAIRY)]
-  [DataRow(ProductCategory.MEAT)]
-  [DataRow(ProductCategory.FISH)]
-  [DataRow(ProductCategory.FRUITS)]
-  [DataRow(ProductCategory.VEGETABLES)]
-  [DataRow(ProductCategory.BEVERAGES)]
-  [DataRow(ProductCategory.ALCOHOLIC_BEVERAGES)]
-  [DataRow(ProductCategory.TOBACCO)]
-  [DataRow(ProductCategory.CLEANING_SUPPLIES)]
-  [DataRow(ProductCategory.PERSONAL_CARE)]
-  [DataRow(ProductCategory.MEDICINE)]
-  [DataRow(ProductCategory.OTHER)]
-  public void ProductCategory_CanBeSetToAnyValue(ProductCategory category)
-  {
-    // Arrange
-    var product = new Product { Category = category };
-
-    // Assert
-    Assert.AreEqual(category, product.Category);
-  }
-
-  #endregion
 }
