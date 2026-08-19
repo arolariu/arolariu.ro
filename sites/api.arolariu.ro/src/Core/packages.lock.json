@@ -163,15 +163,6 @@
           "Azure.Storage.Common": "12.16.0"
         }
       },
-      "Azure.Storage.Queues": {
-        "type": "Transitive",
-        "resolved": "12.15.0",
-        "contentHash": "ZCUxifpmNUAWmEE11KhrU0VPRTxG22IRhZGoplWIr10q2DWQTjqA9ucg1qqJpG966nW2I/pfXdeN7mHU+k00FA==",
-        "dependencies": {
-          "Azure.Storage.Common": "12.16.0",
-          "System.Memory.Data": "1.0.2"
-        }
-      },
       "Castle.Core": {
         "type": "Transitive",
         "resolved": "5.2.1",
@@ -451,6 +442,7 @@
           "Azure.AI.DocumentIntelligence": "[1.0.0, )",
           "Azure.AI.OpenAI": "[2.9.0-beta.1, )",
           "Azure.Storage.Blobs": "[12.29.1, )",
+          "Azure.Storage.Queues": "[12.27.1, )",
           "Microsoft.Azure.Cosmos": "[3.62.0, )",
           "Microsoft.Extensions.AI": "[10.9.0, )",
           "Microsoft.Extensions.AI.OpenAI": "[10.9.0, )",
@@ -499,6 +491,16 @@
           "Azure.Core": "1.60.0",
           "OpenTelemetry.Extensions.Hosting": "1.15.3",
           "OpenTelemetry.PersistentStorage.FileSystem": "1.0.3"
+        }
+      },
+      "Azure.Storage.Queues": {
+        "type": "CentralTransitive",
+        "requested": "[12.27.1, )",
+        "resolved": "12.27.1",
+        "contentHash": "uQgZ9bzwVJ8bqsWywzwkRt1lfusYPXJAPSb9yVlTsSmZtH+bnDb/RfQuHiuUmk3nlQbCOUGFdD0cRXn8uMiOHg==",
+        "dependencies": {
+          "Azure.Core": "1.55.0",
+          "Azure.Storage.Common": "12.28.0"
         }
       },
       "Microsoft.ApplicationInsights": {

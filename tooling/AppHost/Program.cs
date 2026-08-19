@@ -120,7 +120,7 @@ var cosmos = builder
     .WithIconName("DatabaseMultiple");
 
 // Database + containers (mirrors the selfhost-start.sh bootstrap that runs
-// `cosmos.NewDatabase('primary')` + creates invoices/merchants/analysisRuns containers).
+// `cosmos.NewDatabase('primary')` + creates invoices/merchants containers).
 var cosmosPrimaryDb = cosmos.AddCosmosDatabase(Constants.CosmosDatabaseName);
 var cosmosInvoices = cosmosPrimaryDb.AddContainer(
     Constants.CosmosInvoicesContainer,
@@ -128,17 +128,12 @@ var cosmosInvoices = cosmosPrimaryDb.AddContainer(
 var cosmosMerchants = cosmosPrimaryDb.AddContainer(
     Constants.CosmosMerchantsContainer,
     partitionKeyPath: Constants.CosmosMerchantsPartitionKey);
-var cosmosAnalysisRuns = cosmosPrimaryDb.AddContainer(
-    Constants.CosmosAnalysisRunsContainer,
-    partitionKeyPath: Constants.CosmosAnalysisRunsPartitionKey);
-// Aspire 13's AddContainer contract does not expose default TTL. The AnalysisWorker resolves Management before its
-// first poll, and Management idempotently upgrades this container to defaultTtl = -1 through the Analysis Run
-// Foundation. Bicep and selfhost bootstrap set the same value directly.
 
 var storage = builder
     .AddAzureStorage("storage")
     .RunAsEmulator(emulator => emulator
         .WithBlobPort(Constants.AzuriteBlobPort)
+        .WithQueuePort(Constants.AzuriteQueuePort)
         // Persist Azurite's workspace (mounted at /data inside the container)
         // across F5 restarts — uploaded blobs, the 'invoices' container, and CORS
         // service-properties all survive container destruction. Without this,
@@ -150,6 +145,7 @@ var storage = builder
     // hardcoded localhost:10000 — DCP would map that to a random host port and
     // those connections would fail.
     .WithEndpoint("blob", e => e.IsProxied = false)
+    .WithEndpoint("queue", e => e.IsProxied = false)
     .WithIconName("Storage");
 
 // Azurite ships with no CORS rules and no containers — apply allow-all on every

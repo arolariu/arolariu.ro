@@ -9,8 +9,6 @@
 //
 // Deployed Containers:
 // - invoices: Stores invoice documents partitioned by user or merchant
-// - merchants: Stores merchant documents partitioned by parent company
-// - analysisRuns: Stores durable analysis run state partitioned by bucket
 //
 // Consistency Level: Session
 // - Guarantees read-your-writes within a session
@@ -146,33 +144,6 @@ resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-11-01-preview' 
           }
           uniqueKeyPolicy: {
             uniqueKeys: []
-          }
-        }
-      }
-    }
-
-    resource analysisRunsContainer 'containers@2025-11-01-preview' = {
-      name: 'analysisRuns'
-      properties: {
-        resource: {
-          id: 'analysisRuns'
-          defaultTtl: -1
-          partitionKey: {
-            paths: ['/bucket']
-            kind: 'Hash'
-            version: 2
-          }
-          indexingPolicy: {
-            indexingMode: 'consistent'
-            automatic: true
-            includedPaths: [{ path: '/*' }]
-            excludedPaths: [{ path: '/_etag/?' }]
-            compositeIndexes: [
-              [
-                { path: '/status', order: 'ascending' }
-                { path: '/acceptedAt', order: 'ascending' }
-              ]
-            ]
           }
         }
       }

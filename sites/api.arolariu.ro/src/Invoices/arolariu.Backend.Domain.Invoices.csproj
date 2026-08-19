@@ -7,15 +7,13 @@
   <ItemGroup Label="Azure AI Packages">
     <PackageReference Include="Azure.AI.DocumentIntelligence" />
     <PackageReference Include="Azure.AI.OpenAI" />
-  </ItemGroup>
-
-  <ItemGroup Label="Microsoft Extensions AI Packages">
     <PackageReference Include="Microsoft.Extensions.AI" />
     <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
   </ItemGroup>
 
   <ItemGroup Label="Azure SDK Packages">
     <PackageReference Include="Azure.Storage.Blobs" />
+    <PackageReference Include="Azure.Storage.Queues" />
     <PackageReference Include="Microsoft.Azure.Cosmos" />
     <PackageReference Include="Microsoft.Extensions.Azure" />
   </ItemGroup>

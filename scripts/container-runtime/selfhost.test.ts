@@ -3,9 +3,9 @@
  * @module scripts/container-runtime/selfhost.test
  */
 
-import {afterEach, describe, expect, it, vi} from "vitest";
+import {afterEach, describe, expect, it} from "vitest";
 import {getContainerAdapter} from "./adapters.ts";
-import {bootstrapCosmos, buildSelfhostPlan, getRequiredSqlPassword, shouldGenerateTaxonomyArtifacts} from "./selfhost.ts";
+import {buildSelfhostPlan, getRequiredSqlPassword, shouldGenerateTaxonomyArtifacts} from "./selfhost.ts";
 
 const originalSqlPassword = process.env["MSSQL_SA_PASSWORD"];
 
@@ -76,33 +76,6 @@ describe("getRequiredSqlPassword", () => {
 
     it.each(["stop", "logs"] as const)("does not generate artifacts for %s", (action) => {
       expect(shouldGenerateTaxonomyArtifacts(action)).toBe(false);
-    });
-  });
-
-  describe("bootstrapCosmos", () => {
-    it("provisions the durable analysis run container with item-level TTL enabled", async () => {
-      const fetchMock = vi.fn().mockResolvedValue(new Response("{}", {status: 200}));
-      vi.stubGlobal("fetch", fetchMock);
-
-      try {
-        await bootstrapCosmos();
-
-        expect(fetchMock).toHaveBeenCalledTimes(4);
-        expect(fetchMock).toHaveBeenNthCalledWith(
-          4,
-          "http://localhost:8081/dbs/primary/colls",
-          expect.objectContaining({
-            method: "POST",
-            body: JSON.stringify({
-              id: "analysisRuns",
-              partitionKey: {paths: ["/bucket"], kind: "Hash"},
-              defaultTtl: -1,
-            }),
-          }),
-        );
-      } finally {
-        vi.unstubAllGlobals();
-      }
     });
   });
 
