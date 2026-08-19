@@ -237,61 +237,6 @@ It.IsAny<System.Threading.CancellationToken>()
 
   #region UpdateMerchantAsync Tests
 
-  /// <summary>Updates a merchant by identifier, verifying replace semantics.</summary>
-  [TestMethod]
-  [DynamicData(nameof(GetMerchantTestData))]
-  public async Task ShouldUpdateMerchantById_WhenValidMerchantProvided(Merchant originalMerchant)
-  {
-    ArgumentNullException.ThrowIfNull(originalMerchant);
-    // Given
-    var updatedMerchant = MerchantTestDataBuilder.CreateMerchantWithSpecificProperties(
-      id: originalMerchant.id,
-      parentCompanyId: originalMerchant.ParentCompanyId,
-      name: "Updated Merchant Name");
-
-    // Setup ReadMerchantAsync mock
-    var merchantList = new List<Merchant> { originalMerchant };
-    var readFeedResponseMock = new Mock<FeedResponse<Merchant>>();
-    readFeedResponseMock.Setup(response => response.Resource).Returns(merchantList);
-    readFeedResponseMock.Setup(response => response.GetEnumerator())
-      .Returns(merchantList.GetEnumerator());
-    readFeedResponseMock.Setup(response => response.StatusCode).Returns(HttpStatusCode.OK);
-
-    var readMockFeedIterator = new Mock<FeedIterator<Merchant>>();
-    readMockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(true);
-    readMockFeedIterator.Setup(iterator => iterator.ReadNextAsync(It.IsAny<System.Threading.CancellationToken>()))
-         .ReturnsAsync(readFeedResponseMock.Object)
-         .Callback(() => readMockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(false));
-
-    mockMerchantsContainer.Setup(container => container.GetItemQueryIterator<Merchant>(
-        It.IsAny<QueryDefinition>(),
-        It.IsAny<string>(),
-        It.IsAny<QueryRequestOptions>()
-      ))
-      .Returns(readMockFeedIterator.Object);
-
-    // Setup ReplaceItemAsync mock
-    var itemResponseMock = new Mock<ItemResponse<Merchant>>();
-    itemResponseMock.Setup(response => response.Resource).Returns(updatedMerchant);
-
-    mockMerchantsContainer.Setup(container => container.ReplaceItemAsync(
-        updatedMerchant,
-        originalMerchant.id.ToString(),
-        new PartitionKey(originalMerchant.ParentCompanyId.ToString()),
-        It.IsAny<ItemRequestOptions>(),
-        It.IsAny<System.Threading.CancellationToken>()
-      ))
-      .ReturnsAsync(itemResponseMock.Object);
-
-    // When
-    var actualMerchant = await merchantNoSqlBroker.UpdateMerchantAsync(originalMerchant.id, updatedMerchant, CancellationToken.None);
-
-    // Then
-    Assert.IsNotNull(actualMerchant);
-    Assert.AreEqual(updatedMerchant.id, actualMerchant.id);
-    Assert.AreEqual("Updated Merchant Name", actualMerchant.Name);
-  }
-
   /// <summary>Updates merchant via object upsert semantics.</summary>
   [TestMethod]
   [DynamicData(nameof(GetMerchantTestData))]

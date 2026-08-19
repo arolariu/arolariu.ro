@@ -82,23 +82,6 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
   }).ConfigureAwait(false);
   #endregion
 
-  #region Find Merchant By Normalized Name API
-  /// <inheritdoc/>
-  public async Task<Merchant?> FindMerchantByNormalizedNameObject(string normalizedName, CancellationToken cancellationToken) =>
-  await TryCatchAsync(async () =>
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(FindMerchantByNormalizedNameObject));
-
-    string canonicalNormalizedName = NormalizeAndValidateNormalizedName(normalizedName);
-
-    Merchant? merchant = await invoiceNoSqlBroker
-      .FindMerchantByNormalizedNameAsync(canonicalNormalizedName, cancellationToken)
-      .ConfigureAwait(false);
-
-    return merchant;
-  }).ConfigureAwait(false);
-  #endregion
-
   #region Read Merchant Object API
   /// <inheritdoc/>
   public async Task<Merchant> ReadMerchantObject(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>

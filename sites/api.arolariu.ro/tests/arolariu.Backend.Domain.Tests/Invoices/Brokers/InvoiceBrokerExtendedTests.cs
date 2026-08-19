@@ -351,27 +351,6 @@ public sealed class InvoiceBrokerExtendedTests
   }
 
   /// <summary>
-  /// Validates merchant update by ID.
-  /// </summary>
-  [TestMethod]
-  public async Task UpdateMerchantAsync_ById_ReturnsUpdatedMerchant()
-  {
-    // Arrange
-    var merchantId = Guid.NewGuid();
-    var updatedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
-
-    mockBroker
-        .Setup(b => b.UpdateMerchantAsync(merchantId, updatedMerchant, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(updatedMerchant);
-
-    // Act
-    var result = await mockBroker.Object.UpdateMerchantAsync(merchantId, updatedMerchant, CancellationToken.None);
-
-    // Assert
-    Assert.AreSame(updatedMerchant, result);
-  }
-
-  /// <summary>
   /// Validates merchant deletion completes without error.
   /// </summary>
   [TestMethod]

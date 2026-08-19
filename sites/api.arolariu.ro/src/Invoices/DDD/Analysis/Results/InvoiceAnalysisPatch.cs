@@ -10,12 +10,10 @@ using System;
 /// corresponding capability did not produce a usable result during the run — either it was not requested or it failed —
 /// and the previously persisted value MUST be left untouched. A non-null section is authoritative and replaces the
 /// previously persisted value, including when it carries an empty collection.</para>
-/// <para><b>Layer role:</b> This patch is built by the processing layer from an
-/// <see cref="InvoiceAnalysisResult"/>. It exists so that "what changed" is an explicit, inspectable value rather than
-/// implicit mutation scattered across the execution path.</para>
+/// <para><b>Layer role:</b> This patch makes "what changed" an explicit, inspectable value rather than implicit
+/// mutation scattered across the execution path.</para>
 /// </remarks>
 /// <param name="ExtractionUpdate">The receipt extraction result that rebuilds line items and payment metadata.</param>
-/// <param name="MerchantReferenceUpdate">The resolved merchant identifier to link onto the invoice.</param>
 /// <param name="SummaryUpdate">The generated invoice name and description.</param>
 /// <param name="ProductClassificationUpdate">The per-line-item GPC classifications, keyed by correlation token.</param>
 /// <param name="AllergenAssessmentUpdate">The per-line-item allergen assessments, keyed by correlation token.</param>
@@ -23,7 +21,6 @@ using System;
 /// <param name="RecipeGenerationUpdate">The generated recipe suggestions.</param>
 public sealed record InvoiceAnalysisPatch(
   ReceiptExtractionResult? ExtractionUpdate,
-  Guid? MerchantReferenceUpdate,
   InvoiceSummaryResult? SummaryUpdate,
   ProductClassificationResult? ProductClassificationUpdate,
   ProductAllergenAssessmentResult? AllergenAssessmentUpdate,
@@ -35,7 +32,6 @@ public sealed record InvoiceAnalysisPatch(
   /// </summary>
   public bool HasChanges =>
     ExtractionUpdate is not null
-    || MerchantReferenceUpdate is not null
     || SummaryUpdate is not null
     || ProductClassificationUpdate is not null
     || AllergenAssessmentUpdate is not null

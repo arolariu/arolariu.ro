@@ -48,9 +48,6 @@ public partial class MerchantStorageFoundationService
 
   private Exception Classify(Exception exception) => exception switch
   {
-    MerchantNormalizedNameNotSetException
-      => LogAndWrapValidation(exception),
-
     MerchantIdNotSetException
       or MerchantParentCompanyIdNotSetException
       or TaxonomyCodeNotFoundException

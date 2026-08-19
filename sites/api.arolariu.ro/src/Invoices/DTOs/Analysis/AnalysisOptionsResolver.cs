@@ -50,7 +50,6 @@ internal static class AnalysisOptionsResolver
     InvoiceAnalysisOverridesDto selection = overrides.Value;
 
     bool documentExtraction = selection.DocumentExtraction?.Enabled ?? baseline.DocumentExtraction;
-    bool merchantResolution = selection.MerchantResolution?.Enabled ?? baseline.MerchantResolution;
     bool invoiceSummary = selection.InvoiceSummary?.Enabled ?? baseline.InvoiceSummary;
     bool productClassification = selection.ProductClassification?.Enabled ?? baseline.ProductClassification;
     bool allergenAssessment = selection.AllergenAssessment?.Enabled ?? baseline.AllergenAssessment;
@@ -59,7 +58,6 @@ internal static class AnalysisOptionsResolver
     (bool recipeGeneration, int maximumRecipes) = ResolveRecipeSelection(baseline, selection.RecipeGeneration);
 
     if (!documentExtraction
-      && !merchantResolution
       && !invoiceSummary
       && !productClassification
       && !allergenAssessment
@@ -74,7 +72,6 @@ internal static class AnalysisOptionsResolver
     return new InvoiceAnalysisOptions(
       AnalysisProfile.Custom,
       documentExtraction,
-      merchantResolution,
       invoiceSummary,
       productClassification,
       allergenAssessment,
@@ -149,7 +146,6 @@ internal static class AnalysisOptionsResolver
 
   private static bool HasInvoiceCapabilityOverrides(InvoiceAnalysisOverridesDto overrides) =>
     overrides.DocumentExtraction is not null
-    || overrides.MerchantResolution is not null
     || overrides.InvoiceSummary is not null
     || overrides.ProductClassification is not null
     || overrides.AllergenAssessment is not null

@@ -98,8 +98,6 @@ public sealed class DocumentAnalysisFoundationServiceTests
       [InvoiceScanTestData.First(), InvoiceScanTestData.Second()],
       CancellationToken.None);
 
-    Assert.IsNotNull(result.MerchantCandidate);
-    Assert.AreEqual("First Merchant", result.MerchantCandidate.Name);
     Assert.AreEqual(2, result.TaxDetails.Count);
     Assert.AreEqual(2, result.Payments.Count);
   }

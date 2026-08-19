@@ -24,7 +24,6 @@ public sealed record InvoiceAnalysisOptions
   /// </summary>
   /// <param name="profile">The composition profile describing how these capability selections were produced.</param>
   /// <param name="documentExtraction">Whether document extraction should run.</param>
-  /// <param name="merchantResolution">Whether merchant resolution should run.</param>
   /// <param name="invoiceSummary">Whether invoice summarization should run.</param>
   /// <param name="productClassification">Whether product classification should run.</param>
   /// <param name="allergenAssessment">Whether allergen assessment should run.</param>
@@ -41,7 +40,6 @@ public sealed record InvoiceAnalysisOptions
   public InvoiceAnalysisOptions(
     AnalysisProfile profile,
     bool documentExtraction,
-    bool merchantResolution,
     bool invoiceSummary,
     bool productClassification,
     bool allergenAssessment,
@@ -57,11 +55,6 @@ public sealed record InvoiceAnalysisOptions
     if (allergenAssessment && !productClassification)
     {
       throw new ArgumentException("Allergen assessment requires product classification.", nameof(allergenAssessment));
-    }
-
-    if (merchantResolution && !documentExtraction)
-    {
-      throw new ArgumentException("Merchant resolution requires document extraction.", nameof(merchantResolution));
     }
 
     if (invoiceClassification && !documentExtraction)
@@ -98,7 +91,6 @@ public sealed record InvoiceAnalysisOptions
     if (profile == AnalysisProfile.Comprehensive
         && !HasComprehensiveShape(
           documentExtraction,
-          merchantResolution,
           invoiceSummary,
           productClassification,
           allergenAssessment,
@@ -112,7 +104,6 @@ public sealed record InvoiceAnalysisOptions
     if (profile == AnalysisProfile.Fast
         && !HasFastShape(
           documentExtraction,
-          merchantResolution,
           invoiceSummary,
           productClassification,
           allergenAssessment,
@@ -126,7 +117,6 @@ public sealed record InvoiceAnalysisOptions
     if (profile == AnalysisProfile.Balanced
         && !HasBalancedShape(
           documentExtraction,
-          merchantResolution,
           invoiceSummary,
           productClassification,
           allergenAssessment,
@@ -139,7 +129,6 @@ public sealed record InvoiceAnalysisOptions
 
     Profile = profile;
     DocumentExtraction = documentExtraction;
-    MerchantResolution = merchantResolution;
     InvoiceSummary = invoiceSummary;
     ProductClassification = productClassification;
     AllergenAssessment = allergenAssessment;
@@ -157,11 +146,6 @@ public sealed record InvoiceAnalysisOptions
   /// Gets a value indicating whether document extraction should run.
   /// </summary>
   public bool DocumentExtraction { get; }
-
-  /// <summary>
-  /// Gets a value indicating whether merchant resolution should run.
-  /// </summary>
-  public bool MerchantResolution { get; }
 
   /// <summary>
   /// Gets a value indicating whether invoice summarization should run.
@@ -201,7 +185,6 @@ public sealed record InvoiceAnalysisOptions
     new(
       AnalysisProfile.Comprehensive,
       documentExtraction: true,
-      merchantResolution: true,
       invoiceSummary: true,
       productClassification: true,
       allergenAssessment: true,
@@ -210,15 +193,14 @@ public sealed record InvoiceAnalysisOptions
       maximumRecipes: 3);
 
   /// <summary>
-  /// Creates the published fast (minimal, low-latency) invoice analysis preset: document extraction, merchant
-  /// resolution, product GPC classification, and invoice ECOICOP classification only.
+  /// Creates the published fast (minimal, low-latency) invoice analysis preset: document extraction, product GPC
+  /// classification, and invoice ECOICOP classification only.
   /// </summary>
   /// <returns>The fast invoice analysis option set.</returns>
   public static InvoiceAnalysisOptions Fast() =>
     new(
       AnalysisProfile.Fast,
       documentExtraction: true,
-      merchantResolution: true,
       invoiceSummary: false,
       productClassification: true,
       allergenAssessment: false,
@@ -235,7 +217,6 @@ public sealed record InvoiceAnalysisOptions
     new(
       AnalysisProfile.Balanced,
       documentExtraction: true,
-      merchantResolution: true,
       invoiceSummary: true,
       productClassification: true,
       allergenAssessment: true,
@@ -245,7 +226,6 @@ public sealed record InvoiceAnalysisOptions
 
   private static bool HasComprehensiveShape(
     bool documentExtraction,
-    bool merchantResolution,
     bool invoiceSummary,
     bool productClassification,
     bool allergenAssessment,
@@ -253,7 +233,6 @@ public sealed record InvoiceAnalysisOptions
     bool recipeGeneration,
     int maximumRecipes) =>
       documentExtraction
-      && merchantResolution
       && invoiceSummary
       && productClassification
       && allergenAssessment
@@ -263,7 +242,6 @@ public sealed record InvoiceAnalysisOptions
 
   private static bool HasFastShape(
     bool documentExtraction,
-    bool merchantResolution,
     bool invoiceSummary,
     bool productClassification,
     bool allergenAssessment,
@@ -271,7 +249,6 @@ public sealed record InvoiceAnalysisOptions
     bool recipeGeneration,
     int maximumRecipes) =>
       documentExtraction
-      && merchantResolution
       && !invoiceSummary
       && productClassification
       && !allergenAssessment
@@ -281,7 +258,6 @@ public sealed record InvoiceAnalysisOptions
 
   private static bool HasBalancedShape(
     bool documentExtraction,
-    bool merchantResolution,
     bool invoiceSummary,
     bool productClassification,
     bool allergenAssessment,
@@ -289,7 +265,6 @@ public sealed record InvoiceAnalysisOptions
     bool recipeGeneration,
     int maximumRecipes) =>
       documentExtraction
-      && merchantResolution
       && invoiceSummary
       && productClassification
       && allergenAssessment

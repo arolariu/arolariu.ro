@@ -338,12 +338,9 @@ public sealed class ClassificationOrchestrationService(
       .Select(classification => classification.OfficialLabel)
       .Distinct(StringComparer.Ordinal);
 
-    string merchantName = extraction.MerchantCandidate?.Name ?? string.Empty;
-
     return string.Join(
       " ",
       $"Receipt type: {extraction.ReceiptType}.",
-      $"Merchant: {merchantName}.",
       $"Products: {string.Join(", ", productNames)}.",
       $"Detected product categories: {string.Join(", ", productCategories)}.");
   }

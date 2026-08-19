@@ -13,7 +13,6 @@ using System;
 /// both product classification and allergen assessment. Violating overrides are rejected rather than silently repaired.</para>
 /// </remarks>
 /// <param name="DocumentExtraction">Overrides receipt OCR extraction.</param>
-/// <param name="MerchantResolution">Overrides merchant candidate resolution.</param>
 /// <param name="InvoiceSummary">Overrides invoice name and description generation.</param>
 /// <param name="ProductClassification">Overrides GPC product classification.</param>
 /// <param name="AllergenAssessment">Overrides per-product allergen assessment.</param>
@@ -22,7 +21,6 @@ using System;
 [Serializable]
 public readonly record struct InvoiceAnalysisOverridesDto(
   CapabilityToggleDto? DocumentExtraction,
-  CapabilityToggleDto? MerchantResolution,
   CapabilityToggleDto? InvoiceSummary,
   CapabilityToggleDto? ProductClassification,
   CapabilityToggleDto? AllergenAssessment,

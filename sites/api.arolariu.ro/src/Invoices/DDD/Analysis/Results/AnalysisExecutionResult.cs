@@ -31,13 +31,11 @@ public abstract record AnalysisExecutionResult(
 /// </summary>
 /// <param name="Message">The queued analysis message being executed.</param>
 /// <param name="TargetPatch">The immutable invoice patch produced by the analysis pipeline.</param>
-/// <param name="MerchantCandidate">The transient merchant candidate observed during analysis, if any.</param>
 /// <param name="CompletedCapabilities">The capabilities that produced a usable result.</param>
 /// <param name="FailureReason">The bounded failure reason for a failed execution, or <see langword="null"/>.</param>
 public sealed record InvoiceAnalysisExecutionResult(
   AnalysisQueueMessage Message,
   InvoiceAnalysisPatch TargetPatch,
-  MerchantCandidate? MerchantCandidate,
   IReadOnlyCollection<AnalysisCapability> CompletedCapabilities,
   AnalysisFailureReason? FailureReason = null)
   : AnalysisExecutionResult(Message, CompletedCapabilities, FailureReason);

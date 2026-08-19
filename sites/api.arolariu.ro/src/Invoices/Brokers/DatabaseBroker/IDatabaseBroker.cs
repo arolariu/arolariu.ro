@@ -171,22 +171,6 @@ public interface IDatabaseBroker
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
   ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync(Guid parentCompanyId, CancellationToken cancellationToken);
 
-  /// <summary>Finds a merchant by its canonical normalized name.</summary>
-  ValueTask<Merchant?> FindMerchantByNormalizedNameAsync(
-    string normalizedName,
-    CancellationToken cancellationToken);
-
-  /// <summary>
-  /// Replaces (upserts) a merchant by identifier (partition inferred via existing document lookup).
-  /// </summary>
-  /// <param name="merchantIdentifier">Merchant identity.</param>
-  /// <param name="updatedMerchant">Updated merchant snapshot.</param>
-  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
-  /// <returns>The persisted merchant.</returns>
-  /// <exception cref="ArgumentNullException">Thrown if <paramref name="updatedMerchant"/> is null.</exception>
-  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  ValueTask<Merchant> UpdateMerchantAsync(Guid merchantIdentifier, Merchant updatedMerchant, CancellationToken cancellationToken);
-
   /// <summary>
   /// Replaces (upserts) a merchant using its current and updated snapshots.
   /// </summary>

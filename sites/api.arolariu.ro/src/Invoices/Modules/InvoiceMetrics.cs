@@ -579,7 +579,6 @@ public static class InvoiceMetrics
   internal static string ToTag(AnalysisCapability capability) => capability switch
   {
     AnalysisCapability.DocumentExtraction => "document_extraction",
-    AnalysisCapability.MerchantResolution => "merchant_resolution",
     AnalysisCapability.InvoiceSummary => "invoice_summary",
     AnalysisCapability.ProductClassification => "product_classification",
     AnalysisCapability.AllergenAssessment => "allergen_assessment",

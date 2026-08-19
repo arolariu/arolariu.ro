@@ -14,10 +14,6 @@ public enum AnalysisCapability
   [JsonStringEnumMemberName("documentExtraction")]
   DocumentExtraction,
 
-  /// <summary>Resolve or correlate the invoice merchant.</summary>
-  [JsonStringEnumMemberName("merchantResolution")]
-  MerchantResolution,
-
   /// <summary>Produce an invoice-level natural-language summary.</summary>
   [JsonStringEnumMemberName("invoiceSummary")]
   InvoiceSummary,

@@ -90,7 +90,6 @@ public sealed partial class DocumentAnalysisFoundationService : IDocumentAnalysi
 
   private static ReceiptExtractionResult MergeDocuments(IReadOnlyList<IndexedReceiptDocument> extractedDocuments)
   {
-    MerchantCandidate? merchantCandidate = null;
     var products = new List<ExtractedProduct>();
     var productKeys = new HashSet<ProductIdentity>();
     var taxDetails = new List<TaxDetail>();
@@ -111,7 +110,6 @@ public sealed partial class DocumentAnalysisFoundationService : IDocumentAnalysi
     {
       ReceiptDocument document = extractedDocument.Document;
 
-      merchantCandidate ??= TryCreateMerchantCandidate(document.Merchant);
       receiptType = ChooseFirstNonEmpty(receiptType, document.ReceiptType.Value);
       countryRegion = ChooseFirstNonEmpty(countryRegion, document.CountryRegion.Value);
       transactionDate ??= document.Payment.TransactionDate.Value;
@@ -136,7 +134,6 @@ public sealed partial class DocumentAnalysisFoundationService : IDocumentAnalysi
       payments);
 
     return new ReceiptExtractionResult(
-      merchantCandidate,
       products,
       paymentInformation,
       receiptType,
@@ -228,28 +225,6 @@ public sealed partial class DocumentAnalysisFoundationService : IDocumentAnalysi
           Amount = amount,
         });
     }
-  }
-
-  private static MerchantCandidate? TryCreateMerchantCandidate(ReceiptMerchantDocument merchant)
-  {
-    string name = NormalizeOptionalText(merchant.Name.Value);
-    string address = NormalizeOptionalText(merchant.Address.Value);
-    string phoneNumber = NormalizeOptionalText(merchant.PhoneNumber.Value);
-
-    if (string.IsNullOrEmpty(name)
-        && string.IsNullOrEmpty(address)
-        && string.IsNullOrEmpty(phoneNumber))
-    {
-      return null;
-    }
-
-    return new MerchantCandidate(
-      name,
-      address,
-      phoneNumber,
-      merchant.Name.Confidence,
-      merchant.Address.Confidence,
-      merchant.PhoneNumber.Confidence);
   }
 
   private static bool TryCreateProduct(

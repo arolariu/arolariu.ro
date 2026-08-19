@@ -212,8 +212,7 @@ public sealed class InvoiceManagementServiceTests
     AnalysisFailureReason? failureReason) =>
     new(
       message,
-      new InvoiceAnalysisPatch(null, null, null, null, null, null, null),
-      MerchantCandidate: null,
+      new InvoiceAnalysisPatch(null, null, null, null, null, null),
       CompletedCapabilities: [],
       FailureReason: failureReason);
 }

@@ -15,7 +15,6 @@ public sealed record ReceiptExtractionResult
   /// <summary>
   /// Initializes a new instance of the <see cref="ReceiptExtractionResult"/> record.
   /// </summary>
-  /// <param name="merchantCandidate">The selected merchant candidate, if any.</param>
   /// <param name="products">The normalized deduplicated products.</param>
   /// <param name="paymentInformation">The merged payment information.</param>
   /// <param name="receiptType">The merged receipt type.</param>
@@ -23,7 +22,6 @@ public sealed record ReceiptExtractionResult
   /// <param name="taxDetails">The merged deduplicated tax lines.</param>
   /// <param name="payments">The merged deduplicated payment lines.</param>
   public ReceiptExtractionResult(
-    MerchantCandidate? merchantCandidate,
     IReadOnlyList<ExtractedProduct> products,
     PaymentInformation paymentInformation,
     string receiptType,
@@ -33,7 +31,6 @@ public sealed record ReceiptExtractionResult
   {
     ArgumentNullException.ThrowIfNull(paymentInformation);
 
-    MerchantCandidate = merchantCandidate;
     Products = Snapshot(products, nameof(products));
     PaymentInformation = ClonePaymentInformation(paymentInformation);
     ReceiptType = AnalysisContractGuards.NormalizeOptionalText(receiptType) ?? string.Empty;
@@ -51,11 +48,6 @@ public sealed record ReceiptExtractionResult
       Amount = paymentDetail.Amount,
     });
   }
-
-  /// <summary>
-  /// Gets the selected merchant candidate, if any.
-  /// </summary>
-  public MerchantCandidate? MerchantCandidate { get; }
 
   /// <summary>
   /// Gets the normalized deduplicated products.

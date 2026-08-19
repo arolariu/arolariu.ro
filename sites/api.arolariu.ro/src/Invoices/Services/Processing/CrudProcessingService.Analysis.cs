@@ -7,7 +7,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
@@ -45,44 +44,16 @@ public partial class CrudProcessingService
 
       ArgumentNullException.ThrowIfNull(invoice);
 
-      ResolvedMerchant? resolvedMerchant = await ResolveMerchantForInvoiceAsync(
-        message,
-        executionResult.MerchantCandidate,
-        invoice.id,
-        cancellationToken)
-        .ConfigureAwait(false);
-
       InvoiceAnalysisPatch patch = executionResult.TargetPatch;
-
-      if (resolvedMerchant is not null)
-      {
-        patch = patch with { MerchantReferenceUpdate = resolvedMerchant.Merchant.id };
-      }
 
       ApplyInvoicePatch(invoice, patch, message.CorrelationId);
       activity?.SetTag("analysis.patch_has_changes", patch.HasChanges);
-
-      if (resolvedMerchant is not null)
-      {
-        await PersistMerchantLinkageAsync(resolvedMerchant, invoice.id, cancellationToken).ConfigureAwait(false);
-      }
 
       await invoiceOrchestrationService
         .UpdateInvoiceObject(invoice, invoice.id, invoice.UserIdentifier, cancellationToken)
         .ConfigureAwait(false);
 
-      IReadOnlyCollection<AnalysisCapability> completedCapabilities = executionResult.CompletedCapabilities;
-
-      if (resolvedMerchant is not null && !completedCapabilities.Contains(AnalysisCapability.MerchantResolution))
-      {
-        completedCapabilities = [.. completedCapabilities, AnalysisCapability.MerchantResolution];
-      }
-
-      return executionResult with
-      {
-        TargetPatch = patch,
-        CompletedCapabilities = completedCapabilities,
-      };
+      return executionResult;
     }).ConfigureAwait(false);
 
   /// <inheritdoc/>
@@ -114,95 +85,11 @@ public partial class CrudProcessingService
       return executionResult;
     }).ConfigureAwait(false);
 
-  private async Task<ResolvedMerchant?> ResolveMerchantForInvoiceAsync(
-    AnalysisQueueMessage message,
-    MerchantCandidate? candidate,
-    Guid invoiceIdentifier,
-    CancellationToken cancellationToken)
-  {
-    if (!message.InvoiceOptions?.MerchantResolution ?? true)
-    {
-      return null;
-    }
-
-    if (candidate is null || string.IsNullOrWhiteSpace(candidate.Name))
-    {
-      return null;
-    }
-
-    string normalizedName = MerchantNameNormalizer.Normalize(candidate.Name);
-
-    if (string.IsNullOrEmpty(normalizedName))
-    {
-      return null;
-    }
-
-    Merchant? existing = await merchantOrchestrationService
-      .FindMerchantByNormalizedNameObject(normalizedName, cancellationToken)
-      .ConfigureAwait(false);
-
-    if (existing is not null)
-    {
-      return new ResolvedMerchant(existing, IsNew: false);
-    }
-
-    var created = new Merchant
-    {
-      id = Guid.CreateVersion7(),
-      Name = candidate.Name,
-      ParentCompanyId = Guid.Empty,
-      Address = new ContactInformation
-      {
-        Address = candidate.Address,
-        PhoneNumber = candidate.PhoneNumber,
-      },
-      CreatedBy = message.RequestedBy,
-      CreatedAt = DateTimeOffset.UtcNow,
-      ReferencedInvoices = [invoiceIdentifier],
-    };
-
-    return new ResolvedMerchant(created, IsNew: true);
-  }
-
-  private async Task PersistMerchantLinkageAsync(
-    ResolvedMerchant resolved,
-    Guid invoiceIdentifier,
-    CancellationToken cancellationToken)
-  {
-    Merchant merchant = resolved.Merchant;
-    bool alreadyReferenced = merchant.ReferencedInvoices.Contains(invoiceIdentifier);
-
-    if (!alreadyReferenced)
-    {
-      merchant.ReferencedInvoices.Add(invoiceIdentifier);
-    }
-
-    if (resolved.IsNew)
-    {
-      await merchantOrchestrationService
-        .CreateMerchantObject(merchant, merchant.ParentCompanyId, cancellationToken)
-        .ConfigureAwait(false);
-      return;
-    }
-
-    if (!alreadyReferenced)
-    {
-      await merchantOrchestrationService
-        .UpdateMerchantObject(merchant, merchant.id, merchant.ParentCompanyId, cancellationToken)
-        .ConfigureAwait(false);
-    }
-  }
-
   private static void ApplyInvoicePatch(Invoice invoice, InvoiceAnalysisPatch patch, Guid sourceRunId)
   {
     if (patch.ExtractionUpdate is not null)
     {
       ApplyExtraction(invoice, patch.ExtractionUpdate);
-    }
-
-    if (patch.MerchantReferenceUpdate is not null)
-    {
-      invoice.MerchantReference = patch.MerchantReferenceUpdate.Value;
     }
 
     if (patch.SummaryUpdate is not null)
@@ -311,5 +198,4 @@ public partial class CrudProcessingService
     _ => AllergenEvidenceLevel.Precautionary,
   };
 
-  private sealed record ResolvedMerchant(Merchant Merchant, bool IsNew);
 }

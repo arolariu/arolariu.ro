@@ -44,12 +44,6 @@ internal abstract class DatabaseBrokerTestAdapter : IDatabaseBroker
   public virtual ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync(Guid parentCompanyId, CancellationToken cancellationToken) =>
     throw new NotSupportedException();
 
-  public virtual ValueTask<Merchant?> FindMerchantByNormalizedNameAsync(string normalizedName, CancellationToken cancellationToken) =>
-    throw new NotSupportedException();
-
-  public virtual ValueTask<Merchant> UpdateMerchantAsync(Guid merchantIdentifier, Merchant updatedMerchant, CancellationToken cancellationToken) =>
-    throw new NotSupportedException();
-
   public virtual ValueTask<Merchant> UpdateMerchantAsync(Merchant currentMerchant, Merchant updatedMerchant, CancellationToken cancellationToken) =>
     throw new NotSupportedException();
 

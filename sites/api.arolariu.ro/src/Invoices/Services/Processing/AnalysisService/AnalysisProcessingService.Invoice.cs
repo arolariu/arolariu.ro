@@ -44,7 +44,6 @@ public sealed partial class AnalysisProcessingService
       IReadOnlyList<ProductAnalysisInput> productInputs = BuildProductInputs(invoice.Items);
 
       ReceiptExtractionResult? extraction = null;
-      MerchantCandidate? merchantCandidate = null;
       InvoiceSummaryResult? summary = null;
       ProductClassificationResult? productClassification = null;
       ProductAllergenAssessmentResult? allergenAssessment = null;
@@ -63,7 +62,6 @@ public sealed partial class AnalysisProcessingService
         if (extraction is not null)
         {
           productInputs = BuildProductInputs(extraction.Products);
-          merchantCandidate = options.MerchantResolution ? extraction.MerchantCandidate : null;
         }
       }
 
@@ -136,7 +134,6 @@ public sealed partial class AnalysisProcessingService
 
       var patch = new InvoiceAnalysisPatch(
         extraction,
-        MerchantReferenceUpdate: null,
         summary,
         productClassification,
         allergenAssessment,
@@ -146,7 +143,6 @@ public sealed partial class AnalysisProcessingService
       return new InvoiceAnalysisExecutionResult(
         message,
         patch,
-        merchantCandidate,
         [.. completedCapabilities]);
     }).ConfigureAwait(false);
 
@@ -262,8 +258,7 @@ public sealed partial class AnalysisProcessingService
     AnalysisFailureReason failureReason) =>
     new(
       message,
-      new InvoiceAnalysisPatch(null, null, null, null, null, null, null),
-      MerchantCandidate: null,
+      new InvoiceAnalysisPatch(null, null, null, null, null, null),
       CompletedCapabilities: [],
       FailureReason: failureReason);
 }
