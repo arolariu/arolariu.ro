@@ -3,10 +3,8 @@ namespace arolariu.Backend.Domain.Invoices.Services.Foundation.DocumentAnalysis;
 using System;
 using System.Collections.Generic;
 
-using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
 public sealed partial class DocumentAnalysisFoundationService
 {
@@ -22,8 +20,7 @@ public sealed partial class DocumentAnalysisFoundationService
 
   private static void ValidateScanIsUsable(
     InvoiceScan scan,
-    int index,
-    ApplicationOptions storageOptions)
+    int index)
   {
     if (!InvoiceScan.NotDefault(scan))
     {
@@ -39,9 +36,11 @@ public sealed partial class DocumentAnalysisFoundationService
         nameof(scan));
     }
 
-    if (!InvoiceScanStorageLocationPolicy.TryValidate(scan.Location, storageOptions, out string validationMessage))
+    if (scan.Location is null || !scan.Location.IsAbsoluteUri)
     {
-      throw new ArgumentException(validationMessage, nameof(scan));
+      throw new ArgumentException(
+        $"Invoice scan at index {index} must have an absolute location URI.",
+        nameof(scan));
     }
   }
 

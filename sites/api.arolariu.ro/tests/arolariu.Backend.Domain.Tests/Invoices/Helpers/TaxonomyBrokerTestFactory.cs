@@ -12,15 +12,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 /// </summary>
 public static class TaxonomyBrokerTestFactory
 {
-  /// <summary>Canonical ECOICOP code used by shared tests.</summary>
-  public const string EcoicopCode = "01.1";
-
-  /// <summary>Canonical GS1 GPC code used by shared tests.</summary>
-  public const string GpcCode = "10000025";
-
-  /// <summary>Canonical NACE code used by shared tests.</summary>
-  public const string NaceCode = "01";
-
   private static readonly string[] FoodDivisionHierarchyCodes = ["01"];
   private static readonly string[] FoodDivisionHierarchyLabels = ["Food and non-alcoholic beverages"];
   private static readonly string[] FoodGroupHierarchyCodes = ["01", "01.1"];

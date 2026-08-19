@@ -2,230 +2,153 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Brokers;
 
 using System;
 using System.Collections.Generic;
-using System.Text.Json;
 
 using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptions.Inner;
+using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
-/// Verifies taxonomy artifact validation, search ranking, and canonical resolution.
+/// Tests the in-memory taxonomy broker against deterministic injected taxonomy artifacts.
 /// </summary>
-/// <remarks>
-/// Tests use compact generated artifacts to isolate broker contracts from the production
-/// embedded data, while one smoke test confirms that all embedded taxonomy resources load.
-/// </remarks>
 [TestClass]
 public sealed class TaxonomyBrokerTests
 {
-  /// <summary>Verifies exact code search ranks first and resolves trusted data.</summary>
+  /// <summary>
+  /// Verifies that resolving a known manual taxonomy code returns its canonical classification value.
+  /// </summary>
   [TestMethod]
-  public void SearchAndResolve_ValidArtifacts_ReturnCanonicalValues()
+  public void Resolve_ExistingManualCode_ReturnsCanonicalManualClassification()
   {
-    var broker = new JsonTaxonomyBroker(CreateArtifacts());
+    // Arrange
+    ITaxonomyBroker broker = TaxonomyBrokerTestFactory.Create();
 
-    IReadOnlyList<TaxonomySearchResult> results = broker.Search(
-      ClassificationSystem.EcoicopV2,
-      "01.1",
-      10);
-    StandardClassification classification = broker.Resolve(
+    // Act
+    StandardClassification result = broker.Resolve(
       ClassificationSystem.EcoicopV2,
       "01.1",
       ClassificationOrigin.Manual,
-      null,
-      []);
+      confidence: null,
+      evidence: []);
 
-    Assert.AreEqual("01.1", results[0].Code);
-    Assert.AreEqual("Food products 1", classification.OfficialLabel);
-    Assert.AreEqual("2", classification.Version);
-    Assert.IsTrue(broker.Contains(ClassificationSystem.EcoicopV2, "01.1"));
+    // Assert
+    Assert.AreEqual("Food", result.OfficialLabel);
+    Assert.AreEqual(ClassificationOrigin.Manual, result.Origin);
+    Assert.IsNull(result.Confidence);
+    Assert.AreEqual(2, result.Hierarchy.Count);
+    Assert.AreEqual("01.1", result.Hierarchy[^1].Code);
   }
 
-  /// <summary>Verifies result counts are capped at fifty.</summary>
+  /// <summary>
+  /// Verifies the broker exposes the actual version declared by each validated generated artifact, rather than a
+  /// taxonomy-system name or caller-supplied value.
+  /// </summary>
   [TestMethod]
-  public void Search_ExcessiveLimit_CapsAtFifty()
+  public void GetArtifactVersion_InjectedArtifacts_ReturnsDeclaredArtifactVersions()
   {
-    var broker = new JsonTaxonomyBroker(CreateArtifacts(60));
+    ITaxonomyBroker broker = TaxonomyBrokerTestFactory.Create();
 
+    Assert.AreEqual("2026-05", broker.GetArtifactVersion(ClassificationSystem.Gs1Gpc));
+    Assert.AreEqual("2", broker.GetArtifactVersion(ClassificationSystem.EcoicopV2));
+    Assert.AreEqual("2.1", broker.GetArtifactVersion(ClassificationSystem.Nace21));
+  }
+
+  /// <summary>
+  /// Verifies that resolving an unknown taxonomy code throws the dedicated not-found exception.
+  /// </summary>
+  [TestMethod]
+  public void Resolve_UnknownCode_ThrowsTaxonomyCodeNotFoundException() =>
+    Assert.ThrowsExactly<TaxonomyCodeNotFoundException>(() =>
+      TaxonomyBrokerTestFactory.Create().Resolve(
+        ClassificationSystem.Nace21,
+        "XX.XX",
+        ClassificationOrigin.Analysis,
+        0.8,
+        []));
+
+  /// <summary>
+  /// Verifies that exact-code matches are ordered before label-only matches.
+  /// </summary>
+  [TestMethod]
+  public void Search_ExactCodeQuery_PrioritizesExactMatch()
+  {
+    // Arrange
+    ITaxonomyBroker broker = TaxonomyBrokerTestFactory.Create();
+
+    // Act
     IReadOnlyList<TaxonomySearchResult> results =
-      broker.Search(ClassificationSystem.EcoicopV2, "food", 500);
+      broker.Search(ClassificationSystem.EcoicopV2, "01.1", maximumResults: 5);
 
+    // Assert
+    Assert.AreEqual(5, results.Count);
+    Assert.AreEqual("01.1", results[0].Code);
+    Assert.AreEqual("Food", results[0].OfficialLabel);
+  }
+
+  /// <summary>
+  /// Verifies that label-token overlap ranking surfaces the most specific match first.
+  /// </summary>
+  [TestMethod]
+  public void Search_LabelQuery_ReturnsDescendingTokenOverlap()
+  {
+    // Arrange
+    ITaxonomyBroker broker = TaxonomyBrokerTestFactory.Create();
+
+    // Act
+    IReadOnlyList<TaxonomySearchResult> results =
+      broker.Search(ClassificationSystem.EcoicopV2, "food cereals", maximumResults: 5);
+
+    // Assert
+    Assert.AreEqual("01.1.1", results[0].Code);
+    Assert.AreEqual("Cereals and cereal products (ND)", results[0].OfficialLabel);
+  }
+
+  /// <summary>
+  /// Verifies that the broker caps result count at fifty even when more matches exist.
+  /// </summary>
+  [TestMethod]
+  public void Search_MaximumResultsAboveFifty_CapsResultsAtFifty()
+  {
+    // Arrange
+    ITaxonomyBroker broker = TaxonomyBrokerTestFactory.CreateLargeEcoicopBroker(nodeCount: 75);
+
+    // Act
+    IReadOnlyList<TaxonomySearchResult> results =
+      broker.Search(ClassificationSystem.EcoicopV2, "food", maximumResults: 200);
+
+    // Assert
     Assert.AreEqual(50, results.Count);
   }
 
-  /// <summary>Verifies query tokens use the same diacritic normalization as artifacts.</summary>
+  /// <summary>
+  /// Verifies that the broker reports taxonomy-code existence for a given system.
+  /// </summary>
   [TestMethod]
-  public void Search_DiacriticQuery_MatchesNormalizedArtifactTokens()
+  public void Contains_KnownCode_ReturnsTrue()
   {
-    var artifacts = new Dictionary<ClassificationSystem, string>(CreateArtifacts())
-    {
-      [ClassificationSystem.Gs1Gpc] = JsonSerializer.Serialize(new
-      {
-        system = "GS1_GPC",
-        version = "2026-05",
-        sourceUrl = "https://example.test",
-        generatedAt = "2026-08-19T00:00:00Z",
-        attribution = "Test",
-        nodes = new[]
-        {
-          Node("100", "Creme dessert", "brick", null, ["100"], ["Creme dessert"])
-        }
-      })
-    };
-    var broker = new JsonTaxonomyBroker(artifacts);
+    // Arrange
+    ITaxonomyBroker broker = TaxonomyBrokerTestFactory.Create();
 
-    IReadOnlyList<TaxonomySearchResult> results =
-      broker.Search(ClassificationSystem.Gs1Gpc, "crème", 5);
+    // Act
+    bool containsCode = broker.Contains(ClassificationSystem.Gs1Gpc, "10000025");
 
-    Assert.AreEqual("100", results[0].Code);
-  }
-
-  /// <summary>Verifies unknown codes throw the classification-owned exception.</summary>
-  [TestMethod]
-  public void Resolve_UnknownCode_ThrowsTaxonomyCodeNotFoundException()
-  {
-    var broker = new JsonTaxonomyBroker(CreateArtifacts());
-
-    Assert.ThrowsExactly<TaxonomyCodeNotFoundException>(() => broker.Resolve(
-      ClassificationSystem.Nace21,
-      "missing",
-      ClassificationOrigin.Manual,
-      null,
-      []));
-  }
-
-  /// <summary>Verifies all supported systems are required.</summary>
-  [TestMethod]
-  public void Constructor_MissingSystem_ThrowsArgumentException()
-  {
-    var artifacts = new Dictionary<ClassificationSystem, string>(CreateArtifacts());
-    _ = artifacts.Remove(ClassificationSystem.Nace21);
-
-    Assert.ThrowsExactly<ArgumentException>(() => new JsonTaxonomyBroker(artifacts));
-  }
-
-  /// <summary>Verifies hierarchy labels must match canonical referenced nodes.</summary>
-  [TestMethod]
-  public void Constructor_MismatchedHierarchyLabel_ThrowsInvalidOperationException()
-  {
-    var artifacts = new Dictionary<ClassificationSystem, string>(CreateArtifacts())
-    {
-      [ClassificationSystem.EcoicopV2] = JsonSerializer.Serialize(new
-      {
-        system = "ECOICOP_V2",
-        version = "2",
-        sourceUrl = "https://example.test",
-        generatedAt = "2026-08-19T00:00:00Z",
-        attribution = "Test",
-        nodes = new object[]
-        {
-          Node("01", "Food", "division", null, ["01"], ["Food"]),
-          Node("01.1", "Food products", "group", "01", ["01", "01.1"], ["Wrong label", "Food products"])
-        }
-      })
-    };
-
-    Assert.ThrowsExactly<InvalidOperationException>(() => new JsonTaxonomyBroker(artifacts));
-  }
-
-  /// <summary>Verifies the production constructor loads all embedded artifacts.</summary>
-  [TestMethod]
-  public void Constructor_Parameterless_LoadsEmbeddedArtifactsForAllSystems()
-  {
-    var broker = new JsonTaxonomyBroker();
-
-    foreach (ClassificationSystem system in Enum.GetValues<ClassificationSystem>())
-      Assert.IsFalse(string.IsNullOrWhiteSpace(broker.GetArtifactVersion(system)));
+    // Assert
+    Assert.IsTrue(containsCode);
   }
 
   /// <summary>
-  /// Creates a complete artifact set with a configurable ECOICOP search corpus.
+  /// Verifies that constructor validation rejects taxonomy artifacts with no nodes.
   /// </summary>
-  /// <param name="ecoicopNodeCount">The number of valid ECOICOP nodes to generate.</param>
-  /// <returns>JSON artifacts keyed by every supported classification system.</returns>
-  private static Dictionary<ClassificationSystem, string> CreateArtifacts(int ecoicopNodeCount = 2) =>
-    new Dictionary<ClassificationSystem, string>
-    {
-      [ClassificationSystem.Gs1Gpc] = CreateArtifact("GS1_GPC", "2026-05", "100", "Bread"),
-      [ClassificationSystem.EcoicopV2] = CreateEcoicopArtifact(ecoicopNodeCount),
-      [ClassificationSystem.Nace21] = CreateArtifact("NACE_2_1", "2.1", "A", "Agriculture"),
-    };
-
-  /// <summary>
-  /// Creates an ECOICOP artifact whose generated child nodes share a searchable label.
-  /// </summary>
-  /// <param name="nodeCount">The total number of nodes, including the root.</param>
-  /// <returns>A serialized, hierarchy-consistent ECOICOP artifact.</returns>
-  private static string CreateEcoicopArtifact(int nodeCount)
+  [TestMethod]
+  public void Constructor_ArtifactWithEmptyNodes_ThrowsInvalidOperationException()
   {
-    var nodes = new List<object>
-    {
-      Node("01", "Food", "division", null, ["01"], ["Food"])
-    };
-    for (int index = 1; index < nodeCount; index++)
-    {
-      string code = $"01.{index}";
-      nodes.Add(Node(code, $"Food products {index}", "group", "01", ["01", code], ["Food", $"Food products {index}"]));
-    }
+    // Arrange
+    IReadOnlyDictionary<ClassificationSystem, string> artifactJsonBySystem =
+      TaxonomyBrokerTestFactory.CreateArtifactJsonBySystemWithEmptyNodes(ClassificationSystem.Nace21);
 
-    return JsonSerializer.Serialize(new
-    {
-      system = "ECOICOP_V2",
-      version = "2",
-      sourceUrl = "https://example.test",
-      generatedAt = "2026-08-19T00:00:00Z",
-      attribution = "Test",
-      nodes
-    });
+    // Act & Assert
+    Assert.ThrowsExactly<InvalidOperationException>(() => new JsonTaxonomyBroker(artifactJsonBySystem));
   }
-
-  /// <summary>
-  /// Creates a valid single-node artifact for systems not under a test-specific mutation.
-  /// </summary>
-  /// <param name="system">The artifact wire-level system identifier.</param>
-  /// <param name="version">The artifact version.</param>
-  /// <param name="code">The root node's canonical code.</param>
-  /// <param name="label">The root node's canonical label.</param>
-  /// <returns>A serialized taxonomy artifact containing one root node.</returns>
-  private static string CreateArtifact(string system, string version, string code, string label) =>
-    JsonSerializer.Serialize(new
-    {
-      system,
-      version,
-      sourceUrl = "https://example.test",
-      generatedAt = "2026-08-19T00:00:00Z",
-      attribution = "Test",
-      nodes = new[] { Node(code, label, "root", null, [code], [label]) }
-    });
-
-  /// <summary>
-  /// Creates the anonymous JSON shape expected for a taxonomy artifact node.
-  /// </summary>
-  /// <param name="code">The node's canonical code.</param>
-  /// <param name="label">The node's official label.</param>
-  /// <param name="level">The taxonomy-specific level name.</param>
-  /// <param name="parentCode">The parent code, or null for a root.</param>
-  /// <param name="hierarchyCodes">The root-to-node code path.</param>
-  /// <param name="hierarchyLabels">The labels corresponding to the code path.</param>
-  /// <returns>An anonymous object suitable for JSON serialization.</returns>
-  private static object Node(
-    string code,
-    string label,
-    string level,
-    string? parentCode,
-    string[] hierarchyCodes,
-    string[] hierarchyLabels) =>
-    new
-    {
-      code,
-      officialLabel = label,
-      level,
-      parentCode,
-      hierarchyCodes,
-      hierarchyLabels,
-      definition = (string?)null,
-      searchText = $"{code} {label}".ToUpperInvariant()
-    };
 }

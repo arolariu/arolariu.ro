@@ -9,7 +9,23 @@
 
 ## Abstract
 
-This RFC documents the Domain-Driven Design (DDD) architecture and SOLID principles implementation in the arolariu.ro backend API. The backend is structured as a modular monolith built with .NET 10.0, featuring three primary domains (General, Invoices, and Auth) that follow DDD patterns including aggregates, value objects, domain events, and repositories.
+This RFC documents the Domain-Driven Design (DDD) architecture used by the
+arolariu.ro .NET 10 modular monolith. The backend separates the Core,
+Authentication, and Invoices bounded contexts and combines aggregates, entities,
+value objects, and domain-specific application services with The Standard's
+flow-forward dependency model.
+
+The completed Invoices refactor exposes one application boundary to HTTP endpoints
+and the background worker:
+
+```text
+Endpoint / Worker
+  -> InvoiceManagementService
+    -> CRUD or Analysis Processing
+      -> approved Orchestrations
+        -> capability Foundations
+          -> Brokers
+```
 
 ---
 
@@ -17,22 +33,27 @@ This RFC documents the Domain-Driven Design (DDD) architecture and SOLID princip
 
 ```mermaid
 flowchart TB
-  Endpoints[Endpoints · Exposers]
-  Processing[Processing Services]
-  Orchestration[Orchestration Services]
-  Foundation[Foundation Services]
+  Adapters[Endpoints / Analysis Worker]
+  Management[InvoiceManagementService]
+  Crud[CrudProcessingService]
+  Analysis[AnalysisProcessingService]
+  Orchestrations[Approved Orchestration Services]
+  Foundations[Capability Foundation Services]
   Brokers[Brokers]
-  External[(External systems<br/>DB · AI · HTTP · Storage)]
+  External[(Cosmos DB · Blob Storage · Document Intelligence<br/>Generative AI · Embedded Taxonomies)]
 
-  Endpoints --> Processing
-  Processing --> Orchestration
-  Orchestration --> Foundation
-  Foundation --> Brokers
+  Adapters --> Management
+  Management --> Crud
+  Management --> Analysis
+  Crud --> Orchestrations
+  Analysis --> Orchestrations
+  Orchestrations --> Foundations
+  Foundations --> Brokers
   Brokers --> External
 
   classDef layer stroke:#e87a3e,stroke-width:1.5px;
   classDef external stroke-dasharray:4 3;
-  class Endpoints,Processing,Orchestration,Foundation,Brokers layer;
+  class Adapters,Management,Crud,Analysis,Orchestrations,Foundations,Brokers layer;
   class External external;
 ```
 
@@ -40,402 +61,243 @@ flowchart TB
 
 ## 1. Motivation
 
-### 1.1 Problem Statement
+### 1.1 Problem statement
 
-Traditional layered architectures often lead to:
-1. **Anemic Domain Models**: Business logic scattered across service layers
-2. **Poor Modularity**: Tight coupling between components making changes risky
-3. **Inconsistent Terminology**: Disconnect between business language and code
-4. **Limited Scalability**: Difficulty in evolving system as complexity grows
+Traditional layered architectures often produce:
 
-### 1.2 Design Goals
+1. **Anemic domain models** with rules scattered across application services.
+2. **Poor modularity** caused by unconstrained dependencies.
+3. **Inconsistent terminology** between business concepts and code.
+4. **Fragile workflows** when computation, persistence, and external integrations
+   share ownership.
 
-- **Ubiquitous Language**: Consistent business terminology across code and documentation
-- **Rich Domain Models**: Business logic encapsulated within domain entities
-- **Clear Boundaries**: Well-defined bounded contexts for each domain
-- **Maintainability**: Modular design following SOLID principles
-- **Testability**: High code coverage (85%+) with clear test boundaries
+### 1.2 Design goals
 
----
-
-## 2. Technical Design
-
-### 2.1 Architecture Overview
-
-```
-arolariu.Backend (Modular Monolith)
-├── Core/                   # Application entry point
-│   └── Program.cs         # Bootstrap and configuration
-├── Common/                # Shared DDD contracts, telemetry, options, validators
-│   ├── DDD/
-│   ├── Telemetry/
-│   ├── Options/
-│   └── Validators/
-├── Core.Auth/             # Authentication bounded context
-│   ├── Brokers/
-│   ├── Endpoints/
-│   ├── Models/
-│   └── Modules/
-├── Invoices/              # Business domain
-│   ├── Brokers/
-│   ├── DDD/
-│   │   ├── AggregatorRoots/
-│   │   ├── Entities/
-│   │   └── ValueObjects/
-│   ├── DTOs/
-│   ├── Endpoints/
-│   ├── Modules/
-│   └── Services/
-│       ├── Foundation/
-│       ├── Orchestration/
-│       └── Processing/
-```
-
-### 2.2 Domain Organization
-
-#### 2.2.1 General Domain (Infrastructure)
-
-**Responsibilities:**
-- Application bootstrapping and configuration
-- Cross-cutting concerns (logging, telemetry, health checks)
-- OpenAPI/Swagger documentation
-- Middleware pipeline setup
-- CORS and security policies
-
-**Key Components:**
-- `GeneralDomainExtensions.cs`: Service registration
-- `SwaggerConfigurationService.cs`: API documentation setup
-- `SwaggerFilterService.cs`: OpenAPI document filtering
-
-**Technology Stack:**
-- .NET 10.0 (LTS)
-- ASP.NET Core Minimal APIs
-- OpenTelemetry for observability
-- Swashbuckle for OpenAPI generation
-
-#### 2.2.2 Invoices Domain (Business Logic)
-
-**Responsibilities:**
-- Invoice lifecycle management (CRUD)
-- Merchant relationship management
-- Product and line item handling
-- Business rule validation
-
-**Implemented Aggregate/Entity Model (source-aligned):**
-
-- `Invoice` aggregate root: `Invoices/DDD/AggregatorRoots/Invoices/Invoice.cs`
-  - Core fields include `UserIdentifier`, `MerchantReference`, `Scans`, `PaymentInformation`, `Items`, `PossibleRecipes`, and `AdditionalMetadata`.
-- `Merchant` referenced entity: `Invoices/DDD/Entities/Merchants/Merchant.cs`
-  - Includes category, structured contact information, parent company linkage, and referenced invoice identifiers.
-- Invoice domain value objects are located under `Invoices/DDD/ValueObjects/**` and currently include `PaymentInformation`, `Recipe`, `Allergen`, and product-centric value objects under `ValueObjects/Products/`.
-
-**Domain Events:**
-
-At the time of this RFC update, the invoices bounded context does **not** expose explicit domain event types such as `InvoiceCreatedEvent` in the source tree. Workflow coordination is implemented through The Standard service layering (Foundation/Orchestration/Processing) and endpoint handlers.
-
-#### 2.2.3 Authentication Domain (Core.Auth)
-
-**Responsibilities:**
-- User authentication
-- JWT token validation
-- Authorization policies
-- External identity provider integration
-
-**Key Components:**
-- `Core.Auth/Brokers/AuthDbContext.cs` for identity persistence
-- `Core.Auth/Endpoints/AuthEndpoints.cs` for minimal API exposure
-- `Core.Auth/Modules/WebApplicationBuilderExtensions.cs` for auth service registration
-- Authentication and authorization wiring invoked through general-domain startup extensions
-
-### 2.3 SOLID Principles Implementation
-
-#### 2.3.1 Single Responsibility Principle (SRP)
-
-Each class has one reason to change:
-- **Domain entities**: Manage their own state and business rules
-- **Brokers**: Handle external dependency integration only
-- **Foundation services**: Encapsulate CRUD + validation boundaries
-- **Orchestration/Processing services**: Coordinate flows and heavy operations
-
-#### 2.3.2 Open/Closed Principle (OCP)
-
-Extension through:
-- Additional processing/orchestration service implementations behind interfaces
-- Policy-based authorization (add new policies without changing core)
-- Strategy pattern for business rules
-
-#### 2.3.3 Liskov Substitution Principle (LSP)
-
-```csharp
-// Base entity abstract class
-public abstract class BaseEntity<T>
-{
-    public abstract T id { get; init; }
-}
-
-// Named entity extends base
-public abstract class NamedEntity<T> : BaseEntity<T>
-{
-    public string Name { get; set; }
-    public string Description { get; set; }
-}
-
-// All entities are substitutable
-public sealed class Invoice : NamedEntity<Guid> { }
-public sealed class Merchant : NamedEntity<Guid> { }
-```
-
-#### 2.3.4 Interface Segregation Principle (ISP)
-
-Focused interfaces:
-```csharp
-public interface IInvoiceNoSqlBroker { /* data access boundary */ }
-public interface IInvoiceStorageFoundationService { /* CRUD + validation */ }
-public interface IInvoiceOrchestrationService { /* multi-service coordination */ }
-public interface IInvoiceProcessingService { /* higher-order business flows */ }
-```
-
-#### 2.3.5 Dependency Inversion Principle (DIP)
-
-All dependencies injected through abstractions:
-```csharp
-public class InvoiceOrchestrationService(
-    IInvoiceStorageFoundationService invoiceStorageFoundationService,
-    IInvoiceAnalysisFoundationService invoiceAnalysisFoundationService)
-{
-    // Implementation
-}
-```
+- Use a consistent ubiquitous language.
+- Keep aggregate invariants with domain models and their approved service boundary.
+- Make dependency direction and capability ownership explicit.
+- Keep durable work recoverable across process restarts.
+- Preserve testability through focused interfaces and dependency limits.
 
 ---
 
-## 3. Implementation Examples
+## 2. Technical design
 
-### 3.1 Domain Service Bootstrap
+### 2.1 Bounded-context organization
 
-```csharp
-// Program.cs
-internal static class Program
-{
-    public static void Main(string[] args)
-    {
-        WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-
-        // Configure domains
-        builder.AddGeneralDomainConfiguration();
-        builder.AddInvoicesDomainConfiguration();
-
-        WebApplication app = builder.Build();
-
-        // Configure middleware pipeline
-        app.AddGeneralApplicationConfiguration();
-        app.AddInvoiceDomainConfiguration();
-
-        app.Run();
-    }
-}
+```text
+sites/api.arolariu.ro/src/
+├── Core/                         # Application entry point and infrastructure
+├── Common/                       # Shared DDD, telemetry, options, and HTTP contracts
+├── Core.Auth/                    # Authentication bounded context
+└── Invoices/
+    ├── Brokers/                  # External dependency boundaries
+    ├── DDD/
+    │   ├── AggregatorRoots/
+    │   ├── Analysis/             # Durable runs, options, patches, and results
+    │   ├── Entities/
+    │   └── ValueObjects/
+    ├── DTOs/
+    ├── Endpoints/                # HTTP adapters
+    ├── Services/
+    │   ├── Management/           # Single application-facing façade
+    │   ├── Processing/           # CRUD and analysis processing
+    │   ├── Orchestration/        # Approved capability coordination
+    │   └── Foundation/           # Broker-neighboring capability boundaries
+    └── Workers/                  # Durable analysis queue consumer
 ```
 
-### 3.2 Domain Configuration Extension
+### 2.2 Domain model
 
-```csharp
-// GeneralDomainExtensions.cs
-public static class GeneralDomainExtensions
-{
-    public static WebApplicationBuilder AddGeneralDomainConfiguration(
-        this WebApplicationBuilder builder)
-    {
-        // Register health checks and OpenAPI support
-        builder.Services.AddHealthChecks();
-        builder.Services.AddSwaggerGen(SwaggerConfigurationService.GetSwaggerGenOptions());
-        builder.AddOTelLogging();
-        builder.AddOTelMetering();
-        builder.AddOTelTracing();
-        builder.AddAuthServices();
-        
-        return builder;
-    }
+The Invoices bounded context currently owns:
 
-    public static WebApplication AddGeneralApplicationConfiguration(
-        this WebApplication app)
-    {
-        // Configure middleware
-        app.UseRouting();
-        app.UseCors();
-        app.UseAuthentication();
-        app.UseAuthorization();
-        
-        // Configure Swagger
-        app.UseSwagger(SwaggerConfigurationService.GetSwaggerOptions());
-        app.UseSwaggerUI(SwaggerConfigurationService.GetSwaggerUIOptions());
-        
-        return app;
-    }
-}
-```
+- `Invoice`, the aggregate root for invoice state, scans, payment information,
+  products, classifications, recipes, and analysis-derived metadata.
+- `Merchant`, the merchant entity referenced by invoices and partitioned by parent
+  company.
+- `AnalysisRun`, the durable state machine for accepted, claimed, completed, and
+  failed invoice or merchant analysis work.
+- Immutable analysis contracts and patches under `DDD/Analysis/`, which separate
+  capability results from persistence of the target aggregate.
 
-### 3.3 Minimal API Endpoint
+The source tree does not currently expose explicit invoice domain-event types.
+Cross-aggregate workflows are coordinated through the service graph described below.
 
-```csharp
-// Invoice endpoints
-public static void MapInvoiceEndpoints(this WebApplication app)
-{
-    var invoices = app.MapGroup("rest/v1")
-        .WithTags("Invoices");
+### 2.3 Invoice application-service graph
 
-    invoices.MapGet("/{id:guid}", async (
-        Guid id,
-        IInvoiceProcessingService invoiceProcessingService,
-        ClaimsPrincipal principal) =>
-    {
-        var invoice = await invoiceProcessingService.ReadInvoice(id, RetrieveUserIdentifierClaimFromPrincipal(principal));
-        return invoice is not null
-            ? Results.Ok(invoice) 
-            : Results.NotFound();
-    })
-    .WithName("GetInvoice")
-    .Produces<Invoice>(StatusCodes.Status200OK)
-    .Produces(StatusCodes.Status404NotFound);
+The exact domain dependencies are:
 
-    invoices.MapPost("/", async (
-        CreateInvoiceDto invoiceDto,
-        IInvoiceProcessingService invoiceProcessingService,
-        ClaimsPrincipal principal) =>
-    {
-        var invoice = invoiceDto.ToInvoice();
-        await invoiceProcessingService.CreateInvoice(invoice);
-        return Results.Created($"/rest/v1/invoices/{invoice.id}", invoice);
-    })
-    .WithName("CreateInvoice")
-    .Produces<Invoice>(StatusCodes.Status201Created)
-    .ProducesValidationProblem();
-}
-```
+| Service | Direct domain dependencies | Count |
+|---|---|---:|
+| `InvoiceManagementService` | `ICrudProcessingService`, `IAnalysisProcessingService` | 2 |
+| `CrudProcessingService` | `IInvoiceOrchestrationService`, `IMerchantOrchestrationService` | 2 |
+| `AnalysisProcessingService` | `IClassificationOrchestrationService`, `IAnalysisOrchestrationService` | 2 |
+| `InvoiceOrchestrationService` | `IInvoiceStorageFoundationService` | 1 |
+| `MerchantOrchestrationService` | `IMerchantStorageFoundationService` | 1 |
+| `ClassificationOrchestrationService` | `IClassificationAnalysisFoundationService`, `IGenerativeAnalysisFoundationService` | 2 |
+| `AnalysisOrchestrationService` | `IAnalysisRunFoundationService`, `IDocumentAnalysisFoundationService`, `IGenerativeAnalysisFoundationService` | 3 |
+
+`InvoiceManagementService` is the only invoice-domain service consumed by endpoint
+handlers and `AnalysisWorker`. Management delegates simple operations and owns
+cross-processing sequencing. Processing calls only approved orchestration services;
+no processing service reaches a Foundation or Broker directly.
+
+### 2.4 Foundation capability ownership
+
+| Foundation | Broker dependencies | Owned capability |
+|---|---|---|
+| Invoice Storage | `IDatabaseBroker`, `IInvoiceBlobStorageBroker` | Invoice persistence and validation of approved scan blobs |
+| Merchant Storage | `IDatabaseBroker` | Merchant persistence and lookup |
+| Classification Analysis | `ITaxonomyBroker` | Taxonomy search and canonical resolution |
+| Generative Analysis | `IGenerativeAnalysisBroker` | Typed structured generation and retry policy |
+| Document Analysis | `IDocumentIntelligenceBroker` | Receipt extraction from stored scan URIs |
+| Analysis Run | `IDatabaseBroker` | Durable queue, claims, leases, and terminal transitions |
+
+No Foundation calls another Foundation. Broker implementations remain thin external
+adapters and do not own domain workflow decisions.
+
+### 2.5 Unified Cosmos boundary
+
+`IDatabaseBroker`, implemented by the partial `CosmosDatabaseBroker`, is the single
+Cosmos persistence abstraction for all three regions:
+
+- `invoices`, partitioned by invoice `UserIdentifier`;
+- `merchants`, partitioned by `ParentCompanyId`;
+- `analysisRuns`, partitioned by `/bucket`.
+
+The analysis-run region uses the constant bucket `default`. Queued and running runs
+have no item TTL. Completed and failed runs receive a 30-day item TTL, while the
+container enables per-item TTL with `DefaultTimeToLive = -1`.
+
+Workers claim the oldest queued run or a running run whose lease expired. Claims,
+lease renewals, completion, and failure use immutable `AnalysisRun` transitions and
+Cosmos `_etag` conditional replacement. This prevents two workers from silently
+overwriting the same lease.
+
+### 2.6 Analysis integration stack
+
+The current capability stack is:
+
+- Azure Blob Storage through `IInvoiceBlobStorageBroker` for approved invoice scan
+  property inspection.
+- Azure AI Document Intelligence through `IDocumentIntelligenceBroker`, using the
+  `prebuilt-receipt` model against scan URIs.
+- `Microsoft.Extensions.AI` through `IGenerativeAnalysisBroker` for typed JSON Schema
+  output over an `IChatClient`.
+- Embedded GS1 GPC, ECOICOP v2, and NACE 2.1 artifacts through `ITaxonomyBroker` for
+  deterministic search and canonical classification.
+
+This stack keeps provider mapping in Brokers, validation and retry behavior in
+Foundations, and capability sequencing above the Foundation layer.
 
 ---
 
-## 4. Trade-offs and Alternatives
+## 3. Runtime workflows
 
-### 4.1 Considered Alternatives
+### 3.1 CRUD
 
-**Alternative 1: Microservices Architecture**
-- **Pros**: Better scalability, independent deployment
-- **Cons**: Increased complexity, distributed transaction challenges, operational overhead
-- **Reason for rejection**: Current scale doesn't justify complexity
-
-**Alternative 2: Traditional Layered Architecture**
-- **Pros**: Simple, familiar pattern
-- **Cons**: Anemic domain models, poor maintainability
-- **Reason for rejection**: Doesn't support rich business logic
-
-**Alternative 3: CQRS + Event Sourcing**
-- **Pros**: Excellent scalability, complete audit trail
-- **Cons**: High complexity, steep learning curve
-- **Reason for rejection**: Overkill for current requirements
-
-### 4.2 Trade-offs
-
-**Pros:**
-- ✅ Clear domain boundaries
-- ✅ Rich business logic in domain layer
-- ✅ Excellent testability
-- ✅ Easy to understand and maintain
-- ✅ Scalable to distributed architecture if needed
-
-**Cons:**
-- ❌ More upfront design effort required
-- ❌ Learning curve for team members new to DDD
-- ❌ More boilerplate code initially
-
----
-
-## 5. Testing Strategy
-
-### 5.1 Test Naming Convention
-
-All tests follow: `MethodName_Condition_ExpectedResult()`
-
-```csharp
-[TestMethod]
-public void CreateInvoice_WithValidData_ReturnsSuccessResult()
-{
-    // Arrange
-    var merchant = CreateTestMerchant();
-    var products = CreateTestProducts();
-    
-    // Act
-    var invoice = Invoice.Create(merchant.Id, products);
-    
-    // Assert
-    Assert.IsNotNull(invoice);
-    Assert.AreEqual(merchant.Id, invoice.MerchantId);
-    Assert.AreEqual(products.Count, invoice.Products.Count);
-}
-
-[TestMethod]
-public void CreateInvoice_WithEmptyProducts_ThrowsArgumentException()
-{
-    // Arrange
-    var merchantId = Guid.NewGuid();
-    var emptyProducts = new List<Product>();
-    
-    // Act & Assert
-    Assert.ThrowsExactly<ArgumentException>(() => 
-        Invoice.Create(merchantId, emptyProducts));
-}
+```text
+Endpoint
+  -> InvoiceManagementService
+    -> CrudProcessingService
+      -> Invoice or Merchant Orchestration
+        -> corresponding Storage Foundation
+          -> IDatabaseBroker and, for invoice scans, IInvoiceBlobStorageBroker
 ```
 
-### 5.2 Test Coverage Requirements
+### 3.2 Durable analysis
 
-- **Domain Layer**: 85%+ coverage
-- **Application Layer**: 85%+ coverage
-- **Infrastructure Layer**: Optional (focus on integration tests)
+The analyze endpoint validates the target through CRUD Processing before Analysis
+Processing persists an accepted run. `AnalysisWorker` later resolves only
+`IInvoiceManagementService`, which coordinates:
+
+1. Claiming the next run and maintaining its lease through Analysis Processing.
+2. Reading the target through CRUD Processing.
+3. Producing immutable capability results and patches through Analysis Processing.
+4. Persisting invoice, merchant, and relationship changes through CRUD Processing.
+5. Completing the run only after target persistence succeeds, or failing it when the
+   target is missing, capability execution fails terminally, or persistence fails.
+
+Analysis Processing does not persist invoice or merchant aggregates. Management is
+the cross-processing coordinator that establishes this ordering.
 
 ---
 
-## 6. Documentation Requirements
+## 4. SOLID application
 
-- [x] API documentation via XML comments
-- [x] OpenAPI/Swagger specification
-- [x] Domain model diagrams
-- [x] Architecture decision records (this RFC)
-- [x] Code quality guidelines (`.github/instructions/backend.instructions.md`)
+### 4.1 Single responsibility
+
+- Domain models own state and invariant-preserving transitions.
+- Brokers own provider calls and provider-neutral mapping.
+- Foundations own one storage or analysis capability.
+- Orchestrations compose only their approved Foundations.
+- Processing owns computation and domain transformations.
+- Management owns application-level sequencing across Processing services.
+- Endpoints and workers remain adapters.
+
+### 4.2 Interface segregation and dependency inversion
+
+Interfaces are capability-specific: storage, classification, generation, document
+extraction, durable runs, CRUD processing, analysis processing, and management are
+separate contracts. Consumers depend on the narrow abstraction for the next approved
+layer rather than on concrete implementations.
+
+### 4.3 Open/closed and substitution
+
+Provider implementations can be replaced behind Broker contracts without changing
+the domain service graph. Foundation and orchestration contracts likewise permit
+isolated test doubles while preserving dependency direction.
+
+---
+
+## 5. Trade-offs
+
+### Benefits
+
+- Explicit capability ownership and bounded dependency counts.
+- Recoverable analysis work with optimistic lease coordination.
+- Provider-neutral domain contracts for external analysis systems.
+- One stable application entry point for both request and worker adapters.
+
+### Costs
+
+- More interfaces and service types than a conventional layered application.
+- Durable analysis requires lifecycle, lease, TTL, and compensation handling.
+- Cross-processing persistence must remain in Management to avoid dependency bypasses.
+
+Microservices and event sourcing remain unnecessary for the current deployment
+scale; the modular-monolith boundary retains those options without introducing their
+operational cost now.
+
+---
+
+## 6. Testing strategy
+
+Architecture tests should verify:
+
+- endpoints and the worker consume only `IInvoiceManagementService`;
+- the dependency counts in section 2.3;
+- every Foundation-to-Broker ownership rule in section 2.4;
+- no sideways Foundation or Orchestration dependencies;
+- queue creation, claim races, expired-lease recovery, heartbeat renewal, and TTL;
+- Management-coordinated persistence before terminal run completion;
+- exception marker and cancellation propagation through every layer.
+
+The backend coverage target remains 85% or higher for domain and application code.
 
 ---
 
 ## 7. References
 
-### 7.1 Domain-Driven Design
-
+- [RFC 2002: OpenTelemetry Backend Observability](./2002-opentelemetry-backend-observability.md)
+- [RFC 2003: The Standard Implementation](./2003-the-standard-implementation.md)
+- [RFC 2004: Comprehensive XML Documentation Standard](./2004-comprehensive-xml-documentation-standard.md)
 - [Domain-Driven Design by Eric Evans](https://www.domainlanguage.com/ddd/)
 - [Implementing Domain-Driven Design by Vaughn Vernon](https://vaughnvernon.com/)
-- [Martin Fowler's DDD Articles](https://martinfowler.com/tags/domain%20driven%20design.html)
-
-### 7.2 SOLID Principles
-
-- [SOLID Principles on Wikipedia](https://en.wikipedia.org/wiki/SOLID)
-- [Clean Code by Robert C. Martin](https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882)
-
-### 7.3 .NET Resources
-
-- [.NET 10.0 Documentation](https://docs.microsoft.com/en-us/dotnet/)
-- [ASP.NET Core Minimal APIs](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis)
-- [MSTest Documentation](https://learn.microsoft.com/dotnet/core/testing/unit-testing-mstest-intro)
 
 ---
 
-## 8. Future Enhancements
-
-Potential future work:
-- **RFC 1001**: Extended observability coverage for additional domain flows
-- **RFC 1002**: CQRS for read-heavy operations
-- **RFC 1003**: Multi-tenancy support
-- **RFC 1004**: Metadata and API discoverability alignment for cross-domain assets
-- **RFC 1005**: Background job processing for long-running operations
-
----
-
-**Document Version**: 1.0.0
-**Last Updated**: 2025-10-12
+**Document Version**: 1.1.0
+**Last Updated**: 2026-08-19
 **Reviewed By**: Alexandru-Razvan Olariu
 **Status**: ✅ Implemented

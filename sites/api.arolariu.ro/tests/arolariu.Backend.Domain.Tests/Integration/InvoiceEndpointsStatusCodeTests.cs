@@ -16,7 +16,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.Endpoints;
-using arolariu.Backend.Domain.Invoices.Services.Processing;
+using arolariu.Backend.Domain.Invoices.Services.Management;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -29,12 +29,12 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Integration-style tests asserting that invoice REST endpoints emit the correct
-/// HTTP status code per exception type thrown by <see cref="IInvoiceProcessingService"/>.
+/// HTTP status code per exception type thrown by <see cref="IInvoiceManagementService"/>.
 /// </summary>
 /// <remarks>
 /// <para>
 /// <b>Scope:</b> Exercises the real endpoint handler (<see cref="InvoiceEndpoints.RetrieveSpecificInvoiceAsync"/>,
-/// <see cref="InvoiceEndpoints.CreateNewInvoiceAsync"/>) wired to the real
+/// <c>InvoiceEndpoints.CreateNewInvoiceAsync</c>) wired to the real
 /// <see cref="ExceptionToHttpResultMapper"/>; only the processing service is mocked.
 /// </para>
 /// <para>
@@ -67,7 +67,6 @@ public sealed class InvoiceEndpointsStatusCodeTests
     public TestNotFoundException()
     {
     }
-
     public TestNotFoundException(string message, Exception innerException) : base(message, innerException)
     {
     }
@@ -179,18 +178,18 @@ public sealed class InvoiceEndpointsStatusCodeTests
     return new HttpContextAccessor { HttpContext = httpContext };
   }
 
-  private static Mock<IInvoiceProcessingService> CreateServiceMockThatThrowsOnRead(Exception exceptionToThrow)
+  private static Mock<IInvoiceManagementService> CreateServiceMockThatThrowsOnRead(Exception exceptionToThrow)
   {
-    var mock = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    var mock = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
     mock
       .Setup(s => s.ReadInvoice(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(exceptionToThrow);
     return mock;
   }
 
-  private static Mock<IInvoiceProcessingService> CreateServiceMockThatThrowsOnMerchantRead(Exception exceptionToThrow)
+  private static Mock<IInvoiceManagementService> CreateServiceMockThatThrowsOnMerchantRead(Exception exceptionToThrow)
   {
-    var mock = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    var mock = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
     mock
       .Setup(s => s.ReadMerchant(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(exceptionToThrow);
@@ -364,7 +363,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
   {
     // Arrange - endpoint-level validation runs BEFORE any service call, so the mock
     // is never invoked. The strict mock ensures any unexpected call would fail the test.
-    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    var mockService = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
     var accessor = CreateAuthenticatedContextAccessor();
 
     var invalidDto = new CreateInvoiceRequestDto(
@@ -587,37 +586,36 @@ public sealed class InvoiceEndpointsStatusCodeTests
       Price = 8.5m,
       Classification = classification,
     };
-    var invoice = new Invoice
-    {
-      id = invoiceId,
-      UserIdentifier = userId,
-      Items = [original],
-    };
     var request = new UpdateProductRequestDto(
-      "Old Milk",
-      "New Milk",
-      2,
-      "pcs",
-      "",
-      9m,
-      []);
-    var service = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
-    Invoice? capturedInvoice = null;
+      Selector: new ProductUpdateSelectorDto(
+        OriginalProductCode: null,
+        OriginalName: "Old Milk",
+        OriginalQuantity: 1m,
+        OriginalUnitPrice: 8.5m,
+        OriginalTotalPrice: 8.5m,
+        OccurrenceOrdinal: null),
+      Name: "New Milk",
+      Classification: null,
+      Quantity: 2m,
+      QuantityUnit: "pcs",
+      ProductCode: string.Empty,
+      Price: 9m);
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+    Product? capturedProduct = null;
     service
-      .Setup(candidate => candidate.ReadInvoice(
+      .Setup(candidate => candidate.UpdateProduct(
+        It.IsAny<ProductUpdateSelector>(),
+        It.IsAny<Product>(),
         invoiceId,
         userId,
         It.IsAny<CancellationToken>()))
-      .ReturnsAsync(invoice);
-    service
-      .Setup(candidate => candidate.UpdateInvoice(
-        It.IsAny<Invoice>(),
-        invoiceId,
-        userId,
-        It.IsAny<CancellationToken>()))
-      .Callback<Invoice, Guid, Guid?, CancellationToken>(
-        (updated, _, _, _) => capturedInvoice = updated)
-      .ReturnsAsync(invoice);
+      .Callback<ProductUpdateSelector, Product, Guid, Guid?, CancellationToken>(
+        (_, updated, _, _, _) => capturedProduct = updated)
+      .ReturnsAsync((ProductUpdateSelector _, Product updated, Guid _, Guid? _, CancellationToken _) =>
+      {
+        updated.Classification = classification;
+        return updated;
+      });
 
     IResult result = await InvoiceEndpoints.UpdateProductInInvoiceAsync(
       service.Object,
@@ -626,18 +624,19 @@ public sealed class InvoiceEndpointsStatusCodeTests
       request);
 
     Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
-    Assert.IsNotNull(capturedInvoice);
-    Product persistedProduct = Assert.ContainsSingle(capturedInvoice.Items);
+    Assert.IsNotNull(capturedProduct);
+    Product persistedProduct = capturedProduct;
     Assert.AreEqual("New Milk", persistedProduct.Name);
     Assert.AreEqual(2m, persistedProduct.Quantity);
     Assert.AreSame(classification, persistedProduct.Classification);
     service.Verify(
-      candidate => candidate.GetProduct(
-        It.IsAny<string>(),
-        It.IsAny<Guid>(),
-        It.IsAny<Guid?>(),
+      candidate => candidate.UpdateProduct(
+        It.IsAny<ProductUpdateSelector>(),
+        It.IsAny<Product>(),
+        invoiceId,
+        userId,
         It.IsAny<CancellationToken>()),
-      Times.Never);
+      Times.Once);
   }
   #endregion
 
@@ -666,7 +665,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
       null,
       false,
       null);
-    var service = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
     Invoice? capturedInvoice = null;
     service
       .Setup(candidate => candidate.ReadInvoice(
@@ -718,12 +717,12 @@ public sealed class InvoiceEndpointsStatusCodeTests
       null,
       parentCompanyId,
       null);
-    var service = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
     Merchant? capturedMerchant = null;
     service
       .Setup(candidate => candidate.ReadMerchant(
         merchantId,
-        parentCompanyId,
+        parentCompanyId: null,
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(merchant);
     service

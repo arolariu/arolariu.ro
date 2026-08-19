@@ -39,9 +39,6 @@ public sealed partial class GenerativeAnalysisFoundationService
     ArgumentException
       => LogAndWrapValidation(exception),
 
-    TaxonomyCodeNotFoundException
-      => LogAndWrapDependencyValidation(exception),
-
     RequestFailedException requestFailedException when IsDependencyValidation(requestFailedException)
       => LogAndWrapDependencyValidation(exception),
 

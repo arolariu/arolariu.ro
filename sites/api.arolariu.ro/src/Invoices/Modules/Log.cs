@@ -19,32 +19,32 @@ public static partial class Log
   /// </summary>
   /// <param name="logger"></param>
   /// <param name="exceptionMessage"></param>
-  [LoggerMessage(300_100, LogLevel.Error, "The invoice processing service encountered a validation exception: {exceptionMessage}")]
-  public static partial void LogInvoiceProcessingValidationException(this ILogger logger, string exceptionMessage);
+  [LoggerMessage(300_100, LogLevel.Error, "The CRUD processing service encountered a validation exception: {exceptionMessage}")]
+  public static partial void LogCrudProcessingValidationException(this ILogger logger, string exceptionMessage);
 
   /// <summary>
   /// Auto-generated method for logging the invoice processing dependency exception.
   /// </summary>
   /// <param name="logger"></param>
   /// <param name="exceptionMessage"></param>
-  [LoggerMessage(300_101, LogLevel.Error, "The invoice processing service encountered a dependency exception: {exceptionMessage}")]
-  public static partial void LogInvoiceProcessingDependencyException(this ILogger logger, string exceptionMessage);
+  [LoggerMessage(300_101, LogLevel.Error, "The CRUD processing service encountered a dependency exception: {exceptionMessage}")]
+  public static partial void LogCrudProcessingDependencyException(this ILogger logger, string exceptionMessage);
 
   /// <summary>
   /// Auto-generated method for logging the invoice processing dependency validation exception.
   /// </summary>
   /// <param name="logger"></param>
   /// <param name="exceptionMessage"></param>
-  [LoggerMessage(300_102, LogLevel.Error, "The invoice processing service encountered a dependency validation exception: {exceptionMessage}")]
-  public static partial void LogInvoiceProcessingDependencyValidationException(this ILogger logger, string exceptionMessage);
+  [LoggerMessage(300_102, LogLevel.Error, "The CRUD processing service encountered a dependency validation exception: {exceptionMessage}")]
+  public static partial void LogCrudProcessingDependencyValidationException(this ILogger logger, string exceptionMessage);
 
   /// <summary>
-  /// Auto-generated method for logging the invoice processing service exception.
+  /// Auto-generated method for logging the CRUD processing service exception.
   /// </summary>
   /// <param name="logger"></param>
   /// <param name="exceptionMessage"></param>
-  [LoggerMessage(300_103, LogLevel.Error, "The invoice processing service encountered a service exception: {exceptionMessage}")]
-  public static partial void LogInvoiceProcessingServiceException(this ILogger logger, string exceptionMessage);
+  [LoggerMessage(300_103, LogLevel.Error, "The CRUD processing service encountered a service exception: {exceptionMessage}")]
+  public static partial void LogCrudProcessingServiceException(this ILogger logger, string exceptionMessage);
   #endregion
 
   #region Processing Service Logging Methods (Analysis Processing Service)
@@ -646,6 +646,27 @@ public static partial class Log
     string taxonomyVersion,
     long? inputTokens,
     long? outputTokens);
+
+  /// <summary>
+  /// Logs a validation failure inside the classification analysis foundation.
+  /// </summary>
+  /// <param name="logger">The logger instance.</param>
+  [LoggerMessage(300_233, LogLevel.Warning, "Classification analysis foundation validation failed.")]
+  public static partial void LogClassificationAnalysisValidationException(this ILogger logger);
+
+  /// <summary>
+  /// Logs a dependency-validation failure inside the classification analysis foundation.
+  /// </summary>
+  /// <param name="logger">The logger instance.</param>
+  [LoggerMessage(300_234, LogLevel.Warning, "Classification analysis foundation dependency validation failed.")]
+  public static partial void LogClassificationAnalysisDependencyValidationException(this ILogger logger);
+
+  /// <summary>
+  /// Logs an unexpected service failure inside the classification analysis foundation.
+  /// </summary>
+  /// <param name="logger">The logger instance.</param>
+  [LoggerMessage(300_235, LogLevel.Error, "Classification analysis foundation service failed.")]
+  public static partial void LogClassificationAnalysisServiceException(this ILogger logger);
 
   #endregion
 }

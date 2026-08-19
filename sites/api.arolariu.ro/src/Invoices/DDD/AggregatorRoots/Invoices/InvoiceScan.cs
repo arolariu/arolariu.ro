@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// The scan type enum represents the type of scan.
@@ -71,6 +72,17 @@ public readonly record struct InvoiceScan(
   [Required] Uri Location,
   IDictionary<string, object>? Metadata)
 {
+  /// <summary>
+  /// Gets or sets the approved blob path relative to the invoices container.
+  /// </summary>
+  /// <remarks>
+  /// This transient property is populated at transport-mapping time for newly supplied scans so the invoice storage
+  /// foundation can validate server-observed blob properties without resolving configuration. It is not serialized or
+  /// persisted because existing stored scans have already crossed that trust boundary.
+  /// </remarks>
+  [JsonIgnore]
+  internal string? ApprovedBlobPath { get; init; }
+
   /// <summary>
   /// Static method to create a new instance of the InvoiceScan with default values.
   /// </summary>

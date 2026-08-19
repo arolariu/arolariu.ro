@@ -104,7 +104,7 @@ public sealed class AnalysisRunFoundationServiceTests
 
   /// <summary>
   /// Verifies that an <see cref="AnalysisRunCosmosDbRateLimitException"/> surfaced by the broker (the typed
-  /// exception the database broker produces for a Cosmos HTTP 429 response) is
+  /// exception <see cref="arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker.CosmosDatabaseBroker"/> itself produces for a Cosmos HTTP 429 response) is
   /// classified as a dependency-validation failure — a caller-correctable 429, not a generic 503 — and that
   /// the retry-after hint survives the wrap so <c>ExceptionToHttpResultMapper</c> can surface it.
   /// </summary>

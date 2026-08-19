@@ -3,7 +3,6 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Helpers;
 using System;
 using System.Collections.Generic;
 
-using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
@@ -21,17 +20,15 @@ internal sealed class GenerativeCapabilityHarness
 {
   private GenerativeCapabilityHarness(
     ScriptedGenerativeAnalysisBroker broker,
-    ITaxonomyBroker taxonomyBroker,
     IReadOnlyList<ProductAnalysisInput> products,
     ProductClassificationResult classifications,
     ProductAllergenAssessmentResult allergens)
   {
     Broker = broker;
-    TaxonomyBroker = taxonomyBroker;
     Products = products;
     Classifications = classifications;
     Allergens = allergens;
-    Service = new GenerativeAnalysisFoundationService(broker, taxonomyBroker, NullLoggerFactory.Instance);
+    Service = new GenerativeAnalysisFoundationService(broker, NullLoggerFactory.Instance);
   }
 
   /// <summary>Gets the foundation service under test.</summary>
@@ -39,9 +36,6 @@ internal sealed class GenerativeCapabilityHarness
 
   /// <summary>Gets the scripted generative broker backing the service.</summary>
   public ScriptedGenerativeAnalysisBroker Broker { get; }
-
-  /// <summary>Gets the taxonomy broker supplied to the service.</summary>
-  public ITaxonomyBroker TaxonomyBroker { get; }
 
   /// <summary>Gets the transient products submitted to the service.</summary>
   public IReadOnlyList<ProductAnalysisInput> Products { get; }
@@ -65,7 +59,6 @@ internal sealed class GenerativeCapabilityHarness
 
     return new GenerativeCapabilityHarness(
       broker,
-      TaxonomyBrokerTestFactory.Create(),
       CreateProducts(includeNonFood: false),
       CreateClassifications(includeNonFood: false),
       CreateAllergens());
@@ -105,7 +98,6 @@ internal sealed class GenerativeCapabilityHarness
 
     return new GenerativeCapabilityHarness(
       broker,
-      TaxonomyBrokerTestFactory.Create(),
       CreateProducts(includeNonFood: false),
       CreateClassifications(includeNonFood: false),
       CreateAllergens());
@@ -129,7 +121,6 @@ internal sealed class GenerativeCapabilityHarness
 
     return new GenerativeCapabilityHarness(
       broker,
-      TaxonomyBrokerTestFactory.Create(),
       CreateProducts(includeNonFood: false),
       CreateClassifications(includeNonFood: false),
       CreateAllergens());
@@ -148,7 +139,6 @@ internal sealed class GenerativeCapabilityHarness
 
     return new GenerativeCapabilityHarness(
       broker,
-      TaxonomyBrokerTestFactory.Create(),
       CreateProducts(includeNonFood: true),
       CreateClassifications(includeNonFood: true),
       CreateAllergens(
@@ -176,7 +166,6 @@ internal sealed class GenerativeCapabilityHarness
 
     return new GenerativeCapabilityHarness(
       broker,
-      TaxonomyBrokerTestFactory.Create(),
       [new ProductAnalysisInput("item-0001", new Product { Name = "pensula", Quantity = 1, QuantityUnit = "pcs" })],
       new ProductClassificationResult(new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
       {

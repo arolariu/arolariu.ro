@@ -22,15 +22,6 @@
           "OpenAI": "2.9.1"
         }
       },
-      "Azure.AI.Translation.Text": {
-        "type": "Direct",
-        "requested": "[2.0.0, )",
-        "resolved": "2.0.0",
-        "contentHash": "v0U87B7PkjvxppAVWSMZSDshTB1uPBR6nPcdGWrhzUW/v9RG5sP7QdjxJtyJtHVzrUmY9lM8Y2T2mO7KAAXBpQ==",
-        "dependencies": {
-          "Azure.Core": "1.57.0"
-        }
-      },
       "Azure.Storage.Blobs": {
         "type": "Direct",
         "requested": "[12.29.1, )",

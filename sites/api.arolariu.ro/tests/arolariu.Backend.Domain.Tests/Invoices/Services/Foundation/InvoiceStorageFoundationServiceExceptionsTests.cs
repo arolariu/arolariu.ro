@@ -4,6 +4,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Domain.Invoices.Brokers.BlobStorageBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
@@ -24,14 +25,13 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 public class InvoiceStorageFoundationServiceExceptionsTests
 {
   private readonly Mock<IDatabaseBroker> _broker = new();
+  private readonly Mock<IInvoiceBlobStorageBroker> _blobStorageBroker = new();
   private readonly InvoiceStorageFoundationService _sut;
 
   /// <summary>Initializes a new instance of the <see cref="InvoiceStorageFoundationServiceExceptionsTests"/> class.</summary>
   public InvoiceStorageFoundationServiceExceptionsTests()
   {
-    _sut = new InvoiceStorageFoundationService(
-      _broker.Object,
-      NullLoggerFactory.Instance);
+    _sut = new InvoiceStorageFoundationService(_broker.Object, _blobStorageBroker.Object, NullLoggerFactory.Instance);
   }
 
   /// <summary>Verifies that an <see cref="InvoiceNotFoundException"/> from the broker is wrapped into an <see cref="InvoiceFoundationDependencyValidationException"/>.</summary>

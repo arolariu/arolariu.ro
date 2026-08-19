@@ -59,6 +59,21 @@ public sealed record InvoiceAnalysisOptions
       throw new ArgumentException("Allergen assessment requires product classification.", nameof(allergenAssessment));
     }
 
+    if (merchantResolution && !documentExtraction)
+    {
+      throw new ArgumentException("Merchant resolution requires document extraction.", nameof(merchantResolution));
+    }
+
+    if (invoiceClassification && !documentExtraction)
+    {
+      throw new ArgumentException("Invoice classification requires document extraction.", nameof(invoiceClassification));
+    }
+
+    if (invoiceClassification && !productClassification)
+    {
+      throw new ArgumentException("Invoice classification requires product classification.", nameof(invoiceClassification));
+    }
+
     if (recipeGeneration && !productClassification)
     {
       throw new ArgumentException("Recipe generation requires product classification.", nameof(recipeGeneration));

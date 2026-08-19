@@ -177,8 +177,7 @@ public sealed class DocumentAnalysisExceptionClassificationTests
     var service = new DocumentAnalysisFoundationService(
       new ScriptedDocumentIntelligenceBroker(
         ScriptedDocumentIntelligenceBroker.Failure(new HttpRequestException(sensitiveSentinel))),
-      loggerFactory,
-      InvoiceScanTestData.CreateOptionsManager());
+      loggerFactory);
 
     await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
       () => service.ExtractInvoiceAsync([InvoiceScanTestData.First()], CancellationToken.None));
@@ -205,6 +204,5 @@ public sealed class DocumentAnalysisExceptionClassificationTests
   private static DocumentAnalysisFoundationService CreateServiceThrowing(Exception exception) =>
     new(
       new ScriptedDocumentIntelligenceBroker(ScriptedDocumentIntelligenceBroker.Failure(exception)),
-      NullLoggerFactory.Instance,
-      InvoiceScanTestData.CreateOptionsManager());
+      NullLoggerFactory.Instance);
 }

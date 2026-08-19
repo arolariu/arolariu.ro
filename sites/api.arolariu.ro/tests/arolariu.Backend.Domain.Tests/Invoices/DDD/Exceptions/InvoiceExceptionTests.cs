@@ -521,145 +521,145 @@ public sealed class InvoiceExceptionTests
 
   #endregion
 
-  #region InvoiceProcessingServiceValidationException Tests
+  #region CrudProcessingServiceValidationException Tests
 
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
   [TestMethod]
-  public void InvoiceProcessingServiceValidationException_DefaultConstructor_CreatesInstance()
+  public void CrudProcessingServiceValidationException_DefaultConstructor_CreatesInstance()
   {
     // Act
-    var exception = new InvoiceProcessingServiceValidationException();
+    var exception = new CrudProcessingServiceValidationException();
 
     // Assert
     Assert.IsNotNull(exception);
-    Assert.IsExactInstanceOfType<InvoiceProcessingServiceValidationException>(exception);
+    Assert.IsExactInstanceOfType<CrudProcessingServiceValidationException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
   [TestMethod]
-  public void InvoiceProcessingServiceValidationException_InnerExceptionConstructor_SetsPropertiesCorrectly()
+  public void CrudProcessingServiceValidationException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
     var innerException = new InvoiceOrchestrationValidationException();
 
     // Act
-    var exception = new InvoiceProcessingServiceValidationException(innerException);
+    var exception = new CrudProcessingServiceValidationException(innerException);
 
     // Assert
     Assert.IsNotNull(exception);
-    Assert.AreEqual("Invoice Processing Validation Exception", exception.Message);
+    Assert.AreEqual("CRUD Processing Validation Exception", exception.Message);
     Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
 
-  #region InvoiceProcessingServiceDependencyException Tests
+  #region CrudProcessingServiceDependencyException Tests
 
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
   [TestMethod]
-  public void InvoiceProcessingServiceDependencyException_DefaultConstructor_CreatesInstance()
+  public void CrudProcessingServiceDependencyException_DefaultConstructor_CreatesInstance()
   {
     // Act
-    var exception = new InvoiceProcessingServiceDependencyException();
+    var exception = new CrudProcessingServiceDependencyException();
 
     // Assert
     Assert.IsNotNull(exception);
-    Assert.IsExactInstanceOfType<InvoiceProcessingServiceDependencyException>(exception);
+    Assert.IsExactInstanceOfType<CrudProcessingServiceDependencyException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
   [TestMethod]
-  public void InvoiceProcessingServiceDependencyException_InnerExceptionConstructor_SetsPropertiesCorrectly()
+  public void CrudProcessingServiceDependencyException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
     var innerException = new InvoiceOrchestrationDependencyException();
 
     // Act
-    var exception = new InvoiceProcessingServiceDependencyException(innerException);
+    var exception = new CrudProcessingServiceDependencyException(innerException);
 
     // Assert
     Assert.IsNotNull(exception);
-    Assert.AreEqual("Invoice Processing Dependency Exception", exception.Message);
+    Assert.AreEqual("CRUD Processing Dependency Exception", exception.Message);
     Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
 
-  #region InvoiceProcessingServiceDependencyValidationException Tests
+  #region CrudProcessingServiceDependencyValidationException Tests
 
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
   [TestMethod]
-  public void InvoiceProcessingServiceDependencyValidationException_DefaultConstructor_CreatesInstance()
+  public void CrudProcessingServiceDependencyValidationException_DefaultConstructor_CreatesInstance()
   {
     // Act
-    var exception = new InvoiceProcessingServiceDependencyValidationException();
+    var exception = new CrudProcessingServiceDependencyValidationException();
 
     // Assert
     Assert.IsNotNull(exception);
-    Assert.IsExactInstanceOfType<InvoiceProcessingServiceDependencyValidationException>(exception);
+    Assert.IsExactInstanceOfType<CrudProcessingServiceDependencyValidationException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
   [TestMethod]
-  public void InvoiceProcessingServiceDependencyValidationException_InnerExceptionConstructor_SetsPropertiesCorrectly()
+  public void CrudProcessingServiceDependencyValidationException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
     var innerException = new InvoiceOrchestrationDependencyValidationException();
 
     // Act
-    var exception = new InvoiceProcessingServiceDependencyValidationException(innerException);
+    var exception = new CrudProcessingServiceDependencyValidationException(innerException);
 
     // Assert
     Assert.IsNotNull(exception);
-    Assert.AreEqual("Invoice Processing Dependency Validation Exception", exception.Message);
+    Assert.AreEqual("CRUD Processing Dependency Validation Exception", exception.Message);
     Assert.AreSame(innerException, exception.InnerException);
   }
 
   #endregion
 
-  #region InvoiceProcessingServiceException Tests
+  #region CrudProcessingServiceException Tests
 
   /// <summary>
   /// Verifies default constructor creates instance.
   /// </summary>
   [TestMethod]
-  public void InvoiceProcessingServiceException_DefaultConstructor_CreatesInstance()
+  public void CrudProcessingServiceException_DefaultConstructor_CreatesInstance()
   {
     // Act
-    var exception = new InvoiceProcessingServiceException();
+    var exception = new CrudProcessingServiceException();
 
     // Assert
     Assert.IsNotNull(exception);
-    Assert.IsExactInstanceOfType<InvoiceProcessingServiceException>(exception);
+    Assert.IsExactInstanceOfType<CrudProcessingServiceException>(exception);
   }
 
   /// <summary>
   /// Verifies constructor with inner exception sets properties correctly.
   /// </summary>
   [TestMethod]
-  public void InvoiceProcessingServiceException_InnerExceptionConstructor_SetsPropertiesCorrectly()
+  public void CrudProcessingServiceException_InnerExceptionConstructor_SetsPropertiesCorrectly()
   {
     // Arrange
     var innerException = new InvoiceOrchestrationServiceException();
 
     // Act
-    var exception = new InvoiceProcessingServiceException(innerException);
+    var exception = new CrudProcessingServiceException(innerException);
 
     // Assert
     Assert.IsNotNull(exception);
-    Assert.AreEqual("Invoice Processing Exception", exception.Message);
+    Assert.AreEqual("CRUD Processing Exception", exception.Message);
     Assert.AreSame(innerException, exception.InnerException);
   }
 
@@ -714,10 +714,10 @@ public sealed class InvoiceExceptionTests
   /// Verifies all processing exceptions inherit from Exception base class.
   /// </summary>
   [TestMethod]
-  [DataRow(typeof(InvoiceProcessingServiceValidationException))]
-  [DataRow(typeof(InvoiceProcessingServiceDependencyException))]
-  [DataRow(typeof(InvoiceProcessingServiceDependencyValidationException))]
-  [DataRow(typeof(InvoiceProcessingServiceException))]
+  [DataRow(typeof(CrudProcessingServiceValidationException))]
+  [DataRow(typeof(CrudProcessingServiceDependencyException))]
+  [DataRow(typeof(CrudProcessingServiceDependencyValidationException))]
+  [DataRow(typeof(CrudProcessingServiceException))]
   public void ProcessingExceptions_InheritFromException_TypeVerification(Type exceptionType)
   {
     // Assert
@@ -741,10 +741,10 @@ public sealed class InvoiceExceptionTests
   [DataRow(typeof(InvoiceOrchestrationDependencyException))]
   [DataRow(typeof(InvoiceOrchestrationDependencyValidationException))]
   [DataRow(typeof(InvoiceOrchestrationServiceException))]
-  [DataRow(typeof(InvoiceProcessingServiceValidationException))]
-  [DataRow(typeof(InvoiceProcessingServiceDependencyException))]
-  [DataRow(typeof(InvoiceProcessingServiceDependencyValidationException))]
-  [DataRow(typeof(InvoiceProcessingServiceException))]
+  [DataRow(typeof(CrudProcessingServiceValidationException))]
+  [DataRow(typeof(CrudProcessingServiceDependencyException))]
+  [DataRow(typeof(CrudProcessingServiceDependencyValidationException))]
+  [DataRow(typeof(CrudProcessingServiceException))]
   public void AllExceptions_HaveSerializableAttribute_AttributeVerification(Type exceptionType)
   {
     // Assert
@@ -768,7 +768,7 @@ public sealed class InvoiceExceptionTests
     var orchestrationException = new InvoiceOrchestrationValidationException(foundationException);
 
     // Act
-    var processingException = new InvoiceProcessingServiceValidationException(orchestrationException);
+    var processingException = new CrudProcessingServiceValidationException(orchestrationException);
 
     // Assert
     Assert.IsNotNull(processingException.InnerException);
@@ -799,7 +799,7 @@ public sealed class InvoiceExceptionTests
     var orchestrationException = new InvoiceOrchestrationDependencyException(foundationException);
 
     // Act
-    var processingException = new InvoiceProcessingServiceDependencyException(orchestrationException);
+    var processingException = new CrudProcessingServiceDependencyException(orchestrationException);
 
     // Assert
     Assert.IsNotNull(processingException.InnerException);

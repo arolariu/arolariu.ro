@@ -44,8 +44,7 @@ public sealed class DocumentAnalysisFoundationServiceTests
 
     var service = new DocumentAnalysisFoundationService(
       broker,
-      NullLoggerFactory.Instance,
-      InvoiceScanTestData.CreateOptionsManager());
+      NullLoggerFactory.Instance);
 
     var result = await service.ExtractInvoiceAsync(
       [InvoiceScanTestData.First(), InvoiceScanTestData.Second()],
@@ -93,8 +92,7 @@ public sealed class DocumentAnalysisFoundationServiceTests
 
     var service = new DocumentAnalysisFoundationService(
       broker,
-      NullLoggerFactory.Instance,
-      InvoiceScanTestData.CreateOptionsManager());
+      NullLoggerFactory.Instance);
 
     var result = await service.ExtractInvoiceAsync(
       [InvoiceScanTestData.First(), InvoiceScanTestData.Second()],
@@ -123,8 +121,7 @@ public sealed class DocumentAnalysisFoundationServiceTests
 
     var service = new DocumentAnalysisFoundationService(
       broker,
-      NullLoggerFactory.Instance,
-      InvoiceScanTestData.CreateOptionsManager());
+      NullLoggerFactory.Instance);
 
     var result = await service.ExtractInvoiceAsync([InvoiceScanTestData.First()], CancellationToken.None);
 
@@ -152,8 +149,7 @@ public sealed class DocumentAnalysisFoundationServiceTests
 
     var service = new DocumentAnalysisFoundationService(
       broker,
-      NullLoggerFactory.Instance,
-      InvoiceScanTestData.CreateOptionsManager());
+      NullLoggerFactory.Instance);
 
     await Assert.ThrowsExactlyAsync<TaskCanceledException>(
       () => service.ExtractInvoiceAsync([InvoiceScanTestData.First()], cts.Token));
@@ -170,8 +166,7 @@ public sealed class DocumentAnalysisFoundationServiceTests
 
     var service = new DocumentAnalysisFoundationService(
       broker,
-      NullLoggerFactory.Instance,
-      InvoiceScanTestData.CreateOptionsManager());
+      NullLoggerFactory.Instance);
 
     var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyValidationException>(
       () => service.ExtractInvoiceAsync([InvoiceScanTestData.First()], CancellationToken.None));
@@ -190,8 +185,7 @@ public sealed class DocumentAnalysisFoundationServiceTests
 
     var service = new DocumentAnalysisFoundationService(
       broker,
-      NullLoggerFactory.Instance,
-      InvoiceScanTestData.CreateOptionsManager());
+      NullLoggerFactory.Instance);
 
     var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
       () => service.ExtractInvoiceAsync([InvoiceScanTestData.First()], CancellationToken.None));
@@ -211,8 +205,7 @@ public sealed class DocumentAnalysisFoundationServiceTests
 
     var service = new DocumentAnalysisFoundationService(
       broker,
-      NullLoggerFactory.Instance,
-      InvoiceScanTestData.CreateOptionsManager());
+      NullLoggerFactory.Instance);
 
     var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
       () => service.ExtractInvoiceAsync([InvoiceScanTestData.First()], CancellationToken.None));

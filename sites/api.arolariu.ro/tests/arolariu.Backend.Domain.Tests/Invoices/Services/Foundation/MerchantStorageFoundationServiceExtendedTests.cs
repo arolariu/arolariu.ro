@@ -44,9 +44,7 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
         .Setup(factory => factory.CreateLogger(It.IsAny<string>()))
         .Returns(mockLogger.Object);
 
-    service = new MerchantStorageFoundationService(
-        mockBroker.Object,
-        mockLoggerFactory.Object);
+    service = new MerchantStorageFoundationService(mockBroker.Object, mockLoggerFactory.Object);
   }
 
   #region CreateMerchantObject Extended Tests

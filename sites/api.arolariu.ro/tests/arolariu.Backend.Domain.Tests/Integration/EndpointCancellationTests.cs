@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Http;
 using arolariu.Backend.Domain.Invoices.Endpoints;
-using arolariu.Backend.Domain.Invoices.Services.Processing;
+using arolariu.Backend.Domain.Invoices.Services.Management;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Timeouts;
@@ -40,7 +40,6 @@ public sealed class EndpointCancellationTests
       _cts = new CancellationTokenSource();
       _cts.Cancel();
     }
-
     /// <inheritdoc/>
     public CancellationToken RequestTimeoutToken => _cts.Token;
 
@@ -112,7 +111,7 @@ public sealed class EndpointCancellationTests
   [TestMethod]
   public async Task DeleteInvoicesAsync_WhenWriteScopeCancelled_Returns504NotClientClosed()
   {
-    var processing = new Mock<IInvoiceProcessingService>();
+    var processing = new Mock<IInvoiceManagementService>();
     processing
       .Setup(p => p.DeleteInvoices(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new OperationCanceledException());
@@ -146,7 +145,7 @@ public sealed class EndpointCancellationTests
   [TestMethod]
   public async Task RetrieveAllInvoicesAsync_WhenClientDisconnects_DoesNotReturnServerError()
   {
-    var processing = new Mock<IInvoiceProcessingService>();
+    var processing = new Mock<IInvoiceManagementService>();
     processing
       .Setup(p => p.ReadInvoices(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new OperationCanceledException());
@@ -172,7 +171,7 @@ public sealed class EndpointCancellationTests
   [TestMethod]
   public async Task RetrieveAllInvoicesAsync_WhenRequestTimesOut_Returns504()
   {
-    var processing = new Mock<IInvoiceProcessingService>();
+    var processing = new Mock<IInvoiceManagementService>();
     processing
       .Setup(p => p.ReadInvoices(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new OperationCanceledException());
@@ -200,7 +199,7 @@ public sealed class EndpointCancellationTests
   [TestMethod]
   public async Task RetrieveSpecificInvoiceAsync_WhenClientDisconnects_Returns499()
   {
-    var processing = new Mock<IInvoiceProcessingService>();
+    var processing = new Mock<IInvoiceManagementService>();
     processing
       .Setup(p => p.ReadInvoice(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new OperationCanceledException());
@@ -219,12 +218,12 @@ public sealed class EndpointCancellationTests
   /// <summary>
   /// Verifies that when the processing service throws <see cref="OperationCanceledException"/>
   /// and no <c>IHttpRequestTimeoutFeature</c> is present (client disconnected),
-  /// <see cref="InvoiceEndpoints.CreateNewInvoiceAsync"/> returns 499.
+  /// <c>InvoiceEndpoints.CreateNewInvoiceAsync</c> returns 499.
   /// </summary>
   [TestMethod]
   public async Task CreateNewInvoiceAsync_WhenClientDisconnects_Returns499()
   {
-    var processing = new Mock<IInvoiceProcessingService>();
+    var processing = new Mock<IInvoiceManagementService>();
     processing
       .Setup(p => p.CreateInvoice(
         It.IsAny<arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Invoice>(),
@@ -236,7 +235,7 @@ public sealed class EndpointCancellationTests
       UserIdentifier: Guid.NewGuid(),
       InitialScan: new arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.InvoiceScan(
         arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.ScanType.JPG,
-        new Uri("https://example.com/invoice.jpg"),
+        new Uri("https://example.com/invoices/invoice.jpg"),
         null),
       Metadata: null);
 
@@ -254,12 +253,12 @@ public sealed class EndpointCancellationTests
   /// <summary>
   /// Verifies that when the processing service throws <see cref="OperationCanceledException"/>
   /// and a cancelled <c>IHttpRequestTimeoutFeature</c> is installed,
-  /// <see cref="InvoiceEndpoints.CreateNewInvoiceAsync"/> returns 504 Gateway Timeout.
+  /// <c>InvoiceEndpoints.CreateNewInvoiceAsync</c> returns 504 Gateway Timeout.
   /// </summary>
   [TestMethod]
   public async Task CreateNewInvoiceAsync_WhenRequestTimesOut_Returns504()
   {
-    var processing = new Mock<IInvoiceProcessingService>();
+    var processing = new Mock<IInvoiceManagementService>();
     processing
       .Setup(p => p.CreateInvoice(
         It.IsAny<arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Invoice>(),
@@ -271,7 +270,7 @@ public sealed class EndpointCancellationTests
       UserIdentifier: Guid.NewGuid(),
       InitialScan: new arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.InvoiceScan(
         arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.ScanType.JPG,
-        new Uri("https://example.com/invoice.jpg"),
+        new Uri("https://example.com/invoices/invoice.jpg"),
         null),
       Metadata: null);
 
@@ -279,7 +278,7 @@ public sealed class EndpointCancellationTests
     var context = new DefaultHttpContext();
     context.RequestServices = new ServiceCollection().BuildServiceProvider();
     context.Features.Set<IHttpRequestTimeoutFeature>(timeoutFeature);
-    var accessor = new HttpContextAccessor { HttpContext = context };
+    var accessor = CreateAuthenticatedContextAccessor(context);
 
     var result = await InvoiceEndpoints
       .CreateNewInvoiceAsync(processing.Object, accessor, invoiceDto)

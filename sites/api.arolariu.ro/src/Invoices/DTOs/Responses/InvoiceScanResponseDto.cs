@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Invoices.DTOs.Responses;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
@@ -57,8 +58,21 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 public readonly record struct InvoiceScanResponseDto(
   ScanType Type,
   Uri Location,
+  [property: JsonIgnore]
   IReadOnlyDictionary<string, object>? Metadata)
 {
+  /// <summary>
+  /// Initializes a legacy compatibility shape that omits <see cref="Metadata"/>.
+  /// </summary>
+  /// <param name="Type">The scan type.</param>
+  /// <param name="Location">The scan location.</param>
+  public InvoiceScanResponseDto(
+    ScanType Type,
+    Uri Location)
+    : this(Type, Location, Metadata: null)
+  {
+  }
+
   /// <summary>
   /// Creates an <see cref="InvoiceScanResponseDto"/> from a domain <see cref="InvoiceScan"/>.
   /// </summary>

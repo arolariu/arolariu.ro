@@ -173,6 +173,11 @@ public interface IDatabaseBroker
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
   ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync(Guid parentCompanyId, CancellationToken cancellationToken);
 
+  /// <summary>Finds a merchant by its canonical normalized name.</summary>
+  ValueTask<Merchant?> FindMerchantByNormalizedNameAsync(
+    string normalizedName,
+    CancellationToken cancellationToken);
+
   /// <summary>
   /// Replaces (upserts) a merchant by identifier (partition inferred via existing document lookup).
   /// </summary>

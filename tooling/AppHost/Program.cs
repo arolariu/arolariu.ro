@@ -120,7 +120,7 @@ var cosmos = builder
     .WithIconName("DatabaseMultiple");
 
 // Database + containers (mirrors the selfhost-start.sh bootstrap that runs
-// `cosmos.NewDatabase('primary')` + creates invoices/merchants containers).
+// `cosmos.NewDatabase('primary')` + creates invoices/merchants/analysisRuns containers).
 var cosmosPrimaryDb = cosmos.AddCosmosDatabase(Constants.CosmosDatabaseName);
 var cosmosInvoices = cosmosPrimaryDb.AddContainer(
     Constants.CosmosInvoicesContainer,
@@ -128,6 +128,12 @@ var cosmosInvoices = cosmosPrimaryDb.AddContainer(
 var cosmosMerchants = cosmosPrimaryDb.AddContainer(
     Constants.CosmosMerchantsContainer,
     partitionKeyPath: Constants.CosmosMerchantsPartitionKey);
+var cosmosAnalysisRuns = cosmosPrimaryDb.AddContainer(
+    Constants.CosmosAnalysisRunsContainer,
+    partitionKeyPath: Constants.CosmosAnalysisRunsPartitionKey);
+// Aspire 13's AddContainer contract does not expose default TTL. The AnalysisWorker resolves Management before its
+// first poll, and Management idempotently upgrades this container to defaultTtl = -1 through the Analysis Run
+// Foundation. Bicep and selfhost bootstrap set the same value directly.
 
 var storage = builder
     .AddAzureStorage("storage")

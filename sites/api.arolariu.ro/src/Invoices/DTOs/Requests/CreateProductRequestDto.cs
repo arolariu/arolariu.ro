@@ -5,8 +5,10 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 
 /// <summary>
 /// Request DTO for adding a new product line item to an existing invoice.
@@ -21,9 +23,8 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// and value semantics for equality comparisons.
 /// </para>
 /// <para>
-/// <b>Enrichment:</b> The current legacy analysis flow may enrich
-/// <see cref="DetectedAllergens"/>. The product remains unclassified until the
-/// later manual or structured-analysis classification flow is introduced.
+/// <b>AI Enrichment:</b> After creation, the product may be enriched by AI analysis
+/// to populate its classification and allergen assessment.
 /// </para>
 /// <para>
 /// <b>Total Price:</b> The total price is computed automatically as
@@ -33,6 +34,10 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// <param name="Name">
 /// The product name as it appears on the receipt. Required.
 /// This will be used as the product's display name.
+/// </param>
+/// <param name="Classification">
+/// Optional manual GPC classification selection (system plus code).
+/// Null leaves the line item unclassified until an analysis run classifies it.
 /// </param>
 /// <param name="Quantity">
 /// The quantity of product units. Must be positive.
@@ -49,35 +54,32 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// <param name="Price">
 /// The unit price per single quantity. Currency is inherited from the parent invoice.
 /// </param>
-/// <param name="DetectedAllergens">
-/// Optional collection of known allergens in this product.
-/// May be populated by AI analysis if not provided.
-/// </param>
+
 /// <example>
 /// <code>
 /// var request = new CreateProductRequestDto(
 ///     Name: "Milk 1L (LAPTE ZUZU)",
+///     Classification: new ClassificationSelectionDto(ClassificationSystem.Gs1Gpc, "10000025"),
 ///     Quantity: 2,
 ///     QuantityUnit: "buc",
 ///     ProductCode: "5941234567890",
-///     Price: 8.99m,
-///     DetectedAllergens: [Allergen.Lactose]);
+///     Price: 8.99m);
 ///
 /// var product = request.ToProduct();
 /// invoice.Items.Add(product);
 /// </code>
 /// </example>
 /// <seealso cref="Product"/>
-/// <seealso cref="Allergen"/>
+/// <seealso cref="ClassificationSelectionDto"/>
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct CreateProductRequestDto(
   [Required] string Name,
+  ClassificationSelectionDto? Classification,
   decimal Quantity,
   string? QuantityUnit,
   string? ProductCode,
-  decimal Price,
-  IEnumerable<Allergen>? DetectedAllergens)
+  decimal Price)
 {
   /// <summary>
   /// Converts this DTO to a <see cref="Product"/> domain value object.
@@ -95,14 +97,32 @@ public readonly record struct CreateProductRequestDto(
   /// <returns>
   /// A new <see cref="Product"/> instance initialized with the provided values.
   /// </returns>
-  public Product ToProduct() => new()
+  public Product ToProduct()
   {
-    Name = Name,
-    Classification = null,
-    Quantity = Quantity,
-    QuantityUnit = QuantityUnit ?? string.Empty,
-    ProductCode = ProductCode ?? string.Empty,
-    Price = Price,
-    DetectedAllergens = DetectedAllergens ?? [],
-  };
+    ValidateClassification();
+
+    var product = new Product
+    {
+      Name = Name?.Trim() ?? string.Empty,
+      Classification = Classification?.ToManualSelection(),
+      Quantity = Quantity,
+      QuantityUnit = QuantityUnit?.Trim() ?? string.Empty,
+      ProductCode = ProductCode?.Trim() ?? string.Empty,
+      Price = Price,
+    };
+
+    product.ValidateForPersistence();
+    product.RequiresCommercialValidation = true;
+    return product;
+  }
+
+  private void ValidateClassification()
+  {
+    if (Classification is { System: not ClassificationSystem.Gs1Gpc }
+      || Classification is { Code: var code } && string.IsNullOrWhiteSpace(code))
+    {
+      throw new ProductValidationException(
+        "Product classification must use the GS1 GPC system with a nonblank code.");
+    }
+  }
 }

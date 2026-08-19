@@ -393,7 +393,6 @@
         "dependencies": {
           "Azure.AI.DocumentIntelligence": "[1.0.0, )",
           "Azure.AI.OpenAI": "[2.9.0-beta.1, )",
-          "Azure.AI.Translation.Text": "[2.0.0, )",
           "Azure.Storage.Blobs": "[12.29.1, )",
           "Microsoft.Azure.Cosmos": "[3.62.0, )",
           "Microsoft.Extensions.AI": "[10.9.0, )",
@@ -420,15 +419,6 @@
         "dependencies": {
           "Azure.Core": "1.51.1",
           "OpenAI": "2.9.1"
-        }
-      },
-      "Azure.AI.Translation.Text": {
-        "type": "CentralTransitive",
-        "requested": "[2.0.0, )",
-        "resolved": "2.0.0",
-        "contentHash": "v0U87B7PkjvxppAVWSMZSDshTB1uPBR6nPcdGWrhzUW/v9RG5sP7QdjxJtyJtHVzrUmY9lM8Y2T2mO7KAAXBpQ==",
-        "dependencies": {
-          "Azure.Core": "1.57.0"
         }
       },
       "Azure.Core": {

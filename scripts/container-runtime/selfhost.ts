@@ -139,7 +139,14 @@ async function postCosmosResource(url: string, body: unknown): Promise<void> {
   }
 }
 
-async function bootstrapCosmos(): Promise<void> {
+/**
+ * Creates the local Cosmos database and all containers required by the API.
+ *
+ * @remarks
+ * The durable analysis container enables item-level TTL so terminal runs can
+ * expire while queued and active runs remain durable.
+ */
+export async function bootstrapCosmos(): Promise<void> {
   try {
     await postCosmosResource("http://localhost:8081/dbs", {id: "primary"});
     await postCosmosResource("http://localhost:8081/dbs/primary/colls", {
@@ -149,6 +156,11 @@ async function bootstrapCosmos(): Promise<void> {
     await postCosmosResource("http://localhost:8081/dbs/primary/colls", {
       id: "merchants",
       partitionKey: {paths: ["/ParentCompanyId"], kind: "Hash"},
+    });
+    await postCosmosResource("http://localhost:8081/dbs/primary/colls", {
+      id: "analysisRuns",
+      partitionKey: {paths: ["/bucket"], kind: "Hash"},
+      defaultTtl: -1,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

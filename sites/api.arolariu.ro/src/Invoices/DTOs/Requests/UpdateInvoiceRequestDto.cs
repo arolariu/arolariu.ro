@@ -7,7 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 
 /// <summary>
 /// Request DTO for full invoice replacement operations (HTTP PUT semantics).
@@ -39,6 +39,10 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 /// A detailed description of the invoice. Required, but may be empty.
 /// Useful for notes, context, or search purposes.
 /// </param>
+/// <param name="Classification">
+/// Optional manual ECOICOP classification selection (system plus code).
+/// Null leaves the invoice unclassified until an analysis run classifies it.
+/// </param>
 /// <param name="PaymentInformation">
 /// Payment details including currency, total amount, tax, and payment method.
 /// Required for proper financial tracking and reporting.
@@ -60,6 +64,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 /// var request = new UpdateInvoiceRequestDto(
 ///     Name: "Updated Invoice Name",
 ///     Description: "Monthly groceries",
+///     Classification: new ClassificationSelectionDto(ClassificationSystem.EcoicopV2, "01.1.1"),
 ///     PaymentInformation: new PaymentInformation(Currency.RON, 150.50m, 28.60m, PaymentMethod.Card),
 ///     MerchantReference: merchantId,
 ///     IsImportant: true,
@@ -77,11 +82,66 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 public readonly record struct UpdateInvoiceRequestDto(
   [Required] string Name,
   [Required] string Description,
+  ClassificationSelectionDto? Classification,
   PaymentInformation PaymentInformation,
   Guid? MerchantReference,
   bool IsImportant,
   IDictionary<string, object>? AdditionalMetadata)
 {
+  /// <summary>
+  /// Initializes a legacy compatibility shape that omits <see cref="AdditionalMetadata"/>.
+  /// </summary>
+  /// <param name="Name">The invoice name.</param>
+  /// <param name="Description">The invoice description.</param>
+  /// <param name="Classification">The optional manual classification.</param>
+  /// <param name="PaymentInformation">The payment information.</param>
+  /// <param name="MerchantReference">The merchant reference.</param>
+  /// <param name="IsImportant">Whether the invoice is important.</param>
+  public UpdateInvoiceRequestDto(
+    string Name,
+    string Description,
+    ClassificationSelectionDto? Classification,
+    PaymentInformation PaymentInformation,
+    Guid? MerchantReference,
+    bool IsImportant)
+    : this(
+      Name,
+      Description,
+      Classification,
+      PaymentInformation,
+      MerchantReference,
+      IsImportant,
+      AdditionalMetadata: null)
+  {
+  }
+
+  /// <summary>
+  /// Initializes a legacy compatibility shape that supplied payment information before classification.
+  /// </summary>
+  /// <param name="Name">The invoice name.</param>
+  /// <param name="Description">The invoice description.</param>
+  /// <param name="PaymentInformation">The payment information.</param>
+  /// <param name="MerchantReference">The merchant reference.</param>
+  /// <param name="IsImportant">Whether the invoice is important.</param>
+  /// <param name="AdditionalMetadata">Optional metadata.</param>
+  public UpdateInvoiceRequestDto(
+    string Name,
+    string Description,
+    PaymentInformation PaymentInformation,
+    Guid? MerchantReference,
+    bool IsImportant,
+    IDictionary<string, object>? AdditionalMetadata)
+    : this(
+      Name,
+      Description,
+      Classification: null,
+      PaymentInformation,
+      MerchantReference,
+      IsImportant,
+      AdditionalMetadata)
+  {
+  }
+
   /// <summary>
   /// Converts this DTO to an <see cref="Invoice"/> domain aggregate.
   /// </summary>
@@ -106,16 +166,10 @@ public readonly record struct UpdateInvoiceRequestDto(
   /// <param name="userIdentifier">
   /// The owner's user identifier. Used for authorization and partitioning.
   /// </param>
-  /// <param name="existingClassification">
-  /// The canonical classification to preserve during replacement.
-  /// </param>
   /// <returns>
   /// A fully populated <see cref="Invoice"/> instance ready for persistence.
   /// </returns>
-  public Invoice ToInvoice(
-    Guid invoiceId,
-    Guid userIdentifier,
-    StandardClassification? existingClassification)
+  public Invoice ToInvoice(Guid invoiceId, Guid userIdentifier)
   {
     var invoice = new Invoice
     {
@@ -123,7 +177,7 @@ public readonly record struct UpdateInvoiceRequestDto(
       UserIdentifier = userIdentifier,
       Name = Name,
       Description = Description,
-      Classification = existingClassification,
+      Classification = Classification?.ToManualSelection(),
       PaymentInformation = PaymentInformation,
       MerchantReference = MerchantReference ?? Guid.Empty,
       IsImportant = IsImportant,

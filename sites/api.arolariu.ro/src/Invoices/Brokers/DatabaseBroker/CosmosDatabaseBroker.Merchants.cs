@@ -137,6 +137,74 @@ public partial class CosmosDatabaseBroker
   }
 
   /// <inheritdoc/>
+  public async ValueTask<Merchant?> FindMerchantByNormalizedNameAsync(string normalizedName, CancellationToken cancellationToken)
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(FindMerchantByNormalizedNameAsync));
+    activity?.SetLayerContext("Broker", nameof(CosmosDatabaseBroker));
+    activity?.SetCosmosDbContext("primary", "merchants", "query");
+    activity?.SetTag("db.query.type", "cross_partition_query_then_in_memory_exact_normalized_match");
+
+    const string queryText = "SELECT * FROM c WHERE NOT IS_DEFINED(c.IsSoftDeleted) OR c.IsSoftDeleted = false";
+    activity?.SetDbStatement(queryText);
+
+    string normalizedTargetName = MerchantNameNormalizer.Normalize(normalizedName);
+
+    if (string.IsNullOrEmpty(normalizedTargetName))
+    {
+      activity?.SetTag("result.match_found", false);
+      activity?.RecordSuccess();
+      return null;
+    }
+
+    var database = CosmosClient.GetDatabase("primary");
+    var container = database.GetContainer("merchants");
+    var query = new QueryDefinition(queryText);
+    var iterator = container.GetItemQueryIterator<Merchant>(query);
+
+    double totalRequestCharge = 0.0;
+    Merchant? resolvedMerchant = null;
+
+    while (iterator.HasMoreResults)
+    {
+      cancellationToken.ThrowIfCancellationRequested();
+
+      FeedResponse<Merchant> response = await TranslateMerchantCosmosAsync(
+        () => iterator.ReadNextAsync(cancellationToken),
+        null).ConfigureAwait(false);
+
+      totalRequestCharge += response.RequestCharge;
+
+      foreach (Merchant merchant in response)
+      {
+        if (merchant.IsSoftDeleted)
+        {
+          continue;
+        }
+
+        if (string.Equals(
+          MerchantNameNormalizer.Normalize(merchant.Name),
+          normalizedTargetName,
+          StringComparison.Ordinal) is false)
+        {
+          continue;
+        }
+
+        if (resolvedMerchant is null || merchant.id.CompareTo(resolvedMerchant.id) < 0)
+        {
+          resolvedMerchant = merchant;
+        }
+      }
+    }
+
+    activity?.SetCosmosDbRequestCharge(totalRequestCharge);
+    InvoiceMetrics.RecordCosmosDbCharge(totalRequestCharge, "query", "merchants");
+    activity?.SetTag("result.match_found", resolvedMerchant is not null);
+    activity?.RecordSuccess();
+
+    return resolvedMerchant;
+  }
+
+  /// <inheritdoc/>
   public async ValueTask<Merchant> UpdateMerchantAsync(Guid merchantIdentifier, Merchant updatedMerchant, CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantAsync));

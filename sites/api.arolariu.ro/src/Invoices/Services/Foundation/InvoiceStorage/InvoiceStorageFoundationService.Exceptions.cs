@@ -68,11 +68,13 @@ public partial class InvoiceStorageFoundationService
 
   private Exception Classify(Exception exception) => exception switch
   {
-    InvoiceIdNotSetException
+    ArgumentNullException { ParamName: "invoice" or "product" }
+      or InvoiceIdNotSetException
       or InvoiceDescriptionNotSetException
       or InvoicePaymentInformationNotCorrectException
       or InvoiceTimeInformationNotCorrectException
       or InvoicePhotoLocationNotCorrectException
+      or InvoiceScanBlobValidationException
       => LogAndWrapValidation(exception),
 
     InvoiceNotFoundException
@@ -82,6 +84,9 @@ public partial class InvoiceStorageFoundationService
       or InvoiceUnauthorizedAccessException
       or InvoiceForbiddenAccessException
       => LogAndWrapDependencyValidation(exception),
+
+    InvoiceScanBlobDependencyException
+      => LogAndWrapDependency(exception),
 
     InvoiceFailedStorageException
       => LogAndWrapDependency(exception),

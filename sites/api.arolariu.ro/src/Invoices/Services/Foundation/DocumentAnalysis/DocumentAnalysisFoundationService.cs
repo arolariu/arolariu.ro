@@ -6,15 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
-using arolariu.Backend.Common.Exceptions;
-using arolariu.Backend.Common.Options;
-using arolariu.Backend.Domain.Invoices.Brokers.BlobStorageBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
-using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
 using Microsoft.Extensions.Logging;
 
@@ -26,56 +21,22 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 public sealed partial class DocumentAnalysisFoundationService : IDocumentAnalysisFoundationService
 {
   private readonly IDocumentIntelligenceBroker documentIntelligenceBroker;
-  private readonly IInvoiceBlobStorageBroker invoiceBlobStorageBroker;
   private readonly ILogger<IDocumentAnalysisFoundationService> logger;
-  private readonly IOptionsManager optionsManager;
 
   /// <summary>
   /// Initializes a new instance of the <see cref="DocumentAnalysisFoundationService"/> class.
   /// </summary>
   /// <param name="documentIntelligenceBroker">The provider-neutral document-intelligence broker.</param>
-  /// <param name="invoiceBlobStorageBroker">
-  /// The backend credential-backed Blob Storage broker used to validate every approved scan before analysis.
-  /// </param>
   /// <param name="loggerFactory">The logger factory used to create the service logger.</param>
-  /// <param name="optionsManager">The storage configuration used to approve scan locations before provider calls.</param>
   public DocumentAnalysisFoundationService(
     IDocumentIntelligenceBroker documentIntelligenceBroker,
-    IInvoiceBlobStorageBroker invoiceBlobStorageBroker,
-    ILoggerFactory loggerFactory,
-    IOptionsManager optionsManager)
+    ILoggerFactory loggerFactory)
   {
     ArgumentNullException.ThrowIfNull(documentIntelligenceBroker);
-    ArgumentNullException.ThrowIfNull(invoiceBlobStorageBroker);
     ArgumentNullException.ThrowIfNull(loggerFactory);
-    ArgumentNullException.ThrowIfNull(optionsManager);
 
     this.documentIntelligenceBroker = documentIntelligenceBroker;
-    this.invoiceBlobStorageBroker = invoiceBlobStorageBroker;
     logger = loggerFactory.CreateLogger<IDocumentAnalysisFoundationService>();
-    this.optionsManager = optionsManager;
-  }
-
-  /// <summary>
-  /// Initializes a test-only instance for deterministic receipt-mapping tests.
-  /// </summary>
-  /// <remarks>
-  /// This internal constructor is available only to the Invoices test assembly. Production composition must use the
-  /// public constructor so server-side Blob Storage property validation cannot be bypassed.
-  /// </remarks>
-  /// <param name="documentIntelligenceBroker">The scripted document-intelligence broker used by the unit test.</param>
-  /// <param name="loggerFactory">The logger factory used by the unit test.</param>
-  /// <param name="optionsManager">The deterministic storage options used by the unit test.</param>
-  internal DocumentAnalysisFoundationService(
-    IDocumentIntelligenceBroker documentIntelligenceBroker,
-    ILoggerFactory loggerFactory,
-    IOptionsManager optionsManager)
-    : this(
-      documentIntelligenceBroker,
-      new DeterministicTestBlobStorageBroker(),
-      loggerFactory,
-      optionsManager)
-  {
   }
 
   /// <inheritdoc/>
@@ -87,15 +48,13 @@ public sealed partial class DocumentAnalysisFoundationService : IDocumentAnalysi
       {
         using var activity = InvoicePackageTracing.StartActivity(nameof(ExtractInvoiceAsync));
         ValidateScansAreSet(scans);
-        ApplicationOptions storageOptions = optionsManager.GetApplicationOptions();
 
         var extractionTasks = new Task<IndexedReceiptDocument>[scans.Count];
 
         for (int index = 0; index < scans.Count; index++)
         {
           InvoiceScan scan = scans[index];
-          ValidateScanIsUsable(scan, index, storageOptions);
-          await ValidateScanBlobPropertiesAsync(scan, storageOptions, cancellationToken).ConfigureAwait(false);
+          ValidateScanIsUsable(scan, index);
         }
 
         for (int index = 0; index < scans.Count; index++)
@@ -127,93 +86,6 @@ public sealed partial class DocumentAnalysisFoundationService : IDocumentAnalysi
     ValidateReceiptDocumentIsSet(receiptDocument);
 
     return new IndexedReceiptDocument(index, receiptDocument.WithSourceScanIndex(index));
-  }
-
-  private async Task ValidateScanBlobPropertiesAsync(
-    InvoiceScan scan,
-    ApplicationOptions storageOptions,
-    CancellationToken cancellationToken)
-  {
-    if (!InvoiceScanStorageLocationPolicy.TryResolveApprovedBlobPath(
-      scan.Location,
-      storageOptions,
-      out string blobPath,
-      out string validationMessage))
-    {
-      throw new InvoiceScanBlobValidationException(validationMessage);
-    }
-
-    InvoiceScanBlobProperties properties;
-
-    try
-    {
-      properties = await invoiceBlobStorageBroker
-        .GetPropertiesAsync(blobPath, cancellationToken)
-        .ConfigureAwait(false);
-    }
-    catch (Azure.RequestFailedException exception) when (exception.Status == 404)
-    {
-      throw new InvoiceScanBlobValidationException(
-        "The uploaded scan was not found in approved storage.",
-        exception);
-    }
-    catch (Exception exception)
-      when (exception is Azure.RequestFailedException or System.Net.Http.HttpRequestException or TimeoutException)
-    {
-      throw new InvoiceScanBlobDependencyException(
-        "The uploaded scan could not be inspected in storage.",
-        exception);
-    }
-
-    if (properties.ContentLength is < 0 or > (10L * 1024L * 1024L))
-    {
-      throw new InvoiceScanBlobValidationException("The uploaded scan must not exceed 10 MiB.");
-    }
-
-    if (!properties.IsBlockBlob)
-    {
-      throw new InvoiceScanBlobValidationException("The uploaded scan must be stored as a block blob.");
-    }
-
-    if (!HasExpectedContentType(scan.Type, properties.ContentType))
-    {
-      throw new InvoiceScanBlobValidationException(
-        "The uploaded scan content type does not match the selected scan type.");
-    }
-  }
-
-  private static bool HasExpectedContentType(ScanType scanType, string? contentType)
-  {
-    if (string.IsNullOrWhiteSpace(contentType))
-    {
-      return true;
-    }
-
-    string normalizedContentType = contentType
-      .Split(';', 2, StringSplitOptions.TrimEntries)[0];
-
-    if (string.Equals(normalizedContentType, "application/octet-stream", StringComparison.OrdinalIgnoreCase))
-    {
-      return true;
-    }
-
-    return scanType switch
-    {
-      ScanType.JPG or ScanType.JPEG
-        => string.Equals(normalizedContentType, "image/jpeg", StringComparison.OrdinalIgnoreCase),
-      ScanType.PNG
-        => string.Equals(normalizedContentType, "image/png", StringComparison.OrdinalIgnoreCase),
-      ScanType.PDF
-        => string.Equals(normalizedContentType, "application/pdf", StringComparison.OrdinalIgnoreCase),
-      ScanType.BMP
-        => string.Equals(normalizedContentType, "image/bmp", StringComparison.OrdinalIgnoreCase),
-      ScanType.TIFF
-        => string.Equals(normalizedContentType, "image/tiff", StringComparison.OrdinalIgnoreCase),
-      ScanType.HEIF
-        => string.Equals(normalizedContentType, "image/heif", StringComparison.OrdinalIgnoreCase)
-          || string.Equals(normalizedContentType, "image/heic", StringComparison.OrdinalIgnoreCase),
-      _ => false,
-    };
   }
 
   private static ReceiptExtractionResult MergeDocuments(IReadOnlyList<IndexedReceiptDocument> extractedDocuments)
@@ -539,12 +411,4 @@ public sealed partial class DocumentAnalysisFoundationService : IDocumentAnalysi
   private readonly record struct ProductIdentity(string Name, string ProductCode, decimal Quantity, decimal Price);
   private readonly record struct TaxIdentity(string Description, decimal Amount, decimal Rate, decimal NetAmount);
   private readonly record struct PaymentIdentity(string Method, decimal Amount);
-
-  private sealed class DeterministicTestBlobStorageBroker : IInvoiceBlobStorageBroker
-  {
-    public Task<InvoiceScanBlobProperties> GetPropertiesAsync(
-      string blobPath,
-      CancellationToken cancellationToken) =>
-      Task.FromResult(new InvoiceScanBlobProperties(1024L, true, ContentType: null));
-  }
 }

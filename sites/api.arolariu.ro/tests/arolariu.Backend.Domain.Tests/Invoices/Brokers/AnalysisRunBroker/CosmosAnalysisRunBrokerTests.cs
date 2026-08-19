@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Aggregates;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
@@ -18,7 +19,6 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Microsoft.Azure.Cosmos;
-using Microsoft.EntityFrameworkCore;
 
 using Moq;
 
@@ -55,19 +55,14 @@ public sealed class CosmosDatabaseBrokerTests : IDisposable
     mockCosmosClient.Setup(client => client.GetDatabase(It.IsAny<string>())).Returns(mockDatabase.Object);
     mockDatabase.Setup(db => db.GetContainer(ContainerId)).Returns(mockContainer.Object);
 
-    var options = new DbContextOptionsBuilder<CosmosDatabaseBroker>()
-      .UseCosmos(
-        "AccountEndpoint=https://localhost:8081/;AccountKey=local-test-key;",
-        "primary")
-      .Options;
-    broker = new CosmosDatabaseBroker(mockCosmosClient.Object, options);
+    broker = new CosmosDatabaseBroker(mockCosmosClient.Object);
   }
-
-  private static CosmosException MakeCosmosException(HttpStatusCode statusCode) =>
-    new("cosmos failure", statusCode, 0, "activity", 0);
 
   /// <inheritdoc/>
   public void Dispose() => broker.Dispose();
+
+  private static CosmosException MakeCosmosException(HttpStatusCode statusCode) =>
+    new("cosmos failure", statusCode, 0, "activity", 0);
 
   #region EnsureAnalysisQueueAsync Tests
 

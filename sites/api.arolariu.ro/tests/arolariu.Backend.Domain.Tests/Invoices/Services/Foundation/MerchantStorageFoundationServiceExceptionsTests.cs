@@ -29,9 +29,7 @@ public class MerchantStorageFoundationServiceExceptionsTests
   /// <summary>Initializes a new instance of the <see cref="MerchantStorageFoundationServiceExceptionsTests"/> class.</summary>
   public MerchantStorageFoundationServiceExceptionsTests()
   {
-    _sut = new MerchantStorageFoundationService(
-      _broker.Object,
-      NullLoggerFactory.Instance);
+    _sut = new MerchantStorageFoundationService(_broker.Object, NullLoggerFactory.Instance);
   }
 
   /// <summary>Verifies that a <see cref="MerchantNotFoundException"/> from the broker is wrapped into a <see cref="MerchantFoundationServiceDependencyValidationException"/>.</summary>

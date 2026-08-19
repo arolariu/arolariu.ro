@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 
 using Microsoft.Extensions.Logging;
 
@@ -22,10 +23,11 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
   private readonly ILogger<IMerchantStorageFoundationService> logger;
 
   /// <summary>
-  /// Public constructor.
+  /// Initializes a new instance of the <see cref="MerchantStorageFoundationService"/> class.
   /// </summary>
-  /// <param name="invoiceNoSqlBroker"></param>
-  /// <param name="loggerFactory"></param>
+  /// <param name="invoiceNoSqlBroker">The NoSQL persistence broker for merchant entities.</param>
+  /// <param name="loggerFactory">The logger factory used to create the service logger.</param>
+  /// <exception cref="ArgumentNullException">Thrown when any required dependency is null.</exception>
   public MerchantStorageFoundationService(
     IDatabaseBroker invoiceNoSqlBroker,
     ILoggerFactory loggerFactory)
@@ -42,6 +44,7 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchantObject));
+    ArgumentNullException.ThrowIfNull(merchant);
     ValidateMerchantIdentifierIsSet(merchant.id);
 
     await invoiceNoSqlBroker
@@ -79,6 +82,23 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
   }).ConfigureAwait(false);
   #endregion
 
+  #region Find Merchant By Normalized Name API
+  /// <inheritdoc/>
+  public async Task<Merchant?> FindMerchantByNormalizedNameObject(string normalizedName, CancellationToken cancellationToken) =>
+  await TryCatchAsync(async () =>
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(FindMerchantByNormalizedNameObject));
+
+    string canonicalNormalizedName = NormalizeAndValidateNormalizedName(normalizedName);
+
+    Merchant? merchant = await invoiceNoSqlBroker
+      .FindMerchantByNormalizedNameAsync(canonicalNormalizedName, cancellationToken)
+      .ConfigureAwait(false);
+
+    return merchant;
+  }).ConfigureAwait(false);
+  #endregion
+
   #region Read Merchant Object API
   /// <inheritdoc/>
   public async Task<Merchant> ReadMerchantObject(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
@@ -98,11 +118,18 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantObject));
+    ArgumentNullException.ThrowIfNull(updatedMerchant);
+
     var currentMerchant = await invoiceNoSqlBroker.ReadMerchantAsync(merchantIdentifier, parentCompanyId, cancellationToken).ConfigureAwait(false);
-    ArgumentNullException.ThrowIfNull(currentMerchant);
+    if (currentMerchant is null)
+    {
+      throw new MerchantNotFoundException(merchantIdentifier);
+    }
+
+    currentMerchant.ApplyClientUpdate(updatedMerchant);
 
     var newMerchant = await invoiceNoSqlBroker
-      .UpdateMerchantAsync(currentMerchant, updatedMerchant, cancellationToken)
+      .UpdateMerchantAsync(currentMerchant, currentMerchant, cancellationToken)
       .ConfigureAwait(false);
 
     return newMerchant;

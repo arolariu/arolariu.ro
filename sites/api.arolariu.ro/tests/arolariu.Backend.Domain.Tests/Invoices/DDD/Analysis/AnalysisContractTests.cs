@@ -144,6 +144,42 @@ public sealed class AnalysisContractTests
       maximumRecipes: 0));
 
   /// <summary>
+  /// Verifies that merchant resolution cannot be requested without document extraction evidence.
+  /// </summary>
+  [TestMethod]
+  public void InvoiceAnalysisOptions_MerchantResolutionWithoutDocumentExtraction_ThrowsArgumentException() =>
+    Assert.ThrowsExactly<ArgumentException>(() => new InvoiceAnalysisOptions(
+      AnalysisProfile.Custom,
+      documentExtraction: false,
+      merchantResolution: true,
+      invoiceSummary: false,
+      productClassification: false,
+      allergenAssessment: false,
+      invoiceClassification: false,
+      recipeGeneration: false,
+      maximumRecipes: 0));
+
+  /// <summary>
+  /// Verifies that invoice classification requires both extracted receipt data and product classifications.
+  /// </summary>
+  [TestMethod]
+  [DataRow(false, true)]
+  [DataRow(true, false)]
+  public void InvoiceAnalysisOptions_InvoiceClassificationWithoutPrerequisites_ThrowsArgumentException(
+    bool documentExtraction,
+    bool productClassification) =>
+    Assert.ThrowsExactly<ArgumentException>(() => new InvoiceAnalysisOptions(
+      AnalysisProfile.Custom,
+      documentExtraction,
+      merchantResolution: false,
+      invoiceSummary: false,
+      productClassification,
+      allergenAssessment: false,
+      invoiceClassification: true,
+      recipeGeneration: false,
+      maximumRecipes: 0));
+
+  /// <summary>
   /// RED: verifies that recipe generation depends on allergen assessment, not merely on product classification.
   /// Product classification alone (without allergen assessment) is a legal <see cref="AnalysisProfile.Custom"/>
   /// combination on its own, but pairing it with recipe generation must be rejected — otherwise the orchestration

@@ -23,6 +23,70 @@ public sealed partial class GenerativeAnalysisFoundationService
     ValidateCorrelationTokensAreUnique(products.Select(product => product.CorrelationToken));
   }
 
+  private static void ValidateClassificationSubjectsAreSet(
+    IReadOnlyDictionary<string, string> subjectDescriptions)
+  {
+    ArgumentNullException.ThrowIfNull(subjectDescriptions);
+
+    if (subjectDescriptions.Count == 0)
+    {
+      throw new ArgumentException(
+        "At least one classification subject is required.",
+        nameof(subjectDescriptions));
+    }
+
+    ValidateCorrelationTokensAreUnique(subjectDescriptions.Keys);
+
+    foreach ((string token, string description) in subjectDescriptions)
+    {
+      if (string.IsNullOrWhiteSpace(token))
+      {
+        throw new ArgumentException(
+          "Classification subject correlation tokens must not be blank.",
+          nameof(subjectDescriptions));
+      }
+
+      if (string.IsNullOrWhiteSpace(description))
+      {
+        throw new ArgumentException(
+          "Classification subject descriptions must not be blank.",
+          nameof(subjectDescriptions));
+      }
+    }
+  }
+
+  private static void ValidateClassificationCandidatesAreSet(
+    IReadOnlyDictionary<string, IReadOnlyList<ClassificationCandidateOption>> candidatesByToken)
+  {
+    ArgumentNullException.ThrowIfNull(candidatesByToken);
+
+    if (candidatesByToken.Count == 0)
+    {
+      throw new ArgumentException(
+        "At least one classification candidate set is required.",
+        nameof(candidatesByToken));
+    }
+
+    ValidateCorrelationTokensAreUnique(candidatesByToken.Keys);
+
+    foreach ((string token, IReadOnlyList<ClassificationCandidateOption> candidates) in candidatesByToken)
+    {
+      if (string.IsNullOrWhiteSpace(token))
+      {
+        throw new ArgumentException(
+          "Classification candidate correlation tokens must not be blank.",
+          nameof(candidatesByToken));
+      }
+
+      if (candidates is null || candidates.Count == 0)
+      {
+        throw new ArgumentException(
+          "Each classification subject must provide at least one canonical candidate.",
+          nameof(candidatesByToken));
+      }
+    }
+  }
+
   private static void ValidateExtractionIsSet(ReceiptExtractionResult extraction) =>
     ArgumentNullException.ThrowIfNull(extraction);
 
