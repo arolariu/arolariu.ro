@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Exceptions;
 using arolariu.Backend.Common.Http;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.Endpoints;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
@@ -557,6 +559,71 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     Assert.AreEqual(StatusCodes.Status503ServiceUnavailable, GetStatusCode(result));
     Assert.AreEqual(ProblemTypeUris.ServiceUnavailable, GetProblemDetails(result).Type);
+  }
+  #endregion
+
+  #region Product update atomicity tests
+  /// <summary>
+  /// Verifies product replacement is submitted as one invoice write so validation
+  /// failures cannot persist deletion before addition.
+  /// </summary>
+  [TestMethod]
+  public async Task UpdateProductInInvoiceAsync_ValidReplacement_PerformsSingleInvoiceUpdate()
+  {
+    Guid invoiceId = Guid.NewGuid();
+    Guid userId = Guid.NewGuid();
+    var original = new Product {Name = "Old Milk", Quantity = 1, Price = 8.5m};
+    var invoice = new Invoice
+    {
+      id = invoiceId,
+      UserIdentifier = userId,
+      Items = [original],
+    };
+    var request = new UpdateProductRequestDto(
+      "Old Milk",
+      "New Milk",
+      null,
+      2,
+      "pcs",
+      "",
+      9m,
+      []);
+    var service = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    Invoice? capturedInvoice = null;
+    service
+      .Setup(candidate => candidate.ReadInvoice(
+        invoiceId,
+        userId,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+    service
+      .Setup(candidate => candidate.GetProduct(
+        "Old Milk",
+        invoiceId,
+        userId,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(original);
+    service
+      .Setup(candidate => candidate.UpdateInvoice(
+        It.IsAny<Invoice>(),
+        invoiceId,
+        userId,
+        It.IsAny<CancellationToken>()))
+      .Callback<Invoice, Guid, Guid?, CancellationToken>(
+        (updated, _, _, _) => capturedInvoice = updated)
+      .ReturnsAsync(invoice);
+
+    IResult result = await InvoiceEndpoints.UpdateProductInInvoiceAsync(
+      service.Object,
+      CreateAuthenticatedContextAccessor(userId),
+      invoiceId,
+      request);
+
+    Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
+    Assert.IsNotNull(capturedInvoice);
+    Product persistedProduct = Assert.ContainsSingle(capturedInvoice.Items);
+    Assert.AreEqual("New Milk", persistedProduct.Name);
+    Assert.AreEqual(2m, persistedProduct.Quantity);
   }
   #endregion
 

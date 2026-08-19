@@ -1,6 +1,7 @@
 namespace arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
 using System;
+using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 
@@ -10,6 +11,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 /// <param name="System">The selected taxonomy system.</param>
 /// <param name="Code">The selected taxonomy code.</param>
 [Serializable]
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public readonly record struct ClassificationSelectionDto(
   ClassificationSystem System,
   string Code)

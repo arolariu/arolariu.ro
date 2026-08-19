@@ -603,15 +603,20 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      await invoiceProcessingService
-        .DeleteProduct(possibleProduct, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
-        .ConfigureAwait(false);
-
       var updatedProduct = productInformation.ToProduct();
       activity?.SetTag("product.new_name", updatedProduct.Name);
 
+      var updatedItems = possibleInvoice.Items.ToList();
+      int productIndex = updatedItems.IndexOf(possibleProduct);
+      updatedItems[productIndex] = updatedProduct;
+      possibleInvoice.Items = updatedItems;
+
       await invoiceProcessingService
-        .AddProduct(updatedProduct, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+        .UpdateInvoice(
+          possibleInvoice,
+          id,
+          potentialUserIdentifier,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Product updated in invoice");
@@ -1776,4 +1781,3 @@ public static partial class InvoiceEndpoints
   }
   #endregion
 }
-
