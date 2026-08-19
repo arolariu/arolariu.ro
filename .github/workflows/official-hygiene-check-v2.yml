@@ -118,7 +118,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           install-scripts-deps: 'true'
           run-build-components: ${{ matrix.provider.id == 'lint' || matrix.provider.id == 'test-typescript' }}
-          run-generate: ${{ matrix.provider.id == 'test-dotnet' }}
+          run-generate: ${{ matrix.provider.id == 'test-dotnet' || matrix.provider.id == 'test-typescript' }}
           generate-args: '/a'
           dotnet: ${{ matrix.provider.needs-dotnet }}
           python: ${{ matrix.provider.needs-python }}

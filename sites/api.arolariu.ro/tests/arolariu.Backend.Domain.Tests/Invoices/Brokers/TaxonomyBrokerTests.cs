@@ -124,6 +124,16 @@ public sealed class TaxonomyBrokerTests
     Assert.ThrowsExactly<InvalidOperationException>(() => new JsonTaxonomyBroker(artifacts));
   }
 
+  /// <summary>Verifies the production constructor loads all embedded artifacts.</summary>
+  [TestMethod]
+  public void Constructor_Parameterless_LoadsEmbeddedArtifactsForAllSystems()
+  {
+    var broker = new JsonTaxonomyBroker();
+
+    foreach (ClassificationSystem system in Enum.GetValues<ClassificationSystem>())
+      Assert.IsFalse(string.IsNullOrWhiteSpace(broker.GetArtifactVersion(system)));
+  }
+
   private static Dictionary<ClassificationSystem, string> CreateArtifacts(int ecoicopNodeCount = 2) =>
     new Dictionary<ClassificationSystem, string>
     {

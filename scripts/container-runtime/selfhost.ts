@@ -241,8 +241,11 @@ export async function runSelfhost(action: SelfhostAction, runner: CommandRunner 
 
   await runSharedPreflight(adapter, runner);
 
-  if (action === "start") {
+  if (shouldGenerateTaxonomyArtifacts(action)) {
     await runArtifactGeneration(runner);
+  }
+
+  if (action === "start") {
     getRequiredSqlPassword();
     await ensureHttpsCertificates(runner);
     await writeSelfhostTraefikConfig();
