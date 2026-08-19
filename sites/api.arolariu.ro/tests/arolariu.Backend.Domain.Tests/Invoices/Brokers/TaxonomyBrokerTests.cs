@@ -10,7 +10,13 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptio
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-/// <summary>Tests taxonomy broker search, resolution, and validation.</summary>
+/// <summary>
+/// Verifies taxonomy artifact validation, search ranking, and canonical resolution.
+/// </summary>
+/// <remarks>
+/// Tests use compact generated artifacts to isolate broker contracts from the production
+/// embedded data, while one smoke test confirms that all embedded taxonomy resources load.
+/// </remarks>
 [TestClass]
 public sealed class TaxonomyBrokerTests
 {
@@ -134,6 +140,11 @@ public sealed class TaxonomyBrokerTests
       Assert.IsFalse(string.IsNullOrWhiteSpace(broker.GetArtifactVersion(system)));
   }
 
+  /// <summary>
+  /// Creates a complete artifact set with a configurable ECOICOP search corpus.
+  /// </summary>
+  /// <param name="ecoicopNodeCount">The number of valid ECOICOP nodes to generate.</param>
+  /// <returns>JSON artifacts keyed by every supported classification system.</returns>
   private static Dictionary<ClassificationSystem, string> CreateArtifacts(int ecoicopNodeCount = 2) =>
     new Dictionary<ClassificationSystem, string>
     {
@@ -142,6 +153,11 @@ public sealed class TaxonomyBrokerTests
       [ClassificationSystem.Nace21] = CreateArtifact("NACE_2_1", "2.1", "A", "Agriculture"),
     };
 
+  /// <summary>
+  /// Creates an ECOICOP artifact whose generated child nodes share a searchable label.
+  /// </summary>
+  /// <param name="nodeCount">The total number of nodes, including the root.</param>
+  /// <returns>A serialized, hierarchy-consistent ECOICOP artifact.</returns>
   private static string CreateEcoicopArtifact(int nodeCount)
   {
     var nodes = new List<object>
@@ -165,6 +181,14 @@ public sealed class TaxonomyBrokerTests
     });
   }
 
+  /// <summary>
+  /// Creates a valid single-node artifact for systems not under a test-specific mutation.
+  /// </summary>
+  /// <param name="system">The artifact wire-level system identifier.</param>
+  /// <param name="version">The artifact version.</param>
+  /// <param name="code">The root node's canonical code.</param>
+  /// <param name="label">The root node's canonical label.</param>
+  /// <returns>A serialized taxonomy artifact containing one root node.</returns>
   private static string CreateArtifact(string system, string version, string code, string label) =>
     JsonSerializer.Serialize(new
     {
@@ -176,6 +200,16 @@ public sealed class TaxonomyBrokerTests
       nodes = new[] { Node(code, label, "root", null, [code], [label]) }
     });
 
+  /// <summary>
+  /// Creates the anonymous JSON shape expected for a taxonomy artifact node.
+  /// </summary>
+  /// <param name="code">The node's canonical code.</param>
+  /// <param name="label">The node's official label.</param>
+  /// <param name="level">The taxonomy-specific level name.</param>
+  /// <param name="parentCode">The parent code, or null for a root.</param>
+  /// <param name="hierarchyCodes">The root-to-node code path.</param>
+  /// <param name="hierarchyLabels">The labels corresponding to the code path.</param>
+  /// <returns>An anonymous object suitable for JSON serialization.</returns>
   private static object Node(
     string code,
     string label,

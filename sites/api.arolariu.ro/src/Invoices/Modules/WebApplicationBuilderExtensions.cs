@@ -24,25 +24,40 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// Extension methods for the <see cref="WebApplicationBuilder"/> builder.
+/// Registers the Invoices bounded context with an ASP.NET Core application builder.
 /// </summary>
+/// <remarks>
+/// This module is the composition boundary for invoice brokers and The Standard service
+/// layers. It contains registration only; domain workflows remain in their respective
+/// foundation, orchestration, and processing services.
+/// </remarks>
 [ExcludeFromCodeCoverage] // This class is not tested because it is a simple extension class.
 public static class WebApplicationBuilderExtensions
 {
   /// <summary>
-  /// Adds invoices domain configurations to the WebApplicationBuilder instance.
+  /// Registers invoice persistence, analysis, taxonomy, and service-layer dependencies.
   /// </summary>
-  /// <param name="builder">The WebApplicationBuilder instance.</param>
-  /// <returns>The modified IServiceCollection instance.</returns>
   /// <remarks>
-  /// This method configures services related to the invoices domain.
-  /// It adds singleton instances of the invoice SQL broker, invoice reader service,
-  /// invoice storage service, and invoice foundation service.
+  /// <para>
+  /// Cosmos clients and the immutable taxonomy catalog are singletons. Database,
+  /// external-service brokers, and Foundation, Orchestration, and Processing services
+  /// are scoped to the consuming request.
+  /// </para>
+  /// <para>
+  /// Registration defers Cosmos option resolution and taxonomy artifact loading until
+  /// the corresponding service is activated.
+  /// </para>
   /// </remarks>
+  /// <param name="builder">
+  /// The application builder whose service collection and configuration are used.
+  /// </param>
+  /// <exception cref="ArgumentNullException">
+  /// Thrown when <paramref name="builder"/> is <see langword="null"/>.
+  /// </exception>
   /// <example>
   /// <code>
-  /// // Configure invoices domain configurations
-  /// services.AddInvoicesDomainConfiguration(builder);
+  /// WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+  /// builder.AddInvoicesDomainConfiguration();
   /// </code>
   /// </example>
   /// <seealso cref="WebApplicationBuilder"/>

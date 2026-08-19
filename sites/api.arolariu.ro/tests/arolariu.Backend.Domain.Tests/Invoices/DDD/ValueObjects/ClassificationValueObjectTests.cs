@@ -8,7 +8,13 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-/// <summary>Tests canonical classification value objects and wire contracts.</summary>
+/// <summary>
+/// Verifies classification invariants, structural equality, and strict JSON contracts.
+/// </summary>
+/// <remarks>
+/// The fixture exercises both domain construction rules and the externally persisted
+/// enum wire names without documenting each assertion as a separate API contract.
+/// </remarks>
 [TestClass]
 public sealed class ClassificationValueObjectTests
 {
@@ -108,6 +114,10 @@ public sealed class ClassificationValueObjectTests
     Assert.ThrowsExactly<JsonException>(() => JsonSerializer.Deserialize<ClassificationSystem>("1"));
   }
 
+  /// <summary>
+  /// Creates a stable analysis classification for structural equality assertions.
+  /// </summary>
+  /// <returns>A fully validated classification with hierarchy and evidence.</returns>
   private static StandardClassification CreateClassification() =>
     new(
       ClassificationSystem.EcoicopV2,

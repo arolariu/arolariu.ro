@@ -14,7 +14,32 @@ using System.Text.RegularExpressions;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptions.Inner;
 
-/// <summary>Provides an in-memory taxonomy catalog backed by generated JSON artifacts.</summary>
+/// <summary>
+/// Provides immutable taxonomy lookup over validated generated JSON artifacts.
+/// </summary>
+/// <remarks>
+/// <para>
+/// The broker eagerly deserializes and validates every supported taxonomy, then builds
+/// frozen indexes for lock-free reads. It is therefore suitable for singleton
+/// registration after successful construction.
+/// </para>
+/// <para>
+/// Search normalizes case and diacritics, prioritizes exact code matches, and caps
+/// results at 50. Resolution returns canonical labels and hierarchy data from the
+/// artifact rather than trusting caller-supplied display values.
+/// </para>
+/// <para>
+/// <b>Layer role:</b> This type performs artifact I/O and lookup only; it does not choose
+/// a classification or apply invoice workflow rules.
+/// </para>
+/// </remarks>
+/// <example>
+/// <code>
+/// var broker = new JsonTaxonomyBroker();
+/// IReadOnlyList&lt;TaxonomySearchResult&gt; results =
+///   broker.Search(ClassificationSystem.EcoicopV2, "food", 10);
+/// </code>
+/// </example>
 public sealed partial class JsonTaxonomyBroker : ITaxonomyBroker
 {
   private const int MaximumSearchResultLimit = 50;
@@ -36,10 +61,45 @@ public sealed partial class JsonTaxonomyBroker : ITaxonomyBroker
   private readonly FrozenDictionary<ClassificationSystem, TaxonomyArtifact> artifacts;
   private readonly FrozenDictionary<(ClassificationSystem System, string Code), TaxonomyArtifactNode> nodesByCode;
 
-  /// <summary>Initializes the broker from embedded resources.</summary>
+  /// <summary>
+  /// Initializes the broker from the taxonomy artifacts embedded in the assembly.
+  /// </summary>
+  /// <remarks>
+  /// Construction eagerly loads every supported system and fails atomically if any
+  /// resource or artifact violates the canonical artifact contract.
+  /// </remarks>
+  /// <exception cref="InvalidOperationException">
+  /// Thrown when an embedded resource is missing, cannot be deserialized, declares the
+  /// wrong system, or contains invalid nodes or hierarchy relationships.
+  /// </exception>
+  /// <exception cref="JsonException">
+  /// Thrown when an embedded artifact does not conform to the generated JSON contract.
+  /// </exception>
+  /// <exception cref="ArgumentException">
+  /// Thrown when required artifact text or hierarchy values are blank or null.
+  /// </exception>
   public JsonTaxonomyBroker() : this(LoadEmbeddedArtifacts()) { }
 
-  /// <summary>Initializes the broker from injected JSON artifacts.</summary>
+  /// <summary>
+  /// Initializes the broker from caller-provided taxonomy artifact JSON.
+  /// </summary>
+  /// <param name="artifactJsonBySystem">
+  /// One non-empty JSON artifact for every <see cref="ClassificationSystem"/>.
+  /// </param>
+  /// <exception cref="ArgumentNullException">
+  /// Thrown when <paramref name="artifactJsonBySystem"/> or required artifact content is
+  /// <see langword="null"/>.
+  /// </exception>
+  /// <exception cref="ArgumentException">
+  /// Thrown when a system is missing or required artifact content is blank.
+  /// </exception>
+  /// <exception cref="JsonException">
+  /// Thrown when an artifact does not conform to the generated JSON contract.
+  /// </exception>
+  /// <exception cref="InvalidOperationException">
+  /// Thrown when deserialized metadata, node uniqueness, or hierarchy integrity is
+  /// invalid.
+  /// </exception>
   public JsonTaxonomyBroker(IReadOnlyDictionary<ClassificationSystem, string> artifactJsonBySystem)
   {
     ArgumentNullException.ThrowIfNull(artifactJsonBySystem);

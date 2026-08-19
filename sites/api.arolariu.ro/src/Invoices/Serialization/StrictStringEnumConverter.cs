@@ -6,15 +6,55 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-/// <summary>Serializes an enum exclusively through explicit JSON member names.</summary>
-/// <typeparam name="TEnum">Enum whose declared JSON member names are enforced.</typeparam>
+/// <summary>
+/// Converts enum values using only their explicitly declared JSON wire names.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Every member of <typeparamref name="TEnum"/> must declare a non-empty
+/// <see cref="JsonStringEnumMemberNameAttribute"/>, and wire names must be unique.
+/// Reads use ordinal, case-sensitive matching; null, numeric, enum member-name, and
+/// unknown string representations are rejected.
+/// </para>
+/// <para>
+/// Writes reject undefined numeric enum values rather than emitting unstable names.
+/// The converter is stateless; lookup dictionaries are populated once and never mutated
+/// for each closed generic enum type.
+/// </para>
+/// </remarks>
+/// <typeparam name="TEnum">
+/// The enum whose explicit <see cref="JsonStringEnumMemberNameAttribute"/> values define
+/// the complete wire contract.
+/// </typeparam>
+/// <example>
+/// <code>
+/// [JsonConverter(typeof(StrictStringEnumConverter&lt;Status&gt;))]
+/// public enum Status
+/// {
+///   [JsonStringEnumMemberName("ready")]
+///   Ready
+/// }
+///
+/// string json = JsonSerializer.Serialize(Status.Ready); // "ready"
+/// </code>
+/// </example>
 public sealed class StrictStringEnumConverter<TEnum> : JsonConverter<TEnum>
   where TEnum : struct, Enum
 {
   private static readonly Dictionary<TEnum, string> WireNamesByValue = CreateWireNamesByValue();
   private static readonly Dictionary<string, TEnum> ValuesByWireName = CreateValuesByWireName();
 
-  /// <inheritdoc />
+  /// <summary>
+  /// Reads an enum from an exact, explicitly declared JSON string.
+  /// </summary>
+  /// <param name="reader">The reader positioned at the enum JSON token.</param>
+  /// <param name="typeToConvert">The enum type requested by the serializer.</param>
+  /// <param name="options">The serializer options for the current operation.</param>
+  /// <returns>The enum value mapped to the exact wire name.</returns>
+  /// <exception cref="JsonException">
+  /// Thrown when the token is not a non-null string or the string is not a declared
+  /// wire name.
+  /// </exception>
   public override TEnum Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
   {
     if (reader.TokenType != JsonTokenType.String)
@@ -28,7 +68,18 @@ public sealed class StrictStringEnumConverter<TEnum> : JsonConverter<TEnum>
       : throw new JsonException($"'{wireName}' is not a valid {typeof(TEnum).Name} JSON value.");
   }
 
-  /// <inheritdoc />
+  /// <summary>
+  /// Writes the explicit JSON wire name for a defined enum value.
+  /// </summary>
+  /// <param name="writer">The writer that receives the string token.</param>
+  /// <param name="value">The defined enum value to serialize.</param>
+  /// <param name="options">The serializer options for the current operation.</param>
+  /// <exception cref="ArgumentNullException">
+  /// Thrown when <paramref name="writer"/> is <see langword="null"/>.
+  /// </exception>
+  /// <exception cref="JsonException">
+  /// Thrown when <paramref name="value"/> is not a defined enum member.
+  /// </exception>
   public override void Write(Utf8JsonWriter writer, TEnum value, JsonSerializerOptions options)
   {
     ArgumentNullException.ThrowIfNull(writer);
