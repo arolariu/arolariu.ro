@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 
 using Microsoft.EntityFrameworkCore;
@@ -67,8 +68,12 @@ public class Product
   [JsonPropertyOrder(6)]
   public IEnumerable<Allergen> DetectedAllergens { get; set; } = [];
 
+  /// <summary>Gets or sets the structured allergen assessment produced by the analysis pipeline.</summary>
+  [JsonPropertyOrder(7)]
+  public AllergenAssessment? AllergenAssessment { get; set; }
+
   /// <summary>Mutable operational metadata (editing state, completion state, soft delete flag).</summary>
   /// <remarks><para>Soft-deleted products remain embedded for audit; parent invoice filters them out at presentation layers.</para></remarks>
-  [JsonPropertyOrder(7)]
+  [JsonPropertyOrder(8)]
   public ProductMetadata Metadata { get; set; }
 }
