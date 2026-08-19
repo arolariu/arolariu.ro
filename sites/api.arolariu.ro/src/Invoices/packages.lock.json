@@ -22,16 +22,6 @@
           "OpenAI": "2.9.1"
         }
       },
-      "Azure.Storage.Blobs": {
-        "type": "Direct",
-        "requested": "[12.29.1, )",
-        "resolved": "12.29.1",
-        "contentHash": "pWh7xZBto8YcwiO853AB3uijTfVqs9PDte0Bu9/Zd8O9nwKiitWm0Jej1vsNkmYUzeG1552f8vJPjmtW30pBUQ==",
-        "dependencies": {
-          "Azure.Core": "1.55.0",
-          "Azure.Storage.Common": "12.28.0"
-        }
-      },
       "Azure.Storage.Queues": {
         "type": "Direct",
         "requested": "[12.27.1, )",

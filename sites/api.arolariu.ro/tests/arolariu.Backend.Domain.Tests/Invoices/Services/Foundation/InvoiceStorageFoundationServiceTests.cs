@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-using arolariu.Backend.Domain.Invoices.Brokers.BlobStorageBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
@@ -27,7 +26,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 public sealed class InvoiceStorageFoundationServiceTests
 {
   private readonly Mock<IDatabaseBroker> mockBroker;
-  private readonly Mock<IBlobStorageBroker> mockBlobStorageBroker;
   private readonly Mock<ILoggerFactory> mockLoggerFactory;
   private readonly Mock<ILogger<IInvoiceStorageFoundationService>> mockLogger;
   private readonly InvoiceStorageFoundationService service;
@@ -38,7 +36,6 @@ public sealed class InvoiceStorageFoundationServiceTests
   public InvoiceStorageFoundationServiceTests()
   {
     mockBroker = new Mock<IDatabaseBroker>();
-    mockBlobStorageBroker = new Mock<IBlobStorageBroker>();
     mockLoggerFactory = new Mock<ILoggerFactory>();
     mockLogger = new Mock<ILogger<IInvoiceStorageFoundationService>>();
 
@@ -46,7 +43,7 @@ public sealed class InvoiceStorageFoundationServiceTests
         .Setup(factory => factory.CreateLogger(It.IsAny<string>()))
         .Returns(mockLogger.Object);
 
-    service = new InvoiceStorageFoundationService(mockBroker.Object, mockBlobStorageBroker.Object, mockLoggerFactory.Object);
+    service = new InvoiceStorageFoundationService(mockBroker.Object, mockLoggerFactory.Object);
   }
 
   #region Constructor Tests
@@ -57,7 +54,7 @@ public sealed class InvoiceStorageFoundationServiceTests
   [TestMethod]
   public void Constructor_NullBroker_ThrowsArgumentNullException() =>
       Assert.ThrowsExactly<ArgumentNullException>(() =>
-          new InvoiceStorageFoundationService(null!, mockBlobStorageBroker.Object, mockLoggerFactory.Object));
+          new InvoiceStorageFoundationService(null!, mockLoggerFactory.Object));
 
   /// <summary>
   /// Validates successful instantiation with all valid dependencies.
@@ -66,7 +63,7 @@ public sealed class InvoiceStorageFoundationServiceTests
   public void Constructor_ValidDependencies_CreatesInstance()
   {
     // Arrange & Act
-    var svc = new InvoiceStorageFoundationService(mockBroker.Object, mockBlobStorageBroker.Object, mockLoggerFactory.Object);
+    var svc = new InvoiceStorageFoundationService(mockBroker.Object, mockLoggerFactory.Object);
 
     // Assert
     Assert.IsNotNull(svc);

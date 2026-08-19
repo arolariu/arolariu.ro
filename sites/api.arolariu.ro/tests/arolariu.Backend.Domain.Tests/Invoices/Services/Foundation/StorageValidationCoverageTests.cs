@@ -4,7 +4,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-using arolariu.Backend.Domain.Invoices.Brokers.BlobStorageBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
@@ -138,7 +137,7 @@ public sealed class StorageValidationCoverageTests
   }
 
   private static InvoiceStorageFoundationService CreateInvoiceService(Mock<IDatabaseBroker> broker) =>
-    new(broker.Object, Mock.Of<IBlobStorageBroker>(), NullLoggerFactory.Instance);
+    new(broker.Object, NullLoggerFactory.Instance);
 
   private static MerchantStorageFoundationService CreateMerchantService(Mock<IDatabaseBroker> broker) =>
     new(broker.Object, NullLoggerFactory.Instance);

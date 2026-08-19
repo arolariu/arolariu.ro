@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Tests.Invoices.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
@@ -18,16 +19,16 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 /// <summary>
-/// Verifies invoice metadata never crosses the public transport boundary with analysis or credential artifacts.
+/// Verifies invoice metadata request validation and response projection behavior.
 /// </summary>
 [TestClass]
 public sealed class InvoiceMetadataSecurityTests
 {
   /// <summary>
-  /// Verifies sentinel internal keys and non-scalar values are excluded from every public metadata snapshot.
+  /// Verifies every persisted metadata key is exposed by the response snapshot.
   /// </summary>
   [TestMethod]
-  public void CreatePublicSnapshot_InternalSentinelsAndNonScalarValues_ExcludesThem()
+  public void CreateMetadataSnapshot_PersistedEntries_ExposesAllKeys()
   {
     // Arrange
     var metadata = new Dictionary<string, object>
@@ -42,14 +43,21 @@ public sealed class InvoiceMetadataSecurityTests
       ["custom.authorization"] = "Bearer eyJhbGciOiJIUzI1NiJ9.token.signature",
       ["custom.object"] = new Dictionary<string, string> { ["nested"] = "value" },
       ["custom.nan"] = double.NaN,
+      ["custom.jsonNull"] = ParseJsonElement("null"),
+      ["custom.jsonObject"] = ParseJsonElement("""{"nested":"value"}"""),
     };
 
     // Act
-    IReadOnlyDictionary<string, string?> snapshot = InvoiceMetadataProjector.CreatePublicSnapshot(metadata);
+    IReadOnlyDictionary<string, string?> snapshot = InvoiceResponseDto.CreateMetadataSnapshot(metadata);
 
     // Assert
-    Assert.HasCount(1, snapshot);
+    Assert.HasCount(12, snapshot);
     Assert.AreEqual("Tax receipt", snapshot["user.note"]);
+    Assert.AreEqual("model output", snapshot["analysis.response"]);
+    Assert.AreEqual("sv=2026-01-01&sig=secret", snapshot["upload.sas"]);
+    Assert.AreEqual("""{"nested":"value"}""", snapshot["custom.object"]);
+    Assert.IsNull(snapshot["custom.jsonNull"]);
+    Assert.AreEqual("""{"nested":"value"}""", snapshot["custom.jsonObject"]);
   }
 
   /// <summary>
@@ -104,5 +112,10 @@ public sealed class InvoiceMetadataSecurityTests
     Assert.HasCount(1, existing);
     Assert.AreEqual("original", existing["user.note"]);
   }
-}
 
+  private static JsonElement ParseJsonElement(string json)
+  {
+    using JsonDocument document = JsonDocument.Parse(json);
+    return document.RootElement.Clone();
+  }
+}

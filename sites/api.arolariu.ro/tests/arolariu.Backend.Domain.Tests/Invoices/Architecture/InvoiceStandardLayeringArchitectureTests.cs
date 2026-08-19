@@ -4,7 +4,6 @@ using System;
 using System.Linq;
 using System.Reflection;
 
-using arolariu.Backend.Domain.Invoices.Brokers.BlobStorageBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.GenerativeAnalysisBroker;
@@ -65,7 +64,6 @@ public sealed class InvoiceStandardLayeringArchitectureTests
     AssertConstructorDependencies(
       typeof(InvoiceStorageFoundationService),
       typeof(IDatabaseBroker),
-      typeof(IBlobStorageBroker),
       typeof(ILoggerFactory));
 
     AssertConstructorDependencies(

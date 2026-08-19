@@ -43,31 +43,11 @@ public static partial class InvoiceEndpoints
         .SetLayerContext("Endpoint", nameof(InvoiceEndpoints))
         .SetOperationType("CRUD.Create");
 
-      Guid serverOwnerIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
-
-      if (serverOwnerIdentifier == Guid.Empty)
-      {
-        activity?.SetTag("validation.failed", true);
-        activity?.SetTag("validation.reason", "missing_user_identifier");
-        return TypedResults.ValidationProblem(
-          new Dictionary<string, string[]>
-          {
-            ["userIdentifier"] = ["An authenticated user identifier claim is required."]
-          });
-      }
-
-      if (!invoiceDto.TryValidate(out Dictionary<string, string[]> validationErrors))
-      {
-        activity?.SetTag("validation.failed", true);
-        activity?.SetTag("validation.reason", "invoice_transport");
-        return TypedResults.ValidationProblem(validationErrors);
-      }
-
-      var invoice = invoiceDto.ToInvoice(serverOwnerIdentifier);
+      var invoice = invoiceDto.ToInvoice();
       activity?.SetInvoiceContext(invoice.id, invoice.UserIdentifier);
 
       await invoiceManagementService
-        .CreateInvoice(invoice, serverOwnerIdentifier, writeScope.Token)
+        .CreateInvoice(invoice, invoice.UserIdentifier, writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoice created successfully");
@@ -820,7 +800,7 @@ public static partial class InvoiceEndpoints
     IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
-    CreateInvoiceScanRequestDto invoiceScanDto)
+    AttachInvoiceScanRequestDto invoiceScanDto)
   {
     using var writeScope = RequestCancellation.ForWrite(
       httpContext.HttpContext!,
@@ -833,13 +813,6 @@ public static partial class InvoiceEndpoints
       {
         activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
         activity.SetOperationType("Scan.Create");
-      }
-
-      if (!invoiceScanDto.TryValidate(out Dictionary<string, string[]> validationErrors))
-      {
-        activity?.SetTag("validation.failed", true);
-        activity?.SetTag("validation.reason", "scan_transport");
-        return TypedResults.ValidationProblem(validationErrors);
       }
 
       InvoiceScan convertedScan = invoiceScanDto.ToInvoiceScan();
@@ -1001,7 +974,7 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      var publicMetadata = InvoiceMetadataProjector.CreatePublicSnapshot(possibleInvoice.AdditionalMetadata);
+      var publicMetadata = InvoiceResponseDto.CreateMetadataSnapshot(possibleInvoice.AdditionalMetadata);
       activity?.SetTag("metadata.count", publicMetadata.Count);
       activity?.RecordSuccess();
       return TypedResults.Ok(value: publicMetadata);
@@ -1057,7 +1030,7 @@ public static partial class InvoiceEndpoints
         .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
-      var publicMetadata = InvoiceMetadataProjector.CreatePublicSnapshot(updatedInvoice.AdditionalMetadata);
+      var publicMetadata = InvoiceResponseDto.CreateMetadataSnapshot(updatedInvoice.AdditionalMetadata);
       activity?.SetTag("metadata.count", publicMetadata.Count);
       activity?.RecordSuccess("Metadata patched");
       return TypedResults.Accepted($"/rest/v1/invoices/{id}/metadata", publicMetadata);

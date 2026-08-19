@@ -47,19 +47,19 @@ public sealed class AzureStorageQueueBroker : IQueueBroker
     this.queueClient = queueClient ?? throw new ArgumentNullException(nameof(queueClient));
 
   /// <inheritdoc/>
-  public async ValueTask EnsureAnalysisQueueAsync(CancellationToken cancellationToken)
+  public async ValueTask CreateQueueIfNotExistsAsync(CancellationToken cancellationToken)
   {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(EnsureAnalysisQueueAsync));
+    using var activity = InvoicePackageTracing.StartActivity(nameof(CreateQueueIfNotExistsAsync));
     await queueClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
   }
 
   /// <inheritdoc/>
-  public async ValueTask<string> EnqueueAnalysisAsync(
+  public async ValueTask<string> EnqueueMessageAsync(
     AnalysisQueueMessage message,
     CancellationToken cancellationToken)
   {
     ArgumentNullException.ThrowIfNull(message);
-    using var activity = InvoicePackageTracing.StartActivity(nameof(EnqueueAnalysisAsync));
+    using var activity = InvoicePackageTracing.StartActivity(nameof(EnqueueMessageAsync));
 
     Response<SendReceipt> response = await queueClient
       .SendMessageAsync(
@@ -73,12 +73,12 @@ public sealed class AzureStorageQueueBroker : IQueueBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<AnalysisQueueReceipt?> ReceiveAnalysisAsync(
+  public async ValueTask<AnalysisQueueReceipt?> DequeueMessageAsync(
     TimeSpan visibilityTimeout,
     CancellationToken cancellationToken)
   {
     ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(visibilityTimeout, TimeSpan.Zero);
-    using var activity = InvoicePackageTracing.StartActivity(nameof(ReceiveAnalysisAsync));
+    using var activity = InvoicePackageTracing.StartActivity(nameof(DequeueMessageAsync));
 
     Response<QueueMessage[]> response = await queueClient
       .ReceiveMessagesAsync(1, visibilityTimeout, cancellationToken)
@@ -126,14 +126,14 @@ public sealed class AzureStorageQueueBroker : IQueueBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<AnalysisQueueReceipt> RenewAnalysisVisibilityAsync(
+  public async ValueTask<AnalysisQueueReceipt> UpdateMessageVisibilityAsync(
     AnalysisQueueReceipt receipt,
     TimeSpan visibilityTimeout,
     CancellationToken cancellationToken)
   {
     ArgumentNullException.ThrowIfNull(receipt);
     ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(visibilityTimeout, TimeSpan.Zero);
-    using var activity = InvoicePackageTracing.StartActivity(nameof(RenewAnalysisVisibilityAsync));
+    using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMessageVisibilityAsync));
 
     Response<UpdateReceipt> response = await queueClient
       .UpdateMessageAsync(
@@ -151,16 +151,36 @@ public sealed class AzureStorageQueueBroker : IQueueBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask DeleteAnalysisAsync(
+  public async ValueTask DeleteMessageAsync(
     AnalysisQueueReceipt receipt,
     CancellationToken cancellationToken)
   {
     ArgumentNullException.ThrowIfNull(receipt);
-    using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteAnalysisAsync));
+    using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMessageAsync));
 
     await queueClient
       .DeleteMessageAsync(receipt.MessageId, receipt.PopReceipt, cancellationToken)
       .ConfigureAwait(false);
+  }
+
+  /// <inheritdoc/>
+  public async ValueTask<QueueStatus> GetQueueStatusAsync(CancellationToken cancellationToken)
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(GetQueueStatusAsync));
+    Response<bool> existsResponse = await queueClient.ExistsAsync(cancellationToken).ConfigureAwait(false);
+
+    if (!existsResponse.Value)
+    {
+      return new QueueStatus(Exists: false, ApproximateMessageCount: 0);
+    }
+
+    Response<QueueProperties> propertiesResponse = await queueClient
+      .GetPropertiesAsync(cancellationToken)
+      .ConfigureAwait(false);
+
+    return new QueueStatus(
+      Exists: true,
+      ApproximateMessageCount: propertiesResponse.Value.ApproximateMessagesCount);
   }
 
   private static QueueServiceClient CreateQueueServiceClient(IOptionsManager optionsManager)

@@ -109,7 +109,7 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
       throw new MerchantNotFoundException(merchantIdentifier);
     }
 
-    currentMerchant.ApplyClientUpdate(updatedMerchant);
+    ApplyClientUpdate(currentMerchant, updatedMerchant);
 
     var newMerchant = await invoiceNoSqlBroker
       .UpdateMerchantAsync(currentMerchant, currentMerchant, cancellationToken)
@@ -118,4 +118,26 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
     return newMerchant;
   }).ConfigureAwait(false);
   #endregion
+
+  private static void ApplyClientUpdate(Merchant currentMerchant, Merchant clientUpdate)
+  {
+    currentMerchant.Name = clientUpdate.Name;
+    currentMerchant.Description = clientUpdate.Description;
+    currentMerchant.Address = clientUpdate.Address;
+
+    if (clientUpdate.Classification is not null)
+    {
+      currentMerchant.Classification = clientUpdate.Classification;
+    }
+
+    if (clientUpdate.AdditionalMetadata.Count > 0)
+    {
+      currentMerchant.AdditionalMetadata.Clear();
+
+      foreach ((string key, string value) in clientUpdate.AdditionalMetadata)
+      {
+        currentMerchant.AdditionalMetadata[key] = value;
+      }
+    }
+  }
 }

@@ -35,7 +35,7 @@ public sealed class AzureDocumentIntelligenceBroker : IDocumentIntelligenceBroke
   private readonly DocumentIntelligenceClient client;
 
   /// <summary>
-  /// Initializes a new instance of the <see cref="AzureDocumentIntelligenceBroker"/> class.
+  /// Initializes the production broker from application configuration.
   /// </summary>
   /// <param name="optionsManager">The application-options provider containing endpoint credentials.</param>
   public AzureDocumentIntelligenceBroker(IOptionsManager optionsManager)
@@ -58,6 +58,10 @@ public sealed class AzureDocumentIntelligenceBroker : IDocumentIntelligenceBroke
       });
   }
 
+  /// <summary>
+  /// Initializes the broker with an existing SDK client for deterministic Broker-boundary tests.
+  /// </summary>
+  /// <param name="client">The Document Intelligence client to invoke.</param>
   internal AzureDocumentIntelligenceBroker(DocumentIntelligenceClient client) =>
     this.client = client ?? throw new ArgumentNullException(nameof(client));
 

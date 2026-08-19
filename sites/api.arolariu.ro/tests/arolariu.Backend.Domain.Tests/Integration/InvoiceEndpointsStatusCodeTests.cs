@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -56,6 +57,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class InvoiceEndpointsStatusCodeTests
 {
+  private static readonly JsonSerializerOptions ApiJsonOptions = new(JsonSerializerDefaults.Web);
+
   #region Local test exceptions implementing the Common marker interfaces.
   // These intentionally live inside the test so the suite is decoupled from whether
   // concrete domain exception types (e.g., InvoiceNotFoundException) implement the
@@ -369,7 +372,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var invalidDto = new CreateInvoiceRequestDto(
       UserIdentifier: Guid.Empty,
       InitialScan: default,
-      Metadata: null);
+      AdditionalMetadata: null);
 
     // Act
     var result = await InvoiceEndpoints
@@ -379,6 +382,26 @@ public sealed class InvoiceEndpointsStatusCodeTests
     // Assert
     Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
     mockService.VerifyNoOtherCalls();
+  }
+
+  /// <summary>Verifies omitted initialScan JSON is rejected before Management is invoked.</summary>
+  [TestMethod]
+  public async Task CreateNewInvoiceAsync_WhenInitialScanIsOmitted_Returns400ValidationProblem()
+  {
+    Guid userId = Guid.NewGuid();
+    string json = $$"""{"userIdentifier":"{{userId}}","additionalMetadata":null}""";
+    CreateInvoiceRequestDto request = JsonSerializer.Deserialize<CreateInvoiceRequestDto>(
+      json,
+      ApiJsonOptions);
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+
+    IResult result = await InvoiceEndpoints.CreateNewInvoiceAsync(
+      service.Object,
+      CreateAuthenticatedContextAccessor(),
+      request);
+
+    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
+    service.VerifyNoOtherCalls();
   }
   #endregion
 
@@ -578,7 +601,8 @@ public sealed class InvoiceEndpointsStatusCodeTests
       Quantity: 1m,
       QuantityUnit: "pcs",
       ProductCode: null,
-      Price: 8m);
+      Price: 8m,
+      AllergenAssessment: null);
     var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
 
     IResult result = await InvoiceEndpoints.AddProductToInvoiceAsync(
@@ -604,7 +628,8 @@ public sealed class InvoiceEndpointsStatusCodeTests
       Quantity: 1m,
       QuantityUnit: "pcs",
       ProductCode: null,
-      Price: 8m);
+      Price: 8m,
+      AllergenAssessment: null);
     var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
 
     IResult result = await InvoiceEndpoints.AddProductToInvoiceAsync(
@@ -639,7 +664,8 @@ public sealed class InvoiceEndpointsStatusCodeTests
       Quantity: 2m,
       QuantityUnit: "pcs",
       ProductCode: string.Empty,
-      Price: 9m);
+      Price: 9m,
+      AllergenAssessment: null);
     var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
     Product? capturedProduct = null;
     service

@@ -2,8 +2,11 @@ namespace arolariu.Backend.Domain.Invoices.DTOs.Responses;
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -218,7 +221,7 @@ public readonly record struct InvoiceResponseDto(
       MerchantReference: invoice.MerchantReference,
       Items: invoice.Items.Select(ProductResponseDto.FromProduct).ToList().AsReadOnly(),
       PossibleRecipes: invoice.PossibleRecipes.Select(RecipeSuggestionResponseDto.FromRecipeSuggestion).ToList().AsReadOnly(),
-      AdditionalMetadata: InvoiceMetadataProjector.CreatePublicSnapshot(invoice.AdditionalMetadata),
+      AdditionalMetadata: CreateMetadataSnapshot(invoice.AdditionalMetadata),
       ReceiptType: invoice.ReceiptType,
       CountryRegion: invoice.CountryRegion,
       TaxDetails: invoice.TaxDetails.Select(TaxDetailResponseDto.FromTaxDetail).ToList().AsReadOnly(),
@@ -232,4 +235,33 @@ public readonly record struct InvoiceResponseDto(
       NumberOfUpdates: invoice.NumberOfUpdates);
   }
 
+  /// <summary>Creates a read-only response snapshot containing every persisted metadata entry.</summary>
+  public static IReadOnlyDictionary<string, string?> CreateMetadataSnapshot(
+    IDictionary<string, object> additionalMetadata)
+  {
+    ArgumentNullException.ThrowIfNull(additionalMetadata);
+    var snapshot = new Dictionary<string, string?>(additionalMetadata.Count, StringComparer.Ordinal);
+
+    foreach ((string key, object value) in additionalMetadata)
+    {
+      snapshot[key] = FormatMetadataValue(value);
+    }
+
+    return new ReadOnlyDictionary<string, string?>(snapshot);
+  }
+
+  private static string? FormatMetadataValue(object? value) => value switch
+  {
+    null => null,
+    JsonElement { ValueKind: JsonValueKind.Null } => null,
+    JsonElement { ValueKind: JsonValueKind.String } json => json.GetString(),
+    JsonElement json => json.GetRawText(),
+    string text => text,
+    DateTime dateTime => dateTime.ToString("O", CultureInfo.InvariantCulture),
+    DateTimeOffset dateTimeOffset => dateTimeOffset.ToString("O", CultureInfo.InvariantCulture),
+    Guid identifier => identifier.ToString("D"),
+    bool or byte or sbyte or short or ushort or int or uint or long or ulong or float or double or decimal
+      => Convert.ToString(value, CultureInfo.InvariantCulture),
+    _ => JsonSerializer.Serialize(value, value.GetType()),
+  };
 }

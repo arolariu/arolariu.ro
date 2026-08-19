@@ -237,7 +237,7 @@ public sealed class EndpointCancellationTests
         arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.ScanType.JPG,
         new Uri("https://example.com/invoices/invoice.jpg"),
         null),
-      Metadata: null);
+      AdditionalMetadata: null);
 
     // No IHttpRequestTimeoutFeature → client disconnect path.
     var accessor = CreateAuthenticatedContextAccessor();
@@ -272,7 +272,7 @@ public sealed class EndpointCancellationTests
         arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.ScanType.JPG,
         new Uri("https://example.com/invoices/invoice.jpg"),
         null),
-      Metadata: null);
+      AdditionalMetadata: null);
 
     using var timeoutFeature = new StubTimeoutFeature();
     var context = new DefaultHttpContext();

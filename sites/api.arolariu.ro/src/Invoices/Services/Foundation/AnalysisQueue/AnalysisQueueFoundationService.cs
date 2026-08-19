@@ -43,7 +43,13 @@ public sealed partial class AnalysisQueueFoundationService : IAnalysisQueueFound
     await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(EnsureQueueAsync));
-      await queueBroker.EnsureAnalysisQueueAsync(cancellationToken).ConfigureAwait(false);
+      await queueBroker.CreateQueueIfNotExistsAsync(cancellationToken).ConfigureAwait(false);
+      QueueStatus status = await queueBroker.GetQueueStatusAsync(cancellationToken).ConfigureAwait(false);
+
+      if (!status.Exists)
+      {
+        throw new InvalidOperationException("The analysis queue could not be provisioned.");
+      }
     }).ConfigureAwait(false);
 
   /// <inheritdoc/>
@@ -54,7 +60,7 @@ public sealed partial class AnalysisQueueFoundationService : IAnalysisQueueFound
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(EnqueueAsync));
       ArgumentNullException.ThrowIfNull(message);
-      return await queueBroker.EnqueueAnalysisAsync(message, cancellationToken).ConfigureAwait(false);
+      return await queueBroker.EnqueueMessageAsync(message, cancellationToken).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
   /// <inheritdoc/>
@@ -66,7 +72,7 @@ public sealed partial class AnalysisQueueFoundationService : IAnalysisQueueFound
       using var activity = InvoicePackageTracing.StartActivity(nameof(ReceiveAsync));
       ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(visibilityTimeout, TimeSpan.Zero);
       return await queueBroker
-        .ReceiveAnalysisAsync(visibilityTimeout, cancellationToken)
+        .DequeueMessageAsync(visibilityTimeout, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 
@@ -81,7 +87,7 @@ public sealed partial class AnalysisQueueFoundationService : IAnalysisQueueFound
       ArgumentNullException.ThrowIfNull(receipt);
       ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(visibilityTimeout, TimeSpan.Zero);
       return await queueBroker
-        .RenewAnalysisVisibilityAsync(receipt, visibilityTimeout, cancellationToken)
+        .UpdateMessageVisibilityAsync(receipt, visibilityTimeout, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 
@@ -93,7 +99,7 @@ public sealed partial class AnalysisQueueFoundationService : IAnalysisQueueFound
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteAsync));
       ArgumentNullException.ThrowIfNull(receipt);
-      await queueBroker.DeleteAnalysisAsync(receipt, cancellationToken).ConfigureAwait(false);
+      await queueBroker.DeleteMessageAsync(receipt, cancellationToken).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
   private async Task TryCatchAsync(Func<Task> operation)

@@ -82,7 +82,7 @@ public sealed class InvoiceEndpointsTelemetryPrivacyTests
       service.Object,
       contextAccessor,
       invoice.id,
-      new CreateProductRequestDto(productNameSentinel, null, null, 1m, null, null, 1m)).ConfigureAwait(false);
+      new CreateProductRequestDto(productNameSentinel, null, null, 1m, null, null, 1m, null)).ConfigureAwait(false);
     _ = await InvoiceEndpoints.CreateNewMerchantAsync(
       service.Object,
       contextAccessor,
@@ -91,7 +91,7 @@ public sealed class InvoiceEndpointsTelemetryPrivacyTests
       service.Object,
       contextAccessor,
       invoice.id,
-      new CreateInvoiceScanRequestDto(ScanType.JPG, new Uri(scanSasSentinel), Metadata: null)).ConfigureAwait(false);
+      new AttachInvoiceScanRequestDto(ScanType.JPG, new Uri(scanSasSentinel), Metadata: null)).ConfigureAwait(false);
 
     // Assert
     capture.AssertSurfaceExcludes(activities, scanSasSentinel);

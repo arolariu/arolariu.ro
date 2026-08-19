@@ -139,7 +139,7 @@ public sealed class InvoiceResponseTransportContractTests
     AssertPropertyNames(root.GetProperty("taxDetails")[0], "amount", "rate", "netAmount", "description");
     AssertPropertyNames(root.GetProperty("payments")[0], "method", "amount");
     Assert.AreEqual(JsonValueKind.Null, root.GetProperty("additionalMetadata").GetProperty("user.optional").ValueKind);
-    Assert.IsFalse(root.GetProperty("additionalMetadata").TryGetProperty("raw.ocr", out _), "Non-scalar metadata must not be transported.");
+    Assert.AreEqual(JsonValueKind.String, root.GetProperty("additionalMetadata").GetProperty("raw.ocr").ValueKind);
   }
 
   /// <summary>
@@ -441,4 +441,3 @@ public sealed class InvoiceResponseTransportContractTests
     CollectionAssert.AreEqual(orderedExpectedPropertyNames, actualPropertyNames);
   }
 }
-

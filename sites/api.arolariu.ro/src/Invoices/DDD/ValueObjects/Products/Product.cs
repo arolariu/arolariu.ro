@@ -90,10 +90,10 @@ public class Product
   /// intact. The update only changes the client-editable commercial fields and marks the item as edited.
   /// </para>
   /// <para>
-  /// A null <see cref="Product.Classification"/> on <paramref name="clientUpdate"/> means that the caller did not
-  /// select a replacement classification, so the existing canonical classification (including its evidence and
-  /// taxonomy version) is retained. Processing canonicalizes a non-null classification through Analysis
-  /// Orchestration before applying this update.
+  /// A null <see cref="Product.Classification"/> on <paramref name="clientUpdate"/> retains the existing canonical
+  /// classification. A null <see cref="Product.AllergenAssessment"/> likewise retains the existing assessment.
+  /// Processing canonicalizes a supplied classification before this method runs, while a supplied structured
+  /// allergen assessment replaces the previous assessment.
   /// </para>
   /// </remarks>
   /// <param name="clientUpdate">The client-controlled product values to apply.</param>
@@ -111,6 +111,11 @@ public class Product
     if (clientUpdate.Classification is not null)
     {
       Classification = clientUpdate.Classification;
+    }
+
+    if (clientUpdate.AllergenAssessment is not null)
+    {
+      AllergenAssessment = clientUpdate.AllergenAssessment;
     }
 
     ProductMetadata metadata = Metadata;

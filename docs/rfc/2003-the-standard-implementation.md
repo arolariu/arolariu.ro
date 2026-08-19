@@ -79,7 +79,6 @@ flowchart TB
   AnalysisFoundation[AnalysisFoundationService]
   QueueFoundation[AnalysisQueueFoundationService]
   DatabaseBroker[IDatabaseBroker]
-  BlobBroker[IBlobStorageBroker]
   TaxonomyBroker[ITaxonomyBroker]
   GenerativeBroker[IGenerativeAnalysisBroker]
   DocumentBroker[IDocumentIntelligenceBroker]
@@ -95,7 +94,6 @@ flowchart TB
   AnalysisOrch --> QueueFoundation
   AnalysisOrch --> AnalysisFoundation
   InvoiceFoundation --> DatabaseBroker
-  InvoiceFoundation --> BlobBroker
   MerchantFoundation --> DatabaseBroker
   AnalysisFoundation --> TaxonomyBroker
   AnalysisFoundation --> GenerativeBroker
@@ -131,7 +129,7 @@ and do not alter the domain dependency counts below.
 | Orchestration | `InvoiceOrchestrationService` | `IInvoiceStorageFoundationService` | 1 |
 | Orchestration | `MerchantOrchestrationService` | `IMerchantStorageFoundationService` | 1 |
 | Orchestration | `AnalysisOrchestrationService` | `IAnalysisFoundationService`, `IAnalysisQueueFoundationService` | 2 |
-| Foundation | `InvoiceStorageFoundationService` | `IDatabaseBroker`, `IBlobStorageBroker` | 2 |
+| Foundation | `InvoiceStorageFoundationService` | `IDatabaseBroker` | 1 |
 | Foundation | `MerchantStorageFoundationService` | `IDatabaseBroker` | 1 |
 | Foundation | `AnalysisFoundationService` | `IDocumentIntelligenceBroker`, `IGenerativeAnalysisBroker`, `ITaxonomyBroker` | 3 |
 | Foundation | `AnalysisQueueFoundationService` | `IQueueBroker` | 1 |
@@ -163,22 +161,6 @@ Both regions use the raw Cosmos SDK paths in
 `CosmosDatabaseBroker.Merchants.cs`. The EF model retained on
 `CosmosDatabaseBroker` is dormant and is not the runtime persistence path.
 
-### Blob inspection broker
-
-`IBlobStorageBroker`, implemented by `AzureStorageBlobBroker`, supports
-backend-owned inspection of an existing invoice scan URI. It resolves the URI
-against the configured storage account and the `invoices` container, rejects
-URIs that do not identify a blob in that boundary, and reads server-observed blob
-properties. It does not apply scan-size or content-type policy.
-
-`InvoiceStorageFoundationService` applies that policy before invoice creation or
-update: the blob must exist, be no larger than 10 MiB, use block-blob storage,
-and have a content type compatible with the declared scan type when a specific
-content type is present.
-
-The backend authenticates with its configured service credential. Issuing SAS
-tokens or otherwise creating client upload authorization is out of scope.
-
 ### Queue broker
 
 `IQueueBroker`, implemented by `AzureStorageQueueBroker`, owns transport through
@@ -189,7 +171,8 @@ the backend queue named `invoice-analysis`. It:
 - returns Azure Queue's `MessageId`;
 - receives at most one visible message with a caller-supplied visibility timeout;
 - updates the message and its pop receipt when visibility is renewed; and
-- deletes a message by provider message identifier and current pop receipt.
+- deletes a message by provider message identifier and current pop receipt; and
+- reports queue existence and the provider's approximate message count.
 
 The Broker maps received provider data into `AnalysisQueueReceipt`, which carries
 the application message, provider `MessageId`, current pop receipt, dequeue
@@ -216,7 +199,7 @@ apply capability-specific policy, and classify direct Broker failures.
 
 | Foundation | Direct Broker ownership | Responsibility |
 |---|---|---|
-| `InvoiceStorageFoundationService` | `IDatabaseBroker`, `IBlobStorageBroker` | Invoice persistence and server-side validation of existing scan blobs |
+| `InvoiceStorageFoundationService` | `IDatabaseBroker` | Invoice persistence |
 | `MerchantStorageFoundationService` | `IDatabaseBroker` | Merchant CRUD |
 | `AnalysisFoundationService` | `IDocumentIntelligenceBroker`, `IGenerativeAnalysisBroker`, `ITaxonomyBroker` | Independent OCR, typed generation, taxonomy search, and canonical resolution capabilities |
 | `AnalysisQueueFoundationService` | `IQueueBroker` | Queue input validation, provider failure classification, enqueue, receive, visibility renewal, and deletion |
@@ -413,8 +396,6 @@ Tests should enforce:
 - endpoints and the worker resolve the invoice domain only through Management;
 - no Endpoint-to-Processing, Processing-to-Foundation/Broker,
   Orchestration-to-Orchestration, or Foundation-to-Foundation bypass exists;
-- `IBlobStorageBroker` accepts only existing URIs in the backend-owned invoice
-  container and scan policy remains in Invoice Storage Foundation;
 - queue provisioning, message serialization, Azure `MessageId` acknowledgements,
   receive behavior, pop-receipt updates, visibility renewal, visibility-based
   retries, and deletion on dequeue five;

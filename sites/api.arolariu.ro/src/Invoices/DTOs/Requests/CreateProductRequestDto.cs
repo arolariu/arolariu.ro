@@ -1,13 +1,14 @@
 namespace arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
-using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
+
+using Microsoft.AspNetCore.Http;
 
 /// <summary>
 /// Request DTO for adding a new product line item to an existing invoice.
@@ -51,6 +52,7 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// <param name="Price">
 /// The unit price per single quantity. Currency is inherited from the parent invoice.
 /// </param>
+/// <param name="AllergenAssessment">Optional client-supplied structured allergen assessment.</param>
 
 /// <example>
 /// <code>
@@ -61,7 +63,8 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 ///     Quantity: 2,
 ///     QuantityUnit: "buc",
 ///     ProductCode: "5941234567890",
-///     Price: 8.99m);
+///     Price: 8.99m,
+///     AllergenAssessment: null);
 ///
 /// var product = request.ToProduct();
 /// invoice.Items.Add(product);
@@ -74,10 +77,11 @@ public readonly record struct CreateProductRequestDto(
   [Required] string Name,
   ClassificationSystem? ClassificationSystem,
   string? ClassificationCode,
-  decimal Quantity,
+  [Required] decimal? Quantity,
   string? QuantityUnit,
   string? ProductCode,
-  decimal Price)
+  [Required] decimal? Price,
+  AllergenAssessment? AllergenAssessment)
 {
   /// <summary>
   /// Converts this DTO to a <see cref="Product"/> domain value object.
@@ -103,9 +107,10 @@ public readonly record struct CreateProductRequestDto(
         ClassificationSystem,
         ClassificationCode,
         DDD.ValueObjects.Classifications.ClassificationSystem.Gs1Gpc),
-      Quantity = Quantity,
+      Quantity = Quantity ?? throw new BadHttpRequestException("Product quantity is required."),
       QuantityUnit = QuantityUnit?.Trim() ?? string.Empty,
       ProductCode = ProductCode?.Trim() ?? string.Empty,
-      Price = Price,
+      Price = Price ?? throw new BadHttpRequestException("Product price is required."),
+      AllergenAssessment = AllergenAssessment,
     };
 }

@@ -22,6 +22,22 @@ using Moq;
 [TestClass]
 public sealed class AnalysisQueueFoundationServiceTests
 {
+  /// <summary>Verifies queue initialization creates the queue and confirms provider status.</summary>
+  [TestMethod]
+  public async Task EnsureQueueAsync_ProvisionedQueue_ConfirmsStatus()
+  {
+    var broker = new Mock<IQueueBroker>(MockBehavior.Strict);
+    broker.Setup(candidate => candidate.CreateQueueIfNotExistsAsync(It.IsAny<CancellationToken>()))
+      .Returns(ValueTask.CompletedTask);
+    broker.Setup(candidate => candidate.GetQueueStatusAsync(It.IsAny<CancellationToken>()))
+      .ReturnsAsync(new QueueStatus(Exists: true, ApproximateMessageCount: 0));
+    var service = new AnalysisQueueFoundationService(broker.Object, NullLoggerFactory.Instance);
+
+    await service.EnsureQueueAsync(CancellationToken.None);
+
+    broker.VerifyAll();
+  }
+
   /// <summary>
   /// Verifies enqueueing delegates to the queue broker and returns Azure's message identifier.
   /// </summary>
@@ -31,7 +47,7 @@ public sealed class AnalysisQueueFoundationServiceTests
     AnalysisQueueMessage message = CreateMessage();
     var broker = new Mock<IQueueBroker>(MockBehavior.Strict);
     broker
-      .Setup(candidate => candidate.EnqueueAnalysisAsync(message, It.IsAny<CancellationToken>()))
+      .Setup(candidate => candidate.EnqueueMessageAsync(message, It.IsAny<CancellationToken>()))
       .ReturnsAsync("message-1");
     var service = new AnalysisQueueFoundationService(broker.Object, NullLoggerFactory.Instance);
 
@@ -49,7 +65,7 @@ public sealed class AnalysisQueueFoundationServiceTests
   {
     var broker = new Mock<IQueueBroker>(MockBehavior.Strict);
     broker
-      .Setup(candidate => candidate.ReceiveAnalysisAsync(
+      .Setup(candidate => candidate.DequeueMessageAsync(
         TimeSpan.FromMinutes(2),
         It.IsAny<CancellationToken>()))
       .ThrowsAsync(new RequestFailedException(503, "unavailable"));
@@ -70,7 +86,7 @@ public sealed class AnalysisQueueFoundationServiceTests
     await cancellation.CancelAsync().ConfigureAwait(false);
     var broker = new Mock<IQueueBroker>(MockBehavior.Strict);
     broker
-      .Setup(candidate => candidate.EnsureAnalysisQueueAsync(cancellation.Token))
+      .Setup(candidate => candidate.CreateQueueIfNotExistsAsync(cancellation.Token))
       .ThrowsAsync(new OperationCanceledException(cancellation.Token));
     var service = new AnalysisQueueFoundationService(broker.Object, NullLoggerFactory.Instance);
 

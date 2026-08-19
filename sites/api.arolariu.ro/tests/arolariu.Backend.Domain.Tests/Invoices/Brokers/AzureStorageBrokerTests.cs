@@ -5,7 +5,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using arolariu.Backend.Domain.Invoices.Brokers.BlobStorageBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 
@@ -18,41 +17,36 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 /// <summary>
-/// Verifies the backend-owned Azure Blob and Queue broker boundaries.
+/// Verifies the backend-owned Azure Queue broker boundary.
 /// </summary>
 [TestClass]
 public sealed class AzureStorageBrokerTests
 {
-  /// <summary>
-  /// Verifies a configured invoices-container URI resolves to its relative blob name without retaining SAS values.
-  /// </summary>
+  /// <summary>Verifies queue status reports provider existence and approximate message count.</summary>
   [TestMethod]
-  public void ResolveInvoiceBlobName_OwnedBlobWithSas_ReturnsRelativeName()
+  public async Task GetQueueStatusAsync_ExistingQueue_ReturnsApproximateCount()
   {
-    var containerUri = new Uri("https://account.blob.core.windows.net/invoices");
-    var scanUri = new Uri("https://account.blob.core.windows.net/invoices/user/scan.jpg?sig=secret");
+    var queueClient = new Mock<QueueClient>(MockBehavior.Strict);
+    QueueProperties properties = QueuesModelFactory.QueueProperties(
+      metadata: null,
+      approximateMessagesCount: 7);
+    queueClient.Setup(client => client.ExistsAsync(It.IsAny<CancellationToken>()))
+      .ReturnsAsync(Response.FromValue(true, Mock.Of<Response>()));
+    queueClient.Setup(client => client.GetPropertiesAsync(It.IsAny<CancellationToken>()))
+      .ReturnsAsync(Response.FromValue(properties, Mock.Of<Response>()));
+    var broker = new AzureStorageQueueBroker(queueClient.Object);
 
-    string blobName = AzureStorageBlobBroker.ResolveInvoiceBlobName(containerUri, scanUri);
+    QueueStatus status = await broker.GetQueueStatusAsync(CancellationToken.None);
 
-    Assert.AreEqual("user/scan.jpg", blobName);
-    Assert.IsFalse(blobName.Contains("sig", StringComparison.Ordinal));
+    Assert.IsTrue(status.Exists);
+    Assert.AreEqual(7, status.ApproximateMessageCount);
   }
-
-  /// <summary>
-  /// Verifies a scan outside the backend-owned invoices container is rejected.
-  /// </summary>
-  [TestMethod]
-  public void ResolveInvoiceBlobName_ForeignContainer_ThrowsArgumentException() =>
-    Assert.ThrowsExactly<ArgumentException>(() =>
-      AzureStorageBlobBroker.ResolveInvoiceBlobName(
-        new Uri("https://account.blob.core.windows.net/invoices"),
-        new Uri("https://account.blob.core.windows.net/public/scan.jpg")));
 
   /// <summary>
   /// Verifies enqueueing returns Azure Queue's provider message identifier.
   /// </summary>
   [TestMethod]
-  public async Task EnqueueAnalysisAsync_ValidMessage_ReturnsProviderMessageId()
+  public async Task EnqueueMessageAsync_ValidMessage_ReturnsProviderMessageId()
   {
     AnalysisQueueMessage message = CreateMessage();
     var queueClient = new Mock<QueueClient>(MockBehavior.Strict);
@@ -74,7 +68,7 @@ public sealed class AzureStorageBrokerTests
     var broker = new AzureStorageQueueBroker(queueClient.Object);
 
     string messageId = await broker
-      .EnqueueAnalysisAsync(message, CancellationToken.None)
+      .EnqueueMessageAsync(message, CancellationToken.None)
       .ConfigureAwait(false);
 
     Assert.AreEqual("message-1", messageId);
@@ -89,7 +83,7 @@ public sealed class AzureStorageBrokerTests
   /// Verifies receiving maps Azure provider receipt information and the application payload.
   /// </summary>
   [TestMethod]
-  public async Task ReceiveAnalysisAsync_VisibleMessage_ReturnsMappedReceipt()
+  public async Task DequeueMessageAsync_VisibleMessage_ReturnsMappedReceipt()
   {
     AnalysisQueueMessage message = CreateMessage();
     QueueMessage providerMessage = QueuesModelFactory.QueueMessage(
@@ -110,7 +104,7 @@ public sealed class AzureStorageBrokerTests
     var broker = new AzureStorageQueueBroker(queueClient.Object);
 
     AnalysisQueueReceipt? receipt = await broker
-      .ReceiveAnalysisAsync(TimeSpan.FromMinutes(2), CancellationToken.None)
+      .DequeueMessageAsync(TimeSpan.FromMinutes(2), CancellationToken.None)
       .ConfigureAwait(false);
 
     Assert.IsNotNull(receipt);
@@ -124,7 +118,7 @@ public sealed class AzureStorageBrokerTests
   /// Verifies malformed payloads retain provider receipt metadata for bounded retry and deletion.
   /// </summary>
   [TestMethod]
-  public async Task ReceiveAnalysisAsync_MalformedPayload_ReturnsMalformedReceipt()
+  public async Task DequeueMessageAsync_MalformedPayload_ReturnsMalformedReceipt()
   {
     const string malformedPayload = "{not-json";
     QueueMessage providerMessage = QueuesModelFactory.QueueMessage(
@@ -143,7 +137,7 @@ public sealed class AzureStorageBrokerTests
     var broker = new AzureStorageQueueBroker(queueClient.Object);
 
     AnalysisQueueReceipt? receipt = await broker
-      .ReceiveAnalysisAsync(TimeSpan.FromMinutes(2), CancellationToken.None)
+      .DequeueMessageAsync(TimeSpan.FromMinutes(2), CancellationToken.None)
       .ConfigureAwait(false);
 
     Assert.IsNotNull(receipt);
@@ -157,7 +151,7 @@ public sealed class AzureStorageBrokerTests
   /// Verifies syntactically valid payloads with invalid domain values retain provider receipt metadata.
   /// </summary>
   [TestMethod]
-  public async Task ReceiveAnalysisAsync_SemanticallyInvalidPayload_ReturnsMalformedReceipt()
+  public async Task DequeueMessageAsync_SemanticallyInvalidPayload_ReturnsMalformedReceipt()
   {
     AnalysisQueueMessage message = CreateMessage();
     string validPayload = JsonSerializer.Serialize(message);
@@ -181,7 +175,7 @@ public sealed class AzureStorageBrokerTests
     var broker = new AzureStorageQueueBroker(queueClient.Object);
 
     AnalysisQueueReceipt? receipt = await broker
-      .ReceiveAnalysisAsync(TimeSpan.FromMinutes(2), CancellationToken.None)
+      .DequeueMessageAsync(TimeSpan.FromMinutes(2), CancellationToken.None)
       .ConfigureAwait(false);
 
     Assert.IsNotNull(receipt);
@@ -193,7 +187,7 @@ public sealed class AzureStorageBrokerTests
   /// Verifies renewal replaces the pop receipt and deletion uses the renewed value.
   /// </summary>
   [TestMethod]
-  public async Task RenewThenDeleteAnalysisAsync_ValidReceipt_UsesLatestPopReceipt()
+  public async Task UpdateThenDeleteMessageAsync_ValidReceipt_UsesLatestPopReceipt()
   {
     AnalysisQueueMessage message = CreateMessage();
     var receipt = new AnalysisQueueReceipt(
@@ -220,11 +214,11 @@ public sealed class AzureStorageBrokerTests
       .ReturnsAsync(Response.FromValue(Mock.Of<Response>(), Mock.Of<Response>()));
     var broker = new AzureStorageQueueBroker(queueClient.Object);
 
-    await broker.RenewAnalysisVisibilityAsync(
+    await broker.UpdateMessageVisibilityAsync(
       receipt,
       TimeSpan.FromMinutes(2),
       CancellationToken.None);
-    await broker.DeleteAnalysisAsync(receipt, CancellationToken.None);
+    await broker.DeleteMessageAsync(receipt, CancellationToken.None);
 
     Assert.AreEqual("receipt-2", receipt.PopReceipt);
     queueClient.VerifyAll();

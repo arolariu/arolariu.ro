@@ -66,47 +66,7 @@ public sealed class Merchant : NamedEntity<Guid>
   [JsonPropertyOrder(7)]
   public IDictionary<string, string> AdditionalMetadata { get; init; } = new Dictionary<string, string>();
 
-  /// <summary>
-  /// Applies client-editable merchant fields to this persisted merchant.
-  /// </summary>
-  /// <remarks>
-  /// <para>
-  /// Identity, partition membership, reverse invoice references, audit fields, soft-delete state, and importance
-  /// remain owned by the persisted entity and are deliberately not copied from <paramref name="clientUpdate"/>.
-  /// Moving a merchant between parent-company partitions requires an explicit cross-partition workflow and is not
-  /// part of a normal merchant update.
-  /// </para>
-  /// <para>
-  /// A null classification means no manual NACE selection was made and retains the current canonical
-  /// classification. A non-null selection must already have been canonicalized by Processing through Analysis Orchestration.
-  /// Non-empty client metadata intentionally replaces <see cref="AdditionalMetadata"/>. An empty collection retains
-  /// the persisted metadata so a contact or classification update cannot erase server-owned enrichment.
-  /// </para>
-  /// </remarks>
-  /// <param name="clientUpdate">The client-controlled merchant values to apply.</param>
-  /// <exception cref="ArgumentNullException">Thrown when <paramref name="clientUpdate"/> is null.</exception>
-  public void ApplyClientUpdate(Merchant clientUpdate)
-  {
-    ArgumentNullException.ThrowIfNull(clientUpdate);
 
-    Name = clientUpdate.Name;
-    Description = clientUpdate.Description;
-    Address = clientUpdate.Address;
-
-    if (clientUpdate.Classification is not null)
-    {
-      Classification = clientUpdate.Classification;
-    }
-
-    if (clientUpdate.AdditionalMetadata.Count > 0)
-    {
-      AdditionalMetadata.Clear();
-      foreach (var (key, value) in clientUpdate.AdditionalMetadata)
-      {
-        AdditionalMetadata[key] = value;
-      }
-    }
-  }
 
   /// <summary>
   /// Create a default instance of <see cref="Merchant"/>.

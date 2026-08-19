@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 /// </summary>
 /// <remarks>
 /// <para>
-/// This broker is the new Task 5 extraction boundary that replaces aggregate-mutating OCR calls
-/// for new analysis-pipeline work. It accepts only the external scan location and returns an
-/// immutable, provider-neutral <see cref="ReceiptDocument"/> contract.
+/// The broker accepts an externally accessible invoice scan URI, invokes the configured receipt model, and returns
+/// an immutable provider-neutral <see cref="ReceiptDocument"/>. Domain aggregate mutation and workflow sequencing
+/// remain outside the Broker layer.
 /// </para>
 /// <para>
 /// Broker implementations MUST remain thin wrappers over external SDKs and MUST NOT accept or

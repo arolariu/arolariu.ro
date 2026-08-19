@@ -517,7 +517,7 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceManagementService invoiceManagementService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("The invoice scan payload to be created.", Required = true)] CreateInvoiceScanRequestDto invoiceScanDto);
+    [FromBody, SwaggerRequestBody("The invoice scan payload to attach.", Required = true)] AttachInvoiceScanRequestDto invoiceScanDto);
   #endregion
 
   #region HTTP GET /rest/v1/invoices/{id}/scans

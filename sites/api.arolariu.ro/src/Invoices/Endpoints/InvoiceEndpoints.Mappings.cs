@@ -264,7 +264,7 @@ public static partial class InvoiceEndpoints
 
     router // Create the invoice scan for a given invoice.
       .MapPost("/invoices/{id}/scans", CreateInvoiceScanAsync)
-      .Accepts<CreateInvoiceScanRequestDto>("application/json")
+      .Accepts<AttachInvoiceScanRequestDto>("application/json")
       .Produces<InvoiceScanResponseDto>(StatusCodes.Status201Created)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
@@ -314,7 +314,7 @@ public static partial class InvoiceEndpoints
 
     router // Retrieve the invoice metadata for a given invoice.
       .MapGet("/invoices/{id}/metadata", RetrieveInvoiceMetadataAsync)
-      .Produces<Dictionary<string, string>>(StatusCodes.Status200OK)
+      .Produces<IReadOnlyDictionary<string, string?>>(StatusCodes.Status200OK)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -330,7 +330,7 @@ public static partial class InvoiceEndpoints
     router // Update the invoice metadata for a given invoice.
       .MapPatch("/invoices/{id}/metadata", PatchInvoiceMetadataAsync)
       .Accepts<PatchMetadataRequestDto>("application/json")
-      .Produces<Dictionary<string, string>>(StatusCodes.Status202Accepted)
+      .Produces<IReadOnlyDictionary<string, string?>>(StatusCodes.Status202Accepted)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
