@@ -21,8 +21,9 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// and value semantics for equality comparisons.
 /// </para>
 /// <para>
-/// <b>AI Enrichment:</b> After creation, the product may be enriched by AI analysis
-/// to populate classification and <see cref="DetectedAllergens"/> if not provided.
+/// <b>Enrichment:</b> The current legacy analysis flow may enrich
+/// <see cref="DetectedAllergens"/>. The product remains unclassified until the
+/// later manual or structured-analysis classification flow is introduced.
 /// </para>
 /// <para>
 /// <b>Total Price:</b> The total price is computed automatically as

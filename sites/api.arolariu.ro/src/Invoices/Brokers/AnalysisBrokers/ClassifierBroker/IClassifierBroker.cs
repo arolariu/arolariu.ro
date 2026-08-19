@@ -7,7 +7,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DTOs;
 
 /// <summary>
-/// Broker contract for delegating invoice analysis / enrichment to Azure AI Foundry classification services (LLM).
+/// Broker contract for delegating legacy invoice and merchant enrichment to Azure AI Foundry.
 /// </summary>
 /// <remarks>
 /// <para><b>Layer Role (The Standard):</b> A broker is a thin, test-isolated abstraction over an external dependency (here: Azure AI Foundry model router).
@@ -16,7 +16,7 @@ using arolariu.Backend.Domain.Invoices.DTOs;
 /// <para><b>Responsibilities:</b>
 /// <list type="bullet">
 ///   <item><description>Accept a domain <see cref="Invoice"/> plus <see cref="AnalysisOptions"/> directives.</description></item>
-///   <item><description>Invoke one or more model completions / chat interactions to enrich invoice fields (naming, categorization, tagging).</description></item>
+///   <item><description>Invoke model completions to enrich names, descriptions, allergens, recipes, and OCR fallback fields.</description></item>
 ///   <item><description>Return the mutated (or enriched) invoice aggregate to upstream foundation / processing services.</description></item>
 /// </list></para>
 /// <para><b>Exclusions:</b> No persistence, no multi-aggregate orchestration, no retry / circuit-breaker policy (handled by higher resilience layer or pipeline),

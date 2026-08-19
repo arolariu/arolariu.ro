@@ -25,8 +25,8 @@ using Microsoft.Extensions.Logging;
 /// <para><b>Enrichment Pipeline:</b> Parallelizes LLM calls into batches for invoice text,
 /// product allergens, recipes, and OCR fallback values.
 /// Each prompt failure (e.g. content filter rejection) results in a default / empty fallback without aborting the remaining steps.</para>
-/// <para><b>Resilience:</b> Catches <c>ClientResultException</c> (Azure SDK) per step and converts it to silent fallback (empty string /
-/// default enum / empty collection) to keep a best-effort enrichment model. Upstream layers MAY introduce logging or metrics decorators.</para>
+/// <para><b>Resilience:</b> Catches <c>ClientResultException</c> (Azure SDK) per step and converts it to silent fallback (empty string or
+/// empty collection) to keep a best-effort enrichment model. Upstream layers MAY introduce logging or metrics decorators.</para>
 /// <para><b>Determinism:</b> Non-deterministic by design; repeated executions can yield variant textual outputs. Upstream caching or
 /// freeze-on-first-success strategies SHOULD be applied if immutability is desired.</para>
 /// <para><b>Thread Safety:</b> Reuses a single <see cref="AzureOpenAIClient"/> instance which is thread-safe; the class itself contains no mutable shared state.</para>
@@ -48,7 +48,7 @@ public sealed partial class AzureClassifierBroker : IClassifierBroker
   /// <para>Throws fast on null dependency to fail early in composition root.</para>
   /// </remarks>
   /// <param name="optionsManager">Abstraction supplying strongly typed application options (MUST NOT be null).</param>
-  /// <param name="loggerFactory">Logger factory for creating category-specific loggers (MUST NOT be null).</param>
+  /// <param name="loggerFactory">Logger factory for creating the broker logger (MUST NOT be null).</param>
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="optionsManager"/> or <paramref name="loggerFactory"/> is null.</exception>
   public AzureClassifierBroker(IOptionsManager optionsManager, ILoggerFactory loggerFactory)
   {
