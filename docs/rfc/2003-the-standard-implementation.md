@@ -57,7 +57,7 @@ targets:
    operation.
 2. Flow-forward calls with no sideways Foundation or Orchestration
    dependencies.
-3. Focused Processing services for CRUD/persistence and analysis computation.
+3. One Processing service coordinating CRUD, persistence, and analysis computation.
 4. Explicit capability ownership at Foundation and Broker boundaries.
 5. Azure Queue delivery that survives request completion and process restarts.
 6. Small, testable constructor dependency sets.
@@ -70,17 +70,13 @@ targets:
 flowchart TB
   Adapters[Endpoints / AnalysisWorker]
   Management[InvoiceManagementService]
-  Crud[CrudProcessingService]
-  Analysis[AnalysisProcessingService]
+  Processing[InvoiceProcessingService]
   InvoiceOrch[InvoiceOrchestrationService]
   MerchantOrch[MerchantOrchestrationService]
-  ClassificationOrch[ClassificationOrchestrationService]
   AnalysisOrch[AnalysisOrchestrationService]
   InvoiceFoundation[InvoiceStorageFoundationService]
   MerchantFoundation[MerchantStorageFoundationService]
-  ClassificationFoundation[ClassificationAnalysisFoundationService]
-  GenerativeFoundation[GenerativeAnalysisFoundationService]
-  DocumentFoundation[DocumentAnalysisFoundationService]
+  AnalysisFoundation[AnalysisFoundationService]
   QueueFoundation[AnalysisQueueFoundationService]
   DatabaseBroker[IDatabaseBroker]
   BlobBroker[IBlobStorageBroker]
@@ -90,25 +86,20 @@ flowchart TB
   QueueBroker[IQueueBroker]
 
   Adapters --> Management
-  Management --> Crud
-  Management --> Analysis
-  Crud --> InvoiceOrch
-  Crud --> MerchantOrch
-  Analysis --> ClassificationOrch
-  Analysis --> AnalysisOrch
+  Management --> Processing
+  Processing --> InvoiceOrch
+  Processing --> MerchantOrch
+  Processing --> AnalysisOrch
   InvoiceOrch --> InvoiceFoundation
   MerchantOrch --> MerchantFoundation
-  ClassificationOrch --> ClassificationFoundation
-  ClassificationOrch --> GenerativeFoundation
   AnalysisOrch --> QueueFoundation
-  AnalysisOrch --> DocumentFoundation
-  AnalysisOrch --> GenerativeFoundation
+  AnalysisOrch --> AnalysisFoundation
   InvoiceFoundation --> DatabaseBroker
   InvoiceFoundation --> BlobBroker
   MerchantFoundation --> DatabaseBroker
-  ClassificationFoundation --> TaxonomyBroker
-  GenerativeFoundation --> GenerativeBroker
-  DocumentFoundation --> DocumentBroker
+  AnalysisFoundation --> TaxonomyBroker
+  AnalysisFoundation --> GenerativeBroker
+  AnalysisFoundation --> DocumentBroker
   QueueFoundation --> QueueBroker
 ```
 
@@ -117,14 +108,14 @@ The required direction is:
 ```text
 Endpoint / Worker
   -> InvoiceManagementService
-    -> CRUD or Analysis Processing
+    -> InvoiceProcessingService
       -> approved Orchestrations
         -> capability Foundations
           -> Brokers
 ```
 
-Management coordinates both Processing services but never calls an
-Orchestration, Foundation, or Broker directly.
+Management delegates to one Processing service and never calls an Orchestration,
+Foundation, or Broker directly.
 
 ---
 
@@ -135,18 +126,14 @@ and do not alter the domain dependency counts below.
 
 | Layer | Implementation | Direct domain dependencies | Count |
 |---|---|---|---:|
-| Management | `InvoiceManagementService` | `ICrudProcessingService`, `IAnalysisProcessingService` | 2 |
-| Processing | `CrudProcessingService` | `IInvoiceOrchestrationService`, `IMerchantOrchestrationService` | 2 |
-| Processing | `AnalysisProcessingService` | `IClassificationOrchestrationService`, `IAnalysisOrchestrationService` | 2 |
+| Management | `InvoiceManagementService` | `IInvoiceProcessingService` | 1 |
+| Processing | `InvoiceProcessingService` | `IInvoiceOrchestrationService`, `IMerchantOrchestrationService`, `IAnalysisOrchestrationService` | 3 |
 | Orchestration | `InvoiceOrchestrationService` | `IInvoiceStorageFoundationService` | 1 |
 | Orchestration | `MerchantOrchestrationService` | `IMerchantStorageFoundationService` | 1 |
-| Orchestration | `ClassificationOrchestrationService` | `IClassificationAnalysisFoundationService`, `IGenerativeAnalysisFoundationService` | 2 |
-| Orchestration | `AnalysisOrchestrationService` | `IAnalysisQueueFoundationService`, `IDocumentAnalysisFoundationService`, `IGenerativeAnalysisFoundationService` | 3 |
+| Orchestration | `AnalysisOrchestrationService` | `IAnalysisFoundationService`, `IAnalysisQueueFoundationService` | 2 |
 | Foundation | `InvoiceStorageFoundationService` | `IDatabaseBroker`, `IBlobStorageBroker` | 2 |
 | Foundation | `MerchantStorageFoundationService` | `IDatabaseBroker` | 1 |
-| Foundation | `ClassificationAnalysisFoundationService` | `ITaxonomyBroker` | 1 |
-| Foundation | `GenerativeAnalysisFoundationService` | `IGenerativeAnalysisBroker` | 1 |
-| Foundation | `DocumentAnalysisFoundationService` | `IDocumentIntelligenceBroker` | 1 |
+| Foundation | `AnalysisFoundationService` | `IDocumentIntelligenceBroker`, `IGenerativeAnalysisBroker`, `ITaxonomyBroker` | 3 |
 | Foundation | `AnalysisQueueFoundationService` | `IQueueBroker` | 1 |
 
 This graph is closed: Processing calls only its listed Orchestrations, and each
@@ -231,9 +218,7 @@ apply capability-specific policy, and classify direct Broker failures.
 |---|---|---|
 | `InvoiceStorageFoundationService` | `IDatabaseBroker`, `IBlobStorageBroker` | Invoice persistence and server-side validation of existing scan blobs |
 | `MerchantStorageFoundationService` | `IDatabaseBroker` | Merchant CRUD |
-| `ClassificationAnalysisFoundationService` | `ITaxonomyBroker` | Taxonomy version lookup, bounded search, and canonical classification resolution |
-| `GenerativeAnalysisFoundationService` | `IGenerativeAnalysisBroker` | Typed structured generation, validation, retry policy, and capability telemetry |
-| `DocumentAnalysisFoundationService` | `IDocumentIntelligenceBroker` | Parallel scan extraction and deterministic receipt merge |
+| `AnalysisFoundationService` | `IDocumentIntelligenceBroker`, `IGenerativeAnalysisBroker`, `ITaxonomyBroker` | Independent OCR, typed generation, taxonomy search, and canonical resolution capabilities |
 | `AnalysisQueueFoundationService` | `IQueueBroker` | Queue input validation, provider failure classification, enqueue, receive, visibility renewal, and deletion |
 
 No Foundation calls another Foundation.
@@ -248,98 +233,89 @@ Orchestration services expose domain workflows over approved Foundations:
   Invoice Storage.
 - **Merchant Orchestration** delegates merchant persistence and reads to Merchant
   Storage.
-- **Classification Orchestration** combines Generative Analysis candidate
-  selection with Classification Analysis taxonomy search and canonical
-  resolution. Manual classification resolution uses Classification Analysis
-  directly.
-- **Analysis Orchestration** delegates queue lifecycle, document extraction, and
-  non-classification generative capabilities through Analysis Queue, Document
-  Analysis, and Generative Analysis Foundations.
-
-Classification Orchestration and Analysis Orchestration do not call each other.
-Analysis Processing sequences their capabilities.
+- **Analysis Orchestration** sequences OCR, generative, taxonomy, and queue
+  capabilities through the unified Analysis Foundation and the separate
+  Analysis Queue Foundation. It owns bounded taxonomy candidate collection,
+  canonical resolution, and manual classification lookup.
 
 ---
 
 ## Processing services
 
-### CRUD Processing
-
-`CrudProcessingService` owns:
+`InvoiceProcessingService` owns:
 
 - invoice and merchant CRUD delegation;
 - product, scan, and metadata collection operations;
 - invoice/merchant relationship handling;
 - application of immutable analysis patches; and
-- persistence of analysis-derived invoice or merchant changes.
-
-It persists only through Invoice and Merchant Orchestration.
-
-### Analysis Processing
-
-`AnalysisProcessingService` owns:
-
+- persistence of analysis-derived invoice or merchant changes;
 - effective analysis option resolution and `AnalysisQueueMessage` creation;
 - queue receive and delete delegation;
 - periodic visibility renewal while an operation executes;
-- invoice and merchant capability sequencing across Classification and Analysis
-  Orchestration;
-- immutable execution results and target patches; and
-- best-effort capability outcome classification and telemetry.
+- delegation of invoice and merchant workflow composition to Analysis Orchestration;
+- coordination of immutable execution results and target patches with persistence; and
+- bounded retry and terminal-deletion policy.
 
-It does not persist invoice or merchant aggregates. Production uses a two-minute
-visibility timeout and renews visibility every 30 seconds.
+It persists only through Invoice and Merchant Orchestration. Production uses a
+two-minute visibility timeout and renews visibility every 30 seconds.
 
 ---
 
 ## Management service
 
-`InvoiceManagementService` is the application façade and has exactly two domain
-dependencies: CRUD Processing and Analysis Processing.
-
-Simple CRUD methods delegate to CRUD Processing. Cross-processing operations
-remain in Management.
+`InvoiceManagementService` is the application façade and has exactly one domain
+dependency: Invoice Processing. Every method delegates to that boundary.
 
 ### Queue acceptance
 
 ```text
 Analyze endpoint
   -> InvoiceManagementService
-    -> CrudProcessingService (target existence and ownership)
-    -> AnalysisProcessingService
+    -> InvoiceProcessingService (target existence, ownership, and queue publication)
       -> AnalysisOrchestrationService
         -> AnalysisQueueFoundationService
           -> IQueueBroker
 ```
 
-Analysis Processing creates `AnalysisQueueMessage` with a correlation identifier,
+Invoice Processing creates `AnalysisQueueMessage` with a correlation identifier,
 target type and identifier, requester, optional target partition identifier,
 target-specific options, and W3C trace context. Azure Queue's returned
 `MessageId` is exposed by `AnalysisAcceptedResponseDto` together with the target
 type and target identifier. Both invoice and merchant analysis endpoints return
 that DTO in an HTTP 202 Accepted response.
 
+### Manual classification updates
+
+Invoice, product, and merchant updates containing a classification selection are
+resolved synchronously through Analysis Orchestration before persistence.
+Processing supplies the required taxonomy system (ECOICOP v2, GS1 GPC, or NACE
+2.1), replaces client-provided labels and hierarchy data with the canonical
+taxonomy snapshot, and then delegates persistence to the resource Orchestration.
+Updates without a classification selection do not invoke Analysis Orchestration.
+
 ### Worker execution and persistence
 
 ```text
 AnalysisWorker
   -> InvoiceManagementService
-    -> AnalysisProcessingService (receive + visibility renewal)
-    -> CrudProcessingService (read target)
-    -> AnalysisProcessingService
-       -> ClassificationOrchestrationService
-       -> AnalysisOrchestrationService
+    -> InvoiceProcessingService
+       -> AnalysisOrchestrationService (receive, renewal, and capabilities)
+       -> InvoiceOrchestrationService or MerchantOrchestrationService (read/persist)
        -> immutable patch/result
-    -> CrudProcessingService (persist target)
-    -> AnalysisProcessingService (delete successful or terminal message)
+       -> AnalysisOrchestrationService (delete successful or terminal message)
 ```
 
-Management persists a successful target patch before deleting the queue message.
+Processing persists a successful target patch before deleting the queue message.
 Failures before the fifth delivery leave the message undeleted; Azure Queue makes
 it visible again after the visibility timeout. A successful message is deleted
 immediately. A failed message is deleted when its dequeue count reaches five,
 making the fifth delivery terminal. The current design does not move terminal
 messages to a separate poison queue.
+
+Malformed provider payloads retain message ID, pop receipt, raw payload, and
+dequeue count without exposing payload content to logs. Processing leaves
+deliveries one through four for visibility recovery and deletes the fifth
+delivery with `InvalidStructuredOutput`.
 
 ---
 

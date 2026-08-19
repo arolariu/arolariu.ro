@@ -11,18 +11,14 @@ using arolariu.Backend.Domain.Invoices.Brokers.GenerativeAnalysisBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.AnalysisQueue;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.ClassificationAnalysis;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.DocumentAnalysis;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
 using arolariu.Backend.Domain.Invoices.Services.Management;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.AnalysisService;
-using arolariu.Backend.Domain.Invoices.Services.Orchestration.ClassificationService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
-using arolariu.Backend.Domain.Invoices.Services.Processing.AnalysisService;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -41,18 +37,12 @@ public sealed class InvoiceStandardLayeringArchitectureTests
   {
     AssertConstructorDependencies(
       typeof(InvoiceManagementService),
-      typeof(ICrudProcessingService),
-      typeof(IAnalysisProcessingService));
+      typeof(IInvoiceProcessingService));
 
     AssertConstructorDependencies(
-      typeof(CrudProcessingService),
+      typeof(InvoiceProcessingService),
       typeof(IInvoiceOrchestrationService),
       typeof(IMerchantOrchestrationService),
-      typeof(ILoggerFactory));
-
-    AssertConstructorDependencies(
-      typeof(AnalysisProcessingService),
-      typeof(IClassificationOrchestrationService),
       typeof(IAnalysisOrchestrationService),
       typeof(ILoggerFactory));
 
@@ -67,16 +57,9 @@ public sealed class InvoiceStandardLayeringArchitectureTests
       typeof(ILoggerFactory));
 
     AssertConstructorDependencies(
-      typeof(ClassificationOrchestrationService),
-      typeof(IClassificationAnalysisFoundationService),
-      typeof(IGenerativeAnalysisFoundationService),
-      typeof(ILoggerFactory));
-
-    AssertConstructorDependencies(
       typeof(AnalysisOrchestrationService),
+      typeof(IAnalysisFoundationService),
       typeof(IAnalysisQueueFoundationService),
-      typeof(IDocumentAnalysisFoundationService),
-      typeof(IGenerativeAnalysisFoundationService),
       typeof(ILoggerFactory));
 
     AssertConstructorDependencies(
@@ -91,18 +74,10 @@ public sealed class InvoiceStandardLayeringArchitectureTests
       typeof(ILoggerFactory));
 
     AssertConstructorDependencies(
-      typeof(ClassificationAnalysisFoundationService),
-      typeof(ITaxonomyBroker),
-      typeof(ILoggerFactory));
-
-    AssertConstructorDependencies(
-      typeof(GenerativeAnalysisFoundationService),
-      typeof(IGenerativeAnalysisBroker),
-      typeof(ILoggerFactory));
-
-    AssertConstructorDependencies(
-      typeof(DocumentAnalysisFoundationService),
+      typeof(AnalysisFoundationService),
       typeof(IDocumentIntelligenceBroker),
+      typeof(IGenerativeAnalysisBroker),
+      typeof(ITaxonomyBroker),
       typeof(ILoggerFactory));
 
     AssertConstructorDependencies(

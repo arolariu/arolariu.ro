@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Foundation;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.DocumentAnalysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Azure;
@@ -174,7 +174,7 @@ public sealed class DocumentAnalysisExceptionClassificationTests
     using var capture = new AnalysisTelemetryPrivacyCapture();
     using ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(capture));
     using var activities = new InvoiceActivityRecorder();
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       new ScriptedDocumentIntelligenceBroker(
         ScriptedDocumentIntelligenceBroker.Failure(new HttpRequestException(sensitiveSentinel))),
       loggerFactory);
@@ -201,8 +201,8 @@ public sealed class DocumentAnalysisExceptionClassificationTests
     Assert.IsInstanceOfType<TimeoutException>(exception.InnerException);
   }
 
-  private static DocumentAnalysisFoundationService CreateServiceThrowing(Exception exception) =>
-    new(
+  private static AnalysisFoundationService CreateServiceThrowing(Exception exception) =>
+    InvoiceScanTestData.CreateAnalysisService(
       new ScriptedDocumentIntelligenceBroker(ScriptedDocumentIntelligenceBroker.Failure(exception)),
       NullLoggerFactory.Instance);
 }

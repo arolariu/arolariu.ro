@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Orchestration;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.Modules;
 
 public sealed partial class AnalysisOrchestrationService
@@ -51,6 +52,8 @@ public sealed partial class AnalysisOrchestrationService
       => LogAndWrapDependency(exception.InnerException ?? exception),
     AnalysisFoundationServiceException
       => LogAndWrapService(exception.InnerException ?? exception),
+    TaxonomyCodeNotFoundException
+      => LogAndWrapValidation(exception),
     ArgumentException
       => LogAndWrapValidation(exception),
     _ => LogAndWrapService(exception),

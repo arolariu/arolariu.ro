@@ -12,19 +12,15 @@ using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.GenerativeAnalysisBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.AnalysisQueue;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.ClassificationAnalysis;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.DocumentAnalysis;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.AnalysisService;
-using arolariu.Backend.Domain.Invoices.Services.Orchestration.ClassificationService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
 using arolariu.Backend.Domain.Invoices.Services.Management;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
-using arolariu.Backend.Domain.Invoices.Services.Processing.AnalysisService;
 using arolariu.Backend.Domain.Invoices.Workers;
 
 using Azure;
@@ -147,21 +143,17 @@ public static class WebApplicationBuilderExtensions
 
     // Foundation services:
     services.AddScoped<IAnalysisQueueFoundationService, AnalysisQueueFoundationService>();
-    services.AddScoped<IClassificationAnalysisFoundationService, ClassificationAnalysisFoundationService>();
-    services.AddScoped<IDocumentAnalysisFoundationService, DocumentAnalysisFoundationService>();
-    services.AddScoped<IGenerativeAnalysisFoundationService, GenerativeAnalysisFoundationService>();
+    services.AddScoped<IAnalysisFoundationService, AnalysisFoundationService>();
     services.AddScoped<IInvoiceStorageFoundationService, InvoiceStorageFoundationService>();
     services.AddScoped<IMerchantStorageFoundationService, MerchantStorageFoundationService>();
 
     // Orchestration services:
     services.AddScoped<IAnalysisOrchestrationService, AnalysisOrchestrationService>();
-    services.AddScoped<IClassificationOrchestrationService, ClassificationOrchestrationService>();
     services.AddScoped<IInvoiceOrchestrationService, InvoiceOrchestrationService>();
     services.AddScoped<IMerchantOrchestrationService, MerchantOrchestrationService>();
 
     // Processing services:
-    services.AddScoped<IAnalysisProcessingService, AnalysisProcessingService>();
-    services.AddScoped<ICrudProcessingService, CrudProcessingService>();
+    services.AddScoped<IInvoiceProcessingService, InvoiceProcessingService>();
 
     // Management services:
     services.AddScoped<IInvoiceManagementService, InvoiceManagementService>();

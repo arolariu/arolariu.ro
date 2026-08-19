@@ -9,12 +9,49 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 
 /// <summary>
 /// Defines queue lifecycle and non-classification analysis capability coordination.
 /// </summary>
 public interface IAnalysisOrchestrationService
 {
+  /// <summary>Executes the selected invoice analysis workflow without persistence.</summary>
+  Task<InvoiceAnalysisExecutionResult> ExecuteInvoiceAnalysisAsync(
+    AnalysisQueueMessage message,
+    Invoice invoice,
+    CancellationToken cancellationToken);
+
+  /// <summary>Executes the selected merchant analysis workflow without persistence.</summary>
+  Task<MerchantAnalysisExecutionResult> ExecuteMerchantAnalysisAsync(
+    AnalysisQueueMessage message,
+    Merchant merchant,
+    CancellationToken cancellationToken);
+
+  /// <summary>Canonically resolves one optional manual classification selection.</summary>
+  Task<StandardClassification?> ResolveManualClassificationAsync(
+    StandardClassification? classification,
+    ClassificationSystem expectedSystem,
+    CancellationToken cancellationToken);
+
+  /// <summary>Classifies transient products against GS1 GPC.</summary>
+  Task<ProductClassificationResult> ClassifyProductsAsync(
+    IReadOnlyList<ProductAnalysisInput> products,
+    CancellationToken cancellationToken);
+
+  /// <summary>Classifies an invoice against ECOICOP v2.</summary>
+  Task<InvoiceClassificationResult> ClassifyInvoiceAsync(
+    ReceiptExtractionResult extraction,
+    ProductClassificationResult products,
+    Guid sourceRunId,
+    CancellationToken cancellationToken);
+
+  /// <summary>Classifies a merchant against NACE 2.1.</summary>
+  Task<MerchantClassificationResult> ClassifyMerchantAsync(
+    Merchant merchant,
+    Guid sourceRunId,
+    CancellationToken cancellationToken);
+
   /// <summary>Ensures the backend-owned analysis queue exists.</summary>
   Task EnsureQueueAsync(CancellationToken cancellationToken);
 

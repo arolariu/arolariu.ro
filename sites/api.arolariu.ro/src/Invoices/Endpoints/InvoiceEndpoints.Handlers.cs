@@ -286,8 +286,6 @@ public static partial class InvoiceEndpoints
         updatedInvoiceEntity.Scans.Add(scan);
       }
 
-      updatedInvoiceEntity.Classification ??= possibleInvoice.Classification;
-
       var updatedInvoice = await invoiceManagementService
         .UpdateInvoice(updatedInvoiceEntity, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
@@ -1298,8 +1296,6 @@ public static partial class InvoiceEndpoints
       }
 
       Merchant updatedMerchant = merchantPayload.ToMerchant(id);
-      updatedMerchant.Classification ??= existingMerchant.Classification;
-
       Merchant persistedMerchant = await invoiceManagementService
         .UpdateMerchant(
           updatedMerchant,

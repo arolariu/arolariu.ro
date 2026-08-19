@@ -18,7 +18,7 @@ using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using GenerativeService = arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysis.GenerativeAnalysisFoundationService;
+using GenerativeService = arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis.AnalysisFoundationService;
 
 /// <summary>
 /// Covers remaining recipe generation structured-output and ingredient bucket branch combinations.
@@ -98,7 +98,7 @@ public sealed class GenerativeAnalysisRecipeBranchCoverageTests
     using var capture = new AnalysisTelemetryPrivacyCapture();
     using ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(capture));
     using var activities = new InvoiceActivityRecorder();
-    var service = new GenerativeService(
+    GenerativeService service = InvoiceScanTestData.CreateAnalysisService(
       new ScriptedGenerativeAnalysisBroker(
         ScriptedGenerativeAnalysisBroker.Success(new GenerativeService.RecipeGenerationStructuredResult([recipe]))),
       loggerFactory);

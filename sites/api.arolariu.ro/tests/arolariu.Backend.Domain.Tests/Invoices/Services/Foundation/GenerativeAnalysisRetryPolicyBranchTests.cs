@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 
 using Azure;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

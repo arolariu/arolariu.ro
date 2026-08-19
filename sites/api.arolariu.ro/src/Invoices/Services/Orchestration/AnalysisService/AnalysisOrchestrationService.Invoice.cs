@@ -19,7 +19,7 @@ public sealed partial class AnalysisOrchestrationService
     await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(ExtractInvoiceAsync));
-      return await documentAnalysisFoundationService
+      return await analysisFoundationService
         .ExtractInvoiceAsync(scans, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
@@ -32,7 +32,7 @@ public sealed partial class AnalysisOrchestrationService
     await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(GenerateInvoiceSummaryAsync));
-      return await generativeAnalysisFoundationService
+      return await analysisFoundationService
         .GenerateInvoiceSummaryAsync(products, correlationId, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
@@ -46,7 +46,7 @@ public sealed partial class AnalysisOrchestrationService
     await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(AssessAllergensAsync));
-      return await generativeAnalysisFoundationService
+      return await analysisFoundationService
         .AssessAllergensAsync(products, classifications, correlationId, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
@@ -62,7 +62,7 @@ public sealed partial class AnalysisOrchestrationService
     await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(GenerateRecipesAsync));
-      return await generativeAnalysisFoundationService
+      return await analysisFoundationService
         .GenerateRecipesAsync(products, classifications, allergens, maximumRecipes, correlationId, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);

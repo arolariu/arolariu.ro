@@ -100,9 +100,7 @@ public readonly record struct CreateProductRequestDto(
     new()
     {
       Name = Name?.Trim() ?? string.Empty,
-      Classification = Classification?.System == ClassificationSystem.Gs1Gpc
-        ? Classification.Value.ToManualSelection()
-        : null,
+      Classification = Classification?.ToManualSelection(),
       Quantity = Quantity,
       QuantityUnit = QuantityUnit?.Trim() ?? string.Empty,
       ProductCode = ProductCode?.Trim() ?? string.Empty,

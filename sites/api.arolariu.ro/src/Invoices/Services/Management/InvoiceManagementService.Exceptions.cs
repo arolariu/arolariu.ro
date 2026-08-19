@@ -48,20 +48,20 @@ public sealed partial class InvoiceManagementService
       or InvoiceManagementServiceException
       => exception,
 
-    IValidationException
+    _ when ContainsExceptionMarker<IValidationException>(exception)
       => new InvoiceManagementValidationException(exception),
 
-    IDependencyValidationException
-      or INotFoundException
-      or IAlreadyExistsException
-      or ILockedException
-      or IRateLimitedException
-      or IUnauthorizedException
-      or IForbiddenException
+    _ when ContainsExceptionMarker<IDependencyValidationException>(exception)
+      || ContainsExceptionMarker<INotFoundException>(exception)
+      || ContainsExceptionMarker<IAlreadyExistsException>(exception)
+      || ContainsExceptionMarker<ILockedException>(exception)
+      || ContainsExceptionMarker<IRateLimitedException>(exception)
+      || ContainsExceptionMarker<IUnauthorizedException>(exception)
+      || ContainsExceptionMarker<IForbiddenException>(exception)
       => new InvoiceManagementDependencyValidationException(exception),
 
-    IDependencyException
-      or ITimeoutException
+    _ when ContainsExceptionMarker<IDependencyException>(exception)
+      || ContainsExceptionMarker<ITimeoutException>(exception)
       => new InvoiceManagementDependencyException(exception),
 
     _ => new InvoiceManagementServiceException(exception),

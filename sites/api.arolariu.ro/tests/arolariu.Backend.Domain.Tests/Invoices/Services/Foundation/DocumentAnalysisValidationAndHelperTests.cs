@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Foundation;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.DocumentAnalysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Microsoft.Extensions.Logging.Abstractions;
@@ -26,7 +26,7 @@ public sealed class DocumentAnalysisValidationAndHelperTests
   [TestMethod]
   public async Task ExtractInvoiceAsync_NullScans_ThrowsValidationException()
   {
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       new ScriptedDocumentIntelligenceBroker(ReceiptDocumentTestData.Document()),
       NullLoggerFactory.Instance);
 
@@ -40,7 +40,7 @@ public sealed class DocumentAnalysisValidationAndHelperTests
   [TestMethod]
   public async Task ExtractInvoiceAsync_EmptyScans_ThrowsValidationException()
   {
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       new ScriptedDocumentIntelligenceBroker(ReceiptDocumentTestData.Document()),
       NullLoggerFactory.Instance);
 
@@ -54,7 +54,7 @@ public sealed class DocumentAnalysisValidationAndHelperTests
   [TestMethod]
   public async Task ExtractInvoiceAsync_DefaultScan_ThrowsValidationException()
   {
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       new ScriptedDocumentIntelligenceBroker(ReceiptDocumentTestData.Document()),
       NullLoggerFactory.Instance);
 
@@ -69,7 +69,7 @@ public sealed class DocumentAnalysisValidationAndHelperTests
   public async Task ExtractInvoiceAsync_RelativeScanLocation_ThrowsValidationException()
   {
     var scan = new InvoiceScan(ScanType.JPG, new Uri("receipt.jpg", UriKind.Relative), null);
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       new ScriptedDocumentIntelligenceBroker(ReceiptDocumentTestData.Document()),
       NullLoggerFactory.Instance);
 
@@ -86,7 +86,7 @@ public sealed class DocumentAnalysisValidationAndHelperTests
     var broker = new ScriptedDocumentIntelligenceBroker(
       new ScriptedDocumentIntelligenceBroker.ScriptedDocumentResponse(null, TimeSpan.Zero, null));
 
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       broker,
       NullLoggerFactory.Instance);
 
@@ -100,7 +100,7 @@ public sealed class DocumentAnalysisValidationAndHelperTests
   [TestMethod]
   public async Task ExtractInvoiceAsync_ValidScanAndDocument_ReturnsExtractionResult()
   {
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       new ScriptedDocumentIntelligenceBroker(ReceiptDocumentTestData.Page("Milk", 1.0m)),
       NullLoggerFactory.Instance);
 
@@ -204,13 +204,13 @@ public sealed class DocumentAnalysisValidationAndHelperTests
   }
 
   private static MethodInfo GetPrivateStaticMethod(string methodName) =>
-    typeof(DocumentAnalysisFoundationService).GetMethod(
+    typeof(AnalysisFoundationService).GetMethod(
       methodName,
       BindingFlags.NonPublic | BindingFlags.Static)!;
 
   private static object CreateNestedRecord(string typeName, object?[] arguments)
   {
-    Type type = typeof(DocumentAnalysisFoundationService).GetNestedType(typeName, BindingFlags.NonPublic)!;
+    Type type = typeof(AnalysisFoundationService).GetNestedType(typeName, BindingFlags.NonPublic)!;
     ConstructorInfo constructor = Array.Find(
       type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic),
       candidate => candidate.GetParameters().Length == arguments.Length)!;

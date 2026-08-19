@@ -628,9 +628,9 @@ public sealed class InvoiceEndpointsStatusCodeTests
   #endregion
 
   #region Replacement classification preservation tests
-  /// <summary>Verifies invoice PUT preserves the stored canonical classification.</summary>
+  /// <summary>Verifies invoice PUT preserves classification omission for Processing merge semantics.</summary>
   [TestMethod]
-  public async Task UpdateSpecificInvoiceAsync_ExistingClassification_PreservesSnapshot()
+  public async Task UpdateSpecificInvoiceAsync_OmittedClassification_LeavesSelectionUnset()
   {
     Guid invoiceId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
@@ -668,7 +668,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
         It.IsAny<CancellationToken>()))
       .Callback<Invoice, Guid, Guid?, CancellationToken>(
         (updated, _, _, _) => capturedInvoice = updated)
-      .ReturnsAsync((Invoice updated, Guid _, Guid? _, CancellationToken _) => updated);
+      .ReturnsAsync(invoice);
 
     IResult result = await InvoiceEndpoints.UpdateSpecificInvoiceAsync(
       service.Object,
@@ -678,12 +678,12 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
     Assert.IsNotNull(capturedInvoice);
-    Assert.AreSame(classification, capturedInvoice.Classification);
+    Assert.IsNull(capturedInvoice.Classification);
   }
 
-  /// <summary>Verifies merchant PUT preserves the stored canonical classification.</summary>
+  /// <summary>Verifies merchant PUT preserves classification omission for Processing merge semantics.</summary>
   [TestMethod]
-  public async Task UpdateSpecificMerchantAsync_ExistingClassification_PreservesSnapshot()
+  public async Task UpdateSpecificMerchantAsync_OmittedClassification_LeavesSelectionUnset()
   {
     Guid merchantId = Guid.NewGuid();
     Guid parentCompanyId = Guid.NewGuid();
@@ -720,7 +720,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
         It.IsAny<CancellationToken>()))
       .Callback<Merchant, Guid, Guid?, CancellationToken>(
         (updated, _, _, _) => capturedMerchant = updated)
-      .ReturnsAsync((Merchant updated, Guid _, Guid? _, CancellationToken _) => updated);
+      .ReturnsAsync(merchant);
 
     IResult result = await InvoiceEndpoints.UpdateSpecificMerchantAsync(
       service.Object,
@@ -730,7 +730,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
     Assert.IsNotNull(capturedMerchant);
-    Assert.AreSame(classification, capturedMerchant.Classification);
+    Assert.IsNull(capturedMerchant.Classification);
   }
 
   private static StandardClassification CreateClassification(

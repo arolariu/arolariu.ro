@@ -5,7 +5,7 @@ using System.Reflection;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.DocumentAnalysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -86,7 +86,7 @@ public sealed class DocumentAnalysisProductBranchCoverageTests
 
   private static bool InvokeTryCreateProduct(ReceiptProductDocument productDocument, out ExtractedProduct? product)
   {
-    MethodInfo method = typeof(DocumentAnalysisFoundationService).GetMethod(
+    MethodInfo method = typeof(AnalysisFoundationService).GetMethod(
       "TryCreateProduct",
       BindingFlags.NonPublic | BindingFlags.Static)
       ?? throw new AssertFailedException("TryCreateProduct method was not found.");
@@ -114,4 +114,3 @@ public sealed class DocumentAnalysisProductBranchCoverageTests
   private static decimal ParseDecimal(string value) =>
     decimal.Parse(value, CultureInfo.InvariantCulture);
 }
-

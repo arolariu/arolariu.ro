@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.DocumentAnalysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Microsoft.Extensions.Logging.Abstractions;
@@ -47,7 +47,7 @@ public sealed class DocumentAnalysisPaymentTypeTests
           ReceiptDocumentTestData.Tender(method, 15.50m),
         ]));
 
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       broker,
       NullLoggerFactory.Instance);
 
@@ -63,7 +63,7 @@ public sealed class DocumentAnalysisPaymentTypeTests
   public async Task ExtractInvoiceAsync_WithoutPaymentLines_DeterminesUnknownPaymentType()
   {
     var broker = new ScriptedDocumentIntelligenceBroker(ReceiptDocumentTestData.Document());
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       broker,
       NullLoggerFactory.Instance);
 
@@ -85,7 +85,7 @@ public sealed class DocumentAnalysisPaymentTypeTests
           ReceiptDocumentTestData.Tender(" ", 0.0m),
         ]));
 
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       broker,
       NullLoggerFactory.Instance);
 

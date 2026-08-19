@@ -16,21 +16,38 @@ public sealed class AnalysisQueueReceipt
     string popReceipt,
     long dequeueCount,
     DateTimeOffset? nextVisibleAt)
+    : this(message, rawPayload: null, messageId, popReceipt, dequeueCount, nextVisibleAt)
   {
-    ArgumentNullException.ThrowIfNull(message);
+  }
+
+  private AnalysisQueueReceipt(
+    AnalysisQueueMessage? message,
+    string? rawPayload,
+    string messageId,
+    string popReceipt,
+    long dequeueCount,
+    DateTimeOffset? nextVisibleAt)
+  {
     ArgumentException.ThrowIfNullOrWhiteSpace(messageId);
     ArgumentException.ThrowIfNullOrWhiteSpace(popReceipt);
     ArgumentOutOfRangeException.ThrowIfLessThan(dequeueCount, 1);
 
     Message = message;
+    RawPayload = rawPayload;
     MessageId = messageId;
     PopReceipt = popReceipt;
     DequeueCount = dequeueCount;
     NextVisibleAt = nextVisibleAt;
   }
 
-  /// <summary>Gets the application analysis message.</summary>
-  public AnalysisQueueMessage Message { get; }
+  /// <summary>Gets the application analysis message, or null when the provider payload is malformed.</summary>
+  public AnalysisQueueMessage? Message { get; }
+
+  /// <summary>Gets the malformed raw provider payload, or null for a valid application message.</summary>
+  public string? RawPayload { get; }
+
+  /// <summary>Gets a value indicating whether the provider payload could not be parsed.</summary>
+  public bool IsMalformed => Message is null;
 
   /// <summary>Gets Azure Queue's provider message identifier.</summary>
   public string MessageId { get; }
@@ -43,6 +60,30 @@ public sealed class AnalysisQueueReceipt
 
   /// <summary>Gets the next time at which the message becomes visible, when supplied by Azure Queue.</summary>
   public DateTimeOffset? NextVisibleAt { get; private set; }
+
+  /// <summary>Creates a receipt for a malformed provider payload while retaining retry and deletion metadata.</summary>
+  /// <param name="rawPayload">The unparsed provider payload. Its contents must never be logged.</param>
+  /// <param name="messageId">Azure Queue's message identifier.</param>
+  /// <param name="popReceipt">The current pop receipt required for renewal or deletion.</param>
+  /// <param name="dequeueCount">The number of times Azure Queue has delivered the payload.</param>
+  /// <param name="nextVisibleAt">The next visibility timestamp supplied by Azure Queue, when available.</param>
+  /// <returns>A malformed receipt that can participate in bounded retry and terminal deletion.</returns>
+  public static AnalysisQueueReceipt CreateMalformed(
+    string rawPayload,
+    string messageId,
+    string popReceipt,
+    long dequeueCount,
+    DateTimeOffset? nextVisibleAt)
+  {
+    ArgumentNullException.ThrowIfNull(rawPayload);
+    return new AnalysisQueueReceipt(
+      message: null,
+      rawPayload,
+      messageId,
+      popReceipt,
+      dequeueCount,
+      nextVisibleAt);
+  }
 
   internal void UpdateVisibility(string popReceipt, DateTimeOffset? nextVisibleAt)
   {

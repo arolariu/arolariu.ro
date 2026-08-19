@@ -6,7 +6,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 
 /// <summary>
-/// Represents the processing-layer execution outcome of one queued analysis message.
+/// Represents the orchestration-layer execution outcome of one queued analysis message.
 /// </summary>
 /// <remarks>
 /// This contract carries the queue message, the immutable target patch produced by analysis, the capabilities

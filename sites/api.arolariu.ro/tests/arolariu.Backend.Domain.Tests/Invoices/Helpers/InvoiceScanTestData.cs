@@ -3,13 +3,41 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Helpers;
 using System;
 
 using arolariu.Backend.Common.Options;
+using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.GenerativeAnalysisBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
+
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+
+using Moq;
 
 /// <summary>
 /// Provides deterministic invoice scan fixtures for document-analysis tests.
 /// </summary>
 internal static class InvoiceScanTestData
 {
+  /// <summary>Creates the unified Analysis Foundation for document-focused tests.</summary>
+  internal static AnalysisFoundationService CreateAnalysisService(
+    IDocumentIntelligenceBroker documentIntelligenceBroker,
+    ILoggerFactory? loggerFactory = null) =>
+    new(
+      documentIntelligenceBroker,
+      Mock.Of<IGenerativeAnalysisBroker>(),
+      TaxonomyBrokerTestFactory.Create(),
+      loggerFactory ?? NullLoggerFactory.Instance);
+
+  /// <summary>Creates the unified Analysis Foundation for generative-focused tests.</summary>
+  internal static AnalysisFoundationService CreateAnalysisService(
+    IGenerativeAnalysisBroker generativeAnalysisBroker,
+    ILoggerFactory? loggerFactory = null) =>
+    new(
+      Mock.Of<IDocumentIntelligenceBroker>(),
+      generativeAnalysisBroker,
+      TaxonomyBrokerTestFactory.Create(),
+      loggerFactory ?? NullLoggerFactory.Instance);
+
   /// <summary>
   /// Creates storage options that approve the deterministic scan fixtures in this test assembly.
   /// </summary>

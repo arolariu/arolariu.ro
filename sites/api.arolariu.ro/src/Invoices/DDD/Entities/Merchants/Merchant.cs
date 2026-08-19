@@ -33,7 +33,7 @@ public sealed class Merchant : NamedEntity<Guid>
 
   /// <summary>Standardised classification used for analytics, grouping and analysis heuristics.</summary>
   /// <remarks>
-  /// <para><b>Expected system:</b> <see cref="ClassificationSystem.Nace21"/>. Storage foundations reject any other system.</para>
+  /// <para><b>Expected system:</b> <see cref="ClassificationSystem.Nace21"/>. Processing resolves every manual selection canonically before persistence.</para>
   /// <para><see langword="null"/> means the merchant has not been classified yet.</para>
   /// </remarks>
   [JsonPropertyOrder(3)]
@@ -78,7 +78,7 @@ public sealed class Merchant : NamedEntity<Guid>
   /// </para>
   /// <para>
   /// A null classification means no manual NACE selection was made and retains the current canonical
-  /// classification. A non-null selection must already have been canonicalized by the merchant storage foundation.
+  /// classification. A non-null selection must already have been canonicalized by Processing through Analysis Orchestration.
   /// Non-empty client metadata intentionally replaces <see cref="AdditionalMetadata"/>. An empty collection retains
   /// the persisted metadata so a contact or classification update cannot erase server-owned enrichment.
   /// </para>

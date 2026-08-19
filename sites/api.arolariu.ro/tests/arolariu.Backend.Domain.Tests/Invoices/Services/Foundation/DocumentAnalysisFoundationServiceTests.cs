@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Foundation;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.DocumentAnalysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Azure;
@@ -17,7 +17,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Verifies deterministic multi-scan extraction behavior and exception classification for
-/// <see cref="DocumentAnalysisFoundationService"/>.
+/// <see cref="AnalysisFoundationService"/>.
 /// </summary>
 [TestClass]
 public sealed class DocumentAnalysisFoundationServiceTests
@@ -42,7 +42,7 @@ public sealed class DocumentAnalysisFoundationServiceTests
         ReceiptDocumentTestData.Page("Milk", 1m, "Bread", 2m),
         delay: TimeSpan.FromMilliseconds(10)));
 
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       broker,
       NullLoggerFactory.Instance);
 
@@ -90,7 +90,7 @@ public sealed class DocumentAnalysisFoundationServiceTests
           ReceiptDocumentTestData.Tender("cash", 1.00m),
         ]));
 
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       broker,
       NullLoggerFactory.Instance);
 
@@ -117,7 +117,7 @@ public sealed class DocumentAnalysisFoundationServiceTests
           ReceiptDocumentTestData.Product("Invalid", -1m, "pcs", "BAD", 3.00m, totalPrice: 3.00m),
         ]));
 
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       broker,
       NullLoggerFactory.Instance);
 
@@ -145,7 +145,7 @@ public sealed class DocumentAnalysisFoundationServiceTests
         ReceiptDocumentTestData.Page("Milk", 1m),
         delay: TimeSpan.FromMilliseconds(250)));
 
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       broker,
       NullLoggerFactory.Instance);
 
@@ -162,7 +162,7 @@ public sealed class DocumentAnalysisFoundationServiceTests
     var broker = new ScriptedDocumentIntelligenceBroker(
       ScriptedDocumentIntelligenceBroker.Failure(new RequestFailedException(status: 400, message: "bad request")));
 
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       broker,
       NullLoggerFactory.Instance);
 
@@ -181,7 +181,7 @@ public sealed class DocumentAnalysisFoundationServiceTests
     var broker = new ScriptedDocumentIntelligenceBroker(
       ScriptedDocumentIntelligenceBroker.Failure(new RequestFailedException(status: 429, message: "rate limited")));
 
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       broker,
       NullLoggerFactory.Instance);
 
@@ -201,7 +201,7 @@ public sealed class DocumentAnalysisFoundationServiceTests
       ScriptedDocumentIntelligenceBroker.Failure(
         new InvalidStructuredOutputException("provider output violated the receipt contract")));
 
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       broker,
       NullLoggerFactory.Instance);
 

@@ -3,18 +3,21 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Helpers;
 using System;
 using System.Collections.Generic;
 
+using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 
 using Microsoft.Extensions.Logging.Abstractions;
 
+using Moq;
+
 /// <summary>
-/// Builds <see cref="GenerativeAnalysisFoundationService"/> instances wired to deterministic capability scripts.
+/// Builds <see cref="AnalysisFoundationService"/> instances wired to deterministic capability scripts.
 /// </summary>
 internal sealed class GenerativeCapabilityHarness
 {
@@ -28,11 +31,15 @@ internal sealed class GenerativeCapabilityHarness
     Products = products;
     Classifications = classifications;
     Allergens = allergens;
-    Service = new GenerativeAnalysisFoundationService(broker, NullLoggerFactory.Instance);
+    Service = new AnalysisFoundationService(
+      Mock.Of<IDocumentIntelligenceBroker>(),
+      broker,
+      TaxonomyBrokerTestFactory.Create(),
+      NullLoggerFactory.Instance);
   }
 
   /// <summary>Gets the foundation service under test.</summary>
-  public GenerativeAnalysisFoundationService Service { get; }
+  public AnalysisFoundationService Service { get; }
 
   /// <summary>Gets the scripted generative broker backing the service.</summary>
   public ScriptedGenerativeAnalysisBroker Broker { get; }
@@ -54,7 +61,7 @@ internal sealed class GenerativeCapabilityHarness
   /// <returns>A harness ready for summary generation tests.</returns>
   public static GenerativeCapabilityHarness WithInvoiceSummary(string name, string description)
   {
-    var response = new GenerativeAnalysisFoundationService.InvoiceSummaryStructuredResult(name, description);
+    var response = new AnalysisFoundationService.InvoiceSummaryStructuredResult(name, description);
     var broker = new ScriptedGenerativeAnalysisBroker(ScriptedGenerativeAnalysisBroker.Success(response));
 
     return new GenerativeCapabilityHarness(
@@ -76,18 +83,18 @@ internal sealed class GenerativeCapabilityHarness
     ProductAllergenEvidenceTier evidenceTier,
     string evidenceSource)
   {
-    var response = new GenerativeAnalysisFoundationService.AllergenAssessmentBatchStructuredResult(
+    var response = new AnalysisFoundationService.AllergenAssessmentBatchStructuredResult(
       [
-        new GenerativeAnalysisFoundationService.AllergenAssessmentStructuredEntry(
+        new AnalysisFoundationService.AllergenAssessmentStructuredEntry(
           "item-0001",
           "SignalsFound",
           [
-            new GenerativeAnalysisFoundationService.AllergenSignalStructuredEntry(
+            new AnalysisFoundationService.AllergenSignalStructuredEntry(
               code.ToString(),
               evidenceTier.ToString(),
               0.92,
               [
-                new GenerativeAnalysisFoundationService.AllergenEvidenceStructuredEntry(
+                new AnalysisFoundationService.AllergenEvidenceStructuredEntry(
                   evidenceSource,
                   "lapte")
               ])
@@ -109,9 +116,9 @@ internal sealed class GenerativeCapabilityHarness
   /// <returns>A harness ready for empty allergen success tests.</returns>
   public static GenerativeCapabilityHarness EmptyAllergenSuccess()
   {
-    var response = new GenerativeAnalysisFoundationService.AllergenAssessmentBatchStructuredResult(
+    var response = new AnalysisFoundationService.AllergenAssessmentBatchStructuredResult(
       [
-        new GenerativeAnalysisFoundationService.AllergenAssessmentStructuredEntry(
+        new AnalysisFoundationService.AllergenAssessmentStructuredEntry(
           "item-0001",
           "NoSignalsInAvailableEvidence",
           [])
@@ -132,9 +139,9 @@ internal sealed class GenerativeCapabilityHarness
   /// <param name="recipes">The scripted recipes returned by the provider.</param>
   /// <returns>A harness ready for recipe generation tests.</returns>
   public static GenerativeCapabilityHarness WithRecipes(
-    IReadOnlyList<GenerativeAnalysisFoundationService.RecipeStructuredSuggestion> recipes)
+    IReadOnlyList<AnalysisFoundationService.RecipeStructuredSuggestion> recipes)
   {
-    var response = new GenerativeAnalysisFoundationService.RecipeGenerationStructuredResult(recipes);
+    var response = new AnalysisFoundationService.RecipeGenerationStructuredResult(recipes);
     var broker = new ScriptedGenerativeAnalysisBroker(ScriptedGenerativeAnalysisBroker.Success(response));
 
     return new GenerativeCapabilityHarness(

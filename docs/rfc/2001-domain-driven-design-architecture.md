@@ -165,7 +165,7 @@ renews visibility while it executes.
 
 Queue transport details remain in Broker and Foundation roles. Target loading,
 analysis execution, persistence ordering, and terminal retry policy remain in
-Processing and Management roles.
+Processing.
 
 ---
 
@@ -177,8 +177,8 @@ Processing and Management roles.
 - Brokers own provider calls and provider-neutral mapping.
 - Foundations own one external capability and its validation policy.
 - Orchestrations compose only approved Foundations.
-- Processing services own domain computation and transformations.
-- Management owns application-level sequencing across Processing services.
+- Processing services own domain computation, transformations, and persistence sequencing.
+- Management delegates application use cases to the approved Processing boundary.
 - Endpoints and workers remain adapters.
 
 ### 4.2 Interface segregation and dependency inversion
@@ -207,8 +207,8 @@ test doubles while retaining dependency direction.
 
 - More interfaces and service types than a conventional layered application.
 - Durable queue processing requires visibility renewal and bounded retry policy.
-- Cross-processing persistence must remain in Management to prevent dependency
-  bypasses.
+- Processing must coordinate analysis results with resource Orchestrations
+  without introducing Orchestration-to-Orchestration calls.
 
 Microservices and event sourcing remain unnecessary for the current deployment
 scale; the modular-monolith boundary retains those options without introducing

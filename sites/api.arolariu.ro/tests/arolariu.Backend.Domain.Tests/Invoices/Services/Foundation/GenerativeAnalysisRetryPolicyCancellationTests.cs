@@ -6,7 +6,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-using arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

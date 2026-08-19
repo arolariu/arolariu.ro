@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.DocumentAnalysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Microsoft.Extensions.Logging.Abstractions;
@@ -28,7 +28,7 @@ public sealed class DocumentAnalysisProductMappingTests
   {
     ReceiptProductDocument product = Product(name, quantity: 1.0m, price: 2.0m, totalPrice: 2.0m);
     var broker = new ScriptedDocumentIntelligenceBroker(ReceiptDocumentTestData.Document(products: [product]));
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       broker,
       NullLoggerFactory.Instance);
 
@@ -59,7 +59,7 @@ public sealed class DocumentAnalysisProductMappingTests
       decimal.Parse(totalPrice, System.Globalization.CultureInfo.InvariantCulture));
 
     var broker = new ScriptedDocumentIntelligenceBroker(ReceiptDocumentTestData.Document(products: [product]));
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       broker,
       NullLoggerFactory.Instance);
 
@@ -76,7 +76,7 @@ public sealed class DocumentAnalysisProductMappingTests
   {
     ReceiptProductDocument product = Product("Apples", quantity: 0.0m, price: 2.0m, totalPrice: 6.0m);
     var broker = new ScriptedDocumentIntelligenceBroker(ReceiptDocumentTestData.Document(products: [product]));
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       broker,
       NullLoggerFactory.Instance);
 
@@ -94,7 +94,7 @@ public sealed class DocumentAnalysisProductMappingTests
   {
     ReceiptProductDocument product = Product("Bananas", quantity: 4.0m, price: 0.0m, totalPrice: 10.0m);
     var broker = new ScriptedDocumentIntelligenceBroker(ReceiptDocumentTestData.Document(products: [product]));
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       broker,
       NullLoggerFactory.Instance);
 
@@ -113,7 +113,7 @@ public sealed class DocumentAnalysisProductMappingTests
   {
     ReceiptProductDocument product = Product("Unresolved", quantity: 0.0m, price: 0.0m, totalPrice: 10.0m);
     var broker = new ScriptedDocumentIntelligenceBroker(ReceiptDocumentTestData.Document(products: [product]));
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       broker,
       NullLoggerFactory.Instance);
 
@@ -132,7 +132,7 @@ public sealed class DocumentAnalysisProductMappingTests
   {
     ReceiptProductDocument product = Product("Milk", quantity: 1.0m, price: 3.0m, totalPrice: null, confidence: 0.0);
     var broker = new ScriptedDocumentIntelligenceBroker(ReceiptDocumentTestData.Document(products: [product]));
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       broker,
       NullLoggerFactory.Instance);
 
@@ -163,7 +163,7 @@ public sealed class DocumentAnalysisProductMappingTests
           ReceiptDocumentTestData.Tender("Card", 11.9m),
         ]));
 
-    var service = new DocumentAnalysisFoundationService(
+    var service = InvoiceScanTestData.CreateAnalysisService(
       broker,
       NullLoggerFactory.Instance);
 

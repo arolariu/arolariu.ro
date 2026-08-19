@@ -50,7 +50,7 @@ public sealed class Invoice : NamedEntity<Guid>
   /// The standardised classification assigned to this invoice.
   /// </summary>
   /// <remarks>
-  /// <para><b>Expected system:</b> <see cref="ClassificationSystem.EcoicopV2"/>. Storage foundations reject any other system.</para>
+  /// <para><b>Expected system:</b> <see cref="ClassificationSystem.EcoicopV2"/>. Processing resolves every manual selection canonically before persistence.</para>
   /// <para><see langword="null"/> means the invoice has not been classified yet, either manually or by an analysis run.</para>
   /// </remarks>
   [JsonPropertyOrder(5)]

@@ -10,15 +10,15 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 /// </summary>
 /// <remarks>
 /// <para><b>Canonicalization:</b> This DTO deliberately carries no official label, version, or hierarchy. Callers may
-/// not assert taxonomy metadata. The storage foundation services re-resolve every non-null classification through the
-/// taxonomy broker before persistence, so the placeholder metadata produced by <see cref="ToManualSelection"/> never
+/// not assert taxonomy metadata. Processing re-resolves every non-null classification through Analysis Orchestration
+/// before persistence, so the placeholder metadata produced by <see cref="ToManualSelection"/> never
 /// reaches the datastore.</para>
 /// <para><b>Provenance:</b> A selection made through this DTO is always recorded with
 /// <see cref="ClassificationOrigin.Manual"/> and a <see langword="null"/> confidence, because a human choice has no
 /// model confidence.</para>
 /// <para><b>Expected systems:</b> <see cref="ClassificationSystem.EcoicopV2"/> for invoices,
 /// <see cref="ClassificationSystem.Gs1Gpc"/> for products, and <see cref="ClassificationSystem.Nace21"/> for merchants.
-/// Storage foundations reject mismatched systems.</para>
+/// Processing rejects mismatched systems before resource persistence.</para>
 /// </remarks>
 /// <param name="System">The taxonomy system the <paramref name="Code"/> belongs to.</param>
 /// <param name="Code">The taxonomy code selected by the caller.</param>
@@ -35,7 +35,7 @@ public readonly record struct ClassificationSelectionDto(
   /// </summary>
   /// <remarks>
   /// <para>The returned classification carries placeholder version, label, and single-node hierarchy values. It is only
-  /// ever an intermediate representation: the storage foundation replaces it with the canonical taxonomy projection
+  /// ever an intermediate representation: Processing replaces it with the canonical taxonomy projection
   /// before persistence.</para>
   /// </remarks>
   /// <returns>An unresolved manual classification carrying the selected system and code.</returns>

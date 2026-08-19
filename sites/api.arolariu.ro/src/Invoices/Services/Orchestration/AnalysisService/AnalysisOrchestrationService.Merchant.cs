@@ -18,7 +18,7 @@ public sealed partial class AnalysisOrchestrationService
     await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(GenerateMerchantDescriptionAsync));
-      return await generativeAnalysisFoundationService
+      return await analysisFoundationService
         .GenerateMerchantDescriptionAsync(merchant, correlationId, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);

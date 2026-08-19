@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.AnalysisQueue;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.DocumentAnalysis;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 
 using Microsoft.Extensions.Logging;
 
@@ -19,27 +18,23 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 public sealed partial class AnalysisOrchestrationService : IAnalysisOrchestrationService
 {
   private readonly IAnalysisQueueFoundationService analysisQueueFoundationService;
-  private readonly IDocumentAnalysisFoundationService documentAnalysisFoundationService;
-  private readonly IGenerativeAnalysisFoundationService generativeAnalysisFoundationService;
+  private readonly IAnalysisFoundationService analysisFoundationService;
   private readonly ILogger<IAnalysisOrchestrationService> logger;
 
   /// <summary>
   /// Initializes a new instance of the <see cref="AnalysisOrchestrationService"/> class.
   /// </summary>
   public AnalysisOrchestrationService(
+    IAnalysisFoundationService analysisFoundationService,
     IAnalysisQueueFoundationService analysisQueueFoundationService,
-    IDocumentAnalysisFoundationService documentAnalysisFoundationService,
-    IGenerativeAnalysisFoundationService generativeAnalysisFoundationService,
     ILoggerFactory loggerFactory)
   {
     ArgumentNullException.ThrowIfNull(analysisQueueFoundationService);
-    ArgumentNullException.ThrowIfNull(documentAnalysisFoundationService);
-    ArgumentNullException.ThrowIfNull(generativeAnalysisFoundationService);
+    ArgumentNullException.ThrowIfNull(analysisFoundationService);
     ArgumentNullException.ThrowIfNull(loggerFactory);
 
     this.analysisQueueFoundationService = analysisQueueFoundationService;
-    this.documentAnalysisFoundationService = documentAnalysisFoundationService;
-    this.generativeAnalysisFoundationService = generativeAnalysisFoundationService;
+    this.analysisFoundationService = analysisFoundationService;
     logger = loggerFactory.CreateLogger<IAnalysisOrchestrationService>();
   }
 

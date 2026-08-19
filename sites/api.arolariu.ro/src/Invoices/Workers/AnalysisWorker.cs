@@ -12,7 +12,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
-/// Drains the durable analysis queue by claiming and executing one queued run at a time.
+/// Drains the durable analysis queue by receiving and executing one visible message at a time.
 /// </summary>
 /// <remarks>
 /// <para><b>Layer role (The Standard):</b> This worker is a host adapter, not a service. It resolves
@@ -20,8 +20,8 @@ using Microsoft.Extensions.Logging;
 /// foundation service, a broker, or a database context, so the layer hierarchy is preserved even though the worker
 /// itself is a singleton.</para>
 /// <para><b>Scoping:</b> A fresh <see cref="AsyncServiceScope"/> is created for every poll iteration. Scoped
-/// dependencies such as the Cosmos-backed brokers are therefore never shared between two runs, and a run that faults
-/// cannot poison the next one's object graph.</para>
+/// dependencies are therefore never shared between deliveries, and a delivery that faults cannot poison the next
+/// scope's object graph.</para>
 /// <para><b>Resilience:</b> An unexpected iteration failure is logged and the loop continues. Only host shutdown ends
 /// the loop, and it does so without faulting the background task.</para>
 /// </remarks>
@@ -74,14 +74,14 @@ public sealed class AnalysisWorker : BackgroundService
   [SuppressMessage(
     "Design",
     "CA1031:Do not catch general exception types",
-    Justification = "A single poisoned run must never terminate the hosted worker; the failure is logged and the run's lease expires for retry.")]
+    Justification = "A single failed delivery must never terminate the hosted worker; the failure is logged and queue visibility recovers for retry.")]
   protected override async Task ExecuteAsync(CancellationToken stoppingToken)
   {
     logger.LogAnalysisWorkerStarted();
 
-    // The durable store is provisioned once, before the first poll, so an empty environment does not produce a
+    // The durable queue is provisioned once, before the first poll, so an empty environment does not produce a
     // storm of not-found failures on every iteration.
-    await EnsureAnalysisStoreAsync(stoppingToken).ConfigureAwait(false);
+    await EnsureAnalysisQueueAsync(stoppingToken).ConfigureAwait(false);
 
     while (!stoppingToken.IsCancellationRequested)
     {
@@ -92,8 +92,8 @@ public sealed class AnalysisWorker : BackgroundService
         AsyncServiceScope scope = serviceScopeFactory.CreateAsyncScope();
         await using (scope.ConfigureAwait(false))
         {
-          var processing = scope.ServiceProvider.GetRequiredService<IInvoiceManagementService>();
-          processed = await processing.TryExecuteNextAnalysisAsync(stoppingToken).ConfigureAwait(false);
+          var management = scope.ServiceProvider.GetRequiredService<IInvoiceManagementService>();
+          processed = await management.TryExecuteNextAnalysisAsync(stoppingToken).ConfigureAwait(false);
         }
       }
       catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -103,7 +103,7 @@ public sealed class AnalysisWorker : BackgroundService
       }
       catch (Exception)
       {
-        // A single poisoned run must not take the worker down; the run's own lease will expire and be retried.
+        // A single failed delivery must not take the worker down; queue visibility will recover for retry.
         logger.LogAnalysisWorkerIterationFailed();
       }
 
@@ -119,7 +119,7 @@ public sealed class AnalysisWorker : BackgroundService
   }
 
   /// <summary>
-  /// Ensures the durable analysis run store exists before the worker starts polling.
+  /// Ensures the durable analysis queue exists before the worker starts polling.
   /// </summary>
   /// <param name="stoppingToken">The host shutdown token.</param>
   /// <returns>Asynchronous task.</returns>
@@ -127,15 +127,15 @@ public sealed class AnalysisWorker : BackgroundService
     "Design",
     "CA1031:Do not catch general exception types",
     Justification = "Startup provisioning is best-effort; the real dependency failure is reported per run by the processing layer.")]
-  private async Task EnsureAnalysisStoreAsync(CancellationToken stoppingToken)
+  private async Task EnsureAnalysisQueueAsync(CancellationToken stoppingToken)
   {
     try
     {
       AsyncServiceScope scope = serviceScopeFactory.CreateAsyncScope();
       await using (scope.ConfigureAwait(false))
       {
-        var processing = scope.ServiceProvider.GetRequiredService<IInvoiceManagementService>();
-        await processing.EnsureAnalysisQueueAsync(stoppingToken).ConfigureAwait(false);
+        var management = scope.ServiceProvider.GetRequiredService<IInvoiceManagementService>();
+        await management.EnsureAnalysisQueueAsync(stoppingToken).ConfigureAwait(false);
       }
     }
     catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -145,9 +145,9 @@ public sealed class AnalysisWorker : BackgroundService
     }
     catch (Exception)
     {
-      // Provisioning is best-effort at startup: the store may already exist and simply be unreachable for a moment.
-      // Polling still proceeds, and each run's own dependency classification reports the real failure.
-      logger.LogAnalysisWorkerStoreInitializationFailed();
+      // Provisioning is best-effort at startup: the queue may already exist and simply be unreachable for a moment.
+      // Polling still proceeds, and each delivery's dependency classification reports the real failure.
+      logger.LogAnalysisWorkerQueueInitializationFailed();
     }
   }
 }

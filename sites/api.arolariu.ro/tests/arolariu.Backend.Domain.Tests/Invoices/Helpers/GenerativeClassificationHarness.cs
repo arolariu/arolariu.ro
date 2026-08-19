@@ -1,11 +1,14 @@
 namespace arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
-using arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysis;
+using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 
 using Microsoft.Extensions.Logging.Abstractions;
 
+using Moq;
+
 /// <summary>
-/// Builds <see cref="GenerativeAnalysisFoundationService"/> instances wired to deterministic test doubles.
+/// Builds <see cref="AnalysisFoundationService"/> instances wired to deterministic test doubles.
 /// </summary>
 internal sealed class GenerativeClassificationHarness
 {
@@ -15,12 +18,21 @@ internal sealed class GenerativeClassificationHarness
   {
     Broker = broker;
     Service = retryPolicy is null
-      ? new GenerativeAnalysisFoundationService(broker, NullLoggerFactory.Instance)
-      : new GenerativeAnalysisFoundationService(broker, NullLoggerFactory.Instance, retryPolicy);
+      ? new AnalysisFoundationService(
+        Mock.Of<IDocumentIntelligenceBroker>(),
+        broker,
+        TaxonomyBrokerTestFactory.Create(),
+        NullLoggerFactory.Instance)
+      : new AnalysisFoundationService(
+        Mock.Of<IDocumentIntelligenceBroker>(),
+        broker,
+        TaxonomyBrokerTestFactory.Create(),
+        NullLoggerFactory.Instance,
+        retryPolicy);
   }
 
   /// <summary>Gets the foundation service under test.</summary>
-  public GenerativeAnalysisFoundationService Service { get; }
+  public AnalysisFoundationService Service { get; }
 
   /// <summary>Gets the scripted generative AI broker double backing <see cref="Service"/>.</summary>
   public ScriptedGenerativeAnalysisBroker Broker { get; }

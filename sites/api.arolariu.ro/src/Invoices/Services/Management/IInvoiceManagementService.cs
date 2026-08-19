@@ -18,30 +18,30 @@ using arolariu.Backend.Domain.Invoices.Services.Processing;
 public interface IInvoiceManagementService
 {
   #region Invoice CRUD
-  /// <inheritdoc cref="ICrudProcessingService.CreateInvoice"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.CreateInvoice"/>
   Task CreateInvoice(Invoice invoice, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="ICrudProcessingService.ReadInvoice"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.ReadInvoice"/>
   Task<Invoice> ReadInvoice(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="ICrudProcessingService.ReadInvoices"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.ReadInvoices"/>
   Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="ICrudProcessingService.UpdateInvoice"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.UpdateInvoice"/>
   Task<Invoice> UpdateInvoice(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="ICrudProcessingService.DeleteInvoice"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.DeleteInvoice"/>
   Task DeleteInvoice(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="ICrudProcessingService.DeleteInvoices"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.DeleteInvoices"/>
   Task DeleteInvoices(Guid userIdentifier, CancellationToken cancellationToken);
   #endregion
 
   #region Product CRUD
-  /// <inheritdoc cref="ICrudProcessingService.AddProduct"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.AddProduct"/>
   Task AddProduct(Product product, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="ICrudProcessingService.UpdateProduct"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.UpdateProduct"/>
   Task<Product> UpdateProduct(
     string productName,
     Product updatedProduct,
@@ -49,65 +49,65 @@ public interface IInvoiceManagementService
     Guid? userIdentifier,
     CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="ICrudProcessingService.GetProducts"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.GetProducts"/>
   Task<IEnumerable<Product>> GetProducts(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="ICrudProcessingService.GetProduct"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.GetProduct"/>
   Task<Product> GetProduct(string productName, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="ICrudProcessingService.DeleteProduct"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.DeleteProduct"/>
   Task DeleteProduct(string productName, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
   #endregion
 
   #region Scan CRUD
-  /// <inheritdoc cref="ICrudProcessingService.CreateInvoiceScan"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.CreateInvoiceScan"/>
   Task CreateInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="ICrudProcessingService.ReadInvoiceScans"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.ReadInvoiceScans"/>
   Task<IEnumerable<InvoiceScan>> ReadInvoiceScans(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="ICrudProcessingService.DeleteInvoiceScan"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.DeleteInvoiceScan"/>
   Task DeleteInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
   #endregion
 
   #region Metadata CRUD
-  /// <inheritdoc cref="ICrudProcessingService.AddMetadataToInvoice"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.AddMetadataToInvoice"/>
   Task AddMetadataToInvoice(IDictionary<string, object> metadata, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="ICrudProcessingService.UpdateMetadataOnInvoice"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.UpdateMetadataOnInvoice"/>
   Task<IDictionary<string, object>> UpdateMetadataOnInvoice(IDictionary<string, object> metadata, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="ICrudProcessingService.GetMetadataFromInvoice"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.GetMetadataFromInvoice"/>
   Task<IDictionary<string, object>> GetMetadataFromInvoice(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="ICrudProcessingService.DeleteMetadataFromInvoice"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.DeleteMetadataFromInvoice"/>
   Task DeleteMetadataFromInvoice(IEnumerable<string> metadataKeys, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
   #endregion
 
   #region Merchant CRUD
-  /// <inheritdoc cref="ICrudProcessingService.CreateMerchant"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.CreateMerchant"/>
   Task CreateMerchant(Merchant merchant, Guid? parentCompanyId, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="ICrudProcessingService.ReadMerchant"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.ReadMerchant"/>
   Task<Merchant> ReadMerchant(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="ICrudProcessingService.ReadMerchants"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.ReadMerchants"/>
   Task<IEnumerable<Merchant>> ReadMerchants(Guid parentCompanyId, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="ICrudProcessingService.UpdateMerchant"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.UpdateMerchant"/>
   Task<Merchant> UpdateMerchant(Merchant updatedMerchant, Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="ICrudProcessingService.DeleteMerchant"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.DeleteMerchant"/>
   Task DeleteMerchant(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
   #region Analysis Queue
-  /// <inheritdoc cref="ICrudProcessingService.PersistInvoiceAnalysisAsync"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.PersistInvoiceAnalysisAsync"/>
   Task<InvoiceAnalysisExecutionResult> PersistInvoiceAnalysisAsync(
     InvoiceAnalysisExecutionResult executionResult,
     CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="ICrudProcessingService.PersistMerchantAnalysisAsync"/>
+  /// <inheritdoc cref="IInvoiceProcessingService.PersistMerchantAnalysisAsync"/>
   Task<MerchantAnalysisExecutionResult> PersistMerchantAnalysisAsync(
     MerchantAnalysisExecutionResult executionResult,
     CancellationToken cancellationToken);

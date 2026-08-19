@@ -33,7 +33,7 @@ public class Product
 
   /// <summary>Standardised classification assigned to this product.</summary>
   /// <remarks>
-  /// <para><b>Expected system:</b> <see cref="ClassificationSystem.Gs1Gpc"/>. Storage foundations reject any other system.</para>
+  /// <para><b>Expected system:</b> <see cref="ClassificationSystem.Gs1Gpc"/>. Processing resolves every manual selection canonically before persistence.</para>
   /// <para><see langword="null"/> means the line item has not been classified yet.</para>
   /// </remarks>
   [JsonPropertyOrder(1)]
@@ -92,8 +92,8 @@ public class Product
   /// <para>
   /// A null <see cref="Product.Classification"/> on <paramref name="clientUpdate"/> means that the caller did not
   /// select a replacement classification, so the existing canonical classification (including its evidence and
-  /// taxonomy version) is retained. A non-null classification is canonicalized by the invoice storage foundation
-  /// before persistence.
+  /// taxonomy version) is retained. Processing canonicalizes a non-null classification through Analysis
+  /// Orchestration before applying this update.
   /// </para>
   /// </remarks>
   /// <param name="clientUpdate">The client-controlled product values to apply.</param>

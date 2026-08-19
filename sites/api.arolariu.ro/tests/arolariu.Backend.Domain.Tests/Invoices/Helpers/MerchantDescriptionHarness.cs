@@ -6,17 +6,20 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.GenerativeAnalysisBroker;
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 using arolariu.Backend.Domain.Tests.Builders;
 
 using Microsoft.Extensions.Logging.Abstractions;
 
+using Moq;
+
 /// <summary>
-/// Builds <see cref="GenerativeAnalysisFoundationService"/> instances wired to deterministic merchant description scripts.
+/// Builds <see cref="AnalysisFoundationService"/> instances wired to deterministic merchant description scripts.
 /// </summary>
 internal sealed class MerchantDescriptionHarness
 {
@@ -25,11 +28,15 @@ internal sealed class MerchantDescriptionHarness
     Broker = broker;
     Merchant = merchant;
     SourceRunId = sourceRunId;
-    Service = new GenerativeAnalysisFoundationService(broker, NullLoggerFactory.Instance);
+    Service = new AnalysisFoundationService(
+      Mock.Of<IDocumentIntelligenceBroker>(),
+      broker,
+      TaxonomyBrokerTestFactory.Create(),
+      NullLoggerFactory.Instance);
   }
 
   /// <summary>Gets the foundation service under test.</summary>
-  public GenerativeAnalysisFoundationService Service { get; }
+  public AnalysisFoundationService Service { get; }
 
   /// <summary>Gets the scripted generative broker backing the service.</summary>
   public ScriptedGenerativeAnalysisBroker Broker { get; }
@@ -120,7 +127,7 @@ internal sealed class MerchantDescriptionHarness
 
   private static object CreateMerchantDescriptionOutput(string description)
   {
-    Type? outputType = typeof(GenerativeAnalysisFoundationService).GetNestedType(
+    Type? outputType = typeof(AnalysisFoundationService).GetNestedType(
       "MerchantDescriptionOutput",
       BindingFlags.NonPublic);
 

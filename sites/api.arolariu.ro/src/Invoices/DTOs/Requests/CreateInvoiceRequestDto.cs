@@ -38,7 +38,7 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// </param>
 /// <param name="Description">Optional descriptive text supplied by the client.</param>
 /// <param name="Classification">
-/// Optional manual ECOICOP v2 classification selection. The storage foundation canonicalizes it before persistence.
+/// Optional manual ECOICOP v2 classification selection. Processing canonicalizes it before persistence.
 /// </param>
 /// <param name="PaymentInformation">
 /// Optional client-supplied transaction date, payment type, currency, and monetary amounts. Null uses domain defaults

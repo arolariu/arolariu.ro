@@ -120,6 +120,116 @@ public sealed class AzureStorageBrokerTests
     Assert.AreEqual(message, receipt.Message);
   }
 
+  /// <summary>
+  /// Verifies malformed payloads retain provider receipt metadata for bounded retry and deletion.
+  /// </summary>
+  [TestMethod]
+  public async Task ReceiveAnalysisAsync_MalformedPayload_ReturnsMalformedReceipt()
+  {
+    const string malformedPayload = "{not-json";
+    QueueMessage providerMessage = QueuesModelFactory.QueueMessage(
+      "message-1",
+      "receipt-1",
+      BinaryData.FromString(malformedPayload),
+      dequeueCount: 5,
+      nextVisibleOn: DateTimeOffset.UtcNow.AddMinutes(2));
+    var queueClient = new Mock<QueueClient>(MockBehavior.Strict);
+    queueClient
+      .Setup(client => client.ReceiveMessagesAsync(
+        1,
+        TimeSpan.FromMinutes(2),
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(Response.FromValue<QueueMessage[]>([providerMessage], Mock.Of<Response>()));
+    var broker = new AzureStorageQueueBroker(queueClient.Object);
+
+    AnalysisQueueReceipt? receipt = await broker
+      .ReceiveAnalysisAsync(TimeSpan.FromMinutes(2), CancellationToken.None)
+      .ConfigureAwait(false);
+
+    Assert.IsNotNull(receipt);
+    Assert.IsTrue(receipt.IsMalformed);
+    Assert.IsNull(receipt.Message);
+    Assert.AreEqual(malformedPayload, receipt.RawPayload);
+    Assert.AreEqual(5, receipt.DequeueCount);
+  }
+
+  /// <summary>
+  /// Verifies syntactically valid payloads with invalid domain values retain provider receipt metadata.
+  /// </summary>
+  [TestMethod]
+  public async Task ReceiveAnalysisAsync_SemanticallyInvalidPayload_ReturnsMalformedReceipt()
+  {
+    AnalysisQueueMessage message = CreateMessage();
+    string validPayload = JsonSerializer.Serialize(message);
+    string invalidPayload = validPayload.Replace(
+      message.TargetId.ToString(),
+      Guid.Empty.ToString(),
+      StringComparison.OrdinalIgnoreCase);
+    QueueMessage providerMessage = QueuesModelFactory.QueueMessage(
+      "message-1",
+      "receipt-1",
+      BinaryData.FromString(invalidPayload),
+      dequeueCount: 5,
+      nextVisibleOn: DateTimeOffset.UtcNow.AddMinutes(2));
+    var queueClient = new Mock<QueueClient>(MockBehavior.Strict);
+    queueClient
+      .Setup(client => client.ReceiveMessagesAsync(
+        1,
+        TimeSpan.FromMinutes(2),
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(Response.FromValue<QueueMessage[]>([providerMessage], Mock.Of<Response>()));
+    var broker = new AzureStorageQueueBroker(queueClient.Object);
+
+    AnalysisQueueReceipt? receipt = await broker
+      .ReceiveAnalysisAsync(TimeSpan.FromMinutes(2), CancellationToken.None)
+      .ConfigureAwait(false);
+
+    Assert.IsNotNull(receipt);
+    Assert.IsTrue(receipt.IsMalformed);
+    Assert.AreEqual(invalidPayload, receipt.RawPayload);
+  }
+
+  /// <summary>
+  /// Verifies renewal replaces the pop receipt and deletion uses the renewed value.
+  /// </summary>
+  [TestMethod]
+  public async Task RenewThenDeleteAnalysisAsync_ValidReceipt_UsesLatestPopReceipt()
+  {
+    AnalysisQueueMessage message = CreateMessage();
+    var receipt = new AnalysisQueueReceipt(
+      message,
+      "message-1",
+      "receipt-1",
+      dequeueCount: 1,
+      nextVisibleAt: null);
+    UpdateReceipt updateReceipt = QueuesModelFactory.UpdateReceipt(
+      "receipt-2",
+      DateTimeOffset.UtcNow.AddMinutes(2));
+    var queueClient = new Mock<QueueClient>(MockBehavior.Strict);
+    queueClient.Setup(client => client.UpdateMessageAsync(
+        "message-1",
+        "receipt-1",
+        It.IsAny<string>(),
+        TimeSpan.FromMinutes(2),
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(Response.FromValue(updateReceipt, Mock.Of<Response>()));
+    queueClient.Setup(client => client.DeleteMessageAsync(
+        "message-1",
+        "receipt-2",
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(Response.FromValue(Mock.Of<Response>(), Mock.Of<Response>()));
+    var broker = new AzureStorageQueueBroker(queueClient.Object);
+
+    await broker.RenewAnalysisVisibilityAsync(
+      receipt,
+      TimeSpan.FromMinutes(2),
+      CancellationToken.None);
+    await broker.DeleteAnalysisAsync(receipt, CancellationToken.None);
+
+    Assert.AreEqual("receipt-2", receipt.PopReceipt);
+    queueClient.VerifyAll();
+  }
+
   private static AnalysisQueueMessage CreateMessage() =>
     AnalysisQueueMessage.CreateInvoice(
       Guid.NewGuid(),

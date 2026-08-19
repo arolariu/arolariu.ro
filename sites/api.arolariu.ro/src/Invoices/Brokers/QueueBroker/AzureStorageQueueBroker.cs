@@ -90,8 +90,32 @@ public sealed class AzureStorageQueueBroker : IQueueBroker
     }
 
     QueueMessage message = response.Value[0];
-    AnalysisQueueMessage payload = JsonSerializer.Deserialize<AnalysisQueueMessage>(message.Body)
-      ?? throw new InvalidOperationException("The analysis queue message payload is empty.");
+    string rawPayload = message.Body.ToString();
+    AnalysisQueueMessage? payload;
+
+    try
+    {
+      payload = JsonSerializer.Deserialize<AnalysisQueueMessage>(rawPayload);
+    }
+    catch (Exception exception) when (exception is JsonException or ArgumentException)
+    {
+      return AnalysisQueueReceipt.CreateMalformed(
+        rawPayload,
+        message.MessageId,
+        message.PopReceipt,
+        message.DequeueCount,
+        message.NextVisibleOn);
+    }
+
+    if (payload is null)
+    {
+      return AnalysisQueueReceipt.CreateMalformed(
+        rawPayload,
+        message.MessageId,
+        message.PopReceipt,
+        message.DequeueCount,
+        message.NextVisibleOn);
+    }
 
     return new AnalysisQueueReceipt(
       payload,
@@ -115,7 +139,9 @@ public sealed class AzureStorageQueueBroker : IQueueBroker
       .UpdateMessageAsync(
         receipt.MessageId,
         receipt.PopReceipt,
-        JsonSerializer.Serialize(receipt.Message),
+        receipt.IsMalformed
+          ? receipt.RawPayload
+          : JsonSerializer.Serialize(receipt.Message),
         visibilityTimeout,
         cancellationToken)
       .ConfigureAwait(false);

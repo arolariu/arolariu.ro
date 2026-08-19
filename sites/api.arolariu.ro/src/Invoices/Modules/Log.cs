@@ -4,7 +4,7 @@ using System;
 
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 
 using Microsoft.Extensions.Logging;
 
@@ -19,63 +19,35 @@ public static partial class Log
   /// </summary>
   /// <param name="logger"></param>
   /// <param name="exceptionMessage"></param>
-  [LoggerMessage(300_100, LogLevel.Error, "The CRUD processing service encountered a validation exception: {exceptionMessage}")]
-  public static partial void LogCrudProcessingValidationException(this ILogger logger, string exceptionMessage);
+  [LoggerMessage(300_100, LogLevel.Error, "The invoice processing service encountered a validation exception: {exceptionMessage}")]
+  public static partial void LogInvoiceProcessingValidationException(this ILogger logger, string exceptionMessage);
 
   /// <summary>
   /// Auto-generated method for logging the invoice processing dependency exception.
   /// </summary>
   /// <param name="logger"></param>
   /// <param name="exceptionMessage"></param>
-  [LoggerMessage(300_101, LogLevel.Error, "The CRUD processing service encountered a dependency exception: {exceptionMessage}")]
-  public static partial void LogCrudProcessingDependencyException(this ILogger logger, string exceptionMessage);
+  [LoggerMessage(300_101, LogLevel.Error, "The invoice processing service encountered a dependency exception: {exceptionMessage}")]
+  public static partial void LogInvoiceProcessingDependencyException(this ILogger logger, string exceptionMessage);
 
   /// <summary>
   /// Auto-generated method for logging the invoice processing dependency validation exception.
   /// </summary>
   /// <param name="logger"></param>
   /// <param name="exceptionMessage"></param>
-  [LoggerMessage(300_102, LogLevel.Error, "The CRUD processing service encountered a dependency validation exception: {exceptionMessage}")]
-  public static partial void LogCrudProcessingDependencyValidationException(this ILogger logger, string exceptionMessage);
+  [LoggerMessage(300_102, LogLevel.Error, "The invoice processing service encountered a dependency validation exception: {exceptionMessage}")]
+  public static partial void LogInvoiceProcessingDependencyValidationException(this ILogger logger, string exceptionMessage);
 
   /// <summary>
   /// Auto-generated method for logging the CRUD processing service exception.
   /// </summary>
   /// <param name="logger"></param>
   /// <param name="exceptionMessage"></param>
-  [LoggerMessage(300_103, LogLevel.Error, "The CRUD processing service encountered a service exception: {exceptionMessage}")]
-  public static partial void LogCrudProcessingServiceException(this ILogger logger, string exceptionMessage);
+  [LoggerMessage(300_103, LogLevel.Error, "The invoice processing service encountered a service exception: {exceptionMessage}")]
+  public static partial void LogInvoiceProcessingServiceException(this ILogger logger, string exceptionMessage);
   #endregion
 
-  #region Processing Service Logging Methods (Analysis Processing Service)
-  /// <summary>
-  /// Logs a validation exception raised by the analysis processing service.
-  /// </summary>
-  /// <param name="logger">The logger.</param>
-  [LoggerMessage(300_200, LogLevel.Error, "The analysis processing service encountered a validation exception.")]
-  public static partial void LogAnalysisProcessingValidationException(this ILogger logger);
-
-  /// <summary>
-  /// Logs a dependency exception raised by the analysis processing service.
-  /// </summary>
-  /// <param name="logger">The logger.</param>
-  [LoggerMessage(300_201, LogLevel.Error, "The analysis processing service encountered a dependency exception.")]
-  public static partial void LogAnalysisProcessingDependencyException(this ILogger logger);
-
-  /// <summary>
-  /// Logs a dependency validation exception raised by the analysis processing service.
-  /// </summary>
-  /// <param name="logger">The logger.</param>
-  [LoggerMessage(300_202, LogLevel.Error, "The analysis processing service encountered a dependency validation exception.")]
-  public static partial void LogAnalysisProcessingDependencyValidationException(this ILogger logger);
-
-  /// <summary>
-  /// Logs a service exception raised by the analysis processing service.
-  /// </summary>
-  /// <param name="logger">The logger.</param>
-  [LoggerMessage(300_203, LogLevel.Error, "The analysis processing service encountered a service exception.")]
-  public static partial void LogAnalysisProcessingServiceException(this ILogger logger);
-
+  #region Analysis Workflow Logging Methods
   /// <summary>
   /// Logs the loss of an analysis run lease while the run was still executing.
   /// </summary>
@@ -104,6 +76,14 @@ public static partial class Log
     Guid runId,
     AnalysisFailureReason failureReason);
 
+  /// <summary>Logs terminal deletion of a malformed analysis queue payload without recording its contents.</summary>
+  [LoggerMessage(300_217, LogLevel.Error, "Malformed analysis message '{messageId}' was deleted on delivery {dequeueCount} with reason '{failureReason}'.")]
+  public static partial void LogMalformedAnalysisMessageDeleted(
+    this ILogger logger,
+    string messageId,
+    long dequeueCount,
+    AnalysisFailureReason failureReason);
+
   /// <summary>
   /// Logs an unexpected failure inside the analysis worker's polling loop.
   /// </summary>
@@ -119,11 +99,11 @@ public static partial class Log
   public static partial void LogAnalysisWorkerStarted(this ILogger logger);
 
   /// <summary>
-  /// Logs a failure to ensure the durable analysis run store during worker startup.
+  /// Logs a failure to ensure the durable analysis queue during worker startup.
   /// </summary>
   /// <param name="logger">The logger.</param>
-  [LoggerMessage(300_215, LogLevel.Error, "The analysis worker could not ensure the durable run store.")]
-  public static partial void LogAnalysisWorkerStoreInitializationFailed(this ILogger logger);
+  [LoggerMessage(300_215, LogLevel.Error, "The analysis worker could not ensure the durable queue.")]
+  public static partial void LogAnalysisWorkerQueueInitializationFailed(this ILogger logger);
 
   /// <summary>
   /// Logs a best-effort queue-depth refresh failure without exposing provider failure content.
