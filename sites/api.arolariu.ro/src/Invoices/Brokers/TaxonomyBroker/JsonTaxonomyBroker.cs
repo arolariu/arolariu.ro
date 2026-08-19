@@ -1,9 +1,10 @@
-namespace arolariu.Backend.Domain.Invoices.Brokers.TaxonomyCatalog;
+namespace arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
 
 using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -11,10 +12,10 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptions;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptions.Inner;
 
 /// <summary>Provides an in-memory taxonomy catalog backed by generated JSON artifacts.</summary>
-public sealed partial class TaxonomyBroker : ITaxonomyBroker
+public sealed partial class JsonTaxonomyBroker : ITaxonomyBroker
 {
   private const int MaximumSearchResultLimit = 50;
   private static readonly FrozenDictionary<ClassificationSystem, string> ArtifactFiles =
@@ -36,10 +37,10 @@ public sealed partial class TaxonomyBroker : ITaxonomyBroker
   private readonly FrozenDictionary<(ClassificationSystem System, string Code), TaxonomyArtifactNode> nodesByCode;
 
   /// <summary>Initializes the broker from embedded resources.</summary>
-  public TaxonomyBroker() : this(LoadEmbeddedArtifacts()) { }
+  public JsonTaxonomyBroker() : this(LoadEmbeddedArtifacts()) { }
 
   /// <summary>Initializes the broker from injected JSON artifacts.</summary>
-  public TaxonomyBroker(IReadOnlyDictionary<ClassificationSystem, string> artifactJsonBySystem)
+  public JsonTaxonomyBroker(IReadOnlyDictionary<ClassificationSystem, string> artifactJsonBySystem)
   {
     ArgumentNullException.ThrowIfNull(artifactJsonBySystem);
     foreach (ClassificationSystem system in Enum.GetValues<ClassificationSystem>())
@@ -168,11 +169,27 @@ public sealed partial class TaxonomyBroker : ITaxonomyBroker
         throw new InvalidOperationException($"Taxonomy artifact for '{system}' has mismatched hierarchy arrays for '{node.Code}'.");
       if (!string.Equals(NormalizeCode(node.HierarchyCodes[^1]), node.NormalizedCode, StringComparison.Ordinal))
         throw new InvalidOperationException($"Taxonomy hierarchy for '{node.Code}' does not end with the node.");
-      if (node.ParentCode is not null && !nodes.ContainsKey(NormalizeCode(node.ParentCode)))
-        throw new InvalidOperationException($"Taxonomy parent '{node.ParentCode}' for '{node.Code}' was not found.");
-      foreach (string hierarchyCode in node.HierarchyCodes)
-        if (!nodes.ContainsKey(NormalizeCode(hierarchyCode)))
-          throw new InvalidOperationException($"Taxonomy hierarchy code '{hierarchyCode}' for '{node.Code}' was not found.");
+
+      for (int index = 0; index < node.HierarchyCodes.Length; index++)
+      {
+        string hierarchyCode = NormalizeCode(node.HierarchyCodes[index]);
+        if (!nodes.TryGetValue(hierarchyCode, out TaxonomyArtifactNode? hierarchyNode))
+          throw new InvalidOperationException($"Taxonomy hierarchy code '{node.HierarchyCodes[index]}' for '{node.Code}' was not found.");
+        if (!string.Equals(hierarchyNode.OfficialLabel, node.HierarchyLabels[index], StringComparison.Ordinal))
+          throw new InvalidOperationException($"Taxonomy hierarchy label for '{node.HierarchyCodes[index]}' does not match its canonical node.");
+
+        string? expectedParentCode = index == 0 ? null : NormalizeCode(node.HierarchyCodes[index - 1]);
+        string? actualParentCode = hierarchyNode.ParentCode is null ? null : NormalizeCode(hierarchyNode.ParentCode);
+        if (!string.Equals(actualParentCode, expectedParentCode, StringComparison.Ordinal))
+          throw new InvalidOperationException($"Taxonomy hierarchy for '{node.Code}' does not follow the declared parent chain.");
+      }
+
+      string? expectedNodeParent = node.HierarchyCodes.Length == 1
+        ? null
+        : NormalizeCode(node.HierarchyCodes[^2]);
+      string? actualNodeParent = node.ParentCode is null ? null : NormalizeCode(node.ParentCode);
+      if (!string.Equals(actualNodeParent, expectedNodeParent, StringComparison.Ordinal))
+        throw new InvalidOperationException($"Taxonomy parent for '{node.Code}' does not match its hierarchy.");
     }
   }
 
@@ -195,12 +212,22 @@ public sealed partial class TaxonomyBroker : ITaxonomyBroker
   private static string NormalizeCode(string code) =>
     ClassificationContracts.RequireText(code, nameof(code)).ToUpperInvariant();
 
-  private static FrozenSet<string> Tokenize(string value) =>
-    TokenRegex().Matches(value).Select(match => match.Value.ToUpperInvariant()).ToFrozenSet(StringComparer.Ordinal);
+  private static FrozenSet<string> Tokenize(string value)
+  {
+    string normalized = value
+      .Normalize(NormalizationForm.FormD)
+      .Where(character => CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+      .Aggregate(new StringBuilder(), (builder, character) => builder.Append(character))
+      .ToString()
+      .Normalize(NormalizationForm.FormC)
+      .ToUpperInvariant();
+
+    return TokenRegex().Matches(normalized).Select(match => match.Value).ToFrozenSet(StringComparer.Ordinal);
+  }
 
   private static Dictionary<ClassificationSystem, string> LoadEmbeddedArtifacts()
   {
-    Assembly assembly = typeof(TaxonomyBroker).Assembly;
+    Assembly assembly = typeof(JsonTaxonomyBroker).Assembly;
     string assemblyName = assembly.GetName().Name!;
     var result = new Dictionary<ClassificationSystem, string>();
     foreach ((ClassificationSystem system, string fileName) in ArtifactFiles)

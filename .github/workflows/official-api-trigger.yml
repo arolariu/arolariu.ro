@@ -47,14 +47,7 @@ on:
   # Automatic trigger on main branch changes to backend API
   push:
     branches: ["main"]
-    paths:
-      - "sites/api.arolariu.ro/**"
-      - "scripts/generate.artifacts.ts"
-      - "scripts/generate.ts"
-      - "scripts/common/logger.ts"
-      - "scripts/types/generators.ts"
-      - "package.json"
-      - "package-lock.json"
+    paths: ["sites/api.arolariu.ro/**"]
 
   # Manual trigger for controlled deployments
   workflow_dispatch:

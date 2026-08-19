@@ -25,7 +25,42 @@ describe("classification contracts", () => {
         sourceUrl: "https://example.test",
         generatedAt: "2026-08-19",
         attribution: "Test",
-        nodes: [],
+        nodes: [
+          {
+            code: "A",
+            officialLabel: "Agriculture",
+            level: "section",
+            parentCode: null,
+            hierarchyCodes: ["A"],
+            hierarchyLabels: ["Agriculture"],
+            definition: null,
+            searchText: "a agriculture",
+          },
+        ],
+      }),
+    ).toBe(false);
+  });
+
+  it("rejects impossible RFC3339 calendar dates", () => {
+    expect(
+      isTaxonomyArtifact({
+        system: "NACE_2_1",
+        version: "2.1",
+        sourceUrl: "https://example.test",
+        generatedAt: "2026-02-30T00:00:00Z",
+        attribution: "Test",
+        nodes: [
+          {
+            code: "A",
+            officialLabel: "Agriculture",
+            level: "section",
+            parentCode: null,
+            hierarchyCodes: ["A"],
+            hierarchyLabels: ["Agriculture"],
+            definition: null,
+            searchText: "a agriculture",
+          },
+        ],
       }),
     ).toBe(false);
   });

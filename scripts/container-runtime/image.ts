@@ -11,7 +11,7 @@ import {defaultRunner, formatCommand, type CommandRunner} from "./process.ts";
 import {resolveContainerEngine} from "./selection.ts";
 import {exitWithError} from "./types.ts";
 
-export type ImageTarget = "frontend" | "backend" | "cv" | "exp";
+type ImageTarget = "frontend" | "backend" | "cv" | "exp";
 
 /** Options for building a local image with the selected engine. */
 export interface ImageBuildOptions {
@@ -58,7 +58,7 @@ function parseTarget(argv: readonly string[]): ImageTarget {
  * @param target - Image target.
  * @returns `true` for frontend and backend images.
  */
-export function requiresTaxonomyArtifacts(target: ImageTarget): boolean {
+function requiresTaxonomyArtifacts(target: ImageTarget): boolean {
   return target === "frontend" || target === "backend";
 }
 

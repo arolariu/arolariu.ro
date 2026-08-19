@@ -62,9 +62,9 @@ RUN dotnet restore src/Core/arolariu.Backend.Core.csproj
 COPY . .
 
 # Fail fast when host-side taxonomy generation was skipped.
-RUN test -s src/Invoices/Resources/Taxonomies/gpc-2026-05.min.json \
-  && test -s src/Invoices/Resources/Taxonomies/ecoicop-v2.min.json \
-  && test -s src/Invoices/Resources/Taxonomies/nace-2.1.min.json
+RUN test "$(find src/Invoices/Resources/Taxonomies -maxdepth 1 -type f -name 'gpc-*.min.json' -size +0c | wc -l)" -eq 1 \
+  && test "$(find src/Invoices/Resources/Taxonomies -maxdepth 1 -type f -name 'ecoicop-*.min.json' -size +0c | wc -l)" -eq 1 \
+  && test "$(find src/Invoices/Resources/Taxonomies -maxdepth 1 -type f -name 'nace-*.min.json' -size +0c | wc -l)" -eq 1
 
 RUN dotnet build src/Core/arolariu.Backend.Core.csproj \
   --no-restore \

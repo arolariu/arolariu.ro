@@ -1,9 +1,10 @@
-namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptions;
+namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptions.Inner;
 
 using System;
+using arolariu.Backend.Common.Exceptions;
 
 /// <summary>Identifies a canonical taxonomy code that does not exist.</summary>
-public sealed class TaxonomyCodeNotFoundException : Exception
+public sealed class TaxonomyCodeNotFoundException : Exception, INotFoundException
 {
   /// <summary>Initializes an empty taxonomy-code exception.</summary>
   public TaxonomyCodeNotFoundException()

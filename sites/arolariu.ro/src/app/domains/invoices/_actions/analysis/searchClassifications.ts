@@ -19,7 +19,7 @@ import {
 type SearchClassificationsResult = ServerActionResult<readonly ClassificationSearchResult[]>;
 
 /** Searches one generated taxonomy catalog without exposing raw artifact internals. */
-export async function searchClassifications(input: unknown): Promise<SearchClassificationsResult> {
+export async function searchClassifications(input: unknown): SearchClassificationsResult {
   return withSpan("api.actions.invoices.searchClassifications", async () => {
     try {
       addSpanEvent("bff.taxonomies.search.start");

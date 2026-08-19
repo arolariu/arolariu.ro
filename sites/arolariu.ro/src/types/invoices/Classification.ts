@@ -109,7 +109,36 @@ function hasOnlyKeys(record: Readonly<Record<string, unknown>>, keys: readonly s
 }
 
 function isStrictRfc3339Timestamp(value: unknown): value is string {
-  return typeof value === "string" && rfc3339Pattern.test(value) && Number.isFinite(Date.parse(value));
+  if (typeof value !== "string") return false;
+  const match = rfc3339Pattern.exec(value);
+  if (match === null || !Number.isFinite(Date.parse(value))) return false;
+
+  const [datePart, timePart] = value.split("T");
+  const dateSegments = datePart?.split("-").map(Number);
+  const timeSegments = timePart?.slice(0, 8).split(":").map(Number);
+  if (dateSegments?.length !== 3 || timeSegments?.length !== 3) return false;
+
+  const [year, month, day] = dateSegments;
+  const [hour, minute, second] = timeSegments;
+  if (
+    year === undefined ||
+    month === undefined ||
+    day === undefined ||
+    hour === undefined ||
+    minute === undefined ||
+    second === undefined ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    hour > 23 ||
+    minute > 59 ||
+    second > 59
+  ) {
+    return false;
+  }
+
+  const maximumDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return day <= maximumDay;
 }
 
 /** Normalizes Unicode taxonomy-search text. */

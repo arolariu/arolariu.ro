@@ -60,14 +60,7 @@ on:
   # Automatic trigger on preview branch changes to main website
   push:
     branches: ["preview"]
-    paths:
-      - "sites/arolariu.ro/**"
-      - "scripts/generate.artifacts.ts"
-      - "scripts/generate.ts"
-      - "scripts/common/logger.ts"
-      - "scripts/types/generators.ts"
-      - "package.json"
-      - "package-lock.json"
+    paths: ["sites/arolariu.ro/**"]
 
   # Manual trigger for controlled builds
   workflow_dispatch:

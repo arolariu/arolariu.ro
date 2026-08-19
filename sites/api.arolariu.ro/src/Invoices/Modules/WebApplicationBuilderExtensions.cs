@@ -10,7 +10,7 @@ using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
-using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyCatalog;
+using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
@@ -108,7 +108,7 @@ public static class WebApplicationBuilderExtensions
     services.AddScoped<IFormRecognizerBroker, AzureFormRecognizerBroker>();
     services.AddScoped<IInvoiceNoSqlBroker, InvoiceNoSqlBroker>();
     services.AddScoped<ITranslatorBroker, AzureTranslatorBroker>();
-    services.AddSingleton<ITaxonomyBroker, TaxonomyBroker>();
+    services.AddSingleton<ITaxonomyBroker, JsonTaxonomyBroker>();
 
     // Foundation services:
     services.AddScoped<IInvoiceStorageFoundationService, InvoiceStorageFoundationService>();
