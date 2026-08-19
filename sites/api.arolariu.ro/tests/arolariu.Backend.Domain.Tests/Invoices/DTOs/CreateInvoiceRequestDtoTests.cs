@@ -72,7 +72,7 @@ public sealed class CreateInvoiceRequestDtoTests
       });
 
     // Act
-    Invoice invoice = request.ToInvoice(serverOwnerIdentifier, CreateStorageOptions());
+    Invoice invoice = request.ToInvoice(serverOwnerIdentifier);
 
     // Assert
     Assert.AreEqual(serverOwnerIdentifier, invoice.UserIdentifier);
@@ -142,7 +142,7 @@ public sealed class CreateInvoiceRequestDtoTests
 
     // Act
     CreateInvoiceRequestDto request = JsonSerializer.Deserialize<CreateInvoiceRequestDto>(payload, ApiJsonOptions);
-    Invoice invoice = request.ToInvoice(serverOwnerIdentifier, CreateStorageOptions());
+    Invoice invoice = request.ToInvoice(serverOwnerIdentifier);
     using JsonDocument serializedRequest = JsonDocument.Parse(JsonSerializer.Serialize(request, ApiJsonOptions));
 
     // Assert
@@ -187,7 +187,7 @@ public sealed class CreateInvoiceRequestDtoTests
       Metadata: null);
 
     // Act
-    bool isValid = request.TryValidate(CreateStorageOptions(), out Dictionary<string, string[]> validationErrors);
+    bool isValid = request.TryValidate(out Dictionary<string, string[]> validationErrors);
 
     // Assert
     Assert.IsFalse(isValid);

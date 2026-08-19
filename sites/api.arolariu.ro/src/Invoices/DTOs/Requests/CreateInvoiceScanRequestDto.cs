@@ -6,7 +6,6 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
-using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
 /// <summary>
@@ -72,7 +71,7 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 ///     Location: blobUri,
 ///     Metadata: new Dictionary&lt;string, object&gt; { ["pageNumber"] = 2 });
 ///
-/// var scan = request.ToInvoiceScan(storageOptions);
+/// var scan = request.ToInvoiceScan();
 /// invoice.Scans.Add(scan);
 /// </code>
 /// </example>
@@ -98,46 +97,31 @@ public readonly record struct CreateInvoiceScanRequestDto(
   /// If immutability is required, the caller should provide a copy.
   /// </para>
   /// </remarks>
-  /// <param name="storageOptions">The configured Azure Blob storage service-root endpoint.</param>
   /// <returns>
   /// A new <see cref="InvoiceScan"/> instance ready to be added to an invoice.
   /// </returns>
   /// <exception cref="ArgumentException">Thrown when the scan cannot be processed by Document Intelligence.</exception>
-  public InvoiceScan ToInvoiceScan(ApplicationOptions storageOptions)
+  public InvoiceScan ToInvoiceScan()
   {
-    if (!TryValidate(storageOptions, out Dictionary<string, string[]> validationErrors))
+    if (!TryValidate(out Dictionary<string, string[]> validationErrors))
     {
       throw new ArgumentException(
-        string.Join(" ", validationErrors.Values.SelectMany(static errors => errors)),
-        nameof(storageOptions));
+        string.Join(" ", validationErrors.Values.SelectMany(static errors => errors)));
     }
 
-    _ = InvoiceScanStorageLocationPolicy.TryResolveApprovedBlobPath(
-      Location,
-      storageOptions,
-      out string approvedBlobPath,
-      out _);
-
-    return new(Type, Location, Metadata)
-    {
-      ApprovedBlobPath = approvedBlobPath,
-    };
+    return new InvoiceScan(Type, Location, Metadata);
   }
 
   /// <summary>
   /// Validates the scan input before it is persisted or submitted to Document Intelligence.
   /// </summary>
-  /// <param name="storageOptions">The configured Azure Blob storage service-root endpoint.</param>
   /// <param name="validationErrors">
   /// A field-keyed collection of validation failures. The collection is empty when the method returns
   /// <see langword="true"/>.
   /// </param>
   /// <returns><see langword="true"/> when this request can enter the document analysis pipeline; otherwise, <see langword="false"/>.</returns>
-  public bool TryValidate(
-    ApplicationOptions storageOptions,
-    out Dictionary<string, string[]> validationErrors)
+  public bool TryValidate(out Dictionary<string, string[]> validationErrors)
   {
-    ArgumentNullException.ThrowIfNull(storageOptions);
     validationErrors = new Dictionary<string, string[]>(StringComparer.Ordinal);
 
     if (!Enum.IsDefined(Type) || !InvoiceScan.IsSupportedByDocumentIntelligence(Type))
@@ -148,12 +132,11 @@ public readonly record struct CreateInvoiceScanRequestDto(
       ];
     }
 
-    if (!InvoiceScanStorageLocationPolicy.TryValidate(
-      Location,
-      storageOptions,
-      out string locationValidationMessage))
+    if (Location is null
+        || !Location.IsAbsoluteUri
+        || !string.IsNullOrEmpty(Location.UserInfo))
     {
-      validationErrors[nameof(Location)] = [locationValidationMessage];
+      validationErrors[nameof(Location)] = ["Scan location must be an absolute URI without user information."];
     }
 
     return validationErrors.Count == 0;

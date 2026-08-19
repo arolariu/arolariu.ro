@@ -43,7 +43,6 @@ public static partial class InvoiceEndpoints
   {
     Func<
       Services.Management.IInvoiceManagementService,
-      Common.Options.IOptionsManager,
       IHttpContextAccessor,
       CreateInvoiceRequestDto,
       Task<IResult>> createInvoiceHandler = CreateNewInvoiceAsync;

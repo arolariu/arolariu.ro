@@ -29,7 +29,6 @@ public static partial class InvoiceEndpoints
   /// Creates a new invoice in the system.
   /// </summary>
   /// <param name="invoiceManagementService">The invoice management service responsible for handling invoice logic.</param>
-  /// <param name="optionsManager">The configured storage options used to validate scan locations.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="invoiceDto">The data transfer object containing the details of the invoice to be created.</param>
   /// <returns>A task representing the asynchronous operation, containing the result of the creation process.</returns>
@@ -54,7 +53,6 @@ public static partial class InvoiceEndpoints
   [Authorize]
   internal static partial Task<IResult> CreateNewInvoiceAsync(
     [FromServices] IInvoiceManagementService invoiceManagementService,
-    [FromServices] IOptionsManager optionsManager,
     [FromServices] IHttpContextAccessor httpContext,
     [FromBody, SwaggerRequestBody("The invoice DTO containing the details for the new invoice.", Required = true)] CreateInvoiceRequestDto invoiceDto);
   #endregion
@@ -493,7 +491,6 @@ public static partial class InvoiceEndpoints
   /// Creates a new scan for a specific invoice.
   /// </summary>
   /// <param name="invoiceManagementService">The invoice management service responsible for handling invoice logic.</param>
-  /// <param name="optionsManager">The configured storage options used to validate the scan location.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice to which the scan will be added.</param>
   /// <param name="invoiceScanDto">The invoice scan data to be created.</param>
@@ -518,7 +515,6 @@ public static partial class InvoiceEndpoints
   [Authorize]
   internal static partial Task<IResult> CreateInvoiceScanAsync(
     [FromServices] IInvoiceManagementService invoiceManagementService,
-    [FromServices] IOptionsManager optionsManager,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("The invoice scan payload to be created.", Required = true)] CreateInvoiceScanRequestDto invoiceScanDto);

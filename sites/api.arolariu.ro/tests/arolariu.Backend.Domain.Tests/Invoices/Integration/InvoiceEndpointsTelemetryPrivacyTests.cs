@@ -89,7 +89,6 @@ public sealed class InvoiceEndpointsTelemetryPrivacyTests
       new CreateMerchantRequestDto(merchantNameSentinel, string.Empty, string.Empty, Guid.Empty)).ConfigureAwait(false);
     _ = await InvoiceEndpoints.CreateInvoiceScanAsync(
       service.Object,
-      optionsManager,
       contextAccessor,
       invoice.id,
       new CreateInvoiceScanRequestDto(ScanType.JPG, new Uri(scanSasSentinel), Metadata: null)).ConfigureAwait(false);
@@ -123,4 +122,3 @@ public sealed class InvoiceEndpointsTelemetryPrivacyTests
       };
   }
 }
-

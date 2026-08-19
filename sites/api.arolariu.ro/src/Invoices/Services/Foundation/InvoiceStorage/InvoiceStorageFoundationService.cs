@@ -119,11 +119,6 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
       cancellationToken.ThrowIfCancellationRequested();
       ValidateScanIsUsable(scan);
 
-      if (string.IsNullOrWhiteSpace(scan.ApprovedBlobPath))
-      {
-        continue;
-      }
-
       await ValidateScanBlobPropertiesAsync(scan, cancellationToken).ConfigureAwait(false);
     }
   }

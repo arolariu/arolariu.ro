@@ -29,7 +29,6 @@ public static partial class InvoiceEndpoints
   #region CRUD operations for the Invoice Standard Endpoints
   internal static async partial Task<IResult> CreateNewInvoiceAsync(
     IInvoiceManagementService invoiceManagementService,
-    IOptionsManager optionsManager,
     IHttpContextAccessor httpContext,
     CreateInvoiceRequestDto invoiceDto)
   {
@@ -55,16 +54,14 @@ public static partial class InvoiceEndpoints
           });
       }
 
-      ApplicationOptions storageOptions = optionsManager.GetApplicationOptions();
-
-      if (!invoiceDto.TryValidate(storageOptions, out Dictionary<string, string[]> validationErrors))
+      if (!invoiceDto.TryValidate(out Dictionary<string, string[]> validationErrors))
       {
         activity?.SetTag("validation.failed", true);
         activity?.SetTag("validation.reason", "invoice_transport");
         return TypedResults.ValidationProblem(validationErrors);
       }
 
-      var invoice = invoiceDto.ToInvoice(serverOwnerIdentifier, storageOptions);
+      var invoice = invoiceDto.ToInvoice(serverOwnerIdentifier);
       activity?.SetInvoiceContext(invoice.id, invoice.UserIdentifier);
 
       await invoiceManagementService
@@ -86,16 +83,6 @@ public static partial class InvoiceEndpoints
       return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
-
-  internal static Task<IResult> CreateNewInvoiceAsync(
-    IInvoiceManagementService invoiceManagementService,
-    IHttpContextAccessor httpContext,
-    CreateInvoiceRequestDto invoiceDto) =>
-    CreateNewInvoiceAsync(
-      invoiceManagementService,
-      CompatibilityOptionsManager.For(invoiceDto),
-      httpContext,
-      invoiceDto);
 
   internal static async partial Task<IResult> RetrieveSpecificInvoiceAsync(
     IInvoiceManagementService invoiceManagementService,
@@ -831,7 +818,6 @@ public static partial class InvoiceEndpoints
 
   internal static async partial Task<IResult> CreateInvoiceScanAsync(
     IInvoiceManagementService invoiceManagementService,
-    IOptionsManager optionsManager,
     IHttpContextAccessor httpContext,
     Guid id,
     CreateInvoiceScanRequestDto invoiceScanDto)
@@ -849,16 +835,14 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("Scan.Create");
       }
 
-      ApplicationOptions storageOptions = optionsManager.GetApplicationOptions();
-
-      if (!invoiceScanDto.TryValidate(storageOptions, out Dictionary<string, string[]> validationErrors))
+      if (!invoiceScanDto.TryValidate(out Dictionary<string, string[]> validationErrors))
       {
         activity?.SetTag("validation.failed", true);
         activity?.SetTag("validation.reason", "scan_transport");
         return TypedResults.ValidationProblem(validationErrors);
       }
 
-      InvoiceScan convertedScan = invoiceScanDto.ToInvoiceScan(storageOptions);
+      InvoiceScan convertedScan = invoiceScanDto.ToInvoiceScan();
       activity?.SetTag("scan.type", convertedScan.Type.ToString());
 
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
@@ -1672,30 +1656,6 @@ public static partial class InvoiceEndpoints
     }
   }
   #endregion
-
-  private sealed class CompatibilityOptionsManager : IOptionsManager
-  {
-    private readonly ApplicationOptions options;
-
-    private CompatibilityOptionsManager(ApplicationOptions options) =>
-      this.options = options ?? throw new ArgumentNullException(nameof(options));
-
-    internal static CompatibilityOptionsManager For(CreateInvoiceRequestDto invoiceDto)
-    {
-      Uri? firstScanLocation = invoiceDto.Scans.FirstOrDefault().Location;
-      string storageEndpoint = firstScanLocation?.GetLeftPart(UriPartial.Authority) ?? "https://unit-tests.arolariu.ro";
-      string storageAccountName = firstScanLocation?.Host.Split('.', StringSplitOptions.RemoveEmptyEntries)[0] ?? "unit-tests";
-
-      return new CompatibilityOptionsManager(
-        new LocalOptions
-        {
-          StorageAccountName = storageAccountName,
-          StorageAccountEndpoint = storageEndpoint,
-        });
-    }
-
-    public ApplicationOptions GetApplicationOptions() => options;
-  }
 
   #region Cancellation helpers
   /// <summary>
