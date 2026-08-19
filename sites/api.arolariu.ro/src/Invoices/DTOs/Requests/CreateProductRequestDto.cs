@@ -5,9 +5,8 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 
 /// <summary>
@@ -97,32 +96,16 @@ public readonly record struct CreateProductRequestDto(
   /// <returns>
   /// A new <see cref="Product"/> instance initialized with the provided values.
   /// </returns>
-  public Product ToProduct()
-  {
-    ValidateClassification();
-
-    var product = new Product
+  public Product ToProduct() =>
+    new()
     {
       Name = Name?.Trim() ?? string.Empty,
-      Classification = Classification?.ToManualSelection(),
+      Classification = Classification?.System == ClassificationSystem.Gs1Gpc
+        ? Classification.Value.ToManualSelection()
+        : null,
       Quantity = Quantity,
       QuantityUnit = QuantityUnit?.Trim() ?? string.Empty,
       ProductCode = ProductCode?.Trim() ?? string.Empty,
       Price = Price,
     };
-
-    product.ValidateForPersistence();
-    product.RequiresCommercialValidation = true;
-    return product;
-  }
-
-  private void ValidateClassification()
-  {
-    if (Classification is { System: not ClassificationSystem.Gs1Gpc }
-      || Classification is { Code: var code } && string.IsNullOrWhiteSpace(code))
-    {
-      throw new ProductValidationException(
-        "Product classification must use the GS1 GPC system with a nonblank code.");
-    }
-  }
 }

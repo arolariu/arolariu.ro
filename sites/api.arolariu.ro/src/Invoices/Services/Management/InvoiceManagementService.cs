@@ -103,7 +103,7 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
 
   /// <inheritdoc/>
   public async Task<Product> UpdateProduct(
-    ProductUpdateSelector selector,
+    string productName,
     Product updatedProduct,
     Guid invoiceIdentifier,
     Guid? userIdentifier,
@@ -112,7 +112,7 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateProduct));
       return await crudProcessingService
-        .UpdateProduct(selector, updatedProduct, invoiceIdentifier, userIdentifier, cancellationToken)
+        .UpdateProduct(productName, updatedProduct, invoiceIdentifier, userIdentifier, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 
@@ -134,14 +134,14 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
 
   /// <inheritdoc/>
   public async Task DeleteProduct(
-    ProductUpdateSelector selector,
+    string productName,
     Guid invoiceIdentifier,
     Guid? userIdentifier,
     CancellationToken cancellationToken)
     => await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteProduct));
-      await crudProcessingService.DeleteProduct(selector, invoiceIdentifier, userIdentifier, cancellationToken).ConfigureAwait(false);
+      await crudProcessingService.DeleteProduct(productName, invoiceIdentifier, userIdentifier, cancellationToken).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
   /// <inheritdoc/>

@@ -121,22 +121,20 @@ public interface ICrudProcessingService
 
   #region Update Invoice Product API
   /// <summary>
-  /// Applies a client product update to one persisted line item and writes its invoice aggregate once.
+  /// Applies a client product update to the first persisted line item matching the supplied name.
   /// </summary>
   /// <remarks>
-  /// The identity-free <paramref name="selector"/> first prefers an original product code. Without one, it uses the
-  /// original normalized name, quantity, unit price, and total price. An occurrence ordinal is required only while
-  /// multiple persisted products remain indistinguishable under that preferred selector.
-  /// Server-owned enrichment and workflow fields are retained by the persisted line item.
+  /// Duplicate product names remain ambiguous by design; the first matching line item is updated.
+  /// Server-owned enrichment and workflow fields are retained.
   /// </remarks>
-  /// <param name="selector">The transient identity-free selector for one persisted line item.</param>
+  /// <param name="productName">The original product name used to locate the first matching line item.</param>
   /// <param name="updatedProduct">The client-editable values to apply to the selected line item.</param>
   /// <param name="invoiceIdentifier">Target invoice identifier.</param>
   /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>The updated persisted line item after the aggregate write path has canonicalized it.</returns>
   Task<Product> UpdateProduct(
-    ProductUpdateSelector selector,
+    string productName,
     Product updatedProduct,
     Guid invoiceIdentifier,
     Guid? userIdentifier,
@@ -166,19 +164,17 @@ public interface ICrudProcessingService
 
   #region Delete Invoice Product API
   /// <summary>
-  /// Deletes exactly one selected product from an invoice and writes the aggregate once.
+  /// Deletes the first product matching the supplied name and writes the aggregate once.
   /// </summary>
   /// <remarks>
-  /// The identity-free <paramref name="selector"/> first prefers an original product code. Without one, it uses the
-  /// original normalized name, quantity, unit price, and total price. An occurrence ordinal is required only while
-  /// multiple persisted products remain indistinguishable under that preferred selector.
+  /// Duplicate product names remain ambiguous by design; the first matching line item is removed.
   /// </remarks>
-  /// <param name="selector">The transient identity-free selector for the persisted product to remove.</param>
+  /// <param name="productName">The product name used to locate the first matching line item.</param>
   /// <param name="invoiceIdentifier">Invoice id.</param>
   /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   Task DeleteProduct(
-    ProductUpdateSelector selector,
+    string productName,
     Guid invoiceIdentifier,
     Guid? userIdentifier,
     CancellationToken cancellationToken);

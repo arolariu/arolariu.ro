@@ -82,17 +82,6 @@ public sealed class Invoice : NamedEntity<Guid>
   public ICollection<Product> Items { get; set; } = [];
 
   /// <summary>
-  /// Gets or sets whether a targeted line-item mutation must retain untouched classifications.
-  /// </summary>
-  /// <remarks>
-  /// This transient mutation marker is set by product-mutation processing flows. It prevents a targeted product
-  /// edit or removal from re-projecting existing classification evidence and taxonomy versions while allowing a newly
-  /// supplied manual selection to be canonicalized by storage. It is never serialized or persisted.
-  /// </remarks>
-  [JsonIgnore]
-  internal bool PreserveUntouchedProductClassifications { get; set; }
-
-  /// <summary>
   /// Structured recipe suggestions produced by the analysis pipeline for this invoice.
   /// </summary>
   /// <remarks>

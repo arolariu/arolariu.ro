@@ -83,29 +83,6 @@ public sealed class StorageValidationCoverageTests
 
 
   /// <summary>
-  /// Verifies null product slots are rejected as invalid input before persistence.
-  /// </summary>
-  [TestMethod]
-  public async Task CreateInvoiceObject_NullProductSlot_ThrowsValidationExceptionBeforePersistence()
-  {
-    var broker = new Mock<IDatabaseBroker>();
-    Invoice invoice = new()
-    {
-      id = Guid.NewGuid(),
-      UserIdentifier = Guid.NewGuid(),
-      Items = [null!],
-    };
-    InvoiceStorageFoundationService service = CreateInvoiceService(broker);
-
-    await Assert.ThrowsExactlyAsync<InvoiceFoundationValidationException>(
-      () => service.CreateInvoiceObject(invoice, invoice.UserIdentifier, CancellationToken.None)).ConfigureAwait(false);
-
-    broker.Verify(
-      item => item.CreateInvoiceAsync(It.IsAny<Invoice>(), It.IsAny<CancellationToken>()),
-      Times.Never);
-  }
-
-  /// <summary>
   /// Verifies merchant identifier validation rejects an empty identifier on create.
   /// </summary>
   [TestMethod]

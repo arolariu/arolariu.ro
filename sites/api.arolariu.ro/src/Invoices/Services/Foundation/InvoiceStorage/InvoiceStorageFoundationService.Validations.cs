@@ -28,7 +28,6 @@ public partial class InvoiceStorageFoundationService
     ValidateIdentifierIsSet(invoice.id);
     ValidateIdentifierIsSet(invoice.UserIdentifier);
     ValidateScansAreSet(invoice.Scans);
-    ValidateProductsAreReadyForPersistence(invoice.Items);
   }
 
   private static void ValidateScansAreSet(IEnumerable<InvoiceScan>? scans)
@@ -107,21 +106,4 @@ public partial class InvoiceStorageFoundationService
     };
   }
 
-  private static void ValidateProductsAreReadyForPersistence(IEnumerable<Product>? products)
-  {
-    if (products is null)
-    {
-      return;
-    }
-
-    foreach (Product product in products)
-    {
-      ArgumentNullException.ThrowIfNull(product);
-
-      if (product.RequiresCommercialValidation)
-      {
-        product.ValidateForPersistence();
-      }
-    }
-  }
 }

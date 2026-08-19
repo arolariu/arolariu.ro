@@ -42,10 +42,10 @@ internal abstract class WorkerManagementServiceBase : IInvoiceManagementService
   public Task DeleteInvoice(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException(Unsupported());
   public Task DeleteInvoices(Guid userIdentifier, CancellationToken cancellationToken) => Task.FromException(Unsupported());
   public Task AddProduct(Product product, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException(Unsupported());
-  public Task<Product> UpdateProduct(ProductUpdateSelector selector, Product updatedProduct, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException<Product>(Unsupported());
+  public Task<Product> UpdateProduct(string productName, Product updatedProduct, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException<Product>(Unsupported());
   public Task<IEnumerable<Product>> GetProducts(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException<IEnumerable<Product>>(Unsupported());
   public Task<Product> GetProduct(string productName, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException<Product>(Unsupported());
-  public Task DeleteProduct(ProductUpdateSelector selector, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException(Unsupported());
+  public Task DeleteProduct(string productName, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException(Unsupported());
   public Task CreateInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException(Unsupported());
   public Task<IEnumerable<InvoiceScan>> ReadInvoiceScans(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException<IEnumerable<InvoiceScan>>(Unsupported());
   public Task DeleteInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException(Unsupported());

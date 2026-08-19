@@ -579,21 +579,8 @@ public sealed class InvoiceEndpointsStatusCodeTests
       "2026-05",
       "10000025",
       "Food or beverage products");
-    var original = new Product
-    {
-      Name = "Old Milk",
-      Quantity = 1,
-      Price = 8.5m,
-      Classification = classification,
-    };
     var request = new UpdateProductRequestDto(
-      Selector: new ProductUpdateSelectorDto(
-        OriginalProductCode: null,
-        OriginalName: "Old Milk",
-        OriginalQuantity: 1m,
-        OriginalUnitPrice: 8.5m,
-        OriginalTotalPrice: 8.5m,
-        OccurrenceOrdinal: null),
+      OriginalProductName: "Old Milk",
       Name: "New Milk",
       Classification: null,
       Quantity: 2m,
@@ -604,14 +591,14 @@ public sealed class InvoiceEndpointsStatusCodeTests
     Product? capturedProduct = null;
     service
       .Setup(candidate => candidate.UpdateProduct(
-        It.IsAny<ProductUpdateSelector>(),
+        "Old Milk",
         It.IsAny<Product>(),
         invoiceId,
         userId,
         It.IsAny<CancellationToken>()))
-      .Callback<ProductUpdateSelector, Product, Guid, Guid?, CancellationToken>(
+      .Callback<string, Product, Guid, Guid?, CancellationToken>(
         (_, updated, _, _, _) => capturedProduct = updated)
-      .ReturnsAsync((ProductUpdateSelector _, Product updated, Guid _, Guid? _, CancellationToken _) =>
+      .ReturnsAsync((string _, Product updated, Guid _, Guid? _, CancellationToken _) =>
       {
         updated.Classification = classification;
         return updated;
@@ -631,7 +618,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     Assert.AreSame(classification, persistedProduct.Classification);
     service.Verify(
       candidate => candidate.UpdateProduct(
-        It.IsAny<ProductUpdateSelector>(),
+        "Old Milk",
         It.IsAny<Product>(),
         invoiceId,
         userId,

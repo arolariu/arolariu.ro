@@ -557,13 +557,12 @@ public static partial class InvoiceEndpoints
 
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
-      var selector = productDto.ToSelector();
-      activity?.SetTag(
-        "product.selector.strategy",
-        selector.UsesOriginalProductCode ? "product_code" : "composite_snapshot");
-
       await invoiceManagementService
-        .DeleteProduct(selector, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+        .DeleteProduct(
+          productDto.ProductName,
+          id,
+          potentialUserIdentifier,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Product removed from invoice");
@@ -602,15 +601,11 @@ public static partial class InvoiceEndpoints
 
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
-      var selector = productInformation.ToSelector();
       var productEntity = productInformation.ToProduct();
-      activity?.SetTag(
-        "product.selector.strategy",
-        selector.UsesOriginalProductCode ? "product_code" : "composite_snapshot");
 
       var updatedProduct = await invoiceManagementService
         .UpdateProduct(
-          selector,
+          productInformation.OriginalProductName,
           productEntity,
           id,
           potentialUserIdentifier,
