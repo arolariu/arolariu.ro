@@ -1,0 +1,140 @@
+namespace arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
+
+using System;
+using System.Text.Json.Serialization;
+
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
+
+/// <summary>
+/// Represents one provider-neutral analysis request carried by Azure Storage Queue.
+/// </summary>
+public sealed record AnalysisQueueMessage
+{
+  /// <summary>
+  /// Initializes a new analysis queue message.
+  /// </summary>
+  [JsonConstructor]
+  public AnalysisQueueMessage(
+    Guid correlationId,
+    AnalysisTargetType targetType,
+    Guid targetId,
+    Guid requestedBy,
+    Guid? targetPartitionIdentifier,
+    InvoiceAnalysisOptions? invoiceOptions,
+    MerchantAnalysisOptions? merchantOptions,
+    string traceParent)
+  {
+    RequireNonEmpty(correlationId, nameof(correlationId));
+    RequireNonEmpty(targetId, nameof(targetId));
+    RequireNonEmpty(requestedBy, nameof(requestedBy));
+    ArgumentException.ThrowIfNullOrWhiteSpace(traceParent);
+
+    if (targetType == AnalysisTargetType.Invoice
+        && (invoiceOptions is null || merchantOptions is not null))
+    {
+      throw new ArgumentException(
+        "Invoice analysis messages require invoice options only.",
+        nameof(invoiceOptions));
+    }
+
+    if (targetType == AnalysisTargetType.Merchant
+        && (merchantOptions is null || invoiceOptions is not null))
+    {
+      throw new ArgumentException(
+        "Merchant analysis messages require merchant options only.",
+        nameof(merchantOptions));
+    }
+
+    if (targetType is not AnalysisTargetType.Invoice and not AnalysisTargetType.Merchant)
+    {
+      throw new ArgumentOutOfRangeException(
+        nameof(targetType),
+        targetType,
+        "Only invoice and merchant targets can be queued for aggregate analysis.");
+    }
+
+    CorrelationId = correlationId;
+    TargetType = targetType;
+    TargetId = targetId;
+    RequestedBy = requestedBy;
+    TargetPartitionIdentifier = targetPartitionIdentifier;
+    InvoiceOptions = invoiceOptions;
+    MerchantOptions = merchantOptions;
+    TraceParent = traceParent;
+  }
+
+  /// <summary>Gets the stable application correlation identifier.</summary>
+  public Guid CorrelationId { get; }
+
+  /// <summary>Gets the target aggregate type.</summary>
+  public AnalysisTargetType TargetType { get; }
+
+  /// <summary>Gets the target aggregate identifier.</summary>
+  public Guid TargetId { get; }
+
+  /// <summary>Gets the identifier of the user who requested analysis.</summary>
+  public Guid RequestedBy { get; }
+
+  /// <summary>Gets the optional target partition identifier.</summary>
+  public Guid? TargetPartitionIdentifier { get; }
+
+  /// <summary>Gets invoice analysis options when the target is an invoice.</summary>
+  public InvoiceAnalysisOptions? InvoiceOptions { get; }
+
+  /// <summary>Gets merchant analysis options when the target is a merchant.</summary>
+  public MerchantAnalysisOptions? MerchantOptions { get; }
+
+  /// <summary>Gets the W3C trace context captured when the message was enqueued.</summary>
+  public string TraceParent { get; }
+
+  /// <summary>Creates an invoice analysis queue message.</summary>
+  public static AnalysisQueueMessage CreateInvoice(
+    Guid targetId,
+    Guid requestedBy,
+    Guid correlationId,
+    InvoiceAnalysisOptions options,
+    string traceParent)
+  {
+    ArgumentNullException.ThrowIfNull(options);
+
+    return new AnalysisQueueMessage(
+      correlationId,
+      AnalysisTargetType.Invoice,
+      targetId,
+      requestedBy,
+      targetPartitionIdentifier: null,
+      options,
+      merchantOptions: null,
+      traceParent);
+  }
+
+  /// <summary>Creates a merchant analysis queue message.</summary>
+  public static AnalysisQueueMessage CreateMerchant(
+    Guid targetId,
+    Guid requestedBy,
+    Guid correlationId,
+    Guid? targetPartitionIdentifier,
+    MerchantAnalysisOptions options,
+    string traceParent)
+  {
+    ArgumentNullException.ThrowIfNull(options);
+
+    return new AnalysisQueueMessage(
+      correlationId,
+      AnalysisTargetType.Merchant,
+      targetId,
+      requestedBy,
+      targetPartitionIdentifier,
+      invoiceOptions: null,
+      options,
+      traceParent);
+  }
+
+  private static void RequireNonEmpty(Guid identifier, string parameterName)
+  {
+    if (identifier == Guid.Empty)
+    {
+      throw new ArgumentException("Identifier must not be empty.", parameterName);
+    }
+  }
+}
