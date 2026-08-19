@@ -56,6 +56,9 @@ using arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysis;
 /// </remarks>
 public static class InvoiceMetrics
 {
+  /// <summary>The OpenTelemetry source name emitted by the generative analysis client.</summary>
+  public const string AnalysisTelemetrySourceName = "arolariu.Backend.Domain.Invoices.Analysis";
+
   private static readonly Meter Meter = MeterGenerators.InvoiceMeter;
 
   private const string TargetTypeTag = "target_type";

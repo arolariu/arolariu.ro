@@ -364,6 +364,23 @@ public static partial class InvoiceEndpoints
       .RequireRateLimiting(RateLimitPolicies.StandardWrites)
       .WithName(nameof(DeleteInvoiceMetadataAsync))
       .WithRequestTimeout(RequestTimeoutPolicies.Crud);
+
+    router
+      .MapPost("/invoices/{id}/analyze", AnalyzeInvoiceAsync)
+      .Accepts<AnalyzeInvoiceRequestDto>("application/json")
+      .Produces<AnalysisAcceptedResponseDto>(StatusCodes.Status202Accepted)
+      .ProducesValidationProblem()
+      .ProducesProblem(StatusCodes.Status401Unauthorized)
+      .ProducesProblem(StatusCodes.Status402PaymentRequired)
+      .ProducesProblem(StatusCodes.Status403Forbidden)
+      .ProducesProblem(StatusCodes.Status404NotFound)
+      .ProducesProblem(StatusCodes.Status429TooManyRequests)
+      .ProducesProblem(StatusCodes.Status500InternalServerError)
+      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
+      .WithName(nameof(AnalyzeInvoiceAsync))
+      .RequireAuthorization()
+      .RequireRateLimiting(RateLimitPolicies.AnalysisOperations)
+      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
   }
 
   /// <summary>
@@ -521,42 +538,8 @@ public static partial class InvoiceEndpoints
       .RequireRateLimiting(RateLimitPolicies.StandardReads)
       .WithName(nameof(RetrieveProductsFromMerchantAsync))
       .WithRequestTimeout(RequestTimeoutPolicies.Crud);
-  }
 
-  /// <summary>
-  /// Registers the analysis enqueue endpoints for both analyzable aggregates.
-  /// </summary>
-  /// <remarks>
-  /// <para><b>Operation:</b> Both routes are pure enqueue operations. They validate the target, persist a durable
-  /// analysis run, and return <c>202 Accepted</c> immediately. No OCR or generative work runs on the request thread,
-  /// so the ordinary CRUD write timeout applies rather than a long analysis budget.</para>
-  /// <para><b>Location header:</b> The accepted response points at the analyzed target, because the target - not the
-  /// run - is the resource a client polls for the applied outcome.</para>
-  /// <para><b>Charging / Billing:</b> Includes <c>402 PaymentRequired</c> problem mapping placeholder for future usage-based billing enforcement.</para>
-  /// <para><b>Idempotency:</b> Each call enqueues a new run; concurrent runs against the same target resolve
-  /// last-write-wins on the target aggregate.</para>
-  /// </remarks>
-  /// <param name="router">Route builder instance.</param>
-  private static void MapInvoiceAnalysisEndpoints(this IEndpointRouteBuilder router)
-  {
-    router // Enqueue an analysis run for a specific invoice, given its identifier.
-      .MapPost("/invoices/{id}/analyze", AnalyzeInvoiceAsync)
-      .Accepts<AnalyzeInvoiceRequestDto>("application/json")
-      .Produces<AnalysisAcceptedResponseDto>(StatusCodes.Status202Accepted)
-      .ProducesValidationProblem()
-      .ProducesProblem(StatusCodes.Status401Unauthorized)
-      .ProducesProblem(StatusCodes.Status402PaymentRequired)
-      .ProducesProblem(StatusCodes.Status403Forbidden)
-      .ProducesProblem(StatusCodes.Status404NotFound)
-      .ProducesProblem(StatusCodes.Status429TooManyRequests)
-      .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .ProducesProblem(StatusCodes.Status504GatewayTimeout)
-      .WithName(nameof(AnalyzeInvoiceAsync))
-      .RequireAuthorization()
-      .RequireRateLimiting(RateLimitPolicies.AnalysisOperations)
-      .WithRequestTimeout(RequestTimeoutPolicies.Crud);
-
-    router // Enqueue an analysis run for a specific merchant, given its identifier.
+    router
       .MapPost("/merchants/{id}/analyze", AnalyzeMerchantAsync)
       .Accepts<AnalyzeMerchantRequestDto>("application/json")
       .Produces<AnalysisAcceptedResponseDto>(StatusCodes.Status202Accepted)

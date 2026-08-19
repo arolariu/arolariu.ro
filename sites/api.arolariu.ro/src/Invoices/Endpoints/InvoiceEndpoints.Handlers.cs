@@ -43,7 +43,9 @@ public static partial class InvoiceEndpoints
         .SetLayerContext("Endpoint", nameof(InvoiceEndpoints))
         .SetOperationType("CRUD.Create");
 
-      if (!TryRetrieveUserIdentifierClaimFromPrincipal(httpContext, out Guid serverOwnerIdentifier))
+      Guid serverOwnerIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+
+      if (serverOwnerIdentifier == Guid.Empty)
       {
         activity?.SetTag("validation.failed", true);
         activity?.SetTag("validation.reason", "missing_user_identifier");
@@ -1695,4 +1697,84 @@ public static partial class InvoiceEndpoints
     return TypedResults.StatusCode(StatusCodes.Status499ClientClosedRequest);
   }
   #endregion
+
+  internal static async partial Task<IResult> AnalyzeInvoiceAsync(
+    IInvoiceManagementService invoiceManagementService,
+    IHttpContextAccessor httpContext,
+    Guid id,
+    AnalyzeInvoiceRequestDto request)
+  {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
+    try
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceAsync), ActivityKind.Server);
+      activity?
+        .SetLayerContext("Endpoint", nameof(InvoiceEndpoints))
+        .SetOperationType("Invoice.Analyze");
+
+      Guid userIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetInvoiceContext(id, userIdentifier);
+      activity?.SetTag("analysis.profile", request.Profile.ToString());
+
+      AnalysisAcceptedResponseDto accepted = await invoiceManagementService
+        .QueueInvoiceAnalysisAsync(id, userIdentifier, request, writeScope.Token)
+        .ConfigureAwait(false);
+
+      activity?.SetTag("analysis.message_id", accepted.MessageId);
+      activity?.RecordSuccess("Invoice analysis message queued");
+      return TypedResults.Accepted($"/rest/v1/invoices/{id}", accepted);
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "analyze", "invoice");
+    }
+    catch (Exception exception)
+    {
+      Activity.Current?.SetStatus(ActivityStatusCode.Error, "analysis_failure");
+      return ExceptionToHttpResultMapper.ToHttpResult(exception, Activity.Current);
+    }
+  }
+
+  internal static async partial Task<IResult> AnalyzeMerchantAsync(
+    IInvoiceManagementService invoiceManagementService,
+    IHttpContextAccessor httpContext,
+    Guid id,
+    AnalyzeMerchantRequestDto request)
+  {
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
+
+    try
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeMerchantAsync), ActivityKind.Server);
+      activity?
+        .SetLayerContext("Endpoint", nameof(InvoiceEndpoints))
+        .SetOperationType("Merchant.Analyze");
+
+      Guid userIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetMerchantContext(id);
+      activity?.SetTag("analysis.profile", request.Profile.ToString());
+
+      AnalysisAcceptedResponseDto accepted = await invoiceManagementService
+        .QueueMerchantAnalysisAsync(id, userIdentifier, request, writeScope.Token)
+        .ConfigureAwait(false);
+
+      activity?.SetTag("analysis.message_id", accepted.MessageId);
+      activity?.RecordSuccess("Merchant analysis message queued");
+      return TypedResults.Accepted($"/rest/v1/merchants/{id}", accepted);
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "analyze", "merchant");
+    }
+    catch (Exception exception)
+    {
+      Activity.Current?.SetStatus(ActivityStatusCode.Error, "analysis_failure");
+      return ExceptionToHttpResultMapper.ToHttpResult(exception, Activity.Current);
+    }
+  }
 }

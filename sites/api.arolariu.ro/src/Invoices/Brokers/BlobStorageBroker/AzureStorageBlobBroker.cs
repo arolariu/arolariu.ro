@@ -4,6 +4,9 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Common.Azure;
+using arolariu.Backend.Common.Options;
+
 using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
@@ -29,6 +32,14 @@ public sealed class AzureStorageBlobBroker : IBlobStorageBroker
 {
   private const string InvoiceContainerName = "invoices";
   private readonly BlobContainerClient invoiceContainer;
+
+  /// <summary>
+  /// Initializes a new instance from the backend storage configuration.
+  /// </summary>
+  public AzureStorageBlobBroker(IOptionsManager optionsManager)
+    : this(CreateBlobServiceClient(optionsManager))
+  {
+  }
 
   /// <summary>
   /// Initializes a new instance of the <see cref="AzureStorageBlobBroker"/> class.
@@ -82,4 +93,22 @@ public sealed class AzureStorageBlobBroker : IBlobStorageBroker
 
     return candidate.BlobName;
   }
+
+  private static BlobServiceClient CreateBlobServiceClient(IOptionsManager optionsManager)
+  {
+    ArgumentNullException.ThrowIfNull(optionsManager);
+    string endpoint = optionsManager.GetApplicationOptions().StorageAccountEndpoint;
+
+    if (endpoint.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+    {
+      string connectionString =
+        $"DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey={AzuriteDevelopmentKey};BlobEndpoint={endpoint};";
+      return new BlobServiceClient(connectionString);
+    }
+
+    return new BlobServiceClient(new Uri(endpoint), AzureCredentialFactory.CreateCredential());
+  }
+
+  private const string AzuriteDevelopmentKey =
+    "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 }

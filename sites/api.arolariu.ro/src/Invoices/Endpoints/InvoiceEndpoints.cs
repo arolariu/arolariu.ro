@@ -41,8 +41,8 @@ public static partial class InvoiceEndpoints
   /// Registers all invoice, invoice analysis and merchant endpoint groups into the application's routing pipeline.
   /// </summary>
   /// <remarks>
-  /// <para><b>Grouping Strategy:</b> Consolidates related endpoints under the base path segment <c>rest/v1</c>. Each subgroup (standard invoice, analysis, merchant)
-  /// is defined in a corresponding partial implementation method (<c>MapStandardInvoiceEndpoints</c>, <c>MapInvoiceAnalysisEndpoints</c>, <c>MapStandardMerchantEndpoints</c>).</para>
+  /// <para><b>Grouping Strategy:</b> Consolidates related endpoints under the base path segment <c>rest/v1</c>.
+  /// Invoice analysis is registered with invoice routes and merchant analysis with merchant routes.</para>
   /// <para><b>Idempotency:</b> Safe to invoke once during startup; repeated invocation would register duplicate endpoints (DO NOT call multiple times).</para>
   /// <para><b>Versioning Policy:</b> Route segment version (<c>v1</c>) DOES NOT auto-track semantic constant <c>SemanticVersioning</c>; bump URI only on public breaking changes.</para>
   /// <para><b>Cross-Cutting Concerns:</b> Authentication, authorization, validation, caching, and OpenAPI metadata are applied in handler / metadata partials to keep this method declarative.</para>
@@ -51,7 +51,6 @@ public static partial class InvoiceEndpoints
   public static void MapInvoiceEndpoints(this IEndpointRouteBuilder router)
   {
     router.MapGroup("rest/v1").MapStandardInvoiceEndpoints();
-    router.MapGroup("rest/v1").MapInvoiceAnalysisEndpoints();
     router.MapGroup("rest/v1").MapStandardMerchantEndpoints();
   }
 
@@ -72,47 +71,13 @@ public static partial class InvoiceEndpoints
     using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveUserIdentifierClaimFromPrincipal));
 
     var principal = httpContextAccessor.HttpContext?.User ?? new ClaimsPrincipal(new ClaimsIdentity());
-    var userIdentifierClaim = principal.Claims.FirstOrDefault(
-        predicate: claim => claim.Type == "userIdentifier",
-        defaultValue: new Claim(type: "userIdentifier", value: Guid.Empty.ToString()));
+    Claim? userIdentifierClaim = principal.Claims.FirstOrDefault(
+      claim => claim.Type == "userIdentifier");
 
-    var potentialUserIdentifier = Guid.Parse(userIdentifierClaim.Value);
-    return potentialUserIdentifier;
-  }
-
-  /// <summary>
-  /// Safely resolves a non-empty invoice owner identifier from the authenticated request principal.
-  /// </summary>
-  /// <remarks>
-  /// This is the non-throwing counterpart used at creation boundaries. It follows the established
-  /// <c>userIdentifier</c> claim convention while allowing the endpoint to return a validation response for a
-  /// missing or malformed claim instead of treating request identity as client-controlled data.
-  /// </remarks>
-  /// <param name="httpContextAccessor">Accessor exposing the current request principal.</param>
-  /// <param name="userIdentifier">The resolved non-empty user identifier when the method returns <see langword="true"/>.</param>
-  /// <returns><see langword="true"/> when a valid non-empty <c>userIdentifier</c> claim is present; otherwise, <see langword="false"/>.</returns>
-  private static bool TryRetrieveUserIdentifierClaimFromPrincipal(
-    IHttpContextAccessor httpContextAccessor,
-    out Guid userIdentifier)
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(TryRetrieveUserIdentifierClaimFromPrincipal));
-    userIdentifier = Guid.Empty;
-
-    var principal = httpContextAccessor.HttpContext?.User ?? new ClaimsPrincipal(new ClaimsIdentity());
-    Claim? userIdentifierClaim = principal.Claims.FirstOrDefault(claim => claim.Type == "userIdentifier");
-
-    bool hasValidClaim = userIdentifierClaim is not null
-      && Guid.TryParse(userIdentifierClaim.Value, out userIdentifier)
-      && userIdentifier != Guid.Empty;
-
-    activity?.SetTag("user.claim.valid", hasValidClaim);
-
-    if (hasValidClaim)
-    {
-      return true;
-    }
-
-    return false;
+    return userIdentifierClaim is not null
+      && Guid.TryParse(userIdentifierClaim.Value, out Guid userIdentifier)
+      ? userIdentifier
+      : Guid.Empty;
   }
 
   /// <summary>

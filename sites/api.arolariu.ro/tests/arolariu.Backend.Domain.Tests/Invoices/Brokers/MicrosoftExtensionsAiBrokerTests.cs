@@ -14,7 +14,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
-/// Defines materialization tests for the real <see cref="MicrosoftExtensionsAnalysisBroker"/> driven over a deterministic
+/// Defines materialization tests for the real <see cref="AzureFoundryBroker"/> driven over a deterministic
 /// external <see cref="IChatClient"/> double.
 /// </summary>
 /// <remarks>
@@ -24,7 +24,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 /// private nested record so the production DTO visibility never has to be widened for testability.
 /// </remarks>
 [TestClass]
-public sealed class MicrosoftExtensionsAnalysisBrokerTests
+public sealed class AzureFoundryBrokerTests
 {
   /// <summary>
   /// Verifies that the broker materializes a non-public typed structured output contract, proving the production
@@ -36,7 +36,7 @@ public sealed class MicrosoftExtensionsAnalysisBrokerTests
     // Arrange
     const string payload = """{"description":"A neighbourhood grocery retailer.","confidence":0.87}""";
     using var chatClient = new ScriptedChatClient(payload, "unit-test-model");
-    var broker = new MicrosoftExtensionsAnalysisBroker(chatClient);
+    var broker = new AzureFoundryBroker(chatClient);
     var request = new GenerativeRequest("Describe the merchant.", new { name = "Test Merchant" });
 
     // Act
@@ -60,7 +60,7 @@ public sealed class MicrosoftExtensionsAnalysisBrokerTests
   {
     // Arrange
     using var chatClient = new ScriptedChatClient("this is not json", modelId: null);
-    var broker = new MicrosoftExtensionsAnalysisBroker(chatClient);
+    var broker = new AzureFoundryBroker(chatClient);
     var request = new GenerativeRequest("Describe the merchant.", new { name = "Test Merchant" });
 
     // Act + Assert

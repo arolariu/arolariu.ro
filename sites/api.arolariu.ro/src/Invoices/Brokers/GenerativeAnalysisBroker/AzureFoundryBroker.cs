@@ -18,16 +18,16 @@ using Microsoft.Extensions.AI;
 /// retry or orchestration logic. Transient-failure retry is the responsibility of the calling foundation-layer service.</para>
 /// <para><b>Confidentiality:</b> This broker never logs prompt or response content.</para>
 /// </remarks>
-public sealed class MicrosoftExtensionsAnalysisBroker : IGenerativeAnalysisBroker
+public sealed class AzureFoundryBroker : IGenerativeAnalysisBroker
 {
   private readonly IChatClient chatClient;
 
   /// <summary>
-  /// Initializes a new instance of the <see cref="MicrosoftExtensionsAnalysisBroker"/> class.
+  /// Initializes a new instance of the <see cref="AzureFoundryBroker"/> class.
   /// </summary>
   /// <param name="chatClient">The Microsoft.Extensions.AI chat client used to reach the underlying generative AI provider.</param>
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="chatClient"/> is null.</exception>
-  public MicrosoftExtensionsAnalysisBroker(IChatClient chatClient)
+  public AzureFoundryBroker(IChatClient chatClient)
   {
     ArgumentNullException.ThrowIfNull(chatClient);
     this.chatClient = chatClient;

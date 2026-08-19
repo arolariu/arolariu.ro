@@ -42,9 +42,6 @@ using Microsoft.Extensions.DependencyInjection;
 [ExcludeFromCodeCoverage] // This class is not tested because it is a simple extension class.
 public static class WebApplicationBuilderExtensions
 {
-  /// <summary>The OpenTelemetry activity source name emitted by the generative analysis pipeline.</summary>
-  private const string AnalysisTelemetrySourceName = "arolariu.Backend.Domain.Invoices.Analysis";
-
   /// <summary>
   /// Adds invoices domain configurations to the WebApplicationBuilder instance.
   /// </summary>
@@ -137,14 +134,14 @@ public static class WebApplicationBuilderExtensions
         return azureClient.GetChatClient(InvoiceMetrics.ConfiguredGenerativeModelIdentifier).AsIChatClient();
       })
       .UseOpenTelemetry(
-        sourceName: AnalysisTelemetrySourceName,
+        sourceName: InvoiceMetrics.AnalysisTelemetrySourceName,
         configure: options => options.EnableSensitiveData = false);
 
     // Broker services:
     services.AddScoped<IDocumentIntelligenceBroker, AzureDocumentIntelligenceBroker>();
     services.AddScoped<IBlobStorageBroker, AzureStorageBlobBroker>();
     services.AddScoped<IDatabaseBroker, CosmosDatabaseBroker>();
-    services.AddScoped<IGenerativeAnalysisBroker, MicrosoftExtensionsAnalysisBroker>();
+    services.AddScoped<IGenerativeAnalysisBroker, AzureFoundryBroker>();
     services.AddScoped<IQueueBroker, AzureStorageQueueBroker>();
     services.AddSingleton<ITaxonomyBroker, JsonTaxonomyBroker>();
 
@@ -165,6 +162,8 @@ public static class WebApplicationBuilderExtensions
     // Processing services:
     services.AddScoped<IAnalysisProcessingService, AnalysisProcessingService>();
     services.AddScoped<ICrudProcessingService, CrudProcessingService>();
+
+    // Management services:
     services.AddScoped<IInvoiceManagementService, InvoiceManagementService>();
 
     // Hosted workers:

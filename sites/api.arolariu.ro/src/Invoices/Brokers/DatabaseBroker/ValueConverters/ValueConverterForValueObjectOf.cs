@@ -1,4 +1,4 @@
-namespace arolariu.Backend.Domain.Invoices.Modules.ValueConverters;
+namespace arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker.ValueConverters;
 
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
