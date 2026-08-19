@@ -1,4 +1,4 @@
-namespace arolariu.Backend.Domain.Tests.Invoices.Brokers.AnalysisRunBroker;
+namespace arolariu.Backend.Domain.Tests.Invoices.Brokers.DatabaseBroker;
 
 using System;
 using System.Collections.Generic;
