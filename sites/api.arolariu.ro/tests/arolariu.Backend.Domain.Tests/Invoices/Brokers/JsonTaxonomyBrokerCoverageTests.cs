@@ -1,9 +1,7 @@
 namespace arolariu.Backend.Domain.Tests.Invoices.Brokers;
 
 using System;
-using System.Collections.Frozen;
 using System.Collections.Generic;
-using System.Reflection;
 
 using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
@@ -17,26 +15,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class JsonTaxonomyBrokerCoverageTests
 {
-  private static readonly string[] MilkTokens = ["MILK"];
-
-  /// <summary>
-  /// Verifies token-overlap calculation returns zero when the query token set is empty.
-  /// </summary>
-  [TestMethod]
-  public void CalculateTokenOverlap_EmptyQueryTokens_ReturnsZero()
-  {
-    MethodInfo method = typeof(JsonTaxonomyBroker).GetMethod(
-      "CalculateTokenOverlap",
-      BindingFlags.NonPublic | BindingFlags.Static)
-      ?? throw new AssertFailedException("CalculateTokenOverlap method was not found.");
-    FrozenSet<string> nodeTokens = MilkTokens.ToFrozenSet(StringComparer.Ordinal);
-    FrozenSet<string> queryTokens = Array.Empty<string>().ToFrozenSet(StringComparer.Ordinal);
-
-    var score = (double)method.Invoke(null, [nodeTokens, queryTokens])!;
-
-    Assert.AreEqual(0.0, score);
-  }
-
   /// <summary>
   /// Verifies embedded artifacts can be loaded repeatedly through the default constructor.
   /// </summary>

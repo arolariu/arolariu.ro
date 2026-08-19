@@ -185,7 +185,9 @@ public sealed partial class JsonTaxonomyBroker : ITaxonomyBroker
     _ = ClassificationContracts.RequireText(artifact.Version, nameof(artifact.Version));
     _ = ClassificationContracts.RequireText(artifact.SourceUrl, nameof(artifact.SourceUrl));
     _ = ClassificationContracts.RequireText(artifact.Attribution, nameof(artifact.Attribution));
-    if (artifact.Nodes is null || artifact.Nodes.Length == 0)
+    ArgumentNullException.ThrowIfNull(artifact.Nodes);
+
+    if (artifact.Nodes.Length == 0)
       throw new InvalidOperationException($"Taxonomy artifact for '{system}' must contain nodes.");
 
     var indexed = new Dictionary<string, TaxonomyArtifactNode>(StringComparer.Ordinal);

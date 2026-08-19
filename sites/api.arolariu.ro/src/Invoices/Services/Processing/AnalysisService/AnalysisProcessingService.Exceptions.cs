@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Processing;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.Modules;
 
 public sealed partial class AnalysisProcessingService

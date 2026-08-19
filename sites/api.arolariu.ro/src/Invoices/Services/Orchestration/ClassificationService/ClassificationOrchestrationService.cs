@@ -14,6 +14,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Orchestrati
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.ClassificationAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.GenerativeAnalysis;
 

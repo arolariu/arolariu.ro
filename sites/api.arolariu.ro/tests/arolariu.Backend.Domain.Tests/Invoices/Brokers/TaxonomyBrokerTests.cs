@@ -4,8 +4,8 @@ using System;
 using System.Collections.Generic;
 
 using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
-using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptions.Inner;
 using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;

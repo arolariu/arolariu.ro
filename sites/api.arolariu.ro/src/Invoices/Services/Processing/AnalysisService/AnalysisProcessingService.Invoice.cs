@@ -13,6 +13,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
