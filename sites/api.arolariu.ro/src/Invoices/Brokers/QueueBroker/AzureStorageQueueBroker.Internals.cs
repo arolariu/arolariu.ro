@@ -13,6 +13,10 @@ public sealed partial class AzureStorageQueueBroker
   private const string AzuriteDevelopmentKey =
     "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 
+  /// <summary>Creates the Azure Queue service client for hosted Azure or local Azurite execution.</summary>
+  /// <param name="optionsManager">The application options source containing the configured storage endpoint.</param>
+  /// <returns>An authenticated queue service client targeting the configured storage account.</returns>
+  /// <exception cref="ArgumentNullException">Thrown when <paramref name="optionsManager"/> is null.</exception>
   private static QueueServiceClient CreateQueueServiceClient(IOptionsManager optionsManager)
   {
     ArgumentNullException.ThrowIfNull(optionsManager);
