@@ -11,9 +11,6 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 /// </summary>
 public interface IQueueBroker
 {
-  /// <summary>Creates the configured queue when it does not already exist.</summary>
-  ValueTask CreateQueueIfNotExistsAsync(CancellationToken cancellationToken);
-
   /// <summary>Enqueues one message and returns the provider message identifier.</summary>
   ValueTask<string> EnqueueMessageAsync(
     AnalysisQueueMessage message,

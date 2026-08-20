@@ -7,19 +7,17 @@ using System.Reflection;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
-using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-/// <summary>Verifies request-owned manual taxonomy mapping.</summary>
+/// <summary>Verifies request classification transport contracts.</summary>
 [TestClass]
 public sealed class RequestClassificationDtoTests
 {
-  /// <summary>Verifies add-merchant requests require and map a NACE code.</summary>
+  /// <summary>Verifies add-merchant requests require a code without creating a domain classification.</summary>
   [TestMethod]
-  public void AddMerchantToInvoiceRequestDto_ClassificationCode_MapsNaceSelection()
+  public void AddMerchantToInvoiceRequestDto_ClassificationCode_RemainsRequiredTransportData()
   {
     var request = new AddMerchantToInvoiceRequestDto(
       "Store",
@@ -40,13 +38,12 @@ public sealed class RequestClassificationDtoTests
 
     Assert.AreEqual(typeof(string), property.PropertyType);
     Assert.IsNotNull(parameter.GetCustomAttribute<RequiredAttribute>());
-    Assert.AreEqual(ClassificationSystem.Nace21, merchant.Classification?.System);
-    Assert.AreEqual("47.11", merchant.Classification?.Code);
+    Assert.IsNull(merchant.Classification);
   }
 
-  /// <summary>Verifies invoice PATCH requests map supplied codes as ECOICOP selections.</summary>
+  /// <summary>Verifies invoice PATCH mapping preserves classification for Processing resolution.</summary>
   [TestMethod]
-  public void PatchInvoiceRequestDto_ClassificationCode_MapsEcoicopSelection()
+  public void PatchInvoiceRequestDto_ClassificationCode_DoesNotCreateClassification()
   {
     var existing = new Invoice { id = Guid.NewGuid(), UserIdentifier = Guid.NewGuid() };
     var request = new PatchInvoiceRequestDto(
@@ -61,13 +58,12 @@ public sealed class RequestClassificationDtoTests
 
     Invoice patched = request.ApplyTo(existing, Guid.NewGuid());
 
-    Assert.AreEqual(ClassificationSystem.EcoicopV2, patched.Classification?.System);
-    Assert.AreEqual("01.1", patched.Classification?.Code);
+    Assert.IsNull(patched.Classification);
   }
 
-  /// <summary>Verifies optional invoice classification codes reject whitespace.</summary>
+  /// <summary>Verifies invoice mapping leaves whitespace validation to Analysis Orchestration.</summary>
   [TestMethod]
-  public void UpdateInvoiceRequestDto_WhitespaceClassificationCode_ThrowsBadHttpRequestException()
+  public void UpdateInvoiceRequestDto_WhitespaceClassificationCode_DoesNotCreateClassification()
   {
     var request = new UpdateInvoiceRequestDto(
       "Invoice",
@@ -78,7 +74,6 @@ public sealed class RequestClassificationDtoTests
       IsImportant: false,
       AdditionalMetadata: null);
 
-    Assert.ThrowsExactly<BadHttpRequestException>(
-      () => request.ToInvoice(Guid.NewGuid(), Guid.NewGuid()));
+    Assert.IsNull(request.ToInvoice(Guid.NewGuid(), Guid.NewGuid()).Classification);
   }
 }

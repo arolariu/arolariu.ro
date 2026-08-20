@@ -48,15 +48,15 @@ public interface IInvoiceOrchestrationService
   /// <remarks>
   /// The invoice is loaded, the scan is appended, and the aggregate is persisted once.
   /// </remarks>
-  /// <param name="scan">The uploaded scan to attach.</param>
   /// <param name="invoiceIdentifier">The identifier of the invoice receiving the scan.</param>
   /// <param name="userIdentifier">The optional partition context for the invoice.</param>
+  /// <param name="scan">The uploaded scan to attach.</param>
   /// <param name="cancellationToken">The token used to cancel validation or persistence.</param>
   /// <returns>The updated invoice aggregate containing the attached scan.</returns>
   Task<Invoice> AttachInvoiceScanAsync(
-    InvoiceScan scan,
     Guid invoiceIdentifier,
     Guid? userIdentifier,
+    InvoiceScan scan,
     CancellationToken cancellationToken);
   #endregion
 

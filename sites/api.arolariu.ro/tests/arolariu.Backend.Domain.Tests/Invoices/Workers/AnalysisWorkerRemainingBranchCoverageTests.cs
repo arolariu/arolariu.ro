@@ -37,9 +37,8 @@ public sealed class AnalysisWorkerRemainingBranchCoverageTests
     await probe.WaitForIterationsAsync(2).ConfigureAwait(false);
     await worker.StopAsync(CancellationToken.None).ConfigureAwait(false);
 
-    Assert.AreEqual("ensure-store", probe.Timeline[0]);
-    Assert.AreEqual("try-execute-processed", probe.Timeline[1]);
-    Assert.AreEqual("try-execute-idle", probe.Timeline[2]);
+    Assert.AreEqual("try-execute-processed", probe.Timeline[0]);
+    Assert.AreEqual("try-execute-idle", probe.Timeline[1]);
     worker.Dispose();
   }
 
@@ -88,12 +87,6 @@ public sealed class AnalysisWorkerRemainingBranchCoverageTests
   /// </summary>
   private sealed class FakeAnalysisProcessingService(WorkerDelayProbe probe) : WorkerManagementServiceBase
   {
-    public override Task EnsureAnalysisQueueAsync(CancellationToken cancellationToken)
-    {
-      probe.Events.Enqueue("ensure-store");
-      return Task.CompletedTask;
-    }
-
     public override Task<bool> TryExecuteNextAnalysisAsync(CancellationToken cancellationToken) =>
       Task.FromResult(probe.NextProcessedValue());
   }

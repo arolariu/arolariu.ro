@@ -7,9 +7,6 @@ using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
-
-using Microsoft.AspNetCore.Http;
 
 /// <summary>
 /// Request DTO for updating client-editable merchant fields.
@@ -77,9 +74,6 @@ public readonly record struct UpdateMerchantRequestDto(
   Guid? ParentCompanyId,
   IDictionary<string, string>? AdditionalMetadata)
 {
-  private const string PlaceholderVersion = "unresolved";
-  private const string PlaceholderLabel = "unresolved";
-
   /// <summary>
   /// Converts this DTO to a <see cref="Merchant"/> domain entity.
   /// </summary>
@@ -114,7 +108,6 @@ public readonly record struct UpdateMerchantRequestDto(
       id = merchantId,
       Name = Name,
       Description = Description,
-      Classification = CreateManualClassification(ClassificationCode),
       Address = Address ?? new ContactInformation(),
     };
 
@@ -127,32 +120,5 @@ public readonly record struct UpdateMerchantRequestDto(
     }
 
     return merchant;
-  }
-
-  private static StandardClassification? CreateManualClassification(string? code)
-  {
-    if (code is null)
-    {
-      return null;
-    }
-
-    if (string.IsNullOrWhiteSpace(code))
-    {
-      throw new BadHttpRequestException("Classification code must not be empty or whitespace.");
-    }
-
-    string normalizedCode = code.Trim();
-    IReadOnlyList<ClassificationNode> hierarchy =
-      [new ClassificationNode(PlaceholderVersion, normalizedCode, PlaceholderLabel)];
-
-    return new StandardClassification(
-      ClassificationSystem.Nace21,
-      PlaceholderVersion,
-      normalizedCode,
-      PlaceholderLabel,
-      hierarchy,
-      ClassificationOrigin.Manual,
-      confidence: null,
-      evidence: []);
   }
 }

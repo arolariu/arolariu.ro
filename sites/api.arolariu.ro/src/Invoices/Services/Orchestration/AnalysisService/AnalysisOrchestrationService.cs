@@ -11,7 +11,6 @@ using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 using Microsoft.Extensions.Logging;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
-using DDD = arolariu.Backend.Domain.Invoices.DDD;
 
 /// <summary>
 /// Coordinates analysis queue lifecycle and non-classification capabilities.
@@ -43,29 +42,7 @@ public sealed partial class AnalysisOrchestrationService : IAnalysisOrchestratio
     logger = loggerFactory.CreateLogger<IAnalysisOrchestrationService>();
   }
 
-  /// <summary>Ensures the backend-owned analysis queue is available.</summary>
-  /// <param name="cancellationToken">The token used to cancel queue provisioning.</param>
-  /// <returns>A task that completes after availability is verified.</returns>
-  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationDependencyException">
-  /// Thrown when the queue foundation reports a provider failure.
-  /// </exception>
-  public async Task EnsureQueueAsync(CancellationToken cancellationToken) =>
-    await TryCatchAsync(async () =>
-    {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(EnsureQueueAsync));
-      await analysisQueueFoundationService.EnsureQueueAsync(cancellationToken).ConfigureAwait(false);
-    }).ConfigureAwait(false);
-
-  /// <summary>Publishes one durable analysis request through the queue foundation.</summary>
-  /// <param name="message">The provider-neutral analysis request to enqueue.</param>
-  /// <param name="cancellationToken">The token used to cancel publication.</param>
-  /// <returns>The provider-assigned string message identifier.</returns>
-  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationValidationException">
-  /// Thrown when the queue foundation rejects the message input.
-  /// </exception>
-  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationDependencyException">
-  /// Thrown when the queue provider cannot publish the message.
-  /// </exception>
+  /// <inheritdoc/>
   public async Task<string> EnqueueAnalysisAsync(
     AnalysisQueueMessage message,
     CancellationToken cancellationToken) =>
@@ -75,16 +52,7 @@ public sealed partial class AnalysisOrchestrationService : IAnalysisOrchestratio
       return await analysisQueueFoundationService.EnqueueAsync(message, cancellationToken).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
-  /// <summary>Receives at most one visible analysis message from the queue foundation.</summary>
-  /// <param name="visibilityTimeout">The positive interval for which a dequeued message is hidden.</param>
-  /// <param name="cancellationToken">The token used to cancel dequeue.</param>
-  /// <returns>The receipt, or <see langword="null"/> when no message is visible.</returns>
-  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationValidationException">
-  /// Thrown when the visibility timeout is invalid.
-  /// </exception>
-  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationDependencyException">
-  /// Thrown when the queue provider cannot complete the dequeue.
-  /// </exception>
+  /// <inheritdoc/>
   public async Task<AnalysisQueueReceipt?> ReceiveAnalysisAsync(
     TimeSpan visibilityTimeout,
     CancellationToken cancellationToken) =>
@@ -96,17 +64,7 @@ public sealed partial class AnalysisOrchestrationService : IAnalysisOrchestratio
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 
-  /// <summary>Renews visibility ownership for a dequeued analysis message.</summary>
-  /// <param name="receipt">The receipt containing the current provider message ID and pop receipt.</param>
-  /// <param name="visibilityTimeout">The positive replacement visibility interval.</param>
-  /// <param name="cancellationToken">The token used to cancel renewal.</param>
-  /// <returns>The receipt containing updated provider state.</returns>
-  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationValidationException">
-  /// Thrown when the receipt or timeout is invalid.
-  /// </exception>
-  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationDependencyException">
-  /// Thrown when the provider cannot renew visibility.
-  /// </exception>
+  /// <inheritdoc/>
   public async Task<AnalysisQueueReceipt> RenewAnalysisVisibilityAsync(
     AnalysisQueueReceipt receipt,
     TimeSpan visibilityTimeout,
@@ -119,16 +77,7 @@ public sealed partial class AnalysisOrchestrationService : IAnalysisOrchestratio
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 
-  /// <summary>Deletes a completed or terminally failed analysis message.</summary>
-  /// <param name="receipt">The receipt containing the provider message ID and current pop receipt.</param>
-  /// <param name="cancellationToken">The token used to cancel deletion.</param>
-  /// <returns>A task that completes after deletion.</returns>
-  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationValidationException">
-  /// Thrown when the receipt is invalid.
-  /// </exception>
-  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationDependencyException">
-  /// Thrown when the provider cannot delete the message.
-  /// </exception>
+  /// <inheritdoc/>
   public async Task DeleteAnalysisAsync(
     AnalysisQueueReceipt receipt,
     CancellationToken cancellationToken) =>

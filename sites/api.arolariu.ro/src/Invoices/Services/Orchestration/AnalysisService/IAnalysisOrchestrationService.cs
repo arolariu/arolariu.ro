@@ -37,12 +37,12 @@ public interface IAnalysisOrchestrationService
     CancellationToken cancellationToken);
 
   /// <summary>Canonically resolves one optional manual classification selection.</summary>
-  /// <param name="classification">The optional code-only classification request.</param>
+  /// <param name="classificationCode">The optional code-only classification request.</param>
   /// <param name="expectedSystem">The taxonomy system required by the target field.</param>
   /// <param name="cancellationToken">The token used to cancel taxonomy resolution.</param>
   /// <returns>The canonical taxonomy snapshot, or <see langword="null"/> when no selection was supplied.</returns>
   Task<StandardClassification?> ResolveManualClassificationAsync(
-    StandardClassification? classification,
+    string? classificationCode,
     ClassificationSystem expectedSystem,
     CancellationToken cancellationToken);
 
@@ -75,11 +75,6 @@ public interface IAnalysisOrchestrationService
     Merchant merchant,
     Guid sourceRunId,
     CancellationToken cancellationToken);
-
-  /// <summary>Ensures the backend-owned analysis queue exists.</summary>
-  /// <param name="cancellationToken">The token used to cancel queue provisioning.</param>
-  /// <returns>A task that completes after queue availability is verified.</returns>
-  Task EnsureQueueAsync(CancellationToken cancellationToken);
 
   /// <summary>Enqueues one analysis message and returns Azure Queue's message identifier.</summary>
   /// <param name="message">The provider-neutral durable analysis request.</param>

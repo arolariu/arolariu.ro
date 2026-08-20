@@ -11,12 +11,6 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 /// </summary>
 public interface IAnalysisQueueFoundationService
 {
-  /// <summary>Ensures the backend-owned analysis queue exists and is available.</summary>
-  /// <param name="cancellationToken">The token used to cancel queue provisioning and verification.</param>
-  /// <returns>A task that completes after the queue has been verified.</returns>
-  /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled.</exception>
-  Task EnsureQueueAsync(CancellationToken cancellationToken);
-
   /// <summary>Enqueues one analysis request and returns Azure Queue's message identifier.</summary>
   /// <param name="message">The validated provider-neutral analysis request to enqueue.</param>
   /// <param name="cancellationToken">The token used to cancel queue publication.</param>

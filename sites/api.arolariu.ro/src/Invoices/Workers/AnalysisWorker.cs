@@ -79,10 +79,6 @@ public sealed class AnalysisWorker : BackgroundService
   {
     logger.LogAnalysisWorkerStarted();
 
-    // The durable queue is provisioned once, before the first poll, so an empty environment does not produce a
-    // storm of not-found failures on every iteration.
-    await EnsureAnalysisQueueAsync(stoppingToken).ConfigureAwait(false);
-
     while (!stoppingToken.IsCancellationRequested)
     {
       bool processed = false;
@@ -115,39 +111,6 @@ public sealed class AnalysisWorker : BackgroundService
       {
         return;
       }
-    }
-  }
-
-  /// <summary>
-  /// Ensures the durable analysis queue exists before the worker starts polling.
-  /// </summary>
-  /// <param name="stoppingToken">The host shutdown token.</param>
-  /// <returns>Asynchronous task.</returns>
-  [SuppressMessage(
-    "Design",
-    "CA1031:Do not catch general exception types",
-    Justification = "Startup provisioning is best-effort; the real dependency failure is reported per run by the processing layer.")]
-  private async Task EnsureAnalysisQueueAsync(CancellationToken stoppingToken)
-  {
-    try
-    {
-      AsyncServiceScope scope = serviceScopeFactory.CreateAsyncScope();
-      await using (scope.ConfigureAwait(false))
-      {
-        var management = scope.ServiceProvider.GetRequiredService<IInvoiceManagementService>();
-        await management.EnsureAnalysisQueueAsync(stoppingToken).ConfigureAwait(false);
-      }
-    }
-    catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-    {
-      // Host shutdown during startup provisioning. The polling loop exits immediately on the same token.
-      return;
-    }
-    catch (Exception)
-    {
-      // Provisioning is best-effort at startup: the queue may already exist and simply be unreachable for a moment.
-      // Polling still proceeds, and each delivery's dependency classification reports the real failure.
-      logger.LogAnalysisWorkerQueueInitializationFailed();
     }
   }
 }

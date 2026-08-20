@@ -13,6 +13,12 @@ using Microsoft.Extensions.Logging;
 /// </summary>
 public static partial class Log
 {
+  #region Broker Logging Methods
+  /// <summary>Logs the start of a structured generative provider request without recording request content.</summary>
+  [LoggerMessage(600_100, LogLevel.Debug, "A structured generative analysis provider call is starting.")]
+  public static partial void LogStructuredGenerationStarted(this ILogger logger);
+  #endregion
+
   #region Management Service Logging Methods
   /// <summary>Logs an invoice Management validation exception.</summary>
   [LoggerMessage(500_100, LogLevel.Error, "The invoice Management service encountered a validation exception.")]
@@ -115,13 +121,6 @@ public static partial class Log
   /// <param name="logger">The logger.</param>
   [LoggerMessage(300_214, LogLevel.Information, "The analysis worker started polling for queued runs.")]
   public static partial void LogAnalysisWorkerStarted(this ILogger logger);
-
-  /// <summary>
-  /// Logs a failure to ensure the durable analysis queue during worker startup.
-  /// </summary>
-  /// <param name="logger">The logger.</param>
-  [LoggerMessage(300_215, LogLevel.Error, "The analysis worker could not ensure the durable queue.")]
-  public static partial void LogAnalysisWorkerQueueInitializationFailed(this ILogger logger);
 
   /// <summary>
   /// Logs a best-effort queue-depth refresh failure without exposing provider failure content.

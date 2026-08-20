@@ -16,7 +16,7 @@ using System.Diagnostics.CodeAnalysis;
 /// <example>
 /// <code>
 /// var request = new DeleteProductRequestDto("LAPTE ZUZU 1L");
-/// await invoiceService.DeleteProduct(request.ProductName, invoiceId, userId, cancellationToken);
+/// await invoiceService.DeleteProduct(invoiceId, userId, request.ProductName, cancellationToken);
 /// </code>
 /// </example>
 /// <seealso cref="CreateProductRequestDto"/>

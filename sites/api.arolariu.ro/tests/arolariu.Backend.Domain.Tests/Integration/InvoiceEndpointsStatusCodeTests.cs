@@ -649,7 +649,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
   #endregion
 
   #region Product update atomicity tests
-  /// <summary>Verifies a whitespace product classification code is rejected before Management is invoked.</summary>
+  /// <summary>Verifies a whitespace product classification code rejected by Management maps to bad request.</summary>
   [TestMethod]
   public async Task AddProductToInvoiceAsync_WhitespaceClassificationCode_ReturnsBadRequest()
   {
@@ -664,6 +664,18 @@ public sealed class InvoiceEndpointsStatusCodeTests
       Price: 8m,
       AllergenAssessment: null);
     var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+    service.Setup(candidate => candidate.ReadInvoice(
+        invoiceId,
+        userId,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(new Invoice { id = invoiceId, UserIdentifier = userId });
+    service.Setup(candidate => candidate.AddProduct(
+        invoiceId,
+        userId,
+        It.IsAny<Product>(),
+        " ",
+        It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new BadHttpRequestException("Classification code must not be whitespace."));
 
     IResult result = await InvoiceEndpoints.AddProductToInvoiceAsync(
       service.Object,
@@ -672,7 +684,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
       request);
 
     Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
-    service.VerifyNoOtherCalls();
+    service.VerifyAll();
   }
 
   /// <summary>
@@ -702,14 +714,15 @@ public sealed class InvoiceEndpointsStatusCodeTests
     Product? capturedProduct = null;
     service
       .Setup(candidate => candidate.UpdateProduct(
-        "Old Milk",
-        It.IsAny<Product>(),
         invoiceId,
         userId,
+        "Old Milk",
+        It.IsAny<Product>(),
+        null,
         It.IsAny<CancellationToken>()))
-      .Callback<string, Product, Guid, Guid?, CancellationToken>(
-        (_, updated, _, _, _) => capturedProduct = updated)
-      .ReturnsAsync((string _, Product updated, Guid _, Guid? _, CancellationToken _) =>
+      .Callback<Guid, Guid?, string, Product, string?, CancellationToken>(
+        (_, _, _, updated, _, _) => capturedProduct = updated)
+      .ReturnsAsync((Guid _, Guid? _, string _, Product updated, string? _, CancellationToken _) =>
       {
         updated.Classification = classification;
         return updated;
@@ -729,10 +742,11 @@ public sealed class InvoiceEndpointsStatusCodeTests
     Assert.AreSame(classification, persistedProduct.Classification);
     service.Verify(
       candidate => candidate.UpdateProduct(
-        "Old Milk",
-        It.IsAny<Product>(),
         invoiceId,
         userId,
+        "Old Milk",
+        It.IsAny<Product>(),
+        null,
         It.IsAny<CancellationToken>()),
       Times.Once);
   }
@@ -774,12 +788,13 @@ public sealed class InvoiceEndpointsStatusCodeTests
       .ReturnsAsync(invoice);
     service
       .Setup(candidate => candidate.UpdateInvoice(
-        It.IsAny<Invoice>(),
         invoiceId,
         userId,
+        It.IsAny<Invoice>(),
+        null,
         It.IsAny<CancellationToken>()))
-      .Callback<Invoice, Guid, Guid?, CancellationToken>(
-        (updated, _, _, _) => capturedInvoice = updated)
+      .Callback<Guid, Guid?, Invoice, string?, CancellationToken>(
+        (_, _, updated, _, _) => capturedInvoice = updated)
       .ReturnsAsync(invoice);
 
     IResult result = await InvoiceEndpoints.UpdateSpecificInvoiceAsync(
@@ -827,12 +842,13 @@ public sealed class InvoiceEndpointsStatusCodeTests
       .ReturnsAsync(merchant);
     service
       .Setup(candidate => candidate.UpdateMerchant(
-        It.IsAny<Merchant>(),
         merchantId,
         parentCompanyId,
+        It.IsAny<Merchant>(),
+        null,
         It.IsAny<CancellationToken>()))
-      .Callback<Merchant, Guid, Guid?, CancellationToken>(
-        (updated, _, _, _) => capturedMerchant = updated)
+      .Callback<Guid, Guid?, Merchant, string?, CancellationToken>(
+        (_, _, updated, _, _) => capturedMerchant = updated)
       .ReturnsAsync(merchant);
 
     IResult result = await InvoiceEndpoints.UpdateSpecificMerchantAsync(

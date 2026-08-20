@@ -166,7 +166,7 @@ Both regions use the raw Cosmos SDK paths in
 `IQueueBroker`, implemented by `AzureStorageQueueBroker`, owns transport through
 the backend queue named `invoice-analysis`. It:
 
-- creates the queue when needed;
+- assumes the deployment-provisioned queue already exists;
 - serializes and enqueues an `AnalysisQueueMessage`;
 - returns Azure Queue's `MessageId`;
 - receives at most one visible message with a caller-supplied visibility timeout;
@@ -309,8 +309,8 @@ All invoice and merchant endpoint handlers inject
 budgets, DTO mapping, HTTP results, and exception-to-ProblemDetails translation;
 they do not inject lower-layer contracts.
 
-`AnalysisWorker` is a host adapter. It provisions the queue through Management,
-then creates a fresh service scope for each poll and resolves only
+`AnalysisWorker` is a host adapter. It creates a fresh service scope for each
+poll and resolves only
 `IInvoiceManagementService`. It processes at most one received message per
 iteration and waits five seconds when no message is visible.
 
@@ -342,8 +342,8 @@ cancelled because the process can no longer safely assume exclusive visibility.
 
 Transient execution failures are retried by leaving the message undeleted. Azure
 Queue redelivers it after its visibility timeout and increments the dequeue
-count. Management deletes a failed message on dequeue five. Queue provisioning
-is best-effort at worker startup; per-iteration failures are logged without
+count. Management deletes a failed message on dequeue five. Queue availability
+is a deployment prerequisite; per-iteration failures are logged without
 terminating the hosted worker.
 
 ### Capability stack
@@ -396,7 +396,7 @@ Tests should enforce:
 - endpoints and the worker resolve the invoice domain only through Management;
 - no Endpoint-to-Processing, Processing-to-Foundation/Broker,
   Orchestration-to-Orchestration, or Foundation-to-Foundation bypass exists;
-- queue provisioning, message serialization, Azure `MessageId` acknowledgements,
+- message serialization, Azure `MessageId` acknowledgements,
   receive behavior, pop-receipt updates, visibility renewal, visibility-based
   retries, and deletion on dequeue five;
 - Management persists successful patches before message deletion;

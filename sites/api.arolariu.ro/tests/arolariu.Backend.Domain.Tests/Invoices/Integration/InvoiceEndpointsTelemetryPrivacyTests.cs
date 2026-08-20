@@ -49,22 +49,25 @@ public sealed class InvoiceEndpointsTelemetryPrivacyTests
       .ReturnsAsync(invoice);
     service
       .Setup(processing => processing.AddProduct(
-        It.IsAny<arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Product>(),
         invoice.id,
         ownerIdentifier,
+        It.IsAny<arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Product>(),
+        It.IsAny<string?>(),
         It.IsAny<CancellationToken>()))
       .Returns(Task.CompletedTask);
     service
       .Setup(processing => processing.UpdateInvoice(
-        invoice,
         invoice.id,
         ownerIdentifier,
+        invoice,
+        It.IsAny<string?>(),
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(invoice);
     service
       .Setup(processing => processing.CreateMerchant(
         It.IsAny<arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Merchant>(),
         null,
+        It.IsAny<string?>(),
         It.IsAny<CancellationToken>()))
       .Returns(Task.CompletedTask);
 

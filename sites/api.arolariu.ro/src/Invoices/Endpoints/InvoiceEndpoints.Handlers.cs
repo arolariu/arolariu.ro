@@ -266,7 +266,12 @@ public static partial class InvoiceEndpoints
       }
 
       var updatedInvoice = await invoiceManagementService
-        .UpdateInvoice(updatedInvoiceEntity, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+        .UpdateInvoice(
+          id,
+          potentialUserIdentifier,
+          updatedInvoiceEntity,
+          invoicePayload.ClassificationCode,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoice updated successfully");
@@ -333,13 +338,23 @@ public static partial class InvoiceEndpoints
         {
           possibleMerchant.ReferencedInvoices.Add(id);
           await invoiceManagementService
-            .UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId, cancellationToken: writeScope.Token)
+            .UpdateMerchant(
+              possibleMerchant.id,
+              possibleMerchant.ParentCompanyId,
+              possibleMerchant,
+              classificationCode: null,
+              cancellationToken: writeScope.Token)
             .ConfigureAwait(false);
         }
       }
 
       var updatedInvoice = await invoiceManagementService
-        .UpdateInvoice(newInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+        .UpdateInvoice(
+          id,
+          potentialUserIdentifier,
+          newInvoice,
+          invoicePayload.ClassificationCode,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoice patched successfully");
@@ -440,7 +455,12 @@ public static partial class InvoiceEndpoints
       }
 
       await invoiceManagementService
-        .AddProduct(productEntity, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+        .AddProduct(
+          id,
+          potentialUserIdentifier,
+          productEntity,
+          product.ClassificationCode,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Product added to invoice");
@@ -525,9 +545,9 @@ public static partial class InvoiceEndpoints
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
       await invoiceManagementService
         .DeleteProduct(
-          productDto.ProductName,
           id,
           potentialUserIdentifier,
+          productDto.ProductName,
           cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
@@ -571,10 +591,11 @@ public static partial class InvoiceEndpoints
 
       var updatedProduct = await invoiceManagementService
         .UpdateProduct(
-          productInformation.OriginalProductName,
-          productEntity,
           id,
           potentialUserIdentifier,
+          productInformation.OriginalProductName,
+          productEntity,
+          productInformation.ClassificationCode,
           writeScope.Token)
         .ConfigureAwait(false);
 
@@ -699,11 +720,16 @@ public static partial class InvoiceEndpoints
       merchant.ReferencedInvoices.Add(possibleInvoice.id);
 
       await invoiceManagementService
-        .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+        .UpdateInvoice(
+          id,
+          potentialUserIdentifier,
+          possibleInvoice,
+          classificationCode: null,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       await invoiceManagementService
-        .CreateMerchant(merchant, null, writeScope.Token)
+        .CreateMerchant(merchant, null, merchantDto.ClassificationCode, writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Merchant added to invoice");
@@ -773,11 +799,21 @@ public static partial class InvoiceEndpoints
       possibleMerchant.ReferencedInvoices.Remove(possibleInvoice.id);
 
       await invoiceManagementService
-        .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+        .UpdateInvoice(
+          id,
+          potentialUserIdentifier,
+          possibleInvoice,
+          classificationCode: null,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       await invoiceManagementService
-        .UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId, cancellationToken: writeScope.Token)
+        .UpdateMerchant(
+          possibleMerchant.id,
+          possibleMerchant.ParentCompanyId,
+          possibleMerchant,
+          classificationCode: null,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Merchant removed from invoice");
@@ -821,7 +857,7 @@ public static partial class InvoiceEndpoints
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       await invoiceManagementService
-        .CreateInvoiceScan(convertedScan, id, potentialUserIdentifier, writeScope.Token)
+        .CreateInvoiceScan(id, potentialUserIdentifier, convertedScan, writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Scan added to invoice");
@@ -924,7 +960,12 @@ public static partial class InvoiceEndpoints
       {
         possibleInvoice.Scans.Remove(possibleScan);
         await invoiceManagementService
-          .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+          .UpdateInvoice(
+            id,
+            potentialUserIdentifier,
+            possibleInvoice,
+            classificationCode: null,
+            cancellationToken: writeScope.Token)
           .ConfigureAwait(false);
         activity?.RecordSuccess("Scan removed from invoice");
         return TypedResults.NoContent();
@@ -1026,7 +1067,12 @@ public static partial class InvoiceEndpoints
       invoiceMetadataPatch.ApplyTo(possibleInvoice.AdditionalMetadata);
 
       var updatedInvoice = await invoiceManagementService
-        .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+        .UpdateInvoice(
+          id,
+          potentialUserIdentifier,
+          possibleInvoice,
+          classificationCode: null,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       var publicMetadata = InvoiceResponseDto.CreateMetadataSnapshot(updatedInvoice.AdditionalMetadata);
@@ -1084,7 +1130,12 @@ public static partial class InvoiceEndpoints
       }
 
       _ = await invoiceManagementService
-        .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+        .UpdateInvoice(
+          id,
+          potentialUserIdentifier,
+          possibleInvoice,
+          classificationCode: null,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Metadata keys deleted");
@@ -1129,7 +1180,7 @@ public static partial class InvoiceEndpoints
       activity?.SetMerchantContext(merchant.id);
 
       await invoiceManagementService
-          .CreateMerchant(merchant, null, writeScope.Token)
+          .CreateMerchant(merchant, null, classificationCode: null, writeScope.Token)
           .ConfigureAwait(false);
 
       activity?.RecordSuccess("Merchant created");
@@ -1270,9 +1321,10 @@ public static partial class InvoiceEndpoints
       Merchant updatedMerchant = merchantPayload.ToMerchant(id);
       Merchant persistedMerchant = await invoiceManagementService
         .UpdateMerchant(
-          updatedMerchant,
           id,
           existingMerchant.ParentCompanyId,
+          updatedMerchant,
+          merchantPayload.ClassificationCode,
           cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
@@ -1335,7 +1387,12 @@ public static partial class InvoiceEndpoints
         {
           possibleInvoice.MerchantReference = Guid.Empty;
           await invoiceManagementService
-            .UpdateInvoice(possibleInvoice, possibleInvoice.id, null, writeScope.Token)
+            .UpdateInvoice(
+              possibleInvoice.id,
+              userIdentifier: null,
+              possibleInvoice,
+              classificationCode: null,
+              writeScope.Token)
             .ConfigureAwait(false);
         }
       }
@@ -1467,12 +1524,22 @@ public static partial class InvoiceEndpoints
         invoice.MerchantReference = possibleMerchant.id;
 
         await invoiceManagementService
-          .UpdateInvoice(invoice, invoice.id, null, writeScope.Token)
+          .UpdateInvoice(
+            invoice.id,
+            userIdentifier: null,
+            invoice,
+            classificationCode: null,
+            writeScope.Token)
           .ConfigureAwait(false);
       }
 
       await invoiceManagementService
-        .UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId, cancellationToken: writeScope.Token)
+        .UpdateMerchant(
+          possibleMerchant.id,
+          possibleMerchant.ParentCompanyId,
+          possibleMerchant,
+          classificationCode: null,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoices added to merchant");
@@ -1540,12 +1607,22 @@ public static partial class InvoiceEndpoints
         invoice.MerchantReference = Guid.Empty;
 
         await invoiceManagementService
-          .UpdateInvoice(invoice, invoice.id, null, writeScope.Token)
+          .UpdateInvoice(
+            invoice.id,
+            userIdentifier: null,
+            invoice,
+            classificationCode: null,
+            writeScope.Token)
           .ConfigureAwait(false);
       }
 
       await invoiceManagementService
-        .UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId, cancellationToken: writeScope.Token)
+        .UpdateMerchant(
+          possibleMerchant.id,
+          possibleMerchant.ParentCompanyId,
+          possibleMerchant,
+          classificationCode: null,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoices removed from merchant");

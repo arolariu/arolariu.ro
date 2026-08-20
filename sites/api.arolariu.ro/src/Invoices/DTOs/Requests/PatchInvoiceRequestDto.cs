@@ -5,10 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
-
-using Microsoft.AspNetCore.Http;
 
 /// <summary>
 /// Request DTO for partial invoice update operations (HTTP PATCH semantics).
@@ -99,9 +96,6 @@ public readonly record struct PatchInvoiceRequestDto(
   ICollection<Guid>? SharedWith,
   IDictionary<string, object>? AdditionalMetadata)
 {
-  private const string PlaceholderVersion = "unresolved";
-  private const string PlaceholderLabel = "unresolved";
-
   /// <summary>
   /// Applies this partial update to an existing <see cref="Invoice"/> instance.
   /// </summary>
@@ -150,7 +144,7 @@ public readonly record struct PatchInvoiceRequestDto(
       UserIdentifier = existing.UserIdentifier,
       Name = !string.IsNullOrWhiteSpace(Name) ? Name : existing.Name,
       Description = !string.IsNullOrWhiteSpace(Description) ? Description : existing.Description,
-      Classification = CreateManualClassification(ClassificationCode) ?? existing.Classification,
+      Classification = existing.Classification,
       PaymentInformation = PaymentInformation ?? existing.PaymentInformation,
       MerchantReference = MerchantReference.HasValue && MerchantReference.Value != Guid.Empty
         ? MerchantReference.Value
@@ -203,32 +197,5 @@ public readonly record struct PatchInvoiceRequestDto(
 
     patched.PerformUpdate(updatedBy);
     return patched;
-  }
-
-  private static StandardClassification? CreateManualClassification(string? code)
-  {
-    if (code is null)
-    {
-      return null;
-    }
-
-    if (string.IsNullOrWhiteSpace(code))
-    {
-      throw new BadHttpRequestException("Classification code must not be empty or whitespace.");
-    }
-
-    string normalizedCode = code.Trim();
-    IReadOnlyList<ClassificationNode> hierarchy =
-      [new ClassificationNode(PlaceholderVersion, normalizedCode, PlaceholderLabel)];
-
-    return new StandardClassification(
-      ClassificationSystem.EcoicopV2,
-      PlaceholderVersion,
-      normalizedCode,
-      PlaceholderLabel,
-      hierarchy,
-      ClassificationOrigin.Manual,
-      confidence: null,
-      evidence: []);
   }
 }

@@ -1,11 +1,6 @@
 namespace arolariu.Backend.Domain.Tests.Invoices.Workers;
 
 using System;
-using System.Collections.Concurrent;
-using System.Threading;
-using System.Threading.Tasks;
-
-using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.Services.Management;
 using arolariu.Backend.Domain.Invoices.Workers;
 
@@ -14,7 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
-/// Adds constructor and startup-failure branch coverage for <see cref="AnalysisWorker"/>.
+/// Adds constructor branch coverage for <see cref="AnalysisWorker"/>.
 /// </summary>
 [TestClass]
 public sealed class AnalysisWorkerCoverageTests
@@ -36,7 +31,7 @@ public sealed class AnalysisWorkerCoverageTests
   public void Constructor_NullLogger_ThrowsArgumentNullException()
   {
     using var probe = new StartupFailureProbe();
-    using ServiceProvider provider = probe.BuildProvider();
+    using ServiceProvider provider = StartupFailureProbe.BuildProvider();
 
     Assert.ThrowsExactly<ArgumentNullException>(() =>
       new AnalysisWorker(provider.GetRequiredService<IServiceScopeFactory>(), null!, FastIdleDelay));
@@ -49,7 +44,7 @@ public sealed class AnalysisWorkerCoverageTests
   public void Constructor_NegativeIdleDelay_ThrowsArgumentOutOfRangeException()
   {
     using var probe = new StartupFailureProbe();
-    using ServiceProvider provider = probe.BuildProvider();
+    using ServiceProvider provider = StartupFailureProbe.BuildProvider();
 
     Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
       new AnalysisWorker(
@@ -66,7 +61,7 @@ public sealed class AnalysisWorkerCoverageTests
   public void Constructor_TwoArgumentOverload_ConstructsSuccessfully()
   {
     using var probe = new StartupFailureProbe();
-    using ServiceProvider provider = probe.BuildProvider();
+    using ServiceProvider provider = StartupFailureProbe.BuildProvider();
 
     using var worker = new AnalysisWorker(
       provider.GetRequiredService<IServiceScopeFactory>(),
@@ -76,97 +71,26 @@ public sealed class AnalysisWorkerCoverageTests
   }
 
   /// <summary>
-  /// Verifies best-effort store initialization failures are swallowed and polling still starts.
-  /// </summary>
-  [TestMethod]
-  public async Task ExecuteAsync_StoreInitializationThrows_ContinuesToPoll()
-  {
-    using var probe = new StartupFailureProbe { EnsureFailure = new InvalidOperationException("startup") };
-    using ServiceProvider provider = probe.BuildProvider();
-    var worker = new AnalysisWorker(
-      provider.GetRequiredService<IServiceScopeFactory>(),
-      NullLogger<AnalysisWorker>.Instance,
-      FastIdleDelay);
-
-    await worker.StartAsync(CancellationToken.None).ConfigureAwait(false);
-    await probe.WaitForIterationsAsync(1).ConfigureAwait(false);
-    await worker.StopAsync(CancellationToken.None).ConfigureAwait(false);
-
-    Assert.AreEqual("ensure-store", probe.Timeline[0]);
-    Assert.AreEqual("try-execute", probe.Timeline[1]);
-    worker.Dispose();
-  }
-
-  /// <summary>
-  /// Captures worker service-provider events and iteration signals for startup branch tests.
+  /// Provides the scoped service provider used by constructor tests.
   /// </summary>
   private sealed class StartupFailureProbe : IDisposable
   {
-    private readonly SemaphoreSlim iterationSignal = new(0);
-
-    internal ConcurrentQueue<string> Events { get; } = new();
-
-    internal Exception? EnsureFailure { get; init; }
-
-    internal string[] Timeline => [.. Events];
-
-    internal ServiceProvider BuildProvider()
+    internal static ServiceProvider BuildProvider()
     {
       var services = new ServiceCollection();
-      services.AddScoped<IInvoiceManagementService>(_ => new FakeAnalysisProcessingService(this));
+      services.AddScoped<IInvoiceManagementService>(_ => new FakeAnalysisProcessingService());
       return services.BuildServiceProvider();
     }
 
-    internal async Task WaitForIterationsAsync(int expected)
+    public void Dispose()
     {
-      for (int index = 0; index < expected; index++)
-      {
-        bool signalled = await iterationSignal.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
-        Assert.IsTrue(signalled, $"Timed out waiting for worker iteration {index + 1}.");
-      }
     }
-
-    internal void SignalIteration() => iterationSignal.Release();
-
-    public void Dispose() => iterationSignal.Dispose();
   }
 
   /// <summary>
   /// Provides scripted analysis processing behavior for the worker under test.
   /// </summary>
-  private sealed class FakeAnalysisProcessingService(StartupFailureProbe probe) : WorkerManagementServiceBase
+  private sealed class FakeAnalysisProcessingService : WorkerManagementServiceBase
   {
-    public override Task EnsureAnalysisQueueAsync(CancellationToken cancellationToken)
-    {
-      probe.Events.Enqueue("ensure-store");
-
-      if (probe.EnsureFailure is not null)
-      {
-        throw probe.EnsureFailure;
-      }
-
-      return Task.CompletedTask;
-    }
-
-    public override Task<string> QueueInvoiceAnalysisAsync(
-      Guid invoiceId,
-      Guid userIdentifier,
-      InvoiceAnalysisRequestDto request,
-      CancellationToken cancellationToken) =>
-        throw new NotSupportedException();
-
-    public override Task<string> QueueMerchantAnalysisAsync(
-      Guid merchantId,
-      Guid userIdentifier,
-      MerchantAnalysisRequestDto request,
-      CancellationToken cancellationToken) =>
-        throw new NotSupportedException();
-
-    public override Task<bool> TryExecuteNextAnalysisAsync(CancellationToken cancellationToken)
-    {
-      probe.Events.Enqueue("try-execute");
-      probe.SignalIteration();
-      return Task.FromResult(false);
-    }
   }
 }

@@ -47,7 +47,7 @@ public sealed partial class AzureFoundryBroker : IGenerativeAnalysisBroker
     where T : class
   {
     ArgumentNullException.ThrowIfNull(request);
-    LogStructuredGenerationStarted(logger);
+    logger.LogStructuredGenerationStarted();
 
     var messages = new List<ChatMessage>
     {

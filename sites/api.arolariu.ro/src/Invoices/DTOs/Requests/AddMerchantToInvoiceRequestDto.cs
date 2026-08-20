@@ -1,15 +1,11 @@
 namespace arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
-
-using Microsoft.AspNetCore.Http;
 
 /// <summary>
 /// Request DTO for creating and associating a new merchant with an invoice.
@@ -75,9 +71,6 @@ public readonly record struct AddMerchantToInvoiceRequestDto(
   ContactInformation? Address,
   Guid? ParentCompanyId)
 {
-  private const string PlaceholderVersion = "unresolved";
-  private const string PlaceholderLabel = "unresolved";
-
   /// <summary>
   /// Converts this DTO to a new <see cref="Merchant"/> domain entity.
   /// </summary>
@@ -105,31 +98,8 @@ public readonly record struct AddMerchantToInvoiceRequestDto(
     id = Guid.NewGuid(),
     Name = Name,
     Description = Description,
-    Classification = CreateManualClassification(ClassificationCode),
     Address = Address ?? new ContactInformation(),
     ParentCompanyId = ParentCompanyId ?? Guid.Empty,
     CreatedAt = DateTime.UtcNow,
   };
-
-  private static StandardClassification CreateManualClassification(string code)
-  {
-    if (string.IsNullOrWhiteSpace(code))
-    {
-      throw new BadHttpRequestException("Classification code is required.");
-    }
-
-    string normalizedCode = code.Trim();
-    IReadOnlyList<ClassificationNode> hierarchy =
-      [new ClassificationNode(PlaceholderVersion, normalizedCode, PlaceholderLabel)];
-
-    return new StandardClassification(
-      ClassificationSystem.Nace21,
-      PlaceholderVersion,
-      normalizedCode,
-      PlaceholderLabel,
-      hierarchy,
-      ClassificationOrigin.Manual,
-      confidence: null,
-      evidence: []);
-  }
 }

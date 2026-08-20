@@ -62,9 +62,10 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       NullLoggerFactory.Instance);
 
     Invoice result = await service.UpdateInvoice(
-      updatedInvoice,
       invoiceId,
       userId,
+      updatedInvoice,
+      classificationCode: null,
       CancellationToken.None);
 
     Assert.IsNull(result.Classification);
@@ -92,7 +93,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
     var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
     var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
     analysis.Setup(service => service.ResolveManualClassificationAsync(
-        selection,
+        selection.Code,
         ClassificationSystem.Gs1Gpc,
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(canonical);
@@ -113,29 +114,25 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       analysis.Object,
       NullLoggerFactory.Instance);
 
-    await service.AddProduct(product, invoiceId, userId, CancellationToken.None);
+    await service.AddProduct(invoiceId, userId, product, selection.Code, CancellationToken.None);
 
     analysis.VerifyAll();
     invoiceOrchestration.VerifyAll();
   }
 
   /// <summary>
-  /// Verifies a wrong-system product classification is rejected before resource persistence.
+  /// Verifies an invalid product classification code is rejected before resource persistence.
   /// </summary>
   [TestMethod]
-  public async Task AddProduct_WrongClassificationSystem_DoesNotPersist()
+  public async Task AddProduct_InvalidClassificationCode_DoesNotPersist()
   {
     Guid invoiceId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
-    StandardClassification selection = CreateClassification(
-      ClassificationSystem.EcoicopV2,
-      "01.1",
-      "Food");
-    var product = new Product { Name = "Milk", Classification = selection };
+    var product = new Product { Name = "Milk" };
     var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
     var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
     analysis.Setup(service => service.ResolveManualClassificationAsync(
-        selection,
+        "invalid",
         ClassificationSystem.Gs1Gpc,
         It.IsAny<CancellationToken>()))
       .ThrowsAsync(new AnalysisOrchestrationValidationException(new ArgumentException("wrong system")));
@@ -146,7 +143,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       NullLoggerFactory.Instance);
 
     await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceValidationException>(
-      () => service.AddProduct(product, invoiceId, userId, CancellationToken.None));
+      () => service.AddProduct(invoiceId, userId, product, "invalid", CancellationToken.None));
     invoiceOrchestration.VerifyNoOtherCalls();
   }
 
@@ -351,7 +348,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
     var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
     var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
     analysis.Setup(service => service.ResolveManualClassificationAsync(
-        selection,
+        selection.Code,
         ClassificationSystem.EcoicopV2,
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(canonical);
@@ -368,7 +365,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       NullLoggerFactory.Instance);
 
     Invoice result = await service
-      .UpdateInvoice(updatedInvoice, invoiceId, userId, CancellationToken.None)
+      .UpdateInvoice(invoiceId, userId, updatedInvoice, selection.Code, CancellationToken.None)
       .ConfigureAwait(false);
 
     Assert.AreSame(canonical, result.Classification);
@@ -393,7 +390,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
     var merchantOrchestration = new Mock<IMerchantOrchestrationService>(MockBehavior.Strict);
     var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
     analysis.Setup(service => service.ResolveManualClassificationAsync(
-        selection,
+        selection.Code,
         ClassificationSystem.Nace21,
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(canonical);
@@ -410,7 +407,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       NullLoggerFactory.Instance);
 
     Merchant result = await service
-      .UpdateMerchant(updatedMerchant, merchantId, null, CancellationToken.None)
+      .UpdateMerchant(merchantId, null, updatedMerchant, selection.Code, CancellationToken.None)
       .ConfigureAwait(false);
 
     Assert.AreSame(canonical, result.Classification);
@@ -443,7 +440,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
     var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
     var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
     analysis.Setup(service => service.ResolveManualClassificationAsync(
-        selection,
+        selection.Code,
         ClassificationSystem.Gs1Gpc,
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(canonical);
@@ -465,7 +462,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       NullLoggerFactory.Instance);
 
     Product result = await service
-      .UpdateProduct("Milk", updatedProduct, invoiceId, userId, CancellationToken.None)
+      .UpdateProduct(invoiceId, userId, "Milk", updatedProduct, selection.Code, CancellationToken.None)
       .ConfigureAwait(false);
 
     Assert.AreSame(canonical, result.Classification);

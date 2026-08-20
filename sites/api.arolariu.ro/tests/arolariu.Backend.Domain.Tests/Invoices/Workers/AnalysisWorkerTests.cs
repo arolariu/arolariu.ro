@@ -14,39 +14,13 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
-/// Defines behavioural tests for the analysis background worker: store bootstrap, per-iteration scoping, idle
+/// Defines behavioural tests for the analysis background worker: per-iteration scoping, idle
 /// backoff, resilience, and clean shutdown.
 /// </summary>
 [TestClass]
 public sealed class AnalysisWorkerTests
 {
   private static readonly TimeSpan FastIdleDelay = TimeSpan.FromMilliseconds(10);
-
-  /// <summary>
-  /// Verifies that the worker ensures the durable analysis store exists, through a scope, before it polls for
-  /// the first run.
-  /// </summary>
-  [TestMethod]
-  public async Task ExecuteAsync_Always_EnsuresAnalysisStoreBeforeFirstPoll()
-  {
-    // Arrange
-    using var probe = new WorkerProbe();
-    using ServiceProvider provider = probe.BuildProvider();
-    var worker = new AnalysisWorker(
-      provider.GetRequiredService<IServiceScopeFactory>(),
-      NullLogger<AnalysisWorker>.Instance,
-      FastIdleDelay);
-
-    // Act
-    await worker.StartAsync(CancellationToken.None).ConfigureAwait(false);
-    await probe.WaitForIterationsAsync(1).ConfigureAwait(false);
-    await worker.StopAsync(CancellationToken.None).ConfigureAwait(false);
-
-    // Assert
-    Assert.AreEqual("ensure-store", probe.Timeline[0]);
-    Assert.AreEqual("try-execute", probe.Timeline[1]);
-    worker.Dispose();
-  }
 
   /// <summary>
   /// Verifies that every poll iteration resolves the processing service from a freshly created scope, so scoped
@@ -181,12 +155,6 @@ public sealed class AnalysisWorkerTests
 
   private sealed class FakeAnalysisProcessingService(WorkerProbe probe) : WorkerManagementServiceBase
   {
-    public override Task EnsureAnalysisQueueAsync(CancellationToken cancellationToken)
-    {
-      probe.Events.Enqueue("ensure-store");
-      return Task.CompletedTask;
-    }
-
     public override Task<string> QueueInvoiceAnalysisAsync(
       Guid invoiceId,
       Guid userIdentifier,

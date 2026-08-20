@@ -22,22 +22,6 @@ using Moq;
 [TestClass]
 public sealed class AnalysisQueueFoundationServiceTests
 {
-  /// <summary>Verifies queue initialization creates the queue and confirms provider status.</summary>
-  [TestMethod]
-  public async Task EnsureQueueAsync_ProvisionedQueue_ConfirmsStatus()
-  {
-    var broker = new Mock<IQueueBroker>(MockBehavior.Strict);
-    broker.Setup(candidate => candidate.CreateQueueIfNotExistsAsync(It.IsAny<CancellationToken>()))
-      .Returns(ValueTask.CompletedTask);
-    broker.Setup(candidate => candidate.GetQueueStatusAsync(It.IsAny<CancellationToken>()))
-      .ReturnsAsync(new QueueStatus(Exists: true, ApproximateMessageCount: 0));
-    var service = new AnalysisQueueFoundationService(broker.Object, NullLoggerFactory.Instance);
-
-    await service.EnsureQueueAsync(CancellationToken.None);
-
-    broker.VerifyAll();
-  }
-
   /// <summary>
   /// Verifies enqueueing delegates to the queue broker and returns Azure's message identifier.
   /// </summary>
@@ -73,25 +57,6 @@ public sealed class AnalysisQueueFoundationServiceTests
 
     await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
       () => service.DequeueAsync(TimeSpan.FromMinutes(2), CancellationToken.None))
-      .ConfigureAwait(false);
-  }
-
-  /// <summary>
-  /// Verifies cancellation is never reclassified as a dependency failure.
-  /// </summary>
-  [TestMethod]
-  public async Task EnsureQueueAsync_Cancellation_Propagates()
-  {
-    using var cancellation = new CancellationTokenSource();
-    await cancellation.CancelAsync().ConfigureAwait(false);
-    var broker = new Mock<IQueueBroker>(MockBehavior.Strict);
-    broker
-      .Setup(candidate => candidate.CreateQueueIfNotExistsAsync(cancellation.Token))
-      .ThrowsAsync(new OperationCanceledException(cancellation.Token));
-    var service = new AnalysisQueueFoundationService(broker.Object, NullLoggerFactory.Instance);
-
-    await Assert.ThrowsExactlyAsync<OperationCanceledException>(
-      () => service.EnsureQueueAsync(cancellation.Token))
       .ConfigureAwait(false);
   }
 

@@ -105,6 +105,19 @@ public sealed class InvoiceUnifiedLayeringArchitectureTests
       "arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Processing.AnalysisProcessingServiceException"));
   }
 
+  /// <summary>
+  /// Verifies queue provisioning is absent from every application-facing layer.
+  /// </summary>
+  [TestMethod]
+  public void QueueContracts_AlwaysProvisionedQueue_ExposeNoProvisioningMethods()
+  {
+    Assert.IsNull(RequireType($"{BrokersNamespace}.QueueBroker.IQueueBroker").GetMethod("CreateQueueIfNotExistsAsync"));
+    Assert.IsNull(RequireType($"{ServicesNamespace}.Foundation.AnalysisQueue.IAnalysisQueueFoundationService").GetMethod("EnsureQueueAsync"));
+    Assert.IsNull(RequireType($"{ServicesNamespace}.Orchestration.AnalysisService.IAnalysisOrchestrationService").GetMethod("EnsureQueueAsync"));
+    Assert.IsNull(RequireType($"{ServicesNamespace}.Processing.IInvoiceProcessingService").GetMethod("EnsureAnalysisQueueAsync"));
+    Assert.IsNull(typeof(IInvoiceManagementService).GetMethod("EnsureAnalysisQueueAsync"));
+  }
+
   private static Type RequireType(string fullName) =>
     InvoiceAssembly.GetType(fullName)
     ?? throw new AssertFailedException($"Required unified architecture type '{fullName}' was not found.");

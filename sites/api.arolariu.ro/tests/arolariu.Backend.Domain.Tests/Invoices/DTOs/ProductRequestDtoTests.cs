@@ -6,11 +6,9 @@ using System.Linq;
 using System.Reflection;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
-using Microsoft.AspNetCore.Http;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>Verifies create and update product request mapping.</summary>
@@ -34,8 +32,7 @@ public sealed class ProductRequestDtoTests
     Product product = request.ToProduct();
 
     Assert.AreSame(assessment, product.AllergenAssessment);
-    Assert.AreEqual(ClassificationSystem.Gs1Gpc, product.Classification?.System);
-    Assert.AreEqual("10000025", product.Classification?.Code);
+    Assert.IsNull(product.Classification);
   }
 
   /// <summary>Verifies update mapping carries the structured allergen assessment.</summary>
@@ -58,9 +55,9 @@ public sealed class ProductRequestDtoTests
     Assert.AreSame(assessment, product.AllergenAssessment);
   }
 
-  /// <summary>Verifies optional product classifications reject whitespace codes.</summary>
+  /// <summary>Verifies product mapping leaves classification resolution to Processing.</summary>
   [TestMethod]
-  public void CreateProductRequestDto_WhitespaceClassificationCode_ThrowsBadHttpRequestException()
+  public void CreateProductRequestDto_WhitespaceClassificationCode_DoesNotCreateClassification()
   {
     var request = new CreateProductRequestDto(
       "Milk",
@@ -71,7 +68,7 @@ public sealed class ProductRequestDtoTests
       Price: 8m,
       AllergenAssessment: null);
 
-    Assert.ThrowsExactly<BadHttpRequestException>(() => request.ToProduct());
+    Assert.IsNull(request.ToProduct().Classification);
   }
 
   /// <summary>Verifies quantity and price are non-nullable required contract values.</summary>

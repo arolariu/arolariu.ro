@@ -131,7 +131,7 @@ public static partial class InvoiceEndpoints
   [SwaggerOperation(
     Summary = "Updates a specific invoice in the system.",
     Description = "This endpoint updates an existing invoice in the Invoice Management System by replacing it entirely with the provided payload. " +
-    "The operation validates the new invoice data against the schema. " +
+    "The operation validates the new invoice data and resolves any supplied ClassificationCode against ECOICOP v2. " +
     "If the invoice exists and the user has permission, the update is performed.",
     OperationId = nameof(UpdateSpecificInvoiceAsync),
     Tags = [EndpointNameTag])]
@@ -164,7 +164,7 @@ public static partial class InvoiceEndpoints
   [SwaggerOperation(
     Summary = "Patches a specific invoice in the system.",
     Description = "This endpoint applies partial updates to an existing invoice in the Invoice Management System. " +
-    "It allows modifying specific fields without replacing the entire resource. " +
+    "It allows modifying specific fields without replacing the entire resource and resolves any supplied ClassificationCode against ECOICOP v2. " +
     "The operation validates the partial data and applies the changes if the invoice exists and the user is authorized.",
     OperationId = nameof(PatchSpecificInvoiceAsync),
     Tags = [EndpointNameTag])]
@@ -258,7 +258,7 @@ public static partial class InvoiceEndpoints
   [SwaggerOperation(
     Summary = "Adds a product to a specific invoice in the system.",
     Description = "This endpoint adds a new product to an existing invoice in the Invoice Management System. " +
-    "The operation validates the product data and checks if the invoice exists. " +
+    "The operation validates the product data, resolves any supplied ClassificationCode against GS1 GPC, and checks if the invoice exists. " +
     "If successful, the product is appended to the invoice's product list.",
     OperationId = nameof(AddProductToInvoiceAsync),
     Tags = [EndpointNameTag])]
@@ -326,12 +326,12 @@ public static partial class InvoiceEndpoints
   [SwaggerOperation(
     Summary = "Removes a product from a specific invoice in the system.",
     Description = "This endpoint removes one deterministically selected product from a specific invoice. " +
-    "A product code takes precedence; otherwise the original normalized commercial snapshot and occurrence ordinal " +
-    "identify the exact line item. If successful, the product is removed from the invoice's product list.",
+    "The first product whose name exactly matches case-insensitively is selected. " +
+    "If successful, the product is removed from the invoice's product list.",
     OperationId = nameof(RemoveProductFromInvoiceAsync),
     Tags = [EndpointNameTag])]
   [SwaggerResponse(StatusCodes.Status204NoContent, "The product was successfully removed from the invoice.")]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The product selector is invalid, ambiguous, or out of range.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The product name selector is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice or the product was not found.", typeof(ProblemDetails))]
@@ -346,7 +346,7 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceManagementService invoiceManagementService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("The deterministic product selector to remove.", Required = true)] DeleteProductRequestDto productDto);
+    [FromBody, SwaggerRequestBody("The product name selector to remove.", Required = true)] DeleteProductRequestDto productDto);
   #endregion
 
   #region HTTP PUT /rest/v1/invoices/{id}/products
@@ -362,7 +362,7 @@ public static partial class InvoiceEndpoints
     Summary = "Updates a product in a specific invoice in the system.",
     Description = "This endpoint updates the details of a specific product within an invoice. " +
     "It identifies the product by name and replaces its data with the provided payload. " +
-    "The operation validates the new product data and ensures the product exists in the invoice.",
+    "The operation validates the new product data, resolves any supplied ClassificationCode against GS1 GPC, and ensures the product exists in the invoice.",
     OperationId = nameof(UpdateProductInInvoiceAsync),
     Tags = [EndpointNameTag])]
   [SwaggerResponse(StatusCodes.Status202Accepted, "The product was successfully updated in the invoice.", typeof(ProductResponseDto))]
@@ -429,7 +429,7 @@ public static partial class InvoiceEndpoints
   [SwaggerOperation(
     Summary = "Adds a merchant to an invoice in the system.",
     Description = "This endpoint associates a merchant with a specific invoice in the Invoice Management System. " +
-    "It validates the merchant data and checks if the invoice exists. " +
+    "It validates the merchant data, resolves the required ClassificationCode against NACE 2.1, and checks if the invoice exists. " +
     "If successful, the merchant is linked to the invoice.",
     OperationId = nameof(AddMerchantToInvoiceAsync),
     Tags = [EndpointNameTag])]
@@ -796,7 +796,7 @@ public static partial class InvoiceEndpoints
   [SwaggerOperation(
     Summary = "Updates a specific merchant in the system.",
     Description = "This endpoint updates a specific merchant in the Invoice Management System. " +
-    "It validates the updated merchant data and ensures the merchant exists. " +
+    "It validates the updated merchant data, resolves any supplied ClassificationCode against NACE 2.1, and ensures the merchant exists. " +
     "If successful, the merchant is updated.",
     OperationId = nameof(UpdateSpecificMerchantAsync),
     Tags = [EndpointNameTag])]

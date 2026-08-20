@@ -62,14 +62,6 @@ public sealed partial class AzureStorageQueueBroker : IQueueBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask CreateQueueIfNotExistsAsync(CancellationToken cancellationToken)
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(CreateQueueIfNotExistsAsync));
-    LogQueueOperationStarted(logger, nameof(CreateQueueIfNotExistsAsync));
-    await queueClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-  }
-
-  /// <inheritdoc/>
   public async ValueTask<string> EnqueueMessageAsync(
     AnalysisQueueMessage message,
     CancellationToken cancellationToken)

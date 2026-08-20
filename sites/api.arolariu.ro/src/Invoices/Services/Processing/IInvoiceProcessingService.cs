@@ -84,12 +84,18 @@ public interface IInvoiceProcessingService
   /// <summary>
   /// Replaces an existing invoice aggregate with updated state.
   /// </summary>
-  /// <param name="updatedInvoice">New aggregate state.</param>
   /// <param name="invoiceIdentifier">Identifier of target invoice.</param>
   /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
+  /// <param name="updatedInvoice">New aggregate state.</param>
+  /// <param name="classificationCode">The optional ECOICOP v2 code to resolve canonically.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Updated invoice.</returns>
-  Task<Invoice> UpdateInvoice(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
+  Task<Invoice> UpdateInvoice(
+    Guid invoiceIdentifier,
+    Guid? userIdentifier,
+    Invoice updatedInvoice,
+    string? classificationCode,
+    CancellationToken cancellationToken);
   #endregion
 
   #region Delete Invoice API
@@ -118,12 +124,18 @@ public interface IInvoiceProcessingService
   /// <summary>
   /// Appends a product to an invoice's product collection.
   /// </summary>
-  /// <param name="product">Product to add.</param>
   /// <param name="invoiceIdentifier">Target invoice id.</param>
   /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
+  /// <param name="product">Product to add.</param>
+  /// <param name="classificationCode">The optional GS1 GPC code to resolve canonically.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>A task that completes after the aggregate update.</returns>
-  Task AddProduct(Product product, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
+  Task AddProduct(
+    Guid invoiceIdentifier,
+    Guid? userIdentifier,
+    Product product,
+    string? classificationCode,
+    CancellationToken cancellationToken);
   #endregion
 
   #region Update Invoice Product API
@@ -134,17 +146,19 @@ public interface IInvoiceProcessingService
   /// Duplicate product names remain ambiguous by design; the first matching line item is updated.
   /// Server-owned enrichment and workflow fields are retained.
   /// </remarks>
-  /// <param name="productName">The original product name used to locate the first matching line item.</param>
-  /// <param name="updatedProduct">The client-editable values to apply to the selected line item.</param>
   /// <param name="invoiceIdentifier">Target invoice identifier.</param>
   /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
+  /// <param name="productName">The original product name used to locate the first matching line item.</param>
+  /// <param name="updatedProduct">The client-editable values to apply to the selected line item.</param>
+  /// <param name="classificationCode">The optional GS1 GPC code to resolve canonically.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>The updated persisted line item after the aggregate write path has canonicalized it.</returns>
   Task<Product> UpdateProduct(
-    string productName,
-    Product updatedProduct,
     Guid invoiceIdentifier,
     Guid? userIdentifier,
+    string productName,
+    Product updatedProduct,
+    string? classificationCode,
     CancellationToken cancellationToken);
   #endregion
 
@@ -163,12 +177,12 @@ public interface IInvoiceProcessingService
   /// <summary>
   /// Retrieves a single product by name from an invoice.
   /// </summary>
-  /// <param name="productName">Product name (case sensitivity policy defined by implementation).</param>
   /// <param name="invoiceIdentifier">Invoice id.</param>
   /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
+  /// <param name="productName">Product name (case sensitivity policy defined by implementation).</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>The first matching product, or a default product when no item matches.</returns>
-  Task<Product> GetProduct(string productName, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
+  Task<Product> GetProduct(Guid invoiceIdentifier, Guid? userIdentifier, string productName, CancellationToken cancellationToken);
   #endregion
 
   #region Delete Invoice Product API
@@ -178,15 +192,15 @@ public interface IInvoiceProcessingService
   /// <remarks>
   /// Duplicate product names remain ambiguous by design; the first matching line item is removed.
   /// </remarks>
-  /// <param name="productName">The product name used to locate the first matching line item.</param>
   /// <param name="invoiceIdentifier">Invoice id.</param>
   /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
+  /// <param name="productName">The product name used to locate the first matching line item.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>A task that completes after the aggregate update.</returns>
   Task DeleteProduct(
-    string productName,
     Guid invoiceIdentifier,
     Guid? userIdentifier,
+    string productName,
     CancellationToken cancellationToken);
   #endregion
 
@@ -194,12 +208,12 @@ public interface IInvoiceProcessingService
   /// <summary>
   /// Attaches a scan value to an existing invoice.
   /// </summary>
-  /// <param name="scan">Scans data (raw / encoded representation).</param>
   /// <param name="invoiceIdentifier">Invoice id.</param>
   /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
+  /// <param name="scan">Scans data (raw / encoded representation).</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>A task that completes after the scan is attached.</returns>
-  Task CreateInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
+  Task CreateInvoiceScan(Guid invoiceIdentifier, Guid? userIdentifier, InvoiceScan scan, CancellationToken cancellationToken);
   #endregion
 
   #region Read Invoice Scans API
@@ -217,36 +231,36 @@ public interface IInvoiceProcessingService
   /// <summary>
   /// Deletes the scan resource for an invoice.
   /// </summary>
-  /// <param name="scan">The invoice scan object</param>
   /// <param name="invoiceIdentifier">Invoice id.</param>
   /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
+  /// <param name="scan">The invoice scan object</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>A task that completes after the aggregate update.</returns>
-  Task DeleteInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
+  Task DeleteInvoiceScan(Guid invoiceIdentifier, Guid? userIdentifier, InvoiceScan scan, CancellationToken cancellationToken);
   #endregion
 
   #region Create Invoice Metadata API
   /// <summary>
   /// Adds or merges metadata entries into an invoice's metadata dictionary.
   /// </summary>
-  /// <param name="metadata">Key/value pairs to add or overwrite.</param>
   /// <param name="invoiceIdentifier">Invoice id.</param>
   /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
+  /// <param name="metadata">Key/value pairs to add or overwrite.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>A task that completes after the aggregate update.</returns>
-  Task AddMetadataToInvoice(IDictionary<string, object> metadata, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
+  Task AddMetadataToInvoice(Guid invoiceIdentifier, Guid? userIdentifier, IDictionary<string, object> metadata, CancellationToken cancellationToken);
   #endregion
 
   #region Update Invoice Metadata API
   /// <summary>
   /// Upserts metadata entries on an invoice (adds new keys, overwrites existing ones).
   /// </summary>
-  /// <param name="metadata">Key/value pairs to upsert.</param>
   /// <param name="invoiceIdentifier">Invoice id.</param>
   /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
+  /// <param name="metadata">Key/value pairs to upsert.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Updated metadata dictionary snapshot.</returns>
-  Task<IDictionary<string, object>> UpdateMetadataOnInvoice(IDictionary<string, object> metadata, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
+  Task<IDictionary<string, object>> UpdateMetadataOnInvoice(Guid invoiceIdentifier, Guid? userIdentifier, IDictionary<string, object> metadata, CancellationToken cancellationToken);
   #endregion
 
   #region Get Invoice Metadata API
@@ -264,12 +278,12 @@ public interface IInvoiceProcessingService
   /// <summary>
   /// Removes specific metadata keys from an invoice.
   /// </summary>
-  /// <param name="metadataKeys">Keys to remove.</param>
   /// <param name="invoiceIdentifier">Invoice id.</param>
   /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
+  /// <param name="metadataKeys">Keys to remove.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>A task that completes after the aggregate update.</returns>
-  Task DeleteMetadataFromInvoice(IEnumerable<string> metadataKeys, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
+  Task DeleteMetadataFromInvoice(Guid invoiceIdentifier, Guid? userIdentifier, IEnumerable<string> metadataKeys, CancellationToken cancellationToken);
   #endregion
 
   #endregion
@@ -282,9 +296,10 @@ public interface IInvoiceProcessingService
   /// </summary>
   /// <param name="merchant">Merchant aggregate.</param>
   /// <param name="parentCompanyId">Partition / company scope; pass null for a cross-partition operation.</param>
+  /// <param name="classificationCode">The optional NACE 2.1 code to resolve canonically.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>A task that completes after merchant persistence.</returns>
-  Task CreateMerchant(Merchant merchant, Guid? parentCompanyId, CancellationToken cancellationToken);
+  Task CreateMerchant(Merchant merchant, Guid? parentCompanyId, string? classificationCode, CancellationToken cancellationToken);
   #endregion
 
   #region Read Merchant API
@@ -312,12 +327,18 @@ public interface IInvoiceProcessingService
   /// <summary>
   /// Replaces an existing merchant aggregate with updated state.
   /// </summary>
-  /// <param name="updatedMerchant">New merchant state.</param>
   /// <param name="identifier">Merchant id.</param>
   /// <param name="parentCompanyId">Company / partition scope; pass null for a cross-partition operation.</param>
+  /// <param name="updatedMerchant">New merchant state.</param>
+  /// <param name="classificationCode">The optional NACE 2.1 code to resolve canonically.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Updated merchant.</returns>
-  Task<Merchant> UpdateMerchant(Merchant updatedMerchant, Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken);
+  Task<Merchant> UpdateMerchant(
+    Guid identifier,
+    Guid? parentCompanyId,
+    Merchant updatedMerchant,
+    string? classificationCode,
+    CancellationToken cancellationToken);
   #endregion
 
   #region Delete Merchant API
@@ -354,11 +375,6 @@ public interface IInvoiceProcessingService
   #endregion
 
   #region Analysis Queue
-  /// <summary>Ensures the backend-owned analysis queue exists.</summary>
-  /// <param name="cancellationToken">The token used to cancel queue provisioning.</param>
-  /// <returns>A task that completes after queue availability is verified.</returns>
-  Task EnsureAnalysisQueueAsync(CancellationToken cancellationToken);
-
   /// <summary>Validates invoice ownership and queues a request with resolved analysis options.</summary>
   /// <param name="invoiceId">The invoice identifier to analyze.</param>
   /// <param name="userIdentifier">The authenticated invoice owner.</param>

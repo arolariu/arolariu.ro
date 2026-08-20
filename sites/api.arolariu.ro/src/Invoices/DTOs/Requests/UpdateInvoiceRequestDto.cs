@@ -6,10 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
-
-using Microsoft.AspNetCore.Http;
 
 /// <summary>
 /// Request DTO for full invoice replacement operations (HTTP PUT semantics).
@@ -87,9 +84,6 @@ public readonly record struct UpdateInvoiceRequestDto(
   bool IsImportant,
   IDictionary<string, object>? AdditionalMetadata)
 {
-  private const string PlaceholderVersion = "unresolved";
-  private const string PlaceholderLabel = "unresolved";
-
   /// <summary>
   /// Converts this DTO to an <see cref="Invoice"/> domain aggregate.
   /// </summary>
@@ -125,7 +119,6 @@ public readonly record struct UpdateInvoiceRequestDto(
       UserIdentifier = userIdentifier,
       Name = Name,
       Description = Description,
-      Classification = CreateManualClassification(ClassificationCode),
       PaymentInformation = PaymentInformation,
       MerchantReference = MerchantReference ?? Guid.Empty,
       IsImportant = IsImportant,
@@ -140,32 +133,5 @@ public readonly record struct UpdateInvoiceRequestDto(
     }
 
     return invoice;
-  }
-
-  private static StandardClassification? CreateManualClassification(string? code)
-  {
-    if (code is null)
-    {
-      return null;
-    }
-
-    if (string.IsNullOrWhiteSpace(code))
-    {
-      throw new BadHttpRequestException("Classification code must not be empty or whitespace.");
-    }
-
-    string normalizedCode = code.Trim();
-    IReadOnlyList<ClassificationNode> hierarchy =
-      [new ClassificationNode(PlaceholderVersion, normalizedCode, PlaceholderLabel)];
-
-    return new StandardClassification(
-      ClassificationSystem.EcoicopV2,
-      PlaceholderVersion,
-      normalizedCode,
-      PlaceholderLabel,
-      hierarchy,
-      ClassificationOrigin.Manual,
-      confidence: null,
-      evidence: []);
   }
 }
