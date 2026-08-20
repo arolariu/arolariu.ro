@@ -10,7 +10,6 @@ using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
-using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.DTOs.Responses;
 using arolariu.Backend.Domain.Invoices.Services.Management;
@@ -1007,7 +1006,7 @@ public static partial class InvoiceEndpoints
     "later by a background worker and applied to the invoice.",
     OperationId = nameof(AnalyzeInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice analysis run has been accepted and queued.", typeof(AnalysisAcceptedResponseDto))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice analysis run has been accepted and queued.", typeof(string))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice identifier or analysis options are invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to analyze this invoice.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status402PaymentRequired, "The user does not have enough credits to perform this analysis.", typeof(ProblemDetails))]
@@ -1043,7 +1042,7 @@ public static partial class InvoiceEndpoints
     "later by a background worker and applied to the merchant.",
     OperationId = nameof(AnalyzeMerchantAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The merchant analysis run has been accepted and queued.", typeof(AnalysisAcceptedResponseDto))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The merchant analysis run has been accepted and queued.", typeof(string))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant identifier or analysis options are invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to analyze this merchant.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status402PaymentRequired, "The user does not have enough credits to perform this analysis.", typeof(ProblemDetails))]

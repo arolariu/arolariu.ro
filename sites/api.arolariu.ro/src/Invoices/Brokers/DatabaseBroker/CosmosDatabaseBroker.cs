@@ -11,7 +11,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
-using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker.ValueConverters;
 using arolariu.Backend.Domain.Invoices.Modules.ValueConverters;
 
 using Microsoft.Azure.Cosmos;

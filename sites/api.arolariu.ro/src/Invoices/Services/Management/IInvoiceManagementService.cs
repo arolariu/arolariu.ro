@@ -9,40 +9,76 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
-using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
-using arolariu.Backend.Domain.Invoices.Services.Processing;
 
 /// <summary>
 /// Defines the standalone business-facing contract consumed by invoice endpoints and the analysis worker.
 /// </summary>
+/// <remarks>
+/// This Management boundary delegates every operation to the unified Processing service, preserves cancellation,
+/// and classifies lower-layer failures into the invoice Management exception family.
+/// </remarks>
 public interface IInvoiceManagementService
 {
   #region Invoice CRUD
-  /// <inheritdoc cref="IInvoiceProcessingService.CreateInvoice"/>
+  /// <summary>Creates an invoice in its owning user partition.</summary>
+  /// <param name="invoice">The invoice aggregate to persist.</param>
+  /// <param name="userIdentifier">The owning user identifier, or <see langword="null"/> when resolved downstream.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>A task that represents the create operation.</returns>
   Task CreateInvoice(Invoice invoice, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="IInvoiceProcessingService.ReadInvoice"/>
+  /// <summary>Retrieves one invoice by identifier and optional user partition.</summary>
+  /// <param name="identifier">The invoice identifier.</param>
+  /// <param name="userIdentifier">The owning user partition, or <see langword="null"/> for an authorized lookup.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>The matching invoice aggregate.</returns>
   Task<Invoice> ReadInvoice(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="IInvoiceProcessingService.ReadInvoices"/>
+  /// <summary>Retrieves all invoices in one user partition.</summary>
+  /// <param name="userIdentifier">The owning user partition.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>The invoices visible in the requested partition.</returns>
   Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="IInvoiceProcessingService.UpdateInvoice"/>
+  /// <summary>Replaces client-editable state on an existing invoice.</summary>
+  /// <param name="updatedInvoice">The transient aggregate carrying replacement values.</param>
+  /// <param name="invoiceIdentifier">The identifier of the persisted invoice.</param>
+  /// <param name="userIdentifier">The owning user partition, or <see langword="null"/> when resolved downstream.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>The updated invoice aggregate.</returns>
   Task<Invoice> UpdateInvoice(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="IInvoiceProcessingService.DeleteInvoice"/>
+  /// <summary>Removes one invoice from active use.</summary>
+  /// <param name="identifier">The invoice identifier.</param>
+  /// <param name="userIdentifier">The owning user partition, or <see langword="null"/> when resolved downstream.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>A task that represents the remove operation.</returns>
   Task DeleteInvoice(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="IInvoiceProcessingService.DeleteInvoices"/>
+  /// <summary>Removes all invoices in one user partition from active use.</summary>
+  /// <param name="userIdentifier">The owning user partition.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>A task that represents the bulk remove operation.</returns>
   Task DeleteInvoices(Guid userIdentifier, CancellationToken cancellationToken);
   #endregion
 
   #region Product CRUD
-  /// <inheritdoc cref="IInvoiceProcessingService.AddProduct"/>
+  /// <summary>Adds a product line to an existing invoice.</summary>
+  /// <param name="product">The product value to add.</param>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The owning user partition, or <see langword="null"/> when resolved downstream.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>A task that represents the add operation.</returns>
   Task AddProduct(Product product, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="IInvoiceProcessingService.UpdateProduct"/>
+  /// <summary>Replaces the first invoice product matching a persisted name.</summary>
+  /// <param name="productName">The persisted product name used to locate the line item.</param>
+  /// <param name="updatedProduct">The transient product carrying replacement values.</param>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The owning user partition, or <see langword="null"/> when resolved downstream.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>The product state persisted on the invoice.</returns>
   Task<Product> UpdateProduct(
     string productName,
     Product updatedProduct,
@@ -50,87 +86,174 @@ public interface IInvoiceManagementService
     Guid? userIdentifier,
     CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="IInvoiceProcessingService.GetProducts"/>
+  /// <summary>Retrieves every product line from an invoice.</summary>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The owning user partition, or <see langword="null"/> when resolved downstream.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>The invoice product lines.</returns>
   Task<IEnumerable<Product>> GetProducts(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="IInvoiceProcessingService.GetProduct"/>
+  /// <summary>Retrieves the first invoice product matching a name.</summary>
+  /// <param name="productName">The product name to locate.</param>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The owning user partition, or <see langword="null"/> when resolved downstream.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>The matching product line.</returns>
   Task<Product> GetProduct(string productName, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="IInvoiceProcessingService.DeleteProduct"/>
+  /// <summary>Removes the first invoice product matching a name.</summary>
+  /// <param name="productName">The persisted product name to remove.</param>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The owning user partition, or <see langword="null"/> when resolved downstream.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>A task that represents the remove operation.</returns>
   Task DeleteProduct(string productName, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
   #endregion
 
   #region Scan CRUD
-  /// <inheritdoc cref="IInvoiceProcessingService.CreateInvoiceScan"/>
+  /// <summary>Adds a receipt scan to an existing invoice.</summary>
+  /// <param name="scan">The scan to add.</param>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The owning user partition, or <see langword="null"/> when resolved downstream.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>A task that represents the add operation.</returns>
   Task CreateInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="IInvoiceProcessingService.ReadInvoiceScans"/>
+  /// <summary>Retrieves every receipt scan attached to an invoice.</summary>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The owning user partition, or <see langword="null"/> when resolved downstream.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>The attached invoice scans.</returns>
   Task<IEnumerable<InvoiceScan>> ReadInvoiceScans(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="IInvoiceProcessingService.DeleteInvoiceScan"/>
+  /// <summary>Removes a receipt scan from an existing invoice.</summary>
+  /// <param name="scan">The scan value to remove.</param>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The owning user partition, or <see langword="null"/> when resolved downstream.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>A task that represents the remove operation.</returns>
   Task DeleteInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
   #endregion
 
   #region Metadata CRUD
-  /// <inheritdoc cref="IInvoiceProcessingService.AddMetadataToInvoice"/>
+  /// <summary>Adds client-owned metadata entries to an invoice.</summary>
+  /// <param name="metadata">The validated metadata entries to add.</param>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The owning user partition, or <see langword="null"/> when resolved downstream.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>A task that represents the metadata add operation.</returns>
   Task AddMetadataToInvoice(IDictionary<string, object> metadata, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="IInvoiceProcessingService.UpdateMetadataOnInvoice"/>
+  /// <summary>Updates client-owned metadata entries on an invoice.</summary>
+  /// <param name="metadata">The validated metadata entries to merge.</param>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The owning user partition, or <see langword="null"/> when resolved downstream.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>The complete persisted metadata collection after the merge.</returns>
   Task<IDictionary<string, object>> UpdateMetadataOnInvoice(IDictionary<string, object> metadata, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="IInvoiceProcessingService.GetMetadataFromInvoice"/>
+  /// <summary>Retrieves the metadata collection from an invoice.</summary>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The owning user partition, or <see langword="null"/> when resolved downstream.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>The persisted invoice metadata collection.</returns>
   Task<IDictionary<string, object>> GetMetadataFromInvoice(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="IInvoiceProcessingService.DeleteMetadataFromInvoice"/>
+  /// <summary>Removes selected client-owned metadata entries from an invoice.</summary>
+  /// <param name="metadataKeys">The metadata keys to remove.</param>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The owning user partition, or <see langword="null"/> when resolved downstream.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>A task that represents the metadata remove operation.</returns>
   Task DeleteMetadataFromInvoice(IEnumerable<string> metadataKeys, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
   #endregion
 
   #region Merchant CRUD
-  /// <inheritdoc cref="IInvoiceProcessingService.CreateMerchant"/>
+  /// <summary>Creates a merchant in its parent-company partition.</summary>
+  /// <param name="merchant">The merchant entity to persist.</param>
+  /// <param name="parentCompanyId">The parent-company partition, or <see langword="null"/> when derived from the entity.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>A task that represents the create operation.</returns>
   Task CreateMerchant(Merchant merchant, Guid? parentCompanyId, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="IInvoiceProcessingService.ReadMerchant"/>
+  /// <summary>Retrieves one merchant by identifier and optional parent-company partition.</summary>
+  /// <param name="identifier">The merchant identifier.</param>
+  /// <param name="parentCompanyId">The parent-company partition, or <see langword="null"/> for a scoped lookup.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>The matching merchant entity.</returns>
   Task<Merchant> ReadMerchant(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="IInvoiceProcessingService.ReadMerchants"/>
+  /// <summary>Retrieves all merchants in one parent-company partition.</summary>
+  /// <param name="parentCompanyId">The parent-company partition.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>The merchants in the requested partition.</returns>
   Task<IEnumerable<Merchant>> ReadMerchants(Guid parentCompanyId, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="IInvoiceProcessingService.UpdateMerchant"/>
+  /// <summary>Replaces client-editable state on an existing merchant.</summary>
+  /// <param name="updatedMerchant">The transient merchant carrying replacement values.</param>
+  /// <param name="identifier">The persisted merchant identifier.</param>
+  /// <param name="parentCompanyId">The parent-company partition, or <see langword="null"/> when resolved downstream.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>The updated merchant entity.</returns>
   Task<Merchant> UpdateMerchant(Merchant updatedMerchant, Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="IInvoiceProcessingService.DeleteMerchant"/>
+  /// <summary>Removes one merchant from active use.</summary>
+  /// <param name="identifier">The merchant identifier.</param>
+  /// <param name="parentCompanyId">The parent-company partition, or <see langword="null"/> when resolved downstream.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>A task that represents the remove operation.</returns>
   Task DeleteMerchant(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
   #region Analysis Queue
-  /// <inheritdoc cref="IInvoiceProcessingService.PersistInvoiceAnalysisAsync"/>
+  /// <summary>Applies an invoice analysis execution result to durable aggregates.</summary>
+  /// <param name="executionResult">The immutable invoice execution result to persist.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>The supplied execution result after target persistence completes.</returns>
   Task<InvoiceAnalysisExecutionResult> PersistInvoiceAnalysisAsync(
     InvoiceAnalysisExecutionResult executionResult,
     CancellationToken cancellationToken);
 
-  /// <inheritdoc cref="IInvoiceProcessingService.PersistMerchantAnalysisAsync"/>
+  /// <summary>Applies a merchant analysis execution result to the durable merchant.</summary>
+  /// <param name="executionResult">The immutable merchant execution result to persist.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>The persisted merchant execution result.</returns>
   Task<MerchantAnalysisExecutionResult> PersistMerchantAnalysisAsync(
     MerchantAnalysisExecutionResult executionResult,
     CancellationToken cancellationToken);
 
   /// <summary>Ensures the backend-owned analysis queue exists.</summary>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>A task that represents queue provisioning.</returns>
   Task EnsureAnalysisQueueAsync(CancellationToken cancellationToken);
 
   /// <summary>Queues invoice analysis after validating target ownership.</summary>
-  Task<AnalysisAcceptedResponseDto> QueueInvoiceAnalysisAsync(
+  /// <param name="invoiceId">The invoice identifier to analyze.</param>
+  /// <param name="userIdentifier">The authenticated owner requesting analysis.</param>
+  /// <param name="request">The requested profile and capability overrides.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>Azure Queue's provider message identifier.</returns>
+  Task<string> QueueInvoiceAnalysisAsync(
     Guid invoiceId,
     Guid userIdentifier,
     InvoiceAnalysisRequestDto request,
     CancellationToken cancellationToken);
 
   /// <summary>Queues merchant analysis after validating target ownership.</summary>
-  Task<AnalysisAcceptedResponseDto> QueueMerchantAnalysisAsync(
+  /// <param name="merchantId">The merchant identifier to analyze.</param>
+  /// <param name="userIdentifier">The authenticated user requesting analysis.</param>
+  /// <param name="request">The requested profile and capability overrides.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>Azure Queue's provider message identifier.</returns>
+  Task<string> QueueMerchantAnalysisAsync(
     Guid merchantId,
     Guid userIdentifier,
     MerchantAnalysisRequestDto request,
     CancellationToken cancellationToken);
 
   /// <summary>Receives and processes at most one visible analysis message.</summary>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns><see langword="true"/> when a message was processed; otherwise, <see langword="false"/>.</returns>
   Task<bool> TryExecuteNextAnalysisAsync(CancellationToken cancellationToken);
   #endregion
 }

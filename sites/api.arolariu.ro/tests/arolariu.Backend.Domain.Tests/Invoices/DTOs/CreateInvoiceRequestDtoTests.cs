@@ -38,15 +38,17 @@ public sealed class CreateInvoiceRequestDtoTests
     Assert.AreEqual(0, invoice.Items.Count);
   }
 
-  /// <summary>Verifies an empty client-supplied partition identifier is rejected.</summary>
+  /// <summary>Verifies the body-supplied partition identifier is mapped without a DTO guard.</summary>
   [TestMethod]
-  public void ToInvoice_EmptyUserIdentifier_ThrowsBadHttpRequestException()
+  public void ToInvoice_EmptyUserIdentifier_MapsTrustedBodyValue()
   {
     var request = new CreateInvoiceRequestDto(
       Guid.Empty,
       new InvoiceScan(ScanType.JPG, new Uri("https://example.test/invoices/receipt.jpg"), null),
       null);
 
-    Assert.ThrowsExactly<BadHttpRequestException>(() => request.ToInvoice());
+    Invoice invoice = request.ToInvoice();
+
+    Assert.AreEqual(Guid.Empty, invoice.UserIdentifier);
   }
 }

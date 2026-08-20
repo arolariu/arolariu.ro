@@ -1,20 +1,16 @@
 namespace arolariu.Backend.Domain.Invoices.Services.Foundation.AnalysisQueue;
 
 using System;
-using System.Net.Http;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
-using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Foundation;
-
-using Azure;
 
 using Microsoft.Extensions.Logging;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
+using DDD = arolariu.Backend.Domain.Invoices.DDD;
 
 /// <summary>
 /// Validates and classifies access to the Azure Storage Queue analysis boundary.
@@ -27,6 +23,9 @@ public sealed partial class AnalysisQueueFoundationService : IAnalysisQueueFound
   /// <summary>
   /// Initializes a new instance of the <see cref="AnalysisQueueFoundationService"/> class.
   /// </summary>
+  /// <param name="queueBroker">The broker that owns Azure Storage Queue operations.</param>
+  /// <param name="loggerFactory">The factory used to create the queue foundation logger.</param>
+  /// <exception cref="ArgumentNullException">Thrown when a required dependency is <see langword="null"/>.</exception>
   public AnalysisQueueFoundationService(
     IQueueBroker queueBroker,
     ILoggerFactory loggerFactory)
@@ -38,7 +37,16 @@ public sealed partial class AnalysisQueueFoundationService : IAnalysisQueueFound
     logger = loggerFactory.CreateLogger<IAnalysisQueueFoundationService>();
   }
 
-  /// <inheritdoc/>
+  /// <summary>Provisions the analysis queue and verifies that it is available.</summary>
+  /// <param name="cancellationToken">The token used to cancel provisioning or verification.</param>
+  /// <returns>A task that completes after queue availability has been verified.</returns>
+  /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled.</exception>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationDependencyValidationException">
+  /// Thrown when the broker reports queue state that cannot satisfy the queue contract.
+  /// </exception>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationDependencyException">
+  /// Thrown when the queue provider cannot be reached or times out.
+  /// </exception>
   public async Task EnsureQueueAsync(CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
@@ -52,7 +60,16 @@ public sealed partial class AnalysisQueueFoundationService : IAnalysisQueueFound
       }
     }).ConfigureAwait(false);
 
-  /// <inheritdoc/>
+  /// <summary>Publishes one provider-neutral analysis request to the durable queue.</summary>
+  /// <param name="message">The analysis request to publish.</param>
+  /// <param name="cancellationToken">The token used to cancel publication.</param>
+  /// <returns>The provider-assigned string message identifier.</returns>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationValidationException">
+  /// Thrown when <paramref name="message"/> is <see langword="null"/>.
+  /// </exception>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationDependencyException">
+  /// Thrown when the queue provider rejects the operation because of a transport or timeout failure.
+  /// </exception>
   public async Task<string> EnqueueAsync(
     AnalysisQueueMessage message,
     CancellationToken cancellationToken) =>
@@ -63,20 +80,39 @@ public sealed partial class AnalysisQueueFoundationService : IAnalysisQueueFound
       return await queueBroker.EnqueueMessageAsync(message, cancellationToken).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
-  /// <inheritdoc/>
-  public async Task<AnalysisQueueReceipt?> ReceiveAsync(
+  /// <summary>Dequeues at most one currently visible analysis request.</summary>
+  /// <param name="visibilityTimeout">The positive interval for which a dequeued message is hidden.</param>
+  /// <param name="cancellationToken">The token used to cancel the dequeue operation.</param>
+  /// <returns>The provider-neutral receipt, or <see langword="null"/> when no message is visible.</returns>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationValidationException">
+  /// Thrown when <paramref name="visibilityTimeout"/> is not positive.
+  /// </exception>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationDependencyException">
+  /// Thrown when the queue provider cannot complete the dequeue operation.
+  /// </exception>
+  public async Task<AnalysisQueueReceipt?> DequeueAsync(
     TimeSpan visibilityTimeout,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(ReceiveAsync));
+      using var activity = InvoicePackageTracing.StartActivity(nameof(DequeueAsync));
       ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(visibilityTimeout, TimeSpan.Zero);
       return await queueBroker
         .DequeueMessageAsync(visibilityTimeout, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 
-  /// <inheritdoc/>
+  /// <summary>Renews visibility ownership for a previously dequeued message.</summary>
+  /// <param name="receipt">The receipt containing the current provider message ID and pop receipt.</param>
+  /// <param name="visibilityTimeout">The positive interval for which the message remains hidden.</param>
+  /// <param name="cancellationToken">The token used to cancel visibility renewal.</param>
+  /// <returns>The receipt with the provider's updated pop receipt and next-visible time.</returns>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationValidationException">
+  /// Thrown when the receipt is <see langword="null"/> or the timeout is not positive.
+  /// </exception>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationDependencyException">
+  /// Thrown when the queue provider cannot renew visibility.
+  /// </exception>
   public async Task<AnalysisQueueReceipt> RenewVisibilityAsync(
     AnalysisQueueReceipt receipt,
     TimeSpan visibilityTimeout,
@@ -91,7 +127,16 @@ public sealed partial class AnalysisQueueFoundationService : IAnalysisQueueFound
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 
-  /// <inheritdoc/>
+  /// <summary>Deletes a completed or terminally failed analysis queue message.</summary>
+  /// <param name="receipt">The receipt containing the provider message ID and current pop receipt.</param>
+  /// <param name="cancellationToken">The token used to cancel deletion.</param>
+  /// <returns>A task that completes after the provider accepts the deletion.</returns>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationValidationException">
+  /// Thrown when <paramref name="receipt"/> is <see langword="null"/>.
+  /// </exception>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationDependencyException">
+  /// Thrown when the queue provider cannot delete the message.
+  /// </exception>
   public async Task DeleteAsync(
     AnalysisQueueReceipt receipt,
     CancellationToken cancellationToken) =>
@@ -101,83 +146,4 @@ public sealed partial class AnalysisQueueFoundationService : IAnalysisQueueFound
       ArgumentNullException.ThrowIfNull(receipt);
       await queueBroker.DeleteMessageAsync(receipt, cancellationToken).ConfigureAwait(false);
     }).ConfigureAwait(false);
-
-  private async Task TryCatchAsync(Func<Task> operation)
-  {
-    try
-    {
-      await operation().ConfigureAwait(false);
-    }
-    catch (OperationCanceledException)
-    {
-      throw;
-    }
-    catch (Exception exception)
-    {
-      throw Classify(exception);
-    }
-  }
-
-  private async Task<TResult> TryCatchAsync<TResult>(Func<Task<TResult>> operation)
-  {
-    try
-    {
-      return await operation().ConfigureAwait(false);
-    }
-    catch (OperationCanceledException)
-    {
-      throw;
-    }
-    catch (Exception exception)
-    {
-      throw Classify(exception);
-    }
-  }
-
-  private Exception Classify(Exception exception) => exception switch
-  {
-    ArgumentException
-      => LogValidation(exception),
-
-    JsonException
-      or InvalidOperationException
-      => LogDependencyValidation(exception),
-
-    RequestFailedException
-      or HttpRequestException
-      or TimeoutException
-      => LogDependency(exception),
-
-    _ => LogService(exception),
-  };
-
-  private AnalysisFoundationValidationException LogValidation(Exception exception)
-  {
-    LogAnalysisQueueFailure(logger, "validation");
-    return new AnalysisFoundationValidationException(exception);
-  }
-
-  private AnalysisFoundationDependencyValidationException LogDependencyValidation(Exception exception)
-  {
-    LogAnalysisQueueFailure(logger, "dependency_validation");
-    return new AnalysisFoundationDependencyValidationException(exception);
-  }
-
-  private AnalysisFoundationDependencyException LogDependency(Exception exception)
-  {
-    LogAnalysisQueueFailure(logger, "dependency");
-    return new AnalysisFoundationDependencyException(exception);
-  }
-
-  private AnalysisFoundationServiceException LogService(Exception exception)
-  {
-    LogAnalysisQueueFailure(logger, "service");
-    return new AnalysisFoundationServiceException(exception);
-  }
-
-  [LoggerMessage(
-    EventId = 300_340,
-    Level = LogLevel.Error,
-    Message = "The analysis queue Foundation classified a {failureType} failure.")]
-  private static partial void LogAnalysisQueueFailure(ILogger logger, string failureType);
 }

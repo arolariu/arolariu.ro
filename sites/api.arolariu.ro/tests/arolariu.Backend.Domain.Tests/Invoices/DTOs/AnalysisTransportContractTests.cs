@@ -4,7 +4,7 @@ using System;
 using System.Text.Json;
 
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
-using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
+using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -14,20 +14,28 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class AnalysisTransportContractTests
 {
+  private static readonly JsonSerializerOptions ApiJsonOptions = new(JsonSerializerDefaults.Web);
+
   /// <summary>
-  /// Verifies accepted responses serialize the provider message identifier.
+  /// Verifies invoice capability selections serialize as flat scalar properties.
   /// </summary>
   [TestMethod]
-  public void AcceptedResponse_Serialize_UsesMessageId()
+  public void InvoiceRequest_Serialize_UsesFlatCapabilityProperties()
   {
-    var response = new AnalysisAcceptedResponseDto(
-      "message-1",
-      AnalysisTargetType.Invoice,
-      Guid.Parse("11111111-1111-1111-1111-111111111111"));
+    var request = new InvoiceAnalysisRequestDto(
+      AnalysisProfile.Fast,
+      DocumentExtraction: true,
+      InvoiceSummary: false,
+      ProductClassification: true,
+      AllergenAssessment: false,
+      InvoiceClassification: true,
+      RecipeGeneration: true,
+      MaximumRecipes: 2);
 
-    string json = JsonSerializer.Serialize(response);
+    string json = JsonSerializer.Serialize(request, ApiJsonOptions);
 
-    StringAssert.Contains(json, "\"MessageId\":\"message-1\"", StringComparison.Ordinal);
-    StringAssert.Contains(json, "\"TargetType\":\"invoice\"", StringComparison.Ordinal);
+    StringAssert.Contains(json, "\"recipeGeneration\":true", StringComparison.Ordinal);
+    StringAssert.Contains(json, "\"maximumRecipes\":2", StringComparison.Ordinal);
+    Assert.IsFalse(json.Contains("\"enabled\"", StringComparison.Ordinal));
   }
 }

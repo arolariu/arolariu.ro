@@ -17,6 +17,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptio
 using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
+using DDD = arolariu.Backend.Domain.Invoices.DDD;
 
 /// <summary>
 /// Orchestrates manual and AI-assisted canonical classification workflows.
@@ -26,7 +27,17 @@ public sealed partial class AnalysisOrchestrationService
   private const int MaximumCandidatesPerSearchTerm = 5;
   private const int MaximumCandidatesPerSubject = 10;
 
-  /// <inheritdoc/>
+  /// <summary>Resolves an optional code-only manual selection against its required taxonomy.</summary>
+  /// <param name="classification">The optional classification whose code is authoritative for resolution.</param>
+  /// <param name="expectedSystem">The taxonomy system required by the target field.</param>
+  /// <param name="cancellationToken">The token used to cancel taxonomy resolution.</param>
+  /// <returns>The canonical manual classification, or <see langword="null"/> when no selection was supplied.</returns>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationValidationException">
+  /// Thrown when the supplied system does not match or the code cannot be resolved.
+  /// </exception>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationDependencyException">
+  /// Thrown when taxonomy access fails.
+  /// </exception>
   public async Task<StandardClassification?> ResolveManualClassificationAsync(
     StandardClassification? classification,
     ClassificationSystem expectedSystem,
@@ -58,7 +69,16 @@ public sealed partial class AnalysisOrchestrationService
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 
-  /// <inheritdoc/>
+  /// <summary>Classifies transient products against bounded GS1 GPC candidates.</summary>
+  /// <param name="products">The non-empty product inputs keyed by unique correlation tokens.</param>
+  /// <param name="cancellationToken">The token used to cancel generation and taxonomy access.</param>
+  /// <returns>Canonical GS1 GPC classifications keyed by product token.</returns>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationValidationException">
+  /// Thrown when products are absent or no usable classification input is available.
+  /// </exception>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationDependencyException">
+  /// Thrown when generation or taxonomy access fails.
+  /// </exception>
   public async Task<ProductClassificationResult> ClassifyProductsAsync(
     IReadOnlyList<ProductAnalysisInput> products,
     CancellationToken cancellationToken) =>
@@ -87,7 +107,18 @@ public sealed partial class AnalysisOrchestrationService
       return new ProductClassificationResult(classifications);
     }).ConfigureAwait(false);
 
-  /// <inheritdoc/>
+  /// <summary>Classifies an extracted invoice against bounded ECOICOP v2 candidates.</summary>
+  /// <param name="extraction">The typed receipt extraction used as invoice evidence.</param>
+  /// <param name="products">The canonical product classifications used as supporting evidence.</param>
+  /// <param name="sourceRunId">The non-empty run identifier used as the transient subject token.</param>
+  /// <param name="cancellationToken">The token used to cancel generation and taxonomy access.</param>
+  /// <returns>The canonical ECOICOP v2 invoice classification.</returns>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationValidationException">
+  /// Thrown when required evidence is null or the run identifier is empty.
+  /// </exception>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationDependencyException">
+  /// Thrown when generation or taxonomy access fails.
+  /// </exception>
   public async Task<InvoiceClassificationResult> ClassifyInvoiceAsync(
     ReceiptExtractionResult extraction,
     ProductClassificationResult products,
@@ -119,7 +150,17 @@ public sealed partial class AnalysisOrchestrationService
       return new InvoiceClassificationResult(classifications[sourceRunId.ToString()]);
     }).ConfigureAwait(false);
 
-  /// <inheritdoc/>
+  /// <summary>Classifies a merchant against bounded NACE 2.1 candidates.</summary>
+  /// <param name="merchant">The merchant snapshot used to build classification evidence.</param>
+  /// <param name="sourceRunId">The non-empty run identifier used as the transient subject token.</param>
+  /// <param name="cancellationToken">The token used to cancel generation and taxonomy access.</param>
+  /// <returns>The canonical NACE 2.1 merchant classification.</returns>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationValidationException">
+  /// Thrown when the merchant is null or the run identifier is empty.
+  /// </exception>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationDependencyException">
+  /// Thrown when generation or taxonomy access fails.
+  /// </exception>
   public async Task<MerchantClassificationResult> ClassifyMerchantAsync(
     Merchant merchant,
     Guid sourceRunId,

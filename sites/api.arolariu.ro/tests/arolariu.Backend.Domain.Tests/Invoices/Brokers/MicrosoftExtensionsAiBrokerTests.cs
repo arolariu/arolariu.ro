@@ -11,6 +11,7 @@ using arolariu.Backend.Domain.Invoices.Brokers.GenerativeAnalysisBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
@@ -27,6 +28,18 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 public sealed class AzureFoundryBrokerTests
 {
   /// <summary>
+  /// Verifies the broker rejects a missing logger factory at its construction boundary.
+  /// </summary>
+  [TestMethod]
+  public void Constructor_NullLoggerFactory_ThrowsArgumentNullException()
+  {
+    using var chatClient = new ScriptedChatClient("{}", modelId: null);
+
+    Assert.ThrowsExactly<ArgumentNullException>(
+      () => new AzureFoundryBroker(chatClient, null!));
+  }
+
+  /// <summary>
   /// Verifies that the broker materializes a non-public typed structured output contract, proving the production
   /// foundation services can keep their output records private.
   /// </summary>
@@ -36,11 +49,13 @@ public sealed class AzureFoundryBrokerTests
     // Arrange
     const string payload = """{"description":"A neighbourhood grocery retailer.","confidence":0.87}""";
     using var chatClient = new ScriptedChatClient(payload, "unit-test-model");
-    var broker = new AzureFoundryBroker(chatClient);
-    var request = new GenerativeRequest("Describe the merchant.", new { name = "Test Merchant" });
+    var broker = new AzureFoundryBroker(chatClient, NullLoggerFactory.Instance);
+    var request = new GenerativeAnalysisRequest(
+      "Describe the merchant.",
+      new { name = "Test Merchant" });
 
     // Act
-    GenerativeResponse<PrivateStructuredOutput> response = await broker
+    GenerativeAnalysisResponse<PrivateStructuredOutput> response = await broker
       .GenerateStructuredAsync<PrivateStructuredOutput>(request, CancellationToken.None)
       .ConfigureAwait(false);
 
@@ -60,8 +75,10 @@ public sealed class AzureFoundryBrokerTests
   {
     // Arrange
     using var chatClient = new ScriptedChatClient("this is not json", modelId: null);
-    var broker = new AzureFoundryBroker(chatClient);
-    var request = new GenerativeRequest("Describe the merchant.", new { name = "Test Merchant" });
+    var broker = new AzureFoundryBroker(chatClient, NullLoggerFactory.Instance);
+    var request = new GenerativeAnalysisRequest(
+      "Describe the merchant.",
+      new { name = "Test Merchant" });
 
     // Act + Assert
     await Assert.ThrowsExactlyAsync<InvalidStructuredOutputException>(async () =>

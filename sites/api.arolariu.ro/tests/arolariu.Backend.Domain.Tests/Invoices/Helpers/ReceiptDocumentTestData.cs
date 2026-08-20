@@ -84,7 +84,7 @@ internal static class ReceiptDocumentTestData
   /// <param name="quantity">The first product quantity.</param>
   /// <param name="additionalProducts">Additional alternating product-name and quantity pairs.</param>
   /// <returns>A provider-neutral receipt document.</returns>
-  public static ReceiptDocument Page(
+  public static DocumentIntelligenceRecord Page(
     string productName,
     decimal quantity,
     params object[] additionalProducts)
@@ -118,7 +118,7 @@ internal static class ReceiptDocumentTestData
   /// <param name="taxDetails">The extracted tax lines.</param>
   /// <param name="payments">The extracted payment lines.</param>
   /// <returns>A provider-neutral receipt document.</returns>
-  public static ReceiptDocument Document(
+  public static DocumentIntelligenceRecord Document(
     IEnumerable<ReceiptProductDocument>? products = null,
     string merchantName = "",
     string merchantAddress = "",
@@ -129,7 +129,7 @@ internal static class ReceiptDocumentTestData
     IEnumerable<ReceiptTaxDocument>? taxDetails = null,
     IEnumerable<ReceiptPaymentLineDocument>? payments = null)
   {
-    return new ReceiptDocument(
+    return new DocumentIntelligenceRecord(
       merchant: new ReceiptMerchantDocument(
         Name: Field(merchantName, 0.98),
         Address: Field(merchantAddress, 0.97),

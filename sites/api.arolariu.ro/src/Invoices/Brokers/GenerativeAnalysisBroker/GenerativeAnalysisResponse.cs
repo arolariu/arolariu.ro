@@ -6,17 +6,17 @@ using System;
 /// Represents a typed structured response produced by the generative AI broker.
 /// </summary>
 /// <typeparam name="T">The structured output type requested from the provider.</typeparam>
-public sealed record GenerativeResponse<T>
+public sealed record GenerativeAnalysisResponse<T>
   where T : class
 {
   /// <summary>
-  /// Initializes a new instance of the <see cref="GenerativeResponse{T}"/> record.
+  /// Initializes a new instance of the <see cref="GenerativeAnalysisResponse{T}"/> record.
   /// </summary>
   /// <param name="value">The typed structured result produced by the provider.</param>
   /// <param name="modelId">The provider model identifier that produced the response, if reported.</param>
   /// <param name="usage">The non-sensitive token usage metadata for the response, if reported.</param>
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
-  public GenerativeResponse(T value, string? modelId, GenerativeUsage? usage)
+  public GenerativeAnalysisResponse(T value, string? modelId, GenerativeUsage? usage)
   {
     Value = value ?? throw new ArgumentNullException(nameof(value));
     ModelId = modelId;

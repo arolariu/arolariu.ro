@@ -225,4 +225,41 @@ public sealed class AnalysisOrchestrationCurrentArchitectureTests
     Assert.AreEqual("message-1", result);
     queue.VerifyAll();
   }
+
+  /// <summary>
+  /// Verifies receiving analysis work delegates to the dequeue-named Foundation capability.
+  /// </summary>
+  [TestMethod]
+  public async Task ReceiveAnalysisAsync_VisibleMessage_DelegatesToFoundationDequeue()
+  {
+    AnalysisQueueMessage message = AnalysisQueueMessage.CreateInvoice(
+      Guid.NewGuid(),
+      Guid.NewGuid(),
+      Guid.NewGuid(),
+      InvoiceAnalysisOptions.Fast(),
+      "00-trace-span-01");
+    var receipt = new AnalysisQueueReceipt(
+      message,
+      "message-1",
+      "pop-receipt",
+      dequeueCount: 1,
+      DateTimeOffset.UtcNow);
+    var queue = new Mock<IAnalysisQueueFoundationService>(MockBehavior.Strict);
+    var analysis = new Mock<IAnalysisFoundationService>(MockBehavior.Strict);
+    queue.Setup(service => service.DequeueAsync(
+        TimeSpan.FromMinutes(2),
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(receipt);
+    var service = new AnalysisOrchestrationService(
+      analysis.Object,
+      queue.Object,
+      NullLoggerFactory.Instance);
+
+    AnalysisQueueReceipt? result = await service
+      .ReceiveAnalysisAsync(TimeSpan.FromMinutes(2), CancellationToken.None)
+      .ConfigureAwait(false);
+
+    Assert.AreSame(receipt, result);
+    queue.VerifyAll();
+  }
 }

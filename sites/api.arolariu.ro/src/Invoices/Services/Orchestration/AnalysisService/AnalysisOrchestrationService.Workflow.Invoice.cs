@@ -16,10 +16,21 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptio
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
+using DDD = arolariu.Backend.Domain.Invoices.DDD;
 
 public sealed partial class AnalysisOrchestrationService
 {
-  /// <inheritdoc/>
+  /// <summary>Executes the resolved invoice capability graph without persisting aggregate state.</summary>
+  /// <param name="message">The durable invoice request containing resolved capability options.</param>
+  /// <param name="invoice">The invoice snapshot to analyze.</param>
+  /// <param name="cancellationToken">The token used to cancel the capability graph.</param>
+  /// <returns>The immutable patch, completed capabilities, and first observed failure reason.</returns>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationValidationException">
+  /// Thrown when the message or invoice is null.
+  /// </exception>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationServiceException">
+  /// Thrown when an unclassified orchestration failure prevents producing an execution result.
+  /// </exception>
   public async Task<InvoiceAnalysisExecutionResult> ExecuteInvoiceAnalysisAsync(
     AnalysisQueueMessage message,
     Invoice invoice,

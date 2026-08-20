@@ -182,7 +182,7 @@ count, and next-visible time.
 
 | Broker contract | Implementation responsibility |
 |---|---|
-| `IDocumentIntelligenceBroker` | Calls Azure AI Document Intelligence's `prebuilt-receipt` model for a scan URI and maps the response to `ReceiptDocument` |
+| `IDocumentIntelligenceBroker` | Calls Azure AI Document Intelligence's `prebuilt-receipt` model for a scan URI and maps the response to `DocumentIntelligenceRecord` |
 | `IGenerativeAnalysisBroker` | `AzureFoundryBroker` uses `Microsoft.Extensions.AI.IChatClient` typed JSON Schema responses and returns provider-neutral structured results |
 | `ITaxonomyBroker` | Loads embedded GS1 GPC, ECOICOP v2, and NACE 2.1 artifacts for deterministic search and canonical resolution |
 
@@ -232,7 +232,7 @@ Orchestration services expose domain workflows over approved Foundations:
 - invoice/merchant relationship handling;
 - application of immutable analysis patches; and
 - persistence of analysis-derived invoice or merchant changes;
-- effective analysis option resolution and `AnalysisQueueMessage` creation;
+- consumption of request-resolved analysis options and `AnalysisQueueMessage` creation;
 - queue receive and delete delegation;
 - periodic visibility renewal while an operation executes;
 - delegation of invoice and merchant workflow composition to Analysis Orchestration;
@@ -263,9 +263,9 @@ Analyze endpoint
 Invoice Processing creates `AnalysisQueueMessage` with a correlation identifier,
 target type and identifier, requester, optional target partition identifier,
 target-specific options, and W3C trace context. Azure Queue's returned
-`MessageId` is exposed by `AnalysisAcceptedResponseDto` together with the target
-type and target identifier. Both invoice and merchant analysis endpoints return
-that DTO in an HTTP 202 Accepted response.
+`MessageId` is returned directly through Processing and Management. Both invoice
+and merchant analysis endpoints return that string as the HTTP 202 Accepted
+response body.
 
 ### Manual classification updates
 

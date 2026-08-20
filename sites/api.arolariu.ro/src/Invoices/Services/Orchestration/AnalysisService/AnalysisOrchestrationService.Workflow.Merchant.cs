@@ -11,10 +11,21 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
+using DDD = arolariu.Backend.Domain.Invoices.DDD;
 
 public sealed partial class AnalysisOrchestrationService
 {
-  /// <inheritdoc/>
+  /// <summary>Executes the resolved merchant capability graph without persisting aggregate state.</summary>
+  /// <param name="message">The durable merchant request containing resolved capability options.</param>
+  /// <param name="merchant">The merchant snapshot to analyze.</param>
+  /// <param name="cancellationToken">The token used to cancel the capability graph.</param>
+  /// <returns>The immutable patch, completed capabilities, and first observed failure reason.</returns>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationValidationException">
+  /// Thrown when the message or merchant is null.
+  /// </exception>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationServiceException">
+  /// Thrown when an unclassified orchestration failure prevents producing an execution result.
+  /// </exception>
   public async Task<MerchantAnalysisExecutionResult> ExecuteMerchantAnalysisAsync(
     AnalysisQueueMessage message,
     Merchant merchant,

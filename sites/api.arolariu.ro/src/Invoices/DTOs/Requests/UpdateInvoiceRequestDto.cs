@@ -8,7 +8,8 @@ using System.Diagnostics.CodeAnalysis;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
-using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
+
+using Microsoft.AspNetCore.Http;
 
 /// <summary>
 /// Request DTO for full invoice replacement operations (HTTP PUT semantics).
@@ -40,7 +41,6 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// A detailed description of the invoice. Required, but may be empty.
 /// Useful for notes, context, or search purposes.
 /// </param>
-/// <param name="ClassificationSystem">Optional taxonomy system for the manual invoice classification.</param>
 /// <param name="ClassificationCode">Optional taxonomy code for the manual invoice classification.</param>
 /// <param name="PaymentInformation">
 /// Payment details including currency, total amount, tax, and payment method.
@@ -63,7 +63,6 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// var request = new UpdateInvoiceRequestDto(
 ///     Name: "Updated Invoice Name",
 ///     Description: "Monthly groceries",
-///     ClassificationSystem: ClassificationSystem.EcoicopV2,
 ///     ClassificationCode: "01.1.1",
 ///     PaymentInformation: new PaymentInformation(Currency.RON, 150.50m, 28.60m, PaymentMethod.Card),
 ///     MerchantReference: merchantId,
@@ -82,70 +81,14 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 public readonly record struct UpdateInvoiceRequestDto(
   [Required] string Name,
   [Required] string Description,
-  ClassificationSystem? ClassificationSystem,
   string? ClassificationCode,
   PaymentInformation PaymentInformation,
   Guid? MerchantReference,
   bool IsImportant,
   IDictionary<string, object>? AdditionalMetadata)
 {
-  /// <summary>
-  /// Initializes a legacy compatibility shape that omits <see cref="AdditionalMetadata"/>.
-  /// </summary>
-  /// <param name="Name">The invoice name.</param>
-  /// <param name="Description">The invoice description.</param>
-  /// <param name="ClassificationSystem">The optional manual classification system.</param>
-  /// <param name="ClassificationCode">The optional manual classification code.</param>
-  /// <param name="PaymentInformation">The payment information.</param>
-  /// <param name="MerchantReference">The merchant reference.</param>
-  /// <param name="IsImportant">Whether the invoice is important.</param>
-  public UpdateInvoiceRequestDto(
-    string Name,
-    string Description,
-    ClassificationSystem? ClassificationSystem,
-    string? ClassificationCode,
-    PaymentInformation PaymentInformation,
-    Guid? MerchantReference,
-    bool IsImportant)
-    : this(
-      Name,
-      Description,
-      ClassificationSystem,
-      ClassificationCode,
-      PaymentInformation,
-      MerchantReference,
-      IsImportant,
-      AdditionalMetadata: null)
-  {
-  }
-
-  /// <summary>
-  /// Initializes a legacy compatibility shape that supplied payment information before classification.
-  /// </summary>
-  /// <param name="Name">The invoice name.</param>
-  /// <param name="Description">The invoice description.</param>
-  /// <param name="PaymentInformation">The payment information.</param>
-  /// <param name="MerchantReference">The merchant reference.</param>
-  /// <param name="IsImportant">Whether the invoice is important.</param>
-  /// <param name="AdditionalMetadata">Optional metadata.</param>
-  public UpdateInvoiceRequestDto(
-    string Name,
-    string Description,
-    PaymentInformation PaymentInformation,
-    Guid? MerchantReference,
-    bool IsImportant,
-    IDictionary<string, object>? AdditionalMetadata)
-    : this(
-      Name,
-      Description,
-      ClassificationSystem: null,
-      ClassificationCode: null,
-      PaymentInformation,
-      MerchantReference,
-      IsImportant,
-      AdditionalMetadata)
-  {
-  }
+  private const string PlaceholderVersion = "unresolved";
+  private const string PlaceholderLabel = "unresolved";
 
   /// <summary>
   /// Converts this DTO to an <see cref="Invoice"/> domain aggregate.
@@ -182,10 +125,7 @@ public readonly record struct UpdateInvoiceRequestDto(
       UserIdentifier = userIdentifier,
       Name = Name,
       Description = Description,
-      Classification = RequestClassificationMapper.ToManualSelection(
-        ClassificationSystem,
-        ClassificationCode,
-        DDD.ValueObjects.Classifications.ClassificationSystem.EcoicopV2),
+      Classification = CreateManualClassification(ClassificationCode),
       PaymentInformation = PaymentInformation,
       MerchantReference = MerchantReference ?? Guid.Empty,
       IsImportant = IsImportant,
@@ -200,5 +140,32 @@ public readonly record struct UpdateInvoiceRequestDto(
     }
 
     return invoice;
+  }
+
+  private static StandardClassification? CreateManualClassification(string? code)
+  {
+    if (code is null)
+    {
+      return null;
+    }
+
+    if (string.IsNullOrWhiteSpace(code))
+    {
+      throw new BadHttpRequestException("Classification code must not be empty or whitespace.");
+    }
+
+    string normalizedCode = code.Trim();
+    IReadOnlyList<ClassificationNode> hierarchy =
+      [new ClassificationNode(PlaceholderVersion, normalizedCode, PlaceholderLabel)];
+
+    return new StandardClassification(
+      ClassificationSystem.EcoicopV2,
+      PlaceholderVersion,
+      normalizedCode,
+      PlaceholderLabel,
+      hierarchy,
+      ClassificationOrigin.Manual,
+      confidence: null,
+      evidence: []);
   }
 }

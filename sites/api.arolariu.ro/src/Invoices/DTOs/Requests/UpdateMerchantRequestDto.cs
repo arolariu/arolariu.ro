@@ -8,7 +8,8 @@ using System.Diagnostics.CodeAnalysis;
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
-using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
+
+using Microsoft.AspNetCore.Http;
 
 /// <summary>
 /// Request DTO for updating client-editable merchant fields.
@@ -37,7 +38,6 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// <param name="Description">
 /// The new detailed description. Required. Replaces the existing description.
 /// </param>
-/// <param name="ClassificationSystem">Optional taxonomy system for the manual merchant classification.</param>
 /// <param name="ClassificationCode">Optional taxonomy code for the manual merchant classification.</param>
 /// <param name="Address">
 /// The new structured contact and address information.
@@ -56,7 +56,6 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// var request = new UpdateMerchantRequestDto(
 ///     Name: "Kaufland Iasi Pacurari",
 ///     Description: "Updated description with new hours",
-///     ClassificationSystem: ClassificationSystem.Nace21,
 ///     ClassificationCode: "47.11",
 ///     Address: new ContactInformation { City = "Iasi", Country = "Romania" },
 ///     ParentCompanyId: parentId,
@@ -73,65 +72,13 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 public readonly record struct UpdateMerchantRequestDto(
   [Required] string Name,
   [Required] string Description,
-  ClassificationSystem? ClassificationSystem,
   string? ClassificationCode,
   ContactInformation? Address,
   Guid? ParentCompanyId,
   IDictionary<string, string>? AdditionalMetadata)
 {
-  /// <summary>
-  /// Initializes a legacy compatibility shape that omits <see cref="AdditionalMetadata"/>.
-  /// </summary>
-  /// <param name="Name">The merchant name.</param>
-  /// <param name="Description">The merchant description.</param>
-  /// <param name="ClassificationSystem">The optional manual classification system.</param>
-  /// <param name="ClassificationCode">The optional manual classification code.</param>
-  /// <param name="Address">The contact information.</param>
-  /// <param name="ParentCompanyId">The retained parent-company identifier.</param>
-  public UpdateMerchantRequestDto(
-    string Name,
-    string Description,
-    ClassificationSystem? ClassificationSystem,
-    string? ClassificationCode,
-    ContactInformation? Address,
-    Guid? ParentCompanyId)
-    : this(
-      Name,
-      Description,
-      ClassificationSystem,
-      ClassificationCode,
-      Address,
-      ParentCompanyId,
-      AdditionalMetadata: null)
-  {
-  }
-
-  /// <summary>
-  /// Initializes a legacy compatibility shape that omitted the address parameter.
-  /// </summary>
-  /// <param name="Name">The merchant name.</param>
-  /// <param name="Description">The merchant description.</param>
-  /// <param name="ClassificationSystem">The optional manual classification system.</param>
-  /// <param name="ClassificationCode">The optional manual classification code.</param>
-  /// <param name="ParentCompanyId">The retained parent-company identifier.</param>
-  /// <param name="AdditionalMetadata">Optional metadata.</param>
-  public UpdateMerchantRequestDto(
-    string Name,
-    string Description,
-    ClassificationSystem? ClassificationSystem,
-    string? ClassificationCode,
-    Guid? ParentCompanyId,
-    IDictionary<string, string>? AdditionalMetadata)
-    : this(
-      Name,
-      Description,
-      ClassificationSystem,
-      ClassificationCode,
-      Address: null,
-      ParentCompanyId,
-      AdditionalMetadata)
-  {
-  }
+  private const string PlaceholderVersion = "unresolved";
+  private const string PlaceholderLabel = "unresolved";
 
   /// <summary>
   /// Converts this DTO to a <see cref="Merchant"/> domain entity.
@@ -167,10 +114,7 @@ public readonly record struct UpdateMerchantRequestDto(
       id = merchantId,
       Name = Name,
       Description = Description,
-      Classification = RequestClassificationMapper.ToManualSelection(
-        ClassificationSystem,
-        ClassificationCode,
-        DDD.ValueObjects.Classifications.ClassificationSystem.Nace21),
+      Classification = CreateManualClassification(ClassificationCode),
       Address = Address ?? new ContactInformation(),
     };
 
@@ -183,5 +127,32 @@ public readonly record struct UpdateMerchantRequestDto(
     }
 
     return merchant;
+  }
+
+  private static StandardClassification? CreateManualClassification(string? code)
+  {
+    if (code is null)
+    {
+      return null;
+    }
+
+    if (string.IsNullOrWhiteSpace(code))
+    {
+      throw new BadHttpRequestException("Classification code must not be empty or whitespace.");
+    }
+
+    string normalizedCode = code.Trim();
+    IReadOnlyList<ClassificationNode> hierarchy =
+      [new ClassificationNode(PlaceholderVersion, normalizedCode, PlaceholderLabel)];
+
+    return new StandardClassification(
+      ClassificationSystem.Nace21,
+      PlaceholderVersion,
+      normalizedCode,
+      PlaceholderLabel,
+      hierarchy,
+      ClassificationOrigin.Manual,
+      confidence: null,
+      evidence: []);
   }
 }

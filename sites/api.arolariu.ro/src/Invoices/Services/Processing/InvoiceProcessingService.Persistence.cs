@@ -18,12 +18,25 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
+using DDD = arolariu.Backend.Domain.Invoices.DDD;
 
 public sealed partial class InvoiceProcessingService
 {
   private const string InvariantNumberFormat = "0.############################";
 
-  /// <inheritdoc/>
+  /// <summary>Applies an immutable invoice analysis patch and persists the target invoice.</summary>
+  /// <param name="executionResult">The successful invoice execution result containing the durable message and target patch.</param>
+  /// <param name="cancellationToken">The token used to cancel target lookup or persistence.</param>
+  /// <returns>The supplied execution result after the invoice update completes.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceValidationException">
+  /// Thrown when <paramref name="executionResult"/> is null.
+  /// </exception>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyValidationException">
+  /// Thrown when the target invoice is unavailable.
+  /// </exception>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when invoice persistence fails.
+  /// </exception>
   [SuppressMessage(
     "Design",
     "CA1031:Do not catch general exception types",
@@ -58,7 +71,19 @@ public sealed partial class InvoiceProcessingService
       return executionResult;
     }).ConfigureAwait(false);
 
-  /// <inheritdoc/>
+  /// <summary>Applies an immutable merchant analysis patch and persists the target merchant.</summary>
+  /// <param name="executionResult">The successful merchant execution result containing the durable message and target patch.</param>
+  /// <param name="cancellationToken">The token used to cancel target lookup or persistence.</param>
+  /// <returns>The supplied execution result after the merchant update completes.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceValidationException">
+  /// Thrown when <paramref name="executionResult"/> is null.
+  /// </exception>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyValidationException">
+  /// Thrown when the target merchant is unavailable.
+  /// </exception>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when merchant persistence fails.
+  /// </exception>
   public async Task<MerchantAnalysisExecutionResult> PersistMerchantAnalysisAsync(
     MerchantAnalysisExecutionResult executionResult,
     CancellationToken cancellationToken) =>

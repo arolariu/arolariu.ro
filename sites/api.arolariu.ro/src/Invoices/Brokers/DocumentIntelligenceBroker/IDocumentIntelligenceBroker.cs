@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 /// <remarks>
 /// <para>
 /// The broker accepts an externally accessible invoice scan URI, invokes the configured receipt model, and returns
-/// an immutable provider-neutral <see cref="ReceiptDocument"/>. Domain aggregate mutation and workflow sequencing
+/// an immutable provider-neutral <see cref="DocumentIntelligenceRecord"/>. Domain aggregate mutation and workflow sequencing
 /// remain outside the Broker layer.
 /// </para>
 /// <para>
@@ -28,7 +28,7 @@ public interface IDocumentIntelligenceBroker
   /// <returns>The extracted provider-neutral receipt document.</returns>
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="scanLocation"/> is null.</exception>
   /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
-  ValueTask<ReceiptDocument> AnalyzeReceiptAsync(
+  ValueTask<DocumentIntelligenceRecord> AnalyzeReceiptAsync(
     Uri scanLocation,
     CancellationToken cancellationToken);
 }

@@ -9,10 +9,17 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
+using DDD = arolariu.Backend.Domain.Invoices.DDD;
 
 public sealed partial class AnalysisFoundationService
 {
-  /// <inheritdoc/>
+  /// <summary>Returns the version declared by a loaded trusted taxonomy artifact.</summary>
+  /// <param name="system">The taxonomy system whose version is requested.</param>
+  /// <param name="cancellationToken">The token checked before taxonomy access.</param>
+  /// <returns>The loaded artifact's declared version.</returns>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationValidationException">
+  /// Thrown when <paramref name="system"/> is unsupported.
+  /// </exception>
   public async Task<string> GetTaxonomyVersionAsync(
     ClassificationSystem system,
     CancellationToken cancellationToken) =>
@@ -24,7 +31,15 @@ public sealed partial class AnalysisFoundationService
       },
       cancellationToken).ConfigureAwait(false);
 
-  /// <inheritdoc/>
+  /// <summary>Searches a trusted taxonomy artifact for a bounded candidate set.</summary>
+  /// <param name="system">The taxonomy system to search.</param>
+  /// <param name="query">The taxonomy search expression.</param>
+  /// <param name="maximumResults">The maximum candidate count requested from the broker.</param>
+  /// <param name="cancellationToken">The token checked before taxonomy access.</param>
+  /// <returns>Canonical candidate codes and official labels.</returns>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationValidationException">
+  /// Thrown when a search argument is invalid.
+  /// </exception>
   public async Task<IReadOnlyList<ClassificationCandidateOption>> SearchTaxonomyAsync(
     ClassificationSystem system,
     string query,
@@ -41,7 +56,17 @@ public sealed partial class AnalysisFoundationService
       },
       cancellationToken).ConfigureAwait(false);
 
-  /// <inheritdoc/>
+  /// <summary>Resolves a code-only request into a canonical taxonomy snapshot.</summary>
+  /// <param name="system">The taxonomy system containing the requested code.</param>
+  /// <param name="code">The exact taxonomy code to resolve.</param>
+  /// <param name="origin">The origin assigned to the resolved classification.</param>
+  /// <param name="confidence">The optional analysis confidence.</param>
+  /// <param name="evidence">The evidence retained on the resolved snapshot.</param>
+  /// <param name="cancellationToken">The token checked before taxonomy access.</param>
+  /// <returns>The canonical classification from the trusted artifact.</returns>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationDependencyValidationException">
+  /// Thrown when the taxonomy broker cannot resolve the requested code.
+  /// </exception>
   public async Task<StandardClassification> ResolveClassificationAsync(
     ClassificationSystem system,
     string code,

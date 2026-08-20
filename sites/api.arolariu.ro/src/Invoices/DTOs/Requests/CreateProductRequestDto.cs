@@ -1,6 +1,7 @@
 namespace arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
@@ -35,7 +36,6 @@ using Microsoft.AspNetCore.Http;
 /// The product name as it appears on the receipt. Required.
 /// This will be used as the product's display name.
 /// </param>
-/// <param name="ClassificationSystem">Optional taxonomy system for the manual product classification.</param>
 /// <param name="ClassificationCode">Optional taxonomy code for the manual product classification.</param>
 /// <param name="Quantity">
 /// The quantity of product units. Must be positive.
@@ -58,7 +58,6 @@ using Microsoft.AspNetCore.Http;
 /// <code>
 /// var request = new CreateProductRequestDto(
 ///     Name: "Milk 1L (LAPTE ZUZU)",
-///     ClassificationSystem: ClassificationSystem.Gs1Gpc,
 ///     ClassificationCode: "10000025",
 ///     Quantity: 2,
 ///     QuantityUnit: "buc",
@@ -75,14 +74,16 @@ using Microsoft.AspNetCore.Http;
 [ExcludeFromCodeCoverage]
 public readonly record struct CreateProductRequestDto(
   [Required] string Name,
-  ClassificationSystem? ClassificationSystem,
   string? ClassificationCode,
-  [Required] decimal? Quantity,
+  [Required] decimal Quantity,
   string? QuantityUnit,
   string? ProductCode,
-  [Required] decimal? Price,
+  [Required] decimal Price,
   AllergenAssessment? AllergenAssessment)
 {
+  private const string PlaceholderVersion = "unresolved";
+  private const string PlaceholderLabel = "unresolved";
+
   /// <summary>
   /// Converts this DTO to a <see cref="Product"/> domain value object.
   /// </summary>
@@ -103,14 +104,38 @@ public readonly record struct CreateProductRequestDto(
     new()
     {
       Name = Name?.Trim() ?? string.Empty,
-      Classification = RequestClassificationMapper.ToManualSelection(
-        ClassificationSystem,
-        ClassificationCode,
-        DDD.ValueObjects.Classifications.ClassificationSystem.Gs1Gpc),
-      Quantity = Quantity ?? throw new BadHttpRequestException("Product quantity is required."),
+      Classification = CreateManualClassification(ClassificationCode),
+      Quantity = Quantity,
       QuantityUnit = QuantityUnit?.Trim() ?? string.Empty,
       ProductCode = ProductCode?.Trim() ?? string.Empty,
-      Price = Price ?? throw new BadHttpRequestException("Product price is required."),
+      Price = Price,
       AllergenAssessment = AllergenAssessment,
     };
+
+  private static StandardClassification? CreateManualClassification(string? code)
+  {
+    if (code is null)
+    {
+      return null;
+    }
+
+    if (string.IsNullOrWhiteSpace(code))
+    {
+      throw new BadHttpRequestException("Classification code must not be empty or whitespace.");
+    }
+
+    string normalizedCode = code.Trim();
+    IReadOnlyList<ClassificationNode> hierarchy =
+      [new ClassificationNode(PlaceholderVersion, normalizedCode, PlaceholderLabel)];
+
+    return new StandardClassification(
+      ClassificationSystem.Gs1Gpc,
+      PlaceholderVersion,
+      normalizedCode,
+      PlaceholderLabel,
+      hierarchy,
+      ClassificationOrigin.Manual,
+      confidence: null,
+      evidence: []);
+  }
 }

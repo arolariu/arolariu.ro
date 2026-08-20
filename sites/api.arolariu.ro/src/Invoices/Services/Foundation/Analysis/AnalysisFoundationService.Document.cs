@@ -12,13 +12,23 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
+using DDD = arolariu.Backend.Domain.Invoices.DDD;
 
 /// <summary>
 /// Extracts and deterministically merges typed receipt data across all scans of an invoice.
 /// </summary>
 public sealed partial class AnalysisFoundationService
 {
-  /// <inheritdoc/>
+  /// <summary>Extracts typed receipt data from each scan and merges it in scan order.</summary>
+  /// <param name="scans">The non-empty ordered collection of supported scans with absolute locations.</param>
+  /// <param name="cancellationToken">The token used to cancel document analysis.</param>
+  /// <returns>The deterministic provider-neutral extraction merged across all scans.</returns>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationValidationException">
+  /// Thrown when the scan collection is empty or contains an unsupported or unusable scan.
+  /// </exception>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationDependencyException">
+  /// Thrown when Document Intelligence fails, times out, or returns invalid structured data.
+  /// </exception>
   public async Task<ReceiptExtractionResult> ExtractInvoiceAsync(
     IReadOnlyList<InvoiceScan> scans,
     CancellationToken cancellationToken) =>
@@ -28,7 +38,7 @@ public sealed partial class AnalysisFoundationService
         using var activity = InvoicePackageTracing.StartActivity(nameof(ExtractInvoiceAsync));
         ValidateScansAreSet(scans);
 
-        var extractionTasks = new Task<IndexedReceiptDocument>[scans.Count];
+        var extractionTasks = new Task<IndexedDocumentIntelligenceRecord>[scans.Count];
 
         for (int index = 0; index < scans.Count; index++)
         {
@@ -42,7 +52,7 @@ public sealed partial class AnalysisFoundationService
           extractionTasks[index] = AnalyzeScanAsync(scan, index, cancellationToken);
         }
 
-        IndexedReceiptDocument[] extractedDocuments = await Task
+        IndexedDocumentIntelligenceRecord[] extractedDocuments = await Task
           .WhenAll(extractionTasks)
           .ConfigureAwait(false);
 
@@ -53,21 +63,24 @@ public sealed partial class AnalysisFoundationService
       cancellationToken)
       .ConfigureAwait(false);
 
-  private async Task<IndexedReceiptDocument> AnalyzeScanAsync(
+  private async Task<IndexedDocumentIntelligenceRecord> AnalyzeScanAsync(
     InvoiceScan scan,
     int index,
     CancellationToken cancellationToken)
   {
-    ReceiptDocument receiptDocument = await documentIntelligenceBroker
+    DocumentIntelligenceRecord documentIntelligenceRecord = await documentIntelligenceBroker
       .AnalyzeReceiptAsync(scan.Location, cancellationToken)
       .ConfigureAwait(false);
 
-    ValidateReceiptDocumentIsSet(receiptDocument);
+    ValidateDocumentIntelligenceRecordIsSet(documentIntelligenceRecord);
 
-    return new IndexedReceiptDocument(index, receiptDocument.WithSourceScanIndex(index));
+    return new IndexedDocumentIntelligenceRecord(
+      index,
+      documentIntelligenceRecord.WithSourceScanIndex(index));
   }
 
-  private static ReceiptExtractionResult MergeDocuments(IReadOnlyList<IndexedReceiptDocument> extractedDocuments)
+  private static ReceiptExtractionResult MergeDocuments(
+    IReadOnlyList<IndexedDocumentIntelligenceRecord> extractedDocuments)
   {
     var products = new List<ExtractedProduct>();
     var productKeys = new HashSet<ProductIdentity>();
@@ -85,9 +98,9 @@ public sealed partial class AnalysisFoundationService
     decimal? subtotalAmount = null;
     decimal? tipAmount = null;
 
-    foreach (IndexedReceiptDocument extractedDocument in extractedDocuments)
+    foreach (IndexedDocumentIntelligenceRecord extractedDocument in extractedDocuments)
     {
-      ReceiptDocument document = extractedDocument.Document;
+      DocumentIntelligenceRecord document = extractedDocument.Document;
 
       receiptType = ChooseFirstNonEmpty(receiptType, document.ReceiptType.Value);
       countryRegion = ChooseFirstNonEmpty(countryRegion, document.CountryRegion.Value);
@@ -361,7 +374,9 @@ public sealed partial class AnalysisFoundationService
     return maximum;
   }
 
-  private readonly record struct IndexedReceiptDocument(int Index, ReceiptDocument Document);
+  private readonly record struct IndexedDocumentIntelligenceRecord(
+    int Index,
+    DocumentIntelligenceRecord Document);
   private readonly record struct ProductIdentity(string Name, string ProductCode, decimal Quantity, decimal Price);
   private readonly record struct TaxIdentity(string Description, decimal Amount, decimal Rate, decimal NetAmount);
   private readonly record struct PaymentIdentity(string Method, decimal Amount);

@@ -8,7 +8,7 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.O
 
 public sealed partial class InvoiceManagementService
 {
-  private static async Task TryCatchAsync(Func<Task> operation)
+  private async Task TryCatchAsync(Func<Task> operation)
   {
     try
     {
@@ -24,7 +24,7 @@ public sealed partial class InvoiceManagementService
     }
   }
 
-  private static async Task<TResult> TryCatchAsync<TResult>(Func<Task<TResult>> operation)
+  private async Task<TResult> TryCatchAsync<TResult>(Func<Task<TResult>> operation)
   {
     try
     {
@@ -40,7 +40,7 @@ public sealed partial class InvoiceManagementService
     }
   }
 
-  private static Exception Classify(Exception exception) => exception switch
+  private Exception Classify(Exception exception) => exception switch
   {
     InvoiceManagementValidationException
       or InvoiceManagementDependencyException
@@ -49,7 +49,7 @@ public sealed partial class InvoiceManagementService
       => exception,
 
     _ when ContainsExceptionMarker<IValidationException>(exception)
-      => new InvoiceManagementValidationException(exception),
+      => LogAndWrapValidation(exception),
 
     _ when ContainsExceptionMarker<IDependencyValidationException>(exception)
       || ContainsExceptionMarker<INotFoundException>(exception)
@@ -58,14 +58,38 @@ public sealed partial class InvoiceManagementService
       || ContainsExceptionMarker<IRateLimitedException>(exception)
       || ContainsExceptionMarker<IUnauthorizedException>(exception)
       || ContainsExceptionMarker<IForbiddenException>(exception)
-      => new InvoiceManagementDependencyValidationException(exception),
+      => LogAndWrapDependencyValidation(exception),
 
     _ when ContainsExceptionMarker<IDependencyException>(exception)
       || ContainsExceptionMarker<ITimeoutException>(exception)
-      => new InvoiceManagementDependencyException(exception),
+      => LogAndWrapDependency(exception),
 
-    _ => new InvoiceManagementServiceException(exception),
+    _ => LogAndWrapService(exception),
   };
+
+  private InvoiceManagementValidationException LogAndWrapValidation(Exception exception)
+  {
+    logger.LogInvoiceManagementValidationException();
+    return new InvoiceManagementValidationException(exception);
+  }
+
+  private InvoiceManagementDependencyValidationException LogAndWrapDependencyValidation(Exception exception)
+  {
+    logger.LogInvoiceManagementDependencyValidationException();
+    return new InvoiceManagementDependencyValidationException(exception);
+  }
+
+  private InvoiceManagementDependencyException LogAndWrapDependency(Exception exception)
+  {
+    logger.LogInvoiceManagementDependencyException();
+    return new InvoiceManagementDependencyException(exception);
+  }
+
+  private InvoiceManagementServiceException LogAndWrapService(Exception exception)
+  {
+    logger.LogInvoiceManagementServiceException();
+    return new InvoiceManagementServiceException(exception);
+  }
 
   private static bool ContainsExceptionMarker<TMarker>(Exception exception)
     where TMarker : class

@@ -11,9 +11,9 @@ using arolariu.Backend.Domain.Invoices.Modules;
 
 public sealed partial class AnalysisFoundationService
 {
-  private async Task<GenerativeResponse<TResult>> GenerateWithRetryAsync<TResult>(
+  private async Task<GenerativeAnalysisResponse<TResult>> GenerateWithRetryAsync<TResult>(
     GenerativeTelemetryMetadata telemetry,
-    GenerativeRequest request,
+    GenerativeAnalysisRequest request,
     CancellationToken cancellationToken)
     where TResult : class =>
     await retryPolicy.ExecuteAsync(

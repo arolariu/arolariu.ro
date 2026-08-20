@@ -13,10 +13,23 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
+using DDD = arolariu.Backend.Domain.Invoices.DDD;
 
 public sealed partial class AnalysisFoundationService
 {
-  /// <inheritdoc/>
+  /// <summary>Generates bounded taxonomy search terms for each classification subject.</summary>
+  /// <param name="capability">The classification capability represented in telemetry.</param>
+  /// <param name="system">The taxonomy system to target.</param>
+  /// <param name="taxonomyVersion">The trusted taxonomy artifact version.</param>
+  /// <param name="subjectDescriptions">Subject descriptions keyed by transient correlation token.</param>
+  /// <param name="cancellationToken">The token used to cancel structured generation.</param>
+  /// <returns>One search-term collection for each supplied token.</returns>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationValidationException">
+  /// Thrown when the subject set is empty, malformed, or contains duplicate tokens.
+  /// </exception>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationDependencyException">
+  /// Thrown when structured generation fails or returns an invalid token mapping.
+  /// </exception>
   public async Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> GenerateClassificationSearchTermsAsync(
     AnalysisCapability capability,
     ClassificationSystem system,
@@ -29,7 +42,7 @@ public sealed partial class AnalysisFoundationService
         using var activity = InvoicePackageTracing.StartActivity(nameof(GenerateClassificationSearchTermsAsync));
         ValidateClassificationSubjectsAreSet(subjectDescriptions);
 
-        var request = new GenerativeRequest(
+        var request = new GenerativeAnalysisRequest(
           BuildSearchTermsSystemPrompt(system),
           new
           {
@@ -38,7 +51,7 @@ public sealed partial class AnalysisFoundationService
               .ToArray(),
           });
 
-        GenerativeResponse<SearchTermsBatchResult> response = await GenerateWithRetryAsync<SearchTermsBatchResult>(
+        GenerativeAnalysisResponse<SearchTermsBatchResult> response = await GenerateWithRetryAsync<SearchTermsBatchResult>(
           GenerativeTelemetryCatalog.ForClassificationCapability(capability, taxonomyVersion),
           request,
           cancellationToken)
@@ -49,7 +62,19 @@ public sealed partial class AnalysisFoundationService
       cancellationToken)
       .ConfigureAwait(false);
 
-  /// <inheritdoc/>
+  /// <summary>Selects one code from each subject's offered canonical candidates.</summary>
+  /// <param name="capability">The classification capability represented in telemetry.</param>
+  /// <param name="system">The taxonomy system represented by the candidates.</param>
+  /// <param name="taxonomyVersion">The trusted taxonomy artifact version.</param>
+  /// <param name="candidatesByToken">Non-empty candidate collections keyed by correlation token.</param>
+  /// <param name="cancellationToken">The token used to cancel structured generation.</param>
+  /// <returns>The selected code and confidence for each supplied token.</returns>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationValidationException">
+  /// Thrown when candidate sets are missing, empty, or keyed by invalid tokens.
+  /// </exception>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationDependencyException">
+  /// Thrown when structured generation fails or returns an invalid selection mapping.
+  /// </exception>
   public async Task<IReadOnlyDictionary<string, SelectedClassificationCandidate>> SelectClassificationCandidatesAsync(
     AnalysisCapability capability,
     ClassificationSystem system,
@@ -62,7 +87,7 @@ public sealed partial class AnalysisFoundationService
         using var activity = InvoicePackageTracing.StartActivity(nameof(SelectClassificationCandidatesAsync));
         ValidateClassificationCandidatesAreSet(candidatesByToken);
 
-        var request = new GenerativeRequest(
+        var request = new GenerativeAnalysisRequest(
           BuildSelectionSystemPrompt(system),
           new
           {
@@ -77,7 +102,7 @@ public sealed partial class AnalysisFoundationService
               .ToArray(),
           });
 
-        GenerativeResponse<SelectionBatchResult> response = await GenerateWithRetryAsync<SelectionBatchResult>(
+        GenerativeAnalysisResponse<SelectionBatchResult> response = await GenerateWithRetryAsync<SelectionBatchResult>(
           GenerativeTelemetryCatalog.ForClassificationCapability(capability, taxonomyVersion),
           request,
           cancellationToken)

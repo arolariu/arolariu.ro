@@ -44,6 +44,7 @@ public sealed partial class AnalysisFoundationService
     }
   }
 
-  private static void ValidateReceiptDocumentIsSet(ReceiptDocument receiptDocument) =>
-    ArgumentNullException.ThrowIfNull(receiptDocument);
+  private static void ValidateDocumentIntelligenceRecordIsSet(
+    DocumentIntelligenceRecord documentIntelligenceRecord) =>
+    ArgumentNullException.ThrowIfNull(documentIntelligenceRecord);
 }

@@ -12,10 +12,21 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
+using DDD = arolariu.Backend.Domain.Invoices.DDD;
 
 public sealed partial class AnalysisFoundationService
 {
-  /// <inheritdoc/>
+  /// <summary>Generates a concise invoice name and description from transient products.</summary>
+  /// <param name="products">The non-empty product inputs to summarize.</param>
+  /// <param name="sourceRunId">The non-empty durable analysis run identifier.</param>
+  /// <param name="cancellationToken">The token used to cancel structured generation.</param>
+  /// <returns>The validated invoice summary.</returns>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationValidationException">
+  /// Thrown when products are absent or the run identifier is empty.
+  /// </exception>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationDependencyException">
+  /// Thrown when structured generation fails or returns an invalid summary.
+  /// </exception>
   public async Task<InvoiceSummaryResult> GenerateInvoiceSummaryAsync(
     IReadOnlyList<ProductAnalysisInput> products,
     Guid sourceRunId,
@@ -30,7 +41,7 @@ public sealed partial class AnalysisFoundationService
         activity?.SetTag("analysis.source_run_id", sourceRunId);
         activity?.SetTag("analysis.product_count", products.Count);
 
-        var request = new GenerativeRequest(
+        var request = new GenerativeAnalysisRequest(
           BuildInvoiceSummarySystemPrompt(),
           new
           {
@@ -45,7 +56,7 @@ public sealed partial class AnalysisFoundationService
               .ToArray(),
           });
 
-        GenerativeResponse<InvoiceSummaryStructuredResult> response = await GenerateWithRetryAsync<InvoiceSummaryStructuredResult>(
+        GenerativeAnalysisResponse<InvoiceSummaryStructuredResult> response = await GenerateWithRetryAsync<InvoiceSummaryStructuredResult>(
           GenerativeTelemetryCatalog.ForNonTaxonomyCapability(AnalysisCapability.InvoiceSummary),
           request,
           cancellationToken)

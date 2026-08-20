@@ -14,10 +14,21 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
+using DDD = arolariu.Backend.Domain.Invoices.DDD;
 
 public sealed partial class AnalysisFoundationService
 {
-  /// <inheritdoc/>
+  /// <summary>Generates a concise merchant description grounded in supplied merchant evidence.</summary>
+  /// <param name="merchant">The merchant fields and related-invoice references used as evidence.</param>
+  /// <param name="sourceRunId">The non-empty durable analysis run identifier.</param>
+  /// <param name="cancellationToken">The token used to cancel structured generation.</param>
+  /// <returns>The validated factual merchant description.</returns>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationValidationException">
+  /// Thrown when the merchant is null or the run identifier is empty.
+  /// </exception>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationDependencyException">
+  /// Thrown when structured generation fails or weak evidence is returned without qualified language.
+  /// </exception>
   public async Task<MerchantDescriptionResult> GenerateMerchantDescriptionAsync(
     Merchant merchant,
     Guid sourceRunId,
@@ -40,7 +51,7 @@ public sealed partial class AnalysisFoundationService
         activity?.SetTag("analysis.classification", merchant.Classification?.Code);
         activity?.SetTag("analysis.merchant_evidence_strength", hasWeakEvidence ? "weak" : "supported");
 
-        var request = new GenerativeRequest(
+        var request = new GenerativeAnalysisRequest(
           BuildMerchantDescriptionSystemPrompt(),
           new
           {
@@ -67,7 +78,7 @@ public sealed partial class AnalysisFoundationService
             },
           });
 
-        GenerativeResponse<MerchantDescriptionOutput> response = await GenerateWithRetryAsync<MerchantDescriptionOutput>(
+        GenerativeAnalysisResponse<MerchantDescriptionOutput> response = await GenerateWithRetryAsync<MerchantDescriptionOutput>(
           GenerativeTelemetryCatalog.ForNonTaxonomyCapability(AnalysisCapability.DescriptionGeneration),
           request,
           cancellationToken)

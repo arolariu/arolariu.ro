@@ -5,7 +5,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 
@@ -13,23 +12,26 @@ using Azure;
 using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
 
+using Microsoft.Extensions.Logging;
+
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
 /// <summary>
 /// Transports analysis requests through the backend-owned Azure Storage Queue.
 /// </summary>
-public sealed class AzureStorageQueueBroker : IQueueBroker
+public sealed partial class AzureStorageQueueBroker : IQueueBroker
 {
-  private const string AnalysisQueueName = "invoice-analysis";
-  private const string AzuriteDevelopmentKey =
-    "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
   private readonly QueueClient queueClient;
+  private readonly ILogger<IQueueBroker> logger;
 
   /// <summary>
   /// Initializes a new instance from the backend storage configuration.
   /// </summary>
-  public AzureStorageQueueBroker(IOptionsManager optionsManager)
-    : this(CreateQueueServiceClient(optionsManager))
+  /// <param name="optionsManager">The application-options provider containing the storage endpoint.</param>
+  /// <param name="loggerFactory">The factory used to create the provider-neutral Broker logger.</param>
+  /// <exception cref="ArgumentNullException">Thrown when either dependency is null.</exception>
+  public AzureStorageQueueBroker(IOptionsManager optionsManager, ILoggerFactory loggerFactory)
+    : this(CreateQueueServiceClient(optionsManager), loggerFactory)
   {
   }
 
@@ -37,19 +39,33 @@ public sealed class AzureStorageQueueBroker : IQueueBroker
   /// Initializes a new instance of the <see cref="AzureStorageQueueBroker"/> class.
   /// </summary>
   /// <param name="queueServiceClient">The configured Azure Queue service client.</param>
-  public AzureStorageQueueBroker(QueueServiceClient queueServiceClient)
+  /// <param name="loggerFactory">The factory used to create the provider-neutral Broker logger.</param>
+  /// <exception cref="ArgumentNullException">Thrown when either dependency is null.</exception>
+  public AzureStorageQueueBroker(
+    QueueServiceClient queueServiceClient,
+    ILoggerFactory loggerFactory)
   {
     ArgumentNullException.ThrowIfNull(queueServiceClient);
+    ArgumentNullException.ThrowIfNull(loggerFactory);
+
     queueClient = queueServiceClient.GetQueueClient(AnalysisQueueName);
+    logger = loggerFactory.CreateLogger<IQueueBroker>();
   }
 
-  internal AzureStorageQueueBroker(QueueClient queueClient) =>
-    this.queueClient = queueClient ?? throw new ArgumentNullException(nameof(queueClient));
+  internal AzureStorageQueueBroker(QueueClient queueClient, ILoggerFactory loggerFactory)
+  {
+    ArgumentNullException.ThrowIfNull(queueClient);
+    ArgumentNullException.ThrowIfNull(loggerFactory);
+
+    this.queueClient = queueClient;
+    logger = loggerFactory.CreateLogger<IQueueBroker>();
+  }
 
   /// <inheritdoc/>
   public async ValueTask CreateQueueIfNotExistsAsync(CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateQueueIfNotExistsAsync));
+    LogQueueOperationStarted(logger, nameof(CreateQueueIfNotExistsAsync));
     await queueClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
   }
 
@@ -60,6 +76,7 @@ public sealed class AzureStorageQueueBroker : IQueueBroker
   {
     ArgumentNullException.ThrowIfNull(message);
     using var activity = InvoicePackageTracing.StartActivity(nameof(EnqueueMessageAsync));
+    LogQueueOperationStarted(logger, nameof(EnqueueMessageAsync));
 
     Response<SendReceipt> response = await queueClient
       .SendMessageAsync(
@@ -79,6 +96,7 @@ public sealed class AzureStorageQueueBroker : IQueueBroker
   {
     ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(visibilityTimeout, TimeSpan.Zero);
     using var activity = InvoicePackageTracing.StartActivity(nameof(DequeueMessageAsync));
+    LogQueueOperationStarted(logger, nameof(DequeueMessageAsync));
 
     Response<QueueMessage[]> response = await queueClient
       .ReceiveMessagesAsync(1, visibilityTimeout, cancellationToken)
@@ -134,6 +152,7 @@ public sealed class AzureStorageQueueBroker : IQueueBroker
     ArgumentNullException.ThrowIfNull(receipt);
     ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(visibilityTimeout, TimeSpan.Zero);
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMessageVisibilityAsync));
+    LogQueueOperationStarted(logger, nameof(UpdateMessageVisibilityAsync));
 
     Response<UpdateReceipt> response = await queueClient
       .UpdateMessageAsync(
@@ -157,6 +176,7 @@ public sealed class AzureStorageQueueBroker : IQueueBroker
   {
     ArgumentNullException.ThrowIfNull(receipt);
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMessageAsync));
+    LogQueueOperationStarted(logger, nameof(DeleteMessageAsync));
 
     await queueClient
       .DeleteMessageAsync(receipt.MessageId, receipt.PopReceipt, cancellationToken)
@@ -167,6 +187,7 @@ public sealed class AzureStorageQueueBroker : IQueueBroker
   public async ValueTask<QueueStatus> GetQueueStatusAsync(CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(GetQueueStatusAsync));
+    LogQueueOperationStarted(logger, nameof(GetQueueStatusAsync));
     Response<bool> existsResponse = await queueClient.ExistsAsync(cancellationToken).ConfigureAwait(false);
 
     if (!existsResponse.Value)
@@ -181,41 +202,5 @@ public sealed class AzureStorageQueueBroker : IQueueBroker
     return new QueueStatus(
       Exists: true,
       ApproximateMessageCount: propertiesResponse.Value.ApproximateMessagesCount);
-  }
-
-  private static QueueServiceClient CreateQueueServiceClient(IOptionsManager optionsManager)
-  {
-    ArgumentNullException.ThrowIfNull(optionsManager);
-    string blobEndpoint = optionsManager.GetApplicationOptions().StorageAccountEndpoint;
-    Uri queueEndpoint = ResolveQueueEndpoint(new Uri(blobEndpoint));
-
-    if (queueEndpoint.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase))
-    {
-      string connectionString =
-        $"DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey={AzuriteDevelopmentKey};QueueEndpoint={queueEndpoint};";
-      return new QueueServiceClient(connectionString);
-    }
-
-    return new QueueServiceClient(queueEndpoint, AzureCredentialFactory.CreateCredential());
-  }
-
-  internal static Uri ResolveQueueEndpoint(Uri blobEndpoint)
-  {
-    ArgumentNullException.ThrowIfNull(blobEndpoint);
-    var builder = new UriBuilder(blobEndpoint);
-
-    if (builder.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
-        || builder.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase))
-    {
-      if (builder.Port == 10000)
-      {
-        builder.Port = 10001;
-      }
-
-      return builder.Uri;
-    }
-
-    builder.Host = builder.Host.Replace(".blob.", ".queue.", StringComparison.OrdinalIgnoreCase);
-    return builder.Uri;
   }
 }

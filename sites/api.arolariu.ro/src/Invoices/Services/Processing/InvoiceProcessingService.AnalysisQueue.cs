@@ -12,20 +12,25 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
-using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.AnalysisService;
 
 using Microsoft.Extensions.Logging;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
+using DDD = arolariu.Backend.Domain.Invoices.DDD;
 
 /// <summary>
 /// Coordinates analysis queue messages and capability execution.
 /// </summary>
 public sealed partial class InvoiceProcessingService
 {
-  /// <inheritdoc/>
+  /// <summary>Ensures the durable analysis queue is available through analysis orchestration.</summary>
+  /// <param name="cancellationToken">The token used to cancel queue provisioning.</param>
+  /// <returns>A task that completes after queue availability is verified.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when the analysis orchestration dependency cannot provision or verify the queue.
+  /// </exception>
   public async Task EnsureAnalysisQueueAsync(CancellationToken cancellationToken) =>
     await TryCatchAnalysisAsync(async () =>
     {
@@ -33,8 +38,22 @@ public sealed partial class InvoiceProcessingService
       await analysisOrchestrationService.EnsureQueueAsync(cancellationToken).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
-  /// <inheritdoc/>
-  public async Task<AnalysisAcceptedResponseDto> QueueInvoiceAnalysisAsync(
+  /// <summary>Validates invoice ownership and publishes a resolved durable analysis request.</summary>
+  /// <param name="invoiceId">The invoice identifier to analyze.</param>
+  /// <param name="userIdentifier">The authenticated invoice owner.</param>
+  /// <param name="request">The requested profile and capability overrides.</param>
+  /// <param name="cancellationToken">The token used to cancel validation or publication.</param>
+  /// <returns>The provider-assigned string message identifier.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceValidationException">
+  /// Thrown when the request cannot be converted to valid analysis options.
+  /// </exception>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyValidationException">
+  /// Thrown when the target invoice is unavailable to the requester.
+  /// </exception>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when target lookup or queue publication fails.
+  /// </exception>
+  public async Task<string> QueueInvoiceAnalysisAsync(
     Guid invoiceId,
     Guid userIdentifier,
     InvoiceAnalysisRequestDto request,
@@ -59,11 +78,25 @@ public sealed partial class InvoiceProcessingService
 
       InvoiceMetrics.RecordAnalysisMessageQueued(AnalysisTargetType.Invoice);
       logger.LogAnalysisMessageQueued(message.CorrelationId, AnalysisTargetType.Invoice);
-      return new AnalysisAcceptedResponseDto(messageId, message.TargetType, message.TargetId);
+      return messageId;
     }).ConfigureAwait(false);
 
-  /// <inheritdoc/>
-  public async Task<AnalysisAcceptedResponseDto> QueueMerchantAnalysisAsync(
+  /// <summary>Validates merchant ownership and publishes a resolved durable analysis request.</summary>
+  /// <param name="merchantId">The merchant identifier to analyze.</param>
+  /// <param name="userIdentifier">The authenticated requester.</param>
+  /// <param name="request">The requested profile and capability overrides.</param>
+  /// <param name="cancellationToken">The token used to cancel validation or publication.</param>
+  /// <returns>The provider-assigned string message identifier.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceValidationException">
+  /// Thrown when the request cannot be converted to valid analysis options.
+  /// </exception>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyValidationException">
+  /// Thrown when the target merchant is unavailable or not owned by the requester.
+  /// </exception>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when target lookup or queue publication fails.
+  /// </exception>
+  public async Task<string> QueueMerchantAnalysisAsync(
     Guid merchantId,
     Guid userIdentifier,
     MerchantAnalysisRequestDto request,
@@ -95,10 +128,15 @@ public sealed partial class InvoiceProcessingService
 
       InvoiceMetrics.RecordAnalysisMessageQueued(AnalysisTargetType.Merchant);
       logger.LogAnalysisMessageQueued(message.CorrelationId, AnalysisTargetType.Merchant);
-      return new AnalysisAcceptedResponseDto(messageId, message.TargetType, message.TargetId);
+      return messageId;
     }).ConfigureAwait(false);
 
-  /// <inheritdoc/>
+  /// <summary>Dequeues at most one visible analysis message using the configured visibility timeout.</summary>
+  /// <param name="cancellationToken">The token used to cancel dequeue.</param>
+  /// <returns>The provider-neutral receipt, or <see langword="null"/> when no message is visible.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when analysis orchestration cannot complete the dequeue.
+  /// </exception>
   public async Task<AnalysisQueueReceipt?> ReceiveNextAnalysisAsync(CancellationToken cancellationToken) =>
     await TryCatchAnalysisAsync(async () =>
     {
@@ -108,7 +146,16 @@ public sealed partial class InvoiceProcessingService
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 
-  /// <inheritdoc/>
+  /// <summary>Executes an operation while periodically renewing ownership of its queue message.</summary>
+  /// <typeparam name="TResult">The coordinated operation's result type.</typeparam>
+  /// <param name="receipt">The currently owned queue receipt.</param>
+  /// <param name="operation">The operation invoked with a token linked to visibility ownership.</param>
+  /// <param name="cancellationToken">The token used to cancel execution and renewal.</param>
+  /// <returns>The operation result when execution and all required renewals succeed.</returns>
+  /// <exception cref="ArgumentNullException">Thrown when <paramref name="receipt"/> or <paramref name="operation"/> is null.</exception>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when visibility renewal fails and exclusive message ownership can no longer be assumed.
+  /// </exception>
   [SuppressMessage(
     "Reliability",
     "CA2025:Ensure tasks using 'IDisposable' instances complete before the instances are disposed",
@@ -147,7 +194,14 @@ public sealed partial class InvoiceProcessingService
     return result!;
   }
 
-  /// <inheritdoc/>
+  /// <summary>Deletes a completed or terminally failed analysis message and records its terminal outcome.</summary>
+  /// <param name="receipt">The receipt containing the provider message ID and current pop receipt.</param>
+  /// <param name="failureReason">The terminal failure reason to record, or <see langword="null"/> for success.</param>
+  /// <param name="cancellationToken">The token used to cancel deletion.</param>
+  /// <returns>A task that completes after deletion and terminal logging.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when analysis orchestration cannot delete the queue message.
+  /// </exception>
   public async Task DeleteAnalysisAsync(
     AnalysisQueueReceipt receipt,
     AnalysisFailureReason? failureReason,

@@ -82,7 +82,7 @@ public sealed class InvoiceEndpointsTelemetryPrivacyTests
       service.Object,
       contextAccessor,
       invoice.id,
-      new CreateProductRequestDto(productNameSentinel, null, null, 1m, null, null, 1m, null)).ConfigureAwait(false);
+      new CreateProductRequestDto(productNameSentinel, null, 1m, null, null, 1m, null)).ConfigureAwait(false);
     _ = await InvoiceEndpoints.CreateNewMerchantAsync(
       service.Object,
       contextAccessor,

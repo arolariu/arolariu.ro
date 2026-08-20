@@ -1,8 +1,12 @@
 namespace arolariu.Backend.Domain.Tests.Invoices.DTOs;
 
 using System;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Reflection;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
@@ -20,8 +24,7 @@ public sealed class ProductRequestDtoTests
     AllergenAssessment assessment = AllergenAssessment.NoSignals(Guid.NewGuid());
     var request = new CreateProductRequestDto(
       "Milk",
-      ClassificationSystem: null,
-      ClassificationCode: null,
+      ClassificationCode: " 10000025 ",
       Quantity: 1m,
       QuantityUnit: "pcs",
       ProductCode: null,
@@ -31,6 +34,8 @@ public sealed class ProductRequestDtoTests
     Product product = request.ToProduct();
 
     Assert.AreSame(assessment, product.AllergenAssessment);
+    Assert.AreEqual(ClassificationSystem.Gs1Gpc, product.Classification?.System);
+    Assert.AreEqual("10000025", product.Classification?.Code);
   }
 
   /// <summary>Verifies update mapping carries the structured allergen assessment.</summary>
@@ -41,7 +46,6 @@ public sealed class ProductRequestDtoTests
     var request = new UpdateProductRequestDto(
       "Old milk",
       "Milk",
-      ClassificationSystem: null,
       ClassificationCode: null,
       Quantity: 1m,
       QuantityUnit: "pcs",
@@ -54,15 +58,14 @@ public sealed class ProductRequestDtoTests
     Assert.AreSame(assessment, product.AllergenAssessment);
   }
 
-  /// <summary>Verifies omitted quantity cannot silently become zero.</summary>
+  /// <summary>Verifies optional product classifications reject whitespace codes.</summary>
   [TestMethod]
-  public void CreateProductRequestDto_MissingQuantity_ThrowsBadHttpRequestException()
+  public void CreateProductRequestDto_WhitespaceClassificationCode_ThrowsBadHttpRequestException()
   {
     var request = new CreateProductRequestDto(
       "Milk",
-      ClassificationSystem: null,
-      ClassificationCode: null,
-      Quantity: null,
+      ClassificationCode: " ",
+      Quantity: 1m,
       QuantityUnit: "pcs",
       ProductCode: null,
       Price: 8m,
@@ -71,21 +74,27 @@ public sealed class ProductRequestDtoTests
     Assert.ThrowsExactly<BadHttpRequestException>(() => request.ToProduct());
   }
 
-  /// <summary>Verifies omitted price cannot silently become zero.</summary>
+  /// <summary>Verifies quantity and price are non-nullable required contract values.</summary>
   [TestMethod]
-  public void UpdateProductRequestDto_MissingPrice_ThrowsBadHttpRequestException()
+  public void ProductRequestDtos_QuantityAndPrice_AreRequiredDecimals()
   {
-    var request = new UpdateProductRequestDto(
-      "Old milk",
-      "Milk",
-      ClassificationSystem: null,
-      ClassificationCode: null,
-      Quantity: 1m,
-      QuantityUnit: "pcs",
-      ProductCode: null,
-      Price: null,
-      AllergenAssessment: null);
+    AssertRequiredDecimal<CreateProductRequestDto>(nameof(CreateProductRequestDto.Quantity));
+    AssertRequiredDecimal<CreateProductRequestDto>(nameof(CreateProductRequestDto.Price));
+    AssertRequiredDecimal<UpdateProductRequestDto>(nameof(UpdateProductRequestDto.Quantity));
+    AssertRequiredDecimal<UpdateProductRequestDto>(nameof(UpdateProductRequestDto.Price));
+  }
 
-    Assert.ThrowsExactly<BadHttpRequestException>(() => request.ToProduct());
+  private static void AssertRequiredDecimal<TRequest>(string propertyName)
+  {
+    PropertyInfo property = typeof(TRequest).GetProperty(propertyName)
+      ?? throw new AssertFailedException($"Property '{propertyName}' was not found.");
+    ParameterInfo parameter = typeof(TRequest)
+      .GetConstructors(BindingFlags.Public | BindingFlags.Instance)
+      .Single()
+      .GetParameters()
+      .Single(candidate => candidate.Name == propertyName);
+
+    Assert.AreEqual(typeof(decimal), property.PropertyType);
+    Assert.IsNotNull(parameter.GetCustomAttribute<RequiredAttribute>());
   }
 }

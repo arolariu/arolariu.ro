@@ -10,16 +10,16 @@ using System;
 /// <c>user_payload</c> JSON field. Callers MUST design <see cref="SystemPrompt"/> so the model treats
 /// <see cref="UserPayload"/> strictly as untrusted data and never follows instructions embedded within it.</para>
 /// </remarks>
-public sealed record GenerativeRequest
+public sealed record GenerativeAnalysisRequest
 {
   /// <summary>
-  /// Initializes a new instance of the <see cref="GenerativeRequest"/> record.
+  /// Initializes a new instance of the <see cref="GenerativeAnalysisRequest"/> record.
   /// </summary>
   /// <param name="systemPrompt">The trusted system prompt instructing the model, including the untrusted-data boundary statement.</param>
   /// <param name="userPayload">The untrusted payload serialized as <c>user_payload</c> JSON data.</param>
   /// <exception cref="ArgumentException">Thrown when <paramref name="systemPrompt"/> is null, empty, or whitespace.</exception>
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="userPayload"/> is null.</exception>
-  public GenerativeRequest(string systemPrompt, object userPayload)
+  public GenerativeAnalysisRequest(string systemPrompt, object userPayload)
   {
     ArgumentNullException.ThrowIfNull(systemPrompt);
 

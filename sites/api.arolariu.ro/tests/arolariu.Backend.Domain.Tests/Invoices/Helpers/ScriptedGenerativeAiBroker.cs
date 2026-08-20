@@ -18,7 +18,7 @@ using arolariu.Backend.Domain.Invoices.Brokers.GenerativeAnalysisBroker;
 internal sealed class ScriptedGenerativeAnalysisBroker : IGenerativeAnalysisBroker
 {
   private readonly ScriptedGenerativeResponse[] scriptedResponses;
-  private readonly List<GenerativeRequest> capturedRequests = [];
+  private readonly List<GenerativeAnalysisRequest> capturedRequests = [];
   private int invocationIndex = -1;
 
   /// <summary>
@@ -34,7 +34,7 @@ internal sealed class ScriptedGenerativeAnalysisBroker : IGenerativeAnalysisBrok
   /// <summary>
   /// Gets every request captured across all invocations, in call order.
   /// </summary>
-  public IReadOnlyList<GenerativeRequest> CapturedRequests => capturedRequests;
+  public IReadOnlyList<GenerativeAnalysisRequest> CapturedRequests => capturedRequests;
 
   /// <summary>
   /// Gets the total number of invocations observed so far.
@@ -42,8 +42,8 @@ internal sealed class ScriptedGenerativeAnalysisBroker : IGenerativeAnalysisBrok
   public int InvocationCount => invocationIndex + 1;
 
   /// <inheritdoc/>
-  public async Task<GenerativeResponse<T>> GenerateStructuredAsync<T>(
-    GenerativeRequest request,
+  public async Task<GenerativeAnalysisResponse<T>> GenerateStructuredAsync<T>(
+    GenerativeAnalysisRequest request,
     CancellationToken cancellationToken)
     where T : class
   {
@@ -73,7 +73,7 @@ internal sealed class ScriptedGenerativeAnalysisBroker : IGenerativeAnalysisBrok
       throw response.Exception;
     }
 
-    return new GenerativeResponse<T>((T)response.Value!, response.ModelId, response.Usage);
+    return new GenerativeAnalysisResponse<T>((T)response.Value!, response.ModelId, response.Usage);
   }
 
   /// <summary>

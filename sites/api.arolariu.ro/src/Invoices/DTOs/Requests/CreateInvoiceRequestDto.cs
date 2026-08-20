@@ -7,8 +7,6 @@ using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
-using Microsoft.AspNetCore.Http;
-
 /// <summary>
 /// Represents the minimal client request required to persist a new invoice artifact.
 /// </summary>
@@ -24,29 +22,20 @@ using Microsoft.AspNetCore.Http;
 [ExcludeFromCodeCoverage]
 public readonly record struct CreateInvoiceRequestDto(
   [Required] Guid UserIdentifier,
-  [Required] InvoiceScan? InitialScan,
+  [Required] InvoiceScan InitialScan,
   IDictionary<string, object>? AdditionalMetadata)
 {
   /// <summary>Maps the minimal request into a new invoice aggregate.</summary>
   /// <returns>A new invoice containing the supplied owner, initial scan, and metadata.</returns>
-  /// <exception cref="BadHttpRequestException">Thrown when <see cref="UserIdentifier"/> is empty.</exception>
   public Invoice ToInvoice()
   {
-    if (UserIdentifier == Guid.Empty)
-    {
-      throw new BadHttpRequestException("User identifier is required.");
-    }
-
     var invoice = new Invoice
     {
       id = Guid.CreateVersion7(),
       UserIdentifier = UserIdentifier,
       CreatedAt = DateTime.UtcNow,
       CreatedBy = UserIdentifier,
-      Scans =
-      [
-        InitialScan ?? throw new BadHttpRequestException("Initial scan is required."),
-      ],
+      Scans = [InitialScan],
     };
 
     if (AdditionalMetadata is not null)

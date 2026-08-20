@@ -61,7 +61,7 @@ public sealed class AnalysisQueueFoundationServiceTests
   /// Verifies Azure dependency failures are classified at the Foundation boundary.
   /// </summary>
   [TestMethod]
-  public async Task ReceiveAsync_AzureFailure_ThrowsFoundationDependencyException()
+  public async Task DequeueAsync_AzureFailure_ThrowsFoundationDependencyException()
   {
     var broker = new Mock<IQueueBroker>(MockBehavior.Strict);
     broker
@@ -72,7 +72,7 @@ public sealed class AnalysisQueueFoundationServiceTests
     var service = new AnalysisQueueFoundationService(broker.Object, NullLoggerFactory.Instance);
 
     await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
-      () => service.ReceiveAsync(TimeSpan.FromMinutes(2), CancellationToken.None))
+      () => service.DequeueAsync(TimeSpan.FromMinutes(2), CancellationToken.None))
       .ConfigureAwait(false);
   }
 

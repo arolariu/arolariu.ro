@@ -20,6 +20,7 @@ using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
 using Microsoft.Extensions.Logging;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
+using DDD = arolariu.Backend.Domain.Invoices.DDD;
 
 /// <summary>
 /// Coordinates invoice, merchant, and analysis workflows.
@@ -43,6 +44,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   /// <param name="merchantOrchestrationService">The merchant persistence orchestration boundary.</param>
   /// <param name="analysisOrchestrationService">The analysis capability and queue orchestration boundary.</param>
   /// <param name="loggerFactory">The logger factory used to create processing telemetry.</param>
+  /// <exception cref="ArgumentNullException">Thrown when a required dependency is <see langword="null"/>.</exception>
   public InvoiceProcessingService(
     IInvoiceOrchestrationService invoiceOrchestrationService,
     IMerchantOrchestrationService merchantOrchestrationService,
@@ -83,7 +85,17 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
 
 
   #region Create Invoice API
-  /// <inheritdoc/>
+  /// <summary>Canonicalizes any manual ECOICOP code and persists a new invoice.</summary>
+  /// <param name="invoice">The invoice aggregate to persist.</param>
+  /// <param name="userIdentifier">The optional owning user partition.</param>
+  /// <param name="cancellationToken">The token used to cancel classification or persistence.</param>
+  /// <returns>A task that completes after persistence.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceValidationException">
+  /// Thrown when invoice input or a manual classification code is invalid.
+  /// </exception>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when classification or invoice persistence fails.
+  /// </exception>
   public async Task CreateInvoice(Invoice invoice, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -110,7 +122,17 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Create Merchant API
-  /// <inheritdoc/>
+  /// <summary>Canonicalizes any manual NACE code and persists a new merchant.</summary>
+  /// <param name="merchant">The merchant entity to persist.</param>
+  /// <param name="parentCompanyId">The optional parent-company partition.</param>
+  /// <param name="cancellationToken">The token used to cancel classification or persistence.</param>
+  /// <returns>A task that completes after persistence.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceValidationException">
+  /// Thrown when merchant input or a manual classification code is invalid.
+  /// </exception>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when classification or merchant persistence fails.
+  /// </exception>
   public async Task CreateMerchant(Merchant merchant, Guid? parentCompanyId, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -137,7 +159,14 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Delete Invoice API
-  /// <inheritdoc/>
+  /// <summary>Deletes one invoice through invoice orchestration.</summary>
+  /// <param name="identifier">The invoice identifier.</param>
+  /// <param name="userIdentifier">The optional owning user partition.</param>
+  /// <param name="cancellationToken">The token used to cancel deletion.</param>
+  /// <returns>A task that completes after deletion.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when invoice orchestration cannot complete the deletion.
+  /// </exception>
   public async Task DeleteInvoice(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -154,7 +183,13 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Read Invoices API
-  /// <inheritdoc/>
+  /// <summary>Reads all invoices in one user partition.</summary>
+  /// <param name="userIdentifier">The user partition to query.</param>
+  /// <param name="cancellationToken">The token used to cancel the query.</param>
+  /// <returns>The invoices returned by invoice orchestration.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when invoice orchestration cannot complete the query.
+  /// </exception>
   public async Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -172,7 +207,13 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Read Merchants API
-  /// <inheritdoc/>
+  /// <summary>Reads all merchants in one parent-company partition.</summary>
+  /// <param name="parentCompanyId">The parent-company partition to query.</param>
+  /// <param name="cancellationToken">The token used to cancel the query.</param>
+  /// <returns>The merchants returned by merchant orchestration.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when merchant orchestration cannot complete the query.
+  /// </exception>
   public async Task<IEnumerable<Merchant>> ReadMerchants(Guid parentCompanyId, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -190,7 +231,14 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Read Invoice API
-  /// <inheritdoc/>
+  /// <summary>Reads one invoice through invoice orchestration.</summary>
+  /// <param name="identifier">The invoice identifier.</param>
+  /// <param name="userIdentifier">The optional owning user partition.</param>
+  /// <param name="cancellationToken">The token used to cancel the read.</param>
+  /// <returns>The matching invoice aggregate.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyValidationException">
+  /// Thrown when the invoice is unavailable to the request.
+  /// </exception>
   public async Task<Invoice> ReadInvoice(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -208,7 +256,14 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Read Merchant API
-  /// <inheritdoc/>
+  /// <summary>Reads one merchant through merchant orchestration.</summary>
+  /// <param name="identifier">The merchant identifier.</param>
+  /// <param name="parentCompanyId">The optional parent-company partition.</param>
+  /// <param name="cancellationToken">The token used to cancel the read.</param>
+  /// <returns>The matching merchant entity.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyValidationException">
+  /// Thrown when the merchant is unavailable to the request.
+  /// </exception>
   public async Task<Merchant> ReadMerchant(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -226,7 +281,18 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Update Invoice API
-  /// <inheritdoc/>
+  /// <summary>Canonicalizes any manual ECOICOP code and replaces an invoice.</summary>
+  /// <param name="updatedInvoice">The replacement invoice state.</param>
+  /// <param name="invoiceIdentifier">The persisted invoice identifier.</param>
+  /// <param name="userIdentifier">The optional owning user partition.</param>
+  /// <param name="cancellationToken">The token used to cancel classification or persistence.</param>
+  /// <returns>The persisted invoice aggregate.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceValidationException">
+  /// Thrown when replacement input or a manual classification code is invalid.
+  /// </exception>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when classification or invoice persistence fails.
+  /// </exception>
   public async Task<Invoice> UpdateInvoice(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -254,7 +320,18 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Update Merchant API
-  /// <inheritdoc/>
+  /// <summary>Canonicalizes any manual NACE code and replaces a merchant.</summary>
+  /// <param name="updatedMerchant">The replacement merchant fields.</param>
+  /// <param name="identifier">The persisted merchant identifier.</param>
+  /// <param name="parentCompanyId">The optional parent-company partition.</param>
+  /// <param name="cancellationToken">The token used to cancel classification or persistence.</param>
+  /// <returns>The persisted merchant entity.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceValidationException">
+  /// Thrown when replacement input or a manual classification code is invalid.
+  /// </exception>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when classification or merchant persistence fails.
+  /// </exception>
   public async Task<Merchant> UpdateMerchant(Merchant updatedMerchant, Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -282,7 +359,14 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Delete Merchant API
-  /// <inheritdoc/>
+  /// <summary>Deletes one merchant through merchant orchestration.</summary>
+  /// <param name="identifier">The merchant identifier.</param>
+  /// <param name="parentCompanyId">The optional parent-company partition.</param>
+  /// <param name="cancellationToken">The token used to cancel deletion.</param>
+  /// <returns>A task that completes after deletion.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when merchant orchestration cannot complete the deletion.
+  /// </exception>
   public async Task DeleteMerchant(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -299,7 +383,18 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Add Product API
-  /// <inheritdoc/>
+  /// <summary>Canonicalizes any manual GS1 GPC code and appends a product to an invoice.</summary>
+  /// <param name="product">The product to append.</param>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The optional owning user partition.</param>
+  /// <param name="cancellationToken">The token used to cancel classification or persistence.</param>
+  /// <returns>A task that completes after the aggregate update.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceValidationException">
+  /// Thrown when the product is null or its manual classification code is invalid.
+  /// </exception>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when classification or invoice persistence fails.
+  /// </exception>
   public async Task AddProduct(Product product, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -329,7 +424,16 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Update Product API
-  /// <inheritdoc/>
+  /// <summary>Replaces client-editable fields on the first product matching an exact name.</summary>
+  /// <param name="productName">The case-insensitive persisted name used to select the first product.</param>
+  /// <param name="updatedProduct">The client-editable replacement values.</param>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The optional owning user partition.</param>
+  /// <param name="cancellationToken">The token used to cancel classification or persistence.</param>
+  /// <returns>The merged product persisted on the invoice.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceValidationException">
+  /// Thrown when a required argument is missing, no exact-name product exists, or a classification code is invalid.
+  /// </exception>
   public async Task<Product> UpdateProduct(
     string productName,
     Product updatedProduct,
@@ -348,33 +452,60 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
       .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
 
-    Product persistedProduct = invoice.Items.FirstOrDefault(product =>
-      string.Equals(product.Name, productName, StringComparison.OrdinalIgnoreCase))
-      ?? throw new ProductNotFoundException(invoiceIdentifier);
+    List<Product> products = [.. invoice.Items];
+    int selectedProductIndex = products.FindIndex(product =>
+      string.Equals(product.Name, productName, StringComparison.OrdinalIgnoreCase));
 
-    if (updatedProduct.Classification is not null)
+    if (selectedProductIndex < 0)
     {
-      updatedProduct.Classification = await analysisOrchestrationService
+      throw new ProductNotFoundException(invoiceIdentifier);
+    }
+
+    Product persistedProduct = products[selectedProductIndex];
+    StandardClassification? canonicalClassification = updatedProduct.Classification;
+
+    if (canonicalClassification is not null)
+    {
+      canonicalClassification = await analysisOrchestrationService
         .ResolveManualClassificationAsync(
-          updatedProduct.Classification,
+          canonicalClassification,
           ClassificationSystem.Gs1Gpc,
           cancellationToken)
         .ConfigureAwait(false);
     }
 
-    persistedProduct.ApplyClientUpdate(updatedProduct);
+    var canonicalUpdate = new Product
+    {
+      Name = updatedProduct.Name,
+      Classification = canonicalClassification,
+      Quantity = updatedProduct.Quantity,
+      QuantityUnit = updatedProduct.QuantityUnit,
+      ProductCode = updatedProduct.ProductCode,
+      Price = updatedProduct.Price,
+      AllergenAssessment = updatedProduct.AllergenAssessment,
+    };
+    Product mergedProduct = Product.Merge(persistedProduct, canonicalUpdate);
+    products[selectedProductIndex] = mergedProduct;
+    invoice.Items = products;
 
     await invoiceOrchestrationService
       .UpdateInvoiceObject(invoice, invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
 
     activity?.SetTag("result.product_found", true);
-    return persistedProduct;
+    return mergedProduct;
   }).ConfigureAwait(false);
   #endregion
 
   #region Get Products API
-  /// <inheritdoc/>
+  /// <summary>Returns every product currently stored on an invoice.</summary>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The optional owning user partition.</param>
+  /// <param name="cancellationToken">The token used to cancel the read.</param>
+  /// <returns>The invoice's product collection.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyValidationException">
+  /// Thrown when the invoice is unavailable to the request.
+  /// </exception>
   public async Task<IEnumerable<Product>> GetProducts(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -389,7 +520,15 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Get Product API
-  /// <inheritdoc/>
+  /// <summary>Returns the first invoice product whose name contains the supplied text.</summary>
+  /// <param name="productName">The case-insensitive text to find within a product name.</param>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The optional owning user partition.</param>
+  /// <param name="cancellationToken">The token used to cancel the read.</param>
+  /// <returns>The first matching product, or a default product when no item matches.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyValidationException">
+  /// Thrown when the invoice is unavailable to the request.
+  /// </exception>
   public async Task<Product> GetProduct(string productName, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -408,7 +547,15 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Delete Product API
-  /// <inheritdoc/>
+  /// <summary>Removes the first product matching an exact case-insensitive name.</summary>
+  /// <param name="productName">The persisted product name used for selection.</param>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The optional owning user partition.</param>
+  /// <param name="cancellationToken">The token used to cancel the read or update.</param>
+  /// <returns>A task that completes after the aggregate update.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceValidationException">
+  /// Thrown when the name is blank or no exact-name product exists.
+  /// </exception>
   public async Task DeleteProduct(
     string productName,
     Guid invoiceIdentifier,
@@ -442,7 +589,13 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Delete Invoices API
-  /// <inheritdoc/>
+  /// <summary>Deletes every invoice returned for one user partition.</summary>
+  /// <param name="userIdentifier">The user partition whose invoices are deleted.</param>
+  /// <param name="cancellationToken">The token checked before each deletion and passed downstream.</param>
+  /// <returns>A task that completes after all returned invoices are deleted.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when the partition query or any invoice deletion fails.
+  /// </exception>
   public async Task DeleteInvoices(Guid userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -462,7 +615,15 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Create Invoice Scan API
-  /// <inheritdoc/>
+  /// <summary>Attaches one scan to an existing invoice through invoice orchestration.</summary>
+  /// <param name="scan">The scan to attach.</param>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The optional owning user partition.</param>
+  /// <param name="cancellationToken">The token used to cancel attachment.</param>
+  /// <returns>A task that completes after the aggregate update.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when invoice orchestration cannot attach the scan.
+  /// </exception>
   public async Task CreateInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -474,7 +635,14 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Read Invoice Scans API
-  /// <inheritdoc/>
+  /// <summary>Reads all scans currently attached to an invoice.</summary>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The optional owning user partition.</param>
+  /// <param name="cancellationToken">The token used to cancel the read.</param>
+  /// <returns>The invoice's scan collection.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyValidationException">
+  /// Thrown when the invoice is unavailable to the request.
+  /// </exception>
   public async Task<IEnumerable<InvoiceScan>> ReadInvoiceScans(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -487,7 +655,15 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Delete Invoice Scan API
-  /// <inheritdoc/>
+  /// <summary>Removes the supplied scan value from an invoice and persists the aggregate.</summary>
+  /// <param name="scan">The scan value to remove.</param>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The optional owning user partition.</param>
+  /// <param name="cancellationToken">The token used to cancel the read or update.</param>
+  /// <returns>A task that completes after the aggregate update.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when invoice orchestration cannot read or persist the invoice.
+  /// </exception>
   public async Task DeleteInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -504,7 +680,15 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Add Invoice Metadata API
-  /// <inheritdoc/>
+  /// <summary>Adds or replaces supplied metadata entries and persists the invoice once.</summary>
+  /// <param name="metadata">The metadata entries to merge into the invoice dictionary.</param>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The optional owning user partition.</param>
+  /// <param name="cancellationToken">The token used to cancel the read or update.</param>
+  /// <returns>A task that completes after the aggregate update.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when invoice orchestration cannot read or persist the invoice.
+  /// </exception>
   public async Task AddMetadataToInvoice(IDictionary<string, object> metadata, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -527,7 +711,15 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Update Invoice Metadata API
-  /// <inheritdoc/>
+  /// <summary>Upserts supplied metadata entries and returns the persisted dictionary.</summary>
+  /// <param name="metadata">The metadata entries to merge into the invoice dictionary.</param>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The optional owning user partition.</param>
+  /// <param name="cancellationToken">The token used to cancel the read or update.</param>
+  /// <returns>The complete metadata dictionary from the persisted invoice.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when invoice orchestration cannot read or persist the invoice.
+  /// </exception>
   public async Task<IDictionary<string, object>> UpdateMetadataOnInvoice(IDictionary<string, object> metadata, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -551,7 +743,14 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Get Invoice Metadata API
-  /// <inheritdoc/>
+  /// <summary>Returns the complete metadata dictionary stored on an invoice.</summary>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The optional owning user partition.</param>
+  /// <param name="cancellationToken">The token used to cancel the read.</param>
+  /// <returns>The invoice's persisted metadata dictionary.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyValidationException">
+  /// Thrown when the invoice is unavailable to the request.
+  /// </exception>
   public async Task<IDictionary<string, object>> GetMetadataFromInvoice(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -564,7 +763,15 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Delete Invoice Metadata API
-  /// <inheritdoc/>
+  /// <summary>Removes selected metadata keys and persists the invoice once.</summary>
+  /// <param name="metadataKeys">The metadata keys to remove when present.</param>
+  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
+  /// <param name="userIdentifier">The optional owning user partition.</param>
+  /// <param name="cancellationToken">The token used to cancel the read or update.</param>
+  /// <returns>A task that completes after the aggregate update.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when invoice orchestration cannot read or persist the invoice.
+  /// </exception>
   public async Task DeleteMetadataFromInvoice(IEnumerable<string> metadataKeys, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {

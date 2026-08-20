@@ -4,7 +4,6 @@ using System;
 
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
-using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 
 /// <summary>
 /// Represents the request body accepted by the invoice analyze endpoint.
@@ -24,17 +23,21 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// <param name="ProductClassification">Optional GS1 GPC classification selection.</param>
 /// <param name="AllergenAssessment">Optional allergen assessment selection.</param>
 /// <param name="InvoiceClassification">Optional ECOICOP classification selection.</param>
-/// <param name="RecipeGeneration">Optional recipe generation selection and result cap.</param>
+/// <param name="RecipeGeneration">Optional recipe generation selection.</param>
+/// <param name="MaximumRecipes">Optional recipe result cap in the inclusive range 1 to 3 when generation is enabled.</param>
 [Serializable]
 public readonly record struct InvoiceAnalysisRequestDto(
   AnalysisProfile? Profile,
-  CapabilityToggleDto? DocumentExtraction,
-  CapabilityToggleDto? InvoiceSummary,
-  CapabilityToggleDto? ProductClassification,
-  CapabilityToggleDto? AllergenAssessment,
-  CapabilityToggleDto? InvoiceClassification,
-  RecipeGenerationOverrideDto? RecipeGeneration)
+  bool? DocumentExtraction,
+  bool? InvoiceSummary,
+  bool? ProductClassification,
+  bool? AllergenAssessment,
+  bool? InvoiceClassification,
+  bool? RecipeGeneration,
+  int? MaximumRecipes)
 {
+  private const int MaximumSupportedRecipes = 3;
+
   /// <summary>
   /// Resolves the effective invoice analysis options described by this request.
   /// </summary>
@@ -47,6 +50,113 @@ public readonly record struct InvoiceAnalysisRequestDto(
   /// Thrown when the requested maximum recipe count falls outside the inclusive range 1 to 3, or when a disabled
   /// recipe capability is paired with a non-zero recipe count.
   /// </exception>
-  public InvoiceAnalysisOptions ToInvoiceAnalysisOptions() =>
-    AnalysisOptionsResolver.ResolveInvoiceOptions(this);
+  public InvoiceAnalysisOptions ToInvoiceAnalysisOptions()
+  {
+    AnalysisProfile requestedProfile = Profile ?? AnalysisProfile.Comprehensive;
+
+    if (!Enum.IsDefined(requestedProfile))
+    {
+      throw new ArgumentOutOfRangeException(
+        nameof(Profile),
+        requestedProfile,
+        "Profile must be a defined analysis profile.");
+    }
+
+    if (requestedProfile == AnalysisProfile.Custom)
+    {
+      throw new ArgumentException(
+        "The custom profile is an effective response value and cannot be requested.",
+        nameof(Profile));
+    }
+
+    InvoiceAnalysisOptions baseline = ResolveBaseline(requestedProfile);
+
+    if (!HasCapabilityOverrides())
+    {
+      return baseline;
+    }
+
+    bool documentExtraction = DocumentExtraction ?? baseline.DocumentExtraction;
+    bool invoiceSummary = InvoiceSummary ?? baseline.InvoiceSummary;
+    bool productClassification = ProductClassification ?? baseline.ProductClassification;
+    bool allergenAssessment = AllergenAssessment ?? baseline.AllergenAssessment;
+    bool invoiceClassification = InvoiceClassification ?? baseline.InvoiceClassification;
+    (bool recipeGeneration, int maximumRecipes) = ResolveRecipeSelection(
+      baseline,
+      RecipeGeneration,
+      MaximumRecipes);
+
+    if (!documentExtraction
+      && !invoiceSummary
+      && !productClassification
+      && !allergenAssessment
+      && !invoiceClassification
+      && !recipeGeneration)
+    {
+      throw new ArgumentException(
+        "An analysis run must enable at least one capability.",
+        nameof(InvoiceAnalysisRequestDto));
+    }
+
+    return new InvoiceAnalysisOptions(
+      AnalysisProfile.Custom,
+      documentExtraction,
+      invoiceSummary,
+      productClassification,
+      allergenAssessment,
+      invoiceClassification,
+      recipeGeneration,
+      maximumRecipes);
+  }
+
+  private static InvoiceAnalysisOptions ResolveBaseline(AnalysisProfile profile) =>
+    profile switch
+    {
+      AnalysisProfile.Comprehensive => InvoiceAnalysisOptions.Comprehensive(),
+      AnalysisProfile.Fast => InvoiceAnalysisOptions.Fast(),
+      _ => InvoiceAnalysisOptions.Balanced(),
+    };
+
+  private bool HasCapabilityOverrides() =>
+    DocumentExtraction is not null
+    || InvoiceSummary is not null
+    || ProductClassification is not null
+    || AllergenAssessment is not null
+    || InvoiceClassification is not null
+    || RecipeGeneration is not null
+    || MaximumRecipes is not null;
+
+  private static (bool RecipeGeneration, int MaximumRecipes) ResolveRecipeSelection(
+    InvoiceAnalysisOptions baseline,
+    bool? recipeGenerationOverride,
+    int? maximumRecipesOverride)
+  {
+    bool recipeGeneration = recipeGenerationOverride ?? baseline.RecipeGeneration;
+
+    if (!recipeGeneration)
+    {
+      if (maximumRecipesOverride is int configuredMaximumRecipes && configuredMaximumRecipes != 0)
+      {
+        throw new ArgumentOutOfRangeException(
+          nameof(maximumRecipesOverride),
+          configuredMaximumRecipes,
+          "Maximum recipes must be zero or omitted when recipe generation is disabled.");
+      }
+
+      return (false, 0);
+    }
+
+    int maximumRecipes = maximumRecipesOverride
+      ?? (recipeGenerationOverride is true ? MaximumSupportedRecipes : baseline.MaximumRecipes);
+
+    if (maximumRecipes is < 1 or > MaximumSupportedRecipes)
+    {
+      throw new ArgumentOutOfRangeException(
+        nameof(maximumRecipesOverride),
+        maximumRecipes,
+        $"Maximum recipes must be in the inclusive range 1 to {MaximumSupportedRecipes}.");
+    }
+
+    return (true, maximumRecipes);
+  }
 }

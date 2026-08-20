@@ -65,11 +65,12 @@ public sealed class DocumentMappingTests
   /// Verifies that Azure receipt fields are mapped into provider-neutral records without touching domain aggregates.
   /// </summary>
   [TestMethod]
-  public void MapReceiptDocument_ValidAnalyzedDocument_MapsValuesAndConfidence()
+  public void MapDocumentIntelligenceRecord_ValidAnalyzedDocument_MapsValuesAndConfidence()
   {
     var analyzedDocument = ReceiptDocumentTestData.AzureAnalyzedDocument();
 
-    ReceiptDocument receiptDocument = AzureDocumentIntelligenceBroker.MapReceiptDocument(analyzedDocument);
+    DocumentIntelligenceRecord receiptDocument =
+      AzureDocumentIntelligenceBroker.MapDocumentIntelligenceRecord(analyzedDocument);
 
     Assert.AreEqual("Contoso Market", receiptDocument.Merchant.Name.Value);
     Assert.AreEqual("RO", receiptDocument.CountryRegion.Value);
@@ -91,9 +92,10 @@ public sealed class DocumentMappingTests
   public void WithSourceScanIndex_StampedDocument_PropagatesIndexToNestedFields()
   {
     var analyzedDocument = ReceiptDocumentTestData.AzureAnalyzedDocument();
-    ReceiptDocument receiptDocument = AzureDocumentIntelligenceBroker.MapReceiptDocument(analyzedDocument);
+    DocumentIntelligenceRecord receiptDocument =
+      AzureDocumentIntelligenceBroker.MapDocumentIntelligenceRecord(analyzedDocument);
 
-    ReceiptDocument stampedDocument = receiptDocument.WithSourceScanIndex(2);
+    DocumentIntelligenceRecord stampedDocument = receiptDocument.WithSourceScanIndex(2);
 
     Assert.AreEqual(2, stampedDocument.Merchant.Name.SourceScanIndex);
     Assert.AreEqual(2, stampedDocument.Products[0].Name.SourceScanIndex);
@@ -106,11 +108,12 @@ public sealed class DocumentMappingTests
   /// Verifies unsupported root field types do not leak arbitrary OCR content into string output fields.
   /// </summary>
   [TestMethod]
-  public void MapReceiptDocument_WhenRootStringFieldsUseUnsupportedTypes_IgnoresArbitraryContent()
+  public void MapDocumentIntelligenceRecord_WhenRootStringFieldsUseUnsupportedTypes_IgnoresArbitraryContent()
   {
     var analyzedDocument = ReceiptDocumentTestData.AzureAnalyzedDocumentWithUnsupportedRootStringTypes();
 
-    ReceiptDocument receiptDocument = AzureDocumentIntelligenceBroker.MapReceiptDocument(analyzedDocument);
+    DocumentIntelligenceRecord receiptDocument =
+      AzureDocumentIntelligenceBroker.MapDocumentIntelligenceRecord(analyzedDocument);
 
     Assert.AreEqual(string.Empty, receiptDocument.Merchant.Name.Value);
     Assert.AreEqual(string.Empty, receiptDocument.Merchant.Address.Value);
@@ -123,11 +126,12 @@ public sealed class DocumentMappingTests
   /// Verifies unsupported nested field types do not leak arbitrary OCR content into product, tax, or payment strings.
   /// </summary>
   [TestMethod]
-  public void MapReceiptDocument_WhenNestedStringFieldsUseUnsupportedTypes_IgnoresArbitraryContent()
+  public void MapDocumentIntelligenceRecord_WhenNestedStringFieldsUseUnsupportedTypes_IgnoresArbitraryContent()
   {
     var analyzedDocument = ReceiptDocumentTestData.AzureAnalyzedDocumentWithUnsupportedNestedStringTypes();
 
-    ReceiptDocument receiptDocument = AzureDocumentIntelligenceBroker.MapReceiptDocument(analyzedDocument);
+    DocumentIntelligenceRecord receiptDocument =
+      AzureDocumentIntelligenceBroker.MapDocumentIntelligenceRecord(analyzedDocument);
 
     Assert.AreEqual(1, receiptDocument.Products.Count);
     Assert.AreEqual(string.Empty, receiptDocument.Products[0].Name.Value);
@@ -144,11 +148,12 @@ public sealed class DocumentMappingTests
   /// inventing receipt information from unavailable OCR fields.
   /// </summary>
   [TestMethod]
-  public void MapReceiptDocument_WhenOptionalCollectionsAndPaymentFieldsAreAbsent_MapsSafeEmptyReceiptSections()
+  public void MapDocumentIntelligenceRecord_WhenOptionalCollectionsAndPaymentFieldsAreAbsent_MapsSafeEmptyReceiptSections()
   {
     var analyzedDocument = ReceiptDocumentTestData.AzureAnalyzedDocumentWithMissingOptionalSections();
 
-    ReceiptDocument receiptDocument = AzureDocumentIntelligenceBroker.MapReceiptDocument(analyzedDocument);
+    DocumentIntelligenceRecord receiptDocument =
+      AzureDocumentIntelligenceBroker.MapDocumentIntelligenceRecord(analyzedDocument);
 
     Assert.HasCount(0, receiptDocument.Products);
     Assert.HasCount(0, receiptDocument.TaxDetails);
@@ -164,11 +169,12 @@ public sealed class DocumentMappingTests
   /// malformed collection entries to become receipt products, taxes, or payments.
   /// </summary>
   [TestMethod]
-  public void MapReceiptDocument_WhenProviderUsesAlternatesAndMalformedCollectionEntries_MapsOnlyValidReceiptData()
+  public void MapDocumentIntelligenceRecord_WhenProviderUsesAlternatesAndMalformedCollectionEntries_MapsOnlyValidReceiptData()
   {
     var analyzedDocument = ReceiptDocumentTestData.AzureAnalyzedDocumentWithAlternatesAndMalformedCollectionEntries();
 
-    ReceiptDocument receiptDocument = AzureDocumentIntelligenceBroker.MapReceiptDocument(analyzedDocument);
+    DocumentIntelligenceRecord receiptDocument =
+      AzureDocumentIntelligenceBroker.MapDocumentIntelligenceRecord(analyzedDocument);
 
     Assert.AreEqual("+40 700 000 000", receiptDocument.Merchant.PhoneNumber.Value);
     Assert.AreEqual(25m, receiptDocument.Payment.TotalAmount.Value);
@@ -186,11 +192,12 @@ public sealed class DocumentMappingTests
   /// while supported phone and country content fallbacks retain their non-sensitive values.
   /// </summary>
   [TestMethod]
-  public void MapReceiptDocument_WhenProviderReturnsNullValuesAndCollections_MapsSafeFallbacksWithoutInventingData()
+  public void MapDocumentIntelligenceRecord_WhenProviderReturnsNullValuesAndCollections_MapsSafeFallbacksWithoutInventingData()
   {
     var analyzedDocument = ReceiptDocumentTestData.AzureAnalyzedDocumentWithNullValuesAndCollections();
 
-    ReceiptDocument receiptDocument = AzureDocumentIntelligenceBroker.MapReceiptDocument(analyzedDocument);
+    DocumentIntelligenceRecord receiptDocument =
+      AzureDocumentIntelligenceBroker.MapDocumentIntelligenceRecord(analyzedDocument);
 
     Assert.AreEqual("+40 700 000 001", receiptDocument.Merchant.PhoneNumber.Value);
     Assert.AreEqual("RO", receiptDocument.CountryRegion.Value);
@@ -206,11 +213,12 @@ public sealed class DocumentMappingTests
   /// requiring an OCR-specific time format in the provider-neutral receipt contract.
   /// </summary>
   [TestMethod]
-  public void MapReceiptDocument_WhenProviderReturnsFourDigitTransactionTime_MapsHoursAndMinutes()
+  public void MapDocumentIntelligenceRecord_WhenProviderReturnsFourDigitTransactionTime_MapsHoursAndMinutes()
   {
     var analyzedDocument = ReceiptDocumentTestData.AzureAnalyzedDocumentWithFourDigitTransactionTime();
 
-    ReceiptDocument receiptDocument = AzureDocumentIntelligenceBroker.MapReceiptDocument(analyzedDocument);
+    DocumentIntelligenceRecord receiptDocument =
+      AzureDocumentIntelligenceBroker.MapDocumentIntelligenceRecord(analyzedDocument);
 
     Assert.AreEqual(new DateTimeOffset(2026, 08, 16, 12, 34, 0, TimeSpan.Zero), receiptDocument.Payment.TransactionDate.Value);
   }
@@ -220,11 +228,12 @@ public sealed class DocumentMappingTests
   /// currency when their typed Azure values are unavailable.
   /// </summary>
   [TestMethod]
-  public void MapReceiptDocument_WhenCurrencyCandidatesAreUnsupportedOrNull_DoesNotInventCurrency()
+  public void MapDocumentIntelligenceRecord_WhenCurrencyCandidatesAreUnsupportedOrNull_DoesNotInventCurrency()
   {
     var analyzedDocument = ReceiptDocumentTestData.AzureAnalyzedDocumentWithInvalidCurrencyCandidates();
 
-    ReceiptDocument receiptDocument = AzureDocumentIntelligenceBroker.MapReceiptDocument(analyzedDocument);
+    DocumentIntelligenceRecord receiptDocument =
+      AzureDocumentIntelligenceBroker.MapDocumentIntelligenceRecord(analyzedDocument);
 
     Assert.IsNull(receiptDocument.Payment.Currency.Value);
     Assert.AreEqual(0.0, receiptDocument.Payment.Currency.Confidence, 0.0001);
@@ -235,11 +244,11 @@ public sealed class DocumentMappingTests
   /// provider-neutral transaction date.
   /// </summary>
   [TestMethod]
-  public void MapReceiptDocument_WhenTransactionDateOrTimeIsMalformed_MapsOnlyTheValidDateComponent()
+  public void MapDocumentIntelligenceRecord_WhenTransactionDateOrTimeIsMalformed_MapsOnlyTheValidDateComponent()
   {
-    ReceiptDocument malformedDate = AzureDocumentIntelligenceBroker.MapReceiptDocument(
+    DocumentIntelligenceRecord malformedDate = AzureDocumentIntelligenceBroker.MapDocumentIntelligenceRecord(
       ReceiptDocumentTestData.AzureAnalyzedDocumentWithMalformedTransactionDate());
-    ReceiptDocument malformedTime = AzureDocumentIntelligenceBroker.MapReceiptDocument(
+    DocumentIntelligenceRecord malformedTime = AzureDocumentIntelligenceBroker.MapDocumentIntelligenceRecord(
       ReceiptDocumentTestData.AzureAnalyzedDocumentWithMalformedTransactionTime());
 
     Assert.IsNull(malformedDate.Payment.TransactionDate.Value);
@@ -253,9 +262,10 @@ public sealed class DocumentMappingTests
   [TestMethod]
   [DataRow("99:99")]
   [DataRow("235999")]
-  public void MapReceiptDocument_WhenCompactTransactionTimeIsOutOfRange_PreservesDateWithoutTime(string transactionTime)
+  public void MapDocumentIntelligenceRecord_WhenCompactTransactionTimeIsOutOfRange_PreservesDateWithoutTime(
+    string transactionTime)
   {
-    ReceiptDocument receiptDocument = AzureDocumentIntelligenceBroker.MapReceiptDocument(
+    DocumentIntelligenceRecord receiptDocument = AzureDocumentIntelligenceBroker.MapDocumentIntelligenceRecord(
       ReceiptDocumentTestData.AzureAnalyzedDocumentWithCompactTransactionTime(transactionTime));
 
     Assert.AreEqual(
@@ -267,9 +277,9 @@ public sealed class DocumentMappingTests
   /// Verifies the upper boundary of the supported compact time format is preserved.
   /// </summary>
   [TestMethod]
-  public void MapReceiptDocument_WhenCompactTransactionTimeIsMaximumValidValue_MapsHoursMinutesAndSeconds()
+  public void MapDocumentIntelligenceRecord_WhenCompactTransactionTimeIsMaximumValidValue_MapsHoursMinutesAndSeconds()
   {
-    ReceiptDocument receiptDocument = AzureDocumentIntelligenceBroker.MapReceiptDocument(
+    DocumentIntelligenceRecord receiptDocument = AzureDocumentIntelligenceBroker.MapDocumentIntelligenceRecord(
       ReceiptDocumentTestData.AzureAnalyzedDocumentWithCompactTransactionTime("23:59:59"));
 
     Assert.AreEqual(
@@ -360,7 +370,7 @@ public sealed class DocumentMappingTests
     var client = CreateClientReturning(scanLocation, operation.Object);
     var broker = new AzureDocumentIntelligenceBroker(client.Object);
 
-    ReceiptDocument receiptDocument = await broker
+    DocumentIntelligenceRecord receiptDocument = await broker
       .AnalyzeReceiptAsync(scanLocation, CancellationToken.None)
       .ConfigureAwait(false);
 
@@ -372,9 +382,9 @@ public sealed class DocumentMappingTests
   /// Verifies a date without a provider transaction-time field remains a midnight date rather than inventing a time.
   /// </summary>
   [TestMethod]
-  public void MapReceiptDocument_TransactionDateWithoutTime_KeepsDateAtMidnight()
+  public void MapDocumentIntelligenceRecord_TransactionDateWithoutTime_KeepsDateAtMidnight()
   {
-    ReceiptDocument receiptDocument = AzureDocumentIntelligenceBroker.MapReceiptDocument(
+    DocumentIntelligenceRecord receiptDocument = AzureDocumentIntelligenceBroker.MapDocumentIntelligenceRecord(
       ReceiptDocumentTestData.AzureAnalyzedDocumentWithTransactionDateWithoutTime());
 
     Assert.AreEqual(new DateTimeOffset(2026, 08, 16, 0, 0, 0, TimeSpan.Zero), receiptDocument.Payment.TransactionDate.Value);

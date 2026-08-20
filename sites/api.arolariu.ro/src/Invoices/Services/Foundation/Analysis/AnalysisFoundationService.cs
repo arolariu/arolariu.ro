@@ -22,6 +22,11 @@ public sealed partial class AnalysisFoundationService : IAnalysisFoundationServi
   /// <summary>
   /// Initializes a new instance of the <see cref="AnalysisFoundationService"/> class.
   /// </summary>
+  /// <param name="documentIntelligenceBroker">The broker used for typed receipt extraction.</param>
+  /// <param name="generativeAiBroker">The broker used for structured generative capabilities.</param>
+  /// <param name="taxonomyBroker">The broker used for deterministic taxonomy search and resolution.</param>
+  /// <param name="loggerFactory">The factory used to create the foundation logger.</param>
+  /// <exception cref="ArgumentNullException">Thrown when a required dependency is <see langword="null"/>.</exception>
   public AnalysisFoundationService(
     IDocumentIntelligenceBroker documentIntelligenceBroker,
     IGenerativeAnalysisBroker generativeAiBroker,
@@ -39,6 +44,12 @@ public sealed partial class AnalysisFoundationService : IAnalysisFoundationServi
   /// <summary>
   /// Initializes a new instance of the <see cref="AnalysisFoundationService"/> class with an injected retry policy.
   /// </summary>
+  /// <param name="documentIntelligenceBroker">The broker used for typed receipt extraction.</param>
+  /// <param name="generativeAiBroker">The broker used for structured generative capabilities.</param>
+  /// <param name="taxonomyBroker">The broker used for deterministic taxonomy search and resolution.</param>
+  /// <param name="loggerFactory">The factory used to create the foundation logger.</param>
+  /// <param name="retryPolicy">The bounded policy applied to transient generative dependency failures.</param>
+  /// <exception cref="ArgumentNullException">Thrown when a required dependency is <see langword="null"/>.</exception>
   internal AnalysisFoundationService(
     IDocumentIntelligenceBroker documentIntelligenceBroker,
     IGenerativeAnalysisBroker generativeAiBroker,

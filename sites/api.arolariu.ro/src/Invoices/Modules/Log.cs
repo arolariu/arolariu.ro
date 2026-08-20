@@ -13,6 +13,24 @@ using Microsoft.Extensions.Logging;
 /// </summary>
 public static partial class Log
 {
+  #region Management Service Logging Methods
+  /// <summary>Logs an invoice Management validation exception.</summary>
+  [LoggerMessage(500_100, LogLevel.Error, "The invoice Management service encountered a validation exception.")]
+  public static partial void LogInvoiceManagementValidationException(this ILogger logger);
+
+  /// <summary>Logs an invoice Management dependency-validation exception.</summary>
+  [LoggerMessage(500_101, LogLevel.Error, "The invoice Management service encountered a dependency-validation exception.")]
+  public static partial void LogInvoiceManagementDependencyValidationException(this ILogger logger);
+
+  /// <summary>Logs an invoice Management dependency exception.</summary>
+  [LoggerMessage(500_102, LogLevel.Error, "The invoice Management service encountered a dependency exception.")]
+  public static partial void LogInvoiceManagementDependencyException(this ILogger logger);
+
+  /// <summary>Logs an invoice Management service exception.</summary>
+  [LoggerMessage(500_103, LogLevel.Error, "The invoice Management service encountered a service exception.")]
+  public static partial void LogInvoiceManagementServiceException(this ILogger logger);
+  #endregion
+
   #region Processing Service Logging Methods (Invoice Orchestration Service)
   /// <summary>
   /// Auto-generated method for logging the invoice processing validation exception.
@@ -111,6 +129,22 @@ public static partial class Log
   /// <param name="logger">The logger.</param>
   [LoggerMessage(300_216, LogLevel.Warning, "The analysis queue-depth refresh failed; the previous gauge sample remains until it expires.")]
   public static partial void LogAnalysisQueueDepthRefreshFailed(this ILogger logger);
+
+  /// <summary>Logs an Analysis Queue Foundation validation exception.</summary>
+  [LoggerMessage(300_340, LogLevel.Error, "The analysis queue Foundation encountered a validation exception.")]
+  public static partial void LogAnalysisQueueValidationException(this ILogger logger);
+
+  /// <summary>Logs an Analysis Queue Foundation dependency-validation exception.</summary>
+  [LoggerMessage(300_341, LogLevel.Error, "The analysis queue Foundation encountered a dependency-validation exception.")]
+  public static partial void LogAnalysisQueueDependencyValidationException(this ILogger logger);
+
+  /// <summary>Logs an Analysis Queue Foundation dependency exception.</summary>
+  [LoggerMessage(300_342, LogLevel.Error, "The analysis queue Foundation encountered a dependency exception.")]
+  public static partial void LogAnalysisQueueDependencyException(this ILogger logger);
+
+  /// <summary>Logs an Analysis Queue Foundation service exception.</summary>
+  [LoggerMessage(300_343, LogLevel.Error, "The analysis queue Foundation encountered a service exception.")]
+  public static partial void LogAnalysisQueueServiceException(this ILogger logger);
   #endregion
 
   #region Orchestration Services Logging Methods (Invoice + Merchant)

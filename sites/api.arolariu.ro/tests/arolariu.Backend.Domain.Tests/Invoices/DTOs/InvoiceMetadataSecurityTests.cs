@@ -2,6 +2,7 @@ namespace arolariu.Backend.Domain.Tests.Invoices.DTOs;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -111,6 +112,45 @@ public sealed class InvoiceMetadataSecurityTests
     Assert.ThrowsExactly<InvoiceMetadataValidationException>(() => patch.ApplyTo(existing));
     Assert.HasCount(1, existing);
     Assert.AreEqual("original", existing["user.note"]);
+  }
+
+  /// <summary>Verifies metadata patches are not constrained by an entry-count ceiling.</summary>
+  [TestMethod]
+  public void ApplyTo_MoreThanThirtyTwoEntries_AppliesAllEntries()
+  {
+    Dictionary<string, object> entries = Enumerable.Range(0, 33)
+      .ToDictionary(index => $"custom.entry{index}", index => (object)index);
+    var destination = new Dictionary<string, object>();
+
+    new PatchMetadataRequestDto(entries).ApplyTo(destination);
+
+    Assert.HasCount(33, destination);
+  }
+
+  /// <summary>Verifies safe metadata keys are not constrained by a length ceiling.</summary>
+  [TestMethod]
+  public void ApplyTo_LongSupportedKey_AppliesEntry()
+  {
+    string key = $"custom.{new string('a', 128)}";
+    var destination = new Dictionary<string, object>();
+
+    new PatchMetadataRequestDto(new Dictionary<string, object> { [key] = true })
+      .ApplyTo(destination);
+
+    Assert.IsTrue((bool)destination[key]);
+  }
+
+  /// <summary>Verifies non-credential string scalars are not constrained by a length ceiling.</summary>
+  [TestMethod]
+  public void ApplyTo_LongStringValue_AppliesEntry()
+  {
+    string value = new('a', 2048);
+    var destination = new Dictionary<string, object>();
+
+    new PatchMetadataRequestDto(new Dictionary<string, object> { ["custom.note"] = value })
+      .ApplyTo(destination);
+
+    Assert.AreEqual(value, destination["custom.note"]);
   }
 
   private static JsonElement ParseJsonElement(string json)

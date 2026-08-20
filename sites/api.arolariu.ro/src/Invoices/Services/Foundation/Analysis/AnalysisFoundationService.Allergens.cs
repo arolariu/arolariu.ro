@@ -15,6 +15,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
+using DDD = arolariu.Backend.Domain.Invoices.DDD;
 
 public sealed partial class AnalysisFoundationService
 {
@@ -25,7 +26,18 @@ public sealed partial class AnalysisFoundationService
     "allergenStatement",
   };
 
-  /// <inheritdoc/>
+  /// <summary>Assesses EU-14 allergen signals for classified transient products.</summary>
+  /// <param name="products">The non-empty transient product inputs.</param>
+  /// <param name="classifications">Canonical classifications covering the supplied products.</param>
+  /// <param name="sourceRunId">The non-empty durable analysis run identifier.</param>
+  /// <param name="cancellationToken">The token used to cancel structured generation.</param>
+  /// <returns>One validated allergen assessment per product correlation token.</returns>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationValidationException">
+  /// Thrown when required input is absent or the run identifier is empty.
+  /// </exception>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationDependencyException">
+  /// Thrown when structured generation fails or returns unsupported allergen data.
+  /// </exception>
   public async Task<ProductAllergenAssessmentResult> AssessAllergensAsync(
     IReadOnlyList<ProductAnalysisInput> products,
     ProductClassificationResult classifications,
@@ -48,7 +60,7 @@ public sealed partial class AnalysisFoundationService
           products.Select(product => product.CorrelationToken),
           StringComparer.Ordinal);
 
-        var request = new GenerativeRequest(
+        var request = new GenerativeAnalysisRequest(
           BuildAllergenAssessmentSystemPrompt(),
           new
           {
@@ -62,7 +74,7 @@ public sealed partial class AnalysisFoundationService
               .ToArray(),
           });
 
-        GenerativeResponse<AllergenAssessmentBatchStructuredResult> response = await GenerateWithRetryAsync<AllergenAssessmentBatchStructuredResult>(
+        GenerativeAnalysisResponse<AllergenAssessmentBatchStructuredResult> response = await GenerateWithRetryAsync<AllergenAssessmentBatchStructuredResult>(
           GenerativeTelemetryCatalog.ForNonTaxonomyCapability(AnalysisCapability.AllergenAssessment),
           request,
           cancellationToken)

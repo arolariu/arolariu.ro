@@ -12,6 +12,7 @@ using Azure;
 using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
 
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Moq;
@@ -22,6 +23,14 @@ using Moq;
 [TestClass]
 public sealed class AzureStorageBrokerTests
 {
+  /// <summary>
+  /// Verifies the SDK-client test constructor rejects a missing logger factory.
+  /// </summary>
+  [TestMethod]
+  public void Constructor_NullLoggerFactory_ThrowsArgumentNullException() =>
+    Assert.ThrowsExactly<ArgumentNullException>(
+      () => new AzureStorageQueueBroker(Mock.Of<QueueClient>(), null!));
+
   /// <summary>Verifies queue status reports provider existence and approximate message count.</summary>
   [TestMethod]
   public async Task GetQueueStatusAsync_ExistingQueue_ReturnsApproximateCount()
@@ -34,7 +43,7 @@ public sealed class AzureStorageBrokerTests
       .ReturnsAsync(Response.FromValue(true, Mock.Of<Response>()));
     queueClient.Setup(client => client.GetPropertiesAsync(It.IsAny<CancellationToken>()))
       .ReturnsAsync(Response.FromValue(properties, Mock.Of<Response>()));
-    var broker = new AzureStorageQueueBroker(queueClient.Object);
+    var broker = new AzureStorageQueueBroker(queueClient.Object, NullLoggerFactory.Instance);
 
     QueueStatus status = await broker.GetQueueStatusAsync(CancellationToken.None);
 
@@ -65,7 +74,7 @@ public sealed class AzureStorageBrokerTests
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(Response.FromValue(sendReceipt, Mock.Of<Response>()));
 
-    var broker = new AzureStorageQueueBroker(queueClient.Object);
+    var broker = new AzureStorageQueueBroker(queueClient.Object, NullLoggerFactory.Instance);
 
     string messageId = await broker
       .EnqueueMessageAsync(message, CancellationToken.None)
@@ -101,7 +110,7 @@ public sealed class AzureStorageBrokerTests
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(Response.FromValue<QueueMessage[]>([providerMessage], Mock.Of<Response>()));
 
-    var broker = new AzureStorageQueueBroker(queueClient.Object);
+    var broker = new AzureStorageQueueBroker(queueClient.Object, NullLoggerFactory.Instance);
 
     AnalysisQueueReceipt? receipt = await broker
       .DequeueMessageAsync(TimeSpan.FromMinutes(2), CancellationToken.None)
@@ -134,7 +143,7 @@ public sealed class AzureStorageBrokerTests
         TimeSpan.FromMinutes(2),
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(Response.FromValue<QueueMessage[]>([providerMessage], Mock.Of<Response>()));
-    var broker = new AzureStorageQueueBroker(queueClient.Object);
+    var broker = new AzureStorageQueueBroker(queueClient.Object, NullLoggerFactory.Instance);
 
     AnalysisQueueReceipt? receipt = await broker
       .DequeueMessageAsync(TimeSpan.FromMinutes(2), CancellationToken.None)
@@ -172,7 +181,7 @@ public sealed class AzureStorageBrokerTests
         TimeSpan.FromMinutes(2),
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(Response.FromValue<QueueMessage[]>([providerMessage], Mock.Of<Response>()));
-    var broker = new AzureStorageQueueBroker(queueClient.Object);
+    var broker = new AzureStorageQueueBroker(queueClient.Object, NullLoggerFactory.Instance);
 
     AnalysisQueueReceipt? receipt = await broker
       .DequeueMessageAsync(TimeSpan.FromMinutes(2), CancellationToken.None)
@@ -212,7 +221,7 @@ public sealed class AzureStorageBrokerTests
         "receipt-2",
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(Response.FromValue(Mock.Of<Response>(), Mock.Of<Response>()));
-    var broker = new AzureStorageQueueBroker(queueClient.Object);
+    var broker = new AzureStorageQueueBroker(queueClient.Object, NullLoggerFactory.Instance);
 
     await broker.UpdateMessageVisibilityAsync(
       receipt,

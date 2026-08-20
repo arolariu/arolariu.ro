@@ -11,11 +11,12 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
-using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.Services.Management;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
 
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Moq;
@@ -26,6 +27,14 @@ using Moq;
 [TestClass]
 public sealed class InvoiceManagementServiceTests
 {
+  /// <summary>Verifies Management rejects a missing logger factory dependency.</summary>
+  [TestMethod]
+  public void Constructor_NullLoggerFactory_ThrowsArgumentNullException()
+  {
+    Assert.ThrowsExactly<ArgumentNullException>(
+      () => new InvoiceManagementService(Mock.Of<IInvoiceProcessingService>(), null!));
+  }
+
   /// <summary>
   /// Verifies nested forbidden failures retain dependency-validation semantics at the Management boundary.
   /// </summary>
@@ -46,7 +55,7 @@ public sealed class InvoiceManagementServiceTests
         It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvoiceProcessingServiceException(
         new MerchantForbiddenAccessException(merchantId, userId)));
-    var service = new InvoiceManagementService(processing.Object);
+    var service = new InvoiceManagementService(processing.Object, NullLoggerFactory.Instance);
 
     await Assert.ThrowsExactlyAsync<InvoiceManagementDependencyValidationException>(
       () => service.QueueMerchantAnalysisAsync(
@@ -71,22 +80,22 @@ public sealed class InvoiceManagementServiceTests
       ProductClassification: null,
       AllergenAssessment: null,
       InvoiceClassification: null,
-      RecipeGeneration: null);
-    var accepted = new AnalysisAcceptedResponseDto("message-1", AnalysisTargetType.Invoice, invoiceId);
+      RecipeGeneration: null,
+      MaximumRecipes: null);
     var processing = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
     processing.Setup(service => service.QueueInvoiceAnalysisAsync(
         invoiceId,
         userId,
         request,
         It.IsAny<CancellationToken>()))
-      .ReturnsAsync(accepted);
-    var service = new InvoiceManagementService(processing.Object);
+      .ReturnsAsync("message-1");
+    var service = new InvoiceManagementService(processing.Object, NullLoggerFactory.Instance);
 
-    AnalysisAcceptedResponseDto result = await service
+    string result = await service
       .QueueInvoiceAnalysisAsync(invoiceId, userId, request, CancellationToken.None)
       .ConfigureAwait(false);
 
-    Assert.AreEqual("message-1", result.MessageId);
+    Assert.AreEqual("message-1", result);
     processing.VerifyAll();
   }
 
@@ -99,7 +108,7 @@ public sealed class InvoiceManagementServiceTests
     var processing = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
     processing.Setup(service => service.TryExecuteNextAnalysisAsync(It.IsAny<CancellationToken>()))
       .ReturnsAsync(true);
-    var service = new InvoiceManagementService(processing.Object);
+    var service = new InvoiceManagementService(processing.Object, NullLoggerFactory.Instance);
 
     bool processed = await service
       .TryExecuteNextAnalysisAsync(CancellationToken.None)
@@ -118,7 +127,7 @@ public sealed class InvoiceManagementServiceTests
     var processing = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
     processing.Setup(service => service.TryExecuteNextAnalysisAsync(It.IsAny<CancellationToken>()))
       .ReturnsAsync(false);
-    var service = new InvoiceManagementService(processing.Object);
+    var service = new InvoiceManagementService(processing.Object, NullLoggerFactory.Instance);
 
     bool processed = await service
       .TryExecuteNextAnalysisAsync(CancellationToken.None)
@@ -137,12 +146,23 @@ public sealed class InvoiceManagementServiceTests
     var processing = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
     processing.Setup(service => service.TryExecuteNextAnalysisAsync(It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvalidOperationException("processing failed"));
-    var service = new InvoiceManagementService(processing.Object);
+    var logger = new Mock<ILogger<IInvoiceManagementService>>();
+    logger.Setup(candidate => candidate.IsEnabled(LogLevel.Error)).Returns(true);
+    var loggerFactory = new Mock<ILoggerFactory>();
+    loggerFactory.Setup(factory => factory.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
+    var service = new InvoiceManagementService(processing.Object, loggerFactory.Object);
 
     await Assert.ThrowsExactlyAsync<
       arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementServiceException>(
       () => service.TryExecuteNextAnalysisAsync(CancellationToken.None));
     processing.VerifyAll();
+    logger.Verify(candidate => candidate.Log(
+      LogLevel.Error,
+      It.IsAny<EventId>(),
+      It.Is<It.IsAnyType>((_, _) => true),
+      It.IsAny<Exception?>(),
+      It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+      Times.Once);
   }
 
   private static AnalysisQueueReceipt CreateReceipt(long dequeueCount)

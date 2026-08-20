@@ -20,10 +20,10 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 /// <see cref="DocumentValue{TValue}"/>.
 /// </para>
 /// </remarks>
-public sealed record ReceiptDocument
+public sealed record DocumentIntelligenceRecord
 {
   /// <summary>
-  /// Initializes a new instance of the <see cref="ReceiptDocument"/> record.
+  /// Initializes a new instance of the <see cref="DocumentIntelligenceRecord"/> record.
   /// </summary>
   /// <param name="merchant">The merchant section extracted from the scan.</param>
   /// <param name="products">The extracted product lines.</param>
@@ -32,7 +32,7 @@ public sealed record ReceiptDocument
   /// <param name="countryRegion">The extracted country or region field.</param>
   /// <param name="taxDetails">The extracted tax lines.</param>
   /// <param name="payments">The extracted payment lines.</param>
-  public ReceiptDocument(
+  public DocumentIntelligenceRecord(
     ReceiptMerchantDocument merchant,
     IReadOnlyList<ReceiptProductDocument> products,
     ReceiptPaymentDocument payment,
@@ -98,7 +98,7 @@ public sealed record ReceiptDocument
   /// <exception cref="ArgumentOutOfRangeException">
   /// Thrown when <paramref name="sourceScanIndex"/> is less than zero.
   /// </exception>
-  public ReceiptDocument WithSourceScanIndex(int sourceScanIndex)
+  public DocumentIntelligenceRecord WithSourceScanIndex(int sourceScanIndex)
   {
     ValidateSourceScanIndex(sourceScanIndex);
 
@@ -123,7 +123,7 @@ public sealed record ReceiptDocument
       stampedPayments[index] = Payments[index].WithSourceScanIndex(sourceScanIndex);
     }
 
-    return new ReceiptDocument(
+    return new DocumentIntelligenceRecord(
       merchant: Merchant.WithSourceScanIndex(sourceScanIndex),
       products: stampedProducts,
       payment: Payment.WithSourceScanIndex(sourceScanIndex),

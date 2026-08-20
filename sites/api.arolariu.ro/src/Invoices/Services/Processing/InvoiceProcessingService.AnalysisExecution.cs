@@ -13,12 +13,18 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
+using DDD = arolariu.Backend.Domain.Invoices.DDD;
 
 public sealed partial class InvoiceProcessingService
 {
   private const long MaximumDequeueCount = 5;
 
-  /// <inheritdoc/>
+  /// <summary>Dequeues and processes at most one analysis message under bounded retry policy.</summary>
+  /// <param name="cancellationToken">The token used to cancel dequeue, execution, persistence, or deletion.</param>
+  /// <returns><see langword="true"/> when a message was dequeued, including malformed messages; otherwise, <see langword="false"/>.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when queue ownership, target access, persistence, or deletion fails outside a classified capability result.
+  /// </exception>
   public async Task<bool> TryExecuteNextAnalysisAsync(CancellationToken cancellationToken) =>
     await TryCatchAnalysisAsync(async () =>
     {

@@ -12,10 +12,11 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 using Microsoft.Extensions.Logging;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
+using DDD = arolariu.Backend.Domain.Invoices.DDD;
 
 
 /// <summary>
-/// Class that implements the merchant storage foundation service.
+/// Validates merchant storage inputs and classifies direct database broker failures.
 /// </summary>
 public partial class MerchantStorageFoundationService : IMerchantStorageFoundationService
 {
@@ -39,7 +40,17 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
   }
 
   #region Create Merchant Object API
-  /// <inheritdoc/>
+  /// <summary>Validates and persists a new merchant through the database broker.</summary>
+  /// <param name="merchant">The merchant entity to persist.</param>
+  /// <param name="parentCompanyId">The optional parent-company partition forwarded by upstream layers.</param>
+  /// <param name="cancellationToken">The token used to cancel persistence.</param>
+  /// <returns>A task that completes after the merchant is stored.</returns>
+  /// <exception cref="DDD.Entities.Merchants.Exceptions.Outer.Foundation.MerchantFoundationServiceValidationException">
+  /// Thrown when the merchant is null or has an empty identifier.
+  /// </exception>
+  /// <exception cref="DDD.Entities.Merchants.Exceptions.Outer.Foundation.MerchantFoundationServiceDependencyException">
+  /// Thrown when the database broker reports a storage failure.
+  /// </exception>
   public async Task CreateMerchantObject(Merchant merchant, Guid? parentCompanyId, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -54,7 +65,17 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
   #endregion
 
   #region Delete Merchant Object API
-  /// <inheritdoc/>
+  /// <summary>Validates the identifiers and deletes one merchant through the database broker.</summary>
+  /// <param name="identifier">The non-empty merchant identifier.</param>
+  /// <param name="parentCompanyId">The required non-empty parent-company partition.</param>
+  /// <param name="cancellationToken">The token used to cancel deletion.</param>
+  /// <returns>A task that completes after the broker accepts the deletion.</returns>
+  /// <exception cref="DDD.Entities.Merchants.Exceptions.Outer.Foundation.MerchantFoundationServiceValidationException">
+  /// Thrown when either identifier is missing or empty.
+  /// </exception>
+  /// <exception cref="DDD.Entities.Merchants.Exceptions.Outer.Foundation.MerchantFoundationServiceDependencyValidationException">
+  /// Thrown when the broker rejects the deletion because of resource state or access constraints.
+  /// </exception>
   public async Task DeleteMerchantObject(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -68,7 +89,13 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
   #endregion
 
   #region Read Merchant Objects API
-  /// <inheritdoc/>
+  /// <summary>Reads all merchants in one parent-company partition.</summary>
+  /// <param name="parentCompanyId">The parent-company partition to query.</param>
+  /// <param name="cancellationToken">The token used to cancel the query.</param>
+  /// <returns>The merchants returned by the database broker.</returns>
+  /// <exception cref="DDD.Entities.Merchants.Exceptions.Outer.Foundation.MerchantFoundationServiceDependencyException">
+  /// Thrown when the database broker cannot complete the query.
+  /// </exception>
   public async Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -83,7 +110,14 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
   #endregion
 
   #region Read Merchant Object API
-  /// <inheritdoc/>
+  /// <summary>Reads one merchant through the database broker.</summary>
+  /// <param name="identifier">The merchant identifier.</param>
+  /// <param name="parentCompanyId">The optional parent-company partition used for the read.</param>
+  /// <param name="cancellationToken">The token used to cancel the read.</param>
+  /// <returns>The matching merchant entity.</returns>
+  /// <exception cref="DDD.Entities.Merchants.Exceptions.Outer.Foundation.MerchantFoundationServiceDependencyValidationException">
+  /// Thrown when the broker classifies the merchant as unavailable to this request.
+  /// </exception>
   public async Task<Merchant> ReadMerchantObject(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -96,7 +130,18 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
   #endregion
 
   #region Update Merchant Object API
-  /// <inheritdoc/>
+  /// <summary>Applies client-editable fields to an existing merchant and persists the result.</summary>
+  /// <param name="updatedMerchant">The client-supplied replacement fields.</param>
+  /// <param name="merchantIdentifier">The identifier of the persisted merchant.</param>
+  /// <param name="parentCompanyId">The optional parent-company partition used for lookup.</param>
+  /// <param name="cancellationToken">The token used to cancel the read or update.</param>
+  /// <returns>The merchant state returned by the database broker.</returns>
+  /// <exception cref="DDD.Entities.Merchants.Exceptions.Outer.Foundation.MerchantFoundationServiceDependencyValidationException">
+  /// Thrown when the existing merchant cannot be found.
+  /// </exception>
+  /// <exception cref="DDD.Entities.Merchants.Exceptions.Outer.Foundation.MerchantFoundationServiceException">
+  /// Thrown when the replacement value is null or an unclassified service failure occurs.
+  /// </exception>
   public async Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {

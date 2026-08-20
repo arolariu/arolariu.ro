@@ -41,7 +41,7 @@ public sealed class InvoiceUnifiedLayeringArchitectureTests
     Type generativeBroker = RequireType($"{BrokersNamespace}.GenerativeAnalysisBroker.IGenerativeAnalysisBroker");
     Type taxonomyBroker = RequireType($"{BrokersNamespace}.TaxonomyBroker.ITaxonomyBroker");
 
-    AssertConstructor(management, processingContract);
+    AssertConstructor(management, processingContract, typeof(ILoggerFactory));
     AssertConstructor(
       processing,
       invoiceOrchestration,

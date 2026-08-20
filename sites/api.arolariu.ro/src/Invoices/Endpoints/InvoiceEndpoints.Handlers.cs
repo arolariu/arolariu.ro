@@ -13,7 +13,6 @@ using arolariu.Backend.Common.Telemetry.Tracing;
 using arolariu.Backend.Domain.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
-using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.DTOs.Responses;
 using arolariu.Backend.Domain.Invoices.Services.Management;
@@ -1628,45 +1627,6 @@ public static partial class InvoiceEndpoints
   }
   #endregion
 
-  #region Cancellation helpers
-  /// <summary>
-  /// Produces the response and telemetry for a cancelled request, distinguishing a server-side
-  /// timeout (a fault worth alerting on) from a client disconnect (not a fault at all).
-  /// </summary>
-  /// <param name="context">The current HTTP context.</param>
-  /// <param name="writeScope">The write scope if this was a mutation; <see langword="null"/> for reads.</param>
-  /// <param name="operation">Metric operation label, e.g. <c>"read"</c>.</param>
-  /// <param name="entity">Metric entity label, e.g. <c>"invoice"</c>.</param>
-  /// <returns>A 504 ProblemDetails result on timeout, otherwise a 499 marker result.</returns>
-  private static IResult HandleCancellation(
-    HttpContext context,
-    CancellationTokenSource? writeScope,
-    string operation,
-    string entity)
-  {
-    var isTimeout = RequestCancellation.WasTimeout(context) || writeScope?.IsCancellationRequested == true;
-
-    if (isTimeout)
-    {
-      InvoiceMetrics.RecordOperation(operation, entity, "timeout");
-      Activity.Current?.SetStatus(ActivityStatusCode.Error, "Timeout");
-      return TypedResults.Problem(new ProblemDetails
-      {
-        Status = StatusCodes.Status504GatewayTimeout,
-        Title = "Operation timed out",
-        Type = ProblemTypeUris.Timeout,
-        Detail = "The operation took too long to complete. Please try again later.",
-      });
-    }
-
-    // Client disconnected. Deliberately leave the span status Unset — this is not a fault,
-    // and marking it Error would poison error-rate SLOs with normal client behaviour.
-    InvoiceMetrics.RecordOperation(operation, entity, "canceled");
-    Activity.Current?.SetTag("cancellation.reason", "client_disconnect");
-    return TypedResults.StatusCode(StatusCodes.Status499ClientClosedRequest);
-  }
-  #endregion
-
   internal static async partial Task<IResult> AnalyzeInvoiceAsync(
     IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
@@ -1688,13 +1648,13 @@ public static partial class InvoiceEndpoints
       activity?.SetInvoiceContext(id, userIdentifier);
       activity?.SetTag("analysis.profile", request.Profile.ToString());
 
-      AnalysisAcceptedResponseDto accepted = await invoiceManagementService
+      string messageId = await invoiceManagementService
         .QueueInvoiceAnalysisAsync(id, userIdentifier, request, writeScope.Token)
         .ConfigureAwait(false);
 
-      activity?.SetTag("analysis.message_id", accepted.MessageId);
+      activity?.SetTag("analysis.message_id", messageId);
       activity?.RecordSuccess("Invoice analysis message queued");
-      return TypedResults.Accepted($"/rest/v1/invoices/{id}", accepted);
+      return TypedResults.Accepted($"/rest/v1/invoices/{id}", messageId);
     }
     catch (OperationCanceledException)
     {
@@ -1728,13 +1688,13 @@ public static partial class InvoiceEndpoints
       activity?.SetMerchantContext(id);
       activity?.SetTag("analysis.profile", request.Profile.ToString());
 
-      AnalysisAcceptedResponseDto accepted = await invoiceManagementService
+      string messageId = await invoiceManagementService
         .QueueMerchantAnalysisAsync(id, userIdentifier, request, writeScope.Token)
         .ConfigureAwait(false);
 
-      activity?.SetTag("analysis.message_id", accepted.MessageId);
+      activity?.SetTag("analysis.message_id", messageId);
       activity?.RecordSuccess("Merchant analysis message queued");
-      return TypedResults.Accepted($"/rest/v1/merchants/{id}", accepted);
+      return TypedResults.Accepted($"/rest/v1/merchants/{id}", messageId);
     }
     catch (OperationCanceledException)
     {

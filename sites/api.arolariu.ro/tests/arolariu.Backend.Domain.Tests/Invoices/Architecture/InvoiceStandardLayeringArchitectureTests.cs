@@ -36,7 +36,8 @@ public sealed class InvoiceStandardLayeringArchitectureTests
   {
     AssertConstructorDependencies(
       typeof(InvoiceManagementService),
-      typeof(IInvoiceProcessingService));
+      typeof(IInvoiceProcessingService),
+      typeof(ILoggerFactory));
 
     AssertConstructorDependencies(
       typeof(InvoiceProcessingService),

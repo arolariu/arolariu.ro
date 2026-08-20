@@ -16,10 +16,24 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
+using DDD = arolariu.Backend.Domain.Invoices.DDD;
 
 public sealed partial class AnalysisFoundationService
 {
-  /// <inheritdoc/>
+  /// <summary>Generates bounded recipes from food-eligible products and current allergen evidence.</summary>
+  /// <param name="products">The non-empty transient product inputs.</param>
+  /// <param name="classifications">Canonical classifications covering the supplied products.</param>
+  /// <param name="allergens">Allergen assessments covering exactly the supplied product tokens.</param>
+  /// <param name="maximumRecipes">The requested limit in the inclusive range one through three.</param>
+  /// <param name="sourceRunId">The non-empty durable analysis run identifier.</param>
+  /// <param name="cancellationToken">The token used to cancel structured generation.</param>
+  /// <returns>Validated recipe suggestions, or an empty result when no product is food-eligible.</returns>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationValidationException">
+  /// Thrown when inputs are absent, inconsistent, or outside supported bounds.
+  /// </exception>
+  /// <exception cref="DDD.Analysis.Exceptions.Outer.Foundation.AnalysisFoundationDependencyException">
+  /// Thrown when structured generation fails or returns an invalid recipe contract.
+  /// </exception>
   public async Task<RecipeGenerationResult> GenerateRecipesAsync(
     IReadOnlyList<ProductAnalysisInput> products,
     ProductClassificationResult classifications,
@@ -65,7 +79,7 @@ public sealed partial class AnalysisFoundationService
           .Distinct()
           .ToArray();
 
-        var request = new GenerativeRequest(
+        var request = new GenerativeAnalysisRequest(
           BuildRecipeGenerationSystemPrompt(),
           new
           {
@@ -83,7 +97,7 @@ public sealed partial class AnalysisFoundationService
               .ToArray(),
           });
 
-        GenerativeResponse<RecipeGenerationStructuredResult> response = await GenerateWithRetryAsync<RecipeGenerationStructuredResult>(
+        GenerativeAnalysisResponse<RecipeGenerationStructuredResult> response = await GenerateWithRetryAsync<RecipeGenerationStructuredResult>(
           GenerativeTelemetryCatalog.ForNonTaxonomyCapability(AnalysisCapability.RecipeGeneration),
           request,
           cancellationToken)

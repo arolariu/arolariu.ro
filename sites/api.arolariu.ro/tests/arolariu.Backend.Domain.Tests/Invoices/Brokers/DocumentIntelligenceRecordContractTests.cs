@@ -11,7 +11,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 /// Verifies receipt-document collection and provenance invariants at the provider-neutral boundary.
 /// </summary>
 [TestClass]
-public sealed class ReceiptDocumentContractTests
+public sealed class DocumentIntelligenceRecordContractTests
 {
   /// <summary>
   /// Verifies receipt documents reject null items rather than exposing invalid immutable collection snapshots.

@@ -81,45 +81,39 @@ public class Product
   public ProductMetadata Metadata { get; set; }
 
   /// <summary>
-  /// Applies a client-editable line-item update while preserving analysis and workflow state.
+  /// Merges client-controlled product values into a server-owned product snapshot.
   /// </summary>
   /// <remarks>
-  /// <para>
-  /// This method mutates the persisted line item selected by its owning invoice aggregate; it never replaces that
-  /// instance. As a result, the allergen assessment and operational metadata produced by server workflows remain
-  /// intact. The update only changes the client-editable commercial fields and marks the item as edited.
-  /// </para>
-  /// <para>
-  /// A null <see cref="Product.Classification"/> on <paramref name="clientUpdate"/> retains the existing canonical
-  /// classification. A null <see cref="Product.AllergenAssessment"/> likewise retains the existing assessment.
-  /// Processing canonicalizes a supplied classification before this method runs, while a supplied structured
-  /// allergen assessment replaces the previous assessment.
-  /// </para>
+  /// Commercial fields always come from <paramref name="right"/>. Non-null analysis values from
+  /// <paramref name="right"/> replace those from <paramref name="left"/>, while null analysis values retain the
+  /// corresponding left value. Operational metadata remains server-owned and is copied from
+  /// <paramref name="left"/>, with <see cref="ProductMetadata.IsEdited"/> set to <see langword="true"/>.
+  /// Neither input is mutated.
   /// </remarks>
-  /// <param name="clientUpdate">The client-controlled product values to apply.</param>
-  /// <exception cref="ArgumentNullException">Thrown when <paramref name="clientUpdate"/> is null.</exception>
-  public void ApplyClientUpdate(Product clientUpdate)
+  /// <param name="left">The persisted server-owned product snapshot.</param>
+  /// <param name="right">The client-controlled product values.</param>
+  /// <returns>A new product containing the merged values.</returns>
+  /// <exception cref="ArgumentNullException">
+  /// Thrown when <paramref name="left"/> or <paramref name="right"/> is null.
+  /// </exception>
+  public static Product Merge(Product left, Product right)
   {
-    ArgumentNullException.ThrowIfNull(clientUpdate);
+    ArgumentNullException.ThrowIfNull(left);
+    ArgumentNullException.ThrowIfNull(right);
 
-    Name = clientUpdate.Name;
-    Quantity = clientUpdate.Quantity;
-    QuantityUnit = clientUpdate.QuantityUnit;
-    ProductCode = clientUpdate.ProductCode;
-    Price = clientUpdate.Price;
-
-    if (clientUpdate.Classification is not null)
-    {
-      Classification = clientUpdate.Classification;
-    }
-
-    if (clientUpdate.AllergenAssessment is not null)
-    {
-      AllergenAssessment = clientUpdate.AllergenAssessment;
-    }
-
-    ProductMetadata metadata = Metadata;
+    ProductMetadata metadata = left.Metadata;
     metadata.IsEdited = true;
-    Metadata = metadata;
+
+    return new Product
+    {
+      Name = right.Name,
+      Classification = right.Classification ?? left.Classification,
+      Quantity = right.Quantity,
+      QuantityUnit = right.QuantityUnit,
+      ProductCode = right.ProductCode,
+      Price = right.Price,
+      AllergenAssessment = right.AllergenAssessment ?? left.AllergenAssessment,
+      Metadata = metadata,
+    };
   }
 }

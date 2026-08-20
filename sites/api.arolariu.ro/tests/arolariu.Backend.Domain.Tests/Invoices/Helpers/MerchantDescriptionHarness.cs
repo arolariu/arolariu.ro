@@ -94,7 +94,7 @@ internal sealed class MerchantDescriptionHarness
   /// Returns the captured structured request payload.
   /// </summary>
   /// <returns>The first captured request.</returns>
-  public GenerativeRequest CapturedRequest() => Broker.CapturedRequests[0];
+  public GenerativeAnalysisRequest CapturedRequest() => Broker.CapturedRequests[0];
 
   private static Merchant CreateMerchant() =>
     new()

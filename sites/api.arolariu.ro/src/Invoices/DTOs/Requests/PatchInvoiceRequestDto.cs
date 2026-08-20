@@ -7,7 +7,8 @@ using System.Diagnostics.CodeAnalysis;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
-using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
+
+using Microsoft.AspNetCore.Http;
 
 /// <summary>
 /// Request DTO for partial invoice update operations (HTTP PATCH semantics).
@@ -48,7 +49,6 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// <param name="Description">
 /// Optional new description. Null or whitespace preserves the existing description.
 /// </param>
-/// <param name="ClassificationSystem">Optional taxonomy system for the manual invoice classification.</param>
 /// <param name="ClassificationCode">Optional taxonomy code for the manual invoice classification.</param>
 /// <param name="PaymentInformation">
 /// Optional new payment information. Null preserves the existing payment details.
@@ -75,7 +75,6 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 /// var request = new PatchInvoiceRequestDto(
 ///     Name: "Updated Name",
 ///     Description: null,  // Keep existing
-///     ClassificationSystem: null, // Keep existing
 ///     ClassificationCode: null,
 ///     PaymentInformation: null,
 ///     MerchantReference: null,
@@ -93,7 +92,6 @@ using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 public readonly record struct PatchInvoiceRequestDto(
   string? Name,
   string? Description,
-  ClassificationSystem? ClassificationSystem,
   string? ClassificationCode,
   PaymentInformation? PaymentInformation,
   Guid? MerchantReference,
@@ -101,6 +99,9 @@ public readonly record struct PatchInvoiceRequestDto(
   ICollection<Guid>? SharedWith,
   IDictionary<string, object>? AdditionalMetadata)
 {
+  private const string PlaceholderVersion = "unresolved";
+  private const string PlaceholderLabel = "unresolved";
+
   /// <summary>
   /// Applies this partial update to an existing <see cref="Invoice"/> instance.
   /// </summary>
@@ -149,12 +150,7 @@ public readonly record struct PatchInvoiceRequestDto(
       UserIdentifier = existing.UserIdentifier,
       Name = !string.IsNullOrWhiteSpace(Name) ? Name : existing.Name,
       Description = !string.IsNullOrWhiteSpace(Description) ? Description : existing.Description,
-      Classification = RequestClassificationMapper
-        .ToManualSelection(
-          ClassificationSystem,
-          ClassificationCode,
-          DDD.ValueObjects.Classifications.ClassificationSystem.EcoicopV2)
-        ?? existing.Classification,
+      Classification = CreateManualClassification(ClassificationCode) ?? existing.Classification,
       PaymentInformation = PaymentInformation ?? existing.PaymentInformation,
       MerchantReference = MerchantReference.HasValue && MerchantReference.Value != Guid.Empty
         ? MerchantReference.Value
@@ -207,5 +203,32 @@ public readonly record struct PatchInvoiceRequestDto(
 
     patched.PerformUpdate(updatedBy);
     return patched;
+  }
+
+  private static StandardClassification? CreateManualClassification(string? code)
+  {
+    if (code is null)
+    {
+      return null;
+    }
+
+    if (string.IsNullOrWhiteSpace(code))
+    {
+      throw new BadHttpRequestException("Classification code must not be empty or whitespace.");
+    }
+
+    string normalizedCode = code.Trim();
+    IReadOnlyList<ClassificationNode> hierarchy =
+      [new ClassificationNode(PlaceholderVersion, normalizedCode, PlaceholderLabel)];
+
+    return new StandardClassification(
+      ClassificationSystem.EcoicopV2,
+      PlaceholderVersion,
+      normalizedCode,
+      PlaceholderLabel,
+      hierarchy,
+      ClassificationOrigin.Manual,
+      confidence: null,
+      evidence: []);
   }
 }

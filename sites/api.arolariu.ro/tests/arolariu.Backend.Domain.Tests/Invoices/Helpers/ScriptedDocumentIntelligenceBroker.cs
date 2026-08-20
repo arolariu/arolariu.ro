@@ -19,7 +19,7 @@ internal sealed class ScriptedDocumentIntelligenceBroker : IDocumentIntelligence
   /// Initializes a new instance of the <see cref="ScriptedDocumentIntelligenceBroker"/> class.
   /// </summary>
   /// <param name="scriptedDocuments">The scripted documents returned in call order.</param>
-  public ScriptedDocumentIntelligenceBroker(params ReceiptDocument[] scriptedDocuments)
+  public ScriptedDocumentIntelligenceBroker(params DocumentIntelligenceRecord[] scriptedDocuments)
     : this(CreateResponses(scriptedDocuments))
   {
   }
@@ -40,7 +40,7 @@ internal sealed class ScriptedDocumentIntelligenceBroker : IDocumentIntelligence
   public int MaxConcurrentRequests { get; private set; }
 
   /// <inheritdoc/>
-  public async ValueTask<ReceiptDocument> AnalyzeReceiptAsync(
+  public async ValueTask<DocumentIntelligenceRecord> AnalyzeReceiptAsync(
     Uri scanLocation,
     CancellationToken cancellationToken)
   {
@@ -85,7 +85,9 @@ internal sealed class ScriptedDocumentIntelligenceBroker : IDocumentIntelligence
   /// <param name="document">The provider-neutral document to return.</param>
   /// <param name="delay">The artificial boundary delay.</param>
   /// <returns>The scripted response.</returns>
-  public static ScriptedDocumentResponse Success(ReceiptDocument document, TimeSpan? delay = null) =>
+  public static ScriptedDocumentResponse Success(
+    DocumentIntelligenceRecord document,
+    TimeSpan? delay = null) =>
     new(document, delay ?? TimeSpan.Zero, null);
 
   /// <summary>
@@ -97,7 +99,8 @@ internal sealed class ScriptedDocumentIntelligenceBroker : IDocumentIntelligence
   public static ScriptedDocumentResponse Failure(Exception exception, TimeSpan? delay = null) =>
     new(null, delay ?? TimeSpan.Zero, exception);
 
-  private static ScriptedDocumentResponse[] CreateResponses(ReceiptDocument[] scriptedDocuments)
+  private static ScriptedDocumentResponse[] CreateResponses(
+    DocumentIntelligenceRecord[] scriptedDocuments)
   {
     ArgumentNullException.ThrowIfNull(scriptedDocuments);
 
@@ -118,7 +121,7 @@ internal sealed class ScriptedDocumentIntelligenceBroker : IDocumentIntelligence
   /// <param name="Delay">The artificial delay before the response completes.</param>
   /// <param name="Exception">The exception to throw instead of returning a document.</param>
   internal readonly record struct ScriptedDocumentResponse(
-    ReceiptDocument? Document,
+    DocumentIntelligenceRecord? Document,
     TimeSpan Delay,
     Exception? Exception);
 }

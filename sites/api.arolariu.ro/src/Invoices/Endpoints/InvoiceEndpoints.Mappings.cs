@@ -9,7 +9,6 @@ using arolariu.Backend.Common.Http;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
-using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.DTOs.Responses;
 
@@ -362,7 +361,7 @@ public static partial class InvoiceEndpoints
     router
       .MapPost("/invoices/{id}/analyze", AnalyzeInvoiceAsync)
       .Accepts<InvoiceAnalysisRequestDto>("application/json")
-      .Produces<AnalysisAcceptedResponseDto>(StatusCodes.Status202Accepted)
+      .Produces<string>(StatusCodes.Status202Accepted)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status402PaymentRequired)
@@ -536,7 +535,7 @@ public static partial class InvoiceEndpoints
     router
       .MapPost("/merchants/{id}/analyze", AnalyzeMerchantAsync)
       .Accepts<MerchantAnalysisRequestDto>("application/json")
-      .Produces<AnalysisAcceptedResponseDto>(StatusCodes.Status202Accepted)
+      .Produces<string>(StatusCodes.Status202Accepted)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status402PaymentRequired)

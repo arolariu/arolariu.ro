@@ -9,7 +9,6 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
-using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.Services.Management;
 
@@ -22,17 +21,17 @@ internal abstract class WorkerManagementServiceBase : IInvoiceManagementService
 
   public virtual Task EnsureAnalysisQueueAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-  public virtual Task<AnalysisAcceptedResponseDto> QueueInvoiceAnalysisAsync(
+  public virtual Task<string> QueueInvoiceAnalysisAsync(
     Guid invoiceId,
     Guid userIdentifier,
     InvoiceAnalysisRequestDto request,
-    CancellationToken cancellationToken) => Task.FromException<AnalysisAcceptedResponseDto>(Unsupported());
+    CancellationToken cancellationToken) => Task.FromException<string>(Unsupported());
 
-  public virtual Task<AnalysisAcceptedResponseDto> QueueMerchantAnalysisAsync(
+  public virtual Task<string> QueueMerchantAnalysisAsync(
     Guid merchantId,
     Guid userIdentifier,
     MerchantAnalysisRequestDto request,
-    CancellationToken cancellationToken) => Task.FromException<AnalysisAcceptedResponseDto>(Unsupported());
+    CancellationToken cancellationToken) => Task.FromException<string>(Unsupported());
 
   public virtual Task<bool> TryExecuteNextAnalysisAsync(CancellationToken cancellationToken) => Task.FromResult(false);
 

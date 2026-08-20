@@ -38,8 +38,3 @@ public interface IQueueBroker
   /// <summary>Gets the configured queue's existence and approximate message count.</summary>
   ValueTask<QueueStatus> GetQueueStatusAsync(CancellationToken cancellationToken);
 }
-
-/// <summary>Represents the current provider-reported queue status.</summary>
-/// <param name="Exists">Whether the configured queue exists.</param>
-/// <param name="ApproximateMessageCount">The provider's approximate visible and invisible message count.</param>
-public readonly record struct QueueStatus(bool Exists, long ApproximateMessageCount);

@@ -58,10 +58,6 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.I
 public readonly record struct PatchMetadataRequestDto(
   [Required] IDictionary<string, object> Entries)
 {
-  private const int MaximumEntryCount = 32;
-  private const int MaximumKeyLength = 96;
-  private const int MaximumStringValueLength = 1024;
-
   /// <summary>
   /// Validates the complete metadata patch before any aggregate state is changed.
   /// </summary>
@@ -116,11 +112,6 @@ public readonly record struct PatchMetadataRequestDto(
       throw new InvoiceMetadataValidationException("At least one metadata entry is required.");
     }
 
-    if (entries.Count > MaximumEntryCount)
-    {
-      throw new InvoiceMetadataValidationException("A metadata patch can contain at most 32 entries.");
-    }
-
     var normalizedEntries = new Dictionary<string, object?>(entries.Count, StringComparer.Ordinal);
 
     foreach ((string key, object value) in entries)
@@ -135,7 +126,6 @@ public readonly record struct PatchMetadataRequestDto(
   private static void ValidateKey(string? key)
   {
     if (string.IsNullOrWhiteSpace(key)
-      || key.Length > MaximumKeyLength
       || key != key.Trim()
       || !HasSupportedNamespace(key)
       || !HasSupportedKeyCharacters(key))
@@ -174,7 +164,7 @@ public readonly record struct PatchMetadataRequestDto(
     return value switch
     {
       null => null,
-      string text when text.Length <= MaximumStringValueLength && !LooksLikeSensitiveTransportValue(text) => text,
+      string text when !LooksLikeSensitiveTransportValue(text) => text,
       bool boolean => boolean,
       byte or sbyte or short or ushort or int or uint or long or ulong or decimal => value,
       float number when float.IsFinite(number) => number,
@@ -199,11 +189,6 @@ public readonly record struct PatchMetadataRequestDto(
   private static string NormalizeString(JsonElement jsonElement)
   {
     string value = jsonElement.GetString() ?? string.Empty;
-
-    if (value.Length > MaximumStringValueLength)
-    {
-      throw new InvoiceMetadataValidationException("Metadata string values must not exceed 1024 characters.");
-    }
 
     if (LooksLikeSensitiveTransportValue(value))
     {

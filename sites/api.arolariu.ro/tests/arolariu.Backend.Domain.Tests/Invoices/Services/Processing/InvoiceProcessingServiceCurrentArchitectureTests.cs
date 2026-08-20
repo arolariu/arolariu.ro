@@ -16,7 +16,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing;
-using arolariu.Backend.Domain.Invoices.DTOs.Analysis;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.AnalysisService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
@@ -470,6 +469,11 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       .ConfigureAwait(false);
 
     Assert.AreSame(canonical, result.Classification);
+    Assert.AreNotSame(persistedProduct, result);
+    Assert.AreSame(result, invoice.Items.Single());
+    Assert.IsTrue(result.Metadata.IsEdited);
+    Assert.IsFalse(persistedProduct.Metadata.IsEdited);
+    Assert.AreSame(selection, updatedProduct.Classification);
   }
 
   /// <summary>
@@ -560,7 +564,8 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       ProductClassification: null,
       AllergenAssessment: null,
       InvoiceClassification: null,
-      RecipeGeneration: null);
+      RecipeGeneration: null,
+      MaximumRecipes: null);
     var invoice = new Invoice { id = invoiceId, UserIdentifier = userIdentifier };
     var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
     var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
@@ -582,11 +587,11 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       analysis.Object,
       NullLoggerFactory.Instance);
 
-    AnalysisAcceptedResponseDto result = await service
+    string result = await service
       .QueueInvoiceAnalysisAsync(invoiceId, userIdentifier, request, CancellationToken.None)
       .ConfigureAwait(false);
 
-    Assert.AreEqual("message-1", result.MessageId);
+    Assert.AreEqual("message-1", result);
     invoiceOrchestration.VerifyAll();
     analysis.VerifyAll();
   }
