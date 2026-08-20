@@ -24,7 +24,8 @@ public sealed record QueueAnalysisMessage
     Guid? targetPartitionIdentifier,
     InvoiceAnalysisOptions? invoiceOptions,
     MerchantAnalysisOptions? merchantOptions,
-    string traceParent)
+    string traceParent,
+    int attemptNumber = 1)
   {
     RequireNonEmpty(correlationId, nameof(correlationId));
     RequireNonEmpty(targetId, nameof(targetId));
@@ -60,6 +61,14 @@ public sealed record QueueAnalysisMessage
         "Only invoice and merchant targets can be queued for aggregate analysis.");
     }
 
+    if (attemptNumber is < 1 or > 3)
+    {
+      throw new ArgumentOutOfRangeException(
+        nameof(attemptNumber),
+        attemptNumber,
+        "Analysis attempt number must be in the inclusive range 1 to 3.");
+    }
+
     CorrelationId = correlationId;
     TargetType = targetType;
     TargetId = targetId;
@@ -68,6 +77,7 @@ public sealed record QueueAnalysisMessage
     InvoiceOptions = invoiceOptions;
     MerchantOptions = merchantOptions;
     TraceParent = traceParent;
+    AttemptNumber = attemptNumber;
   }
 
   /// <summary>Gets the stable application correlation identifier.</summary>
@@ -94,13 +104,17 @@ public sealed record QueueAnalysisMessage
   /// <summary>Gets the W3C trace context captured when the message was enqueued.</summary>
   public string TraceParent { get; }
 
+  /// <summary>Gets the logical selective-retry attempt number.</summary>
+  public int AttemptNumber { get; }
+
   /// <summary>Creates an invoice analysis queue message.</summary>
   public static QueueAnalysisMessage CreateInvoiceMessage(
     Guid targetId,
     Guid requestedBy,
     Guid correlationId,
     InvoiceAnalysisOptions options,
-    string traceParent)
+    string traceParent,
+    int attemptNumber = 1)
   {
     ArgumentNullException.ThrowIfNull(options);
 
@@ -112,7 +126,8 @@ public sealed record QueueAnalysisMessage
       targetPartitionIdentifier: null,
       options,
       merchantOptions: null,
-      traceParent);
+      traceParent,
+      attemptNumber);
   }
 
   /// <summary>Creates a merchant analysis queue message.</summary>
@@ -122,7 +137,8 @@ public sealed record QueueAnalysisMessage
     Guid correlationId,
     Guid? targetPartitionIdentifier,
     MerchantAnalysisOptions options,
-    string traceParent)
+    string traceParent,
+    int attemptNumber = 1)
   {
     ArgumentNullException.ThrowIfNull(options);
 
@@ -134,7 +150,8 @@ public sealed record QueueAnalysisMessage
       targetPartitionIdentifier,
       invoiceOptions: null,
       options,
-      traceParent);
+      traceParent,
+      attemptNumber);
   }
 
   private static void RequireNonEmpty(Guid identifier, string parameterName)

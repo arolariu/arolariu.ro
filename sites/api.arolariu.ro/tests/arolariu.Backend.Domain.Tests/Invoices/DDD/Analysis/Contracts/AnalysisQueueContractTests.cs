@@ -67,6 +67,42 @@ public sealed class AnalysisQueueContractTests
   }
 
   /// <summary>
+  /// Verifies replacement messages preserve their logical attempt number.
+  /// </summary>
+  [TestMethod]
+  public void CreateInvoiceMessage_AttemptTwo_PreservesAttempt()
+  {
+    QueueAnalysisMessage message = QueueAnalysisMessage.CreateInvoiceMessage(
+      Guid.NewGuid(),
+      Guid.NewGuid(),
+      Guid.NewGuid(),
+      InvoiceAnalysisOptions.Fast(),
+      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      attemptNumber: 2);
+
+    Assert.AreEqual(2, message.AttemptNumber);
+  }
+
+  /// <summary>
+  /// Verifies logical attempts outside the selective-retry policy are rejected.
+  /// </summary>
+  [TestMethod]
+  [DataRow(0)]
+  [DataRow(4)]
+  public void CreateInvoiceMessage_AttemptOutsidePolicy_ThrowsArgumentOutOfRangeException(
+    int attemptNumber)
+  {
+    Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+      QueueAnalysisMessage.CreateInvoiceMessage(
+        Guid.NewGuid(),
+        Guid.NewGuid(),
+        Guid.NewGuid(),
+        InvoiceAnalysisOptions.Fast(),
+        "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+        attemptNumber));
+  }
+
+  /// <summary>
   /// Verifies empty identifiers are rejected before a message reaches the queue.
   /// </summary>
   [TestMethod]
@@ -138,5 +174,26 @@ public sealed class AnalysisQueueContractTests
     QueueAnalysisMessage? deserializedMessage = JsonSerializer.Deserialize<QueueAnalysisMessage>(json);
 
     Assert.AreEqual(message, deserializedMessage);
+  }
+
+  /// <summary>
+  /// Verifies serialization preserves the terminal logical attempt.
+  /// </summary>
+  [TestMethod]
+  public void SerializationRoundTrip_AttemptThree_PreservesAttempt()
+  {
+    QueueAnalysisMessage message = QueueAnalysisMessage.CreateMerchantMessage(
+      Guid.NewGuid(),
+      Guid.NewGuid(),
+      Guid.NewGuid(),
+      Guid.NewGuid(),
+      MerchantAnalysisOptions.Fast(),
+      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      attemptNumber: 3);
+
+    string json = JsonSerializer.Serialize(message);
+    QueueAnalysisMessage? deserializedMessage = JsonSerializer.Deserialize<QueueAnalysisMessage>(json);
+
+    Assert.AreEqual(3, deserializedMessage?.AttemptNumber);
   }
 }
