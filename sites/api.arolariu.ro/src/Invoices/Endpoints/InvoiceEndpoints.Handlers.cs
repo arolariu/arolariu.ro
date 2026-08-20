@@ -270,7 +270,6 @@ public static partial class InvoiceEndpoints
           id,
           potentialUserIdentifier,
           updatedInvoiceEntity,
-          invoicePayload.ClassificationCode,
           cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
@@ -353,7 +352,6 @@ public static partial class InvoiceEndpoints
           id,
           potentialUserIdentifier,
           newInvoice,
-          invoicePayload.ClassificationCode,
           cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
@@ -587,14 +585,28 @@ public static partial class InvoiceEndpoints
 
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
-      var productEntity = productInformation.ToProduct();
-
-      var updatedProduct = await invoiceManagementService
-        .UpdateProduct(
+      var persistedProduct = await invoiceManagementService
+        .GetProduct(
           id,
           potentialUserIdentifier,
           productInformation.OriginalProductName,
-          productEntity,
+          writeScope.Token)
+        .ConfigureAwait(false);
+      var updatedProduct = productInformation.ToProduct(persistedProduct);
+
+      await invoiceManagementService
+        .DeleteProduct(
+          id,
+          potentialUserIdentifier,
+          productInformation.OriginalProductName,
+          writeScope.Token)
+        .ConfigureAwait(false);
+
+      await invoiceManagementService
+        .AddProduct(
+          id,
+          potentialUserIdentifier,
+          updatedProduct,
           productInformation.ClassificationCode,
           writeScope.Token)
         .ConfigureAwait(false);
@@ -724,7 +736,6 @@ public static partial class InvoiceEndpoints
           id,
           potentialUserIdentifier,
           possibleInvoice,
-          classificationCode: null,
           cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
@@ -803,7 +814,6 @@ public static partial class InvoiceEndpoints
           id,
           potentialUserIdentifier,
           possibleInvoice,
-          classificationCode: null,
           cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
@@ -831,7 +841,7 @@ public static partial class InvoiceEndpoints
     }
   }
 
-  internal static async partial Task<IResult> CreateInvoiceScanAsync(
+  internal static async partial Task<IResult> AttachInvoiceScanAsync(
     IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
@@ -843,7 +853,7 @@ public static partial class InvoiceEndpoints
 
     try
     {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceScanAsync), ActivityKind.Server);
+      using var activity = InvoicePackageTracing.StartActivity(nameof(AttachInvoiceScanAsync), ActivityKind.Server);
       if (activity is not null)
       {
         activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
@@ -857,7 +867,7 @@ public static partial class InvoiceEndpoints
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       await invoiceManagementService
-        .CreateInvoiceScan(id, potentialUserIdentifier, convertedScan, writeScope.Token)
+        .AttachInvoiceScan(id, potentialUserIdentifier, convertedScan, writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Scan added to invoice");
@@ -964,7 +974,6 @@ public static partial class InvoiceEndpoints
             id,
             potentialUserIdentifier,
             possibleInvoice,
-            classificationCode: null,
             cancellationToken: writeScope.Token)
           .ConfigureAwait(false);
         activity?.RecordSuccess("Scan removed from invoice");
@@ -1071,7 +1080,6 @@ public static partial class InvoiceEndpoints
           id,
           potentialUserIdentifier,
           possibleInvoice,
-          classificationCode: null,
           cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
@@ -1134,7 +1142,6 @@ public static partial class InvoiceEndpoints
           id,
           potentialUserIdentifier,
           possibleInvoice,
-          classificationCode: null,
           cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
@@ -1391,7 +1398,6 @@ public static partial class InvoiceEndpoints
               possibleInvoice.id,
               userIdentifier: null,
               possibleInvoice,
-              classificationCode: null,
               writeScope.Token)
             .ConfigureAwait(false);
         }
@@ -1528,7 +1534,6 @@ public static partial class InvoiceEndpoints
             invoice.id,
             userIdentifier: null,
             invoice,
-            classificationCode: null,
             writeScope.Token)
           .ConfigureAwait(false);
       }
@@ -1611,7 +1616,6 @@ public static partial class InvoiceEndpoints
             invoice.id,
             userIdentifier: null,
             invoice,
-            classificationCode: null,
             writeScope.Token)
           .ConfigureAwait(false);
       }

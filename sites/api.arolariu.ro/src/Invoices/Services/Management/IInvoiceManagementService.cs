@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
@@ -45,14 +44,12 @@ public interface IInvoiceManagementService
   /// <param name="invoiceIdentifier">The identifier of the persisted invoice.</param>
   /// <param name="userIdentifier">The owning user partition, or <see langword="null"/> when resolved downstream.</param>
   /// <param name="updatedInvoice">The transient aggregate carrying replacement values.</param>
-  /// <param name="classificationCode">The optional ECOICOP v2 code to resolve canonically.</param>
   /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
   /// <returns>The updated invoice aggregate.</returns>
   Task<Invoice> UpdateInvoice(
     Guid invoiceIdentifier,
     Guid? userIdentifier,
     Invoice updatedInvoice,
-    string? classificationCode,
     CancellationToken cancellationToken);
 
   /// <summary>Removes one invoice from active use.</summary>
@@ -81,22 +78,6 @@ public interface IInvoiceManagementService
     Guid invoiceIdentifier,
     Guid? userIdentifier,
     Product product,
-    string? classificationCode,
-    CancellationToken cancellationToken);
-
-  /// <summary>Replaces the first invoice product matching a persisted name.</summary>
-  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
-  /// <param name="userIdentifier">The owning user partition, or <see langword="null"/> when resolved downstream.</param>
-  /// <param name="productName">The persisted product name used to locate the line item.</param>
-  /// <param name="updatedProduct">The transient product carrying replacement values.</param>
-  /// <param name="classificationCode">The optional GS1 GPC code to resolve canonically.</param>
-  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
-  /// <returns>The product state persisted on the invoice.</returns>
-  Task<Product> UpdateProduct(
-    Guid invoiceIdentifier,
-    Guid? userIdentifier,
-    string productName,
-    Product updatedProduct,
     string? classificationCode,
     CancellationToken cancellationToken);
 
@@ -131,7 +112,7 @@ public interface IInvoiceManagementService
   /// <param name="scan">The scan to add.</param>
   /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
   /// <returns>A task that represents the add operation.</returns>
-  Task CreateInvoiceScan(Guid invoiceIdentifier, Guid? userIdentifier, InvoiceScan scan, CancellationToken cancellationToken);
+  Task AttachInvoiceScan(Guid invoiceIdentifier, Guid? userIdentifier, InvoiceScan scan, CancellationToken cancellationToken);
 
   /// <summary>Retrieves every receipt scan attached to an invoice.</summary>
   /// <param name="invoiceIdentifier">The target invoice identifier.</param>
@@ -227,22 +208,6 @@ public interface IInvoiceManagementService
   #endregion
 
   #region Analysis Queue
-  /// <summary>Applies an invoice analysis execution result to durable aggregates.</summary>
-  /// <param name="executionResult">The immutable invoice execution result to persist.</param>
-  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
-  /// <returns>The supplied execution result after target persistence completes.</returns>
-  Task<InvoiceAnalysisExecutionResult> PersistInvoiceAnalysisAsync(
-    InvoiceAnalysisExecutionResult executionResult,
-    CancellationToken cancellationToken);
-
-  /// <summary>Applies a merchant analysis execution result to the durable merchant.</summary>
-  /// <param name="executionResult">The immutable merchant execution result to persist.</param>
-  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
-  /// <returns>The persisted merchant execution result.</returns>
-  Task<MerchantAnalysisExecutionResult> PersistMerchantAnalysisAsync(
-    MerchantAnalysisExecutionResult executionResult,
-    CancellationToken cancellationToken);
-
   /// <summary>Queues invoice analysis after validating target ownership.</summary>
   /// <param name="invoiceId">The invoice identifier to analyze.</param>
   /// <param name="userIdentifier">The authenticated owner requesting analysis.</param>
@@ -270,6 +235,6 @@ public interface IInvoiceManagementService
   /// <summary>Receives and processes at most one visible analysis message.</summary>
   /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
   /// <returns><see langword="true"/> when a message was processed; otherwise, <see langword="false"/>.</returns>
-  Task<bool> TryExecuteNextAnalysisAsync(CancellationToken cancellationToken);
+  Task<bool> ProcessAnalysisAsync(CancellationToken cancellationToken);
   #endregion
 }

@@ -261,8 +261,8 @@ public static partial class InvoiceEndpoints
       .WithName(nameof(RemoveMerchantFromInvoiceAsync))
       .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
-    router // Create the invoice scan for a given invoice.
-      .MapPost("/invoices/{id}/scans", CreateInvoiceScanAsync)
+    router // Attach an invoice scan to a given invoice.
+      .MapPost("/invoices/{id}/scans", AttachInvoiceScanAsync)
       .Accepts<AttachInvoiceScanRequestDto>("application/json")
       .Produces<InvoiceScanResponseDto>(StatusCodes.Status201Created)
       .ProducesValidationProblem()
@@ -276,7 +276,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status504GatewayTimeout)
       .RequireAuthorization()
       .RequireRateLimiting(RateLimitPolicies.StandardWrites)
-      .WithName(nameof(CreateInvoiceScanAsync))
+      .WithName(nameof(AttachInvoiceScanAsync))
       .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
     router // Retrieve the invoice scans for a given invoice.

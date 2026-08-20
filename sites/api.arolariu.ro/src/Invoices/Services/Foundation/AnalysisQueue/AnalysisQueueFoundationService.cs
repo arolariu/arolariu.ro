@@ -38,7 +38,7 @@ public sealed partial class AnalysisQueueFoundationService : IAnalysisQueueFound
 
   /// <inheritdoc/>
   public async Task<string> EnqueueAsync(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {

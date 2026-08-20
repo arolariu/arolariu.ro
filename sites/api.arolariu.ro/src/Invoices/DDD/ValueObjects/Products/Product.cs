@@ -1,6 +1,4 @@
 namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
-
-using System;
 using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
@@ -80,40 +78,4 @@ public class Product
   [JsonPropertyOrder(7)]
   public ProductMetadata Metadata { get; set; }
 
-  /// <summary>
-  /// Merges client-controlled product values into a server-owned product snapshot.
-  /// </summary>
-  /// <remarks>
-  /// Commercial fields always come from <paramref name="right"/>. Non-null analysis values from
-  /// <paramref name="right"/> replace those from <paramref name="left"/>, while null analysis values retain the
-  /// corresponding left value. Operational metadata remains server-owned and is copied from
-  /// <paramref name="left"/>, with <see cref="ProductMetadata.IsEdited"/> set to <see langword="true"/>.
-  /// Neither input is mutated.
-  /// </remarks>
-  /// <param name="left">The persisted server-owned product snapshot.</param>
-  /// <param name="right">The client-controlled product values.</param>
-  /// <returns>A new product containing the merged values.</returns>
-  /// <exception cref="ArgumentNullException">
-  /// Thrown when <paramref name="left"/> or <paramref name="right"/> is null.
-  /// </exception>
-  public static Product Merge(Product left, Product right)
-  {
-    ArgumentNullException.ThrowIfNull(left);
-    ArgumentNullException.ThrowIfNull(right);
-
-    ProductMetadata metadata = left.Metadata;
-    metadata.IsEdited = true;
-
-    return new Product
-    {
-      Name = right.Name,
-      Classification = right.Classification ?? left.Classification,
-      Quantity = right.Quantity,
-      QuantityUnit = right.QuantityUnit,
-      ProductCode = right.ProductCode,
-      Price = right.Price,
-      AllergenAssessment = right.AllergenAssessment ?? left.AllergenAssessment,
-      Metadata = metadata,
-    };
-  }
 }

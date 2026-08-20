@@ -169,9 +169,9 @@ public sealed class AnalysisWorkerTests
       CancellationToken cancellationToken) =>
         throw new NotSupportedException();
 
-    public override Task<bool> TryExecuteNextAnalysisAsync(CancellationToken cancellationToken)
+    public override Task<bool> ProcessAnalysisAsync(CancellationToken cancellationToken)
     {
-      probe.Events.Enqueue("try-execute");
+      probe.Events.Enqueue("process-analysis");
       probe.SignalIteration();
 
       if (probe.ExecuteFailure is not null)

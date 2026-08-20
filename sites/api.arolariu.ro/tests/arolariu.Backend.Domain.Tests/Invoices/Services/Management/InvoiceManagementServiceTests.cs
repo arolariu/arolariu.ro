@@ -4,6 +4,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
@@ -103,15 +104,15 @@ public sealed class InvoiceManagementServiceTests
   /// Verifies queue consumption delegates to the unified Processing service.
   /// </summary>
   [TestMethod]
-  public async Task TryExecuteNextAnalysisAsync_VisibleMessage_ReturnsTrue()
+  public async Task ProcessAnalysisAsync_VisibleMessage_ReturnsTrue()
   {
     var processing = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
-    processing.Setup(service => service.TryExecuteNextAnalysisAsync(It.IsAny<CancellationToken>()))
+    processing.Setup(service => service.ProcessAnalysisAsync(It.IsAny<CancellationToken>()))
       .ReturnsAsync(true);
     var service = new InvoiceManagementService(processing.Object, NullLoggerFactory.Instance);
 
     bool processed = await service
-      .TryExecuteNextAnalysisAsync(CancellationToken.None)
+      .ProcessAnalysisAsync(CancellationToken.None)
       .ConfigureAwait(false);
 
     Assert.IsTrue(processed);
@@ -122,15 +123,15 @@ public sealed class InvoiceManagementServiceTests
   /// Verifies an empty queue result is propagated from Processing.
   /// </summary>
   [TestMethod]
-  public async Task TryExecuteNextAnalysisAsync_NoMessage_ReturnsFalse()
+  public async Task ProcessAnalysisAsync_NoMessage_ReturnsFalse()
   {
     var processing = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
-    processing.Setup(service => service.TryExecuteNextAnalysisAsync(It.IsAny<CancellationToken>()))
+    processing.Setup(service => service.ProcessAnalysisAsync(It.IsAny<CancellationToken>()))
       .ReturnsAsync(false);
     var service = new InvoiceManagementService(processing.Object, NullLoggerFactory.Instance);
 
     bool processed = await service
-      .TryExecuteNextAnalysisAsync(CancellationToken.None)
+      .ProcessAnalysisAsync(CancellationToken.None)
       .ConfigureAwait(false);
 
     Assert.IsFalse(processed);
@@ -141,10 +142,10 @@ public sealed class InvoiceManagementServiceTests
   /// Verifies Processing failures are classified by the Management boundary.
   /// </summary>
   [TestMethod]
-  public async Task TryExecuteNextAnalysisAsync_ProcessingFailure_ThrowsManagementException()
+  public async Task ProcessAnalysisAsync_ProcessingFailure_ThrowsManagementException()
   {
     var processing = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
-    processing.Setup(service => service.TryExecuteNextAnalysisAsync(It.IsAny<CancellationToken>()))
+    processing.Setup(service => service.ProcessAnalysisAsync(It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvalidOperationException("processing failed"));
     var logger = new Mock<ILogger<IInvoiceManagementService>>();
     logger.Setup(candidate => candidate.IsEnabled(LogLevel.Error)).Returns(true);
@@ -154,7 +155,7 @@ public sealed class InvoiceManagementServiceTests
 
     await Assert.ThrowsExactlyAsync<
       arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementServiceException>(
-      () => service.TryExecuteNextAnalysisAsync(CancellationToken.None));
+      () => service.ProcessAnalysisAsync(CancellationToken.None));
     processing.VerifyAll();
     logger.Verify(candidate => candidate.Log(
       LogLevel.Error,
@@ -167,12 +168,12 @@ public sealed class InvoiceManagementServiceTests
 
   private static AnalysisQueueReceipt CreateReceipt(long dequeueCount)
   {
-    AnalysisQueueMessage message = AnalysisQueueMessage.CreateInvoice(
+    QueueAnalysisMessage message = QueueAnalysisMessage.CreateInvoiceMessage(
       Guid.NewGuid(),
       Guid.NewGuid(),
       Guid.NewGuid(),
       InvoiceAnalysisOptions.Fast(),
-      "00-trace-span-01");
+      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
 
     return new AnalysisQueueReceipt(
       message,
@@ -183,7 +184,7 @@ public sealed class InvoiceManagementServiceTests
   }
 
   private static InvoiceAnalysisExecutionResult CreateExecution(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     AnalysisFailureReason? failureReason) =>
     new(
       message,

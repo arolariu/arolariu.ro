@@ -8,6 +8,7 @@ using System.Reflection;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
+using arolariu.Backend.Domain.Tests.Builders;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -35,7 +36,7 @@ public sealed class ProductRequestDtoTests
     Assert.IsNull(product.Classification);
   }
 
-  /// <summary>Verifies update mapping carries the structured allergen assessment.</summary>
+  /// <summary>Verifies update mapping carries client data and preserves server-owned product state.</summary>
   [TestMethod]
   public void UpdateProductRequestDto_AllergenAssessment_MapsToProduct()
   {
@@ -50,9 +51,18 @@ public sealed class ProductRequestDtoTests
       Price: 8m,
       AllergenAssessment: assessment);
 
-    Product product = request.ToProduct();
+    var persistedProduct = new Product
+    {
+      Classification = ClassificationTestData.Gpc("10000025", "Milk"),
+      Metadata = new ProductMetadata { IsComplete = true },
+    };
+    Product product = request.ToProduct(persistedProduct);
 
     Assert.AreSame(assessment, product.AllergenAssessment);
+    Assert.AreSame(persistedProduct.Classification, product.Classification);
+    Assert.IsTrue(product.Metadata.IsEdited);
+    Assert.IsTrue(product.Metadata.IsComplete);
+    Assert.IsFalse(persistedProduct.Metadata.IsEdited);
   }
 
   /// <summary>Verifies product mapping leaves classification resolution to Processing.</summary>

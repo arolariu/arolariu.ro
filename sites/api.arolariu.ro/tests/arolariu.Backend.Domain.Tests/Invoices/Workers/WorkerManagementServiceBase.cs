@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
@@ -31,20 +30,19 @@ internal abstract class WorkerManagementServiceBase : IInvoiceManagementService
     MerchantAnalysisRequestDto request,
     CancellationToken cancellationToken) => Task.FromException<string>(Unsupported());
 
-  public virtual Task<bool> TryExecuteNextAnalysisAsync(CancellationToken cancellationToken) => Task.FromResult(false);
+  public virtual Task<bool> ProcessAnalysisAsync(CancellationToken cancellationToken) => Task.FromResult(false);
 
   public Task CreateInvoice(Invoice invoice, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException(Unsupported());
   public Task<Invoice> ReadInvoice(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException<Invoice>(Unsupported());
   public Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier, CancellationToken cancellationToken) => Task.FromException<IEnumerable<Invoice>>(Unsupported());
-  public Task<Invoice> UpdateInvoice(Guid invoiceIdentifier, Guid? userIdentifier, Invoice updatedInvoice, string? classificationCode, CancellationToken cancellationToken) => Task.FromException<Invoice>(Unsupported());
+  public Task<Invoice> UpdateInvoice(Guid invoiceIdentifier, Guid? userIdentifier, Invoice updatedInvoice, CancellationToken cancellationToken) => Task.FromException<Invoice>(Unsupported());
   public Task DeleteInvoice(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException(Unsupported());
   public Task DeleteInvoices(Guid userIdentifier, CancellationToken cancellationToken) => Task.FromException(Unsupported());
   public Task AddProduct(Guid invoiceIdentifier, Guid? userIdentifier, Product product, string? classificationCode, CancellationToken cancellationToken) => Task.FromException(Unsupported());
-  public Task<Product> UpdateProduct(Guid invoiceIdentifier, Guid? userIdentifier, string productName, Product updatedProduct, string? classificationCode, CancellationToken cancellationToken) => Task.FromException<Product>(Unsupported());
   public Task<IEnumerable<Product>> GetProducts(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException<IEnumerable<Product>>(Unsupported());
   public Task<Product> GetProduct(Guid invoiceIdentifier, Guid? userIdentifier, string productName, CancellationToken cancellationToken) => Task.FromException<Product>(Unsupported());
   public Task DeleteProduct(Guid invoiceIdentifier, Guid? userIdentifier, string productName, CancellationToken cancellationToken) => Task.FromException(Unsupported());
-  public Task CreateInvoiceScan(Guid invoiceIdentifier, Guid? userIdentifier, InvoiceScan scan, CancellationToken cancellationToken) => Task.FromException(Unsupported());
+  public Task AttachInvoiceScan(Guid invoiceIdentifier, Guid? userIdentifier, InvoiceScan scan, CancellationToken cancellationToken) => Task.FromException(Unsupported());
   public Task<IEnumerable<InvoiceScan>> ReadInvoiceScans(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException<IEnumerable<InvoiceScan>>(Unsupported());
   public Task DeleteInvoiceScan(Guid invoiceIdentifier, Guid? userIdentifier, InvoiceScan scan, CancellationToken cancellationToken) => Task.FromException(Unsupported());
   public Task AddMetadataToInvoice(Guid invoiceIdentifier, Guid? userIdentifier, IDictionary<string, object> metadata, CancellationToken cancellationToken) => Task.FromException(Unsupported());
@@ -56,6 +54,4 @@ internal abstract class WorkerManagementServiceBase : IInvoiceManagementService
   public Task<IEnumerable<Merchant>> ReadMerchants(Guid parentCompanyId, CancellationToken cancellationToken) => Task.FromException<IEnumerable<Merchant>>(Unsupported());
   public Task<Merchant> UpdateMerchant(Guid identifier, Guid? parentCompanyId, Merchant updatedMerchant, string? classificationCode, CancellationToken cancellationToken) => Task.FromException<Merchant>(Unsupported());
   public Task DeleteMerchant(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) => Task.FromException(Unsupported());
-  public Task<InvoiceAnalysisExecutionResult> PersistInvoiceAnalysisAsync(InvoiceAnalysisExecutionResult executionResult, CancellationToken cancellationToken) => Task.FromException<InvoiceAnalysisExecutionResult>(Unsupported());
-  public Task<MerchantAnalysisExecutionResult> PersistMerchantAnalysisAsync(MerchantAnalysisExecutionResult executionResult, CancellationToken cancellationToken) => Task.FromException<MerchantAnalysisExecutionResult>(Unsupported());
 }

@@ -17,6 +17,17 @@ public static partial class Log
   /// <summary>Logs the start of a structured generative provider request without recording request content.</summary>
   [LoggerMessage(600_100, LogLevel.Debug, "A structured generative analysis provider call is starting.")]
   public static partial void LogStructuredGenerationStarted(this ILogger logger);
+
+  /// <summary>
+  /// Logs the start of an Azure Storage Queue Broker operation without recording message contents.
+  /// </summary>
+  /// <param name="logger">The logger instance.</param>
+  /// <param name="operationName">The bounded Broker operation name.</param>
+  [LoggerMessage(
+    600_101,
+    LogLevel.Debug,
+    "Azure Storage Queue Broker operation {OperationName} is starting.")]
+  public static partial void LogQueueOperationStarted(this ILogger logger, string operationName);
   #endregion
 
   #region Management Service Logging Methods

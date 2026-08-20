@@ -13,8 +13,8 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// </summary>
 /// <remarks>
 /// The original name identifies the persisted line item. Commercial values, an optional canonical classification
-/// selection, and an optional structured allergen assessment are applied while server-owned workflow metadata remains
-/// preserved by the Processing layer.
+/// selection, and an optional structured allergen assessment are applied while server-owned enrichment and workflow
+/// metadata are preserved by <see cref="ToProduct(Product)"/>.
 /// </remarks>
 /// <param name="OriginalProductName">The current product name used to locate the first matching line item.</param>
 /// <param name="Name">The replacement product name.</param>
@@ -38,14 +38,27 @@ public readonly record struct UpdateProductRequestDto(
   [Required] decimal Price,
   AllergenAssessment? AllergenAssessment)
 {
-  /// <summary>Maps client-editable fields to a transient product update.</summary>
-  public Product ToProduct() => new()
+  /// <summary>Maps client-editable fields onto a replacement while preserving server-owned product state.</summary>
+  /// <param name="persistedProduct">The persisted product returned by the Management read operation.</param>
+  /// <returns>A replacement product suitable for the Management delete-and-add workflow.</returns>
+  /// <exception cref="ArgumentNullException">Thrown when <paramref name="persistedProduct"/> is null.</exception>
+  public Product ToProduct(Product persistedProduct)
   {
-    Name = Name?.Trim() ?? string.Empty,
-    Quantity = Quantity,
-    QuantityUnit = QuantityUnit?.Trim() ?? string.Empty,
-    ProductCode = ProductCode?.Trim() ?? string.Empty,
-    Price = Price,
-    AllergenAssessment = AllergenAssessment,
-  };
+    ArgumentNullException.ThrowIfNull(persistedProduct);
+
+    ProductMetadata metadata = persistedProduct.Metadata;
+    metadata.IsEdited = true;
+
+    return new Product
+    {
+      Name = Name?.Trim() ?? string.Empty,
+      Classification = persistedProduct.Classification,
+      Quantity = Quantity,
+      QuantityUnit = QuantityUnit?.Trim() ?? string.Empty,
+      ProductCode = ProductCode?.Trim() ?? string.Empty,
+      Price = Price,
+      AllergenAssessment = AllergenAssessment ?? persistedProduct.AllergenAssessment,
+      Metadata = metadata,
+    };
+  }
 }

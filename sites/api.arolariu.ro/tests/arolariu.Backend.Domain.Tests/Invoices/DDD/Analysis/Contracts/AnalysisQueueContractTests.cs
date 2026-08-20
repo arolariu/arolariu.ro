@@ -1,7 +1,9 @@
 namespace arolariu.Backend.Domain.Tests.Invoices.DDD.Analysis.Contracts;
 
 using System;
+using System.Text.Json;
 
+using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 
@@ -17,18 +19,18 @@ public sealed class AnalysisQueueContractTests
   /// Verifies the invoice factory creates a valid invoice-only message.
   /// </summary>
   [TestMethod]
-  public void CreateInvoice_ValidInput_ReturnsInvoiceMessage()
+  public void CreateInvoiceMessage_ValidInput_ReturnsInvoiceMessage()
   {
     Guid targetId = Guid.NewGuid();
     Guid requestedBy = Guid.NewGuid();
     Guid correlationId = Guid.NewGuid();
 
-    AnalysisQueueMessage message = AnalysisQueueMessage.CreateInvoice(
+    QueueAnalysisMessage message = QueueAnalysisMessage.CreateInvoiceMessage(
       targetId,
       requestedBy,
       correlationId,
       InvoiceAnalysisOptions.Fast(),
-      "00-trace-span-01");
+      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
 
     Assert.AreEqual(AnalysisTargetType.Invoice, message.TargetType);
     Assert.AreEqual(targetId, message.TargetId);
@@ -43,20 +45,20 @@ public sealed class AnalysisQueueContractTests
   /// Verifies the merchant factory preserves the merchant partition identifier.
   /// </summary>
   [TestMethod]
-  public void CreateMerchant_ValidInput_ReturnsMerchantMessage()
+  public void CreateMerchantMessage_ValidInput_ReturnsMerchantMessage()
   {
     Guid targetId = Guid.NewGuid();
     Guid requestedBy = Guid.NewGuid();
     Guid correlationId = Guid.NewGuid();
     Guid parentCompanyId = Guid.NewGuid();
 
-    AnalysisQueueMessage message = AnalysisQueueMessage.CreateMerchant(
+    QueueAnalysisMessage message = QueueAnalysisMessage.CreateMerchantMessage(
       targetId,
       requestedBy,
       correlationId,
       parentCompanyId,
       MerchantAnalysisOptions.Fast(),
-      "00-trace-span-01");
+      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
 
     Assert.AreEqual(AnalysisTargetType.Merchant, message.TargetType);
     Assert.AreEqual(parentCompanyId, message.TargetPartitionIdentifier);
@@ -71,18 +73,30 @@ public sealed class AnalysisQueueContractTests
   [DataRow("target")]
   [DataRow("requester")]
   [DataRow("correlation")]
-  public void CreateInvoice_EmptyIdentifier_ThrowsArgumentException(string emptyIdentifier)
+  public void CreateInvoiceMessage_EmptyIdentifier_ThrowsArgumentException(string emptyIdentifier)
   {
     Guid targetId = emptyIdentifier == "target" ? Guid.Empty : Guid.NewGuid();
     Guid requestedBy = emptyIdentifier == "requester" ? Guid.Empty : Guid.NewGuid();
     Guid correlationId = emptyIdentifier == "correlation" ? Guid.Empty : Guid.NewGuid();
 
-    Assert.ThrowsExactly<ArgumentException>(() => AnalysisQueueMessage.CreateInvoice(
+    Assert.ThrowsExactly<ArgumentException>(() => QueueAnalysisMessage.CreateInvoiceMessage(
       targetId,
       requestedBy,
       correlationId,
       InvoiceAnalysisOptions.Fast(),
-      "00-trace-span-01"));
+      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"));
+  }
+
+  /// <summary>Verifies malformed W3C trace context is rejected before enqueue.</summary>
+  [TestMethod]
+  public void CreateInvoiceMessage_InvalidTraceParent_ThrowsArgumentException()
+  {
+    Assert.ThrowsExactly<ArgumentException>(() => QueueAnalysisMessage.CreateInvoiceMessage(
+      Guid.NewGuid(),
+      Guid.NewGuid(),
+      Guid.NewGuid(),
+      InvoiceAnalysisOptions.Fast(),
+      "invalid-trace-parent"));
   }
 
   /// <summary>
@@ -91,12 +105,12 @@ public sealed class AnalysisQueueContractTests
   [TestMethod]
   public void Constructor_BlankProviderIdentifier_ThrowsArgumentException()
   {
-    AnalysisQueueMessage message = AnalysisQueueMessage.CreateInvoice(
+    QueueAnalysisMessage message = QueueAnalysisMessage.CreateInvoiceMessage(
       Guid.NewGuid(),
       Guid.NewGuid(),
       Guid.NewGuid(),
       InvoiceAnalysisOptions.Fast(),
-      "00-trace-span-01");
+      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
 
     Assert.ThrowsExactly<ArgumentException>(() => new AnalysisQueueReceipt(
       message,
@@ -104,5 +118,25 @@ public sealed class AnalysisQueueContractTests
       popReceipt: "receipt",
       dequeueCount: 1,
       nextVisibleAt: null));
+  }
+
+  /// <summary>
+  /// Verifies JSON serialization preserves the queue transport contract.
+  /// </summary>
+  [TestMethod]
+  public void SerializationRoundTrip_ValidMessage_PreservesContract()
+  {
+    QueueAnalysisMessage message = QueueAnalysisMessage.CreateMerchantMessage(
+      Guid.NewGuid(),
+      Guid.NewGuid(),
+      Guid.NewGuid(),
+      Guid.NewGuid(),
+      MerchantAnalysisOptions.Comprehensive(),
+      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
+
+    string json = JsonSerializer.Serialize(message);
+    QueueAnalysisMessage? deserializedMessage = JsonSerializer.Deserialize<QueueAnalysisMessage>(json);
+
+    Assert.AreEqual(message, deserializedMessage);
   }
 }

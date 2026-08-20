@@ -2,6 +2,7 @@ namespace arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 
 using System.Collections.Generic;
 
+using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 
@@ -16,7 +17,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 /// <param name="CompletedCapabilities">The capabilities that produced a usable result.</param>
 /// <param name="FailureReason">The bounded failure reason for a failed execution, or <see langword="null"/>.</param>
 public abstract record AnalysisExecutionResult(
-  AnalysisQueueMessage Message,
+  QueueAnalysisMessage Message,
   IReadOnlyCollection<AnalysisCapability> CompletedCapabilities,
   AnalysisFailureReason? FailureReason)
 {
@@ -34,7 +35,7 @@ public abstract record AnalysisExecutionResult(
 /// <param name="CompletedCapabilities">The capabilities that produced a usable result.</param>
 /// <param name="FailureReason">The bounded failure reason for a failed execution, or <see langword="null"/>.</param>
 public sealed record InvoiceAnalysisExecutionResult(
-  AnalysisQueueMessage Message,
+  QueueAnalysisMessage Message,
   InvoiceAnalysisPatch TargetPatch,
   IReadOnlyCollection<AnalysisCapability> CompletedCapabilities,
   AnalysisFailureReason? FailureReason = null)
@@ -48,7 +49,7 @@ public sealed record InvoiceAnalysisExecutionResult(
 /// <param name="CompletedCapabilities">The capabilities that produced a usable result.</param>
 /// <param name="FailureReason">The bounded failure reason for a failed execution, or <see langword="null"/>.</param>
 public sealed record MerchantAnalysisExecutionResult(
-  AnalysisQueueMessage Message,
+  QueueAnalysisMessage Message,
   MerchantAnalysisPatch TargetPatch,
   IReadOnlyCollection<AnalysisCapability> CompletedCapabilities,
   AnalysisFailureReason? FailureReason = null)

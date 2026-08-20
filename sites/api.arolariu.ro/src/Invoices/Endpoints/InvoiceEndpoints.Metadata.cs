@@ -361,7 +361,7 @@ public static partial class InvoiceEndpoints
   [SwaggerOperation(
     Summary = "Updates a product in a specific invoice in the system.",
     Description = "This endpoint updates the details of a specific product within an invoice. " +
-    "It identifies the product by name and replaces its data with the provided payload. " +
+    "It identifies the product by name and composes the Management get, delete, and add operations in that order. " +
     "The operation validates the new product data, resolves any supplied ClassificationCode against GS1 GPC, and ensures the product exists in the invoice.",
     OperationId = nameof(UpdateProductInInvoiceAsync),
     Tags = [EndpointNameTag])]
@@ -487,7 +487,7 @@ public static partial class InvoiceEndpoints
 
   #region HTTP POST /rest/v1/invoices/{id}/scans
   /// <summary>
-  /// Creates a new scan for a specific invoice.
+  /// Attaches a new scan to a specific invoice.
   /// </summary>
   /// <param name="invoiceManagementService">The invoice management service responsible for handling invoice logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
@@ -495,11 +495,11 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceScanDto">The invoice scan data to be created.</param>
   /// <returns>A task representing the asynchronous operation, indicating the result of the creation.</returns>
   [SwaggerOperation(
-    Summary = "Creates a new invoice scan in the system.",
-    Description = "This endpoint creates a new scan record for a specific invoice in the Invoice Management System. " +
+    Summary = "Attaches a new invoice scan in the system.",
+    Description = "This endpoint attaches a new scan record to a specific invoice in the Invoice Management System. " +
     "It validates the scan data and associates it with the specified invoice. " +
     "The operation ensures the invoice exists and the user is authorized to add scans.",
-    OperationId = nameof(CreateInvoiceScanAsync),
+    OperationId = nameof(AttachInvoiceScanAsync),
     Tags = [EndpointNameTag])]
   [SwaggerResponse(StatusCodes.Status201Created, "The invoice scan was successfully created.", typeof(InvoiceScanResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice scan data is invalid.", typeof(ValidationProblemDetails))]
@@ -512,7 +512,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> CreateInvoiceScanAsync(
+  internal static partial Task<IResult> AttachInvoiceScanAsync(
     [FromServices] IInvoiceManagementService invoiceManagementService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,

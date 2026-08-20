@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Invoices.Services.Orchestration.AnalysisServic
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
@@ -164,7 +165,7 @@ public sealed partial class AnalysisOrchestrationService
   /// </exception>
   /// <inheritdoc/>
   public async Task<InvoiceAnalysisExecutionResult> ExecuteInvoiceAnalysisAsync(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     Invoice invoice,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
@@ -297,7 +298,7 @@ public sealed partial class AnalysisOrchestrationService
     }).ConfigureAwait(false);
 
   private async Task<TResult?> ExecuteBestEffortAsync<TResult>(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     AnalysisCapability capability,
     Func<Task<TResult>> operation,
     ConcurrentQueue<AnalysisCapability> completedCapabilities,
@@ -331,7 +332,7 @@ public sealed partial class AnalysisOrchestrationService
   }
 
   private void RecordCapabilityOutcome(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     AnalysisCapability capability,
     AnalysisOutcome outcome,
     long startedAtTimestamp,
@@ -407,7 +408,7 @@ public sealed partial class AnalysisOrchestrationService
   }
 
   private static InvoiceAnalysisExecutionResult CreateInvoiceFailureResult(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     AnalysisFailureReason failureReason) =>
     new(
       message,
@@ -428,7 +429,7 @@ public sealed partial class AnalysisOrchestrationService
   /// </exception>
   /// <inheritdoc/>
   public async Task<MerchantAnalysisExecutionResult> ExecuteMerchantAnalysisAsync(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     Merchant merchant,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
@@ -490,7 +491,7 @@ public sealed partial class AnalysisOrchestrationService
     }).ConfigureAwait(false);
 
   private static MerchantAnalysisExecutionResult CreateMerchantFailureResult(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     AnalysisFailureReason failureReason) =>
     new(
       message,

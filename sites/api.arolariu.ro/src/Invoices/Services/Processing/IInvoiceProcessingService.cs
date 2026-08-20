@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
@@ -87,14 +88,12 @@ public interface IInvoiceProcessingService
   /// <param name="invoiceIdentifier">Identifier of target invoice.</param>
   /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
   /// <param name="updatedInvoice">New aggregate state.</param>
-  /// <param name="classificationCode">The optional ECOICOP v2 code to resolve canonically.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Updated invoice.</returns>
   Task<Invoice> UpdateInvoice(
     Guid invoiceIdentifier,
     Guid? userIdentifier,
     Invoice updatedInvoice,
-    string? classificationCode,
     CancellationToken cancellationToken);
   #endregion
 
@@ -134,30 +133,6 @@ public interface IInvoiceProcessingService
     Guid invoiceIdentifier,
     Guid? userIdentifier,
     Product product,
-    string? classificationCode,
-    CancellationToken cancellationToken);
-  #endregion
-
-  #region Update Invoice Product API
-  /// <summary>
-  /// Applies a client product update to the first persisted line item matching the supplied name.
-  /// </summary>
-  /// <remarks>
-  /// Duplicate product names remain ambiguous by design; the first matching line item is updated.
-  /// Server-owned enrichment and workflow fields are retained.
-  /// </remarks>
-  /// <param name="invoiceIdentifier">Target invoice identifier.</param>
-  /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
-  /// <param name="productName">The original product name used to locate the first matching line item.</param>
-  /// <param name="updatedProduct">The client-editable values to apply to the selected line item.</param>
-  /// <param name="classificationCode">The optional GS1 GPC code to resolve canonically.</param>
-  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
-  /// <returns>The updated persisted line item after the aggregate write path has canonicalized it.</returns>
-  Task<Product> UpdateProduct(
-    Guid invoiceIdentifier,
-    Guid? userIdentifier,
-    string productName,
-    Product updatedProduct,
     string? classificationCode,
     CancellationToken cancellationToken);
   #endregion
@@ -204,7 +179,7 @@ public interface IInvoiceProcessingService
     CancellationToken cancellationToken);
   #endregion
 
-  #region Create Invoice Scan API
+  #region Attach Invoice Scan API
   /// <summary>
   /// Attaches a scan value to an existing invoice.
   /// </summary>
@@ -213,7 +188,7 @@ public interface IInvoiceProcessingService
   /// <param name="scan">Scans data (raw / encoded representation).</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>A task that completes after the scan is attached.</returns>
-  Task CreateInvoiceScan(Guid invoiceIdentifier, Guid? userIdentifier, InvoiceScan scan, CancellationToken cancellationToken);
+  Task AttachInvoiceScan(Guid invoiceIdentifier, Guid? userIdentifier, InvoiceScan scan, CancellationToken cancellationToken);
   #endregion
 
   #region Read Invoice Scans API
@@ -352,28 +327,6 @@ public interface IInvoiceProcessingService
   Task DeleteMerchant(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
-  #region Persist Analysis Results API
-  /// <summary>
-  /// Applies an immutable invoice analysis execution result to the durable target invoice.
-  /// </summary>
-  /// <param name="executionResult">The immutable invoice analysis execution result to persist.</param>
-  /// <param name="cancellationToken">Cancellation token to abort the operation.</param>
-  /// <returns>The supplied execution result after target persistence completes.</returns>
-  Task<InvoiceAnalysisExecutionResult> PersistInvoiceAnalysisAsync(
-    InvoiceAnalysisExecutionResult executionResult,
-    CancellationToken cancellationToken);
-
-  /// <summary>
-  /// Applies an immutable merchant analysis execution result onto the durable merchant aggregate.
-  /// </summary>
-  /// <param name="executionResult">The immutable merchant analysis execution result to persist.</param>
-  /// <param name="cancellationToken">Cancellation token to abort the operation.</param>
-  /// <returns>The persisted execution result.</returns>
-  Task<MerchantAnalysisExecutionResult> PersistMerchantAnalysisAsync(
-    MerchantAnalysisExecutionResult executionResult,
-    CancellationToken cancellationToken);
-  #endregion
-
   #region Analysis Queue
   /// <summary>Validates invoice ownership and queues a request with resolved analysis options.</summary>
   /// <param name="invoiceId">The invoice identifier to analyze.</param>
@@ -421,7 +374,7 @@ public interface IInvoiceProcessingService
   /// <param name="cancellationToken">The token used to cancel capability execution.</param>
   /// <returns>The immutable invoice analysis execution result.</returns>
   Task<InvoiceAnalysisExecutionResult> ExecuteInvoiceAnalysisAsync(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     Invoice invoice,
     CancellationToken cancellationToken);
 
@@ -431,7 +384,7 @@ public interface IInvoiceProcessingService
   /// <param name="cancellationToken">The token used to cancel capability execution.</param>
   /// <returns>The immutable merchant analysis execution result.</returns>
   Task<MerchantAnalysisExecutionResult> ExecuteMerchantAnalysisAsync(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     Merchant merchant,
     CancellationToken cancellationToken);
 
@@ -448,7 +401,7 @@ public interface IInvoiceProcessingService
   /// <summary>Receives and processes at most one visible analysis message.</summary>
   /// <param name="cancellationToken">The token used to cancel dequeue or processing.</param>
   /// <returns><see langword="true"/> when a message was received; otherwise, <see langword="false"/>.</returns>
-  Task<bool> TryExecuteNextAnalysisAsync(CancellationToken cancellationToken);
+  Task<bool> ProcessAnalysisAsync(CancellationToken cancellationToken);
   #endregion
 
   #endregion

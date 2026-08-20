@@ -2,10 +2,12 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Services.Processing;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -21,6 +23,7 @@ using arolariu.Backend.Domain.Invoices.Services.Orchestration.AnalysisService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
+using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -33,6 +36,41 @@ using Moq;
 [TestClass]
 public sealed class InvoiceProcessingServiceCurrentArchitectureTests
 {
+  /// <summary>Verifies exact-name reads do not select an overlapping product name.</summary>
+  [TestMethod]
+  public async Task GetProduct_OverlappingNames_ReturnsExactMatch()
+  {
+    Guid invoiceId = Guid.NewGuid();
+    Guid userId = Guid.NewGuid();
+    var chocolate = new Product { Name = "Milk Chocolate" };
+    var milk = new Product { Name = "Milk" };
+    var invoice = new Invoice
+    {
+      id = invoiceId,
+      UserIdentifier = userId,
+      Items = [chocolate, milk],
+    };
+    var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
+    invoiceOrchestration.Setup(service => service.ReadInvoiceObject(
+        invoiceId,
+        userId,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+    var service = new InvoiceProcessingService(
+      invoiceOrchestration.Object,
+      Mock.Of<IMerchantOrchestrationService>(),
+      Mock.Of<IAnalysisOrchestrationService>(),
+      NullLoggerFactory.Instance);
+
+    Product result = await service.GetProduct(
+      invoiceId,
+      userId,
+      "Milk",
+      CancellationToken.None);
+
+    Assert.AreSame(milk, result);
+  }
+
   /// <summary>
   /// Verifies an update without a classification selection bypasses Analysis Orchestration.
   /// </summary>
@@ -65,7 +103,6 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       invoiceId,
       userId,
       updatedInvoice,
-      classificationCode: null,
       CancellationToken.None);
 
     Assert.IsNull(result.Classification);
@@ -151,9 +188,15 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
   /// Verifies a successful queue delivery persists the target before deleting the message.
   /// </summary>
   [TestMethod]
-  public async Task TryExecuteNextAnalysisAsync_Success_PersistsBeforeDelete()
+  public async Task ProcessAnalysisAsync_Success_PersistsBeforeDelete()
   {
     AnalysisQueueReceipt receipt = CreateReceipt(dequeueCount: 1);
+    Assert.IsTrue(ActivityContext.TryParse(
+      receipt.Message!.TraceParent,
+      traceState: null,
+      isRemote: true,
+      out ActivityContext parentContext));
+    using var activities = new InvoiceActivityRecorder();
     var invoice = new Invoice
     {
       id = receipt.Message!.TargetId,
@@ -201,18 +244,22 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       analysis.Object,
       NullLoggerFactory.Instance);
 
-    bool result = await service.TryExecuteNextAnalysisAsync(CancellationToken.None);
+    bool result = await service.ProcessAnalysisAsync(CancellationToken.None);
 
     Assert.IsTrue(result);
     List<string> expectedOperations = ["receive", "read-target", "analyze", "read-for-persistence", "persist", "delete"];
     CollectionAssert.AreEqual(expectedOperations, operations);
+    Activity? consumer = activities.FindActivity(nameof(InvoiceProcessingService.ProcessAnalysisAsync));
+    Assert.IsNotNull(consumer);
+    Assert.AreEqual(parentContext.TraceId, consumer.TraceId);
+    Assert.AreEqual(parentContext.SpanId, consumer.ParentSpanId);
   }
 
   /// <summary>
   /// Verifies a persistence failure below dequeue five leaves the message for visibility recovery.
   /// </summary>
   [TestMethod]
-  public async Task TryExecuteNextAnalysisAsync_PersistenceFailure_DoesNotDeleteMessage()
+  public async Task ProcessAnalysisAsync_PersistenceFailure_DoesNotDeleteMessage()
   {
     AnalysisQueueReceipt receipt = CreateReceipt(dequeueCount: 1);
     var invoice = new Invoice
@@ -251,7 +298,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       analysis.Object,
       NullLoggerFactory.Instance);
 
-    bool result = await service.TryExecuteNextAnalysisAsync(CancellationToken.None);
+    bool result = await service.ProcessAnalysisAsync(CancellationToken.None);
 
     Assert.IsTrue(result);
     analysis.Verify(service => service.DeleteAnalysisAsync(
@@ -263,7 +310,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
   /// Verifies malformed payloads below the terminal delivery remain queued for visibility recovery.
   /// </summary>
   [TestMethod]
-  public async Task TryExecuteNextAnalysisAsync_FirstMalformedDelivery_DoesNotDeleteMessage()
+  public async Task ProcessAnalysisAsync_FirstMalformedDelivery_DoesNotDeleteMessage()
   {
     AnalysisQueueReceipt receipt = AnalysisQueueReceipt.CreateMalformed(
       "{not-json",
@@ -282,7 +329,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       analysis.Object,
       NullLoggerFactory.Instance);
 
-    bool result = await service.TryExecuteNextAnalysisAsync(CancellationToken.None);
+    bool result = await service.ProcessAnalysisAsync(CancellationToken.None);
 
     Assert.IsTrue(result);
     analysis.Verify(service => service.DeleteAnalysisAsync(
@@ -294,7 +341,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
   /// Verifies the fifth malformed delivery is deleted through Analysis Orchestration.
   /// </summary>
   [TestMethod]
-  public async Task TryExecuteNextAnalysisAsync_FifthMalformedDelivery_DeletesMessage()
+  public async Task ProcessAnalysisAsync_FifthMalformedDelivery_DeletesMessage()
   {
     AnalysisQueueReceipt receipt = AnalysisQueueReceipt.CreateMalformed(
       "{not-json",
@@ -317,7 +364,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       analysis.Object,
       NullLoggerFactory.Instance);
 
-    bool result = await service.TryExecuteNextAnalysisAsync(CancellationToken.None);
+    bool result = await service.ProcessAnalysisAsync(CancellationToken.None);
 
     Assert.IsTrue(result);
     analysis.VerifyAll();
@@ -343,7 +390,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
     {
       id = invoiceId,
       UserIdentifier = userId,
-      Classification = selection,
+      ClassificationCode = selection.Code,
     };
     var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
     var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
@@ -353,7 +400,9 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(canonical);
     invoiceOrchestration.Setup(service => service.UpdateInvoiceObject(
-        It.Is<Invoice>(invoice => ReferenceEquals(invoice.Classification, canonical)),
+        It.Is<Invoice>(invoice =>
+          ReferenceEquals(invoice.Classification, canonical) &&
+          invoice.ClassificationCode == null),
         invoiceId,
         userId,
         It.IsAny<CancellationToken>()))
@@ -365,10 +414,11 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       NullLoggerFactory.Instance);
 
     Invoice result = await service
-      .UpdateInvoice(invoiceId, userId, updatedInvoice, selection.Code, CancellationToken.None)
+      .UpdateInvoice(invoiceId, userId, updatedInvoice, CancellationToken.None)
       .ConfigureAwait(false);
 
     Assert.AreSame(canonical, result.Classification);
+    Assert.IsNull(result.ClassificationCode);
   }
 
   /// <summary>
@@ -414,66 +464,6 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
   }
 
   /// <summary>
-  /// Verifies product updates replace client taxonomy data with the canonical taxonomy snapshot.
-  /// </summary>
-  [TestMethod]
-  public async Task UpdateProduct_ManualClassification_PersistsCanonicalClassification()
-  {
-    Guid invoiceId = Guid.NewGuid();
-    Guid userId = Guid.NewGuid();
-    StandardClassification selection = CreateClassification(
-      ClassificationSystem.Gs1Gpc,
-      "10000001",
-      "Client supplied label");
-    StandardClassification canonical = CreateClassification(
-      ClassificationSystem.Gs1Gpc,
-      "10000001",
-      "Milk");
-    var persistedProduct = new Product { Name = "Milk" };
-    var updatedProduct = new Product { Name = "Milk", Classification = selection };
-    var invoice = new Invoice
-    {
-      id = invoiceId,
-      UserIdentifier = userId,
-      Items = [persistedProduct],
-    };
-    var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
-    var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
-    analysis.Setup(service => service.ResolveManualClassificationAsync(
-        selection.Code,
-        ClassificationSystem.Gs1Gpc,
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync(canonical);
-    invoiceOrchestration.Setup(service => service.ReadInvoiceObject(
-        invoiceId,
-        userId,
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync(invoice);
-    invoiceOrchestration.Setup(service => service.UpdateInvoiceObject(
-        It.Is<Invoice>(updated => ReferenceEquals(updated.Items.Single().Classification, canonical)),
-        invoiceId,
-        userId,
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync(invoice);
-    var service = new InvoiceProcessingService(
-      invoiceOrchestration.Object,
-      Mock.Of<IMerchantOrchestrationService>(),
-      analysis.Object,
-      NullLoggerFactory.Instance);
-
-    Product result = await service
-      .UpdateProduct(invoiceId, userId, "Milk", updatedProduct, selection.Code, CancellationToken.None)
-      .ConfigureAwait(false);
-
-    Assert.AreSame(canonical, result.Classification);
-    Assert.AreNotSame(persistedProduct, result);
-    Assert.AreSame(result, invoice.Items.Single());
-    Assert.IsTrue(result.Metadata.IsEdited);
-    Assert.IsFalse(persistedProduct.Metadata.IsEdited);
-    Assert.AreSame(selection, updatedProduct.Classification);
-  }
-
-  /// <summary>
   /// Verifies a transient capability failure marks the execution as failed so the queue message can retry.
   /// </summary>
   [TestMethod]
@@ -490,12 +480,12 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       invoiceClassification: false,
       recipeGeneration: false,
       maximumRecipes: 0);
-    AnalysisQueueMessage message = AnalysisQueueMessage.CreateInvoice(
+    QueueAnalysisMessage message = QueueAnalysisMessage.CreateInvoiceMessage(
       invoiceId,
       userId,
       Guid.NewGuid(),
       options,
-      "00-trace-span-01");
+      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
     var invoice = new Invoice { id = invoiceId, UserIdentifier = userId };
     var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
     InvoiceAnalysisExecutionResult expected = new(
@@ -526,7 +516,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
   /// Verifies the unified Processing service owns queue consumption and reports an empty queue.
   /// </summary>
   [TestMethod]
-  public async Task TryExecuteNextAnalysisAsync_NoVisibleMessage_ReturnsFalse()
+  public async Task ProcessAnalysisAsync_NoVisibleMessage_ReturnsFalse()
   {
     var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
     analysis.Setup(service => service.ReceiveAnalysisAsync(
@@ -540,7 +530,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       NullLoggerFactory.Instance);
 
     bool result = await service
-      .TryExecuteNextAnalysisAsync(CancellationToken.None)
+      .ProcessAnalysisAsync(CancellationToken.None)
       .ConfigureAwait(false);
 
     Assert.IsFalse(result);
@@ -571,7 +561,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       .Setup(service => service.ReadInvoiceObject(invoiceId, userIdentifier, It.IsAny<CancellationToken>()))
       .ReturnsAsync(invoice);
     analysis.Setup(service => service.EnqueueAnalysisAsync(
-        It.Is<AnalysisQueueMessage>(message =>
+        It.Is<QueueAnalysisMessage>(message =>
           message.TargetId == invoiceId
           && message.RequestedBy == userIdentifier
           && message.InvoiceOptions!.Profile == AnalysisProfile.Fast),
@@ -697,12 +687,12 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       invoiceClassification: false,
       recipeGeneration: false,
       maximumRecipes: 0);
-    AnalysisQueueMessage message = AnalysisQueueMessage.CreateInvoice(
+    QueueAnalysisMessage message = QueueAnalysisMessage.CreateInvoiceMessage(
       Guid.NewGuid(),
       Guid.NewGuid(),
       Guid.NewGuid(),
       options,
-      "00-trace-span-01");
+      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
 
     return new AnalysisQueueReceipt(message, "message-1", "receipt-1", dequeueCount, null);
   }

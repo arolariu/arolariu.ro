@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
@@ -11,6 +13,46 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 public sealed partial class AnalysisFoundationService
 {
+  private static void ValidateScansAreSet(IReadOnlyList<InvoiceScan> scans)
+  {
+    ArgumentNullException.ThrowIfNull(scans);
+
+    if (scans.Count == 0)
+    {
+      throw new ArgumentException("At least one invoice scan is required for typed receipt extraction.", nameof(scans));
+    }
+  }
+
+  private static void ValidateScanIsUsable(
+    InvoiceScan scan,
+    int index)
+  {
+    if (!InvoiceScan.NotDefault(scan))
+    {
+      throw new ArgumentException(
+        $"Invoice scan at index {index} must not be the default sentinel value.",
+        nameof(scan));
+    }
+
+    if (!InvoiceScan.IsSupportedByDocumentIntelligence(scan.Type))
+    {
+      throw new ArgumentException(
+        $"Invoice scan at index {index} has an unsupported scan type.",
+        nameof(scan));
+    }
+
+    if (scan.Location is null || !scan.Location.IsAbsoluteUri)
+    {
+      throw new ArgumentException(
+        $"Invoice scan at index {index} must have an absolute location URI.",
+        nameof(scan));
+    }
+  }
+
+  private static void ValidateDocumentIntelligenceRecordIsSet(
+    DocumentIntelligenceRecord documentIntelligenceRecord) =>
+    ArgumentNullException.ThrowIfNull(documentIntelligenceRecord);
+
   private static void ValidateProductsAreSet(IReadOnlyList<ProductAnalysisInput> products)
   {
     ArgumentNullException.ThrowIfNull(products);

@@ -7,8 +7,6 @@ using arolariu.Backend.Common.Options;
 
 using Azure.Storage.Queues;
 
-using Microsoft.Extensions.Logging;
-
 public sealed partial class AzureStorageQueueBroker
 {
   private const string AnalysisQueueName = "invoice-analysis";
@@ -50,9 +48,4 @@ public sealed partial class AzureStorageQueueBroker
     builder.Host = builder.Host.Replace(".blob.", ".queue.", StringComparison.OrdinalIgnoreCase);
     return builder.Uri;
   }
-
-  [LoggerMessage(
-    Level = LogLevel.Debug,
-    Message = "Azure Storage Queue Broker operation {OperationName} is starting.")]
-  private static partial void LogQueueOperationStarted(ILogger logger, string operationName);
 }

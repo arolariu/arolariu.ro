@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
@@ -31,7 +32,7 @@ public sealed class InvoiceProcessingReconciliationTests
 {
   /// <summary>Verifies product-code matching preserves enrichment and refreshes OCR confidence.</summary>
   [TestMethod]
-  public async Task PersistInvoiceAnalysisAsync_ProductCodeMatch_PreservesEnrichment()
+  public async Task ProcessAnalysisAsync_ProductCodeMatch_PreservesEnrichment()
   {
     Guid invoiceId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
@@ -72,7 +73,7 @@ public sealed class InvoiceProcessingReconciliationTests
 
   /// <summary>Verifies duplicate attribute matches consume previous items once and leave unmatched items clean.</summary>
   [TestMethod]
-  public async Task PersistInvoiceAnalysisAsync_DuplicateAttributeMatches_UsesFifoAndLeavesUnmatchedClean()
+  public async Task ProcessAnalysisAsync_DuplicateAttributeMatches_UsesFifoAndLeavesUnmatchedClean()
   {
     Guid invoiceId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
@@ -119,6 +120,12 @@ public sealed class InvoiceProcessingReconciliationTests
     Invoice invoice,
     InvoiceAnalysisExecutionResult execution)
   {
+    var receipt = new AnalysisQueueReceipt(
+      execution.Message,
+      "message-1",
+      "pop-receipt-1",
+      dequeueCount: 1,
+      nextVisibleAt: null);
     var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
     invoiceOrchestration.Setup(service => service.ReadInvoiceObject(
         invoice.id,
@@ -131,13 +138,28 @@ public sealed class InvoiceProcessingReconciliationTests
         invoice.UserIdentifier,
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(invoice);
+    var analysisOrchestration = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
+    analysisOrchestration.Setup(service => service.ReceiveAnalysisAsync(
+        TimeSpan.FromMinutes(2),
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(receipt);
+    analysisOrchestration.Setup(service => service.ExecuteInvoiceAnalysisAsync(
+        execution.Message,
+        invoice,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(execution);
+    analysisOrchestration.Setup(service => service.DeleteAnalysisAsync(
+        receipt,
+        It.IsAny<CancellationToken>()))
+      .Returns(Task.CompletedTask);
     var service = new InvoiceProcessingService(
       invoiceOrchestration.Object,
       Mock.Of<IMerchantOrchestrationService>(),
-      Mock.Of<IAnalysisOrchestrationService>(),
+      analysisOrchestration.Object,
       NullLoggerFactory.Instance);
 
-    await service.PersistInvoiceAnalysisAsync(execution, CancellationToken.None);
+    bool processed = await service.ProcessAnalysisAsync(CancellationToken.None);
+    Assert.IsTrue(processed);
     return invoice;
   }
 
@@ -155,12 +177,12 @@ public sealed class InvoiceProcessingReconciliationTests
       invoiceClassification: false,
       recipeGeneration: false,
       maximumRecipes: 0);
-    AnalysisQueueMessage message = AnalysisQueueMessage.CreateInvoice(
+    QueueAnalysisMessage message = QueueAnalysisMessage.CreateInvoiceMessage(
       invoiceId,
       userId,
       Guid.NewGuid(),
       options,
-      "00-trace-span-01");
+      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
     var extraction = new ReceiptExtractionResult(
       products,
       new PaymentInformation(),

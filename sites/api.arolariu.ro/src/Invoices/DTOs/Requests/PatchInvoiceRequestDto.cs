@@ -145,6 +145,7 @@ public readonly record struct PatchInvoiceRequestDto(
       Name = !string.IsNullOrWhiteSpace(Name) ? Name : existing.Name,
       Description = !string.IsNullOrWhiteSpace(Description) ? Description : existing.Description,
       Classification = existing.Classification,
+      ClassificationCode = ClassificationCode,
       PaymentInformation = PaymentInformation ?? existing.PaymentInformation,
       MerchantReference = MerchantReference.HasValue && MerchantReference.Value != Guid.Empty
         ? MerchantReference.Value

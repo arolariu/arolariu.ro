@@ -63,12 +63,12 @@ public sealed partial class AzureStorageQueueBroker : IQueueBroker
 
   /// <inheritdoc/>
   public async ValueTask<string> EnqueueMessageAsync(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     CancellationToken cancellationToken)
   {
     ArgumentNullException.ThrowIfNull(message);
     using var activity = InvoicePackageTracing.StartActivity(nameof(EnqueueMessageAsync));
-    LogQueueOperationStarted(logger, nameof(EnqueueMessageAsync));
+    logger.LogQueueOperationStarted(nameof(EnqueueMessageAsync));
 
     Response<SendReceipt> response = await queueClient
       .SendMessageAsync(
@@ -88,7 +88,7 @@ public sealed partial class AzureStorageQueueBroker : IQueueBroker
   {
     ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(visibilityTimeout, TimeSpan.Zero);
     using var activity = InvoicePackageTracing.StartActivity(nameof(DequeueMessageAsync));
-    LogQueueOperationStarted(logger, nameof(DequeueMessageAsync));
+    logger.LogQueueOperationStarted(nameof(DequeueMessageAsync));
 
     Response<QueueMessage[]> response = await queueClient
       .ReceiveMessagesAsync(1, visibilityTimeout, cancellationToken)
@@ -101,11 +101,11 @@ public sealed partial class AzureStorageQueueBroker : IQueueBroker
 
     QueueMessage message = response.Value[0];
     string rawPayload = message.Body.ToString();
-    AnalysisQueueMessage? payload;
+    QueueAnalysisMessage? payload;
 
     try
     {
-      payload = JsonSerializer.Deserialize<AnalysisQueueMessage>(rawPayload);
+      payload = JsonSerializer.Deserialize<QueueAnalysisMessage>(rawPayload);
     }
     catch (Exception exception) when (exception is JsonException or ArgumentException)
     {
@@ -144,7 +144,7 @@ public sealed partial class AzureStorageQueueBroker : IQueueBroker
     ArgumentNullException.ThrowIfNull(receipt);
     ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(visibilityTimeout, TimeSpan.Zero);
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMessageVisibilityAsync));
-    LogQueueOperationStarted(logger, nameof(UpdateMessageVisibilityAsync));
+    logger.LogQueueOperationStarted(nameof(UpdateMessageVisibilityAsync));
 
     Response<UpdateReceipt> response = await queueClient
       .UpdateMessageAsync(
@@ -168,7 +168,7 @@ public sealed partial class AzureStorageQueueBroker : IQueueBroker
   {
     ArgumentNullException.ThrowIfNull(receipt);
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMessageAsync));
-    LogQueueOperationStarted(logger, nameof(DeleteMessageAsync));
+    logger.LogQueueOperationStarted(nameof(DeleteMessageAsync));
 
     await queueClient
       .DeleteMessageAsync(receipt.MessageId, receipt.PopReceipt, cancellationToken)
@@ -179,7 +179,7 @@ public sealed partial class AzureStorageQueueBroker : IQueueBroker
   public async ValueTask<QueueStatus> GetQueueStatusAsync(CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(GetQueueStatusAsync));
-    LogQueueOperationStarted(logger, nameof(GetQueueStatusAsync));
+    logger.LogQueueOperationStarted(nameof(GetQueueStatusAsync));
     Response<bool> existsResponse = await queueClient.ExistsAsync(cancellationToken).ConfigureAwait(false);
 
     if (!existsResponse.Value)

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Foundation;
@@ -45,12 +46,12 @@ public sealed class AnalysisOrchestrationCurrentArchitectureTests
       invoiceClassification: false,
       recipeGeneration: false,
       maximumRecipes: 0);
-    AnalysisQueueMessage message = AnalysisQueueMessage.CreateInvoice(
+    QueueAnalysisMessage message = QueueAnalysisMessage.CreateInvoiceMessage(
       Guid.NewGuid(),
       Guid.NewGuid(),
       Guid.NewGuid(),
       options,
-      "00-trace-span-01");
+      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
     var invoice = new Invoice
     {
       id = message.TargetId,
@@ -171,12 +172,12 @@ public sealed class AnalysisOrchestrationCurrentArchitectureTests
       invoiceClassification: false,
       recipeGeneration: false,
       maximumRecipes: 0);
-    AnalysisQueueMessage message = AnalysisQueueMessage.CreateInvoice(
+    QueueAnalysisMessage message = QueueAnalysisMessage.CreateInvoiceMessage(
       Guid.NewGuid(),
       Guid.NewGuid(),
       Guid.NewGuid(),
       options,
-      "00-trace-span-01");
+      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
     var invoice = new Invoice { id = message.TargetId, UserIdentifier = message.RequestedBy };
     var analysis = new Mock<IAnalysisFoundationService>(MockBehavior.Strict);
     analysis.Setup(service => service.GenerateInvoiceSummaryAsync(
@@ -203,12 +204,12 @@ public sealed class AnalysisOrchestrationCurrentArchitectureTests
   [TestMethod]
   public async Task EnqueueAnalysisAsync_ValidMessage_ReturnsMessageId()
   {
-    AnalysisQueueMessage message = AnalysisQueueMessage.CreateInvoice(
+    QueueAnalysisMessage message = QueueAnalysisMessage.CreateInvoiceMessage(
       Guid.NewGuid(),
       Guid.NewGuid(),
       Guid.NewGuid(),
       InvoiceAnalysisOptions.Fast(),
-      "00-trace-span-01");
+      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
     var queue = new Mock<IAnalysisQueueFoundationService>(MockBehavior.Strict);
     var analysis = new Mock<IAnalysisFoundationService>(MockBehavior.Strict);
     queue.Setup(service => service.EnqueueAsync(message, It.IsAny<CancellationToken>()))
@@ -232,12 +233,12 @@ public sealed class AnalysisOrchestrationCurrentArchitectureTests
   [TestMethod]
   public async Task ReceiveAnalysisAsync_VisibleMessage_DelegatesToFoundationDequeue()
   {
-    AnalysisQueueMessage message = AnalysisQueueMessage.CreateInvoice(
+    QueueAnalysisMessage message = QueueAnalysisMessage.CreateInvoiceMessage(
       Guid.NewGuid(),
       Guid.NewGuid(),
       Guid.NewGuid(),
       InvoiceAnalysisOptions.Fast(),
-      "00-trace-span-01");
+      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
     var receipt = new AnalysisQueueReceipt(
       message,
       "message-1",

@@ -89,7 +89,7 @@ public sealed class AnalysisWorker : BackgroundService
         await using (scope.ConfigureAwait(false))
         {
           var management = scope.ServiceProvider.GetRequiredService<IInvoiceManagementService>();
-          processed = await management.TryExecuteNextAnalysisAsync(stoppingToken).ConfigureAwait(false);
+          processed = await management.ProcessAnalysisAsync(stoppingToken).ConfigureAwait(false);
         }
       }
       catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

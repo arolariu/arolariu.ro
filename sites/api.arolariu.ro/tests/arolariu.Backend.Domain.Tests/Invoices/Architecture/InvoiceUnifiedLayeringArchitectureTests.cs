@@ -118,6 +118,35 @@ public sealed class InvoiceUnifiedLayeringArchitectureTests
     Assert.IsNull(typeof(IInvoiceManagementService).GetMethod("EnsureAnalysisQueueAsync"));
   }
 
+  /// <summary>
+  /// Verifies internal persistence workflows and product replacement are absent from public service contracts.
+  /// </summary>
+  [TestMethod]
+  public void ServiceContracts_InternalWorkflows_ExposeOnlyApprovedOperations()
+  {
+    Type processingContract = RequireType($"{ServicesNamespace}.Processing.IInvoiceProcessingService");
+
+    Assert.IsNull(typeof(IInvoiceManagementService).GetMethod("PersistInvoiceAnalysisAsync"));
+    Assert.IsNull(typeof(IInvoiceManagementService).GetMethod("PersistMerchantAnalysisAsync"));
+    Assert.IsNull(processingContract.GetMethod("PersistInvoiceAnalysisAsync"));
+    Assert.IsNull(processingContract.GetMethod("PersistMerchantAnalysisAsync"));
+    Assert.IsNull(typeof(IInvoiceManagementService).GetMethod("UpdateProduct"));
+    Assert.IsNull(processingContract.GetMethod("UpdateProduct"));
+    Assert.IsNotNull(typeof(IInvoiceManagementService).GetMethod("ProcessAnalysisAsync"));
+    Assert.IsNotNull(processingContract.GetMethod("ProcessAnalysisAsync"));
+    Assert.IsNull(typeof(IInvoiceManagementService).GetMethod("CreateInvoiceScan"));
+    Assert.IsNull(processingContract.GetMethod("CreateInvoiceScan"));
+    Assert.IsNotNull(typeof(IInvoiceManagementService).GetMethod("AttachInvoiceScan"));
+    Assert.IsNotNull(processingContract.GetMethod("AttachInvoiceScan"));
+
+    MethodInfo managementUpdateInvoice = typeof(IInvoiceManagementService).GetMethod("UpdateInvoice")
+      ?? throw new AssertFailedException("Management UpdateInvoice was not found.");
+    MethodInfo processingUpdateInvoice = processingContract.GetMethod("UpdateInvoice")
+      ?? throw new AssertFailedException("Processing UpdateInvoice was not found.");
+    Assert.IsFalse(managementUpdateInvoice.GetParameters().Any(parameter => parameter.ParameterType == typeof(string)));
+    Assert.IsFalse(processingUpdateInvoice.GetParameters().Any(parameter => parameter.ParameterType == typeof(string)));
+  }
+
   private static Type RequireType(string fullName) =>
     InvoiceAssembly.GetType(fullName)
     ?? throw new AssertFailedException($"Required unified architecture type '{fullName}' was not found.");

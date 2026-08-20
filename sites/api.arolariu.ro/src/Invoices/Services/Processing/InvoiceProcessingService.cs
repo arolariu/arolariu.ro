@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Common.Telemetry.Tracing;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
@@ -306,7 +307,6 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   /// <param name="updatedInvoice">The replacement invoice state.</param>
   /// <param name="invoiceIdentifier">The persisted invoice identifier.</param>
   /// <param name="userIdentifier">The optional owning user partition.</param>
-  /// <param name="classificationCode">The optional ECOICOP v2 code to resolve canonically.</param>
   /// <param name="cancellationToken">The token used to cancel classification or persistence.</param>
   /// <returns>The persisted invoice aggregate.</returns>
   /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceValidationException">
@@ -320,23 +320,23 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
     Guid invoiceIdentifier,
     Guid? userIdentifier,
     Invoice updatedInvoice,
-    string? classificationCode,
     CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoice));
     var sw = Stopwatch.StartNew();
 
-    if (classificationCode is not null)
+    if (updatedInvoice.ClassificationCode is not null)
     {
       updatedInvoice.Classification = await analysisOrchestrationService
         .ResolveManualClassificationAsync(
-          classificationCode,
+          updatedInvoice.ClassificationCode,
           ClassificationSystem.EcoicopV2,
           cancellationToken)
         .ConfigureAwait(false);
     }
 
+    updatedInvoice.ClassificationCode = null;
     var newInvoice = await invoiceOrchestrationService
       .UpdateInvoiceObject(updatedInvoice, invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
@@ -466,82 +466,6 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   }).ConfigureAwait(false);
   #endregion
 
-  #region Update Product API
-  /// <summary>Replaces client-editable fields on the first product matching an exact name.</summary>
-  /// <param name="productName">The case-insensitive persisted name used to select the first product.</param>
-  /// <param name="updatedProduct">The client-editable replacement values.</param>
-  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
-  /// <param name="userIdentifier">The optional owning user partition.</param>
-  /// <param name="classificationCode">The optional GS1 GPC code to resolve canonically.</param>
-  /// <param name="cancellationToken">The token used to cancel classification or persistence.</param>
-  /// <returns>The merged product persisted on the invoice.</returns>
-  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceValidationException">
-  /// Thrown when a required argument is missing, no exact-name product exists, or a classification code is invalid.
-  /// </exception>
-  /// <inheritdoc/>
-  public async Task<Product> UpdateProduct(
-    Guid invoiceIdentifier,
-    Guid? userIdentifier,
-    string productName,
-    Product updatedProduct,
-    string? classificationCode,
-    CancellationToken cancellationToken) =>
-  await TryCatchAsync(async () =>
-  {
-    ArgumentException.ThrowIfNullOrWhiteSpace(productName);
-    ArgumentNullException.ThrowIfNull(updatedProduct);
-
-    using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateProduct));
-    activity?.SetInvoiceContext(invoiceIdentifier, userIdentifier);
-
-    var invoice = await invoiceOrchestrationService
-      .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
-
-    List<Product> products = [.. invoice.Items];
-    int selectedProductIndex = products.FindIndex(product =>
-      string.Equals(product.Name, productName, StringComparison.OrdinalIgnoreCase));
-
-    if (selectedProductIndex < 0)
-    {
-      throw new ProductNotFoundException(invoiceIdentifier);
-    }
-
-    Product persistedProduct = products[selectedProductIndex];
-    StandardClassification? canonicalClassification = null;
-    if (classificationCode is not null)
-    {
-      canonicalClassification = await analysisOrchestrationService
-        .ResolveManualClassificationAsync(
-          classificationCode,
-          ClassificationSystem.Gs1Gpc,
-          cancellationToken)
-        .ConfigureAwait(false);
-    }
-
-    var canonicalUpdate = new Product
-    {
-      Name = updatedProduct.Name,
-      Classification = canonicalClassification,
-      Quantity = updatedProduct.Quantity,
-      QuantityUnit = updatedProduct.QuantityUnit,
-      ProductCode = updatedProduct.ProductCode,
-      Price = updatedProduct.Price,
-      AllergenAssessment = updatedProduct.AllergenAssessment,
-    };
-    Product mergedProduct = Product.Merge(persistedProduct, canonicalUpdate);
-    products[selectedProductIndex] = mergedProduct;
-    invoice.Items = products;
-
-    await invoiceOrchestrationService
-      .UpdateInvoiceObject(invoice, invoiceIdentifier, userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
-
-    activity?.SetTag("result.product_found", true);
-    return mergedProduct;
-  }).ConfigureAwait(false);
-  #endregion
-
   #region Get Products API
   /// <summary>Returns every product currently stored on an invoice.</summary>
   /// <param name="invoiceIdentifier">The target invoice identifier.</param>
@@ -566,12 +490,12 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Get Product API
-  /// <summary>Returns the first invoice product whose name contains the supplied text.</summary>
-  /// <param name="productName">The case-insensitive text to find within a product name.</param>
+  /// <summary>Returns the first invoice product whose name exactly matches the supplied text.</summary>
+  /// <param name="productName">The case-insensitive exact product name.</param>
   /// <param name="invoiceIdentifier">The target invoice identifier.</param>
   /// <param name="userIdentifier">The optional owning user partition.</param>
   /// <param name="cancellationToken">The token used to cancel the read.</param>
-  /// <returns>The first matching product, or a default product when no item matches.</returns>
+  /// <returns>The first exact-name product.</returns>
   /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyValidationException">
   /// Thrown when the invoice is unavailable to the request.
   /// </exception>
@@ -584,12 +508,9 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
       .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
 
-    var products = invoice.Items;
-    var product = products.FirstOrDefault(
-      p => p.Name is not null && p.Name.Contains(productName, StringComparison.InvariantCultureIgnoreCase),
-      new Product());
-
-    return product;
+    return invoice.Items.FirstOrDefault(product =>
+      string.Equals(product.Name, productName, StringComparison.OrdinalIgnoreCase))
+      ?? throw new ProductNotFoundException(invoiceIdentifier);
   }).ConfigureAwait(false);
   #endregion
 
@@ -663,7 +584,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   }).ConfigureAwait(false);
   #endregion
 
-  #region Create Invoice Scan API
+  #region Attach Invoice Scan API
   /// <summary>Attaches one scan to an existing invoice through invoice orchestration.</summary>
   /// <param name="scan">The scan to attach.</param>
   /// <param name="invoiceIdentifier">The target invoice identifier.</param>
@@ -674,10 +595,10 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   /// Thrown when invoice orchestration cannot attach the scan.
   /// </exception>
   /// <inheritdoc/>
-  public async Task CreateInvoiceScan(Guid invoiceIdentifier, Guid? userIdentifier, InvoiceScan scan, CancellationToken cancellationToken) =>
+  public async Task AttachInvoiceScan(Guid invoiceIdentifier, Guid? userIdentifier, InvoiceScan scan, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceScan));
+    using var activity = InvoicePackageTracing.StartActivity(nameof(AttachInvoiceScan));
     await invoiceOrchestrationService
       .AttachInvoiceScanAsync(invoiceIdentifier, userIdentifier, scan, cancellationToken)
       .ConfigureAwait(false);
@@ -858,10 +779,9 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   /// Thrown when queue ownership, target access, persistence, or deletion fails outside a classified capability result.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<bool> TryExecuteNextAnalysisAsync(CancellationToken cancellationToken) =>
+  public async Task<bool> ProcessAnalysisAsync(CancellationToken cancellationToken) =>
     await TryCatchAnalysisAsync(async () =>
     {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(TryExecuteNextAnalysisAsync));
       AnalysisQueueReceipt? receipt = await ReceiveNextAnalysisAsync(cancellationToken).ConfigureAwait(false);
 
       if (receipt is null)
@@ -882,8 +802,19 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
         return true;
       }
 
-      AnalysisQueueMessage message = receipt.Message
+      QueueAnalysisMessage message = receipt.Message
         ?? throw new InvalidOperationException("A valid analysis queue receipt must contain a message.");
+      _ = ActivityContext.TryParse(
+        message.TraceParent,
+        traceState: null,
+        isRemote: true,
+        out ActivityContext parentContext);
+      using var activity = InvoicePackageTracing.StartActivity(
+        nameof(ProcessAnalysisAsync),
+        ActivityKind.Consumer,
+        parentContext);
+      activity?.SetTag("analysis.correlation_id", message.CorrelationId);
+      activity?.SetTag("analysis.target_type", message.TargetType);
       AnalysisFailureReason? failureReason = await ExecuteWithVisibilityRenewalAsync(
         receipt,
         renewalToken => ExecuteAnalysisAttemptAsync(message, renewalToken),
@@ -903,7 +834,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
     "CA1031:Do not catch general exception types",
     Justification = "Every queue attempt must be reduced to a bounded failure reason so Azure Queue can apply retry or terminal deletion policy.")]
   private async Task<AnalysisFailureReason?> ExecuteAnalysisAttemptAsync(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     CancellationToken cancellationToken)
   {
     try
@@ -928,7 +859,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   }
 
   private async Task<AnalysisFailureReason?> ExecuteInvoiceAnalysisAttemptAsync(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     CancellationToken cancellationToken)
   {
     Invoice invoice = await invoiceOrchestrationService
@@ -953,7 +884,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   }
 
   private async Task<AnalysisFailureReason?> ExecuteMerchantAnalysisAttemptAsync(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     CancellationToken cancellationToken)
   {
     Merchant merchant = await merchantOrchestrationService
@@ -1049,7 +980,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
         .ReadInvoiceObject(invoiceId, userIdentifier, cancellationToken)
         .ConfigureAwait(false);
       InvoiceAnalysisOptions options = request.ToInvoiceAnalysisOptions();
-      AnalysisQueueMessage message = AnalysisQueueMessage.CreateInvoice(
+      QueueAnalysisMessage message = QueueAnalysisMessage.CreateInvoiceMessage(
         invoiceId,
         userIdentifier,
         Guid.CreateVersion7(),
@@ -1099,7 +1030,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
       }
 
       MerchantAnalysisOptions options = request.ToMerchantAnalysisOptions();
-      AnalysisQueueMessage message = AnalysisQueueMessage.CreateMerchant(
+      QueueAnalysisMessage message = QueueAnalysisMessage.CreateMerchantMessage(
         merchant.id,
         userIdentifier,
         Guid.CreateVersion7(),
@@ -1285,7 +1216,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   /// </exception>
   /// <inheritdoc/>
   public async Task<InvoiceAnalysisExecutionResult> ExecuteInvoiceAnalysisAsync(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     Invoice invoice,
     CancellationToken cancellationToken) =>
     await TryCatchAnalysisAsync(() => analysisOrchestrationService.ExecuteInvoiceAnalysisAsync(
@@ -1306,7 +1237,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   /// </exception>
   /// <inheritdoc/>
   public async Task<MerchantAnalysisExecutionResult> ExecuteMerchantAnalysisAsync(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     Merchant merchant,
     CancellationToken cancellationToken) =>
     await TryCatchAnalysisAsync(() => analysisOrchestrationService.ExecuteMerchantAnalysisAsync(
@@ -1334,7 +1265,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
     "Design",
     "CA1031:Do not catch general exception types",
     Justification = "A persistence failure after analysis must be surfaced so the management layer can fail the durable run explicitly.")]
-  public async Task<InvoiceAnalysisExecutionResult> PersistInvoiceAnalysisAsync(
+  private async Task<InvoiceAnalysisExecutionResult> PersistInvoiceAnalysisAsync(
     InvoiceAnalysisExecutionResult executionResult,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
@@ -1342,7 +1273,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
       using var activity = InvoicePackageTracing.StartActivity(nameof(PersistInvoiceAnalysisAsync));
       ArgumentNullException.ThrowIfNull(executionResult);
 
-      AnalysisQueueMessage message = executionResult.Message;
+      QueueAnalysisMessage message = executionResult.Message;
       Invoice invoice = await invoiceOrchestrationService
         .ReadInvoiceObject(
           message.TargetId,
@@ -1378,7 +1309,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   /// Thrown when merchant persistence fails.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<MerchantAnalysisExecutionResult> PersistMerchantAnalysisAsync(
+  private async Task<MerchantAnalysisExecutionResult> PersistMerchantAnalysisAsync(
     MerchantAnalysisExecutionResult executionResult,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
@@ -1386,7 +1317,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
       using var activity = InvoicePackageTracing.StartActivity(nameof(PersistMerchantAnalysisAsync));
       ArgumentNullException.ThrowIfNull(executionResult);
 
-      AnalysisQueueMessage message = executionResult.Message;
+      QueueAnalysisMessage message = executionResult.Message;
       Merchant merchant = await merchantOrchestrationService
         .ReadMerchantObject(message.TargetId, message.TargetPartitionIdentifier, cancellationToken)
         .ConfigureAwait(false);

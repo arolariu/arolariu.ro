@@ -4,6 +4,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.AnalysisQueue;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
@@ -44,7 +45,7 @@ public sealed partial class AnalysisOrchestrationService : IAnalysisOrchestratio
 
   /// <inheritdoc/>
   public async Task<string> EnqueueAnalysisAsync(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {

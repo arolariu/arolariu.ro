@@ -165,6 +165,25 @@ public sealed class AnalysisPersistenceSerializationTests
     Assert.HasCount(1, roundTripped.Classification.Hierarchy);
   }
 
+  /// <summary>Verifies the transient classification code never enters Cosmos JSON.</summary>
+  [TestMethod]
+  public void Invoice_ClassificationCode_IsExcludedFromPersistenceSerialization()
+  {
+    var invoice = new Invoice
+    {
+      id = Guid.CreateVersion7(),
+      UserIdentifier = Guid.NewGuid(),
+      ClassificationCode = "01.1",
+    };
+
+    string json = JsonConvert.SerializeObject(invoice);
+    Invoice roundTripped = JsonConvert.DeserializeObject<Invoice>(json)
+      ?? throw new AssertFailedException("Deserializing Invoice produced null.");
+
+    Assert.IsFalse(json.Contains("ClassificationCode", StringComparison.OrdinalIgnoreCase));
+    Assert.IsNull(roundTripped.ClassificationCode);
+  }
+
   #endregion
 
   #region Helpers

@@ -167,7 +167,7 @@ Both regions use the raw Cosmos SDK paths in
 the backend queue named `invoice-analysis`. It:
 
 - assumes the deployment-provisioned queue already exists;
-- serializes and enqueues an `AnalysisQueueMessage`;
+- serializes and enqueues a `QueueAnalysisMessage`;
 - returns Azure Queue's `MessageId`;
 - receives at most one visible message with a caller-supplied visibility timeout;
 - updates the message and its pop receipt when visibility is renewed; and
@@ -232,7 +232,7 @@ Orchestration services expose domain workflows over approved Foundations:
 - invoice/merchant relationship handling;
 - application of immutable analysis patches; and
 - persistence of analysis-derived invoice or merchant changes;
-- consumption of request-resolved analysis options and `AnalysisQueueMessage` creation;
+- consumption of request-resolved analysis options and `QueueAnalysisMessage` creation;
 - queue receive and delete delegation;
 - periodic visibility renewal while an operation executes;
 - delegation of invoice and merchant workflow composition to Analysis Orchestration;
@@ -241,6 +241,8 @@ Orchestration services expose domain workflows over approved Foundations:
 
 It persists only through Invoice and Merchant Orchestration. Production uses a
 two-minute visibility timeout and renews visibility every 30 seconds.
+Analysis-result persistence helpers are private Processing workflow details and
+are not exposed by Processing or Management contracts.
 
 ---
 
@@ -260,7 +262,7 @@ Analyze endpoint
           -> IQueueBroker
 ```
 
-Invoice Processing creates `AnalysisQueueMessage` with a correlation identifier,
+Invoice Processing creates `QueueAnalysisMessage` with a correlation identifier,
 target type and identifier, requester, optional target partition identifier,
 target-specific options, and W3C trace context. Azure Queue's returned
 `MessageId` is returned directly through Processing and Management. Both invoice
@@ -275,6 +277,9 @@ Processing supplies the required taxonomy system (ECOICOP v2, GS1 GPC, or NACE
 2.1), replaces client-provided labels and hierarchy data with the canonical
 taxonomy snapshot, and then delegates persistence to the resource Orchestration.
 Updates without a classification selection do not invoke Analysis Orchestration.
+Invoice request mappings carry the temporary ECOICOP code on the transient
+aggregate. Processing resolves that code and clears it before invoking Invoice
+Orchestration so it cannot become persistence state.
 
 ### Worker execution and persistence
 
@@ -312,7 +317,8 @@ they do not inject lower-layer contracts.
 `AnalysisWorker` is a host adapter. It creates a fresh service scope for each
 poll and resolves only
 `IInvoiceManagementService`. It processes at most one received message per
-iteration and waits five seconds when no message is visible.
+iteration through `ProcessAnalysisAsync` and waits five seconds when no message
+is visible.
 
 ---
 
@@ -320,7 +326,7 @@ iteration and waits five seconds when no message is visible.
 
 ### Message contract
 
-`AnalysisQueueMessage` is the provider-neutral durable request. It carries:
+`QueueAnalysisMessage` is the provider-neutral durable request. It carries:
 
 - `CorrelationId`;
 - `TargetType` (`Invoice` or `Merchant`);
@@ -359,11 +365,12 @@ against embedded taxonomy artifacts before returning a canonical
 
 ## Accepted product identity limitation
 
-Product update and delete currently identify a product by a
-case-insensitive exact name and operate on the first matching item in the
-invoice. Product names are not unique, so duplicate names make the selected item
-ambiguous. This ambiguity is accepted for the PR #960 remediation; introducing a
-stable product identifier or duplicate-name conflict behavior is separate
+Product update and delete currently identify a product by name. The HTTP update
+adapter composes Management `GetProduct`, `DeleteProduct`, and `AddProduct` calls
+in that order; no update-product operation exists in the Standard service
+layers. Product names are not unique, so duplicate names make the selected item
+ambiguous. This ambiguity is accepted for the PR #960 remediation; introducing
+a stable product identifier or duplicate-name conflict behavior is separate
 follow-up work.
 
 ---
@@ -399,7 +406,10 @@ Tests should enforce:
 - message serialization, Azure `MessageId` acknowledgements,
   receive behavior, pop-receipt updates, visibility renewal, visibility-based
   retries, and deletion on dequeue five;
-- Management persists successful patches before message deletion;
+- Processing persists successful patches before message deletion;
+- the product update endpoint invokes Management get, delete, and add operations
+  in order while forwarding one cancellation token;
+- invoice classification codes are resolved and cleared before persistence;
 - replacement Broker mappings return provider-neutral contracts; and
 - cancellation and exception markers survive every layer.
 

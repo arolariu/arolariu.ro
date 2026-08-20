@@ -60,7 +60,6 @@ public sealed class InvoiceEndpointsTelemetryPrivacyTests
         invoice.id,
         ownerIdentifier,
         invoice,
-        It.IsAny<string?>(),
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(invoice);
     service
@@ -90,7 +89,7 @@ public sealed class InvoiceEndpointsTelemetryPrivacyTests
       service.Object,
       contextAccessor,
       new CreateMerchantRequestDto(merchantNameSentinel, string.Empty, string.Empty, Guid.Empty)).ConfigureAwait(false);
-    _ = await InvoiceEndpoints.CreateInvoiceScanAsync(
+    _ = await InvoiceEndpoints.AttachInvoiceScanAsync(
       service.Object,
       contextAccessor,
       invoice.id,

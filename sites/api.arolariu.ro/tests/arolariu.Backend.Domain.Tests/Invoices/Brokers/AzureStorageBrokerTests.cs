@@ -57,7 +57,7 @@ public sealed class AzureStorageBrokerTests
   [TestMethod]
   public async Task EnqueueMessageAsync_ValidMessage_ReturnsProviderMessageId()
   {
-    AnalysisQueueMessage message = CreateMessage();
+    QueueAnalysisMessage message = CreateMessage();
     var queueClient = new Mock<QueueClient>(MockBehavior.Strict);
     SendReceipt sendReceipt = QueuesModelFactory.SendReceipt(
       "message-1",
@@ -82,7 +82,7 @@ public sealed class AzureStorageBrokerTests
 
     Assert.AreEqual("message-1", messageId);
     queueClient.Verify(client => client.SendMessageAsync(
-      It.Is<string>(payload => JsonSerializer.Deserialize<AnalysisQueueMessage>(payload) == message),
+      It.Is<string>(payload => JsonSerializer.Deserialize<QueueAnalysisMessage>(payload) == message),
       null,
       null,
       It.IsAny<CancellationToken>()), Times.Once);
@@ -94,7 +94,7 @@ public sealed class AzureStorageBrokerTests
   [TestMethod]
   public async Task DequeueMessageAsync_VisibleMessage_ReturnsMappedReceipt()
   {
-    AnalysisQueueMessage message = CreateMessage();
+    QueueAnalysisMessage message = CreateMessage();
     QueueMessage providerMessage = QueuesModelFactory.QueueMessage(
       "message-1",
       "receipt-1",
@@ -162,7 +162,7 @@ public sealed class AzureStorageBrokerTests
   [TestMethod]
   public async Task DequeueMessageAsync_SemanticallyInvalidPayload_ReturnsMalformedReceipt()
   {
-    AnalysisQueueMessage message = CreateMessage();
+    QueueAnalysisMessage message = CreateMessage();
     string validPayload = JsonSerializer.Serialize(message);
     string invalidPayload = validPayload.Replace(
       message.TargetId.ToString(),
@@ -198,7 +198,7 @@ public sealed class AzureStorageBrokerTests
   [TestMethod]
   public async Task UpdateThenDeleteMessageAsync_ValidReceipt_UsesLatestPopReceipt()
   {
-    AnalysisQueueMessage message = CreateMessage();
+    QueueAnalysisMessage message = CreateMessage();
     var receipt = new AnalysisQueueReceipt(
       message,
       "message-1",
@@ -233,11 +233,11 @@ public sealed class AzureStorageBrokerTests
     queueClient.VerifyAll();
   }
 
-  private static AnalysisQueueMessage CreateMessage() =>
-    AnalysisQueueMessage.CreateInvoice(
+  private static QueueAnalysisMessage CreateMessage() =>
+    QueueAnalysisMessage.CreateInvoiceMessage(
       Guid.NewGuid(),
       Guid.NewGuid(),
       Guid.NewGuid(),
       InvoiceAnalysisOptions.Fast(),
-      "00-trace-span-01");
+      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
 }

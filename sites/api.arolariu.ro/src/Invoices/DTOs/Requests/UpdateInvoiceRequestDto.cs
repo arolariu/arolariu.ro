@@ -119,6 +119,7 @@ public readonly record struct UpdateInvoiceRequestDto(
       UserIdentifier = userIdentifier,
       Name = Name,
       Description = Description,
+      ClassificationCode = ClassificationCode,
       PaymentInformation = PaymentInformation,
       MerchantReference = MerchantReference ?? Guid.Empty,
       IsImportant = IsImportant,

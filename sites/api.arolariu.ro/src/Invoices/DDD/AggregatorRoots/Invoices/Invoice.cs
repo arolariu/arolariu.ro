@@ -57,6 +57,17 @@ public sealed class Invoice : NamedEntity<Guid>
   public StandardClassification? Classification { get; set; }
 
   /// <summary>
+  /// Gets or sets the transient ECOICOP v2 code selected by an endpoint update mapping.
+  /// </summary>
+  /// <remarks>
+  /// Processing resolves this transport-only value into <see cref="Classification"/> and clears it before persistence.
+  /// It is intentionally excluded from JSON serialization and must never become durable invoice state.
+  /// </remarks>
+  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  public string? ClassificationCode { get; set; }
+
+  /// <summary>
   /// The invoice scan value object.
   /// </summary>
   [JsonPropertyOrder(6)]

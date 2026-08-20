@@ -4,6 +4,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 
 /// <summary>
@@ -17,7 +18,7 @@ public interface IAnalysisQueueFoundationService
   /// <returns>The provider-assigned string message identifier.</returns>
   /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled.</exception>
   Task<string> EnqueueAsync(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     CancellationToken cancellationToken);
 
   /// <summary>Dequeues at most one visible analysis request.</summary>

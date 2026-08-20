@@ -28,7 +28,7 @@ public sealed class AnalysisQueueFoundationServiceTests
   [TestMethod]
   public async Task EnqueueAsync_ValidMessage_ReturnsMessageId()
   {
-    AnalysisQueueMessage message = CreateMessage();
+    QueueAnalysisMessage message = CreateMessage();
     var broker = new Mock<IQueueBroker>(MockBehavior.Strict);
     broker
       .Setup(candidate => candidate.EnqueueMessageAsync(message, It.IsAny<CancellationToken>()))
@@ -60,11 +60,11 @@ public sealed class AnalysisQueueFoundationServiceTests
       .ConfigureAwait(false);
   }
 
-  private static AnalysisQueueMessage CreateMessage() =>
-    AnalysisQueueMessage.CreateInvoice(
+  private static QueueAnalysisMessage CreateMessage() =>
+    QueueAnalysisMessage.CreateInvoiceMessage(
       Guid.NewGuid(),
       Guid.NewGuid(),
       Guid.NewGuid(),
       InvoiceAnalysisOptions.Fast(),
-      "00-trace-span-01");
+      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
 }

@@ -2,6 +2,8 @@ namespace arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 
 using System;
 
+using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
+
 /// <summary>
 /// Carries one received analysis message together with the provider receipt required for visibility renewal and deletion.
 /// </summary>
@@ -11,7 +13,7 @@ public sealed class AnalysisQueueReceipt
   /// Initializes a new analysis queue receipt.
   /// </summary>
   public AnalysisQueueReceipt(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     string messageId,
     string popReceipt,
     long dequeueCount,
@@ -21,7 +23,7 @@ public sealed class AnalysisQueueReceipt
   }
 
   private AnalysisQueueReceipt(
-    AnalysisQueueMessage? message,
+    QueueAnalysisMessage? message,
     string? rawPayload,
     string messageId,
     string popReceipt,
@@ -41,7 +43,7 @@ public sealed class AnalysisQueueReceipt
   }
 
   /// <summary>Gets the application analysis message, or null when the provider payload is malformed.</summary>
-  public AnalysisQueueMessage? Message { get; }
+  public QueueAnalysisMessage? Message { get; }
 
   /// <summary>Gets the malformed raw provider payload, or null for a valid application message.</summary>
   public string? RawPayload { get; }

@@ -45,7 +45,7 @@ public sealed class AnalysisWorkerMidIterationCancellationTests
     await worker.StopAsync(CancellationToken.None).ConfigureAwait(false);
 
     Assert.IsNull(executeTask.Exception);
-    Assert.AreEqual(1, processing.TryExecuteCalls);
+    Assert.AreEqual(1, processing.ProcessAnalysisCalls);
   }
 
   /// <summary>
@@ -54,15 +54,15 @@ public sealed class AnalysisWorkerMidIterationCancellationTests
   /// </summary>
   private sealed class CancellingDuringIterationProcessingService(CancellationTokenSource cancellationSource) : WorkerManagementServiceBase
   {
-    private int tryExecuteCalls;
+    private int processAnalysisCalls;
 
     /// <summary>Gets the number of polling invocations.</summary>
-    internal int TryExecuteCalls => Volatile.Read(ref tryExecuteCalls);
+    internal int ProcessAnalysisCalls => Volatile.Read(ref processAnalysisCalls);
 
     /// <inheritdoc/>
-    public override async Task<bool> TryExecuteNextAnalysisAsync(CancellationToken cancellationToken)
+    public override async Task<bool> ProcessAnalysisAsync(CancellationToken cancellationToken)
     {
-      Interlocked.Increment(ref tryExecuteCalls);
+      Interlocked.Increment(ref processAnalysisCalls);
       await cancellationSource.CancelAsync().ConfigureAwait(false);
       throw new OperationCanceledException(cancellationToken);
     }

@@ -59,6 +59,7 @@ public sealed class RequestClassificationDtoTests
     Invoice patched = request.ApplyTo(existing, Guid.NewGuid());
 
     Assert.IsNull(patched.Classification);
+    Assert.AreEqual("01.1", patched.ClassificationCode);
   }
 
   /// <summary>Verifies invoice mapping leaves whitespace validation to Analysis Orchestration.</summary>
@@ -74,6 +75,9 @@ public sealed class RequestClassificationDtoTests
       IsImportant: false,
       AdditionalMetadata: null);
 
-    Assert.IsNull(request.ToInvoice(Guid.NewGuid(), Guid.NewGuid()).Classification);
+    Invoice invoice = request.ToInvoice(Guid.NewGuid(), Guid.NewGuid());
+
+    Assert.IsNull(invoice.Classification);
+    Assert.AreEqual(" ", invoice.ClassificationCode);
   }
 }

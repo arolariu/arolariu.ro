@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
@@ -22,7 +23,7 @@ public interface IAnalysisOrchestrationService
   /// <param name="cancellationToken">The token used to cancel capability execution.</param>
   /// <returns>The immutable invoice patch, completed capabilities, and optional failure reason.</returns>
   Task<InvoiceAnalysisExecutionResult> ExecuteInvoiceAnalysisAsync(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     Invoice invoice,
     CancellationToken cancellationToken);
 
@@ -32,7 +33,7 @@ public interface IAnalysisOrchestrationService
   /// <param name="cancellationToken">The token used to cancel capability execution.</param>
   /// <returns>The immutable merchant patch, completed capabilities, and optional failure reason.</returns>
   Task<MerchantAnalysisExecutionResult> ExecuteMerchantAnalysisAsync(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     Merchant merchant,
     CancellationToken cancellationToken);
 
@@ -81,7 +82,7 @@ public interface IAnalysisOrchestrationService
   /// <param name="cancellationToken">The token used to cancel publication.</param>
   /// <returns>The provider-assigned string message identifier.</returns>
   Task<string> EnqueueAnalysisAsync(
-    AnalysisQueueMessage message,
+    QueueAnalysisMessage message,
     CancellationToken cancellationToken);
 
   /// <summary>Receives at most one visible analysis message.</summary>

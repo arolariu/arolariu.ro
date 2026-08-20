@@ -37,8 +37,8 @@ public sealed class AnalysisWorkerRemainingBranchCoverageTests
     await probe.WaitForIterationsAsync(2).ConfigureAwait(false);
     await worker.StopAsync(CancellationToken.None).ConfigureAwait(false);
 
-    Assert.AreEqual("try-execute-processed", probe.Timeline[0]);
-    Assert.AreEqual("try-execute-idle", probe.Timeline[1]);
+    Assert.AreEqual("process-analysis-processed", probe.Timeline[0]);
+    Assert.AreEqual("process-analysis-idle", probe.Timeline[1]);
     worker.Dispose();
   }
 
@@ -48,7 +48,7 @@ public sealed class AnalysisWorkerRemainingBranchCoverageTests
   private sealed class WorkerDelayProbe : IDisposable
   {
     private readonly SemaphoreSlim iterationSignal = new(0);
-    private int tryExecuteCount;
+    private int processAnalysisCount;
 
     internal ConcurrentQueue<string> Events { get; } = new();
 
@@ -72,9 +72,9 @@ public sealed class AnalysisWorkerRemainingBranchCoverageTests
 
     internal bool NextProcessedValue()
     {
-      int call = Interlocked.Increment(ref tryExecuteCount);
+      int call = Interlocked.Increment(ref processAnalysisCount);
       bool processed = call == 1;
-      Events.Enqueue(processed ? "try-execute-processed" : "try-execute-idle");
+      Events.Enqueue(processed ? "process-analysis-processed" : "process-analysis-idle");
       iterationSignal.Release();
       return processed;
     }
@@ -87,7 +87,7 @@ public sealed class AnalysisWorkerRemainingBranchCoverageTests
   /// </summary>
   private sealed class FakeAnalysisProcessingService(WorkerDelayProbe probe) : WorkerManagementServiceBase
   {
-    public override Task<bool> TryExecuteNextAnalysisAsync(CancellationToken cancellationToken) =>
+    public override Task<bool> ProcessAnalysisAsync(CancellationToken cancellationToken) =>
       Task.FromResult(probe.NextProcessedValue());
   }
 }

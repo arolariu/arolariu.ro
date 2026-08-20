@@ -1,20 +1,22 @@
-namespace arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
+namespace arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 
 using System;
+using System.Diagnostics;
 using System.Text.Json.Serialization;
 
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 
 /// <summary>
 /// Represents one provider-neutral analysis request carried by Azure Storage Queue.
 /// </summary>
-public sealed record AnalysisQueueMessage
+public sealed record QueueAnalysisMessage
 {
   /// <summary>
   /// Initializes a new analysis queue message.
   /// </summary>
   [JsonConstructor]
-  public AnalysisQueueMessage(
+  public QueueAnalysisMessage(
     Guid correlationId,
     AnalysisTargetType targetType,
     Guid targetId,
@@ -28,6 +30,11 @@ public sealed record AnalysisQueueMessage
     RequireNonEmpty(targetId, nameof(targetId));
     RequireNonEmpty(requestedBy, nameof(requestedBy));
     ArgumentException.ThrowIfNullOrWhiteSpace(traceParent);
+
+    if (!ActivityContext.TryParse(traceParent, traceState: null, isRemote: true, out _))
+    {
+      throw new ArgumentException("Trace parent must be valid W3C trace context.", nameof(traceParent));
+    }
 
     if (targetType == AnalysisTargetType.Invoice
         && (invoiceOptions is null || merchantOptions is not null))
@@ -88,7 +95,7 @@ public sealed record AnalysisQueueMessage
   public string TraceParent { get; }
 
   /// <summary>Creates an invoice analysis queue message.</summary>
-  public static AnalysisQueueMessage CreateInvoice(
+  public static QueueAnalysisMessage CreateInvoiceMessage(
     Guid targetId,
     Guid requestedBy,
     Guid correlationId,
@@ -97,7 +104,7 @@ public sealed record AnalysisQueueMessage
   {
     ArgumentNullException.ThrowIfNull(options);
 
-    return new AnalysisQueueMessage(
+    return new QueueAnalysisMessage(
       correlationId,
       AnalysisTargetType.Invoice,
       targetId,
@@ -109,7 +116,7 @@ public sealed record AnalysisQueueMessage
   }
 
   /// <summary>Creates a merchant analysis queue message.</summary>
-  public static AnalysisQueueMessage CreateMerchant(
+  public static QueueAnalysisMessage CreateMerchantMessage(
     Guid targetId,
     Guid requestedBy,
     Guid correlationId,
@@ -119,7 +126,7 @@ public sealed record AnalysisQueueMessage
   {
     ArgumentNullException.ThrowIfNull(options);
 
-    return new AnalysisQueueMessage(
+    return new QueueAnalysisMessage(
       correlationId,
       AnalysisTargetType.Merchant,
       targetId,
