@@ -64,7 +64,7 @@ public sealed partial class AnalysisOrchestrationService
   /// <inheritdoc/>
   private async Task<(string Name, string Description)> GenerateInvoiceSummaryAsync(
     IReadOnlyList<ProductAnalysisInput> products,
-    System.    Guid correlationId,
+    Guid correlationId,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
@@ -90,7 +90,7 @@ public sealed partial class AnalysisOrchestrationService
   private async Task<IReadOnlyDictionary<string, AllergenAssessment>> AssessAllergensAsync(
     IReadOnlyList<ProductAnalysisInput> products,
     IReadOnlyDictionary<string, StandardClassification> classifications,
-    System.    Guid correlationId,
+    Guid correlationId,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
@@ -120,7 +120,7 @@ public sealed partial class AnalysisOrchestrationService
     IReadOnlyDictionary<string, StandardClassification> classifications,
     IReadOnlyDictionary<string, AllergenAssessment> allergens,
     int maximumRecipes,
-    System.    Guid correlationId,
+    Guid correlationId,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
@@ -144,7 +144,7 @@ public sealed partial class AnalysisOrchestrationService
   /// <inheritdoc/>
   private async Task<string> GenerateMerchantDescriptionAsync(
     Merchant merchant,
-    System.    Guid correlationId,
+    Guid correlationId,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
@@ -175,8 +175,10 @@ public sealed partial class AnalysisOrchestrationService
       activity?.SetTag("analysis.target_id", invoice.id);
       cancellationToken.ThrowIfCancellationRequested();
 
-      ReceiptExtraction extraction = CreateExtractionSnapshot(invoice);
-      bool extractionAvailable = true;
+      ReceiptExtraction? extraction = options.InvoiceClassification && !options.DocumentExtraction
+        ? CreateExtractionSnapshot(invoice)
+        : null;
+      bool extractionAvailable = !options.InvoiceClassification || extraction is not null || options.DocumentExtraction;
       bool failedExtraction = false;
 
       if (options.DocumentExtraction)
@@ -294,7 +296,7 @@ public sealed partial class AnalysisOrchestrationService
           CapabilityAttempt<StandardClassification> attempt = await ExecuteBestEffortAsync(
             correlationId,
             AnalysisCapability.InvoiceClassification,
-            () => ClassifyInvoiceAsync(extraction, classifications, correlationId, cancellationToken))
+            () => ClassifyInvoiceAsync(extraction!, classifications, correlationId, cancellationToken))
             .ConfigureAwait(false);
           failedInvoiceClassification = !attempt.Succeeded;
 

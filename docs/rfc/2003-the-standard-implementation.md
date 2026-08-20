@@ -230,19 +230,19 @@ Orchestration services expose domain workflows over approved Foundations:
 - invoice and merchant CRUD delegation;
 - product, scan, and metadata collection operations;
 - invoice/merchant relationship handling;
-- application of immutable analysis patches; and
-- persistence of analysis-derived invoice or merchant changes;
+- loading and persistence of analysis-derived invoice or merchant changes;
 - consumption of request-resolved analysis options and `QueueAnalysisMessage` creation;
 - queue receive and delete delegation;
 - periodic visibility renewal while an operation executes;
 - delegation of invoice and merchant workflow composition to Analysis Orchestration;
-- coordination of immutable execution results and target patches with persistence; and
-- bounded retry and terminal-deletion policy.
+- failed-only replacement-message publication; and
+- logical three-attempt discard policy.
 
 It persists only through Invoice and Merchant Orchestration. Production uses a
 two-minute visibility timeout and renews visibility every 30 seconds.
-Analysis-result persistence helpers are private Processing workflow details and
-are not exposed by Processing or Management contracts.
+Persistence failures are logged without changing replacement-message policy.
+Processing deletes the current message before publishing a replacement, which
+avoids duplicate replacements but accepts a retry-loss window if enqueue fails.
 
 ---
 
@@ -264,7 +264,7 @@ Analyze endpoint
 
 Invoice Processing creates `QueueAnalysisMessage` with a correlation identifier,
 target type and identifier, requester, optional target partition identifier,
-target-specific options, and W3C trace context. Azure Queue's returned
+target-specific options, W3C trace context, and logical `AttemptNumber`. Azure Queue's returned
 `MessageId` is returned directly through Processing and Management. Both invoice
 and merchant analysis endpoints return that string as the HTTP 202 Accepted
 response body.
@@ -287,18 +287,21 @@ Orchestration so it cannot become persistence state.
 AnalysisWorker
   -> InvoiceManagementService
     -> InvoiceProcessingService
-       -> AnalysisOrchestrationService (receive, renewal, and capabilities)
-       -> InvoiceOrchestrationService or MerchantOrchestrationService (read/persist)
-       -> immutable patch/result
-       -> AnalysisOrchestrationService (delete successful or terminal message)
+       -> AnalysisOrchestrationService (receive and renewal)
+       -> InvoiceOrchestrationService or MerchantOrchestrationService (read target)
+       -> AnalysisOrchestrationService (mutate aggregate in memory, return failed options)
+       -> InvoiceOrchestrationService or MerchantOrchestrationService (persist partial success)
+       -> AnalysisOrchestrationService (delete current message, enqueue replacement when needed)
 ```
 
-Processing persists a successful target patch before deleting the queue message.
-Failures before the fifth delivery leave the message undeleted; Azure Queue makes
-it visible again after the visibility timeout. A successful message is deleted
-immediately. A failed message is deleted when its dequeue count reaches five,
-making the fifth delivery terminal. The current design does not move terminal
-messages to a separate poison queue.
+Analysis Orchestration returns `(Invoice, InvoiceAnalysisOptions?)` or
+`(Merchant, MerchantAnalysisOptions?)`. Successful capability values are applied
+directly to the loaded aggregate; the optional option record contains only
+direct failures and dependency-blocked capabilities. Processing attempts partial
+persistence, deletes the current message, and publishes a replacement with
+`AttemptNumber + 1` when failures remain below attempt three. Attempt-three
+failures are logged and discarded. The current design has no poison queue,
+external workflow-state store, or persistence retry.
 
 Malformed provider payloads retain message ID, pop receipt, raw payload, and
 dequeue count without exposing payload content to logs. Processing leaves
@@ -334,7 +337,8 @@ is visible.
 - `RequestedBy`;
 - optional `TargetPartitionIdentifier`;
 - exactly one of `InvoiceOptions` or `MerchantOptions`; and
-- `TraceParent`.
+- `TraceParent`; and
+- `AttemptNumber` in the inclusive range one through three.
 
 The constructor rejects empty required identifiers, unsupported target types,
 missing trace context, or an invalid combination of target type and options.
@@ -346,11 +350,23 @@ renews visibility every 30 seconds and replaces the receipt's pop receipt with
 the value returned by Azure Queue. If renewal fails, coordinated execution is
 cancelled because the process can no longer safely assume exclusive visibility.
 
-Transient execution failures are retried by leaving the message undeleted. Azure
-Queue redelivers it after its visibility timeout and increments the dequeue
-count. Management deletes a failed message on dequeue five. Queue availability
-is a deployment prerequisite; per-iteration failures are logged without
-terminating the hosted worker.
+Capability failures use replacement-message retries because Azure dequeue count
+resets for every newly published message. The replacement preserves correlation,
+target, requester, partition, and W3C trace context while carrying only failed
+and blocked options. The approved ordering is persistence, delete current
+message, then enqueue replacement. If replacement enqueue fails after deletion,
+the retry is lost and the failure surfaces through the worker boundary.
+
+Custom invoice options may select dependent-only capabilities for internal
+replacement messages and use prerequisite values already persisted on the
+aggregate. Public request DTOs retain dependency-closed validation. Queue
+availability is a deployment prerequisite; per-iteration failures are logged
+without terminating the hosted worker.
+
+If prerequisite enrichment succeeds in memory but aggregate persistence fails,
+a dependent-only replacement may reload without that prerequisite and remain
+blocked until attempt three. This is an accepted consequence of log-only
+persistence failures and the absence of external workflow state.
 
 ### Capability stack
 
@@ -360,6 +376,13 @@ classification. Merchant analysis combines canonical classification and
 structured description generation. Classification resolves provider suggestions
 against embedded taxonomy artifacts before returning a canonical
 `StandardClassification`.
+
+Foundation capability contracts return direct values: `ReceiptExtraction`,
+summary tuples, classification dictionaries or values, persisted allergen
+dictionaries, recipe collections, and merchant description strings. Analysis
+Orchestration owns sequencing, safe parallelism, aggregate mutation, failure
+tracking, and dependency blocking. The former capability-result, patch, and
+execution-result wrappers are not part of the implementation.
 
 ---
 
@@ -404,9 +427,16 @@ Tests should enforce:
 - no Endpoint-to-Processing, Processing-to-Foundation/Broker,
   Orchestration-to-Orchestration, or Foundation-to-Foundation bypass exists;
 - message serialization, Azure `MessageId` acknowledgements,
-  receive behavior, pop-receipt updates, visibility renewal, visibility-based
-  retries, and deletion on dequeue five;
-- Processing persists successful patches before message deletion;
+  receive behavior, pop-receipt updates, visibility renewal, logical attempt
+  serialization, and malformed-payload deletion on dequeue five;
+- Processing persists successful aggregate sections before current-message deletion;
+- failed-only replacements preserve trace context and increment `AttemptNumber`;
+- attempt three deletes and discards without another enqueue;
+- persistence failures remain log-only while queue policy continues;
+- replacement enqueue failures occur after one current-message deletion;
+- Analysis Orchestration returns aggregate tuples and includes blocked dependents
+  in failed options;
+- obsolete capability-result, patch, mapper, and execution-result types are absent;
 - the product update endpoint invokes Management get, delete, and add operations
   in order while forwarding one cancellation token;
 - invoice classification codes are resolved and cleared before persistence;
@@ -457,6 +487,6 @@ add `retryAfterSeconds` for rate limits.
 
 ---
 
-**Document Version**: 1.2.0
-**Last Updated**: 2026-08-19
+**Document Version**: 1.3.0
+**Last Updated**: 2026-08-20
 **Maintainer**: Alexandru Olariu ([@arolariu](https://github.com/arolariu))
