@@ -24,8 +24,8 @@ internal sealed class GenerativeCapabilityHarness
   private GenerativeCapabilityHarness(
     ScriptedGenerativeAnalysisBroker broker,
     IReadOnlyList<ProductAnalysisInput> products,
-    ProductClassificationResult classifications,
-    ProductAllergenAssessmentResult allergens)
+    IReadOnlyDictionary<string, StandardClassification> classifications,
+    IReadOnlyDictionary<string, AllergenAssessment> allergens)
   {
     Broker = broker;
     Products = products;
@@ -48,10 +48,10 @@ internal sealed class GenerativeCapabilityHarness
   public IReadOnlyList<ProductAnalysisInput> Products { get; }
 
   /// <summary>Gets the product classifications paired with <see cref="Products"/>.</summary>
-  public ProductClassificationResult Classifications { get; }
+  public IReadOnlyDictionary<string, StandardClassification> Classifications { get; }
 
   /// <summary>Gets the allergen assessments paired with <see cref="Products"/>.</summary>
-  public ProductAllergenAssessmentResult Allergens { get; }
+  public IReadOnlyDictionary<string, AllergenAssessment> Allergens { get; }
 
   /// <summary>
   /// Creates a harness scripted for invoice summary generation.
@@ -149,17 +149,18 @@ internal sealed class GenerativeCapabilityHarness
       CreateProducts(includeNonFood: true),
       CreateClassifications(includeNonFood: true),
       CreateAllergens(
-        new Dictionary<string, ProductAllergenAssessment>
+        new Dictionary<string, AllergenAssessment>
         {
-          ["item-0001"] = ProductAllergenAssessment.SignalsFound(
+          ["item-0001"] = AllergenAssessment.Detected(
+            Guid.NewGuid(),
             [
-              new ProductAllergenSignal(
+              new AllergenSignal(
                 AllergenCode.Milk,
-                ProductAllergenEvidenceTier.Declared,
+                AllergenEvidenceLevel.Explicit,
                 0.98,
                 [new AllergenEvidence("ingredientsText", "milk")])
             ]),
-          ["item-0002"] = ProductAllergenAssessment.NoSignalsInAvailableEvidence(),
+          ["item-0002"] = AllergenAssessment.NoSignals(Guid.NewGuid()),
         }));
   }
 
@@ -174,13 +175,13 @@ internal sealed class GenerativeCapabilityHarness
     return new GenerativeCapabilityHarness(
       broker,
       [new ProductAnalysisInput("item-0001", new Product { Name = "pensula", Quantity = 1, QuantityUnit = "pcs" })],
-      new ProductClassificationResult(new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
+      new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
       {
         ["item-0001"] = CreateNonFoodClassification("10001674", "Artists Brushes/Applicators"),
-      }),
-      CreateAllergens(new Dictionary<string, ProductAllergenAssessment>(StringComparer.Ordinal)
+      },
+      CreateAllergens(new Dictionary<string, AllergenAssessment>(StringComparer.Ordinal)
       {
-        ["item-0001"] = ProductAllergenAssessment.NoSignalsInAvailableEvidence(),
+        ["item-0001"] = AllergenAssessment.NoSignals(Guid.NewGuid()),
       }));
   }
 
@@ -196,7 +197,7 @@ internal sealed class GenerativeCapabilityHarness
         new ProductAnalysisInput("item-0001", new Product { Name = "lapte", Quantity = 1, QuantityUnit = "l" }),
       ];
 
-  private static ProductClassificationResult CreateClassifications(bool includeNonFood)
+  private static Dictionary<string, StandardClassification> CreateClassifications(bool includeNonFood)
   {
     var classifications = new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
     {
@@ -208,17 +209,16 @@ internal sealed class GenerativeCapabilityHarness
       classifications["item-0002"] = CreateNonFoodClassification("10001674", "Artists Brushes/Applicators");
     }
 
-    return new ProductClassificationResult(classifications);
+    return classifications;
   }
 
-  private static ProductAllergenAssessmentResult CreateAllergens(
-    IReadOnlyDictionary<string, ProductAllergenAssessment>? assessments = null) =>
-    new(
+  private static IReadOnlyDictionary<string, AllergenAssessment> CreateAllergens(
+    IReadOnlyDictionary<string, AllergenAssessment>? assessments = null) =>
       assessments
-      ?? new Dictionary<string, ProductAllergenAssessment>(StringComparer.Ordinal)
+      ?? new Dictionary<string, AllergenAssessment>(StringComparer.Ordinal)
       {
-        ["item-0001"] = ProductAllergenAssessment.NoSignalsInAvailableEvidence(),
-      });
+        ["item-0001"] = AllergenAssessment.NoSignals(Guid.NewGuid()),
+      };
 
   private static StandardClassification CreateFoodClassification(string code, string label) =>
     new(

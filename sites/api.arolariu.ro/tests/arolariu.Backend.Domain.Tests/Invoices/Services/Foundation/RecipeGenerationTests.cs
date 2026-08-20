@@ -10,6 +10,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -64,7 +65,8 @@ public sealed class RecipeGenerationTests
           [AllergenCode.Milk.ToString()])
       ]);
 
-    RecipeGenerationResult result = await harness.Service.GenerateRecipesAsync(
+    System.Collections.Generic.IReadOnlyList<RecipeSuggestion> result =
+      await harness.Service.GenerateRecipesAsync(
       harness.Products,
       harness.Classifications,
       harness.Allergens,
@@ -74,7 +76,7 @@ public sealed class RecipeGenerationTests
 
     string payload = JsonSerializer.Serialize(harness.Broker.CapturedRequests[0].UserPayload);
 
-    Assert.AreEqual(1, result.Recipes.Count);
+    Assert.AreEqual(1, result.Count);
     StringAssert.Contains(payload, "lapte", StringComparison.Ordinal);
     Assert.IsFalse(payload.Contains("pensula", StringComparison.Ordinal));
   }
@@ -366,7 +368,8 @@ public sealed class RecipeGenerationTests
   {
     var harness = GenerativeCapabilityHarness.WithNonFoodOnlyRecipeInputs();
 
-    RecipeGenerationResult result = await harness.Service.GenerateRecipesAsync(
+    System.Collections.Generic.IReadOnlyList<RecipeSuggestion> result =
+      await harness.Service.GenerateRecipesAsync(
       harness.Products,
       harness.Classifications,
       harness.Allergens,
@@ -374,7 +377,7 @@ public sealed class RecipeGenerationTests
       Guid.NewGuid(),
       CancellationToken.None);
 
-    Assert.AreEqual(0, result.Recipes.Count);
+    Assert.AreEqual(0, result.Count);
     Assert.AreEqual(0, harness.Broker.InvocationCount);
     Assert.AreEqual(0, harness.Broker.CapturedRequests.Count);
   }

@@ -7,11 +7,11 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Foundation;
-using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
-using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
@@ -23,20 +23,17 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Moq;
 
-/// <summary>
-/// Verifies queue-oriented Analysis Orchestration behavior.
-/// </summary>
+/// <summary>Verifies aggregate-oriented Analysis Orchestration behavior.</summary>
 [TestClass]
 public sealed class AnalysisOrchestrationCurrentArchitectureTests
 {
-  /// <summary>
-  /// Verifies independent summary and product-classification branches start concurrently.
-  /// </summary>
+  /// <summary>Verifies independent summary and product-classification branches start concurrently.</summary>
   [TestMethod]
-  public async Task ExecuteInvoiceAnalysisAsync_IndependentCapabilities_RunConcurrently()
+  public async Task AnalyzeInvoiceAsync_IndependentCapabilities_RunConcurrently()
   {
     var bothCapabilitiesStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
     int startedCapabilities = 0;
+    Guid correlationId = Guid.NewGuid();
     InvoiceAnalysisOptions options = new(
       AnalysisProfile.Custom,
       documentExtraction: false,
@@ -46,161 +43,124 @@ public sealed class AnalysisOrchestrationCurrentArchitectureTests
       invoiceClassification: false,
       recipeGeneration: false,
       maximumRecipes: 0);
-    QueueAnalysisMessage message = QueueAnalysisMessage.CreateInvoiceMessage(
-      Guid.NewGuid(),
-      Guid.NewGuid(),
-      Guid.NewGuid(),
-      options,
-      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
     var invoice = new Invoice
     {
-      id = message.TargetId,
-      UserIdentifier = message.RequestedBy,
+      id = Guid.NewGuid(),
+      UserIdentifier = Guid.NewGuid(),
       Items = [new Product { Name = "Milk" }],
     };
-    var analysis = new Mock<IAnalysisFoundationService>(MockBehavior.Strict);
-    analysis.Setup(service => service.GenerateInvoiceSummaryAsync(
+    var foundation = new Mock<IAnalysisFoundationService>(MockBehavior.Strict);
+    foundation.Setup(service => service.GenerateInvoiceSummaryAsync(
         It.IsAny<IReadOnlyList<ProductAnalysisInput>>(),
-        message.CorrelationId,
+        correlationId,
         It.IsAny<CancellationToken>()))
       .Returns(async () =>
       {
-        if (Interlocked.Increment(ref startedCapabilities) == 2)
-        {
-          bothCapabilitiesStarted.TrySetResult();
-        }
-
+        SignalConcurrentStart(bothCapabilitiesStarted, ref startedCapabilities);
         await bothCapabilitiesStarted.Task.ConfigureAwait(false);
-        return new InvoiceSummaryResult("Groceries", "Milk purchase");
+        return ("Groceries", "Milk purchase");
       });
-    analysis.Setup(service => service.GetTaxonomyVersionAsync(
-        ClassificationSystem.Gs1Gpc,
-        It.IsAny<CancellationToken>()))
-      .Returns(async () =>
-      {
-        if (Interlocked.Increment(ref startedCapabilities) == 2)
-        {
-          bothCapabilitiesStarted.TrySetResult();
-        }
+    SetupSuccessfulProductClassification(
+      foundation,
+      bothCapabilitiesStarted,
+      () => SignalConcurrentStart(bothCapabilitiesStarted, ref startedCapabilities));
+    AnalysisOrchestrationService service = CreateService(foundation);
 
-        await bothCapabilitiesStarted.Task.ConfigureAwait(false);
-        return "test-version";
-      });
-    analysis.Setup(service => service.GenerateClassificationSearchTermsAsync(
-        AnalysisCapability.ProductClassification,
-        ClassificationSystem.Gs1Gpc,
-        "test-version",
-        It.IsAny<IReadOnlyDictionary<string, string>>(),
-        It.IsAny<CancellationToken>()))
-      .Returns((
-        AnalysisCapability _,
-        ClassificationSystem _,
-        string _,
-        IReadOnlyDictionary<string, string> subjects,
-        CancellationToken _) =>
-        Task.FromResult<IReadOnlyDictionary<string, IReadOnlyList<string>>>(
-          subjects.ToDictionary(
-            pair => pair.Key,
-            _ => (IReadOnlyList<string>)["milk"],
-            StringComparer.Ordinal)));
-    analysis.Setup(service => service.SearchTaxonomyAsync(
-        ClassificationSystem.Gs1Gpc,
-        "milk",
-        5,
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync([new ClassificationCandidateOption("10000001", "Milk")]);
-    analysis.Setup(service => service.SelectClassificationCandidatesAsync(
-        AnalysisCapability.ProductClassification,
-        ClassificationSystem.Gs1Gpc,
-        "test-version",
-        It.IsAny<IReadOnlyDictionary<string, IReadOnlyList<ClassificationCandidateOption>>>(),
-        It.IsAny<CancellationToken>()))
-      .Returns((
-        AnalysisCapability _,
-        ClassificationSystem _,
-        string _,
-        IReadOnlyDictionary<string, IReadOnlyList<ClassificationCandidateOption>> candidates,
-        CancellationToken _) =>
-        Task.FromResult<IReadOnlyDictionary<string, SelectedClassificationCandidate>>(
-          candidates.ToDictionary(
-            pair => pair.Key,
-            _ => new SelectedClassificationCandidate("10000001", 0.9),
-            StringComparer.Ordinal)));
-    analysis.Setup(service => service.ResolveClassificationAsync(
-        ClassificationSystem.Gs1Gpc,
-        "10000001",
-        ClassificationOrigin.Analysis,
-        0.9,
-        It.IsAny<IReadOnlyList<ClassificationEvidence>>(),
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync(new StandardClassification(
-        ClassificationSystem.Gs1Gpc,
-        "test-version",
-        "10000001",
-        "Milk",
-        [new ClassificationNode("leaf", "10000001", "Milk")],
-        ClassificationOrigin.Analysis,
-        0.9,
-        evidence: []));
-    var service = new AnalysisOrchestrationService(
-      analysis.Object,
-      Mock.Of<IAnalysisQueueFoundationService>(),
-      NullLoggerFactory.Instance);
-
-    Task<InvoiceAnalysisExecutionResult> execution = service.ExecuteInvoiceAnalysisAsync(
-      message,
-      invoice,
-      CancellationToken.None);
+    Task<(Invoice Invoice, InvoiceAnalysisOptions? FailedOptions)> execution =
+      service.AnalyzeInvoiceAsync(invoice, options, correlationId, CancellationToken.None);
     Task completed = await Task.WhenAny(execution, Task.Delay(TimeSpan.FromSeconds(1)));
+    (Invoice analyzed, InvoiceAnalysisOptions? failed) = await execution;
 
     Assert.AreSame(execution, completed);
-    Assert.IsFalse((await execution).Failed);
+    Assert.IsNull(failed);
+    Assert.AreEqual("Groceries", analyzed.Name);
+    Assert.AreEqual("10000001", analyzed.Items.Single().Classification?.Code);
   }
 
-  /// <summary>
-  /// Verifies Analysis Orchestration owns workflow sequencing and reports capability failures.
-  /// </summary>
+  /// <summary>Verifies successful independent work is retained while failed and blocked capabilities are returned.</summary>
   [TestMethod]
-  public async Task ExecuteInvoiceAnalysisAsync_DependencyFailure_ReturnsFailureResult()
+  public async Task AnalyzeInvoiceAsync_SummarySucceedsClassificationFails_ReturnsAggregateAndFailedOptions()
   {
+    Guid correlationId = Guid.NewGuid();
     InvoiceAnalysisOptions options = new(
       AnalysisProfile.Custom,
       documentExtraction: false,
       invoiceSummary: true,
-      productClassification: false,
-      allergenAssessment: false,
+      productClassification: true,
+      allergenAssessment: true,
       invoiceClassification: false,
-      recipeGeneration: false,
-      maximumRecipes: 0);
-    QueueAnalysisMessage message = QueueAnalysisMessage.CreateInvoiceMessage(
-      Guid.NewGuid(),
-      Guid.NewGuid(),
-      Guid.NewGuid(),
-      options,
-      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
-    var invoice = new Invoice { id = message.TargetId, UserIdentifier = message.RequestedBy };
-    var analysis = new Mock<IAnalysisFoundationService>(MockBehavior.Strict);
-    analysis.Setup(service => service.GenerateInvoiceSummaryAsync(
-        It.IsAny<System.Collections.Generic.IReadOnlyList<ProductAnalysisInput>>(),
-        message.CorrelationId,
+      recipeGeneration: true,
+      maximumRecipes: 2);
+    var invoice = new Invoice
+    {
+      id = Guid.NewGuid(),
+      UserIdentifier = Guid.NewGuid(),
+      Items = [new Product { Name = "Milk" }],
+    };
+    var foundation = new Mock<IAnalysisFoundationService>(MockBehavior.Strict);
+    foundation.Setup(service => service.GenerateInvoiceSummaryAsync(
+        It.IsAny<IReadOnlyList<ProductAnalysisInput>>(),
+        correlationId,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(("Generated name", "Generated description"));
+    foundation.Setup(service => service.GetTaxonomyVersionAsync(
+        ClassificationSystem.Gs1Gpc,
         It.IsAny<CancellationToken>()))
       .ThrowsAsync(new AnalysisFoundationDependencyException(new TimeoutException()));
-    var service = new AnalysisOrchestrationService(
-      analysis.Object,
-      Mock.Of<IAnalysisQueueFoundationService>(),
-      NullLoggerFactory.Instance);
+    AnalysisOrchestrationService service = CreateService(foundation);
 
-    InvoiceAnalysisExecutionResult result = await service
-      .ExecuteInvoiceAnalysisAsync(message, invoice, CancellationToken.None)
-      .ConfigureAwait(false);
+    (Invoice analyzed, InvoiceAnalysisOptions? failed) = await service.AnalyzeInvoiceAsync(
+      invoice,
+      options,
+      correlationId,
+      CancellationToken.None);
 
-    Assert.IsTrue(result.Failed);
-    Assert.AreEqual(AnalysisFailureReason.Dependency, result.FailureReason);
+    Assert.AreEqual("Generated name", analyzed.Name);
+    Assert.AreEqual("Generated description", analyzed.Description);
+    Assert.IsNotNull(failed);
+    Assert.IsTrue(failed.ProductClassification);
+    Assert.IsTrue(failed.AllergenAssessment);
+    Assert.IsTrue(failed.RecipeGeneration);
+    Assert.AreEqual(2, failed.MaximumRecipes);
   }
 
-  /// <summary>
-  /// Verifies enqueueing delegates to the Analysis Queue Foundation.
-  /// </summary>
+  /// <summary>Verifies merchant description success is retained when classification fails.</summary>
+  [TestMethod]
+  public async Task AnalyzeMerchantAsync_ClassificationFailsDescriptionSucceeds_ReturnsAggregateAndFailedOptions()
+  {
+    Guid correlationId = Guid.NewGuid();
+    MerchantAnalysisOptions options = MerchantAnalysisOptions.Comprehensive();
+    var merchant = new Merchant
+    {
+      id = Guid.NewGuid(),
+      Name = "Corner Shop",
+      Description = "Existing description",
+    };
+    var foundation = new Mock<IAnalysisFoundationService>(MockBehavior.Strict);
+    foundation.Setup(service => service.GetTaxonomyVersionAsync(
+        ClassificationSystem.Nace21,
+        It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new AnalysisFoundationDependencyException(new TimeoutException()));
+    foundation.Setup(service => service.GenerateMerchantDescriptionAsync(
+        merchant,
+        correlationId,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync("Generated merchant description");
+    AnalysisOrchestrationService service = CreateService(foundation);
+
+    (Merchant analyzed, MerchantAnalysisOptions? failed) = await service.AnalyzeMerchantAsync(
+      merchant,
+      options,
+      correlationId,
+      CancellationToken.None);
+
+    Assert.AreEqual("Generated merchant description", analyzed.Description);
+    Assert.IsNotNull(failed);
+    Assert.IsTrue(failed.MerchantClassification);
+    Assert.IsFalse(failed.DescriptionGeneration);
+  }
+
+  /// <summary>Verifies enqueueing delegates to the Analysis Queue Foundation.</summary>
   [TestMethod]
   public async Task EnqueueAnalysisAsync_ValidMessage_ReturnsMessageId()
   {
@@ -211,25 +171,20 @@ public sealed class AnalysisOrchestrationCurrentArchitectureTests
       InvoiceAnalysisOptions.Fast(),
       "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
     var queue = new Mock<IAnalysisQueueFoundationService>(MockBehavior.Strict);
-    var analysis = new Mock<IAnalysisFoundationService>(MockBehavior.Strict);
     queue.Setup(service => service.EnqueueAsync(message, It.IsAny<CancellationToken>()))
       .ReturnsAsync("message-1");
     var service = new AnalysisOrchestrationService(
-      analysis.Object,
+      Mock.Of<IAnalysisFoundationService>(),
       queue.Object,
       NullLoggerFactory.Instance);
 
-    string result = await service
-      .EnqueueAnalysisAsync(message, CancellationToken.None)
-      .ConfigureAwait(false);
+    string result = await service.EnqueueAnalysisAsync(message, CancellationToken.None);
 
     Assert.AreEqual("message-1", result);
     queue.VerifyAll();
   }
 
-  /// <summary>
-  /// Verifies receiving analysis work delegates to the dequeue-named Foundation capability.
-  /// </summary>
+  /// <summary>Verifies receiving analysis work delegates to the dequeue-named Foundation capability.</summary>
   [TestMethod]
   public async Task ReceiveAnalysisAsync_VisibleMessage_DelegatesToFoundationDequeue()
   {
@@ -246,21 +201,109 @@ public sealed class AnalysisOrchestrationCurrentArchitectureTests
       dequeueCount: 1,
       DateTimeOffset.UtcNow);
     var queue = new Mock<IAnalysisQueueFoundationService>(MockBehavior.Strict);
-    var analysis = new Mock<IAnalysisFoundationService>(MockBehavior.Strict);
     queue.Setup(service => service.DequeueAsync(
         TimeSpan.FromMinutes(2),
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(receipt);
     var service = new AnalysisOrchestrationService(
-      analysis.Object,
+      Mock.Of<IAnalysisFoundationService>(),
       queue.Object,
       NullLoggerFactory.Instance);
 
-    AnalysisQueueReceipt? result = await service
-      .ReceiveAnalysisAsync(TimeSpan.FromMinutes(2), CancellationToken.None)
-      .ConfigureAwait(false);
+    AnalysisQueueReceipt? result = await service.ReceiveAnalysisAsync(
+      TimeSpan.FromMinutes(2),
+      CancellationToken.None);
 
     Assert.AreSame(receipt, result);
     queue.VerifyAll();
+  }
+
+  private static AnalysisOrchestrationService CreateService(
+    Mock<IAnalysisFoundationService> foundation) =>
+    new(
+      foundation.Object,
+      Mock.Of<IAnalysisQueueFoundationService>(),
+      NullLoggerFactory.Instance);
+
+  private static void SignalConcurrentStart(
+    TaskCompletionSource bothCapabilitiesStarted,
+    ref int startedCapabilities)
+  {
+    if (Interlocked.Increment(ref startedCapabilities) == 2)
+    {
+      bothCapabilitiesStarted.TrySetResult();
+    }
+  }
+
+  private static void SetupSuccessfulProductClassification(
+    Mock<IAnalysisFoundationService> foundation,
+    TaskCompletionSource bothCapabilitiesStarted,
+    Action onStarted)
+  {
+    foundation.Setup(service => service.GetTaxonomyVersionAsync(
+        ClassificationSystem.Gs1Gpc,
+        It.IsAny<CancellationToken>()))
+      .Returns(async () =>
+      {
+        onStarted();
+        await bothCapabilitiesStarted.Task.ConfigureAwait(false);
+        return "test-version";
+      });
+    foundation.Setup(service => service.GenerateClassificationSearchTermsAsync(
+        AnalysisCapability.ProductClassification,
+        ClassificationSystem.Gs1Gpc,
+        "test-version",
+        It.IsAny<IReadOnlyDictionary<string, string>>(),
+        It.IsAny<CancellationToken>()))
+      .Returns((
+        AnalysisCapability _,
+        ClassificationSystem _,
+        string _,
+        IReadOnlyDictionary<string, string> subjects,
+        CancellationToken _) =>
+        Task.FromResult<IReadOnlyDictionary<string, IReadOnlyList<string>>>(
+          subjects.ToDictionary(
+            pair => pair.Key,
+            _ => (IReadOnlyList<string>)["milk"],
+            StringComparer.Ordinal)));
+    foundation.Setup(service => service.SearchTaxonomyAsync(
+        ClassificationSystem.Gs1Gpc,
+        "milk",
+        5,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync([new ClassificationCandidateOption("10000001", "Milk")]);
+    foundation.Setup(service => service.SelectClassificationCandidatesAsync(
+        AnalysisCapability.ProductClassification,
+        ClassificationSystem.Gs1Gpc,
+        "test-version",
+        It.IsAny<IReadOnlyDictionary<string, IReadOnlyList<ClassificationCandidateOption>>>(),
+        It.IsAny<CancellationToken>()))
+      .Returns((
+        AnalysisCapability _,
+        ClassificationSystem _,
+        string _,
+        IReadOnlyDictionary<string, IReadOnlyList<ClassificationCandidateOption>> candidates,
+        CancellationToken _) =>
+        Task.FromResult<IReadOnlyDictionary<string, SelectedClassificationCandidate>>(
+          candidates.ToDictionary(
+            pair => pair.Key,
+            _ => new SelectedClassificationCandidate("10000001", 0.9),
+            StringComparer.Ordinal)));
+    foundation.Setup(service => service.ResolveClassificationAsync(
+        ClassificationSystem.Gs1Gpc,
+        "10000001",
+        ClassificationOrigin.Analysis,
+        0.9,
+        It.IsAny<IReadOnlyList<ClassificationEvidence>>(),
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(new StandardClassification(
+        ClassificationSystem.Gs1Gpc,
+        "test-version",
+        "10000001",
+        "Milk",
+        [new ClassificationNode("leaf", "10000001", "Milk")],
+        ClassificationOrigin.Analysis,
+        0.9,
+        evidence: []));
   }
 }

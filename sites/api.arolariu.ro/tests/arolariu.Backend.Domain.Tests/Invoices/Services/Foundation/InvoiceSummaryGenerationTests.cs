@@ -26,7 +26,7 @@ public sealed class InvoiceSummaryGenerationTests
       "Breakfast essentials",
       "Milk and breakfast staples for the week.");
 
-    InvoiceSummaryResult result = await harness.Service.GenerateInvoiceSummaryAsync(
+    (string Name, string Description) result = await harness.Service.GenerateInvoiceSummaryAsync(
       harness.Products,
       Guid.NewGuid(),
       CancellationToken.None);

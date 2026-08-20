@@ -26,9 +26,9 @@ public sealed class GenerativeAnalysisMerchantDescriptionNullEvidenceTests
       "Likely a merchant with limited invoice evidence.",
       merchant);
 
-    MerchantDescriptionResult result = await harness.ExecuteAsync();
+    string result = await harness.ExecuteAsync();
 
-    Assert.AreEqual("Likely a merchant with limited invoice evidence.", result.Description);
+    Assert.AreEqual("Likely a merchant with limited invoice evidence.", result);
     Assert.AreEqual(1, harness.Broker.InvocationCount);
   }
 
@@ -44,4 +44,3 @@ public sealed class GenerativeAnalysisMerchantDescriptionNullEvidenceTests
       ParentCompanyId = Guid.Empty,
     };
 }
-

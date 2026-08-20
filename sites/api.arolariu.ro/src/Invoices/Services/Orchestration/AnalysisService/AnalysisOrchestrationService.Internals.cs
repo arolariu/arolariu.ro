@@ -1,6 +1,7 @@
 namespace arolariu.Backend.Domain.Invoices.Services.Orchestration.AnalysisService;
 
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
@@ -10,7 +11,6 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using System;
-using System.Collections.Concurrent;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Orchestration;
@@ -18,7 +18,9 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptio
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using System.Linq;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Foundation;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 
 /// <summary>
@@ -37,7 +39,7 @@ public sealed partial class AnalysisOrchestrationService
   /// Thrown when document analysis fails.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<ReceiptExtractionResult> ExtractInvoiceAsync(
+  private async Task<ReceiptExtraction> ExtractInvoiceAsync(
     IReadOnlyList<InvoiceScan> scans,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
@@ -60,7 +62,7 @@ public sealed partial class AnalysisOrchestrationService
   /// Thrown when structured generation fails.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<InvoiceSummaryResult> GenerateInvoiceSummaryAsync(
+  private async Task<(string Name, string Description)> GenerateInvoiceSummaryAsync(
     IReadOnlyList<ProductAnalysisInput> products,
     System.    Guid correlationId,
     CancellationToken cancellationToken) =>
@@ -85,9 +87,9 @@ public sealed partial class AnalysisOrchestrationService
   /// Thrown when structured generation fails.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<ProductAllergenAssessmentResult> AssessAllergensAsync(
+  private async Task<IReadOnlyDictionary<string, AllergenAssessment>> AssessAllergensAsync(
     IReadOnlyList<ProductAnalysisInput> products,
-    ProductClassificationResult classifications,
+    IReadOnlyDictionary<string, StandardClassification> classifications,
     System.    Guid correlationId,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
@@ -113,10 +115,10 @@ public sealed partial class AnalysisOrchestrationService
   /// Thrown when structured generation fails.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<RecipeGenerationResult> GenerateRecipesAsync(
+  private async Task<IReadOnlyList<RecipeSuggestion>> GenerateRecipesAsync(
     IReadOnlyList<ProductAnalysisInput> products,
-    ProductClassificationResult classifications,
-    ProductAllergenAssessmentResult allergens,
+    IReadOnlyDictionary<string, StandardClassification> classifications,
+    IReadOnlyDictionary<string, AllergenAssessment> allergens,
     int maximumRecipes,
     System.    Guid correlationId,
     CancellationToken cancellationToken) =>
@@ -140,7 +142,7 @@ public sealed partial class AnalysisOrchestrationService
   /// Thrown when structured generation fails.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<MerchantDescriptionResult> GenerateMerchantDescriptionAsync(
+  private async Task<string> GenerateMerchantDescriptionAsync(
     Merchant merchant,
     System.    Guid correlationId,
     CancellationToken cancellationToken) =>
@@ -152,167 +154,273 @@ public sealed partial class AnalysisOrchestrationService
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 
-  /// <summary>Executes the resolved invoice capability graph without persisting aggregate state.</summary>
-  /// <param name="message">The durable invoice request containing resolved capability options.</param>
-  /// <param name="invoice">The invoice snapshot to analyze.</param>
-  /// <param name="cancellationToken">The token used to cancel the capability graph.</param>
-  /// <returns>The immutable patch, completed capabilities, and first observed failure reason.</returns>
-  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationValidationException">
-  /// Thrown when the message or invoice is null.
-  /// </exception>
-  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationServiceException">
-  /// Thrown when an unclassified orchestration failure prevents producing an execution result.
-  /// </exception>
   /// <inheritdoc/>
-  public async Task<InvoiceAnalysisExecutionResult> ExecuteInvoiceAnalysisAsync(
-    QueueAnalysisMessage message,
+  public async Task<(Invoice Invoice, InvoiceAnalysisOptions? FailedOptions)> AnalyzeInvoiceAsync(
     Invoice invoice,
+    InvoiceAnalysisOptions options,
+    Guid correlationId,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(ExecuteInvoiceAnalysisAsync));
-      ArgumentNullException.ThrowIfNull(message);
+      using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceAsync));
       ArgumentNullException.ThrowIfNull(invoice);
-      activity?.SetTag("analysis.correlation_id", message.CorrelationId.ToString());
-      activity?.SetTag("analysis.target_id", message.TargetId.ToString());
+      ArgumentNullException.ThrowIfNull(options);
 
-      cancellationToken.ThrowIfCancellationRequested();
-
-      if (message.TargetType != AnalysisTargetType.Invoice || message.InvoiceOptions is null)
+      if (correlationId == Guid.Empty)
       {
-        return CreateInvoiceFailureResult(message, AnalysisFailureReason.Validation);
+        throw new ArgumentException("Correlation identifier must not be empty.", nameof(correlationId));
       }
 
-      InvoiceAnalysisOptions options = message.InvoiceOptions;
-      var completedCapabilities = new ConcurrentQueue<AnalysisCapability>();
-      var failureReasons = new ConcurrentQueue<AnalysisFailureReason>();
-      IReadOnlyList<ProductAnalysisInput> productInputs = BuildProductInputs(invoice.Items);
+      activity?.SetTag("analysis.correlation_id", correlationId);
+      activity?.SetTag("analysis.target_id", invoice.id);
+      cancellationToken.ThrowIfCancellationRequested();
 
-      ReceiptExtractionResult? extraction = null;
-      InvoiceSummaryResult? summary = null;
-      ProductClassificationResult? productClassification = null;
-      ProductAllergenAssessmentResult? allergenAssessment = null;
-      InvoiceClassificationResult? invoiceClassification = null;
-      RecipeGenerationResult? recipeGeneration = null;
+      ReceiptExtraction extraction = CreateExtractionSnapshot(invoice);
+      bool extractionAvailable = true;
+      bool failedExtraction = false;
 
       if (options.DocumentExtraction)
       {
-        extraction = await ExecuteBestEffortAsync(
-          message,
+        CapabilityAttempt<ReceiptExtraction> attempt = await ExecuteBestEffortAsync(
+          correlationId,
           AnalysisCapability.DocumentExtraction,
-          () => ExtractInvoiceAsync([.. invoice.Scans], cancellationToken),
-          completedCapabilities,
-          failureReasons)
+          () => ExtractInvoiceAsync([.. invoice.Scans], cancellationToken))
           .ConfigureAwait(false);
+        failedExtraction = !attempt.Succeeded;
 
-        if (extraction is not null)
+        if (attempt.Succeeded)
         {
-          productInputs = BuildProductInputs(extraction.Products);
+          extraction = attempt.Result;
+          ApplyExtraction(invoice, extraction);
+        }
+        else
+        {
+          extractionAvailable = false;
         }
       }
 
-      Task<InvoiceSummaryResult?> summaryTask = options.InvoiceSummary
+      List<ProductAnalysisInput> productInputs = BuildProductInputs(invoice.Items);
+      IReadOnlyDictionary<string, StandardClassification> classifications =
+        GetPersistedProductClassifications(productInputs);
+      bool classificationsAvailable = classifications.Count == productInputs.Count;
+      bool failedSummary = false;
+      bool failedProductClassification = false;
+
+      Task<CapabilityAttempt<(string Name, string Description)>> summaryTask = options.InvoiceSummary
         ? ExecuteBestEffortAsync(
-          message,
+          correlationId,
           AnalysisCapability.InvoiceSummary,
-          () => GenerateInvoiceSummaryAsync(
-            productInputs,
-            message.CorrelationId,
-            cancellationToken),
-          completedCapabilities,
-          failureReasons)
-        : Task.FromResult<InvoiceSummaryResult?>(null);
-      Task<ProductClassificationResult?> productClassificationTask = options.ProductClassification
-        ? ExecuteBestEffortAsync(
-          message,
-          AnalysisCapability.ProductClassification,
-          () => ClassifyProductsAsync(productInputs, cancellationToken),
-          completedCapabilities,
-          failureReasons)
-        : Task.FromResult<ProductClassificationResult?>(null);
+          () => GenerateInvoiceSummaryAsync(productInputs, correlationId, cancellationToken))
+        : Task.FromResult(CapabilityAttempt<(string Name, string Description)>.NotRun);
+      Task<CapabilityAttempt<IReadOnlyDictionary<string, StandardClassification>>> classificationTask =
+        options.ProductClassification
+          ? ExecuteBestEffortAsync(
+            correlationId,
+            AnalysisCapability.ProductClassification,
+            () => ClassifyProductsAsync(productInputs, cancellationToken))
+          : Task.FromResult(CapabilityAttempt<IReadOnlyDictionary<string, StandardClassification>>.NotRun);
 
-      await Task.WhenAll(summaryTask, productClassificationTask).ConfigureAwait(false);
-      summary = await summaryTask.ConfigureAwait(false);
-      productClassification = await productClassificationTask.ConfigureAwait(false);
+      await Task.WhenAll(summaryTask, classificationTask).ConfigureAwait(false);
+      CapabilityAttempt<(string Name, string Description)> summaryAttempt =
+        await summaryTask.ConfigureAwait(false);
+      CapabilityAttempt<IReadOnlyDictionary<string, StandardClassification>> classificationAttempt =
+        await classificationTask.ConfigureAwait(false);
 
-      if (options.AllergenAssessment && productClassification is not null)
+      if (options.InvoiceSummary)
       {
-        allergenAssessment = await ExecuteBestEffortAsync(
-          message,
-          AnalysisCapability.AllergenAssessment,
-          () => AssessAllergensAsync(
-            productInputs,
-            productClassification,
-            message.CorrelationId,
-            cancellationToken),
-          completedCapabilities,
-          failureReasons)
-          .ConfigureAwait(false);
+        failedSummary = !summaryAttempt.Succeeded;
+
+        if (summaryAttempt.Succeeded)
+        {
+          invoice.Name = summaryAttempt.Result.Name;
+          invoice.Description = summaryAttempt.Result.Description;
+        }
       }
 
-      if (options.InvoiceClassification && extraction is not null && productClassification is not null)
+      if (options.ProductClassification)
       {
-        invoiceClassification = await ExecuteBestEffortAsync(
-          message,
-          AnalysisCapability.InvoiceClassification,
-          () => ClassifyInvoiceAsync(
-            extraction,
-            productClassification,
-            message.CorrelationId,
-            cancellationToken),
-          completedCapabilities,
-          failureReasons)
-          .ConfigureAwait(false);
+        failedProductClassification = !classificationAttempt.Succeeded;
+        classificationsAvailable = classificationAttempt.Succeeded;
+
+        if (classificationAttempt.Succeeded)
+        {
+          classifications = classificationAttempt.Result;
+          ApplyProductClassifications(invoice, classifications);
+        }
       }
 
-      if (options.RecipeGeneration && productClassification is not null && allergenAssessment is not null)
+      bool failedAllergens = false;
+      IReadOnlyDictionary<string, AllergenAssessment> allergens = GetPersistedAllergenAssessments(productInputs);
+      bool allergensAvailable = allergens.Count == productInputs.Count;
+
+      if (options.AllergenAssessment)
       {
-        recipeGeneration = await ExecuteBestEffortAsync(
-          message,
-          AnalysisCapability.RecipeGeneration,
-          () => GenerateRecipesAsync(
-            productInputs,
-            productClassification,
-            allergenAssessment,
-            options.MaximumRecipes,
-            message.CorrelationId,
-            cancellationToken),
-          completedCapabilities,
-          failureReasons)
-          .ConfigureAwait(false);
+        if (!classificationsAvailable)
+        {
+          failedAllergens = true;
+          allergensAvailable = false;
+          RecordBlockedCapability(correlationId, AnalysisCapability.AllergenAssessment);
+        }
+        else
+        {
+          CapabilityAttempt<IReadOnlyDictionary<string, AllergenAssessment>> attempt =
+            await ExecuteBestEffortAsync(
+              correlationId,
+              AnalysisCapability.AllergenAssessment,
+              () => AssessAllergensAsync(productInputs, classifications, correlationId, cancellationToken))
+            .ConfigureAwait(false);
+          failedAllergens = !attempt.Succeeded;
+          allergensAvailable = attempt.Succeeded;
+
+          if (attempt.Succeeded)
+          {
+            allergens = attempt.Result;
+            ApplyAllergenAssessments(invoice, allergens);
+          }
+        }
       }
 
-      var patch = new InvoiceAnalysisPatch(
-        extraction,
-        summary,
-        productClassification,
-        allergenAssessment,
-        invoiceClassification,
-        recipeGeneration);
+      bool failedInvoiceClassification = false;
 
-      return new InvoiceAnalysisExecutionResult(
-        message,
-        patch,
-        [.. completedCapabilities],
-        failureReasons.TryPeek(out AnalysisFailureReason failureReason) ? failureReason : null);
+      if (options.InvoiceClassification)
+      {
+        if (!extractionAvailable || !classificationsAvailable)
+        {
+          failedInvoiceClassification = true;
+          RecordBlockedCapability(correlationId, AnalysisCapability.InvoiceClassification);
+        }
+        else
+        {
+          CapabilityAttempt<StandardClassification> attempt = await ExecuteBestEffortAsync(
+            correlationId,
+            AnalysisCapability.InvoiceClassification,
+            () => ClassifyInvoiceAsync(extraction, classifications, correlationId, cancellationToken))
+            .ConfigureAwait(false);
+          failedInvoiceClassification = !attempt.Succeeded;
+
+          if (attempt.Succeeded)
+          {
+            invoice.Classification = attempt.Result;
+          }
+        }
+      }
+
+      bool failedRecipes = false;
+
+      if (options.RecipeGeneration)
+      {
+        if (!classificationsAvailable || !allergensAvailable)
+        {
+          failedRecipes = true;
+          RecordBlockedCapability(correlationId, AnalysisCapability.RecipeGeneration);
+        }
+        else
+        {
+          CapabilityAttempt<IReadOnlyList<RecipeSuggestion>> attempt = await ExecuteBestEffortAsync(
+            correlationId,
+            AnalysisCapability.RecipeGeneration,
+            () => GenerateRecipesAsync(
+              productInputs,
+              classifications,
+              allergens,
+              options.MaximumRecipes,
+              correlationId,
+              cancellationToken))
+            .ConfigureAwait(false);
+          failedRecipes = !attempt.Succeeded;
+
+          if (attempt.Succeeded)
+          {
+            invoice.PossibleRecipes = [.. attempt.Result];
+          }
+        }
+      }
+
+      InvoiceAnalysisOptions? failedOptions = CreateFailedInvoiceOptions(
+        options,
+        failedExtraction,
+        failedSummary,
+        failedProductClassification,
+        failedAllergens,
+        failedInvoiceClassification,
+        failedRecipes);
+
+      return (invoice, failedOptions);
     }).ConfigureAwait(false);
 
-  private async Task<TResult?> ExecuteBestEffortAsync<TResult>(
-    QueueAnalysisMessage message,
+  /// <inheritdoc/>
+  public async Task<(Merchant Merchant, MerchantAnalysisOptions? FailedOptions)> AnalyzeMerchantAsync(
+    Merchant merchant,
+    MerchantAnalysisOptions options,
+    Guid correlationId,
+    CancellationToken cancellationToken) =>
+    await TryCatchAsync(async () =>
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeMerchantAsync));
+      ArgumentNullException.ThrowIfNull(merchant);
+      ArgumentNullException.ThrowIfNull(options);
+
+      if (correlationId == Guid.Empty)
+      {
+        throw new ArgumentException("Correlation identifier must not be empty.", nameof(correlationId));
+      }
+
+      activity?.SetTag("analysis.correlation_id", correlationId);
+      activity?.SetTag("analysis.target_id", merchant.id);
+      cancellationToken.ThrowIfCancellationRequested();
+
+      Task<CapabilityAttempt<StandardClassification>> classificationTask = options.MerchantClassification
+        ? ExecuteBestEffortAsync(
+          correlationId,
+          AnalysisCapability.MerchantClassification,
+          () => ClassifyMerchantAsync(merchant, correlationId, cancellationToken))
+        : Task.FromResult(CapabilityAttempt<StandardClassification>.NotRun);
+      Task<CapabilityAttempt<string>> descriptionTask = options.DescriptionGeneration
+        ? ExecuteBestEffortAsync(
+          correlationId,
+          AnalysisCapability.DescriptionGeneration,
+          () => GenerateMerchantDescriptionAsync(merchant, correlationId, cancellationToken))
+        : Task.FromResult(CapabilityAttempt<string>.NotRun);
+
+      await Task.WhenAll(classificationTask, descriptionTask).ConfigureAwait(false);
+      CapabilityAttempt<StandardClassification> classificationAttempt =
+        await classificationTask.ConfigureAwait(false);
+      CapabilityAttempt<string> descriptionAttempt = await descriptionTask.ConfigureAwait(false);
+
+      if (classificationAttempt.Succeeded)
+      {
+        merchant.Classification = classificationAttempt.Result;
+      }
+
+      if (descriptionAttempt.Succeeded)
+      {
+        merchant.Description = descriptionAttempt.Result;
+      }
+
+      bool failedClassification = options.MerchantClassification && !classificationAttempt.Succeeded;
+      bool failedDescription = options.DescriptionGeneration && !descriptionAttempt.Succeeded;
+      MerchantAnalysisOptions? failedOptions = failedClassification || failedDescription
+        ? new MerchantAnalysisOptions(
+          AnalysisProfile.Custom,
+          failedClassification,
+          failedDescription)
+        : null;
+
+      return (merchant, failedOptions);
+    }).ConfigureAwait(false);
+
+  private async Task<CapabilityAttempt<TResult>> ExecuteBestEffortAsync<TResult>(
+    Guid correlationId,
     AnalysisCapability capability,
-    Func<Task<TResult>> operation,
-    ConcurrentQueue<AnalysisCapability> completedCapabilities,
-    ConcurrentQueue<AnalysisFailureReason> failureReasons)
-    where TResult : class
+    Func<Task<TResult>> operation)
   {
     long startedAt = System.Diagnostics.Stopwatch.GetTimestamp();
 
     try
     {
       TResult result = await operation().ConfigureAwait(false);
-      completedCapabilities.Enqueue(capability);
-      RecordCapabilityOutcome(message, capability, AnalysisOutcome.Success, startedAt, failureReason: null);
-      return result;
+      RecordCapabilityOutcome(correlationId, capability, AnalysisOutcome.Success, startedAt, failureReason: null);
+      return CapabilityAttempt<TResult>.Success(result);
     }
     catch (OperationCanceledException)
     {
@@ -325,14 +433,13 @@ public sealed partial class AnalysisOrchestrationService
       or AnalysisOrchestrationServiceException)
     {
       AnalysisFailureReason failureReason = ResolveFailureReason(exception);
-      failureReasons.Enqueue(failureReason);
-      RecordCapabilityOutcome(message, capability, AnalysisOutcome.Failure, startedAt, failureReason);
-      return null;
+      RecordCapabilityOutcome(correlationId, capability, AnalysisOutcome.Failure, startedAt, failureReason);
+      return CapabilityAttempt<TResult>.Failure;
     }
   }
 
   private void RecordCapabilityOutcome(
-    QueueAnalysisMessage message,
+    Guid correlationId,
     AnalysisCapability capability,
     AnalysisOutcome outcome,
     long startedAtTimestamp,
@@ -341,20 +448,33 @@ public sealed partial class AnalysisOrchestrationService
     double durationMs = System.Diagnostics.Stopwatch.GetElapsedTime(startedAtTimestamp).TotalMilliseconds;
 
     InvoiceMetrics.RecordCapabilityOutcome(capability, outcome, durationMs, failureReason);
-    logger.LogAnalysisCapabilityOutcomeObserved(message.CorrelationId, capability, outcome, durationMs);
+    logger.LogAnalysisCapabilityOutcomeObserved(correlationId, capability, outcome, durationMs);
 
     if (!failureReason.HasValue)
     {
       return;
     }
 
-    logger.LogAnalysisCapabilityFailureReasonObserved(message.CorrelationId, capability, failureReason.Value);
+    logger.LogAnalysisCapabilityFailureReasonObserved(correlationId, capability, failureReason.Value);
 
     if (failureReason.Value == AnalysisFailureReason.InvalidStructuredOutput)
     {
       InvoiceMetrics.RecordCapabilityInvalidStructuredOutput(capability);
       logger.LogAnalysisInvalidStructuredOutputDetected(capability);
     }
+  }
+
+  private void RecordBlockedCapability(Guid correlationId, AnalysisCapability capability)
+  {
+    InvoiceMetrics.RecordCapabilityOutcome(
+      capability,
+      AnalysisOutcome.Failure,
+      durationMs: 0,
+      AnalysisFailureReason.DependencyValidation);
+    logger.LogAnalysisCapabilityFailureReasonObserved(
+      correlationId,
+      capability,
+      AnalysisFailureReason.DependencyValidation);
   }
 
   private static AnalysisFailureReason ResolveFailureReason(Exception exception)
@@ -386,118 +506,281 @@ public sealed partial class AnalysisOrchestrationService
     foreach (Product product in products)
     {
       ArgumentNullException.ThrowIfNull(product);
-      inputs.Add(new ProductAnalysisInput(AnalysisCorrelationTokens.ForProduct(index), product));
+      inputs.Add(new ProductAnalysisInput($"product:{index}", product));
       index++;
     }
 
     return inputs;
   }
 
-  private static List<ProductAnalysisInput> BuildProductInputs(IReadOnlyList<ExtractedProduct> products)
+  private static Dictionary<string, StandardClassification> GetPersistedProductClassifications(
+    IReadOnlyList<ProductAnalysisInput> products)
   {
-    var inputs = new List<ProductAnalysisInput>(products.Count);
+    var classifications = new Dictionary<string, StandardClassification>(StringComparer.Ordinal);
 
-    for (int index = 0; index < products.Count; index++)
+    foreach (ProductAnalysisInput product in products)
     {
-      inputs.Add(new ProductAnalysisInput(
-        AnalysisCorrelationTokens.ForProduct(index),
-        ExtractedProductMapper.ToDomainProduct(products[index])));
+      if (product.Product.Classification is not null)
+      {
+        classifications[product.CorrelationToken] = product.Product.Classification;
+      }
     }
 
-    return inputs;
+    return classifications;
   }
 
-  private static InvoiceAnalysisExecutionResult CreateInvoiceFailureResult(
-    QueueAnalysisMessage message,
-    AnalysisFailureReason failureReason) =>
-    new(
-      message,
-      new InvoiceAnalysisPatch(null, null, null, null, null, null),
-      CompletedCapabilities: [],
-      FailureReason: failureReason);
+  private static Dictionary<string, AllergenAssessment> GetPersistedAllergenAssessments(
+    IReadOnlyList<ProductAnalysisInput> products)
+  {
+    var assessments = new Dictionary<string, AllergenAssessment>(StringComparer.Ordinal);
 
-  /// <summary>Executes the resolved merchant capability graph without persisting aggregate state.</summary>
-  /// <param name="message">The durable merchant request containing resolved capability options.</param>
-  /// <param name="merchant">The merchant snapshot to analyze.</param>
-  /// <param name="cancellationToken">The token used to cancel the capability graph.</param>
-  /// <returns>The immutable patch, completed capabilities, and first observed failure reason.</returns>
-  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationValidationException">
-  /// Thrown when the message or merchant is null.
-  /// </exception>
-  /// <exception cref="DDD.Analysis.Exceptions.Outer.Orchestration.AnalysisOrchestrationServiceException">
-  /// Thrown when an unclassified orchestration failure prevents producing an execution result.
-  /// </exception>
-  /// <inheritdoc/>
-  public async Task<MerchantAnalysisExecutionResult> ExecuteMerchantAnalysisAsync(
-    QueueAnalysisMessage message,
-    Merchant merchant,
-    CancellationToken cancellationToken) =>
-    await TryCatchAsync(async () =>
+    foreach (ProductAnalysisInput product in products)
     {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(ExecuteMerchantAnalysisAsync));
-      ArgumentNullException.ThrowIfNull(message);
-      ArgumentNullException.ThrowIfNull(merchant);
-      activity?.SetTag("analysis.correlation_id", message.CorrelationId.ToString());
-      activity?.SetTag("analysis.target_id", message.TargetId.ToString());
-
-      cancellationToken.ThrowIfCancellationRequested();
-
-      if (message.TargetType != AnalysisTargetType.Merchant || message.MerchantOptions is null)
+      if (product.Product.AllergenAssessment is not null)
       {
-        return CreateMerchantFailureResult(message, AnalysisFailureReason.Validation);
+        assessments[product.CorrelationToken] = product.Product.AllergenAssessment;
+      }
+    }
+
+    return assessments;
+  }
+
+  private static InvoiceAnalysisOptions? CreateFailedInvoiceOptions(
+    InvoiceAnalysisOptions requested,
+    bool documentExtraction,
+    bool invoiceSummary,
+    bool productClassification,
+    bool allergenAssessment,
+    bool invoiceClassification,
+    bool recipeGeneration)
+  {
+    if (!documentExtraction
+        && !invoiceSummary
+        && !productClassification
+        && !allergenAssessment
+        && !invoiceClassification
+        && !recipeGeneration)
+    {
+      return null;
+    }
+
+    return new InvoiceAnalysisOptions(
+      AnalysisProfile.Custom,
+      documentExtraction,
+      invoiceSummary,
+      productClassification,
+      allergenAssessment,
+      invoiceClassification,
+      recipeGeneration,
+      recipeGeneration ? requested.MaximumRecipes : 0);
+  }
+
+  private static ReceiptExtraction CreateExtractionSnapshot(Invoice invoice) =>
+    new(
+      [.. invoice.Items],
+      invoice.PaymentInformation,
+      invoice.ReceiptType,
+      invoice.CountryRegion,
+      [.. invoice.TaxDetails],
+      [.. invoice.Payments]);
+
+  private static void ApplyExtraction(Invoice invoice, ReceiptExtraction extraction)
+  {
+    invoice.Items = ReconcileProducts(invoice.Items, extraction.Products);
+    invoice.PaymentInformation = extraction.PaymentInformation;
+    invoice.ReceiptType = extraction.ReceiptType;
+    invoice.CountryRegion = extraction.CountryRegion;
+    invoice.TaxDetails = [.. extraction.TaxDetails];
+    invoice.Payments = [.. extraction.Payments];
+  }
+
+  private static void ApplyProductClassifications(
+    Invoice invoice,
+    IReadOnlyDictionary<string, StandardClassification> classifications)
+  {
+    var items = invoice.Items as IList<Product> ?? [.. invoice.Items];
+
+    for (int index = 0; index < items.Count; index++)
+    {
+      if (classifications.TryGetValue($"product:{index}", out StandardClassification? classification))
+      {
+        items[index].Classification = classification;
+      }
+    }
+  }
+
+  private static void ApplyAllergenAssessments(
+    Invoice invoice,
+    IReadOnlyDictionary<string, AllergenAssessment> assessments)
+  {
+    var items = invoice.Items as IList<Product> ?? [.. invoice.Items];
+
+    for (int index = 0; index < items.Count; index++)
+    {
+      if (assessments.TryGetValue($"product:{index}", out AllergenAssessment? assessment))
+      {
+        items[index].AllergenAssessment = assessment;
+      }
+    }
+  }
+
+  private const string InvariantNumberFormat = "0.############################";
+
+  private static List<Product> ReconcileProducts(
+    IEnumerable<Product>? previousItems,
+    IReadOnlyList<Product> extractedProducts)
+  {
+    ArgumentNullException.ThrowIfNull(extractedProducts);
+
+    ProductCarryOverIndex carryOver = ProductCarryOverIndex.Build(previousItems);
+    var reconciled = new List<Product>(extractedProducts.Count);
+
+    foreach (Product extracted in extractedProducts)
+    {
+      Product? previous = carryOver.TryTake(extracted);
+
+      if (previous is not null)
+      {
+        extracted.Classification = previous.Classification;
+        extracted.AllergenAssessment = previous.AllergenAssessment;
+
+        ProductMetadata metadata = previous.Metadata;
+        metadata.Confidence = extracted.Metadata.Confidence;
+        extracted.Metadata = metadata;
       }
 
-      MerchantAnalysisOptions options = message.MerchantOptions;
-      var completedCapabilities = new ConcurrentQueue<AnalysisCapability>();
-      var failureReasons = new ConcurrentQueue<AnalysisFailureReason>();
+      reconciled.Add(extracted);
+    }
 
-      MerchantClassificationResult? classification = null;
-      MerchantDescriptionResult? description = null;
+    return reconciled;
+  }
 
-      Task<MerchantClassificationResult?> classificationTask = options.MerchantClassification
-        ? ExecuteBestEffortAsync(
-          message,
-          AnalysisCapability.MerchantClassification,
-          () => ClassifyMerchantAsync(
-            merchant,
-            message.CorrelationId,
-            cancellationToken),
-          completedCapabilities,
-          failureReasons)
-        : Task.FromResult<MerchantClassificationResult?>(null);
-      Task<MerchantDescriptionResult?> descriptionTask = options.DescriptionGeneration
-        ? ExecuteBestEffortAsync(
-          message,
-          AnalysisCapability.DescriptionGeneration,
-          () => GenerateMerchantDescriptionAsync(
-            merchant,
-            message.CorrelationId,
-            cancellationToken),
-          completedCapabilities,
-          failureReasons)
-        : Task.FromResult<MerchantDescriptionResult?>(null);
+  private static string? BuildProductCodeKey(string? productCode) =>
+    string.IsNullOrWhiteSpace(productCode) ? null : productCode.Trim().ToUpperInvariant();
 
-      await Task.WhenAll(classificationTask, descriptionTask).ConfigureAwait(false);
-      classification = await classificationTask.ConfigureAwait(false);
-      description = await descriptionTask.ConfigureAwait(false);
+  private static string BuildProductAttributeKey(Product product) => string.Concat(
+    NormalizeProductName(product.Name),
+    "|",
+    product.Quantity.ToString(InvariantNumberFormat, CultureInfo.InvariantCulture),
+    "|",
+    product.Price.ToString(InvariantNumberFormat, CultureInfo.InvariantCulture));
 
-      var patch = new MerchantAnalysisPatch(classification, description);
+  private static string NormalizeProductName(string? name) =>
+    string.IsNullOrWhiteSpace(name)
+      ? string.Empty
+      : string.Join(
+          ' ',
+          name.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        .ToUpperInvariant();
 
-      return new MerchantAnalysisExecutionResult(
-        message,
-        patch,
-        [.. completedCapabilities],
-        failureReasons.TryPeek(out AnalysisFailureReason failureReason) ? failureReason : null);
-    }).ConfigureAwait(false);
+  private sealed class ProductCarryOverIndex
+  {
+    private readonly Dictionary<string, Queue<ProductCarryOverEntry>> byProductCode = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Queue<ProductCarryOverEntry>> byAttributes = new(StringComparer.Ordinal);
 
-  private static MerchantAnalysisExecutionResult CreateMerchantFailureResult(
-    QueueAnalysisMessage message,
-    AnalysisFailureReason failureReason) =>
-    new(
-      message,
-      new MerchantAnalysisPatch(null, null),
-      CompletedCapabilities: [],
-      FailureReason: failureReason);
+    internal static ProductCarryOverIndex Build(IEnumerable<Product>? previousItems)
+    {
+      var index = new ProductCarryOverIndex();
+
+      if (previousItems is null)
+      {
+        return index;
+      }
+
+      foreach (Product previous in previousItems)
+      {
+        if (previous is null)
+        {
+          continue;
+        }
+
+        var entry = new ProductCarryOverEntry(previous);
+        string? productCodeKey = BuildProductCodeKey(previous.ProductCode);
+
+        if (productCodeKey is not null)
+        {
+          Enqueue(index.byProductCode, productCodeKey, entry);
+        }
+
+        Enqueue(index.byAttributes, BuildProductAttributeKey(previous), entry);
+      }
+
+      return index;
+    }
+
+    internal Product? TryTake(Product candidate)
+    {
+      string? productCodeKey = BuildProductCodeKey(candidate.ProductCode);
+
+      if (productCodeKey is not null && TryDequeue(byProductCode, productCodeKey, out Product? byCode))
+      {
+        return byCode;
+      }
+
+      return TryDequeue(byAttributes, BuildProductAttributeKey(candidate), out Product? byAttribute)
+        ? byAttribute
+        : null;
+    }
+
+    private static void Enqueue(
+      Dictionary<string, Queue<ProductCarryOverEntry>> index,
+      string key,
+      ProductCarryOverEntry entry)
+    {
+      if (!index.TryGetValue(key, out Queue<ProductCarryOverEntry>? queue))
+      {
+        queue = new Queue<ProductCarryOverEntry>();
+        index[key] = queue;
+      }
+
+      queue.Enqueue(entry);
+    }
+
+    private static bool TryDequeue(
+      Dictionary<string, Queue<ProductCarryOverEntry>> index,
+      string key,
+      out Product? matched)
+    {
+      matched = null;
+
+      if (!index.TryGetValue(key, out Queue<ProductCarryOverEntry>? queue))
+      {
+        return false;
+      }
+
+      while (queue.Count > 0)
+      {
+        ProductCarryOverEntry entry = queue.Dequeue();
+
+        if (entry.Consumed)
+        {
+          continue;
+        }
+
+        entry.Consumed = true;
+        matched = entry.Product;
+        return true;
+      }
+
+      return false;
+    }
+  }
+
+  private sealed class ProductCarryOverEntry(Product product)
+  {
+    internal Product Product { get; } = product;
+
+    internal bool Consumed { get; set; }
+  }
+
+  private readonly record struct CapabilityAttempt<TResult>(bool Succeeded, TResult Result)
+  {
+    internal static CapabilityAttempt<TResult> NotRun => new(false, default!);
+
+    internal static CapabilityAttempt<TResult> Failure => new(false, default!);
+
+    internal static CapabilityAttempt<TResult> Success(TResult result) => new(true, result);
+  }
 
   private const int MaximumCandidatesPerSearchTerm = 5;
   private const int MaximumCandidatesPerSubject = 10;
@@ -551,8 +834,8 @@ public sealed partial class AnalysisOrchestrationService
   /// Thrown when generation or taxonomy access fails.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<ProductClassificationResult> ClassifyProductsAsync(
-    IReadOnlyList<ProductAnalysisInput> products,
+  private async Task<IReadOnlyDictionary<string, StandardClassification>> ClassifyProductsAsync(
+    List<ProductAnalysisInput> products,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
@@ -569,14 +852,12 @@ public sealed partial class AnalysisOrchestrationService
         product => product.Product.Name,
         StringComparer.Ordinal);
 
-      IReadOnlyDictionary<string, StandardClassification> classifications = await ClassifyBatchAsync(
+      return await ClassifyBatchAsync(
         AnalysisCapability.ProductClassification,
         ClassificationSystem.Gs1Gpc,
         subjects,
         cancellationToken)
         .ConfigureAwait(false);
-
-      return new ProductClassificationResult(classifications);
     }).ConfigureAwait(false);
 
   /// <summary>Classifies an extracted invoice against bounded ECOICOP v2 candidates.</summary>
@@ -592,9 +873,9 @@ public sealed partial class AnalysisOrchestrationService
   /// Thrown when generation or taxonomy access fails.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<InvoiceClassificationResult> ClassifyInvoiceAsync(
-    ReceiptExtractionResult extraction,
-    ProductClassificationResult products,
+  private async Task<StandardClassification> ClassifyInvoiceAsync(
+    ReceiptExtraction extraction,
+    IReadOnlyDictionary<string, StandardClassification> products,
     Guid sourceRunId,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
@@ -620,7 +901,7 @@ public sealed partial class AnalysisOrchestrationService
         cancellationToken)
         .ConfigureAwait(false);
 
-      return new InvoiceClassificationResult(classifications[sourceRunId.ToString()]);
+      return classifications[sourceRunId.ToString()];
     }).ConfigureAwait(false);
 
   /// <summary>Classifies a merchant against bounded NACE 2.1 candidates.</summary>
@@ -635,7 +916,7 @@ public sealed partial class AnalysisOrchestrationService
   /// Thrown when generation or taxonomy access fails.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<MerchantClassificationResult> ClassifyMerchantAsync(
+  private async Task<StandardClassification> ClassifyMerchantAsync(
     Merchant merchant,
     Guid sourceRunId,
     CancellationToken cancellationToken) =>
@@ -661,7 +942,7 @@ public sealed partial class AnalysisOrchestrationService
         cancellationToken)
         .ConfigureAwait(false);
 
-      return new MerchantClassificationResult(classifications[sourceRunId.ToString()]);
+      return classifications[sourceRunId.ToString()];
     }).ConfigureAwait(false);
 
   private async Task<Dictionary<string, StandardClassification>> ClassifyBatchAsync(
@@ -788,13 +1069,15 @@ public sealed partial class AnalysisOrchestrationService
 
   private static double NormalizeConfidence(double confidence) => Math.Clamp(confidence, 0d, 1d);
 
-  private static string BuildInvoiceDescription(ReceiptExtractionResult extraction, ProductClassificationResult products)
+  private static string BuildInvoiceDescription(
+    ReceiptExtraction extraction,
+    IReadOnlyDictionary<string, StandardClassification> products)
   {
     IEnumerable<string> productNames = extraction.Products
       .Select(product => product.Name)
       .Where(name => !string.IsNullOrWhiteSpace(name));
 
-    IEnumerable<string> productCategories = products.Classifications.Values
+    IEnumerable<string> productCategories = products.Values
       .Select(classification => classification.OfficialLabel)
       .Distinct(StringComparer.Ordinal);
 

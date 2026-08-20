@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.GenerativeAnalysisBroker;
 using arolariu.Backend.Common.DDD.ValueObjects;
-using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 using arolariu.Backend.Domain.Tests.Builders;
@@ -51,8 +50,8 @@ internal sealed class MerchantDescriptionHarness
   /// Executes the merchant description generation flow for the harness merchant.
   /// </summary>
   /// <param name="cancellationToken">The cancellation token that aborts generation.</param>
-  /// <returns>The generated merchant description result.</returns>
-  public Task<MerchantDescriptionResult> ExecuteAsync(CancellationToken cancellationToken = default) =>
+  /// <returns>The generated merchant description.</returns>
+  public Task<string> ExecuteAsync(CancellationToken cancellationToken = default) =>
     Service.GenerateMerchantDescriptionAsync(Merchant, SourceRunId, cancellationToken);
 
   /// <summary>

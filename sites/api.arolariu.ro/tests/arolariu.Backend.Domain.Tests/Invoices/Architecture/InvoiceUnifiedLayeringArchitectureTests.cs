@@ -1,11 +1,23 @@
 namespace arolariu.Backend.Domain.Tests.Invoices.Architecture;
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Invoices.Endpoints;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 using arolariu.Backend.Domain.Invoices.Services.Management;
+using arolariu.Backend.Domain.Invoices.Services.Orchestration.AnalysisService;
 using arolariu.Backend.Domain.Invoices.Workers;
 
 using Microsoft.Extensions.Logging;
@@ -147,6 +159,76 @@ public sealed class InvoiceUnifiedLayeringArchitectureTests
     Assert.IsFalse(processingUpdateInvoice.GetParameters().Any(parameter => parameter.ParameterType == typeof(string)));
   }
 
+  /// <summary>
+  /// Verifies Analysis Foundation exposes direct capability values instead of one-field result wrappers.
+  /// </summary>
+  [TestMethod]
+  public void AnalysisFoundation_DirectValues_ReplaceCapabilityWrappers()
+  {
+    AssertReturnType(
+      typeof(IAnalysisFoundationService),
+      nameof(IAnalysisFoundationService.GenerateInvoiceSummaryAsync),
+      typeof(Task<ValueTuple<string, string>>));
+    AssertReturnType(
+      typeof(IAnalysisFoundationService),
+      nameof(IAnalysisFoundationService.AssessAllergensAsync),
+      typeof(Task<IReadOnlyDictionary<string, AllergenAssessment>>));
+    AssertReturnType(
+      typeof(IAnalysisFoundationService),
+      nameof(IAnalysisFoundationService.GenerateMerchantDescriptionAsync),
+      typeof(Task<string>));
+    AssertReturnType(
+      typeof(IAnalysisFoundationService),
+      nameof(IAnalysisFoundationService.GenerateRecipesAsync),
+      typeof(Task<IReadOnlyList<RecipeSuggestion>>));
+  }
+
+  /// <summary>
+  /// Verifies Analysis Orchestration returns mutated aggregates with failed-only option records.
+  /// </summary>
+  [TestMethod]
+  public void AnalysisOrchestration_AggregateWorkflows_ReplaceExecutionResults()
+  {
+    AssertReturnType(
+      typeof(IAnalysisOrchestrationService),
+      nameof(IAnalysisOrchestrationService.AnalyzeInvoiceAsync),
+      typeof(Task<ValueTuple<Invoice, InvoiceAnalysisOptions>>));
+    AssertReturnType(
+      typeof(IAnalysisOrchestrationService),
+      nameof(IAnalysisOrchestrationService.AnalyzeMerchantAsync),
+      typeof(Task<ValueTuple<Merchant, MerchantAnalysisOptions>>));
+  }
+
+  /// <summary>
+  /// Verifies obsolete analysis wrapper contracts are absent from the invoice assembly.
+  /// </summary>
+  [TestMethod]
+  public void AnalysisContracts_ObsoleteWrappers_AreAbsent()
+  {
+    string[] removedTypes =
+    [
+      "AnalysisExecutionResult",
+      "InvoiceAnalysisExecutionResult",
+      "MerchantAnalysisExecutionResult",
+      "InvoiceAnalysisPatch",
+      "MerchantAnalysisPatch",
+      "InvoiceSummaryResult",
+      "InvoiceClassificationResult",
+      "MerchantClassificationResult",
+      "MerchantDescriptionResult",
+      "ProductClassificationResult",
+      "ProductAllergenAssessmentResult",
+      "RecipeGenerationResult",
+    ];
+
+    foreach (string removedType in removedTypes)
+    {
+      Assert.IsFalse(
+        InvoiceAssembly.GetTypes().Any(type => type.Name == removedType),
+        removedType);
+    }
+  }
+
   private static Type RequireType(string fullName) =>
     InvoiceAssembly.GetType(fullName)
     ?? throw new AssertFailedException($"Required unified architecture type '{fullName}' was not found.");
@@ -162,5 +244,13 @@ public sealed class InvoiceUnifiedLayeringArchitectureTests
       .ToArray();
 
     CollectionAssert.AreEqual(expectedParameterTypes, actualParameterTypes, concreteType.FullName);
+  }
+
+  private static void AssertReturnType(Type contract, string methodName, Type expectedReturnType)
+  {
+    MethodInfo method = contract.GetMethod(methodName)
+      ?? throw new AssertFailedException($"Required method '{contract.FullName}.{methodName}' was not found.");
+
+    Assert.AreEqual(expectedReturnType, method.ReturnType, methodName);
   }
 }

@@ -9,12 +9,9 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 /// </summary>
 /// <remarks>
 /// <para>This contract captures only capability selection and recipe limits. It deliberately excludes run metadata and persisted stamps because those arrive in later pipeline tasks.</para>
-/// <para><b>Dependency Closure:</b> Allergen assessment requires product classification to be enabled. Recipe generation
-/// requires allergen assessment to be enabled (and therefore, transitively, product classification as well) — this
-/// mirrors the orchestration DAG (Task 9), which only attempts recipe generation once both product classification and
-/// allergen assessment outcomes are available; without this closure a legal <see cref="AnalysisProfile.Custom"/>
-/// selection could enable recipe generation while disabling allergen assessment, causing the DAG to silently skip
-/// recipes forever.</para>
+/// <para><b>Dependency Inputs:</b> Custom selections may enable a dependent capability without re-enabling successful
+/// prerequisites. This supports failed-only replacement messages; orchestration consumes prerequisite values already
+/// present on the loaded aggregate. Published presets retain their exact dependency-closed shapes.</para>
 /// <para><b>Profiles:</b> <see cref="AnalysisProfile.Fast"/>, <see cref="AnalysisProfile.Balanced"/>, and <see cref="AnalysisProfile.Comprehensive"/> must each exactly match their published preset shape; callers requiring custom combinations must use <see cref="AnalysisProfile.Custom"/>.</para>
 /// </remarks>
 public sealed record InvoiceAnalysisOptions
@@ -31,7 +28,7 @@ public sealed record InvoiceAnalysisOptions
   /// <param name="recipeGeneration">Whether recipe generation should run.</param>
   /// <param name="maximumRecipes">The maximum number of recipes that may be produced when recipe generation is enabled.</param>
   /// <exception cref="ArgumentException">
-  /// Thrown when the profile conflicts with the supplied capability flags or when capability dependency closure rules are violated.
+  /// Thrown when a published profile conflicts with the supplied capability flags.
   /// </exception>
   /// <exception cref="ArgumentOutOfRangeException">
   /// Thrown when <paramref name="maximumRecipes"/> is negative, when recipe generation is enabled without a positive limit,
@@ -50,31 +47,6 @@ public sealed record InvoiceAnalysisOptions
     if (!Enum.IsDefined(profile))
     {
       throw new ArgumentOutOfRangeException(nameof(profile), profile, "Profile must be a defined analysis profile.");
-    }
-
-    if (allergenAssessment && !productClassification)
-    {
-      throw new ArgumentException("Allergen assessment requires product classification.", nameof(allergenAssessment));
-    }
-
-    if (invoiceClassification && !documentExtraction)
-    {
-      throw new ArgumentException("Invoice classification requires document extraction.", nameof(invoiceClassification));
-    }
-
-    if (invoiceClassification && !productClassification)
-    {
-      throw new ArgumentException("Invoice classification requires product classification.", nameof(invoiceClassification));
-    }
-
-    if (recipeGeneration && !productClassification)
-    {
-      throw new ArgumentException("Recipe generation requires product classification.", nameof(recipeGeneration));
-    }
-
-    if (recipeGeneration && !allergenAssessment)
-    {
-      throw new ArgumentException("Recipe generation requires allergen assessment.", nameof(recipeGeneration));
     }
 
     maximumRecipes = AnalysisContractGuards.RequireNonNegative(maximumRecipes, nameof(maximumRecipes));

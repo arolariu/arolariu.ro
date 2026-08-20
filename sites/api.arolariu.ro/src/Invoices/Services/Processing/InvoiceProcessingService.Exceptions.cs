@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Orchestration;
@@ -37,9 +36,6 @@ public sealed partial class InvoiceProcessingService
 
   private delegate Task<IEnumerable<InvoiceScan>> CallbackFunctionForTasksWithInvoiceScanListReturn();
 
-  private delegate Task<InvoiceAnalysisExecutionResult> CallbackFunctionForTasksWithInvoiceAnalysisExecutionResultReturn();
-
-  private delegate Task<MerchantAnalysisExecutionResult> CallbackFunctionForTasksWithMerchantAnalysisExecutionResultReturn();
   #endregion
 
   #region Unified Classify
@@ -258,39 +254,6 @@ public sealed partial class InvoiceProcessingService
     }
   }
 
-  private async Task<InvoiceAnalysisExecutionResult> TryCatchAsync(
-    CallbackFunctionForTasksWithInvoiceAnalysisExecutionResultReturn callbackFunction)
-  {
-    try
-    {
-      return await callbackFunction().ConfigureAwait(false);
-    }
-    catch (OperationCanceledException)
-    {
-      throw;
-    }
-    catch (Exception exception)
-    {
-      throw Classify(exception);
-    }
-  }
-
-  private async Task<MerchantAnalysisExecutionResult> TryCatchAsync(
-    CallbackFunctionForTasksWithMerchantAnalysisExecutionResultReturn callbackFunction)
-  {
-    try
-    {
-      return await callbackFunction().ConfigureAwait(false);
-    }
-    catch (OperationCanceledException)
-    {
-      throw;
-    }
-    catch (Exception exception)
-    {
-      throw Classify(exception);
-    }
-  }
   #endregion
 
   #region Processing service exception builders

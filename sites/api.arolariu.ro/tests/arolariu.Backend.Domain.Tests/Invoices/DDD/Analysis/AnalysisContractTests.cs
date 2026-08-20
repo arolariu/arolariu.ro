@@ -31,17 +31,24 @@ public sealed class AnalysisContractTests
   }
 
   /// <summary>
-  /// Verifies recipe generation still requires both classification and allergen assessment.
+  /// Verifies custom replacement options may retry one dependent capability using persisted prerequisites.
   /// </summary>
   [TestMethod]
-  public void Constructor_RecipeWithoutAllergens_ThrowsArgumentException() =>
-    Assert.ThrowsExactly<ArgumentException>(() => new InvoiceAnalysisOptions(
+  public void Constructor_CustomRecipeOnly_PreservesDependentOnlyRetry()
+  {
+    InvoiceAnalysisOptions options = new(
       AnalysisProfile.Custom,
-      documentExtraction: true,
+      documentExtraction: false,
       invoiceSummary: false,
-      productClassification: true,
+      productClassification: false,
       allergenAssessment: false,
       invoiceClassification: false,
       recipeGeneration: true,
-      maximumRecipes: 1));
+      maximumRecipes: 1);
+
+    Assert.IsFalse(options.ProductClassification);
+    Assert.IsFalse(options.AllergenAssessment);
+    Assert.IsTrue(options.RecipeGeneration);
+    Assert.AreEqual(1, options.MaximumRecipes);
+  }
 }

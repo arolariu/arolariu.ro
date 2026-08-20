@@ -568,6 +568,33 @@ public static partial class Log
   [LoggerMessage(300_231, LogLevel.Warning, "Analysis run '{runId}' of target type '{targetType}' lost its worker lease and was aborted before persistence.")]
   public static partial void LogAnalysisLeaseLost(this ILogger logger, Guid runId, AnalysisTargetType targetType);
 
+  /// <summary>Logs publication of a failed-only replacement message.</summary>
+  [LoggerMessage(300_232, LogLevel.Information, "Analysis run '{correlationId}' queued replacement attempt {attemptNumber}.")]
+  public static partial void LogAnalysisReplacementMessageQueued(
+    this ILogger logger,
+    Guid correlationId,
+    int attemptNumber);
+
+  /// <summary>Logs terminal discard after the logical attempt limit.</summary>
+  [LoggerMessage(300_233, LogLevel.Warning, "Analysis run '{correlationId}' discarded remaining failures after attempt {attemptNumber}.")]
+  public static partial void LogAnalysisMessageDiscardedAfterMaximumAttempts(
+    this ILogger logger,
+    Guid correlationId,
+    int attemptNumber);
+
+  /// <summary>Logs a target persistence failure without recording aggregate content.</summary>
+  [LoggerMessage(300_234, LogLevel.Error, "Analysis run '{correlationId}' could not persist its analyzed target; queue policy will continue.")]
+  public static partial void LogAnalysisTargetPersistenceFailed(
+    this ILogger logger,
+    Guid correlationId);
+
+  /// <summary>Logs a replacement enqueue failure after the current message was deleted.</summary>
+  [LoggerMessage(300_235, LogLevel.Error, "Analysis run '{correlationId}' could not queue replacement attempt {attemptNumber} after deleting the current message.")]
+  public static partial void LogAnalysisReplacementMessageEnqueueFailed(
+    this ILogger logger,
+    Guid correlationId,
+    int attemptNumber);
+
   /// <summary>
   /// Logs bounded non-sensitive token usage metadata observed for a successful generative analysis capability call.
   /// </summary>

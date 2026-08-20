@@ -1,40 +1,42 @@
 namespace arolariu.Backend.Domain.Invoices.Services.Orchestration.AnalysisService;
 
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
-using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 
 /// <summary>
-/// Defines queue lifecycle and non-classification analysis capability coordination.
+/// Defines queue lifecycle, aggregate analysis, and manual classification coordination.
 /// </summary>
 public interface IAnalysisOrchestrationService
 {
-  /// <summary>Executes the selected invoice analysis workflow without persistence.</summary>
-  /// <param name="message">The durable request containing resolved invoice options.</param>
-  /// <param name="invoice">The invoice snapshot to analyze.</param>
+  /// <summary>Analyzes the selected invoice capabilities without persisting the aggregate.</summary>
+  /// <param name="invoice">The invoice aggregate to enrich in memory.</param>
+  /// <param name="options">The selected invoice capability set.</param>
+  /// <param name="correlationId">The durable analysis correlation identifier.</param>
   /// <param name="cancellationToken">The token used to cancel capability execution.</param>
-  /// <returns>The immutable invoice patch, completed capabilities, and optional failure reason.</returns>
-  Task<InvoiceAnalysisExecutionResult> ExecuteInvoiceAnalysisAsync(
-    QueueAnalysisMessage message,
+  /// <returns>The analyzed aggregate and failed or dependency-blocked options, if any.</returns>
+  Task<(Invoice Invoice, InvoiceAnalysisOptions? FailedOptions)> AnalyzeInvoiceAsync(
     Invoice invoice,
+    InvoiceAnalysisOptions options,
+    Guid correlationId,
     CancellationToken cancellationToken);
 
-  /// <summary>Executes the selected merchant analysis workflow without persistence.</summary>
-  /// <param name="message">The durable request containing resolved merchant options.</param>
-  /// <param name="merchant">The merchant snapshot to analyze.</param>
+  /// <summary>Analyzes the selected merchant capabilities without persisting the entity.</summary>
+  /// <param name="merchant">The merchant entity to enrich in memory.</param>
+  /// <param name="options">The selected merchant capability set.</param>
+  /// <param name="correlationId">The durable analysis correlation identifier.</param>
   /// <param name="cancellationToken">The token used to cancel capability execution.</param>
-  /// <returns>The immutable merchant patch, completed capabilities, and optional failure reason.</returns>
-  Task<MerchantAnalysisExecutionResult> ExecuteMerchantAnalysisAsync(
-    QueueAnalysisMessage message,
+  /// <returns>The analyzed entity and failed options, if any.</returns>
+  Task<(Merchant Merchant, MerchantAnalysisOptions? FailedOptions)> AnalyzeMerchantAsync(
     Merchant merchant,
+    MerchantAnalysisOptions options,
+    Guid correlationId,
     CancellationToken cancellationToken);
 
   /// <summary>Canonically resolves one optional manual classification selection.</summary>
@@ -45,36 +47,6 @@ public interface IAnalysisOrchestrationService
   Task<StandardClassification?> ResolveManualClassificationAsync(
     string? classificationCode,
     ClassificationSystem expectedSystem,
-    CancellationToken cancellationToken);
-
-  /// <summary>Classifies transient products against GS1 GPC.</summary>
-  /// <param name="products">The non-empty product inputs keyed by transient correlation tokens.</param>
-  /// <param name="cancellationToken">The token used to cancel classification.</param>
-  /// <returns>Canonical GS1 GPC classifications keyed by product token.</returns>
-  Task<ProductClassificationResult> ClassifyProductsAsync(
-    IReadOnlyList<ProductAnalysisInput> products,
-    CancellationToken cancellationToken);
-
-  /// <summary>Classifies an invoice against ECOICOP v2.</summary>
-  /// <param name="extraction">The typed receipt extraction used to describe the invoice.</param>
-  /// <param name="products">The canonical product classifications used as evidence.</param>
-  /// <param name="sourceRunId">The non-empty analysis run identifier.</param>
-  /// <param name="cancellationToken">The token used to cancel classification.</param>
-  /// <returns>The canonical ECOICOP v2 invoice classification.</returns>
-  Task<InvoiceClassificationResult> ClassifyInvoiceAsync(
-    ReceiptExtractionResult extraction,
-    ProductClassificationResult products,
-    Guid sourceRunId,
-    CancellationToken cancellationToken);
-
-  /// <summary>Classifies a merchant against NACE 2.1.</summary>
-  /// <param name="merchant">The merchant snapshot to classify.</param>
-  /// <param name="sourceRunId">The non-empty analysis run identifier.</param>
-  /// <param name="cancellationToken">The token used to cancel classification.</param>
-  /// <returns>The canonical NACE 2.1 merchant classification.</returns>
-  Task<MerchantClassificationResult> ClassifyMerchantAsync(
-    Merchant merchant,
-    Guid sourceRunId,
     CancellationToken cancellationToken);
 
   /// <summary>Enqueues one analysis message and returns Azure Queue's message identifier.</summary>
@@ -109,61 +81,5 @@ public interface IAnalysisOrchestrationService
   /// <returns>A task that completes after deletion.</returns>
   Task DeleteAnalysisAsync(
     AnalysisQueueReceipt receipt,
-    CancellationToken cancellationToken);
-
-  /// <summary>Extracts typed receipt data from invoice scans.</summary>
-  /// <param name="scans">The ordered invoice scans to extract.</param>
-  /// <param name="cancellationToken">The token used to cancel extraction.</param>
-  /// <returns>The merged typed receipt extraction.</returns>
-  Task<ReceiptExtractionResult> ExtractInvoiceAsync(
-    IReadOnlyList<InvoiceScan> scans,
-    CancellationToken cancellationToken);
-
-  /// <summary>Generates an invoice summary.</summary>
-  /// <param name="products">The transient product inputs to summarize.</param>
-  /// <param name="correlationId">The durable analysis correlation identifier.</param>
-  /// <param name="cancellationToken">The token used to cancel generation.</param>
-  /// <returns>The generated invoice summary.</returns>
-  Task<InvoiceSummaryResult> GenerateInvoiceSummaryAsync(
-    IReadOnlyList<ProductAnalysisInput> products,
-    Guid correlationId,
-    CancellationToken cancellationToken);
-
-  /// <summary>Assesses allergens for classified products.</summary>
-  /// <param name="products">The transient products to assess.</param>
-  /// <param name="classifications">Canonical classifications covering the supplied products.</param>
-  /// <param name="correlationId">The durable analysis correlation identifier.</param>
-  /// <param name="cancellationToken">The token used to cancel generation.</param>
-  /// <returns>The allergen assessments keyed by product correlation token.</returns>
-  Task<ProductAllergenAssessmentResult> AssessAllergensAsync(
-    IReadOnlyList<ProductAnalysisInput> products,
-    ProductClassificationResult classifications,
-    Guid correlationId,
-    CancellationToken cancellationToken);
-
-  /// <summary>Generates recipe suggestions.</summary>
-  /// <param name="products">The transient products available to recipes.</param>
-  /// <param name="classifications">Canonical classifications covering the supplied products.</param>
-  /// <param name="allergens">Allergen assessments covering the supplied products.</param>
-  /// <param name="maximumRecipes">The requested recipe limit.</param>
-  /// <param name="correlationId">The durable analysis correlation identifier.</param>
-  /// <param name="cancellationToken">The token used to cancel generation.</param>
-  /// <returns>The bounded recipe suggestions.</returns>
-  Task<RecipeGenerationResult> GenerateRecipesAsync(
-    IReadOnlyList<ProductAnalysisInput> products,
-    ProductClassificationResult classifications,
-    ProductAllergenAssessmentResult allergens,
-    int maximumRecipes,
-    Guid correlationId,
-    CancellationToken cancellationToken);
-
-  /// <summary>Generates a merchant description.</summary>
-  /// <param name="merchant">The merchant evidence to describe.</param>
-  /// <param name="correlationId">The durable analysis correlation identifier.</param>
-  /// <param name="cancellationToken">The token used to cancel generation.</param>
-  /// <returns>The generated merchant description.</returns>
-  Task<MerchantDescriptionResult> GenerateMerchantDescriptionAsync(
-    Merchant merchant,
-    Guid correlationId,
     CancellationToken cancellationToken);
 }

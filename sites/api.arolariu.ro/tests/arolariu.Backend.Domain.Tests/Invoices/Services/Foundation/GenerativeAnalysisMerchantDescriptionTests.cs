@@ -61,9 +61,9 @@ public sealed class GenerativeAnalysisMerchantDescriptionTests
     }
     else
     {
-      MerchantDescriptionResult result = await harness.ExecuteAsync();
+      string result = await harness.ExecuteAsync();
 
-      Assert.AreEqual("Corner Shop sells groceries.", result.Description);
+      Assert.AreEqual("Corner Shop sells groceries.", result);
     }
   }
 
@@ -90,9 +90,9 @@ public sealed class GenerativeAnalysisMerchantDescriptionTests
       hasParentCompany: false);
     MerchantDescriptionHarness harness = MerchantDescriptionHarness.WithResponse("Corner Shop sells groceries.", merchant);
 
-    MerchantDescriptionResult result = await harness.ExecuteAsync();
+    string result = await harness.ExecuteAsync();
 
-    Assert.AreEqual("Corner Shop sells groceries.", result.Description);
+    Assert.AreEqual("Corner Shop sells groceries.", result);
   }
 
   /// <summary>
@@ -106,9 +106,9 @@ public sealed class GenerativeAnalysisMerchantDescriptionTests
   {
     MerchantDescriptionHarness harness = MerchantDescriptionHarness.WithSparseResponse(description);
 
-    MerchantDescriptionResult result = await harness.ExecuteAsync();
+    string result = await harness.ExecuteAsync();
 
-    Assert.AreEqual(description, result.Description);
+    Assert.AreEqual(description, result);
   }
 
   /// <summary>

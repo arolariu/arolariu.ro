@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
@@ -14,10 +13,9 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.AnalysisQueue;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.AnalysisService;
-using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
-using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
-using arolariu.Backend.Domain.Invoices.Services.Processing;
 
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -25,17 +23,15 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 /// <summary>
-/// Verifies OCR persistence preserves existing product enrichment while refreshing extracted values.
+/// Verifies OCR reconciliation preserves existing product enrichment while refreshing extracted values.
 /// </summary>
 [TestClass]
 public sealed class InvoiceProcessingReconciliationTests
 {
   /// <summary>Verifies product-code matching preserves enrichment and refreshes OCR confidence.</summary>
   [TestMethod]
-  public async Task ProcessAnalysisAsync_ProductCodeMatch_PreservesEnrichment()
+  public async Task AnalyzeInvoiceAsync_ProductCodeMatch_PreservesEnrichment()
   {
-    Guid invoiceId = Guid.NewGuid();
-    Guid userId = Guid.NewGuid();
     StandardClassification classification = CreateClassification("10000001", "Milk");
     AllergenAssessment allergenAssessment = AllergenAssessment.NoSignals(Guid.NewGuid());
     var previous = new Product
@@ -54,14 +50,19 @@ public sealed class InvoiceProcessingReconciliationTests
         Confidence = 0.25,
       },
     };
-    Invoice invoice = CreateInvoice(invoiceId, userId, [previous]);
-    InvoiceAnalysisExecutionResult execution = CreateExecution(
-      invoiceId,
-      userId,
-      [new ExtractedProduct("Fresh milk", 2m, "pcs", "sku-1", 6m, 0.91)]);
-    Invoice persisted = await PersistAsync(invoice, execution);
-    Product product = persisted.Items.Single();
+    Invoice invoice = CreateInvoice([previous]);
+    ReceiptExtraction extraction = CreateExtraction(
+      [CreateProduct("Fresh milk", 2m, "pcs", "sku-1", 6m, 0.91)]);
+    AnalysisOrchestrationService service = CreateService(extraction);
 
+    (Invoice analyzed, InvoiceAnalysisOptions? failed) = await service.AnalyzeInvoiceAsync(
+      invoice,
+      ExtractionOnlyOptions(),
+      Guid.NewGuid(),
+      CancellationToken.None);
+    Product product = analyzed.Items.Single();
+
+    Assert.IsNull(failed);
     Assert.AreEqual("Fresh milk", product.Name);
     Assert.AreSame(classification, product.Classification);
     Assert.AreSame(allergenAssessment, product.AllergenAssessment);
@@ -73,10 +74,8 @@ public sealed class InvoiceProcessingReconciliationTests
 
   /// <summary>Verifies duplicate attribute matches consume previous items once and leave unmatched items clean.</summary>
   [TestMethod]
-  public async Task ProcessAnalysisAsync_DuplicateAttributeMatches_UsesFifoAndLeavesUnmatchedClean()
+  public async Task AnalyzeInvoiceAsync_DuplicateAttributeMatches_UsesFifoAndLeavesUnmatchedClean()
   {
-    Guid invoiceId = Guid.NewGuid();
-    Guid userId = Guid.NewGuid();
     StandardClassification firstClassification = CreateClassification("10000001", "First");
     StandardClassification secondClassification = CreateClassification("10000002", "Second");
     var first = new Product
@@ -90,23 +89,28 @@ public sealed class InvoiceProcessingReconciliationTests
     var second = new Product
     {
       Name = "milk",
-      Quantity = 1.00m,
-      Price = 5.0m,
+      Quantity = 1m,
+      Price = 5m,
       Classification = secondClassification,
       Metadata = new ProductMetadata { IsComplete = true },
     };
-    Invoice invoice = CreateInvoice(invoiceId, userId, [first, second]);
-    InvoiceAnalysisExecutionResult execution = CreateExecution(
-      invoiceId,
-      userId,
+    Invoice invoice = CreateInvoice([first, second]);
+    ReceiptExtraction extraction = CreateExtraction(
       [
-        new ExtractedProduct("MILK", 1m, "pcs", string.Empty, 5m, 0.8),
-        new ExtractedProduct("milk", 1m, "pcs", string.Empty, 5m, 0.7),
-        new ExtractedProduct("Bread", 1m, "pcs", string.Empty, 4m, 0.9),
+        CreateProduct("MILK", 1m, "pcs", string.Empty, 5m, 0.8),
+        CreateProduct("milk", 1m, "pcs", string.Empty, 5m, 0.7),
+        CreateProduct("Bread", 1m, "pcs", string.Empty, 4m, 0.9),
       ]);
-    Invoice persisted = await PersistAsync(invoice, execution);
-    Product[] products = [.. persisted.Items];
+    AnalysisOrchestrationService service = CreateService(extraction);
 
+    (Invoice analyzed, InvoiceAnalysisOptions? failed) = await service.AnalyzeInvoiceAsync(
+      invoice,
+      ExtractionOnlyOptions(),
+      Guid.NewGuid(),
+      CancellationToken.None);
+    Product[] products = [.. analyzed.Items];
+
+    Assert.IsNull(failed);
     Assert.AreSame(firstClassification, products[0].Classification);
     Assert.IsTrue(products[0].Metadata.IsEdited);
     Assert.AreSame(secondClassification, products[1].Classification);
@@ -116,59 +120,22 @@ public sealed class InvoiceProcessingReconciliationTests
     Assert.AreEqual(0.9, products[2].Metadata.Confidence);
   }
 
-  private static async Task<Invoice> PersistAsync(
-    Invoice invoice,
-    InvoiceAnalysisExecutionResult execution)
+  private static AnalysisOrchestrationService CreateService(ReceiptExtraction extraction)
   {
-    var receipt = new AnalysisQueueReceipt(
-      execution.Message,
-      "message-1",
-      "pop-receipt-1",
-      dequeueCount: 1,
-      nextVisibleAt: null);
-    var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
-    invoiceOrchestration.Setup(service => service.ReadInvoiceObject(
-        invoice.id,
-        invoice.UserIdentifier,
+    var foundation = new Mock<IAnalysisFoundationService>(MockBehavior.Strict);
+    foundation.Setup(service => service.ExtractInvoiceAsync(
+        It.IsAny<System.Collections.Generic.IReadOnlyList<InvoiceScan>>(),
         It.IsAny<CancellationToken>()))
-      .ReturnsAsync(invoice);
-    invoiceOrchestration.Setup(service => service.UpdateInvoiceObject(
-        invoice,
-        invoice.id,
-        invoice.UserIdentifier,
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync(invoice);
-    var analysisOrchestration = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
-    analysisOrchestration.Setup(service => service.ReceiveAnalysisAsync(
-        TimeSpan.FromMinutes(2),
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync(receipt);
-    analysisOrchestration.Setup(service => service.ExecuteInvoiceAnalysisAsync(
-        execution.Message,
-        invoice,
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync(execution);
-    analysisOrchestration.Setup(service => service.DeleteAnalysisAsync(
-        receipt,
-        It.IsAny<CancellationToken>()))
-      .Returns(Task.CompletedTask);
-    var service = new InvoiceProcessingService(
-      invoiceOrchestration.Object,
-      Mock.Of<IMerchantOrchestrationService>(),
-      analysisOrchestration.Object,
-      NullLoggerFactory.Instance);
+      .ReturnsAsync(extraction);
 
-    bool processed = await service.ProcessAnalysisAsync(CancellationToken.None);
-    Assert.IsTrue(processed);
-    return invoice;
+    return new AnalysisOrchestrationService(
+      foundation.Object,
+      Mock.Of<IAnalysisQueueFoundationService>(),
+      NullLoggerFactory.Instance);
   }
 
-  private static InvoiceAnalysisExecutionResult CreateExecution(
-    Guid invoiceId,
-    Guid userId,
-    ExtractedProduct[] products)
-  {
-    InvoiceAnalysisOptions options = new(
+  private static InvoiceAnalysisOptions ExtractionOnlyOptions() =>
+    new(
       AnalysisProfile.Custom,
       documentExtraction: true,
       invoiceSummary: false,
@@ -177,13 +144,9 @@ public sealed class InvoiceProcessingReconciliationTests
       invoiceClassification: false,
       recipeGeneration: false,
       maximumRecipes: 0);
-    QueueAnalysisMessage message = QueueAnalysisMessage.CreateInvoiceMessage(
-      invoiceId,
-      userId,
-      Guid.NewGuid(),
-      options,
-      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
-    var extraction = new ReceiptExtractionResult(
+
+  private static ReceiptExtraction CreateExtraction(Product[] products) =>
+    new(
       products,
       new PaymentInformation(),
       receiptType: string.Empty,
@@ -191,18 +154,30 @@ public sealed class InvoiceProcessingReconciliationTests
       taxDetails: [],
       payments: []);
 
-    return new InvoiceAnalysisExecutionResult(
-      message,
-      new InvoiceAnalysisPatch(extraction, null, null, null, null, null),
-      CompletedCapabilities: []);
-  }
-
-  private static Invoice CreateInvoice(Guid invoiceId, Guid userId, Product[] products) =>
+  private static Product CreateProduct(
+    string name,
+    decimal quantity,
+    string quantityUnit,
+    string productCode,
+    decimal price,
+    double confidence) =>
     new()
     {
-      id = invoiceId,
-      UserIdentifier = userId,
+      Name = name,
+      Quantity = quantity,
+      QuantityUnit = quantityUnit,
+      ProductCode = productCode,
+      Price = price,
+      Metadata = new ProductMetadata { Confidence = confidence },
+    };
+
+  private static Invoice CreateInvoice(Product[] products) =>
+    new()
+    {
+      id = Guid.NewGuid(),
+      UserIdentifier = Guid.NewGuid(),
       Items = products,
+      Scans = [new InvoiceScan(ScanType.JPG, new Uri("https://example.test/receipt.jpg"), null)],
     };
 
   private static StandardClassification CreateClassification(string code, string label) =>

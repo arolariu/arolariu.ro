@@ -17,6 +17,7 @@ using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.Modules;
 using System.Text.RegularExpressions;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
@@ -47,9 +48,9 @@ public sealed partial class AnalysisFoundationService
   /// Thrown when structured generation fails or returns unsupported allergen data.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<ProductAllergenAssessmentResult> AssessAllergensAsync(
+  public async Task<IReadOnlyDictionary<string, AllergenAssessment>> AssessAllergensAsync(
     IReadOnlyList<ProductAnalysisInput> products,
-    ProductClassificationResult classifications,
+    IReadOnlyDictionary<string, StandardClassification> classifications,
     Guid sourceRunId,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(
@@ -57,13 +58,11 @@ public sealed partial class AnalysisFoundationService
       {
         using var activity = InvoicePackageTracing.StartActivity(nameof(AssessAllergensAsync));
         ValidateProductsAreSet(products);
-        ValidateProductClassificationResultIsSet(classifications);
+        ValidateProductClassificationsAreSet(classifications);
         ValidateSourceRunId(sourceRunId, nameof(sourceRunId));
 
         activity?.SetTag("analysis.source_run_id", sourceRunId);
         activity?.SetTag("analysis.product_count", products.Count);
-
-        IReadOnlyList<ClassifiedProductAnalysisResult> mappedProducts = ProductResultMapper.Map(products, classifications);
 
         var expectedTokens = new HashSet<string>(
           products.Select(product => product.CorrelationToken),
@@ -78,7 +77,7 @@ public sealed partial class AnalysisFoundationService
               {
                 correlationToken = product.CorrelationToken,
                 productName = product.Product.Name,
-                classification = ToClassificationPayload(mappedProducts[index].Classification),
+                classification = ToClassificationPayload(classifications[product.CorrelationToken]),
               })
               .ToArray(),
           });
@@ -94,19 +93,23 @@ public sealed partial class AnalysisFoundationService
           expectedTokens,
           static entry => entry.CorrelationToken);
 
-        var assessments = new Dictionary<string, ProductAllergenAssessment>(StringComparer.Ordinal);
+        var assessments = new Dictionary<string, AllergenAssessment>(StringComparer.Ordinal);
 
         foreach (ProductAnalysisInput product in products)
         {
-          assessments[product.CorrelationToken] = MapAllergenAssessment(indexedAssessments[product.CorrelationToken]);
+          assessments[product.CorrelationToken] = MapAllergenAssessment(
+            indexedAssessments[product.CorrelationToken],
+            sourceRunId);
         }
 
-        return new ProductAllergenAssessmentResult(assessments);
+        return assessments;
       },
       cancellationToken)
       .ConfigureAwait(false);
 
-  private static ProductAllergenAssessment MapAllergenAssessment(AllergenAssessmentStructuredEntry entry)
+  private static AllergenAssessment MapAllergenAssessment(
+    AllergenAssessmentStructuredEntry entry,
+    Guid sourceRunId)
   {
     string status = RequireStructuredText(entry.Status, "status");
     IReadOnlyList<AllergenSignalStructuredEntry> signals = entry.Signals
@@ -114,29 +117,30 @@ public sealed partial class AnalysisFoundationService
 
     return status switch
     {
-      nameof(ProductAllergenAssessmentStatus.SignalsFound) => ProductAllergenAssessment.SignalsFound(
+      "SignalsFound" => AllergenAssessment.Detected(
+        sourceRunId,
         signals.Select(MapAllergenSignal).ToArray()),
 
-      nameof(ProductAllergenAssessmentStatus.NoSignalsInAvailableEvidence) when signals.Count == 0
-        => ProductAllergenAssessment.NoSignalsInAvailableEvidence(),
+      "NoSignalsInAvailableEvidence" when signals.Count == 0
+        => AllergenAssessment.NoSignals(sourceRunId),
 
-      nameof(ProductAllergenAssessmentStatus.InsufficientData) when signals.Count == 0
-        => ProductAllergenAssessment.InsufficientData(),
+      "InsufficientData" when signals.Count == 0
+        => AllergenAssessment.Insufficient(sourceRunId),
 
-      nameof(ProductAllergenAssessmentStatus.NoSignalsInAvailableEvidence)
-        or nameof(ProductAllergenAssessmentStatus.InsufficientData)
+      "NoSignalsInAvailableEvidence"
+        or "InsufficientData"
         => throw new InvalidStructuredOutputException($"Allergen assessment status '{status}' must not include signals."),
 
       _ => throw new InvalidStructuredOutputException($"Structured allergen assessment status '{status}' is not supported."),
     };
   }
 
-  private static ProductAllergenSignal MapAllergenSignal(AllergenSignalStructuredEntry entry)
+  private static AllergenSignal MapAllergenSignal(AllergenSignalStructuredEntry entry)
   {
     string codeText = RequireStructuredText(entry.Code, "code");
     string evidenceTierText = RequireStructuredText(entry.EvidenceTier, "evidenceTier");
     AllergenCode code = ParseAllergenCode(codeText);
-    ProductAllergenEvidenceTier evidenceTier = ParseAllergenEvidenceTier(evidenceTierText);
+    AllergenEvidenceLevel evidenceLevel = ParseAllergenEvidenceLevel(evidenceTierText);
 
     IReadOnlyList<AllergenEvidenceStructuredEntry> evidenceEntries = entry.Evidence
       ?? throw new InvalidStructuredOutputException("Structured allergen signal did not contain an evidence collection.");
@@ -145,16 +149,16 @@ public sealed partial class AnalysisFoundationService
       .Select(MapAllergenEvidence)
       .ToArray();
 
-    if (evidenceTier == ProductAllergenEvidenceTier.Declared)
+    if (string.Equals(evidenceTierText, "Declared", StringComparison.Ordinal))
     {
       throw new InvalidStructuredOutputException(
         $"Declared allergen signal '{code}' is not supported for Task 7 because trusted explicit ingredient or allergen-statement inputs are unavailable.");
     }
 
     return CreateFromStructuredOutput(
-      () => new ProductAllergenSignal(
+      () => new AllergenSignal(
         code,
-        evidenceTier,
+        evidenceLevel,
         RequireStructuredConfidence(entry.Confidence, "confidence"),
         evidence),
       $"Structured allergen signal '{codeText}' was invalid.");
@@ -186,15 +190,14 @@ public sealed partial class AnalysisFoundationService
     return parsedCode;
   }
 
-  private static ProductAllergenEvidenceTier ParseAllergenEvidenceTier(string evidenceTier)
+  private static AllergenEvidenceLevel ParseAllergenEvidenceLevel(string evidenceTier) => evidenceTier switch
   {
-    if (!Enum.TryParse(evidenceTier, ignoreCase: false, out ProductAllergenEvidenceTier parsedTier) || !Enum.IsDefined(parsedTier))
-    {
-      throw new InvalidStructuredOutputException($"Structured allergen evidence tier '{evidenceTier}' is not supported.");
-    }
-
-    return parsedTier;
-  }
+    "Likely" => AllergenEvidenceLevel.Inferred,
+    "Possible" => AllergenEvidenceLevel.Precautionary,
+    "Declared" => AllergenEvidenceLevel.Explicit,
+    _ => throw new InvalidStructuredOutputException(
+      $"Structured allergen evidence tier '{evidenceTier}' is not supported."),
+  };
 
   private static object ToClassificationPayload(StandardClassification classification) =>
     new
@@ -563,7 +566,7 @@ public sealed partial class AnalysisFoundationService
   /// Thrown when Document Intelligence fails, times out, or returns invalid structured data.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<ReceiptExtractionResult> ExtractInvoiceAsync(
+  public async Task<ReceiptExtraction> ExtractInvoiceAsync(
     IReadOnlyList<InvoiceScan> scans,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(
@@ -613,10 +616,10 @@ public sealed partial class AnalysisFoundationService
       documentIntelligenceRecord.WithSourceScanIndex(index));
   }
 
-  private static ReceiptExtractionResult MergeDocuments(
+  private static ReceiptExtraction MergeDocuments(
     IReadOnlyList<IndexedDocumentIntelligenceRecord> extractedDocuments)
   {
-    var products = new List<ExtractedProduct>();
+    var products = new List<Product>();
     var productKeys = new HashSet<ProductIdentity>();
     var taxDetails = new List<TaxDetail>();
     var taxKeys = new HashSet<TaxIdentity>();
@@ -659,7 +662,7 @@ public sealed partial class AnalysisFoundationService
       tipAmount,
       payments);
 
-    return new ReceiptExtractionResult(
+    return new ReceiptExtraction(
       products,
       paymentInformation,
       receiptType,
@@ -670,12 +673,12 @@ public sealed partial class AnalysisFoundationService
 
   private static void MergeProducts(
     IReadOnlyList<ReceiptProductDocument> productDocuments,
-    List<ExtractedProduct> mergedProducts,
+    List<Product> mergedProducts,
     ISet<ProductIdentity> productKeys)
   {
     foreach (ReceiptProductDocument productDocument in productDocuments)
     {
-      if (!TryCreateProduct(productDocument, out ExtractedProduct? product, out ProductIdentity identity))
+      if (!TryCreateProduct(productDocument, out Product? product, out ProductIdentity identity))
       {
         continue;
       }
@@ -755,7 +758,7 @@ public sealed partial class AnalysisFoundationService
 
   private static bool TryCreateProduct(
     ReceiptProductDocument productDocument,
-    out ExtractedProduct? product,
+    out Product? product,
     out ProductIdentity identity)
   {
     product = null;
@@ -809,7 +812,15 @@ public sealed partial class AnalysisFoundationService
         productDocument.Price.Confidence,
         productDocument.TotalPrice.Confidence);
 
-    product = new ExtractedProduct(name, quantity, quantityUnit, productCode, price, confidence);
+    product = new Product
+    {
+      Name = name,
+      Quantity = quantity,
+      QuantityUnit = quantityUnit,
+      ProductCode = productCode,
+      Price = price,
+      Metadata = new ProductMetadata { Confidence = confidence },
+    };
     identity = new ProductIdentity(name.ToUpperInvariant(), productCode.ToUpperInvariant(), quantity, price);
     return true;
   }
@@ -987,7 +998,7 @@ public sealed partial class AnalysisFoundationService
   /// Thrown when structured generation fails or returns an invalid summary.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<InvoiceSummaryResult> GenerateInvoiceSummaryAsync(
+  public async Task<(string Name, string Description)> GenerateInvoiceSummaryAsync(
     IReadOnlyList<ProductAnalysisInput> products,
     Guid sourceRunId,
     CancellationToken cancellationToken) =>
@@ -1027,9 +1038,9 @@ public sealed partial class AnalysisFoundationService
       cancellationToken)
       .ConfigureAwait(false);
 
-  private static InvoiceSummaryResult MapInvoiceSummary(InvoiceSummaryStructuredResult response) =>
+  private static (string Name, string Description) MapInvoiceSummary(InvoiceSummaryStructuredResult response) =>
     CreateFromStructuredOutput(
-      () => new InvoiceSummaryResult(
+      () => (
         RequireStructuredText(response.Name, "name"),
         RequireStructuredText(response.Description, "description")),
       "Structured invoice summary output was invalid.");
@@ -1065,7 +1076,7 @@ public sealed partial class AnalysisFoundationService
   /// Thrown when structured generation fails or weak evidence is returned without qualified language.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<MerchantDescriptionResult> GenerateMerchantDescriptionAsync(
+  public async Task<string> GenerateMerchantDescriptionAsync(
     Merchant merchant,
     Guid sourceRunId,
     CancellationToken cancellationToken) =>
@@ -1125,16 +1136,47 @@ public sealed partial class AnalysisFoundationService
       cancellationToken)
       .ConfigureAwait(false);
 
-  private static MerchantDescriptionResult MapMerchantDescription(
+  private static string MapMerchantDescription(
     Merchant merchant,
     MerchantDescriptionOutput response)
   {
-    string description = RequireStructuredText(response.Description, nameof(MerchantDescriptionOutput.Description));
+    string description = CreateFromStructuredOutput(
+      () => ValidateMerchantDescription(
+        RequireStructuredText(response.Description, nameof(MerchantDescriptionOutput.Description))),
+      "Structured merchant description output was invalid.");
     ValidateQualifiedDescriptionForWeakEvidence(merchant, description);
 
-    return CreateFromStructuredOutput(
-      () => new MerchantDescriptionResult(description),
-      "Structured merchant description output was invalid.");
+    return description;
+  }
+
+  private static string ValidateMerchantDescription(string description)
+  {
+    const int maximumDescriptionLength = 240;
+
+    if (description.Length > maximumDescriptionLength)
+    {
+      throw new ArgumentOutOfRangeException(
+        nameof(description),
+        description.Length,
+        $"Merchant descriptions must not exceed {maximumDescriptionLength} characters.");
+    }
+
+    if (description.Contains("http://", StringComparison.OrdinalIgnoreCase)
+        || description.Contains("https://", StringComparison.OrdinalIgnoreCase)
+        || description.Contains("www.", StringComparison.OrdinalIgnoreCase)
+        || MerchantBareDomainRegex().IsMatch(description))
+    {
+      throw new ArgumentException("Merchant descriptions must not contain URLs.", nameof(description));
+    }
+
+    if (MerchantExternalResearchClaimRegex().IsMatch(description))
+    {
+      throw new ArgumentException(
+        "Merchant descriptions must not claim external research.",
+        nameof(description));
+    }
+
+    return description;
   }
 
   private static void ValidateQualifiedDescriptionForWeakEvidence(Merchant merchant, string description)
@@ -1221,6 +1263,18 @@ public sealed partial class AnalysisFoundationService
     RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
   private static partial Regex MerchantWeakEvidenceQualifierRegex();
 
+  [GeneratedRegex(
+    @"\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\b",
+    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+    matchTimeoutMilliseconds: 250)]
+  private static partial Regex MerchantBareDomainRegex();
+
+  [GeneratedRegex(
+    @"\b(?:according\s+to|based\s+on|per)\b[^.!?\r\n]{0,160}\b(?:google(?:\s+maps)?|linkedin|online(?:\s+(?:sources?|research|search(?:es)?|results?|records?|listings?))?|web(?:\s+(?:sources?|research|search(?:es)?|results?))?|public\s+(?:records?|registry|registries|listings?)|registry(?:\s+(?:data|records?|listings?))?|registries(?:\s+(?:data|records?|listings?))?|listings?)\b|\b(?:i|we)\s+(?:looked\s+up|searched(?:\s+for)?|checked|reviewed|found)\b[^.!?\r\n]{0,160}\b(?:google(?:\s+maps)?|linkedin|online|web|public\s+(?:records?|registry|registries|listings?)|registry(?:\s+(?:data|records?|listings?))?|registries(?:\s+(?:data|records?|listings?))?|listings?)\b",
+    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+    matchTimeoutMilliseconds: 250)]
+  private static partial Regex MerchantExternalResearchClaimRegex();
+
   /// <summary>Generates bounded recipes from food-eligible products and current allergen evidence.</summary>
   /// <param name="products">The non-empty transient product inputs.</param>
   /// <param name="classifications">Canonical classifications covering the supplied products.</param>
@@ -1236,10 +1290,10 @@ public sealed partial class AnalysisFoundationService
   /// Thrown when structured generation fails or returns an invalid recipe contract.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<RecipeGenerationResult> GenerateRecipesAsync(
+  public async Task<IReadOnlyList<RecipeSuggestion>> GenerateRecipesAsync(
     IReadOnlyList<ProductAnalysisInput> products,
-    ProductClassificationResult classifications,
-    ProductAllergenAssessmentResult allergens,
+    IReadOnlyDictionary<string, StandardClassification> classifications,
+    IReadOnlyDictionary<string, AllergenAssessment> allergens,
     int maximumRecipes,
     Guid sourceRunId,
     CancellationToken cancellationToken) =>
@@ -1248,8 +1302,8 @@ public sealed partial class AnalysisFoundationService
       {
         using var activity = InvoicePackageTracing.StartActivity(nameof(GenerateRecipesAsync));
         ValidateProductsAreSet(products);
-        ValidateProductClassificationResultIsSet(classifications);
-        ValidateProductAllergenAssessmentResultIsSet(allergens);
+        ValidateProductClassificationsAreSet(classifications);
+        ValidateProductAllergenAssessmentsAreSet(allergens);
         ValidateAllergenAssessmentsCoverProducts(products, allergens);
         ValidateMaximumRecipes(maximumRecipes);
         ValidateSourceRunId(sourceRunId, nameof(sourceRunId));
@@ -1258,24 +1312,22 @@ public sealed partial class AnalysisFoundationService
         activity?.SetTag("analysis.product_count", products.Count);
         activity?.SetTag("analysis.maximum_recipes", maximumRecipes);
 
-        IReadOnlyList<ClassifiedProductAnalysisResult> mappedProducts = ProductResultMapper.Map(products, classifications);
-
         var eligibleProducts = products
-          .Select((product, index) => new
+          .Select(product => new
           {
             product.CorrelationToken,
             Product = product.Product,
-            Classification = mappedProducts[index].Classification,
+            Classification = classifications[product.CorrelationToken],
           })
           .Where(item => IsFoodOrBeverageClassification(item.Classification))
           .ToArray();
 
         if (eligibleProducts.Length == 0)
         {
-          return new RecipeGenerationResult([]);
+          return [];
         }
 
-        AllergenCode[] allowedWarningCodes = allergens.Assessments.Values
+        AllergenCode[] allowedWarningCodes = allergens.Values
           .SelectMany(assessment => assessment.Signals)
           .Select(signal => signal.Code)
           .Distinct()
@@ -1322,7 +1374,7 @@ public sealed partial class AnalysisFoundationService
           .Select(entry => MapRecipe(entry, allowedWarningCodes, sourceRunId))
           .ToArray();
 
-        return new RecipeGenerationResult(recipes);
+        return recipes;
       },
       cancellationToken)
       .ConfigureAwait(false);

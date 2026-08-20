@@ -8,7 +8,6 @@ using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
-using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
@@ -182,13 +181,4 @@ public sealed class InvoiceManagementServiceTests
       dequeueCount,
       null);
   }
-
-  private static InvoiceAnalysisExecutionResult CreateExecution(
-    QueueAnalysisMessage message,
-    AnalysisFailureReason? failureReason) =>
-    new(
-      message,
-      new InvoiceAnalysisPatch(null, null, null, null, null, null),
-      CompletedCapabilities: [],
-      FailureReason: failureReason);
 }

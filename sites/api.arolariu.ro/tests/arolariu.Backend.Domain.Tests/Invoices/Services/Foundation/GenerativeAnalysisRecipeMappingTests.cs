@@ -34,9 +34,9 @@ public sealed class GenerativeAnalysisRecipeMappingTests
   [DataRow(nameof(RecipeDifficulty.Hard))]
   public async Task GenerateRecipesAsync_SupportedDifficulty_ReturnsRecipe(string difficulty)
   {
-    RecipeGenerationResult result = await ExecuteRecipeAsync(CreateRecipe(difficulty: difficulty));
+    IReadOnlyList<RecipeSuggestion> result = await ExecuteRecipeAsync(CreateRecipe(difficulty: difficulty));
 
-    Assert.AreEqual(difficulty, result.Recipes[0].Difficulty.ToString());
+    Assert.AreEqual(difficulty, result[0].Difficulty.ToString());
   }
 
   /// <summary>
@@ -65,12 +65,12 @@ public sealed class GenerativeAnalysisRecipeMappingTests
       missingOptionalIngredients: [],
       allergenWarnings: []);
 
-    RecipeGenerationResult result = await ExecuteRecipeAsync(recipe);
+    IReadOnlyList<RecipeSuggestion> result = await ExecuteRecipeAsync(recipe);
 
-    Assert.AreEqual(0, result.Recipes[0].PurchasedIngredients.Count);
-    Assert.AreEqual(0, result.Recipes[0].AssumedPantryStaples.Count);
-    Assert.AreEqual(0, result.Recipes[0].MissingOptionalIngredients.Count);
-    Assert.AreEqual(0, result.Recipes[0].AllergenWarnings.Count);
+    Assert.AreEqual(0, result[0].PurchasedIngredients.Count);
+    Assert.AreEqual(0, result[0].AssumedPantryStaples.Count);
+    Assert.AreEqual(0, result[0].MissingOptionalIngredients.Count);
+    Assert.AreEqual(0, result[0].AllergenWarnings.Count);
   }
 
   /// <summary>
@@ -137,16 +137,16 @@ public sealed class GenerativeAnalysisRecipeMappingTests
   [TestMethod]
   public async Task GenerateRecipesAsync_DisjointIngredientBuckets_ReturnsRecipe()
   {
-    RecipeGenerationResult result = await ExecuteRecipeAsync(CreateRecipe(
+    IReadOnlyList<RecipeSuggestion> result = await ExecuteRecipeAsync(CreateRecipe(
       purchasedIngredients: [CreateIngredient("Milk")],
       pantryStaples: [CreateIngredient("Oats")],
       missingOptionalIngredients: [CreateIngredient("Honey")],
       allergenWarnings: [nameof(AllergenCode.Milk)]));
 
-    Assert.AreEqual(1, result.Recipes[0].PurchasedIngredients.Count);
-    Assert.AreEqual(1, result.Recipes[0].AssumedPantryStaples.Count);
-    Assert.AreEqual(1, result.Recipes[0].MissingOptionalIngredients.Count);
-    Assert.AreEqual(AllergenCode.Milk, result.Recipes[0].AllergenWarnings[0]);
+    Assert.AreEqual(1, result[0].PurchasedIngredients.Count);
+    Assert.AreEqual(1, result[0].AssumedPantryStaples.Count);
+    Assert.AreEqual(1, result[0].MissingOptionalIngredients.Count);
+    Assert.AreEqual(AllergenCode.Milk, result[0].AllergenWarnings[0]);
   }
 
   /// <summary>
@@ -158,7 +158,7 @@ public sealed class GenerativeAnalysisRecipeMappingTests
     var broker = new ScriptedGenerativeAnalysisBroker();
     GenerativeClassificationHarness harness = GenerativeClassificationHarness.Create(broker);
 
-    RecipeGenerationResult result = await harness.Service.GenerateRecipesAsync(
+    IReadOnlyList<RecipeSuggestion> result = await harness.Service.GenerateRecipesAsync(
       CreateProducts(),
       CreateNonFoodClassifications(),
       CreateAllergenAssessments(),
@@ -166,7 +166,7 @@ public sealed class GenerativeAnalysisRecipeMappingTests
       Guid.NewGuid(),
       CancellationToken.None);
 
-    Assert.AreEqual(0, result.Recipes.Count);
+    Assert.AreEqual(0, result.Count);
     Assert.AreEqual(0, broker.InvocationCount);
   }
 
@@ -177,9 +177,9 @@ public sealed class GenerativeAnalysisRecipeMappingTests
   [TestMethod]
   public async Task GenerateRecipesAsync_FoodClassificationLabel_ReturnsRecipe()
   {
-    RecipeGenerationResult result = await ExecuteRecipeAsync(CreateRecipe(), CreateFoodLabelClassifications());
+    IReadOnlyList<RecipeSuggestion> result = await ExecuteRecipeAsync(CreateRecipe(), CreateFoodLabelClassifications());
 
-    Assert.AreEqual(1, result.Recipes.Count);
+    Assert.AreEqual(1, result.Count);
   }
 
   /// <summary>
@@ -191,7 +191,7 @@ public sealed class GenerativeAnalysisRecipeMappingTests
     var broker = new ScriptedGenerativeAnalysisBroker();
     GenerativeClassificationHarness harness = GenerativeClassificationHarness.Create(broker);
 
-    RecipeGenerationResult result = await harness.Service.GenerateRecipesAsync(
+    IReadOnlyList<RecipeSuggestion> result = await harness.Service.GenerateRecipesAsync(
       CreateProducts(),
       CreateNonGpcClassifications(),
       CreateAllergenAssessments(),
@@ -199,16 +199,17 @@ public sealed class GenerativeAnalysisRecipeMappingTests
       Guid.NewGuid(),
       CancellationToken.None);
 
-    Assert.AreEqual(0, result.Recipes.Count);
+    Assert.AreEqual(0, result.Count);
     Assert.AreEqual(0, broker.InvocationCount);
   }
 
-  private static Task<RecipeGenerationResult> ExecuteRecipeAsync(GenerativeService.RecipeStructuredSuggestion recipe) =>
+  private static Task<IReadOnlyList<RecipeSuggestion>> ExecuteRecipeAsync(
+    GenerativeService.RecipeStructuredSuggestion recipe) =>
     ExecuteRecipeAsync(recipe, CreateFoodClassifications());
 
-  private static async Task<RecipeGenerationResult> ExecuteRecipeAsync(
+  private static async Task<IReadOnlyList<RecipeSuggestion>> ExecuteRecipeAsync(
     GenerativeService.RecipeStructuredSuggestion recipe,
-    ProductClassificationResult classifications)
+    IReadOnlyDictionary<string, StandardClassification> classifications)
   {
     var response = new GenerativeService.RecipeGenerationStructuredResult([recipe]);
     var broker = new ScriptedGenerativeAnalysisBroker(ScriptedGenerativeAnalysisBroker.Success(response));
@@ -250,8 +251,8 @@ public sealed class GenerativeAnalysisRecipeMappingTests
   private static List<ProductAnalysisInput> CreateProducts() =>
     [new ProductAnalysisInput("item-0001", new Product { Name = "lapte", Quantity = 1, QuantityUnit = "l" })];
 
-  private static ProductClassificationResult CreateFoodClassifications() =>
-    new(new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
+  private static Dictionary<string, StandardClassification> CreateFoodClassifications() =>
+    new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
     {
       ["item-0001"] = new StandardClassification(
         ClassificationSystem.Gs1Gpc,
@@ -265,11 +266,11 @@ public sealed class GenerativeAnalysisRecipeMappingTests
         ClassificationOrigin.Analysis,
         0.9,
         [new ClassificationEvidence("subject.description", "lapte")]),
-    });
+    };
 
 
-  private static ProductClassificationResult CreateFoodLabelClassifications() =>
-    new(new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
+  private static Dictionary<string, StandardClassification> CreateFoodLabelClassifications() =>
+    new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
     {
       ["item-0001"] = new StandardClassification(
         ClassificationSystem.Gs1Gpc,
@@ -283,10 +284,10 @@ public sealed class GenerativeAnalysisRecipeMappingTests
         ClassificationOrigin.Analysis,
         0.9,
         [new ClassificationEvidence("subject.description", "lapte")]),
-    });
+    };
 
-  private static ProductClassificationResult CreateNonGpcClassifications() =>
-    new(new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
+  private static Dictionary<string, StandardClassification> CreateNonGpcClassifications() =>
+    new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
     {
       ["item-0001"] = new StandardClassification(
         ClassificationSystem.Nace21,
@@ -297,9 +298,9 @@ public sealed class GenerativeAnalysisRecipeMappingTests
         ClassificationOrigin.Analysis,
         0.9,
         [new ClassificationEvidence("subject.description", "merchant")]),
-    });
-  private static ProductClassificationResult CreateNonFoodClassifications() =>
-    new(new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
+    };
+  private static Dictionary<string, StandardClassification> CreateNonFoodClassifications() =>
+    new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
     {
       ["item-0001"] = new StandardClassification(
         ClassificationSystem.Gs1Gpc,
@@ -310,20 +311,21 @@ public sealed class GenerativeAnalysisRecipeMappingTests
         ClassificationOrigin.Analysis,
         0.9,
         [new ClassificationEvidence("subject.description", "appliance")]),
-    });
+    };
 
-  private static ProductAllergenAssessmentResult CreateAllergenAssessments() =>
-    new(new Dictionary<string, ProductAllergenAssessment>(StringComparer.Ordinal)
+  private static Dictionary<string, AllergenAssessment> CreateAllergenAssessments() =>
+    new Dictionary<string, AllergenAssessment>(StringComparer.Ordinal)
     {
-      ["item-0001"] = ProductAllergenAssessment.SignalsFound(
+      ["item-0001"] = AllergenAssessment.Detected(
+        Guid.NewGuid(),
         [
-          new ProductAllergenSignal(
+          new AllergenSignal(
             AllergenCode.Milk,
-            ProductAllergenEvidenceTier.Likely,
+            AllergenEvidenceLevel.Inferred,
             0.98,
             [new AllergenEvidence("productName", "milk")]),
         ]),
-    });
+    };
 
   private static async Task AssertInvalidStructuredOutputAsync(Func<Task> action)
   {
@@ -331,5 +333,3 @@ public sealed class GenerativeAnalysisRecipeMappingTests
     Assert.IsInstanceOfType<InvalidStructuredOutputException>(exception.InnerException);
   }
 }
-
-

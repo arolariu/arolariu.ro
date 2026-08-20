@@ -28,7 +28,7 @@ public sealed class GenerativeAnalysisInvoiceSummaryTests
   [TestMethod]
   public async Task GenerateInvoiceSummaryAsync_ValidStructuredSummary_ReturnsSummary()
   {
-    InvoiceSummaryResult result = await ExecuteSummaryAsync(new GenerativeService.InvoiceSummaryStructuredResult(
+    (string Name, string Description) result = await ExecuteSummaryAsync(new GenerativeService.InvoiceSummaryStructuredResult(
       "Weekly groceries",
       "Milk and pantry items for breakfast."));
 
@@ -54,7 +54,8 @@ public sealed class GenerativeAnalysisInvoiceSummaryTests
     Assert.IsInstanceOfType<InvalidStructuredOutputException>(exception.InnerException);
   }
 
-  private static async Task<InvoiceSummaryResult> ExecuteSummaryAsync(GenerativeService.InvoiceSummaryStructuredResult response)
+  private static async Task<(string Name, string Description)> ExecuteSummaryAsync(
+    GenerativeService.InvoiceSummaryStructuredResult response)
   {
     var broker = new ScriptedGenerativeAnalysisBroker(ScriptedGenerativeAnalysisBroker.Success(response));
     GenerativeClassificationHarness harness = GenerativeClassificationHarness.Create(broker);

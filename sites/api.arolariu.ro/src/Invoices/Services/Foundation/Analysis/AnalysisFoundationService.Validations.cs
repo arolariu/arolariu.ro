@@ -10,6 +10,8 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 
 public sealed partial class AnalysisFoundationService
 {
@@ -129,13 +131,15 @@ public sealed partial class AnalysisFoundationService
     }
   }
 
-  private static void ValidateExtractionIsSet(ReceiptExtractionResult extraction) =>
+  private static void ValidateExtractionIsSet(ReceiptExtraction extraction) =>
     ArgumentNullException.ThrowIfNull(extraction);
 
-  private static void ValidateProductClassificationResultIsSet(ProductClassificationResult products) =>
-    ArgumentNullException.ThrowIfNull(products);
+  private static void ValidateProductClassificationsAreSet(
+    IReadOnlyDictionary<string, StandardClassification> classifications) =>
+    ArgumentNullException.ThrowIfNull(classifications);
 
-  private static void ValidateProductAllergenAssessmentResultIsSet(ProductAllergenAssessmentResult allergens) =>
+  private static void ValidateProductAllergenAssessmentsAreSet(
+    IReadOnlyDictionary<string, AllergenAssessment> allergens) =>
     ArgumentNullException.ThrowIfNull(allergens);
 
   private static void ValidateMerchantIsSet(Merchant merchant) =>
@@ -174,13 +178,13 @@ public sealed partial class AnalysisFoundationService
 
   private static void ValidateAllergenAssessmentsCoverProducts(
     IReadOnlyList<ProductAnalysisInput> products,
-    ProductAllergenAssessmentResult allergens)
+    IReadOnlyDictionary<string, AllergenAssessment> allergens)
   {
     var expectedTokens = products
       .Select(product => product.CorrelationToken)
       .ToHashSet(StringComparer.Ordinal);
 
-    var actualTokens = allergens.Assessments.Keys.ToHashSet(StringComparer.Ordinal);
+    var actualTokens = allergens.Keys.ToHashSet(StringComparer.Ordinal);
 
     if (!expectedTokens.SetEquals(actualTokens))
     {

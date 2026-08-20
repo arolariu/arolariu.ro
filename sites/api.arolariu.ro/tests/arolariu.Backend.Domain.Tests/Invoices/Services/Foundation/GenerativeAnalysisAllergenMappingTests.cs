@@ -32,11 +32,15 @@ public sealed class GenerativeAnalysisAllergenMappingTests
   [DataRow(nameof(ProductAllergenAssessmentStatus.InsufficientData))]
   public async Task AssessAllergensAsync_EmptySignalStatuses_ReturnEmptyAssessments(string status)
   {
-    ProductAllergenAssessmentResult result = await ExecuteAssessmentAsync(
+    IReadOnlyDictionary<string, AllergenAssessment> result = await ExecuteAssessmentAsync(
       new GenerativeService.AllergenAssessmentStructuredEntry("item-0001", status, []));
 
-    Assert.AreEqual(status, result.Assessments["item-0001"].Status.ToString());
-    Assert.AreEqual(0, result.Assessments["item-0001"].Signals.Count);
+    AllergenAssessmentStatus expectedStatus =
+      status == nameof(ProductAllergenAssessmentStatus.NoSignalsInAvailableEvidence)
+        ? AllergenAssessmentStatus.NoSignals
+        : AllergenAssessmentStatus.InsufficientData;
+    Assert.AreEqual(expectedStatus, result["item-0001"].Status);
+    Assert.AreEqual(0, result["item-0001"].Signals.Count);
   }
 
   /// <summary>
@@ -47,14 +51,17 @@ public sealed class GenerativeAnalysisAllergenMappingTests
   [DataRow(nameof(ProductAllergenEvidenceTier.Possible))]
   public async Task AssessAllergensAsync_SupportedEvidenceTier_ReturnsSignal(string evidenceTier)
   {
-    ProductAllergenAssessmentResult result = await ExecuteAssessmentAsync(
+    IReadOnlyDictionary<string, AllergenAssessment> result = await ExecuteAssessmentAsync(
       new GenerativeService.AllergenAssessmentStructuredEntry(
         "item-0001",
         nameof(ProductAllergenAssessmentStatus.SignalsFound),
         [CreateSignal(evidenceTier: evidenceTier)]));
 
-    Assert.AreEqual(ProductAllergenAssessmentStatus.SignalsFound, result.Assessments["item-0001"].Status);
-    Assert.AreEqual(evidenceTier, result.Assessments["item-0001"].Signals[0].EvidenceTier.ToString());
+    AllergenEvidenceLevel expectedLevel = evidenceTier == nameof(ProductAllergenEvidenceTier.Likely)
+      ? AllergenEvidenceLevel.Inferred
+      : AllergenEvidenceLevel.Precautionary;
+    Assert.AreEqual(AllergenAssessmentStatus.Detected, result["item-0001"].Status);
+    Assert.AreEqual(expectedLevel, result["item-0001"].Signals[0].EvidenceLevel);
   }
 
   /// <summary>
@@ -185,7 +192,7 @@ public sealed class GenerativeAnalysisAllergenMappingTests
           [CreateSignal(evidence: [new GenerativeService.AllergenEvidenceStructuredEntry(source, value!)])])));
   }
 
-  private static async Task<ProductAllergenAssessmentResult> ExecuteAssessmentAsync(
+  private static async Task<IReadOnlyDictionary<string, AllergenAssessment>> ExecuteAssessmentAsync(
     GenerativeService.AllergenAssessmentStructuredEntry entry)
   {
     var response = new GenerativeService.AllergenAssessmentBatchStructuredResult([entry]);
@@ -212,8 +219,8 @@ public sealed class GenerativeAnalysisAllergenMappingTests
   private static List<ProductAnalysisInput> CreateProducts() =>
     [new ProductAnalysisInput("item-0001", new Product { Name = "lapte", Quantity = 1, QuantityUnit = "l" })];
 
-  private static ProductClassificationResult CreateProductClassifications() =>
-    new(new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
+  private static Dictionary<string, StandardClassification> CreateProductClassifications() =>
+    new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
     {
       ["item-0001"] = new StandardClassification(
         ClassificationSystem.Gs1Gpc,
@@ -227,7 +234,7 @@ public sealed class GenerativeAnalysisAllergenMappingTests
         ClassificationOrigin.Analysis,
         0.9,
         [new ClassificationEvidence("subject.description", "lapte")]),
-    });
+    };
 
   private static async Task AssertInvalidStructuredOutputAsync(Func<Task> action)
   {
@@ -235,4 +242,3 @@ public sealed class GenerativeAnalysisAllergenMappingTests
     Assert.IsInstanceOfType<InvalidStructuredOutputException>(exception.InnerException);
   }
 }
-

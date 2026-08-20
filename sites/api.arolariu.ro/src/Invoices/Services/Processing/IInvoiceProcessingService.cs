@@ -24,7 +24,7 @@ using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 /// <para><b>Responsibilities:</b>
 /// <list type="bullet">
 ///   <item><description>Coordinate invoice and merchant persistence through their dedicated Orchestrations.</description></item>
-///   <item><description>Apply immutable analysis patches and durable queue retry/deletion policy.</description></item>
+///   <item><description>Persist analyzed aggregates and publish failed-only replacement messages.</description></item>
 ///   <item><description>Resolve manual code-only classification requests before aggregate persistence.</description></item>
 /// </list></para>
 /// <para><b>Exclusions:</b> No Foundation or Broker calls, HTTP concerns, or UI mapping.</para>
@@ -38,8 +38,9 @@ using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 /// </list>
 /// The fork between those two strategies lives <b>only in the broker layer</b>; every layer above simply forwards the value.
 /// That is what lets one endpoint and one business-logic path serve both the scoped and the global case.</para>
-/// <para><b>Durable analysis:</b> Queue messages carry resolved options. Processing owns visibility renewal,
-/// persistence-before-delete ordering, and terminal deletion on the fifth dequeue.</para>
+/// <para><b>Durable analysis:</b> Queue messages carry resolved options and a logical attempt number. Processing owns
+/// visibility renewal, partial persistence, delete-before-replacement ordering, and discard after logical attempt three.
+/// Malformed payloads retain their provider dequeue-count deletion policy because no application message can be read.</para>
 /// </remarks>
 public interface IInvoiceProcessingService
 {
@@ -366,26 +367,6 @@ public interface IInvoiceProcessingService
   Task<TResult> ExecuteWithVisibilityRenewalAsync<TResult>(
     AnalysisQueueReceipt receipt,
     Func<CancellationToken, Task<TResult>> operation,
-    CancellationToken cancellationToken);
-
-  /// <summary>Executes invoice analysis without persisting the aggregate.</summary>
-  /// <param name="message">The durable invoice analysis request.</param>
-  /// <param name="invoice">The invoice snapshot to analyze.</param>
-  /// <param name="cancellationToken">The token used to cancel capability execution.</param>
-  /// <returns>The immutable invoice analysis execution result.</returns>
-  Task<InvoiceAnalysisExecutionResult> ExecuteInvoiceAnalysisAsync(
-    QueueAnalysisMessage message,
-    Invoice invoice,
-    CancellationToken cancellationToken);
-
-  /// <summary>Executes merchant analysis without persisting the aggregate.</summary>
-  /// <param name="message">The durable merchant analysis request.</param>
-  /// <param name="merchant">The merchant snapshot to analyze.</param>
-  /// <param name="cancellationToken">The token used to cancel capability execution.</param>
-  /// <returns>The immutable merchant analysis execution result.</returns>
-  Task<MerchantAnalysisExecutionResult> ExecuteMerchantAnalysisAsync(
-    QueueAnalysisMessage message,
-    Merchant merchant,
     CancellationToken cancellationToken);
 
   /// <summary>Deletes one completed or terminally failed analysis message.</summary>

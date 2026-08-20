@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Reflection;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
-using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -33,7 +33,7 @@ public sealed class DocumentAnalysisProductBranchCoverageTests
     string totalPrice,
     string expectedPrice)
   {
-    bool created = InvokeTryCreateProduct(CreateProduct("Milk", quantity, price, totalPrice), out ExtractedProduct? product);
+    bool created = InvokeTryCreateProduct(CreateProduct("Milk", quantity, price, totalPrice), out Product? product);
 
     Assert.IsTrue(created);
     Assert.IsNotNull(product);
@@ -48,7 +48,7 @@ public sealed class DocumentAnalysisProductBranchCoverageTests
   {
     bool created = InvokeTryCreateProduct(
       CreateProduct("Milk", "10000000000000000000000000000", "0.0", "0.01"),
-      out ExtractedProduct? product);
+      out Product? product);
 
     Assert.IsTrue(created);
     Assert.IsNotNull(product);
@@ -63,7 +63,7 @@ public sealed class DocumentAnalysisProductBranchCoverageTests
   {
     bool created = InvokeTryCreateProduct(
       CreateProduct("Milk", "6.0", "0.0", "79228162514264337593543950335"),
-      out ExtractedProduct? product);
+      out Product? product);
 
     Assert.IsTrue(created);
     Assert.IsNotNull(product);
@@ -76,7 +76,7 @@ public sealed class DocumentAnalysisProductBranchCoverageTests
   [TestMethod]
   public void TryCreateProduct_NonNegativeQuantityAndPrice_ReturnsProduct()
   {
-    bool created = InvokeTryCreateProduct(CreateProduct("Milk", "1.0", "2.0", "2.0"), out ExtractedProduct? product);
+    bool created = InvokeTryCreateProduct(CreateProduct("Milk", "1.0", "2.0", "2.0"), out Product? product);
 
     Assert.IsTrue(created);
     Assert.IsNotNull(product);
@@ -84,7 +84,7 @@ public sealed class DocumentAnalysisProductBranchCoverageTests
     Assert.AreEqual(2.0m, product.Price);
   }
 
-  private static bool InvokeTryCreateProduct(ReceiptProductDocument productDocument, out ExtractedProduct? product)
+  private static bool InvokeTryCreateProduct(ReceiptProductDocument productDocument, out Product? product)
   {
     MethodInfo method = typeof(AnalysisFoundationService).GetMethod(
       "TryCreateProduct",
@@ -93,7 +93,7 @@ public sealed class DocumentAnalysisProductBranchCoverageTests
     object?[] arguments = [productDocument, null, null];
 
     bool created = (bool)method.Invoke(null, arguments)!;
-    product = (ExtractedProduct?)arguments[1];
+    product = (Product?)arguments[1];
     return created;
   }
 

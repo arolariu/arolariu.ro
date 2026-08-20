@@ -326,6 +326,18 @@ public static class InvoiceMetrics
   public static readonly Counter<long> AnalysisLeaseLost =
     Meter.CreateCounter<long>("invoices.analysis.lease.lost", "events", "Analysis messages whose visibility could not be renewed.");
 
+  /// <summary>Counts failed-only replacement messages by target type and logical attempt.</summary>
+  public static readonly Counter<long> AnalysisReplacementMessages =
+    Meter.CreateCounter<long>("invoices.analysis.queue.replacements", "messages", "Failed-only replacement messages.");
+
+  /// <summary>Counts messages discarded with failures after the logical attempt limit.</summary>
+  public static readonly Counter<long> AnalysisMessagesDiscarded =
+    Meter.CreateCounter<long>("invoices.analysis.queue.discarded", "messages", "Analysis messages discarded after maximum attempts.");
+
+  /// <summary>Counts analyzed aggregates that could not be persisted.</summary>
+  public static readonly Counter<long> AnalysisTargetPersistenceFailures =
+    Meter.CreateCounter<long>("invoices.analysis.persistence.failures", "failures", "Analyzed target persistence failures.");
+
   /// <summary>
   /// Records the terminal outcome and duration of an analysis message attempt.
   /// </summary>
@@ -363,6 +375,34 @@ public static class InvoiceMetrics
   /// <param name="targetType">The analysis target type.</param>
   public static void RecordAnalysisLeaseLost(AnalysisTargetType targetType) =>
     AnalysisLeaseLost.Add(1, new KeyValuePair<string, object?>(TargetTypeTag, ToTag(targetType)));
+
+  /// <summary>Records a failed-only replacement message.</summary>
+  /// <param name="targetType">The analysis target type.</param>
+  /// <param name="attemptNumber">The replacement message's logical attempt.</param>
+  public static void RecordAnalysisReplacementMessage(
+    AnalysisTargetType targetType,
+    int attemptNumber) =>
+    AnalysisReplacementMessages.Add(
+      1,
+      new TagList
+      {
+        { TargetTypeTag, ToTag(targetType) },
+        { "attempt", attemptNumber },
+      });
+
+  /// <summary>Records a terminal discard after maximum logical attempts.</summary>
+  /// <param name="targetType">The analysis target type.</param>
+  public static void RecordAnalysisMessageDiscarded(AnalysisTargetType targetType) =>
+    AnalysisMessagesDiscarded.Add(
+      1,
+      new KeyValuePair<string, object?>(TargetTypeTag, ToTag(targetType)));
+
+  /// <summary>Records failure to persist an analyzed target.</summary>
+  /// <param name="targetType">The analysis target type.</param>
+  public static void RecordAnalysisTargetPersistenceFailure(AnalysisTargetType targetType) =>
+    AnalysisTargetPersistenceFailures.Add(
+      1,
+      new KeyValuePair<string, object?>(TargetTypeTag, ToTag(targetType)));
 
   #endregion
 

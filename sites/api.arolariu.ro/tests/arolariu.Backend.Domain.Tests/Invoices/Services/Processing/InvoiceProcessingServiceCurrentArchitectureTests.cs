@@ -12,7 +12,6 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Orchestration;
-using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
@@ -205,27 +204,24 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
     var operations = new List<string>();
     var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
     var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
-    int readCount = 0;
     analysis.Setup(service => service.ReceiveAnalysisAsync(
         TimeSpan.FromMinutes(2),
         It.IsAny<CancellationToken>()))
       .Callback(() => operations.Add("receive"))
       .ReturnsAsync(receipt);
-    invoiceOrchestration.Setup(service => service.ReadInvoiceObject(
-        invoice.id,
-        invoice.UserIdentifier,
-        It.IsAny<CancellationToken>()))
-      .Callback(() => operations.Add(++readCount == 1 ? "read-target" : "read-for-persistence"))
-      .ReturnsAsync(invoice);
-    analysis.Setup(service => service.ExecuteInvoiceAnalysisAsync(
-        receipt.Message!,
-        invoice,
-        It.IsAny<CancellationToken>()))
-      .Callback(() => operations.Add("analyze"))
-      .ReturnsAsync(new InvoiceAnalysisExecutionResult(
-        receipt.Message!,
-        new InvoiceAnalysisPatch(null, null, null, null, null, null),
-        CompletedCapabilities: []));
+    invoiceOrchestration    .Setup(service => service.ReadInvoiceObject(
+      invoice.id,
+      invoice.UserIdentifier,
+      It.IsAny<CancellationToken>()))
+    .Callback(() => operations.Add("read-target"))
+    .ReturnsAsync(invoice);
+    analysis.Setup(service => service.AnalyzeInvoiceAsync(
+      invoice,
+      receipt.Message!.InvoiceOptions!,
+      receipt.Message.CorrelationId,
+      It.IsAny<CancellationToken>()))
+    .Callback(() => operations.Add("analyze"))
+    .ReturnsAsync((invoice, null));
     invoiceOrchestration.Setup(service => service.UpdateInvoiceObject(
         invoice,
         invoice.id,
@@ -247,7 +243,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
     bool result = await service.ProcessAnalysisAsync(CancellationToken.None);
 
     Assert.IsTrue(result);
-    List<string> expectedOperations = ["receive", "read-target", "analyze", "read-for-persistence", "persist", "delete"];
+    List<string> expectedOperations = ["receive", "read-target", "analyze", "persist", "delete"];
     CollectionAssert.AreEqual(expectedOperations, operations);
     Activity? consumer = activities.FindActivity(nameof(InvoiceProcessingService.ProcessAnalysisAsync));
     Assert.IsNotNull(consumer);
@@ -256,10 +252,10 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
   }
 
   /// <summary>
-  /// Verifies a persistence failure below dequeue five leaves the message for visibility recovery.
+  /// Verifies a persistence failure is log-only and replacement queue policy continues.
   /// </summary>
   [TestMethod]
-  public async Task ProcessAnalysisAsync_PersistenceFailure_DoesNotDeleteMessage()
+  public async Task ProcessAnalysisAsync_PersistenceFailure_DeletesAndQueuesReplacement()
   {
     AnalysisQueueReceipt receipt = CreateReceipt(dequeueCount: 1);
     var invoice = new Invoice
@@ -278,20 +274,37 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
         invoice.UserIdentifier,
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(invoice);
-    analysis.Setup(service => service.ExecuteInvoiceAnalysisAsync(
-        receipt.Message!,
+    InvoiceAnalysisOptions failedOptions = new(
+      AnalysisProfile.Custom,
+      documentExtraction: false,
+      invoiceSummary: true,
+      productClassification: false,
+      allergenAssessment: false,
+      invoiceClassification: false,
+      recipeGeneration: false,
+      maximumRecipes: 0);
+    analysis.Setup(service => service.AnalyzeInvoiceAsync(
         invoice,
+        receipt.Message!.InvoiceOptions!,
+        receipt.Message.CorrelationId,
         It.IsAny<CancellationToken>()))
-      .ReturnsAsync(new InvoiceAnalysisExecutionResult(
-        receipt.Message!,
-        new InvoiceAnalysisPatch(null, null, null, null, null, null),
-        CompletedCapabilities: []));
+      .ReturnsAsync((invoice, failedOptions));
     invoiceOrchestration.Setup(service => service.UpdateInvoiceObject(
         invoice,
         invoice.id,
         invoice.UserIdentifier,
         It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvoiceOrchestrationDependencyException(new TimeoutException()));
+    analysis.Setup(service => service.DeleteAnalysisAsync(
+        receipt,
+        It.IsAny<CancellationToken>()))
+      .Returns(Task.CompletedTask);
+    analysis.Setup(service => service.EnqueueAnalysisAsync(
+        It.Is<QueueAnalysisMessage>(message =>
+          message.AttemptNumber == 2
+          && message.InvoiceOptions == failedOptions),
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync("replacement-message");
     var service = new InvoiceProcessingService(
       invoiceOrchestration.Object,
       Mock.Of<IMerchantOrchestrationService>(),
@@ -301,9 +314,137 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
     bool result = await service.ProcessAnalysisAsync(CancellationToken.None);
 
     Assert.IsTrue(result);
-    analysis.Verify(service => service.DeleteAnalysisAsync(
-      It.IsAny<AnalysisQueueReceipt>(),
+    analysis.VerifyAll();
+  }
+
+  /// <summary>Verifies logical attempt three persists and deletes without publishing another replacement.</summary>
+  [TestMethod]
+  public async Task ProcessAnalysisAsync_AttemptThreeWithFailures_DeletesWithoutReplacement()
+  {
+    AnalysisQueueReceipt receipt = CreateReceipt(dequeueCount: 1, attemptNumber: 3);
+    var invoice = new Invoice
+    {
+      id = receipt.Message!.TargetId,
+      UserIdentifier = receipt.Message.RequestedBy,
+    };
+    InvoiceAnalysisOptions failedOptions = new(
+      AnalysisProfile.Custom,
+      documentExtraction: false,
+      invoiceSummary: true,
+      productClassification: false,
+      allergenAssessment: false,
+      invoiceClassification: false,
+      recipeGeneration: false,
+      maximumRecipes: 0);
+    var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
+    var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
+    analysis.Setup(service => service.ReceiveAnalysisAsync(
+        TimeSpan.FromMinutes(2),
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(receipt);
+    invoiceOrchestration.Setup(service => service.ReadInvoiceObject(
+        invoice.id,
+        invoice.UserIdentifier,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+    analysis.Setup(service => service.AnalyzeInvoiceAsync(
+        invoice,
+        receipt.Message.InvoiceOptions!,
+        receipt.Message.CorrelationId,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync((invoice, failedOptions));
+    invoiceOrchestration.Setup(service => service.UpdateInvoiceObject(
+        invoice,
+        invoice.id,
+        invoice.UserIdentifier,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+    analysis.Setup(service => service.DeleteAnalysisAsync(
+        receipt,
+        It.IsAny<CancellationToken>()))
+      .Returns(Task.CompletedTask);
+    var service = new InvoiceProcessingService(
+      invoiceOrchestration.Object,
+      Mock.Of<IMerchantOrchestrationService>(),
+      analysis.Object,
+      NullLoggerFactory.Instance);
+
+    bool result = await service.ProcessAnalysisAsync(CancellationToken.None);
+
+    Assert.IsTrue(result);
+    analysis.Verify(service => service.EnqueueAnalysisAsync(
+      It.IsAny<QueueAnalysisMessage>(),
       It.IsAny<CancellationToken>()), Times.Never);
+    analysis.VerifyAll();
+  }
+
+  /// <summary>Verifies replacement enqueue failure surfaces only after the current message has been deleted.</summary>
+  [TestMethod]
+  public async Task ProcessAnalysisAsync_ReplacementEnqueueFails_DeletesBeforeSurfacingFailure()
+  {
+    AnalysisQueueReceipt receipt = CreateReceipt();
+    var invoice = new Invoice
+    {
+      id = receipt.Message!.TargetId,
+      UserIdentifier = receipt.Message.RequestedBy,
+    };
+    InvoiceAnalysisOptions failedOptions = new(
+      AnalysisProfile.Custom,
+      documentExtraction: false,
+      invoiceSummary: true,
+      productClassification: false,
+      allergenAssessment: false,
+      invoiceClassification: false,
+      recipeGeneration: false,
+      maximumRecipes: 0);
+    var operations = new List<string>();
+    var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
+    var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
+    analysis.Setup(service => service.ReceiveAnalysisAsync(
+        TimeSpan.FromMinutes(2),
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(receipt);
+    invoiceOrchestration.Setup(service => service.ReadInvoiceObject(
+        invoice.id,
+        invoice.UserIdentifier,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+    analysis.Setup(service => service.AnalyzeInvoiceAsync(
+        invoice,
+        receipt.Message.InvoiceOptions!,
+        receipt.Message.CorrelationId,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync((invoice, failedOptions));
+    invoiceOrchestration.Setup(service => service.UpdateInvoiceObject(
+        invoice,
+        invoice.id,
+        invoice.UserIdentifier,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+    analysis.Setup(service => service.DeleteAnalysisAsync(
+        receipt,
+        It.IsAny<CancellationToken>()))
+      .Callback(() => operations.Add("delete"))
+      .Returns(Task.CompletedTask);
+    analysis.Setup(service => service.EnqueueAnalysisAsync(
+        It.IsAny<QueueAnalysisMessage>(),
+        It.IsAny<CancellationToken>()))
+      .Callback(() => operations.Add("enqueue"))
+      .ThrowsAsync(new AnalysisOrchestrationDependencyException(new TimeoutException()));
+    var service = new InvoiceProcessingService(
+      invoiceOrchestration.Object,
+      Mock.Of<IMerchantOrchestrationService>(),
+      analysis.Object,
+      NullLoggerFactory.Instance);
+
+    await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceDependencyException>(
+      () => service.ProcessAnalysisAsync(CancellationToken.None));
+
+    List<string> expectedOperations = ["delete", "enqueue"];
+    CollectionAssert.AreEqual(expectedOperations, operations);
+    analysis.Verify(service => service.DeleteAnalysisAsync(
+      receipt,
+      It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -461,55 +602,6 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       .ConfigureAwait(false);
 
     Assert.AreSame(canonical, result.Classification);
-  }
-
-  /// <summary>
-  /// Verifies a transient capability failure marks the execution as failed so the queue message can retry.
-  /// </summary>
-  [TestMethod]
-  public async Task ExecuteInvoiceAnalysisAsync_DependencyFailure_ReturnsRetryableFailure()
-  {
-    Guid invoiceId = Guid.NewGuid();
-    Guid userId = Guid.NewGuid();
-    InvoiceAnalysisOptions options = new(
-      AnalysisProfile.Custom,
-      documentExtraction: false,
-      invoiceSummary: true,
-      productClassification: false,
-      allergenAssessment: false,
-      invoiceClassification: false,
-      recipeGeneration: false,
-      maximumRecipes: 0);
-    QueueAnalysisMessage message = QueueAnalysisMessage.CreateInvoiceMessage(
-      invoiceId,
-      userId,
-      Guid.NewGuid(),
-      options,
-      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
-    var invoice = new Invoice { id = invoiceId, UserIdentifier = userId };
-    var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
-    InvoiceAnalysisExecutionResult expected = new(
-      message,
-      new InvoiceAnalysisPatch(null, null, null, null, null, null),
-      CompletedCapabilities: [],
-      FailureReason: AnalysisFailureReason.Dependency);
-    analysis.Setup(service => service.ExecuteInvoiceAnalysisAsync(
-        message,
-        invoice,
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync(expected);
-    var service = new InvoiceProcessingService(
-      Mock.Of<IInvoiceOrchestrationService>(),
-      Mock.Of<IMerchantOrchestrationService>(),
-      analysis.Object,
-      NullLoggerFactory.Instance);
-
-    InvoiceAnalysisExecutionResult result = await service
-      .ExecuteInvoiceAnalysisAsync(message, invoice, CancellationToken.None)
-      .ConfigureAwait(false);
-
-    Assert.IsTrue(result.Failed);
-    Assert.AreEqual(AnalysisFailureReason.Dependency, result.FailureReason);
   }
 
   /// <summary>
@@ -676,7 +768,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
         CancellationToken.None));
   }
 
-  private static AnalysisQueueReceipt CreateReceipt(long dequeueCount = 1)
+  private static AnalysisQueueReceipt CreateReceipt(long dequeueCount = 1, int attemptNumber = 1)
   {
     InvoiceAnalysisOptions options = new(
       AnalysisProfile.Custom,
@@ -692,7 +784,8 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       Guid.NewGuid(),
       Guid.NewGuid(),
       options,
-      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
+      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+      attemptNumber);
 
     return new AnalysisQueueReceipt(message, "message-1", "receipt-1", dequeueCount, null);
   }

@@ -68,9 +68,9 @@ public sealed class GenerativeAnalysisRecipeBranchCoverageTests
     }
     else
     {
-      RecipeGenerationResult result = await ExecuteRecipesAsync([recipe]);
+      IReadOnlyList<RecipeSuggestion> result = await ExecuteRecipesAsync([recipe]);
 
-      Assert.AreEqual(1, result.Recipes.Count);
+      Assert.AreEqual(1, result.Count);
     }
   }
 
@@ -115,7 +115,7 @@ public sealed class GenerativeAnalysisRecipeBranchCoverageTests
     capture.AssertSurfaceExcludes(activities, sensitiveSentinel);
   }
 
-  private static async Task<RecipeGenerationResult> ExecuteRecipesAsync(
+  private static async Task<IReadOnlyList<RecipeSuggestion>> ExecuteRecipesAsync(
     IReadOnlyList<GenerativeService.RecipeStructuredSuggestion> recipes)
   {
     var response = new GenerativeService.RecipeGenerationStructuredResult(recipes);
@@ -176,8 +176,8 @@ public sealed class GenerativeAnalysisRecipeBranchCoverageTests
   private static ProductAnalysisInput[] CreateProducts() =>
     [new ProductAnalysisInput("item-0001", new Product { Name = "lapte", Quantity = 1, QuantityUnit = "l" })];
 
-  private static ProductClassificationResult CreateFoodClassifications() =>
-    new(new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
+  private static Dictionary<string, StandardClassification> CreateFoodClassifications() =>
+    new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
     {
       ["item-0001"] = new StandardClassification(
         ClassificationSystem.Gs1Gpc,
@@ -191,20 +191,21 @@ public sealed class GenerativeAnalysisRecipeBranchCoverageTests
         ClassificationOrigin.Analysis,
         0.9,
         [new ClassificationEvidence("subject.description", "lapte")]),
-    });
+    };
 
-  private static ProductAllergenAssessmentResult CreateAllergenAssessments() =>
-    new(new Dictionary<string, ProductAllergenAssessment>(StringComparer.Ordinal)
+  private static Dictionary<string, AllergenAssessment> CreateAllergenAssessments() =>
+    new Dictionary<string, AllergenAssessment>(StringComparer.Ordinal)
     {
-      ["item-0001"] = ProductAllergenAssessment.SignalsFound(
+      ["item-0001"] = AllergenAssessment.Detected(
+        Guid.NewGuid(),
         [
-          new ProductAllergenSignal(
+          new AllergenSignal(
             AllergenCode.Milk,
-            ProductAllergenEvidenceTier.Likely,
+            AllergenEvidenceLevel.Inferred,
             0.98,
             [new AllergenEvidence("productName", "milk")]),
         ]),
-    });
+    };
 
   private static async Task AssertInvalidStructuredOutputAsync(Func<Task> action)
   {

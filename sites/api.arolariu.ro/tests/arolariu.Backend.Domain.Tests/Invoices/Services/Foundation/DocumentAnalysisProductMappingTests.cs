@@ -139,7 +139,7 @@ public sealed class DocumentAnalysisProductMappingTests
     var result = await service.ExtractInvoiceAsync([InvoiceScanTestData.First()], CancellationToken.None);
 
     Assert.AreEqual(1, result.Products.Count);
-    Assert.AreEqual(0.98, result.Products[0].Confidence);
+    Assert.AreEqual(0.98, result.Products[0].Metadata.Confidence);
   }
 
   /// <summary>

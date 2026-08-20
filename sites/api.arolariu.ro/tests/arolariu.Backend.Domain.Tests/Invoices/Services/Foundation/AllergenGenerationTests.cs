@@ -55,15 +55,16 @@ public sealed class AllergenGenerationTests
   {
     var harness = GenerativeCapabilityHarness.EmptyAllergenSuccess();
 
-    ProductAllergenAssessmentResult result = await harness.Service.AssessAllergensAsync(
+    System.Collections.Generic.IReadOnlyDictionary<string, AllergenAssessment> result =
+      await harness.Service.AssessAllergensAsync(
       harness.Products,
       harness.Classifications,
       Guid.NewGuid(),
       CancellationToken.None);
 
     Assert.AreEqual(
-      ProductAllergenAssessmentStatus.NoSignalsInAvailableEvidence,
-      result.Assessments["item-0001"].Status);
+      AllergenAssessmentStatus.NoSignals,
+      result["item-0001"].Status);
   }
 
   /// <summary>
@@ -96,7 +97,7 @@ public sealed class AllergenGenerationTests
     var exception = await Assert.ThrowsExactlyAsync<AnalysisFoundationDependencyException>(
       () => harness.Service.AssessAllergensAsync(
         [new ProductAnalysisInput("item-0001", new Product { Name = "seafood mix" })],
-        new ProductClassificationResult(new System.Collections.Generic.Dictionary<string, StandardClassification>(System.StringComparer.Ordinal)
+        new System.Collections.Generic.Dictionary<string, StandardClassification>(System.StringComparer.Ordinal)
         {
           ["item-0001"] = new StandardClassification(
             ClassificationSystem.Gs1Gpc,
@@ -112,7 +113,7 @@ public sealed class AllergenGenerationTests
             ClassificationOrigin.Analysis,
             0.81,
             [new ClassificationEvidence("subject.description", "seafood mix")])
-        }),
+        },
         Guid.NewGuid(),
         CancellationToken.None));
 

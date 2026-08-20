@@ -25,9 +25,9 @@ public sealed class MerchantDescriptionGenerationTests
   {
     var harness = MerchantDescriptionHarness.WithResponse("A local grocery retailer serving neighborhood shoppers.");
 
-    MerchantDescriptionResult result = await harness.ExecuteAsync();
+    string result = await harness.ExecuteAsync();
 
-    Assert.AreEqual("A local grocery retailer serving neighborhood shoppers.", result.Description);
+    Assert.AreEqual("A local grocery retailer serving neighborhood shoppers.", result);
     Assert.AreEqual(1, harness.Broker.InvocationCount);
   }
 
@@ -39,9 +39,9 @@ public sealed class MerchantDescriptionGenerationTests
   {
     var harness = MerchantDescriptionHarness.WithSparseResponse("Likely a local retailer based on limited invoice evidence.");
 
-    MerchantDescriptionResult result = await harness.ExecuteAsync();
+    string result = await harness.ExecuteAsync();
 
-    StringAssert.Contains(result.Description, "Likely", StringComparison.Ordinal);
+    StringAssert.Contains(result, "Likely", StringComparison.Ordinal);
   }
 
   /// <summary>
@@ -55,9 +55,9 @@ public sealed class MerchantDescriptionGenerationTests
   {
     var harness = MerchantDescriptionHarness.WithSparseResponse(description);
 
-    MerchantDescriptionResult result = await harness.ExecuteAsync();
+    string result = await harness.ExecuteAsync();
 
-    Assert.AreEqual(description, result.Description);
+    Assert.AreEqual(description, result);
   }
 
   /// <summary>
@@ -171,9 +171,9 @@ public sealed class MerchantDescriptionGenerationTests
   {
     var harness = MerchantDescriptionHarness.WithResponse(description);
 
-    MerchantDescriptionResult result = await harness.ExecuteAsync();
+    string result = await harness.ExecuteAsync();
 
-    Assert.AreEqual(description, result.Description);
+    Assert.AreEqual(description, result);
   }
 
   /// <summary>

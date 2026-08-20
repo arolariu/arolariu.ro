@@ -5,7 +5,7 @@ using System.Globalization;
 using System.Reflection;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
-using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -25,7 +25,7 @@ public sealed class DocumentAnalysisProductCoverageTests
   [DataRow("   ")]
   public void TryCreateProduct_NullOrBlankName_ReturnsFalse(string? name)
   {
-    bool created = InvokeTryCreateProduct(CreateProduct(name, "1", "2", "2"), out ExtractedProduct? product);
+    bool created = InvokeTryCreateProduct(CreateProduct(name, "1", "2", "2"), out Product? product);
 
     Assert.IsFalse(created);
     Assert.IsNull(product);
@@ -46,7 +46,7 @@ public sealed class DocumentAnalysisProductCoverageTests
     string price,
     string totalPrice)
   {
-    bool created = InvokeTryCreateProduct(CreateProduct("Milk", quantity, price, totalPrice), out ExtractedProduct? product);
+    bool created = InvokeTryCreateProduct(CreateProduct("Milk", quantity, price, totalPrice), out Product? product);
 
     Assert.IsFalse(created);
     Assert.IsNull(product);
@@ -58,7 +58,7 @@ public sealed class DocumentAnalysisProductCoverageTests
   [TestMethod]
   public void TryCreateProduct_NullQuantity_CreatesProductWithZeroQuantity()
   {
-    bool created = InvokeTryCreateProduct(CreateProduct("Milk", null, "2", null), out ExtractedProduct? product);
+    bool created = InvokeTryCreateProduct(CreateProduct("Milk", null, "2", null), out Product? product);
 
     Assert.IsTrue(created);
     Assert.IsNotNull(product);
@@ -72,7 +72,7 @@ public sealed class DocumentAnalysisProductCoverageTests
   [TestMethod]
   public void TryCreateProduct_NullPrice_CreatesProductWithZeroPrice()
   {
-    bool created = InvokeTryCreateProduct(CreateProduct("Milk", "2", null, null), out ExtractedProduct? product);
+    bool created = InvokeTryCreateProduct(CreateProduct("Milk", "2", null, null), out Product? product);
 
     Assert.IsTrue(created);
     Assert.IsNotNull(product);
@@ -86,7 +86,7 @@ public sealed class DocumentAnalysisProductCoverageTests
   [TestMethod]
   public void TryCreateProduct_ZeroQuantityWithTotalAndPrice_DerivesQuantity()
   {
-    bool created = InvokeTryCreateProduct(CreateProduct("Milk", "0", "2", "6"), out ExtractedProduct? product);
+    bool created = InvokeTryCreateProduct(CreateProduct("Milk", "0", "2", "6"), out Product? product);
 
     Assert.IsTrue(created);
     Assert.IsNotNull(product);
@@ -100,7 +100,7 @@ public sealed class DocumentAnalysisProductCoverageTests
   [TestMethod]
   public void TryCreateProduct_ZeroPriceWithTotalAndQuantity_DerivesPrice()
   {
-    bool created = InvokeTryCreateProduct(CreateProduct("Milk", "4", "0", "10"), out ExtractedProduct? product);
+    bool created = InvokeTryCreateProduct(CreateProduct("Milk", "4", "0", "10"), out Product? product);
 
     Assert.IsTrue(created);
     Assert.IsNotNull(product);
@@ -114,7 +114,7 @@ public sealed class DocumentAnalysisProductCoverageTests
   [TestMethod]
   public void TryCreateProduct_ZeroQuantityAndZeroPrice_DoesNotDeriveComponent()
   {
-    bool created = InvokeTryCreateProduct(CreateProduct("Milk", "0", "0", "10"), out ExtractedProduct? product);
+    bool created = InvokeTryCreateProduct(CreateProduct("Milk", "0", "0", "10"), out Product? product);
 
     Assert.IsTrue(created);
     Assert.IsNotNull(product);
@@ -122,7 +122,7 @@ public sealed class DocumentAnalysisProductCoverageTests
     Assert.AreEqual(0.0m, product.Price);
   }
 
-  private static bool InvokeTryCreateProduct(ReceiptProductDocument productDocument, out ExtractedProduct? product)
+  private static bool InvokeTryCreateProduct(ReceiptProductDocument productDocument, out Product? product)
   {
     MethodInfo method = typeof(AnalysisFoundationService).GetMethod(
       "TryCreateProduct",
@@ -131,7 +131,7 @@ public sealed class DocumentAnalysisProductCoverageTests
     object?[] arguments = [productDocument, null, null];
 
     bool created = (bool)method.Invoke(null, arguments)!;
-    product = (ExtractedProduct?)arguments[1];
+    product = (Product?)arguments[1];
     return created;
   }
 

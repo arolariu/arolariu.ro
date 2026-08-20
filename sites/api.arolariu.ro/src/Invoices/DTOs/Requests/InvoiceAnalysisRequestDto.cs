@@ -98,6 +98,13 @@ public readonly record struct InvoiceAnalysisRequestDto(
         nameof(InvoiceAnalysisRequestDto));
     }
 
+    ValidateClientDependencyClosure(
+      documentExtraction,
+      productClassification,
+      allergenAssessment,
+      invoiceClassification,
+      recipeGeneration);
+
     return new InvoiceAnalysisOptions(
       AnalysisProfile.Custom,
       documentExtraction,
@@ -107,6 +114,35 @@ public readonly record struct InvoiceAnalysisRequestDto(
       invoiceClassification,
       recipeGeneration,
       maximumRecipes);
+  }
+
+  private static void ValidateClientDependencyClosure(
+    bool documentExtraction,
+    bool productClassification,
+    bool allergenAssessment,
+    bool invoiceClassification,
+    bool recipeGeneration)
+  {
+    if (allergenAssessment && !productClassification)
+    {
+      throw new ArgumentException(
+        "Allergen assessment requires product classification.",
+        nameof(allergenAssessment));
+    }
+
+    if (invoiceClassification && (!documentExtraction || !productClassification))
+    {
+      throw new ArgumentException(
+        "Invoice classification requires document extraction and product classification.",
+        nameof(invoiceClassification));
+    }
+
+    if (recipeGeneration && (!productClassification || !allergenAssessment))
+    {
+      throw new ArgumentException(
+        "Recipe generation requires product classification and allergen assessment.",
+        nameof(recipeGeneration));
+    }
   }
 
   private static InvoiceAnalysisOptions ResolveBaseline(AnalysisProfile profile) =>

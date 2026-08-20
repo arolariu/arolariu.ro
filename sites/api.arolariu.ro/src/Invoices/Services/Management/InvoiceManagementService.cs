@@ -527,7 +527,7 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
   /// <param name="cancellationToken">The token used to cancel dequeue or processing.</param>
   /// <returns><see langword="true"/> when a message was dequeued; otherwise, <see langword="false"/>.</returns>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyException">
-  /// Thrown when queue ownership, target access, persistence, or terminal deletion fails.
+  /// Thrown when queue ownership, target access, deletion, or replacement publication fails.
   /// </exception>
   /// <inheritdoc/>
   public async Task<bool> ProcessAnalysisAsync(CancellationToken cancellationToken) =>

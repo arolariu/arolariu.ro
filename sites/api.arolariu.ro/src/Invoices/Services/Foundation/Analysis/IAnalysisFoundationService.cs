@@ -10,7 +10,9 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 
 /// <summary>
 /// Defines independent OCR, generative, and taxonomy operations used by Analysis Orchestration.
@@ -24,7 +26,7 @@ public interface IAnalysisFoundationService
   /// <param name="scans">The non-empty ordered scan collection to analyze.</param>
   /// <param name="cancellationToken">The token used to cancel document analysis.</param>
   /// <returns>The merged provider-neutral receipt extraction.</returns>
-  Task<ReceiptExtractionResult> ExtractInvoiceAsync(
+  Task<ReceiptExtraction> ExtractInvoiceAsync(
     IReadOnlyList<InvoiceScan> scans,
     CancellationToken cancellationToken);
 
@@ -67,7 +69,7 @@ public interface IAnalysisFoundationService
   /// <param name="sourceRunId">The non-empty durable analysis run identifier.</param>
   /// <param name="cancellationToken">The token used to cancel generation.</param>
   /// <returns>The generated invoice name and description.</returns>
-  Task<InvoiceSummaryResult> GenerateInvoiceSummaryAsync(
+  Task<(string Name, string Description)> GenerateInvoiceSummaryAsync(
     IReadOnlyList<ProductAnalysisInput> products,
     Guid sourceRunId,
     CancellationToken cancellationToken);
@@ -80,9 +82,9 @@ public interface IAnalysisFoundationService
   /// <param name="sourceRunId">The non-empty durable analysis run identifier.</param>
   /// <param name="cancellationToken">The token used to cancel generation.</param>
   /// <returns>One allergen assessment for each supplied product token.</returns>
-  Task<ProductAllergenAssessmentResult> AssessAllergensAsync(
+  Task<IReadOnlyDictionary<string, AllergenAssessment>> AssessAllergensAsync(
     IReadOnlyList<ProductAnalysisInput> products,
-    ProductClassificationResult classifications,
+    IReadOnlyDictionary<string, StandardClassification> classifications,
     Guid sourceRunId,
     CancellationToken cancellationToken);
 
@@ -93,7 +95,7 @@ public interface IAnalysisFoundationService
   /// <param name="sourceRunId">The non-empty durable analysis run identifier.</param>
   /// <param name="cancellationToken">The token used to cancel generation.</param>
   /// <returns>The generated factual merchant description.</returns>
-  Task<MerchantDescriptionResult> GenerateMerchantDescriptionAsync(
+  Task<string> GenerateMerchantDescriptionAsync(
     Merchant merchant,
     Guid sourceRunId,
     CancellationToken cancellationToken);
@@ -108,10 +110,10 @@ public interface IAnalysisFoundationService
   /// <param name="sourceRunId">The non-empty durable analysis run identifier.</param>
   /// <param name="cancellationToken">The token used to cancel generation.</param>
   /// <returns>The bounded recipe suggestion collection; it is empty when no product is food-eligible.</returns>
-  Task<RecipeGenerationResult> GenerateRecipesAsync(
+  Task<IReadOnlyList<RecipeSuggestion>> GenerateRecipesAsync(
     IReadOnlyList<ProductAnalysisInput> products,
-    ProductClassificationResult classifications,
-    ProductAllergenAssessmentResult allergens,
+    IReadOnlyDictionary<string, StandardClassification> classifications,
+    IReadOnlyDictionary<string, AllergenAssessment> allergens,
     int maximumRecipes,
     Guid sourceRunId,
     CancellationToken cancellationToken);
