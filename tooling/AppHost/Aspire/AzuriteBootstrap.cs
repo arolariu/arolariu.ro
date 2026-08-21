@@ -7,6 +7,7 @@ using global::Aspire.Hosting;
 using global::Aspire.Hosting.ApplicationModel;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Azure.Storage.Queues;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
@@ -15,10 +16,11 @@ using Microsoft.Extensions.Logging;
 /// Configures CORS service-properties on the Aspire-managed Azurite storage emulator
 /// so browser-side blob uploads succeed across the origin boundary between
 /// <c>https://localhost:3000</c> (website) and <c>http://localhost:10000</c> (blob endpoint),
-/// and ensures any required blob containers exist (idempotent <c>CreateIfNotExists</c>).
+/// and ensures required blob containers and queues exist through idempotent
+/// <c>CreateIfNotExists</c> operations.
 ///
 /// <para>
-/// Azurite ships with no default CORS rules and no containers; without this hook every
+/// Azurite ships with no default CORS rules, containers, or queues; without this hook every
 /// preflight OPTIONS fails with "No 'Access-Control-Allow-Origin' header is present on the
 /// requested resource", and the first upload to a missing container 404s with
 /// <c>ContainerNotFound</c>. With the named data volume in place (see <c>Program.cs</c>'s
@@ -32,7 +34,7 @@ using Microsoft.Extensions.Logging;
 /// </para>
 ///
 /// <para>
-/// In production these containers are provisioned by Bicep (see <c>infra/Azure/Bicep</c>).
+/// In production these storage resources are provisioned by Bicep (see <c>infra/Azure/Bicep</c>).
 /// This helper brings the local emulator to the same starting state.
 /// </para>
 /// </summary>
@@ -62,8 +64,9 @@ internal static class AzuriteBootstrap
   /// <summary>
   /// Subscribes a bootstrap handler to <paramref name="storage"/>'s
   /// <see cref="ResourceReadyEvent"/>. The handler applies allow-all CORS rules and
-  /// idempotently creates each container in <paramref name="containerNames"/>. CORS and
-  /// container creation are retried independently up to 6 times each with linear backoff.
+  /// idempotently creates each blob container in <paramref name="blobContainerNames"/> and
+  /// queue in <paramref name="queueNames"/>. CORS and resource creation are retried
+  /// independently up to 6 times each with linear backoff.
   /// Bootstrap success/failure is surfaced via a custom health check
   /// (<c>azurite-bootstrap</c>) attached to <paramref name="storage"/>, so the dashboard
   /// turns the storage resource red on persistent failure instead of leaving the user to
@@ -73,23 +76,27 @@ internal static class AzuriteBootstrap
   /// <param name="storage">The Azurite storage resource to configure.</param>
   /// <param name="blobPort">The host port Azurite's blob service is reachable at
   /// (typically <c>10000</c> via <c>WithBlobPort</c>).</param>
-  /// <param name="containerNames">Container names to ensure exist
+  /// <param name="queuePort">The host port Azurite's queue service is reachable at
+  /// (typically <c>10001</c> via <c>WithQueuePort</c>).</param>
+  /// <param name="blobContainerNames">Blob container names to ensure exist
   /// (<c>CreateIfNotExistsAsync</c>). Pass an empty array if no containers are needed.</param>
+  /// <param name="queueNames">Queue names to ensure exist
+  /// (<c>CreateIfNotExistsAsync</c>). Pass an empty array if no queues are needed.</param>
   public static IDistributedApplicationBuilder AddAzuriteBootstrap<TResource>(
       this IDistributedApplicationBuilder builder,
       IResourceBuilder<TResource> storage,
       int blobPort,
-      params string[] containerNames)
+      int queuePort,
+      IReadOnlyList<string> blobContainerNames,
+      IReadOnlyList<string> queueNames)
       where TResource : IResource
   {
     ArgumentNullException.ThrowIfNull(builder);
     ArgumentNullException.ThrowIfNull(storage);
-    ArgumentNullException.ThrowIfNull(containerNames);
+    ArgumentNullException.ThrowIfNull(blobContainerNames);
+    ArgumentNullException.ThrowIfNull(queueNames);
 
-    var connStr =
-        $"DefaultEndpointsProtocol=http;AccountName={AzuriteAccountName};"
-      + $"AccountKey={AzuriteAccountKey};"
-      + $"BlobEndpoint=http://localhost:{blobPort}/{AzuriteAccountName};";
+    string connectionString = CreateConnectionString(blobPort, queuePort);
 
     builder.Services.AddHealthChecks().AddCheck(HealthCheckName, () =>
         _bootstrapError is null
@@ -112,14 +119,25 @@ internal static class AzuriteBootstrap
       var logger = evt.Services.GetService<ILoggerFactory>()
               ?.CreateLogger("AzuriteBootstrap");
 
-      var client = new BlobServiceClient(connStr);
+      var blobServiceClient = new BlobServiceClient(connectionString);
+      var queueServiceClient = new QueueServiceClient(connectionString);
 
       try
       {
-        await ApplyCorsWithRetryAsync(client, logger, ct).ConfigureAwait(false);
-        await EnsureContainersWithRetryAsync(client, containerNames, logger, ct).ConfigureAwait(false);
+        await ApplyCorsWithRetryAsync(blobServiceClient, logger, ct).ConfigureAwait(false);
+        await EnsureContainersWithRetryAsync(
+          blobServiceClient,
+          blobContainerNames,
+          logger,
+          ct).ConfigureAwait(false);
+        await EnsureQueuesWithRetryAsync(
+          queueServiceClient,
+          queueNames,
+          logger,
+          ct).ConfigureAwait(false);
         _bootstrapError = null;
-        logger?.LogInformation("Azurite bootstrap completed (CORS + container creation).");
+        logger?.LogInformation(
+          "Azurite bootstrap completed (CORS + blob container + queue creation).");
       }
       catch (OperationCanceledException)
       {
@@ -137,6 +155,24 @@ internal static class AzuriteBootstrap
     });
 
     return builder;
+  }
+
+  /// <summary>
+  /// Creates the local Azurite connection string for blob and queue services.
+  /// </summary>
+  /// <param name="blobPort">The positive host blob-service port.</param>
+  /// <param name="queuePort">The positive host queue-service port.</param>
+  /// <returns>The connection string targeting both loopback service endpoints.</returns>
+  internal static string CreateConnectionString(int blobPort, int queuePort)
+  {
+    ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(blobPort, 0);
+    ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(queuePort, 0);
+
+    return
+        $"DefaultEndpointsProtocol=http;AccountName={AzuriteAccountName};"
+      + $"AccountKey={AzuriteAccountKey};"
+      + $"BlobEndpoint=http://localhost:{blobPort}/{AzuriteAccountName};"
+      + $"QueueEndpoint=http://localhost:{queuePort}/{AzuriteAccountName};";
   }
 
   // Match the storage resource itself or any descendant (e.g. the Azurite container
@@ -190,11 +226,11 @@ internal static class AzuriteBootstrap
 
   private static async Task EnsureContainersWithRetryAsync(
       BlobServiceClient client,
-      string[] containerNames,
+      IReadOnlyList<string> containerNames,
       ILogger? logger,
       CancellationToken ct)
   {
-    if (containerNames.Length == 0) return;
+    if (containerNames.Count == 0) return;
 
     for (int attempt = 1; attempt <= MaxAttempts; attempt++)
     {
@@ -238,5 +274,50 @@ internal static class AzuriteBootstrap
     }
     throw new InvalidOperationException(
         $"Azurite container bootstrap failed after {MaxAttempts} attempts.");
+  }
+
+  private static async Task EnsureQueuesWithRetryAsync(
+      QueueServiceClient client,
+      IReadOnlyList<string> queueNames,
+      ILogger? logger,
+      CancellationToken cancellationToken)
+  {
+    if (queueNames.Count == 0)
+    {
+      return;
+    }
+
+    for (int attempt = 1; attempt <= MaxAttempts; attempt++)
+    {
+      try
+      {
+        foreach (string queueName in queueNames)
+        {
+          await client
+            .GetQueueClient(queueName)
+            .CreateIfNotExistsAsync(cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+          logger?.LogInformation(
+            "Azurite queue '{Name}' is ready.",
+            queueName);
+        }
+
+        return;
+      }
+      catch (Exception exception) when (attempt < MaxAttempts)
+      {
+        logger?.LogDebug(
+          "Azurite queue creation attempt {Attempt} failed: {Message}; retrying in {DelaySec}s.",
+          attempt,
+          exception.Message,
+          attempt);
+        await Task
+          .Delay(TimeSpan.FromSeconds(attempt), cancellationToken)
+          .ConfigureAwait(false);
+      }
+    }
+
+    throw new InvalidOperationException(
+      $"Azurite queue bootstrap failed after {MaxAttempts} attempts.");
   }
 }

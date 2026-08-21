@@ -148,13 +148,19 @@ var storage = builder
     .WithEndpoint("queue", e => e.IsProxied = false)
     .WithIconName("Storage");
 
-// Azurite ships with no CORS rules and no containers — apply allow-all on every
+// Azurite ships with no CORS rules, containers, or queues — apply allow-all on every
 // startup so browser uploads from https://localhost:3000 → http://localhost:10000
 // succeed, and idempotently create the 'invoices' container so the first upload
-// from uploadScan.ts doesn't 404 with ContainerNotFound. In production these are
+// from uploadScan.ts doesn't 404 with ContainerNotFound. The analysis queue is
+// created before the hosted worker starts polling. In production these are
 // provisioned by Bicep; this brings the local emulator to the same starting state.
 // See Aspire/AzuriteBootstrap.cs for the retry / event-subscription details.
-builder.AddAzuriteBootstrap(storage, Constants.AzuriteBlobPort, "invoices");
+builder.AddAzuriteBootstrap(
+    storage,
+    blobPort: Constants.AzuriteBlobPort,
+    queuePort: Constants.AzuriteQueuePort,
+    blobContainerNames: ["invoices"],
+    queueNames: [Constants.AnalysisQueueName]);
 
 var redisPassword = builder.AddParameter("redis-password", secret: true);
 var redis = builder
