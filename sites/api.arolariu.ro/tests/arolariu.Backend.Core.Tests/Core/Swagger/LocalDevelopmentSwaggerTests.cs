@@ -91,6 +91,21 @@ public sealed class LocalDevelopmentSwaggerTests
     Assert.IsFalse(script.Contains("console.", StringComparison.Ordinal));
   }
 
+  /// <summary>
+  /// Verifies the local identity origin is added to Swagger's connection policy.
+  /// </summary>
+  [TestMethod]
+  public void CreateContentSecurityPolicy_LocalIdentityEndpoint_AllowsOrigin()
+  {
+    string policy = LocalDevelopmentSwagger.CreateContentSecurityPolicy(
+      new Uri("http://127.0.0.1:5123/personas"));
+
+    StringAssert.Contains(
+      policy,
+      "connect-src 'self' http://127.0.0.1:5123;",
+      StringComparison.Ordinal);
+  }
+
   private static IConfiguration CreateConfiguration(
     string infra,
     string? azureClientId,

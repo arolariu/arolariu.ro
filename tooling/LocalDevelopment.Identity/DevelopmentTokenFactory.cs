@@ -15,7 +15,7 @@ internal sealed class DevelopmentTokenFactory
   private readonly TimeProvider timeProvider;
   private readonly SigningCredentials signingCredentials;
 
-  internal DevelopmentTokenFactory(
+  public DevelopmentTokenFactory(
     LocalIdentityOptions options,
     TimeProvider timeProvider)
   {

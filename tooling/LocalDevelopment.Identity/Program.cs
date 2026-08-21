@@ -1,6 +1,7 @@
 namespace LocalDevelopment.Identity;
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,7 +18,10 @@ internal static class Program
       configPath,
       swaggerOrigin);
 
-    RequireLoopbackBinding(builder.Configuration["ASPNETCORE_URLS"]);
+    string? configuredUrls =
+      builder.Configuration[WebHostDefaults.ServerUrlsKey]
+      ?? builder.Configuration["ASPNETCORE_URLS"];
+    RequireLoopbackBinding(configuredUrls);
 
     builder.Services.AddCors(cors =>
       cors.AddDefaultPolicy(policy =>
@@ -66,11 +70,12 @@ internal static class Program
     app.Run();
   }
 
-  private static void RequireLoopbackBinding(string? urls)
+  internal static void RequireLoopbackBinding(string? urls)
   {
     if (string.IsNullOrWhiteSpace(urls))
     {
-      return;
+      throw new InvalidOperationException(
+        "Local development identity service requires an explicit loopback binding.");
     }
 
     foreach (string value in urls.Split(';', StringSplitOptions.RemoveEmptyEntries))

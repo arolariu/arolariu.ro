@@ -56,7 +56,13 @@ internal static class Program
       }
 
       using var cosmosClient =
-        new CosmosClient(options.CosmosConnectionString);
+        new CosmosClient(
+          options.CosmosConnectionString,
+          new CosmosClientOptions
+          {
+            ConnectionMode = ConnectionMode.Gateway,
+            LimitToEndpoint = true,
+          });
       var bootstrap = new LocalScenarioBootstrap(
         new LocalCosmosResetter(cosmosClient),
         storage,

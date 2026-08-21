@@ -6,6 +6,7 @@ using System.Text;
 
 using LocalDevelopment.Identity;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -72,6 +73,29 @@ public sealed class DevelopmentTokenFactoryTests
         TimeProvider.System));
   }
 
+  /// <summary>
+  /// Verifies the factory can be constructed through its runtime DI registration.
+  /// </summary>
+  [TestMethod]
+  public void DependencyInjection_ResolveFactory_ConstructsFactory()
+  {
+    var services = new ServiceCollection();
+    services.AddSingleton(Options);
+    services.AddSingleton(TimeProvider.System);
+    services.AddSingleton<DevelopmentTokenFactory>();
+
+    using ServiceProvider provider = services.BuildServiceProvider(
+      new ServiceProviderOptions
+      {
+        ValidateOnBuild = true,
+      });
+
+    DevelopmentTokenFactory factory =
+      provider.GetRequiredService<DevelopmentTokenFactory>();
+
+    Assert.IsNotNull(factory);
+  }
+
   private static ClaimsPrincipal ValidateToken(string token)
   {
     var handler = new JwtSecurityTokenHandler
@@ -99,5 +123,22 @@ public sealed class DevelopmentTokenFactoryTests
     DateTimeOffset instant) : TimeProvider
   {
     public override DateTimeOffset GetUtcNow() => instant;
+  }
+}
+
+/// <summary>
+/// Verifies the local identity service rejects unsafe binding configuration.
+/// </summary>
+[TestClass]
+public sealed class LocalIdentityBindingTests
+{
+  /// <summary>
+  /// Verifies the token service cannot start without an explicit binding.
+  /// </summary>
+  [TestMethod]
+  public void RequireLoopbackBinding_MissingUrls_ThrowsInvalidOperationException()
+  {
+    Assert.ThrowsExactly<InvalidOperationException>(
+      () => LocalDevelopment.Identity.Program.RequireLoopbackBinding(null));
   }
 }

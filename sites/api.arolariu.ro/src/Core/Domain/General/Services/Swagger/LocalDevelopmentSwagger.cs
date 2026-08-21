@@ -58,6 +58,43 @@ internal static class LocalDevelopmentSwagger
   }
 
   /// <summary>
+  /// Creates the API content security policy, allowing the local identity origin
+  /// only when the development-only bridge is enabled.
+  /// </summary>
+  /// <param name="identityEndpoint">
+  /// The gated loopback identity endpoint, or <see langword="null"/>.
+  /// </param>
+  /// <returns>The complete content security policy.</returns>
+  internal static string CreateContentSecurityPolicy(Uri? identityEndpoint)
+  {
+    string connectSources = "'self'";
+
+    if (identityEndpoint is not null)
+    {
+      if (!identityEndpoint.IsLoopback)
+      {
+        throw new ArgumentException(
+          "Local Swagger identity endpoint must be loopback.",
+          nameof(identityEndpoint));
+      }
+
+      connectSources +=
+        $" {identityEndpoint.GetLeftPart(UriPartial.Authority)}";
+    }
+
+    return
+      "default-src 'self'; " +
+      "script-src 'self'; " +
+      "style-src 'self' 'unsafe-inline'; " +
+      "img-src 'self' data: https:; " +
+      "font-src 'self'; " +
+      $"connect-src {connectSources}; " +
+      "frame-ancestors 'none'; " +
+      "base-uri 'self'; " +
+      "form-action 'self'";
+  }
+
+  /// <summary>
   /// Creates the browser script that selects a local persona and preauthorizes
   /// Swagger's existing Bearer security scheme.
   /// </summary>
