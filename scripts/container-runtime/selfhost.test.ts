@@ -5,7 +5,12 @@
 
 import {afterEach, describe, expect, it} from "vitest";
 import {getContainerAdapter} from "./adapters.ts";
-import {buildSelfhostPlan, getRequiredSqlPassword, shouldGenerateTaxonomyArtifacts} from "./selfhost.ts";
+import {
+  buildLocalStorageBootstrapCommand,
+  buildSelfhostPlan,
+  getRequiredSqlPassword,
+  shouldGenerateTaxonomyArtifacts,
+} from "./selfhost.ts";
 
 const originalSqlPassword = process.env["MSSQL_SA_PASSWORD"];
 
@@ -67,6 +72,21 @@ describe("getRequiredSqlPassword", () => {
     process.env["MSSQL_SA_PASSWORD"] = "local-strong-password";
 
     expect(getRequiredSqlPassword()).toBe("local-strong-password");
+  });
+
+  describe("buildLocalStorageBootstrapCommand", () => {
+    it("uses the shared .NET local storage provisioner", () => {
+      expect(buildLocalStorageBootstrapCommand()).toEqual({
+        command: "dotnet",
+        args: [
+          "run",
+          "--project",
+          "../../tooling/LocalDevelopment.Bootstrap",
+          "--",
+          "--ensure-storage-only",
+        ],
+      });
+    });
   });
 
   describe("shouldGenerateTaxonomyArtifacts", () => {

@@ -10,7 +10,7 @@ import {setTimeout as delay} from "node:timers/promises";
 import {fileURLToPath} from "node:url";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runArtifactGeneration, runSharedPreflight} from "./preflight.ts";
-import {defaultRunner, formatCommand, type CommandRunner} from "./process.ts";
+import {defaultRunner, formatCommand, type CommandRunner, type CommandRunnerOptions} from "./process.ts";
 import {resolveContainerEngine} from "./selection.ts";
 import {removeSelfhostTraefikConfig, writeSelfhostTraefikConfig} from "./traefik.ts";
 import {ContainerRuntimeError, exitWithError} from "./types.ts";
@@ -89,12 +89,38 @@ export function buildSelfhostPlan(inputs: SelfhostPlanInputs): readonly RuntimeC
   ];
 }
 
-async function runCommandOrThrow(runner: CommandRunner, command: RuntimeCommand): Promise<void> {
+async function runCommandOrThrow(
+  runner: CommandRunner,
+  command: RuntimeCommand,
+  options: CommandRunnerOptions = {},
+): Promise<void> {
   console.log(`$ ${formatCommand(command)}`);
-  const result = await runner.run(command, {cwd: "infra/Local", stdio: "tee"});
+  const result = await runner.run(command, {
+    cwd: options.cwd ?? "infra/Local",
+    env: options.env,
+    stdio: options.stdio ?? "tee",
+  });
   if (result.code !== 0) {
     throw new ContainerRuntimeError(`Command failed: ${formatCommand(command)}\n${result.output}`);
   }
+}
+
+/**
+ * Builds the shared storage-only local bootstrap command.
+ *
+ * @returns The command that idempotently provisions Azurite resources.
+ */
+export function buildLocalStorageBootstrapCommand(): RuntimeCommand {
+  return {
+    command: "dotnet",
+    args: [
+      "run",
+      "--project",
+      "../../tooling/LocalDevelopment.Bootstrap",
+      "--",
+      "--ensure-storage-only",
+    ],
+  };
 }
 
 async function pathExists(path: string): Promise<boolean> {
@@ -206,6 +232,17 @@ async function bootstrapSelfhost(adapter: ContainerRuntimeAdapter, runner: Comma
   );
   await bootstrapCosmos();
   await bootstrapAzurite();
+  await runCommandOrThrow(
+    runner,
+    buildLocalStorageBootstrapCommand(),
+    {
+      env: {
+        DOTNET_ENVIRONMENT: "Development",
+        INFRA: "local",
+        ConnectionStrings__storage: azuriteDevelopmentConnectionString,
+      },
+    },
+  );
 }
 
 /**
