@@ -18,5 +18,6 @@
   <ItemGroup>
     <ProjectReference Include="..\AppHost\AppHost.csproj" />
     <ProjectReference Include="..\LocalDevelopment.Bootstrap\LocalDevelopment.Bootstrap.csproj" />
+    <ProjectReference Include="..\LocalDevelopment.Identity\LocalDevelopment.Identity.csproj" />
   </ItemGroup>
 </Project>
