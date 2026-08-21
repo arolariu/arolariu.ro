@@ -239,7 +239,8 @@ async function bootstrapSelfhost(adapter: ContainerRuntimeAdapter, runner: Comma
       env: {
         DOTNET_ENVIRONMENT: "Development",
         INFRA: "local",
-        ConnectionStrings__storage: azuriteDevelopmentConnectionString,
+        ConnectionStrings__blobs: azuriteDevelopmentConnectionString,
+        ConnectionStrings__queues: azuriteDevelopmentConnectionString,
       },
     },
   );

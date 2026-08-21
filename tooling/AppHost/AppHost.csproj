@@ -21,6 +21,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\sites\api.arolariu.ro\src\Core\arolariu.Backend.Core.csproj" IsAspireProjectResource="true" />
+    <ProjectReference Include="..\LocalDevelopment.Bootstrap\LocalDevelopment.Bootstrap.csproj" IsAspireProjectResource="true" />
+    <ProjectReference Include="..\LocalDevelopment.Identity\LocalDevelopment.Identity.csproj" IsAspireProjectResource="true" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="AppHost.Tests" />

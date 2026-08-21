@@ -34,6 +34,7 @@ internal static class Constants
 
   // ── Fixed dev ports — match infra/Local/Storage/docker-compose.yml ──
   public const int ApiPort = 5000;
+  public const int LocalIdentityPort = 5011;
   public const int ExpPort = 5002;
   public const int WebsitePort = 3000;
   public const int CvPort = 4173;

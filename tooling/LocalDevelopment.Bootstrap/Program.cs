@@ -23,7 +23,8 @@ internal static class Program
           options.EnvironmentName,
           options.Infra,
           options.AzureClientId,
-          options.StorageConnectionString);
+          options.BlobStorageConnectionString,
+          options.QueueStorageConnectionString);
       }
       else
       {
@@ -34,13 +35,14 @@ internal static class Program
           options.CosmosConnectionString
             ?? throw new InvalidOperationException(
               "ConnectionStrings__primary is required."),
-          options.StorageConnectionString);
+          options.BlobStorageConnectionString,
+          options.QueueStorageConnectionString);
       }
 
       var blobServiceClient =
-        new BlobServiceClient(options.StorageConnectionString);
+        new BlobServiceClient(options.BlobStorageConnectionString);
       var queueServiceClient =
-        new QueueServiceClient(options.StorageConnectionString);
+        new QueueServiceClient(options.QueueStorageConnectionString);
       var storage = new LocalAzuriteResetter(
         blobServiceClient,
         queueServiceClient);

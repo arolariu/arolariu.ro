@@ -10,7 +10,8 @@ internal static class LocalEnvironmentGuard
     string infra,
     string? azureClientId,
     string cosmosConnectionString,
-    string storageConnectionString)
+    string blobStorageConnectionString,
+    string queueStorageConnectionString)
   {
     ValidateRuntime(environmentName, infra, azureClientId);
 
@@ -28,17 +29,28 @@ internal static class LocalEnvironmentGuard
         "Local development bootstrap refused a non-emulator Cosmos target.");
     }
 
-    ValidateStorageConnection(storageConnectionString);
+    ValidateStorageConnection(
+      blobStorageConnectionString,
+      "blob");
+    ValidateStorageConnection(
+      queueStorageConnectionString,
+      "queue");
   }
 
   internal static void ValidateStorage(
     string environmentName,
     string infra,
     string? azureClientId,
-    string storageConnectionString)
+    string blobStorageConnectionString,
+    string queueStorageConnectionString)
   {
     ValidateRuntime(environmentName, infra, azureClientId);
-    ValidateStorageConnection(storageConnectionString);
+    ValidateStorageConnection(
+      blobStorageConnectionString,
+      "blob");
+    ValidateStorageConnection(
+      queueStorageConnectionString,
+      "queue");
   }
 
   private static void ValidateRuntime(
@@ -58,7 +70,9 @@ internal static class LocalEnvironmentGuard
     }
   }
 
-  private static void ValidateStorageConnection(string connectionString)
+  private static void ValidateStorageConnection(
+    string connectionString,
+    string serviceName)
   {
     if (string.Equals(
       connectionString,
@@ -68,21 +82,20 @@ internal static class LocalEnvironmentGuard
       return;
     }
 
-    bool hasBlob = TryReadEndpoint(
+    string endpointKey = string.Equals(
+      serviceName,
+      "blob",
+      StringComparison.Ordinal)
+        ? "BlobEndpoint"
+        : "QueueEndpoint";
+    bool hasEndpoint = TryReadEndpoint(
       connectionString,
-      "BlobEndpoint",
-      out Uri? blobEndpoint);
-    bool hasQueue = TryReadEndpoint(
-      connectionString,
-      "QueueEndpoint",
-      out Uri? queueEndpoint);
+      endpointKey,
+      out Uri? endpoint);
 
-    if (!hasBlob
-        || !hasQueue
-        || blobEndpoint is null
-        || queueEndpoint is null
-        || !blobEndpoint.IsLoopback
-        || !queueEndpoint.IsLoopback)
+    if (!hasEndpoint
+        || endpoint is null
+        || !endpoint.IsLoopback)
     {
       throw new InvalidOperationException(
         "Local development bootstrap refused a non-Azurite storage target.");

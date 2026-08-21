@@ -147,6 +147,8 @@ var storage = builder
     .WithEndpoint("blob", e => e.IsProxied = false)
     .WithEndpoint("queue", e => e.IsProxied = false)
     .WithIconName("Storage");
+var storageBlobs = storage.AddBlobs("blobs");
+var storageQueues = storage.AddQueues("queues");
 
 // Azurite ships with no CORS rules, containers, or queues — apply allow-all on every
 // startup so browser uploads from https://localhost:3000 → http://localhost:10000
@@ -161,6 +163,24 @@ builder.AddAzuriteBootstrap(
     queuePort: Constants.AzuriteQueuePort,
     blobContainerNames: ["invoices"],
     queueNames: [Constants.AnalysisQueueName]);
+
+IReadOnlyDictionary<string, string> bootstrapEnvironment =
+    LocalDevelopmentResourceConfiguration.CreateBootstrapEnvironment(
+        manifestPath: "SeedData/scenario.v1.json");
+var localBootstrap = builder
+    .AddProject<Projects.LocalDevelopment_Bootstrap>("local-bootstrap")
+    .WithReference(cosmosPrimaryDb)
+    .WithReference(storageBlobs)
+    .WithReference(storageQueues)
+    .WithEnvironment("DOTNET_ENVIRONMENT", bootstrapEnvironment["DOTNET_ENVIRONMENT"])
+    .WithEnvironment("INFRA", bootstrapEnvironment["INFRA"])
+    .WithEnvironment("SEED_MANIFEST_PATH", bootstrapEnvironment["SEED_MANIFEST_PATH"])
+    .WaitFor(cosmosInvoices)
+    .WaitFor(cosmosMerchants)
+    .WaitFor(storageBlobs)
+    .WaitFor(storageQueues)
+    .ExcludeFromManifest()
+    .WithIconName("DatabaseLightning");
 
 var redisPassword = builder.AddParameter("redis-password", secret: true);
 var redis = builder
@@ -206,6 +226,27 @@ var exp = builder
     .WithIconName("KeyMultiple")
     .WithHttpHealthCheck("/api/ready");
 
+string aspireConfigPath = Path.GetFullPath(
+    "../../sites/exp.arolariu.ro/config.aspire.json");
+IReadOnlyDictionary<string, string> identityEnvironment =
+    LocalDevelopmentResourceConfiguration.CreateIdentityEnvironment(
+        aspireConfigPath,
+        $"http://localhost:{Constants.ApiPort}");
+var localIdentities = builder
+    .AddProject<Projects.LocalDevelopment_Identity>("local-identities")
+    .WithHttpEndpoint(
+        port: Constants.LocalIdentityPort,
+        name: "http",
+        isProxied: false)
+    .WithEnvironment("DOTNET_ENVIRONMENT", identityEnvironment["DOTNET_ENVIRONMENT"])
+    .WithEnvironment("INFRA", identityEnvironment["INFRA"])
+    .WithEnvironment("LOCAL_CONFIG_PATH", identityEnvironment["LOCAL_CONFIG_PATH"])
+    .WithEnvironment("LOCAL_SWAGGER_ORIGIN", identityEnvironment["LOCAL_SWAGGER_ORIGIN"])
+    .WaitFor(exp)
+    .ExcludeFromManifest()
+    .WithIconName("PersonKey")
+    .WithHttpHealthCheck("/health");
+
 // ─────────────────────────────────────────────────────────────────────
 // .NET API. API reads connection strings from exp at startup; Aspire
 // injects EXP_PROXY_URL pointing at the native exp endpoint.
@@ -215,7 +256,12 @@ var api = builder
     .AddProject<Projects.arolariu_Backend_Core>("api")
     .WithHttpEndpoint(port: Constants.ApiPort, name: "http")
     .WithEnvironment("EXP_PROXY_URL", exp.GetEndpoint("http"))
+    .WithEnvironment(
+        "LOCAL_DEVELOPMENT_IDENTITY_URL",
+        localIdentities.GetEndpoint("http"))
     .WithReference(exp)
+    .WaitForCompletion(localBootstrap)
+    .WaitFor(localIdentities)
     .WaitFor(exp)
     .WithIconName("CodeBlock")
     .WithHttpHealthCheck("/health");

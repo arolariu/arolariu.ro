@@ -24,7 +24,8 @@ public sealed class LocalEnvironmentGuardTests
       infra: "local",
       azureClientId: null,
       cosmosConnectionString: EmulatorCosmosConnection,
-      storageConnectionString: "UseDevelopmentStorage=true");
+      blobStorageConnectionString: "UseDevelopmentStorage=true",
+      queueStorageConnectionString: "UseDevelopmentStorage=true");
   }
 
   /// <summary>
@@ -45,6 +46,7 @@ public sealed class LocalEnvironmentGuardTests
         infra,
         azureClientId,
         EmulatorCosmosConnection,
+        "UseDevelopmentStorage=true",
         "UseDevelopmentStorage=true"));
   }
 
@@ -60,6 +62,7 @@ public sealed class LocalEnvironmentGuardTests
         "local",
         azureClientId: null,
         "AccountEndpoint=https://example.documents.azure.com/;AccountKey=value;",
+        "UseDevelopmentStorage=true",
         "UseDevelopmentStorage=true"));
   }
 }
