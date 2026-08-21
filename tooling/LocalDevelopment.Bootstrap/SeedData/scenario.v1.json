@@ -1,0 +1,485 @@
+{
+  "version": "v1",
+  "personas": [
+    {
+      "key": "alice",
+      "subject": "alice@arolariu.ro",
+      "userIdentifier": "7574070c-3ee9-5031-9b1b-0dc08c61ee86"
+    },
+    {
+      "key": "bob",
+      "subject": "bob@arolariu.ro",
+      "userIdentifier": "6a40503e-c1af-51b0-8b60-3c6648b3724e"
+    },
+    {
+      "key": "charlie",
+      "subject": "charlie@arolariu.ro",
+      "userIdentifier": "fc687d5c-39d5-5541-868c-f76a3fdbd4e4"
+    }
+  ],
+  "merchants": [
+    {
+      "key": "merchant/northstar-central",
+      "id": "646b6472-cc7f-5092-9960-d703e827fd55",
+      "ownerKey": "alice",
+      "name": "Northstar Market Central",
+      "description": "Central grocery location.",
+      "parentCompanyId": "4d86a424-5216-5075-a23f-fd5d2d1f92b4",
+      "classificationCode": "47.11",
+      "classificationLabel": "Retail sale in non-specialised stores"
+    },
+    {
+      "key": "merchant/northstar-riverside",
+      "id": "df0939b8-6b96-516e-8c42-27a192de4549",
+      "ownerKey": "alice",
+      "name": "Northstar Market Riverside",
+      "description": "Riverside grocery location.",
+      "parentCompanyId": "4d86a424-5216-5075-a23f-fd5d2d1f92b4",
+      "classificationCode": "47.11",
+      "classificationLabel": "Retail sale in non-specialised stores"
+    },
+    {
+      "key": "merchant/harbor-home-east",
+      "id": "761c4629-d5b5-557e-b16b-53dd13b2f0d7",
+      "ownerKey": "alice",
+      "name": "Harbor Home East",
+      "description": "Home and household supplies.",
+      "parentCompanyId": "a98397c8-7100-5073-ab14-6387f0aef0a8",
+      "classificationCode": "47.52",
+      "classificationLabel": "Retail sale of hardware"
+    },
+    {
+      "key": "merchant/harbor-home-west",
+      "id": "3dc075f3-0b50-5338-b61b-5654f1fd3f9e",
+      "ownerKey": "alice",
+      "name": "Harbor Home West",
+      "description": "Home improvement location.",
+      "parentCompanyId": "a98397c8-7100-5073-ab14-6387f0aef0a8",
+      "classificationCode": "47.52",
+      "classificationLabel": "Retail sale of hardware"
+    },
+    {
+      "key": "merchant/old-town-market",
+      "id": "b0d77996-d538-5a58-aaa5-c7d330c4ec9c",
+      "ownerKey": "alice",
+      "name": "Old Town Market",
+      "description": "Independent local retailer.",
+      "parentCompanyId": "00000000-0000-0000-0000-000000000000",
+      "classificationCode": "47.21",
+      "classificationLabel": "Retail sale of fruit and vegetables"
+    },
+    {
+      "key": "merchant/charlie-corner-shop",
+      "id": "10c9d400-4c11-5466-ab1b-489a0ba1a6f5",
+      "ownerKey": "charlie",
+      "name": "Charlie's Corner Shop",
+      "description": "Independent neighbourhood store.",
+      "parentCompanyId": "00000000-0000-0000-0000-000000000000",
+      "classificationCode": "47.11",
+      "classificationLabel": "Retail sale in non-specialised stores"
+    },
+    {
+      "key": "merchant/charlie-parent-location",
+      "id": "1ee68b3a-0728-59b0-8513-b088daef8a86",
+      "ownerKey": "charlie",
+      "name": "Charlie Office Supply North",
+      "description": "Office supply location.",
+      "parentCompanyId": "384e4810-b83e-5bb6-b057-10a12235b1f6",
+      "classificationCode": "47.62",
+      "classificationLabel": "Retail sale of stationery"
+    }
+  ],
+  "invoices": [
+    {
+      "key": "invoice/alice-weekly-groceries",
+      "id": "8fc167a9-0f91-5216-9653-771876772771",
+      "ownerKey": "alice",
+      "name": "Weekly groceries",
+      "description": "Milk, bread, and breakfast staples.",
+      "daysAgo": 0,
+      "merchantKey": "merchant/northstar-central",
+      "sharedWith": [],
+      "currencyCode": "RON",
+      "paymentType": "CARD",
+      "totalAmount": 126.40,
+      "taxAmount": 20.18,
+      "isImportant": true,
+      "isSoftDeleted": false,
+      "classificationCode": "01.1",
+      "classificationLabel": "Food",
+      "products": [
+        {
+          "name": "Whole milk",
+          "quantity": 2,
+          "quantityUnit": "l",
+          "productCode": "MILK-001",
+          "price": 8.50,
+          "classificationCode": "10000025",
+          "classificationLabel": "Milk",
+          "allergenState": "detected",
+          "isEdited": false
+        },
+        {
+          "name": "Sourdough bread",
+          "quantity": 1,
+          "quantityUnit": "pcs",
+          "productCode": "BREAD-001",
+          "price": 15.00,
+          "classificationCode": "10000163",
+          "classificationLabel": "Bread",
+          "allergenState": "none",
+          "isEdited": true
+        }
+      ],
+      "includeRecipe": true,
+      "blobKey": "grocery-receipt"
+    },
+    {
+      "key": "invoice/alice-riverside-topup",
+      "id": "2b1405e5-5e0b-576e-91f8-8b63ad223b6a",
+      "ownerKey": "alice",
+      "name": "Riverside top-up",
+      "description": "Small mid-week grocery purchase.",
+      "daysAgo": 1,
+      "merchantKey": "merchant/northstar-riverside",
+      "sharedWith": [],
+      "currencyCode": "RON",
+      "paymentType": "CASH",
+      "totalAmount": 42.30,
+      "taxAmount": 6.75,
+      "isImportant": false,
+      "isSoftDeleted": false,
+      "classificationCode": "01.1",
+      "classificationLabel": "Food",
+      "products": [
+        {
+          "name": "Apples",
+          "quantity": 1.5,
+          "quantityUnit": "kg",
+          "productCode": "APPLE-001",
+          "price": 7.20,
+          "classificationCode": "10000001",
+          "classificationLabel": "Fresh fruit",
+          "allergenState": "none",
+          "isEdited": false
+        }
+      ],
+      "includeRecipe": false,
+      "blobKey": null
+    },
+    {
+      "key": "invoice/alice-household-supplies",
+      "id": "cefd8346-c079-5266-b3ae-94c973e2501a",
+      "ownerKey": "alice",
+      "name": "Household supplies",
+      "description": "Cleaning and home supplies.",
+      "daysAgo": 3,
+      "merchantKey": "merchant/harbor-home-east",
+      "sharedWith": [],
+      "currencyCode": "RON",
+      "paymentType": "TRANSFER",
+      "totalAmount": 238.90,
+      "taxAmount": 38.14,
+      "isImportant": false,
+      "isSoftDeleted": false,
+      "classificationCode": "05.6",
+      "classificationLabel": "Goods and services for routine household maintenance",
+      "products": [
+        {
+          "name": "Laundry detergent",
+          "quantity": 1,
+          "quantityUnit": "pcs",
+          "productCode": "HOME-001",
+          "price": 49.90,
+          "classificationCode": "10000405",
+          "classificationLabel": "Laundry detergent",
+          "allergenState": "unassessed",
+          "isEdited": false
+        }
+      ],
+      "includeRecipe": false,
+      "blobKey": "household-receipt"
+    },
+    {
+      "key": "invoice/alice-home-improvement",
+      "id": "c5f1acbe-bd2b-5dcd-9d38-622863d257eb",
+      "ownerKey": "alice",
+      "name": "Home improvement",
+      "description": "Paint and repair materials.",
+      "daysAgo": 7,
+      "merchantKey": "merchant/harbor-home-west",
+      "sharedWith": [],
+      "currencyCode": "EUR",
+      "paymentType": "CARD",
+      "totalAmount": 84.50,
+      "taxAmount": 13.49,
+      "isImportant": true,
+      "isSoftDeleted": false,
+      "classificationCode": "05.5",
+      "classificationLabel": "Tools and equipment for house and garden",
+      "products": [
+        {
+          "name": "Interior paint",
+          "quantity": 5,
+          "quantityUnit": "l",
+          "productCode": "PAINT-001",
+          "price": 12.90,
+          "classificationCode": "10000600",
+          "classificationLabel": "Paint",
+          "allergenState": "unassessed",
+          "isEdited": true
+        }
+      ],
+      "includeRecipe": false,
+      "blobKey": null
+    },
+    {
+      "key": "invoice/alice-restaurant-dinner",
+      "id": "c48cd638-8a51-5347-aa28-80047559be01",
+      "ownerKey": "alice",
+      "name": "Restaurant dinner",
+      "description": "Dinner with split payment.",
+      "daysAgo": 14,
+      "merchantKey": "merchant/old-town-market",
+      "sharedWith": [],
+      "currencyCode": "RON",
+      "paymentType": "SPLIT",
+      "totalAmount": 185.00,
+      "taxAmount": 29.54,
+      "isImportant": false,
+      "isSoftDeleted": false,
+      "classificationCode": "11.1",
+      "classificationLabel": "Food and beverage serving services",
+      "products": [
+        {
+          "name": "Dinner menu",
+          "quantity": 2,
+          "quantityUnit": "servings",
+          "productCode": "MEAL-001",
+          "price": 82.50,
+          "classificationCode": null,
+          "classificationLabel": null,
+          "allergenState": "insufficient",
+          "isEdited": false
+        }
+      ],
+      "includeRecipe": false,
+      "blobKey": "restaurant-receipt"
+    },
+    {
+      "key": "invoice/alice-pharmacy",
+      "id": "0041a485-71b0-5c2a-8be7-49cb242eafdd",
+      "ownerKey": "alice",
+      "name": "Pharmacy purchase",
+      "description": "Health and personal care items.",
+      "daysAgo": 30,
+      "merchantKey": "merchant/old-town-market",
+      "sharedWith": [],
+      "currencyCode": "RON",
+      "paymentType": "MOBILEPAYMENT",
+      "totalAmount": 68.70,
+      "taxAmount": 10.97,
+      "isImportant": false,
+      "isSoftDeleted": false,
+      "classificationCode": "06.1",
+      "classificationLabel": "Medicines and health products",
+      "products": [
+        {
+          "name": "Vitamin supplement",
+          "quantity": 1,
+          "quantityUnit": "box",
+          "productCode": "HEALTH-001",
+          "price": 68.70,
+          "classificationCode": null,
+          "classificationLabel": null,
+          "allergenState": "unassessed",
+          "isEdited": false
+        }
+      ],
+      "includeRecipe": false,
+      "blobKey": null
+    },
+    {
+      "key": "invoice/alice-shared-family-shop",
+      "id": "c4435cb7-4d5a-5a12-b46e-e9e155ffddc1",
+      "ownerKey": "alice",
+      "name": "Shared family shop",
+      "description": "Shared grocery receipt for Alice and Charlie.",
+      "daysAgo": 60,
+      "merchantKey": "merchant/northstar-central",
+      "sharedWith": ["charlie"],
+      "currencyCode": "RON",
+      "paymentType": "CARD",
+      "totalAmount": 312.10,
+      "taxAmount": 49.83,
+      "isImportant": true,
+      "isSoftDeleted": false,
+      "classificationCode": "01.1",
+      "classificationLabel": "Food",
+      "products": [
+        {
+          "name": "Pasta",
+          "quantity": 4,
+          "quantityUnit": "packs",
+          "productCode": "PASTA-001",
+          "price": 8.20,
+          "classificationCode": "10000214",
+          "classificationLabel": "Pasta",
+          "allergenState": "none",
+          "isEdited": false
+        }
+      ],
+      "includeRecipe": true,
+      "blobKey": null
+    },
+    {
+      "key": "invoice/alice-soft-deleted-archive",
+      "id": "d244d807-161b-5bab-b683-7fdc07912320",
+      "ownerKey": "alice",
+      "name": "Archived receipt",
+      "description": "Soft-deleted historical example.",
+      "daysAgo": 90,
+      "merchantKey": "merchant/old-town-market",
+      "sharedWith": [],
+      "currencyCode": "RON",
+      "paymentType": "CASH",
+      "totalAmount": 24.00,
+      "taxAmount": 3.83,
+      "isImportant": false,
+      "isSoftDeleted": true,
+      "classificationCode": null,
+      "classificationLabel": null,
+      "products": [
+        {
+          "name": "Archived item",
+          "quantity": 1,
+          "quantityUnit": "pcs",
+          "productCode": "ARCHIVE-001",
+          "price": 24.00,
+          "classificationCode": null,
+          "classificationLabel": null,
+          "allergenState": "unassessed",
+          "isEdited": false
+        }
+      ],
+      "includeRecipe": false,
+      "blobKey": null
+    },
+    {
+      "key": "invoice/charlie-breakfast",
+      "id": "c7aec965-5495-5d85-89db-bd3db6156ada",
+      "ownerKey": "charlie",
+      "name": "Breakfast essentials",
+      "description": "A small breakfast purchase.",
+      "daysAgo": 2,
+      "merchantKey": "merchant/charlie-corner-shop",
+      "sharedWith": [],
+      "currencyCode": "RON",
+      "paymentType": "CARD",
+      "totalAmount": 36.40,
+      "taxAmount": 5.81,
+      "isImportant": false,
+      "isSoftDeleted": false,
+      "classificationCode": "01.1",
+      "classificationLabel": "Food",
+      "products": [
+        {
+          "name": "Yogurt",
+          "quantity": 4,
+          "quantityUnit": "cups",
+          "productCode": "YOGURT-001",
+          "price": 4.10,
+          "classificationCode": "10000028",
+          "classificationLabel": "Yogurt",
+          "allergenState": "detected",
+          "isEdited": false
+        }
+      ],
+      "includeRecipe": true,
+      "blobKey": null
+    },
+    {
+      "key": "invoice/charlie-office-supplies",
+      "id": "c622f7a1-d7fe-5c64-87b1-86069b460117",
+      "ownerKey": "charlie",
+      "name": "Office supplies",
+      "description": "Notebooks and stationery.",
+      "daysAgo": 10,
+      "merchantKey": "merchant/charlie-parent-location",
+      "sharedWith": [],
+      "currencyCode": "EUR",
+      "paymentType": "TRANSFER",
+      "totalAmount": 52.00,
+      "taxAmount": 8.30,
+      "isImportant": true,
+      "isSoftDeleted": false,
+      "classificationCode": "09.5",
+      "classificationLabel": "Information and communication",
+      "products": [
+        {
+          "name": "Notebook",
+          "quantity": 3,
+          "quantityUnit": "pcs",
+          "productCode": "OFFICE-001",
+          "price": 9.50,
+          "classificationCode": "10001000",
+          "classificationLabel": "Stationery",
+          "allergenState": "unassessed",
+          "isEdited": true
+        }
+      ],
+      "includeRecipe": false,
+      "blobKey": null
+    },
+    {
+      "key": "invoice/charlie-weekend-market",
+      "id": "591b0694-44ab-5e4f-a72e-68439e13dd49",
+      "ownerKey": "charlie",
+      "name": "Weekend market",
+      "description": "Fresh produce from a local store.",
+      "daysAgo": 45,
+      "merchantKey": "merchant/charlie-corner-shop",
+      "sharedWith": [],
+      "currencyCode": "RON",
+      "paymentType": "CASH",
+      "totalAmount": 74.20,
+      "taxAmount": 11.85,
+      "isImportant": false,
+      "isSoftDeleted": false,
+      "classificationCode": null,
+      "classificationLabel": null,
+      "products": [
+        {
+          "name": "Seasonal vegetables",
+          "quantity": 3,
+          "quantityUnit": "kg",
+          "productCode": "VEG-001",
+          "price": 12.00,
+          "classificationCode": null,
+          "classificationLabel": null,
+          "allergenState": "insufficient",
+          "isEdited": false
+        }
+      ],
+      "includeRecipe": false,
+      "blobKey": null
+    }
+  ],
+  "blobs": [
+    {
+      "key": "grocery-receipt",
+      "contentType": "image/png",
+      "contentBase64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2rJ0AAAAASUVORK5CYII="
+    },
+    {
+      "key": "household-receipt",
+      "contentType": "image/png",
+      "contentBase64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2rJ0AAAAASUVORK5CYII="
+    },
+    {
+      "key": "restaurant-receipt",
+      "contentType": "image/png",
+      "contentBase64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2rJ0AAAAASUVORK5CYII="
+    }
+  ]
+}

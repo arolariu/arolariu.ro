@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.29.1" />
+    <PackageReference Include="Azure.Storage.Queues" Version="12.27.1" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.62.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\sites\api.arolariu.ro\src\Invoices\arolariu.Backend.Domain.Invoices.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="SeedData\scenario.v1.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="AppHost.Tests" />
+  </ItemGroup>
+</Project>

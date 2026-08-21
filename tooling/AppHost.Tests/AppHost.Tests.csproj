@@ -17,5 +17,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AppHost\AppHost.csproj" />
+    <ProjectReference Include="..\LocalDevelopment.Bootstrap\LocalDevelopment.Bootstrap.csproj" />
   </ItemGroup>
 </Project>
