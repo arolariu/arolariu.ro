@@ -7,7 +7,9 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
 using arolariu.Backend.Domain.Tests.Builders;
 
@@ -25,7 +27,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class MerchantStorageFoundationServiceTests
 {
-  private readonly Mock<IInvoiceNoSqlBroker> mockBroker;
+  private readonly Mock<IDatabaseBroker> mockBroker;
   private readonly Mock<ILoggerFactory> mockLoggerFactory;
   private readonly Mock<ILogger<IMerchantStorageFoundationService>> mockLogger;
   private readonly MerchantStorageFoundationService service;
@@ -35,7 +37,7 @@ public sealed class MerchantStorageFoundationServiceTests
   /// </summary>
   public MerchantStorageFoundationServiceTests()
   {
-    mockBroker = new Mock<IInvoiceNoSqlBroker>();
+    mockBroker = new Mock<IDatabaseBroker>();
     mockLoggerFactory = new Mock<ILoggerFactory>();
     mockLogger = new Mock<ILogger<IMerchantStorageFoundationService>>();
 
@@ -43,9 +45,7 @@ public sealed class MerchantStorageFoundationServiceTests
         .Setup(factory => factory.CreateLogger(It.IsAny<string>()))
         .Returns(mockLogger.Object);
 
-    service = new MerchantStorageFoundationService(
-        mockBroker.Object,
-        mockLoggerFactory.Object);
+    service = new MerchantStorageFoundationService(mockBroker.Object, mockLoggerFactory.Object);
   }
 
   #region Constructor Tests
@@ -56,9 +56,7 @@ public sealed class MerchantStorageFoundationServiceTests
   [TestMethod]
   public void Constructor_NullBroker_ThrowsArgumentNullException() =>
       Assert.ThrowsExactly<ArgumentNullException>(() =>
-          new MerchantStorageFoundationService(
-            null!,
-            mockLoggerFactory.Object));
+          new MerchantStorageFoundationService(null!, mockLoggerFactory.Object));
 
   /// <summary>
   /// Validates successful instantiation with all valid dependencies.
@@ -67,9 +65,7 @@ public sealed class MerchantStorageFoundationServiceTests
   public void Constructor_ValidDependencies_CreatesInstance()
   {
     // Arrange & Act
-    var svc = new MerchantStorageFoundationService(
-        mockBroker.Object,
-        mockLoggerFactory.Object);
+    var svc = new MerchantStorageFoundationService(mockBroker.Object, mockLoggerFactory.Object);
 
     // Assert
     Assert.IsNotNull(svc);
@@ -401,17 +397,17 @@ public sealed class MerchantStorageFoundationServiceTests
         .ReturnsAsync(currentMerchant);
 
     mockBroker
-        .Setup(b => b.UpdateMerchantAsync(currentMerchant, updatedMerchant, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(updatedMerchant);
+        .Setup(b => b.UpdateMerchantAsync(currentMerchant, currentMerchant, It.IsAny<CancellationToken>()))
+        .ReturnsAsync(currentMerchant);
 
     // Act
     var result = await service.UpdateMerchantObject(updatedMerchant, merchantId, parentCompanyId, CancellationToken.None);
 
     // Assert
     Assert.IsNotNull(result);
-    Assert.AreEqual(updatedMerchant.id, result.id);
+    Assert.AreEqual(currentMerchant.id, result.id);
     mockBroker.Verify(b => b.ReadMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()), Times.Once);
-    mockBroker.Verify(b => b.UpdateMerchantAsync(currentMerchant, updatedMerchant, It.IsAny<CancellationToken>()), Times.Once);
+    mockBroker.Verify(b => b.UpdateMerchantAsync(currentMerchant, currentMerchant, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -430,22 +426,22 @@ public sealed class MerchantStorageFoundationServiceTests
         .ReturnsAsync(currentMerchant);
 
     mockBroker
-        .Setup(b => b.UpdateMerchantAsync(currentMerchant, updatedMerchant, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(updatedMerchant);
+        .Setup(b => b.UpdateMerchantAsync(currentMerchant, currentMerchant, It.IsAny<CancellationToken>()))
+        .ReturnsAsync(currentMerchant);
 
     // Act
     var result = await service.UpdateMerchantObject(updatedMerchant, merchantId, null, CancellationToken.None);
 
     // Assert
     Assert.IsNotNull(result);
-    mockBroker.Verify(b => b.UpdateMerchantAsync(currentMerchant, updatedMerchant, It.IsAny<CancellationToken>()), Times.Once);
+    mockBroker.Verify(b => b.UpdateMerchantAsync(currentMerchant, currentMerchant, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
-  /// Validates null current merchant during update throws exception.
+  /// Validates a missing merchant during update produces a typed dependency-validation exception.
   /// </summary>
   [TestMethod]
-  public async Task UpdateMerchantObject_NullCurrentMerchant_ThrowsFoundationServiceException()
+  public async Task UpdateMerchantObject_NullCurrentMerchant_ThrowsFoundationDependencyValidationException()
   {
     // Arrange
     var merchantId = Guid.NewGuid();
@@ -456,8 +452,11 @@ public sealed class MerchantStorageFoundationServiceTests
         .ReturnsAsync((Merchant?)null);
 
     // Act & Assert
-    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
+    MerchantFoundationServiceDependencyValidationException exception =
+      await Assert.ThrowsExactlyAsync<MerchantFoundationServiceDependencyValidationException>(() =>
         service.UpdateMerchantObject(updatedMerchant, merchantId, null, CancellationToken.None));
+
+    Assert.IsInstanceOfType<MerchantNotFoundException>(exception.InnerException);
   }
 
   /// <summary>
@@ -476,7 +475,7 @@ public sealed class MerchantStorageFoundationServiceTests
         .ReturnsAsync(currentMerchant);
 
     mockBroker
-        .Setup(b => b.UpdateMerchantAsync(currentMerchant, updatedMerchant, It.IsAny<CancellationToken>()))
+        .Setup(b => b.UpdateMerchantAsync(currentMerchant, currentMerchant, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new InvalidOperationException("Update failed"));
 
     // Act & Assert

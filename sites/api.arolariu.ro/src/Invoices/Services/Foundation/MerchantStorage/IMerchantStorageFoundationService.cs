@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation;
 
 /// <summary>
 /// Foundation storage contract for persisting and retrieving <see cref="Merchant"/> aggregates.

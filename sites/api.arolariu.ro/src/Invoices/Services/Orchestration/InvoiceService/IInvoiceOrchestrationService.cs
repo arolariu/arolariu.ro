@@ -7,58 +7,31 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DTOs;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 
 /// <summary>
-/// Orchestration layer contract for coordinating invoice-related workflows across foundation services and (optionally) processing concerns.
+/// Defines invoice aggregate workflows over the invoice storage Foundation.
 /// </summary>
 /// <remarks>
-/// <para><b>Layer Role (The Standard):</b> Orchestration services compose one or more foundation services, apply cross-cutting policies
-/// (validation sequencing, exception classification, retry / resilience hooks), and prepare data for upstream presentation layers.
-/// They MUST NOT contain raw persistence calls (delegated to foundation) nor heavy computational enrichment (delegated to processing).</para>
+/// <para><b>Layer Role (The Standard):</b> This Orchestration depends only on
+/// <see cref="IInvoiceStorageFoundationService"/> and classifies that Foundation's failures for Processing.</para>
 /// <para><b>Responsibilities:</b>
 /// <list type="bullet">
-///   <item><description>Sequence domain operations (e.g., validate → store → analyze) while maintaining clear transactional boundaries.</description></item>
-///   <item><description>Translate low-level dependency / validation exceptions into higher-order orchestration exceptions (per The Standard).</description></item>
-///   <item><description>Enforce partition / ownership rules by propagating or asserting <c>userIdentifier</c>.</description></item>
-///   <item><description>Invoke processing / analysis workflows when explicitly requested (e.g., AnalyzeInvoiceWithOptions).</description></item>
+///   <item><description>Delegate invoice CRUD to the storage Foundation.</description></item>
+///   <item><description>Attach a scan by reading and updating one invoice aggregate.</description></item>
+///   <item><description>Classify Foundation validation and dependency failures.</description></item>
 /// </list></para>
-/// <para><b>Exclusions:</b> No direct HTTP / transport awareness, no UI mapping, no persistence broker usage directly, no long-running state machines
-/// (those belong to a higher saga / workflow coordinator if introduced).</para>
-/// <para><b>Idempotency:</b> Read / delete operations are naturally idempotent; create and update operations SHOULD guard against duplicate or stale writes
-/// (future: optimistic concurrency tokens).</para>
-/// <para><b>Error Strategy:</b> Implementations SHOULD capture foundation exceptions and wrap them into orchestration-level exceptions to keep vertical
-/// layering separable for observability and policy (e.g., global exception middleware).</para>
+/// <para><b>Exclusions:</b> No Analysis Orchestration, Processing, Broker, or transport dependencies.</para>
 /// </remarks>
 public interface IInvoiceOrchestrationService
 {
-  /// <summary>
-  /// Executes an analysis workflow for a specific invoice using the supplied option flags.
-  /// </summary>
-  /// <remarks>
-  /// <para><b>Behavior:</b> Orchestrates retrieval (if not already loaded downstream), validation, then delegates enrichment /
-  /// classification steps to processing / foundation analysis components.</para>
-  /// <para><b>Side Effects:</b> May update persisted invoice state if analysis results are persisted (future enhancement).
-  /// Currently assumed to be synchronous; backlog: promote to async operation resource.</para>
-  /// <para><b>Idempotency:</b> Re-running with identical inputs SHOULD yield semantically equivalent enrichment unless time‑variant
-  /// data sources are consulted (e.g., external tax rates).</para>
-  /// </remarks>
-  /// <param name="options">Directive flags controlling which analysis / enrichment steps to perform (MUST NOT be null).</param>
-  /// <param name="invoiceIdentifier">Target invoice identifier (MUST reference an existing invoice).</param>
-  /// <param name="userIdentifier">Tenant / partition scope (enforced for ownership isolation); pass null for a cross-partition operation.</param>
-  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
-  /// <returns>Asynchronous task.</returns>
-  /// <exception cref="ArgumentNullException">Thrown if <paramref name="options"/> is null.</exception>
-  /// <exception cref="InvalidOperationException">Thrown if invoice not found or fails pre-analysis invariants.</exception>
-  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  Task AnalyzeInvoiceWithOptions(AnalysisOptions options, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
-
   #region Implements the Invoice Storage Foundation Service
   #region Create Invoice API
   /// <summary>
   /// Creates (persists) a new invoice aggregate via the underlying foundation storage service.
   /// </summary>
   /// <remarks>
-  /// <para><b>Workflow:</b> Validate inbound aggregate → delegate to foundation storage → optionally trigger post-create hooks (future: events).</para>
+  /// <para><b>Workflow:</b> Delegate persistence to invoice storage and return the supplied aggregate.</para>
   /// <para><b>Failure Modes:</b> Validation exceptions for invariant breaches; dependency / dependency validation exceptions surfaced from foundation layer and wrapped by implementation.</para>
   /// </remarks>
   /// <param name="invoice">Fully initialized invoice aggregate to persist.</param>
@@ -68,12 +41,31 @@ public interface IInvoiceOrchestrationService
   Task<Invoice> CreateInvoiceObject(Invoice invoice, Guid? userIdentifier, CancellationToken cancellationToken);
   #endregion
 
+  #region Attach Invoice Scan API
+  /// <summary>
+  /// Attaches one scan value to an existing invoice.
+  /// </summary>
+  /// <remarks>
+  /// The invoice is loaded, the scan is appended, and the aggregate is persisted once.
+  /// </remarks>
+  /// <param name="invoiceIdentifier">The identifier of the invoice receiving the scan.</param>
+  /// <param name="userIdentifier">The optional partition context for the invoice.</param>
+  /// <param name="scan">The uploaded scan to attach.</param>
+  /// <param name="cancellationToken">The token used to cancel validation or persistence.</param>
+  /// <returns>The updated invoice aggregate containing the attached scan.</returns>
+  Task<Invoice> AttachInvoiceScanAsync(
+    Guid invoiceIdentifier,
+    Guid? userIdentifier,
+    InvoiceScan scan,
+    CancellationToken cancellationToken);
+  #endregion
+
   #region Read Invoice API
   /// <summary>
   /// Retrieves a single invoice aggregate by identifier.
   /// </summary>
   /// <remarks>
-  /// <para><b>Behavior:</b> Delegates to foundation storage; may augment with orchestration-level caching or access policy enforcement in future.</para>
+  /// <para><b>Behavior:</b> Delegates directly to invoice storage.</para>
   /// </remarks>
   /// <param name="identifier">Invoice identifier.</param>
   /// <param name="userIdentifier">Tenant / partition scope; pass null for a cross-partition operation.</param>
@@ -87,7 +79,7 @@ public interface IInvoiceOrchestrationService
   /// Retrieves all invoices for an optional partition scope.
   /// </summary>
   /// <remarks>
-  /// <para><b>Pagination:</b> Not supported yet (backlog). Implementations SHOULD avoid unbounded materialization where possible.</para>
+  /// <para><b>Behavior:</b> Returns the sequence supplied by invoice storage.</para>
   /// </remarks>
   /// <param name="userIdentifier">Tenant / partition scope.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
@@ -101,7 +93,6 @@ public interface IInvoiceOrchestrationService
   /// </summary>
   /// <remarks>
   /// <para><b>Validation:</b> Ensures identifier consistency (argument id vs aggregate id if enforced) and domain invariants prior to persistence.</para>
-  /// <para><b>Concurrency:</b> No ETag support yet; potential overwrite of concurrent updates (backlog: optimistic concurrency).</para>
   /// </remarks>
   /// <param name="updatedInvoice">Proposed new invoice state.</param>
   /// <param name="invoiceIdentifier">Identifier of invoice being updated.</param>
@@ -117,7 +108,7 @@ public interface IInvoiceOrchestrationService
   /// </summary>
   /// <remarks>
   /// <para><b>Idempotency:</b> Repeated calls yield stable terminal state.</para>
-  /// <para><b>Side Effects:</b> No cascading delete in orchestration layer (future: explicit cascade policy / event emission).</para>
+  /// <para><b>Side Effects:</b> No cascading delete is performed by this Orchestration.</para>
   /// </remarks>
   /// <param name="identifier">Invoice identifier.</param>
   /// <param name="userIdentifier">Tenant / partition scope; pass null for a cross-partition operation.</param>

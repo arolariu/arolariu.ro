@@ -12,8 +12,9 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 /// Represents a merchant (vendor / store) referenced by one or more invoices within the invoicing bounded context.
 /// </summary>
 /// <remarks>
-/// <para>Encapsulates classification (<c>Classification</c>), location/contact data (<c>Address</c>), hierarchical grouping (<c>ParentCompanyId</c>)
-/// and reverse references from invoices (<c>ReferencedInvoices</c>) for analytic aggregation.</para>
+/// <para>Encapsulates classification (<c>Classification</c>), the inherited generated <c>Description</c>, location/contact data
+/// (<c>Address</c>), hierarchical grouping (<c>ParentCompanyId</c>) and reverse references from invoices
+/// (<c>ReferencedInvoices</c>) for analytic aggregation.</para>
 /// <para><b>Identity:</b> Assigned at creation time (random GUID). Future optimization may migrate to Version 7 GUID for chronological sorting.</para>
 /// <para><b>Relationships:</b> Not an aggregate root for invoices (invoices own the relationship by storing <c>MerchantReference</c>). This type acts
 /// as a referenced entity; deleting a merchant should not cascade to invoices without explicit orchestration logic.</para>
@@ -30,8 +31,11 @@ public sealed class Merchant : NamedEntity<Guid>
   [JsonPropertyOrder(0)]
   public override Guid id { get; init; } = Guid.NewGuid();
 
-  /// <summary>Gets or sets the canonical NACE classification used for analytics and grouping.</summary>
-  /// <remarks><see langword="null"/> means that the merchant is unclassified.</remarks>
+  /// <summary>Standardised classification used for analytics, grouping and analysis heuristics.</summary>
+  /// <remarks>
+  /// <para><b>Expected system:</b> <see cref="ClassificationSystem.Nace21"/>. Processing resolves every manual selection canonically before persistence.</para>
+  /// <para><see langword="null"/> means the merchant has not been classified yet.</para>
+  /// </remarks>
   [JsonPropertyOrder(3)]
   public StandardClassification? Classification { get; set; }
 
@@ -61,6 +65,8 @@ public sealed class Merchant : NamedEntity<Guid>
   /// </remarks>
   [JsonPropertyOrder(7)]
   public IDictionary<string, string> AdditionalMetadata { get; init; } = new Dictionary<string, string>();
+
+
 
   /// <summary>
   /// Create a default instance of <see cref="Merchant"/>.

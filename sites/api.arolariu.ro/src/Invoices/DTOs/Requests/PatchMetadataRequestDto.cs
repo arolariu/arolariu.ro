@@ -6,6 +6,8 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
+
 /// <summary>
 /// Request DTO for adding or updating metadata entries on an invoice.
 /// </summary>
@@ -23,23 +25,18 @@ using System.Text.Json;
 /// exists, its value is replaced with the new value from this DTO.
 /// </para>
 /// <para>
-/// <b>Key Naming Convention:</b> Keys should follow a dotted namespace pattern
-/// for organization and to avoid collisions:
-/// <list type="bullet">
-///   <item><description><c>ai.confidence</c>: AI-generated confidence scores.</description></item>
-///   <item><description><c>ai.extractionDate</c>: When AI analysis was performed.</description></item>
-///   <item><description><c>user.note</c>: User-provided annotations.</description></item>
-///   <item><description><c>import.source</c>: Data source for imported invoices.</description></item>
-/// </list>
+/// <b>Confidentiality:</b> Only client-owned <c>user.</c>, <c>custom.</c>, and <c>import.</c> namespaces are
+/// mutable. Server-owned OCR, prompt, response, workflow, run, lease, credential, token, and SAS metadata is
+/// immutable through this endpoint.
 /// </para>
 /// <para>
-/// <b>Value Types:</b> Supports strings, numbers (int/double), booleans, and null.
-/// Complex objects should be serialized to JSON strings.
+/// <b>Value Types:</b> Supports null, strings, booleans, and finite numeric scalars only. Arrays and objects are
+/// rejected rather than stored as raw JSON.
 /// </para>
 /// </remarks>
 /// <param name="Entries">
 /// Dictionary of metadata entries to add or update. Required.
-/// Keys must be non-empty strings. Values are converted from <see cref="JsonElement"/>
+/// Keys must be non-empty strings. Values are converted from <c>JsonElement</c>
 /// to native types during processing.
 /// </param>
 /// <example>
@@ -62,6 +59,18 @@ public readonly record struct PatchMetadataRequestDto(
   [Required] IDictionary<string, object> Entries)
 {
   /// <summary>
+  /// Validates the complete metadata patch before any aggregate state is changed.
+  /// </summary>
+  /// <remarks>
+  /// Validation applies the client namespace and scalar-value contract to every entry before a caller can mutate an
+  /// existing metadata dictionary. It is safe to invoke repeatedly.
+  /// </remarks>
+  /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner.InvoiceMetadataValidationException">
+  /// Thrown when any key or value lies outside the public metadata patch contract.
+  /// </exception>
+  public void Validate() => _ = ValidateAndNormalize(Entries);
+
+  /// <summary>
   /// Applies the metadata entries to an existing metadata dictionary.
   /// </summary>
   /// <remarks>
@@ -71,7 +80,7 @@ public readonly record struct PatchMetadataRequestDto(
   /// </para>
   /// <para>
   /// <b>JsonElement Conversion:</b> When receiving data from HTTP requests, values
-  /// may arrive as <see cref="JsonElement"/>. This method automatically converts
+  /// may arrive as <c>JsonElement</c>. This method automatically converts
   /// them to native .NET types (string, long, double, bool) for proper storage.
   /// </para>
   /// </remarks>
@@ -85,47 +94,130 @@ public readonly record struct PatchMetadataRequestDto(
   public void ApplyTo(IDictionary<string, object> existingMetadata)
   {
     ArgumentNullException.ThrowIfNull(existingMetadata);
-    foreach (var (key, value) in Entries)
+
+    Dictionary<string, object?> normalizedEntries =
+      ValidateAndNormalize(Entries);
+
+    foreach ((string key, object? value) in normalizedEntries)
     {
-      // Convert JsonElement to native types for proper serialization
-      existingMetadata[key] = ConvertJsonElement(value);
+      existingMetadata[key] = value!;
     }
   }
 
-  /// <summary>
-  /// Converts a <see cref="JsonElement"/> to its native .NET type.
-  /// </summary>
-  /// <remarks>
-  /// <para>
-  /// Handles conversion of JSON deserialized values to their appropriate .NET
-  /// representations for storage and subsequent serialization.
-  /// </para>
-  /// <para>
-  /// <b>Number Handling:</b> Attempts integer conversion first (as <see cref="Int64"/>),
-  /// falling back to <see cref="Double"/> for decimal values.
-  /// </para>
-  /// </remarks>
-  /// <param name="value">
-  /// The value to convert. If not a <see cref="JsonElement"/>, returned as-is.
-  /// </param>
-  /// <returns>
-  /// The converted native type (string, long, double, bool, or raw JSON text).
-  /// </returns>
-  private static object ConvertJsonElement(object value)
+  private static Dictionary<string, object?> ValidateAndNormalize(
+    IDictionary<string, object>? entries)
   {
-    if (value is not JsonElement jsonElement)
+    if (entries is null || entries.Count == 0)
     {
-      return value;
+      throw new InvoiceMetadataValidationException("At least one metadata entry is required.");
     }
 
-    return jsonElement.ValueKind switch
+    var normalizedEntries = new Dictionary<string, object?>(entries.Count, StringComparer.Ordinal);
+
+    foreach ((string key, object value) in entries)
     {
-      JsonValueKind.String => jsonElement.GetString() ?? string.Empty,
-      JsonValueKind.Number => jsonElement.TryGetInt64(out var longValue) ? longValue : jsonElement.GetDouble(),
-      JsonValueKind.True => true,
-      JsonValueKind.False => false,
-      JsonValueKind.Null => null!,
-      _ => jsonElement.GetRawText()
+      ValidateKey(key);
+      normalizedEntries.Add(key, NormalizeScalarValue(value));
+    }
+
+    return normalizedEntries;
+  }
+
+  private static void ValidateKey(string? key)
+  {
+    if (string.IsNullOrWhiteSpace(key)
+      || key != key.Trim()
+      || !HasSupportedNamespace(key)
+      || !HasSupportedKeyCharacters(key))
+    {
+      throw new InvoiceMetadataValidationException(
+        "Metadata keys must use a supported client namespace and contain only safe identifier characters.");
+    }
+  }
+
+  private static bool HasSupportedNamespace(string key) =>
+    key.StartsWith("user.", StringComparison.Ordinal)
+    || key.StartsWith("custom.", StringComparison.Ordinal)
+    || key.StartsWith("import.", StringComparison.Ordinal);
+
+  private static bool HasSupportedKeyCharacters(string key)
+  {
+    foreach (char character in key)
+    {
+      if (!char.IsAsciiLetterOrDigit(character)
+        && character is not '.' and not '_' and not '-')
+      {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private static object? NormalizeScalarValue(object? value)
+  {
+    if (value is JsonElement jsonElement)
+    {
+      return NormalizeJsonScalar(jsonElement);
+    }
+
+    return value switch
+    {
+      null => null,
+      string text when !LooksLikeSensitiveTransportValue(text) => text,
+      bool boolean => boolean,
+      byte or sbyte or short or ushort or int or uint or long or ulong or decimal => value,
+      float number when float.IsFinite(number) => number,
+      double number when double.IsFinite(number) => number,
+      _ => throw new InvoiceMetadataValidationException(
+        "Metadata values must be null, strings, booleans, or finite numeric scalars."),
     };
   }
+
+  private static object? NormalizeJsonScalar(JsonElement jsonElement) =>
+    jsonElement.ValueKind switch
+    {
+      JsonValueKind.Null => null,
+      JsonValueKind.String => NormalizeString(jsonElement),
+      JsonValueKind.True => true,
+      JsonValueKind.False => false,
+      JsonValueKind.Number => NormalizeNumber(jsonElement),
+      _ => throw new InvoiceMetadataValidationException(
+        "Metadata values must be null, strings, booleans, or finite numeric scalars."),
+    };
+
+  private static string NormalizeString(JsonElement jsonElement)
+  {
+    string value = jsonElement.GetString() ?? string.Empty;
+
+    if (LooksLikeSensitiveTransportValue(value))
+    {
+      throw new InvoiceMetadataValidationException("Metadata values must not contain transport credentials.");
+    }
+
+    return value;
+  }
+
+  private static object NormalizeNumber(JsonElement jsonElement)
+  {
+    if (jsonElement.TryGetInt64(out long integralValue))
+    {
+      return integralValue;
+    }
+
+    double floatingValue = jsonElement.GetDouble();
+
+    if (!double.IsFinite(floatingValue))
+    {
+      throw new InvoiceMetadataValidationException("Metadata numeric values must be finite.");
+    }
+
+    return floatingValue;
+  }
+
+  private static bool LooksLikeSensitiveTransportValue(string value) =>
+    value.Contains("sig=", StringComparison.OrdinalIgnoreCase)
+    || value.Contains("token=", StringComparison.OrdinalIgnoreCase)
+    || value.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+    || value.StartsWith("eyJ", StringComparison.Ordinal);
 }

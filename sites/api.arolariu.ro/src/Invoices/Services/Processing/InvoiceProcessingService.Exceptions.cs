@@ -3,15 +3,17 @@ namespace arolariu.Backend.Domain.Invoices.Services.Processing;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing;
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
-
-public partial class InvoiceProcessingService
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptions.Inner;
+using arolariu.Backend.Domain.Invoices.Modules;
+public sealed partial class InvoiceProcessingService
 {
   #region Delegates
   private delegate Task CallbackFunctionForTasksWithNoReturn();
@@ -33,6 +35,7 @@ public partial class InvoiceProcessingService
   private delegate Task<InvoiceScan> CallbackFunctionForTasksWithInvoiceScanReturn();
 
   private delegate Task<IEnumerable<InvoiceScan>> CallbackFunctionForTasksWithInvoiceScanListReturn();
+
   #endregion
 
   #region Unified Classify
@@ -66,6 +69,16 @@ public partial class InvoiceProcessingService
       => CreateAndLogDependencyException(merchantDependency.InnerException ?? merchantDependency),
     MerchantOrchestrationServiceException merchantService
       => CreateAndLogServiceException(merchantService.InnerException ?? merchantService),
+    AnalysisOrchestrationValidationException analysisValidation
+      => CreateAndLogValidationException(analysisValidation.InnerException ?? analysisValidation),
+    AnalysisOrchestrationDependencyValidationException analysisDependencyValidation
+      => CreateAndLogDependencyValidationException(analysisDependencyValidation.InnerException ?? analysisDependencyValidation),
+    AnalysisOrchestrationDependencyException analysisDependency
+      => CreateAndLogDependencyException(analysisDependency.InnerException ?? analysisDependency),
+    AnalysisOrchestrationServiceException analysisService
+      => CreateAndLogServiceException(analysisService.InnerException ?? analysisService),
+    ArgumentException
+      => CreateAndLogValidationException(exception),
     _ => CreateAndLogServiceException(exception),
   };
   #endregion
@@ -240,43 +253,127 @@ public partial class InvoiceProcessingService
       throw Classify(exception);
     }
   }
+
   #endregion
 
   #region Processing service exception builders
   private InvoiceProcessingServiceValidationException CreateAndLogValidationException(Exception exception)
   {
-    var invoiceProcessingValidationException = new InvoiceProcessingServiceValidationException(exception.Message, exception);
-    var exceptionMessage = invoiceProcessingValidationException.Message;
+    var processingValidationException = new InvoiceProcessingServiceValidationException(exception.Message, exception);
+    var exceptionMessage = processingValidationException.Message;
     logger.LogInvoiceProcessingValidationException(exceptionMessage);
     InvoiceMetrics.RecordOperation("unknown", "invoice", "failure", failureReason: "validation");
-    return invoiceProcessingValidationException;
+    return processingValidationException;
   }
 
   private InvoiceProcessingServiceDependencyException CreateAndLogDependencyException(Exception exception)
   {
-    var invoiceProcessingDependencyException = new InvoiceProcessingServiceDependencyException(exception.Message, exception);
-    var exceptionMessage = invoiceProcessingDependencyException.Message;
+    var processingDependencyException = new InvoiceProcessingServiceDependencyException(exception.Message, exception);
+    var exceptionMessage = processingDependencyException.Message;
     logger.LogInvoiceProcessingDependencyException(exceptionMessage);
     InvoiceMetrics.RecordOperation("unknown", "invoice", "failure", failureReason: "dependency");
-    return invoiceProcessingDependencyException;
+    return processingDependencyException;
   }
 
   private InvoiceProcessingServiceDependencyValidationException CreateAndLogDependencyValidationException(Exception exception)
   {
-    var invoiceProcessingDependencyValidationException = new InvoiceProcessingServiceDependencyValidationException(exception.Message, exception);
-    var exceptionMessage = invoiceProcessingDependencyValidationException.Message;
+    var processingDependencyValidationException = new InvoiceProcessingServiceDependencyValidationException(exception.Message, exception);
+    var exceptionMessage = processingDependencyValidationException.Message;
     logger.LogInvoiceProcessingDependencyValidationException(exceptionMessage);
     InvoiceMetrics.RecordOperation("unknown", "invoice", "failure", failureReason: "dependency_validation");
-    return invoiceProcessingDependencyValidationException;
+    return processingDependencyValidationException;
   }
 
   private InvoiceProcessingServiceException CreateAndLogServiceException(Exception exception)
   {
-    var invoiceProcessingServiceException = new InvoiceProcessingServiceException(exception.Message, exception);
-    var exceptionMessage = invoiceProcessingServiceException.Message;
+    var processingServiceException = new InvoiceProcessingServiceException(exception.Message, exception);
+    var exceptionMessage = processingServiceException.Message;
     logger.LogInvoiceProcessingServiceException(exceptionMessage);
     InvoiceMetrics.RecordOperation("unknown", "invoice", "failure", failureReason: "service");
-    return invoiceProcessingServiceException;
+    return processingServiceException;
   }
   #endregion
+
+  private async Task TryCatchAnalysisAsync(Func<Task> returningTaskFunction)
+  {
+    try
+    {
+      await returningTaskFunction().ConfigureAwait(false);
+    }
+    catch (OperationCanceledException)
+    {
+      throw;
+    }
+    catch (Exception exception)
+    {
+      throw ClassifyAnalysis(exception);
+    }
+  }
+
+  private async Task<TResult> TryCatchAnalysisAsync<TResult>(Func<Task<TResult>> returningTaskFunction)
+  {
+    try
+    {
+      return await returningTaskFunction().ConfigureAwait(false);
+    }
+    catch (OperationCanceledException)
+    {
+      throw;
+    }
+    catch (Exception exception)
+    {
+      throw ClassifyAnalysis(exception);
+    }
+  }
+
+  private Exception ClassifyAnalysis(Exception exception) => exception switch
+  {
+    InvoiceProcessingServiceValidationException
+      or InvoiceProcessingServiceDependencyException
+      or InvoiceProcessingServiceDependencyValidationException
+      or InvoiceProcessingServiceException
+      => exception,
+
+    AnalysisOrchestrationValidationException
+      or TaxonomyCodeNotFoundException
+      or InvalidAnalysisOptionsException
+      or ArgumentException
+      => LogAndWrapValidation(exception),
+
+    AnalysisOrchestrationDependencyValidationException
+      => LogAndWrapDependencyValidation(exception),
+
+    AnalysisOrchestrationDependencyException
+      => LogAndWrapDependency(exception),
+
+    _ => LogAndWrapService(exception),
+  };
+
+  private InvoiceProcessingServiceValidationException LogAndWrapValidation(Exception exception)
+  {
+    var outer = new InvoiceProcessingServiceValidationException(exception);
+    logger.LogInvoiceProcessingValidationException(exception.Message);
+    return outer;
+  }
+
+  private InvoiceProcessingServiceDependencyException LogAndWrapDependency(Exception exception)
+  {
+    var outer = new InvoiceProcessingServiceDependencyException(exception);
+    logger.LogInvoiceProcessingDependencyException(exception.Message);
+    return outer;
+  }
+
+  private InvoiceProcessingServiceDependencyValidationException LogAndWrapDependencyValidation(Exception exception)
+  {
+    var outer = new InvoiceProcessingServiceDependencyValidationException(exception);
+    logger.LogInvoiceProcessingDependencyValidationException(exception.Message);
+    return outer;
+  }
+
+  private InvoiceProcessingServiceException LogAndWrapService(Exception exception)
+  {
+    var outer = new InvoiceProcessingServiceException(exception);
+    logger.LogInvoiceProcessingServiceException(exception.Message);
+    return outer;
+  }
 }

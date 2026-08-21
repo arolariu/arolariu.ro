@@ -9,8 +9,8 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Tests.Builders;
-using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -61,10 +61,10 @@ public sealed class EntityTests
   }
 
   /// <summary>
-  /// Verifies Invoice defaults to an unclassified state.
+  /// Verifies Invoice default category is NOT_DEFINED.
   /// </summary>
   [TestMethod]
-  public void Invoice_DefaultClassification_IsNull()
+  public void Invoice_DefaultClassification_IsUnclassified()
   {
     // Arrange
     var invoice = new Invoice
@@ -95,17 +95,14 @@ public sealed class EntityTests
   }
 
   /// <summary>
-  /// Verifies Invoice classification stores a canonical ECOICOP snapshot.
+  /// Verifies Invoice classification can be set to a standard taxonomy classification.
   /// </summary>
   [TestMethod]
   public void Invoice_SetClassification_ClassificationIsSet()
   {
-    StandardClassification classification = TaxonomyBrokerTestFactory.Create().Resolve(
-      ClassificationSystem.EcoicopV2,
-      TaxonomyBrokerTestFactory.EcoicopCode,
-      ClassificationOrigin.Manual,
-      null,
-      []);
+    // Arrange
+    var classification = ClassificationTestData.Ecoicop("01.1", "Food");
+
     var invoice = new Invoice
     {
       id = Guid.NewGuid(),
@@ -113,7 +110,22 @@ public sealed class EntityTests
       Classification = classification
     };
 
-    Assert.AreSame(classification, invoice.Classification);
+    // Assert
+    Assert.AreEqual(classification, invoice.Classification);
+    Assert.AreEqual(ClassificationSystem.EcoicopV2, invoice.Classification!.System);
+  }
+
+  /// <summary>
+  /// Verifies Invoice classification defaults to unclassified.
+  /// </summary>
+  [TestMethod]
+  public void Invoice_DefaultClassification_IsNull()
+  {
+    // Arrange
+    var invoice = new Invoice { id = Guid.NewGuid(), UserIdentifier = Guid.NewGuid() };
+
+    // Assert
+    Assert.IsNull(invoice.Classification);
   }
 
   /// <summary>
@@ -265,11 +277,11 @@ public sealed class EntityTests
     {
       id = Guid.NewGuid(),
       UserIdentifier = Guid.NewGuid(),
-      PossibleRecipes = new List<Recipe>
-            {
-                new Recipe { Name = "Recipe 1", Complexity = RecipeComplexity.EASY },
-                new Recipe { Name = "Recipe 2", Complexity = RecipeComplexity.HARD }
-            }
+      PossibleRecipes = new List<RecipeSuggestion>
+      {
+        BuildRecipe("Recipe 1", RecipeDifficulty.Easy),
+        BuildRecipe("Recipe 2", RecipeDifficulty.Hard),
+      }
     };
 
     // Assert
@@ -380,17 +392,12 @@ public sealed class EntityTests
   [TestMethod]
   public void Merchant_Creation_WithValidProperties_Succeeds()
   {
-    StandardClassification classification = TaxonomyBrokerTestFactory.Create().Resolve(
-      ClassificationSystem.Nace21,
-      TaxonomyBrokerTestFactory.NaceCode,
-      ClassificationOrigin.Manual,
-      null,
-      []);
+    // Act
     var merchant = new Merchant
     {
       id = Guid.NewGuid(),
       Name = "Test Merchant",
-      Classification = classification,
+      Classification = ClassificationTestData.Nace("47.11", "Retail sale in non-specialised stores"),
       ParentCompanyId = Guid.NewGuid()
     };
 
@@ -398,14 +405,14 @@ public sealed class EntityTests
     Assert.IsNotNull(merchant);
     Assert.AreNotEqual(Guid.Empty, merchant.id);
     Assert.AreEqual("Test Merchant", merchant.Name);
-    Assert.AreSame(classification, merchant.Classification);
+    Assert.AreEqual("47.11", merchant.Classification!.Code);
   }
 
   /// <summary>
-  /// Verifies Merchant defaults to an unclassified state.
+  /// Verifies Merchant default classification is unclassified.
   /// </summary>
   [TestMethod]
-  public void Merchant_DefaultClassification_IsNull()
+  public void Merchant_DefaultClassification_IsUnclassified()
   {
     // Arrange
     var merchant = new Merchant();
@@ -477,6 +484,35 @@ public sealed class EntityTests
     Assert.AreEqual("Test Store", merchant.Address.FullName);
     Assert.AreEqual("123 Main St", merchant.Address.Address);
     Assert.AreEqual("+1234567890", merchant.Address.PhoneNumber);
+  }
+
+  /// <summary>
+  /// Verifies a standard classification can be set on Merchant.
+  /// </summary>
+  [TestMethod]
+  public void MerchantClassification_CanBeSetOnMerchant()
+  {
+    // Arrange
+    var classification = ClassificationTestData.Nace("47.11", "Retail sale in non-specialised stores");
+
+    var merchant = new Merchant { Classification = classification };
+
+    // Assert
+    Assert.AreEqual(classification, merchant.Classification);
+    Assert.AreEqual(ClassificationSystem.Nace21, merchant.Classification!.System);
+  }
+
+  /// <summary>
+  /// Verifies Merchant classification defaults to unclassified.
+  /// </summary>
+  [TestMethod]
+  public void MerchantClassification_DefaultsToNull()
+  {
+    // Arrange
+    var merchant = new Merchant();
+
+    // Assert
+    Assert.IsNull(merchant.Classification);
   }
 
   /// <summary>
@@ -689,6 +725,9 @@ public sealed class EntityTests
   [DataRow(ScanType.PDF)]
   [DataRow(ScanType.OTHER)]
   [DataRow(ScanType.UNKNOWN)]
+  [DataRow(ScanType.BMP)]
+  [DataRow(ScanType.TIFF)]
+  [DataRow(ScanType.HEIF)]
   public void ScanType_AllValues_AreDefined(ScanType scanType)
   {
     // Assert
@@ -705,6 +744,9 @@ public sealed class EntityTests
   [DataRow("PDF")]
   [DataRow("OTHER")]
   [DataRow("UNKNOWN")]
+  [DataRow("BMP")]
+  [DataRow("TIFF")]
+  [DataRow("HEIF")]
   public void ScanType_ParseFromString_ReturnsCorrectValue(string scanTypeName)
   {
     // Act
@@ -716,4 +758,46 @@ public sealed class EntityTests
 
   #endregion
 
+  #region ClassificationSystem Enum Tests
+
+  /// <summary>
+  /// Verifies ClassificationSystem enum has EcoicopV2 as a valid value.
+  /// </summary>
+  [TestMethod]
+  public void ClassificationSystem_Ecoicop_IsDefined()
+  {
+    // Assert
+    Assert.IsTrue(Enum.IsDefined<ClassificationSystem>(ClassificationSystem.EcoicopV2));
+  }
+
+  /// <summary>
+  /// Verifies every classification system backing the cutover taxonomy is defined.
+  /// </summary>
+  [TestMethod]
+  [DataRow(ClassificationSystem.EcoicopV2)]
+  [DataRow(ClassificationSystem.Gs1Gpc)]
+  [DataRow(ClassificationSystem.Nace21)]
+  public void ClassificationSystem_AllValues_AreDefined(ClassificationSystem system)
+  {
+    // Assert
+    Assert.IsTrue(Enum.IsDefined<ClassificationSystem>(system));
+  }
+
+  #endregion
+
+  private static RecipeSuggestion BuildRecipe(string name, RecipeDifficulty difficulty) =>
+    new(
+      name,
+      $"{name} description.",
+      2,
+      10,
+      20,
+      30,
+      difficulty,
+      [new RecipeIngredient("Flour", "500 g", null)],
+      [new RecipeIngredient("Salt", "1 tsp", null)],
+      [],
+      [new RecipeStep(1, "Mix everything.", null)],
+      [],
+      Guid.NewGuid());
 }

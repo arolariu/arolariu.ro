@@ -25,7 +25,7 @@ public static class MerchantTestDataBuilder
     ParentCompanyId = Guid.NewGuid(),
     Name = GetRandomString(),
     Description = GetRandomString(),
-    Classification = null,
+    Classification = ClassificationTestData.Nace("47.91", "Retail sale via mail order houses or via Internet"),
     Address = new ContactInformation(),
     IsImportant = Random.Next(0, 2) == 1,
     CreatedBy = Guid.NewGuid(),

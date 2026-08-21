@@ -1,11 +1,10 @@
 namespace arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 /// <summary>
@@ -21,9 +20,8 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// and value semantics for equality comparisons.
 /// </para>
 /// <para>
-/// <b>Enrichment:</b> The current legacy analysis flow may enrich
-/// <see cref="DetectedAllergens"/>. The product remains unclassified until the
-/// later manual or structured-analysis classification flow is introduced.
+/// <b>AI Enrichment:</b> After creation, the product may be enriched by AI analysis
+/// to populate its classification and allergen assessment.
 /// </para>
 /// <para>
 /// <b>Total Price:</b> The total price is computed automatically as
@@ -34,6 +32,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// The product name as it appears on the receipt. Required.
 /// This will be used as the product's display name.
 /// </param>
+/// <param name="ClassificationCode">Optional taxonomy code for the manual product classification.</param>
 /// <param name="Quantity">
 /// The quantity of product units. Must be positive.
 /// Supports decimal for fractional quantities (e.g., 1.5 kg).
@@ -49,35 +48,34 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// <param name="Price">
 /// The unit price per single quantity. Currency is inherited from the parent invoice.
 /// </param>
-/// <param name="DetectedAllergens">
-/// Optional collection of known allergens in this product.
-/// May be populated by AI analysis if not provided.
-/// </param>
+/// <param name="AllergenAssessment">Optional client-supplied structured allergen assessment.</param>
+
 /// <example>
 /// <code>
 /// var request = new CreateProductRequestDto(
 ///     Name: "Milk 1L (LAPTE ZUZU)",
+///     ClassificationCode: "10000025",
 ///     Quantity: 2,
 ///     QuantityUnit: "buc",
 ///     ProductCode: "5941234567890",
 ///     Price: 8.99m,
-///     DetectedAllergens: [Allergen.Lactose]);
+///     AllergenAssessment: null);
 ///
 /// var product = request.ToProduct();
 /// invoice.Items.Add(product);
 /// </code>
 /// </example>
 /// <seealso cref="Product"/>
-/// <seealso cref="Allergen"/>
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct CreateProductRequestDto(
   [Required] string Name,
-  decimal Quantity,
+  string? ClassificationCode,
+  [Required] decimal Quantity,
   string? QuantityUnit,
   string? ProductCode,
-  decimal Price,
-  IEnumerable<Allergen>? DetectedAllergens)
+  [Required] decimal Price,
+  AllergenAssessment? AllergenAssessment)
 {
   /// <summary>
   /// Converts this DTO to a <see cref="Product"/> domain value object.
@@ -95,14 +93,14 @@ public readonly record struct CreateProductRequestDto(
   /// <returns>
   /// A new <see cref="Product"/> instance initialized with the provided values.
   /// </returns>
-  public Product ToProduct() => new()
-  {
-    Name = Name,
-    Classification = null,
-    Quantity = Quantity,
-    QuantityUnit = QuantityUnit ?? string.Empty,
-    ProductCode = ProductCode ?? string.Empty,
-    Price = Price,
-    DetectedAllergens = DetectedAllergens ?? [],
-  };
+  public Product ToProduct() =>
+    new()
+    {
+      Name = Name?.Trim() ?? string.Empty,
+      Quantity = Quantity,
+      QuantityUnit = QuantityUnit?.Trim() ?? string.Empty,
+      ProductCode = ProductCode?.Trim() ?? string.Empty,
+      Price = Price,
+      AllergenAssessment = AllergenAssessment,
+    };
 }

@@ -26,7 +26,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class InvoiceStorageFoundationServiceExtendedTests
 {
-  private readonly Mock<IInvoiceNoSqlBroker> mockBroker;
+  private readonly Mock<IDatabaseBroker> mockBroker;
   private readonly Mock<ILoggerFactory> mockLoggerFactory;
   private readonly Mock<ILogger<IInvoiceStorageFoundationService>> mockLogger;
   private readonly InvoiceStorageFoundationService service;
@@ -36,7 +36,7 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
   /// </summary>
   public InvoiceStorageFoundationServiceExtendedTests()
   {
-    mockBroker = new Mock<IInvoiceNoSqlBroker>();
+    mockBroker = new Mock<IDatabaseBroker>();
     mockLoggerFactory = new Mock<ILoggerFactory>();
     mockLogger = new Mock<ILogger<IInvoiceStorageFoundationService>>();
 
@@ -44,9 +44,7 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
         .Setup(factory => factory.CreateLogger(It.IsAny<string>()))
         .Returns(mockLogger.Object);
 
-    service = new InvoiceStorageFoundationService(
-        mockBroker.Object,
-        mockLoggerFactory.Object);
+    service = new InvoiceStorageFoundationService(mockBroker.Object, mockLoggerFactory.Object);
   }
 
   #region CreateInvoiceObject Extended Tests

@@ -188,7 +188,31 @@ public static partial class Log
   - `http.client.request.duration`: Dependency call latency
   - `http.client.active_requests`: Concurrent outbound requests
 
-#### 2.2.4 Azure Monitor Export Integration
+#### 2.2.4 Queued Analysis Trace and Retry Telemetry
+
+Invoice and merchant analysis requests capture W3C `traceparent` in
+`QueueAnalysisMessage`. `InvoiceProcessingService.ProcessAnalysisAsync` parses
+that context and starts an `ActivityKind.Consumer` activity, so background work
+remains correlated with the request that published it.
+
+Failed-only replacement messages preserve the original `CorrelationId` and
+`TraceParent` while incrementing the bounded logical `AttemptNumber`. Each
+replacement attempt therefore remains in the same distributed trace without
+using Azure Queue dequeue count as application retry state.
+
+Bounded analysis telemetry records:
+
+- capability success, failure, and dependency-blocked outcomes;
+- logical replacement attempt number;
+- replacement publication;
+- attempt-three discard; and
+- target persistence failure.
+
+Logs and metrics accept only correlation identifiers, bounded enums, attempt
+numbers, counts, and durations. OCR content, product or merchant names, prompts,
+provider responses, scan URLs, and credentials are excluded.
+
+#### 2.2.5 Azure Monitor Export Integration
 
 **Location**: Implemented directly in:
 

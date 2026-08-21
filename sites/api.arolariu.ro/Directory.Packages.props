@@ -35,6 +35,8 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.10" />
   </ItemGroup>
   <ItemGroup Label="Microsoft Extensions Packages">
+    <PackageVersion Include="Microsoft.Extensions.AI" Version="10.9.0" />
+    <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="10.9.0" />
     <PackageVersion Include="Microsoft.Extensions.Azure" Version="1.14.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Identity.Core" Version="10.0.10" />
@@ -45,10 +47,10 @@
     <PackageVersion Include="Azure.Core" Version="1.61.0" />
     <PackageVersion Include="Azure.Identity" Version="1.21.0" />
     <PackageVersion Include="Azure.Storage.Blobs" Version="12.29.1" />
+    <PackageVersion Include="Azure.Storage.Queues" Version="12.27.1" />
   </ItemGroup>
   <ItemGroup Label="Azure AI Packages">
     <PackageVersion Include="Azure.AI.OpenAI" Version="2.9.0-beta.1" />
-    <PackageVersion Include="Azure.AI.Translation.Text" Version="2.0.0" />
   </ItemGroup>
   <ItemGroup Label="Azure Cosmos DB Packages">
     <PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.62.0" />

@@ -5,39 +5,18 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
-/// Request DTO for removing a product line item from an invoice.
+/// Identifies the first invoice product to delete by name.
 /// </summary>
 /// <remarks>
-/// <para>
-/// <b>Purpose:</b> Identifies a product for removal from an invoice's item collection.
-/// Typically used to remove incorrectly added items or duplicate entries.
-/// </para>
-/// <para>
-/// <b>Immutability:</b> This is a <c>readonly record struct</c> ensuring thread-safety
-/// and value semantics for equality comparisons.
-/// </para>
-/// <para>
-/// <b>Soft Delete:</b> By default, deletion marks the product's <c>Metadata.IsSoftDeleted</c>
-/// flag as <c>true</c> rather than physically removing it. This preserves audit history
-/// and allows for potential recovery.
-/// </para>
-/// <para>
-/// <b>Recalculation:</b> After deletion, the invoice's <c>PaymentInformation.TotalAmount</c>
-/// should be recalculated to exclude the deleted product.
-/// </para>
+/// The route identifies the owning invoice. Processing performs a case-insensitive exact-name lookup and removes the
+/// first matching line item before persisting the invoice once. Duplicate product names remain intentionally
+/// ambiguous because products are identity-free.
 /// </remarks>
-/// <param name="ProductName">
-/// The name of the product to delete. Required.
-/// Matched against existing product <c>Name</c> values using a case-insensitive
-/// substring comparison in the current service implementation.
-/// </param>
+/// <param name="ProductName">The required product name used to locate the first matching line item.</param>
 /// <example>
 /// <code>
-/// // Remove a product by its name
-/// var request = new DeleteProductRequestDto(ProductName: "LAPTE ZUZU 1L");
-///
-/// // Service layer handles the actual deletion
-/// await invoiceService.DeleteProductAsync(invoiceId, request);
+/// var request = new DeleteProductRequestDto("LAPTE ZUZU 1L");
+/// await invoiceService.DeleteProduct(invoiceId, userId, request.ProductName, cancellationToken);
 /// </code>
 /// </example>
 /// <seealso cref="CreateProductRequestDto"/>

@@ -77,8 +77,8 @@ public readonly record struct CreateMerchantRequestDto(
   /// <b>ID Generation:</b> A new <see cref="Guid"/> is generated for the merchant.
   /// </para>
   /// <para>
-  /// <b>Classification Default:</b> The merchant remains unclassified until the
-  /// later manual classification flow is introduced.
+  /// <b>Classification Default:</b> The classification is left unset
+  /// and should be refined through subsequent updates or AI classification.
   /// </para>
   /// <para>
   /// <b>Address Note:</b> The <see cref="Address"/> string parameter is not currently

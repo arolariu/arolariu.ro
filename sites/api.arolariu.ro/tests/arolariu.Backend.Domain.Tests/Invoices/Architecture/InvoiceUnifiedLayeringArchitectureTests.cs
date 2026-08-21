@@ -1,0 +1,256 @@
+namespace arolariu.Backend.Domain.Tests.Invoices.Architecture;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
+
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
+using arolariu.Backend.Domain.Invoices.Endpoints;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
+using arolariu.Backend.Domain.Invoices.Services.Management;
+using arolariu.Backend.Domain.Invoices.Services.Orchestration.AnalysisService;
+using arolariu.Backend.Domain.Invoices.Workers;
+
+using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+/// <summary>
+/// Verifies the approved unified invoice service graph without compile-time dependencies on types that do not exist yet.
+/// </summary>
+[TestClass]
+public sealed class InvoiceUnifiedLayeringArchitectureTests
+{
+  private const string ServicesNamespace = "arolariu.Backend.Domain.Invoices.Services";
+  private const string BrokersNamespace = "arolariu.Backend.Domain.Invoices.Brokers";
+  private static readonly Assembly InvoiceAssembly = typeof(InvoiceManagementService).Assembly;
+
+  /// <summary>
+  /// Verifies the target Management, Processing, Orchestration, and Foundation constructors.
+  /// </summary>
+  [TestMethod]
+  public void ServiceConstructors_UnifiedGraph_MatchExpectedDependencies()
+  {
+    Type management = RequireType($"{ServicesNamespace}.Management.InvoiceManagementService");
+    Type processing = RequireType($"{ServicesNamespace}.Processing.InvoiceProcessingService");
+    Type processingContract = RequireType($"{ServicesNamespace}.Processing.IInvoiceProcessingService");
+    Type invoiceOrchestration = RequireType($"{ServicesNamespace}.Orchestration.InvoiceService.IInvoiceOrchestrationService");
+    Type merchantOrchestration = RequireType($"{ServicesNamespace}.Orchestration.MerchantService.IMerchantOrchestrationService");
+    Type analysisOrchestrationContract = RequireType($"{ServicesNamespace}.Orchestration.AnalysisService.IAnalysisOrchestrationService");
+    Type analysisOrchestration = RequireType($"{ServicesNamespace}.Orchestration.AnalysisService.AnalysisOrchestrationService");
+    Type analysisFoundationContract = RequireType($"{ServicesNamespace}.Foundation.Analysis.IAnalysisFoundationService");
+    Type queueFoundationContract = RequireType($"{ServicesNamespace}.Foundation.AnalysisQueue.IAnalysisQueueFoundationService");
+    Type analysisFoundation = RequireType($"{ServicesNamespace}.Foundation.Analysis.AnalysisFoundationService");
+    Type documentBroker = RequireType($"{BrokersNamespace}.DocumentIntelligenceBroker.IDocumentIntelligenceBroker");
+    Type generativeBroker = RequireType($"{BrokersNamespace}.GenerativeAnalysisBroker.IGenerativeAnalysisBroker");
+    Type taxonomyBroker = RequireType($"{BrokersNamespace}.TaxonomyBroker.ITaxonomyBroker");
+
+    AssertConstructor(management, processingContract, typeof(ILoggerFactory));
+    AssertConstructor(
+      processing,
+      invoiceOrchestration,
+      merchantOrchestration,
+      analysisOrchestrationContract,
+      typeof(ILoggerFactory));
+    AssertConstructor(
+      analysisOrchestration,
+      analysisFoundationContract,
+      queueFoundationContract,
+      typeof(ILoggerFactory));
+    AssertConstructor(
+      analysisFoundation,
+      documentBroker,
+      generativeBroker,
+      taxonomyBroker,
+      typeof(ILoggerFactory));
+  }
+
+  /// <summary>
+  /// Verifies endpoint handlers and the worker retain Management-only entry points.
+  /// </summary>
+  [TestMethod]
+  public void Adapters_PublicDependencies_UseManagementOnly()
+  {
+    Type managementContract = typeof(IInvoiceManagementService);
+    Type[] endpointServiceParameters = typeof(InvoiceEndpoints)
+      .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
+      .SelectMany(method => method.GetParameters())
+      .Select(parameter => parameter.ParameterType)
+      .Where(type => type.Namespace?.StartsWith(ServicesNamespace, StringComparison.Ordinal) == true)
+      .Distinct()
+      .ToArray();
+
+    CollectionAssert.AreEquivalent(new[] { managementContract }, endpointServiceParameters);
+
+    Type[] workerServiceFields = typeof(AnalysisWorker)
+      .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
+      .Select(field => field.FieldType)
+      .Where(type => type.Namespace?.StartsWith(ServicesNamespace, StringComparison.Ordinal) == true)
+      .ToArray();
+
+    Assert.AreEqual(0, workerServiceFields.Length);
+  }
+
+  /// <summary>
+  /// Verifies Processing exposes one exception family after service consolidation.
+  /// </summary>
+  [TestMethod]
+  public void ProcessingExceptions_UnifiedContract_ReplacesLegacyFamilies()
+  {
+    const string processingExceptions =
+      "arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing";
+
+    Assert.IsNotNull(InvoiceAssembly.GetType($"{processingExceptions}.InvoiceProcessingServiceValidationException"));
+    Assert.IsNotNull(InvoiceAssembly.GetType($"{processingExceptions}.InvoiceProcessingServiceDependencyException"));
+    Assert.IsNotNull(InvoiceAssembly.GetType($"{processingExceptions}.InvoiceProcessingServiceDependencyValidationException"));
+    Assert.IsNotNull(InvoiceAssembly.GetType($"{processingExceptions}.InvoiceProcessingServiceException"));
+    Assert.IsNull(InvoiceAssembly.GetType($"{processingExceptions}.CrudProcessingServiceException"));
+    Assert.IsNull(InvoiceAssembly.GetType(
+      "arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Processing.AnalysisProcessingServiceException"));
+  }
+
+  /// <summary>
+  /// Verifies queue provisioning is absent from every application-facing layer.
+  /// </summary>
+  [TestMethod]
+  public void QueueContracts_AlwaysProvisionedQueue_ExposeNoProvisioningMethods()
+  {
+    Assert.IsNull(RequireType($"{BrokersNamespace}.QueueBroker.IQueueBroker").GetMethod("CreateQueueIfNotExistsAsync"));
+    Assert.IsNull(RequireType($"{ServicesNamespace}.Foundation.AnalysisQueue.IAnalysisQueueFoundationService").GetMethod("EnsureQueueAsync"));
+    Assert.IsNull(RequireType($"{ServicesNamespace}.Orchestration.AnalysisService.IAnalysisOrchestrationService").GetMethod("EnsureQueueAsync"));
+    Assert.IsNull(RequireType($"{ServicesNamespace}.Processing.IInvoiceProcessingService").GetMethod("EnsureAnalysisQueueAsync"));
+    Assert.IsNull(typeof(IInvoiceManagementService).GetMethod("EnsureAnalysisQueueAsync"));
+  }
+
+  /// <summary>
+  /// Verifies internal persistence workflows and product replacement are absent from public service contracts.
+  /// </summary>
+  [TestMethod]
+  public void ServiceContracts_InternalWorkflows_ExposeOnlyApprovedOperations()
+  {
+    Type processingContract = RequireType($"{ServicesNamespace}.Processing.IInvoiceProcessingService");
+
+    Assert.IsNull(typeof(IInvoiceManagementService).GetMethod("PersistInvoiceAnalysisAsync"));
+    Assert.IsNull(typeof(IInvoiceManagementService).GetMethod("PersistMerchantAnalysisAsync"));
+    Assert.IsNull(processingContract.GetMethod("PersistInvoiceAnalysisAsync"));
+    Assert.IsNull(processingContract.GetMethod("PersistMerchantAnalysisAsync"));
+    Assert.IsNull(typeof(IInvoiceManagementService).GetMethod("UpdateProduct"));
+    Assert.IsNull(processingContract.GetMethod("UpdateProduct"));
+    Assert.IsNotNull(typeof(IInvoiceManagementService).GetMethod("ProcessAnalysisAsync"));
+    Assert.IsNotNull(processingContract.GetMethod("ProcessAnalysisAsync"));
+    Assert.IsNull(typeof(IInvoiceManagementService).GetMethod("CreateInvoiceScan"));
+    Assert.IsNull(processingContract.GetMethod("CreateInvoiceScan"));
+    Assert.IsNotNull(typeof(IInvoiceManagementService).GetMethod("AttachInvoiceScan"));
+    Assert.IsNotNull(processingContract.GetMethod("AttachInvoiceScan"));
+
+    MethodInfo managementUpdateInvoice = typeof(IInvoiceManagementService).GetMethod("UpdateInvoice")
+      ?? throw new AssertFailedException("Management UpdateInvoice was not found.");
+    MethodInfo processingUpdateInvoice = processingContract.GetMethod("UpdateInvoice")
+      ?? throw new AssertFailedException("Processing UpdateInvoice was not found.");
+    Assert.IsFalse(managementUpdateInvoice.GetParameters().Any(parameter => parameter.ParameterType == typeof(string)));
+    Assert.IsFalse(processingUpdateInvoice.GetParameters().Any(parameter => parameter.ParameterType == typeof(string)));
+  }
+
+  /// <summary>
+  /// Verifies Analysis Foundation exposes direct capability values instead of one-field result wrappers.
+  /// </summary>
+  [TestMethod]
+  public void AnalysisFoundation_DirectValues_ReplaceCapabilityWrappers()
+  {
+    AssertReturnType(
+      typeof(IAnalysisFoundationService),
+      nameof(IAnalysisFoundationService.GenerateInvoiceSummaryAsync),
+      typeof(Task<ValueTuple<string, string>>));
+    AssertReturnType(
+      typeof(IAnalysisFoundationService),
+      nameof(IAnalysisFoundationService.AssessAllergensAsync),
+      typeof(Task<IReadOnlyDictionary<string, AllergenAssessment>>));
+    AssertReturnType(
+      typeof(IAnalysisFoundationService),
+      nameof(IAnalysisFoundationService.GenerateMerchantDescriptionAsync),
+      typeof(Task<string>));
+    AssertReturnType(
+      typeof(IAnalysisFoundationService),
+      nameof(IAnalysisFoundationService.GenerateRecipesAsync),
+      typeof(Task<IReadOnlyList<RecipeSuggestion>>));
+  }
+
+  /// <summary>
+  /// Verifies Analysis Orchestration returns mutated aggregates with failed-only option records.
+  /// </summary>
+  [TestMethod]
+  public void AnalysisOrchestration_AggregateWorkflows_ReplaceExecutionResults()
+  {
+    AssertReturnType(
+      typeof(IAnalysisOrchestrationService),
+      nameof(IAnalysisOrchestrationService.AnalyzeInvoiceAsync),
+      typeof(Task<ValueTuple<Invoice, InvoiceAnalysisOptions>>));
+    AssertReturnType(
+      typeof(IAnalysisOrchestrationService),
+      nameof(IAnalysisOrchestrationService.AnalyzeMerchantAsync),
+      typeof(Task<ValueTuple<Merchant, MerchantAnalysisOptions>>));
+  }
+
+  /// <summary>
+  /// Verifies obsolete analysis wrapper contracts are absent from the invoice assembly.
+  /// </summary>
+  [TestMethod]
+  public void AnalysisContracts_ObsoleteWrappers_AreAbsent()
+  {
+    string[] removedTypes =
+    [
+      "AnalysisExecutionResult",
+      "InvoiceAnalysisExecutionResult",
+      "MerchantAnalysisExecutionResult",
+      "InvoiceAnalysisPatch",
+      "MerchantAnalysisPatch",
+      "InvoiceSummaryResult",
+      "InvoiceClassificationResult",
+      "MerchantClassificationResult",
+      "MerchantDescriptionResult",
+      "ProductClassificationResult",
+      "ProductAllergenAssessmentResult",
+      "RecipeGenerationResult",
+    ];
+
+    foreach (string removedType in removedTypes)
+    {
+      Assert.IsFalse(
+        InvoiceAssembly.GetTypes().Any(type => type.Name == removedType),
+        removedType);
+    }
+  }
+
+  private static Type RequireType(string fullName) =>
+    InvoiceAssembly.GetType(fullName)
+    ?? throw new AssertFailedException($"Required unified architecture type '{fullName}' was not found.");
+
+  private static void AssertConstructor(Type concreteType, params Type[] expectedParameterTypes)
+  {
+    ConstructorInfo constructor = concreteType
+      .GetConstructors(BindingFlags.Public | BindingFlags.Instance)
+      .Single();
+    Type[] actualParameterTypes = constructor
+      .GetParameters()
+      .Select(parameter => parameter.ParameterType)
+      .ToArray();
+
+    CollectionAssert.AreEqual(expectedParameterTypes, actualParameterTypes, concreteType.FullName);
+  }
+
+  private static void AssertReturnType(Type contract, string methodName, Type expectedReturnType)
+  {
+    MethodInfo method = contract.GetMethod(methodName)
+      ?? throw new AssertFailedException($"Required method '{contract.FullName}.{methodName}' was not found.");
+
+    Assert.AreEqual(expectedReturnType, method.ReturnType, methodName);
+  }
+}

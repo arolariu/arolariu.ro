@@ -13,20 +13,21 @@ using Microsoft.Extensions.Logging;
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
 /// <summary>
-/// The Invoice Storage foundation service.
+/// Validates invoice storage inputs and classifies direct database broker failures.
 /// </summary>
 public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundationService
 {
-  private readonly IInvoiceNoSqlBroker invoiceNoSqlBroker;
+  private readonly IDatabaseBroker invoiceNoSqlBroker;
   private readonly ILogger<IInvoiceStorageFoundationService> logger;
 
   /// <summary>
-  /// Constructor.
+  /// Initializes a new instance of the <see cref="InvoiceStorageFoundationService"/> class.
   /// </summary>
-  /// <param name="invoiceNoSqlBroker"></param>
-  /// <param name="loggerFactory"></param>
+  /// <param name="invoiceNoSqlBroker">The durable invoice database broker.</param>
+  /// <param name="loggerFactory">The logger factory used to create the foundation logger.</param>
+  /// <exception cref="ArgumentNullException">Thrown when a required dependency is <see langword="null"/>.</exception>
   public InvoiceStorageFoundationService(
-    IInvoiceNoSqlBroker invoiceNoSqlBroker,
+    IDatabaseBroker invoiceNoSqlBroker,
     ILoggerFactory loggerFactory)
   {
     ArgumentNullException.ThrowIfNull(invoiceNoSqlBroker);
@@ -41,6 +42,7 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceObject));
+    ArgumentNullException.ThrowIfNull(invoice);
     ValidateInvoiceInformationIsValid(invoice);
 
     await invoiceNoSqlBroker
@@ -84,6 +86,8 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
     ValidateIdentifierIsSet(invoiceIdentifier);
+    ArgumentNullException.ThrowIfNull(updatedInvoice);
+    ValidateInvoiceInformationIsValid(updatedInvoice);
 
     var newInvoice = await invoiceNoSqlBroker
       .UpdateInvoiceAsync(invoiceIdentifier, updatedInvoice, cancellationToken)
@@ -91,6 +95,7 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 
     return newInvoice!;
   }).ConfigureAwait(false);
+
   #endregion
 
   #region Delete Invoice Object API

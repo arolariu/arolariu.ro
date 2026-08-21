@@ -42,4 +42,5 @@ internal static class Constants
   public const int SqlPort = 8082;
   public const int CosmosGatewayPort = 8081;
   public const int AzuriteBlobPort = 10000;
+  public const int AzuriteQueuePort = 10001;
 }

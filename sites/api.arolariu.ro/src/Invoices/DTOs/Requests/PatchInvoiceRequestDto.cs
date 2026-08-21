@@ -26,12 +26,12 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// <list type="bullet">
 ///   <item><description>Null values preserve the original field value.</description></item>
 ///   <item><description><see cref="Guid.Empty"/> for <c>MerchantReference</c> means "no change".</description></item>
-///   <item><description>A null classification selection means "no change".</description></item>
+///   <item><description>Null classification fields mean "no change".</description></item>
 ///   <item><description>Empty or whitespace strings for Name/Description mean "no change".</description></item>
 /// </list>
 /// </para>
 /// <para>
-/// <b>Collections:</b> Scans, Items, Recipes, and SharedWith are copied from the
+/// <b>Collections:</b> Scans, Items, PossibleRecipes, and SharedWith are copied from the
 /// existing invoice (not modifiable via PATCH). Metadata entries are merged
 /// with key-wise overwrite semantics.
 /// </para>
@@ -46,6 +46,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// <param name="Description">
 /// Optional new description. Null or whitespace preserves the existing description.
 /// </param>
+/// <param name="ClassificationCode">Optional taxonomy code for the manual invoice classification.</param>
 /// <param name="PaymentInformation">
 /// Optional new payment information. Null preserves the existing payment details.
 /// </param>
@@ -71,6 +72,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// var request = new PatchInvoiceRequestDto(
 ///     Name: "Updated Name",
 ///     Description: null,  // Keep existing
+///     ClassificationCode: null,
 ///     PaymentInformation: null,
 ///     MerchantReference: null,
 ///     IsImportant: true,
@@ -87,6 +89,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 public readonly record struct PatchInvoiceRequestDto(
   string? Name,
   string? Description,
+  string? ClassificationCode,
   PaymentInformation? PaymentInformation,
   Guid? MerchantReference,
   bool? IsImportant,
@@ -106,7 +109,7 @@ public readonly record struct PatchInvoiceRequestDto(
   /// <list type="bullet">
   ///   <item><description><see cref="Name"/>: Applied only if non-null and non-whitespace.</description></item>
   ///   <item><description><see cref="Description"/>: Applied only if non-null and non-whitespace.</description></item>
-  ///   <item><description>The existing classification is always preserved.</description></item>
+  ///   <item><description>Classification fields: Applied only when a system and code are supplied.</description></item>
   ///   <item><description><see cref="PaymentInformation"/>: Applied only if non-null.</description></item>
   ///   <item><description><see cref="MerchantReference"/>: Applied only if has value and not <c>Empty</c>.</description></item>
   ///   <item><description><see cref="IsImportant"/>: Applied only if has value.</description></item>
@@ -142,6 +145,7 @@ public readonly record struct PatchInvoiceRequestDto(
       Name = !string.IsNullOrWhiteSpace(Name) ? Name : existing.Name,
       Description = !string.IsNullOrWhiteSpace(Description) ? Description : existing.Description,
       Classification = existing.Classification,
+      ClassificationCode = ClassificationCode,
       PaymentInformation = PaymentInformation ?? existing.PaymentInformation,
       MerchantReference = MerchantReference.HasValue && MerchantReference.Value != Guid.Empty
         ? MerchantReference.Value
@@ -189,10 +193,7 @@ public readonly record struct PatchInvoiceRequestDto(
 
     if (AdditionalMetadata is not null)
     {
-      foreach (var (key, value) in AdditionalMetadata)
-      {
-        patched.AdditionalMetadata[key] = value;
-      }
+      new PatchMetadataRequestDto(AdditionalMetadata).ApplyTo(patched.AdditionalMetadata);
     }
 
     patched.PerformUpdate(updatedBy);

@@ -1,75 +1,29 @@
 namespace arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 /// <summary>
-/// Request DTO for replacing an existing product within an invoice (PUT semantics).
+/// Represents a full client-editable replacement for the first invoice product matching
+/// <see cref="OriginalProductName"/>.
 /// </summary>
 /// <remarks>
-/// <para>
-/// <b>Purpose:</b> Enables full replacement of a product's data, typically used to
-/// correct OCR errors or update product information after manual review.
-/// </para>
-/// <para>
-/// <b>Immutability:</b> This is a <c>readonly record struct</c> ensuring thread-safety
-/// and value semantics for equality comparisons.
-/// </para>
-/// <para>
-/// <b>Product Identification:</b> Products within an invoice are identified by their
-/// <see cref="OriginalProductName"/>. The update replaces the entire product data
-/// while maintaining its position in the invoice's item collection.
-/// </para>
-/// <para>
-/// <b>Metadata Flag:</b> When a product is updated via this DTO, its
-/// <c>Metadata.IsEdited</c> flag is set to <c>true</c> to track manual modifications.
-/// </para>
+/// The original name identifies the persisted line item. Commercial values, an optional canonical classification
+/// selection, and an optional structured allergen assessment are applied while server-owned enrichment and workflow
+/// metadata are preserved by <see cref="ToProduct(Product)"/>.
 /// </remarks>
-/// <param name="OriginalProductName">
-/// The current name of the product to update. Required.
-/// Used to locate the product within the invoice's item collection.
-/// </param>
-/// <param name="Name">
-/// The new name for the product. Required.
-/// May be the same as <see cref="OriginalProductName"/> if only other fields change.
-/// </param>
-/// <param name="Quantity">
-/// The new quantity of product units. Must be positive.
-/// </param>
-/// <param name="QuantityUnit">
-/// The new unit of measure. Null becomes empty string.
-/// </param>
-/// <param name="ProductCode">
-/// The new SKU or barcode identifier. Null becomes empty string.
-/// </param>
-/// <param name="Price">
-/// The new unit price. Total price is recomputed as <c>Quantity × Price</c>.
-/// </param>
-/// <param name="DetectedAllergens">
-/// The new collection of detected allergens. Null becomes empty collection.
-/// </param>
-/// <example>
-/// <code>
-/// // Fix OCR error in product name and price
-/// var request = new UpdateProductRequestDto(
-///     OriginalProductName: "LAPTE ZU2U 1L",  // OCR misread
-///     Name: "LAPTE ZUZU 1L",                 // Corrected
-///     Quantity: 2,
-///     QuantityUnit: "buc",
-///     ProductCode: "5941234567890",
-///     Price: 8.99m,
-///     DetectedAllergens: [Allergen.Lactose]);
-///
-/// var updatedProduct = request.ToProduct();
-/// </code>
-/// </example>
-/// <seealso cref="Product"/>
+/// <param name="OriginalProductName">The current product name used to locate the first matching line item.</param>
+/// <param name="Name">The replacement product name.</param>
+/// <param name="ClassificationCode">Optional GS1 GPC classification code.</param>
+/// <param name="Quantity">The required replacement quantity.</param>
+/// <param name="QuantityUnit">The optional replacement unit of measure.</param>
+/// <param name="ProductCode">The optional replacement SKU or barcode.</param>
+/// <param name="Price">The required replacement unit price.</param>
+/// <param name="AllergenAssessment">Optional replacement structured allergen assessment.</param>
 /// <seealso cref="CreateProductRequestDto"/>
 /// <seealso cref="DeleteProductRequestDto"/>
 [Serializable]
@@ -77,39 +31,34 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 public readonly record struct UpdateProductRequestDto(
   [Required] string OriginalProductName,
   [Required] string Name,
-  decimal Quantity,
+  string? ClassificationCode,
+  [Required] decimal Quantity,
   string? QuantityUnit,
   string? ProductCode,
-  decimal Price,
-  IEnumerable<Allergen>? DetectedAllergens)
+  [Required] decimal Price,
+  AllergenAssessment? AllergenAssessment)
 {
-  /// <summary>
-  /// Converts this DTO to a <see cref="Product"/> domain value object.
-  /// </summary>
-  /// <remarks>
-  /// <para>
-  /// <b>Note:</b> The <see cref="OriginalProductName"/> is not included in the
-  /// returned product—it is only used for identification during the update operation.
-  /// </para>
-  /// <para>
-  /// <b>Null Handling:</b> Optional string fields are converted to empty strings.
-  /// Optional collections default to empty enumerables.
-  /// </para>
-  /// </remarks>
-  /// <returns>
-  /// A new <see cref="Product"/> instance with the updated values.
-  /// </returns>
-  /// <param name="existingClassification">
-  /// The canonical classification to preserve during replacement.
-  /// </param>
-  public Product ToProduct(StandardClassification? existingClassification) => new()
+  /// <summary>Maps client-editable fields onto a replacement while preserving server-owned product state.</summary>
+  /// <param name="persistedProduct">The persisted product returned by the Management read operation.</param>
+  /// <returns>A replacement product suitable for the Management delete-and-add workflow.</returns>
+  /// <exception cref="ArgumentNullException">Thrown when <paramref name="persistedProduct"/> is null.</exception>
+  public Product ToProduct(Product persistedProduct)
   {
-    Name = Name,
-    Classification = existingClassification,
-    Quantity = Quantity,
-    QuantityUnit = QuantityUnit ?? string.Empty,
-    ProductCode = ProductCode ?? string.Empty,
-    Price = Price,
-    DetectedAllergens = DetectedAllergens ?? [],
-  };
+    ArgumentNullException.ThrowIfNull(persistedProduct);
+
+    ProductMetadata metadata = persistedProduct.Metadata;
+    metadata.IsEdited = true;
+
+    return new Product
+    {
+      Name = Name?.Trim() ?? string.Empty,
+      Classification = persistedProduct.Classification,
+      Quantity = Quantity,
+      QuantityUnit = QuantityUnit?.Trim() ?? string.Empty,
+      ProductCode = ProductCode?.Trim() ?? string.Empty,
+      Price = Price,
+      AllergenAssessment = AllergenAssessment ?? persistedProduct.AllergenAssessment,
+      Metadata = metadata,
+    };
+  }
 }

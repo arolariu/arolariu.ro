@@ -2,7 +2,9 @@ namespace arolariu.Backend.Domain.Tests.Integration;
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,13 +12,14 @@ using System.Threading.Tasks;
 using arolariu.Backend.Common.Exceptions;
 using arolariu.Backend.Common.Http;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.Endpoints;
-using arolariu.Backend.Domain.Invoices.Services.Processing;
+using arolariu.Backend.Domain.Invoices.Services.Management;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -29,12 +32,12 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Integration-style tests asserting that invoice REST endpoints emit the correct
-/// HTTP status code per exception type thrown by <see cref="IInvoiceProcessingService"/>.
+/// HTTP status code per exception type thrown by <see cref="IInvoiceManagementService"/>.
 /// </summary>
 /// <remarks>
 /// <para>
 /// <b>Scope:</b> Exercises the real endpoint handler (<see cref="InvoiceEndpoints.RetrieveSpecificInvoiceAsync"/>,
-/// <see cref="InvoiceEndpoints.CreateNewInvoiceAsync"/>) wired to the real
+/// <c>InvoiceEndpoints.CreateNewInvoiceAsync</c>) wired to the real
 /// <see cref="ExceptionToHttpResultMapper"/>; only the processing service is mocked.
 /// </para>
 /// <para>
@@ -67,7 +70,6 @@ public sealed class InvoiceEndpointsStatusCodeTests
     public TestNotFoundException()
     {
     }
-
     public TestNotFoundException(string message, Exception innerException) : base(message, innerException)
     {
     }
@@ -179,18 +181,18 @@ public sealed class InvoiceEndpointsStatusCodeTests
     return new HttpContextAccessor { HttpContext = httpContext };
   }
 
-  private static Mock<IInvoiceProcessingService> CreateServiceMockThatThrowsOnRead(Exception exceptionToThrow)
+  private static Mock<IInvoiceManagementService> CreateServiceMockThatThrowsOnRead(Exception exceptionToThrow)
   {
-    var mock = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    var mock = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
     mock
       .Setup(s => s.ReadInvoice(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(exceptionToThrow);
     return mock;
   }
 
-  private static Mock<IInvoiceProcessingService> CreateServiceMockThatThrowsOnMerchantRead(Exception exceptionToThrow)
+  private static Mock<IInvoiceManagementService> CreateServiceMockThatThrowsOnMerchantRead(Exception exceptionToThrow)
   {
-    var mock = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    var mock = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
     mock
       .Setup(s => s.ReadMerchant(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(exceptionToThrow);
@@ -356,21 +358,23 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
   #region POST /rest/v1/invoices validation tests
   /// <summary>
-  /// Verifies that the endpoint rejects a request with an empty user identifier by returning
-  /// 400 Bad Request <em>before</em> invoking the processing service (endpoint-level validation).
+  /// Verifies the endpoint forwards the body-trusted user identifier without adding a guard.
   /// </summary>
   [TestMethod]
-  public async Task CreateNewInvoiceAsync_WhenUserIdentifierIsEmpty_Returns400ValidationProblem()
+  public async Task CreateNewInvoiceAsync_WhenUserIdentifierIsEmpty_DelegatesTrustedBodyValue()
   {
-    // Arrange - endpoint-level validation runs BEFORE any service call, so the mock
-    // is never invoked. The strict mock ensures any unexpected call would fail the test.
-    var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+    var mockService = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
     var accessor = CreateAuthenticatedContextAccessor();
 
     var invalidDto = new CreateInvoiceRequestDto(
       UserIdentifier: Guid.Empty,
-      InitialScan: default,
-      Metadata: null);
+      InitialScan: default!,
+      AdditionalMetadata: null);
+    mockService.Setup(service => service.CreateInvoice(
+        It.Is<Invoice>(invoice => invoice.UserIdentifier == Guid.Empty),
+        Guid.Empty,
+        It.IsAny<CancellationToken>()))
+      .Returns(Task.CompletedTask);
 
     // Act
     var result = await InvoiceEndpoints
@@ -378,8 +382,87 @@ public sealed class InvoiceEndpointsStatusCodeTests
 ;
 
     // Assert
-    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
-    mockService.VerifyNoOtherCalls();
+    Assert.AreEqual(StatusCodes.Status201Created, GetStatusCode(result));
+    mockService.VerifyAll();
+  }
+
+  /// <summary>Verifies the initial scan is a non-nullable required constructor contract.</summary>
+  [TestMethod]
+  public void CreateInvoiceRequestDto_InitialScan_IsRequiredAndNonNullable()
+  {
+    System.Reflection.ParameterInfo parameter = typeof(CreateInvoiceRequestDto)
+      .GetConstructors(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+      .Single()
+      .GetParameters()
+      .Single(candidate => candidate.Name == nameof(CreateInvoiceRequestDto.InitialScan));
+
+    Assert.AreEqual(typeof(InvoiceScan), parameter.ParameterType);
+    Assert.IsNotNull(parameter.GetCustomAttributes(typeof(RequiredAttribute), inherit: false).SingleOrDefault());
+  }
+  #endregion
+
+  #region Analysis acceptance contract tests
+  /// <summary>Verifies invoice analysis returns the Azure message identifier as the 202 body.</summary>
+  [TestMethod]
+  public async Task AnalyzeInvoiceAsync_QueuedMessage_ReturnsMessageIdBody()
+  {
+    Guid invoiceId = Guid.NewGuid();
+    Guid userId = Guid.NewGuid();
+    var request = new InvoiceAnalysisRequestDto(
+      AnalysisProfile.Fast,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null);
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+    service.Setup(candidate => candidate.QueueInvoiceAnalysisAsync(
+        invoiceId,
+        userId,
+        request,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync("message-1");
+
+    IResult result = await InvoiceEndpoints.AnalyzeInvoiceAsync(
+      service.Object,
+      CreateAuthenticatedContextAccessor(userId),
+      invoiceId,
+      request);
+
+    Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
+    Assert.AreEqual("message-1", ((IValueHttpResult)result).Value);
+    service.VerifyAll();
+  }
+
+  /// <summary>Verifies merchant analysis returns the Azure message identifier as the 202 body.</summary>
+  [TestMethod]
+  public async Task AnalyzeMerchantAsync_QueuedMessage_ReturnsMessageIdBody()
+  {
+    Guid merchantId = Guid.NewGuid();
+    Guid userId = Guid.NewGuid();
+    var request = new MerchantAnalysisRequestDto(
+      AnalysisProfile.Fast,
+      MerchantClassification: null,
+      DescriptionGeneration: null);
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+    service.Setup(candidate => candidate.QueueMerchantAnalysisAsync(
+        merchantId,
+        userId,
+        request,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync("message-2");
+
+    IResult result = await InvoiceEndpoints.AnalyzeMerchantAsync(
+      service.Object,
+      CreateAuthenticatedContextAccessor(userId),
+      merchantId,
+      request);
+
+    Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
+    Assert.AreEqual("message-2", ((IValueHttpResult)result).Value);
+    service.VerifyAll();
   }
   #endregion
 
@@ -565,13 +648,48 @@ public sealed class InvoiceEndpointsStatusCodeTests
   }
   #endregion
 
-  #region Product update atomicity tests
-  /// <summary>
-  /// Verifies product replacement is submitted as one invoice write so validation
-  /// failures cannot persist deletion before addition.
-  /// </summary>
+  #region Product replacement workflow tests
+  /// <summary>Verifies a whitespace product classification code rejected by Management maps to bad request.</summary>
   [TestMethod]
-  public async Task UpdateProductInInvoiceAsync_ValidReplacement_PerformsSingleInvoiceUpdate()
+  public async Task AddProductToInvoiceAsync_WhitespaceClassificationCode_ReturnsBadRequest()
+  {
+    Guid invoiceId = Guid.NewGuid();
+    Guid userId = Guid.NewGuid();
+    var request = new CreateProductRequestDto(
+      Name: "Milk",
+      ClassificationCode: " ",
+      Quantity: 1m,
+      QuantityUnit: "pcs",
+      ProductCode: null,
+      Price: 8m,
+      AllergenAssessment: null);
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+    service.Setup(candidate => candidate.ReadInvoice(
+        invoiceId,
+        userId,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(new Invoice { id = invoiceId, UserIdentifier = userId });
+    service.Setup(candidate => candidate.AddProduct(
+        invoiceId,
+        userId,
+        It.IsAny<Product>(),
+        " ",
+        It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new BadHttpRequestException("Classification code must not be whitespace."));
+
+    IResult result = await InvoiceEndpoints.AddProductToInvoiceAsync(
+      service.Object,
+      CreateAuthenticatedContextAccessor(userId),
+      invoiceId,
+      request);
+
+    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
+    service.VerifyAll();
+  }
+
+  /// <summary>Verifies product replacement composes Management get, delete, and add calls in order.</summary>
+  [TestMethod]
+  public async Task UpdateProductInInvoiceAsync_ValidReplacement_ComposesManagementCallsInOrder()
   {
     Guid invoiceId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
@@ -580,44 +698,48 @@ public sealed class InvoiceEndpointsStatusCodeTests
       "2026-05",
       "10000025",
       "Food or beverage products");
-    var original = new Product
+    var request = new UpdateProductRequestDto(
+      OriginalProductName: "Old Milk",
+      Name: "New Milk",
+      ClassificationCode: classification.Code,
+      Quantity: 2m,
+      QuantityUnit: "pcs",
+      ProductCode: string.Empty,
+      Price: 9m,
+      AllergenAssessment: null);
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+    var persistedProduct = new Product
     {
       Name = "Old Milk",
-      Quantity = 1,
-      Price = 8.5m,
       Classification = classification,
+      Metadata = new ProductMetadata { IsComplete = true },
     };
-    var invoice = new Invoice
-    {
-      id = invoiceId,
-      UserIdentifier = userId,
-      Items = [original],
-    };
-    var request = new UpdateProductRequestDto(
-      "Old Milk",
-      "New Milk",
-      2,
-      "pcs",
-      "",
-      9m,
-      []);
-    var service = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
-    Invoice? capturedInvoice = null;
-    service
-      .Setup(candidate => candidate.ReadInvoice(
+    Product? addedProduct = null;
+    var sequence = new MockSequence();
+    service.InSequence(sequence)
+      .Setup(candidate => candidate.GetProduct(
         invoiceId,
         userId,
+        "Old Milk",
         It.IsAny<CancellationToken>()))
-      .ReturnsAsync(invoice);
-    service
-      .Setup(candidate => candidate.UpdateInvoice(
-        It.IsAny<Invoice>(),
+      .ReturnsAsync(persistedProduct);
+    service.InSequence(sequence)
+      .Setup(candidate => candidate.DeleteProduct(
         invoiceId,
         userId,
+        "Old Milk",
         It.IsAny<CancellationToken>()))
-      .Callback<Invoice, Guid, Guid?, CancellationToken>(
-        (updated, _, _, _) => capturedInvoice = updated)
-      .ReturnsAsync(invoice);
+      .Returns(Task.CompletedTask);
+    service.InSequence(sequence)
+      .Setup(candidate => candidate.AddProduct(
+        invoiceId,
+        userId,
+        It.IsAny<Product>(),
+        classification.Code,
+        It.IsAny<CancellationToken>()))
+      .Callback<Guid, Guid?, Product, string?, CancellationToken>(
+        (_, _, product, _, _) => addedProduct = product)
+      .Returns(Task.CompletedTask);
 
     IResult result = await InvoiceEndpoints.UpdateProductInInvoiceAsync(
       service.Object,
@@ -626,25 +748,20 @@ public sealed class InvoiceEndpointsStatusCodeTests
       request);
 
     Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
-    Assert.IsNotNull(capturedInvoice);
-    Product persistedProduct = Assert.ContainsSingle(capturedInvoice.Items);
-    Assert.AreEqual("New Milk", persistedProduct.Name);
-    Assert.AreEqual(2m, persistedProduct.Quantity);
-    Assert.AreSame(classification, persistedProduct.Classification);
-    service.Verify(
-      candidate => candidate.GetProduct(
-        It.IsAny<string>(),
-        It.IsAny<Guid>(),
-        It.IsAny<Guid?>(),
-        It.IsAny<CancellationToken>()),
-      Times.Never);
+    Assert.IsNotNull(addedProduct);
+    Assert.AreEqual("New Milk", addedProduct.Name);
+    Assert.AreEqual(2m, addedProduct.Quantity);
+    Assert.AreSame(classification, addedProduct.Classification);
+    Assert.IsTrue(addedProduct.Metadata.IsEdited);
+    Assert.IsTrue(addedProduct.Metadata.IsComplete);
+    service.VerifyAll();
   }
   #endregion
 
   #region Replacement classification preservation tests
-  /// <summary>Verifies invoice PUT preserves the stored canonical classification.</summary>
+  /// <summary>Verifies invoice PUT preserves classification omission for Processing merge semantics.</summary>
   [TestMethod]
-  public async Task UpdateSpecificInvoiceAsync_ExistingClassification_PreservesSnapshot()
+  public async Task UpdateSpecificInvoiceAsync_OmittedClassification_LeavesSelectionUnset()
   {
     Guid invoiceId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
@@ -660,13 +777,14 @@ public sealed class InvoiceEndpointsStatusCodeTests
       Classification = classification,
     };
     var request = new UpdateInvoiceRequestDto(
-      "Groceries",
-      "Weekly shop",
-      new PaymentInformation(),
-      null,
-      false,
-      null);
-    var service = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+      Name: "Groceries",
+      Description: "Weekly shop",
+      ClassificationCode: null,
+      PaymentInformation: new PaymentInformation(),
+      MerchantReference: null,
+      IsImportant: false,
+      AdditionalMetadata: null);
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
     Invoice? capturedInvoice = null;
     service
       .Setup(candidate => candidate.ReadInvoice(
@@ -676,13 +794,13 @@ public sealed class InvoiceEndpointsStatusCodeTests
       .ReturnsAsync(invoice);
     service
       .Setup(candidate => candidate.UpdateInvoice(
-        It.IsAny<Invoice>(),
         invoiceId,
         userId,
+        It.IsAny<Invoice>(),
         It.IsAny<CancellationToken>()))
-      .Callback<Invoice, Guid, Guid?, CancellationToken>(
-        (updated, _, _, _) => capturedInvoice = updated)
-      .ReturnsAsync((Invoice updated, Guid _, Guid? _, CancellationToken _) => updated);
+      .Callback<Guid, Guid?, Invoice, CancellationToken>(
+        (_, _, updated, _) => capturedInvoice = updated)
+      .ReturnsAsync(invoice);
 
     IResult result = await InvoiceEndpoints.UpdateSpecificInvoiceAsync(
       service.Object,
@@ -692,12 +810,12 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
     Assert.IsNotNull(capturedInvoice);
-    Assert.AreSame(classification, capturedInvoice.Classification);
+    Assert.IsNull(capturedInvoice.Classification);
   }
 
-  /// <summary>Verifies merchant PUT preserves the stored canonical classification.</summary>
+  /// <summary>Verifies merchant PUT preserves classification omission for Processing merge semantics.</summary>
   [TestMethod]
-  public async Task UpdateSpecificMerchantAsync_ExistingClassification_PreservesSnapshot()
+  public async Task UpdateSpecificMerchantAsync_OmittedClassification_LeavesSelectionUnset()
   {
     Guid merchantId = Guid.NewGuid();
     Guid parentCompanyId = Guid.NewGuid();
@@ -713,28 +831,30 @@ public sealed class InvoiceEndpointsStatusCodeTests
       Classification = classification,
     };
     var request = new UpdateMerchantRequestDto(
-      "Store",
-      "Description",
-      null,
-      parentCompanyId,
-      null);
-    var service = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
+      Name: "Store",
+      Description: "Description",
+      ClassificationCode: null,
+      Address: null,
+      ParentCompanyId: parentCompanyId,
+      AdditionalMetadata: null);
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
     Merchant? capturedMerchant = null;
     service
       .Setup(candidate => candidate.ReadMerchant(
         merchantId,
-        parentCompanyId,
+        parentCompanyId: null,
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(merchant);
     service
       .Setup(candidate => candidate.UpdateMerchant(
-        It.IsAny<Merchant>(),
         merchantId,
         parentCompanyId,
+        It.IsAny<Merchant>(),
+        null,
         It.IsAny<CancellationToken>()))
-      .Callback<Merchant, Guid, Guid?, CancellationToken>(
-        (updated, _, _, _) => capturedMerchant = updated)
-      .ReturnsAsync((Merchant updated, Guid _, Guid? _, CancellationToken _) => updated);
+      .Callback<Guid, Guid?, Merchant, string?, CancellationToken>(
+        (_, _, updated, _, _) => capturedMerchant = updated)
+      .ReturnsAsync(merchant);
 
     IResult result = await InvoiceEndpoints.UpdateSpecificMerchantAsync(
       service.Object,
@@ -744,7 +864,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
     Assert.IsNotNull(capturedMerchant);
-    Assert.AreSame(classification, capturedMerchant.Classification);
+    Assert.IsNull(capturedMerchant.Classification);
   }
 
   private static StandardClassification CreateClassification(

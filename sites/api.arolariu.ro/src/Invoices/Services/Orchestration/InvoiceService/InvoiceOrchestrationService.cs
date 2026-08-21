@@ -6,8 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DTOs;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 
 using Microsoft.Extensions.Logging;
@@ -15,120 +13,101 @@ using Microsoft.Extensions.Logging;
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
 /// <summary>
-/// The invoice orchestration service interface represents the orchestration service for the invoice domain.
+/// Coordinates invoice aggregate storage workflows.
 /// </summary>
 public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 {
-  private readonly IInvoiceAnalysisFoundationService invoiceAnalysisFoundationService;
   private readonly IInvoiceStorageFoundationService invoiceStorageFoundationService;
   private readonly ILogger<IInvoiceOrchestrationService> logger;
 
   /// <summary>
-  /// Constructor.
+  /// Initializes a new instance of the <see cref="InvoiceOrchestrationService"/> class.
   /// </summary>
-  /// <param name="invoiceAnalysisFoundationService"></param>
-  /// <param name="invoiceStorageFoundationService"></param>
-  /// <param name="loggerFactory"></param>
+  /// <param name="invoiceStorageFoundationService">The invoice storage foundation service.</param>
+  /// <param name="loggerFactory">The logger factory used to create the orchestration logger.</param>
+  /// <exception cref="ArgumentNullException">Thrown when a required dependency is <see langword="null"/>.</exception>
   public InvoiceOrchestrationService(
-    IInvoiceAnalysisFoundationService invoiceAnalysisFoundationService,
     IInvoiceStorageFoundationService invoiceStorageFoundationService,
     ILoggerFactory loggerFactory)
   {
-    ArgumentNullException.ThrowIfNull(invoiceAnalysisFoundationService);
     ArgumentNullException.ThrowIfNull(invoiceStorageFoundationService);
+    ArgumentNullException.ThrowIfNull(loggerFactory);
 
-    this.invoiceAnalysisFoundationService = invoiceAnalysisFoundationService;
     this.invoiceStorageFoundationService = invoiceStorageFoundationService;
     logger = loggerFactory.CreateLogger<IInvoiceOrchestrationService>();
   }
 
-  #region Analyze Invoice API
-  /// <inheritdoc/>
-  public async Task AnalyzeInvoiceWithOptions(AnalysisOptions options, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
-  await TryCatchAsync(async () =>
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceWithOptions));
-    Invoice currentInvoice = await invoiceStorageFoundationService
-      .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
-
-    cancellationToken.ThrowIfCancellationRequested();
-
-    Invoice analyzedInvoice = await invoiceAnalysisFoundationService
-      .AnalyzeInvoiceAsync(options, currentInvoice, cancellationToken)
-      .ConfigureAwait(false);
-
-    // Last safe boundary: past this point the AI spend is already incurred, so cancelling
-    // here would waste it. Before it, abandoning costs nothing but the read.
-    cancellationToken.ThrowIfCancellationRequested();
-
-    await invoiceStorageFoundationService
-      .UpdateInvoiceObject(analyzedInvoice, invoiceIdentifier, userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
-  }).ConfigureAwait(false);
-  #endregion
-
-  #region Create Invoice API
   /// <inheritdoc/>
   public async Task<Invoice> CreateInvoiceObject(Invoice invoice, Guid? userIdentifier, CancellationToken cancellationToken) =>
-  await TryCatchAsync(async () =>
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceObject));
-    await invoiceStorageFoundationService
-      .CreateInvoiceObject(invoice, userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
-    return invoice;
-  }).ConfigureAwait(false);
-  #endregion
+    await TryCatchAsync(async () =>
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceObject));
 
-  #region Delete Invoice API
+      await invoiceStorageFoundationService
+        .CreateInvoiceObject(invoice, userIdentifier, cancellationToken)
+        .ConfigureAwait(false);
+
+      return invoice;
+    }).ConfigureAwait(false);
+
+  /// <inheritdoc/>
+  public async Task<Invoice> AttachInvoiceScanAsync(
+    Guid invoiceIdentifier,
+    Guid? userIdentifier,
+    InvoiceScan scan,
+    CancellationToken cancellationToken) =>
+    await TryCatchAsync(async () =>
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(AttachInvoiceScanAsync));
+
+      Invoice invoice = await invoiceStorageFoundationService
+        .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
+        .ConfigureAwait(false);
+
+      invoice.Scans.Add(scan);
+
+      return await invoiceStorageFoundationService
+        .UpdateInvoiceObject(invoice, invoiceIdentifier, userIdentifier, cancellationToken)
+        .ConfigureAwait(false);
+    }).ConfigureAwait(false);
+
   /// <inheritdoc/>
   public async Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
-  await TryCatchAsync(async () =>
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceObject));
-    await invoiceStorageFoundationService
-      .DeleteInvoiceObject(identifier, userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
-  }).ConfigureAwait(false);
-  #endregion
+    await TryCatchAsync(async () =>
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceObject));
+      await invoiceStorageFoundationService
+        .DeleteInvoiceObject(identifier, userIdentifier, cancellationToken)
+        .ConfigureAwait(false);
+    }).ConfigureAwait(false);
 
-  #region Read Invoices API
   /// <inheritdoc/>
   public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier, CancellationToken cancellationToken) =>
-  await TryCatchAsync(async () =>
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
-    var invoices = await invoiceStorageFoundationService
-      .ReadAllInvoiceObjects(userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
-    return invoices;
-  }).ConfigureAwait(false);
-  #endregion
+    await TryCatchAsync(async () =>
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
+      return await invoiceStorageFoundationService
+        .ReadAllInvoiceObjects(userIdentifier, cancellationToken)
+        .ConfigureAwait(false);
+    }).ConfigureAwait(false);
 
-  #region Read Invoice API
   /// <inheritdoc/>
   public async Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
-  await TryCatchAsync(async () =>
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceObject));
-    var invoice = await invoiceStorageFoundationService
-      .ReadInvoiceObject(identifier, userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
-    return invoice;
-  }).ConfigureAwait(false);
-  #endregion
+    await TryCatchAsync(async () =>
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceObject));
+      return await invoiceStorageFoundationService
+        .ReadInvoiceObject(identifier, userIdentifier, cancellationToken)
+        .ConfigureAwait(false);
+    }).ConfigureAwait(false);
 
-  #region Update Invoice API
   /// <inheritdoc/>
   public async Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
-  await TryCatchAsync(async () =>
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
-    var updatedInvoiceObject = await invoiceStorageFoundationService
-      .UpdateInvoiceObject(updatedInvoice, invoiceIdentifier, userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
-    return updatedInvoiceObject;
-  }).ConfigureAwait(false);
-  #endregion
+    await TryCatchAsync(async () =>
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
+      return await invoiceStorageFoundationService
+        .UpdateInvoiceObject(updatedInvoice, invoiceIdentifier, userIdentifier, cancellationToken)
+        .ConfigureAwait(false);
+    }).ConfigureAwait(false);
 }

@@ -8,13 +8,14 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Http;
+using arolariu.Backend.Common.Options;
 using arolariu.Backend.Common.Telemetry.Tracing;
 using arolariu.Backend.Domain.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.DTOs.Responses;
-using arolariu.Backend.Domain.Invoices.Services.Processing;
+using arolariu.Backend.Domain.Invoices.Services.Management;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -26,7 +27,7 @@ public static partial class InvoiceEndpoints
 {
   #region CRUD operations for the Invoice Standard Endpoints
   internal static async partial Task<IResult> CreateNewInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     CreateInvoiceRequestDto invoiceDto)
   {
@@ -41,21 +42,11 @@ public static partial class InvoiceEndpoints
         .SetLayerContext("Endpoint", nameof(InvoiceEndpoints))
         .SetOperationType("CRUD.Create");
 
-      if (invoiceDto.UserIdentifier == Guid.Empty)
-      {
-        activity?.SetTag("validation.failed", "UserIdentifier is required");
-        return TypedResults.ValidationProblem(
-          new Dictionary<string, string[]>
-          {
-            ["UserIdentifier"] = ["User identifier is required and cannot be empty."]
-          });
-      }
-
       var invoice = invoiceDto.ToInvoice();
       activity?.SetInvoiceContext(invoice.id, invoice.UserIdentifier);
 
-      await invoiceProcessingService
-        .CreateInvoice(invoice, null, writeScope.Token)
+      await invoiceManagementService
+        .CreateInvoice(invoice, invoice.UserIdentifier, writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoice created successfully");
@@ -75,7 +66,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RetrieveSpecificInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
     CancellationToken cancellationToken)
@@ -106,13 +97,13 @@ public static partial class InvoiceEndpoints
       // Step 1: Try point read with partition key if authenticated (owner scenario)
       if (!isGuestUser)
       {
-        possibleInvoice = await invoiceProcessingService
+        possibleInvoice = await invoiceManagementService
           .ReadInvoice(id, potentialUserIdentifier, cancellationToken)
           .ConfigureAwait(false);
       }
 
       // Step 2: If not found (or guest), try cross-partition read (shared/public scenario)
-      possibleInvoice ??= await invoiceProcessingService
+      possibleInvoice ??= await invoiceManagementService
           .ReadInvoice(id, userIdentifier: null, cancellationToken)
           .ConfigureAwait(false);
 
@@ -160,7 +151,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RetrieveAllInvoicesAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     CancellationToken cancellationToken)
   {
@@ -174,7 +165,7 @@ public static partial class InvoiceEndpoints
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetUserContext(potentialUserIdentifier);
 
-      var possibleInvoices = await invoiceProcessingService
+      var possibleInvoices = await invoiceManagementService
         .ReadInvoices(potentialUserIdentifier, cancellationToken)
         .ConfigureAwait(false);
 
@@ -196,7 +187,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> DeleteInvoicesAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext
     )
   {
@@ -216,7 +207,7 @@ public static partial class InvoiceEndpoints
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetUserContext(potentialUserIdentifier);
 
-      await invoiceProcessingService
+      await invoiceManagementService
         .DeleteInvoices(potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
@@ -236,7 +227,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> UpdateSpecificInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
     UpdateInvoiceRequestDto invoicePayload)
@@ -257,7 +248,7 @@ public static partial class InvoiceEndpoints
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
-      var possibleInvoice = await invoiceProcessingService
+      var possibleInvoice = await invoiceManagementService
         .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
@@ -266,10 +257,7 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      var updatedInvoiceEntity = invoicePayload.ToInvoice(
-        id,
-        potentialUserIdentifier,
-        possibleInvoice.Classification);
+      var updatedInvoiceEntity = invoicePayload.ToInvoice(id, potentialUserIdentifier);
 
       // Preserve scans from the original invoice (scans are managed through dedicated endpoints)
       foreach (var scan in possibleInvoice.Scans)
@@ -277,8 +265,12 @@ public static partial class InvoiceEndpoints
         updatedInvoiceEntity.Scans.Add(scan);
       }
 
-      var updatedInvoice = await invoiceProcessingService
-        .UpdateInvoice(updatedInvoiceEntity, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+      var updatedInvoice = await invoiceManagementService
+        .UpdateInvoice(
+          id,
+          potentialUserIdentifier,
+          updatedInvoiceEntity,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoice updated successfully");
@@ -297,7 +289,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> PatchSpecificInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
     PatchInvoiceRequestDto invoicePayload)
@@ -318,7 +310,7 @@ public static partial class InvoiceEndpoints
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
-      var possibleInvoice = await invoiceProcessingService
+      var possibleInvoice = await invoiceManagementService
         .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
@@ -333,7 +325,7 @@ public static partial class InvoiceEndpoints
       if (invoicePayload.MerchantReference is not null &&
           newInvoice.MerchantReference != possibleInvoice.MerchantReference)
       {
-        var possibleMerchant = await invoiceProcessingService
+        var possibleMerchant = await invoiceManagementService
           .ReadMerchant(newInvoice.MerchantReference, null, writeScope.Token)
           .ConfigureAwait(false);
         if (possibleMerchant is null)
@@ -344,14 +336,23 @@ public static partial class InvoiceEndpoints
         if (!possibleMerchant.ReferencedInvoices.Contains(id))
         {
           possibleMerchant.ReferencedInvoices.Add(id);
-          await invoiceProcessingService
-            .UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId, cancellationToken: writeScope.Token)
+          await invoiceManagementService
+            .UpdateMerchant(
+              possibleMerchant.id,
+              possibleMerchant.ParentCompanyId,
+              possibleMerchant,
+              classificationCode: null,
+              cancellationToken: writeScope.Token)
             .ConfigureAwait(false);
         }
       }
 
-      var updatedInvoice = await invoiceProcessingService
-        .UpdateInvoice(newInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+      var updatedInvoice = await invoiceManagementService
+        .UpdateInvoice(
+          id,
+          potentialUserIdentifier,
+          newInvoice,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoice patched successfully");
@@ -370,7 +371,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> DeleteInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id)
   {
@@ -390,7 +391,7 @@ public static partial class InvoiceEndpoints
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
-      var possibleInvoice = await invoiceProcessingService
+      var possibleInvoice = await invoiceManagementService
         .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
@@ -399,7 +400,7 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      await invoiceProcessingService
+      await invoiceManagementService
         .DeleteInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
@@ -419,7 +420,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> AddProductToInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
     CreateProductRequestDto product)
@@ -437,10 +438,12 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("Product.Add");
       }
 
+      var productEntity = product.ToProduct();
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
-      var possibleInvoice = await invoiceProcessingService
+      var possibleInvoice = await invoiceManagementService
         .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
@@ -449,11 +452,13 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      var productEntity = product.ToProduct();
-      activity?.SetTag("product.name", productEntity.Name);
-
-      await invoiceProcessingService
-        .AddProduct(productEntity, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+      await invoiceManagementService
+        .AddProduct(
+          id,
+          potentialUserIdentifier,
+          productEntity,
+          product.ClassificationCode,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Product added to invoice");
@@ -472,7 +477,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RetrieveProductsFromInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
     CancellationToken cancellationToken)
@@ -489,7 +494,7 @@ public static partial class InvoiceEndpoints
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
-      var possibleInvoice = await invoiceProcessingService
+      var possibleInvoice = await invoiceManagementService
         .ReadInvoice(id, potentialUserIdentifier, cancellationToken)
         .ConfigureAwait(false);
 
@@ -516,7 +521,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RemoveProductFromInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
     DeleteProductRequestDto productDto)
@@ -536,19 +541,12 @@ public static partial class InvoiceEndpoints
 
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
-      activity?.SetTag("product.name", productDto.ProductName);
-
-      var possibleProduct = await invoiceProcessingService
-        .GetProduct(productDto.ProductName, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
-        .ConfigureAwait(false);
-      if (possibleProduct is null)
-      {
-        activity?.SetTag("result.found", false);
-        return TypedResults.NotFound();
-      }
-
-      await invoiceProcessingService
-        .DeleteProduct(productDto.ProductName, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+      await invoiceManagementService
+        .DeleteProduct(
+          id,
+          potentialUserIdentifier,
+          productDto.ProductName,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Product removed from invoice");
@@ -567,7 +565,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> UpdateProductInInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
     UpdateProductRequestDto productInformation)
@@ -587,42 +585,30 @@ public static partial class InvoiceEndpoints
 
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
-      activity?.SetTag("product.original_name", productInformation.OriginalProductName);
-
-      var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
-        .ConfigureAwait(false);
-      if (possibleInvoice is null)
-      {
-        activity?.SetTag("result.invoice_found", false);
-        return TypedResults.NotFound();
-      }
-
-      var updatedItems = possibleInvoice.Items.ToList();
-      int productIndex = updatedItems.FindIndex(product =>
-        product.Name is not null
-        && product.Name.Contains(
-          productInformation.OriginalProductName,
-          StringComparison.InvariantCultureIgnoreCase));
-      if (productIndex < 0)
-      {
-        activity?.SetTag("result.product_found", false);
-        return TypedResults.NotFound();
-      }
-
-      Product existingProduct = updatedItems[productIndex];
-      var updatedProduct = productInformation.ToProduct(existingProduct.Classification);
-      activity?.SetTag("product.new_name", updatedProduct.Name);
-
-      updatedItems[productIndex] = updatedProduct;
-      possibleInvoice.Items = updatedItems;
-
-      await invoiceProcessingService
-        .UpdateInvoice(
-          possibleInvoice,
+      var persistedProduct = await invoiceManagementService
+        .GetProduct(
           id,
           potentialUserIdentifier,
-          cancellationToken: writeScope.Token)
+          productInformation.OriginalProductName,
+          writeScope.Token)
+        .ConfigureAwait(false);
+      var updatedProduct = productInformation.ToProduct(persistedProduct);
+
+      await invoiceManagementService
+        .DeleteProduct(
+          id,
+          potentialUserIdentifier,
+          productInformation.OriginalProductName,
+          writeScope.Token)
+        .ConfigureAwait(false);
+
+      await invoiceManagementService
+        .AddProduct(
+          id,
+          potentialUserIdentifier,
+          updatedProduct,
+          productInformation.ClassificationCode,
+          writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Product updated in invoice");
@@ -641,7 +627,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RetrieveMerchantFromInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
     CancellationToken cancellationToken)
@@ -658,7 +644,7 @@ public static partial class InvoiceEndpoints
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
-      var possibleInvoice = await invoiceProcessingService
+      var possibleInvoice = await invoiceManagementService
         .ReadInvoice(id, potentialUserIdentifier, cancellationToken)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
@@ -675,7 +661,7 @@ public static partial class InvoiceEndpoints
 
       activity?.SetMerchantContext(possibleInvoice.MerchantReference);
 
-      var possibleMerchant = await invoiceProcessingService
+      var possibleMerchant = await invoiceManagementService
         .ReadMerchant(possibleInvoice.MerchantReference, null, cancellationToken)
         .ConfigureAwait(false);
 
@@ -701,7 +687,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> AddMerchantToInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
     AddMerchantToInvoiceRequestDto merchantDto)
@@ -722,7 +708,7 @@ public static partial class InvoiceEndpoints
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
-      var possibleInvoice = await invoiceProcessingService
+      var possibleInvoice = await invoiceManagementService
         .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
@@ -739,18 +725,22 @@ public static partial class InvoiceEndpoints
       }
 
       var merchant = merchantDto.ToMerchant();
-      activity?.SetMerchantContext(merchant.id, merchant.Name);
+      activity?.SetMerchantContext(merchant.id);
       activity?.SetTag("merchant.parent_company_id", merchant.ParentCompanyId.ToString());
 
       possibleInvoice.MerchantReference = merchant.id;
       merchant.ReferencedInvoices.Add(possibleInvoice.id);
 
-      await invoiceProcessingService
-        .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+      await invoiceManagementService
+        .UpdateInvoice(
+          id,
+          potentialUserIdentifier,
+          possibleInvoice,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
-      await invoiceProcessingService
-        .CreateMerchant(merchant, null, writeScope.Token)
+      await invoiceManagementService
+        .CreateMerchant(merchant, null, merchantDto.ClassificationCode, writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Merchant added to invoice");
@@ -770,7 +760,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RemoveMerchantFromInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id)
   {
@@ -790,7 +780,7 @@ public static partial class InvoiceEndpoints
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
-      var possibleInvoice = await invoiceProcessingService
+      var possibleInvoice = await invoiceManagementService
         .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
@@ -807,7 +797,7 @@ public static partial class InvoiceEndpoints
 
       activity?.SetMerchantContext(possibleInvoice.MerchantReference);
 
-      var possibleMerchant = await invoiceProcessingService
+      var possibleMerchant = await invoiceManagementService
         .ReadMerchant(possibleInvoice.MerchantReference, null, writeScope.Token)
         .ConfigureAwait(false);
       if (possibleMerchant is null)
@@ -819,12 +809,21 @@ public static partial class InvoiceEndpoints
       possibleInvoice.MerchantReference = Guid.Empty;
       possibleMerchant.ReferencedInvoices.Remove(possibleInvoice.id);
 
-      await invoiceProcessingService
-        .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+      await invoiceManagementService
+        .UpdateInvoice(
+          id,
+          potentialUserIdentifier,
+          possibleInvoice,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
-      await invoiceProcessingService
-        .UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId, cancellationToken: writeScope.Token)
+      await invoiceManagementService
+        .UpdateMerchant(
+          possibleMerchant.id,
+          possibleMerchant.ParentCompanyId,
+          possibleMerchant,
+          classificationCode: null,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Merchant removed from invoice");
@@ -842,11 +841,11 @@ public static partial class InvoiceEndpoints
     }
   }
 
-  internal static async partial Task<IResult> CreateInvoiceScanAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+  internal static async partial Task<IResult> AttachInvoiceScanAsync(
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
-    CreateInvoiceScanRequestDto invoiceScanDto)
+    AttachInvoiceScanRequestDto invoiceScanDto)
   {
     using var writeScope = RequestCancellation.ForWrite(
       httpContext.HttpContext!,
@@ -854,33 +853,22 @@ public static partial class InvoiceEndpoints
 
     try
     {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceScanAsync), ActivityKind.Server);
+      using var activity = InvoicePackageTracing.StartActivity(nameof(AttachInvoiceScanAsync), ActivityKind.Server);
       if (activity is not null)
       {
         activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
         activity.SetOperationType("Scan.Create");
       }
 
+      InvoiceScan convertedScan = invoiceScanDto.ToInvoiceScan();
+      activity?.SetTag("scan.type", convertedScan.Type.ToString());
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
-      var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+      await invoiceManagementService
+        .AttachInvoiceScan(id, potentialUserIdentifier, convertedScan, writeScope.Token)
         .ConfigureAwait(false);
-      if (possibleInvoice is null)
-      {
-        activity?.SetTag("result.found", false);
-        return TypedResults.NotFound();
-      }
-
-      InvoiceScan convertedScan = invoiceScanDto.ToInvoiceScan();
-      activity?.SetTag("scan.location", convertedScan.Location.ToString());
-
-      possibleInvoice.Scans.Add(convertedScan);
-
-      await invoiceProcessingService
-          .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
-          .ConfigureAwait(false);
 
       activity?.RecordSuccess("Scan added to invoice");
       return TypedResults.Created($"/rest/v1/invoices/{id}/scans", InvoiceScanResponseDto.FromInvoiceScan(convertedScan));
@@ -898,7 +886,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RetrieveInvoiceScansAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
     CancellationToken cancellationToken)
@@ -915,7 +903,7 @@ public static partial class InvoiceEndpoints
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
-      var possibleInvoice = await invoiceProcessingService
+      var possibleInvoice = await invoiceManagementService
         .ReadInvoice(id, potentialUserIdentifier, cancellationToken)
         .ConfigureAwait(false);
 
@@ -942,7 +930,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> DeleteInvoiceScanAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
     string scanLocationField)
@@ -963,7 +951,7 @@ public static partial class InvoiceEndpoints
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
-      var possibleInvoice = await invoiceProcessingService
+      var possibleInvoice = await invoiceManagementService
         .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
@@ -972,9 +960,8 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      // URL-decode the scan location field to handle URL-encoded characters
+      // URL-decode the scan location field to handle URL-encoded characters.
       var decodedScanLocation = Uri.UnescapeDataString(scanLocationField);
-      activity?.SetTag("scan.location", decodedScanLocation);
 
       var possibleScan = possibleInvoice.Scans
          .FirstOrDefault(scan => scan.Location.ToString() == decodedScanLocation, InvoiceScan.Default());
@@ -982,8 +969,12 @@ public static partial class InvoiceEndpoints
       if (InvoiceScan.NotDefault(possibleScan))
       {
         possibleInvoice.Scans.Remove(possibleScan);
-        await invoiceProcessingService
-          .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+        await invoiceManagementService
+          .UpdateInvoice(
+            id,
+            potentialUserIdentifier,
+            possibleInvoice,
+            cancellationToken: writeScope.Token)
           .ConfigureAwait(false);
         activity?.RecordSuccess("Scan removed from invoice");
         return TypedResults.NoContent();
@@ -1005,7 +996,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RetrieveInvoiceMetadataAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
     CancellationToken cancellationToken)
@@ -1022,7 +1013,7 @@ public static partial class InvoiceEndpoints
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
-      var possibleInvoice = await invoiceProcessingService
+      var possibleInvoice = await invoiceManagementService
         .ReadInvoice(id, potentialUserIdentifier, cancellationToken)
         .ConfigureAwait(false);
 
@@ -1032,9 +1023,10 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      activity?.SetTag("metadata.count", possibleInvoice.AdditionalMetadata.Count);
+      var publicMetadata = InvoiceResponseDto.CreateMetadataSnapshot(possibleInvoice.AdditionalMetadata);
+      activity?.SetTag("metadata.count", publicMetadata.Count);
       activity?.RecordSuccess();
-      return TypedResults.Ok(value: possibleInvoice.AdditionalMetadata);
+      return TypedResults.Ok(value: publicMetadata);
     }
     catch (OperationCanceledException)
     {
@@ -1049,7 +1041,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> PatchInvoiceMetadataAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
     PatchMetadataRequestDto invoiceMetadataPatch)
@@ -1067,10 +1059,12 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("Metadata.Patch");
       }
 
+      invoiceMetadataPatch.Validate();
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
-      var possibleInvoice = await invoiceProcessingService
+      var possibleInvoice = await invoiceManagementService
         .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
@@ -1081,13 +1075,18 @@ public static partial class InvoiceEndpoints
 
       invoiceMetadataPatch.ApplyTo(possibleInvoice.AdditionalMetadata);
 
-      var updatedInvoice = await invoiceProcessingService
-        .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+      var updatedInvoice = await invoiceManagementService
+        .UpdateInvoice(
+          id,
+          potentialUserIdentifier,
+          possibleInvoice,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
-      activity?.SetTag("metadata.count", updatedInvoice.AdditionalMetadata.Count);
+      var publicMetadata = InvoiceResponseDto.CreateMetadataSnapshot(updatedInvoice.AdditionalMetadata);
+      activity?.SetTag("metadata.count", publicMetadata.Count);
       activity?.RecordSuccess("Metadata patched");
-      return TypedResults.Accepted($"/rest/v1/invoices/{id}/metadata", updatedInvoice.AdditionalMetadata);
+      return TypedResults.Accepted($"/rest/v1/invoices/{id}/metadata", publicMetadata);
     }
     catch (OperationCanceledException)
     {
@@ -1102,7 +1101,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> DeleteInvoiceMetadataAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
     DeleteMetadataRequestDto metadataKeys)
@@ -1124,7 +1123,7 @@ public static partial class InvoiceEndpoints
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
       activity?.SetTag("metadata.keys_to_delete", metadataKeys.Keys.Count());
 
-      var possibleInvoice = await invoiceProcessingService
+      var possibleInvoice = await invoiceManagementService
         .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
@@ -1138,8 +1137,12 @@ public static partial class InvoiceEndpoints
         possibleInvoice.AdditionalMetadata.Remove(key);
       }
 
-      _ = await invoiceProcessingService
-        .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+      _ = await invoiceManagementService
+        .UpdateInvoice(
+          id,
+          potentialUserIdentifier,
+          possibleInvoice,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Metadata keys deleted");
@@ -1161,7 +1164,7 @@ public static partial class InvoiceEndpoints
 
   #region CRUD operations for the Merchant Standard Endpoints
   internal static async partial Task<IResult> CreateNewMerchantAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     CreateMerchantRequestDto merchantDto)
   {
@@ -1182,10 +1185,9 @@ public static partial class InvoiceEndpoints
 
       var merchant = merchantDto.ToMerchant();
       activity?.SetMerchantContext(merchant.id);
-      activity?.SetTag("merchant.name", merchant.Name);
 
-      await invoiceProcessingService
-          .CreateMerchant(merchant, null, writeScope.Token)
+      await invoiceManagementService
+          .CreateMerchant(merchant, null, classificationCode: null, writeScope.Token)
           .ConfigureAwait(false);
 
       activity?.RecordSuccess("Merchant created");
@@ -1204,7 +1206,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RetrieveAllMerchantsAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid parentCompanyId,
     CancellationToken cancellationToken)
@@ -1221,7 +1223,7 @@ public static partial class InvoiceEndpoints
       _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetTag("parent_company.id", parentCompanyId.ToString());
 
-      var possibleMerchants = await invoiceProcessingService
+      var possibleMerchants = await invoiceManagementService
           .ReadMerchants(parentCompanyId, cancellationToken)
           .ConfigureAwait(false);
 
@@ -1244,7 +1246,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RetrieveSpecificMerchantAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
     Guid? parentCompanyId,
@@ -1266,7 +1268,7 @@ public static partial class InvoiceEndpoints
         activity?.SetTag("parent_company.id", parentCompanyId.Value.ToString());
       }
 
-      var possibleMerchant = await invoiceProcessingService
+      var possibleMerchant = await invoiceManagementService
         .ReadMerchant(id, parentCompanyId, cancellationToken)
         .ConfigureAwait(false);
 
@@ -1276,7 +1278,6 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      activity?.SetTag("merchant.name", possibleMerchant.Name);
       activity?.RecordSuccess();
       return TypedResults.Ok(MerchantResponseDto.FromMerchant(possibleMerchant));
     }
@@ -1293,7 +1294,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> UpdateSpecificMerchantAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
     UpdateMerchantRequestDto merchantPayload)
@@ -1314,26 +1315,28 @@ public static partial class InvoiceEndpoints
       _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetMerchantContext(id);
 
-      var possibleMerchant = await invoiceProcessingService
-        .ReadMerchant(id, merchantPayload.ParentCompanyId, cancellationToken: writeScope.Token)
+      Merchant? existingMerchant = await invoiceManagementService
+        .ReadMerchant(id, parentCompanyId: null, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
-      if (possibleMerchant is null)
+
+      if (existingMerchant is null)
       {
         activity?.SetTag("result.found", false);
         return TypedResults.NotFound();
       }
 
-      var updatedMerchant = merchantPayload.ToMerchant(
-        id,
-        possibleMerchant.Classification);
-      activity?.SetTag("merchant.name", updatedMerchant.Name);
-
-      await invoiceProcessingService
-        .UpdateMerchant(updatedMerchant, id, updatedMerchant.ParentCompanyId, cancellationToken: writeScope.Token)
+      Merchant updatedMerchant = merchantPayload.ToMerchant(id);
+      Merchant persistedMerchant = await invoiceManagementService
+        .UpdateMerchant(
+          id,
+          existingMerchant.ParentCompanyId,
+          updatedMerchant,
+          merchantPayload.ClassificationCode,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Merchant updated");
-      return TypedResults.Accepted($"/rest/v1/merchants/{id}", MerchantResponseDto.FromMerchant(updatedMerchant));
+      return TypedResults.Accepted($"/rest/v1/merchants/{id}", MerchantResponseDto.FromMerchant(persistedMerchant));
     }
     catch (OperationCanceledException)
     {
@@ -1348,7 +1351,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> DeleteMerchantAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
     Guid parentCompanyId)
@@ -1370,7 +1373,7 @@ public static partial class InvoiceEndpoints
       activity?.SetMerchantContext(id);
       activity?.SetTag("parent_company.id", parentCompanyId.ToString());
 
-      var possibleMerchant = await invoiceProcessingService
+      var possibleMerchant = await invoiceManagementService
         .ReadMerchant(id, parentCompanyId, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
       if (possibleMerchant is null)
@@ -1384,19 +1387,23 @@ public static partial class InvoiceEndpoints
       // Before deleting the merchant, we need to remove the reference from all invoices that reference this merchant.
       foreach (var invoiceIdentifier in possibleMerchant.ReferencedInvoices)
       {
-        var possibleInvoice = await invoiceProcessingService
+        var possibleInvoice = await invoiceManagementService
           .ReadInvoice(invoiceIdentifier, null, writeScope.Token)
           .ConfigureAwait(false);
         if (possibleInvoice is not null)
         {
           possibleInvoice.MerchantReference = Guid.Empty;
-          await invoiceProcessingService
-            .UpdateInvoice(possibleInvoice, possibleInvoice.id, null, writeScope.Token)
+          await invoiceManagementService
+            .UpdateInvoice(
+              possibleInvoice.id,
+              userIdentifier: null,
+              possibleInvoice,
+              writeScope.Token)
             .ConfigureAwait(false);
         }
       }
 
-      await invoiceProcessingService
+      await invoiceManagementService
         .DeleteMerchant(id, parentCompanyId, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
@@ -1416,7 +1423,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RetrieveInvoicesFromMerchantAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
     CancellationToken cancellationToken)
@@ -1433,7 +1440,7 @@ public static partial class InvoiceEndpoints
       _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetMerchantContext(id);
 
-      var possibleMerchant = await invoiceProcessingService
+      var possibleMerchant = await invoiceManagementService
         .ReadMerchant(id, null, cancellationToken)
         .ConfigureAwait(false);
       if (possibleMerchant is null)
@@ -1449,7 +1456,7 @@ public static partial class InvoiceEndpoints
 
       foreach (var identifier in listOfInvoiceIdentifiers)
       {
-        var possibleInvoice = await invoiceProcessingService
+        var possibleInvoice = await invoiceManagementService
           .ReadInvoice(identifier, null, cancellationToken)
           .ConfigureAwait(false);
         if (possibleInvoice is not null)
@@ -1476,7 +1483,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> AddInvoiceToMerchantAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
     MerchantInvoicesRequestDto invoiceIdentifiers)
@@ -1498,7 +1505,7 @@ public static partial class InvoiceEndpoints
       activity?.SetMerchantContext(id);
       activity?.SetTag("invoices.requested_count", invoiceIdentifiers.InvoiceIdentifiers.Count());
 
-      var possibleMerchant = await invoiceProcessingService.ReadMerchant(id, null, writeScope.Token).ConfigureAwait(false);
+      var possibleMerchant = await invoiceManagementService.ReadMerchant(id, null, writeScope.Token).ConfigureAwait(false);
       if (possibleMerchant is null)
       {
         activity?.SetTag("result.found", false);
@@ -1508,7 +1515,7 @@ public static partial class InvoiceEndpoints
       var listOfValidInvoices = new HashSet<Invoice>();
       foreach (var identifier in invoiceIdentifiers.InvoiceIdentifiers)
       {
-        var potentialInvoice = await invoiceProcessingService.ReadInvoice(identifier, null, writeScope.Token).ConfigureAwait(false);
+        var potentialInvoice = await invoiceManagementService.ReadInvoice(identifier, null, writeScope.Token).ConfigureAwait(false);
         if (potentialInvoice is not null)
         {
           listOfValidInvoices.Add(potentialInvoice);
@@ -1522,13 +1529,22 @@ public static partial class InvoiceEndpoints
         possibleMerchant.ReferencedInvoices.Add(invoice.id);
         invoice.MerchantReference = possibleMerchant.id;
 
-        await invoiceProcessingService
-          .UpdateInvoice(invoice, invoice.id, null, writeScope.Token)
+        await invoiceManagementService
+          .UpdateInvoice(
+            invoice.id,
+            userIdentifier: null,
+            invoice,
+            writeScope.Token)
           .ConfigureAwait(false);
       }
 
-      await invoiceProcessingService
-        .UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId, cancellationToken: writeScope.Token)
+      await invoiceManagementService
+        .UpdateMerchant(
+          possibleMerchant.id,
+          possibleMerchant.ParentCompanyId,
+          possibleMerchant,
+          classificationCode: null,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoices added to merchant");
@@ -1547,7 +1563,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RemoveInvoiceFromMerchantAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
     MerchantInvoicesRequestDto invoiceIdentifiers)
@@ -1569,7 +1585,7 @@ public static partial class InvoiceEndpoints
       activity?.SetMerchantContext(id);
       activity?.SetTag("invoices.requested_count", invoiceIdentifiers.InvoiceIdentifiers.Count());
 
-      var possibleMerchant = await invoiceProcessingService
+      var possibleMerchant = await invoiceManagementService
         .ReadMerchant(id, null, writeScope.Token)
         .ConfigureAwait(false);
       if (possibleMerchant is null)
@@ -1581,7 +1597,7 @@ public static partial class InvoiceEndpoints
       var listOfInvoicesToBeRemoved = new List<Invoice>();
       foreach (var identifier in invoiceIdentifiers.InvoiceIdentifiers)
       {
-        var potentialInvoice = await invoiceProcessingService.ReadInvoice(identifier, null, writeScope.Token).ConfigureAwait(false);
+        var potentialInvoice = await invoiceManagementService.ReadInvoice(identifier, null, writeScope.Token).ConfigureAwait(false);
         if (potentialInvoice is not null)
         {
           listOfInvoicesToBeRemoved.Add(potentialInvoice);
@@ -1595,13 +1611,22 @@ public static partial class InvoiceEndpoints
         possibleMerchant.ReferencedInvoices.Remove(invoice.id);
         invoice.MerchantReference = Guid.Empty;
 
-        await invoiceProcessingService
-          .UpdateInvoice(invoice, invoice.id, null, writeScope.Token)
+        await invoiceManagementService
+          .UpdateInvoice(
+            invoice.id,
+            userIdentifier: null,
+            invoice,
+            writeScope.Token)
           .ConfigureAwait(false);
       }
 
-      await invoiceProcessingService
-        .UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId, cancellationToken: writeScope.Token)
+      await invoiceManagementService
+        .UpdateMerchant(
+          possibleMerchant.id,
+          possibleMerchant.ParentCompanyId,
+          possibleMerchant,
+          classificationCode: null,
+          cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoices removed from merchant");
@@ -1620,7 +1645,7 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RetrieveProductsFromMerchantAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
     CancellationToken cancellationToken)
@@ -1637,7 +1662,7 @@ public static partial class InvoiceEndpoints
       _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetMerchantContext(id);
 
-      var possibleMerchant = await invoiceProcessingService
+      var possibleMerchant = await invoiceManagementService
         .ReadMerchant(id, null, cancellationToken)
         .ConfigureAwait(false);
       if (possibleMerchant is null)
@@ -1653,7 +1678,7 @@ public static partial class InvoiceEndpoints
 
       foreach (var identifier in listOfInvoices)
       {
-        var potentialInvoice = await invoiceProcessingService
+        var potentialInvoice = await invoiceManagementService
           .ReadInvoice(identifier, null, cancellationToken)
           .ConfigureAwait(false);
 
@@ -1683,109 +1708,83 @@ public static partial class InvoiceEndpoints
   }
   #endregion
 
-  #region Analysis operations
   internal static async partial Task<IResult> AnalyzeInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
+    IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
     Guid id,
-    AnalyzeInvoiceRequestDto options)
+    InvoiceAnalysisRequestDto request)
   {
     using var writeScope = RequestCancellation.ForWrite(
       httpContext.HttpContext!,
-      RequestCancellation.AnalysisWriteBudget);
+      RequestCancellation.CrudWriteBudget);
 
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceAsync), ActivityKind.Server);
-      if (activity is not null)
-      {
-        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
-        activity.SetOperationType("Invoice.Analyze");
-      }
+      activity?
+        .SetLayerContext("Endpoint", nameof(InvoiceEndpoints))
+        .SetOperationType("Invoice.Analyze");
 
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
-      activity?.SetInvoiceContext(id, potentialUserIdentifier);
+      Guid userIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetInvoiceContext(id, userIdentifier);
+      activity?.SetTag("analysis.profile", request.Profile.ToString());
 
-      // Set analysis options on the span
-      var analysisOptions = options.ToAnalysisOptions();
-      activity?.SetTag("analysis.mode", analysisOptions.ToString());
-
-      var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier, writeScope.Token)
-        .ConfigureAwait(false);
-      if (possibleInvoice is null)
-      {
-        activity?.SetTag("result.found", false);
-        return TypedResults.NotFound();
-      }
-
-      await invoiceProcessingService
-        .AnalyzeInvoice(analysisOptions, id, potentialUserIdentifier, cancellationToken: writeScope.Token)
+      string messageId = await invoiceManagementService
+        .QueueInvoiceAnalysisAsync(id, userIdentifier, request, writeScope.Token)
         .ConfigureAwait(false);
 
-      var analyzedInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier, writeScope.Token)
-        .ConfigureAwait(false);
-
-      if (analyzedInvoice is null)
-      {
-        activity?.SetTag("result.analyzed", false);
-        return TypedResults.NotFound();
-      }
-
-      activity?.SetTag("result.items_count", analyzedInvoice.Items.Count);
-      activity?.RecordSuccess("Invoice analyzed");
-      return TypedResults.Accepted($"/rest/v1/invoices/{id}", InvoiceResponseDto.FromInvoice(analyzedInvoice));
+      activity?.SetTag("analysis.message_id", messageId);
+      activity?.RecordSuccess("Invoice analysis message queued");
+      return TypedResults.Accepted($"/rest/v1/invoices/{id}", messageId);
     }
     catch (OperationCanceledException)
     {
       return HandleCancellation(httpContext.HttpContext!, writeScope, "analyze", "invoice");
     }
-    catch (Exception ex)
+    catch (Exception exception)
     {
-      Activity.Current?.RecordException(ex);
-      Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
+      Activity.Current?.SetStatus(ActivityStatusCode.Error, "analysis_failure");
+      return ExceptionToHttpResultMapper.ToHttpResult(exception, Activity.Current);
     }
   }
-  #endregion
 
-  #region Cancellation helpers
-  /// <summary>
-  /// Produces the response and telemetry for a cancelled request, distinguishing a server-side
-  /// timeout (a fault worth alerting on) from a client disconnect (not a fault at all).
-  /// </summary>
-  /// <param name="context">The current HTTP context.</param>
-  /// <param name="writeScope">The write scope if this was a mutation; <see langword="null"/> for reads.</param>
-  /// <param name="operation">Metric operation label, e.g. <c>"read"</c>.</param>
-  /// <param name="entity">Metric entity label, e.g. <c>"invoice"</c>.</param>
-  /// <returns>A 504 ProblemDetails result on timeout, otherwise a 499 marker result.</returns>
-  private static IResult HandleCancellation(
-    HttpContext context,
-    CancellationTokenSource? writeScope,
-    string operation,
-    string entity)
+  internal static async partial Task<IResult> AnalyzeMerchantAsync(
+    IInvoiceManagementService invoiceManagementService,
+    IHttpContextAccessor httpContext,
+    Guid id,
+    MerchantAnalysisRequestDto request)
   {
-    var isTimeout = RequestCancellation.WasTimeout(context) || writeScope?.IsCancellationRequested == true;
+    using var writeScope = RequestCancellation.ForWrite(
+      httpContext.HttpContext!,
+      RequestCancellation.CrudWriteBudget);
 
-    if (isTimeout)
+    try
     {
-      InvoiceMetrics.RecordOperation(operation, entity, "timeout");
-      Activity.Current?.SetStatus(ActivityStatusCode.Error, "Timeout");
-      return TypedResults.Problem(new ProblemDetails
-      {
-        Status = StatusCodes.Status504GatewayTimeout,
-        Title = "Operation timed out",
-        Type = ProblemTypeUris.Timeout,
-        Detail = "The operation took too long to complete. Please try again later.",
-      });
-    }
+      using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeMerchantAsync), ActivityKind.Server);
+      activity?
+        .SetLayerContext("Endpoint", nameof(InvoiceEndpoints))
+        .SetOperationType("Merchant.Analyze");
 
-    // Client disconnected. Deliberately leave the span status Unset — this is not a fault,
-    // and marking it Error would poison error-rate SLOs with normal client behaviour.
-    InvoiceMetrics.RecordOperation(operation, entity, "canceled");
-    Activity.Current?.SetTag("cancellation.reason", "client_disconnect");
-    return TypedResults.StatusCode(StatusCodes.Status499ClientClosedRequest);
+      Guid userIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetMerchantContext(id);
+      activity?.SetTag("analysis.profile", request.Profile.ToString());
+
+      string messageId = await invoiceManagementService
+        .QueueMerchantAnalysisAsync(id, userIdentifier, request, writeScope.Token)
+        .ConfigureAwait(false);
+
+      activity?.SetTag("analysis.message_id", messageId);
+      activity?.RecordSuccess("Merchant analysis message queued");
+      return TypedResults.Accepted($"/rest/v1/merchants/{id}", messageId);
+    }
+    catch (OperationCanceledException)
+    {
+      return HandleCancellation(httpContext.HttpContext!, writeScope, "analyze", "merchant");
+    }
+    catch (Exception exception)
+    {
+      Activity.Current?.SetStatus(ActivityStatusCode.Error, "analysis_failure");
+      return ExceptionToHttpResultMapper.ToHttpResult(exception, Activity.Current);
+    }
   }
-  #endregion
 }

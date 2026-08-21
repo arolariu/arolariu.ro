@@ -9,9 +9,10 @@ using arolariu.Backend.Common.DDD.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 
 /// <summary>
-/// Represents the invoice aggregate root controlling line items, merchant linkage, payment details, scan data, AI enrichment artifacts (recipes, categorization)
+/// Represents the invoice aggregate root controlling line items, merchant linkage, payment details, scan data, AI enrichment artifacts (recipes, classification)
 /// and arbitrary extensible metadata within the bounded invoices context.
 /// </summary>
 /// <remarks>
@@ -20,9 +21,9 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// no de-duplication or concurrency token; last writer wins on updates. Future optimization may introduce distinct filtering.</para>
 /// <para><b>Soft Delete Lifecycle:</b> When soft-deleted at the storage layer, the invoice and each contained product are marked; queries exclude
 /// soft-deleted entities unless explicitly overridden. See service layer deletion logic for cascade behavior.</para>
-/// <para><b>Sentinel Defaults:</b> <c>Guid.Empty</c> for <c>UserIdentifier</c> and <c>MerchantReference</c>, <see langword="null"/> for
-/// <c>Classification</c>, and <c>InvoiceScan.Default()</c> for <c>Scans</c> indicate an unenriched or unlinked state. These SHOULD be replaced by upstream enrichment / user input
-/// flows prior to final analytical usage.</para>
+/// <para><b>Sentinel Defaults:</b> <c>Guid.Empty</c> for <c>UserIdentifier</c> and <c>MerchantReference</c>, and <see langword="null"/> for
+/// <c>Classification</c> indicate an unenriched or unlinked state. These SHOULD be replaced by upstream analysis / user input flows prior to final
+/// analytical usage.</para>
 /// <para><b>Merge Semantics:</b> See <see cref="Merge(Invoice, Invoice)"/> for partial update precedence rules.</para>
 /// <para><b>Thread-safety:</b> Not thread-safe. Do not share instances across threads without external synchronization.</para>
 /// </remarks>
@@ -46,11 +47,25 @@ public sealed class Invoice : NamedEntity<Guid>
   public ICollection<Guid> SharedWith { get; init; } = [];
 
   /// <summary>
-  /// The canonical ECOICOP classification assigned to the invoice.
+  /// The standardised classification assigned to this invoice.
   /// </summary>
-  /// <remarks><see langword="null"/> means that the invoice is unclassified.</remarks>
+  /// <remarks>
+  /// <para><b>Expected system:</b> <see cref="ClassificationSystem.EcoicopV2"/>. Processing resolves every manual selection canonically before persistence.</para>
+  /// <para><see langword="null"/> means the invoice has not been classified yet, either manually or by an analysis run.</para>
+  /// </remarks>
   [JsonPropertyOrder(5)]
   public StandardClassification? Classification { get; set; }
+
+  /// <summary>
+  /// Gets or sets the transient ECOICOP v2 code selected by an endpoint update mapping.
+  /// </summary>
+  /// <remarks>
+  /// Processing resolves this transport-only value into <see cref="Classification"/> and clears it before persistence.
+  /// It is intentionally excluded from JSON serialization and must never become durable invoice state.
+  /// </remarks>
+  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  public string? ClassificationCode { get; set; }
 
   /// <summary>
   /// The invoice scan value object.
@@ -78,11 +93,15 @@ public sealed class Invoice : NamedEntity<Guid>
   public ICollection<Product> Items { get; set; } = [];
 
   /// <summary>
-  /// Possible recipes for the invoice.
+  /// Structured recipe suggestions produced by the analysis pipeline for this invoice.
   /// </summary>
+  /// <remarks>
+  /// <para>A successful recipe capability replaces this collection wholesale, including with an empty collection.
+  /// A failed capability leaves the previously persisted suggestions untouched.</para>
+  /// </remarks>
   [JsonPropertyOrder(10)]
   [SuppressMessage("Usage", "CA2227:Collection properties should be read only", Justification = "Set is only exposed for tests.")]
-  public ICollection<Recipe> PossibleRecipes { get; set; } = [];
+  public ICollection<RecipeSuggestion> PossibleRecipes { get; set; } = [];
 
   /// <summary>
   /// The invoice additional metadata.

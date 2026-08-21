@@ -133,6 +133,7 @@ var storage = builder
     .AddAzureStorage("storage")
     .RunAsEmulator(emulator => emulator
         .WithBlobPort(Constants.AzuriteBlobPort)
+        .WithQueuePort(Constants.AzuriteQueuePort)
         // Persist Azurite's workspace (mounted at /data inside the container)
         // across F5 restarts — uploaded blobs, the 'invoices' container, and CORS
         // service-properties all survive container destruction. Without this,
@@ -144,6 +145,7 @@ var storage = builder
     // hardcoded localhost:10000 — DCP would map that to a random host port and
     // those connections would fail.
     .WithEndpoint("blob", e => e.IsProxied = false)
+    .WithEndpoint("queue", e => e.IsProxied = false)
     .WithIconName("Storage");
 
 // Azurite ships with no CORS rules and no containers — apply allow-all on every

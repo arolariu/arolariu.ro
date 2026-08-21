@@ -23,15 +23,13 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public class MerchantStorageFoundationServiceExceptionsTests
 {
-  private readonly Mock<IInvoiceNoSqlBroker> _broker = new();
+  private readonly Mock<IDatabaseBroker> _broker = new();
   private readonly MerchantStorageFoundationService _sut;
 
   /// <summary>Initializes a new instance of the <see cref="MerchantStorageFoundationServiceExceptionsTests"/> class.</summary>
   public MerchantStorageFoundationServiceExceptionsTests()
   {
-    _sut = new MerchantStorageFoundationService(
-      _broker.Object,
-      NullLoggerFactory.Instance);
+    _sut = new MerchantStorageFoundationService(_broker.Object, NullLoggerFactory.Instance);
   }
 
   /// <summary>Verifies that a <see cref="MerchantNotFoundException"/> from the broker is wrapped into a <see cref="MerchantFoundationServiceDependencyValidationException"/>.</summary>

@@ -10,13 +10,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.O
 
 public partial class MerchantOrchestrationService
 {
-  private delegate Task CallbackFunctionWithNoReturn();
-
-  private delegate Task<Merchant> CallbackFunctionForMerchant();
-
-  private delegate Task<IEnumerable<Merchant>> CallbackFunctionForMerchantList();
-
-  private async Task TryCatchAsync(CallbackFunctionWithNoReturn callbackFunction)
+  private async Task TryCatchAsync(Func<Task> callbackFunction)
   {
     try
     {
@@ -33,24 +27,7 @@ public partial class MerchantOrchestrationService
     }
   }
 
-  private async Task<Merchant> TryCatchAsync(CallbackFunctionForMerchant callbackFunction)
-  {
-    try
-    {
-      return await callbackFunction().ConfigureAwait(false);
-    }
-    catch (OperationCanceledException)
-    {
-      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
-      throw;
-    }
-    catch (Exception exception)
-    {
-      throw Classify(exception);
-    }
-  }
-
-  private async Task<IEnumerable<Merchant>> TryCatchAsync(CallbackFunctionForMerchantList callbackFunction)
+  private async Task<TResult> TryCatchAsync<TResult>(Func<Task<TResult>> callbackFunction)
   {
     try
     {

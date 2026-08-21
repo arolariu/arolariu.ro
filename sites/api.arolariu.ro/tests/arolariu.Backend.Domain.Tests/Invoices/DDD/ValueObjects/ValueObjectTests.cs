@@ -2,10 +2,14 @@ namespace arolariu.Backend.Domain.Tests.Invoices.DDD.ValueObjects;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Tests.Builders;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -288,195 +292,6 @@ public sealed class ValueObjectTests
 
   #endregion
 
-  #region Allergen Tests
-
-  /// <summary>
-  /// Verifies Allergen creates instance with default values.
-  /// </summary>
-  [TestMethod]
-  public void Allergen_DefaultConstructor_CreatesInstanceWithDefaults()
-  {
-    // Act
-    var allergen = new Allergen();
-
-    // Assert
-    Assert.AreEqual(string.Empty, allergen.Name);
-    Assert.AreEqual(string.Empty, allergen.Description);
-    Assert.IsNotNull(allergen.LearnMoreAddress);
-    Assert.AreEqual("https://arolariu.ro/", allergen.LearnMoreAddress.ToString());
-  }
-
-  /// <summary>
-  /// Verifies Allergen properties can be set.
-  /// </summary>
-  [TestMethod]
-  public void Allergen_SetProperties_PropertiesAreSet()
-  {
-    // Arrange
-    var allergen = new Allergen
-    {
-      Name = "Peanuts",
-      Description = "Common tree nut allergen",
-      LearnMoreAddress = new Uri("https://example.com/allergens/peanuts")
-    };
-
-    // Assert
-    Assert.AreEqual("Peanuts", allergen.Name);
-    Assert.AreEqual("Common tree nut allergen", allergen.Description);
-    Assert.AreEqual("https://example.com/allergens/peanuts", allergen.LearnMoreAddress.ToString());
-  }
-
-  /// <summary>
-  /// Verifies Allergen equality based on value.
-  /// </summary>
-  [TestMethod]
-  public void Allergen_SameValues_AreEqual()
-  {
-    // Arrange
-    var allergen1 = new Allergen { Name = "Gluten", Description = "Wheat protein" };
-    var allergen2 = new Allergen { Name = "Gluten", Description = "Wheat protein" };
-
-    // Assert
-    Assert.AreEqual(allergen1, allergen2);
-  }
-
-  /// <summary>
-  /// Verifies Allergen inequality for different values.
-  /// </summary>
-  [TestMethod]
-  public void Allergen_DifferentValues_AreNotEqual()
-  {
-    // Arrange
-    var allergen1 = new Allergen { Name = "Gluten" };
-    var allergen2 = new Allergen { Name = "Dairy" };
-
-    // Assert
-    Assert.AreNotEqual(allergen1, allergen2);
-  }
-
-  #endregion
-
-  #region Recipe Tests
-
-  /// <summary>
-  /// Verifies Recipe creates instance with default values using parameterless constructor.
-  /// </summary>
-  [TestMethod]
-  public void Recipe_ParameterlessConstructor_CreatesInstanceWithDefaults()
-  {
-    // Act
-    var recipe = new Recipe();
-
-    // Assert
-    Assert.AreEqual(string.Empty, recipe.Name);
-    Assert.AreEqual(string.Empty, recipe.Description);
-    Assert.AreEqual(-1, recipe.ApproximateTotalDuration);
-    Assert.AreEqual(RecipeComplexity.UNKNOWN, recipe.Complexity);
-    Assert.IsEmpty(recipe.Ingredients);
-    Assert.IsNotNull(recipe.ReferenceForMoreDetails);
-    Assert.AreEqual("https://arolariu.ro/", recipe.ReferenceForMoreDetails.ToString());
-  }
-
-  /// <summary>
-  /// Verifies Recipe parameterized constructor sets all properties.
-  /// </summary>
-  [TestMethod]
-  public void Recipe_ParameterizedConstructor_SetsAllProperties()
-  {
-    // Arrange
-    var name = "Spaghetti Carbonara";
-    var description = "Classic Italian pasta dish";
-    var duration = 30;
-    var complexity = RecipeComplexity.NORMAL;
-    var ingredients = new List<string> { "Pasta", "Eggs", "Bacon", "Cheese" };
-    var reference = new Uri("https://example.com/recipes/carbonara");
-
-    // Act
-    var recipe = new Recipe(name, description, duration, complexity, ingredients, reference);
-
-    // Assert
-    Assert.AreEqual(name, recipe.Name);
-    Assert.AreEqual(description, recipe.Description);
-    Assert.AreEqual(duration, recipe.ApproximateTotalDuration);
-    Assert.AreEqual(complexity, recipe.Complexity);
-    Assert.AreSequenceEqual(ingredients, recipe.Ingredients);
-    Assert.AreEqual(reference, recipe.ReferenceForMoreDetails);
-  }
-
-  /// <summary>
-  /// Verifies Recipe properties can be set.
-  /// </summary>
-  [TestMethod]
-  public void Recipe_SetProperties_PropertiesAreSet()
-  {
-    // Arrange
-    var recipe = new Recipe
-    {
-      Name = "Pizza Margherita",
-      Description = "Traditional Italian pizza",
-      ApproximateTotalDuration = 45,
-      Complexity = RecipeComplexity.EASY
-    };
-
-    // Assert
-    Assert.AreEqual("Pizza Margherita", recipe.Name);
-    Assert.AreEqual("Traditional Italian pizza", recipe.Description);
-    Assert.AreEqual(45, recipe.ApproximateTotalDuration);
-    Assert.AreEqual(RecipeComplexity.EASY, recipe.Complexity);
-  }
-
-  /// <summary>
-  /// Verifies Recipe same instance is equal to itself.
-  /// </summary>
-  [TestMethod]
-  public void Recipe_SameInstance_IsEqual()
-  {
-    // Arrange
-    var recipe = new Recipe { Name = "Test Recipe", ApproximateTotalDuration = 30 };
-
-    // Assert
-    Assert.AreEqual(recipe, recipe);
-    Assert.AreEqual("Test Recipe", recipe.Name);
-    Assert.AreEqual(30, recipe.ApproximateTotalDuration);
-  }
-
-  #endregion
-
-  #region RecipeComplexity Enum Tests
-
-  /// <summary>
-  /// Verifies RecipeComplexity enum has expected values.
-  /// </summary>
-  [TestMethod]
-  [DataRow(RecipeComplexity.UNKNOWN, 0)]
-  [DataRow(RecipeComplexity.EASY, 1)]
-  [DataRow(RecipeComplexity.NORMAL, 2)]
-  [DataRow(RecipeComplexity.HARD, 3)]
-  public void RecipeComplexity_EnumValues_HaveCorrectUnderlyingValues(RecipeComplexity complexity, int expectedValue)
-  {
-    // Assert
-    Assert.AreEqual(expectedValue, (int)complexity);
-  }
-
-  /// <summary>
-  /// Verifies all RecipeComplexity enum values can be parsed.
-  /// </summary>
-  [TestMethod]
-  [DataRow("UNKNOWN")]
-  [DataRow("EASY")]
-  [DataRow("NORMAL")]
-  [DataRow("HARD")]
-  public void RecipeComplexity_ParseFromString_ReturnsCorrectValue(string complexityName)
-  {
-    // Act
-    var parsed = Enum.Parse<RecipeComplexity>(complexityName);
-
-    // Assert
-    Assert.IsTrue(Enum.IsDefined<RecipeComplexity>(parsed));
-  }
-
-  #endregion
-
   #region Product Tests
 
   /// <summary>
@@ -495,7 +310,7 @@ public sealed class ValueObjectTests
     Assert.AreEqual(string.Empty, product.QuantityUnit);
     Assert.AreEqual(string.Empty, product.ProductCode);
     Assert.AreEqual(0, product.Price);
-    Assert.IsEmpty(product.DetectedAllergens);
+    Assert.IsNull(product.AllergenAssessment);
     Assert.AreEqual(default, product.Metadata);
   }
 
@@ -506,25 +321,30 @@ public sealed class ValueObjectTests
   public void Product_SetProperties_PropertiesAreSet()
   {
     // Arrange
-    var allergens = new List<Allergen> { new Allergen { Name = "Gluten" } };
+    var signals = new List<AllergenSignal>
+    {
+      new(AllergenCode.CerealsContainingGluten, AllergenEvidenceLevel.Explicit, 0.9, [new AllergenEvidence("product-name", "Gluten")]),
+    };
+
     var product = new Product
     {
       Name = "MONSTER ENERGY DRINK 500ML",
+      Classification = ClassificationTestData.Gpc("10000123", "Energy Drinks"),
       Quantity = 2,
       QuantityUnit = "pcs",
       ProductCode = "SKU12345",
       Price = 5.99m,
-      DetectedAllergens = allergens
+      AllergenAssessment = AllergenAssessment.Detected(Guid.NewGuid(), signals)
     };
 
     // Assert
     Assert.AreEqual("MONSTER ENERGY DRINK 500ML", product.Name);
-    Assert.IsNull(product.Classification);
+    Assert.AreEqual("10000123", product.Classification!.Code);
     Assert.AreEqual(2, product.Quantity);
     Assert.AreEqual("pcs", product.QuantityUnit);
     Assert.AreEqual("SKU12345", product.ProductCode);
     Assert.AreEqual(5.99m, product.Price);
-    Assert.ContainsSingle(product.DetectedAllergens);
+    Assert.ContainsSingle(product.AllergenAssessment!.Signals);
   }
 
   /// <summary>
@@ -691,4 +511,78 @@ public sealed class ValueObjectTests
 
   #endregion
 
+  #region Product Classification And Allergen Tests
+
+  /// <summary>
+  /// Verifies a freshly constructed Product is unclassified and carries no allergen assessment.
+  /// </summary>
+  [TestMethod]
+  public void Product_Default_IsUnclassifiedAndUnassessed()
+  {
+    // Arrange
+    var product = new Product();
+
+    // Assert
+    Assert.IsNull(product.Classification);
+    Assert.IsNull(product.AllergenAssessment);
+  }
+
+  /// <summary>
+  /// Verifies Product classification accepts a GS1 GPC classification.
+  /// </summary>
+  [TestMethod]
+  public void Product_SetClassification_ClassificationIsSet()
+  {
+    // Arrange
+    var classification = ClassificationTestData.Gpc("10000045", "Milk (Perishable)");
+
+    var product = new Product { Classification = classification };
+
+    // Assert
+    Assert.AreEqual(classification, product.Classification);
+    Assert.AreEqual(ClassificationSystem.Gs1Gpc, product.Classification!.System);
+  }
+
+  /// <summary>
+  /// Verifies Product allergen assessment accepts a no-signal assessment.
+  /// </summary>
+  [TestMethod]
+  public void Product_SetAllergenAssessment_AssessmentIsSet()
+  {
+    // Arrange
+    var runIdentifier = Guid.NewGuid();
+    var assessment = AllergenAssessment.NoSignals(runIdentifier);
+
+    var product = new Product { AllergenAssessment = assessment };
+
+    // Assert
+    Assert.IsNotNull(product.AllergenAssessment);
+    Assert.AreEqual(runIdentifier, product.AllergenAssessment!.SourceRunId);
+  }
+
+  /// <summary>
+  /// Verifies Product remains identity-free after the analysis cutover.
+  /// </summary>
+  /// <remarks>
+  /// <para>Products are value objects owned by an invoice. Adding an identifier would silently promote them to
+  /// entities and break the aggregate boundary, so the absence of one is asserted rather than assumed.</para>
+  /// </remarks>
+  [TestMethod]
+  public void Product_Type_ExposesNoIdentifier()
+  {
+    // Act
+    var identityMembers = typeof(Product)
+      .GetProperties()
+      .Where(property =>
+        property.Name.Equals("id", StringComparison.OrdinalIgnoreCase)
+        || property.Name.Equals("Id", StringComparison.Ordinal)
+        || property.Name.EndsWith("Identifier", StringComparison.Ordinal))
+      .Select(property => property.Name)
+      .ToList();
+
+    // Assert
+    Assert.AreEqual(0, identityMembers.Count, $"Product must stay identity-free but exposes: {string.Join(", ", identityMembers)}.");
+  }
+
+  #endregion
 }

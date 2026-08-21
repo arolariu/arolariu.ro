@@ -24,24 +24,24 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 /// Follows MethodName_Condition_ExpectedResult pattern; underscores intentional.
 /// </summary>
 [TestClass]
-public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlBrokerTestsBase, IDisposable
+public sealed partial class CosmosDatabaseBrokerComprehensiveTests : CosmosDatabaseBrokerTestsBase, IDisposable
 {
-  private readonly InvoiceNoSqlBroker invoiceNoSqlBroker;
-  private readonly DbContextOptions<InvoiceNoSqlBroker> dbContextOptions;
+  private readonly CosmosDatabaseBroker invoiceNoSqlBroker;
+  private readonly DbContextOptions<CosmosDatabaseBroker> dbContextOptions;
 
   /// <summary>
   /// Initializes a new test fixture with an in-memory Cosmos emulator configuration and a mocked client.
   /// </summary>
-  public InvoiceNoSqlBrokerComprehensiveTests()
+  public CosmosDatabaseBrokerComprehensiveTests()
   {
-    dbContextOptions = new DbContextOptionsBuilder<InvoiceNoSqlBroker>()
+    dbContextOptions = new DbContextOptionsBuilder<CosmosDatabaseBroker>()
       .UseCosmos(
         accountEndpoint: "https://localhost:8081/",
         accountKey: "testKey",
         databaseName: "TestDb")
       .Options;
 
-    invoiceNoSqlBroker = new InvoiceNoSqlBroker(mockCosmosClient.Object, dbContextOptions);
+    invoiceNoSqlBroker = new CosmosDatabaseBroker(mockCosmosClient.Object, dbContextOptions);
   }
 
   /// <summary>

@@ -30,7 +30,7 @@ public static class RequestCancellation
 
   /// <summary>
   /// Budget for the invoice analysis pipeline. Matches the Document Intelligence client's
-  /// 5-minute network timeout configured in <c>AzureFormRecognizerBroker</c>.
+  /// 5-minute network timeout configured in <c>AzureDocumentIntelligenceBroker</c>.
   /// </summary>
   public static readonly TimeSpan AnalysisWriteBudget = TimeSpan.FromSeconds(300);
 
