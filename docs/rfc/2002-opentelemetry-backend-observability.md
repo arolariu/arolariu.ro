@@ -248,6 +248,22 @@ public static void AddGeneralDomainConfiguration(this WebApplicationBuilder buil
 - **Development**: Uses `DefaultAzureCredential()` (Visual Studio, Azure CLI, etc.)
 - **Production**: Uses Managed Identity via `AZURE_CLIENT_ID` environment variable
 
+**Local Swagger personas**:
+
+- Aspire runs a loopback-only `local-identities` tooling resource for Alice,
+  Bob, and Charlie.
+- Tokens use the same issuer, audience, signature, lifetime validation, and
+  `userIdentifier` claim contract as normal API Bearer tokens.
+- Development Swagger injects persona controls only when the environment is
+  Development, `INFRA=local`, no Azure managed identity is present, and AppHost
+  supplies the loopback identity endpoint.
+- The API content security policy adds that exact loopback origin to
+  `connect-src`; production retains the same-origin-only policy.
+- Tokens, signing secrets, connection strings, raw fixture documents, and scan
+  contents are never logged or exported.
+- The identity helper and seed bootstrap are excluded from deployment manifests;
+  production authentication and observability remain unchanged.
+
 **Connection String Resolution**:
 
 ```csharp
