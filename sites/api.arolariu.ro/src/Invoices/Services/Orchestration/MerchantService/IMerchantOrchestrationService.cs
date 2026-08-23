@@ -43,6 +43,12 @@ public interface IMerchantOrchestrationService
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>The merchants returned by storage.</returns>
   Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId, CancellationToken cancellationToken);
+
+  /// <summary>Reads every merchant whose identifier appears in the supplied set.</summary>
+  /// <param name="merchantIdentifiers">The merchant identifiers to read. May be empty.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
+  /// <returns>The merchants matching the supplied identifiers.</returns>
+  Task<IEnumerable<Merchant>> ReadMerchantObjectsByIdentifiers(IReadOnlyCollection<Guid> merchantIdentifiers, CancellationToken cancellationToken);
   #endregion
 
   #region Update Merchant API

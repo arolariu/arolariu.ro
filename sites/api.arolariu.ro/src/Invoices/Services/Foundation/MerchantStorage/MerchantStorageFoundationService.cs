@@ -80,6 +80,20 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
       .ConfigureAwait(false);
     return merchants;
   }).ConfigureAwait(false);
+
+  /// <inheritdoc/>
+  public async Task<IEnumerable<Merchant>> ReadMerchantObjectsByIdentifiers(
+    IReadOnlyCollection<Guid> merchantIdentifiers,
+    CancellationToken cancellationToken) =>
+  await TryCatchAsync(async () =>
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantObjectsByIdentifiers));
+    ArgumentNullException.ThrowIfNull(merchantIdentifiers);
+
+    return await invoiceNoSqlBroker
+      .ReadMerchantsByIdentifiersAsync(merchantIdentifiers, cancellationToken)
+      .ConfigureAwait(false);
+  }).ConfigureAwait(false);
   #endregion
 
   #region Read Merchant Object API

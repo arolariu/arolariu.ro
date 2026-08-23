@@ -71,6 +71,18 @@ public partial class MerchantOrchestrationService : IMerchantOrchestrationServic
       .ConfigureAwait(false);
     return merchants;
   }).ConfigureAwait(false);
+
+  /// <inheritdoc/>
+  public async Task<IEnumerable<Merchant>> ReadMerchantObjectsByIdentifiers(
+    IReadOnlyCollection<Guid> merchantIdentifiers,
+    CancellationToken cancellationToken) =>
+  await TryCatchAsync(async () =>
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantObjectsByIdentifiers));
+    return await merchantStorage
+      .ReadMerchantObjectsByIdentifiers(merchantIdentifiers, cancellationToken)
+      .ConfigureAwait(false);
+  }).ConfigureAwait(false);
   #endregion
 
   #region Read Merchant API
