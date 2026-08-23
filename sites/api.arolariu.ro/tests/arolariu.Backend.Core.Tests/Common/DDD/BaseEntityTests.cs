@@ -6,6 +6,8 @@ using arolariu.Backend.Core.Tests.Shared.TestDoubles;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using Newtonsoft.Json;
+
 /// <summary>
 /// Tests for the base entity abstraction verifying audit field initialization, soft delete behavior,
 /// update simulation and importance flag toggling. Method names follow the mandated
@@ -68,5 +70,27 @@ public sealed class BaseEntityTests
     Assert.IsFalse(entity.IsImportant);
     entity.IsImportant = true;
     Assert.IsTrue(entity.IsImportant);
+  }
+
+  /// <summary>
+  /// Verifies the Cosmos SDK serializer preserves protected persistence state.
+  /// </summary>
+  [TestMethod]
+  public void NewtonsoftRoundTrip_ProtectedState_PreservesValues()
+  {
+    var entity = new TestEntity { CreatedBy = Guid.NewGuid() };
+    Guid updater = Guid.NewGuid();
+    entity.SimulateUpdate(updater);
+    entity.SoftDelete();
+    DateTimeOffset expectedLastUpdatedAt = entity.LastUpdatedAt;
+
+    string json = JsonConvert.SerializeObject(entity);
+    TestEntity roundTripped = JsonConvert.DeserializeObject<TestEntity>(json)
+      ?? throw new AssertFailedException(
+        "Deserializing TestEntity produced null.");
+
+    Assert.IsTrue(roundTripped.IsSoftDeleted);
+    Assert.AreEqual(updater, roundTripped.LastUpdatedBy);
+    Assert.AreEqual(expectedLastUpdatedAt, roundTripped.LastUpdatedAt);
   }
 }

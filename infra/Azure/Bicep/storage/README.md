@@ -134,7 +134,10 @@ module storage 'storage/storageAccount.bicep' = {
 
 **Queue/Table Service:**
 
-- Enabled
+- Queue and table services are enabled.
+- The `invoice-analysis` queue is provisioned declaratively for durable
+  invoice and merchant analysis work. Application Brokers consume this queue
+  but never create infrastructure at runtime.
 
 **Lifecycle Management:**
 

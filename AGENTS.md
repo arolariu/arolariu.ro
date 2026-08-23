@@ -96,6 +96,9 @@ Two coexisting dev modes:
 **`aspire` mode (default)** — `npm run dev -- --engine rancher` or `npm run dev -- --engine podman` (or F5 in VS Code/VS 2026 with the same environment)
 - Apps run **native** (.NET via dotnet, Next.js/Svelte/Docusaurus/status via npm dev scripts, exp via uvicorn) and are reachable at `http://localhost:<port>` (api: 5000, website: 3000, exp: 5002, cv: 4173, docs: 3100, status: 3002). Hot reload preserved.
 - Infrastructure (SQL Server, Cosmos vNext emulator, Azurite, Redis) runs as containers spawned by Aspire 13.x's AppHost (`tooling/AppHost/Program.cs`) through the selected Rancher Desktop or Podman Desktop engine — native Aspire integrations, not Docker Compose.
+- Before the API starts, `local-bootstrap` clears Cosmos invoice/merchant documents, resets Azurite invoice blobs and the `invoice-analysis` queue, then restores the tracked deterministic scenario. SQL, Redis, emulator schemas, indexes, and named volumes stay warm.
+- Seed personas are Alice (rich account: 8 invoices/5 merchants), Bob (empty account), and Charlie (light account: 3 invoices/2 merchants). Dates are relative to UTC launch day; identifiers and relationships are stable.
+- The local `local-identities` resource supplies signed Alice/Bob/Charlie JWTs. Development Swagger displays persona controls that preauthorize its existing Bearer scheme. No token or signing secret is committed.
 - Aspire dashboard at `https://localhost:17080` (auto-opens on AppHost start) with live OTel traces / metrics / logs and clickable URLs / health badges per resource.
 
 **`selfhost` mode (advanced)** — `npm run dev:selfhost -- --engine rancher` or `npm run dev:selfhost -- --engine podman`

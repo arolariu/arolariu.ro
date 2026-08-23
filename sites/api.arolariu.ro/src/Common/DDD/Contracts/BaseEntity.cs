@@ -117,6 +117,7 @@ public abstract class BaseEntity<T> : IAuditable
   /// This timestamp should be updated by the business logic layer before persistence.
   /// Used for optimistic concurrency control and change tracking.
   /// </remarks>
+  [Newtonsoft.Json.JsonProperty]
   [JsonPropertyOrder(byte.MaxValue - 08)]
   public DateTimeOffset LastUpdatedAt { get; protected set; } = DateTimeOffset.UtcNow;
 
@@ -125,6 +126,7 @@ public abstract class BaseEntity<T> : IAuditable
   /// Should be updated to reflect the identifier of the user or system making changes.
   /// Protected setter ensures updates are controlled through business logic methods.
   /// </remarks>
+  [Newtonsoft.Json.JsonProperty]
   [JsonPropertyOrder(byte.MaxValue - 07)]
   public Guid LastUpdatedBy { get; protected set; }
 
@@ -154,6 +156,7 @@ public abstract class BaseEntity<T> : IAuditable
   /// Protected setter ensures soft deletion is controlled through the SoftDelete method.
   /// Soft-deleted entities should be filtered out of normal business operations.
   /// </remarks>
+  [Newtonsoft.Json.JsonProperty]
   [JsonPropertyOrder(byte.MaxValue - 04)]
   public bool IsSoftDeleted { get; protected set; } = false;
 

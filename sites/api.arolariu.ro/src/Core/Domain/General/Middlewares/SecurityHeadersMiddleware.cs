@@ -4,7 +4,11 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Core.Domain.General.Services.Swagger;
+
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 
 /// <summary>
 /// Middleware that adds security headers to all HTTP responses to enhance application security posture.
@@ -38,12 +42,12 @@ using Microsoft.AspNetCore.Http;
 /// </para>
 /// <para>
 /// <strong>Strict-Transport-Security (HSTS):</strong> Enforces HTTPS connections for one year,
-/// including all subdomains. Only applied in production environments. Includes preload directive
-/// for browser HSTS preload lists.
+/// including all subdomains. Includes the preload directive for browser HSTS preload lists.
 /// </para>
 /// <para>
 /// <strong>Content-Security-Policy (CSP):</strong> Defines allowed sources for various resource types
-/// to prevent XSS and data injection attacks. Only applied in production to avoid development friction.
+/// to prevent XSS and data injection attacks. Local Development adds only the strictly gated
+/// loopback identity origin to <c>connect-src</c>.
 /// </para>
 /// </remarks>
 /// <example>
@@ -56,12 +60,21 @@ using Microsoft.AspNetCore.Http;
 /// Initializes a new instance of the <see cref="SecurityHeadersMiddleware"/> class.
 /// </remarks>
 /// <param name="next">The next middleware delegate in the request pipeline.</param>
+/// <param name="environment">The current web host environment.</param>
+/// <param name="configuration">The application configuration.</param>
 [ExcludeFromCodeCoverage] // Infrastructure middleware - integration tested, not unit tested
 #pragma warning disable CA1812
-internal sealed class SecurityHeadersMiddleware(RequestDelegate next)
+internal sealed class SecurityHeadersMiddleware(
+  RequestDelegate next,
+  IWebHostEnvironment environment,
+  IConfiguration configuration)
 #pragma warning restore CA1812
 {
   private readonly RequestDelegate _next = next ?? throw new ArgumentNullException(nameof(next));
+  private readonly string contentSecurityPolicy =
+    LocalDevelopmentSwagger.CreateContentSecurityPolicy(
+      LocalDevelopmentSwagger.Resolve(environment, configuration)
+        .IdentityEndpoint);
 
   /// <summary>
   /// Processes an HTTP request by adding security headers to the response.
@@ -80,7 +93,7 @@ internal sealed class SecurityHeadersMiddleware(RequestDelegate next)
     // Add security headers that apply to all environments
     AddCommonSecurityHeaders(context);
 
-    AddProductionSecurityHeaders(context);
+    AddTransportAndContentSecurityHeaders(context, contentSecurityPolicy);
 
     // Continue processing the request
     await _next(context).ConfigureAwait(false);
@@ -120,14 +133,19 @@ internal sealed class SecurityHeadersMiddleware(RequestDelegate next)
   }
 
   /// <summary>
-  /// Adds security headers that should only be applied in production environments.
+  /// Adds transport and content security headers.
   /// </summary>
   /// <param name="context">The HTTP context containing the response headers.</param>
+  /// <param name="contentSecurityPolicy">
+  /// The resolved policy for the current runtime.
+  /// </param>
   /// <remarks>
-  /// These headers are excluded from development to avoid interference with local debugging
-  /// and to allow HTTP connections during development.
+  /// The content security policy remains restrictive in every environment. The resolved
+  /// local policy permits only the gated loopback identity origin in addition to self.
   /// </remarks>
-  private static void AddProductionSecurityHeaders(HttpContext context)
+  private static void AddTransportAndContentSecurityHeaders(
+    HttpContext context,
+    string contentSecurityPolicy)
   {
     var headers = context.Response.Headers;
 
@@ -147,15 +165,6 @@ internal sealed class SecurityHeadersMiddleware(RequestDelegate next)
     // frame-ancestors 'none': Prevent embedding in frames (redundant with X-Frame-Options)
     // base-uri 'self': Restrict <base> tag URLs to same origin
     // form-action 'self': Only allow form submissions to same origin
-    headers.ContentSecurityPolicy =
-      "default-src 'self'; " +
-      "script-src 'self'; " +
-      "style-src 'self' 'unsafe-inline'; " +
-      "img-src 'self' data: https:; " +
-      "font-src 'self'; " +
-      "connect-src 'self'; " +
-      "frame-ancestors 'none'; " +
-      "base-uri 'self'; " +
-      "form-action 'self'";
+    headers.ContentSecurityPolicy = contentSecurityPolicy;
   }
 }

@@ -24,6 +24,7 @@ internal static class Constants
   public const string CosmosInvoicesPartitionKey = "/UserIdentifier";
   public const string CosmosMerchantsContainer = "merchants";
   public const string CosmosMerchantsPartitionKey = "/ParentCompanyId";
+  public const string AnalysisQueueName = "invoice-analysis";
 
   // ── Volume names (data persistence across container restarts) ──
   public const string SqlDataVolume = "arolariu-mssql-data";
@@ -33,6 +34,7 @@ internal static class Constants
 
   // ── Fixed dev ports — match infra/Local/Storage/docker-compose.yml ──
   public const int ApiPort = 5000;
+  public const int LocalIdentityPort = 5011;
   public const int ExpPort = 5002;
   public const int WebsitePort = 3000;
   public const int CvPort = 4173;

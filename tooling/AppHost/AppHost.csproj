@@ -17,9 +17,12 @@
     <PackageReference Include="Aspire.Hosting.Python" Version="13.4.6" />
     <PackageReference Include="Aspire.Hosting.Redis" Version="13.4.6" />
     <PackageReference Include="Aspire.Hosting.SqlServer" Version="13.4.6" />
+    <PackageReference Include="Azure.Storage.Queues" Version="12.27.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\sites\api.arolariu.ro\src\Core\arolariu.Backend.Core.csproj" IsAspireProjectResource="true" />
+    <ProjectReference Include="..\LocalDevelopment.Bootstrap\LocalDevelopment.Bootstrap.csproj" IsAspireProjectResource="true" />
+    <ProjectReference Include="..\LocalDevelopment.Identity\LocalDevelopment.Identity.csproj" IsAspireProjectResource="true" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="AppHost.Tests" />

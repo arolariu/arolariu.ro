@@ -166,7 +166,8 @@ Both regions use the raw Cosmos SDK paths in
 `IQueueBroker`, implemented by `AzureStorageQueueBroker`, owns transport through
 the backend queue named `invoice-analysis`. It:
 
-- assumes the deployment-provisioned queue already exists;
+- assumes the queue provisioned by Azure Bicep, Aspire bootstrap, or selfhost
+  bootstrap already exists;
 - serializes and enqueues a `QueueAnalysisMessage`;
 - returns Azure Queue's `MessageId`;
 - receives at most one visible message with a caller-supplied visibility timeout;
@@ -177,6 +178,9 @@ the backend queue named `invoice-analysis`. It:
 The Broker maps received provider data into `AnalysisQueueReceipt`, which carries
 the application message, provider `MessageId`, current pop receipt, dequeue
 count, and next-visible time.
+
+Queue creation remains an infrastructure responsibility. The Broker, Foundation,
+Processing service, and worker never call provider create APIs.
 
 ### Analysis capability brokers
 
@@ -322,6 +326,19 @@ poll and resolves only
 `IInvoiceManagementService`. It processes at most one received message per
 iteration through `ProcessAnalysisAsync` and waits five seconds when no message
 is visible.
+
+### Local development bootstrap
+
+Aspire starts a tooling-only one-shot bootstrap before the API. It clears local
+Cosmos invoice/merchant documents, resets Azurite invoice blobs and analysis
+messages, and writes a deterministic Alice/Bob/Charlie scenario. The tooling
+project references domain models for invariant-safe fixture construction but is
+not part of the Management → Processing → Orchestration → Foundation → Broker
+runtime graph. It is excluded from deployment manifests and refuses non-emulator
+targets.
+
+SQL, Redis, emulator schemas, indexes, and named volumes are retained between
+launches. No production seed path exists.
 
 ---
 
