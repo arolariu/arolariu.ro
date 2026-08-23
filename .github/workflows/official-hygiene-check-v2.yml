@@ -181,7 +181,7 @@ jobs:
           install-scripts-deps: 'true'
 
       - name: 📥 Download all outcome artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           pattern: outcome-*
           path: artifacts/hygiene
