@@ -1205,10 +1205,22 @@ public static partial class InvoiceEndpoints
     }
   }
 
+  /// <summary>Determines whether a merchant collection request may be served for the requested user.</summary>
+  /// <remarks>
+  /// <para>An absent <paramref name="visibleToUser"/> implies the caller. A present value must equal the
+  /// caller; otherwise the request is an attempt to enumerate another user's merchants.</para>
+  /// </remarks>
+  /// <param name="caller">The user identifier resolved from the request principal.</param>
+  /// <param name="visibleToUser">The optional user identifier supplied on the query string.</param>
+  /// <returns><see langword="true"/> when the request is authorised; otherwise <see langword="false"/>.</returns>
+  internal static bool IsMerchantCollectionRequestAuthorized(Guid caller, Guid? visibleToUser) =>
+    visibleToUser is null || visibleToUser.Value == caller;
+
   internal static async partial Task<IResult> RetrieveAllMerchantsAsync(
     IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
-    Guid parentCompanyId,
+    Guid? parentCompanyId,
+    Guid? visibleToUser,
     CancellationToken cancellationToken)
   {
     try
@@ -1220,12 +1232,30 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("Merchant.ReadAll");
       }
 
-      _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
-      activity?.SetTag("parent_company.id", parentCompanyId.ToString());
+      Guid userIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
-      var possibleMerchants = await invoiceManagementService
-          .ReadMerchants(parentCompanyId, cancellationToken)
+      if (!IsMerchantCollectionRequestAuthorized(userIdentifier, visibleToUser))
+      {
+        activity?.SetTag("merchant.scope", "forbidden");
+        return TypedResults.Forbid();
+      }
+
+      IEnumerable<Merchant> possibleMerchants;
+      if (parentCompanyId.HasValue)
+      {
+        activity?.SetTag("merchant.scope", "parent_company");
+        activity?.SetTag("parent_company.id", parentCompanyId.Value.ToString());
+        possibleMerchants = await invoiceManagementService
+          .ReadMerchants(parentCompanyId.Value, cancellationToken)
           .ConfigureAwait(false);
+      }
+      else
+      {
+        activity?.SetTag("merchant.scope", "visible_to_user");
+        possibleMerchants = await invoiceManagementService
+          .ReadMerchantsVisibleToUser(userIdentifier, cancellationToken)
+          .ConfigureAwait(false);
+      }
 
       // RESTful convention: return 200 with empty array for collection endpoints, not 404
       var merchantDtos = possibleMerchants?.Select(MerchantResponseDto.FromMerchant) ?? [];
