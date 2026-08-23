@@ -299,6 +299,20 @@ public interface IInvoiceProcessingService
   Task<IEnumerable<Merchant>> ReadMerchants(Guid parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
+  #region Read Merchants Visible To User API
+  /// <summary>
+  /// Enumerates the merchants referenced by the caller's own invoices.
+  /// </summary>
+  /// <remarks>
+  /// Visibility is determined by invoice merchant reference rather than by <c>CreatedBy</c>, because
+  /// analysis performed by any user may create the merchant record that another user's invoice references.
+  /// </remarks>
+  /// <param name="userIdentifier">The authenticated user whose invoices are inspected.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
+  /// <returns>The distinct merchants referenced by the caller's invoices.</returns>
+  Task<IEnumerable<Merchant>> ReadMerchantsVisibleToUser(Guid userIdentifier, CancellationToken cancellationToken);
+  #endregion
+
   #region Update Merchant API
   /// <summary>
   /// Replaces an existing merchant aggregate with updated state.

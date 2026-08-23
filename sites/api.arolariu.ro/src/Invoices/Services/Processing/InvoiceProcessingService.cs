@@ -247,6 +247,38 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   }).ConfigureAwait(false);
   #endregion
 
+  #region Read Merchants Visible To User API
+  /// <summary>Reads the merchants referenced by the caller's own invoices.</summary>
+  /// <param name="userIdentifier">The authenticated user whose invoices are inspected.</param>
+  /// <param name="cancellationToken">The token used to cancel the query.</param>
+  /// <returns>The distinct merchants referenced by the caller's invoices.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when invoice or merchant orchestration cannot complete the query.
+  /// </exception>
+  /// <inheritdoc/>
+  public async Task<IEnumerable<Merchant>> ReadMerchantsVisibleToUser(
+    Guid userIdentifier,
+    CancellationToken cancellationToken) =>
+  await TryCatchAsync(async () =>
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantsVisibleToUser));
+    activity?.SetUserContext(userIdentifier);
+
+    var invoices = await ReadInvoices(userIdentifier, cancellationToken).ConfigureAwait(false);
+    var merchantIdentifiers = MerchantVisibilityResolver.ResolveVisibleMerchantIdentifiers(invoices);
+    activity?.SetTag("merchant.reference_count", merchantIdentifiers.Count);
+
+    if (merchantIdentifiers.Count == 0)
+    {
+      return [];
+    }
+
+    return await merchantOrchestrationService
+      .ReadMerchantObjectsByIdentifiers(merchantIdentifiers, cancellationToken)
+      .ConfigureAwait(false);
+  }).ConfigureAwait(false);
+  #endregion
+
   #region Read Invoice API
   /// <summary>Reads one invoice through invoice orchestration.</summary>
   /// <param name="identifier">The invoice identifier.</param>

@@ -421,6 +421,23 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
       return await invoiceProcessingService.ReadMerchants(parentCompanyId, cancellationToken).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
+  /// <summary>Reads the merchants referenced by the caller's own invoices through the unified Processing boundary.</summary>
+  /// <param name="userIdentifier">The authenticated user whose invoices are inspected.</param>
+  /// <param name="cancellationToken">The token used to cancel the query.</param>
+  /// <returns>The distinct merchants referenced by the caller's invoices.</returns>
+  /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyException">
+  /// Thrown when invoice or merchant persistence cannot complete the query.
+  /// </exception>
+  /// <inheritdoc/>
+  public async Task<IEnumerable<Merchant>> ReadMerchantsVisibleToUser(
+    Guid userIdentifier,
+    CancellationToken cancellationToken) =>
+    await TryCatchAsync(async () =>
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantsVisibleToUser));
+      return await invoiceProcessingService.ReadMerchantsVisibleToUser(userIdentifier, cancellationToken).ConfigureAwait(false);
+    }).ConfigureAwait(false);
+
   /// <summary>Replaces client-editable merchant state through Processing.</summary>
   /// <param name="updatedMerchant">The replacement merchant fields.</param>
   /// <param name="identifier">The persisted merchant identifier.</param>
