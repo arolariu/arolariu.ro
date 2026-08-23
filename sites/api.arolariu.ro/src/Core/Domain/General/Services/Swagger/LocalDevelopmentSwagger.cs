@@ -150,6 +150,9 @@ internal static class LocalDevelopmentSwagger
 
           const status = document.createElement("span");
           status.dataset.localPersonaStatus = "true";
+          status.setAttribute("role", "status");
+          status.setAttribute("aria-live", "polite");
+          status.setAttribute("aria-atomic", "true");
           status.textContent = "Development persona";
           container.appendChild(status);
 

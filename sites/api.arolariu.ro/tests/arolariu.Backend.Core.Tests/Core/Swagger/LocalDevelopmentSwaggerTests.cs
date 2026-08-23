@@ -88,6 +88,8 @@ public sealed class LocalDevelopmentSwaggerTests
     StringAssert.Contains(script, "/token", StringComparison.Ordinal);
     StringAssert.Contains(script, "preauthorizeApiKey", StringComparison.Ordinal);
     StringAssert.Contains(script, "\"Bearer\"", StringComparison.Ordinal);
+    StringAssert.Contains(script, "\"aria-live\"", StringComparison.Ordinal);
+    StringAssert.Contains(script, "\"polite\"", StringComparison.Ordinal);
     Assert.IsFalse(script.Contains("console.", StringComparison.Ordinal));
   }
 

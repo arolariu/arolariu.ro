@@ -48,6 +48,21 @@ public sealed class SeedDataTests
       scenario.Invoices.Count(invoice =>
         invoice.UserIdentifier == PersonaIds.Charlie));
     Assert.AreEqual(
+      7,
+      scenario.Invoices.Count(invoice =>
+        invoice.UserIdentifier == PersonaIds.Alice
+        && !invoice.IsSoftDeleted));
+    Assert.AreEqual(
+      0,
+      scenario.Invoices.Count(invoice =>
+        invoice.UserIdentifier == PersonaIds.Bob
+        && !invoice.IsSoftDeleted));
+    Assert.AreEqual(
+      3,
+      scenario.Invoices.Count(invoice =>
+        invoice.UserIdentifier == PersonaIds.Charlie
+        && !invoice.IsSoftDeleted));
+    Assert.AreEqual(
       5,
       scenario.Merchants.Count(merchant =>
         merchant.CreatedBy == PersonaIds.Alice));
@@ -109,6 +124,25 @@ public sealed class SeedDataTests
     SeedInvoiceDefinition invalidInvoice = manifest.Invoices[0] with
     {
       MerchantKey = "merchant/unknown",
+    };
+
+    Assert.ThrowsExactly<InvalidDataException>(
+      () => SeedManifestValidator.Validate(manifest with
+      {
+        Invoices = [invalidInvoice, .. manifest.Invoices.Skip(1)],
+      }));
+  }
+
+  /// <summary>
+  /// Verifies an invoice cannot reference a blob outside the manifest.
+  /// </summary>
+  [TestMethod]
+  public void Validate_UnknownBlobReference_ThrowsInvalidDataException()
+  {
+    SeedScenarioManifest manifest = SeedData.LoadManifest(ScenarioPath);
+    SeedInvoiceDefinition invalidInvoice = manifest.Invoices[0] with
+    {
+      BlobKey = "blob/unknown",
     };
 
     Assert.ThrowsExactly<InvalidDataException>(

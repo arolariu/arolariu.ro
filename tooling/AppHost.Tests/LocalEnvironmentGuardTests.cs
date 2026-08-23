@@ -65,4 +65,51 @@ public sealed class LocalEnvironmentGuardTests
         "UseDevelopmentStorage=true",
         "UseDevelopmentStorage=true"));
   }
+
+  /// <summary>
+  /// Verifies full bootstrap rejects remote blob and queue endpoints.
+  /// </summary>
+  [TestMethod]
+  [DataRow(
+    "BlobEndpoint=https://storage.example.test/account;",
+    "UseDevelopmentStorage=true")]
+  [DataRow(
+    "UseDevelopmentStorage=true",
+    "QueueEndpoint=https://storage.example.test/account;")]
+  public void Validate_RemoteStorageEndpoint_ThrowsInvalidOperationException(
+    string blobStorageConnectionString,
+    string queueStorageConnectionString)
+  {
+    Assert.ThrowsExactly<InvalidOperationException>(() =>
+      LocalEnvironmentGuard.Validate(
+        "Development",
+        "local",
+        azureClientId: null,
+        EmulatorCosmosConnection,
+        blobStorageConnectionString,
+        queueStorageConnectionString));
+  }
+
+  /// <summary>
+  /// Verifies storage-only bootstrap rejects remote blob and queue endpoints.
+  /// </summary>
+  [TestMethod]
+  [DataRow(
+    "BlobEndpoint=https://storage.example.test/account;",
+    "UseDevelopmentStorage=true")]
+  [DataRow(
+    "UseDevelopmentStorage=true",
+    "QueueEndpoint=https://storage.example.test/account;")]
+  public void ValidateStorage_RemoteStorageEndpoint_ThrowsInvalidOperationException(
+    string blobStorageConnectionString,
+    string queueStorageConnectionString)
+  {
+    Assert.ThrowsExactly<InvalidOperationException>(() =>
+      LocalEnvironmentGuard.ValidateStorage(
+        "Development",
+        "local",
+        azureClientId: null,
+        blobStorageConnectionString,
+        queueStorageConnectionString));
+  }
 }

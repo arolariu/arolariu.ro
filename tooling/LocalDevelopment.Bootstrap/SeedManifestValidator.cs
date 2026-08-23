@@ -29,7 +29,7 @@ internal static class SeedManifestValidator
       invoice => invoice.Key,
       invoice => invoice.Id,
       "invoice");
-    _ = IndexUnique(
+    Dictionary<string, SeedBlobDefinition> blobs = IndexUnique(
       manifest.Blobs,
       blob => blob.Key,
       _ => Guid.Empty,
@@ -61,6 +61,13 @@ internal static class SeedManifestValidator
       {
         throw new InvalidDataException(
           $"Invoice '{invoice.Key}' references unknown merchant '{invoice.MerchantKey}'.");
+      }
+
+      if (invoice.BlobKey is not null
+          && !blobs.ContainsKey(invoice.BlobKey))
+      {
+        throw new InvalidDataException(
+          $"Invoice '{invoice.Key}' references unknown blob '{invoice.BlobKey}'.");
       }
 
       foreach (string sharedPersona in invoice.SharedWith)

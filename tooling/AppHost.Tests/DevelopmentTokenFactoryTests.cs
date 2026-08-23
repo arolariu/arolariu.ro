@@ -31,12 +31,13 @@ public sealed class DevelopmentTokenFactoryTests
   [TestMethod]
   public void Create_Alice_ReturnsValidSignedTokenWithExpectedClaims()
   {
+    var timeProvider = new FixedTimeProvider(Anchor);
     var factory = new DevelopmentTokenFactory(
       Options,
-      new FixedTimeProvider(Anchor));
+      timeProvider);
 
     string token = factory.Create(DevelopmentPersonaCatalog.Alice);
-    ClaimsPrincipal principal = ValidateToken(token);
+    ClaimsPrincipal principal = ValidateToken(token, timeProvider);
 
     Assert.AreEqual(
       DevelopmentPersonaCatalog.Alice.UserIdentifier.ToString(),
@@ -96,7 +97,9 @@ public sealed class DevelopmentTokenFactoryTests
     Assert.IsNotNull(factory);
   }
 
-  private static ClaimsPrincipal ValidateToken(string token)
+  private static ClaimsPrincipal ValidateToken(
+    string token,
+    TimeProvider timeProvider)
   {
     var handler = new JwtSecurityTokenHandler
     {
@@ -112,6 +115,14 @@ public sealed class DevelopmentTokenFactoryTests
         ValidAudience = Options.Audience,
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero,
+        LifetimeValidator = (notBefore, expires, _, _) =>
+        {
+          DateTime now = timeProvider.GetUtcNow().UtcDateTime;
+          return notBefore.HasValue
+            && expires.HasValue
+            && notBefore.Value <= now
+            && expires.Value >= now;
+        },
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(
           Encoding.UTF8.GetBytes(Options.Secret)),
@@ -133,6 +144,16 @@ public sealed class DevelopmentTokenFactoryTests
 public sealed class LocalIdentityBindingTests
 {
   /// <summary>
+  /// Verifies explicit loopback bindings are accepted.
+  /// </summary>
+  [TestMethod]
+  public void RequireLoopbackBinding_LoopbackUrls_ReturnsNormally()
+  {
+    LocalDevelopment.Identity.Program.RequireLoopbackBinding(
+      "http://localhost:5011;https://127.0.0.1:5012");
+  }
+
+  /// <summary>
   /// Verifies the token service cannot start without an explicit binding.
   /// </summary>
   [TestMethod]
@@ -140,5 +161,18 @@ public sealed class LocalIdentityBindingTests
   {
     Assert.ThrowsExactly<InvalidOperationException>(
       () => LocalDevelopment.Identity.Program.RequireLoopbackBinding(null));
+  }
+
+  /// <summary>
+  /// Verifies any remote binding prevents token service startup.
+  /// </summary>
+  [TestMethod]
+  [DataRow("http://0.0.0.0:5011")]
+  [DataRow("http://localhost:5011;http://192.0.2.1:5011")]
+  public void RequireLoopbackBinding_RemoteUrl_ThrowsInvalidOperationException(
+    string urls)
+  {
+    Assert.ThrowsExactly<InvalidOperationException>(
+      () => LocalDevelopment.Identity.Program.RequireLoopbackBinding(urls));
   }
 }
