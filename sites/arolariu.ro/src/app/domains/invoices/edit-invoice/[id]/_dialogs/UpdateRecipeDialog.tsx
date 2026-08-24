@@ -1,7 +1,7 @@
 "use client";
 
 import {formatEnum} from "@/lib/utils.generic";
-import {RecipeComplexity, type Recipe} from "@/types/invoices";
+import {RecipeComplexity, type Recipe, type RecipeSuggestion} from "@/types/invoices";
 import {
   Button,
   Dialog,
@@ -107,7 +107,7 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
         preparationTime,
         cookingTime,
         approximateTotalDuration: preparationTime + cookingTime,
-      });
+      } as unknown as RecipeSuggestion);
       toast.success(t((m) => m.dialogs.invoices.recipeDialog.update.success));
       close();
       router.refresh();

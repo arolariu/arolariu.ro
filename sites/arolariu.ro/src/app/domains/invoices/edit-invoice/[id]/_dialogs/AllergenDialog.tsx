@@ -241,6 +241,8 @@ export default function AllergenDialog(): React.JSX.Element | null {
             totalPrice: product.price * product.quantity,
             metadata: product.metadata,
             detectedAllergens: allergens,
+            classification: product.classification,
+            allergenAssessment: product.allergenAssessment,
           },
         },
       });

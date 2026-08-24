@@ -64,6 +64,7 @@ async function createSingleInvoice(scan: Scan, userIdentifier: string, authToken
     userIdentifier,
     initialScan: {
       scanType: scanTypeToInvoiceScanType(scan.scanType),
+      type: scanTypeToInvoiceScanType(scan.scanType),
       location: scan.blobUrl,
       metadata: {
         sourceScanId: scan.metadata.scanId,

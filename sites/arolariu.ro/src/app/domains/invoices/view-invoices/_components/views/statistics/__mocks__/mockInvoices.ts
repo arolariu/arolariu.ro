@@ -26,6 +26,7 @@ import {ProductCategory} from "@/types/invoices/Product";
 export function createMockInvoice(overrides: Partial<Invoice>): Invoice {
   const defaultScan: InvoiceScan = {
     scanType: InvoiceScanType.JPEG,
+    type: InvoiceScanType.JPEG,
     location: "https://cdn.arolariu.ro/invoices/mock-scan.jpg",
     metadata: {},
   };
@@ -89,6 +90,8 @@ export function createMockProduct(overrides: Partial<Product>): Product {
       isSoftDeleted: false,
       confidence: 1,
     },
+    classification: null,
+    allergenAssessment: null,
     ...overrides,
   };
 }

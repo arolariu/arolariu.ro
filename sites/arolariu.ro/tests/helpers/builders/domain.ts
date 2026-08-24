@@ -51,6 +51,7 @@ import type {
   PaymentInformation,
   Product,
   Recipe,
+  RecipeSuggestion,
 } from "../../../src/types/invoices";
 import {
   InvoiceAnalysisOptions as InvoiceAnalysisOptionsValue,
@@ -60,6 +61,7 @@ import {
   PaymentType,
   ProductCategory,
   RecipeComplexity,
+  RecipeDifficulty,
 } from "../../../src/types/invoices";
 import type {Scan} from "../../../src/types/scans";
 import {ScanStatus, ScanType} from "../../../src/types/scans";
@@ -119,6 +121,8 @@ export function buildProduct(overrides: Partial<Product> = {}): Product {
       isSoftDeleted: false,
       confidence: 1.0,
     },
+    classification: null,
+    allergenAssessment: null,
     ...overrides,
   };
 }
@@ -193,6 +197,7 @@ export function buildMerchant(overrides: Partial<Merchant> = {}): Merchant {
     numberOfUpdates: 0,
     isImportant: false,
     isSoftDeleted: false,
+    classification: null,
     ...overrides,
   };
 }
@@ -226,6 +231,7 @@ export function buildMerchant(overrides: Partial<Merchant> = {}): Merchant {
 export function buildInvoiceScan(overrides: Partial<InvoiceScan> = {}): InvoiceScan {
   return {
     scanType: InvoiceScanType.JPEG,
+    type: InvoiceScanType.JPEG,
     location: "https://storage.test/invoice-scan.jpg",
     metadata: {},
     ...overrides,
@@ -312,6 +318,34 @@ export function buildRecipe(overrides: Partial<Recipe> = {}): Recipe {
 }
 
 /**
+ * Builds a minimal valid test RecipeSuggestion with deterministic defaults.
+ *
+ * @param overrides - Partial recipe suggestion properties to override defaults
+ * @returns A complete RecipeSuggestion object suitable for testing
+ *
+ * @remarks
+ * Mirrors `RecipeSuggestionResponseDto` field-for-field.
+ * `steps` contains exactly one entry to satisfy the backend invariant.
+ */
+export function buildRecipeSuggestion(overrides: Partial<RecipeSuggestion> = {}): RecipeSuggestion {
+  return {
+    name: "Test Recipe Suggestion",
+    description: "",
+    servings: 2,
+    preparationMinutes: 10,
+    cookingMinutes: 15,
+    totalMinutes: 25,
+    difficulty: RecipeDifficulty.Easy,
+    purchasedIngredients: [],
+    assumedPantryStaples: [],
+    missingOptionalIngredients: [],
+    steps: [{sequence: 1, instruction: "Cook everything.", notes: null}],
+    allergenWarnings: [],
+    ...overrides,
+  };
+}
+
+/**
  * Builds a test Invoice with deterministic defaults.
  *
  * @param overrides - Partial invoice properties to override defaults
@@ -359,6 +393,7 @@ export function buildInvoice(overrides: Partial<Invoice> = {}): Invoice {
     merchantReference: "merchant-test-001",
     items: [buildProduct()],
     possibleRecipes: [],
+    classification: null,
     additionalMetadata: {},
     receiptType: "Itemized",
     countryRegion: "RO",

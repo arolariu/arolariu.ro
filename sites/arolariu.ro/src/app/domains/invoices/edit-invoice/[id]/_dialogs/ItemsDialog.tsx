@@ -109,6 +109,8 @@ export default function ItemsDialog(): React.JSX.Element {
       quantity: 1,
       quantityUnit: "",
       price: 0,
+      classification: null,
+      allergenAssessment: null,
     };
     setEditableItems((prev) => [...prev, newItem]);
   }, [setEditableItems]);

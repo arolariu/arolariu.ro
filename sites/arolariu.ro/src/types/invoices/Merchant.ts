@@ -21,9 +21,12 @@
  */
 
 import type {NamedEntity} from "../DDD";
+import type {StandardClassification} from "./Classification";
 
 /**
  * Categorizes merchants by their business type and scale.
+ *
+ * @deprecated Use {@link StandardClassification}. Removed in the final cutover sweep.
  *
  * @remarks
  * Used for filtering, reporting, and analytics. Categories help users
@@ -140,7 +143,10 @@ export interface ContactInformation {
  * @see {@link MerchantCategory} for category options
  */
 export interface Merchant extends NamedEntity<string> {
-  /** The category of the merchant. */
+  /**
+   * The category of the merchant.
+   * @deprecated Use {@link Merchant.classification}. Removed in the final cutover sweep.
+   */
   category: MerchantCategory;
 
   /** The contact information and address of the merchant. */
@@ -148,6 +154,12 @@ export interface Merchant extends NamedEntity<string> {
 
   /** The unique identifier of the parent company. */
   parentCompanyId: string;
+
+  /**
+   * The standard taxonomy classification for this merchant.
+   * @remarks Expected system is NACE 2.1. Null when the merchant has not been classified.
+   */
+  classification: StandardClassification | null;
 }
 
 /**

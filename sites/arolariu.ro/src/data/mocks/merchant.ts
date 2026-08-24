@@ -102,6 +102,7 @@ export class MerchantBuilder {
         website: faker.internet.url(),
       },
       parentCompanyId: faker.string.uuid(),
+      classification: null,
     };
   }
 

@@ -373,6 +373,8 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
         isSoftDeleted: false,
         confidence: 0,
       },
+      classification: null,
+      allergenAssessment: null,
     };
 
     setLocalItems((prev) => [...prev, newItem]);

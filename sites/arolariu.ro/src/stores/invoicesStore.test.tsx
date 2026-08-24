@@ -38,7 +38,7 @@ describe("useInvoicesStore", () => {
     .withLastUpdatedAt(new Date("2025-01-01"))
     .withUserIdentifier("user-123")
     .withCategory(InvoiceCategory.GROCERY)
-    .withScans([{scanType: InvoiceScanType.JPEG, location: "https://example.com/invoice1.jpg", metadata: {}}])
+    .withScans([{scanType: InvoiceScanType.JPEG, type: InvoiceScanType.JPEG, location: "https://example.com/invoice1.jpg", metadata: {}}])
     .withMerchantReference("merchant-1")
     .withPaymentInformation(paymentInformationFixture)
     .build();
@@ -51,7 +51,7 @@ describe("useInvoicesStore", () => {
     .withLastUpdatedAt(new Date("2025-01-02"))
     .withUserIdentifier("user-123")
     .withCategory(InvoiceCategory.FAST_FOOD)
-    .withScans([{scanType: InvoiceScanType.JPEG, location: "https://example.com/invoice2.jpg", metadata: {}}])
+    .withScans([{scanType: InvoiceScanType.JPEG, type: InvoiceScanType.JPEG, location: "https://example.com/invoice2.jpg", metadata: {}}])
     .withMerchantReference("merchant-2")
     .withPaymentInformation(paymentInformationFixture)
     .build();
@@ -64,7 +64,7 @@ describe("useInvoicesStore", () => {
     .withLastUpdatedAt(new Date("2025-01-03"))
     .withUserIdentifier("user-456")
     .withCategory(InvoiceCategory.HOME_CLEANING)
-    .withScans([{scanType: InvoiceScanType.JPEG, location: "https://example.com/invoice3.jpg", metadata: {}}])
+    .withScans([{scanType: InvoiceScanType.JPEG, type: InvoiceScanType.JPEG, location: "https://example.com/invoice3.jpg", metadata: {}}])
     .withMerchantReference("merchant-1")
     .withPaymentInformation(paymentInformationFixture)
     .build();
@@ -205,7 +205,7 @@ describe("useInvoicesStore", () => {
         .withLastUpdatedAt(new Date("2025-06-01"))
         .withUserIdentifier("user-123")
         .withCategory(InvoiceCategory.CAR_AUTO)
-        .withScans([{scanType: InvoiceScanType.JPEG, location: "https://example.com/updated.jpg", metadata: {}}])
+        .withScans([{scanType: InvoiceScanType.JPEG, type: InvoiceScanType.JPEG, location: "https://example.com/updated.jpg", metadata: {}}])
         .withMerchantReference("merchant-updated")
         .withPaymentInformation(paymentInformationFixture)
         .build();

@@ -107,6 +107,8 @@ export class ProductBuilder {
         isSoftDeleted: false,
         confidence: faker.number.float({min: 0.7, max: 1, multipleOf: 0.01}),
       },
+      classification: null,
+      allergenAssessment: null,
     };
   }
 

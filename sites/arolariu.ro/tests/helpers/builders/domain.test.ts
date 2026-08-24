@@ -14,7 +14,7 @@ import {
   buildInvoiceScan,
   buildMerchant,
   buildProduct,
-  buildRecipe,
+  buildRecipeSuggestion,
   buildScan,
 } from "./domain";
 
@@ -23,7 +23,7 @@ describe("domain builders", () => {
     const product = buildProduct({name: "Milk"});
     const merchant = buildMerchant({id: "merchant-1", name: "Local Shop"});
     const scan = buildInvoiceScan({location: "https://storage.test/scan.jpg"});
-    const recipe = buildRecipe({name: "Pancakes", ingredients: ["milk"]});
+    const recipe = buildRecipeSuggestion({name: "Pancakes"});
     const invoice = buildInvoice({
       id: "invoice-1",
       merchantReference: merchant.id,

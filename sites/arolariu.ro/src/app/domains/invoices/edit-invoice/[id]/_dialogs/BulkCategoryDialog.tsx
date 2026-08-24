@@ -177,6 +177,8 @@ export default function BulkCategoryDialog(): React.JSX.Element | null {
                   totalPrice: product.price * product.quantity,
                   metadata: product.metadata,
                   detectedAllergens: product.detectedAllergens,
+                  classification: product.classification,
+                  allergenAssessment: product.allergenAssessment,
                 },
               },
             });

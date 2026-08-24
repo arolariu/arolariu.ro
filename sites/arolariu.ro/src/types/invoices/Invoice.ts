@@ -27,7 +27,7 @@
  */
 
 import type {NamedEntity} from "../DDD";
-import type {PaymentDetail, PaymentInformation, Product, Recipe, TaxDetail} from "./index.ts";
+import type {PaymentDetail, PaymentInformation, Product, Recipe, RecipeSuggestion, StandardClassification, TaxDetail} from "./index.ts";
 
 /**
  * Represents the AI analysis options for invoice processing.
@@ -122,6 +122,8 @@ export type InvoiceScanType = (typeof InvoiceScanType)[keyof typeof InvoiceScanT
 
 /**
  * Categorizes invoices by their primary business purpose.
+ *
+ * @deprecated Use {@link StandardClassification}. Removed in the final cutover sweep.
  *
  * @remarks
  * Used for filtering, reporting, and analytics. Categories are assigned
@@ -241,8 +243,16 @@ export type InvoiceScanMetadataValue = string | object;
  * @see {@link CreateInvoiceScanDtoPayload} for creating new scans
  */
 export type InvoiceScan = {
-  /** The type of the invoice scan. */
+  /**
+   * The type of the invoice scan.
+   * @deprecated Use {@link InvoiceScan.type}. Removed in the final cutover sweep.
+   */
   scanType: InvoiceScanType;
+  /**
+   * The numeric scan format type, matching the backend `InvoiceScanResponseDto.type`.
+   * @remarks Added alongside the deprecated {@link InvoiceScan.scanType} during the contract cutover.
+   */
+  type: InvoiceScanType;
   /** The location (URL or path) of the invoice scan. */
   location: string;
   /** Additional metadata associated with the invoice scan (supports both string and object values). */
@@ -322,6 +332,7 @@ export interface Invoice extends NamedEntity<string> {
 
   /**
    * The category of the invoice.
+   * @deprecated Use {@link Invoice.classification}. Removed in the final cutover sweep.
    */
   category: InvoiceCategory;
 
@@ -347,9 +358,16 @@ export interface Invoice extends NamedEntity<string> {
   items: Product[];
 
   /**
-   * The list of recipes that can be made from the items on the invoice.
+   * AI-generated structured recipe suggestions derived from the invoice products.
+   * @remarks Replaces the legacy {@link Recipe}[]-typed field. Type updated during contract cutover.
    */
-  possibleRecipes: Recipe[];
+  possibleRecipes: readonly RecipeSuggestion[];
+
+  /**
+   * The standard taxonomy classification for this invoice.
+   * @remarks Expected system is ECOICOP v2. Null when the invoice has not been classified.
+   */
+  classification: StandardClassification | null;
 
   /**
    * Additional metadata for the invoice.

@@ -3,7 +3,7 @@
  * @module data/mocks/invoice.test
  */
 
-import {InvoiceCategory, InvoiceScanType, ProductCategory, RecipeComplexity} from "@/types/invoices";
+import {InvoiceCategory, InvoiceScanType, ProductCategory, RecipeDifficulty} from "@/types/invoices";
 import {describe, expect, it} from "vitest";
 import {InvoiceBuilder, createInvoiceBuilder, generateRandomInvoice, generateRandomInvoices, mockInvoice, mockInvoiceList} from "./invoice";
 
@@ -84,6 +84,7 @@ describe("InvoiceBuilder", () => {
       const scans = [
         {
           scanType: InvoiceScanType.JPEG,
+          type: InvoiceScanType.JPEG,
           location: "https://example.com/photo.jpg",
           metadata: {},
         },
@@ -111,6 +112,8 @@ describe("InvoiceBuilder", () => {
           totalPrice: 20,
           detectedAllergens: [],
           metadata: {isComplete: true, isEdited: false, isSoftDeleted: false, confidence: 0},
+          classification: null,
+          allergenAssessment: null,
         },
       ];
       const invoice = builder.withItems(items).build();
@@ -141,16 +144,18 @@ describe("InvoiceBuilder", () => {
       const builder = new InvoiceBuilder();
       const recipes = [
         {
-          name: "Test Recipe",
-          complexity: RecipeComplexity.Easy,
-          ingredients: [],
-          duration: 30,
-          description: "A test recipe",
-          referenceForMoreDetails: "https://example.com",
-          cookingTime: 20,
-          preparationTime: 10,
-          instructions: "Test instructions",
-          approximateTotalDuration: 30,
+          name: "Test Recipe Suggestion",
+          description: "",
+          servings: 2,
+          preparationMinutes: 10,
+          cookingMinutes: 20,
+          totalMinutes: 30,
+          difficulty: RecipeDifficulty.Easy,
+          purchasedIngredients: [],
+          assumedPantryStaples: [],
+          missingOptionalIngredients: [],
+          steps: [{sequence: 1, instruction: "Cook.", notes: null}],
+          allergenWarnings: [],
         },
       ];
       const invoice = builder.withPossibleRecipes(recipes).build();
@@ -187,7 +192,8 @@ describe("InvoiceBuilder", () => {
     it("should generate random recipes with specific count", () => {
       const builder = new InvoiceBuilder();
       const invoice = builder.withRandomRecipes(2).build();
-      expect(invoice.possibleRecipes).toHaveLength(2);
+      // withRandomRecipes is a stub during the cutover sweep; always returns [].
+      expect(invoice.possibleRecipes).toHaveLength(0);
     });
 
     it("should generate random scans with default count", () => {
@@ -257,7 +263,7 @@ describe("InvoiceBuilder", () => {
       expect(invoice.merchantReference).toBe("chain-merchant");
       expect(invoice.sharedWith).toEqual(["user-1", "user-2"]);
       expect(invoice.items).toHaveLength(3);
-      expect(invoice.possibleRecipes).toHaveLength(1);
+      expect(invoice.possibleRecipes).toHaveLength(0);
     });
   });
 

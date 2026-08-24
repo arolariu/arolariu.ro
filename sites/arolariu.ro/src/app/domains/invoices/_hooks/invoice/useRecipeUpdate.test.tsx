@@ -3,7 +3,7 @@
  * @module app/domains/invoices/_hooks/invoice/useRecipeUpdate.test
  */
 
-import type {Recipe} from "@/types/invoices";
+import type {RecipeSuggestion} from "@/types/invoices";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder, invokeHookCallback} from "../../../../../../tests/helpers";
@@ -24,28 +24,10 @@ const {useInvoicesStore} = await import("@/stores");
 const mockUseInvoicesStore = vi.mocked(useInvoicesStore);
 
 describe("useRecipeUpdate", () => {
-  const testRecipes: Recipe[] = [
-    TestDataBuilder.build("recipe", {
-      name: "Recipe 1",
-      description: "First recipe",
-      ingredients: ["ing1"],
-      instructions: "step1",
-      cookingTime: 10,
-    }),
-    TestDataBuilder.build("recipe", {
-      name: "Recipe 2",
-      description: "Second recipe",
-      ingredients: ["ing2"],
-      instructions: "step2",
-      cookingTime: 20,
-    }),
-    TestDataBuilder.build("recipe", {
-      name: "Recipe 3",
-      description: "Third recipe",
-      ingredients: ["ing3"],
-      instructions: "step3",
-      cookingTime: 30,
-    }),
+  const testRecipes: RecipeSuggestion[] = [
+    TestDataBuilder.build("recipeSuggestion", {name: "Recipe 1", description: "First recipe"}),
+    TestDataBuilder.build("recipeSuggestion", {name: "Recipe 2", description: "Second recipe"}),
+    TestDataBuilder.build("recipeSuggestion", {name: "Recipe 3", description: "Third recipe"}),
   ];
 
   const testInvoice = TestDataBuilder.build("invoice", {
@@ -83,10 +65,10 @@ describe("useRecipeUpdate", () => {
 
   describe("recipe update", () => {
     it("successfully updates a recipe by name", async () => {
-      const updatedRecipe = TestDataBuilder.build("recipe", {
+      const updatedRecipe = TestDataBuilder.build("recipeSuggestion", {
         ...testRecipes[1]!,
         description: "Updated description",
-        cookingTime: 25,
+        cookingMinutes: 25,
       });
 
       const hookResult = renderHook(() => useRecipeUpdate(testInvoice));
@@ -101,7 +83,7 @@ describe("useRecipeUpdate", () => {
     });
 
     it("updates first recipe when matched", async () => {
-      const updatedRecipe = TestDataBuilder.build("recipe", {
+      const updatedRecipe = TestDataBuilder.build("recipeSuggestion", {
         ...testRecipes[0]!,
         description: "First recipe updated",
       });
@@ -115,7 +97,7 @@ describe("useRecipeUpdate", () => {
     });
 
     it("updates last recipe when matched", async () => {
-      const updatedRecipe = TestDataBuilder.build("recipe", {
+      const updatedRecipe = TestDataBuilder.build("recipeSuggestion", {
         ...testRecipes[2]!,
       });
 
@@ -128,7 +110,7 @@ describe("useRecipeUpdate", () => {
     });
 
     it("updates all recipes with matching name", async () => {
-      const duplicateRecipes: Recipe[] = [
+      const duplicateRecipes: RecipeSuggestion[] = [
         {...testRecipes[0]!, name: "Duplicate"},
         {...testRecipes[1]!, name: "Duplicate"},
         {...testRecipes[2]!, name: "Unique"},
@@ -139,12 +121,10 @@ describe("useRecipeUpdate", () => {
         possibleRecipes: duplicateRecipes,
       });
 
-      const updatedRecipe = TestDataBuilder.build("recipe", {
+      const updatedRecipe = TestDataBuilder.build("recipeSuggestion", {
         name: "Duplicate",
         description: "All updated",
-        ingredients: ["new"],
-        instructions: "new step",
-        cookingTime: 99,
+        cookingMinutes: 99,
       });
 
       const {result} = renderHook(() => useRecipeUpdate(invoiceWithDuplicates));
@@ -157,12 +137,9 @@ describe("useRecipeUpdate", () => {
     });
 
     it("returns invoice unchanged when recipe not found", async () => {
-      const updatedRecipe = TestDataBuilder.build("recipe", {
+      const updatedRecipe = TestDataBuilder.build("recipeSuggestion", {
         name: "Nonexistent",
         description: "New",
-        ingredients: [],
-        instructions: "",
-        cookingTime: 0,
       });
 
       const {result} = renderHook(() => useRecipeUpdate(testInvoice));
@@ -181,12 +158,9 @@ describe("useRecipeUpdate", () => {
         possibleRecipes: [],
       });
 
-      const updatedRecipe = TestDataBuilder.build("recipe", {
+      const updatedRecipe = TestDataBuilder.build("recipeSuggestion", {
         name: "Any",
         description: "Recipe",
-        ingredients: [],
-        instructions: "",
-        cookingTime: 0,
       });
 
       const {result} = renderHook(() => useRecipeUpdate(emptyInvoice));
@@ -197,7 +171,7 @@ describe("useRecipeUpdate", () => {
     });
 
     it("can update recipe name", async () => {
-      const updatedRecipe = TestDataBuilder.build("recipe", {
+      const updatedRecipe = TestDataBuilder.build("recipeSuggestion", {
         ...testRecipes[1]!,
         name: "Renamed Recipe",
       });
@@ -210,7 +184,7 @@ describe("useRecipeUpdate", () => {
     });
 
     it("preserves invoice properties other than recipes", async () => {
-      const updatedRecipe = TestDataBuilder.build("recipe", {
+      const updatedRecipe = TestDataBuilder.build("recipeSuggestion", {
         ...testRecipes[0]!,
         description: "Updated",
       });
@@ -225,7 +199,7 @@ describe("useRecipeUpdate", () => {
     });
 
     it("is case-sensitive for recipe names", async () => {
-      const updatedRecipe = TestDataBuilder.build("recipe", {
+      const updatedRecipe = TestDataBuilder.build("recipeSuggestion", {
         ...testRecipes[0]!,
         description: "Updated",
       });
@@ -240,7 +214,7 @@ describe("useRecipeUpdate", () => {
 
   describe("loading state management", () => {
     it("resets isUpdating after update", async () => {
-      const updatedRecipe = TestDataBuilder.build("recipe", {
+      const updatedRecipe = TestDataBuilder.build("recipeSuggestion", {
         ...testRecipes[0]!,
         description: "Updated",
       });
@@ -257,7 +231,7 @@ describe("useRecipeUpdate", () => {
         throw new Error("Store error");
       });
 
-      const updatedRecipe = TestDataBuilder.build("recipe", {
+      const updatedRecipe = TestDataBuilder.build("recipeSuggestion", {
         ...testRecipes[0]!,
         description: "Updated",
       });
@@ -276,7 +250,7 @@ describe("useRecipeUpdate", () => {
 
   describe("store integration", () => {
     it("calls updateEntity with correct invoice id", async () => {
-      const updatedRecipe = TestDataBuilder.build("recipe", {
+      const updatedRecipe = TestDataBuilder.build("recipeSuggestion", {
         ...testRecipes[0]!,
         description: "Updated",
       });
@@ -294,7 +268,7 @@ describe("useRecipeUpdate", () => {
     });
 
     it("calls updateEntity exactly once per update operation", async () => {
-      const updatedRecipe = TestDataBuilder.build("recipe", {
+      const updatedRecipe = TestDataBuilder.build("recipeSuggestion", {
         ...testRecipes[0]!,
         description: "Updated",
       });
@@ -308,7 +282,7 @@ describe("useRecipeUpdate", () => {
 
     it("does not mutate original invoice", async () => {
       const originalRecipes = testInvoice.possibleRecipes;
-      const updatedRecipe = TestDataBuilder.build("recipe", {
+      const updatedRecipe = TestDataBuilder.build("recipeSuggestion", {
         ...testRecipes[0]!,
         description: "Updated",
       });
@@ -324,13 +298,11 @@ describe("useRecipeUpdate", () => {
 
   describe("recipe data integrity", () => {
     it("preserves all updated recipe properties", async () => {
-      const complexUpdate = TestDataBuilder.build("recipe", {
+      const complexUpdate = TestDataBuilder.build("recipeSuggestion", {
         name: "Recipe 1",
         description: "Completely new description",
-        ingredients: ["new1", "new2", "new3"],
-        instructions: "newStep1\nnewStep2\nnewStep3",
-        cookingTime: 999,
-        preparationTime: 45,
+        cookingMinutes: 999,
+        preparationMinutes: 45,
       });
 
       const {result} = renderHook(() => useRecipeUpdate(testInvoice));
@@ -341,7 +313,7 @@ describe("useRecipeUpdate", () => {
     });
 
     it("handles partial recipe updates", async () => {
-      const partialUpdate = TestDataBuilder.build("recipe", {
+      const partialUpdate = TestDataBuilder.build("recipeSuggestion", {
         ...testRecipes[1]!,
         description: "Only description changed",
       });
@@ -351,7 +323,7 @@ describe("useRecipeUpdate", () => {
       const updatedInvoice = await result.current.updateRecipeCallback("Recipe 2", partialUpdate);
 
       expect(updatedInvoice.possibleRecipes[1]?.description).toBe("Only description changed");
-      expect(updatedInvoice.possibleRecipes[1]?.cookingTime).toBe(testRecipes[1]!.cookingTime);
+      expect(updatedInvoice.possibleRecipes[1]?.cookingMinutes).toBe(testRecipes[1]!.cookingMinutes);
     });
   });
 
@@ -359,11 +331,11 @@ describe("useRecipeUpdate", () => {
     it("handles sequential recipe updates", async () => {
       const {result, rerender} = renderHook(({invoice}) => useRecipeUpdate(invoice), {initialProps: {invoice: testInvoice}});
 
-      const update1: Recipe = {...testRecipes[0]!, description: "First update"};
+      const update1: RecipeSuggestion = {...testRecipes[0]!, description: "First update"};
       const updated1 = await result.current.updateRecipeCallback("Recipe 1", update1);
       rerender({invoice: updated1});
 
-      const update2: Recipe = {...testRecipes[1]!, description: "Second update"};
+      const update2: RecipeSuggestion = {...testRecipes[1]!, description: "Second update"};
       const updated2 = await result.current.updateRecipeCallback("Recipe 2", update2);
 
       expect(updated2.possibleRecipes[0]?.description).toBe("First update");
@@ -373,12 +345,9 @@ describe("useRecipeUpdate", () => {
 
   describe("edge cases", () => {
     it("handles update to recipe with empty string name", async () => {
-      const emptyNameRecipe = TestDataBuilder.build("recipe", {
+      const emptyNameRecipe = TestDataBuilder.build("recipeSuggestion", {
         name: "",
         description: "Empty name recipe",
-        ingredients: [],
-        instructions: "",
-        cookingTime: 0,
       });
 
       const invoiceWithEmptyName = TestDataBuilder.build("invoice", {
@@ -386,7 +355,7 @@ describe("useRecipeUpdate", () => {
         possibleRecipes: [emptyNameRecipe, ...testRecipes],
       });
 
-      const updatedRecipe = TestDataBuilder.build("recipe", {
+      const updatedRecipe = TestDataBuilder.build("recipeSuggestion", {
         ...emptyNameRecipe,
         description: "Updated empty name recipe",
       });
@@ -399,12 +368,9 @@ describe("useRecipeUpdate", () => {
     });
 
     it("handles recipe names with special characters", async () => {
-      const specialRecipe = TestDataBuilder.build("recipe", {
+      const specialRecipe = TestDataBuilder.build("recipeSuggestion", {
         name: "Recipe w/ Special-Chars & Symbols!",
         description: "Special",
-        ingredients: [],
-        instructions: "",
-        cookingTime: 0,
       });
 
       const invoiceWithSpecial = TestDataBuilder.build("invoice", {
@@ -412,7 +378,7 @@ describe("useRecipeUpdate", () => {
         possibleRecipes: [specialRecipe, ...testRecipes],
       });
 
-      const updatedRecipe = TestDataBuilder.build("recipe", {
+      const updatedRecipe = TestDataBuilder.build("recipeSuggestion", {
         ...specialRecipe,
         description: "Updated special",
       });

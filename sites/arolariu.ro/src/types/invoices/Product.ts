@@ -25,7 +25,7 @@
  * @see {@link Allergen} for allergen information
  */
 
-import type {Allergen} from "./index.ts";
+import type {Allergen, AllergenAssessment, StandardClassification} from "./index.ts";
 
 /**
  * Tracks the editing and lifecycle state of a product.
@@ -76,6 +76,8 @@ export type ProductMetadata = {
 
 /**
  * Categorizes products by their type for analytics and filtering.
+ *
+ * @deprecated Use {@link StandardClassification}. Removed in the final cutover sweep.
  *
  * @remarks
  * Product categories enable spending breakdowns and dietary tracking.
@@ -176,7 +178,10 @@ export interface Product {
   /** The name of the product. */
   name: string;
 
-  /** The category of the product. */
+  /**
+   * The category of the product.
+   * @deprecated Use {@link Product.classification}. Removed in the final cutover sweep.
+   */
   category: ProductCategory;
 
   /** The quantity of the product. */
@@ -194,11 +199,26 @@ export interface Product {
   /** The total price of the product (price * quantity). */
   totalPrice: number;
 
-  /** The list of detected allergens in the product. */
+  /**
+   * The list of detected allergens in the product.
+   * @deprecated Use {@link Product.allergenAssessment}. Removed in the final cutover sweep.
+   */
   detectedAllergens: Allergen[];
 
   /** The metadata associated with the product. */
   metadata: ProductMetadata;
+
+  /**
+   * The standard taxonomy classification for this product.
+   * @remarks Expected system is GS1 GPC or ECOICOP v2. Null when the product has not been classified.
+   */
+  classification: StandardClassification | null;
+
+  /**
+   * Structured EU-14 allergen assessment for this product.
+   * @remarks Null when the allergen assessment pipeline has not run for this product.
+   */
+  allergenAssessment: AllergenAssessment | null;
 }
 
 /**

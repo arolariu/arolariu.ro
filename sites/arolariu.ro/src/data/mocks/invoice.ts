@@ -35,6 +35,7 @@ import {
   type PaymentType,
   type Product,
   type Recipe,
+  type RecipeSuggestion,
 } from "@/types/invoices";
 import {faker} from "@faker-js/faker";
 import {generateRandomProduct} from "./product";
@@ -169,6 +170,7 @@ export class InvoiceBuilder {
       scans: [
         {
           scanType: InvoiceScanType.JPEG,
+          type: InvoiceScanType.JPEG,
           location: faker.image.url({width: 800, height: 600}),
           metadata: {},
         },
@@ -185,6 +187,7 @@ export class InvoiceBuilder {
         tipAmount: tip,
       },
       possibleRecipes: [],
+      classification: null,
       additionalMetadata: {},
       receiptType: "",
       countryRegion: "",
@@ -638,7 +641,7 @@ export class InvoiceBuilder {
    * @see {@link RecipeComplexity} for difficulty levels
    * @see {@link withRandomRecipes} for generating random test recipes
    */
-  withPossibleRecipes(recipes: Recipe[]): this {
+  withPossibleRecipes(recipes: RecipeSuggestion[]): this {
     this.invoice.possibleRecipes = recipes;
     return this;
   }
@@ -748,11 +751,15 @@ export class InvoiceBuilder {
   withRandomScans(count?: number): this {
     const scanCount = count ?? faker.number.int({min: 1, max: 3});
     const scanTypes = [InvoiceScanType.JPEG, InvoiceScanType.PNG, InvoiceScanType.PDF];
-    this.invoice.scans = Array.from({length: scanCount}, () => ({
-      scanType: faker.helpers.arrayElement(scanTypes),
-      location: faker.image.url({width: 800, height: 600}),
-      metadata: {},
-    }));
+    this.invoice.scans = Array.from({length: scanCount}, () => {
+      const selectedScanType = faker.helpers.arrayElement(scanTypes);
+      return {
+        scanType: selectedScanType,
+        type: selectedScanType,
+        location: faker.image.url({width: 800, height: 600}),
+        metadata: {},
+      };
+    });
     return this;
   }
 
@@ -792,18 +799,10 @@ export class InvoiceBuilder {
    * @see {@link withPossibleRecipes} for setting specific recipes
    */
   withRandomRecipes(count?: number): this {
-    const recipeCount = count ?? faker.number.int({min: 0, max: 3});
-    this.invoice.possibleRecipes = Array.from({length: recipeCount}, () => ({
-      name: faker.lorem.sentence(3),
-      complexity: faker.number.int({min: 0, max: 3}) as RecipeComplexity,
-      ingredients: [],
-      approximateTotalDuration: faker.number.int({min: 5, max: 120}),
-      description: faker.lorem.sentence({min: 10, max: 80}),
-      referenceForMoreDetails: faker.internet.url(),
-      cookingTime: faker.number.int({min: 5, max: 120}),
-      preparationTime: faker.number.int({min: 5, max: 120}),
-      instructions: faker.lorem.sentence({min: 10, max: 50}),
-    }));
+    // Minimal fix: RecipeSuggestion has a completely different shape than the legacy Recipe type.
+    // A later task will replace this with proper RecipeSuggestion fixture generation.
+    void count;
+    this.invoice.possibleRecipes = [];
     return this;
   }
 

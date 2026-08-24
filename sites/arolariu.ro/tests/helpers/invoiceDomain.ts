@@ -137,6 +137,8 @@ export function buildProduct(overrides: Partial<Product> = {}): Product {
       isSoftDeleted: false,
       confidence: 1.0,
     },
+    classification: null,
+    allergenAssessment: null,
     ...overrides,
   };
 }
@@ -216,6 +218,7 @@ export function buildInvoice(overrides: Partial<Invoice> = {}): Invoice {
     numberOfUpdates: 0,
     isImportant: false,
     isSoftDeleted: false,
+    classification: null,
     ...overrides,
   };
 }
@@ -276,6 +279,7 @@ export function buildMerchant(overrides: Partial<Merchant> = {}): Merchant {
     numberOfUpdates: 0,
     isImportant: false,
     isSoftDeleted: false,
+    classification: null,
     ...overrides,
   };
 }

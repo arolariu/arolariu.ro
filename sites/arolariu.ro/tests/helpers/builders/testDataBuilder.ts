@@ -13,6 +13,7 @@ import type {
   Merchant,
   Product,
   Recipe,
+  RecipeSuggestion,
 } from "../../../src/types/invoices";
 import type {Scan} from "../../../src/types/scans";
 import {
@@ -31,6 +32,7 @@ import {
   buildMerchant,
   buildProduct,
   buildRecipe,
+  buildRecipeSuggestion,
   buildScan,
 } from "./domain";
 import {jsonResponse, noContentResponse, textResponse} from "./http";
@@ -49,6 +51,7 @@ export type TestDataKind =
   | "product"
   | "merchant"
   | "recipe"
+  | "recipeSuggestion"
   | "invoiceScan"
   | "createInvoicePayload"
   | "createInvoiceScanPayload"
@@ -63,6 +66,7 @@ export class TestDataBuilder {
   public static build(kind: "product", overrides?: Partial<Product>): Product;
   public static build(kind: "merchant", overrides?: Partial<Merchant>): Merchant;
   public static build(kind: "recipe", overrides?: Partial<Recipe>): Recipe;
+  public static build(kind: "recipeSuggestion", overrides?: Partial<RecipeSuggestion>): RecipeSuggestion;
   public static build(kind: "invoiceScan", overrides?: Partial<InvoiceScan>): InvoiceScan;
   public static build(kind: "createInvoicePayload", overrides?: Partial<CreateInvoiceDtoPayload>): CreateInvoiceDtoPayload;
   public static build(kind: "createInvoiceScanPayload", overrides?: Partial<CreateInvoiceScanDtoPayload>): CreateInvoiceScanDtoPayload;
@@ -81,6 +85,8 @@ export class TestDataBuilder {
         return buildMerchant(overrides as Partial<Merchant> | undefined);
       case "recipe":
         return buildRecipe(overrides as Partial<Recipe> | undefined);
+      case "recipeSuggestion":
+        return buildRecipeSuggestion(overrides as Partial<RecipeSuggestion> | undefined);
       case "invoiceScan":
         return buildInvoiceScan(overrides as Partial<InvoiceScan> | undefined);
       case "createInvoicePayload":

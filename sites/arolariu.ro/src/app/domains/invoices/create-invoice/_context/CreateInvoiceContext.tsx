@@ -206,6 +206,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       } = await createInvoice({
         initialScan: {
           scanType,
+          type: scanType,
           location: firstScan.blobUrl,
           metadata: {},
         },

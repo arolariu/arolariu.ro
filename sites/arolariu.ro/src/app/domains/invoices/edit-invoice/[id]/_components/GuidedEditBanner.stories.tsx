@@ -55,6 +55,8 @@ const createMockProduct = (overrides: Partial<Product>): Product => ({
     isSoftDeleted: false,
     confidence: 1.0,
   },
+  classification: null,
+  allergenAssessment: null,
   ...overrides,
 });
 
