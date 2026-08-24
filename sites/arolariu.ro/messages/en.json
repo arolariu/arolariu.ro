@@ -356,7 +356,6 @@
         }
       },
       "merchantInfoCard": {
-        "categoryDistribution": "Category Distribution",
         "noMerchantLinked": "No merchant linked to this invoice",
         "spendingHistory": "Spending History",
         "stats": {
@@ -900,37 +899,6 @@
         "errors": {
           "genericError": "Failed to submit for analysis. Please try again."
         }
-      },
-      "bulkCategoryDialog": {
-        "buttons": {
-          "cancel": "Cancel",
-          "save": "Apply to All",
-          "saving": "Saving..."
-        },
-        "description": "{count, plural, one {Change category for # product} other {Change category for # products}}",
-        "errors": {
-          "allFailed": "All products failed to update",
-          "missingData": "Missing data",
-          "noProducts": "No products selected",
-          "saveFailed": "Failed to update categories"
-        },
-        "labels": {
-          "andMore": "...and {count} more",
-          "newCategory": "New Category",
-          "progress": "Progress",
-          "selectedProducts": "Selected Products"
-        },
-        "placeholders": {
-          "selectCategory": "Select a category"
-        },
-        "progress": {
-          "updating": "Updating {current} of {total}..."
-        },
-        "success": {
-          "partialSuccess": "Updated {success} products, {failed} failed",
-          "saved": "{count, plural, one {Category updated for # product} other {Category updated for # products}}"
-        },
-        "title": "Change Category"
       },
       "createInvoiceDialog": {
         "batchMode": {
@@ -2205,6 +2173,7 @@
         "anyValue": "any",
         "button": "Filters",
         "categories": "Categories",
+        "classificationGroups": "Classification",
         "category": "Category",
         "clear": "Clear all",
         "currency": "Currency",
@@ -2618,11 +2587,7 @@
             "remove": "Remove item",
             "restore": "Restore item"
           },
-          "bulkCategory": {
-            "noSelection": "Please select at least one product"
-          },
           "bulkToolbar": {
-            "changeCategory": "Change Category",
             "deleteSelected": "Delete Selected",
             "noSelection": "No products selected",
             "selectedCount": "{count, plural, one {# item selected} other {# items selected}}"

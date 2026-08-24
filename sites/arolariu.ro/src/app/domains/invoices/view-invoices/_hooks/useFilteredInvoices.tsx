@@ -4,6 +4,7 @@ import {getTransactionYear, toRON} from "@/lib/currency";
 import {toSafeDate} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
 import {useMemo} from "react";
+import {getClassificationGroup} from "../../_utils/labelUtilities";
 import type {FilterState} from "./useInvoiceFilters";
 
 /**
@@ -89,9 +90,14 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
       filtered = filtered.filter((invoice) => invoice.paymentInformation.totalCostAmount <= filters.amountMax!);
     }
 
-    // Apply category filter (OR logic)
-    if (filters.categories.length > 0) {
-      filtered = filtered.filter((invoice) => filters.categories.includes(invoice.category));
+    // Apply classification group filter (OR logic).
+    // Invoices with null classification are excluded from group-specific filters
+    // but are included when classificationGroups is empty ("All").
+    if (filters.classificationGroups.length > 0) {
+      filtered = filtered.filter((invoice) => {
+        const group = getClassificationGroup(invoice.classification ?? null);
+        return group !== null && filters.classificationGroups.includes(group);
+      });
     }
 
     // Apply payment type filter (OR logic)

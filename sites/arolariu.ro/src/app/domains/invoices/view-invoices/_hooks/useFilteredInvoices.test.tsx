@@ -5,11 +5,26 @@
 
 import {InvoiceBuilder} from "@/data/mocks";
 import type {Invoice} from "@/types/invoices";
-import {InvoiceCategory, PaymentType} from "@/types/invoices";
+import {ClassificationOrigin, ClassificationSystem, PaymentType} from "@/types/invoices";
+import type {StandardClassification} from "@/types/invoices";
 import {renderHook} from "@testing-library/react";
 import {describe, expect, it} from "vitest";
 import {useFilteredInvoices} from "./useFilteredInvoices";
 import type {FilterState} from "./useInvoiceFilters";
+
+/** Builds a minimal StandardClassification whose root node has the given label. */
+function makeClassification(rootLabel: string): StandardClassification {
+  return {
+    system: ClassificationSystem.EcoicopV2,
+    version: "2024",
+    code: "test-code",
+    officialLabel: `${rootLabel} — leaf`,
+    hierarchy: [{level: "division", code: "test-code", officialLabel: rootLabel}],
+    origin: ClassificationOrigin.Analysis,
+    confidence: 0.9,
+    evidence: [],
+  };
+}
 
 /**
  * Helper to create a default filter state for testing.
@@ -20,7 +35,7 @@ const createDefaultFilters = (): FilterState => ({
   dateTo: null,
   amountMin: null,
   amountMax: null,
-  categories: [],
+  classificationGroups: [],
   paymentTypes: [],
   currencies: [],
   sortBy: "date",
@@ -712,72 +727,108 @@ describe("useFilteredInvoices", () => {
     });
   });
 
-  describe("Category filtering", () => {
-    it("should filter by single category", () => {
+  describe("Classification group filtering", () => {
+    it("filters by single taxonomy root group", () => {
       // Arrange
-      const invoice1 = new InvoiceBuilder().withName("Grocery Invoice").build();
-      invoice1.category = InvoiceCategory.GROCERY;
+      const foodInvoice = new InvoiceBuilder().withName("Food Invoice").build();
+      foodInvoice.classification = makeClassification("Food and non-alcoholic beverages");
 
-      const invoice2 = new InvoiceBuilder().withName("Fast Food Invoice").build();
-      invoice2.category = InvoiceCategory.FAST_FOOD;
+      const transportInvoice = new InvoiceBuilder().withName("Transport Invoice").build();
+      transportInvoice.classification = makeClassification("Transport");
 
-      const invoices = [invoice1, invoice2];
+      const invoices = [foodInvoice, transportInvoice];
       const filters: FilterState = {
         ...createDefaultFilters(),
-        categories: [InvoiceCategory.GROCERY],
+        classificationGroups: ["Food and non-alcoholic beverages"],
       };
 
       // Act
       const {result} = renderHook(() => useFilteredInvoices(invoices, filters));
 
-      // Assert
+      // Assert: only the food invoice is returned
       expect(result.current).toHaveLength(1);
-      expect(result.current[0]!.category).toBe(InvoiceCategory.GROCERY);
+      expect(result.current[0]).toEqual(foodInvoice);
     });
 
-    it("should filter by multiple categories (OR logic)", () => {
-      // Arrange: Create three invoices with distinct categories
-      const invoice1 = new InvoiceBuilder().withName("Grocery Store").build();
-      invoice1.category = InvoiceCategory.GROCERY;
+    it("filters by multiple taxonomy root groups (OR logic)", () => {
+      // Arrange
+      const foodInvoice = new InvoiceBuilder().withName("Food Invoice").build();
+      foodInvoice.classification = makeClassification("Food and non-alcoholic beverages");
 
-      const invoice2 = new InvoiceBuilder().withName("Electronics Store").build();
-      invoice2.category = InvoiceCategory.FAST_FOOD;
+      const transportInvoice = new InvoiceBuilder().withName("Transport Invoice").build();
+      transportInvoice.classification = makeClassification("Transport");
 
-      const invoice3 = new InvoiceBuilder().withName("Cleaning Store").build();
-      invoice3.category = InvoiceCategory.HOME_CLEANING;
+      const housingInvoice = new InvoiceBuilder().withName("Housing Invoice").build();
+      housingInvoice.classification = makeClassification("Housing");
 
-      const invoices = [invoice1, invoice2, invoice3];
-
-      // Verify categories are different before filtering
-      expect(invoice1.category).toBe(InvoiceCategory.GROCERY);
-      expect(invoice2.category).toBe(InvoiceCategory.FAST_FOOD);
-      expect(invoice3.category).toBe(InvoiceCategory.HOME_CLEANING);
-
+      const invoices = [foodInvoice, transportInvoice, housingInvoice];
       const filters: FilterState = {
         ...createDefaultFilters(),
-        categories: [InvoiceCategory.GROCERY, InvoiceCategory.FAST_FOOD],
+        classificationGroups: ["Food and non-alcoholic beverages", "Transport"],
       };
 
       // Act
       const {result} = renderHook(() => useFilteredInvoices(invoices, filters));
 
-      // Assert: Should include both grocery and fast food, but not home cleaning
+      // Assert: food and transport included; housing excluded
       expect(result.current).toHaveLength(2);
-      const categories = result.current.map((i) => i.category);
-      expect(categories).toContain(InvoiceCategory.GROCERY);
-      expect(categories).toContain(InvoiceCategory.FAST_FOOD);
-      expect(categories).not.toContain(InvoiceCategory.HOME_CLEANING);
+      expect(result.current).toContainEqual(foodInvoice);
+      expect(result.current).toContainEqual(transportInvoice);
+      expect(result.current).not.toContainEqual(housingInvoice);
     });
 
-    it("should return no results when no invoices match category", () => {
+    it("excludes invoices with null classification from a specific-group filter", () => {
       // Arrange
-      const invoice = new InvoiceBuilder().withName("Grocery Invoice").build();
-      invoice.category = InvoiceCategory.GROCERY;
+      const classifiedInvoice = new InvoiceBuilder().withName("Classified").build();
+      classifiedInvoice.classification = makeClassification("Food and non-alcoholic beverages");
 
-      const invoices = [invoice];
+      const unclassifiedInvoice = new InvoiceBuilder().withName("Unclassified").build();
+      // unclassifiedInvoice.classification is null by default
+
+      const invoices = [classifiedInvoice, unclassifiedInvoice];
       const filters: FilterState = {
         ...createDefaultFilters(),
-        categories: [InvoiceCategory.CAR_AUTO],
+        classificationGroups: ["Food and non-alcoholic beverages"],
+      };
+
+      // Act
+      const {result} = renderHook(() => useFilteredInvoices(invoices, filters));
+
+      // Assert: unclassified invoice is excluded
+      expect(result.current).toHaveLength(1);
+      expect(result.current[0]).toEqual(classifiedInvoice);
+    });
+
+    it("includes invoices with null classification when filter is empty (All)", () => {
+      // Arrange
+      const classifiedInvoice = new InvoiceBuilder().withName("Classified").build();
+      classifiedInvoice.classification = makeClassification("Food and non-alcoholic beverages");
+
+      const unclassifiedInvoice = new InvoiceBuilder().withName("Unclassified").build();
+      // unclassifiedInvoice.classification is null by default
+
+      const invoices = [classifiedInvoice, unclassifiedInvoice];
+      const filters: FilterState = {
+        ...createDefaultFilters(),
+        classificationGroups: [], // empty = All
+      };
+
+      // Act
+      const {result} = renderHook(() => useFilteredInvoices(invoices, filters));
+
+      // Assert: both are included
+      expect(result.current).toHaveLength(2);
+    });
+
+    it("returns no results when no invoices match group", () => {
+      // Arrange
+      const foodInvoice = new InvoiceBuilder().withName("Food Invoice").build();
+      foodInvoice.classification = makeClassification("Food and non-alcoholic beverages");
+
+      const invoices = [foodInvoice];
+      const filters: FilterState = {
+        ...createDefaultFilters(),
+        classificationGroups: ["Transport"],
       };
 
       // Act
@@ -1058,28 +1109,28 @@ describe("useFilteredInvoices", () => {
   });
 
   describe("Combined filters", () => {
-    it("should apply search and category filters together", () => {
+    it("should apply search and classification group filters together", () => {
       // Arrange
-      const invoice1 = new InvoiceBuilder().withName("Apple Grocery").build();
-      invoice1.category = InvoiceCategory.GROCERY;
+      const invoice1 = new InvoiceBuilder().withName("Apple Food").build();
+      invoice1.classification = makeClassification("Food and non-alcoholic beverages");
 
-      const invoice2 = new InvoiceBuilder().withName("Banana Grocery").build();
-      invoice2.category = InvoiceCategory.GROCERY;
+      const invoice2 = new InvoiceBuilder().withName("Banana Food").build();
+      invoice2.classification = makeClassification("Food and non-alcoholic beverages");
 
-      const invoice3 = new InvoiceBuilder().withName("Apple Fast Food").build();
-      invoice3.category = InvoiceCategory.FAST_FOOD;
+      const invoice3 = new InvoiceBuilder().withName("Apple Transport").build();
+      invoice3.classification = makeClassification("Transport");
 
       const invoices = [invoice1, invoice2, invoice3];
       const filters: FilterState = {
         ...createDefaultFilters(),
         search: "apple",
-        categories: [InvoiceCategory.GROCERY],
+        classificationGroups: ["Food and non-alcoholic beverages"],
       };
 
       // Act
       const {result} = renderHook(() => useFilteredInvoices(invoices, filters));
 
-      // Assert: Only grocery invoices with "apple" in name
+      // Assert: Only food invoices with "apple" in name
       expect(result.current).toHaveLength(1);
       expect(result.current[0]).toEqual(invoice1);
     });
@@ -1154,9 +1205,8 @@ describe("useFilteredInvoices", () => {
 
     it("should apply all filters and sort correctly", () => {
       // Arrange
-      const groceryA = new InvoiceBuilder()
-        .withName("A Grocery")
-        .withCategory(InvoiceCategory.GROCERY)
+      const foodA = new InvoiceBuilder()
+        .withName("A Food")
         .withPaymentInformation({
           transactionDate: new Date("2024-02-15"),
           totalCostAmount: 75,
@@ -1167,10 +1217,10 @@ describe("useFilteredInvoices", () => {
           currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
+      foodA.classification = makeClassification("Food and non-alcoholic beverages");
 
-      const groceryB = new InvoiceBuilder()
-        .withName("B Grocery")
-        .withCategory(InvoiceCategory.GROCERY)
+      const foodB = new InvoiceBuilder()
+        .withName("B Food")
         .withPaymentInformation({
           transactionDate: new Date("2024-02-20"),
           totalCostAmount: 85,
@@ -1181,12 +1231,13 @@ describe("useFilteredInvoices", () => {
           currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
+      foodB.classification = makeClassification("Food and non-alcoholic beverages");
 
-      const invoices = [groceryB, groceryA];
+      const invoices = [foodB, foodA];
       const filters: FilterState = {
         ...createDefaultFilters(),
-        search: "grocery",
-        categories: [InvoiceCategory.GROCERY],
+        search: "food",
+        classificationGroups: ["Food and non-alcoholic beverages"],
         paymentTypes: [PaymentType.Card],
         dateFrom: "2024-02-01",
         amountMin: 50,
@@ -1199,8 +1250,8 @@ describe("useFilteredInvoices", () => {
 
       // Assert: Both match filters, sorted by name ascending
       expect(result.current).toHaveLength(2);
-      expect(result.current[0]).toEqual(groceryA);
-      expect(result.current[1]).toEqual(groceryB);
+      expect(result.current[0]).toEqual(foodA);
+      expect(result.current[1]).toEqual(foodB);
     });
   });
 
@@ -1217,10 +1268,9 @@ describe("useFilteredInvoices", () => {
       expect(result.current).toHaveLength(0);
     });
 
-    it("should return empty array when no invoices match filters", () => {
+    it("should return empty array when no invoices match classification group filter", () => {
       // Arrange
       const invoice = new InvoiceBuilder()
-        .withCategory(InvoiceCategory.GROCERY)
         .withPaymentInformation({
           totalCostAmount: 100,
           transactionDate: new Date("2024-01-15"),
@@ -1231,11 +1281,12 @@ describe("useFilteredInvoices", () => {
           currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
+      invoice.classification = makeClassification("Food and non-alcoholic beverages");
 
       const invoices = [invoice];
       const filters: FilterState = {
         ...createDefaultFilters(),
-        categories: [InvoiceCategory.OTHER], // Won't match
+        classificationGroups: ["Transport"], // Won't match
       };
 
       // Act

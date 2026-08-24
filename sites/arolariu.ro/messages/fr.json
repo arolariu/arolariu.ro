@@ -356,7 +356,6 @@
         }
       },
       "merchantInfoCard": {
-        "categoryDistribution": "Répartition par catégorie",
         "noMerchantLinked": "Aucun commerçant lié à cette facture",
         "spendingHistory": "Historique des dépenses",
         "stats": {
@@ -900,37 +899,6 @@
         "errors": {
           "genericError": "Échec de l'envoi pour analyse. Veuillez réessayer."
         }
-      },
-      "bulkCategoryDialog": {
-        "buttons": {
-          "cancel": "Annuler",
-          "save": "Appliquer à tous",
-          "saving": "Enregistrement..."
-        },
-        "description": "{count, plural, one {Changer la catégorie pour # produit} other {Changer la catégorie pour # produits}}",
-        "errors": {
-          "allFailed": "Echec de la mise a jour de tous les produits",
-          "missingData": "Données manquantes",
-          "noProducts": "Aucun produit sélectionné",
-          "saveFailed": "Échec de la mise à jour des catégories"
-        },
-        "labels": {
-          "andMore": "...et {count} de plus",
-          "newCategory": "Nouvelle catégorie",
-          "progress": "Progression",
-          "selectedProducts": "Produits sélectionnés"
-        },
-        "placeholders": {
-          "selectCategory": "Sélectionner une catégorie"
-        },
-        "progress": {
-          "updating": "Mise a jour {current} sur {total}..."
-        },
-        "success": {
-          "partialSuccess": "{success} produits mis a jour, {failed} echoues",
-          "saved": "{count, plural, one {Catégorie mise à jour pour # produit} other {Catégorie mise à jour pour # produits}}"
-        },
-        "title": "Changer de catégorie"
       },
       "createInvoiceDialog": {
         "batchMode": {
@@ -2241,7 +2209,8 @@
           "nameZA": "Nom (Z-A)"
         },
         "timeOfDay": "Moment de la journée",
-        "title": "Filtres"
+        "title": "Filtres",
+        "classificationGroups": "Classification"
       }
     }
   },
@@ -2618,11 +2587,7 @@
             "remove": "Supprimer l'article",
             "restore": "Restaurer l'article"
           },
-          "bulkCategory": {
-            "noSelection": "Veuillez sélectionner au moins un produit"
-          },
           "bulkToolbar": {
-            "changeCategory": "Changer de catégorie",
             "deleteSelected": "Supprimer la sélection",
             "noSelection": "Aucun produit sélectionné",
             "selectedCount": "{count, plural, one {# article sélectionné} other {# articles sélectionnés}}"
