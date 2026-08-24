@@ -202,15 +202,15 @@ export function AnalysisPanel(): React.JSX.Element | null {
    * Handles quick re-analyze (CompleteAnalysis).
    */
   const handleQuickAnalyze = useCallback(async (): Promise<void> => {
-    await handleAnalyze(InvoiceAnalysisOptions.CompleteAnalysis);
+    await handleAnalyze("comprehensive");
   }, [handleAnalyze]);
 
   /**
-   * Factory: returns a stable click handler for triggering analysis with a specific option.
+   * Factory: returns a stable click handler for triggering analysis with a specific profile.
    * Each option button gets its own callback to avoid re-rendering on unrelated state changes.
    */
   const createAnalyzeHandler = useCallback(
-    (optionId: InvoiceAnalysisOptions) => {
+    (optionId: AnalysisProfile) => {
       return () => handleAnalyze(optionId);
     },
     [handleAnalyze],

@@ -24,7 +24,7 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createErrorResult, fetchWithTimeout, ServerActionResult} from "@/lib/utils.server";
-import type {CreateInvoiceDtoPayload} from "@/types/invoices";
+import type {CreateInvoiceDtoPayload, Invoice} from "@/types/invoices";
 import {parseInvoiceResponse, tryParse} from "@/types/invoices/transport";
 
 /**

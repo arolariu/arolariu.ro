@@ -229,8 +229,12 @@ function parseProductMetadata(value: unknown, path: string): ProductMetadata {
 function parseContactInformation(value: unknown, path: string): ContactInformation {
   if (!isRecord(value)) throw new TransportValidationError(path, "expected object");
 
+  // Bind the narrowed record before the closure: TypeScript widens `value` back to
+  // `unknown` inside a nested function because the guard cannot be proven to still hold.
+  const record: Readonly<Record<string, unknown>> = value;
+
   function parseContactField(field: string): string {
-    const val: unknown = value[field];
+    const val: unknown = record[field];
     if (val === undefined) return "";
     if (typeof val !== "string") throw new TransportValidationError(`${path}.${field}`, "expected string");
     return val;

@@ -759,9 +759,22 @@ public sealed class InvoiceEndpointsStatusCodeTests
   #endregion
 
   #region Replacement classification preservation tests
-  /// <summary>Verifies invoice PUT preserves classification omission for Processing merge semantics.</summary>
+  /// <summary>
+  /// Verifies invoice PUT preserves an existing classification when no manual code is supplied.
+  /// </summary>
+  /// <remarks>
+  /// <para>This test previously asserted the opposite — that the endpoint hands Processing an
+  /// invoice with a null classification and lets "Processing merge semantics" restore it. No such
+  /// merge exists for invoices: <c>InvoiceProcessingService.UpdateInvoice</c> only assigns
+  /// <c>Classification</c> when a <c>ClassificationCode</c> is present, and persistence is a
+  /// full-document Cosmos upsert. The omitted classification was therefore dropped, so renaming an
+  /// invoice silently destroyed its analysis-derived classification, confidence and evidence.</para>
+  /// <para>Merchants are unaffected because <c>MerchantStorageFoundationService.UpdateMerchantObject</c>
+  /// copies client-editable fields onto the persisted entity field by field, leaving an unassigned
+  /// classification intact.</para>
+  /// </remarks>
   [TestMethod]
-  public async Task UpdateSpecificInvoiceAsync_OmittedClassification_LeavesSelectionUnset()
+  public async Task UpdateSpecificInvoiceAsync_OmittedClassification_PreservesPersistedSelection()
   {
     Guid invoiceId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
@@ -811,7 +824,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
     Assert.IsNotNull(capturedInvoice);
-    Assert.IsNull(capturedInvoice.Classification);
+    Assert.AreSame(classification, capturedInvoice.Classification);
   }
 
   /// <summary>Verifies merchant PUT preserves classification omission for Processing merge semantics.</summary>

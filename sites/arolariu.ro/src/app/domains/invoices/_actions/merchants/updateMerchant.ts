@@ -63,7 +63,9 @@ export async function updateMerchant({merchantId, merchant}: ServerActionInputTy
         classificationCode: resolveClassificationCodeForWrite(merchant.classification),
         address: merchant.address,
         parentCompanyId: merchant.parentCompanyId ?? null,
-        additionalMetadata: merchant.additionalMetadata ?? null,
+        // Null preserves the persisted metadata; the frontend Merchant model does not
+        // carry additionalMetadata, so it must never be sent as an empty overwrite.
+        additionalMetadata: null,
       };
       const response = await fetchWithTimeout(`/rest/v1/merchants/${merchantId}`, {
         method: "PUT",

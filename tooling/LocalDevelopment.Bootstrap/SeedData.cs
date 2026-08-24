@@ -135,7 +135,6 @@ internal static class SeedData
     DateOnly utcAnchorDate)
   {
     DateTimeOffset transactionDate = ResolveDate(utcAnchorDate, definition.DaysAgo);
-    Guid sourceRunId = definition.Id;
     Currency currency = CreateCurrency(definition.CurrencyCode);
     var invoice = new Invoice
     {
@@ -166,10 +165,10 @@ internal static class SeedData
         SubtotalAmount = definition.TotalAmount - definition.TaxAmount,
       },
       Items = definition.Products
-        .Select(product => CreateProduct(product, sourceRunId))
+        .Select(product => CreateProduct(product))
         .ToList(),
       PossibleRecipes = definition.IncludeRecipe
-        ? [CreateRecipe(definition, sourceRunId)]
+        ? [CreateRecipe(definition)]
         : [],
       ReceiptType = "Itemized",
       CountryRegion = "RO",
@@ -221,9 +220,7 @@ internal static class SeedData
     return invoice;
   }
 
-  private static Product CreateProduct(
-    SeedProductDefinition definition,
-    Guid sourceRunId) =>
+  private static Product CreateProduct(SeedProductDefinition definition) =>
     new()
     {
       Name = definition.Name,
@@ -242,9 +239,7 @@ internal static class SeedData
           definition.IsEdited
             ? ClassificationOrigin.Manual
             : ClassificationOrigin.Analysis),
-      AllergenAssessment = CreateAllergenAssessment(
-        definition.AllergenState,
-        sourceRunId),
+      AllergenAssessment = CreateAllergenAssessment(definition.AllergenState),
       Metadata = new ProductMetadata
       {
         IsEdited = definition.IsEdited,
@@ -271,13 +266,10 @@ internal static class SeedData
         ? [new ClassificationEvidence("seed.fixture", label)]
         : []);
 
-  private static AllergenAssessment? CreateAllergenAssessment(
-    string state,
-    Guid sourceRunId) =>
+  private static AllergenAssessment? CreateAllergenAssessment(string state) =>
     state.ToLowerInvariant() switch
     {
       "detected" => AllergenAssessment.Detected(
-        sourceRunId,
         [
           new AllergenSignal(
             AllergenCode.Milk,
@@ -285,16 +277,14 @@ internal static class SeedData
             0.95,
             [new AllergenEvidence("seed.fixture", "milk")]),
         ]),
-      "none" => AllergenAssessment.NoSignals(sourceRunId),
-      "insufficient" => AllergenAssessment.Insufficient(sourceRunId),
+      "none" => AllergenAssessment.NoSignals(),
+      "insufficient" => AllergenAssessment.Insufficient(),
       "unassessed" => null,
       _ => throw new InvalidDataException(
         $"Unsupported allergen seed state '{state}'."),
     };
 
-  private static RecipeSuggestion CreateRecipe(
-    SeedInvoiceDefinition invoice,
-    Guid sourceRunId) =>
+  private static RecipeSuggestion CreateRecipe(SeedInvoiceDefinition invoice) =>
     new(
       $"{invoice.Name} bowl",
       "A deterministic local development recipe.",
@@ -309,8 +299,7 @@ internal static class SeedData
       [new RecipeIngredient("Water", "250 ml", null)],
       [],
       [new RecipeStep(1, "Combine the ingredients and cook gently.", null)],
-      [],
-      sourceRunId);
+      []);
 
   private static Currency CreateCurrency(string code) =>
     code.ToUpperInvariant() switch
