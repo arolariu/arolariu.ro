@@ -39,6 +39,23 @@
  */
 export type {Allergen, CreateAllergenDtoPayload, DeleteAllergenDtoPayload, UpdateAllergenDtoPayload} from "./Allergen";
 
+/**
+ * EU-14 canonical allergen model, runtime guards, and food-safety assessment types.
+ * @see {@link AllergenAssessment} for the structured assessment contract
+ */
+export {
+  AllergenAssessmentStatus,
+  AllergenCode,
+  AllergenEvidenceLevel,
+  isAllergenAssessment,
+  isAllergenCode,
+  isAllergenEvidence,
+  isAllergenSignal,
+  type AllergenAssessment,
+  type AllergenEvidence,
+  type AllergenSignal,
+} from "./Allergen";
+
 /** Shared runtime type guards for the invoice transport boundary. */
 export {hasOnlyKeys, isArrayOf, isBoolean, isFiniteNumber, isNonEmptyString, isRecord} from "./guards";
 
