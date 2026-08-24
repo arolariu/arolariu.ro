@@ -217,4 +217,3 @@ export function isRecipeSuggestion(value: unknown): value is RecipeSuggestion {
     isArrayOf(value["allergenWarnings"], isAllergenCode)
   );
 }
-

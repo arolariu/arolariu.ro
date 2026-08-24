@@ -242,4 +242,3 @@ export function isAllergenAssessment(value: unknown): value is AllergenAssessmen
   const hasSignals = signals.length > 0;
   return status === AllergenAssessmentStatus.Detected ? hasSignals : !hasSignals;
 }
-
