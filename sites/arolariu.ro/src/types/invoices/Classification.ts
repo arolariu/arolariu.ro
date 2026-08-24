@@ -21,6 +21,25 @@ export const ClassificationOrigin = {Analysis: "Analysis", Manual: "Manual"} as 
 /** Union of supported classification-origin values. */
 export type ClassificationOrigin = (typeof ClassificationOrigin)[keyof typeof ClassificationOrigin];
 
+/**
+ * Decides which `classificationCode` value a write action should send for an entity.
+ *
+ * @remarks
+ * The backend resolves any supplied code through `ResolveManualClassificationAsync`, which
+ * unconditionally stamps the result as {@link ClassificationOrigin.Manual} with a null
+ * confidence and empty evidence. Echoing an analysis-derived code back on an unrelated edit
+ * would therefore silently downgrade it from `Analysis` to `Manual` and discard its evidence.
+ *
+ * Sending `null` instead makes the backend preserve the persisted classification untouched.
+ * Only a genuinely user-chosen classification should travel as a code.
+ *
+ * @param classification - The entity's current classification, or null when unclassified.
+ * @returns The manual code to send, or null to preserve whatever the server already holds.
+ */
+export function resolveClassificationCodeForWrite(classification: StandardClassification | null): string | null {
+  return classification?.origin === ClassificationOrigin.Manual ? classification.code : null;
+}
+
 /** Minimal mutation-safe taxonomy selection. */
 export interface ClassificationSelection {
   readonly system: ClassificationSystem;

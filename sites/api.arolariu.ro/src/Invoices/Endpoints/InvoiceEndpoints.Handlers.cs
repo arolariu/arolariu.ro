@@ -274,6 +274,14 @@ public static partial class InvoiceEndpoints
         }
       }
 
+      // Preserve the resolved classification when no manual code is supplied. Without this the
+      // full-document upsert would drop an analysis-derived classification, including its origin,
+      // confidence and evidence, on every unrelated edit such as renaming the invoice.
+      if (invoicePayload.ClassificationCode is null)
+      {
+        updatedInvoiceEntity.Classification = possibleInvoice.Classification;
+      }
+
       var updatedInvoice = await invoiceManagementService
         .UpdateInvoice(
           id,

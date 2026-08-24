@@ -30,6 +30,7 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Invoice} from "@/types/invoices";
+import {resolveClassificationCodeForWrite} from "@/types/invoices/Classification";
 import {parseInvoiceResponse, tryParse} from "@/types/invoices/transport";
 
 type ServerActionInputType = Readonly<{
@@ -119,7 +120,7 @@ export async function updateInvoice({invoiceId, invoice}: ServerActionInputType)
       const requestDto = {
         name: invoice.name,
         description: invoice.description,
-        classificationCode: invoice.classification?.code ?? null,
+        classificationCode: resolveClassificationCodeForWrite(invoice.classification),
         paymentInformation: invoice.paymentInformation,
         merchantReference: invoice.merchantReference,
         isImportant: invoice.isImportant,

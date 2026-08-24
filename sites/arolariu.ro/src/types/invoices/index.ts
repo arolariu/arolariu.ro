@@ -68,6 +68,7 @@ export {
   isSearchClassificationsInput,
   isTaxonomyArtifact,
   normalizeClassificationSearchQuery,
+  resolveClassificationCodeForWrite,
   type ClassificationEvidence,
   type ClassificationNode,
   type ClassificationSearchResult,
