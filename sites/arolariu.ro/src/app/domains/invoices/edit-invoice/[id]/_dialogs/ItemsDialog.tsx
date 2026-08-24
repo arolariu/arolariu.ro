@@ -1,7 +1,7 @@
 "use client";
 
 import {usePaginationWithSearch} from "@/hooks";
-import {Product, ProductCategory} from "@/types/invoices";
+import {type Product} from "@/types/invoices";
 import {
   Button,
   Dialog,
@@ -51,7 +51,7 @@ import styles from "./ItemsDialog.module.scss";
  * Payload contains the full invoice object.
  *
  * **Validation**: New items are created with sensible defaults:
- * - `category`: `ProductCategory.NOT_DEFINED`
+ * - `classification`: `null` (unclassified)
  * - `quantity`: 1
  * - `price`: 0
  *
@@ -96,8 +96,6 @@ export default function ItemsDialog(): React.JSX.Element {
   const handleAddNewItem = useCallback(() => {
     const newItem: Product = {
       name: "",
-      category: ProductCategory.NOT_DEFINED,
-      detectedAllergens: [],
       metadata: {
         isComplete: false,
         isEdited: false,

@@ -78,13 +78,11 @@ const validInvoiceJson = {
 
 const validProductJson = {
   name: "Organic Milk",
-  category: 300,
   quantity: 2,
   quantityUnit: "pcs",
   productCode: "",
   price: 8.99,
   totalPrice: 17.98,
-  detectedAllergens: [],
   metadata: {isEdited: false, isComplete: true, isSoftDeleted: false, confidence: 0.95},
   classification: null,
   allergenAssessment: {

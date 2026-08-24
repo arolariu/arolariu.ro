@@ -12,6 +12,7 @@ import naceArtifactJson from "@/data/taxonomies/nace-2.1.min.json";
 import {
   ClassificationSystem,
   isClassificationSystem,
+  isRecord,
   isTaxonomyArtifact,
   normalizeClassificationSearchQuery,
   type ClassificationSearchResult,
@@ -47,10 +48,6 @@ const expectedSystems = [
   ClassificationSystem.EcoicopV2,
   ClassificationSystem.Nace21,
 ] as const;
-
-function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 function tokenize(value: string): ReadonlySet<string> {
   const normalized = normalizeClassificationSearchQuery(value);

@@ -26,9 +26,9 @@
  * - Hidden completely if user has only one invoice
  */
 
-import {formatAmount, formatDate, formatEnum} from "@/lib/utils.generic";
+import {formatAmount, formatDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
-import {InvoiceCategory, type Invoice} from "@/types/invoices";
+import {type Invoice} from "@/types/invoices";
 import {Badge, Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
 import {motion} from "motion/react";
 import {selectorFromPath, useTranslations} from "next-intl-selector";
@@ -130,7 +130,7 @@ export function RelatedInvoicesCard(): React.JSX.Element | null {
 
   // Extract values for memoization dependencies
   const currentAmount = currentInvoice.paymentInformation.totalCostAmount;
-  const currentCategory = currentInvoice.category;
+  const currentClassification = currentInvoice.classification?.code ?? null;
   const currentMerchantId = currentInvoice.merchantReference;
 
   /**
@@ -160,8 +160,8 @@ export function RelatedInvoicesCard(): React.JSX.Element | null {
           return {invoice: inv, relationType: "sameMerchant"};
         }
 
-        // Same category
-        if (inv.category === currentCategory && currentCategory !== 0) {
+        // Same classification
+        if (inv.classification?.code && inv.classification.code === currentClassification) {
           return {invoice: inv, relationType: "sameCategory"};
         }
 
@@ -191,7 +191,7 @@ export function RelatedInvoicesCard(): React.JSX.Element | null {
         return new Date(b.invoice.createdAt).getTime() - new Date(a.invoice.createdAt).getTime();
       })
       .slice(0, 6); // Max 6 related invoices
-  }, [invoices, currentInvoice, currentCategory, currentAmount, currentMerchantId]);
+  }, [invoices, currentInvoice, currentClassification, currentAmount, currentMerchantId]);
 
   // Don't render if no related invoices
   if (relatedInvoices.length === 0) {
@@ -299,11 +299,11 @@ function RelatedInvoiceMiniCard({invoice, relationType}: Readonly<RelatedInvoice
         {/* Amount */}
         <div className={styles["amount"]}>{amount}</div>
 
-        {/* Category Badge */}
-        {invoice.category !== 0 && (
+        {/* Classification Badge */}
+        {invoice.classification !== null && (
           <div className={styles["categoryRow"]}>
             <TbTag className={styles["icon"]} />
-            <Badge variant='outline'>{formatEnum(InvoiceCategory, invoice.category as number) || "Other"}</Badge>
+            <Badge variant='outline'>{invoice.classification.officialLabel}</Badge>
           </div>
         )}
 

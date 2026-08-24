@@ -9,9 +9,8 @@
  */
 
 import type {Invoice, Product} from "@/types/invoices";
-import {InvoiceCategory, InvoiceScanType} from "@/types/invoices";
+import {InvoiceScanType} from "@/types/invoices";
 import {AllergenAssessmentStatus, AllergenCode, AllergenEvidenceLevel} from "@/types/invoices/Allergen";
-import {ProductCategory} from "@/types/invoices/Product";
 import {render, screen} from "@testing-library/react";
 import {describe, expect, it} from "vitest";
 import {computeAllergenFrequency} from "../../../_utils/statistics";
@@ -20,13 +19,11 @@ import {AllergenSummaryChart} from "./AllergenSummaryChart";
 function makeProduct(overrides: Partial<Product>): Product {
   return {
     name: "Test Product",
-    category: ProductCategory.GROCERIES,
     quantity: 1,
     quantityUnit: "pcs",
     productCode: "",
     price: 10,
     totalPrice: 10,
-    detectedAllergens: [],
     metadata: {isEdited: false, isComplete: true, isSoftDeleted: false, confidence: 1},
     classification: null,
     allergenAssessment: null,
@@ -41,9 +38,8 @@ function makeInvoice(items: Product[]): Invoice {
     description: "",
     userIdentifier: "user_test",
     sharedWith: [],
-    category: InvoiceCategory.GROCERY,
     classification: null,
-    scans: [{scanType: InvoiceScanType.JPEG, type: InvoiceScanType.JPEG, location: "", metadata: {}}],
+    scans: [{type: InvoiceScanType.JPEG, location: "", metadata: {}}],
     paymentInformation: {
       totalCostAmount: 100,
       totalTaxAmount: 0,
@@ -62,8 +58,13 @@ function makeInvoice(items: Product[]): Invoice {
     taxDetails: [],
     payments: [],
     createdAt: new Date(),
+    createdBy: "user_test",
     lastUpdatedAt: new Date(),
-  } as unknown as Invoice;
+    lastUpdatedBy: "user_test",
+    numberOfUpdates: 0,
+    isImportant: false,
+    isSoftDeleted: false,
+  };
 }
 
 describe("computeAllergenFrequency — denominator safety", () => {

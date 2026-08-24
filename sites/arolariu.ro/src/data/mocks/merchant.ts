@@ -16,7 +16,7 @@
  * @see {@link generateRandomMerchant} - Quick random generation
  */
 
-import {MerchantCategory, type Merchant} from "@/types/invoices";
+import {type Merchant} from "@/types/invoices";
 import {faker} from "@faker-js/faker";
 
 /**
@@ -43,7 +43,7 @@ import {faker} from "@faker-js/faker";
  * // Basic usage
  * const merchant = new MerchantBuilder()
  *   .withName("SuperMart")
- *   .withCategory(MerchantCategory.SUPERMARKET)
+ *   .withCategory(classification.SUPERMARKET)
  *   .withAddress("123 Main St")
  *   .build();
  * ```
@@ -54,7 +54,7 @@ import {faker} from "@faker-js/faker";
  * const parentId = faker.string.uuid();
  * const merchants = new MerchantBuilder()
  *   .withParentCompanyId(parentId)
- *   .withCategory(MerchantCategory.RESTAURANT_CHAIN)
+ *   .withCategory(classification.RESTAURANT_CHAIN)
  *   .buildMany(5); // 5 locations of same chain
  * ```
  */
@@ -93,7 +93,6 @@ export class MerchantBuilder {
       numberOfUpdates: faker.number.int({min: 0, max: 100}),
       isImportant: faker.datatype.boolean(),
       isSoftDeleted: false,
-      category: MerchantCategory.LOCAL_SHOP,
       address: {
         fullName: faker.company.name(),
         address: faker.location.streetAddress(true),
@@ -245,27 +244,10 @@ export class MerchantBuilder {
   }
 
   /**
-   * Sets the business category of the merchant.
-   * @param category Business type classification
-   * @returns The MerchantBuilder instance for chaining
-   */
-  withCategory(category: MerchantCategory): this {
-    this.merchant.category = category;
-    return this;
-  }
-
-  /**
    * Sets the merchant's physical address.
    *
    * @param address - Street address, city, state, zip
    * @returns The MerchantBuilder instance for method chaining
-   *
-   * @example
-   * ```typescript
-   * const merchant = new MerchantBuilder()
-   *   .withAddress("123 Main St, Springfield, IL 62701")
-   *   .build();
-   * ```
    */
   withAddress(address: string): this {
     this.merchant.address.address = address;
@@ -382,7 +364,7 @@ export function createMerchantBuilder(): MerchantBuilder {
  * // Result: {
  * //   id: "uuid...",
  * //   name: "Johnson Group",
- * //   category: MerchantCategory.SUPERMARKET,
+ * //   category: classification.SUPERMARKET,
  * //   address: "123 Oak St, Denver CO",
  * //   ...
  * // }
@@ -451,7 +433,6 @@ export function generateRandomMerchants(count: number): Merchant[] {
 export const mockMerchant = new MerchantBuilder()
   .withId("merchant-1")
   .withName("Test Merchant")
-  .withCategory(MerchantCategory.SUPERMARKET)
   .build();
 
 /**
@@ -479,7 +460,7 @@ export const mockMerchant = new MerchantBuilder()
  * ```typescript
  * // Test filtering
  * const supermarkets = mockMerchantList.filter(
- *   m => m.category === MerchantCategory.SUPERMARKET
+ *   m => m.category === classification.SUPERMARKET
  * );
  * ```
  */

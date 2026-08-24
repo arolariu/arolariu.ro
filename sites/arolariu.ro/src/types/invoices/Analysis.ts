@@ -373,8 +373,8 @@ export function isMerchantAnalysisCapabilitiesValid(capabilities: MerchantAnalys
  * `maximumRecipes` is emitted only when the effective `recipeGeneration` is `true`
  * and its effective value differs from the preset value.
  *
- * The returned object never contains `userIdentifier` or `analysisOptions` —
- * those are legacy fields that are no longer part of the analysis contract.
+ * The returned object never contains legacy fields that are no longer part of
+ * the analysis contract.
  *
  * The `profile` field is always the requestable base profile passed in as an
  * argument. The backend derives an internal `"custom"` profile server-side
@@ -433,7 +433,8 @@ export function buildInvoiceAnalysisRequest(
  *   overrides shift one or more capabilities away from their preset values.
  *
  * @remarks
- * The returned object never contains `userIdentifier` or `analysisOptions`.
+ * The returned object never contains legacy fields that are no longer part of
+ * the analysis contract.
  *
  * The `profile` field is always the requestable base profile passed in.
  * The backend derives an internal `"custom"` profile server-side when

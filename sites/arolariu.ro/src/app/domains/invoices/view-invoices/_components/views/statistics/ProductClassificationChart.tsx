@@ -70,7 +70,7 @@ function CustomTooltip({
       </p>
       <p className={styles["tooltipPercentage"]}>{formatAmount(data.percentage, "en-US", 1)}%</p>
       <p className={styles["tooltipCount"]}>
-        {t((m) => m.cards.invoices.statistics.productCategory.tooltip.productCount, {count: String(data.productCount)})}
+        {t((m) => m.cards.invoices.statistics.productClassification.tooltip.productCount, {count: String(data.productCount)})}
       </p>
     </div>
   );
@@ -90,14 +90,14 @@ export function ProductClassificationChart({data, currency}: Props): React.JSX.E
     return (
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
-          <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.productCategory.title)}</CardTitle>
+          <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.productClassification.title)}</CardTitle>
           <CardDescription className={styles["cardDescription"]}>
-            {t((m) => m.cards.invoices.statistics.productCategory.description)}
+            {t((m) => m.cards.invoices.statistics.productClassification.description)}
           </CardDescription>
         </CardHeader>
         <CardContent className={styles["cardContent"]}>
           <div className={styles["emptyState"]}>
-            <p className={styles["emptyText"]}>{t((m) => m.cards.invoices.statistics.productCategory.empty)}</p>
+            <p className={styles["emptyText"]}>{t((m) => m.cards.invoices.statistics.productClassification.empty)}</p>
           </div>
         </CardContent>
       </Card>
@@ -120,9 +120,9 @@ export function ProductClassificationChart({data, currency}: Props): React.JSX.E
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.productCategory.title)}</CardTitle>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.productClassification.title)}</CardTitle>
         <CardDescription className={styles["cardDescription"]}>
-          {t((m) => m.cards.invoices.statistics.productCategory.description)}
+          {t((m) => m.cards.invoices.statistics.productClassification.description)}
         </CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>

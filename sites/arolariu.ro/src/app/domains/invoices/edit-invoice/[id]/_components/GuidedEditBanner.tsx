@@ -1,6 +1,6 @@
 "use client";
 
-import {Product, ProductCategory} from "@/types/invoices";
+import {type Product} from "@/types/invoices";
 import {Alert, AlertDescription, AlertTitle, Badge, Button} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
@@ -24,42 +24,10 @@ type Props = Readonly<{
  * **Purpose**: Surfaces products requiring manual review after AI analysis:
  * - Products with `metadata.isComplete === false`
  * - Products with low OCR confidence (`metadata.confidence < 0.7`)
- * - Products with `category === ProductCategory.NOT_DEFINED`
+ * - Products with `classification === null`
  * - Products with empty `name`
  *
- * **Dismissal Behavior**:
- * - Banner can be dismissed via X button
- * - Dismissal state persists in localStorage per invoice
- * - Can be re-enabled by clearing localStorage or resetting state
- *
- * **Summary Breakdown**:
- * Displays counts for:
- * - Total incomplete products
- * - Uncategorized products
- * - Low confidence extractions
- * - Missing names
- *
- * **Actions**:
- * - "Review All" button scrolls to first flagged item
- * - "Dismiss" button hides banner
- *
- * **Animation**: Uses Framer Motion for smooth entrance/exit transitions.
- *
- * **Domain Context**: Part of guided editing feature for edit-invoice page.
- *
- * @param props - Component properties containing items array and optional callback
- * @returns Client-rendered banner or null if dismissed or no issues found
- *
- * @example
- * ```tsx
- * <GuidedEditBanner
- *   items={invoice.items}
- *   onReviewAll={() => scrollToFirstIncompleteItem()}
- * />
- * ```
- *
  * @see {@link Product} - Product type with metadata
- * @see {@link ProductCategory} - Product category enum
  */
 export default function GuidedEditBanner({items, onReviewAll}: Props): React.JSX.Element | null {
   const t = useTranslations();
@@ -94,8 +62,8 @@ export default function GuidedEditBanner({items, onReviewAll}: Props): React.JSX
         lowConfidence.push(item);
       }
 
-      // Check for uncategorized products
-      if (item.category === ProductCategory.NOT_DEFINED) {
+      // Check for unclassified products
+      if (item.classification === null) {
         uncategorized.push(item);
       }
 

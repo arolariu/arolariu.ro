@@ -5,10 +5,8 @@
  * @module app/domains/invoices/view-invoice/[id]/components/cards/insights/NutritionCard
  *
  * @remarks
- * **Decision D5** — The food-grouping subsection (food groups grid, basket composition,
- * balance score, suggestion) has been removed. It derived from the deprecated numeric
- * `ProductCategory` enum which has no valid taxonomy mapping. No heuristic replacement
- * is provided.
+ * **Decision D5** — The food-grouping subsection has been removed. It derived from
+ * the deprecated numeric category enum which has no valid taxonomy mapping.
  *
  * This card now renders the EU-14 structured allergen assessment for each product
  * via {@link AllergenAssessmentView}.

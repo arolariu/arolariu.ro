@@ -3,7 +3,7 @@
 import {type MessageSelector, useTranslations} from "next-intl-selector";
 
 import {formatCurrency} from "@/lib/utils.generic";
-import {Invoice, InvoiceCategory, Merchant} from "@/types/invoices";
+import {Invoice, Merchant} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -143,8 +143,8 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
       score += 10;
     }
 
-    // Category (10 points)
-    if (invoice.category !== InvoiceCategory.NOT_DEFINED) score += 10;
+    // Classification (10 points)
+    if (invoice.classification !== null) score += 10;
 
     // Description (10 points)
     if (invoice.description.length > 0) score += 10;
@@ -200,14 +200,13 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
       });
     }
 
-    // No category or default category → Set category
-    if (invoice.category === InvoiceCategory.NOT_DEFINED && !dismissedTips.includes("noCategory")) {
+    // No classification → suggest taxonomy search
+    if (invoice.classification === null && !dismissedTips.includes("noCategory")) {
       tips.push({
         id: "noCategory",
         messageSelector: (m) => m.pages.invoices.editInvoice.triviaTips.contextTips.noCategory,
         actionSelector: (m) => m.pages.invoices.editInvoice.triviaTips.contextActions.setCategory,
         handleAction: () => {
-          // Focus category select
           const categorySelect = document.querySelector<HTMLButtonElement>('button[role="combobox"]');
           categorySelect?.focus();
           categorySelect?.scrollIntoView({behavior: "smooth", block: "center"});

@@ -3,7 +3,6 @@
  */
 
 import {InvoiceBuilder, ProductBuilder} from "@/data/mocks";
-import {ProductCategory} from "@/types/invoices";
 import {ClassificationOrigin, ClassificationSystem, type StandardClassification} from "@/types/invoices/Classification";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {
@@ -40,13 +39,13 @@ vi.mock("@/lib/currency", () => ({
 // Classification helpers for analytics tests
 // ---------------------------------------------------------------------------
 
-function makeTestClassification(rootLabel: string): StandardClassification {
+function makeTestClassification(rootLabel: string, code: string = "50000000"): StandardClassification {
   return {
     system: ClassificationSystem.Gs1Gpc,
-    code: "50000000",
+    code,
     officialLabel: rootLabel,
     version: "2026-05",
-    hierarchy: [{level: "segment", code: "50000000", officialLabel: rootLabel}],
+    hierarchy: [{level: "segment", code, officialLabel: rootLabel}],
     origin: ClassificationOrigin.Analysis,
     confidence: 0.9,
     evidence: [],
@@ -848,9 +847,9 @@ describe("getQuantityAnalysis", () => {
 describe("getInvoiceSummary", () => {
   it("should compute summary statistics correctly", () => {
     const items = [
-      new ProductBuilder().withCategory(ProductCategory.DAIRY).withTotalPrice(50).withName("Milk").build(),
-      new ProductBuilder().withCategory(ProductCategory.MEAT).withTotalPrice(100).withName("Beef").build(),
-      new ProductBuilder().withCategory(ProductCategory.FRUITS).withTotalPrice(30).withName("Apples").build(),
+      new ProductBuilder().withClassification(makeTestClassification("Dairy", "50130000")).withTotalPrice(50).withName("Milk").build(),
+      new ProductBuilder().withClassification(makeTestClassification("Meat", "50230000")).withTotalPrice(100).withName("Beef").build(),
+      new ProductBuilder().withClassification(makeTestClassification("Fruits", "50100000")).withTotalPrice(30).withName("Apples").build(),
     ];
 
     const invoice = new InvoiceBuilder().withItems(items).withPaymentAmount(180).build();

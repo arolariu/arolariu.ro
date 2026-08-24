@@ -20,7 +20,7 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
-import type {Invoice, InvoiceCategory, PaymentInformation, Product, RecipeSuggestion} from "@/types/invoices";
+import type {Invoice, PaymentInformation, Product, RecipeSuggestion} from "@/types/invoices";
 import {parseInvoiceResponse, tryParse} from "@/types/invoices/transport";
 import {revalidatePath} from "next/cache";
 
@@ -32,7 +32,6 @@ type ServerActionInputType = Readonly<{
     name?: string;
     description?: string;
     classificationCode?: string;
-    category?: InvoiceCategory;
     paymentInformation?: PaymentInformation;
     merchantReference?: string;
     isImportant?: boolean;

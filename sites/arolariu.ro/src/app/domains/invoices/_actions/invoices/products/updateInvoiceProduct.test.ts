@@ -5,7 +5,7 @@
 
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
-import {ClassificationOrigin, ClassificationSystem, ProductCategory, type StandardClassification} from "@/types/invoices";
+import {ClassificationOrigin, ClassificationSystem, type StandardClassification} from "@/types/invoices";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder} from "../../../../../../../tests/helpers";
 
@@ -33,12 +33,10 @@ describe("updateInvoiceProduct", () => {
       originalProductName: "Coffee",
       updatedProduct: TestDataBuilder.build("product", {
         name: "Premium Coffee",
-        category: ProductCategory.GROCERIES,
         quantity: 2,
         quantityUnit: "kg",
         productCode: "PROD-123",
         price: 15.99,
-        detectedAllergens: [],
       }),
     };
 
@@ -66,11 +64,8 @@ describe("updateInvoiceProduct", () => {
     expect(body.productCode).toBe("PROD-123");
     expect(body.price).toBe(15.99);
     expect(body.allergenAssessment).toBeNull();
-    // Ensure the payload is flattened, not nested
-    expect(body.updatedProduct).toBeUndefined();
     // Ensure legacy fields are absent from the wire body
-    expect(body).not.toHaveProperty("category");
-    expect(body).not.toHaveProperty("detectedAllergens");
+    expect(body.updatedProduct).toBeUndefined();
 
     expect(mockRevalidatePath).toHaveBeenCalledWith(`/domains/invoices/edit-invoice/${invoiceId}`, "page");
     expect(mockRevalidatePath).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${invoiceId}`, "page");

@@ -677,7 +677,7 @@
           "subtitle": "Aperçu de vos articles achetés",
           "title": "Analyse des produits"
         },
-        "productCategory": {
+        "productClassification": {
           "description": "Répartition des dépenses par type de produit",
           "empty": "Aucun produit à analyser pour le moment",
           "title": "Dépenses par catégorie de produit",

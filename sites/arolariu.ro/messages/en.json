@@ -677,7 +677,7 @@
           "subtitle": "Insights into your purchased items",
           "title": "Product-Level Analytics"
         },
-        "productCategory": {
+        "productClassification": {
           "description": "Spending breakdown by product type",
           "empty": "No products to analyze yet",
           "title": "Product Category Spending",

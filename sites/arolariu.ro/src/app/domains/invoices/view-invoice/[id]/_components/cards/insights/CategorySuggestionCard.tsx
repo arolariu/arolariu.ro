@@ -1,6 +1,5 @@
 "use client";
 
-import type {InvoiceCategory} from "@/types/invoices";
 import {Button, Card, CardContent, CardHeader, CardTitle, Progress} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
@@ -11,7 +10,7 @@ import styles from "./CategorySuggestionCard.module.scss";
 type CategoryButtonProps = {
   category: (typeof mainCategories)[number] | (typeof extendedCategories)[number];
   isSelected: boolean;
-  onSelect: (id: InvoiceCategory | string) => void;
+  onSelect: (id: string) => void;
   variant: "main" | "extended";
 };
 
@@ -44,14 +43,14 @@ function CategoryButton({category, isSelected, onSelect, variant}: Readonly<Cate
 }
 
 export function CategorySuggestionCard(): React.JSX.Element {
-  const [selected, setSelected] = useState<InvoiceCategory | string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
   const t = useTranslations();
 
   // Gamification progress (mock)
   const categorizedCount = 8;
   const goal = 10;
 
-  const handleSelect = useCallback((id: InvoiceCategory | string) => {
+  const handleSelect = useCallback((id: string) => {
     setSelected(id);
   }, []);
 

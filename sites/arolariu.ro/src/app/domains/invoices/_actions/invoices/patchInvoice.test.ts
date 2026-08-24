@@ -5,7 +5,6 @@
 
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
-import {InvoiceCategory} from "@/types/invoices";
 import {revalidatePath} from "next/cache";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder} from "../../../../../../tests/helpers";
@@ -135,8 +134,8 @@ describe("patchInvoice", () => {
     expect(body).toHaveProperty("classificationCode");
   });
 
-  it("does not forward numeric category to the wire body", async () => {
-    await patchInvoice({invoiceId, payload: {name: "X", category: InvoiceCategory.GROCERY}});
+  it("does not forward legacy category to the wire body", async () => {
+    await patchInvoice({invoiceId, payload: {name: "X"}});
     const [, init] = mockFetchWithTimeout.mock.calls[0]!;
     const body: unknown = JSON.parse(String(init?.body));
     expect(body).not.toHaveProperty("category");

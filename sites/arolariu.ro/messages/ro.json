@@ -677,7 +677,7 @@
           "subtitle": "Detalii despre articolele achiziționate",
           "title": "Analiză Produse"
         },
-        "productCategory": {
+        "productClassification": {
           "description": "Defalcare cheltuieli după tip de produs",
           "empty": "Niciun produs de analizat încă",
           "title": "Cheltuieli pe Categorii de Produse",

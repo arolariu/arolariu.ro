@@ -41,20 +41,19 @@ export const SingleInvoice: Story = {
   },
 };
 
-/** Rich dataset - multiple invoices across different categories and time periods. */
 export const WithData: Story = {
   args: {
     invoices: [
-      new InvoiceBuilder().withCategory(100).build(), // Grocery
-      new InvoiceBuilder().withCategory(200).build(), // Fast Food
-      new InvoiceBuilder().withCategory(100).build(), // Grocery
-      new InvoiceBuilder().withCategory(300).build(), // Home Cleaning
-      new InvoiceBuilder().withCategory(100).build(), // Grocery
-      new InvoiceBuilder().withCategory(400).build(), // Car/Auto
-      new InvoiceBuilder().withCategory(200).build(), // Fast Food
-      new InvoiceBuilder().withCategory(100).build(), // Grocery
-      new InvoiceBuilder().withCategory(100).build(), // Grocery
-      new InvoiceBuilder().withCategory(200).build(), // Fast Food
+      new InvoiceBuilder().build(),
+      new InvoiceBuilder().build(),
+      new InvoiceBuilder().build(),
+      new InvoiceBuilder().build(),
+      new InvoiceBuilder().build(),
+      new InvoiceBuilder().build(),
+      new InvoiceBuilder().build(),
+      new InvoiceBuilder().build(),
+      new InvoiceBuilder().build(),
+      new InvoiceBuilder().build(),
     ],
   },
 };

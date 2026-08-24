@@ -386,7 +386,7 @@ describe("createInvoiceFromScans", () => {
 
       const fetchCall = mockFetch.mock.calls[0];
       const body = JSON.parse(fetchCall?.[1]?.body as string);
-      expect(body.initialScan.scanType).toBe(InvoiceScanType.JPEG);
+      expect(body.initialScan.type).toBe(InvoiceScanType.JPEG);
     });
 
     it("should map PNG scan type correctly", async () => {
@@ -401,7 +401,7 @@ describe("createInvoiceFromScans", () => {
 
       const fetchCall = mockFetch.mock.calls[0];
       const body = JSON.parse(fetchCall?.[1]?.body as string);
-      expect(body.initialScan.scanType).toBe(InvoiceScanType.PNG);
+      expect(body.initialScan.type).toBe(InvoiceScanType.PNG);
     });
 
     it("should map PDF scan type correctly", async () => {
@@ -416,7 +416,7 @@ describe("createInvoiceFromScans", () => {
 
       const fetchCall = mockFetch.mock.calls[0];
       const body = JSON.parse(fetchCall?.[1]?.body as string);
-      expect(body.initialScan.scanType).toBe(InvoiceScanType.PDF);
+      expect(body.initialScan.type).toBe(InvoiceScanType.PDF);
     });
 
     it("should map unknown scan type to UNKNOWN", async () => {
@@ -431,7 +431,7 @@ describe("createInvoiceFromScans", () => {
 
       const fetchCall = mockFetch.mock.calls[0];
       const body = JSON.parse(fetchCall?.[1]?.body as string);
-      expect(body.initialScan.scanType).toBe(InvoiceScanType.UNKNOWN);
+      expect(body.initialScan.type).toBe(InvoiceScanType.UNKNOWN);
     });
   });
 

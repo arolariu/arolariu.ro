@@ -119,7 +119,7 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
   const dailySpending = useMemo(() => computeDailySpending(invoices), [invoices]);
 
   // Product-level analytics
-  const productCategorySpending = useMemo(() => computeProductClassificationSpending(invoices), [invoices]);
+  const classificationSpending = useMemo(() => computeProductClassificationSpending(invoices), [invoices]);
   const topProducts = useMemo(() => computeTopProducts(invoices, 10), [invoices]);
   const allergenFrequency = useMemo(() => computeAllergenFrequency(invoices), [invoices]);
 
@@ -310,7 +310,7 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
             animate={{opacity: 1, x: 0}}
             transition={{duration: 0.5, delay: 0.8}}>
             <ProductClassificationChart
-              data={productCategorySpending}
+              data={classificationSpending}
               currency={currency}
             />
           </motion.div>

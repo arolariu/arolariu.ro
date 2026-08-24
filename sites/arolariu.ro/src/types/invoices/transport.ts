@@ -29,7 +29,7 @@
  */
 
 import {validateStringIsGuidType} from "@/lib/utils.generic";
-import {type Allergen, isAllergenAssessment} from "./Allergen";
+import {isAllergenAssessment} from "./Allergen";
 import {
   isClassificationOrigin,
   isClassificationSystem,
@@ -39,15 +39,14 @@ import {
 } from "./Classification";
 import {isFiniteNumber, isNonEmptyString, isRecord} from "./guards";
 import {
-  InvoiceCategory,
   InvoiceScanType,
   type Invoice,
   type InvoiceScan,
   type InvoiceScanMetadataValue,
 } from "./Invoice";
-import {MerchantCategory, type ContactInformation, type Merchant} from "./Merchant";
+import {type ContactInformation, type Merchant} from "./Merchant";
 import {PaymentType, type PaymentDetail, type PaymentInformation, type TaxDetail} from "./Payment";
-import {ProductCategory, type Product, type ProductMetadata} from "./Product";
+import {type Product, type ProductMetadata} from "./Product";
 import {isRecipeSuggestion} from "./Recipe";
 import type {Currency} from "../DDD";
 
@@ -208,7 +207,7 @@ function parseScan(value: unknown, path: string): InvoiceScan {
     }
   }
 
-  return {type, scanType: type, location, metadata};
+  return {type, location, metadata};
 }
 
 /** Parses a {@link ProductMetadata} value object. */
@@ -261,17 +260,6 @@ function parseProductInternal(value: unknown, path: string): Product {
     throw new TransportValidationError(`${path}.name`, "expected non-empty string");
   }
 
-  // category (deprecated) — present + invalid → throw; absent → NOT_DEFINED
-  const rawCategory = value["category"];
-  const validProductCategories: readonly number[] = Object.values(ProductCategory);
-  let category: ProductCategory = ProductCategory.NOT_DEFINED;
-  if (rawCategory !== undefined && rawCategory !== null) {
-    if (typeof rawCategory !== "number" || !validProductCategories.includes(rawCategory)) {
-      throw new TransportValidationError(`${path}.category`, `unrecognised product category: ${String(rawCategory)}`);
-    }
-    category = rawCategory as ProductCategory;
-  }
-
   const rawQuantity = value["quantity"];
   if (!isFiniteNumber(rawQuantity)) {
     throw new TransportValidationError(`${path}.quantity`, "expected finite number");
@@ -297,20 +285,6 @@ function parseProductInternal(value: unknown, path: string): Product {
     throw new TransportValidationError(`${path}.totalPrice`, "expected finite number");
   }
 
-  // detectedAllergens (deprecated) — lenient, default []
-  const rawAllergens = value["detectedAllergens"];
-  const detectedAllergens: Allergen[] = [];
-  if (Array.isArray(rawAllergens)) {
-    for (const item of rawAllergens) {
-      if (isRecord(item)) {
-        const allergenName = typeof item["name"] === "string" ? item["name"] : "";
-        const allergenDesc = typeof item["description"] === "string" ? item["description"] : "";
-        const allergenUrl = typeof item["learnMoreAddress"] === "string" ? item["learnMoreAddress"] : "";
-        detectedAllergens.push({name: allergenName, description: allergenDesc, learnMoreAddress: allergenUrl});
-      }
-    }
-  }
-
   // metadata (required)
   const metadata = parseProductMetadata(value["metadata"], `${path}.metadata`);
 
@@ -330,13 +304,11 @@ function parseProductInternal(value: unknown, path: string): Product {
 
   return {
     name: rawName,
-    category,
     quantity: rawQuantity,
     quantityUnit: rawQuantityUnit,
     productCode: rawProductCode,
     price: rawPrice,
     totalPrice: rawTotalPrice,
-    detectedAllergens,
     metadata,
     classification,
     allergenAssessment,
@@ -359,17 +331,6 @@ function parseMerchantInternal(value: unknown, path: string): Merchant {
 
   const rawDescription = value["description"];
   const description = typeof rawDescription === "string" ? rawDescription : "";
-
-  // category (deprecated) — present + invalid → throw; absent → NOT_DEFINED
-  const rawCategory = value["category"];
-  const validMerchantCategories: readonly number[] = Object.values(MerchantCategory);
-  let category: MerchantCategory = MerchantCategory.NOT_DEFINED;
-  if (rawCategory !== undefined && rawCategory !== null) {
-    if (typeof rawCategory !== "number" || !validMerchantCategories.includes(rawCategory)) {
-      throw new TransportValidationError(`${path}.category`, `unrecognised merchant category: ${String(rawCategory)}`);
-    }
-    category = rawCategory as MerchantCategory;
-  }
 
   const address = parseContactInformation(value["address"], `${path}.address`);
 
@@ -401,7 +362,6 @@ function parseMerchantInternal(value: unknown, path: string): Merchant {
     id: rawId,
     name: rawName,
     description,
-    category,
     address,
     parentCompanyId,
     classification,
@@ -640,17 +600,6 @@ export function parseInvoiceResponse(value: unknown): Invoice {
     }
   }
 
-  // category (deprecated) — absent → NOT_DEFINED; present + invalid → throw
-  const rawCategory = value["category"];
-  const validInvoiceCategories: readonly number[] = Object.values(InvoiceCategory);
-  let category: InvoiceCategory = InvoiceCategory.NOT_DEFINED;
-  if (rawCategory !== undefined && rawCategory !== null) {
-    if (typeof rawCategory !== "number" || !validInvoiceCategories.includes(rawCategory)) {
-      throw new TransportValidationError(`${path}.category`, `unrecognised invoice category: ${String(rawCategory)}`);
-    }
-    category = rawCategory as InvoiceCategory;
-  }
-
   // taxDetails — lenient, absent → []
   const rawTaxDetails = value["taxDetails"];
   const taxDetails: TaxDetail[] = [];
@@ -721,7 +670,6 @@ export function parseInvoiceResponse(value: unknown): Invoice {
     receiptType,
     countryRegion,
     sharedWith,
-    category,
     taxDetails,
     payments,
     createdAt,

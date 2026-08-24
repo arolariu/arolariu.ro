@@ -119,7 +119,7 @@ export function ExportDialog(): React.JSX.Element {
           item.quantity.toString(),
           formatAmount(item.price),
           formatAmount(item.totalPrice),
-          `"${String(item.category).replaceAll('"', '""')}"`,
+          `"${(item.classification?.officialLabel ?? "").replaceAll('"', '""')}"`,
         ];
         csvRows.push(row.join(","));
       }

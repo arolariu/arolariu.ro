@@ -135,7 +135,7 @@ describe("addInvoiceProduct", () => {
     expect(result.success).toBe(false);
   });
 
-  it("sends classificationCode and allergenAssessment; omits category, detectedAllergens, totalPrice, metadata", async () => {
+  it("sends classificationCode and allergenAssessment; omits legacy totalPrice and metadata", async () => {
     const invoiceId = "11111111-1111-4111-8111-111111111111";
     const product = TestDataBuilder.build("product", {name: "Milk", price: 5.99});
 
@@ -145,8 +145,6 @@ describe("addInvoiceProduct", () => {
     const body = JSON.parse(callArgs?.[1]?.body as string);
     expect(body).toHaveProperty("classificationCode");
     expect(body).toHaveProperty("allergenAssessment");
-    expect(body).not.toHaveProperty("category");
-    expect(body).not.toHaveProperty("detectedAllergens");
     expect(body).not.toHaveProperty("totalPrice");
     expect(body).not.toHaveProperty("metadata");
   });

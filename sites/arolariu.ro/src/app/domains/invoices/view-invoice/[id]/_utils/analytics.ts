@@ -107,7 +107,7 @@ export type InvoiceSummary = {
 export function getInvoiceSummary(invoice: Invoice): InvoiceSummary {
   const {items, paymentInformation} = invoice;
   const {totalCostAmount, totalTaxAmount} = paymentInformation;
-  const categories = new Set(items.map((item) => item.category));
+  const categories = new Set(items.map((item) => item.classification?.code ?? "unclassified"));
   const sortedByPrice = items.toSorted((a, b) => b.totalPrice - a.totalPrice);
 
   return {
@@ -397,8 +397,8 @@ export type CategoryTrendData = {
  * @returns Array of category comparison data sorted by current spending (descending)
  *
  * @remarks
- * - Groups products by ProductCategory
- * - Compares current invoice's category spending against historical averages
+ * - Groups products by classification taxonomy group
+ * - Compares current invoice's classification spending against historical averages
  * - Normalizes all amounts to RON using yearly average exchange rates
  * - Returns empty array if current invoice has no items
  * - Only includes categories present in the current invoice

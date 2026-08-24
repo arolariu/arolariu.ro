@@ -2,7 +2,7 @@
 
 import {toRONDetailed} from "@/lib/currency";
 import {formatCurrency, formatDate, formatEnum, toSafeDate} from "@/lib/utils.generic";
-import {PaymentType, ProductCategory} from "@/types/invoices";
+import {PaymentType} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -117,7 +117,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
             </div>
             <div className={styles["infoItem"]}>
               <p className={styles["infoLabelPlain"]}>{t((m) => m.cards.invoices.invoiceDetailsCard.labels.category)}</p>
-              <Badge variant='outline'>{formatEnum(ProductCategory, invoice.category)}</Badge>
+              <Badge variant='outline'>{invoice.classification?.officialLabel ?? "Unclassified"}</Badge>
             </div>
             <div className={styles["infoItem"]}>
               <div className={styles["infoLabel"]}>
@@ -302,14 +302,14 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                       <TableCell>
                         <div className={styles["itemCell"]}>
                           <p className={styles["itemName"]}>{item.name}</p>
-                          {item.detectedAllergens.length > 0 && (
+                          {(item.allergenAssessment?.status === "detected" ? item.allergenAssessment.signals : []).length > 0 && (
                             <div className={styles["allergenList"]}>
-                              {item.detectedAllergens.map((allergen) => (
-                                <TooltipProvider key={allergen.name}>
+                              {(item.allergenAssessment?.status === "detected" ? item.allergenAssessment.signals : []).map((signal) => (
+                                <TooltipProvider key={signal.code}>
                                   <Tooltip>
-                                    <TooltipTrigger render={<Badge variant='secondary'>{allergen.name}</Badge>} />
+                                    <TooltipTrigger render={<Badge variant='secondary'>{signal.code}</Badge>} />
                                     <TooltipContent>
-                                      <p>{allergen.description}</p>
+                                      <p>{signal.evidenceLevel}</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>

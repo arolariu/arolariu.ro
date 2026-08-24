@@ -8,11 +8,9 @@ import type {
   CreateInvoiceDtoPayload,
   CreateInvoiceScanDtoPayload,
   Invoice,
-  InvoiceAnalysisOptions,
   InvoiceScan,
   Merchant,
   Product,
-  Recipe,
   RecipeSuggestion,
 } from "../../../src/types/invoices";
 import type {Scan} from "../../../src/types/scans";
@@ -27,11 +25,9 @@ import {
   buildCreateInvoicePayload,
   buildCreateInvoiceScanPayload,
   buildInvoice,
-  buildInvoiceAnalysisOptions,
   buildInvoiceScan,
   buildMerchant,
   buildProduct,
-  buildRecipe,
   buildRecipeSuggestion,
   buildScan,
 } from "./domain";
@@ -50,13 +46,11 @@ export type TestDataKind =
   | "invoice"
   | "product"
   | "merchant"
-  | "recipe"
   | "recipeSuggestion"
   | "invoiceScan"
   | "createInvoicePayload"
   | "createInvoiceScanPayload"
   | "scan"
-  | "invoiceAnalysisOptions"
   | "userInformation"
   | "authenticatedUserInformation"
   | "anonymousUserInformation";
@@ -65,13 +59,11 @@ export class TestDataBuilder {
   public static build(kind: "invoice", overrides?: Partial<Invoice>): Invoice;
   public static build(kind: "product", overrides?: Partial<Product>): Product;
   public static build(kind: "merchant", overrides?: Partial<Merchant>): Merchant;
-  public static build(kind: "recipe", overrides?: Partial<Recipe>): Recipe;
   public static build(kind: "recipeSuggestion", overrides?: Partial<RecipeSuggestion>): RecipeSuggestion;
   public static build(kind: "invoiceScan", overrides?: Partial<InvoiceScan>): InvoiceScan;
   public static build(kind: "createInvoicePayload", overrides?: Partial<CreateInvoiceDtoPayload>): CreateInvoiceDtoPayload;
   public static build(kind: "createInvoiceScanPayload", overrides?: Partial<CreateInvoiceScanDtoPayload>): CreateInvoiceScanDtoPayload;
   public static build(kind: "scan", overrides?: Partial<Scan>): Scan;
-  public static build(kind: "invoiceAnalysisOptions", value?: InvoiceAnalysisOptions): InvoiceAnalysisOptions;
   public static build(kind: "userInformation", overrides?: UserInformationOverrides): UserInformation;
   public static build(kind: "authenticatedUserInformation", overrides?: UserInformationOverrides): UserInformation;
   public static build(kind: "anonymousUserInformation"): UserInformation;
@@ -83,8 +75,6 @@ export class TestDataBuilder {
         return buildProduct(overrides as Partial<Product> | undefined);
       case "merchant":
         return buildMerchant(overrides as Partial<Merchant> | undefined);
-      case "recipe":
-        return buildRecipe(overrides as Partial<Recipe> | undefined);
       case "recipeSuggestion":
         return buildRecipeSuggestion(overrides as Partial<RecipeSuggestion> | undefined);
       case "invoiceScan":
@@ -95,8 +85,6 @@ export class TestDataBuilder {
         return buildCreateInvoiceScanPayload(overrides as Partial<CreateInvoiceScanDtoPayload> | undefined);
       case "scan":
         return buildScan(overrides as Partial<Scan> | undefined);
-      case "invoiceAnalysisOptions":
-        return buildInvoiceAnalysisOptions(overrides as InvoiceAnalysisOptions | undefined);
       case "userInformation":
         return buildUserInformation(overrides as UserInformationOverrides | undefined);
       case "authenticatedUserInformation":

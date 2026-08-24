@@ -5,12 +5,10 @@
 
 import {describe, expect, it} from "vitest";
 
-import {InvoiceAnalysisOptions} from "../../../src/types/invoices";
 import {
   buildCreateInvoicePayload,
   buildCreateInvoiceScanPayload,
   buildInvoice,
-  buildInvoiceAnalysisOptions,
   buildInvoiceScan,
   buildMerchant,
   buildProduct,
@@ -48,11 +46,9 @@ describe("domain builders", () => {
       },
     });
     const createScanPayload = buildCreateInvoiceScanPayload();
-    const options = buildInvoiceAnalysisOptions();
 
     expect(createInvoicePayload.initialScan.location).toBe("https://storage.test/invoice-scan.jpg");
     expect(createScanPayload.location).toBe("https://storage.test/invoice-scan.jpg");
-    expect(options).toBe(InvoiceAnalysisOptions.CompleteAnalysis);
   });
 
   it("builds standalone uploaded scans", () => {

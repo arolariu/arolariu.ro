@@ -134,7 +134,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
   const [selectedScans, setSelectedScans] = useState<CachedScan[]>([]);
   const [isCreating, setIsCreating] = useState(false);
 
-  // Classification selection (replaces legacy InvoiceCategory)
+  // Classification selection
   const [classificationSelection, setClassificationSelection] = useState<ClassificationSelection | null>(null);
 
   // Partial-failure recovery state
@@ -241,7 +241,6 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       if (invoiceId === null) {
         const {success, data: invoice, error} = await createInvoice({
           initialScan: {
-            scanType,
             type: scanType,
             location: firstScan.blobUrl,
             metadata: {},

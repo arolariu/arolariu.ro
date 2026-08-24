@@ -44,7 +44,6 @@ import type {AllergenCode} from "@/types/invoices/Allergen";
 import {AllergenAssessmentStatus} from "@/types/invoices/Allergen";
 import {getTransactionYear, toRON} from "../../../../../lib/currency";
 import {getClassificationGroup} from "../../_utils/labelUtilities";
-export {getProductCategoryLabel} from "../../_utils/labelUtilities";
 
 /**
  * Empty GUID constant used to filter invalid merchant references.
@@ -1370,37 +1369,6 @@ export type AllergenFrequency = {
   percentage: number;
 };
 
-/**
- * Maps ProductCategory enum values to human-readable labels.
- *
- * @param categoryId - Numeric category ID from ProductCategory enum
- * @returns Human-readable category label
- *
- * @remarks
- * **Category Mappings:**
- * - 0 (NOT_DEFINED) → "Uncategorized"
- * - 100 (BAKED_GOODS) → "Baked Goods"
- * - 200 (GROCERIES) → "Groceries"
- * - 300 (DAIRY) → "Dairy"
- * - 400 (MEAT) → "Meat"
- * - 500 (FISH) → "Fish"
- * - 600 (FRUITS) → "Fruits"
- * - 700 (VEGETABLES) → "Vegetables"
- * - 800 (BEVERAGES) → "Beverages"
- * - 900 (ALCOHOLIC_BEVERAGES) → "Alcoholic Beverages"
- * - 1000 (TOBACCO) → "Tobacco"
- * - 1100 (CLEANING_SUPPLIES) → "Cleaning Supplies"
- * - 1200 (PERSONAL_CARE) → "Personal Care"
- * - 1300 (MEDICINE) → "Medicine"
- * - 9999 (OTHER) → "Other"
- * - Unknown → "Unknown"
- *
- * @example
- * ```typescript
- * const label = getProductCategoryLabel(300); // "Dairy"
- * const label2 = getProductCategoryLabel(400); // "Meat"
- * ```
- */
 /**
  * Computes spending aggregates grouped by the taxonomy root of each product's classification.
  *

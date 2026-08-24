@@ -1,7 +1,6 @@
 "use client";
 
-import {formatEnum} from "@/lib/utils.generic";
-import {type Merchant, MerchantCategory} from "@/types/invoices";
+import {type Merchant} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -37,7 +36,7 @@ import styles from "./MerchantDialog.module.scss";
  * **Visual Design**:
  * - Profile-style header with merchant icon in primary-tinted circle
  * - Table layout for structured detail presentation
- * - Category badge derived from `MerchantCategory` const-object
+ * - Classification badge showing merchant sector
  *
  * **Dialog Integration**: Uses `useDialog` hook with `INVOICE_MERCHANT` type.
  * Payload contains the full `Merchant` object.
@@ -56,7 +55,6 @@ import styles from "./MerchantDialog.module.scss";
  *
  * @see {@link MerchantCard} - Parent component that opens this dialog
  * @see {@link Merchant} - Merchant type definition
- * @see {@link MerchantCategory} - Category const-object for badge display
  */
 export default function MerchantDialog(): React.JSX.Element {
   const t = useTranslations();
@@ -67,7 +65,7 @@ export default function MerchantDialog(): React.JSX.Element {
   } = useDialog("EDIT_INVOICE__MERCHANT");
 
   const merchant = payload;
-  const merchantCategoryAsString = formatEnum(MerchantCategory, merchant.category) || "NOT_DEFINED";
+  const merchantClassification = merchant.classification?.officialLabel ?? "Unclassified";
 
   return (
     <Dialog
@@ -91,7 +89,7 @@ export default function MerchantDialog(): React.JSX.Element {
               <Badge
                 variant='outline'
                 className={styles["categoryBadge"]}>
-                {merchantCategoryAsString}
+                {merchantClassification}
               </Badge>
             </div>
           </div>

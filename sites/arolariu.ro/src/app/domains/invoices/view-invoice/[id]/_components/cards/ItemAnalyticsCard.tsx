@@ -248,7 +248,13 @@ export function ItemAnalyticsCard(): React.JSX.Element {
 
     const sortedByPrice = invoice.items.toSorted((a, b) => b.totalPrice - a.totalPrice);
     const uniqueGroups = new Set(invoice.items.map((item) => getClassificationGroup(item.classification ?? null) ?? "unclassified"));
-    const allAllergens = new Set(invoice.items.flatMap((item) => item.detectedAllergens.map((allergen) => allergen.name)));
+    const allAllergens = new Set(
+      invoice.items.flatMap((item) =>
+        item.allergenAssessment?.status === "detected"
+          ? item.allergenAssessment.signals.map((s) => s.code)
+          : [],
+      ),
+    );
 
     return {
       mostExpensive: sortedByPrice[0],
@@ -448,29 +454,20 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                                   </Tooltip>
                                 )}
                               </div>
-                              {item.detectedAllergens.length > 0 && (
+                              {(item.allergenAssessment?.status === "detected" && item.allergenAssessment.signals.length > 0) && (
                                 <div className={styles["allergenList"]}>
-                                  {item.detectedAllergens.map((allergen) => (
-                                    <Tooltip key={allergen.name}>
+                                  {item.allergenAssessment.signals.map((signal) => (
+                                    <Tooltip key={signal.code}>
                                       <TooltipTrigger>
                                         <Badge
                                           variant='destructive'
                                           className={styles["allergenBadge"]}>
                                           <TbAlertTriangle className={styles["allergenIcon"]} />
-                                          {allergen.name}
+                                          {signal.code}
                                         </Badge>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        <p className={styles["allergenDescription"]}>{allergen.description}</p>
-                                        {allergen.learnMoreAddress ? (
-                                          <a
-                                            href={allergen.learnMoreAddress}
-                                            target='_blank'
-                                            rel='noopener noreferrer'
-                                            className={styles["allergenLink"]}>
-                                            Learn more →
-                                          </a>
-                                        ) : null}
+                                        <p className={styles["allergenDescription"]}>{signal.evidenceLevel}</p>
                                       </TooltipContent>
                                     </Tooltip>
                                   ))}

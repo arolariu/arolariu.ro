@@ -39,7 +39,7 @@ import type {FilterState} from "./useInvoiceFilters";
  *   dateTo: "2024-12-31", // ISO date string
  *   amountMin: 10,
  *   amountMax: 100,
- *   categories: [InvoiceCategory.GROCERY],
+ *   classificationGroups: ["Food and non-alcoholic beverages"],
  *   paymentTypes: [PaymentType.Card],
  *   sortBy: "date",
  *   sortOrder: "desc",

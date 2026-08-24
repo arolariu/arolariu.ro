@@ -6,7 +6,6 @@
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
 import type {Merchant} from "@/types/invoices";
-import {MerchantCategory} from "@/types/invoices";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder} from "../../../../../../tests/helpers";
 
@@ -22,9 +21,9 @@ describe("fetchMerchants", () => {
   const MERCHANT_ID_3 = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 
   const mockMerchants: Merchant[] = [
-    TestDataBuilder.build("merchant", {id: MERCHANT_ID_1, name: "Supermarket A", category: MerchantCategory.SUPERMARKET}),
-    TestDataBuilder.build("merchant", {id: MERCHANT_ID_2, name: "Local Shop B", category: MerchantCategory.LOCAL_SHOP}),
-    TestDataBuilder.build("merchant", {id: MERCHANT_ID_3, name: "Online Store C", category: MerchantCategory.ONLINE_SHOP}),
+    TestDataBuilder.build("merchant", {id: MERCHANT_ID_1, name: "Supermarket A"}),
+    TestDataBuilder.build("merchant", {id: MERCHANT_ID_2, name: "Local Shop B"}),
+    TestDataBuilder.build("merchant", {id: MERCHANT_ID_3, name: "Online Store C"}),
   ];
 
   beforeEach(() => {

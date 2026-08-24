@@ -112,14 +112,10 @@ export const TopTwenty: Story = {
   },
 };
 
-/**
- * Grocery products only.
- * Filters to show only grocery category products.
- */
 export const GroceryOnly: Story = {
   args: {
     data: computeTopProducts(
-      mockInvoices.filter((inv) => inv.category === 100), // GROCERY enum value
+      mockInvoices.filter((inv) => inv.classification?.system === "ECOICOP_V2" && inv.classification.code.startsWith("01")),
     ),
     currency: "lei",
   },

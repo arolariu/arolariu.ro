@@ -30,7 +30,6 @@ import {type Invoice} from "@/types/invoices";
 import {
   Area,
   AreaChart,
-  Badge,
   Button,
   Card,
   CardContent,
@@ -189,9 +188,6 @@ export function MerchantInfoCard(): React.JSX.Element {
           <div className={styles["infoRow"]}>
             <TbPhone className={styles["iconMuted"]} />
             <span className={styles["infoText"]}>{merchant.address.phoneNumber}</span>
-          </div>
-          <div className={styles["infoRow"]}>
-            <Badge variant='outline'>{merchant.category}</Badge>
           </div>
           {Boolean(merchant.address.website) && (
             <div className={styles["infoRow"]}>

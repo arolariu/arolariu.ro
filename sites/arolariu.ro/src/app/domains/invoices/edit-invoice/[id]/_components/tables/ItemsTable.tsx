@@ -3,7 +3,7 @@
 import {patchInvoice} from "@/app/domains/invoices/_actions/invoices";
 import {usePaginationWithSearch} from "@/hooks";
 import {formatCurrency} from "@/lib/utils.generic";
-import {Invoice, Product, ProductCategory} from "@/types/invoices";
+import {Invoice, Product} from "@/types/invoices";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -358,13 +358,11 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
     const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const newItem: Product = {
       name: `${t((m) => m.pages.invoices.editInvoice.itemsTable.newItem.defaultName)}_${uniqueSuffix}`,
-      category: ProductCategory.NOT_DEFINED,
       quantity: 1,
       quantityUnit: "pcs",
       productCode: "",
       price: 0,
       totalPrice: 0,
-      detectedAllergens: [],
       metadata: {
         isEdited: true,
         isComplete: false,
@@ -666,8 +664,9 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
               const isEditing = editingCell?.rowIndex === index;
               const isSelected = selectedIndices.has(index);
               const {isSoftDeleted, isEdited} = item.metadata;
-              const {detectedAllergens, quantity, quantityUnit, price} = item;
-              const hasAllergens = detectedAllergens.length > 0;
+              const {quantity, quantityUnit, price} = item;
+              const detectedSignals = item.allergenAssessment?.status === "detected" ? item.allergenAssessment.signals : [];
+              const hasAllergens = detectedSignals.length > 0;
               const indicatorClass = getProductIndicatorClass(item);
 
               // Create stable handlers for this specific row
@@ -748,13 +747,13 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                                       className={styles["allergenBadge"]}>
                                       <TbFlask className={styles["allergenIcon"]} />
                                       {t((m) => m.pages.invoices.editInvoice.itemsTable.indicators.allergens, {
-                                        count: detectedAllergens.length,
+                                        count: detectedSignals.length,
                                       })}
                                     </Badge>
                                   }
                                 />
                                 <TooltipContent>
-                                  <p>{detectedAllergens.map((a) => a.name).join(", ")}</p>
+                                  <p>{detectedSignals.map((s) => s.code).join(", ")}</p>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>

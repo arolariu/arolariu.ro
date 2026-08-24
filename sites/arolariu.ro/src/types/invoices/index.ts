@@ -22,8 +22,8 @@
  * // Import specific types
  * import type { Invoice, Product } from "@/types/invoices";
  *
- * // Import enums (runtime values)
- * import { InvoiceCategory, ProductCategory } from "@/types/invoices";
+ * // Import runtime values (enums/const objects)
+ * import { InvoiceScanType, PaymentType } from "@/types/invoices";
  *
  * // Import DTO payloads for API calls
  * import type { CreateInvoiceDtoPayload } from "@/types/invoices";
@@ -32,12 +32,6 @@
  * @see {@link Invoice} for the primary aggregate root
  * @see {@link ../DDD} for base entity types
  */
-
-/**
- * Allergen types for food safety tracking.
- * @see {@link Allergen} for allergen structure
- */
-export type {Allergen, CreateAllergenDtoPayload, DeleteAllergenDtoPayload, UpdateAllergenDtoPayload} from "./Allergen";
 
 /**
  * EU-14 canonical allergen model, runtime guards, and food-safety assessment types.
@@ -85,8 +79,6 @@ export {
  * @see {@link Invoice} for the main entity
  */
 export {
-  InvoiceAnalysisOptions,
-  InvoiceCategory,
   InvoiceScanType,
   type CreateInvoiceDtoPayload,
   type CreateInvoiceScanDtoPayload,
@@ -126,7 +118,6 @@ export {
  * @see {@link Merchant} for the merchant entity
  */
 export {
-  MerchantCategory,
   type ContactInformation,
   type CreateMerchantDtoPayload,
   type DeleteMerchantDtoPayload,
@@ -155,7 +146,6 @@ export {
  * @see {@link Product} for product structure
  */
 export {
-  ProductCategory,
   type CreateProductDtoPayload,
   type DeleteProductDtoPayload,
   type Product,
@@ -170,18 +160,13 @@ export {
  * @see {@link Recipe} for the legacy recipe structure
  */
 export {
-  RecipeComplexity,
   RecipeDifficulty,
   isRecipeIngredient,
   isRecipeStep,
   isRecipeSuggestion,
-  type CreateRecipeDtoPayload,
-  type DeleteRecipeDtoPayload,
-  type Recipe,
   type RecipeIngredient,
   type RecipeStep,
   type RecipeSuggestion,
-  type UpdateRecipeDtoPayload,
 } from "./Recipe";
 
 /**

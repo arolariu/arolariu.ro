@@ -4,7 +4,7 @@
  */
 
 import {InvoiceBuilder} from "@/data/mocks";
-import {InvoiceCategory, InvoiceScanType, PaymentType, type Invoice} from "@/types/invoices";
+import {InvoiceScanType, PaymentType, type Invoice} from "@/types/invoices";
 import {act, renderHook} from "@testing-library/react";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {useInvoicesStore} from "./invoicesStore";
@@ -41,8 +41,7 @@ describe("useInvoicesStore", () => {
     .withCreatedAt(new Date("2025-01-01"))
     .withLastUpdatedAt(new Date("2025-01-01"))
     .withUserIdentifier("user-123")
-    .withCategory(InvoiceCategory.GROCERY)
-    .withScans([{scanType: InvoiceScanType.JPEG, type: InvoiceScanType.JPEG, location: "https://example.com/invoice1.jpg", metadata: {}}])
+    .withScans([{type: InvoiceScanType.JPEG, location: "https://example.com/invoice1.jpg", metadata: {}}])
     .withMerchantReference("merchant-1")
     .withPaymentInformation(paymentInformationFixture)
     .build();
@@ -54,8 +53,7 @@ describe("useInvoicesStore", () => {
     .withCreatedAt(new Date("2025-01-02"))
     .withLastUpdatedAt(new Date("2025-01-02"))
     .withUserIdentifier("user-123")
-    .withCategory(InvoiceCategory.FAST_FOOD)
-    .withScans([{scanType: InvoiceScanType.JPEG, type: InvoiceScanType.JPEG, location: "https://example.com/invoice2.jpg", metadata: {}}])
+    .withScans([{type: InvoiceScanType.JPEG, location: "https://example.com/invoice2.jpg", metadata: {}}])
     .withMerchantReference("merchant-2")
     .withPaymentInformation(paymentInformationFixture)
     .build();
@@ -67,8 +65,7 @@ describe("useInvoicesStore", () => {
     .withCreatedAt(new Date("2025-01-03"))
     .withLastUpdatedAt(new Date("2025-01-03"))
     .withUserIdentifier("user-456")
-    .withCategory(InvoiceCategory.HOME_CLEANING)
-    .withScans([{scanType: InvoiceScanType.JPEG, type: InvoiceScanType.JPEG, location: "https://example.com/invoice3.jpg", metadata: {}}])
+    .withScans([{type: InvoiceScanType.JPEG, location: "https://example.com/invoice3.jpg", metadata: {}}])
     .withMerchantReference("merchant-1")
     .withPaymentInformation(paymentInformationFixture)
     .build();
@@ -210,8 +207,7 @@ describe("useInvoicesStore", () => {
         .withCreatedAt(new Date("2025-01-01"))
         .withLastUpdatedAt(new Date("2025-06-01"))
         .withUserIdentifier("user-123")
-        .withCategory(InvoiceCategory.CAR_AUTO)
-        .withScans([{scanType: InvoiceScanType.JPEG, type: InvoiceScanType.JPEG, location: "https://example.com/updated.jpg", metadata: {}}])
+        .withScans([{type: InvoiceScanType.JPEG, location: "https://example.com/updated.jpg", metadata: {}}])
         .withMerchantReference("merchant-updated")
         .withPaymentInformation(paymentInformationFixture)
         .build();
@@ -224,7 +220,6 @@ describe("useInvoicesStore", () => {
       expect(result.current.getState().entities).toHaveLength(1);
       expect(result.current.getState().entities[0]?.name).toBe("Updated Invoice Name");
       expect(result.current.getState().entities[0]?.description).toBe("Updated description");
-      expect(result.current.getState().entities[0]?.category).toBe(InvoiceCategory.CAR_AUTO);
     });
 
     it("should not create duplicates when upserting same entity twice", () => {
@@ -290,13 +285,11 @@ describe("useInvoicesStore", () => {
         result.current.getState().setEntities([mockInvoice1, mockInvoice2]);
         result.current.getState().updateEntity(mockInvoice1.id, {
           name: "Updated Invoice Name",
-          category: InvoiceCategory.CAR_AUTO,
         });
       });
 
       const updatedInvoice = result.current.getState().entities.find((inv) => inv.id === mockInvoice1.id);
       expect(updatedInvoice?.name).toBe("Updated Invoice Name");
-      expect(updatedInvoice?.category).toBe(InvoiceCategory.CAR_AUTO);
       expect(updatedInvoice?.description).toBe(mockInvoice1.description); // Should remain unchanged
     });
 
@@ -583,13 +576,11 @@ describe("useInvoicesStore", () => {
       act(() => {
         result.current.getState().updateEntity(mockInvoice2.id, {
           name: "Updated Invoice",
-          category: InvoiceCategory.FAST_FOOD,
         });
       });
 
       expect(result.current.getState().entities[1]?.name).toBe("Updated Invoice");
       expect(result.current.getState().selectedEntities[0]?.name).toBe("Updated Invoice");
-      expect(result.current.getState().selectedEntities[0]?.category).toBe(InvoiceCategory.FAST_FOOD);
     });
 
     it("should cover all action branches for toggleEntitySelection", () => {
@@ -782,9 +773,8 @@ describe("useInvoicesStore", () => {
         isSoftDeleted: false,
         userIdentifier: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
         sharedWith: [],
-        category: InvoiceCategory.GROCERY,
         // 'classification' key intentionally absent (retired shape)
-        scans: [{scanType: InvoiceScanType.JPEG, type: InvoiceScanType.JPEG, location: "https://example.com/scan.jpg", metadata: {}}],
+        scans: [{type: InvoiceScanType.JPEG, location: "https://example.com/scan.jpg", metadata: {}}],
         paymentInformation: {
           transactionDate: new Date("2024-01-01"),
           paymentType: PaymentType.Cash,
@@ -811,7 +801,7 @@ describe("useInvoicesStore", () => {
         .build();
 
       mockGetItem.mockResolvedValueOnce({
-        state: {entities: [oldShapeInvoice as unknown as Invoice, newShapeInvoice]},
+        state: {entities: [oldShapeInvoice as Partial<Invoice> as Invoice, newShapeInvoice]},
         version: 0,
       });
 

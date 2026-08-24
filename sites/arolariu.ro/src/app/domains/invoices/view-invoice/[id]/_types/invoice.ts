@@ -3,8 +3,6 @@
  * @module sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_types/invoice
  */
 
-import {InvoiceCategory, ProductCategory} from "@/types/invoices";
-
 // Simplified historical invoice summary for analytics
 export type HistoricalInvoiceSummary = {
   id: string;
@@ -13,6 +11,8 @@ export type HistoricalInvoiceSummary = {
   totalAmount: number;
   itemCount: number;
   merchantName: string;
-  category: InvoiceCategory;
-  categoryBreakdown: Record<ProductCategory, number>;
+  /** ECOICOP v2 classification code, or null when unclassified. */
+  classificationCode: string | null;
+  /** Classification label breakdown by GS1 GPC code. */
+  classificationBreakdown: Record<string, number>;
 };

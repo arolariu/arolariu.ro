@@ -18,7 +18,7 @@
  *
  * **Supported Fields:**
  * - Required: name, category, quantity, price
- * - Optional: quantityUnit, productCode, detectedAllergens
+ * - Optional: quantityUnit, productCode
  * - Server-generated: totalPrice, metadata
  *
  * @see {@link Product} - Product type definition
@@ -44,7 +44,7 @@ import {revalidatePath} from "next/cache";
 type ServerActionInputType = Readonly<{
   /** The unique identifier of the invoice. Must be a valid UUIDv4 GUID. */
   readonly invoiceId: string;
-  /** The product to add. Must include required fields: name, category, quantity, price. */
+  /** The product to add. Must include required fields: name, quantity, price. */
   readonly product: Product;
 }>;
 
@@ -112,17 +112,10 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  *   invoiceId: "123e4567-e89b-12d3-a456-426614174000",
  *   product: {
  *     name: "Zuzu Milk 2% 1 Liter",
- *     category: ProductCategory.DAIRY,
  *     quantity: 2,
  *     quantityUnit: "pcs",
  *     price: 8.99,
- *     detectedAllergens: [
- *       {
- *         name: "Lactose",
- *         description: "Milk sugar",
- *         learnMoreAddress: "https://example.com/allergens/lactose"
- *       }
- *     ]
+ *     allergenAssessment: null,
  *   }
  * });
  *

@@ -1,4 +1,4 @@
-import {Product, ProductCategory} from "@/types/invoices";
+import {type Product} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
 import GuidedEditBanner from "./GuidedEditBanner";
 
@@ -42,13 +42,11 @@ type Story = StoryObj<typeof meta>;
 // Mock products with various issues
 const createMockProduct = (overrides: Partial<Product>): Product => ({
   name: "Product Name",
-  category: ProductCategory.GROCERIES,
   quantity: 1,
   quantityUnit: "pcs",
   productCode: "",
   price: 10.0,
   totalPrice: 10.0,
-  detectedAllergens: [],
   metadata: {
     isEdited: false,
     isComplete: true,
@@ -65,7 +63,6 @@ const completeProducts: Product[] = [createMockProduct({name: "Complete Product 
 const incompleteProducts: Product[] = [
   createMockProduct({
     name: "Uncategorized Product",
-    category: ProductCategory.NOT_DEFINED,
     metadata: {
       isEdited: false,
       isComplete: false,
@@ -98,7 +95,6 @@ const mixedProducts: Product[] = [
   ...incompleteProducts,
   createMockProduct({
     name: "Another Incomplete",
-    category: ProductCategory.NOT_DEFINED,
     metadata: {
       isEdited: false,
       isComplete: false,
@@ -125,7 +121,6 @@ export const SingleIssue: Story = {
     items: [
       createMockProduct({
         name: "Uncategorized Product",
-        category: ProductCategory.NOT_DEFINED,
         metadata: {
           isEdited: false,
           isComplete: false,
@@ -191,7 +186,6 @@ export const OnlyUncategorized: Story = {
     items: [
       createMockProduct({
         name: "Uncategorized 1",
-        category: ProductCategory.NOT_DEFINED,
         metadata: {
           isEdited: false,
           isComplete: false,
@@ -201,7 +195,6 @@ export const OnlyUncategorized: Story = {
       }),
       createMockProduct({
         name: "Uncategorized 2",
-        category: ProductCategory.NOT_DEFINED,
         metadata: {
           isEdited: false,
           isComplete: false,
@@ -211,7 +204,6 @@ export const OnlyUncategorized: Story = {
       }),
       createMockProduct({
         name: "Uncategorized 3",
-        category: ProductCategory.NOT_DEFINED,
         metadata: {
           isEdited: false,
           isComplete: false,
@@ -260,7 +252,6 @@ export const ManyIssues: Story = {
       ...Array.from({length: 10}, (_, i) =>
         createMockProduct({
           name: `Product ${i + 1}`,
-          category: ProductCategory.NOT_DEFINED,
           metadata: {
             isEdited: false,
             isComplete: false,

@@ -122,8 +122,7 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  * **Wire Format:**
  * The backend DTO (`UpdateProductRequestDto`) is **flat**, not nested. This
  * action flattens the input `payload` before sending so the wire body looks
- * like `{ originalProductName, name, category, quantity, quantityUnit,
- * productCode, price, detectedAllergens }`.
+ * like `{ originalProductName, name, quantity, quantityUnit, productCode, price }`.
  *
  * **Cache Revalidation:**
  * On successful update, automatically revalidates Next.js cache for:
@@ -163,14 +162,9 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  *     originalProductName: "Zuzu Milk 2% 1 Liter",
  *     updatedProduct: {
  *       name: "Zuzu Milk 2% 1 Liter",
- *       category: ProductCategory.DAIRY,
  *       quantity: 2,
  *       quantityUnit: "pcs",
  *       price: 8.99,
- *       detectedAllergens: [
- *         { name: "Lactose", description: "Milk sugar", learnMoreAddress: "" },
- *         { name: "Milk Protein", description: "Casein and whey proteins", learnMoreAddress: "" }
- *       ]
  *     }
  *   }
  * });
@@ -190,12 +184,10 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  *   payload: {
  *     originalProductName: "Gala Apples",
  *     updatedProduct: {
- *       name: "Organic Gala Apples", // Name can be changed
- *       category: ProductCategory.FRUITS,
+ *       name: "Organic Gala Apples",
  *       quantity: 3,
  *       quantityUnit: "kg",
- *       price: 15.99, // Price updated
- *       detectedAllergens: []
+ *       price: 15.99,
  *     }
  *   }
  * });

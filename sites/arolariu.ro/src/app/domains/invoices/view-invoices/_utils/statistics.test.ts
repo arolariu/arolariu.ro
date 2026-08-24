@@ -17,13 +17,14 @@
  * - computeTopProducts
  * - computeAllergenFrequency
  * - getPaymentTypeLabel
- * - getProductCategoryLabel
  */
 
 import {describe, expect, it} from "vitest";
 
 // Import types
 import type {Invoice, Product} from "@/types/invoices";
+import {PaymentType} from "@/types/invoices";
+import type {AllergenAssessment} from "@/types/invoices/Allergen";
 import type {StandardClassification} from "@/types/invoices/Classification";
 import {ClassificationOrigin, ClassificationSystem} from "@/types/invoices/Classification";
 
@@ -44,7 +45,6 @@ import {
   computeTimeOfDay,
   computeTopProducts,
   getPaymentTypeLabel,
-  getProductCategoryLabel,
 } from "./statistics";
 
 /**
@@ -58,7 +58,7 @@ function createTestInvoice(overrides: {
   currency?: string;
   date?: Date;
   classification?: StandardClassification | null;
-  paymentType?: number;
+  paymentType?: PaymentType;
   items?: Product[];
 }): Invoice {
   const date = overrides.date ?? new Date();
@@ -69,27 +69,38 @@ function createTestInvoice(overrides: {
     name: `Test Invoice`,
     description: "Test invoice description",
     createdAt: date,
+    createdBy: "test-user",
     lastUpdatedAt: date,
+    lastUpdatedBy: "test-user",
+    numberOfUpdates: 0,
+    isImportant: false,
+    isSoftDeleted: false,
     userIdentifier: "test-user",
     merchantReference: overrides.merchantId ?? "merchant-1",
-    category: 100,
     classification: overrides.classification ?? null,
     scans: [],
+    sharedWith: [],
+    additionalMetadata: {},
+    receiptType: "",
+    countryRegion: "RO",
+    taxDetails: [],
+    payments: [],
     paymentInformation: {
       transactionDate: date,
       totalCostAmount: overrides.amount ?? 100,
+      totalTaxAmount: 0,
+      subtotalAmount: 0,
+      tipAmount: 0,
       currency: {
         code: currency,
         symbol: currency === "EUR" ? "€" : currency === "USD" ? "$" : "lei",
         name: currency === "EUR" ? "Euro" : currency === "USD" ? "US Dollar" : "Romanian Leu",
       },
-      currencyCode: currency,
-      paymentType: overrides.paymentType ?? 200,
-      isValid: true,
+      paymentType: overrides.paymentType ?? PaymentType.Card,
     },
     items: overrides.items ?? [],
     possibleRecipes: [],
-  } as unknown as Invoice;
+  };
 }
 
 /**
@@ -102,23 +113,25 @@ function createTestProduct(overrides: {
   price?: number;
   totalPrice?: number;
   classification?: StandardClassification | null;
-  detectedAllergens?: Array<{name: string; description: string}>;
-  allergenAssessment?: {status: string; signals: Array<{code: string; evidenceLevel: string; confidence: number; evidence: unknown[]}>} | null;
+  allergenAssessment?: AllergenAssessment | null;
   isSoftDeleted?: boolean;
 }): Product {
   return {
-    id: overrides.id ?? `product-${Math.random()}`,
     name: overrides.name ?? "Test Product",
-    productIdentifier: `prod-${Math.random()}`,
     quantity: overrides.quantity ?? 1,
+    quantityUnit: "pcs",
+    productCode: "",
     price: overrides.price ?? 10,
     totalPrice: overrides.totalPrice ?? 10,
-    category: 0,
     classification: overrides.classification ?? null,
-    detectedAllergens: overrides.detectedAllergens ?? [],
     allergenAssessment: overrides.allergenAssessment !== undefined ? overrides.allergenAssessment : null,
-    metadata: overrides.isSoftDeleted ? {isSoftDeleted: true} : undefined,
-  } as unknown as Product;
+    metadata: {
+      isEdited: false,
+      isComplete: true,
+      isSoftDeleted: overrides.isSoftDeleted ?? false,
+      confidence: 1,
+    },
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -741,31 +754,6 @@ describe("Statistics Functions", () => {
     it("should return Unknown for unknown payment type", () => {
       expect(getPaymentTypeLabel(999)).toBe("Unknown");
       expect(getPaymentTypeLabel(-1)).toBe("Unknown");
-    });
-  });
-
-  describe("getProductCategoryLabel", () => {
-    it("should map all known product categories", () => {
-      expect(getProductCategoryLabel(0)).toBe("Uncategorized");
-      expect(getProductCategoryLabel(100)).toBe("Baked Goods");
-      expect(getProductCategoryLabel(200)).toBe("Groceries");
-      expect(getProductCategoryLabel(300)).toBe("Dairy");
-      expect(getProductCategoryLabel(400)).toBe("Meat");
-      expect(getProductCategoryLabel(500)).toBe("Fish");
-      expect(getProductCategoryLabel(600)).toBe("Fruits");
-      expect(getProductCategoryLabel(700)).toBe("Vegetables");
-      expect(getProductCategoryLabel(800)).toBe("Beverages");
-      expect(getProductCategoryLabel(900)).toBe("Alcoholic Beverages");
-      expect(getProductCategoryLabel(1000)).toBe("Tobacco");
-      expect(getProductCategoryLabel(1100)).toBe("Cleaning Supplies");
-      expect(getProductCategoryLabel(1200)).toBe("Personal Care");
-      expect(getProductCategoryLabel(1300)).toBe("Medicine");
-      expect(getProductCategoryLabel(9999)).toBe("Other");
-    });
-
-    it("should return Unknown for unknown category", () => {
-      expect(getProductCategoryLabel(999)).toBe("Unknown");
-      expect(getProductCategoryLabel(-1)).toBe("Unknown");
     });
   });
 
@@ -1494,17 +1482,6 @@ describe("Statistics Functions", () => {
         const invoice = createTestInvoice({amount: 100});
         // @ts-expect-error - Intentionally testing null items
         invoice.items = null;
-
-        const result = computeAllergenFrequency([invoice]);
-
-        expect(result).toHaveLength(0);
-      });
-
-      it("should handle products with null detectedAllergens", () => {
-        const product = createTestProduct({name: "Test Product"});
-        // @ts-expect-error - Intentionally testing null detectedAllergens
-        product.detectedAllergens = null;
-        const invoice = createTestInvoice({items: [product], amount: 100});
 
         const result = computeAllergenFrequency([invoice]);
 

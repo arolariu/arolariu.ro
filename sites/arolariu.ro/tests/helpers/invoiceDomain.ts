@@ -20,7 +20,7 @@
  */
 
 import type {Invoice, Merchant, Product} from "@/types/invoices";
-import {InvoiceCategory, MerchantCategory, PaymentType, ProductCategory} from "@/types/invoices";
+import {PaymentType} from "@/types/invoices";
 import type {ContactInformation} from "@/types/invoices/Merchant";
 import type {PaymentInformation} from "@/types/invoices/Payment";
 import type {CachedScan, Scan} from "@/types/scans";
@@ -124,13 +124,11 @@ export function createTextResponse(text: string, init: Readonly<{status: number;
 export function buildProduct(overrides: Partial<Product> = {}): Product {
   return {
     name: "Coffee",
-    category: ProductCategory.GROCERIES,
     quantity: 1,
     quantityUnit: "pcs",
     productCode: "",
     price: 10,
     totalPrice: 10,
-    detectedAllergens: [],
     metadata: {
       isEdited: false,
       isComplete: true,
@@ -200,7 +198,6 @@ export function buildInvoice(overrides: Partial<Invoice> = {}): Invoice {
     description: "Test invoice description",
     userIdentifier: "user-1",
     sharedWith: [],
-    category: InvoiceCategory.GROCERY,
     scans: [],
     paymentInformation: buildPaymentInformation(),
     merchantReference: "merchant-1",
@@ -269,7 +266,6 @@ export function buildMerchant(overrides: Partial<Merchant> = {}): Merchant {
     id: "22222222-2222-4222-8222-222222222222",
     name: "Test merchant",
     description: "Test merchant description",
-    category: MerchantCategory.SUPERMARKET,
     address: buildContactInformation(),
     parentCompanyId: "",
     createdAt: new Date("2026-01-01T00:00:00.000Z"),

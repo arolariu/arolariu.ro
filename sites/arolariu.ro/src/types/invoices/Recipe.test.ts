@@ -67,7 +67,7 @@ describe("isRecipeSuggestion", () => {
         instructions: "Cook it.",
         preparationTime: 10,
         cookingTime: 15,
-        referenceForMoreDetails: "https://example.com",
+        externalUrl: "https://example.com",
       }),
     ).toBe(false);
   });

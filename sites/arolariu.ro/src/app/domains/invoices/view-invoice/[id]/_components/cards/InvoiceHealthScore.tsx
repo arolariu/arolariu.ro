@@ -34,12 +34,10 @@ import {selectorFromPath} from "next-intl-selector";
  * **Rendering Context:** Client Component (requires useState, useMemo).
  *
  * @see {@link useInvoiceContext} for data access
- * @see {@link InvoiceCategory} for category enum
  * @see {@link Product} for product structure
  * @see {@link ProductMetadata} for completeness flags
  */
 
-import {InvoiceCategory, ProductCategory} from "@/types/invoices";
 import {
   Button,
   Card,
@@ -217,8 +215,8 @@ export function InvoiceHealthScore(): React.JSX.Element {
       && (invoice.paymentInformation.currency?.code?.length ?? 0) > 0;
     const paymentPoints = hasCompletePayment ? 15 : 0;
 
-    // Factor 6: Categories assigned (10 points)
-    const categorizedProducts = items.filter((item) => item.category !== ProductCategory.NOT_DEFINED).length;
+    // Factor 6: Classification assigned (10 points)
+    const categorizedProducts = items.filter((item) => item.classification !== null).length;
     const categoryRatio = totalItems > 0 ? categorizedProducts / totalItems : 0;
     const categoryPoints = Math.round(categoryRatio * 10);
 
