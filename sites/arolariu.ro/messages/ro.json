@@ -371,34 +371,8 @@
       "nutritionCard": {
         "allergens": {
           "foundInItems": "Găsit în {count} articol(e)",
-          "title": "Alergeni detectați"
-        },
-        "composition": {
-          "dairyOther": "Lactate/Altele",
-          "processed": "Procesate",
-          "title": "Compoziția coșului tău",
-          "wholeFoods": "Alimente integrale"
-        },
-        "foodGroups": {
-          "fruits": "Fructe",
-          "grains": "Cereale",
-          "itemsCount": "{count} articol(s)",
-          "protein": "Proteine",
-          "vegetables": "Legume"
-        },
-        "score": {
-          "excellent": "Excelent",
-          "fair": "Acceptabil",
-          "good": "Bun",
-          "needsWork": "Necesită îmbunătățiri",
-          "title": "Scor echilibru alimentar"
-        },
-        "suggestions": {
-          "addFruits": "Adăugarea unor fructe ar îmbunătăți echilibrul nutrițional",
-          "addFruitsAndVegetables": "Adaugă mai multe fructe și legume pentru a-ți echilibra coșul",
-          "addVegetables": "Ia în calcul adăugarea de legume pentru o alimentație mai echilibrată",
-          "greatBalance": "Cumpărături foarte bine echilibrate!",
-          "swapProcessed": "Încearcă să înlocuiești unele produse procesate cu alimente integrale"
+          "title": "Alergeni detectați",
+          "noProducts": "Nu exista produse pe aceasta factura."
         },
         "title": "Privire generală nutriție"
       },
@@ -851,37 +825,17 @@
         }
       },
       "allergenDialog": {
-        "aria": {
-          "removeAllergen": "Elimină alergenul {name}"
-        },
         "buttons": {
-          "add": "Adaugă",
           "cancel": "Anulează",
           "save": "Salvează Modificările",
           "saving": "Se salvează..."
         },
-        "defaultDescription": "Conține {name}",
         "description": "Gestionează alergenii pentru {productName}",
-        "empty": {
-          "noAllergens": "Niciun alergen detectat"
-        },
         "errors": {
-          "duplicate": "Alergenul {name} este deja adăugat",
-          "emptyName": "Numele alergenului nu poate fi gol",
           "missingData": "Datele produsului lipsesc",
           "saveFailed": "Eroare la salvarea alergenilor"
         },
-        "labels": {
-          "currentAllergens": "Alergeni Actuali",
-          "customAllergen": "Adaugă Alergen Personalizat",
-          "quickAdd": "Adaugă Rapid Alergeni Comuni"
-        },
-        "placeholders": {
-          "customAllergen": "Introdu numele alergenului..."
-        },
         "success": {
-          "added": "Alergen adăugat: {name}",
-          "removed": "Alergen eliminat: {name}",
           "saved": "Alergenii au fost actualizați cu succes"
         },
         "title": "Editează Alergeni"
@@ -5274,6 +5228,63 @@
         "addSuccess": "Scanare adăugată",
         "uploadFailed": "Încărcarea a eșuat (status {status})"
       }
+    }
+  },
+  "allergens": {
+    "editor": {
+      "title": "Editati evaluarea alergenilor",
+      "signals": {
+        "addEvidence": "Adaugati dovada",
+        "evidenceLevel": "Nivel de evidenta",
+        "evidenceSource": "Sursa",
+        "userProvided": "Furnizat de utilizator",
+        "confidence": "Incredere (0-1)",
+        "removeEvidence": "Eliminati intrarea de dovezi",
+        "addSignal": "Adaugati semnal",
+        "removeSignal": "Eliminati semnalul",
+        "empty": "Nu s-au adaugat semnale.",
+        "title": "Semnale",
+        "evidenceValue": "Valoare",
+        "code": "Alergen"
+      },
+      "status": {
+        "label": "Status",
+        "noSignals": "Fara semnale",
+        "insufficientData": "Date insuficiente"
+      }
+    },
+    "view": {
+      "signal": {
+        "evidenceLevel": "Nivel de evidenta",
+        "confidence": "Incredere",
+        "evidenceEntries": "Intrari de dovezi"
+      },
+      "status": {
+        "detected": "Detectat",
+        "insufficientData": "Date insuficiente",
+        "noSignals": "Fara semnale detectate"
+      },
+      "notAssessed": "Acest produs nu a fost evaluat pentru alergeni.",
+      "statusNote": {
+        "noSignals": "Evaluarea s-a finalizat, dar nu a gasit dovezi ale acestui alergen. Aceasta nu confirma ca produsul este lipsit de alergeni.",
+        "insufficientData": "Nu au existat date suficiente pentru o evaluare fiabila a alergenilor."
+      }
+    },
+    "codes": {
+      "crustaceans": "Crustacee",
+      "lupin": "Lupin",
+      "nuts": "Nuci",
+      "celery": "Telina",
+      "milk": "Lapte",
+      "sesame": "Susan",
+      "sulphurDioxideAndSulphites": "Dioxid de sulf si sulfiti",
+      "eggs": "Oua",
+      "mustard": "Mustar",
+      "molluscs": "Moluste",
+      "cerealsContainingGluten": "Cereale care contin gluten",
+      "soybeans": "Soia",
+      "fish": "Peste",
+      "peanuts": "Arahide"
     }
   }
 }

@@ -371,34 +371,8 @@
       "nutritionCard": {
         "allergens": {
           "foundInItems": "Trouvé dans {count} article(s)",
-          "title": "Allergènes détectés"
-        },
-        "composition": {
-          "dairyOther": "Produits laitiers/Autre",
-          "processed": "Transformés",
-          "title": "Composition de votre panier",
-          "wholeFoods": "Aliments complets"
-        },
-        "foodGroups": {
-          "fruits": "Fruits frais",
-          "grains": "Céréales",
-          "itemsCount": "{count} article(s)",
-          "protein": "Protéines",
-          "vegetables": "Légumes"
-        },
-        "score": {
-          "excellent": "Très bon",
-          "fair": "Moyen",
-          "good": "Bon",
-          "needsWork": "À améliorer",
-          "title": "Score d’équilibre alimentaire"
-        },
-        "suggestions": {
-          "addFruits": "Ajouter des fruits améliorerait l’équilibre nutritionnel",
-          "addFruitsAndVegetables": "Ajoutez davantage de fruits et légumes pour équilibrer votre panier",
-          "addVegetables": "Pensez à ajouter des légumes pour une alimentation plus équilibrée",
-          "greatBalance": "Excellent équilibre d’achats !",
-          "swapProcessed": "Essayez de remplacer certains produits transformés par des aliments complets"
+          "title": "Allergènes détectés",
+          "noProducts": "Aucun produit trouve sur cette facture."
         },
         "title": "Vue d’ensemble nutritionnelle"
       },
@@ -851,37 +825,17 @@
         }
       },
       "allergenDialog": {
-        "aria": {
-          "removeAllergen": "Retirer l'allergène {name}"
-        },
         "buttons": {
-          "add": "Ajouter",
           "cancel": "Annuler",
           "save": "Enregistrer les modifications",
           "saving": "Enregistrement..."
         },
-        "defaultDescription": "Contient {name}",
         "description": "Gérer les allergènes pour {productName}",
-        "empty": {
-          "noAllergens": "Aucun allergène détecté"
-        },
         "errors": {
-          "duplicate": "L''allergène {name} a déjà été ajouté",
-          "emptyName": "Le nom de l'allergène ne peut pas être vide",
           "missingData": "Données de produit manquantes",
           "saveFailed": "Échec de l'enregistrement des allergènes"
         },
-        "labels": {
-          "currentAllergens": "Allergènes actuels",
-          "customAllergen": "Ajouter un allergène personnalisé",
-          "quickAdd": "Ajout rapide d'allergènes courants"
-        },
-        "placeholders": {
-          "customAllergen": "Entrez le nom de l'allergène..."
-        },
         "success": {
-          "added": "Allergène ajouté : {name}",
-          "removed": "Allergène retiré : {name}",
           "saved": "Allergènes mis à jour avec succès"
         },
         "title": "Modifier les allergènes"
@@ -5273,6 +5227,63 @@
         "addError": "Échec de l’ajout du scan",
         "addSuccess": "Scan ajouté",
         "uploadFailed": "Échec du téléversement (statut {status})"
+      }
+    }
+  },
+  "allergens": {
+    "view": {
+      "signal": {
+        "evidenceLevel": "Niveau de preuve",
+        "confidence": "Confiance",
+        "evidenceEntries": "Entrees de preuves"
+      },
+      "notAssessed": "Ce produit n'a pas ete evalue pour les allergenes.",
+      "status": {
+        "noSignals": "Aucun signal detecte",
+        "insufficientData": "Donnees insuffisantes",
+        "detected": "Detecte"
+      },
+      "statusNote": {
+        "noSignals": "L'evaluation est terminee mais n'a trouve aucune preuve de cet allergene. Cela ne confirme pas que le produit est exempt de cet allergene.",
+        "insufficientData": "Les donnees disponibles n'etaient pas suffisantes pour une evaluation fiable des allergenes."
+      }
+    },
+    "codes": {
+      "peanuts": "Arachides",
+      "cerealsContainingGluten": "Cereales contenant du gluten",
+      "molluscs": "Mollusques",
+      "nuts": "Fruits a coque",
+      "eggs": "Oeufs",
+      "lupin": "Lupin",
+      "sesame": "Graines de sesame",
+      "milk": "Lait",
+      "crustaceans": "Crustaces",
+      "sulphurDioxideAndSulphites": "Dioxyde de soufre et sulfites",
+      "soybeans": "Soja",
+      "mustard": "Moutarde",
+      "fish": "Poisson",
+      "celery": "Celeri"
+    },
+    "editor": {
+      "title": "Modifier l'evaluation des allergenes",
+      "signals": {
+        "title": "Signaux",
+        "removeEvidence": "Supprimer l'entree de preuve",
+        "userProvided": "Fourni par l'utilisateur",
+        "removeSignal": "Supprimer le signal",
+        "empty": "Aucun signal ajoute.",
+        "confidence": "Confiance (0-1)",
+        "evidenceLevel": "Niveau de preuve",
+        "addSignal": "Ajouter un signal",
+        "evidenceValue": "Valeur",
+        "code": "Allergene",
+        "evidenceSource": "Source",
+        "addEvidence": "Ajouter une preuve"
+      },
+      "status": {
+        "label": "Statut",
+        "noSignals": "Aucun signal",
+        "insufficientData": "Donnees insuffisantes"
       }
     }
   }

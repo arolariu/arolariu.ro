@@ -371,34 +371,8 @@
       "nutritionCard": {
         "allergens": {
           "foundInItems": "Found in {count} item(s)",
-          "title": "Allergens Detected"
-        },
-        "composition": {
-          "dairyOther": "Dairy/Other",
-          "processed": "Processed",
-          "title": "Your Basket Composition",
-          "wholeFoods": "Whole Foods"
-        },
-        "foodGroups": {
-          "fruits": "Fruits",
-          "grains": "Grains",
-          "itemsCount": "{count} item(s)",
-          "protein": "Protein",
-          "vegetables": "Vegetables"
-        },
-        "score": {
-          "excellent": "Excellent",
-          "fair": "Fair",
-          "good": "Good",
-          "needsWork": "Needs Work",
-          "title": "Food Balance Score"
-        },
-        "suggestions": {
-          "addFruits": "Adding some fruits would improve nutritional balance",
-          "addFruitsAndVegetables": "Add more fruits and vegetables to balance your basket",
-          "addVegetables": "Consider adding vegetables for a more balanced diet",
-          "greatBalance": "Great balanced shopping!",
-          "swapProcessed": "Try swapping some processed items for whole foods"
+          "title": "Allergens Detected",
+          "noProducts": "No products found on this invoice."
         },
         "title": "Nutrition Overview"
       },
@@ -851,37 +825,17 @@
         }
       },
       "allergenDialog": {
-        "aria": {
-          "removeAllergen": "Remove {name} allergen"
-        },
         "buttons": {
-          "add": "Add",
           "cancel": "Cancel",
           "save": "Save Changes",
           "saving": "Saving..."
         },
-        "defaultDescription": "Contains {name}",
         "description": "Manage allergens for {productName}",
-        "empty": {
-          "noAllergens": "No allergens detected"
-        },
         "errors": {
-          "duplicate": "Allergen {name} already added",
-          "emptyName": "Allergen name cannot be empty",
           "missingData": "Missing product data",
           "saveFailed": "Failed to save allergens"
         },
-        "labels": {
-          "currentAllergens": "Current Allergens",
-          "customAllergen": "Add Custom Allergen",
-          "quickAdd": "Quick Add Common Allergens"
-        },
-        "placeholders": {
-          "customAllergen": "Enter allergen name..."
-        },
         "success": {
-          "added": "Added allergen: {name}",
-          "removed": "Removed allergen: {name}",
           "saved": "Allergens updated successfully"
         },
         "title": "Edit Allergens"
@@ -5273,6 +5227,63 @@
         "addError": "Failed to add scan",
         "addSuccess": "Scan added",
         "uploadFailed": "Upload failed (status {status})"
+      }
+    }
+  },
+  "allergens": {
+    "view": {
+      "notAssessed": "This product has not been assessed for allergens.",
+      "status": {
+        "detected": "Detected",
+        "insufficientData": "Insufficient data",
+        "noSignals": "No signals found"
+      },
+      "signal": {
+        "confidence": "Confidence",
+        "evidenceEntries": "Evidence entries",
+        "evidenceLevel": "Evidence level"
+      },
+      "statusNote": {
+        "noSignals": "The assessment completed but found no evidence of this allergen. This does not confirm the product is free of this allergen.",
+        "insufficientData": "There was insufficient data to make a reliable allergen assessment."
+      }
+    },
+    "codes": {
+      "milk": "Milk",
+      "nuts": "Nuts",
+      "cerealsContainingGluten": "Cereals Containing Gluten",
+      "fish": "Fish",
+      "molluscs": "Molluscs",
+      "peanuts": "Peanuts",
+      "mustard": "Mustard",
+      "celery": "Celery",
+      "eggs": "Eggs",
+      "sesame": "Sesame",
+      "crustaceans": "Crustaceans",
+      "lupin": "Lupin",
+      "soybeans": "Soybeans",
+      "sulphurDioxideAndSulphites": "Sulphur Dioxide and Sulphites"
+    },
+    "editor": {
+      "status": {
+        "insufficientData": "Insufficient data",
+        "noSignals": "No signals",
+        "label": "Status"
+      },
+      "title": "Edit Allergen Assessment",
+      "signals": {
+        "empty": "No signals added.",
+        "title": "Signals",
+        "removeSignal": "Remove signal",
+        "userProvided": "User-provided",
+        "evidenceLevel": "Evidence level",
+        "addSignal": "Add signal",
+        "evidenceValue": "Value",
+        "addEvidence": "Add evidence",
+        "evidenceSource": "Source",
+        "removeEvidence": "Remove evidence entry",
+        "code": "Allergen",
+        "confidence": "Confidence (0-1)"
       }
     }
   }
