@@ -76,7 +76,6 @@ type DialogType = Readonly<
   | "EDIT_INVOICE__METADATA"
   | "EDIT_INVOICE__ITEMS"
   | "EDIT_INVOICE__ALLERGENS"
-  | "EDIT_INVOICE__BULK_CATEGORY"
   | "EDIT_INVOICE__FEEDBACK"
   | "VIEW_INVOICE__SHARE_ANALYTICS"
   | "VIEW_INVOICE__EXPORT"
@@ -160,7 +159,6 @@ type DialogPayloads = {
   EDIT_INVOICE__METADATA: Record<string, string>;
   EDIT_INVOICE__ITEMS: Invoice;
   EDIT_INVOICE__ALLERGENS: {invoice: Invoice; product: Product; productIndex: number};
-  EDIT_INVOICE__BULK_CATEGORY: {invoice: Invoice; selectedProducts: Product[]; selectedIndices: number[]};
   EDIT_INVOICE__FEEDBACK: {invoice: Invoice; merchant: Merchant | null};
   VIEW_INVOICE__SHARE_ANALYTICS: {invoice: Invoice; merchant: Merchant};
   VIEW_INVOICE__EXPORT: undefined;

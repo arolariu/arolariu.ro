@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * @fileoverview Category Breakdown Chart - displays spending by category as a donut chart.
- * @module app/domains/invoices/view-invoices/_components/views/statistics/CategoryBreakdownChart
+ * @fileoverview Classification Breakdown Chart - displays spending by classification group as a donut chart.
+ * @module app/domains/invoices/view-invoices/_components/views/statistics/ClassificationBreakdownChart
  */
 
 import {formatAmount} from "@/lib/utils.generic";
@@ -21,7 +21,7 @@ import {
 } from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import type {ClassificationGroupAggregate} from "../../../_utils/statistics";
-import styles from "./CategoryBreakdownChart.module.scss";
+import styles from "./ClassificationBreakdownChart.module.scss";
 
 type Props = {
   readonly data: ClassificationGroupAggregate[];
@@ -48,7 +48,7 @@ type CustomLegendProps = {
 };
 
 /**
- * Custom tooltip for the category pie chart.
+ * Custom tooltip for the classification pie chart.
  */
 function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
   const t = useTranslations();
@@ -92,13 +92,13 @@ function CustomLegend({payload}: CustomLegendProps): React.JSX.Element {
 }
 
 /**
- * Renders a donut chart showing spending breakdown by category.
+ * Renders a donut chart showing spending breakdown by taxonomy classification group.
  *
- * @param data - Category aggregates with spending amounts
+ * @param data - Classification group aggregates with spending amounts
  * @param currency - Currency code for display
  * @returns Pie chart component
  */
-export function CategoryBreakdownChart({data, currency}: Props): React.JSX.Element {
+export function ClassificationBreakdownChart({data, currency}: Props): React.JSX.Element {
   const t = useTranslations();
 
   const chartConfig: Record<string, {label: string; color: string}> = {};

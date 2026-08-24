@@ -24,9 +24,9 @@
  * - Chart data computation only runs when invoices change
  */
 
-import {formatAmount, formatEnum, toSafeDate} from "@/lib/utils.generic";
+import {formatAmount, toSafeDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores/invoicesStore";
-import {MerchantCategory, type Invoice} from "@/types/invoices";
+import {type Invoice} from "@/types/invoices";
 import {
   Area,
   AreaChart,
@@ -54,20 +54,6 @@ type MonthlySpending = {
   readonly month: string;
   /** Total spending amount for the month */
   readonly amount: number;
-};
-
-/**
- * Type for category distribution data used in stacked bar visualization.
- */
-type CategoryDistribution = {
-  /** Category enum value */
-  readonly category: MerchantCategory;
-  /** Category display label */
-  readonly label: string;
-  /** Number of invoices in this category */
-  readonly count: number;
-  /** Percentage of total invoices */
-  readonly percentage: number;
 };
 
 /**
@@ -171,32 +157,6 @@ export function MerchantInfoCard(): React.JSX.Element {
   }, [merchantInvoices]);
 
   /**
-   * Calculate category distribution if merchant has invoices in multiple categories.
-   * Shows percentage breakdown across different invoice categories.
-   */
-  const categoryDistribution = useMemo<CategoryDistribution[]>(() => {
-    if (merchantInvoices.length === 0) return [];
-
-    const categoryCounts = new Map<MerchantCategory, number>();
-    merchantInvoices.forEach(() => {
-      const {category} = merchant;
-      const currentCount = categoryCounts.get(category) ?? 0;
-      categoryCounts.set(category, currentCount + 1);
-    });
-
-    const total = merchantInvoices.length;
-    return Array.from(categoryCounts.entries())
-      .map(([category, count]) => ({
-        category,
-        label: formatEnum(MerchantCategory, category),
-        count,
-        percentage: (count / total) * 100,
-      }))
-      .filter((item) => item.count > 0)
-      .toSorted((a, b) => b.count - a.count);
-  }, [merchantInvoices, merchant.category]);
-
-  /**
    * Generate Google Maps URL for the merchant's address.
    */
   const googleMapsUrl = useMemo(() => {
@@ -231,7 +191,7 @@ export function MerchantInfoCard(): React.JSX.Element {
             <span className={styles["infoText"]}>{merchant.address.phoneNumber}</span>
           </div>
           <div className={styles["infoRow"]}>
-            <Badge variant='outline'>{formatEnum(MerchantCategory, merchant.category)}</Badge>
+            <Badge variant='outline'>{merchant.category}</Badge>
           </div>
           {Boolean(merchant.address.website) && (
             <div className={styles["infoRow"]}>
@@ -309,37 +269,6 @@ export function MerchantInfoCard(): React.JSX.Element {
                 <TbCalendar className={styles["statIcon"]} />
                 <span className={styles["statValue"]}>{visitStats.daysAgo}</span>
                 <span className={styles["statLabel"]}>{t((m) => m.cards.invoices.merchantInfoCard.stats.daysAgo)}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Category Distribution */}
-          {categoryDistribution.length > 1 && (
-            <div className={styles["section"]}>
-              <div className={styles["sectionHeader"]}>
-                <span className={styles["sectionTitle"]}>{t((m) => m.cards.invoices.merchantInfoCard.categoryDistribution)}</span>
-              </div>
-              <div className={styles["categoryBar"]}>
-                {categoryDistribution.map((cat) => (
-                  <div
-                    key={cat.category}
-                    className={styles["categorySegment"]}
-                    style={{width: `${cat.percentage}%`}}
-                    title={`${cat.label}: ${cat.count} (${cat.percentage.toFixed(1)}%)`}
-                  />
-                ))}
-              </div>
-              <div className={styles["categoryLabels"]}>
-                {categoryDistribution.map((cat) => (
-                  <div
-                    key={cat.category}
-                    className={styles["categoryLabel"]}>
-                    <span className={styles["categoryLabelText"]}>{cat.label}</span>
-                    <span className={styles["categoryLabelCount"]}>
-                      {cat.count} ({cat.percentage.toFixed(0)}%)
-                    </span>
-                  </div>
-                ))}
               </div>
             </div>
           )}

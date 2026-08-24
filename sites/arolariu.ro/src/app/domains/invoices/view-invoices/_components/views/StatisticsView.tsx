@@ -44,7 +44,7 @@ import {
   computeTopProducts,
 } from "../../_utils/statistics";
 import {AllergenSummaryChart} from "./statistics/AllergenSummaryChart";
-import {CategoryBreakdownChart} from "./statistics/CategoryBreakdownChart";
+import {ClassificationBreakdownChart} from "./statistics/ClassificationBreakdownChart";
 import {ComparisonCards} from "./statistics/ComparisonCards";
 import {CurrencyDistributionChart} from "./statistics/CurrencyDistributionChart";
 import {KPISummaryRow} from "./statistics/KPISummaryRow";
@@ -52,7 +52,7 @@ import {MerchantLeaderboard} from "./statistics/MerchantLeaderboard";
 import {MerchantTrendsChart} from "./statistics/MerchantTrendsChart";
 import {MerchantVisitChart} from "./statistics/MerchantVisitChart";
 import {PriceDistributionChart} from "./statistics/PriceDistributionChart";
-import {ProductCategoryChart} from "./statistics/ProductCategoryChart";
+import {ProductClassificationChart} from "./statistics/ProductClassificationChart";
 import SpendingCalendarHeatmap from "./statistics/SpendingCalendarHeatmap";
 import {SpendingOverTimeChart} from "./statistics/SpendingOverTimeChart";
 import {TimeOfDayChart} from "./statistics/TimeOfDayChart";
@@ -190,7 +190,7 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
             initial={{opacity: 0, x: -20}}
             animate={{opacity: 1, x: 0}}
             transition={{duration: 0.5, delay: 0.5}}>
-            <CategoryBreakdownChart
+            <ClassificationBreakdownChart
               data={categoryAggregates}
               currency={currency}
             />
@@ -309,7 +309,7 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
             initial={{opacity: 0, x: -20}}
             animate={{opacity: 1, x: 0}}
             transition={{duration: 0.5, delay: 0.8}}>
-            <ProductCategoryChart
+            <ProductClassificationChart
               data={productCategorySpending}
               currency={currency}
             />

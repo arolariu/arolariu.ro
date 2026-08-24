@@ -33,7 +33,7 @@ import {motion} from "motion/react";
 import {useLocale} from "next-intl";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {TbEdit, TbFlask, TbPencil, TbPlus, TbRefresh, TbSearch, TbTag, TbTrash} from "react-icons/tb";
+import {TbEdit, TbFlask, TbPencil, TbPlus, TbRefresh, TbSearch, TbTrash} from "react-icons/tb";
 import {useDialog, useDialogs} from "../../../../_contexts/DialogContext";
 import {useEditInvoiceContext} from "../../_context/EditInvoiceContext";
 import styles from "./ItemsTable.module.scss";
@@ -66,7 +66,7 @@ type EditingCell = {
 /**
  * Sort field options for table columns.
  */
-type SortField = "name" | "price" | "quantity" | "category" | null;
+type SortField = "name" | "price" | "quantity" | null;
 
 /**
  * Sort direction for table columns.
@@ -171,17 +171,15 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
       switch (sortField) {
         case "name":
-          return a.name.localeCompare(b.name) * multiplier;
-        case "price":
-          return (a.price - b.price) * multiplier;
-        case "quantity":
-          return (a.quantity - b.quantity) * multiplier;
-        case "category":
-          return (a.category - b.category) * multiplier;
-        default: {
-          const _exhaustive: never = sortField;
-          throw new Error(`Unhandled sortField: ${String(_exhaustive)}`);
-        }
+            return a.name.localeCompare(b.name) * multiplier;
+          case "price":
+            return (a.price - b.price) * multiplier;
+          case "quantity":
+            return (a.quantity - b.quantity) * multiplier;
+          default: {
+            const _exhaustive: never = sortField;
+            throw new Error(`Unhandled sortField: ${String(_exhaustive)}`);
+          }
       }
     });
   }, [filteredItems, sortField, sortDirection]);
@@ -487,29 +485,6 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
   );
 
   /**
-   * Opens the bulk category dialog for selected products.
-   */
-  const handleBulkCategoryChange = useCallback(() => {
-    if (selectedIndices.size === 0) {
-      toast.warning(t((m) => m.pages.invoices.editInvoice.itemsTable.bulkCategory.noSelection));
-      return;
-    }
-
-    const selectedProducts = Array.from(selectedIndices)
-      .map((idx) => sortedItems[idx])
-      .filter(isSelectedProduct);
-
-    // Map selected indices from sorted view to actual localItems indices
-    const actualIndices = selectedProducts.map((product) => localItems.indexOf(product));
-
-    openDialog("EDIT_INVOICE__BULK_CATEGORY", "edit", {
-      invoice,
-      selectedProducts,
-      selectedIndices: actualIndices,
-    });
-  }, [selectedIndices, sortedItems, localItems, invoice, openDialog, t]);
-
-  /**
    * Determines the visual indicator class for a product based on its completeness status.
    *
    * @param item - The product to analyze
@@ -634,14 +609,6 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
             <span className={styles["bulkToolbarText"]}>
               {t((m) => m.pages.invoices.editInvoice.itemsTable.bulkToolbar.selectedCount, {count: selectedIndices.size})}
             </span>
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={handleBulkCategoryChange}
-              className={styles["categoryButton"]}>
-              <TbTag className={styles["categoryIcon"]} />
-              {t((m) => m.pages.invoices.editInvoice.itemsTable.bulkToolbar.changeCategory)}
-            </Button>
             <Button
               variant='destructive'
               size='sm'

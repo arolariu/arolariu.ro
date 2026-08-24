@@ -46,7 +46,6 @@ const AddScanDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/AddSca
 const AddRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/AddRecipeDialog"), {ssr: false});
 const AllergenDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/AllergenDialog"), {ssr: false});
 const AnalyzeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/AnalyzeDialog"), {ssr: false});
-const BulkCategoryDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/BulkCategoryDialog"), {ssr: false});
 const CreateInvoiceDialog = dynamic(() => import("../view-scans/_dialogs/CreateInvoiceDialog"), {ssr: false});
 const DeleteInvoiceDialog = dynamic(() => import("../_dialogs/DeleteInvoiceDialog"), {ssr: false});
 const DeleteRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/DeleteRecipeDialog"), {ssr: false});
@@ -208,8 +207,6 @@ function DialogContainerImpl(): React.JSX.Element | null {
         return <InvoiceItemsDialog />;
       case "EDIT_INVOICE__ALLERGENS":
         return <AllergenDialog />;
-      case "EDIT_INVOICE__BULK_CATEGORY":
-        return <BulkCategoryDialog />;
       case "EDIT_INVOICE__FEEDBACK":
         return <InvoiceFeedbackDialog />;
       case "EDIT_INVOICE__MERCHANT":
