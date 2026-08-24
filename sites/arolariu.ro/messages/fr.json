@@ -1565,6 +1565,46 @@
           "description": "En partageant cette facture publiquement, <strong>toute personne disposant du lien pourra la consulter</strong>. Cela inclut tous les détails de la facture, les articles et les montants. Continuez uniquement si vous souhaitez rendre cette facture accessible au publique.",
           "title": "Avertissement d’accès public"
         }
+      },
+      "invoiceAnalysisControls": {
+        "capabilitiesLabel": "Capacités",
+        "classificationOverwriteAlert": "Cette facture a été classifiée manuellement. L'activation de la classification automatique des factures écrasera vos paramètres manuels.",
+        "customLabel": "Personnalisé",
+        "maximumRecipesLabel": "Nombre maximal de recettes",
+        "profilesLabel": "Profil d'analyse",
+        "capabilities": {
+          "allergenAssessment": "Évaluation des allergènes",
+          "documentExtraction": "Extraction de document",
+          "invoiceClassification": "Classification de facture",
+          "invoiceSummary": "Résumé de facture",
+          "productClassification": "Classification des produits",
+          "recipeGeneration": "Génération de recettes"
+        },
+        "profiles": {
+          "balanced": "Équilibré",
+          "comprehensive": "Complet",
+          "fast": "Rapide"
+        }
+      },
+      "merchantAnalysisControls": {
+        "capabilitiesLabel": "Capacités",
+        "customLabel": "Personnalisé",
+        "profilesLabel": "Profil d'analyse",
+        "capabilities": {
+          "descriptionGeneration": "Génération de description",
+          "merchantClassification": "Classification du marchand"
+        },
+        "profiles": {
+          "balanced": "Équilibré",
+          "comprehensive": "Complet",
+          "fast": "Rapide"
+        }
+      },
+      "queuedAnalysisNotice": {
+        "description": "Votre demande d'analyse a été mise en file d'attente et sera traitée sous peu.",
+        "messageIdLabel": "ID du message :",
+        "refreshButton": "Actualiser",
+        "title": "Analyse en attente"
       }
     }
   },

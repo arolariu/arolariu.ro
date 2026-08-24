@@ -1565,6 +1565,46 @@
           "description": "Prin partajarea publică a acestei facturi, <strong>oricine are linkul o va putea vedea</strong>. Asta include toate detaliile facturii, articolele și sumele. Continuă doar dacă vrei ca această factură să fie accesibilă publicului.",
           "title": "Avertisment privind accesul public"
         }
+      },
+      "invoiceAnalysisControls": {
+        "capabilitiesLabel": "Capabilități",
+        "classificationOverwriteAlert": "Această factură a fost clasificată manual. Activarea clasificării automate a facturii va suprascrie setările dvs. manuale.",
+        "customLabel": "Personalizat",
+        "maximumRecipesLabel": "Număr maxim de rețete",
+        "profilesLabel": "Profil de analiză",
+        "capabilities": {
+          "allergenAssessment": "Evaluare alergeni",
+          "documentExtraction": "Extracție document",
+          "invoiceClassification": "Clasificare factură",
+          "invoiceSummary": "Rezumat factură",
+          "productClassification": "Clasificare produse",
+          "recipeGeneration": "Generare rețete"
+        },
+        "profiles": {
+          "balanced": "Echilibrat",
+          "comprehensive": "Complet",
+          "fast": "Rapid"
+        }
+      },
+      "merchantAnalysisControls": {
+        "capabilitiesLabel": "Capabilități",
+        "customLabel": "Personalizat",
+        "profilesLabel": "Profil de analiză",
+        "capabilities": {
+          "descriptionGeneration": "Generare descriere",
+          "merchantClassification": "Clasificare comerciant"
+        },
+        "profiles": {
+          "balanced": "Echilibrat",
+          "comprehensive": "Complet",
+          "fast": "Rapid"
+        }
+      },
+      "queuedAnalysisNotice": {
+        "description": "Solicitarea dvs. de analiză a fost pusă în coadă și va fi procesată în scurt timp.",
+        "messageIdLabel": "ID mesaj:",
+        "refreshButton": "Reîncarcă",
+        "title": "Analiză în așteptare"
       }
     }
   },

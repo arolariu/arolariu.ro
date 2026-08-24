@@ -1565,6 +1565,46 @@
           "description": "By sharing this invoice publicly, <strong>anyone with the link will be able to view it</strong>. This includes all invoice details, items, and amounts. Only proceed if you intend to make this invoice accessible to the public.",
           "title": "Public access warning"
         }
+      },
+      "invoiceAnalysisControls": {
+        "capabilitiesLabel": "Capabilities",
+        "classificationOverwriteAlert": "This invoice has been manually classified. Enabling automatic invoice classification will overwrite your manual settings.",
+        "customLabel": "Custom",
+        "maximumRecipesLabel": "Maximum Recipes",
+        "profilesLabel": "Analysis Profile",
+        "capabilities": {
+          "allergenAssessment": "Allergen Assessment",
+          "documentExtraction": "Document Extraction",
+          "invoiceClassification": "Invoice Classification",
+          "invoiceSummary": "Invoice Summary",
+          "productClassification": "Product Classification",
+          "recipeGeneration": "Recipe Generation"
+        },
+        "profiles": {
+          "balanced": "Balanced",
+          "comprehensive": "Comprehensive",
+          "fast": "Fast"
+        }
+      },
+      "merchantAnalysisControls": {
+        "capabilitiesLabel": "Capabilities",
+        "customLabel": "Custom",
+        "profilesLabel": "Analysis Profile",
+        "capabilities": {
+          "descriptionGeneration": "Description Generation",
+          "merchantClassification": "Merchant Classification"
+        },
+        "profiles": {
+          "balanced": "Balanced",
+          "comprehensive": "Comprehensive",
+          "fast": "Fast"
+        }
+      },
+      "queuedAnalysisNotice": {
+        "description": "Your analysis request has been queued and will be processed shortly.",
+        "messageIdLabel": "Message ID:",
+        "refreshButton": "Refresh",
+        "title": "Analysis Queued"
       }
     }
   },
