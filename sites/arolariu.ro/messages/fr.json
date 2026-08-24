@@ -5250,19 +5250,19 @@
     },
     "codes": {
       "peanuts": "Arachides",
-      "cerealsContainingGluten": "Cereales contenant du gluten",
+      "cerealsContainingGluten": "Céréales contenant du gluten",
       "molluscs": "Mollusques",
-      "nuts": "Fruits a coque",
-      "eggs": "Oeufs",
+      "nuts": "Fruits à coque",
+      "eggs": "Œufs",
       "lupin": "Lupin",
-      "sesame": "Graines de sesame",
+      "sesame": "Graines de sésame",
       "milk": "Lait",
-      "crustaceans": "Crustaces",
+      "crustaceans": "Crustacés",
       "sulphurDioxideAndSulphites": "Dioxyde de soufre et sulfites",
       "soybeans": "Soja",
       "mustard": "Moutarde",
       "fish": "Poisson",
-      "celery": "Celeri"
+      "celery": "Céleri"
     },
     "editor": {
       "title": "Modifier l'evaluation des allergenes",
