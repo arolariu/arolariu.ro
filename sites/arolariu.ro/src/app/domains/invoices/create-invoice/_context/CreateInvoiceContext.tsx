@@ -13,7 +13,7 @@
  */
 
 import {useScansStore} from "@/stores";
-import {InvoiceAnalysisOptions, InvoiceCategory, PaymentType} from "@/types/invoices";
+import {InvoiceCategory, PaymentType} from "@/types/invoices";
 import {type CachedScan, ScanMetadataKey, ScanMetadataStatus, ScanStatus} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {useRouter} from "next/navigation";
@@ -257,7 +257,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       router.push(`/domains/invoices/view-invoice/${invoice.id}`);
 
       // Fire-and-forget auto-analysis after successful creation
-      analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {
+      analyzeInvoice({invoiceIdentifier: invoice.id, profile: "comprehensive"}).catch((error) => {
         console.error("Background invoice analysis failed:", error);
       });
     } catch (error) {

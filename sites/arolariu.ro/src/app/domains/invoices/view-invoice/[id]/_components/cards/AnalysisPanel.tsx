@@ -2,7 +2,7 @@
 
 import {analyzeInvoice} from "@/app/domains/invoices/_actions/invoices";
 import {formatDate} from "@/lib/utils.generic";
-import {InvoiceAnalysisOptions} from "@/types/invoices";
+import type {AnalysisProfile} from "@/types/invoices/Analysis";
 import {
   Badge,
   Button,
@@ -31,13 +31,13 @@ import styles from "./AnalysisPanel.module.scss";
 /**
  * Analysis option configuration for button display.
  *
- * @property id - The analysis option enum value
+ * @property id - The analysis profile string value
  * @property label - Display label for the button
  * @property description - Tooltip description
  * @property icon - React icon component
  */
 type AnalysisOption = Readonly<{
-  readonly id: InvoiceAnalysisOptions;
+  readonly id: AnalysisProfile;
   readonly label: string;
   readonly description: string;
   readonly icon: React.ReactNode;
@@ -76,7 +76,7 @@ export function AnalysisPanel(): React.JSX.Element | null {
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [currentStep, setCurrentStep] = useState<string>("");
-  const [selectedOption, setSelectedOption] = useState<InvoiceAnalysisOptions | null>(null);
+  const [selectedOption, setSelectedOption] = useState<AnalysisProfile | null>(null);
 
   /**
    * Analysis options configuration.
@@ -87,19 +87,19 @@ export function AnalysisPanel(): React.JSX.Element | null {
    */
   const analysisOptions: readonly AnalysisOption[] = [
     {
-      id: InvoiceAnalysisOptions.CompleteAnalysis,
+      id: "comprehensive",
       label: t((m) => m.pages.invoices.viewInvoice.analysisPanel.options.completeAnalysis),
       description: t((m) => m.pages.invoices.viewInvoice.analysisPanel.tooltips.completeAnalysis),
       icon: <TbBrain className={styles["optionIcon"]} />,
     },
     {
-      id: InvoiceAnalysisOptions.InvoiceOnly,
+      id: "balanced",
       label: t((m) => m.pages.invoices.viewInvoice.analysisPanel.options.invoiceOnly),
       description: t((m) => m.pages.invoices.viewInvoice.analysisPanel.tooltips.invoiceOnly),
       icon: <TbRefreshAlert className={styles["optionIcon"]} />,
     },
     {
-      id: InvoiceAnalysisOptions.InvoiceItemsOnly,
+      id: "fast",
       label: t((m) => m.pages.invoices.viewInvoice.analysisPanel.options.itemsOnly),
       description: t((m) => m.pages.invoices.viewInvoice.analysisPanel.tooltips.itemsOnly),
       icon: <TbShoppingCart className={styles["optionIcon"]} />,
@@ -112,7 +112,7 @@ export function AnalysisPanel(): React.JSX.Element | null {
    * @param option - The analysis option to use
    */
   const handleAnalyze = useCallback(
-    async (option: InvoiceAnalysisOptions): Promise<void> => {
+    async (option: AnalysisProfile): Promise<void> => {
       setIsAnalyzing(true);
       setSelectedOption(option);
       setProgress(0);
@@ -134,7 +134,7 @@ export function AnalysisPanel(): React.JSX.Element | null {
         // Start analysis
         const analysisPromise = analyzeInvoice({
           invoiceIdentifier: invoice.id,
-          analysisOptions: option,
+          profile: option,
         });
 
         // Animate progress while waiting
