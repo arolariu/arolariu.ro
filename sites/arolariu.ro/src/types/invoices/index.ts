@@ -142,12 +142,20 @@ export {
 /**
  * Recipe types for AI-generated cooking suggestions.
  * Generated from invoice product analysis.
- * @see {@link Recipe} for recipe structure
+ * @see {@link RecipeSuggestion} for the current structured recipe contract
+ * @see {@link Recipe} for the legacy recipe structure
  */
 export {
   RecipeComplexity,
+  RecipeDifficulty,
+  isRecipeIngredient,
+  isRecipeStep,
+  isRecipeSuggestion,
   type CreateRecipeDtoPayload,
   type DeleteRecipeDtoPayload,
   type Recipe,
+  type RecipeIngredient,
+  type RecipeStep,
+  type RecipeSuggestion,
   type UpdateRecipeDtoPayload,
 } from "./Recipe";

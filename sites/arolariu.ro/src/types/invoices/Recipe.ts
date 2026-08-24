@@ -22,10 +22,210 @@
  * @see {@link Product} for ingredient source
  */
 
-import type {Product} from "./index.ts";
+import {type AllergenCode, isAllergenCode} from "./Allergen";
+import {hasOnlyKeys, isArrayOf, isFiniteNumber, isNonEmptyString, isRecord} from "./guards";
+
+// ============================================================
+// Structured Recipe Suggestion Model (current API contract)
+// ============================================================
+
+/**
+ * Difficulty level of a recipe as returned by the backend.
+ *
+ * @remarks
+ * Matches the wire strings emitted by `RecipeSuggestionResponseDto` on the backend.
+ * `Easy` → `"easy"`, `Medium` → `"medium"`, `Hard` → `"hard"`.
+ *
+ * @example
+ * ```typescript
+ * const level: RecipeDifficulty = RecipeDifficulty.Medium;
+ * ```
+ */
+export const RecipeDifficulty = {
+  /** Beginner-friendly recipe with simple techniques. */
+  Easy: "easy",
+  /** Moderate skill required; some cooking techniques. */
+  Medium: "medium",
+  /** Advanced techniques and multiple complex steps. */
+  Hard: "hard",
+} as const;
+
+/** Union of recipe difficulty wire strings. */
+export type RecipeDifficulty = (typeof RecipeDifficulty)[keyof typeof RecipeDifficulty];
+
+/**
+ * A single ingredient used in a {@link RecipeSuggestion}.
+ *
+ * @remarks
+ * Mirrors the nested ingredient sub-shape of `RecipeSuggestionResponseDto`.
+ * `preparation` is `null` when no specific preparation step is required.
+ */
+export interface RecipeIngredient {
+  /** The ingredient name (e.g. `"Tomatoes"`). */
+  readonly name: string;
+  /** Measurement quantity (e.g. `"500 g"`). */
+  readonly quantity: string;
+  /** Optional preparation note (e.g. `"diced"`); `null` when absent. */
+  readonly preparation: string | null;
+}
+
+/**
+ * A single step in the cooking instructions of a {@link RecipeSuggestion}.
+ *
+ * @remarks
+ * Steps are 1-indexed; `sequence` is the step number as emitted by the backend.
+ * `notes` is `null` when the backend provides no supplemental note for this step.
+ */
+export interface RecipeStep {
+  /** 1-based position of this step in the instruction sequence. */
+  readonly sequence: number;
+  /** Human-readable instruction for this step. */
+  readonly instruction: string;
+  /** Optional supplemental note for this step; `null` when absent. */
+  readonly notes: string | null;
+}
+
+/**
+ * Structured recipe suggestion returned by the backend analysis pipeline.
+ *
+ * @remarks
+ * Mirrors `RecipeSuggestionResponseDto` field-for-field so that a
+ * read-modify-write round trip is lossless: every JSON property name in this
+ * interface matches the .NET DTO exactly. Do **not** rename fields.
+ *
+ * Field inventory (12 fields):
+ * `name`, `description`, `servings`, `preparationMinutes`, `cookingMinutes`,
+ * `totalMinutes`, `difficulty`, `purchasedIngredients`, `assumedPantryStaples`,
+ * `missingOptionalIngredients`, `steps`, `allergenWarnings`.
+ *
+ * @see {@link RecipeDifficulty} for allowed difficulty values
+ * @see {@link RecipeIngredient} for ingredient sub-shape
+ * @see {@link RecipeStep} for step sub-shape
+ * @see {@link AllergenCode} for allergen warning codes
+ */
+export interface RecipeSuggestion {
+  /** Display name of the recipe. Must be non-empty. */
+  readonly name: string;
+  /** Short description of the recipe. May be an empty string. */
+  readonly description: string;
+  /** Number of servings this recipe yields. */
+  readonly servings: number;
+  /** Time spent on active preparation, in minutes. */
+  readonly preparationMinutes: number;
+  /** Time spent on cooking (passive), in minutes. */
+  readonly cookingMinutes: number;
+  /** Total time = preparationMinutes + cookingMinutes, in minutes. */
+  readonly totalMinutes: number;
+  /** Difficulty classification of this recipe. */
+  readonly difficulty: RecipeDifficulty;
+  /** Ingredients found among the invoice's purchased products. */
+  readonly purchasedIngredients: readonly RecipeIngredient[];
+  /** Common pantry staples assumed to be on hand (not on the invoice). */
+  readonly assumedPantryStaples: readonly RecipeIngredient[];
+  /** Optional ingredients not present on the invoice. */
+  readonly missingOptionalIngredients: readonly RecipeIngredient[];
+  /** Ordered cooking instructions. Backend invariant: at least one step required. */
+  readonly steps: readonly RecipeStep[];
+  /** EU-14 allergen codes present in this recipe. */
+  readonly allergenWarnings: readonly AllergenCode[];
+}
+
+// Guard helpers (module-private)
+const recipeDifficultyValues: readonly string[] = Object.values(RecipeDifficulty);
+const RECIPE_SUGGESTION_KEYS = [
+  "name",
+  "description",
+  "servings",
+  "preparationMinutes",
+  "cookingMinutes",
+  "totalMinutes",
+  "difficulty",
+  "purchasedIngredients",
+  "assumedPantryStaples",
+  "missingOptionalIngredients",
+  "steps",
+  "allergenWarnings",
+] as const;
+
+/**
+ * Determines whether a value conforms to {@link RecipeIngredient}.
+ *
+ * @param value - The unknown value to test.
+ * @returns `true` when `value` is a plain object with valid `name`, `quantity`, and `preparation` fields.
+ */
+export function isRecipeIngredient(value: unknown): value is RecipeIngredient {
+  if (!isRecord(value) || !hasOnlyKeys(value, ["name", "quantity", "preparation"])) {
+    return false;
+  }
+  return (
+    isNonEmptyString(value["name"]) &&
+    isNonEmptyString(value["quantity"]) &&
+    (value["preparation"] === null || typeof value["preparation"] === "string")
+  );
+}
+
+/**
+ * Determines whether a value conforms to {@link RecipeStep}.
+ *
+ * @param value - The unknown value to test.
+ * @returns `true` when `value` is a plain object with valid `sequence`, `instruction`, and `notes` fields.
+ */
+export function isRecipeStep(value: unknown): value is RecipeStep {
+  if (!isRecord(value) || !hasOnlyKeys(value, ["sequence", "instruction", "notes"])) {
+    return false;
+  }
+  return (
+    isFiniteNumber(value["sequence"]) &&
+    isNonEmptyString(value["instruction"]) &&
+    (value["notes"] === null || typeof value["notes"] === "string")
+  );
+}
+
+/**
+ * Determines whether a value conforms to {@link RecipeSuggestion}.
+ *
+ * @remarks
+ * Validates all 12 backend JSON field names and their types. Enforces the
+ * backend invariant that `steps` must contain at least one entry. Entries in
+ * `allergenWarnings` are validated against the EU-14 canonical codes via
+ * {@link isAllergenCode}.
+ *
+ * @param value - The unknown value to test.
+ * @returns `true` when `value` is a structurally valid {@link RecipeSuggestion}.
+ */
+export function isRecipeSuggestion(value: unknown): value is RecipeSuggestion {
+  if (!isRecord(value) || !hasOnlyKeys(value, RECIPE_SUGGESTION_KEYS)) {
+    return false;
+  }
+  const rawDifficulty = value["difficulty"];
+  const rawSteps = value["steps"];
+  return (
+    isNonEmptyString(value["name"]) &&
+    typeof value["description"] === "string" &&
+    isFiniteNumber(value["servings"]) &&
+    isFiniteNumber(value["preparationMinutes"]) &&
+    isFiniteNumber(value["cookingMinutes"]) &&
+    isFiniteNumber(value["totalMinutes"]) &&
+    typeof rawDifficulty === "string" &&
+    recipeDifficultyValues.includes(rawDifficulty) &&
+    isArrayOf(value["purchasedIngredients"], isRecipeIngredient) &&
+    isArrayOf(value["assumedPantryStaples"], isRecipeIngredient) &&
+    isArrayOf(value["missingOptionalIngredients"], isRecipeIngredient) &&
+    Array.isArray(rawSteps) &&
+    rawSteps.length > 0 &&
+    isArrayOf(rawSteps, isRecipeStep) &&
+    isArrayOf(value["allergenWarnings"], isAllergenCode)
+  );
+}
+
+// ============================================================
+// Legacy types — kept for backward-compat during cutover sweep
+// ============================================================
 
 /**
  * Indicates the difficulty level of preparing a recipe.
+ *
+ * @deprecated Use {@link RecipeDifficulty}. Removed in the final cutover sweep.
  *
  * @remarks
  * Complexity helps users filter recipes matching their cooking skill.
@@ -68,6 +268,8 @@ export type RecipeComplexity = (typeof RecipeComplexity)[keyof typeof RecipeComp
 
 /**
  * Represents an AI-generated recipe suggestion based on invoice products.
+ *
+ * @deprecated Use {@link RecipeSuggestion}. Removed in the final cutover sweep.
  *
  * @remarks
  * **Domain Concept:**
@@ -141,6 +343,8 @@ export type Recipe = {
 /**
  * DTO payload for creating a custom recipe.
  *
+ * @deprecated Use {@link RecipeSuggestion}. Removed in the final cutover sweep.
+ *
  * @remarks
  * **Partial Fields:**
  * All fields are optional to support draft recipes and
@@ -170,6 +374,8 @@ export type CreateRecipeDtoPayload = Partial<Recipe>;
 /**
  * DTO payload for updating an existing recipe.
  *
+ * @deprecated Use {@link RecipeSuggestion}. Removed in the final cutover sweep.
+ *
  * @remarks
  * **Partial Updates:**
  * Only provided fields are updated. AI-generated recipes
@@ -194,6 +400,8 @@ export type UpdateRecipeDtoPayload = Partial<Recipe>;
 
 /**
  * DTO payload for removing a recipe suggestion.
+ *
+ * @deprecated Use {@link RecipeSuggestion}. Removed in the final cutover sweep.
  *
  * @remarks
  * **Identification:**
