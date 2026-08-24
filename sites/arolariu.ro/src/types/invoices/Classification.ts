@@ -3,6 +3,8 @@
  * @module types/invoices/Classification
  */
 
+import {hasOnlyKeys, isRecord} from "./guards";
+
 /** Supported canonical taxonomy systems. */
 export const ClassificationSystem = {
   Gs1Gpc: "GS1_GPC",
@@ -92,20 +94,12 @@ const originValues: readonly string[] = Object.values(ClassificationOrigin);
 const rfc3339Pattern =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/u;
 
-function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 function isText(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
 function isStringArray(value: unknown): value is readonly string[] {
   return Array.isArray(value) && value.length > 0 && value.every(isText);
-}
-
-function hasOnlyKeys(record: Readonly<Record<string, unknown>>, keys: readonly string[]): boolean {
-  return Object.keys(record).every((key) => keys.includes(key));
 }
 
 function isStrictRfc3339Timestamp(value: unknown): value is string {

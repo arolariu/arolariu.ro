@@ -39,6 +39,9 @@
  */
 export type {Allergen, CreateAllergenDtoPayload, DeleteAllergenDtoPayload, UpdateAllergenDtoPayload} from "./Allergen";
 
+/** Shared runtime type guards for the invoice transport boundary. */
+export {hasOnlyKeys, isArrayOf, isBoolean, isFiniteNumber, isNonEmptyString, isRecord} from "./guards";
+
 /** Canonical taxonomy classification contracts and runtime guards. */
 export {
   ClassificationOrigin,
