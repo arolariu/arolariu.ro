@@ -77,9 +77,13 @@ export type InvoiceAnalysisOptions = (typeof InvoiceAnalysisOptions)[keyof typeo
  * OCR strategies and preprocessing steps.
  *
  * **Supported Formats:**
- * - Image formats (JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC): Direct OCR processing
+ * - Image formats (JPG, JPEG, PNG, BMP, TIFF, HEIF): Direct OCR processing
  * - PDF: Multi-page document extraction with embedded text detection
  * - OTHER/UNKNOWN: Fallback processing with format detection
+ *
+ * **Backend Constraint:**
+ * The backend `InvoiceScan.type` field accepts values `0`–`8` only.
+ * `HEIC` (formerly `9`) has been removed to prevent rejected uploads.
  *
  * **Backend Processing:**
  * The scan type determines which Azure AI Document Intelligence model
@@ -115,8 +119,7 @@ export const InvoiceScanType = {
   TIFF: 7,
   /** HEIF image format */
   HEIF: 8,
-  /** HEIC image format */
-  HEIC: 9,
+  // HEIC (9) removed: backend InvoiceScan.type only accepts values 0–8
 } as const;
 export type InvoiceScanType = (typeof InvoiceScanType)[keyof typeof InvoiceScanType];
 

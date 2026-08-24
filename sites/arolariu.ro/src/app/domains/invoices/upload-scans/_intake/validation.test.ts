@@ -43,8 +43,8 @@ function validateSingleFile(file: File): UploadBatchValidationResult["invalidFil
 
 describe("upload format policy", () => {
   it("exposes an input accept string that matches all accepted extensions", () => {
-    expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toEqual(["jpg", "jpeg", "png", "bmp", "tif", "tiff", "heif", "heic", "pdf"]);
-    expect(SCAN_UPLOAD_INPUT_ACCEPT).toBe(".jpg,.jpeg,.png,.bmp,.tif,.tiff,.heif,.heic,.pdf");
+    expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toEqual(["jpg", "jpeg", "png", "bmp", "tif", "tiff", "pdf"]);
+    expect(SCAN_UPLOAD_INPUT_ACCEPT).toBe(".jpg,.jpeg,.png,.bmp,.tif,.tiff,.pdf");
   });
 });
 
@@ -59,8 +59,6 @@ describe("validateUploadFile", () => {
       createFile("receipt-alias.jpg", "image/jpg"),
       createFile("receipt.png", "image/png"),
       createFile("receipt.bmp", "image/bmp"),
-      createFile("receipt.heif", "image/heif"),
-      createFile("receipt.heic", "image/heic"),
       createFile("receipt.tif", "image/tiff"),
       createFile("receipt-empty.tiff", ""),
       createFile("receipt.tiff", "image/tiff"),

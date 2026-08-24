@@ -78,7 +78,6 @@ export default function AddScanDialog(): React.JSX.Element {
       [String(InvoiceScanType.BMP)]: t((m) => m.dialogs.invoices.addScanDialog.scanType.bmp),
       [String(InvoiceScanType.TIFF)]: t((m) => m.dialogs.invoices.addScanDialog.scanType.tiff),
       [String(InvoiceScanType.HEIF)]: t((m) => m.dialogs.invoices.addScanDialog.scanType.heif),
-      [String(InvoiceScanType.HEIC)]: t((m) => m.dialogs.invoices.addScanDialog.scanType.heic),
       [String(InvoiceScanType.OTHER)]: t((m) => m.dialogs.invoices.addScanDialog.scanType.other),
     }),
     [t],
@@ -94,7 +93,6 @@ export default function AddScanDialog(): React.JSX.Element {
       tif: InvoiceScanType.TIFF,
       tiff: InvoiceScanType.TIFF,
       heif: InvoiceScanType.HEIF,
-      heic: InvoiceScanType.HEIC,
       pdf: InvoiceScanType.PDF,
     };
     return extension && typeMap[extension] ? typeMap[extension] : InvoiceScanType.OTHER;
@@ -131,7 +129,6 @@ export default function AddScanDialog(): React.JSX.Element {
       "image/bmp": [".bmp"],
       "image/tiff": [".tif", ".tiff"],
       "image/heif": [".heif"],
-      "image/heic": [".heic"],
       "application/pdf": [".pdf"],
     },
     maxFiles: 1,
@@ -247,7 +244,6 @@ export default function AddScanDialog(): React.JSX.Element {
                   <SelectItem value={String(InvoiceScanType.BMP)}>{t((m) => m.dialogs.invoices.addScanDialog.scanType.bmp)}</SelectItem>
                   <SelectItem value={String(InvoiceScanType.TIFF)}>{t((m) => m.dialogs.invoices.addScanDialog.scanType.tiff)}</SelectItem>
                   <SelectItem value={String(InvoiceScanType.HEIF)}>{t((m) => m.dialogs.invoices.addScanDialog.scanType.heif)}</SelectItem>
-                  <SelectItem value={String(InvoiceScanType.HEIC)}>{t((m) => m.dialogs.invoices.addScanDialog.scanType.heic)}</SelectItem>
                   <SelectItem value={String(InvoiceScanType.OTHER)}>{t((m) => m.dialogs.invoices.addScanDialog.scanType.other)}</SelectItem>
                 </SelectContent>
               </Select>
