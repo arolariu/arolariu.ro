@@ -20,11 +20,11 @@ describe("updateInvoice", () => {
     vi.clearAllMocks();
     mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
     mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse(TestDataBuilder.build("invoice", {id: invoiceId})) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+      TestDataBuilder.jsonResponse(TestDataBuilder.build("invoice", {id: invoiceId, userIdentifier: "22222222-2222-4222-8222-222222222222", merchantReference: "33333333-3333-4333-8333-333333333333"})) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
   });
 
-  it("posts the full invoice payload and returns the updated invoice", async () => {
+  it("sends a PUT request to replace the invoice and returns the updated data", async () => {
     const invoice = TestDataBuilder.build("invoice", {id: invoiceId, name: "Full Update Invoice"});
 
     const result = await updateInvoice({invoiceId, invoice});
@@ -33,12 +33,11 @@ describe("updateInvoice", () => {
     expect(mockFetchWithTimeout).toHaveBeenCalledWith(
       `/rest/v1/invoices/${invoiceId}`,
       expect.objectContaining({
-        method: "POST",
+        method: "PUT",
         headers: expect.objectContaining({
           Authorization: "Bearer jwt-1",
           "Content-Type": "application/json",
         }),
-        body: JSON.stringify(invoice),
       }),
     );
 
@@ -121,6 +120,54 @@ describe("updateInvoice", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.message).toContain("An unexpected error occurred");
+    }
+  });
+
+  it("sends a PUT request", async () => {
+    const invoice = TestDataBuilder.build("invoice", {id: invoiceId});
+    await updateInvoice({invoiceId, invoice});
+    const [, init] = mockFetchWithTimeout.mock.calls[0]!;
+    expect(init?.method).toBe("PUT");
+  });
+
+  it("sends classificationCode rather than a numeric category", async () => {
+    const invoice = TestDataBuilder.build("invoice", {id: invoiceId});
+    await updateInvoice({invoiceId, invoice});
+    const [, init] = mockFetchWithTimeout.mock.calls[0]!;
+    const body: unknown = JSON.parse(String(init?.body));
+    expect(body).toHaveProperty("classificationCode");
+    expect(body).not.toHaveProperty("category");
+  });
+
+  it("does not serialize the whole invoice", async () => {
+    const invoice = TestDataBuilder.build("invoice", {id: invoiceId});
+    await updateInvoice({invoiceId, invoice});
+    const [, init] = mockFetchWithTimeout.mock.calls[0]!;
+    const body: unknown = JSON.parse(String(init?.body));
+    expect(body).not.toHaveProperty("items");
+    expect(body).not.toHaveProperty("createdAt");
+    expect(body).not.toHaveProperty("id");
+  });
+
+  it("omits possibleRecipes so the server preserves existing recipes", async () => {
+    const invoice = TestDataBuilder.build("invoice", {id: invoiceId});
+    await updateInvoice({invoiceId, invoice});
+    const [, init] = mockFetchWithTimeout.mock.calls[0]!;
+    const body: unknown = JSON.parse(String(init?.body));
+    expect(body).not.toHaveProperty("possibleRecipes");
+  });
+
+  it("returns a validation failure when the API returns a malformed payload", async () => {
+    mockFetchWithTimeout.mockResolvedValue(
+      TestDataBuilder.jsonResponse({}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+    );
+
+    const invoice = TestDataBuilder.build("invoice", {id: invoiceId});
+    const result = await updateInvoice({invoiceId, invoice});
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe("VALIDATION_ERROR");
     }
   });
 });

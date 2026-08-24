@@ -24,7 +24,8 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createErrorResult, fetchWithTimeout, ServerActionResult} from "@/lib/utils.server";
-import type {CreateInvoiceDtoPayload, Invoice} from "@/types/invoices";
+import type {CreateInvoiceDtoPayload} from "@/types/invoices";
+import {parseInvoiceResponse, tryParse} from "@/types/invoices/transport";
 
 /**
  * Input type allowing partial payload (userIdentifier is auto-filled from auth).
@@ -107,14 +108,24 @@ export async function createInvoice(payload: ServerActionInputType): ServerActio
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: payload.userIdentifier ? JSON.stringify(payload) : JSON.stringify({...payload, userIdentifier}),
+        body: JSON.stringify({
+          userIdentifier: payload.userIdentifier ?? userIdentifier,
+          initialScan: payload.initialScan,
+          additionalMetadata: payload.metadata,
+        }),
       });
       addSpanEvent("bff.invoice.create.complete");
 
       if (response.ok) {
         logWithTrace("info", "Successfully created invoice entity...", {}, "server");
-        const data = (await response.json()) as Invoice;
-        return {success: true, data} as const;
+        const responseBody: unknown = await response.json();
+        const parsed = tryParse(parseInvoiceResponse, responseBody);
+        if (!parsed.ok) {
+          addSpanEvent("bff.invoice.create.invalid");
+          logWithTrace("error", "Create invoice response failed transport validation", {path: parsed.error.path}, "server");
+          return createErrorResult(parsed.error, "The server returned unexpected data. Please try again later.");
+        }
+        return {success: true, data: parsed.value} as const;
       }
 
       addSpanEvent("bff.invoice.create.error");

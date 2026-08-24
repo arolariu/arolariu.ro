@@ -21,6 +21,7 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Invoice, InvoiceCategory, PaymentInformation, Product, Recipe} from "@/types/invoices";
+import {parseInvoiceResponse, tryParse} from "@/types/invoices/transport";
 import {revalidatePath} from "next/cache";
 
 type ServerActionInputType = Readonly<{
@@ -30,6 +31,7 @@ type ServerActionInputType = Readonly<{
   payload: {
     name?: string;
     description?: string;
+    classificationCode?: string;
     category?: InvoiceCategory;
     paymentInformation?: PaymentInformation;
     merchantReference?: string;
@@ -110,16 +112,31 @@ export async function patchInvoice({invoiceId, payload}: ServerActionInputType):
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...(payload.name !== undefined ? {name: payload.name} : {}),
+          ...(payload.description !== undefined ? {description: payload.description} : {}),
+          ...(payload.classificationCode !== undefined ? {classificationCode: payload.classificationCode} : {}),
+          ...(payload.paymentInformation !== undefined ? {paymentInformation: payload.paymentInformation} : {}),
+          ...(payload.merchantReference !== undefined ? {merchantReference: payload.merchantReference} : {}),
+          ...(payload.isImportant !== undefined ? {isImportant: payload.isImportant} : {}),
+          ...(payload.sharedWith !== undefined ? {sharedWith: payload.sharedWith} : {}),
+          ...(payload.additionalMetadata !== undefined ? {additionalMetadata: payload.additionalMetadata} : {}),
+        }),
       });
       addSpanEvent("bff.request.patch-invoice.complete");
 
       if (response.ok) {
         logWithTrace("info", "Successfully patched invoice...", {invoiceId}, "server");
-        const invoice = (await response.json()) as Invoice;
+        const responseBody: unknown = await response.json();
+        const parsed = tryParse(parseInvoiceResponse, responseBody);
+        if (!parsed.ok) {
+          addSpanEvent("bff.request.patch-invoice.invalid");
+          logWithTrace("error", "Patch invoice response failed transport validation", {path: parsed.error.path}, "server");
+          return createErrorResult(parsed.error, "The server returned unexpected data. Please try again later.");
+        }
         revalidatePath(`/domains/invoices/edit-invoice/${invoiceId}`, "page");
         revalidatePath(`/domains/invoices/view-invoice/${invoiceId}`, "page");
-        return {success: true, data: invoice} as const;
+        return {success: true, data: parsed.value} as const;
       }
 
       addSpanEvent("bff.request.patch-invoice.error");
