@@ -130,8 +130,8 @@ describe("mimeTypeUtilities", () => {
       expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toContain("tiff");
     });
 
-    it("should NOT include heif extension (heif files may contain HEIC-encoded data)", () => {
-      expect(ACCEPTED_SCAN_FILE_EXTENSIONS).not.toContain("heif");
+    it("should include heif extension (InvoiceScanType.HEIF is 8, within the accepted range)", () => {
+      expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toContain("heif");
     });
 
     it("should NOT include heic extension (HEIC removed from invoice path)", () => {
@@ -142,8 +142,8 @@ describe("mimeTypeUtilities", () => {
       expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toContain("pdf");
     });
 
-    it("should have exactly 7 supported extensions", () => {
-      expect(ACCEPTED_SCAN_FILE_EXTENSIONS.length).toBe(7);
+    it("should have exactly 8 supported extensions", () => {
+      expect(ACCEPTED_SCAN_FILE_EXTENSIONS.length).toBe(8);
     });
 
     it("should not expose Set mutating methods", () => {
@@ -411,7 +411,11 @@ describe("mimeTypeUtilities", () => {
     it("does not accept HEIC as an invoice scan format", () => {
       expect(ACCEPTED_SCAN_MIME_TYPES).not.toContain("image/heic");
       expect(ACCEPTED_SCAN_FILE_EXTENSIONS).not.toContain("heic");
-      expect(ACCEPTED_SCAN_FILE_EXTENSIONS).not.toContain("heif");
+    });
+
+    it("still accepts HEIF, which the backend supports as InvoiceScanType 8", () => {
+      expect(ACCEPTED_SCAN_MIME_TYPES).toContain("image/heif");
+      expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toContain("heif");
     });
 
     it("rejects mapping a HEIC blob scan onto an invoice scan type", () => {

@@ -16,7 +16,7 @@
  * - Case-insensitive handling of MIME types and extensions
  *
  * **Supported Formats:**
- * - Images: JPEG, PNG, BMP, TIFF, HEIF, HEIC
+ * - Images: JPEG, PNG, BMP, TIFF, HEIF, HEIC (blob storage accepts HEIC; the invoice scan path does not)
  * - Documents: PDF
  *
  * @example
@@ -90,11 +90,14 @@ export const ACCEPTED_SCAN_MIME_TYPES = [
  * - `png` - PNG images
  * - `bmp` - Bitmap images
  * - `tif`, `tiff` - TIFF images
+ * - `heif` - HEIF images
  * - `pdf` - PDF documents
  *
- * Note: `heif` and `heic` are intentionally excluded — `.heif` files commonly
- * contain HEIC-encoded data, and `InvoiceScanType.HEIC` (value 9) exceeds the
- * backend's accepted range of 0–8.
+ * Note: `heic` is intentionally excluded. `InvoiceScanType.HEIC` was value 9,
+ * which exceeds the backend's accepted range of 0-8. `heif` is retained because
+ * `InvoiceScanType.HEIF` is 8 and is accepted, and because `image/heif` remains
+ * in {@link ACCEPTED_SCAN_MIME_TYPES} — dropping only the extension would reject
+ * a file the API can actually ingest.
  *
  * @example
  * ```typescript
@@ -104,7 +107,7 @@ export const ACCEPTED_SCAN_MIME_TYPES = [
  * }
  * ```
  */
-export const ACCEPTED_SCAN_FILE_EXTENSIONS = ["jpg", "jpeg", "png", "bmp", "tif", "tiff", "pdf"] as const;
+export const ACCEPTED_SCAN_FILE_EXTENSIONS = ["jpg", "jpeg", "png", "bmp", "tif", "tiff", "heif", "pdf"] as const;
 
 /**
  * Internal Set for efficient MIME type lookups.

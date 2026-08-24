@@ -43,8 +43,8 @@ function validateSingleFile(file: File): UploadBatchValidationResult["invalidFil
 
 describe("upload format policy", () => {
   it("exposes an input accept string that matches all accepted extensions", () => {
-    expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toEqual(["jpg", "jpeg", "png", "bmp", "tif", "tiff", "pdf"]);
-    expect(SCAN_UPLOAD_INPUT_ACCEPT).toBe(".jpg,.jpeg,.png,.bmp,.tif,.tiff,.pdf");
+    expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toEqual(["jpg", "jpeg", "png", "bmp", "tif", "tiff", "heif", "pdf"]);
+    expect(SCAN_UPLOAD_INPUT_ACCEPT).toBe(".jpg,.jpeg,.png,.bmp,.tif,.tiff,.heif,.pdf");
   });
 });
 

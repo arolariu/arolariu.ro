@@ -39,14 +39,14 @@ function getDropzoneClassName(isAdding: boolean, isDragReject: boolean, isDragAc
  *
  * @remarks
  * **Workflow**:
- * 1. User selects an image or PDF file (JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, or PDF)
+ * 1. User selects an image or PDF file (JPG, JPEG, PNG, BMP, TIFF, HEIF, or PDF)
  * 2. File is converted to base64 and uploaded to Azure Blob Storage
  * 3. Blob URL is attached to the invoice via API
  * 4. Page refreshes to show the new scan
  *
  * **File Validation**:
  * - Maximum size: 10MB
- * - Supported formats: JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC, PDF
+ * - Supported formats: JPG, JPEG, PNG, BMP, TIFF, HEIF, PDF
  *
  * @returns Dialog component for adding invoice scans
  *
