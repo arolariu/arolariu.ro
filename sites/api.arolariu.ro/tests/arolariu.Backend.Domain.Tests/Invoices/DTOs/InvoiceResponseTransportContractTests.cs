@@ -311,7 +311,6 @@ public sealed class InvoiceResponseTransportContractTests
       ClassificationOrigin.Manual,
       null);
     AllergenAssessment assessment = AllergenAssessment.Detected(
-      sourceRunId,
       [
         new AllergenSignal(
           AllergenCode.CerealsContainingGluten,

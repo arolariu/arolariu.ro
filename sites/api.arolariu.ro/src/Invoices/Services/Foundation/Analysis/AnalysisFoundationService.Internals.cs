@@ -118,14 +118,13 @@ public sealed partial class AnalysisFoundationService
     return status switch
     {
       "SignalsFound" => AllergenAssessment.Detected(
-        sourceRunId,
         signals.Select(MapAllergenSignal).ToArray()),
 
       "NoSignalsInAvailableEvidence" when signals.Count == 0
-        => AllergenAssessment.NoSignals(sourceRunId),
+        => AllergenAssessment.NoSignals(),
 
       "InsufficientData" when signals.Count == 0
-        => AllergenAssessment.Insufficient(sourceRunId),
+        => AllergenAssessment.Insufficient(),
 
       "NoSignalsInAvailableEvidence"
         or "InsufficientData"

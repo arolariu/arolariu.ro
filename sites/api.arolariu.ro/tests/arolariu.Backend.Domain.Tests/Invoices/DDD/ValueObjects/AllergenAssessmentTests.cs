@@ -20,8 +20,8 @@ public sealed class AllergenAssessmentTests
   public void AllergenAssessment_NoSignals_IsDifferentFromInsufficientData()
   {
     // Arrange
-    AllergenAssessment noSignals = AllergenAssessment.NoSignals(Guid.NewGuid());
-    AllergenAssessment insufficient = AllergenAssessment.Insufficient(Guid.NewGuid());
+    AllergenAssessment noSignals = AllergenAssessment.NoSignals();
+    AllergenAssessment insufficient = AllergenAssessment.Insufficient();
 
     // Assert
     Assert.AreNotEqual(noSignals.Status, insufficient.Status);
@@ -80,7 +80,7 @@ public sealed class AllergenAssessmentTests
     };
 
     // Act
-    AllergenAssessment assessment = AllergenAssessment.Detected(Guid.NewGuid(), signals);
+    AllergenAssessment assessment = AllergenAssessment.Detected(signals);
     signals.Clear();
     evidence.Add(new AllergenEvidence("manual-note", "contains traces"));
 
@@ -95,7 +95,7 @@ public sealed class AllergenAssessmentTests
   /// </summary>
   [TestMethod]
   public void AllergenAssessment_DetectedWithoutSignals_ThrowsArgumentException() =>
-    Assert.ThrowsExactly<ArgumentException>(() => AllergenAssessment.Detected(Guid.NewGuid(), []));
+    Assert.ThrowsExactly<ArgumentException>(() => AllergenAssessment.Detected([]));
 
   /// <summary>
   /// Verifies that allergen signals enforce confidence bounds.

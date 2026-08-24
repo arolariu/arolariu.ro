@@ -33,7 +33,7 @@ public sealed class InvoiceProcessingReconciliationTests
   public async Task AnalyzeInvoiceAsync_ProductCodeMatch_PreservesEnrichment()
   {
     StandardClassification classification = CreateClassification("10000001", "Milk");
-    AllergenAssessment allergenAssessment = AllergenAssessment.NoSignals(Guid.NewGuid());
+    AllergenAssessment allergenAssessment = AllergenAssessment.NoSignals();
     var previous = new Product
     {
       Name = "Old milk",

@@ -99,7 +99,7 @@ internal static class InvoiceBuilder
         QuantityUnit = GetRandomString(),
         ProductCode = GetRandomString(),
         Price = (decimal)(Random.NextDouble() * 1000),
-        AllergenAssessment = AllergenAssessment.NoSignals(Guid.NewGuid())
+        AllergenAssessment = AllergenAssessment.NoSignals()
       });
     }
 

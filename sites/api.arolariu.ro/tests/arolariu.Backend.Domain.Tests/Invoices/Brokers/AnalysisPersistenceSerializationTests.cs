@@ -97,13 +97,11 @@ public sealed class AnalysisPersistenceSerializationTests
   public void Product_ClassificationAndAllergenAssessment_SurviveSerializerRoundTrip()
   {
     // Arrange
-    Guid sourceRunId = Guid.CreateVersion7();
     var product = new Product
     {
       Name = "Wholemeal loaf",
       Classification = ClassificationTestData.Gpc("10000045", "Bread"),
       AllergenAssessment = AllergenAssessment.Detected(
-        sourceRunId,
         [
           new AllergenSignal(
             AllergenCode.CerealsContainingGluten,
@@ -128,7 +126,6 @@ public sealed class AnalysisPersistenceSerializationTests
     Assert.AreEqual("10000045", roundTripped.Classification.Code);
 
     Assert.IsNotNull(roundTripped.AllergenAssessment);
-    Assert.AreEqual(sourceRunId, roundTripped.AllergenAssessment.SourceRunId);
     Assert.HasCount(1, roundTripped.AllergenAssessment.Signals);
 
     AllergenSignal signal = roundTripped.AllergenAssessment.Signals[0];

@@ -152,7 +152,6 @@ internal sealed class GenerativeCapabilityHarness
         new Dictionary<string, AllergenAssessment>
         {
           ["item-0001"] = AllergenAssessment.Detected(
-            Guid.NewGuid(),
             [
               new AllergenSignal(
                 AllergenCode.Milk,
@@ -160,7 +159,7 @@ internal sealed class GenerativeCapabilityHarness
                 0.98,
                 [new AllergenEvidence("ingredientsText", "milk")])
             ]),
-          ["item-0002"] = AllergenAssessment.NoSignals(Guid.NewGuid()),
+          ["item-0002"] = AllergenAssessment.NoSignals(),
         }));
   }
 
@@ -181,7 +180,7 @@ internal sealed class GenerativeCapabilityHarness
       },
       CreateAllergens(new Dictionary<string, AllergenAssessment>(StringComparer.Ordinal)
       {
-        ["item-0001"] = AllergenAssessment.NoSignals(Guid.NewGuid()),
+        ["item-0001"] = AllergenAssessment.NoSignals(),
       }));
   }
 
@@ -217,7 +216,7 @@ internal sealed class GenerativeCapabilityHarness
       assessments
       ?? new Dictionary<string, AllergenAssessment>(StringComparer.Ordinal)
       {
-        ["item-0001"] = AllergenAssessment.NoSignals(Guid.NewGuid()),
+        ["item-0001"] = AllergenAssessment.NoSignals(),
       };
 
   private static StandardClassification CreateFoodClassification(string code, string label) =>

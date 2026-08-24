@@ -317,7 +317,6 @@ public sealed class GenerativeAnalysisRecipeMappingTests
     new Dictionary<string, AllergenAssessment>(StringComparer.Ordinal)
     {
       ["item-0001"] = AllergenAssessment.Detected(
-        Guid.NewGuid(),
         [
           new AllergenSignal(
             AllergenCode.Milk,

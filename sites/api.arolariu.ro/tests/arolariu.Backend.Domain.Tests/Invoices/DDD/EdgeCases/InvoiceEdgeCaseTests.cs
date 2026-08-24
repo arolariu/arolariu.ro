@@ -349,7 +349,6 @@ public sealed class InvoiceEdgeCaseTests
   public void Product_MultipleAllergenSignals_HandlesCorrectly()
   {
     // Arrange
-    var runIdentifier = Guid.NewGuid();
     var signals = new List<AllergenSignal>
     {
       BuildSignal(AllergenCode.CerealsContainingGluten),
@@ -361,7 +360,7 @@ public sealed class InvoiceEdgeCaseTests
 
     var product = new Product
     {
-      AllergenAssessment = AllergenAssessment.Detected(runIdentifier, signals)
+      AllergenAssessment = AllergenAssessment.Detected(signals)
     };
 
     // Assert
