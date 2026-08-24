@@ -1587,6 +1587,37 @@ export function computeAllergenFrequency(invoices: ReadonlyArray<Invoice>): Alle
 }
 
 /**
+ * Counts the products that carry an allergen assessment.
+ *
+ * @remarks
+ * This is the denominator behind {@link computeAllergenFrequency}. It is exposed separately so
+ * the UI can distinguish two states that both yield an empty frequency list:
+ *
+ * - `0` — nothing was assessed, so nothing is known. The UI must stay neutral.
+ * - `> 0` with no frequencies — assessments ran and detected no signals in those products.
+ *
+ * Conflating the two would let the UI show a reassuring "no allergens" message for products
+ * that were never examined.
+ *
+ * @param invoices - The invoices whose products should be counted.
+ * @returns The number of non-deleted products carrying an allergen assessment.
+ */
+export function countAssessedProducts(invoices: ReadonlyArray<Invoice>): number {
+  let assessedProducts = 0;
+
+  for (const invoice of invoices) {
+    const items = invoice.items ?? [];
+    for (const product of items) {
+      if (product.metadata?.isSoftDeleted) continue;
+      if (product.allergenAssessment === null || product.allergenAssessment === undefined) continue;
+      assessedProducts++;
+    }
+  }
+
+  return assessedProducts;
+}
+
+/**
  * Computes currency distribution across all invoices.
  *
  * @param invoices - Array of invoices to analyze

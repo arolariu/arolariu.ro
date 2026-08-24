@@ -20,6 +20,14 @@ import styles from "./AllergenSummaryChart.module.scss";
 
 type Props = {
   readonly data: AllergenFrequency[];
+  /**
+   * Number of products that carried an allergen assessment.
+   *
+   * @remarks
+   * Zero means nothing was assessed. The empty state must then stay neutral rather than
+   * reassuring, because an absence of data is not an absence of allergens.
+   */
+  readonly assessedProductCount: number;
 };
 
 /**
@@ -77,12 +85,17 @@ function AllergenCard({allergen}: {readonly allergen: AllergenFrequency}): React
  * allergen-free for products that were not assessed.
  *
  * @param data - Allergen frequencies sorted by product count, derived from {@link computeAllergenFrequency}
+ * @param assessedProductCount - Number of products that carried an assessment, from `countAssessedProducts`
  * @returns Grid of allergen cards, or an empty state.
  */
-export function AllergenSummaryChart({data}: Props): React.JSX.Element {
+export function AllergenSummaryChart({data, assessedProductCount}: Props): React.JSX.Element {
   const t = useTranslations();
 
   if (data.length === 0) {
+    // Two very different situations produce an empty list. Nothing assessed means nothing is
+    // known, so the UI must not show a checkmark or say no allergens were found.
+    const nothingAssessed = assessedProductCount === 0;
+
     return (
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
@@ -93,8 +106,12 @@ export function AllergenSummaryChart({data}: Props): React.JSX.Element {
         </CardHeader>
         <CardContent className={styles["cardContent"]}>
           <div className={styles["emptyState"]}>
-            <div className={styles["emptyIcon"]}>✓</div>
-            <p className={styles["emptyText"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.empty)}</p>
+            <div className={styles["emptyIcon"]}>{nothingAssessed ? "?" : "✓"}</div>
+            <p className={styles["emptyText"]}>
+              {nothingAssessed
+                ? t((m) => m.cards.invoices.statistics.allergenSummary.notAssessed)
+                : t((m) => m.cards.invoices.statistics.allergenSummary.empty)}
+            </p>
           </div>
         </CardContent>
       </Card>

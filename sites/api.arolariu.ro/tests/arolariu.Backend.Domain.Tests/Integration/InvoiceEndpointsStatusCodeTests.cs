@@ -758,6 +758,67 @@ public sealed class InvoiceEndpointsStatusCodeTests
   }
   #endregion
 
+  #region Merchant collection scoping tests
+  /// <summary>
+  /// Verifies the merchant collection is owner-scoped even when a parent company is supplied.
+  /// </summary>
+  /// <remarks>
+  /// <para><c>parentCompanyId</c> narrows the caller's own visible set. It must never act as an
+  /// alternate path that skips ownership filtering: <c>MerchantResponseDto</c> exposes
+  /// <c>referencedInvoiceIds</c> and <c>createdBy</c>, so an unscoped partition read would
+  /// disclose other users' invoice and user identifiers to any authenticated caller.</para>
+  /// </remarks>
+  [TestMethod]
+  public async Task RetrieveAllMerchantsAsync_WithParentCompanyId_StillScopesToCaller()
+  {
+    Guid userId = Guid.NewGuid();
+    Guid parentCompanyId = Guid.NewGuid();
+    var inPartition = new Merchant {id = Guid.NewGuid(), ParentCompanyId = parentCompanyId};
+    var outOfPartition = new Merchant {id = Guid.NewGuid(), ParentCompanyId = Guid.NewGuid()};
+
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+    service
+      .Setup(candidate => candidate.ReadMerchantsVisibleToUser(userId, It.IsAny<CancellationToken>()))
+      .ReturnsAsync([inPartition, outOfPartition]);
+
+    IResult result = await InvoiceEndpoints.RetrieveAllMerchantsAsync(
+      service.Object,
+      CreateAuthenticatedContextAccessor(userId),
+      parentCompanyId,
+      visibleToUser: null,
+      CancellationToken.None);
+
+    Assert.AreEqual(StatusCodes.Status200OK, GetStatusCode(result));
+
+    // The owner-scoped read is the ONLY source of merchants; the unscoped partition read
+    // must never be reached. MockBehavior.Strict makes any other call fail the test.
+    service.Verify(
+      candidate => candidate.ReadMerchants(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+      Times.Never);
+  }
+
+  /// <summary>
+  /// Verifies a caller requesting another user's merchants is rejected before any read occurs.
+  /// </summary>
+  [TestMethod]
+  public async Task RetrieveAllMerchantsAsync_VisibleToAnotherUser_ReturnsForbidden()
+  {
+    Guid userId = Guid.NewGuid();
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+
+    IResult result = await InvoiceEndpoints.RetrieveAllMerchantsAsync(
+      service.Object,
+      CreateAuthenticatedContextAccessor(userId),
+      parentCompanyId: null,
+      visibleToUser: Guid.NewGuid(),
+      CancellationToken.None);
+
+    // TypedResults.Forbid() yields ForbidHttpResult, which carries no status-code property.
+    Assert.IsInstanceOfType<ForbidHttpResult>(result);
+    service.VerifyNoOtherCalls();
+  }
+  #endregion
+
   #region Replacement classification preservation tests
   /// <summary>
   /// Verifies invoice PUT preserves an existing classification when no manual code is supplied.

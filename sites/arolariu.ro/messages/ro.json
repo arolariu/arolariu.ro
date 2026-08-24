@@ -541,12 +541,13 @@
         "allergenSummary": {
           "ariaLabel": "Rezumat frecvență alergeni",
           "description": "Expunerea la alergeni în produse",
-          "empty": "Niciun alergen detectat în achizițiile tale",
+          "empty": "Niciun alergen detectat în produsele evaluate",
           "stats": {
             "ofTotal": "din total",
             "products": "produse"
           },
-          "title": "Rezumat Alergeni"
+          "title": "Rezumat Alergeni",
+          "notAssessed": "Încă nu există date despre alergeni — aceste produse nu au fost evaluate"
         },
         "calendarHeatmap": {
           "aria": {

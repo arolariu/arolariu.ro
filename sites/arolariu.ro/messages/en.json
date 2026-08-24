@@ -541,12 +541,13 @@
         "allergenSummary": {
           "ariaLabel": "Allergen frequency summary",
           "description": "Allergen exposure across products",
-          "empty": "No allergens detected in your purchases",
+          "empty": "No allergens detected in the products that were assessed",
           "stats": {
             "ofTotal": "of total",
             "products": "products"
           },
-          "title": "Allergen Summary"
+          "title": "Allergen Summary",
+          "notAssessed": "No allergen data yet — these products have not been assessed"
         },
         "calendarHeatmap": {
           "aria": {

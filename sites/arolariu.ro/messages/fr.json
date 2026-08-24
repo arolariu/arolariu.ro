@@ -541,12 +541,13 @@
         "allergenSummary": {
           "ariaLabel": "Résumé de la fréquence des allergènes",
           "description": "Exposition aux allergènes dans vos produits",
-          "empty": "Aucun allergène détecté dans vos achats",
+          "empty": "Aucun allergène détecté dans les produits évalués",
           "stats": {
             "ofTotal": "du total",
             "products": "produits"
           },
-          "title": "Résumé des allergènes"
+          "title": "Résumé des allergènes",
+          "notAssessed": "Pas encore de données sur les allergènes — ces produits n'ont pas été évalués"
         },
         "calendarHeatmap": {
           "aria": {

@@ -1257,21 +1257,24 @@ public static partial class InvoiceEndpoints
         return TypedResults.Forbid();
       }
 
-      IEnumerable<Merchant> possibleMerchants;
+      // Owner scoping is applied unconditionally. parentCompanyId narrows the caller's own
+      // visible set; it is deliberately NOT an alternate path that skips the ownership filter.
+      // Treating it as one would let any authenticated caller enumerate a partition and read
+      // other users' referencedInvoiceIds and createdBy values out of MerchantResponseDto.
+      IEnumerable<Merchant> possibleMerchants = await invoiceManagementService
+        .ReadMerchantsVisibleToUser(userIdentifier, cancellationToken)
+        .ConfigureAwait(false);
+
       if (parentCompanyId.HasValue)
       {
-        activity?.SetTag("merchant.scope", "parent_company");
+        activity?.SetTag("merchant.scope", "visible_to_user.parent_company");
         activity?.SetTag("parent_company.id", parentCompanyId.Value.ToString());
-        possibleMerchants = await invoiceManagementService
-          .ReadMerchants(parentCompanyId.Value, cancellationToken)
-          .ConfigureAwait(false);
+        possibleMerchants = possibleMerchants
+          .Where(merchant => merchant.ParentCompanyId == parentCompanyId.Value);
       }
       else
       {
         activity?.SetTag("merchant.scope", "visible_to_user");
-        possibleMerchants = await invoiceManagementService
-          .ReadMerchantsVisibleToUser(userIdentifier, cancellationToken)
-          .ConfigureAwait(false);
       }
 
       // RESTful convention: return 200 with empty array for collection endpoints, not 404

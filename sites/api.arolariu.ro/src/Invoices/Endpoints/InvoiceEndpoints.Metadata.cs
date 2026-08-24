@@ -729,10 +729,10 @@ public static partial class InvoiceEndpoints
   /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing a list of merchants.</returns>
   [SwaggerOperation(
-    Summary = "Retrieves all merchants from the system.",
+    Summary = "Retrieves the merchants visible to the authenticated caller.",
     Description = "This endpoint retrieves merchants from the Invoice Management System. " +
-    "Without a partition filter it returns merchants referenced by the caller's own invoices. " +
-    "An optional parentCompanyId can be supplied to filter by partition. " +
+    "Results are always scoped to merchants referenced by the caller's own invoices. " +
+    "An optional parentCompanyId narrows that set to a single partition; it never widens visibility. " +
     "An optional visibleToUser parameter is validated against the caller's identity and returns 403 on mismatch. " +
     "If successful, a list of merchants matching the criteria is returned.",
     OperationId = nameof(RetrieveAllMerchantsAsync),
@@ -748,7 +748,7 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RetrieveAllMerchantsAsync(
     [FromServices] IInvoiceManagementService invoiceManagementService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromQuery, SwaggerParameter("Optional parent company identifier used as a partition filter.", Required = false)] Guid? parentCompanyId,
+    [FromQuery, SwaggerParameter("Optional parent company identifier. Narrows the caller's own merchants; it does not widen visibility.", Required = false)] Guid? parentCompanyId,
     [FromQuery, SwaggerParameter("Optional user identifier. Must match the authenticated caller.", Required = false)] Guid? visibleToUser,
     CancellationToken cancellationToken);
   #endregion

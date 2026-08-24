@@ -29,6 +29,7 @@ import {useMemo} from "react";
 import {TbChartBar} from "react-icons/tb";
 import {
   computeAllergenFrequency,
+  countAssessedProducts,
   computeClassificationGroupAggregates,
   computeCurrencyDistribution,
   computeDailySpending,
@@ -122,6 +123,7 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
   const classificationSpending = useMemo(() => computeProductClassificationSpending(invoices), [invoices]);
   const topProducts = useMemo(() => computeTopProducts(invoices, 10), [invoices]);
   const allergenFrequency = useMemo(() => computeAllergenFrequency(invoices), [invoices]);
+  const assessedProductCount = useMemo(() => countAssessedProducts(invoices), [invoices]);
 
   // Merchant-level analytics
   const merchantTrends = useMemo(() => computeMerchantTrends(invoices, 5), [invoices]);
@@ -332,7 +334,10 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
           initial={{opacity: 0, y: 20}}
           animate={{opacity: 1, y: 0}}
           transition={{duration: 0.5, delay: 0.85}}>
-          <AllergenSummaryChart data={allergenFrequency} />
+          <AllergenSummaryChart
+            assessedProductCount={assessedProductCount}
+            data={allergenFrequency}
+          />
         </motion.div>
       </section>
     </div>

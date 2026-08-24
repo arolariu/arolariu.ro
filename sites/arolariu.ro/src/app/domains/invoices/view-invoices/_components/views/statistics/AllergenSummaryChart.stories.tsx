@@ -65,6 +65,7 @@ const lowFrequencyData: AllergenFrequency[] = [
 /** Default view with diverse allergens across several EU-14 codes. */
 export const Default: Story = {
   args: {
+    assessedProductCount: 20,
     data: diverseData,
   },
 };
@@ -72,6 +73,7 @@ export const Default: Story = {
 /** Empty state — no allergens detected in assessed products. */
 export const Empty: Story = {
   args: {
+    assessedProductCount: 20,
     data: [],
   },
 };
@@ -79,6 +81,7 @@ export const Empty: Story = {
 /** Single allergen. */
 export const SingleAllergen: Story = {
   args: {
+    assessedProductCount: 20,
     data: singleAllergenData,
   },
 };
@@ -86,6 +89,7 @@ export const SingleAllergen: Story = {
 /** High warning levels — several allergens at ≥20%. */
 export const HighWarningLevels: Story = {
   args: {
+    assessedProductCount: 20,
     data: highWarningData,
   },
 };
@@ -93,6 +97,7 @@ export const HighWarningLevels: Story = {
 /** Low frequency allergens — all below 10% threshold. */
 export const LowFrequency: Story = {
   args: {
+    assessedProductCount: 20,
     data: lowFrequencyData,
   },
 };
@@ -100,6 +105,7 @@ export const LowFrequency: Story = {
 /** All 14 EU allergen codes present. */
 export const AllCodes: Story = {
   args: {
+    assessedProductCount: 20,
     data: [
       {code: "cerealsContainingGluten", productCount: 10, percentage: 50},
       {code: "crustaceans", productCount: 2, percentage: 10},
@@ -116,5 +122,13 @@ export const AllCodes: Story = {
       {code: "lupin", productCount: 1, percentage: 5},
       {code: "molluscs", productCount: 1, percentage: 5},
     ],
+  },
+};
+
+/** Nothing was assessed, so the card must stay neutral rather than implying no allergens. */
+export const NotAssessed: Story = {
+  args: {
+    assessedProductCount: 0,
+    data: [],
   },
 };

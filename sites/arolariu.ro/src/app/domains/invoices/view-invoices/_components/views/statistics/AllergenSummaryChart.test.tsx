@@ -13,7 +13,7 @@ import {InvoiceScanType} from "@/types/invoices";
 import {AllergenAssessmentStatus, AllergenCode, AllergenEvidenceLevel} from "@/types/invoices/Allergen";
 import {render, screen} from "@testing-library/react";
 import {describe, expect, it} from "vitest";
-import {computeAllergenFrequency} from "../../../_utils/statistics";
+import {computeAllergenFrequency, countAssessedProducts} from "../../../_utils/statistics";
 import {AllergenSummaryChart} from "./AllergenSummaryChart";
 
 function makeProduct(overrides: Partial<Product>): Product {
@@ -157,16 +157,85 @@ describe("computeAllergenFrequency — denominator safety", () => {
   });
 });
 
+describe("countAssessedProducts", () => {
+  const assessed = makeProduct({
+    allergenAssessment: {status: AllergenAssessmentStatus.NoSignals, signals: []},
+  });
+
+  it("returns zero when no product carries an assessment", () => {
+    expect(countAssessedProducts([makeInvoice([makeProduct({})])])).toBe(0);
+  });
+
+  it("counts only products carrying an assessment", () => {
+    expect(countAssessedProducts([makeInvoice([assessed, makeProduct({})])])).toBe(1);
+  });
+
+  it("excludes soft-deleted products", () => {
+    const deleted = makeProduct({
+      allergenAssessment: {status: AllergenAssessmentStatus.NoSignals, signals: []},
+      metadata: {isEdited: false, isComplete: true, isSoftDeleted: true, confidence: 1},
+    });
+
+    expect(countAssessedProducts([makeInvoice([assessed, deleted])])).toBe(1);
+  });
+
+  it("tolerates an invoice with no items", () => {
+    const invoice = {...makeInvoice([]), items: undefined} as unknown as Invoice;
+
+    expect(countAssessedProducts([invoice])).toBe(0);
+  });
+
+  it("sums across multiple invoices", () => {
+    expect(countAssessedProducts([makeInvoice([assessed]), makeInvoice([assessed, assessed])])).toBe(3);
+  });
+});
+
 describe("AllergenSummaryChart rendering", () => {
   it("renders an allergen card using the canonical label key", () => {
     const data = [{code: AllergenCode.Milk, productCount: 3, percentage: 25}];
-    render(<AllergenSummaryChart data={data} />);
+    render(
+      <AllergenSummaryChart
+        assessedProductCount={12}
+        data={data}
+      />,
+    );
     // Mock translator returns key path: "allergens.codes.milk"
     expect(screen.getByText(/allergens\.codes\.milk/i)).toBeInTheDocument();
   });
 
-  it("renders the empty state when data is empty", () => {
-    render(<AllergenSummaryChart data={[]} />);
+  it("reports no detections when products were assessed but nothing was found", () => {
+    render(
+      <AllergenSummaryChart
+        assessedProductCount={5}
+        data={[]}
+      />,
+    );
+
     expect(screen.getByText(/allergenSummary\.empty/i)).toBeInTheDocument();
+  });
+
+  it("stays neutral when nothing was assessed, rather than implying no allergens", () => {
+    // An empty frequency list with a zero denominator means nothing is known. Rendering the
+    // reassuring "no allergens detected" copy here would assert an absence never established.
+    render(
+      <AllergenSummaryChart
+        assessedProductCount={0}
+        data={[]}
+      />,
+    );
+
+    expect(screen.getByText(/allergenSummary\.notAssessed/i)).toBeInTheDocument();
+    expect(screen.queryByText(/allergenSummary\.empty/i)).not.toBeInTheDocument();
+  });
+
+  it("never renders a reassuring checkmark when nothing was assessed", () => {
+    const {container} = render(
+      <AllergenSummaryChart
+        assessedProductCount={0}
+        data={[]}
+      />,
+    );
+
+    expect(container.textContent).not.toContain("✓");
   });
 });
