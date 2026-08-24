@@ -410,32 +410,36 @@
       },
       "recipeCard": {
         "buttons": {
-          "viewRecipe": "View Recipe",
-          "visitReference": "Visit Reference"
-        },
-        "complexity": {
-          "easy": "Easy Complexity",
-          "hard": "Hard Complexity",
-          "normal": "Normal Complexity",
-          "unknown": "Unknown Complexity"
+          "viewRecipe": "View Recipe"
         },
         "dropdown": {
           "delete": "Delete",
           "edit": "Edit",
           "markAsFavorite": "Mark as Favorite",
-          "share": "Share",
           "view": "View"
         },
         "ingredients": {
-          "additionalLabel": "Additional ingredients:",
-          "label": "Ingredients:",
-          "more": "+{count} more"
+          "total": "{count} ingredients"
         },
         "timing": {
           "cookLabel": "Cook: {minutes}′",
           "cookTooltip": "Cooking time is {minutes} minutes.",
           "prepLabel": "Prep: {minutes}′",
-          "prepTooltip": "Preparation time is {minutes} minutes."
+          "prepTooltip": "Preparation time is {minutes} minutes.",
+          "totalLabel": "Total: {minutes}'",
+          "totalTooltip": "Total time is {minutes} minutes."
+        },
+        "difficulty": {
+          "easy": "Easy",
+          "medium": "Medium",
+          "hard": "Hard"
+        },
+        "servings": "{count} servings",
+        "steps": {
+          "count": "{count} steps"
+        },
+        "allergens": {
+          "sectionLabel": "Allergen warnings"
         }
       },
       "seasonalInsightsCard": {
@@ -1172,11 +1176,6 @@
         }
       },
       "recipeDialog": {
-        "actions": {
-          "enhanceInstructions": "Enhance instructions",
-          "generateName": "Generate name",
-          "unavailable": "This recipe assistant action is not available yet"
-        },
         "buttons": {
           "add": "Add",
           "cancel": "Cancel",
@@ -1205,15 +1204,18 @@
           "medium": "Medium"
         },
         "fields": {
-          "complexity": "Complexity level",
           "cookTime": "Cook time",
           "description": "Description",
           "difficulty": "Difficulty level",
-          "ingredients": "Ingredients",
-          "instructions": "Instructions",
           "prepTime": "Prep time",
           "recipeName": "Recipe name",
-          "totalDuration": "Total Duration"
+          "totalDuration": "Total Duration",
+          "servings": "Servings",
+          "purchasedIngredients": "Purchased Ingredients",
+          "pantryStaples": "Pantry Staples",
+          "missingIngredients": "Missing Optional Ingredients",
+          "steps": "Cooking Steps",
+          "allergens": "Allergen Warnings"
         },
         "minutes": "minutes",
         "placeholders": {
@@ -1222,26 +1224,21 @@
           "instructions": "Enter cooking instructions",
           "prepTime": "e.g. 15 minutes",
           "recipeName": "Enter recipe name",
-          "selectDifficulty": "Select difficulty"
+          "selectDifficulty": "Select difficulty",
+          "servings": "e.g. 4",
+          "ingredientName": "e.g. Tomatoes",
+          "ingredientQuantity": "e.g. 500 g",
+          "ingredientPreparation": "e.g. diced (optional)",
+          "stepInstruction": "Describe this step",
+          "stepNotes": "Optional note"
         },
         "read": {
           "description": "Recipe details and cooking instructions",
           "missingRecipe": "Recipe details are unavailable.",
           "noDescription": "No description provided.",
-          "notSpecified": "Not specified"
-        },
-        "share": {
-          "copied": "Recipe link copied",
-          "copy": "Copy link",
-          "copyFailed": "Failed to copy recipe link",
-          "description": "Share the recipe reference link when one is available.",
-          "missingRecipe": "Recipe details are unavailable.",
-          "title": "Share recipe",
-          "unavailable": "Recipe sharing is not available for this recipe yet."
-        },
-        "tooltips": {
-          "enhanceInstructions": "Use AI to enhance your instructions with more details",
-          "generateName": "Generate a recipe name based on your ingredients and difficulty level using AI"
+          "notSpecified": "Not specified",
+          "noIngredients": "No ingredients listed.",
+          "noAllergens": "No allergen warnings."
         },
         "update": {
           "description": "Update recipe details.",
@@ -1249,6 +1246,11 @@
           "missingRecipe": "Recipe details are unavailable.",
           "success": "Recipe updated successfully",
           "title": "Update recipe"
+        },
+        "validation": {
+          "stepRequired": "At least one step is required",
+          "servingsPositive": "Servings must be a positive number",
+          "totalTimeConstraint": "Total time must be at least prep + cook time"
         }
       },
       "removeScanDialog": {

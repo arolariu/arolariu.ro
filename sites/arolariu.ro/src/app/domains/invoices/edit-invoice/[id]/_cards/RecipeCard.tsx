@@ -1,6 +1,7 @@
 "use client";
 
-import {type Recipe, RecipeComplexity} from "@/types/invoices";
+import {AllergenCode, RecipeDifficulty, type RecipeSuggestion} from "@/types/invoices";
+import {getAllergenLabelKey} from "../../../_components/allergens/allergenLabels";
 import {
   Badge,
   Button,
@@ -20,94 +21,62 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
+import {selectorFromPath} from "next-intl-selector";
 import {useTranslations} from "next-intl-selector";
 import {
   TbClock,
   TbEdit,
-  TbExternalLink,
   TbHeart,
   TbLayoutBottombarExpand,
   TbSeparatorHorizontal,
-  TbShare,
-  TbToolsKitchen,
   TbTrash,
+  TbToolsKitchen,
+  TbUsers,
 } from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./RecipeCard.module.scss";
 
 type Props = {
-  recipe: Recipe;
+  recipe: RecipeSuggestion;
 };
 
+function getDifficultyBadgeVariant(difficulty: RecipeDifficulty): "default" | "secondary" | "outline" {
+  if (difficulty === RecipeDifficulty.Easy) return "default";
+  if (difficulty === RecipeDifficulty.Medium) return "secondary";
+  return "outline";
+}
+
 /**
- * Displays a recipe card with full CRUD operations via dialog-based editing.
+ * Displays a structured recipe card with all 12 RecipeSuggestion fields.
  *
  * @remarks
  * **Rendering Context**: Client Component (`"use client"` directive).
  *
  * **Recipe Details Displayed**:
- * - **Name**: Recipe title with complexity badge (Easy/Normal/Hard)
- * - **Description**: Brief recipe overview
- * - **Ingredients**: First 3 shown with expandable tooltip for remaining
- * - **Timing**: Preparation and cooking time with clock icons
+ * - Name + difficulty badge
+ * - Description
+ * - Servings count
+ * - Prep / cook / total minutes
+ * - Total purchased ingredient count
+ * - Allergen warnings via canonical EU-14 labels
  *
  * **CRUD Operations** (via dropdown menu):
- * - **Edit**: Opens `UpdateRecipeDialog` for modifying recipe details
- * - **Delete**: Opens `DeleteRecipeDialog` for confirmation
- * - **Share**: Opens `ShareRecipeDialog` for sharing options
+ * - **Edit**: Opens `UpdateRecipeDialog`
+ * - **Delete**: Opens `DeleteRecipeDialog`
  * - **View**: Opens `PreviewRecipeDialog` via "View Recipe" button
- * - **Mark as Favorite**: Placeholder for future implementation
- *
- * **Visual Design**:
- * - Complexity badge color varies by difficulty (default/secondary/destructive)
- * - Hover shadow effect for card interactivity
- * - External link button for recipe reference URL
- *
- * **Domain Context**: Part of the recipes tab in edit-invoice, allowing users
- * to manage recipes that can be made with invoice items.
  *
  * @param props - Component properties containing the recipe to display
  * @returns Client-rendered card with recipe details and action menu
- *
- * @example
- * ```tsx
- * <RecipeCard recipe={recipe} />
- * // Displays: Recipe name, complexity, ingredients, timing, action menu
- * ```
- *
- * @see {@link UpdateRecipeDialog} - Dialog for recipe updates
- * @see {@link DeleteRecipeDialog} - Dialog for recipe deletion
- * @see {@link PreviewRecipeDialog} - Dialog for recipe details
- * @see {@link ShareRecipeDialog} - Dialog for recipe sharing
- * @see {@link Recipe} - Recipe type definition
- * @see {@link RecipeComplexity} - Complexity enum for badge styling
  */
 export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations();
-  const {name, complexity, description, ingredients, preparationTime, cookingTime} = recipe;
+  const {name, difficulty, description, purchasedIngredients, assumedPantryStaples, missingOptionalIngredients, preparationMinutes, cookingMinutes, totalMinutes, servings, allergenWarnings, steps} = recipe;
 
-  const complexityLabelMap: Readonly<Record<RecipeComplexity, string>> = {
-    [RecipeComplexity.Unknown]: t((m) => m.cards.invoices.recipeCard.complexity.unknown),
-    [RecipeComplexity.Easy]: t((m) => m.cards.invoices.recipeCard.complexity.easy),
-    [RecipeComplexity.Normal]: t((m) => m.cards.invoices.recipeCard.complexity.normal),
-    [RecipeComplexity.Hard]: t((m) => m.cards.invoices.recipeCard.complexity.hard),
-  };
-
-  const getBadgeVariant = () => {
-    switch (complexity) {
-      case RecipeComplexity.Easy:
-        return "default";
-      case RecipeComplexity.Normal:
-        return "secondary";
-      default:
-        return "destructive";
-    }
-  };
+  const totalIngredients = purchasedIngredients.length + assumedPantryStaples.length + missingOptionalIngredients.length;
 
   const {open: openEditDialog} = useDialog("EDIT_INVOICE__RECIPE_UPDATE", "edit", {recipe});
   const {open: openViewDialog} = useDialog("EDIT_INVOICE__RECIPE_PREVIEW", "view", {recipe});
   const {open: openDeleteDialog} = useDialog("EDIT_INVOICE__RECIPE_DELETE", "delete", {recipe});
-  const {open: openShareDialog} = useDialog("EDIT_INVOICE__RECIPE_SHARE", "share", {recipe});
 
   return (
     <Card className={styles["card"]}>
@@ -115,9 +84,9 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
         <CardTitle>
           <h3 className={styles["title"]}>{name}</h3>
           <Badge
-            variant={getBadgeVariant()}
+            variant={getDifficultyBadgeVariant(difficulty)}
             className={styles["complexityBadge"]}>
-            {complexityLabelMap[complexity]}
+            {t((m) => m.cards.invoices.recipeCard.difficulty[difficulty])}
           </Badge>
         </CardTitle>
         <CardAction className={styles["cardAction"]}>
@@ -135,7 +104,7 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
               <DropdownMenuItem
                 className={styles["menuItem"]}
                 onClick={openViewDialog}>
-                <TbEdit className={styles["menuIcon"]} />
+                <TbLayoutBottombarExpand className={styles["menuIcon"]} />
                 {t((m) => m.cards.invoices.recipeCard.dropdown.view)}
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -150,12 +119,6 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
                 <TbTrash className={styles["menuIcon"]} />
                 {t((m) => m.cards.invoices.recipeCard.dropdown.delete)}
               </DropdownMenuItem>
-              <DropdownMenuItem
-                className={styles["menuItemAccent"]}
-                onClick={openShareDialog}>
-                <TbShare className={styles["menuIcon"]} />
-                {t((m) => m.cards.invoices.recipeCard.dropdown.share)}
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className={styles["menuItemMuted"]}>
                 <TbHeart className={styles["menuIcon"]} />
@@ -168,37 +131,19 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
       <CardContent className={styles["cardContent"]}>
         <p className={styles["description"]}>{description}</p>
 
-        <div className={styles["ingredientsSection"]}>
-          <h4 className={styles["ingredientsLabel"]}>{t((m) => m.cards.invoices.recipeCard.ingredients.label)}</h4>
-          <ul className={styles["ingredientsList"]}>
-            {ingredients.slice(0, 3).map((ingredient) => (
-              <li key={ingredient}>{ingredient}</li>
-            ))}
-            {ingredients.length > 3 && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <li className={styles["moreIngredients"]}>
-                        {t((m) => m.cards.invoices.recipeCard.ingredients.more, {count: String(ingredients.length - 3)})}
-                      </li>
-                    }
-                  />
-                  <TooltipContent className={styles["tooltipContent"]}>
-                    <p className={styles["tooltipTitle"]}>{t((m) => m.cards.invoices.recipeCard.ingredients.additionalLabel)}</p>
-                    <ul className={styles["tooltipIngredientsList"]}>
-                      {ingredients.slice(3).map((ingredient, index) => (
-                        <li key={`${ingredient}-${index + 3}`}>{ingredient}</li>
-                      ))}
-                    </ul>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </ul>
+        <div className={styles["metaRow"]}>
+          <span className={styles["metaItem"]}>
+            <TbUsers className={styles["timeIcon"]} />
+            {t((m) => m.cards.invoices.recipeCard.servings, {count: String(servings)})}
+          </span>
+          <span className={styles["metaItem"]}>
+            {t((m) => m.cards.invoices.recipeCard.ingredients.total, {count: String(totalIngredients)})}
+          </span>
+          <span className={styles["metaItem"]}>
+            {t((m) => m.cards.invoices.recipeCard.steps.count, {count: String(steps.length)})}
+          </span>
         </div>
 
-        {/** Prep + Cook times */}
         <div className={styles["timingRow"]}>
           <TooltipProvider>
             <Tooltip>
@@ -206,12 +151,12 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
                 render={
                   <div className={styles["timeItem"]}>
                     <TbClock className={styles["timeIcon"]} />
-                    {t((m) => m.cards.invoices.recipeCard.timing.prepLabel, {minutes: String(preparationTime)})}
+                    {t((m) => m.cards.invoices.recipeCard.timing.prepLabel, {minutes: String(preparationMinutes)})}
                   </div>
                 }
               />
               <TooltipContent side='bottom'>
-                <p>{t((m) => m.cards.invoices.recipeCard.timing.prepTooltip, {minutes: String(preparationTime)})}</p>
+                <p>{t((m) => m.cards.invoices.recipeCard.timing.prepTooltip, {minutes: String(preparationMinutes)})}</p>
               </TooltipContent>
             </Tooltip>
             <Tooltip>
@@ -219,25 +164,50 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
                 render={
                   <div className={styles["timeItem"]}>
                     <TbToolsKitchen className={styles["timeIcon"]} />
-                    {t((m) => m.cards.invoices.recipeCard.timing.cookLabel, {minutes: String(cookingTime)})}
+                    {t((m) => m.cards.invoices.recipeCard.timing.cookLabel, {minutes: String(cookingMinutes)})}
                   </div>
                 }
               />
               <TooltipContent side='bottom'>
-                <p>{t((m) => m.cards.invoices.recipeCard.timing.cookTooltip, {minutes: String(cookingTime)})}</p>
+                <p>{t((m) => m.cards.invoices.recipeCard.timing.cookTooltip, {minutes: String(cookingMinutes)})}</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <div className={styles["timeItem"]}>
+                    <TbClock className={styles["timeIcon"]} />
+                    {t((m) => m.cards.invoices.recipeCard.timing.totalLabel, {minutes: String(totalMinutes)})}
+                  </div>
+                }
+              />
+              <TooltipContent side='bottom'>
+                <p>{t((m) => m.cards.invoices.recipeCard.timing.totalTooltip, {minutes: String(totalMinutes)})}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
+
+        {allergenWarnings.length > 0 && (
+          <div
+            className={styles["allergensSection"]}
+            aria-label={t((m) => m.cards.invoices.recipeCard.allergens.sectionLabel)}>
+            <span className={styles["allergensLabel"]}>{t((m) => m.cards.invoices.recipeCard.allergens.sectionLabel)}:</span>
+            <div className={styles["allergensList"]}>
+              {allergenWarnings.map((code) => (
+                <Badge
+                  key={code}
+                  variant='destructive'
+                  className={styles["allergenBadge"]}>
+                  {t(selectorFromPath(getAllergenLabelKey(code as AllergenCode)))}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
 
       <CardFooter className={styles["cardFooter"]}>
-        <Button
-          variant='ghost'
-          size='sm'>
-          {t((m) => m.cards.invoices.recipeCard.buttons.visitReference)}
-          <TbExternalLink className={styles["externalLinkIcon"]} />
-        </Button>
         <Button
           variant='default'
           size='sm'

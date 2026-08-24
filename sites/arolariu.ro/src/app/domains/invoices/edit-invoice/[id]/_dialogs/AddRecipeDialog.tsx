@@ -1,7 +1,6 @@
 "use client";
 
-import {formatEnum} from "@/lib/utils.generic";
-import {RecipeComplexity, type Recipe, type RecipeSuggestion} from "@/types/invoices";
+import {AllergenCode, RecipeDifficulty, type RecipeIngredient, type RecipeStep, type RecipeSuggestion} from "@/types/invoices";
 import {
   Button,
   Dialog,
@@ -27,51 +26,30 @@ import {
 import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
-import {TbClock, TbDisc, TbPlus, TbSparkles, TbToolsKitchen, TbToolsKitchen3, TbWand, TbX} from "react-icons/tb";
+import {TbDisc, TbMinus, TbPlus} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 import {useRecipeAdd} from "../../../_hooks/invoice";
 import {useEditInvoiceContext} from "../_context/EditInvoiceContext";
 import styles from "./AddRecipeDialog.module.scss";
 
-function createEmptyRecipe(): Recipe {
-  return {
-    name: "",
-    description: "",
-    ingredients: [],
-    approximateTotalDuration: 0,
-    preparationTime: 0,
-    cookingTime: 0,
-    complexity: RecipeComplexity.Easy,
-    instructions: "",
-    referenceForMoreDetails: "",
-  };
+type IngredientRow = {name: string; quantity: string; preparation: string};
+type StepRow = {instruction: string; notes: string};
+
+function emptyIngredient(): IngredientRow {
+  return {name: "", quantity: "", preparation: ""};
+}
+function emptyStep(): StepRow {
+  return {instruction: "", notes: ""};
 }
 
-function mapDifficultyToComplexity(difficulty: string): RecipeComplexity {
-  switch (difficulty) {
-    case "Easy":
-      return RecipeComplexity.Easy;
-    case "Hard":
-      return RecipeComplexity.Hard;
-    default:
-      return RecipeComplexity.Normal;
-  }
+function toRecipeIngredient(row: IngredientRow): RecipeIngredient {
+  return {name: row.name, quantity: row.quantity, preparation: row.preparation || null};
+}
+function toRecipeStep(row: StepRow, sequence: number): RecipeStep {
+  return {sequence, instruction: row.instruction, notes: row.notes || null};
 }
 
-function updateRecipeFromInput(recipe: Recipe, name: string, value: string): Recipe {
-  switch (name) {
-    case "preparationTime":
-    case "cookingTime":
-      return {...recipe, [name]: Number(value)};
-    case "name":
-    case "description":
-    case "instructions":
-    case "referenceForMoreDetails":
-      return {...recipe, [name]: value};
-    default:
-      return recipe;
-  }
-}
+const ALL_ALLERGEN_CODES = Object.values(AllergenCode);
 
 export default function AddRecipeDialog(): React.JSX.Element {
   const t = useTranslations();
@@ -79,25 +57,52 @@ export default function AddRecipeDialog(): React.JSX.Element {
   const {invoice} = useEditInvoiceContext();
   const {addRecipeCallback, isAdding} = useRecipeAdd(invoice);
   const {isOpen, close} = useDialog("EDIT_INVOICE__RECIPE_ADD", "add");
-  const [recipe, setRecipe] = useState<Recipe>(() => createEmptyRecipe());
 
-  const handleChange = useCallback((event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const {name, value} = event.target;
-    setRecipe((current) => updateRecipeFromInput(current, name, value));
-  }, []);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [servings, setServings] = useState(2);
+  const [difficulty, setDifficulty] = useState<RecipeDifficulty>(RecipeDifficulty.Easy);
+  const [preparationMinutes, setPreparationMinutes] = useState(0);
+  const [cookingMinutes, setCookingMinutes] = useState(0);
+  const [totalMinutes, setTotalMinutes] = useState(0);
+  const [purchased, setPurchased] = useState<IngredientRow[]>([emptyIngredient()]);
+  const [pantry, setPantry] = useState<IngredientRow[]>([emptyIngredient()]);
+  const [missing, setMissing] = useState<IngredientRow[]>([emptyIngredient()]);
+  const [steps, setSteps] = useState<StepRow[]>([emptyStep()]);
+  const [allergens, setAllergens] = useState<AllergenCode[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = useCallback((): boolean => {
+    const newErrors: Record<string, string> = {};
+    if (servings <= 0) newErrors["servings"] = t((m) => m.dialogs.invoices.recipeDialog.validation.servingsPositive);
+    if (totalMinutes < preparationMinutes + cookingMinutes)
+      newErrors["totalMinutes"] = t((m) => m.dialogs.invoices.recipeDialog.validation.totalTimeConstraint);
+    const validSteps = steps.filter((s) => s.instruction.trim().length > 0);
+    if (validSteps.length === 0) newErrors["steps"] = t((m) => m.dialogs.invoices.recipeDialog.validation.stepRequired);
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [servings, totalMinutes, preparationMinutes, cookingMinutes, steps, t]);
 
   const handleCreate = useCallback(async () => {
+    if (!validate()) return;
     try {
-      const preparationTime = Number(recipe.preparationTime);
-      const cookingTime = Number(recipe.cookingTime);
-      const newRecipe: Recipe = {
-        ...recipe,
-        approximateTotalDuration: preparationTime + cookingTime,
-        preparationTime,
-        cookingTime,
+      const recipe: RecipeSuggestion = {
+        name,
+        description,
+        servings,
+        preparationMinutes,
+        cookingMinutes,
+        totalMinutes,
+        difficulty,
+        purchasedIngredients: purchased.filter((r) => r.name.trim()).map(toRecipeIngredient),
+        assumedPantryStaples: pantry.filter((r) => r.name.trim()).map(toRecipeIngredient),
+        missingOptionalIngredients: missing.filter((r) => r.name.trim()).map(toRecipeIngredient),
+        steps: steps
+          .filter((s) => s.instruction.trim())
+          .map((s, i) => toRecipeStep(s, i + 1)),
+        allergenWarnings: allergens,
       };
-
-      await addRecipeCallback(newRecipe as unknown as RecipeSuggestion);
+      await addRecipeCallback(recipe);
       toast.success(t((m) => m.dialogs.invoices.recipeDialog.create.success));
       close();
       router.refresh();
@@ -105,7 +110,7 @@ export default function AddRecipeDialog(): React.JSX.Element {
       const message = error instanceof Error ? error.message : String(error);
       toast.error(message || t((m) => m.dialogs.invoices.recipeDialog.create.error));
     }
-  }, [recipe, t, close, router, addRecipeCallback]);
+  }, [validate, name, description, servings, preparationMinutes, cookingMinutes, totalMinutes, difficulty, purchased, pantry, missing, steps, allergens, addRecipeCallback, t, close, router]);
 
   const handleOpenChange = useCallback(
     (shouldOpen: boolean) => {
@@ -114,20 +119,18 @@ export default function AddRecipeDialog(): React.JSX.Element {
     [close],
   );
 
-  const handleGenerateName = useCallback(() => {
-    toast.info(t((m) => m.dialogs.invoices.recipeDialog.actions.unavailable));
-  }, [t]);
+  const updateIngredientRow = (
+    setter: React.Dispatch<React.SetStateAction<IngredientRow[]>>,
+    index: number,
+    field: keyof IngredientRow,
+    value: string,
+  ) => {
+    setter((rows) => rows.map((r, i) => (i === index ? {...r, [field]: value} : r)));
+  };
 
-  const handleDifficultyChange = useCallback((value: string) => {
-    setRecipe((current) => ({
-      ...current,
-      complexity: mapDifficultyToComplexity(value),
-    }));
+  const toggleAllergen = useCallback((code: AllergenCode) => {
+    setAllergens((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]));
   }, []);
-
-  const handleEnhanceInstructions = useCallback(() => {
-    toast.info(t((m) => m.dialogs.invoices.recipeDialog.actions.unavailable));
-  }, [t]);
 
   return (
     <Dialog
@@ -140,181 +143,215 @@ export default function AddRecipeDialog(): React.JSX.Element {
         </DialogHeader>
 
         <form className={styles["formBody"]}>
+          {/* Name */}
           <div className={styles["fieldGroup"]}>
-            <div className={styles["fieldHeader"]}>
-              <Label htmlFor='recipe-add-name'>{t((m) => m.dialogs.invoices.recipeDialog.fields.recipeName)}</Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <Button
-                        type='button'
-                        variant='outline'
-                        size='sm'
-                        onClick={handleGenerateName}
-                        className={styles["generateButton"]}>
-                        <TbSparkles className={styles["sparklesIcon"]} />
-                        {t((m) => m.dialogs.invoices.recipeDialog.actions.generateName)}
-                      </Button>
-                    }
-                  />
-                  <TooltipContent>
-                    <p className={styles["tooltipText"]}>{t((m) => m.dialogs.invoices.recipeDialog.tooltips.generateName)}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
+            <Label htmlFor='recipe-add-name'>{t((m) => m.dialogs.invoices.recipeDialog.fields.recipeName)}</Label>
             <Input
               id='recipe-add-name'
-              name='name'
-              value={recipe.name}
-              onChange={handleChange}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.recipeName)}
             />
           </div>
 
+          {/* Description */}
           <div className={styles["fieldGroup"]}>
             <Label htmlFor='recipe-add-description'>{t((m) => m.dialogs.invoices.recipeDialog.fields.description)}</Label>
             <Textarea
               id='recipe-add-description'
-              name='description'
-              value={recipe.description}
-              onChange={handleChange}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.description)}
               rows={2}
             />
           </div>
 
+          {/* Servings + Difficulty + Times */}
+          <div className={styles["timeGrid"]}>
+            <div className={styles["fieldGroup"]}>
+              <Label htmlFor='recipe-add-servings'>{t((m) => m.dialogs.invoices.recipeDialog.fields.servings)}</Label>
+              <Input
+                id='recipe-add-servings'
+                type='number'
+                min={1}
+                value={servings}
+                onChange={(e) => setServings(Number(e.target.value))}
+                placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.servings)}
+              />
+              {errors["servings"] && <p className={styles["errorText"]}>{errors["servings"]}</p>}
+            </div>
+            <div className={styles["fieldGroup"]}>
+              <Label htmlFor='recipe-add-difficulty'>{t((m) => m.dialogs.invoices.recipeDialog.fields.difficulty)}</Label>
+              <Select
+                value={difficulty}
+                onValueChange={(v) => setDifficulty(v as RecipeDifficulty)}>
+                <SelectTrigger id='recipe-add-difficulty'>
+                  <SelectValue placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.selectDifficulty)} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={RecipeDifficulty.Easy}>{t((m) => m.dialogs.invoices.recipeDialog.difficulty.easy)}</SelectItem>
+                  <SelectItem value={RecipeDifficulty.Medium}>{t((m) => m.dialogs.invoices.recipeDialog.difficulty.medium)}</SelectItem>
+                  <SelectItem value={RecipeDifficulty.Hard}>{t((m) => m.dialogs.invoices.recipeDialog.difficulty.hard)}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className={styles["fieldGroup"]}>
+              <Label htmlFor='recipe-add-prep'>{t((m) => m.dialogs.invoices.recipeDialog.fields.prepTime)}</Label>
+              <Input
+                id='recipe-add-prep'
+                type='number'
+                min={0}
+                value={preparationMinutes}
+                onChange={(e) => setPreparationMinutes(Number(e.target.value))}
+              />
+            </div>
+            <div className={styles["fieldGroup"]}>
+              <Label htmlFor='recipe-add-cook'>{t((m) => m.dialogs.invoices.recipeDialog.fields.cookTime)}</Label>
+              <Input
+                id='recipe-add-cook'
+                type='number'
+                min={0}
+                value={cookingMinutes}
+                onChange={(e) => setCookingMinutes(Number(e.target.value))}
+              />
+            </div>
+            <div className={styles["fieldGroup"]}>
+              <Label htmlFor='recipe-add-total'>{t((m) => m.dialogs.invoices.recipeDialog.fields.totalDuration)}</Label>
+              <Input
+                id='recipe-add-total'
+                type='number'
+                min={0}
+                value={totalMinutes}
+                onChange={(e) => setTotalMinutes(Number(e.target.value))}
+              />
+              {errors["totalMinutes"] && <p className={styles["errorText"]}>{errors["totalMinutes"]}</p>}
+            </div>
+          </div>
+
+          {/* Ingredient sections */}
+          {([
+            {key: "purchased", label: t((m) => m.dialogs.invoices.recipeDialog.fields.purchasedIngredients), rows: purchased, setter: setPurchased},
+            {key: "pantry", label: t((m) => m.dialogs.invoices.recipeDialog.fields.pantryStaples), rows: pantry, setter: setPantry},
+            {key: "missing", label: t((m) => m.dialogs.invoices.recipeDialog.fields.missingIngredients), rows: missing, setter: setMissing},
+          ] as const).map(({key, label, rows, setter}) => (
+            <div
+              key={key}
+              className={styles["fieldGroup"]}>
+              <div className={styles["fieldHeader"]}>
+                <Label>{label}</Label>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  onClick={() => setter((r) => [...r, emptyIngredient()])}>
+                  <TbPlus className={styles["addIcon"]} />
+                  {t((m) => m.dialogs.invoices.recipeDialog.buttons.add)}
+                </Button>
+              </div>
+              {rows.map((row, i) => (
+                <div
+                  key={i}
+                  className={styles["ingredientRow"]}>
+                  <Input
+                    value={row.name}
+                    onChange={(e) => updateIngredientRow(setter, i, "name", e.target.value)}
+                    placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.ingredientName)}
+                    className={styles["ingredientInput"]}
+                  />
+                  <Input
+                    value={row.quantity}
+                    onChange={(e) => updateIngredientRow(setter, i, "quantity", e.target.value)}
+                    placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.ingredientQuantity)}
+                    className={styles["ingredientInput"]}
+                  />
+                  <Input
+                    value={row.preparation}
+                    onChange={(e) => updateIngredientRow(setter, i, "preparation", e.target.value)}
+                    placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.ingredientPreparation)}
+                    className={styles["ingredientInput"]}
+                  />
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='icon'
+                    disabled={rows.length <= 1}
+                    onClick={() => setter((r) => r.filter((_, idx) => idx !== i))}>
+                    <TbMinus className={styles["icon4"]} />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ))}
+
+          {/* Steps */}
           <div className={styles["fieldGroup"]}>
             <div className={styles["fieldHeader"]}>
-              <Label>{t((m) => m.dialogs.invoices.recipeDialog.fields.ingredients)}</Label>
+              <Label>{t((m) => m.dialogs.invoices.recipeDialog.fields.steps)}</Label>
               <Button
                 type='button'
                 variant='outline'
-                size='sm'>
+                size='sm'
+                onClick={() => setSteps((s) => [...s, emptyStep()])}>
                 <TbPlus className={styles["addIcon"]} />
                 {t((m) => m.dialogs.invoices.recipeDialog.buttons.add)}
               </Button>
             </div>
-
-            <div className={styles["fieldGroup"]}>
-              {recipe.ingredients.map((ingredient, index) => (
-                <div
-                  key={`ingredient-${index}`}
-                  className={styles["ingredientItem"]}>
-                  <div className={styles["ingredientRow"]}>
-                    <div className={styles["ingredientInput"]}>
-                      <Input
-                        value={ingredient}
-                        placeholder={`Ingredient ${index + 1} (from receipt or custom)`}
-                        readOnly
-                      />
-                    </div>
-                    <Button
-                      type='button'
-                      variant='ghost'
-                      size='icon'
-                      disabled={recipe.ingredients.length <= 1}>
-                      <TbX className={styles["icon4"]} />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className={styles["fieldGroup"]}>
-            <Label htmlFor='recipe-add-difficulty'>{t((m) => m.dialogs.invoices.recipeDialog.fields.difficulty)}</Label>
-            <Select
-              value={formatEnum(RecipeComplexity, recipe.complexity) || "Unknown"}
-              onValueChange={handleDifficultyChange}>
-              <SelectTrigger id='recipe-add-difficulty'>
-                <SelectValue placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.selectDifficulty)} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='Easy'>{t((m) => m.dialogs.invoices.recipeDialog.difficulty.easy)}</SelectItem>
-                <SelectItem value='Normal'>{t((m) => m.dialogs.invoices.recipeDialog.difficulty.medium)}</SelectItem>
-                <SelectItem value='Hard'>{t((m) => m.dialogs.invoices.recipeDialog.difficulty.hard)}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className={styles["fieldGroup"]}>
-            <div className={styles["fieldHeader"]}>
-              <Label htmlFor='recipe-add-instructions'>{t((m) => m.dialogs.invoices.recipeDialog.fields.instructions)}</Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <Button
-                        type='button'
-                        variant='outline'
-                        size='sm'
-                        onClick={handleEnhanceInstructions}>
-                        <TbWand className={styles["addIcon"]} />
-                        {t((m) => m.dialogs.invoices.recipeDialog.actions.enhanceInstructions)}
-                      </Button>
-                    }
-                  />
-                  <TooltipContent>
-                    <p>{t((m) => m.dialogs.invoices.recipeDialog.tooltips.enhanceInstructions)}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <Textarea
-              id='recipe-add-instructions'
-              name='instructions'
-              value={recipe.instructions}
-              onChange={handleChange}
-              placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.instructions)}
-              rows={4}
-            />
-          </div>
-
-          <div className={styles["timeGrid"]}>
-            <div className={styles["fieldGroup"]}>
-              <Label htmlFor='recipe-add-preparation-time'>{t((m) => m.dialogs.invoices.recipeDialog.fields.prepTime)}</Label>
-              <div className={styles["timeRow"]}>
-                <TbClock className={styles["mutedIcon"]} />
-                <Input
-                  id='recipe-add-preparation-time'
-                  name='preparationTime'
-                  type='number'
-                  value={recipe.preparationTime}
-                  onChange={handleChange}
-                  placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.prepTime)}
+            {errors["steps"] && <p className={styles["errorText"]}>{errors["steps"]}</p>}
+            {steps.map((step, i) => (
+              <div
+                key={i}
+                className={styles["stepRow"]}>
+                <span className={styles["stepSequence"]}>{i + 1}.</span>
+                <Textarea
+                  value={step.instruction}
+                  onChange={(e) => setSteps((s) => s.map((r, idx) => (idx === i ? {...r, instruction: e.target.value} : r)))}
+                  placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.stepInstruction)}
+                  rows={2}
+                  className={styles["stepInput"]}
                 />
-              </div>
-            </div>
-
-            <div className={styles["fieldGroup"]}>
-              <Label htmlFor='recipe-add-cooking-time'>{t((m) => m.dialogs.invoices.recipeDialog.fields.cookTime)}</Label>
-              <div className={styles["timeRow"]}>
-                <TbToolsKitchen className={styles["mutedIcon"]} />
                 <Input
-                  id='recipe-add-cooking-time'
-                  name='cookingTime'
-                  type='number'
-                  value={recipe.cookingTime}
-                  onChange={handleChange}
-                  placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.cookTime)}
+                  value={step.notes}
+                  onChange={(e) => setSteps((s) => s.map((r, idx) => (idx === i ? {...r, notes: e.target.value} : r)))}
+                  placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.stepNotes)}
                 />
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='icon'
+                  disabled={steps.length <= 1}
+                  onClick={() => setSteps((s) => s.filter((_, idx) => idx !== i))}>
+                  <TbMinus className={styles["icon4"]} />
+                </Button>
               </div>
-            </div>
+            ))}
           </div>
 
-          {(Number(recipe.preparationTime) > 0 || Number(recipe.cookingTime) > 0) && (
-            <div className={styles["fieldGroup"]}>
-              <Label>{t((m) => m.dialogs.invoices.recipeDialog.fields.totalDuration)}</Label>
-              <div className={styles["timeRow"]}>
-                <TbToolsKitchen3 className={styles["mutedIcon"]} />
-                <span>
-                  {Number(recipe.preparationTime) + Number(recipe.cookingTime)} {t((m) => m.dialogs.invoices.recipeDialog.minutes)}
-                </span>
+          {/* Allergen warnings */}
+          <div className={styles["fieldGroup"]}>
+            <Label>{t((m) => m.dialogs.invoices.recipeDialog.fields.allergens)}</Label>
+            <TooltipProvider>
+              <div className={styles["allergenGrid"]}>
+                {ALL_ALLERGEN_CODES.map((code) => (
+                  <Tooltip key={code}>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          type='button'
+                          variant={allergens.includes(code) ? "default" : "outline"}
+                          size='sm'
+                          onClick={() => toggleAllergen(code)}>
+                          {code}
+                        </Button>
+                      }
+                    />
+                    <TooltipContent>
+                      <p>{code}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
               </div>
-            </div>
-          )}
+            </TooltipProvider>
+          </div>
         </form>
 
         <DialogFooter className={styles["dialogFooter"]}>

@@ -410,32 +410,36 @@
       },
       "recipeCard": {
         "buttons": {
-          "viewRecipe": "Voir la recette",
-          "visitReference": "Visiter la référence"
-        },
-        "complexity": {
-          "easy": "Complexité facile",
-          "hard": "Complexité difficile",
-          "normal": "Complexité normale",
-          "unknown": "Complexité inconnue"
+          "viewRecipe": "Voir la recette"
         },
         "dropdown": {
           "delete": "Supprimer",
           "edit": "Modifier",
           "markAsFavorite": "Marquer comme favori",
-          "share": "Partager",
           "view": "Voir"
         },
         "ingredients": {
-          "additionalLabel": "Ingrédients supplémentaires :",
-          "label": "Ingrédients :",
-          "more": "+{count} de plus"
+          "total": "{count} ingrédients"
         },
         "timing": {
           "cookLabel": "Cuisson : {minutes}′",
           "cookTooltip": "Le temps de cuisson est de {minutes} minutes.",
           "prepLabel": "Prépa : {minutes}′",
-          "prepTooltip": "Le temps de préparation est de {minutes} minutes."
+          "prepTooltip": "Le temps de préparation est de {minutes} minutes.",
+          "totalLabel": "Total: {minutes}'",
+          "totalTooltip": "Temps total: {minutes} minutes."
+        },
+        "difficulty": {
+          "easy": "Facile",
+          "medium": "Moyen",
+          "hard": "Difficile"
+        },
+        "servings": "{count} portions",
+        "steps": {
+          "count": "{count} étapes"
+        },
+        "allergens": {
+          "sectionLabel": "Avertissements allergènes"
         }
       },
       "seasonalInsightsCard": {
@@ -1172,11 +1176,6 @@
         }
       },
       "recipeDialog": {
-        "actions": {
-          "enhanceInstructions": "Améliorer les instructions",
-          "generateName": "Générer un nom",
-          "unavailable": "Cette action d’assistance pour les recettes n’est pas encore disponible"
-        },
         "buttons": {
           "add": "Ajouter",
           "cancel": "Annuler",
@@ -1205,15 +1204,18 @@
           "medium": "Moyen"
         },
         "fields": {
-          "complexity": "Niveau de complexité",
           "cookTime": "Temps de cuisson",
           "description": "Présentation",
           "difficulty": "Niveau de difficulté",
-          "ingredients": "Ingrédients",
-          "instructions": "Étapes",
           "prepTime": "Temps de préparation",
           "recipeName": "Nom de la recette",
-          "totalDuration": "Durée totale"
+          "totalDuration": "Durée totale",
+          "servings": "Portions",
+          "purchasedIngredients": "Ingrédients achetés",
+          "pantryStaples": "Ingrédients de base",
+          "missingIngredients": "Ingrédients optionnels manquants",
+          "steps": "Étapes de cuisson",
+          "allergens": "Avertissements allergènes"
         },
         "minutes": "minutes",
         "placeholders": {
@@ -1222,26 +1224,21 @@
           "instructions": "Saisir les instructions de cuisson",
           "prepTime": "ex. 15 minutes",
           "recipeName": "Saisir le nom de la recette",
-          "selectDifficulty": "Sélectionner la difficulté"
+          "selectDifficulty": "Sélectionner la difficulté",
+          "servings": "ex. 4",
+          "ingredientName": "ex. Tomates",
+          "ingredientQuantity": "ex. 500 g",
+          "ingredientPreparation": "ex. coupé (optionnel)",
+          "stepInstruction": "Décrivez cette étape",
+          "stepNotes": "Note optionnelle"
         },
         "read": {
           "description": "Détails de la recette et instructions de préparation",
           "missingRecipe": "Les détails de la recette ne sont pas disponibles.",
           "noDescription": "Aucune description fournie.",
-          "notSpecified": "Non spécifié"
-        },
-        "share": {
-          "copied": "Lien de recette copié",
-          "copy": "Copier le lien",
-          "copyFailed": "Échec de la copie du lien de recette",
-          "description": "Partagez le lien de référence de la recette lorsqu’il est disponible.",
-          "missingRecipe": "Les détails de la recette ne sont pas disponibles.",
-          "title": "Partager la recette",
-          "unavailable": "Le partage de recette n’est pas encore disponible pour cette recette."
-        },
-        "tooltips": {
-          "enhanceInstructions": "Utiliser l’AI pour enrichir vos instructions avec davantage de détails",
-          "generateName": "Générer un nom de recette selon vos ingrédients et votre niveau de difficulté avec l’AI"
+          "notSpecified": "Non spécifié",
+          "noIngredients": "Aucun ingrédient listé.",
+          "noAllergens": "Aucun avertissement d'allergène."
         },
         "update": {
           "description": "Mettre à jour les détails de la recette.",
@@ -1249,6 +1246,11 @@
           "missingRecipe": "Les détails de la recette ne sont pas disponibles.",
           "success": "Recette mise à jour avec succès",
           "title": "Mettre à jour la recette"
+        },
+        "validation": {
+          "stepRequired": "Au moins une étape est requise",
+          "servingsPositive": "Le nombre de portions doit être positif",
+          "totalTimeConstraint": "Le temps total doit être au moins préparation + cuisson"
         }
       },
       "removeScanDialog": {

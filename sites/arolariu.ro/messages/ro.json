@@ -410,32 +410,36 @@
       },
       "recipeCard": {
         "buttons": {
-          "viewRecipe": "Vezi rețeta",
-          "visitReference": "Vizitează referința"
-        },
-        "complexity": {
-          "easy": "Complexitate ușoară",
-          "hard": "Complexitate ridicată",
-          "normal": "Complexitate normală",
-          "unknown": "Complexitate necunoscută"
+          "viewRecipe": "Vezi rețeta"
         },
         "dropdown": {
           "delete": "Șterge",
           "edit": "Editează",
           "markAsFavorite": "Marchează ca favorit",
-          "share": "Distribuie",
           "view": "Vezi"
         },
         "ingredients": {
-          "additionalLabel": "Ingrediente suplimentare:",
-          "label": "Ingrediente:",
-          "more": "+{count} în plus"
+          "total": "{count} ingrediente"
         },
         "timing": {
           "cookLabel": "Gătire: {minutes}′",
           "cookTooltip": "Timpul de gătire este de {minutes} minute.",
           "prepLabel": "Pregătire: {minutes}′",
-          "prepTooltip": "Timpul de pregătire este de {minutes} minute."
+          "prepTooltip": "Timpul de pregătire este de {minutes} minute.",
+          "totalLabel": "Total: {minutes}'",
+          "totalTooltip": "Timp total: {minutes} minute."
+        },
+        "difficulty": {
+          "easy": "Ușor",
+          "medium": "Mediu",
+          "hard": "Greu"
+        },
+        "servings": "{count} porții",
+        "steps": {
+          "count": "{count} pași"
+        },
+        "allergens": {
+          "sectionLabel": "Avertismente alergeni"
         }
       },
       "seasonalInsightsCard": {
@@ -1172,11 +1176,6 @@
         }
       },
       "recipeDialog": {
-        "actions": {
-          "enhanceInstructions": "Îmbunătățește instrucțiunile",
-          "generateName": "Generează nume",
-          "unavailable": "Această acțiune asistată pentru rețete nu este disponibilă încă"
-        },
         "buttons": {
           "add": "Adaugă",
           "cancel": "Anulează",
@@ -1205,15 +1204,18 @@
           "medium": "Mediu"
         },
         "fields": {
-          "complexity": "Nivel de complexitate",
           "cookTime": "Timp de gătire",
           "description": "Descriere",
           "difficulty": "Nivel de dificultate",
-          "ingredients": "Ingrediente",
-          "instructions": "Instrucțiuni",
           "prepTime": "Timp de pregătire",
           "recipeName": "Nume rețetă",
-          "totalDuration": "Durata Totală"
+          "totalDuration": "Durata Totală",
+          "servings": "Porții",
+          "purchasedIngredients": "Ingrediente achiziționate",
+          "pantryStaples": "Condimente de bază",
+          "missingIngredients": "Ingrediente opționale lipsă",
+          "steps": "Pași de gătit",
+          "allergens": "Avertismente alergeni"
         },
         "minutes": "minute",
         "placeholders": {
@@ -1222,26 +1224,21 @@
           "instructions": "Introdu instrucțiunile de gătire",
           "prepTime": "ex. 15 minute",
           "recipeName": "Introdu numele rețetei",
-          "selectDifficulty": "Selectează dificultatea"
+          "selectDifficulty": "Selectează dificultatea",
+          "servings": "ex. 4",
+          "ingredientName": "ex. Roșii",
+          "ingredientQuantity": "ex. 500 g",
+          "ingredientPreparation": "ex. tocat (opțional)",
+          "stepInstruction": "Descrieți acest pas",
+          "stepNotes": "Notă opțională"
         },
         "read": {
           "description": "Detalii despre rețetă și instrucțiuni de preparare",
           "missingRecipe": "Detaliile rețetei nu sunt disponibile.",
           "noDescription": "Nu a fost furnizată nicio descriere.",
-          "notSpecified": "Nespecificat"
-        },
-        "share": {
-          "copied": "Linkul rețetei a fost copiat",
-          "copy": "Copiază linkul",
-          "copyFailed": "Nu s-a putut copia linkul rețetei",
-          "description": "Partajează linkul de referință al rețetei când este disponibil.",
-          "missingRecipe": "Detaliile rețetei nu sunt disponibile.",
-          "title": "Partajează rețeta",
-          "unavailable": "Partajarea rețetei nu este disponibilă încă pentru această rețetă."
-        },
-        "tooltips": {
-          "enhanceInstructions": "Folosește AI pentru a-ți îmbunătăți instrucțiunile cu mai multe detalii",
-          "generateName": "Generează un nume de rețetă pe baza ingredientelor și a nivelului de dificultate folosind AI"
+          "notSpecified": "Nespecificat",
+          "noIngredients": "Nicio ingrediente listate.",
+          "noAllergens": "Nicio avertizare de alergeni."
         },
         "update": {
           "description": "Actualizează detaliile rețetei.",
@@ -1249,6 +1246,11 @@
           "missingRecipe": "Detaliile rețetei nu sunt disponibile.",
           "success": "Rețeta a fost actualizată cu succes",
           "title": "Actualizează rețeta"
+        },
+        "validation": {
+          "stepRequired": "Este necesar cel puțin un pas",
+          "servingsPositive": "Numărul de porții trebuie să fie pozitiv",
+          "totalTimeConstraint": "Timpul total trebuie să fie cel puțin pregătire + gătire"
         }
       },
       "removeScanDialog": {

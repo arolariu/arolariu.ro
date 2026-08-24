@@ -65,7 +65,6 @@ const PreviewScanDialog = dynamic(() => import("../_dialogs/PreviewScanDialog"),
 const RemoveScanDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/RemoveScanDialog"), {ssr: false});
 const ShareAnalyticsDialog = dynamic(() => import("../view-invoice/[id]/_dialogs/ShareAnalyticsDialog"), {ssr: false});
 const ShareInvoiceDialog = dynamic(() => import("../_dialogs/ShareInvoiceDialog"), {ssr: false});
-const ShareRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/ShareRecipeDialog"), {ssr: false});
 const UpdateRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/UpdateRecipeDialog"), {ssr: false});
 // view-invoice/[id]/_dialogs/ExportDialog uses a named export
 const ViewInvoiceExportDialog = dynamic(
@@ -229,8 +228,6 @@ function DialogContainerImpl(): React.JSX.Element | null {
         return <DeleteRecipeDialog />;
       case "EDIT_INVOICE__RECIPE_PREVIEW":
         return <PreviewRecipeDialog />;
-      case "EDIT_INVOICE__RECIPE_SHARE":
-        return <ShareRecipeDialog />;
       // view-invoice/[id] Dialogs
       case "VIEW_INVOICE__SHARE_ANALYTICS":
         return <ShareAnalyticsDialog />;

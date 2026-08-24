@@ -3,7 +3,6 @@
 import {Card, CardContent, CardHeader, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {TbChefHat, TbInfoCircle} from "react-icons/tb";
-import type {Recipe} from "@/types/invoices";
 import MetadataTab from "../../../../edit-invoice/[id]/_components/tabs/MetadataTab";
 import RecipeCard from "../../../../edit-invoice/[id]/_cards/RecipeCard";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
@@ -54,7 +53,7 @@ export function InvoiceTabs(): React.JSX.Element {
                 {invoice.possibleRecipes.map((recipe) => (
                   <RecipeCard
                     key={recipe.name}
-                recipe={recipe as unknown as Recipe}
+                    recipe={recipe}
                   />
                 ))}
               </div>

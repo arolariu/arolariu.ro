@@ -1,6 +1,6 @@
 "use client";
 
-import type {Invoice, Merchant, Recipe} from "@/types/invoices";
+import type {Invoice, Merchant} from "@/types/invoices";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {motion, type Variants} from "motion/react";
 import {TbShoppingCart, TbToolsKitchen} from "react-icons/tb";
@@ -148,7 +148,7 @@ export default function RenderEditInvoiceScreen(props: Readonly<Props>): React.J
                   <TabsContent
                     value='recipes'
                     className={styles["tabContent"]}>
-                    <RecipesTab recipes={invoice.possibleRecipes as unknown as Recipe[]} />
+                    <RecipesTab recipes={invoice.possibleRecipes} />
                   </TabsContent>
 
                   <TabsContent
