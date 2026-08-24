@@ -1474,6 +1474,15 @@
           "title": "Avertissement d’accès public"
         }
       },
+      "classificationPicker": {
+        "clear": "Effacer la sélection",
+        "placeholder": "Rechercher des classifications...",
+        "badge": {
+          "analysisOrigin": "Analyse IA",
+          "hierarchy": "Hiérarchie",
+          "manualOrigin": "Manuel"
+        }
+      },
       "invoiceAnalysisControls": {
         "capabilitiesLabel": "Capacités",
         "classificationOverwriteAlert": "Cette facture a été classifiée manuellement. L'activation de la classification automatique des factures écrasera vos paramètres manuels.",

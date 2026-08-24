@@ -1474,6 +1474,15 @@
           "title": "Avertisment privind accesul public"
         }
       },
+      "classificationPicker": {
+        "clear": "Șterge selecția",
+        "placeholder": "Caută clasificări...",
+        "badge": {
+          "analysisOrigin": "Analiză AI",
+          "hierarchy": "Ierarhie",
+          "manualOrigin": "Manual"
+        }
+      },
       "invoiceAnalysisControls": {
         "capabilitiesLabel": "Capabilități",
         "classificationOverwriteAlert": "Această factură a fost clasificată manual. Activarea clasificării automate a facturii va suprascrie setările dvs. manuale.",

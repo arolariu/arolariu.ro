@@ -1474,6 +1474,15 @@
           "title": "Public access warning"
         }
       },
+      "classificationPicker": {
+        "clear": "Clear selection",
+        "placeholder": "Search classifications...",
+        "badge": {
+          "analysisOrigin": "AI Analysis",
+          "hierarchy": "Hierarchy",
+          "manualOrigin": "Manual"
+        }
+      },
       "invoiceAnalysisControls": {
         "capabilitiesLabel": "Capabilities",
         "classificationOverwriteAlert": "This invoice has been manually classified. Enabling automatic invoice classification will overwrite your manual settings.",
