@@ -103,6 +103,7 @@ function createTestProduct(overrides: {
   totalPrice?: number;
   classification?: StandardClassification | null;
   detectedAllergens?: Array<{name: string; description: string}>;
+  allergenAssessment?: {status: string; signals: Array<{code: string; evidenceLevel: string; confidence: number; evidence: unknown[]}>} | null;
   isSoftDeleted?: boolean;
 }): Product {
   return {
@@ -115,6 +116,7 @@ function createTestProduct(overrides: {
     category: 0,
     classification: overrides.classification ?? null,
     detectedAllergens: overrides.detectedAllergens ?? [],
+    allergenAssessment: overrides.allergenAssessment !== undefined ? overrides.allergenAssessment : null,
     metadata: overrides.isSoftDeleted ? {isSoftDeleted: true} : undefined,
   } as unknown as Product;
 }
@@ -1015,30 +1017,28 @@ describe("Statistics Functions", () => {
       expect(result).toEqual([]);
     });
 
-    it("should count allergen occurrences", () => {
+    it("should count allergen signal occurrences across assessed products", () => {
       const products = [
-        createTestProduct({detectedAllergens: [{name: "Lactose", description: "Found in dairy"}]}),
-        createTestProduct({detectedAllergens: [{name: "Lactose", description: "Found in dairy"}]}),
-        createTestProduct({detectedAllergens: [{name: "Gluten", description: "Found in wheat"}]}),
+        createTestProduct({allergenAssessment: {status: "detected", signals: [{code: "milk", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]}}),
+        createTestProduct({allergenAssessment: {status: "detected", signals: [{code: "milk", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]}}),
+        createTestProduct({allergenAssessment: {status: "detected", signals: [{code: "cerealsContainingGluten", evidenceLevel: "explicit", confidence: 0.95, evidence: []}]}}),
       ];
 
       const invoices = [createTestInvoice({items: products})];
 
       const result = computeAllergenFrequency(invoices);
 
-      const lactose = result.find((a) => a.name === "Lactose");
-      expect(lactose?.productCount).toBe(2);
-      expect(lactose?.description).toBe("Found in dairy");
+      const milk = result.find((a) => a.code === "milk");
+      expect(milk?.productCount).toBe(2);
 
-      const gluten = result.find((a) => a.name === "Gluten");
+      const gluten = result.find((a) => a.code === "cerealsContainingGluten");
       expect(gluten?.productCount).toBe(1);
-      expect(gluten?.description).toBe("Found in wheat");
     });
 
-    it("should compute percentages correctly", () => {
+    it("should compute percentages correctly (denominator = assessed products only)", () => {
       const products = [
-        createTestProduct({detectedAllergens: [{name: "Lactose", description: "Dairy"}]}),
-        createTestProduct({detectedAllergens: []}),
+        createTestProduct({allergenAssessment: {status: "detected", signals: [{code: "milk", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]}}),
+        createTestProduct({allergenAssessment: {status: "noSignals", signals: []}}),
       ];
 
       const invoices = [createTestInvoice({items: products})];
@@ -1050,9 +1050,9 @@ describe("Statistics Functions", () => {
 
     it("should skip soft-deleted products", () => {
       const products = [
-        createTestProduct({detectedAllergens: [{name: "Lactose", description: "Dairy"}]}),
+        createTestProduct({allergenAssessment: {status: "detected", signals: [{code: "milk", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]}}),
         createTestProduct({
-          detectedAllergens: [{name: "Gluten", description: "Wheat"}],
+          allergenAssessment: {status: "detected", signals: [{code: "cerealsContainingGluten", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]},
           isSoftDeleted: true,
         }),
       ];
@@ -1062,32 +1062,44 @@ describe("Statistics Functions", () => {
       const result = computeAllergenFrequency(invoices);
 
       expect(result).toHaveLength(1);
-      expect(result[0]?.name).toBe("Lactose");
+      expect(result[0]?.code).toBe("milk");
     });
 
     it("should sort by product count descending", () => {
       const products = [
-        createTestProduct({detectedAllergens: [{name: "Lactose", description: "Dairy"}]}),
-        createTestProduct({detectedAllergens: [{name: "Gluten", description: "Wheat"}]}),
-        createTestProduct({detectedAllergens: [{name: "Gluten", description: "Wheat"}]}),
+        createTestProduct({allergenAssessment: {status: "detected", signals: [{code: "milk", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]}}),
+        createTestProduct({allergenAssessment: {status: "detected", signals: [{code: "cerealsContainingGluten", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]}}),
+        createTestProduct({allergenAssessment: {status: "detected", signals: [{code: "cerealsContainingGluten", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]}}),
       ];
 
       const invoices = [createTestInvoice({items: products})];
 
       const result = computeAllergenFrequency(invoices);
 
-      expect(result[0]?.name).toBe("Gluten");
-      expect(result[1]?.name).toBe("Lactose");
+      expect(result[0]?.code).toBe("cerealsContainingGluten");
+      expect(result[1]?.code).toBe("milk");
     });
 
-    it("should handle products without allergens", () => {
-      const products = [createTestProduct({detectedAllergens: []})];
+    it("should handle products without allergens (noSignals assessed)", () => {
+      const products = [createTestProduct({allergenAssessment: {status: "noSignals", signals: []}})];
 
       const invoices = [createTestInvoice({items: products})];
 
       const result = computeAllergenFrequency(invoices);
 
       expect(result).toEqual([]);
+    });
+
+    it("should exclude unassessed products (allergenAssessment: null) from the denominator", () => {
+      // 1 assessed with milk, 5 unassessed → denominator = 1, not 6
+      const assessed = createTestProduct({allergenAssessment: {status: "detected", signals: [{code: "milk", evidenceLevel: "explicit", confidence: 1, evidence: []}]}});
+      const unassessed = Array.from({length: 5}, () => createTestProduct({allergenAssessment: null}));
+
+      const invoices = [createTestInvoice({items: [assessed, ...unassessed]})];
+      const result = computeAllergenFrequency(invoices);
+
+      const milk = result.find((r) => r.code === "milk");
+      expect(milk?.percentage).toBe(100); // 1/1 assessed products
     });
   });
 
@@ -1507,25 +1519,25 @@ describe("Statistics Functions", () => {
         expect(result).toHaveLength(0);
       });
 
-      it("should calculate percentage correctly when totalProducts > 0", () => {
+      it("should calculate percentage correctly when assessedProducts > 0", () => {
         const product1 = createTestProduct({
           name: "Product 1",
-          detectedAllergens: [{name: "Gluten", description: "Contains gluten"}],
+          allergenAssessment: {status: "detected", signals: [{code: "cerealsContainingGluten", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]},
         });
         const product2 = createTestProduct({
           name: "Product 2",
-          detectedAllergens: [{name: "Gluten", description: "Contains gluten"}],
+          allergenAssessment: {status: "detected", signals: [{code: "cerealsContainingGluten", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]},
         });
         const product3 = createTestProduct({
           name: "Product 3",
-          detectedAllergens: [],
+          allergenAssessment: {status: "noSignals", signals: []},
         });
         const invoice = createTestInvoice({items: [product1, product2, product3], amount: 100});
 
         const result = computeAllergenFrequency([invoice]);
 
         expect(result).toHaveLength(1);
-        expect(result[0]?.percentage).toBeCloseTo(66.7, 1); // 2/3 * 100
+        expect(result[0]?.percentage).toBeCloseTo(66.7, 1); // 2/3 assessed products * 100
       });
     });
 

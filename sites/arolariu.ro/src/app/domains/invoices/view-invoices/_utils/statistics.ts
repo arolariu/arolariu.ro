@@ -40,6 +40,8 @@
 
 import {formatDate, toSafeDate} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
+import type {AllergenCode} from "@/types/invoices/Allergen";
+import {AllergenAssessmentStatus} from "@/types/invoices/Allergen";
 import {getTransactionYear, toRON} from "../../../../../lib/currency";
 import {getClassificationGroup} from "../../_utils/labelUtilities";
 export {getProductCategoryLabel} from "../../_utils/labelUtilities";
@@ -1338,32 +1340,33 @@ export type TopProduct = {
 };
 
 /**
- * Allergen frequency aggregate for dietary tracking.
+ * Allergen frequency aggregate for dietary tracking (canonical EU-14 model).
  *
  * @remarks
- * Counts allergen occurrences across all products to help users identify
- * allergen exposure in their purchases.
+ * Counts allergen signal occurrences across **assessed** products only.
+ * Products with `allergenAssessment: null` are excluded from the denominator —
+ * they were never assessed and must never be counted as "no allergens".
  *
- * **Use Case:**
- * Useful for dietary restrictions, health tracking, and allergen awareness.
+ * **Safety contract:**
+ * The `percentage` field is computed as
+ * `(productCount / assessedProductCount) * 100`, where the denominator
+ * includes only products for which `allergenAssessment` is non-null.
  *
  * @example
  * ```typescript
  * const allergens = computeAllergenFrequency(invoices);
  * // Returns: [
- * //   { name: "Lactose", description: "Found in dairy products", productCount: 34, percentage: 12.3 },
- * //   { name: "Gluten", description: "Found in wheat products", productCount: 28, percentage: 10.1 }
+ * //   { code: "milk", productCount: 34, percentage: 12.3 },
+ * //   { code: "cerealsContainingGluten", productCount: 28, percentage: 10.1 }
  * // ]
  * ```
  */
 export type AllergenFrequency = {
-  /** Allergen name */
-  name: string;
-  /** Allergen description */
-  description: string;
-  /** Number of products containing this allergen */
+  /** EU-14 canonical allergen code */
+  code: AllergenCode;
+  /** Number of assessed products with this allergen detected */
   productCount: number;
-  /** Percentage of total products */
+  /** Percentage of assessed products (denominator = assessed products only) */
   percentage: number;
 };
 
@@ -1580,43 +1583,34 @@ export function computeTopProducts(invoices: ReadonlyArray<Invoice>, topN = 10):
  * ```
  */
 export function computeAllergenFrequency(invoices: ReadonlyArray<Invoice>): AllergenFrequency[] {
-  const allergenMap = new Map<string, {description: string; productCount: number}>();
-  let totalProducts = 0;
+  const allergenMap = new Map<AllergenCode, number>();
+  let assessedProducts = 0; // Denominator: only products with allergenAssessment !== null
 
   for (const invoice of invoices) {
     const items = invoice.items ?? [];
     for (const product of items) {
-      // Skip soft-deleted products
-      if (!product.metadata?.isSoftDeleted) {
-        totalProducts++;
+      if (product.metadata?.isSoftDeleted) continue;
+      // Products with no assessment are EXCLUDED from the denominator.
+      // Counting them would imply an absence of allergens that was never established.
+      if (product.allergenAssessment === null || product.allergenAssessment === undefined) continue;
 
-        const allergens = product.detectedAllergens ?? [];
-        for (const allergen of allergens) {
-          const existing = allergenMap.get(allergen.name);
-          if (existing) {
-            allergenMap.set(allergen.name, {
-              description: existing.description,
-              productCount: existing.productCount + 1,
-            });
-          } else {
-            allergenMap.set(allergen.name, {
-              description: allergen.description,
-              productCount: 1,
-            });
-          }
+      assessedProducts++;
+
+      // Only "detected" assessments carry signals; other statuses have zero signals by invariant.
+      if (product.allergenAssessment.status === AllergenAssessmentStatus.Detected) {
+        for (const signal of product.allergenAssessment.signals) {
+          allergenMap.set(signal.code, (allergenMap.get(signal.code) ?? 0) + 1);
         }
       }
     }
   }
 
   const result: AllergenFrequency[] = [];
-  for (const [name, data] of allergenMap.entries()) {
-    const percentage = totalProducts > 0 ? (data.productCount / totalProducts) * 100 : 0;
-
+  for (const [code, count] of allergenMap.entries()) {
+    const percentage = assessedProducts > 0 ? (count / assessedProducts) * 100 : 0;
     result.push({
-      name,
-      description: data.description,
-      productCount: data.productCount,
+      code,
+      productCount: count,
       percentage: Math.round(percentage * 10) / 10,
     });
   }

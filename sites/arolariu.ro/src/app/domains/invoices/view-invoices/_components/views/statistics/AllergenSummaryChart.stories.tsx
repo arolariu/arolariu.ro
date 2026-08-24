@@ -1,22 +1,16 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {computeAllergenFrequency} from "../../../_utils/statistics";
-import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
+import type {AllergenFrequency} from "../../../_utils/statistics";
 import {AllergenSummaryChart} from "./AllergenSummaryChart";
 
 /**
- * AllergenSummaryChart displays allergen frequency across products.
+ * AllergenSummaryChart displays EU-14 canonical allergen frequencies across assessed products.
  *
  * ## Features
- * - Compact card grid layout
+ * - Compact card grid layout using canonical EU-14 allergen codes
  * - Color-coded warning levels (high/medium/low)
- * - Shows product count and percentage
- * - Alert icons for visibility
- * - Positive empty state message
- *
- * ## Use Cases
- * - Dietary risk assessment
- * - Allergen exposure tracking
- * - Product safety awareness
+ * - Shows product count and percentage of **assessed** products
+ * - Unassessed products are excluded from the denominator
+ * - Empty state when no allergens detected in assessed products
  */
 const meta = {
   title: "Invoices/Statistics/AllergenSummaryChart",
@@ -26,14 +20,14 @@ const meta = {
     docs: {
       description: {
         component:
-          "Visualizes allergen occurrences across all products to help users identify dietary risks. Uses color-coded warning levels (red ≥20%, yellow 10-19%, blue <10%) and displays product count with percentage.",
+          "Visualizes EU-14 allergen signals across assessed products. Unassessed products are excluded from the denominator — the chart never implies allergen absence for unassessed products.",
       },
     },
   },
   tags: ["autodocs"],
   argTypes: {
     data: {
-      description: "Array of allergen frequencies sorted by product count",
+      description: "Array of allergen frequencies (canonical EU-14 codes, assessed products only)",
       control: false,
     },
   },
@@ -42,86 +36,85 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * Default view with diverse allergens.
- * Shows common allergens found across all products (gluten, lactose, etc.).
- */
+const diverseData: AllergenFrequency[] = [
+  {code: "milk", productCount: 8, percentage: 40},
+  {code: "cerealsContainingGluten", productCount: 7, percentage: 35},
+  {code: "eggs", productCount: 5, percentage: 25},
+  {code: "soybeans", productCount: 3, percentage: 15},
+  {code: "peanuts", productCount: 2, percentage: 10},
+  {code: "nuts", productCount: 1, percentage: 5},
+];
+
+const singleAllergenData: AllergenFrequency[] = [
+  {code: "milk", productCount: 3, percentage: 30},
+];
+
+const highWarningData: AllergenFrequency[] = [
+  {code: "cerealsContainingGluten", productCount: 12, percentage: 60},
+  {code: "milk", productCount: 10, percentage: 50},
+  {code: "eggs", productCount: 8, percentage: 40},
+  {code: "soybeans", productCount: 5, percentage: 25},
+];
+
+const lowFrequencyData: AllergenFrequency[] = [
+  {code: "sesame", productCount: 1, percentage: 3},
+  {code: "mustard", productCount: 1, percentage: 3},
+  {code: "celery", productCount: 1, percentage: 2},
+];
+
+/** Default view with diverse allergens across several EU-14 codes. */
 export const Default: Story = {
   args: {
-    data: computeAllergenFrequency(mockInvoices),
+    data: diverseData,
   },
 };
 
-/**
- * Empty state - no allergens detected.
- * Displays positive checkmark message when products are allergen-free.
- */
+/** Empty state — no allergens detected in assessed products. */
 export const Empty: Story = {
   args: {
-    data: computeAllergenFrequency(emptyInvoices),
+    data: [],
   },
 };
 
-/**
- * Single invoice - limited allergen data.
- * Shows allergen summary for one invoice's products.
- */
-export const SingleInvoice: Story = {
+/** Single allergen. */
+export const SingleAllergen: Story = {
   args: {
-    data: computeAllergenFrequency(singleInvoice),
+    data: singleAllergenData,
   },
 };
 
-/**
- * High warning levels - many allergens.
- * Demonstrates chart with multiple high-frequency allergens (≥20%).
- */
+/** High warning levels — several allergens at ≥20%. */
 export const HighWarningLevels: Story = {
   args: {
-    data: computeAllergenFrequency(mockInvoices.filter((inv) => inv.items.some((item) => item.detectedAllergens.length > 0))),
+    data: highWarningData,
   },
 };
 
-/**
- * Gluten-heavy products.
- * Shows scenario where gluten is the dominant allergen.
- */
-export const GlutenFocused: Story = {
+/** Low frequency allergens — all below 10% threshold. */
+export const LowFrequency: Story = {
   args: {
-    data: computeAllergenFrequency(
-      mockInvoices.filter((inv) => inv.items.some((item) => item.detectedAllergens.some((a) => a.name.toLowerCase().includes("gluten")))),
-    ),
+    data: lowFrequencyData,
   },
 };
 
-/**
- * Dairy allergens prominent.
- * Emphasizes lactose/dairy-related allergens.
- */
-export const DairyFocused: Story = {
+/** All 14 EU allergen codes present. */
+export const AllCodes: Story = {
   args: {
-    data: computeAllergenFrequency(
-      mockInvoices.filter((inv) => inv.items.some((item) => item.detectedAllergens.some((a) => a.name.toLowerCase().includes("lactose")))),
-    ),
-  },
-};
-
-/**
- * Few allergens - low diversity.
- * Shows chart with only 1-2 allergen types.
- */
-export const FewAllergens: Story = {
-  args: {
-    data: computeAllergenFrequency(mockInvoices.slice(0, 2)),
-  },
-};
-
-/**
- * Medium warning levels.
- * Demonstrates allergens in the 10-19% range (yellow warnings).
- */
-export const MediumWarnings: Story = {
-  args: {
-    data: computeAllergenFrequency(mockInvoices.slice(2, 8)),
+    data: [
+      {code: "cerealsContainingGluten", productCount: 10, percentage: 50},
+      {code: "crustaceans", productCount: 2, percentage: 10},
+      {code: "eggs", productCount: 7, percentage: 35},
+      {code: "fish", productCount: 4, percentage: 20},
+      {code: "peanuts", productCount: 3, percentage: 15},
+      {code: "soybeans", productCount: 5, percentage: 25},
+      {code: "milk", productCount: 9, percentage: 45},
+      {code: "nuts", productCount: 2, percentage: 10},
+      {code: "celery", productCount: 1, percentage: 5},
+      {code: "mustard", productCount: 1, percentage: 5},
+      {code: "sesame", productCount: 2, percentage: 10},
+      {code: "sulphurDioxideAndSulphites", productCount: 3, percentage: 15},
+      {code: "lupin", productCount: 1, percentage: 5},
+      {code: "molluscs", productCount: 1, percentage: 5},
+    ],
   },
 };
