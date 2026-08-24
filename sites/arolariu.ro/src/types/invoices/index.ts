@@ -182,3 +182,27 @@ export {
   type RecipeSuggestion,
   type UpdateRecipeDtoPayload,
 } from "./Recipe";
+
+/**
+ * Runtime transport validation boundary for the invoices bounded context.
+ *
+ * @remarks
+ * Every server action that consumes an invoices API response must route that
+ * response through one of these parsers. `as Invoice` casts do NOT validate
+ * at runtime — these parsers are the permanent runtime safety net.
+ *
+ * @see {@link parseInvoiceResponse} for the primary invoice parser
+ * @see {@link tryParse} for non-throwing result wrapper
+ * @see {@link TransportValidationError} for the error type
+ */
+export {
+  TransportValidationError,
+  parseAnalysisAcceptedResponse,
+  parseInvoiceResponse,
+  parseInvoicesResponse,
+  parseMerchantResponse,
+  parseMerchantsResponse,
+  parseProductResponse,
+  parseStandardClassification,
+  tryParse,
+} from "./transport";
