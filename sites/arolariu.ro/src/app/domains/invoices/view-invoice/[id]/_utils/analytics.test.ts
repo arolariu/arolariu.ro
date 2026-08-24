@@ -643,16 +643,16 @@ describe("getClassificationGroupComparison", () => {
     const currentInvoice = new InvoiceBuilder()
       .withId("current")
       .withItems([
-        {classification: FOOD_CLASS, totalPrice: 50} as any,
-        {classification: CLEANING_CLASS, totalPrice: 100} as any,
+        new ProductBuilder().withClassification(FOOD_CLASS).withTotalPrice(50).build(),
+        new ProductBuilder().withClassification(CLEANING_CLASS).withTotalPrice(100).build(),
       ])
       .build();
 
     const historicalInvoice = new InvoiceBuilder()
       .withId("historical")
       .withItems([
-        {classification: FOOD_CLASS, totalPrice: 30} as any,
-        {classification: CLEANING_CLASS, totalPrice: 60} as any,
+        new ProductBuilder().withClassification(FOOD_CLASS).withTotalPrice(30).build(),
+        new ProductBuilder().withClassification(CLEANING_CLASS).withTotalPrice(60).build(),
       ])
       .build();
 
@@ -672,12 +672,12 @@ describe("getClassificationGroupComparison", () => {
   it("should handle group with no historical data", () => {
     const currentInvoice = new InvoiceBuilder()
       .withId("current")
-      .withItems([{classification: FOOD_CLASS, totalPrice: 75} as any])
+      .withItems([new ProductBuilder().withClassification(FOOD_CLASS).withTotalPrice(75).build()])
       .build();
 
     const historicalInvoice = new InvoiceBuilder()
       .withId("historical")
-      .withItems([{classification: CLEANING_CLASS, totalPrice: 30} as any])
+      .withItems([new ProductBuilder().withClassification(CLEANING_CLASS).withTotalPrice(30).build()])
       .build();
 
     const result = getClassificationGroupComparison(currentInvoice, [currentInvoice, historicalInvoice]);
@@ -700,7 +700,7 @@ describe("getClassificationGroupComparison", () => {
   it("should use fallback empty array when other invoice items are null", () => {
     const currentInvoice = new InvoiceBuilder()
       .withId("current")
-      .withItems([{classification: FOOD_CLASS, totalPrice: 40} as any])
+      .withItems([new ProductBuilder().withClassification(FOOD_CLASS).withTotalPrice(40).build()])
       .build();
 
     const otherInvoice = new InvoiceBuilder().withId("other").withPaymentAmount(50).build();

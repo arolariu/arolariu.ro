@@ -61,7 +61,7 @@ create-invoice/
 ### Step 2: Invoice Details
 
 - **Invoice Name** (required) - Auto-suggested from first scan's filename
-- **Category** - Dropdown with InvoiceCategory enum options
+- **Classification** - `ClassificationPicker` searching the ECOICOP v2 taxonomy
 - **Payment Type** - Dropdown with PaymentType enum options
 - **Transaction Date** - Calendar picker (defaults to today)
 - **Description** (optional) - Textarea for notes
@@ -102,7 +102,7 @@ interface CreateInvoiceContextValue {
   // Invoice details
   invoiceDetails: InvoiceDetails;
   setName: (name: string) => void;
-  setCategory: (category: InvoiceCategory) => void;
+  setClassification: (selection: ClassificationSelection | null) => void;
   // ... other setters
 
   // Invoice creation
@@ -114,15 +114,22 @@ interface CreateInvoiceContextValue {
 ## Server Actions Used
 
 - `fetchAaaSUserFromAuthService` - Auth check (page.tsx)
-- `createInvoice` - Creates invoice entity (context)
-- `analyzeInvoice` - Triggers AI analysis (context, optional)
+- `createInvoice` - Creates the minimal invoice entity (context)
+- `patchInvoice` - Applies name, description, payment information and `classificationCode` (context)
+- `attachScanToInvoice` - Reconciles the remaining scans (context)
+- `analyzeInvoice` - Enqueues AI analysis; returns a queue message id, not a result (context, optional)
+
+> **Note:** the backend create endpoint persists only owner, initial scan and
+> additional metadata. Wizard details are applied by the follow-up PATCH, so a
+> partial failure preserves the created invoice id and retries without creating
+> a duplicate.
 
 ## Type Safety
 
 All types are properly defined with strict TypeScript:
 
 ```typescript
-import type {Invoice, InvoiceCategory, InvoiceScanType} from "@/types/invoices";
+import type {ClassificationSelection, Invoice, InvoiceScanType} from "@/types/invoices";
 import type {PaymentType} from "@/types/invoices";
 import type {CachedScan} from "@/types/scans";
 ```
@@ -350,7 +357,7 @@ Add to `messages/en.json` and `messages/ro.json`:
 2. **Templates**: Save invoice templates for quick creation
 3. **Drag & Drop**: Reorder selected scans
 4. **Preview**: Show scan preview in modal
-5. **Auto-categorization**: AI suggests category based on scans
+5. **Auto-classification**: AI suggests a taxonomy classification based on scans
 6. **Multi-language**: Full i18n support
 7. **Validation**: Client-side schema validation with Zod
 8. **Undo**: Allow undo before final creation
