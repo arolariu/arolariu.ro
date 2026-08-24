@@ -1,222 +1,78 @@
 "use client";
 
-import {analyzeInvoice} from "@/app/domains/invoices/_actions/invoices";
+/**
+ * @fileoverview Analysis control panel for triggering invoice re-analysis.
+ * @module app/domains/invoices/view-invoice/[id]/_components/cards/AnalysisPanel
+ *
+ * @remarks
+ * The backend analysis pipeline is **asynchronous**. A successful submit returns
+ * `202 Accepted` with a queue message id. There is no completion signal.
+ * This panel shows exactly four states: idle, submitting, queued, and error.
+ * It never implies analysis has finished.
+ *
+ * **Rendering Context**: Client Component (`"use client"` directive).
+ */
+
+import InvoiceAnalysisControls from "../../../../_components/analysis/InvoiceAnalysisControls";
+import QueuedAnalysisNotice from "../../../../_components/analysis/QueuedAnalysisNotice";
+import {useAnalysisSubmission} from "../../../../_hooks/analysis/useAnalysisSubmission";
+import {buildInvoiceAnalysisRequest, resolveInvoiceCapabilities} from "@/types/invoices/Analysis";
+import type {AnalysisProfile, InvoiceAnalysisCapabilities} from "@/types/invoices/Analysis";
+import {ClassificationOrigin} from "@/types/invoices/Classification";
 import {formatDate} from "@/lib/utils.generic";
-import type {AnalysisProfile} from "@/types/invoices/Analysis";
-import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Progress,
-  Spinner,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-  toast,
-} from "@arolariu/components";
-import {AnimatePresence, motion} from "motion/react";
+import {Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Spinner} from "@arolariu/components";
 import {useLocale} from "next-intl";
 import {useTranslations} from "next-intl-selector";
-import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
-import {TbBolt, TbBrain, TbCheck, TbClock, TbInfoCircle, TbRefresh, TbRefreshAlert, TbShoppingCart, TbSparkles} from "react-icons/tb";
+import {TbBolt, TbClock, TbRefresh, TbSparkles} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./AnalysisPanel.module.scss";
-
-/**
- * Analysis option configuration for button display.
- *
- * @property id - The analysis profile string value
- * @property label - Display label for the button
- * @property description - Tooltip description
- * @property icon - React icon component
- */
-type AnalysisOption = Readonly<{
-  readonly id: AnalysisProfile;
-  readonly label: string;
-  readonly description: string;
-  readonly icon: React.ReactNode;
-}>;
 
 /**
  * Analysis control panel for triggering invoice re-analysis.
  *
  * @remarks
- * **Rendering Context**: Client Component (`"use client"` directive).
+ * Renders only when `invoice.items` is empty. Once items appear (after RSC
+ * refresh picks up backend-processed data), the panel hides itself.
  *
- * **Features**:
- * - Quick re-analyze button (CompleteAnalysis)
- * - Granular analysis option buttons
- * - Loading state with progress indicator
- * - Last analyzed timestamp display
- * - Success/error toast notifications
- * - Automatic page refresh on completion
+ * **Decision D4**: `manualClassificationPresent` prevents silently overwriting a
+ * user's manual classification — InvoiceAnalysisControls surfaces a warning when
+ * the user enables `invoiceClassification` in that case.
  *
- * **Analysis Options**:
- * - Complete Analysis: Full OCR + AI processing
- * - Invoice Only: Basic invoice data extraction
- * - Items Only: Line item categorization
- * - Merchant Only: Merchant identification
- *
- * **Server Actions**: Uses `analyzeInvoice` from `@/app/domains/invoices/_actions/invoices`
- *
- * @returns The AnalysisPanel component.
+ * @returns The AnalysisPanel card, or `null` when the invoice already has items.
  */
 export function AnalysisPanel(): React.JSX.Element | null {
   const t = useTranslations();
   const locale = useLocale();
   const {invoice} = useInvoiceContext();
-  const router = useRouter();
 
-  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
-  const [progress, setProgress] = useState<number>(0);
-  const [currentStep, setCurrentStep] = useState<string>("");
-  const [selectedOption, setSelectedOption] = useState<AnalysisProfile | null>(null);
-
-  /**
-   * Analysis options configuration.
-   *
-   * @remarks
-   * Note: InvoiceMerchantOnly is intentionally excluded as merchant data
-   * is automatically enriched during invoice creation and analysis.
-   */
-  const analysisOptions: readonly AnalysisOption[] = [
-    {
-      id: "comprehensive",
-      label: t((m) => m.pages.invoices.viewInvoice.analysisPanel.options.completeAnalysis),
-      description: t((m) => m.pages.invoices.viewInvoice.analysisPanel.tooltips.completeAnalysis),
-      icon: <TbBrain className={styles["optionIcon"]} />,
-    },
-    {
-      id: "balanced",
-      label: t((m) => m.pages.invoices.viewInvoice.analysisPanel.options.invoiceOnly),
-      description: t((m) => m.pages.invoices.viewInvoice.analysisPanel.tooltips.invoiceOnly),
-      icon: <TbRefreshAlert className={styles["optionIcon"]} />,
-    },
-    {
-      id: "fast",
-      label: t((m) => m.pages.invoices.viewInvoice.analysisPanel.options.itemsOnly),
-      description: t((m) => m.pages.invoices.viewInvoice.analysisPanel.tooltips.itemsOnly),
-      icon: <TbShoppingCart className={styles["optionIcon"]} />,
-    },
-  ];
-
-  /**
-   * Handles triggering invoice analysis.
-   *
-   * @param option - The analysis option to use
-   */
-  const handleAnalyze = useCallback(
-    async (option: AnalysisProfile): Promise<void> => {
-      setIsAnalyzing(true);
-      setSelectedOption(option);
-      setProgress(0);
-
-      const delay = async (ms: number): Promise<void> =>
-        new Promise((resolve) => {
-          setTimeout(resolve, ms);
-        });
-
-      const steps = [
-        t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.preparing),
-        t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.extracting),
-        t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.analyzing),
-        t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.processing),
-        t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.finalizing),
-      ];
-
-      try {
-        // Start analysis
-        const analysisPromise = analyzeInvoice({
-          invoiceIdentifier: invoice.id,
-          profile: option,
-        });
-
-        // Animate progress while waiting
-        const stepDelayMs = 4000;
-        const analysisSettledPromise = analysisPromise.then(
-          () => true,
-          () => true,
-        );
-
-        const animateSteps = async (): Promise<void> => {
-          for (let i = 0; i < steps.length; i++) {
-            const settled = await Promise.race([analysisSettledPromise, delay(0).then(() => false)]);
-            if (settled) return;
-
-            setCurrentStep(steps[i] ?? t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.processing));
-            setProgress(((i + 1) / steps.length) * 95);
-
-            const doneAfterDelay = await Promise.race([analysisSettledPromise, delay(stepDelayMs).then(() => false)]);
-            if (doneAfterDelay) return;
-          }
-        };
-
-        await Promise.race([analysisSettledPromise, animateSteps()]);
-        const result = await analysisPromise;
-
-        // Check if the analysis failed
-        if (!result.success) {
-          throw new Error(result.error.message);
-        }
-
-        setCurrentStep(t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.complete));
-        setProgress(100);
-
-        toast(
-          t((m) => m.pages.invoices.viewInvoice.analysisPanel.toasts.success.title),
-          {
-            description: t((m) => m.pages.invoices.viewInvoice.analysisPanel.toasts.success.description),
-          },
-        );
-
-        // Wait briefly before refresh to show completion state
-        await delay(500);
-
-        // Refresh the page to show updated data
-        router.refresh();
-      } catch (error) {
-        console.error("Error analyzing invoice:", error);
-        toast(
-          t((m) => m.pages.invoices.viewInvoice.analysisPanel.toasts.error.title),
-          {
-            description: t((m) => m.pages.invoices.viewInvoice.analysisPanel.toasts.error.description),
-          },
-        );
-      } finally {
-        setIsAnalyzing(false);
-        setProgress(0);
-        setCurrentStep("");
-        setSelectedOption(null);
-      }
-    },
-    [invoice.id, router, t],
+  const [profile, setProfile] = useState<AnalysisProfile>("comprehensive");
+  const [capabilities, setCapabilities] = useState<InvoiceAnalysisCapabilities>(
+    resolveInvoiceCapabilities("comprehensive"),
   );
 
-  /**
-   * Handles quick re-analyze (CompleteAnalysis).
-   */
-  const handleQuickAnalyze = useCallback(async (): Promise<void> => {
-    await handleAnalyze("comprehensive");
-  }, [handleAnalyze]);
+  const {status, messageId, errorMessage, submit, refreshNow} = useAnalysisSubmission({
+    target: "invoice",
+    identifier: invoice.id,
+    scheduleRefresh: true,
+  });
 
-  /**
-   * Factory: returns a stable click handler for triggering analysis with a specific profile.
-   * Each option button gets its own callback to avoid re-rendering on unrelated state changes.
-   */
-  const createAnalyzeHandler = useCallback(
-    (optionId: AnalysisProfile) => {
-      return () => handleAnalyze(optionId);
+  const manualClassificationPresent =
+    invoice.classification?.origin === ClassificationOrigin.Manual;
+
+  const handleChange = useCallback(
+    (newProfile: AnalysisProfile, newCapabilities: InvoiceAnalysisCapabilities): void => {
+      setProfile(newProfile);
+      setCapabilities(newCapabilities);
     },
-    [handleAnalyze],
+    [],
   );
 
-  // Hide the entire card when analysis is complete (items exist)
+  const handleSubmit = useCallback(async (): Promise<void> => {
+    await submit(buildInvoiceAnalysisRequest(profile, capabilities));
+  }, [profile, capabilities, submit]);
+
+  // Panel is only relevant when the invoice has not yet been analysed (no items).
   if (invoice.items.length > 0) return null;
 
   return (
@@ -225,7 +81,9 @@ export function AnalysisPanel(): React.JSX.Element | null {
         <div className={styles["headerContent"]}>
           <div className={styles["titleRow"]}>
             <TbSparkles className={styles["sparklesIcon"]} />
-            <CardTitle className={styles["title"]}>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.title)}</CardTitle>
+            <CardTitle className={styles["title"]}>
+              {t((m) => m.pages.invoices.viewInvoice.analysisPanel.title)}
+            </CardTitle>
           </div>
           <CardDescription className={styles["description"]}>
             {t((m) => m.pages.invoices.viewInvoice.analysisPanel.description)}
@@ -234,127 +92,76 @@ export function AnalysisPanel(): React.JSX.Element | null {
       </CardHeader>
 
       <CardContent className={styles["content"]}>
-        <AnimatePresence mode='wait'>
-          {isAnalyzing ? (
-            <motion.div
-              key='analyzing'
-              initial={{opacity: 0, y: 10}}
-              animate={{opacity: 1, y: 0}}
-              exit={{opacity: 0, y: -10}}
-              className={styles["analyzingState"]}>
-              <div className={styles["spinnerWrapper"]}>
-                <Spinner className={styles["spinner"]} />
-                <div className={styles["statusText"]}>
-                  <p className={styles["statusTitle"]}>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.analyzing.title)}</p>
-                  <p className={styles["statusStep"]}>{currentStep}</p>
+        {status === "queued" ? (
+          <QueuedAnalysisNotice messageId={messageId} onRefresh={refreshNow} />
+        ) : (
+          <div className={styles["idleState"]}>
+            {invoice.lastUpdatedAt !== null && invoice.lastUpdatedAt !== undefined ? (
+              <div className={styles["lastAnalyzed"]}>
+                <div className={styles["infoRow"]}>
+                  <TbClock className={styles["infoIcon"]} />
+                  <span className={styles["infoLabel"]}>
+                    {t((m) => m.pages.invoices.viewInvoice.analysisPanel.labels.lastAnalyzed)}
+                  </span>
                 </div>
+                <p className={styles["infoValue"]}>
+                  {formatDate(invoice.lastUpdatedAt, {locale, dateStyle: "medium", timeStyle: "short"})}
+                </p>
+                {typeof invoice.numberOfUpdates === "number" && invoice.numberOfUpdates > 0 && (
+                  <div className={styles["updatesBadge"]}>
+                    <Badge variant="outline">
+                      {t((m) => m.pages.invoices.viewInvoice.analysisPanel.labels.updates, {
+                        count: invoice.numberOfUpdates,
+                      })}
+                    </Badge>
+                  </div>
+                )}
               </div>
+            ) : null}
 
-              <Progress
-                value={progress}
-                className={styles["progress"]}
-              />
-              <p className={styles["progressText"]}>
-                {t((m) => m.pages.invoices.viewInvoice.analysisPanel.analyzing.progress, {progress: String(Math.round(progress))})}
+            <InvoiceAnalysisControls
+              profile={profile}
+              value={capabilities}
+              manualClassificationPresent={manualClassificationPresent}
+              onChange={handleChange}
+              disabled={status === "submitting"}
+            />
+
+            {status === "error" && (
+              <div role="alert" className={styles["errorAlert"]}>
+                {errorMessage ?? t((m) => m.dialogs.invoices.analyzeDialog.errors.genericError)}
+              </div>
+            )}
+
+            <div className={styles["quickAction"]}>
+              <Button
+                onClick={handleSubmit}
+                disabled={status === "submitting"}
+                className={styles["primaryButton"]}
+                variant="default"
+                size="default">
+                {status === "submitting" ? (
+                  <>
+                    <Spinner className={styles["buttonIcon"]} />
+                    {t((m) => m.pages.invoices.viewInvoice.analysisPanel.labels.submitting)}
+                  </>
+                ) : (
+                  <>
+                    <TbRefresh className={styles["buttonIcon"]} />
+                    {t((m) => m.pages.invoices.viewInvoice.analysisPanel.buttons.reanalyze)}
+                  </>
+                )}
+              </Button>
+            </div>
+
+            <div className={styles["tip"]}>
+              <TbBolt className={styles["tipIcon"]} />
+              <p className={styles["tipText"]}>
+                {t((m) => m.pages.invoices.viewInvoice.analysisPanel.tip)}
               </p>
-            </motion.div>
-          ) : (
-            <motion.div
-              key='idle'
-              initial={{opacity: 0}}
-              animate={{opacity: 1}}
-              exit={{opacity: 0}}
-              className={styles["idleState"]}>
-              {/* Last Analyzed Info */}
-              {invoice.lastUpdatedAt ? (
-                <div className={styles["lastAnalyzed"]}>
-                  <div className={styles["infoRow"]}>
-                    <TbClock className={styles["infoIcon"]} />
-                    <span className={styles["infoLabel"]}>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.labels.lastAnalyzed)}</span>
-                  </div>
-                  <p className={styles["infoValue"]}>
-                    {formatDate(invoice.lastUpdatedAt, {
-                      locale,
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    })}
-                  </p>
-                  {typeof invoice.numberOfUpdates === "number" && invoice.numberOfUpdates > 0 && (
-                    <div className={styles["updatesBadge"]}>
-                      <Badge variant='outline'>
-                        {t((m) => m.pages.invoices.viewInvoice.analysisPanel.labels.updates, {count: invoice.numberOfUpdates})}
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-              ) : null}
-
-              {/* Quick Re-Analyze Button */}
-              <div className={styles["quickAction"]}>
-                <Button
-                  onClick={handleQuickAnalyze}
-                  disabled={isAnalyzing}
-                  className={styles["primaryButton"]}
-                  variant='default'
-                  size='default'>
-                  <TbRefresh className={styles["buttonIcon"]} />
-                  {t((m) => m.pages.invoices.viewInvoice.analysisPanel.buttons.reanalyze)}
-                </Button>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger render={<TbInfoCircle className={styles["infoIconButton"]} />} />
-                    <TooltipContent>
-                      <p>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.tooltips.reanalyze)}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-
-              {/* Granular Analysis Options */}
-              {invoice.items.length === 0 ? (
-                <div className={styles["optionsSection"]}>
-                  <p className={styles["optionsLabel"]}>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.labels.granularOptions)}</p>
-                  <div className={styles["optionsGrid"]}>
-                    {analysisOptions.map((option) => (
-                      <TooltipProvider key={option.id}>
-                        <Tooltip>
-                          <TooltipTrigger
-                            render={
-                              <Button
-                                onClick={createAnalyzeHandler(option.id)}
-                                disabled={isAnalyzing}
-                                variant='outline'
-                                size='sm'
-                                className={styles["optionButton"]}>
-                                {option.icon}
-                                <span className={styles["optionLabel"]}>{option.label}</span>
-                                {selectedOption === option.id && isAnalyzing ? <TbCheck className={styles["activeIcon"]} /> : null}
-                              </Button>
-                            }
-                          />
-                          <TooltipContent>
-                            <p>{option.description}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className={styles["completionMessage"]}>
-                  <TbCheck className={styles["completionIcon"]} />
-                  <p className={styles["completionText"]}>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.labels.analysisComplete)}</p>
-                </div>
-              )}
-
-              {/* Quick Tip */}
-              <div className={styles["tip"]}>
-                <TbBolt className={styles["tipIcon"]} />
-                <p className={styles["tipText"]}>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.tip)}</p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
