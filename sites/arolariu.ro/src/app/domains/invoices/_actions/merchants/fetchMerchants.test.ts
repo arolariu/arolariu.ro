@@ -17,10 +17,14 @@ const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
 const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
 
 describe("fetchMerchants", () => {
+  const MERCHANT_ID_1 = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  const MERCHANT_ID_2 = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+  const MERCHANT_ID_3 = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+
   const mockMerchants: Merchant[] = [
-    TestDataBuilder.build("merchant", {id: "merchant-1", name: "Supermarket A", category: MerchantCategory.SUPERMARKET}),
-    TestDataBuilder.build("merchant", {id: "merchant-2", name: "Local Shop B", category: MerchantCategory.LOCAL_SHOP}),
-    TestDataBuilder.build("merchant", {id: "merchant-3", name: "Online Store C", category: MerchantCategory.ONLINE_SHOP}),
+    TestDataBuilder.build("merchant", {id: MERCHANT_ID_1, name: "Supermarket A", category: MerchantCategory.SUPERMARKET}),
+    TestDataBuilder.build("merchant", {id: MERCHANT_ID_2, name: "Local Shop B", category: MerchantCategory.LOCAL_SHOP}),
+    TestDataBuilder.build("merchant", {id: MERCHANT_ID_3, name: "Online Store C", category: MerchantCategory.ONLINE_SHOP}),
   ];
 
   beforeEach(() => {
@@ -35,9 +39,9 @@ describe("fetchMerchants", () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data).toHaveLength(3);
-      expect(result.data[0]).toMatchObject({id: "merchant-1", name: "Supermarket A"});
-      expect(result.data[1]).toMatchObject({id: "merchant-2", name: "Local Shop B"});
-      expect(result.data[2]).toMatchObject({id: "merchant-3", name: "Online Store C"});
+      expect(result.data[0]).toMatchObject({id: MERCHANT_ID_1, name: "Supermarket A"});
+      expect(result.data[1]).toMatchObject({id: MERCHANT_ID_2, name: "Local Shop B"});
+      expect(result.data[2]).toMatchObject({id: MERCHANT_ID_3, name: "Online Store C"});
     }
   });
 
@@ -215,7 +219,7 @@ describe("fetchMerchants", () => {
   it("parses the merchant array response correctly", async () => {
     const detailedMerchants: Merchant[] = [
       TestDataBuilder.build("merchant", {
-        id: "merchant-1",
+        id: MERCHANT_ID_1,
         name: "Detailed Supermarket",
         description: "A detailed merchant description",
       }),
@@ -228,7 +232,7 @@ describe("fetchMerchants", () => {
     if (result.success) {
       expect(result.data).toHaveLength(1);
       expect(result.data[0]).toMatchObject({
-        id: "merchant-1",
+        id: MERCHANT_ID_1,
         name: "Detailed Supermarket",
         description: "A detailed merchant description",
       });
@@ -268,10 +272,32 @@ describe("fetchMerchants", () => {
     }
   });
 
+  it("returns a validation failure when the API returns a malformed payload", async () => {
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse({}, {status: 200}));
+
+    const result = await fetchMerchants();
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe("VALIDATION_ERROR");
+    }
+  });
+
+  it("returns a validation failure when the API returns an array with a malformed element", async () => {
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse([{}], {status: 200}));
+
+    const result = await fetchMerchants();
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe("VALIDATION_ERROR");
+    }
+  });
+
   it("preserves all merchant fields in the response", async () => {
     const fullMerchants: Merchant[] = [
       TestDataBuilder.build("merchant", {
-        id: "merchant-1",
+        id: MERCHANT_ID_1,
         name: "Full Merchant",
         createdAt: new Date("2026-01-01T00:00:00.000Z"),
         lastUpdatedAt: new Date("2026-01-02T00:00:00.000Z"),
@@ -284,17 +310,17 @@ describe("fetchMerchants", () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data).toHaveLength(1);
-      expect(result.data[0]?.id).toBe("merchant-1");
+      expect(result.data[0]?.id).toBe(MERCHANT_ID_1);
       expect(result.data[0]?.name).toBe("Full Merchant");
-      expect(result.data[0]?.createdAt).toBe("2026-01-01T00:00:00.000Z");
-      expect(result.data[0]?.lastUpdatedAt).toBe("2026-01-02T00:00:00.000Z");
+      expect(result.data[0]?.createdAt).toEqual(new Date("2026-01-01T00:00:00.000Z"));
+      expect(result.data[0]?.lastUpdatedAt).toEqual(new Date("2026-01-02T00:00:00.000Z"));
     }
   });
 
   it("handles a large merchant list without errors", async () => {
     const largeMerchantList: Merchant[] = Array.from({length: 100}, (_, i) =>
       TestDataBuilder.build("merchant", {
-        id: `merchant-${i}`,
+        id: `${i.toString(16).padStart(8, "0")}-0000-4000-8000-000000000000`,
         name: `Merchant ${i}`,
       }),
     );
@@ -305,8 +331,8 @@ describe("fetchMerchants", () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data).toHaveLength(100);
-      expect(result.data[0]).toMatchObject({id: "merchant-0", name: "Merchant 0"});
-      expect(result.data[99]).toMatchObject({id: "merchant-99", name: "Merchant 99"});
+      expect(result.data[0]).toMatchObject({id: "00000000-0000-4000-8000-000000000000", name: "Merchant 0"});
+      expect(result.data[99]).toMatchObject({id: "00000063-0000-4000-8000-000000000000", name: "Merchant 99"});
     }
   });
 });

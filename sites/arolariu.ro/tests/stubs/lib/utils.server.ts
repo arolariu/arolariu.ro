@@ -120,6 +120,16 @@ function readHttpStatus(value: unknown): number | undefined {
 }
 
 export async function createErrorResult<T>(error: unknown, defaultMessage?: string): Promise<ServerActionResult<T>> {
+  if (error instanceof Error && error.name === "TransportValidationError") {
+    return {
+      success: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        message: defaultMessage ?? error.message,
+      },
+    } as const;
+  }
+
   if (error instanceof Error) {
     const isTimeout = error.message.includes("timed out");
     const status = isTimeout ? undefined : readHttpStatus(error);
