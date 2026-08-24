@@ -812,7 +812,6 @@
         },
         "scanType": {
           "bmp": "Image BMP",
-          "heic": "Image HEIC",
           "heif": "Image HEIF",
           "jpeg": "Image JPEG",
           "label": "Type de scan",
@@ -1992,18 +1991,6 @@
       "createInvoice": {
         "detailsForm": {
           "fields": {
-            "category": {
-              "label": "Catégorie",
-              "options": {
-                "carAuto": "Auto et véhicule",
-                "fastFood": "Restauration",
-                "grocery": "Épicerie",
-                "homeCleaning": "Maison et entretien",
-                "notDefined": "Non catégorisé",
-                "other": "Autre"
-              },
-              "placeholder": "Sélectionner une catégorie"
-            },
             "description": {
               "hint": "Notes facultatives sur cet achat",
               "label": "Description",
@@ -2029,6 +2016,10 @@
             },
             "transactionDate": {
               "label": "Date de transaction"
+            },
+            "classification": {
+              "label": "Classification",
+              "hint": "Rechercher une classification taxonomique (optionnel)"
             }
           },
           "scanPreview": {
@@ -2062,14 +2053,6 @@
             "creating": "Création de la facture...",
             "hint": "Ceci créera la facture et téléchargera les numérisations sélectionnées."
           },
-          "categories": {
-            "carAuto": "Auto et véhicule",
-            "fastFood": "Restauration",
-            "grocery": "Épicerie",
-            "homeCleaning": "Maison et entretien",
-            "notDefined": "Non catégorisé",
-            "other": "Autre"
-          },
           "paymentTypes": {
             "card": "Carte",
             "cash": "Espèces",
@@ -2081,19 +2064,25 @@
           },
           "sections": {
             "details": {
-              "category": "Catégorie",
               "description": "Description",
               "name": "Nom",
               "paymentType": "Mode de paiement",
               "title": "Détails de la facture",
-              "transactionDate": "Date de transaction"
+              "transactionDate": "Date de transaction",
+              "classification": "Classification",
+              "noClassification": "Non classifié"
             },
             "scans": {
               "title": "Numérisations"
             }
           },
           "subtitle": "Vérifiez les détails de votre facture avant de la créer",
-          "title": "Vérifier et créer"
+          "title": "Vérifier et créer",
+          "partialError": {
+            "patchFailed": "Votre facture a été créée mais les détails n'ont pas pu être enregistrés. Cliquez sur Réessayer.",
+            "retry": "Réessayer d'enregistrer les détails",
+            "title": "Facture partiellement créée"
+          }
         },
         "scanSelector": {
           "clearAll": "Effacer",
@@ -2113,6 +2102,15 @@
           "reviewDesc": "Confirmer et créer",
           "selectScans": "Sélectionner les numérisations",
           "selectScansDesc": "Choisir les numérisations de reçus"
+        },
+        "errors": {
+          "createFailed": "Échec de la création de la facture. Veuillez réessayer.",
+          "noScansSelected": "Aucun scan sélectionné. Veuillez en sélectionner au moins un.",
+          "patchFailed": "Impossible d'enregistrer les détails. Veuillez réessayer."
+        },
+        "toasts": {
+          "created": "Facture créée avec succès.",
+          "patchFailed": "Facture créée mais les détails n'ont pas pu être enregistrés. Réessayez depuis l'étape de révision."
         }
       },
       "filters": {

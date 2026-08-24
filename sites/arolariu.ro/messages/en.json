@@ -812,7 +812,6 @@
         },
         "scanType": {
           "bmp": "BMP image",
-          "heic": "HEIC image",
           "heif": "HEIF image",
           "jpeg": "JPEG image",
           "label": "Scan type",
@@ -1992,18 +1991,6 @@
       "createInvoice": {
         "detailsForm": {
           "fields": {
-            "category": {
-              "label": "Category",
-              "options": {
-                "carAuto": "Auto & Vehicle",
-                "fastFood": "Dining",
-                "grocery": "Grocery",
-                "homeCleaning": "Home & Cleaning",
-                "notDefined": "Uncategorized",
-                "other": "Other"
-              },
-              "placeholder": "Select a category"
-            },
             "description": {
               "hint": "Optional notes about this purchase",
               "label": "Description",
@@ -2029,6 +2016,10 @@
             },
             "transactionDate": {
               "label": "Transaction Date"
+            },
+            "classification": {
+              "label": "Classification",
+              "hint": "Search for a taxonomy classification (optional)"
             }
           },
           "scanPreview": {
@@ -2062,14 +2053,6 @@
             "creating": "Creating invoice...",
             "hint": "This will create the invoice and upload the selected scans."
           },
-          "categories": {
-            "carAuto": "Auto & Vehicle",
-            "fastFood": "Dining",
-            "grocery": "Grocery",
-            "homeCleaning": "Home & Cleaning",
-            "notDefined": "Uncategorized",
-            "other": "Other"
-          },
           "paymentTypes": {
             "card": "Card",
             "cash": "Cash",
@@ -2081,19 +2064,25 @@
           },
           "sections": {
             "details": {
-              "category": "Category",
               "description": "Description",
               "name": "Name",
               "paymentType": "Payment Method",
               "title": "Invoice Details",
-              "transactionDate": "Transaction Date"
+              "transactionDate": "Transaction Date",
+              "classification": "Classification",
+              "noClassification": "Not classified"
             },
             "scans": {
               "title": "Scans"
             }
           },
           "subtitle": "Review your invoice details before creating",
-          "title": "Review & Create"
+          "title": "Review & Create",
+          "partialError": {
+            "patchFailed": "Your invoice was created but the details could not be saved. Click Retry to try again.",
+            "retry": "Retry saving details",
+            "title": "Invoice partially created"
+          }
         },
         "scanSelector": {
           "clearAll": "Clear",
@@ -2113,6 +2102,15 @@
           "reviewDesc": "Confirm and create",
           "selectScans": "Select Scans",
           "selectScansDesc": "Choose receipt scans"
+        },
+        "errors": {
+          "createFailed": "Failed to create invoice. Please try again.",
+          "noScansSelected": "No scans selected. Please select at least one scan.",
+          "patchFailed": "Failed to save invoice details. Please retry."
+        },
+        "toasts": {
+          "created": "Invoice created successfully.",
+          "patchFailed": "Invoice was created but details could not be saved. Use Retry on the review step."
         }
       },
       "filters": {

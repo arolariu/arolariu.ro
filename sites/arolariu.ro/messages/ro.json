@@ -812,7 +812,6 @@
         },
         "scanType": {
           "bmp": "Imagine BMP",
-          "heic": "Imagine HEIC",
           "heif": "Imagine HEIF",
           "jpeg": "Imagine JPEG",
           "label": "Tip scanare",
@@ -1992,18 +1991,6 @@
       "createInvoice": {
         "detailsForm": {
           "fields": {
-            "category": {
-              "label": "Categorie",
-              "options": {
-                "carAuto": "Auto și vehicule",
-                "fastFood": "Restaurante",
-                "grocery": "Alimente",
-                "homeCleaning": "Casă și curățenie",
-                "notDefined": "Necategorizat",
-                "other": "Altele"
-              },
-              "placeholder": "Selectați o categorie"
-            },
             "description": {
               "hint": "Note opționale despre această achiziție",
               "label": "Descriere",
@@ -2029,6 +2016,10 @@
             },
             "transactionDate": {
               "label": "Data tranzacției"
+            },
+            "classification": {
+              "label": "Clasificare",
+              "hint": "Caută o clasificare taxonomică (opțional)"
             }
           },
           "scanPreview": {
@@ -2062,14 +2053,6 @@
             "creating": "Se creează factura...",
             "hint": "Factura va fi creată și scanările selectate vor fi încărcate."
           },
-          "categories": {
-            "carAuto": "Auto și vehicule",
-            "fastFood": "Restaurante",
-            "grocery": "Alimente",
-            "homeCleaning": "Casă și curățenie",
-            "notDefined": "Necategorizat",
-            "other": "Altele"
-          },
           "paymentTypes": {
             "card": "Card",
             "cash": "Numerar",
@@ -2081,19 +2064,25 @@
           },
           "sections": {
             "details": {
-              "category": "Categorie",
               "description": "Descriere",
               "name": "Nume",
               "paymentType": "Metodă de plată",
               "title": "Detalii factură",
-              "transactionDate": "Data tranzacției"
+              "transactionDate": "Data tranzacției",
+              "classification": "Clasificare",
+              "noClassification": "Neclasificat"
             },
             "scans": {
               "title": "Scanări"
             }
           },
           "subtitle": "Verificați detaliile facturii înainte de creare",
-          "title": "Verificare și creare"
+          "title": "Verificare și creare",
+          "partialError": {
+            "patchFailed": "Factura a fost creată dar detaliile nu au putut fi salvate. Apăsați Reîncearcă.",
+            "retry": "Reîncearcă salvarea detaliilor",
+            "title": "Factură creată parțial"
+          }
         },
         "scanSelector": {
           "clearAll": "Golește",
@@ -2113,6 +2102,15 @@
           "reviewDesc": "Confirmă și creează",
           "selectScans": "Selectare scanări",
           "selectScansDesc": "Alege scanările"
+        },
+        "errors": {
+          "createFailed": "Crearea facturii a eșuat. Vă rugăm încercați din nou.",
+          "noScansSelected": "Niciun scan selectat. Selectați cel puțin un scan.",
+          "patchFailed": "Salvarea detaliilor a eșuat. Vă rugăm reîncercați."
+        },
+        "toasts": {
+          "created": "Factură creată cu succes.",
+          "patchFailed": "Factura a fost creată dar detaliile nu au putut fi salvate. Reîncercați din pasul de revizuire."
         }
       },
       "filters": {
