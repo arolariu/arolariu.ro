@@ -20,7 +20,7 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
-import type {Invoice, InvoiceCategory, PaymentInformation, Product, Recipe} from "@/types/invoices";
+import type {Invoice, InvoiceCategory, PaymentInformation, Product, RecipeSuggestion} from "@/types/invoices";
 import {parseInvoiceResponse, tryParse} from "@/types/invoices/transport";
 import {revalidatePath} from "next/cache";
 
@@ -39,7 +39,7 @@ type ServerActionInputType = Readonly<{
     sharedWith?: string[];
     additionalMetadata?: Record<string, unknown>;
     items?: Product[];
-    possibleRecipes?: Recipe[];
+    possibleRecipes?: RecipeSuggestion[];
   };
 }>;
 
@@ -121,6 +121,9 @@ export async function patchInvoice({invoiceId, payload}: ServerActionInputType):
           ...(payload.isImportant !== undefined ? {isImportant: payload.isImportant} : {}),
           ...(payload.sharedWith !== undefined ? {sharedWith: payload.sharedWith} : {}),
           ...(payload.additionalMetadata !== undefined ? {additionalMetadata: payload.additionalMetadata} : {}),
+          // possibleRecipes is opt-in: only sent when caller explicitly provides it.
+          // null / omitted → backend PRESERVES existing; [] → CLEARS; [...] → REPLACES.
+          ...(payload.possibleRecipes !== undefined ? {possibleRecipes: payload.possibleRecipes} : {}),
         }),
       });
       addSpanEvent("bff.request.patch-invoice.complete");

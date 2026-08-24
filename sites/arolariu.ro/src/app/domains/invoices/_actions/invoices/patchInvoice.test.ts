@@ -151,8 +151,15 @@ describe("patchInvoice", () => {
     expect(body).not.toHaveProperty("id");
   });
 
-  it("omits possibleRecipes so the server preserves existing recipes", async () => {
+  it("sends possibleRecipes when provided (opt-in: enables recipe writes without risking unrelated edits wiping recipes)", async () => {
     await patchInvoice({invoiceId, payload: {name: "Z", possibleRecipes: []}});
+    const [, init] = mockFetchWithTimeout.mock.calls[0]!;
+    const body: unknown = JSON.parse(String(init?.body));
+    expect(body).toHaveProperty("possibleRecipes", []);
+  });
+
+  it("omits possibleRecipes when not in payload (server preserves existing recipes)", async () => {
+    await patchInvoice({invoiceId, payload: {name: "Z"}});
     const [, init] = mockFetchWithTimeout.mock.calls[0]!;
     const body: unknown = JSON.parse(String(init?.body));
     expect(body).not.toHaveProperty("possibleRecipes");
