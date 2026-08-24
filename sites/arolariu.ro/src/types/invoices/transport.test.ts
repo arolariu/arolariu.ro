@@ -26,6 +26,17 @@ import {
 /** A valid UUIDv4 accepted by the existing validateStringIsGuidType helper. */
 const TEST_GUID = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
 
+/**
+ * The all-zero sentinel GUID.
+ *
+ * @remarks
+ * The backend emits this for `merchantReference` when no merchant is linked, and for
+ * `userIdentifier` on guest invoices. It is neither a v4 nor a v7 UUID, so it only
+ * parses because `validateStringIsGuidType` special-cases it. That behaviour is
+ * load-bearing for every freshly created invoice.
+ */
+const EMPTY_GUID_VALUE = "00000000-0000-0000-0000-000000000000";
+
 const validPaymentInfoJson = {
   transactionDate: "2026-08-01T10:00:00Z",
   paymentType: 0,
@@ -146,6 +157,26 @@ describe("parseInvoiceResponse", () => {
   it("accepts classification: null and yields invoice.classification === null", () => {
     const invoice = parseInvoiceResponse({...validInvoiceJson, classification: null});
     expect(invoice.classification).toBeNull();
+  });
+
+  it("accepts the empty sentinel GUID for an unlinked merchant", () => {
+    // A freshly created invoice has no merchant, so the backend sends Guid.Empty here.
+    // This is the common case, not an edge case: rejecting it would break every new invoice.
+    const invoice = parseInvoiceResponse({...validInvoiceJson, merchantReference: EMPTY_GUID_VALUE});
+
+    expect(invoice.merchantReference).toBe(EMPTY_GUID_VALUE);
+  });
+
+  it("accepts the empty sentinel GUID for a guest user identifier", () => {
+    const invoice = parseInvoiceResponse({...validInvoiceJson, userIdentifier: EMPTY_GUID_VALUE});
+
+    expect(invoice.userIdentifier).toBe(EMPTY_GUID_VALUE);
+  });
+
+  it("still rejects a malformed identifier that is not a GUID at all", () => {
+    expect(() => parseInvoiceResponse({...validInvoiceJson, merchantReference: "not-a-guid"})).toThrow(
+      TransportValidationError,
+    );
   });
 });
 
