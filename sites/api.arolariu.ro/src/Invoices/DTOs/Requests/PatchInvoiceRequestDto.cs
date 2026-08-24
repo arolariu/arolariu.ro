@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
@@ -31,9 +32,10 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// </list>
 /// </para>
 /// <para>
-/// <b>Collections:</b> Scans, Items, PossibleRecipes, and SharedWith are copied from the
-/// existing invoice (not modifiable via PATCH). Metadata entries are merged
-/// with key-wise overwrite semantics.
+/// <b>Collections:</b> Scans and Items are copied from the existing invoice.
+/// PossibleRecipes is replaced when supplied and preserved when null; an explicitly empty
+/// array clears the collection. SharedWith is replaced when supplied and preserved when null.
+/// Metadata entries are merged with key-wise overwrite semantics.
 /// </para>
 /// <para>
 /// <b>Full Replacement:</b> For complete invoice replacement, use
@@ -62,6 +64,11 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// this completely replaces the existing SharedWith list. Use an empty list to
 /// remove all shares. Null preserves the existing sharing settings.
 /// </param>
+/// <param name="PossibleRecipes">
+/// Optional recipe suggestions. Null preserves the persisted collection; a supplied list
+/// (including an explicitly empty array) replaces it wholesale. An explicitly empty array
+/// clears all recipes — this is how "delete the last recipe" is expressed.
+/// </param>
 /// <param name="AdditionalMetadata">
 /// Optional metadata entries to merge with existing metadata. Existing keys are
 /// overwritten; new keys are added. Null or empty dictionary means no metadata changes.
@@ -76,9 +83,11 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 ///     PaymentInformation: null,
 ///     MerchantReference: null,
 ///     IsImportant: true,
+///     SharedWith: null,
+///     PossibleRecipes: null,  // Keep existing
 ///     AdditionalMetadata: null);
 ///
-/// var patched = request.ApplyTo(existingInvoice);
+/// var patched = request.ApplyTo(existingInvoice, userId);
 /// await invoiceService.UpdateAsync(patched);
 /// </code>
 /// </example>
@@ -94,6 +103,7 @@ public readonly record struct PatchInvoiceRequestDto(
   Guid? MerchantReference,
   bool? IsImportant,
   ICollection<Guid>? SharedWith,
+  [property: JsonPropertyName("possibleRecipes")] IReadOnlyList<RecipeSuggestionRequestDto>? PossibleRecipes,
   IDictionary<string, object>? AdditionalMetadata)
 {
   /// <summary>
@@ -116,8 +126,10 @@ public readonly record struct PatchInvoiceRequestDto(
   /// </list>
   /// </para>
   /// <para>
-  /// <b>Collection Handling:</b> All collections (Scans, Items, PossibleRecipes, SharedWith)
-  /// are copied from the existing invoice to preserve referential integrity.
+  /// <b>Collection Handling:</b> Scans and Items are copied from the existing invoice.
+  /// PossibleRecipes is replaced when <see cref="PossibleRecipes"/> is supplied (including
+  /// an explicitly empty list to clear), and preserved from the existing invoice when null.
+  /// SharedWith follows the same null-means-preserve semantics.
   /// </para>
   /// <para>
   /// <b>Metadata Merge:</b> Existing metadata is copied first, then DTO metadata
@@ -164,9 +176,19 @@ public readonly record struct PatchInvoiceRequestDto(
       patched.Items.Add(item);
     }
 
-    foreach (var recipe in existing.PossibleRecipes)
+    if (PossibleRecipes is null)
     {
-      patched.PossibleRecipes.Add(recipe);
+      foreach (var recipe in existing.PossibleRecipes)
+      {
+        patched.PossibleRecipes.Add(recipe);
+      }
+    }
+    else
+    {
+      foreach (var recipe in PossibleRecipes)
+      {
+        patched.PossibleRecipes.Add(recipe.ToRecipeSuggestion());
+      }
     }
 
     // SharedWith: Replace entirely if provided, otherwise copy from existing

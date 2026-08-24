@@ -265,6 +265,15 @@ public static partial class InvoiceEndpoints
         updatedInvoiceEntity.Scans.Add(scan);
       }
 
+      // Preserve recipes when not explicitly supplied; an explicit empty array clears the collection
+      if (invoicePayload.PossibleRecipes is null)
+      {
+        foreach (var recipe in possibleInvoice.PossibleRecipes)
+        {
+          updatedInvoiceEntity.PossibleRecipes.Add(recipe);
+        }
+      }
+
       var updatedInvoice = await invoiceManagementService
         .UpdateInvoice(
           id,

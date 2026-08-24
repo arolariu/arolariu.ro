@@ -54,6 +54,7 @@ public sealed class RequestClassificationDtoTests
       MerchantReference: null,
       IsImportant: null,
       SharedWith: null,
+      PossibleRecipes: null,
       AdditionalMetadata: null);
 
     Invoice patched = request.ApplyTo(existing, Guid.NewGuid());
@@ -73,6 +74,7 @@ public sealed class RequestClassificationDtoTests
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
+      PossibleRecipes: null,
       AdditionalMetadata: null);
 
     Invoice invoice = request.ToInvoice(Guid.NewGuid(), Guid.NewGuid());

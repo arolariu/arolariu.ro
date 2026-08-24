@@ -783,6 +783,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
+      PossibleRecipes: null,
       AdditionalMetadata: null);
     var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
     Invoice? capturedInvoice = null;
