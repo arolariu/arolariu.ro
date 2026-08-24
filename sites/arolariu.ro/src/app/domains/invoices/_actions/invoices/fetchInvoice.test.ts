@@ -134,9 +134,7 @@ describe("fetchInvoice", () => {
   });
 
   it("returns a validation failure when the API returns a malformed payload", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse({}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse({}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
 
     const result = await fetchInvoice({invoiceId});
 

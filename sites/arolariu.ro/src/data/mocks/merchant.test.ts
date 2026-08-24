@@ -3,6 +3,7 @@
  * @module data/mocks/merchant.test
  */
 
+import {ClassificationOrigin, ClassificationSystem, type StandardClassification} from "@/types/invoices";
 import {describe, expect, it} from "vitest";
 import {
   MerchantBuilder,
@@ -12,6 +13,17 @@ import {
   mockMerchant,
   mockMerchantList,
 } from "./merchant";
+
+const TEST_CLASSIFICATION: StandardClassification = {
+  system: ClassificationSystem.Nace21,
+  version: "2.1",
+  code: "47.11",
+  officialLabel: "Retail sale in non-specialised stores",
+  hierarchy: [{level: "section", code: "G", officialLabel: "Wholesale and retail trade"}],
+  origin: ClassificationOrigin.Manual,
+  confidence: null,
+  evidence: [],
+};
 
 describe("MerchantBuilder", () => {
   describe("Constructor", () => {
@@ -54,8 +66,11 @@ describe("MerchantBuilder", () => {
       expect(merchant.address.address).toBe("123 Custom Street");
     });
 
-    it("should set category", () => {
-      // category field removed; classification is used instead
+    it("should set classification and clear it", () => {
+      const builder = new MerchantBuilder();
+
+      expect(builder.withClassification(TEST_CLASSIFICATION).build().classification).toEqual(TEST_CLASSIFICATION);
+      expect(builder.withClassification(null).build().classification).toBeNull();
     });
 
     it("should set phoneNumber", () => {

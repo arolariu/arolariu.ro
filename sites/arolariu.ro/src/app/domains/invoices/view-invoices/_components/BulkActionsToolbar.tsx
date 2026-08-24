@@ -92,7 +92,7 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
    */
   const handleExport = useCallback(() => {
     openExportDialog();
-  }, [openExportDialog, selectedInvoices]);
+  }, [openExportDialog]);
 
   /**
    * Handles bulk deletion of selected invoices.

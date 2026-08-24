@@ -1,6 +1,17 @@
 "use client";
 
-import {AllergenCode, RecipeDifficulty, type RecipeIngredient, type RecipeStep, type RecipeSuggestion} from "@/types/invoices";
+import {
+  AllergenCode,
+  RecipeDifficulty,
+  getAllergenLabelKey,
+  isAllergenCode,
+  isRecipeDifficulty,
+  isRecipeSuggestion,
+  isRecipeText,
+  type RecipeIngredient,
+  type RecipeStep,
+  type RecipeSuggestion,
+} from "@/types/invoices";
 import {
   Button,
   Dialog,
@@ -23,23 +34,35 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useMemo, useState, type ChangeEvent, type Dispatch, type SetStateAction} from "react";
 import {TbDisc, TbMinus, TbPlus} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 import {useRecipeUpdate} from "../../../_hooks/invoice";
 import {useEditInvoiceContext} from "../_context/EditInvoiceContext";
 import styles from "./UpdateRecipeDialog.module.scss";
 
-type IngredientRow = {name: string; quantity: string; preparation: string};
-type StepRow = {instruction: string; notes: string};
+type IngredientRow = {id: string; name: string; quantity: string; preparation: string};
+type StepRow = {id: string; instruction: string; notes: string};
+type IngredientSectionKey = "purchased" | "pantry" | "missing";
+type IngredientField = "name" | "quantity" | "preparation";
+type StepField = "instruction" | "notes";
+type IngredientRowsSetter = Dispatch<SetStateAction<IngredientRow[]>>;
+type UpdateRecipePayload = Readonly<{recipe: RecipeSuggestion; recipeIndex: number}>;
+
+let rowIdentifierSequence = 0;
+
+function nextRowIdentifier(prefix: "ingredient" | "step"): string {
+  rowIdentifierSequence += 1;
+  return `${prefix}-${String(rowIdentifierSequence)}`;
+}
 
 function ingredientToRow(ing: RecipeIngredient): IngredientRow {
-  return {name: ing.name, quantity: ing.quantity, preparation: ing.preparation ?? ""};
+  return {id: nextRowIdentifier("ingredient"), name: ing.name, quantity: ing.quantity, preparation: ing.preparation ?? ""};
 }
 function stepToRow(step: RecipeStep): StepRow {
-  return {instruction: step.instruction, notes: step.notes ?? ""};
+  return {id: nextRowIdentifier("step"), instruction: step.instruction, notes: step.notes ?? ""};
 }
 function toRecipeIngredient(row: IngredientRow): RecipeIngredient {
   return {name: row.name, quantity: row.quantity, preparation: row.preparation || null};
@@ -48,10 +71,51 @@ function toRecipeStep(row: StepRow, sequence: number): RecipeStep {
   return {sequence, instruction: row.instruction, notes: row.notes || null};
 }
 function emptyIngredient(): IngredientRow {
-  return {name: "", quantity: "", preparation: ""};
+  return {id: nextRowIdentifier("ingredient"), name: "", quantity: "", preparation: ""};
 }
 function emptyStep(): StepRow {
-  return {instruction: "", notes: ""};
+  return {id: nextRowIdentifier("step"), instruction: "", notes: ""};
+}
+
+function getUpdateRecipePayload(payload: unknown): UpdateRecipePayload | null {
+  if (typeof payload !== "object" || payload === null || !("recipe" in payload) || !("recipeIndex" in payload)) {
+    return null;
+  }
+  const {recipe, recipeIndex} = payload;
+  if (!isRecipeSuggestion(recipe) || typeof recipeIndex !== "number" || !Number.isSafeInteger(recipeIndex)) {
+    return null;
+  }
+  return {recipe, recipeIndex};
+}
+
+function ingredientRowsFrom(ingredients: readonly RecipeIngredient[] | undefined): IngredientRow[] {
+  if (ingredients === undefined || ingredients.length === 0) return [emptyIngredient()];
+  return ingredients.map((ingredient) => ingredientToRow(ingredient));
+}
+
+function stepRowsFrom(steps: readonly RecipeStep[] | undefined): StepRow[] {
+  if (steps === undefined || steps.length === 0) return [emptyStep()];
+  return steps.toSorted((a, b) => a.sequence - b.sequence).map((step) => stepToRow(step));
+}
+
+function isIngredientSectionKey(value: string | undefined): value is IngredientSectionKey {
+  return value === "purchased" || value === "pantry" || value === "missing";
+}
+
+function isIngredientField(value: string | undefined): value is IngredientField {
+  return value === "name" || value === "quantity" || value === "preparation";
+}
+
+function isStepField(value: string | undefined): value is StepField {
+  return value === "instruction" || value === "notes";
+}
+
+function updateIngredientRows(rows: IngredientRow[], rowIdentifier: string, field: IngredientField, value: string): IngredientRow[] {
+  return rows.map((row) => (row.id === rowIdentifier ? {...row, [field]: value} : row));
+}
+
+function updateStepRows(rows: StepRow[], rowIdentifier: string, field: StepField, value: string): StepRow[] {
+  return rows.map((row) => (row.id === rowIdentifier ? {...row, [field]: value} : row));
 }
 
 const ALL_ALLERGEN_CODES = Object.values(AllergenCode);
@@ -64,54 +128,29 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
     isOpen,
     close,
   } = useDialog("EDIT_INVOICE__RECIPE_UPDATE", "edit");
-  const recipe: RecipeSuggestion | null = (payload as {recipe?: RecipeSuggestion})?.recipe ?? null;
+  const recipePayload = useMemo(() => getUpdateRecipePayload(payload), [payload]);
+  const recipe = recipePayload?.recipe;
   const {invoice} = useEditInvoiceContext();
   const {isUpdating, updateRecipeCallback} = useRecipeUpdate(invoice);
 
-  const [name, setName] = useState(recipe?.name ?? "");
-  const [description, setDescription] = useState(recipe?.description ?? "");
-  const [servings, setServings] = useState(recipe?.servings ?? 2);
-  const [difficulty, setDifficulty] = useState<RecipeDifficulty>(recipe?.difficulty ?? RecipeDifficulty.Easy);
-  const [preparationMinutes, setPreparationMinutes] = useState(recipe?.preparationMinutes ?? 0);
-  const [cookingMinutes, setCookingMinutes] = useState(recipe?.cookingMinutes ?? 0);
-  const [totalMinutes, setTotalMinutes] = useState(recipe?.totalMinutes ?? 0);
-  const [purchased, setPurchased] = useState<IngredientRow[]>(
-    recipe?.purchasedIngredients.map(ingredientToRow) ?? [emptyIngredient()],
-  );
-  const [pantry, setPantry] = useState<IngredientRow[]>(
-    recipe?.assumedPantryStaples.map(ingredientToRow) ?? [emptyIngredient()],
-  );
-  const [missing, setMissing] = useState<IngredientRow[]>(
-    recipe?.missingOptionalIngredients.map(ingredientToRow) ?? [emptyIngredient()],
-  );
-  const [steps, setSteps] = useState<StepRow[]>(
-    recipe
-      ? [...recipe.steps].sort((a, b) => a.sequence - b.sequence).map(stepToRow)
-      : [emptyStep()],
-  );
-  const [allergens, setAllergens] = useState<AllergenCode[]>([...(recipe?.allergenWarnings ?? [])] as AllergenCode[]);
+  const [name, setName] = useState(() => recipe?.name ?? "");
+  const [description, setDescription] = useState(() => recipe?.description ?? "");
+  const [servings, setServings] = useState(() => recipe?.servings ?? 2);
+  const [difficulty, setDifficulty] = useState<RecipeDifficulty>(() => recipe?.difficulty ?? RecipeDifficulty.Easy);
+  const [preparationMinutes, setPreparationMinutes] = useState(() => recipe?.preparationMinutes ?? 0);
+  const [cookingMinutes, setCookingMinutes] = useState(() => recipe?.cookingMinutes ?? 0);
+  const [totalMinutes, setTotalMinutes] = useState(() => recipe?.totalMinutes ?? 0);
+  const [purchased, setPurchased] = useState<IngredientRow[]>(() => ingredientRowsFrom(recipe?.purchasedIngredients));
+  const [pantry, setPantry] = useState<IngredientRow[]>(() => ingredientRowsFrom(recipe?.assumedPantryStaples));
+  const [missing, setMissing] = useState<IngredientRow[]>(() => ingredientRowsFrom(recipe?.missingOptionalIngredients));
+  const [steps, setSteps] = useState<StepRow[]>(() => stepRowsFrom(recipe?.steps));
+  const [allergens, setAllergens] = useState<AllergenCode[]>(() => [...(recipe?.allergenWarnings ?? [])]);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Sync state when the dialog payload changes (different recipe opened).
-  useEffect(() => {
-    if (!recipe) return;
-    setName(recipe.name);
-    setDescription(recipe.description);
-    setServings(recipe.servings);
-    setDifficulty(recipe.difficulty);
-    setPreparationMinutes(recipe.preparationMinutes);
-    setCookingMinutes(recipe.cookingMinutes);
-    setTotalMinutes(recipe.totalMinutes);
-    setPurchased(recipe.purchasedIngredients.length > 0 ? recipe.purchasedIngredients.map(ingredientToRow) : [emptyIngredient()]);
-    setPantry(recipe.assumedPantryStaples.length > 0 ? recipe.assumedPantryStaples.map(ingredientToRow) : [emptyIngredient()]);
-    setMissing(recipe.missingOptionalIngredients.length > 0 ? recipe.missingOptionalIngredients.map(ingredientToRow) : [emptyIngredient()]);
-    setSteps([...recipe.steps].sort((a, b) => a.sequence - b.sequence).map(stepToRow));
-    setAllergens([...recipe.allergenWarnings] as AllergenCode[]);
-    setErrors({});
-  }, [recipe]);
 
   const validate = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
+    if (!isRecipeText(name)) newErrors["name"] = t((m) => m.dialogs.invoices.recipeDialog.validation.nameRequired);
+    if (!isRecipeText(description)) newErrors["description"] = t((m) => m.dialogs.invoices.recipeDialog.validation.descriptionRequired);
     if (servings <= 0) newErrors["servings"] = t((m) => m.dialogs.invoices.recipeDialog.validation.servingsPositive);
     if (totalMinutes < preparationMinutes + cookingMinutes)
       newErrors["totalMinutes"] = t((m) => m.dialogs.invoices.recipeDialog.validation.totalTimeConstraint);
@@ -119,28 +158,26 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
     if (validSteps.length === 0) newErrors["steps"] = t((m) => m.dialogs.invoices.recipeDialog.validation.stepRequired);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [servings, totalMinutes, preparationMinutes, cookingMinutes, steps, t]);
+  }, [name, description, servings, totalMinutes, preparationMinutes, cookingMinutes, steps, t]);
 
   const handleSave = useCallback(async () => {
-    if (!recipe || !validate()) return;
+    if (recipePayload === null || !validate()) return;
     try {
       const updated: RecipeSuggestion = {
-        name,
-        description,
+        name: name.trim(),
+        description: description.trim(),
         servings,
         preparationMinutes,
         cookingMinutes,
         totalMinutes,
         difficulty,
-        purchasedIngredients: purchased.filter((r) => r.name.trim()).map(toRecipeIngredient),
-        assumedPantryStaples: pantry.filter((r) => r.name.trim()).map(toRecipeIngredient),
-        missingOptionalIngredients: missing.filter((r) => r.name.trim()).map(toRecipeIngredient),
-        steps: steps
-          .filter((s) => s.instruction.trim())
-          .map((s, i) => toRecipeStep(s, i + 1)),
+        purchasedIngredients: purchased.filter((r) => r.name.trim()).map((row) => toRecipeIngredient(row)),
+        assumedPantryStaples: pantry.filter((r) => r.name.trim()).map((row) => toRecipeIngredient(row)),
+        missingOptionalIngredients: missing.filter((r) => r.name.trim()).map((row) => toRecipeIngredient(row)),
+        steps: steps.filter((s) => s.instruction.trim()).map((s, i) => toRecipeStep(s, i + 1)),
         allergenWarnings: allergens,
       };
-      await updateRecipeCallback(recipe.name, updated);
+      await updateRecipeCallback(recipePayload.recipeIndex, updated);
       toast.success(t((m) => m.dialogs.invoices.recipeDialog.update.success));
       close();
       router.refresh();
@@ -148,7 +185,26 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
       const message = error instanceof Error ? error.message : String(error);
       toast.error(message || t((m) => m.dialogs.invoices.recipeDialog.update.error));
     }
-  }, [recipe, validate, name, description, servings, preparationMinutes, cookingMinutes, totalMinutes, difficulty, purchased, pantry, missing, steps, allergens, updateRecipeCallback, t, close, router]);
+  }, [
+    recipePayload,
+    validate,
+    name,
+    description,
+    servings,
+    preparationMinutes,
+    cookingMinutes,
+    totalMinutes,
+    difficulty,
+    purchased,
+    pantry,
+    missing,
+    steps,
+    allergens,
+    updateRecipeCallback,
+    t,
+    close,
+    router,
+  ]);
 
   const handleOpenChange = useCallback(
     (shouldOpen: boolean) => {
@@ -157,20 +213,81 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
     [close],
   );
 
-  const updateIngredientRow = (
-    setter: React.Dispatch<React.SetStateAction<IngredientRow[]>>,
-    index: number,
-    field: keyof IngredientRow,
-    value: string,
-  ) => {
-    setter((rows) => rows.map((r, i) => (i === index ? {...r, [field]: value} : r)));
-  };
+  const ingredientSetters = useMemo<Record<IngredientSectionKey, IngredientRowsSetter>>(
+    () => ({purchased: setPurchased, pantry: setPantry, missing: setMissing}),
+    [],
+  );
 
-  const toggleAllergen = useCallback((code: AllergenCode) => {
-    setAllergens((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]));
+  const handleNameChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    setName(event.currentTarget.value);
+  }, []);
+  const handleDescriptionChange = useCallback((event: ChangeEvent<HTMLTextAreaElement>) => {
+    setDescription(event.currentTarget.value);
+  }, []);
+  const handleServingsChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    setServings(Number(event.currentTarget.value));
+  }, []);
+  const handleDifficultyChange = useCallback((value: string) => {
+    if (!isRecipeDifficulty(value)) throw new Error(`Unsupported recipe difficulty: ${value}`);
+    setDifficulty(value);
+  }, []);
+  const handlePreparationMinutesChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    setPreparationMinutes(Number(event.currentTarget.value));
+  }, []);
+  const handleCookingMinutesChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    setCookingMinutes(Number(event.currentTarget.value));
+  }, []);
+  const handleTotalMinutesChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    setTotalMinutes(Number(event.currentTarget.value));
+  }, []);
+  const handleIngredientAdd = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      const {section} = event.currentTarget.dataset;
+      if (!isIngredientSectionKey(section)) return;
+      ingredientSetters[section]((rows) => [...rows, emptyIngredient()]);
+    },
+    [ingredientSetters],
+  );
+  const handleIngredientChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const {field, rowId, section} = event.currentTarget.dataset;
+      if (!isIngredientSectionKey(section) || !isIngredientField(field) || rowId === undefined) return;
+      const {value} = event.currentTarget;
+      ingredientSetters[section]((rows) => updateIngredientRows(rows, rowId, field, value));
+    },
+    [ingredientSetters],
+  );
+  const handleIngredientRemove = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      const {rowId, section} = event.currentTarget.dataset;
+      if (!isIngredientSectionKey(section) || rowId === undefined) return;
+      ingredientSetters[section]((rows) => rows.filter((row) => row.id !== rowId));
+    },
+    [ingredientSetters],
+  );
+  const handleStepAdd = useCallback(() => {
+    setSteps((currentSteps) => [...currentSteps, emptyStep()]);
+  }, []);
+  const handleStepChange = useCallback((event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const {field, rowId} = event.currentTarget.dataset;
+    if (!isStepField(field) || rowId === undefined) return;
+    const {value} = event.currentTarget;
+    setSteps((currentSteps) => updateStepRows(currentSteps, rowId, field, value));
+  }, []);
+  const handleStepRemove = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+    const {rowId} = event.currentTarget.dataset;
+    if (rowId === undefined) return;
+    setSteps((currentSteps) => currentSteps.filter((step) => step.id !== rowId));
+  }, []);
+  const handleAllergenToggle = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+    const {code} = event.currentTarget.dataset;
+    if (!isAllergenCode(code)) return;
+    setAllergens((currentAllergens) =>
+      currentAllergens.includes(code) ? currentAllergens.filter((currentCode) => currentCode !== code) : [...currentAllergens, code],
+    );
   }, []);
 
-  if (!recipe) {
+  if (recipePayload === null) {
     return (
       <Dialog
         open={isOpen}
@@ -205,9 +322,20 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
             <Input
               id='recipe-update-name'
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={handleNameChange}
               placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.recipeName)}
+              required
+              aria-invalid={errors["name"] ? true : undefined}
+              aria-describedby={errors["name"] ? "recipe-update-name-error" : undefined}
             />
+            {errors["name"] === undefined ? null : (
+              <p
+                id='recipe-update-name-error'
+                className={styles["errorText"]}
+                role='alert'>
+                {errors["name"]}
+              </p>
+            )}
           </div>
 
           {/* Description */}
@@ -216,10 +344,21 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
             <Textarea
               id='recipe-update-description'
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={handleDescriptionChange}
               placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.description)}
               rows={2}
+              required
+              aria-invalid={errors["description"] ? true : undefined}
+              aria-describedby={errors["description"] ? "recipe-update-description-error" : undefined}
             />
+            {errors["description"] === undefined ? null : (
+              <p
+                id='recipe-update-description-error'
+                className={styles["errorText"]}
+                role='alert'>
+                {errors["description"]}
+              </p>
+            )}
           </div>
 
           {/* Servings + Difficulty + Times */}
@@ -231,15 +370,15 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                 type='number'
                 min={1}
                 value={servings}
-                onChange={(e) => setServings(Number(e.target.value))}
+                onChange={handleServingsChange}
               />
-              {errors["servings"] && <p className={styles["errorText"]}>{errors["servings"]}</p>}
+              {errors["servings"] === undefined ? null : <p className={styles["errorText"]}>{errors["servings"]}</p>}
             </div>
             <div className={styles["fieldGroup"]}>
               <Label htmlFor='recipe-update-difficulty'>{t((m) => m.dialogs.invoices.recipeDialog.fields.difficulty)}</Label>
               <Select
                 value={difficulty}
-                onValueChange={(v) => setDifficulty(v as RecipeDifficulty)}>
+                onValueChange={handleDifficultyChange}>
                 <SelectTrigger id='recipe-update-difficulty'>
                   <SelectValue placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.selectDifficulty)} />
                 </SelectTrigger>
@@ -257,7 +396,7 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                 type='number'
                 min={0}
                 value={preparationMinutes}
-                onChange={(e) => setPreparationMinutes(Number(e.target.value))}
+                onChange={handlePreparationMinutesChange}
               />
             </div>
             <div className={styles["fieldGroup"]}>
@@ -267,7 +406,7 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                 type='number'
                 min={0}
                 value={cookingMinutes}
-                onChange={(e) => setCookingMinutes(Number(e.target.value))}
+                onChange={handleCookingMinutesChange}
               />
             </div>
             <div className={styles["fieldGroup"]}>
@@ -277,18 +416,28 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                 type='number'
                 min={0}
                 value={totalMinutes}
-                onChange={(e) => setTotalMinutes(Number(e.target.value))}
+                onChange={handleTotalMinutesChange}
               />
-              {errors["totalMinutes"] && <p className={styles["errorText"]}>{errors["totalMinutes"]}</p>}
+              {errors["totalMinutes"] === undefined ? null : <p className={styles["errorText"]}>{errors["totalMinutes"]}</p>}
             </div>
           </div>
 
           {/* Ingredient sections */}
-          {([
-            {key: "purchased", label: t((m) => m.dialogs.invoices.recipeDialog.fields.purchasedIngredients), rows: purchased, setter: setPurchased},
-            {key: "pantry", label: t((m) => m.dialogs.invoices.recipeDialog.fields.pantryStaples), rows: pantry, setter: setPantry},
-            {key: "missing", label: t((m) => m.dialogs.invoices.recipeDialog.fields.missingIngredients), rows: missing, setter: setMissing},
-          ] as const).map(({key, label, rows, setter}) => (
+          {(
+            [
+              {
+                key: "purchased",
+                label: t((m) => m.dialogs.invoices.recipeDialog.fields.purchasedIngredients),
+                rows: purchased,
+              },
+              {key: "pantry", label: t((m) => m.dialogs.invoices.recipeDialog.fields.pantryStaples), rows: pantry},
+              {
+                key: "missing",
+                label: t((m) => m.dialogs.invoices.recipeDialog.fields.missingIngredients),
+                rows: missing,
+              },
+            ] as const
+          ).map(({key, label, rows}) => (
             <div
               key={key}
               className={styles["fieldGroup"]}>
@@ -298,30 +447,40 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                   type='button'
                   variant='outline'
                   size='sm'
-                  onClick={() => setter((r) => [...r, emptyIngredient()])}>
+                  data-section={key}
+                  onClick={handleIngredientAdd}>
                   <TbPlus className={styles["addIcon"]} />
                   {t((m) => m.dialogs.invoices.recipeDialog.buttons.add)}
                 </Button>
               </div>
-              {rows.map((row, i) => (
+              {rows.map((row) => (
                 <div
-                  key={i}
+                  key={row.id}
                   className={styles["ingredientRow"]}>
                   <Input
                     value={row.name}
-                    onChange={(e) => updateIngredientRow(setter, i, "name", e.target.value)}
+                    data-section={key}
+                    data-row-id={row.id}
+                    data-field='name'
+                    onChange={handleIngredientChange}
                     placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.ingredientName)}
                     className={styles["ingredientInput"]}
                   />
                   <Input
                     value={row.quantity}
-                    onChange={(e) => updateIngredientRow(setter, i, "quantity", e.target.value)}
+                    data-section={key}
+                    data-row-id={row.id}
+                    data-field='quantity'
+                    onChange={handleIngredientChange}
                     placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.ingredientQuantity)}
                     className={styles["ingredientInput"]}
                   />
                   <Input
                     value={row.preparation}
-                    onChange={(e) => updateIngredientRow(setter, i, "preparation", e.target.value)}
+                    data-section={key}
+                    data-row-id={row.id}
+                    data-field='preparation'
+                    onChange={handleIngredientChange}
                     placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.ingredientPreparation)}
                     className={styles["ingredientInput"]}
                   />
@@ -330,7 +489,9 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                     variant='ghost'
                     size='icon'
                     disabled={rows.length <= 1}
-                    onClick={() => setter((r) => r.filter((_, idx) => idx !== i))}>
+                    data-section={key}
+                    data-row-id={row.id}
+                    onClick={handleIngredientRemove}>
                     <TbMinus className={styles["icon4"]} />
                   </Button>
                 </div>
@@ -346,27 +507,31 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                 type='button'
                 variant='outline'
                 size='sm'
-                onClick={() => setSteps((s) => [...s, emptyStep()])}>
+                onClick={handleStepAdd}>
                 <TbPlus className={styles["addIcon"]} />
                 {t((m) => m.dialogs.invoices.recipeDialog.buttons.add)}
               </Button>
             </div>
-            {errors["steps"] && <p className={styles["errorText"]}>{errors["steps"]}</p>}
-            {steps.map((step, i) => (
+            {errors["steps"] === undefined ? null : <p className={styles["errorText"]}>{errors["steps"]}</p>}
+            {steps.map((step, stepIndex) => (
               <div
-                key={i}
+                key={step.id}
                 className={styles["stepRow"]}>
-                <span className={styles["stepSequence"]}>{i + 1}.</span>
+                <span className={styles["stepSequence"]}>{stepIndex + 1}.</span>
                 <Textarea
                   value={step.instruction}
-                  onChange={(e) => setSteps((s) => s.map((r, idx) => (idx === i ? {...r, instruction: e.target.value} : r)))}
+                  data-row-id={step.id}
+                  data-field='instruction'
+                  onChange={handleStepChange}
                   placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.stepInstruction)}
                   rows={2}
                   className={styles["stepInput"]}
                 />
                 <Input
                   value={step.notes}
-                  onChange={(e) => setSteps((s) => s.map((r, idx) => (idx === i ? {...r, notes: e.target.value} : r)))}
+                  data-row-id={step.id}
+                  data-field='notes'
+                  onChange={handleStepChange}
                   placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.stepNotes)}
                 />
                 <Button
@@ -374,7 +539,8 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                   variant='ghost'
                   size='icon'
                   disabled={steps.length <= 1}
-                  onClick={() => setSteps((s) => s.filter((_, idx) => idx !== i))}>
+                  data-row-id={step.id}
+                  onClick={handleStepRemove}>
                   <TbMinus className={styles["icon4"]} />
                 </Button>
               </div>
@@ -394,13 +560,14 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                           type='button'
                           variant={allergens.includes(code) ? "default" : "outline"}
                           size='sm'
-                          onClick={() => toggleAllergen(code)}>
-                          {code}
+                          data-code={code}
+                          onClick={handleAllergenToggle}>
+                          {t(selectorFromPath(getAllergenLabelKey(code)))}
                         </Button>
                       }
                     />
                     <TooltipContent>
-                      <p>{code}</p>
+                      <p>{t(selectorFromPath(getAllergenLabelKey(code)))}</p>
                     </TooltipContent>
                   </Tooltip>
                 ))}
@@ -423,7 +590,9 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
               onClick={handleSave}
               disabled={isUpdating}>
               <TbDisc className={styles["saveIcon"]} />
-              {isUpdating ? t((m) => m.dialogs.invoices.recipeDialog.buttons.saving) : t((m) => m.dialogs.invoices.recipeDialog.buttons.save)}
+              {isUpdating
+                ? t((m) => m.dialogs.invoices.recipeDialog.buttons.saving)
+                : t((m) => m.dialogs.invoices.recipeDialog.buttons.save)}
             </Button>
           </div>
         </DialogFooter>

@@ -68,14 +68,7 @@ import {type ScanType, ScanType as ScanTypeEnum} from "@/types/scans";
  * }
  * ```
  */
-export const ACCEPTED_SCAN_MIME_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/bmp",
-  "image/tiff",
-  "image/heif",
-  "application/pdf",
-] as const;
+export const ACCEPTED_SCAN_MIME_TYPES = ["image/jpeg", "image/png", "image/bmp", "image/tiff", "image/heif", "application/pdf"] as const;
 
 /**
  * Immutable array of accepted file extensions for invoice scans.
@@ -201,7 +194,6 @@ const MIME_TO_INVOICE_SCAN_TYPE: Readonly<Record<string, InvoiceScanType>> = {
   "image/bmp": InvoiceScanTypeEnum.BMP,
   "image/tiff": InvoiceScanTypeEnum.TIFF,
   "image/heif": InvoiceScanTypeEnum.HEIF,
-  // "image/heic" omitted: InvoiceScanType.HEIC (9) exceeds the backend-accepted range 0–8
   "application/pdf": InvoiceScanTypeEnum.PDF,
 };
 
@@ -220,7 +212,6 @@ const SCAN_TYPE_TO_INVOICE_SCAN_TYPE: Readonly<Record<string, InvoiceScanType>> 
   [ScanTypeEnum.BMP]: InvoiceScanTypeEnum.BMP,
   [ScanTypeEnum.TIFF]: InvoiceScanTypeEnum.TIFF,
   [ScanTypeEnum.HEIF]: InvoiceScanTypeEnum.HEIF,
-  // ScanType.HEIC deliberately omitted: scanTypeToInvoiceScanType throws for HEIC
   [ScanTypeEnum.PDF]: InvoiceScanTypeEnum.PDF,
   [ScanTypeEnum.OTHER]: InvoiceScanTypeEnum.UNKNOWN,
 };
@@ -393,15 +384,10 @@ export function mimeTypeToInvoiceScanType(mimeType: string): InvoiceScanType {
  * @param scanType - The ScanType to convert
  * @returns The corresponding InvoiceScanType
  *
- * @throws Error when `scanType` is `ScanType.HEIC` because `InvoiceScanType.HEIC`
- *   (formerly value `9`) exceeds the backend-accepted range of `0`–`8`. Convert
- *   the file to JPEG or PNG before attaching it to an invoice.
- *
  * @remarks
  * **Mapping Logic:**
  * - Each specific ScanType maps to its InvoiceScanType equivalent
  * - `ScanType.OTHER` maps to `InvoiceScanType.UNKNOWN`
- * - `ScanType.HEIC` is explicitly rejected (throws) to prevent backend 4xx errors
  *
  * @example
  * ```typescript
@@ -409,17 +395,9 @@ export function mimeTypeToInvoiceScanType(mimeType: string): InvoiceScanType {
  * scanTypeToInvoiceScanType(ScanType.PNG)   // InvoiceScanType.PNG
  * scanTypeToInvoiceScanType(ScanType.PDF)   // InvoiceScanType.PDF
  * scanTypeToInvoiceScanType(ScanType.OTHER) // InvoiceScanType.UNKNOWN
- * scanTypeToInvoiceScanType(ScanType.HEIC)  // throws Error
  * ```
  */
 export function scanTypeToInvoiceScanType(scanType: ScanType): InvoiceScanType {
-  if (scanType === ScanTypeEnum.HEIC) {
-    throw new Error(
-      `ScanType.HEIC cannot be mapped to an InvoiceScanType: the backend InvoiceScan.type field ` +
-        `only accepts values 0–8 and HEIC (formerly 9) has been removed from the invoice scan format. ` +
-        `Convert the file to JPEG or PNG before attaching it to an invoice.`,
-    );
-  }
   return SCAN_TYPE_TO_INVOICE_SCAN_TYPE[scanType] ?? InvoiceScanTypeEnum.UNKNOWN;
 }
 

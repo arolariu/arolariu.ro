@@ -35,6 +35,75 @@ using Moq;
 [TestClass]
 public sealed class InvoiceProcessingServiceCurrentArchitectureTests
 {
+  /// <summary>
+  /// Verifies caller merchant visibility reads invoices directly through orchestration and de-duplicates references.
+  /// </summary>
+  [TestMethod]
+  public async Task ReadMerchantsVisibleToUser_DuplicateReferences_CallsDirectOrchestrations()
+  {
+    Guid userId = Guid.NewGuid();
+    Guid merchantId = Guid.NewGuid();
+    var invoices = new List<Invoice>
+    {
+      new() { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = merchantId },
+      new() { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = merchantId },
+      new() { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = Guid.Empty },
+    };
+    var merchant = new Merchant { id = merchantId };
+    var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
+    var merchantOrchestration = new Mock<IMerchantOrchestrationService>(MockBehavior.Strict);
+    invoiceOrchestration
+      .Setup(service => service.ReadAllInvoiceObjects(userId, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoices);
+    merchantOrchestration
+      .Setup(service => service.ReadMerchantObjectsByIdentifiers(
+        It.Is<IReadOnlyCollection<Guid>>(identifiers =>
+          identifiers.Count == 1 && identifiers.Single() == merchantId),
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync([merchant]);
+    var service = new InvoiceProcessingService(
+      invoiceOrchestration.Object,
+      merchantOrchestration.Object,
+      Mock.Of<IAnalysisOrchestrationService>(),
+      NullLoggerFactory.Instance);
+
+    IEnumerable<Merchant> result = await service.ReadMerchantsVisibleToUser(
+      userId,
+      CancellationToken.None);
+
+    Assert.AreSame(merchant, result.Single());
+    invoiceOrchestration.VerifyAll();
+    merchantOrchestration.VerifyAll();
+  }
+
+  /// <summary>
+  /// Verifies direct invoice orchestration failures retain dependency classification without nested Processing wrapping.
+  /// </summary>
+  [TestMethod]
+  public async Task ReadMerchantsVisibleToUser_InvoiceDependencyFailure_MapsToProcessingDependency()
+  {
+    Guid userId = Guid.NewGuid();
+    var dependencyFailure = new TimeoutException("Cosmos query timed out.");
+    var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
+    var merchantOrchestration = new Mock<IMerchantOrchestrationService>(MockBehavior.Strict);
+    invoiceOrchestration
+      .Setup(service => service.ReadAllInvoiceObjects(userId, It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new InvoiceOrchestrationDependencyException(dependencyFailure));
+    var service = new InvoiceProcessingService(
+      invoiceOrchestration.Object,
+      merchantOrchestration.Object,
+      Mock.Of<IAnalysisOrchestrationService>(),
+      NullLoggerFactory.Instance);
+
+    InvoiceProcessingServiceDependencyException exception =
+      await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceDependencyException>(
+        () => service.ReadMerchantsVisibleToUser(userId, CancellationToken.None));
+
+    Assert.AreSame(dependencyFailure, exception.InnerException);
+    invoiceOrchestration.VerifyAll();
+    merchantOrchestration.VerifyNoOtherCalls();
+  }
+
   /// <summary>Verifies exact-name reads do not select an overlapping product name.</summary>
   [TestMethod]
   public async Task GetProduct_OverlappingNames_ReturnsExactMatch()
@@ -209,7 +278,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
         It.IsAny<CancellationToken>()))
       .Callback(() => operations.Add("receive"))
       .ReturnsAsync(receipt);
-    invoiceOrchestration    .Setup(service => service.ReadInvoiceObject(
+    invoiceOrchestration.Setup(service => service.ReadInvoiceObject(
       invoice.id,
       invoice.UserIdentifier,
       It.IsAny<CancellationToken>()))

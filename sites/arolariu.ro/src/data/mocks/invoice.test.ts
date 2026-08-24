@@ -3,9 +3,20 @@
  * @module data/mocks/invoice.test
  */
 
-import {InvoiceScanType, RecipeDifficulty} from "@/types/invoices";
+import {ClassificationOrigin, ClassificationSystem, InvoiceScanType, RecipeDifficulty, type StandardClassification} from "@/types/invoices";
 import {describe, expect, it} from "vitest";
 import {InvoiceBuilder, createInvoiceBuilder, generateRandomInvoice, generateRandomInvoices, mockInvoice, mockInvoiceList} from "./invoice";
+
+const TEST_CLASSIFICATION: StandardClassification = {
+  system: ClassificationSystem.EcoicopV2,
+  version: "2.0",
+  code: "01.1.1",
+  officialLabel: "Food",
+  hierarchy: [{level: "division", code: "01", officialLabel: "Food and non-alcoholic beverages"}],
+  origin: ClassificationOrigin.Manual,
+  confidence: null,
+  evidence: [],
+};
 
 describe("InvoiceBuilder", () => {
   describe("Constructor", () => {
@@ -89,6 +100,13 @@ describe("InvoiceBuilder", () => {
       const builder = new InvoiceBuilder();
       const invoice = builder.withMerchantReference("merchant-123").build();
       expect(invoice.merchantReference).toBe("merchant-123");
+    });
+
+    it("should set classification and clear it", () => {
+      const builder = new InvoiceBuilder();
+
+      expect(builder.withClassification(TEST_CLASSIFICATION).build().classification).toEqual(TEST_CLASSIFICATION);
+      expect(builder.withClassification(null).build().classification).toBeNull();
     });
 
     it("should set items", () => {

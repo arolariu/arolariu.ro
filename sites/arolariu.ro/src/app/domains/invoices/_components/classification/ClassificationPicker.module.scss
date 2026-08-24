@@ -58,7 +58,9 @@
   color: var(--muted-foreground, #6b7280);
   font-size: 1rem;
   cursor: pointer;
-  transition: background-color 120ms ease, color 120ms ease;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
 
   &:hover:not(:disabled) {
     background-color: var(--muted, #f3f4f6);

@@ -11,10 +11,10 @@
  */
 
 import {formatAmount} from "@/lib/utils.generic";
+import {getAllergenLabelKey} from "@/types/invoices";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
 import {selectorFromPath, useTranslations} from "next-intl-selector";
 import {TbAlertTriangle} from "react-icons/tb";
-import {getAllergenLabelKey} from "../../../../_components/allergens/allergenLabels";
 import type {AllergenFrequency} from "../../../_utils/statistics";
 import styles from "./AllergenSummaryChart.module.scss";
 

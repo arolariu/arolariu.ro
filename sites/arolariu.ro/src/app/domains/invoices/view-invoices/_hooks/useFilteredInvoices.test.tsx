@@ -799,6 +799,21 @@ describe("useFilteredInvoices", () => {
       expect(result.current[0]).toEqual(classifiedInvoice);
     });
 
+    it("returns null-classification invoices when the unclassified group is selected", () => {
+      const classifiedInvoice = new InvoiceBuilder().withName("Classified").build();
+      classifiedInvoice.classification = makeClassification("Food and non-alcoholic beverages");
+      const unclassifiedInvoice = new InvoiceBuilder().withName("Unclassified").build();
+
+      const filters: FilterState = {
+        ...createDefaultFilters(),
+        classificationGroups: ["unclassified"],
+      };
+
+      const {result} = renderHook(() => useFilteredInvoices([classifiedInvoice, unclassifiedInvoice], filters));
+
+      expect(result.current).toEqual([unclassifiedInvoice]);
+    });
+
     it("includes invoices with null classification when filter is empty (All)", () => {
       // Arrange
       const classifiedInvoice = new InvoiceBuilder().withName("Classified").build();

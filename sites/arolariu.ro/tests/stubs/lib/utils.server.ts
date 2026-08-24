@@ -20,13 +20,7 @@ import {vi} from "vitest";
 export type JwtVerificationResult = {valid: true; payload: Record<string, unknown>} | {valid: false; error: string};
 
 export type ServerActionErrorCode =
-  | "NETWORK_ERROR"
-  | "TIMEOUT_ERROR"
-  | "AUTH_ERROR"
-  | "NOT_FOUND"
-  | "VALIDATION_ERROR"
-  | "SERVER_ERROR"
-  | "UNKNOWN_ERROR";
+  "NETWORK_ERROR" | "TIMEOUT_ERROR" | "AUTH_ERROR" | "NOT_FOUND" | "VALIDATION_ERROR" | "SERVER_ERROR" | "UNKNOWN_ERROR";
 
 export type ServerActionResult<T> = Readonly<
   | {success: true; data: T; error?: never}

@@ -17,15 +17,16 @@
  * **Product Enrichment:**
  * Raw OCR names are enriched with:
  * - Generic names (e.g., "MLK 2% 1L" → "Milk 2% 1 Liter")
- * - Category classification
+ * - Canonical taxonomy classification
  * - Allergen detection
  * - Nutritional information (future)
  *
  * @see {@link Invoice.items} for product attachment to invoices
- * @see {@link Allergen} for allergen information
+ * @see {@link AllergenAssessment} for allergen information
  */
 
-import type {AllergenAssessment, StandardClassification} from "./index.ts";
+import type {AllergenAssessment} from "./Allergen";
+import type {StandardClassification} from "./Classification";
 
 /**
  * Tracks the editing and lifecycle state of a product.

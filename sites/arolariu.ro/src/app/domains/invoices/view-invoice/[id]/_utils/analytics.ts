@@ -17,13 +17,7 @@ export type CategorySpending = {
 };
 
 /** Chart color palette; cycles for any number of groups. */
-const CHART_COLORS = [
-  "var(--ac-chart-1)",
-  "var(--ac-chart-2)",
-  "var(--ac-chart-3)",
-  "var(--ac-chart-4)",
-  "var(--ac-chart-5)",
-] as const;
+const CHART_COLORS = ["var(--ac-chart-1)", "var(--ac-chart-2)", "var(--ac-chart-3)", "var(--ac-chart-4)", "var(--ac-chart-5)"] as const;
 
 export function getClassificationGroupSpending(items: Product[]): CategorySpending[] {
   const groupMap = new Map<string, {amount: number; count: number}>();

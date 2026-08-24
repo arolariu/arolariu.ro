@@ -45,6 +45,18 @@ type ServerActionInputType = Readonly<{
 type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
 
 /**
+ * Resolves the safe user-facing message for a failed invoice patch request.
+ *
+ * @param status - HTTP status returned by the invoices API.
+ * @returns A retry message for server failures, or an input message otherwise.
+ */
+function getPatchFailureMessage(status: number): string {
+  return status >= 500
+    ? "A server error occurred. Please try again later."
+    : "Failed to update the invoice. Please check your input and try again.";
+}
+
+/**
  * Server action that performs a partial update (PATCH) on an invoice.
  *
  * @remarks
@@ -145,11 +157,7 @@ export async function patchInvoice({invoiceId, payload}: ServerActionInputType):
       const errorText = await response.text();
       const internalMessage = `Failed to update invoice: ${response.status} ${response.statusText}`;
       logWithTrace("warn", internalMessage, {invoiceId, errorText}, "server");
-      const userMessage =
-        response.status >= 500
-          ? "A server error occurred. Please try again later."
-          : "Failed to update the invoice. Please check your input and try again.";
-      return createErrorResult(new Error(internalMessage), userMessage);
+      return createErrorResult(new Error(internalMessage), getPatchFailureMessage(response.status));
     } catch (error: unknown) {
       addSpanEvent("bff.request.patch-invoice.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";

@@ -6,6 +6,7 @@ import type {Invoice} from "@/types/invoices";
 import {useMemo} from "react";
 import {getClassificationGroup} from "../../_utils/labelUtilities";
 import type {FilterState} from "./useInvoiceFilters";
+import {UNCLASSIFIED_GROUP} from "../_utils/filterOptions";
 
 /**
  * Custom hook for filtering and sorting invoices based on filter criteria.
@@ -91,12 +92,11 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
     }
 
     // Apply classification group filter (OR logic).
-    // Invoices with null classification are excluded from group-specific filters
-    // but are included when classificationGroups is empty ("All").
+    // Null classifications use the same stable bucket exposed by the option deriver.
     if (filters.classificationGroups.length > 0) {
       filtered = filtered.filter((invoice) => {
-        const group = getClassificationGroup(invoice.classification ?? null);
-        return group !== null && filters.classificationGroups.includes(group);
+        const group = getClassificationGroup(invoice.classification ?? null) ?? UNCLASSIFIED_GROUP;
+        return filters.classificationGroups.includes(group);
       });
     }
 

@@ -136,9 +136,6 @@ public partial class CosmosDatabaseBroker
     return filteredMerchants;
   }
 
-  /// <summary>The maximum number of identifiers bound into a single Cosmos <c>IN</c> query.</summary>
-  private const int MerchantIdentifierChunkSize = 100;
-
   /// <inheritdoc/>
   public async ValueTask<IEnumerable<Merchant>> ReadMerchantsByIdentifiersAsync(
     IReadOnlyCollection<Guid> merchantIdentifiers,
@@ -164,7 +161,7 @@ public partial class CosmosDatabaseBroker
     var merchantList = new List<Merchant>();
     var totalRequestCharge = 0.0;
 
-    foreach (var chunk in merchantIdentifiers.Chunk(MerchantIdentifierChunkSize))
+    foreach (var chunk in merchantIdentifiers.Chunk(100))
     {
       var parameterNames = chunk.Select((_, index) => $"@id{index}").ToArray();
       var query = new QueryDefinition($"SELECT * FROM c WHERE c.id IN ({string.Join(", ", parameterNames)})");

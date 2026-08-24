@@ -6,12 +6,7 @@
 import {ClassificationOrigin, ClassificationSystem, PaymentType} from "@/types/invoices";
 import type {ClassificationNode, StandardClassification} from "@/types/invoices";
 import {describe, expect, it} from "vitest";
-import {
-  getClassificationGroup,
-  getClassificationHierarchyPath,
-  getClassificationLabel,
-  getPaymentTypeLabel,
-} from "./labelUtilities";
+import {getClassificationGroup, getClassificationHierarchyPath, getClassificationLabel, getPaymentTypeLabel} from "./labelUtilities";
 
 // ---------------------------------------------------------------------------
 // Classification fixtures

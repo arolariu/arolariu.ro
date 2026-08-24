@@ -22,12 +22,8 @@ const testRecipe: RecipeSuggestion = {
     {name: "Pasta", quantity: "400 g", preparation: null},
     {name: "Eggs", quantity: "3", preparation: "beaten"},
   ],
-  assumedPantryStaples: [
-    {name: "Salt", quantity: "to taste", preparation: null},
-  ],
-  missingOptionalIngredients: [
-    {name: "Black pepper", quantity: "pinch", preparation: null},
-  ],
+  assumedPantryStaples: [{name: "Salt", quantity: "to taste", preparation: null}],
+  missingOptionalIngredients: [{name: "Black pepper", quantity: "pinch", preparation: null}],
   steps: [
     {sequence: 2, instruction: "Fry pancetta", notes: "until crispy"},
     {sequence: 1, instruction: "Boil pasta", notes: null},
@@ -121,7 +117,7 @@ describe("PreviewRecipeDialog", () => {
     await userEvent.click(screen.getByRole("button", {name: "Open Preview"}));
 
     // The mock translator returns the key path — verify allergen labels are used
-    // The allergenLabels map provides the key path (e.g. "allergens.codes.eggs")
+    // The allergen domain mapping provides the key path (e.g. "allergens.codes.eggs")
     // In test environment, the translator may return the key or the mapped label
     const container = screen.getByLabelText(/allergen/i);
     expect(container).toBeTruthy();

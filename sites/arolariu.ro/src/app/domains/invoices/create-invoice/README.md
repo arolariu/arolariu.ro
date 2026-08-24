@@ -119,10 +119,8 @@ interface CreateInvoiceContextValue {
 - `attachScanToInvoice` - Reconciles the remaining scans (context)
 - `analyzeInvoice` - Enqueues AI analysis; returns a queue message id, not a result (context, optional)
 
-> **Note:** the backend create endpoint persists only owner, initial scan and
-> additional metadata. Wizard details are applied by the follow-up PATCH, so a
-> partial failure preserves the created invoice id and retries without creating
-> a duplicate.
+> **Note:** the backend create endpoint persists only owner, initial scan and additional metadata. Wizard details are applied by the
+> follow-up PATCH, so a partial failure preserves the created invoice id and retries without creating a duplicate.
 
 ## Type Safety
 

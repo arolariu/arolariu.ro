@@ -23,9 +23,14 @@ describe("patchInvoice", () => {
     vi.clearAllMocks();
     mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
     mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse(TestDataBuilder.build("invoice", {id: invoiceId, name: "Updated Invoice", userIdentifier: "22222222-2222-4222-8222-222222222222", merchantReference: "33333333-3333-4333-8333-333333333333"})) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+      TestDataBuilder.jsonResponse(
+        TestDataBuilder.build("invoice", {
+          id: invoiceId,
+          name: "Updated Invoice",
+          userIdentifier: "22222222-2222-4222-8222-222222222222",
+          merchantReference: "33333333-3333-4333-8333-333333333333",
+        }),
+      ) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
   });
 
@@ -165,9 +170,7 @@ describe("patchInvoice", () => {
   });
 
   it("returns a validation failure when the API returns a malformed payload", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse({}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse({}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
 
     const result = await patchInvoice({invoiceId, payload: {}});
 

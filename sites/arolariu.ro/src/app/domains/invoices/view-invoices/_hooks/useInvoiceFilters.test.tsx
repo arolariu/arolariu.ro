@@ -224,10 +224,7 @@ describe("useInvoiceFilters", () => {
       result.current.setFilters({classificationGroups: ["Food and non-alcoholic beverages", "Transport"]});
 
       // Assert
-      expect(mockReplace).toHaveBeenCalledWith(
-        expect.stringContaining("grp="),
-        {scroll: false},
-      );
+      expect(mockReplace).toHaveBeenCalledWith(expect.stringContaining("grp="), {scroll: false});
     });
 
     it("should remove param from URL when value is empty/null", () => {

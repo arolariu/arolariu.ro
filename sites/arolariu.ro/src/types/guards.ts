@@ -1,11 +1,11 @@
 /**
- * @fileoverview Shared runtime type guards for the invoice transport boundary.
- * @module types/invoices/guards
+ * @fileoverview Shared runtime type guards for untrusted application data.
+ * @module types/guards
  *
  * @remarks
- * These guards are the only primitives used to validate untrusted API JSON.
- * They exist in one place so that `Classification.ts`, `transport.ts`, and the
- * taxonomy catalog cannot drift apart.
+ * These domain-agnostic primitives are shared by runtime validation boundaries
+ * throughout the application. Domain-specific guards remain beside the types
+ * they validate.
  */
 
 /**

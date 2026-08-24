@@ -32,8 +32,7 @@ export const Default: Story = {
       }}>
       {/* Header */}
       <div style={{borderBottom: "1px solid #e5e7eb", padding: "1.5rem"}}>
-        <h2
-          style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.125rem", fontWeight: 600}}>
+        <h2 style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.125rem", fontWeight: 600}}>
           <TbScanEye style={{height: "1.5rem", width: "1.5rem", color: "#a855f7"}} />
           Analyze Invoice
         </h2>
@@ -66,7 +65,11 @@ export const Default: Story = {
             <label
               key={opt.id}
               style={{display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer"}}>
-              <input type="radio" name="profile" defaultChecked={"selected" in opt && opt.selected} />
+              <input
+                type='radio'
+                name='profile'
+                defaultChecked={"selected" in opt && opt.selected}
+              />
               {opt.label}
             </label>
           ))}
@@ -125,20 +128,16 @@ export const Queued: Story = {
         width: "100%",
       }}>
       <div style={{borderBottom: "1px solid #e5e7eb", padding: "1.5rem"}}>
-        <h2
-          style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.125rem", fontWeight: 600}}>
+        <h2 style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.125rem", fontWeight: 600}}>
           <TbScanEye style={{height: "1.5rem", width: "1.5rem", color: "#a855f7"}} />
           Analyze Invoice
         </h2>
       </div>
       <div style={{padding: "1.5rem", display: "flex", flexDirection: "column", gap: "0.75rem"}}>
         <p style={{fontSize: "0.875rem", fontWeight: 500, color: "#6b7280"}}>⏳ Analysis Queued</p>
-        <p style={{fontSize: "0.875rem", color: "#6b7280"}}>
-          Your analysis request has been queued and will be processed shortly.
-        </p>
+        <p style={{fontSize: "0.875rem", color: "#6b7280"}}>Your analysis request has been queued and will be processed shortly.</p>
         <p style={{fontSize: "0.75rem", color: "#9ca3af"}}>
-          <strong>Message ID:</strong>{" "}
-          <code style={{fontSize: "0.75rem"}}>queue-abc-12345</code>
+          <strong>Message ID:</strong> <code style={{fontSize: "0.75rem"}}>queue-abc-12345</code>
         </p>
         <button
           style={{

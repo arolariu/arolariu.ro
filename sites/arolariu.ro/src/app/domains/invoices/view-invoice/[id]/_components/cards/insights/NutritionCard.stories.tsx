@@ -20,7 +20,14 @@ type Story = StoryObj<typeof meta>;
 /** Preview of the allergen insights card layout. */
 export const Preview: Story = {
   render: () => (
-    <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "#fff", boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)", width: "360px"}}>
+    <div
+      style={{
+        borderRadius: "0.5rem",
+        border: "1px solid #e5e7eb",
+        backgroundColor: "#fff",
+        boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)",
+        width: "360px",
+      }}>
       <div style={{borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
         <h3 style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.125rem", fontWeight: 600}}>⚠️ Allergen Insights</h3>
       </div>
@@ -32,7 +39,9 @@ export const Preview: Story = {
           {name: "Unknown Sauce", status: "insufficientData", note: "Insufficient data"},
           {name: "Coffee Beans", status: null, note: "Not assessed"},
         ].map((item) => (
-          <div key={item.name} style={{borderRadius: "0.375rem", border: "1px solid #e5e7eb", padding: "0.75rem"}}>
+          <div
+            key={item.name}
+            style={{borderRadius: "0.375rem", border: "1px solid #e5e7eb", padding: "0.75rem"}}>
             <p style={{fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.5rem"}}>{item.name}</p>
             <p style={{fontSize: "0.75rem", color: item.status === "detected" ? "#dc2626" : item.status === null ? "#9ca3af" : "#6b7280"}}>
               {item.note}

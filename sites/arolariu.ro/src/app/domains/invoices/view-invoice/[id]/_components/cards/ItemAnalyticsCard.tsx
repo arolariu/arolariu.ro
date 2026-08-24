@@ -43,6 +43,7 @@
  */
 
 import {getClassificationGroup} from "@/app/domains/invoices/_utils/labelUtilities";
+import {getAllergenEvidenceLevelLabelKey, getAllergenLabelKey} from "@/types/invoices";
 import {
   Badge,
   Card,
@@ -63,7 +64,7 @@ import {
 } from "@arolariu/components";
 import {motion} from "motion/react";
 import {useLocale} from "next-intl";
-import {useTranslations} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 import {useCallback, useMemo, useState} from "react";
 import {TbAlertTriangle, TbArrowsSort, TbSearch, TbShoppingCart} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
@@ -250,9 +251,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
     const uniqueGroups = new Set(invoice.items.map((item) => getClassificationGroup(item.classification ?? null) ?? "unclassified"));
     const allAllergens = new Set(
       invoice.items.flatMap((item) =>
-        item.allergenAssessment?.status === "detected"
-          ? item.allergenAssessment.signals.map((s) => s.code)
-          : [],
+        item.allergenAssessment?.status === "detected" ? item.allergenAssessment.signals.map((s) => s.code) : [],
       ),
     );
 
@@ -305,7 +304,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
   const handleSortByQuantity = useCallback(() => handleSort("quantity"), [handleSort]);
 
   // Pre-translate unclassified label once per render
-  const unclassifiedLabel = t((m) => m.forms.invoices.filters.classificationGroups);
+  const unclassifiedLabel = t((m) => m.shared.invoices.classification.unclassified);
 
   // Empty state: no items in invoice
   if (invoice.items.length === 0) {
@@ -454,7 +453,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                                   </Tooltip>
                                 )}
                               </div>
-                              {(item.allergenAssessment?.status === "detected" && item.allergenAssessment.signals.length > 0) && (
+                              {item.allergenAssessment?.status === "detected" && item.allergenAssessment.signals.length > 0 && (
                                 <div className={styles["allergenList"]}>
                                   {item.allergenAssessment.signals.map((signal) => (
                                     <Tooltip key={signal.code}>
@@ -463,11 +462,13 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                                           variant='destructive'
                                           className={styles["allergenBadge"]}>
                                           <TbAlertTriangle className={styles["allergenIcon"]} />
-                                          {signal.code}
+                                          {t(selectorFromPath(getAllergenLabelKey(signal.code)))}
                                         </Badge>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        <p className={styles["allergenDescription"]}>{signal.evidenceLevel}</p>
+                                        <p className={styles["allergenDescription"]}>
+                                          {t(selectorFromPath(getAllergenEvidenceLevelLabelKey(signal.evidenceLevel)))}
+                                        </p>
                                       </TooltipContent>
                                     </Tooltip>
                                   ))}
@@ -476,9 +477,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant='outline'>
-                              {getClassificationGroup(item.classification ?? null) ?? unclassifiedLabel}
-                            </Badge>
+                            <Badge variant='outline'>{getClassificationGroup(item.classification ?? null) ?? unclassifiedLabel}</Badge>
                           </TableCell>
                           <TableCell>{item.price.toFixed(2)}</TableCell>
                           <TableCell>

@@ -45,9 +45,7 @@ const diverseData: AllergenFrequency[] = [
   {code: "nuts", productCount: 1, percentage: 5},
 ];
 
-const singleAllergenData: AllergenFrequency[] = [
-  {code: "milk", productCount: 3, percentage: 30},
-];
+const singleAllergenData: AllergenFrequency[] = [{code: "milk", productCount: 3, percentage: 30}];
 
 const highWarningData: AllergenFrequency[] = [
   {code: "cerealsContainingGluten", productCount: 12, percentage: 60},

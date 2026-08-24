@@ -264,8 +264,14 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantsVisibleToUser));
     activity?.SetUserContext(userIdentifier);
 
-    var invoices = await ReadInvoices(userIdentifier, cancellationToken).ConfigureAwait(false);
-    var merchantIdentifiers = MerchantVisibilityResolver.ResolveVisibleMerchantIdentifiers(invoices);
+    var invoices = await invoiceOrchestrationService
+      .ReadAllInvoiceObjects(userIdentifier, cancellationToken)
+      .ConfigureAwait(false);
+    var merchantIdentifiers = invoices
+      .Select(invoice => invoice.MerchantReference)
+      .Where(reference => reference != Guid.Empty)
+      .Distinct()
+      .ToList();
     activity?.SetTag("merchant.reference_count", merchantIdentifiers.Count);
 
     if (merchantIdentifiers.Count == 0)
@@ -355,7 +361,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoice));
     var sw = Stopwatch.StartNew();
 
-    if (updatedInvoice.ClassificationCode is not null)
+    if (!string.IsNullOrWhiteSpace(updatedInvoice.ClassificationCode))
     {
       updatedInvoice.Classification = await analysisOrchestrationService
         .ResolveManualClassificationAsync(

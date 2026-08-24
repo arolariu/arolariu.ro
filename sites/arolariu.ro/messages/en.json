@@ -1248,6 +1248,8 @@
           "title": "Update recipe"
         },
         "validation": {
+          "nameRequired": "Recipe name is required",
+          "descriptionRequired": "Recipe description is required",
           "stepRequired": "At least one step is required",
           "servingsPositive": "Servings must be a positive number",
           "totalTimeConstraint": "Total time must be at least prep + cook time"
@@ -2081,7 +2083,9 @@
           "title": "Review & Create",
           "partialError": {
             "patchFailed": "Your invoice was created but the details could not be saved. Click Retry to try again.",
+            "scansFailed": "Your invoice was created but one or more scans could not be attached. Retry to finish attaching them.",
             "retry": "Retry saving details",
+            "retryScans": "Retry attaching scans",
             "title": "Invoice partially created"
           }
         },
@@ -2107,11 +2111,13 @@
         "errors": {
           "createFailed": "Failed to create invoice. Please try again.",
           "noScansSelected": "No scans selected. Please select at least one scan.",
-          "patchFailed": "Failed to save invoice details. Please retry."
+          "patchFailed": "Failed to save invoice details. Please retry.",
+          "scanAttachFailed": "Failed to attach all selected scans. Please retry."
         },
         "toasts": {
           "created": "Invoice created successfully.",
-          "patchFailed": "Invoice was created but details could not be saved. Use Retry on the review step."
+          "patchFailed": "Invoice was created but details could not be saved. Use Retry on the review step.",
+          "scanAttachFailed": "Invoice was created but not all scans were attached. Use Retry on the review step."
         }
       },
       "filters": {
@@ -2985,6 +2991,9 @@
           "jsonSuccess": "JSON file downloaded successfully",
           "pdf": {
             "description": "Download professional invoice document",
+            "labels": {
+              "classification": "Classification"
+            },
             "title": "Export as PDF"
           },
           "pdfError": "Failed to generate PDF",
@@ -5026,6 +5035,9 @@
       "toggleTheme": "Toggle theme"
     },
     "invoices": {
+      "classification": {
+        "unclassified": "Unclassified"
+      },
       "commandPalette": {
         "actions": {
           "createInvoice": "Create Invoice",
@@ -5232,6 +5244,11 @@
     }
   },
   "allergens": {
+    "evidenceLevels": {
+      "explicit": "Explicit",
+      "inferred": "Inferred",
+      "precautionary": "Precautionary"
+    },
     "view": {
       "notAssessed": "This product has not been assessed for allergens.",
       "status": {

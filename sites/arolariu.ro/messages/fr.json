@@ -1248,6 +1248,8 @@
           "title": "Mettre à jour la recette"
         },
         "validation": {
+          "nameRequired": "Le nom de la recette est obligatoire",
+          "descriptionRequired": "La description de la recette est obligatoire",
           "stepRequired": "Au moins une étape est requise",
           "servingsPositive": "Le nombre de portions doit être positif",
           "totalTimeConstraint": "Le temps total doit être au moins préparation + cuisson"
@@ -2081,7 +2083,9 @@
           "title": "Vérifier et créer",
           "partialError": {
             "patchFailed": "Votre facture a été créée mais les détails n'ont pas pu être enregistrés. Cliquez sur Réessayer.",
+            "scansFailed": "Votre facture a été créée, mais une ou plusieurs numérisations n'ont pas pu être jointes. Réessayez pour terminer.",
             "retry": "Réessayer d'enregistrer les détails",
+            "retryScans": "Réessayer de joindre les numérisations",
             "title": "Facture partiellement créée"
           }
         },
@@ -2107,11 +2111,13 @@
         "errors": {
           "createFailed": "Échec de la création de la facture. Veuillez réessayer.",
           "noScansSelected": "Aucun scan sélectionné. Veuillez en sélectionner au moins un.",
-          "patchFailed": "Impossible d'enregistrer les détails. Veuillez réessayer."
+          "patchFailed": "Impossible d'enregistrer les détails. Veuillez réessayer.",
+          "scanAttachFailed": "Impossible de joindre toutes les numérisations sélectionnées. Veuillez réessayer."
         },
         "toasts": {
           "created": "Facture créée avec succès.",
-          "patchFailed": "Facture créée mais les détails n'ont pas pu être enregistrés. Réessayez depuis l'étape de révision."
+          "patchFailed": "Facture créée mais les détails n'ont pas pu être enregistrés. Réessayez depuis l'étape de révision.",
+          "scanAttachFailed": "La facture a été créée, mais toutes les numérisations n'ont pas été jointes. Réessayez depuis l'étape de vérification."
         }
       },
       "filters": {
@@ -2985,6 +2991,9 @@
           "jsonSuccess": "Fichier JSON téléchargé avec succès",
           "pdf": {
             "description": "Télécharger un document de facture professionnel",
+            "labels": {
+              "classification": "Classification"
+            },
             "title": "Exporter en PDF"
           },
           "pdfError": "Échec de la génération du PDF",
@@ -5026,6 +5035,9 @@
       "toggleTheme": "Basculer le thème"
     },
     "invoices": {
+      "classification": {
+        "unclassified": "Non classifié"
+      },
       "commandPalette": {
         "actions": {
           "createInvoice": "Créer une facture",
@@ -5232,6 +5244,11 @@
     }
   },
   "allergens": {
+    "evidenceLevels": {
+      "explicit": "Explicite",
+      "inferred": "Déduite",
+      "precautionary": "Précaution"
+    },
     "view": {
       "signal": {
         "evidenceLevel": "Niveau de preuve",

@@ -14,8 +14,7 @@
  */
 
 import ClassificationPicker from "@/app/domains/invoices/_components/classification/ClassificationPicker";
-import type {ClassificationSelection} from "@/types/invoices";
-import {ClassificationSystem, PaymentType} from "@/types/invoices";
+import {ClassificationSystem, PaymentType, type ClassificationSelection} from "@/types/invoices";
 import {
   Button,
   Calendar,
@@ -82,8 +81,16 @@ function ScanThumbnail({scan}: Readonly<{scan: {name: string; blobUrl: string; s
  */
 export default function InvoiceDetailsForm(): React.JSX.Element {
   const t = useTranslations();
-  const {invoiceDetails, setName, setPaymentType, setTransactionDate, setDescription, classificationSelection, setClassification, selectedScans} =
-    useCreateInvoiceContext();
+  const {
+    invoiceDetails,
+    setName,
+    setPaymentType,
+    setTransactionDate,
+    setDescription,
+    classificationSelection,
+    setClassification,
+    selectedScans,
+  } = useCreateInvoiceContext();
 
   /** Updates the invoice name as the user types. */
   const handleNameChange = useCallback(
@@ -210,15 +217,17 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
             <div className={styles["formField"]}>
               <Label htmlFor='transaction-date'>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.transactionDate.label)}</Label>
               <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    id='transaction-date'
-                    variant='outline'
-                    className={styles["dateButton"]}>
-                    <TbCalendar className={styles["calendarIcon"]} />
-                    {dateFormatter.format(invoiceDetails.transactionDate)}
-                  </Button>
-                </PopoverTrigger>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      id='transaction-date'
+                      variant='outline'
+                      className={styles["dateButton"]}>
+                      <TbCalendar className={styles["calendarIcon"]} />
+                      {dateFormatter.format(invoiceDetails.transactionDate)}
+                    </Button>
+                  }
+                />
                 <PopoverContent
                   className={styles["calendarPopover"]}
                   align='start'>
@@ -226,7 +235,6 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
                     mode='single'
                     selected={invoiceDetails.transactionDate}
                     onSelect={handleTransactionDateChange}
-                    autoFocus
                   />
                 </PopoverContent>
               </Popover>

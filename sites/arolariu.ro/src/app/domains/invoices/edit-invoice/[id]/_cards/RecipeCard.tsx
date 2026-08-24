@@ -1,7 +1,6 @@
 "use client";
 
-import {AllergenCode, RecipeDifficulty, type RecipeSuggestion} from "@/types/invoices";
-import {getAllergenLabelKey} from "../../../_components/allergens/allergenLabels";
+import {RecipeDifficulty, getAllergenLabelKey, type RecipeSuggestion} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -21,23 +20,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {selectorFromPath} from "next-intl-selector";
-import {useTranslations} from "next-intl-selector";
-import {
-  TbClock,
-  TbEdit,
-  TbHeart,
-  TbLayoutBottombarExpand,
-  TbSeparatorHorizontal,
-  TbTrash,
-  TbToolsKitchen,
-  TbUsers,
-} from "react-icons/tb";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
+import {TbClock, TbEdit, TbHeart, TbLayoutBottombarExpand, TbSeparatorHorizontal, TbTrash, TbToolsKitchen, TbUsers} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./RecipeCard.module.scss";
 
 type Props = {
-  recipe: RecipeSuggestion;
+  readonly recipe: RecipeSuggestion;
+  readonly recipeIndex: number;
 };
 
 function getDifficultyBadgeVariant(difficulty: RecipeDifficulty): "default" | "secondary" | "outline" {
@@ -68,15 +58,28 @@ function getDifficultyBadgeVariant(difficulty: RecipeDifficulty): "default" | "s
  * @param props - Component properties containing the recipe to display
  * @returns Client-rendered card with recipe details and action menu
  */
-export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element {
+export default function RecipeCard({recipe, recipeIndex}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations();
-  const {name, difficulty, description, purchasedIngredients, assumedPantryStaples, missingOptionalIngredients, preparationMinutes, cookingMinutes, totalMinutes, servings, allergenWarnings, steps} = recipe;
+  const {
+    name,
+    difficulty,
+    description,
+    purchasedIngredients,
+    assumedPantryStaples,
+    missingOptionalIngredients,
+    preparationMinutes,
+    cookingMinutes,
+    totalMinutes,
+    servings,
+    allergenWarnings,
+    steps,
+  } = recipe;
 
   const totalIngredients = purchasedIngredients.length + assumedPantryStaples.length + missingOptionalIngredients.length;
 
-  const {open: openEditDialog} = useDialog("EDIT_INVOICE__RECIPE_UPDATE", "edit", {recipe});
+  const {open: openEditDialog} = useDialog("EDIT_INVOICE__RECIPE_UPDATE", "edit", {recipe, recipeIndex});
   const {open: openViewDialog} = useDialog("EDIT_INVOICE__RECIPE_PREVIEW", "view", {recipe});
-  const {open: openDeleteDialog} = useDialog("EDIT_INVOICE__RECIPE_DELETE", "delete", {recipe});
+  const {open: openDeleteDialog} = useDialog("EDIT_INVOICE__RECIPE_DELETE", "delete", {recipe, recipeIndex});
 
   return (
     <Card className={styles["card"]}>
@@ -139,9 +142,7 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
           <span className={styles["metaItem"]}>
             {t((m) => m.cards.invoices.recipeCard.ingredients.total, {count: String(totalIngredients)})}
           </span>
-          <span className={styles["metaItem"]}>
-            {t((m) => m.cards.invoices.recipeCard.steps.count, {count: String(steps.length)})}
-          </span>
+          <span className={styles["metaItem"]}>{t((m) => m.cards.invoices.recipeCard.steps.count, {count: String(steps.length)})}</span>
         </div>
 
         <div className={styles["timingRow"]}>
@@ -199,7 +200,7 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
                   key={code}
                   variant='destructive'
                   className={styles["allergenBadge"]}>
-                  {t(selectorFromPath(getAllergenLabelKey(code as AllergenCode)))}
+                  {t(selectorFromPath(getAllergenLabelKey(code)))}
                 </Badge>
               ))}
             </div>

@@ -10,14 +10,19 @@
  * list — free-text allergen names are no longer accepted.
  */
 
-import type {AllergenAssessment} from "@/types/invoices/Allergen";
+import {AllergenAssessmentStatus, type AllergenAssessment} from "@/types/invoices/Allergen";
 import {Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useState} from "react";
 import {AllergenAssessmentEditor} from "../../../_components/allergens/AllergenAssessmentEditor";
 import {updateInvoiceProduct} from "../../../_actions/invoices";
 import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./AllergenDialog.module.scss";
+
+const DEFAULT_EDITABLE_ASSESSMENT: AllergenAssessment = {
+  status: AllergenAssessmentStatus.NoSignals,
+  signals: [],
+};
 
 /**
  * Dialog for editing the structured allergen assessment of a single product.
@@ -45,22 +50,13 @@ export default function AllergenDialog(): React.JSX.Element | null {
     close,
   } = useDialog("EDIT_INVOICE__ALLERGENS");
 
-  const {invoice, product, productIndex} = payload;
+  const {invoice, product} = payload;
 
-  const [assessment, setAssessment] = useState<AllergenAssessment | null>(product?.allergenAssessment ?? null);
+  const [assessment, setAssessment] = useState<AllergenAssessment>(product.allergenAssessment ?? DEFAULT_EDITABLE_ASSESSMENT);
+  const [isAssessmentValid, setIsAssessmentValid] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    setAssessment(product?.allergenAssessment ?? null);
-    setIsSaving(false);
-  }, [product]);
-
   const handleSave = useCallback(async () => {
-    if (!invoice || !product || productIndex === undefined) {
-      toast.error(t((m) => m.dialogs.invoices.allergenDialog.errors.missingData));
-      return;
-    }
-
     setIsSaving(true);
 
     try {
@@ -90,17 +86,13 @@ export default function AllergenDialog(): React.JSX.Element | null {
         console.error("Failed to save allergen assessment:", result.error);
         toast.error(t((m) => m.dialogs.invoices.allergenDialog.errors.saveFailed));
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to save allergen assessment:", error);
       toast.error(t((m) => m.dialogs.invoices.allergenDialog.errors.saveFailed));
     } finally {
       setIsSaving(false);
     }
-  }, [invoice, product, productIndex, assessment, close, t]);
-
-  if (!invoice || !product || productIndex === undefined) {
-    return null;
-  }
+  }, [invoice, product, assessment, close, t]);
 
   return (
     <Dialog
@@ -116,6 +108,7 @@ export default function AllergenDialog(): React.JSX.Element | null {
           <AllergenAssessmentEditor
             value={assessment}
             onChange={setAssessment}
+            onValidityChange={setIsAssessmentValid}
           />
         </div>
 
@@ -128,7 +121,7 @@ export default function AllergenDialog(): React.JSX.Element | null {
           </Button>
           <Button
             onClick={handleSave}
-            disabled={isSaving}>
+            disabled={isSaving || !isAssessmentValid}>
             {isSaving
               ? t((m) => m.dialogs.invoices.allergenDialog.buttons.saving)
               : t((m) => m.dialogs.invoices.allergenDialog.buttons.save)}

@@ -76,7 +76,7 @@ describe("useRecipeDelete", () => {
 
       const {result} = renderHook(() => useRecipeDelete(testInvoice));
       await act(async () => {
-        await result.current.removeRecipeCallback("Recipe 2");
+        await result.current.removeRecipeCallback(1);
       });
 
       expect(mockedPatch).toHaveBeenCalledTimes(1);
@@ -93,7 +93,7 @@ describe("useRecipeDelete", () => {
 
       const {result} = renderHook(() => useRecipeDelete(singleRecipeInvoice));
       await act(async () => {
-        await result.current.removeRecipeCallback(testRecipes[0]!.name);
+        await result.current.removeRecipeCallback(0);
       });
 
       expect(mockedPatch).toHaveBeenCalledWith({
@@ -108,7 +108,7 @@ describe("useRecipeDelete", () => {
       const {result} = renderHook(() => useRecipeDelete(testInvoice));
       await expect(
         act(async () => {
-          await result.current.removeRecipeCallback("Recipe 1");
+          await result.current.removeRecipeCallback(0);
         }),
       ).rejects.toThrow("Server error");
 
@@ -123,7 +123,7 @@ describe("useRecipeDelete", () => {
       const {result} = renderHook(() => useRecipeDelete(testInvoice));
       let returned: Invoice | undefined;
       await act(async () => {
-        returned = await result.current.removeRecipeCallback("Recipe 1");
+        returned = await result.current.removeRecipeCallback(0);
       });
 
       expect(updateEntitySpy).toHaveBeenCalledTimes(1);
@@ -137,7 +137,7 @@ describe("useRecipeDelete", () => {
       mockedPatch.mockResolvedValue({success: true, data: {...testInvoice, possibleRecipes: [testRecipes[1]!, testRecipes[2]!]}});
       const {result} = renderHook(() => useRecipeDelete(testInvoice));
       await act(async () => {
-        await result.current.removeRecipeCallback("Recipe 1");
+        await result.current.removeRecipeCallback(0);
       });
       expect(result.current.isDeleting).toBe(false);
     });
@@ -147,7 +147,7 @@ describe("useRecipeDelete", () => {
       const {result} = renderHook(() => useRecipeDelete(testInvoice));
       await act(async () => {
         try {
-          await result.current.removeRecipeCallback("Recipe 1");
+          await result.current.removeRecipeCallback(0);
         } catch {
           /* expected */
         }
@@ -156,21 +156,39 @@ describe("useRecipeDelete", () => {
     });
   });
 
-  describe("edge cases", () => {
-    it("is case-sensitive for recipe names", async () => {
-      const serverInvoice = {...testInvoice, possibleRecipes: testRecipes};
-      mockedPatch.mockResolvedValue({success: true, data: serverInvoice});
+  describe("identity and bounds", () => {
+    it("removes only the selected position when recipe names are duplicated", async () => {
+      const duplicateRecipes = [
+        {...testRecipes[0]!, name: "Duplicate", description: "First"},
+        {...testRecipes[1]!, name: "Duplicate", description: "Second"},
+      ];
+      const duplicateInvoice = {...testInvoice, possibleRecipes: duplicateRecipes};
+      mockedPatch.mockResolvedValue({
+        success: true,
+        data: {...duplicateInvoice, possibleRecipes: [duplicateRecipes[1]!]},
+      });
 
-      const {result} = renderHook(() => useRecipeDelete(testInvoice));
+      const {result} = renderHook(() => useRecipeDelete(duplicateInvoice));
       await act(async () => {
-        await result.current.removeRecipeCallback("recipe 1"); // lowercase — no match
+        await result.current.removeRecipeCallback(0);
       });
 
-      // No recipes removed — full collection sent
       expect(mockedPatch).toHaveBeenCalledWith({
-        invoiceId: testInvoice.id,
-        payload: {possibleRecipes: testRecipes},
+        invoiceId: duplicateInvoice.id,
+        payload: {possibleRecipes: [duplicateRecipes[1]!]},
       });
+    });
+
+    it("rejects an out-of-range position before calling the server", async () => {
+      const {result} = renderHook(() => useRecipeDelete(testInvoice));
+
+      await expect(
+        act(async () => {
+          await result.current.removeRecipeCallback(99);
+        }),
+      ).rejects.toThrow(RangeError);
+
+      expect(mockedPatch).not.toHaveBeenCalled();
     });
   });
 });

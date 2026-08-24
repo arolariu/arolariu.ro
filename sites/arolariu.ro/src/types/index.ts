@@ -19,6 +19,9 @@
 import type {User} from "@clerk/nextjs/server";
 import type {Route} from "next";
 
+// Re-export domain-agnostic runtime validation primitives.
+export {hasOnlyKeys, isArrayOf, isBoolean, isFiniteNumber, isNonEmptyString, isRecord} from "./guards";
+
 // Re-export scan types
 export {ScanStatus, ScanType} from "./scans";
 export type {CachedScan, Scan} from "./scans";

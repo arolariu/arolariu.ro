@@ -262,9 +262,7 @@ describe("ProductBuilder", () => {
       expect(product.totalPrice).toBe(largeNumber);
     });
 
-    it("should handle empty allergens array", () => {
-
-    });
+    it("should handle empty allergens array", () => {});
 
     it("should handle many allergens", () => {
       // allergenAssessment is the structured replacement for legacy allergen arrays

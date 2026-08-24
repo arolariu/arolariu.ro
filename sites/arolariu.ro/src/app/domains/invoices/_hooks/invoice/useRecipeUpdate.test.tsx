@@ -76,7 +76,7 @@ describe("useRecipeUpdate", () => {
 
       const {result} = renderHook(() => useRecipeUpdate(testInvoice));
       await act(async () => {
-        await result.current.updateRecipeCallback("Recipe 2", updatedRecipe);
+        await result.current.updateRecipeCallback(1, updatedRecipe);
       });
 
       expect(mockedPatch).toHaveBeenCalledTimes(1);
@@ -93,7 +93,7 @@ describe("useRecipeUpdate", () => {
       const {result} = renderHook(() => useRecipeUpdate(testInvoice));
       await expect(
         act(async () => {
-          await result.current.updateRecipeCallback("Recipe 1", updatedRecipe);
+          await result.current.updateRecipeCallback(0, updatedRecipe);
         }),
       ).rejects.toThrow("Server error");
 
@@ -108,7 +108,7 @@ describe("useRecipeUpdate", () => {
       const {result} = renderHook(() => useRecipeUpdate(testInvoice));
       let returned: Invoice | undefined;
       await act(async () => {
-        returned = await result.current.updateRecipeCallback("Recipe 1", updatedRecipe);
+        returned = await result.current.updateRecipeCallback(0, updatedRecipe);
       });
 
       expect(updateEntitySpy).toHaveBeenCalledTimes(1);
@@ -128,7 +128,7 @@ describe("useRecipeUpdate", () => {
       });
       const {result} = renderHook(() => useRecipeUpdate(testInvoice));
       await act(async () => {
-        await result.current.updateRecipeCallback("Recipe 1", updated);
+        await result.current.updateRecipeCallback(0, updated);
       });
       expect(result.current.isUpdating).toBe(false);
     });
@@ -139,12 +139,35 @@ describe("useRecipeUpdate", () => {
       const {result} = renderHook(() => useRecipeUpdate(testInvoice));
       await act(async () => {
         try {
-          await result.current.updateRecipeCallback("Recipe 1", updated);
+          await result.current.updateRecipeCallback(0, updated);
         } catch {
           /* expected */
         }
       });
       expect(result.current.isUpdating).toBe(false);
+    });
+  });
+
+  it("updates only the selected position when recipe names are duplicated", async () => {
+    const duplicateRecipes = [
+      {...testRecipes[0]!, name: "Duplicate", description: "First"},
+      {...testRecipes[1]!, name: "Duplicate", description: "Second"},
+    ];
+    const duplicateInvoice = {...testInvoice, possibleRecipes: duplicateRecipes};
+    const updated = {...duplicateRecipes[1]!, description: "Only second changed"};
+    mockedPatch.mockResolvedValue({
+      success: true,
+      data: {...duplicateInvoice, possibleRecipes: [duplicateRecipes[0]!, updated]},
+    });
+
+    const {result} = renderHook(() => useRecipeUpdate(duplicateInvoice));
+    await act(async () => {
+      await result.current.updateRecipeCallback(1, updated);
+    });
+
+    expect(mockedPatch).toHaveBeenCalledWith({
+      invoiceId: duplicateInvoice.id,
+      payload: {possibleRecipes: [duplicateRecipes[0]!, updated]},
     });
   });
 });

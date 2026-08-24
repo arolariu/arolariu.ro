@@ -12,16 +12,17 @@
  */
 
 import {useTranslations} from "next-intl-selector";
-import {useCallback} from "react";
+import {useCallback, type ChangeEvent} from "react";
 import {
   MERCHANT_CAPABILITY_KEYS,
   resolveMerchantCapabilities,
+  type AnalysisProfile,
+  type MerchantAnalysisCapabilities,
 } from "@/types/invoices/Analysis";
-import type {AnalysisProfile, MerchantAnalysisCapabilities} from "@/types/invoices/Analysis";
 import styles from "./MerchantAnalysisControls.module.scss";
 
 /** Props for {@link MerchantAnalysisControls}. */
-interface MerchantAnalysisControlsProps {
+type Props = {
   /** Currently selected analysis profile. */
   readonly profile: AnalysisProfile;
   /** Current capability set (controlled). */
@@ -35,7 +36,7 @@ interface MerchantAnalysisControlsProps {
   readonly onChange: (profile: AnalysisProfile, capabilities: MerchantAnalysisCapabilities) => void;
   /** When `true`, all controls are disabled. */
   readonly disabled?: boolean;
-}
+};
 
 /** Profile values in stable order for rendering. */
 const PROFILES = ["fast", "balanced", "comprehensive"] as const satisfies readonly AnalysisProfile[];
@@ -51,6 +52,20 @@ function countEnabled(value: MerchantAnalysisCapabilities): number {
   return MERCHANT_CAPABILITY_KEYS.filter((key) => value[key]).length;
 }
 
+/** Resolves a profile value emitted by one of the rendered radio inputs. */
+function resolveProfile(value: string): AnalysisProfile {
+  const profile = PROFILES.find((candidate) => candidate === value);
+  if (profile === undefined) throw new Error(`Unsupported merchant analysis profile: ${value}`);
+  return profile;
+}
+
+/** Resolves a capability value emitted by one of the rendered checkbox inputs. */
+function resolveCapability(value: string): (typeof MERCHANT_CAPABILITY_KEYS)[number] {
+  const capability = MERCHANT_CAPABILITY_KEYS.find((candidate) => candidate === value);
+  if (capability === undefined) throw new Error(`Unsupported merchant analysis capability: ${value}`);
+  return capability;
+}
+
 /**
  * Renders profile radio buttons and per-capability checkboxes for merchant analysis.
  *
@@ -60,15 +75,10 @@ function countEnabled(value: MerchantAnalysisCapabilities): number {
  *   requestable values.
  * - Disables a capability checkbox when unchecking it would leave zero enabled.
  *
- * @param props - {@link MerchantAnalysisControlsProps}
+ * @param props - Component properties.
  * @returns The merchant capability controls section.
  */
-export default function MerchantAnalysisControls({
-  profile,
-  value,
-  onChange,
-  disabled = false,
-}: Readonly<MerchantAnalysisControlsProps>): React.JSX.Element {
+export default function MerchantAnalysisControls({profile, value, onChange, disabled = false}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations();
 
   const isCustom = !matchesPreset(profile, value);
@@ -76,7 +86,8 @@ export default function MerchantAnalysisControls({
 
   /** Handles profile radio change — always emits the preset shape. */
   const handleProfileChange = useCallback(
-    (newProfile: AnalysisProfile) => {
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const newProfile = resolveProfile(event.currentTarget.value);
       onChange(newProfile, resolveMerchantCapabilities(newProfile));
     },
     [onChange],
@@ -84,7 +95,9 @@ export default function MerchantAnalysisControls({
 
   /** Handles a single boolean capability toggle. */
   const handleCapabilityChange = useCallback(
-    (key: (typeof MERCHANT_CAPABILITY_KEYS)[number], checked: boolean) => {
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const key = resolveCapability(event.currentTarget.value);
+      const {checked} = event.currentTarget;
       onChange(profile, {...value, [key]: checked});
     },
     [value, profile, onChange],
@@ -94,50 +107,51 @@ export default function MerchantAnalysisControls({
     <div className={styles["container"]}>
       {/* ── Profile selection ── */}
       <fieldset className={styles["fieldset"]}>
-        <legend className={styles["legend"]}>
-          {t((m) => m.dialogs.invoices.merchantAnalysisControls.profilesLabel)}
-        </legend>
+        <legend className={styles["legend"]}>{t((m) => m.dialogs.invoices.merchantAnalysisControls.profilesLabel)}</legend>
         <div className={styles["radioGroup"]}>
           {PROFILES.map((p) => (
-            <label key={p} htmlFor={`merchant-profile-${p}`} className={styles["radioLabel"]}>
+            <label
+              key={p}
+              htmlFor={`merchant-profile-${p}`}
+              className={styles["radioLabel"]}>
               <input
-                type="radio"
+                type='radio'
                 id={`merchant-profile-${p}`}
-                name="merchantAnalysisProfile"
+                name='merchantAnalysisProfile'
                 value={p}
                 checked={profile === p}
                 disabled={disabled}
-                onChange={() => handleProfileChange(p)}
+                onChange={handleProfileChange}
                 className={styles["radio"]}
               />
               {t((m) => m.dialogs.invoices.merchantAnalysisControls.profiles[p])}
             </label>
           ))}
         </div>
-        {isCustom && (
-          <span className={styles["customBadge"]}>
-            {t((m) => m.dialogs.invoices.merchantAnalysisControls.customLabel)}
-          </span>
-        )}
+        {isCustom ? (
+          <span className={styles["customBadge"]}>{t((m) => m.dialogs.invoices.merchantAnalysisControls.customLabel)}</span>
+        ) : null}
       </fieldset>
 
       {/* ── Capability checkboxes ── */}
       <fieldset className={styles["fieldset"]}>
-        <legend className={styles["legend"]}>
-          {t((m) => m.dialogs.invoices.merchantAnalysisControls.capabilitiesLabel)}
-        </legend>
+        <legend className={styles["legend"]}>{t((m) => m.dialogs.invoices.merchantAnalysisControls.capabilitiesLabel)}</legend>
         <div className={styles["checkboxGroup"]}>
           {MERCHANT_CAPABILITY_KEYS.map((key) => {
             const isEnabled = value[key];
             const isLastEnabled = isEnabled && enabledCount === 1;
             return (
-              <label key={key} htmlFor={`merchant-capability-${key}`} className={styles["checkboxLabel"]}>
+              <label
+                key={key}
+                htmlFor={`merchant-capability-${key}`}
+                className={styles["checkboxLabel"]}>
                 <input
-                  type="checkbox"
+                  type='checkbox'
                   id={`merchant-capability-${key}`}
+                  value={key}
                   checked={isEnabled}
                   disabled={disabled || isLastEnabled}
-                  onChange={(e) => handleCapabilityChange(key, e.target.checked)}
+                  onChange={handleCapabilityChange}
                   className={styles["checkbox"]}
                 />
                 {t((m) => m.dialogs.invoices.merchantAnalysisControls.capabilities[key])}

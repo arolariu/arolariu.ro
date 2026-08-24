@@ -151,8 +151,8 @@ type DialogPayloads = {
   EDIT_INVOICE__MERCHANT: Merchant;
   EDIT_INVOICE__MERCHANT_INVOICES: Merchant;
   EDIT_INVOICE__RECIPE_ADD: undefined;
-  EDIT_INVOICE__RECIPE_UPDATE: {recipe: RecipeSuggestion};
-  EDIT_INVOICE__RECIPE_DELETE: {recipe: RecipeSuggestion};
+  EDIT_INVOICE__RECIPE_UPDATE: {recipe: RecipeSuggestion; recipeIndex: number};
+  EDIT_INVOICE__RECIPE_DELETE: {recipe: RecipeSuggestion; recipeIndex: number};
   EDIT_INVOICE__RECIPE_PREVIEW: {recipe: RecipeSuggestion};
   EDIT_INVOICE__METADATA: Record<string, string>;
   EDIT_INVOICE__ITEMS: Invoice;

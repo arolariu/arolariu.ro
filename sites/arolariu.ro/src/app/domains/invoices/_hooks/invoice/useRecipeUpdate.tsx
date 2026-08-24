@@ -5,7 +5,7 @@
  * @module app/domains/invoices/_hooks/invoice/useRecipeUpdate
  *
  * @remarks
- * Computes the full updated `possibleRecipes` collection after substituting the named
+ * Computes the full updated `possibleRecipes` collection after substituting one indexed
  * recipe, sends it to the server via `patchInvoice`, and only updates the local Zustand
  * store on a successful response.
  */
@@ -22,20 +22,20 @@ type HookOutputType = Readonly<{
   /** Whether a recipe update operation is in progress. */
   isUpdating: boolean;
   /**
-   * Replaces recipes whose `name` equals `recipeName` with `updated`, persists the
+   * Replaces the recipe at `recipeIndex` with `updated`, persists the
    * full replacement collection through the server, then updates the local store.
    *
    * @throws When the server action reports failure.
    */
-  updateRecipeCallback: (recipeName: string, updated: RecipeSuggestion) => Promise<Invoice>;
+  updateRecipeCallback: (recipeIndex: number, updated: RecipeSuggestion) => Promise<Invoice>;
 }>;
 
 /**
  * Manages updating recipes on the current invoice, persisting via the server contract.
  *
  * @remarks
- * Recipe matching is name-based; every recipe whose `name` exactly equals `recipeName`
- * is replaced. The hook sends the full replacement array via `patchInvoice` and only
+ * The array position is the mutation identity because the transport contract does not
+ * expose a recipe identifier and names are not unique. The hook sends the full replacement array via `patchInvoice` and only
  * updates the local invoice store after a successful server response.
  *
  * @param invoice - The invoice on which the recipe will be updated.
@@ -45,7 +45,7 @@ type HookOutputType = Readonly<{
  * ```tsx
  * const {isUpdating, updateRecipeCallback} = useRecipeUpdate(invoice);
  * try {
- *   await updateRecipeCallback("Dinner idea", updatedRecipe);
+ *   await updateRecipeCallback(0, updatedRecipe);
  * } catch (error) {
  *   // show error toast — local state was NOT mutated
  * }
@@ -56,10 +56,13 @@ export function useRecipeUpdate(invoice: Invoice): Readonly<HookOutputType> {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const updateRecipeCallback = useCallback(
-    async (recipeName: string, updated: RecipeSuggestion): Promise<Invoice> => {
+    async (recipeIndex: number, updated: RecipeSuggestion): Promise<Invoice> => {
       setIsUpdating(true);
       try {
-        const updatedRecipes = invoice.possibleRecipes.map((r) => (r.name === recipeName ? updated : r));
+        if (!Number.isSafeInteger(recipeIndex) || recipeIndex < 0 || recipeIndex >= invoice.possibleRecipes.length) {
+          throw new RangeError(`Recipe index ${String(recipeIndex)} is outside the invoice recipe collection.`);
+        }
+        const updatedRecipes = invoice.possibleRecipes.map((recipe, index) => (index === recipeIndex ? updated : recipe));
         const result = await patchInvoice({
           invoiceId: invoice.id,
           payload: {possibleRecipes: [...updatedRecipes]},

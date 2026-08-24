@@ -27,7 +27,10 @@
  */
 
 import type {NamedEntity} from "../DDD";
-import type {PaymentDetail, PaymentInformation, Product, RecipeSuggestion, StandardClassification, TaxDetail} from "./index.ts";
+import type {StandardClassification} from "./Classification";
+import type {PaymentDetail, PaymentInformation, TaxDetail} from "./Payment";
+import type {Product} from "./Product";
+import type {RecipeSuggestion} from "./Recipe";
 
 /**
  * Represents the document format type of an invoice scan.
@@ -61,7 +64,7 @@ import type {PaymentDetail, PaymentInformation, Product, RecipeSuggestion, Stand
  *
  * @see {@link InvoiceScan} for the complete scan object structure
  */
-export const InvoiceScanType = {
+const INVOICE_SCAN_TYPE = {
   /** JPG image format */
   JPG: 0,
   /** JPEG image format */
@@ -82,7 +85,9 @@ export const InvoiceScanType = {
   HEIF: 8,
   // HEIC (9) removed: backend InvoiceScan.type only accepts values 0–8
 } as const;
-export type InvoiceScanType = (typeof InvoiceScanType)[keyof typeof InvoiceScanType];
+
+export {INVOICE_SCAN_TYPE as InvoiceScanType};
+export type InvoiceScanType = (typeof INVOICE_SCAN_TYPE)[keyof typeof INVOICE_SCAN_TYPE];
 
 /**
  * Represents a value that can be stored in InvoiceScan metadata.

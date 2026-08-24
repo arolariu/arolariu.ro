@@ -52,6 +52,24 @@ export type UseInvoiceFiltersReturn = {
   activeFilterCount: number;
 };
 
+function setOptionalParameter(params: URLSearchParams, key: string, value: string | null): void {
+  if (value === null || value.length === 0) {
+    params.delete(key);
+  } else {
+    params.set(key, value);
+  }
+}
+
+function setSortParameters(params: URLSearchParams, sortBy: FilterState["sortBy"], sortOrder: FilterState["sortOrder"]): void {
+  if (sortBy !== null && sortOrder !== null && (sortBy !== "date" || sortOrder !== "desc")) {
+    params.set("sortBy", sortBy);
+    params.set("sortOrder", sortOrder);
+  } else {
+    params.delete("sortBy");
+    params.delete("sortOrder");
+  }
+}
+
 /**
  * Custom hook for managing invoice filter state via URL search parameters.
  *
@@ -188,75 +206,20 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
    * @param newFilters - Partial filter state to merge with existing filters
    */
   const setFilters = useCallback(
-    (newFilters: Partial<FilterState>) => {
+    (newFilters: Partial<FilterState>): void => {
       const params = new URLSearchParams(searchParams.toString());
-
       const merged = {...filters, ...newFilters};
 
-      // Set or delete each param based on value
-      if (merged.search) {
-        params.set("q", merged.search);
-      } else {
-        params.delete("q");
-      }
-
-      if (merged.dateFrom) {
-        params.set("from", merged.dateFrom);
-      } else {
-        params.delete("from");
-      }
-
-      if (merged.dateTo) {
-        params.set("to", merged.dateTo);
-      } else {
-        params.delete("to");
-      }
-
-      if (merged.amountMin === null) {
-        params.delete("min");
-      } else {
-        params.set("min", String(merged.amountMin));
-      }
-
-      if (merged.amountMax === null) {
-        params.delete("max");
-      } else {
-        params.set("max", String(merged.amountMax));
-      }
-
-      if (merged.classificationGroups.length > 0) {
-        params.set("grp", merged.classificationGroups.join(","));
-      } else {
-        params.delete("grp");
-      }
-
-      if (merged.paymentTypes.length > 0) {
-        params.set("pay", merged.paymentTypes.join(","));
-      } else {
-        params.delete("pay");
-      }
-
-      if (merged.currencies.length > 0) {
-        params.set("cur", merged.currencies.join(","));
-      } else {
-        params.delete("cur");
-      }
-
-      // Sort params: write only when value differs from the new default
-      // (default = date/desc → no params in URL keeps it clean)
-      if (merged.sortBy && merged.sortOrder && !(merged.sortBy === "date" && merged.sortOrder === "desc")) {
-        params.set("sortBy", merged.sortBy);
-        params.set("sortOrder", merged.sortOrder);
-      } else {
-        params.delete("sortBy");
-        params.delete("sortOrder");
-      }
-
-      if (merged.view === "table") {
-        params.delete("view");
-      } else {
-        params.set("view", merged.view);
-      }
+      setOptionalParameter(params, "q", merged.search);
+      setOptionalParameter(params, "from", merged.dateFrom);
+      setOptionalParameter(params, "to", merged.dateTo);
+      setOptionalParameter(params, "min", merged.amountMin === null ? null : String(merged.amountMin));
+      setOptionalParameter(params, "max", merged.amountMax === null ? null : String(merged.amountMax));
+      setOptionalParameter(params, "grp", merged.classificationGroups.join(","));
+      setOptionalParameter(params, "pay", merged.paymentTypes.join(","));
+      setOptionalParameter(params, "cur", merged.currencies.join(","));
+      setSortParameters(params, merged.sortBy, merged.sortOrder);
+      setOptionalParameter(params, "view", merged.view === "table" ? null : merged.view);
 
       // Replace URL without adding to history or scrolling
       // Only add '?' if there are parameters, otherwise keep pathname clean

@@ -48,7 +48,7 @@ export type AnalysisSubmissionStatus = "idle" | "submitting" | "queued" | "error
 /**
  * Options accepted by {@link useAnalysisSubmission}.
  */
-export interface UseAnalysisSubmissionOptions {
+type HookInputType = Readonly<{
   /** Whether to target an invoice or a merchant analysis endpoint. */
   readonly target: "invoice" | "merchant";
   /** UUIDv4 of the invoice or merchant to analyse. */
@@ -60,12 +60,12 @@ export interface UseAnalysisSubmissionOptions {
    * @defaultValue false
    */
   readonly scheduleRefresh?: boolean;
-}
+}>;
 
 /**
  * Return shape of {@link useAnalysisSubmission}.
  */
-export interface UseAnalysisSubmissionResult {
+type HookOutputType = Readonly<{
   /**
    * Current state of the submission.
    *
@@ -91,6 +91,24 @@ export interface UseAnalysisSubmissionResult {
   readonly refreshNow: () => void;
   /** Resets state back to `idle` and cancels any pending scheduled refresh. */
   readonly reset: () => void;
+}>;
+
+/** Submits a request to the invoice analysis action with invoice-shaped overrides. */
+async function submitInvoiceAnalysis(
+  identifier: string,
+  request: InvoiceAnalysisRequest | MerchantAnalysisRequest,
+): ReturnType<typeof analyzeInvoice> {
+  const {profile, ...overrides} = request as InvoiceAnalysisRequest;
+  return analyzeInvoice({invoiceIdentifier: identifier, profile, overrides});
+}
+
+/** Submits a request to the merchant analysis action with merchant-shaped overrides. */
+async function submitMerchantAnalysis(
+  identifier: string,
+  request: InvoiceAnalysisRequest | MerchantAnalysisRequest,
+): ReturnType<typeof analyzeMerchant> {
+  const {profile, ...overrides} = request as MerchantAnalysisRequest;
+  return analyzeMerchant({merchantIdentifier: identifier, profile, overrides});
 }
 
 // ── Hook ────────────────────────────────────────────────────────────────────
@@ -108,9 +126,9 @@ export interface UseAnalysisSubmissionResult {
  * `"completed"` status, no progress number, and never polls.  The UI must not
  * imply that analysis has finished when status is `"queued"`.
  *
- * Timer cleanup is keyed on `identifier`: changing the identifier (or
- * unmounting) cancels any pending refresh timer.  At most one refresh is
- * ever scheduled per successful submission.
+ * Timer cleanup is keyed on `identifier` and `target`: changing either (or
+ * unmounting) cancels any pending refresh timer. At most one refresh is ever
+ * scheduled per successful submission.
  *
  * @example
  * ```tsx
@@ -123,11 +141,7 @@ export interface UseAnalysisSubmissionResult {
  * // status is "idle" | "submitting" | "queued" | "error" — never "completed"
  * ```
  */
-export function useAnalysisSubmission({
-  target,
-  identifier,
-  scheduleRefresh = false,
-}: Readonly<UseAnalysisSubmissionOptions>): UseAnalysisSubmissionResult {
+export function useAnalysisSubmission({target, identifier, scheduleRefresh = false}: HookInputType): HookOutputType {
   const router = useRouter();
 
   const [status, setStatus] = useState<AnalysisSubmissionStatus>("idle");
@@ -139,7 +153,7 @@ export function useAnalysisSubmission({
   /** Guards against state updates after the component has unmounted. */
   const mountedRef = useRef(true);
 
-  // Cancel any pending refresh timer when identifier changes or on unmount.
+  // Cancel any pending refresh timer when identifier/target changes or on unmount.
   useEffect(() => {
     return () => {
       if (timerRef.current !== null) {
@@ -147,7 +161,7 @@ export function useAnalysisSubmission({
         timerRef.current = null;
       }
     };
-  }, [identifier]);
+  }, [identifier, target]);
 
   // Track mount state to prevent setState after unmount.
   useEffect(() => {
@@ -175,6 +189,15 @@ export function useAnalysisSubmission({
     setErrorMessage(null);
   }, []);
 
+  const scheduleQueuedRefresh = useCallback((): void => {
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      if (mountedRef.current) {
+        router.refresh();
+      }
+    }, ANALYSIS_REFRESH_DELAY_MS);
+  }, [router]);
+
   const submit = useCallback(
     async (request: InvoiceAnalysisRequest | MerchantAnalysisRequest): Promise<void> => {
       // Clear any stale timer from a previous submission.
@@ -189,15 +212,8 @@ export function useAnalysisSubmission({
       setErrorMessage(null);
 
       try {
-        let actionResult: Awaited<ReturnType<typeof analyzeInvoice>>;
-
-        if (target === "invoice") {
-          const {profile, ...overrides} = request as InvoiceAnalysisRequest;
-          actionResult = await analyzeInvoice({invoiceIdentifier: identifier, profile, overrides});
-        } else {
-          const {profile, ...overrides} = request as MerchantAnalysisRequest;
-          actionResult = await analyzeMerchant({merchantIdentifier: identifier, profile, overrides});
-        }
+        const actionResult =
+          target === "invoice" ? await submitInvoiceAnalysis(identifier, request) : await submitMerchantAnalysis(identifier, request);
 
         if (!mountedRef.current) return;
 
@@ -206,12 +222,7 @@ export function useAnalysisSubmission({
           setMessageId(actionResult.data);
 
           if (scheduleRefresh) {
-            timerRef.current = setTimeout(() => {
-              timerRef.current = null;
-              if (mountedRef.current) {
-                router.refresh();
-              }
-            }, ANALYSIS_REFRESH_DELAY_MS);
+            scheduleQueuedRefresh();
           }
         } else {
           setStatus("error");
@@ -223,7 +234,7 @@ export function useAnalysisSubmission({
         setErrorMessage(error instanceof Error ? error.message : "Unknown submission error");
       }
     },
-    [target, identifier, scheduleRefresh, router],
+    [target, identifier, scheduleRefresh, scheduleQueuedRefresh],
   );
 
   return {status, messageId, errorMessage, submit, refreshNow, reset} as const;

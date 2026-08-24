@@ -4,7 +4,17 @@
  */
 
 import {describe, expect, it} from "vitest";
-import {AllergenCode, isAllergenAssessment, isAllergenCode, isAllergenSignal} from "./Allergen";
+import {
+  ALLERGEN_EVIDENCE_LEVEL_LABEL_KEYS,
+  ALLERGEN_LABEL_KEYS,
+  AllergenCode,
+  AllergenEvidenceLevel,
+  getAllergenEvidenceLevelLabelKey,
+  getAllergenLabelKey,
+  isAllergenAssessment,
+  isAllergenCode,
+  isAllergenSignal,
+} from "./Allergen";
 
 // ---------------------------------------------------------------------------
 // Shared fixtures (no `any` — passed directly to `unknown`-parameter guards)
@@ -38,6 +48,23 @@ describe("isAllergenCode", () => {
 
   it("rejects empty string", () => {
     expect(isAllergenCode("")).toBe(false);
+  });
+});
+
+describe("allergen localization keys", () => {
+  it("maps all 14 EU allergen codes to distinct localized message keys", () => {
+    const codes = Object.values(AllergenCode);
+    const keys = codes.map(getAllergenLabelKey);
+
+    expect(Object.keys(ALLERGEN_LABEL_KEYS)).toHaveLength(14);
+    expect(new Set(keys).size).toBe(14);
+    expect(keys.every((key) => key.startsWith("allergens.codes."))).toBe(true);
+  });
+
+  it("maps every evidence level to its localized message key", () => {
+    for (const evidenceLevel of Object.values(AllergenEvidenceLevel)) {
+      expect(getAllergenEvidenceLevelLabelKey(evidenceLevel)).toBe(ALLERGEN_EVIDENCE_LEVEL_LABEL_KEYS[evidenceLevel]);
+    }
   });
 });
 

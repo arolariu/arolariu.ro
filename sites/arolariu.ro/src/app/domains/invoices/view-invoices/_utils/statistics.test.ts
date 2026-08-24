@@ -146,8 +146,8 @@ const FOOD_CLASSIFICATION: StandardClassification = {
   version: "2",
   hierarchy: [
     {level: "division", code: "01", officialLabel: "Food and non-alcoholic beverages"},
-    {level: "group",    code: "01.1", officialLabel: "Food"},
-    {level: "class",    code: "01.1.1", officialLabel: "Cereals and cereal products (ND)"},
+    {level: "group", code: "01.1", officialLabel: "Food"},
+    {level: "class", code: "01.1.1", officialLabel: "Cereals and cereal products (ND)"},
   ],
   origin: ClassificationOrigin.Analysis,
   confidence: 0.9,
@@ -162,8 +162,8 @@ const RESTAURANT_CLASSIFICATION: StandardClassification = {
   version: "2",
   hierarchy: [
     {level: "division", code: "11", officialLabel: "Restaurants and accommodation services"},
-    {level: "group",    code: "11.1", officialLabel: "Food and beverage serving services"},
-    {level: "class",    code: "11.1.1", officialLabel: "Restaurants, cafés and the like (S)"},
+    {level: "group", code: "11.1", officialLabel: "Food and beverage serving services"},
+    {level: "class", code: "11.1.1", officialLabel: "Restaurants, cafés and the like (S)"},
   ],
   origin: ClassificationOrigin.Analysis,
   confidence: 0.9,
@@ -178,7 +178,7 @@ const GPC_FOOD_CLASSIFICATION: StandardClassification = {
   version: "2026-05",
   hierarchy: [
     {level: "segment", code: "50000000", officialLabel: "Food/Beverage"},
-    {level: "family",  code: "50130000", officialLabel: "Milk/Butter/Cream/Yogurts/Cheese/Eggs/Substitutes"},
+    {level: "family", code: "50130000", officialLabel: "Milk/Butter/Cream/Yogurts/Cheese/Eggs/Substitutes"},
   ],
   origin: ClassificationOrigin.Analysis,
   confidence: 0.9,
@@ -193,7 +193,7 @@ const GPC_CLEANING_CLASSIFICATION: StandardClassification = {
   version: "2026-05",
   hierarchy: [
     {level: "segment", code: "47000000", officialLabel: "Cleaning/Hygiene Products"},
-    {level: "family",  code: "47100000", officialLabel: "Cleaning Products"},
+    {level: "family", code: "47100000", officialLabel: "Cleaning Products"},
   ],
   origin: ClassificationOrigin.Analysis,
   confidence: 0.9,
@@ -882,8 +882,8 @@ describe("Statistics Functions", () => {
       const result = computeProductClassificationSpending(invoices);
 
       expect(result[0]?.category).toBe("Cleaning/Hygiene Products"); // 150
-      expect(result[1]?.category).toBe("unclassified");              // 100
-      expect(result[2]?.category).toBe("Food/Beverage");             // 50
+      expect(result[1]?.category).toBe("unclassified"); // 100
+      expect(result[2]?.category).toBe("Food/Beverage"); // 50
     });
 
     it("should count null-classification products in unclassified bucket", () => {
@@ -1007,9 +1007,18 @@ describe("Statistics Functions", () => {
 
     it("should count allergen signal occurrences across assessed products", () => {
       const products = [
-        createTestProduct({allergenAssessment: {status: "detected", signals: [{code: "milk", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]}}),
-        createTestProduct({allergenAssessment: {status: "detected", signals: [{code: "milk", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]}}),
-        createTestProduct({allergenAssessment: {status: "detected", signals: [{code: "cerealsContainingGluten", evidenceLevel: "explicit", confidence: 0.95, evidence: []}]}}),
+        createTestProduct({
+          allergenAssessment: {status: "detected", signals: [{code: "milk", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]},
+        }),
+        createTestProduct({
+          allergenAssessment: {status: "detected", signals: [{code: "milk", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]},
+        }),
+        createTestProduct({
+          allergenAssessment: {
+            status: "detected",
+            signals: [{code: "cerealsContainingGluten", evidenceLevel: "explicit", confidence: 0.95, evidence: []}],
+          },
+        }),
       ];
 
       const invoices = [createTestInvoice({items: products})];
@@ -1025,7 +1034,9 @@ describe("Statistics Functions", () => {
 
     it("should compute percentages correctly (denominator = assessed products only)", () => {
       const products = [
-        createTestProduct({allergenAssessment: {status: "detected", signals: [{code: "milk", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]}}),
+        createTestProduct({
+          allergenAssessment: {status: "detected", signals: [{code: "milk", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]},
+        }),
         createTestProduct({allergenAssessment: {status: "noSignals", signals: []}}),
       ];
 
@@ -1036,11 +1047,32 @@ describe("Statistics Functions", () => {
       expect(result[0]?.percentage).toBe(50.0);
     });
 
+    it("counts one product only once when duplicate signals share an allergen code", () => {
+      const duplicateMilkSignals = createTestProduct({
+        allergenAssessment: {
+          status: "detected",
+          signals: [
+            {code: "milk", evidenceLevel: "explicit", confidence: 0.9, evidence: []},
+            {code: "milk", evidenceLevel: "inferred", confidence: 0.7, evidence: []},
+          ],
+        },
+      });
+
+      const result = computeAllergenFrequency([createTestInvoice({items: [duplicateMilkSignals]})]);
+
+      expect(result).toEqual([{code: "milk", productCount: 1, percentage: 100}]);
+    });
+
     it("should skip soft-deleted products", () => {
       const products = [
-        createTestProduct({allergenAssessment: {status: "detected", signals: [{code: "milk", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]}}),
         createTestProduct({
-          allergenAssessment: {status: "detected", signals: [{code: "cerealsContainingGluten", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]},
+          allergenAssessment: {status: "detected", signals: [{code: "milk", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]},
+        }),
+        createTestProduct({
+          allergenAssessment: {
+            status: "detected",
+            signals: [{code: "cerealsContainingGluten", evidenceLevel: "explicit", confidence: 0.9, evidence: []}],
+          },
           isSoftDeleted: true,
         }),
       ];
@@ -1055,9 +1087,21 @@ describe("Statistics Functions", () => {
 
     it("should sort by product count descending", () => {
       const products = [
-        createTestProduct({allergenAssessment: {status: "detected", signals: [{code: "milk", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]}}),
-        createTestProduct({allergenAssessment: {status: "detected", signals: [{code: "cerealsContainingGluten", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]}}),
-        createTestProduct({allergenAssessment: {status: "detected", signals: [{code: "cerealsContainingGluten", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]}}),
+        createTestProduct({
+          allergenAssessment: {status: "detected", signals: [{code: "milk", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]},
+        }),
+        createTestProduct({
+          allergenAssessment: {
+            status: "detected",
+            signals: [{code: "cerealsContainingGluten", evidenceLevel: "explicit", confidence: 0.9, evidence: []}],
+          },
+        }),
+        createTestProduct({
+          allergenAssessment: {
+            status: "detected",
+            signals: [{code: "cerealsContainingGluten", evidenceLevel: "explicit", confidence: 0.9, evidence: []}],
+          },
+        }),
       ];
 
       const invoices = [createTestInvoice({items: products})];
@@ -1080,7 +1124,9 @@ describe("Statistics Functions", () => {
 
     it("should exclude unassessed products (allergenAssessment: null) from the denominator", () => {
       // 1 assessed with milk, 5 unassessed → denominator = 1, not 6
-      const assessed = createTestProduct({allergenAssessment: {status: "detected", signals: [{code: "milk", evidenceLevel: "explicit", confidence: 1, evidence: []}]}});
+      const assessed = createTestProduct({
+        allergenAssessment: {status: "detected", signals: [{code: "milk", evidenceLevel: "explicit", confidence: 1, evidence: []}]},
+      });
       const unassessed = Array.from({length: 5}, () => createTestProduct({allergenAssessment: null}));
 
       const invoices = [createTestInvoice({items: [assessed, ...unassessed]})];
@@ -1499,11 +1545,17 @@ describe("Statistics Functions", () => {
       it("should calculate percentage correctly when assessedProducts > 0", () => {
         const product1 = createTestProduct({
           name: "Product 1",
-          allergenAssessment: {status: "detected", signals: [{code: "cerealsContainingGluten", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]},
+          allergenAssessment: {
+            status: "detected",
+            signals: [{code: "cerealsContainingGluten", evidenceLevel: "explicit", confidence: 0.9, evidence: []}],
+          },
         });
         const product2 = createTestProduct({
           name: "Product 2",
-          allergenAssessment: {status: "detected", signals: [{code: "cerealsContainingGluten", evidenceLevel: "explicit", confidence: 0.9, evidence: []}]},
+          allergenAssessment: {
+            status: "detected",
+            signals: [{code: "cerealsContainingGluten", evidenceLevel: "explicit", confidence: 0.9, evidence: []}],
+          },
         });
         const product3 = createTestProduct({
           name: "Product 3",

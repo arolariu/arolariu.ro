@@ -21,21 +21,15 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 
 // ── Hoisted mock fns — must be created with vi.hoisted so they exist when
 //    vi.mock() factory runs (vi.mock is hoisted to top of file) ───────────────
-const {
-  mockCreateInvoice,
-  mockPatchInvoice,
-  mockAttachScanToInvoice,
-  mockAnalyzeInvoice,
-  mockUpdateScan,
-  mockMarkScansAsUsedByInvoice,
-} = vi.hoisted(() => ({
-  mockCreateInvoice: vi.fn(),
-  mockPatchInvoice: vi.fn(),
-  mockAttachScanToInvoice: vi.fn(),
-  mockAnalyzeInvoice: vi.fn(),
-  mockUpdateScan: vi.fn(() => Promise.resolve()),
-  mockMarkScansAsUsedByInvoice: vi.fn(),
-}));
+const {mockCreateInvoice, mockPatchInvoice, mockAttachScanToInvoice, mockAnalyzeInvoice, mockUpdateScan, mockMarkScansAsUsedByInvoice} =
+  vi.hoisted(() => ({
+    mockCreateInvoice: vi.fn(),
+    mockPatchInvoice: vi.fn(),
+    mockAttachScanToInvoice: vi.fn(),
+    mockAnalyzeInvoice: vi.fn(),
+    mockUpdateScan: vi.fn(() => Promise.resolve()),
+    mockMarkScansAsUsedByInvoice: vi.fn(),
+  }));
 
 vi.mock("../../_actions/invoices", () => ({
   createInvoice: mockCreateInvoice,
@@ -97,9 +91,7 @@ function wrapper({children}: {readonly children: ReactNode}): React.JSX.Element 
   return <CreateInvoiceProvider>{children}</CreateInvoiceProvider>;
 }
 
-async function renderReady(
-  scans = [SCAN_A],
-): Promise<RenderHookResult<ReturnType<typeof useCreateInvoiceContext>, unknown>> {
+async function renderReady(scans = [SCAN_A]): Promise<RenderHookResult<ReturnType<typeof useCreateInvoiceContext>, unknown>> {
   const result = renderHook(() => useCreateInvoiceContext(), {wrapper});
 
   for (const scan of scans) {
@@ -124,6 +116,107 @@ describe("CreateInvoiceContext — orchestration contract", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setupHappyPath();
+  });
+
+  it("supports scan selection, details updates, and forward and backward wizard navigation", () => {
+    const {result} = renderHook(() => useCreateInvoiceContext(), {wrapper});
+    const transactionDate = new Date("2026-08-24T10:00:00.000Z");
+
+    expect(result.current.currentStep).toBe("select-scans");
+    expect(result.current.canGoNext).toBe(false);
+
+    act(() => {
+      result.current.toggleScan(SCAN_A);
+    });
+    expect(result.current.canGoNext).toBe(true);
+
+    act(() => {
+      result.current.goNext();
+    });
+    expect(result.current.currentStep).toBe("details");
+    expect(result.current.invoiceDetails.name).toBe("scan-aaaa");
+
+    act(() => {
+      result.current.setName(" ");
+      result.current.setDescription("Details");
+      result.current.setTransactionDate(transactionDate);
+    });
+    expect(result.current.canGoNext).toBe(false);
+    expect(result.current.invoiceDetails.description).toBe("Details");
+    expect(result.current.invoiceDetails.transactionDate).toBe(transactionDate);
+
+    act(() => {
+      result.current.setName("Ready");
+      result.current.goNext();
+    });
+    expect(result.current.currentStep).toBe("review");
+    expect(result.current.canGoNext).toBe(false);
+
+    act(() => {
+      result.current.goBack();
+    });
+    expect(result.current.currentStep).toBe("details");
+    act(() => {
+      result.current.goBack();
+    });
+    expect(result.current.currentStep).toBe("select-scans");
+
+    act(() => {
+      result.current.toggleScan(SCAN_A);
+    });
+    expect(result.current.selectedScans).toHaveLength(0);
+  });
+
+  it("clears selected scans and can navigate directly to a wizard step", () => {
+    const {result} = renderHook(() => useCreateInvoiceContext(), {wrapper});
+
+    act(() => {
+      result.current.toggleScan(SCAN_A);
+      result.current.toggleScan(SCAN_B);
+    });
+    expect(result.current.selectedScans).toHaveLength(2);
+
+    act(() => {
+      result.current.clearSelection();
+      result.current.goToStep("review");
+    });
+    expect(result.current.selectedScans).toHaveLength(0);
+    expect(result.current.currentStep).toBe("review");
+  });
+
+  it("rejects creation when no scan is selected", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const {result} = renderHook(() => useCreateInvoiceContext(), {wrapper});
+
+    await act(async () => {
+      await result.current.createInvoiceWithScans();
+    });
+
+    expect(mockCreateInvoice).not.toHaveBeenCalled();
+    expect(result.current.isCreating).toBe(false);
+    expect(consoleError).toHaveBeenCalled();
+  });
+
+  it("stops orchestration when invoice creation returns an error result", async () => {
+    mockCreateInvoice.mockResolvedValue({
+      success: false,
+      error: {message: "Could not create", code: "INTERNAL_ERROR"},
+    });
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const {result} = await renderReady();
+
+    await act(async () => {
+      await result.current.createInvoiceWithScans();
+    });
+
+    expect(mockPatchInvoice).not.toHaveBeenCalled();
+    expect(result.current.partialOutcome).toBeNull();
+    expect(result.current.isCreating).toBe(false);
+    expect(consoleError).toHaveBeenCalledWith("Error creating invoice:", expect.objectContaining({message: "Could not create"}));
+  });
+
+  it("throws a descriptive error when the context hook is used without its provider", () => {
+    expect(() => renderHook(() => useCreateInvoiceContext())).toThrow("useCreateInvoiceContext must be used within CreateInvoiceProvider");
   });
 
   it("calls createInvoice, patchInvoice, attachScanToInvoice, then analyzeInvoice in that order", async () => {
@@ -242,6 +335,61 @@ describe("CreateInvoiceContext — orchestration contract", () => {
         // createInvoice must have been called exactly ONCE across both attempts
         expect(mockCreateInvoice).toHaveBeenCalledTimes(1);
       });
+    });
+
+    it("preserves failed and unattempted scans when the action returns an error result", async () => {
+      const scanC = makeScan("cccc");
+      mockAttachScanToInvoice
+        .mockResolvedValueOnce({success: true, data: undefined})
+        .mockResolvedValueOnce({success: false, error: {message: "Attach failed", code: "INTERNAL_ERROR"}})
+        .mockResolvedValue({success: true, data: undefined});
+
+      const {result} = await renderReady([SCAN_A, SCAN_B, scanC]);
+
+      await act(async () => {
+        await result.current.createInvoiceWithScans();
+      });
+
+      expect(result.current.partialOutcome).toMatchObject({
+        status: "partial",
+        invoiceIdentifier: INVOICE_ID,
+        failedStep: "scans",
+        message: "Attach failed",
+      });
+      expect(mockAnalyzeInvoice).not.toHaveBeenCalled();
+      expect(mockMarkScansAsUsedByInvoice).not.toHaveBeenCalled();
+
+      await act(async () => {
+        await result.current.createInvoiceWithScans();
+      });
+
+      expect(mockCreateInvoice).toHaveBeenCalledTimes(1);
+      expect(mockAttachScanToInvoice).toHaveBeenCalledTimes(3);
+      expect(mockAttachScanToInvoice.mock.calls[2]?.[0]).toMatchObject({
+        invoiceId: INVOICE_ID,
+        payload: {location: scanC.blobUrl},
+      });
+      expect(result.current.partialOutcome).toBeNull();
+      expect(mockAnalyzeInvoice).toHaveBeenCalledTimes(1);
+    });
+
+    it("preserves retry state when attaching an additional scan rejects", async () => {
+      mockAttachScanToInvoice.mockRejectedValueOnce(new Error("Connection lost"));
+
+      const {result} = await renderReady([SCAN_A, SCAN_B]);
+
+      await act(async () => {
+        await result.current.createInvoiceWithScans();
+      });
+
+      expect(result.current.partialOutcome).toMatchObject({
+        status: "partial",
+        invoiceIdentifier: INVOICE_ID,
+        failedStep: "scans",
+        message: "Connection lost",
+      });
+      expect(mockAnalyzeInvoice).not.toHaveBeenCalled();
+      expect(mockMarkScansAsUsedByInvoice).not.toHaveBeenCalled();
     });
   });
 

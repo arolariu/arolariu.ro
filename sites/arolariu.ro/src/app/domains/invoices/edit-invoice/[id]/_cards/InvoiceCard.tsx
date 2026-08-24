@@ -76,8 +76,7 @@ import styles from "./InvoiceCard.module.scss";
 export default function InvoiceCard(): React.JSX.Element {
   const locale = useLocale();
   const t = useTranslations();
-  const {invoice, merchant, pendingChanges, setPaymentType, setIsImportant, setDescription, setTransactionDate} =
-    useEditInvoiceContext();
+  const {invoice, merchant, pendingChanges, setPaymentType, setIsImportant, setDescription, setTransactionDate} = useEditInvoiceContext();
   const {paymentInformation, isImportant, description} = invoice;
 
   // Get the current values (pending change or original)

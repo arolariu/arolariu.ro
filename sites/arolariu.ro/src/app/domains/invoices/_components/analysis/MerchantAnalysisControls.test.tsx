@@ -25,7 +25,7 @@ describe("MerchantAnalysisControls", () => {
     const onChange = vi.fn();
     render(
       <MerchantAnalysisControls
-        profile="fast"
+        profile='fast'
         value={resolveMerchantCapabilities("fast")}
         onChange={onChange}
       />,
@@ -42,7 +42,7 @@ describe("MerchantAnalysisControls", () => {
     const onChange = vi.fn();
     render(
       <MerchantAnalysisControls
-        profile="fast"
+        profile='fast'
         value={resolveMerchantCapabilities("fast")}
         onChange={onChange}
       />,
@@ -65,7 +65,7 @@ describe("MerchantAnalysisControls", () => {
 
     render(
       <MerchantAnalysisControls
-        profile="balanced"
+        profile='balanced'
         value={divergedValue}
         onChange={vi.fn()}
       />,
@@ -85,7 +85,7 @@ describe("MerchantAnalysisControls", () => {
 
     render(
       <MerchantAnalysisControls
-        profile="fast"
+        profile='fast'
         value={lastOneValue}
         onChange={vi.fn()}
       />,
@@ -105,7 +105,7 @@ describe("MerchantAnalysisControls", () => {
 
     render(
       <MerchantAnalysisControls
-        profile="balanced"
+        profile='balanced'
         value={bothEnabled}
         onChange={vi.fn()}
       />,
@@ -126,7 +126,7 @@ describe("MerchantAnalysisControls", () => {
 
     render(
       <MerchantAnalysisControls
-        profile="fast"
+        profile='fast'
         value={initialValue}
         onChange={onChange}
       />,

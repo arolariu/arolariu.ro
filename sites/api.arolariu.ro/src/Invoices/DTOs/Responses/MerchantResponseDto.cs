@@ -167,4 +167,54 @@ public readonly record struct MerchantResponseDto(
       LastUpdatedBy: merchant.LastUpdatedBy,
       NumberOfUpdates: merchant.NumberOfUpdates);
   }
+
+  /// <summary>
+  /// Creates a caller-scoped merchant response without disclosing cross-tenant relationships or audit principals.
+  /// </summary>
+  /// <remarks>
+  /// Referenced invoice identifiers and their count are restricted to the identifiers independently
+  /// established as belonging to the authenticated caller. Audit principals are retained only when
+  /// they identify that caller; unrelated identities are represented by <see cref="Guid.Empty"/>.
+  /// </remarks>
+  /// <param name="merchant">The shared merchant document to project.</param>
+  /// <param name="callerIdentifier">The authenticated caller identifier.</param>
+  /// <param name="callerInvoiceIdentifiers">
+  /// Invoice identifiers owned by the caller and linked to this merchant.
+  /// </param>
+  /// <returns>A merchant response containing only caller-visible relationship and audit identity data.</returns>
+  /// <exception cref="ArgumentNullException">
+  /// Thrown when <paramref name="merchant"/> or <paramref name="callerInvoiceIdentifiers"/> is null.
+  /// </exception>
+  public static MerchantResponseDto FromMerchantForCaller(
+    Merchant merchant,
+    Guid callerIdentifier,
+    IReadOnlySet<Guid> callerInvoiceIdentifiers)
+  {
+    ArgumentNullException.ThrowIfNull(merchant);
+    ArgumentNullException.ThrowIfNull(callerInvoiceIdentifiers);
+
+    var visibleInvoiceIdentifiers = merchant.ReferencedInvoices
+      .Where(callerInvoiceIdentifiers.Contains)
+      .Distinct()
+      .ToList()
+      .AsReadOnly();
+
+    return new(
+      Id: merchant.id,
+      Name: merchant.Name,
+      Description: merchant.Description,
+      Classification: StandardClassificationResponseDto.FromStandardClassification(merchant.Classification),
+      Address: ContactInformationResponseDto.FromContactInformation(merchant.Address),
+      ParentCompanyId: merchant.ParentCompanyId,
+      ReferencedInvoiceCount: visibleInvoiceIdentifiers.Count,
+      ReferencedInvoiceIds: visibleInvoiceIdentifiers,
+      AdditionalMetadata: new Dictionary<string, string>(merchant.AdditionalMetadata),
+      IsImportant: merchant.IsImportant,
+      IsSoftDeleted: merchant.IsSoftDeleted,
+      CreatedAt: merchant.CreatedAt,
+      CreatedBy: merchant.CreatedBy == callerIdentifier ? callerIdentifier : Guid.Empty,
+      LastUpdatedAt: merchant.LastUpdatedAt,
+      LastUpdatedBy: merchant.LastUpdatedBy == callerIdentifier ? callerIdentifier : Guid.Empty,
+      NumberOfUpdates: merchant.NumberOfUpdates);
+  }
 }

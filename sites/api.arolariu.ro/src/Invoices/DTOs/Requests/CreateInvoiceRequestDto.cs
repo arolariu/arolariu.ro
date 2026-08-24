@@ -15,7 +15,10 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 /// Invoice details, products, merchant data, classifications, and other enrichment are added by later analysis or
 /// explicit update requests.
 /// </remarks>
-/// <param name="UserIdentifier">The user partition identifier supplied by the client.</param>
+/// <param name="UserIdentifier">
+/// The legacy user partition identifier supplied by the client. The API does not trust this value;
+/// endpoint mapping derives ownership from the authenticated principal.
+/// </param>
 /// <param name="InitialScan">The primary receipt scan already uploaded by the client.</param>
 /// <param name="AdditionalMetadata">Optional client metadata to persist with the initial invoice artifact.</param>
 [Serializable]
@@ -25,16 +28,21 @@ public readonly record struct CreateInvoiceRequestDto(
   [Required] InvoiceScan InitialScan,
   IDictionary<string, object>? AdditionalMetadata)
 {
-  /// <summary>Maps the minimal request into a new invoice aggregate.</summary>
-  /// <returns>A new invoice containing the supplied owner, initial scan, and metadata.</returns>
-  public Invoice ToInvoice()
+  /// <summary>Maps the minimal request into a new invoice aggregate owned by the authenticated caller.</summary>
+  /// <remarks>
+  /// The body-supplied <see cref="UserIdentifier"/> is retained for transport compatibility but is
+  /// deliberately ignored so a client cannot select another tenant's storage partition.
+  /// </remarks>
+  /// <param name="authenticatedUserIdentifier">The owner identifier derived from authenticated JWT claims.</param>
+  /// <returns>A new invoice containing the authenticated owner, initial scan, and metadata.</returns>
+  public Invoice ToInvoice(Guid authenticatedUserIdentifier)
   {
     var invoice = new Invoice
     {
       id = Guid.CreateVersion7(),
-      UserIdentifier = UserIdentifier,
+      UserIdentifier = authenticatedUserIdentifier,
       CreatedAt = DateTime.UtcNow,
-      CreatedBy = UserIdentifier,
+      CreatedBy = authenticatedUserIdentifier,
       Scans = [InitialScan],
     };
 
@@ -46,7 +54,7 @@ public readonly record struct CreateInvoiceRequestDto(
       }
     }
 
-    invoice.PerformUpdate(UserIdentifier);
+    invoice.PerformUpdate(authenticatedUserIdentifier);
     return invoice;
   }
 }

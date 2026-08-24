@@ -74,6 +74,8 @@ const validInvoiceJson = {
   countryRegion: "RO",
   createdAt: "2026-08-01T10:00:00Z",
   lastUpdatedAt: "2026-08-01T10:00:00Z",
+  isImportant: false,
+  isSoftDeleted: false,
 };
 
 const validProductJson = {
@@ -114,6 +116,8 @@ const validMerchantJson = {
   classification: null,
   createdAt: "2026-08-01T10:00:00Z",
   lastUpdatedAt: "2026-08-01T10:00:00Z",
+  isImportant: false,
+  isSoftDeleted: false,
 };
 
 // ---------------------------------------------------------------------------
@@ -172,9 +176,81 @@ describe("parseInvoiceResponse", () => {
   });
 
   it("still rejects a malformed identifier that is not a GUID at all", () => {
-    expect(() => parseInvoiceResponse({...validInvoiceJson, merchantReference: "not-a-guid"})).toThrow(
-      TransportValidationError,
+    expect(() => parseInvoiceResponse({...validInvoiceJson, merchantReference: "not-a-guid"})).toThrow(TransportValidationError);
+  });
+
+  it.each(["isImportant", "isSoftDeleted"] as const)("rejects a missing required boolean field: %s", (field) => {
+    const {[field]: _omitted, ...withoutField} = validInvoiceJson;
+    expect(() => parseInvoiceResponse(withoutField)).toThrow(TransportValidationError);
+  });
+
+  it.each(["isImportant", "isSoftDeleted"] as const)("rejects a malformed required boolean field: %s", (field) => {
+    expect(() => parseInvoiceResponse({...validInvoiceJson, [field]: "false"})).toThrow(TransportValidationError);
+  });
+
+  it.each(["description", "receiptType", "countryRegion", "createdBy", "lastUpdatedBy"] as const)(
+    "rejects a malformed present optional string field: %s",
+    (field) => {
+      expect(() => parseInvoiceResponse({...validInvoiceJson, [field]: 123})).toThrow(TransportValidationError);
+    },
+  );
+
+  it("rejects a malformed sharedWith entry instead of filtering it out", () => {
+    expect(() => parseInvoiceResponse({...validInvoiceJson, sharedWith: ["user-1", {unexpected: true}]})).toThrow(
+      new TransportValidationError("invoice.sharedWith[1]", "expected string"),
     );
+  });
+
+  it("rejects a malformed tax detail instead of dropping it", () => {
+    expect(() =>
+      parseInvoiceResponse({
+        ...validInvoiceJson,
+        taxDetails: [{amount: "12.5", rate: 0.19, netAmount: 10.5, description: "VAT"}],
+      }),
+    ).toThrow(new TransportValidationError("invoice.taxDetails[0].amount", "expected finite number"));
+  });
+
+  it("rejects a malformed payment detail instead of dropping it", () => {
+    expect(() =>
+      parseInvoiceResponse({
+        ...validInvoiceJson,
+        payments: [{method: "card", amount: "100"}],
+      }),
+    ).toThrow(new TransportValidationError("invoice.payments[0].amount", "expected finite number"));
+  });
+
+  it.each(["seven", -1, 1.5])("rejects a malformed present numberOfUpdates value: %j", (numberOfUpdates) => {
+    expect(() => parseInvoiceResponse({...validInvoiceJson, numberOfUpdates})).toThrow(
+      new TransportValidationError("invoice.numberOfUpdates", "expected non-negative safe integer or null"),
+    );
+  });
+
+  it("preserves valid optional collections and audit fields", () => {
+    const invoice = parseInvoiceResponse({
+      ...validInvoiceJson,
+      sharedWith: ["user-1"],
+      taxDetails: [{amount: 19, rate: 0.19, netAmount: 81, description: "VAT"}],
+      payments: [{method: "card", amount: 100}],
+      createdBy: "user-1",
+      lastUpdatedBy: "user-2",
+      numberOfUpdates: 2,
+    });
+
+    expect(invoice.sharedWith).toEqual(["user-1"]);
+    expect(invoice.taxDetails).toEqual([{amount: 19, rate: 0.19, netAmount: 81, description: "VAT"}]);
+    expect(invoice.payments).toEqual([{method: "card", amount: 100}]);
+    expect(invoice.createdBy).toBe("user-1");
+    expect(invoice.lastUpdatedBy).toBe("user-2");
+    expect(invoice.numberOfUpdates).toBe(2);
+  });
+
+  it("rejects malformed scan metadata values instead of deleting them", () => {
+    expect(() =>
+      parseInvoiceResponse({
+        ...validInvoiceJson,
+        scans: [{type: 0, location: "https://example.com/scan.jpg", metadata: {rotation: 90}}],
+      }),
+    ).toThrow(new TransportValidationError("invoice.scans[0].metadata.rotation", "expected string or object"));
   });
 });
 
@@ -257,5 +333,27 @@ describe("parseMerchantResponse", () => {
   it("accepts a valid merchant and returns the correct name", () => {
     const merchant = parseMerchantResponse(validMerchantJson);
     expect(merchant.name).toBe("Lidl");
+  });
+
+  it.each(["isImportant", "isSoftDeleted"] as const)("rejects a missing required boolean field: %s", (field) => {
+    const {[field]: _omitted, ...withoutField} = validMerchantJson;
+    expect(() => parseMerchantResponse(withoutField)).toThrow(TransportValidationError);
+  });
+
+  it.each(["isImportant", "isSoftDeleted"] as const)("rejects a malformed required boolean field: %s", (field) => {
+    expect(() => parseMerchantResponse({...validMerchantJson, [field]: "false"})).toThrow(TransportValidationError);
+  });
+
+  it.each(["description", "parentCompanyId", "createdBy", "lastUpdatedBy"] as const)(
+    "rejects a malformed present optional string field: %s",
+    (field) => {
+      expect(() => parseMerchantResponse({...validMerchantJson, [field]: 123})).toThrow(TransportValidationError);
+    },
+  );
+
+  it.each(["seven", -1, 1.5])("rejects a malformed present numberOfUpdates value: %j", (numberOfUpdates) => {
+    expect(() => parseMerchantResponse({...validMerchantJson, numberOfUpdates})).toThrow(
+      new TransportValidationError("merchant.numberOfUpdates", "expected non-negative safe integer or null"),
+    );
   });
 });

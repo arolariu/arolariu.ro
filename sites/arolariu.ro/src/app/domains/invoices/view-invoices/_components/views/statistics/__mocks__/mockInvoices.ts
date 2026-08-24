@@ -13,8 +13,7 @@
  * - Transaction amounts
  */
 
-import type {PaymentInformation, Product} from "@/types/invoices";
-import {InvoiceScanType, type Invoice, type InvoiceScan} from "@/types/invoices";
+import {InvoiceScanType, type Invoice, type InvoiceScan, type PaymentInformation, type Product} from "@/types/invoices";
 import {ClassificationOrigin, ClassificationSystem, type StandardClassification} from "@/types/invoices/Classification";
 
 // ---------------------------------------------------------------------------
@@ -34,12 +33,12 @@ function makeClassification(
   code: string,
   hierarchy: ReadonlyArray<readonly [level: string, code: string, officialLabel: string]>,
 ): StandardClassification {
-  const version =
-    system === ClassificationSystem.EcoicopV2
-      ? "2"
-      : system === ClassificationSystem.Nace21
-        ? "2.1"
-        : "2026-05";
+  let version = "2026-05";
+  if (system === ClassificationSystem.EcoicopV2) {
+    version = "2";
+  } else if (system === ClassificationSystem.Nace21) {
+    version = "2.1";
+  }
   return {
     system,
     code,
@@ -59,22 +58,22 @@ function makeClassification(
 /** ECOICOP 01 → 01.1 → 01.1.1  (Grocery / food purchases) */
 const INV_FOOD = makeClassification(ClassificationSystem.EcoicopV2, "01.1.1", [
   ["division", "01", "Food and non-alcoholic beverages"],
-  ["group",    "01.1", "Food"],
-  ["class",    "01.1.1", "Cereals and cereal products (ND)"],
+  ["group", "01.1", "Food"],
+  ["class", "01.1.1", "Cereals and cereal products (ND)"],
 ]);
 
 /** ECOICOP 11 → 11.1 → 11.1.1  (Restaurant / fast-food purchases) */
 const INV_RESTAURANT = makeClassification(ClassificationSystem.EcoicopV2, "11.1.1", [
   ["division", "11", "Restaurants and accommodation services"],
-  ["group",    "11.1", "Food and beverage serving services"],
-  ["class",    "11.1.1", "Restaurants, cafés and the like (S)"],
+  ["group", "11.1", "Food and beverage serving services"],
+  ["class", "11.1.1", "Restaurants, cafés and the like (S)"],
 ]);
 
 /** ECOICOP 05 → 05.6 → 05.6.1 → 05.6.1.1  (Household cleaning) */
 const INV_CLEANING = makeClassification(ClassificationSystem.EcoicopV2, "05.6.1.1", [
   ["division", "05", "Furnishings, household equipment and routine household maintenance"],
-  ["group",    "05.6", "Goods and services for routine household maintenance"],
-  ["class",    "05.6.1", "Non-durable household goods (ND)"],
+  ["group", "05.6", "Goods and services for routine household maintenance"],
+  ["class", "05.6.1", "Non-durable household goods (ND)"],
   ["subclass", "05.6.1.1", "Household cleaning and maintenance products (ND)"],
 ]);
 
@@ -85,30 +84,28 @@ const INV_CLEANING = makeClassification(ClassificationSystem.EcoicopV2, "05.6.1.
 /** GPC 50000000 → 50130000  (Dairy / eggs / butter / yogurt) */
 const PROD_DAIRY = makeClassification(ClassificationSystem.Gs1Gpc, "50130000", [
   ["segment", "50000000", "Food/Beverage"],
-  ["family",  "50130000", "Milk/Butter/Cream/Yogurts/Cheese/Eggs/Substitutes"],
+  ["family", "50130000", "Milk/Butter/Cream/Yogurts/Cheese/Eggs/Substitutes"],
 ]);
 
 /** GPC 50000000 → 50100000  (Fruit & vegetable products) */
 const PROD_FRUITS_VEG = makeClassification(ClassificationSystem.Gs1Gpc, "50100000", [
   ["segment", "50000000", "Food/Beverage"],
-  ["family",  "50100000", "Fruits/Vegetables/Nuts/Seeds Prepared/Processed"],
+  ["family", "50100000", "Fruits/Vegetables/Nuts/Seeds Prepared/Processed"],
 ]);
 
 /** GPC 50000000 → 50200000  (Beverages — non-alcoholic and alcoholic) */
 const PROD_BEVERAGES = makeClassification(ClassificationSystem.Gs1Gpc, "50200000", [
   ["segment", "50000000", "Food/Beverage"],
-  ["family",  "50200000", "Beverages"],
+  ["family", "50200000", "Beverages"],
 ]);
 
 /** GPC 50000000  (General food — meat, fish, bakery, dry goods) */
-const PROD_FOOD_GENERAL = makeClassification(ClassificationSystem.Gs1Gpc, "50000000", [
-  ["segment", "50000000", "Food/Beverage"],
-]);
+const PROD_FOOD_GENERAL = makeClassification(ClassificationSystem.Gs1Gpc, "50000000", [["segment", "50000000", "Food/Beverage"]]);
 
 /** GPC 47000000 → 47100000  (Cleaning products) */
 const PROD_CLEANING = makeClassification(ClassificationSystem.Gs1Gpc, "47100000", [
   ["segment", "47000000", "Cleaning/Hygiene Products"],
-  ["family",  "47100000", "Cleaning Products"],
+  ["family", "47100000", "Cleaning Products"],
 ]);
 
 /** GPC 53000000  (Beauty / personal care — null classification sentinel variant kept as example) */
@@ -144,7 +141,7 @@ export function createMockInvoice(overrides: Partial<Invoice>): Invoice {
   };
 
   return {
-    id: `invoice-${Math.random().toString(36).slice(7)}`,
+    id: `invoice-${globalThis.crypto.randomUUID()}`,
     name: "Mock Invoice",
     description: "Generated for Storybook",
     userIdentifier: "user_mock123",
@@ -220,7 +217,9 @@ const getDateMonthsAgo = (months: number): Date => {
 
 const getRandomDateInMonth = (monthsAgo: number): Date => {
   const date = getDateMonthsAgo(monthsAgo);
-  const day = Math.floor(Math.random() * 28) + 1; // Safe day range for all months
+  const randomValues = new Uint32Array(1);
+  globalThis.crypto.getRandomValues(randomValues);
+  const day = ((randomValues[0] ?? 0) % 28) + 1; // Safe day range for all months
   date.setDate(day);
   return date;
 };
@@ -251,13 +250,15 @@ export const mockInvoices: Invoice[] = [
         classification: PROD_DAIRY,
         quantity: 2,
         price: 6.5,
-        totalPrice: 13,      }),
+        totalPrice: 13,
+      }),
       createMockProduct({
         name: "White Bread 500g",
         classification: PROD_FOOD_GENERAL,
         quantity: 1,
         price: 4.2,
-        totalPrice: 4.2,      }),
+        totalPrice: 4.2,
+      }),
       createMockProduct({
         name: "Chicken Breast",
         classification: PROD_FOOD_GENERAL,
@@ -270,7 +271,8 @@ export const mockInvoices: Invoice[] = [
         classification: PROD_DAIRY,
         quantity: 1,
         price: 12.5,
-        totalPrice: 12.5,      }),
+        totalPrice: 12.5,
+      }),
       createMockProduct({
         name: "Tomatoes",
         classification: PROD_FRUITS_VEG,
@@ -311,7 +313,8 @@ export const mockInvoices: Invoice[] = [
         classification: null,
         quantity: 2,
         price: 22.5,
-        totalPrice: 45,      }),
+        totalPrice: 45,
+      }),
     ],
     createdAt: getRandomDateInMonth(0),
     lastUpdatedAt: getRandomDateInMonth(0),
@@ -338,7 +341,8 @@ export const mockInvoices: Invoice[] = [
         classification: PROD_DAIRY,
         quantity: 1,
         price: 8.5,
-        totalPrice: 8.5,      }),
+        totalPrice: 8.5,
+      }),
       createMockProduct({
         name: "Coffee Beans",
         classification: PROD_BEVERAGES,
@@ -351,7 +355,8 @@ export const mockInvoices: Invoice[] = [
         classification: PROD_FOOD_GENERAL,
         quantity: 3,
         price: 4.1,
-        totalPrice: 12.3,      }),
+        totalPrice: 12.3,
+      }),
     ],
     createdAt: getRandomDateInMonth(1),
     lastUpdatedAt: getRandomDateInMonth(1),
@@ -381,7 +386,8 @@ export const mockInvoices: Invoice[] = [
         classification: PROD_FOOD_GENERAL,
         quantity: 3,
         price: 5.8,
-        totalPrice: 17.4,      }),
+        totalPrice: 17.4,
+      }),
       createMockProduct({
         name: "Extra Virgin Olive Oil",
         classification: PROD_FOOD_GENERAL,
@@ -394,13 +400,15 @@ export const mockInvoices: Invoice[] = [
         classification: PROD_FOOD_GENERAL,
         quantity: 1,
         price: 42.5,
-        totalPrice: 42.5,      }),
+        totalPrice: 42.5,
+      }),
       createMockProduct({
         name: "Greek Yogurt",
         classification: PROD_DAIRY,
         quantity: 4,
         price: 8.2,
-        totalPrice: 32.8,      }),
+        totalPrice: 32.8,
+      }),
     ],
     createdAt: getRandomDateInMonth(1),
     lastUpdatedAt: getRandomDateInMonth(1),
@@ -427,13 +435,15 @@ export const mockInvoices: Invoice[] = [
         classification: null,
         quantity: 1,
         price: 12.5,
-        totalPrice: 12.5,      }),
+        totalPrice: 12.5,
+      }),
       createMockProduct({
         name: "Chicken McNuggets",
         classification: null,
         quantity: 1,
         price: 16,
-        totalPrice: 16,      }),
+        totalPrice: 16,
+      }),
     ],
     createdAt: getRandomDateInMonth(2),
     lastUpdatedAt: getRandomDateInMonth(2),
@@ -515,13 +525,15 @@ export const mockInvoices: Invoice[] = [
         classification: PROD_FOOD_GENERAL,
         quantity: 1,
         price: 18.5,
-        totalPrice: 18.5,      }),
+        totalPrice: 18.5,
+      }),
       createMockProduct({
         name: "Almond Milk Unsweetened",
         classification: PROD_BEVERAGES,
         quantity: 2,
         price: 12.8,
-        totalPrice: 25.6,      }),
+        totalPrice: 25.6,
+      }),
     ],
     createdAt: getRandomDateInMonth(3),
     lastUpdatedAt: getRandomDateInMonth(3),
@@ -547,13 +559,15 @@ export const mockInvoices: Invoice[] = [
         classification: null,
         quantity: 2,
         price: 35,
-        totalPrice: 70,      }),
+        totalPrice: 70,
+      }),
       createMockProduct({
         name: "Garlic Bread Sticks",
         classification: null,
         quantity: 1,
         price: 19,
-        totalPrice: 19,      }),
+        totalPrice: 19,
+      }),
     ],
     createdAt: getRandomDateInMonth(3),
     lastUpdatedAt: getRandomDateInMonth(3),
@@ -587,19 +601,22 @@ export const mockInvoices: Invoice[] = [
         classification: PROD_FOOD_GENERAL,
         quantity: 2,
         price: 38.5,
-        totalPrice: 77,      }),
+        totalPrice: 77,
+      }),
       createMockProduct({
         name: "Red Wine Merlot",
         classification: PROD_BEVERAGES,
         quantity: 2,
         price: 45,
-        totalPrice: 90,      }),
+        totalPrice: 90,
+      }),
       createMockProduct({
         name: "Parmesan Cheese",
         classification: PROD_DAIRY,
         quantity: 1,
         price: 32.8,
-        totalPrice: 32.8,      }),
+        totalPrice: 32.8,
+      }),
     ],
     createdAt: getRandomDateInMonth(4),
     lastUpdatedAt: getRandomDateInMonth(4),
@@ -667,7 +684,8 @@ export const mockInvoices: Invoice[] = [
         classification: PROD_DAIRY,
         quantity: 2,
         price: 9.5,
-        totalPrice: 19,      }),
+        totalPrice: 19,
+      }),
       createMockProduct({
         name: "Wildflower Honey",
         classification: PROD_FOOD_GENERAL,
@@ -680,13 +698,15 @@ export const mockInvoices: Invoice[] = [
         classification: PROD_FOOD_GENERAL,
         quantity: 1,
         price: 12.4,
-        totalPrice: 12.4,      }),
+        totalPrice: 12.4,
+      }),
       createMockProduct({
         name: "Tuna in Oil",
         classification: PROD_FOOD_GENERAL,
         quantity: 6,
         price: 11.5,
-        totalPrice: 69,      }),
+        totalPrice: 69,
+      }),
     ],
     createdAt: getRandomDateInMonth(5),
     lastUpdatedAt: getRandomDateInMonth(5),
@@ -712,7 +732,8 @@ export const mockInvoices: Invoice[] = [
         classification: null,
         quantity: 1,
         price: 56,
-        totalPrice: 56,      }),
+        totalPrice: 56,
+      }),
     ],
     createdAt: getRandomDateInMonth(5),
     lastUpdatedAt: getRandomDateInMonth(5),
@@ -780,13 +801,15 @@ export const mockInvoices: Invoice[] = [
         classification: PROD_BEVERAGES,
         quantity: 2,
         price: 22.5,
-        totalPrice: 45,      }),
+        totalPrice: 45,
+      }),
       createMockProduct({
         name: "Salted Pretzels",
         classification: PROD_FOOD_GENERAL,
         quantity: 2,
         price: 11.2,
-        totalPrice: 22.4,      }),
+        totalPrice: 22.4,
+      }),
       createMockProduct({
         name: "Microwave Popcorn",
         classification: PROD_FOOD_GENERAL,
@@ -833,7 +856,8 @@ export const mockInvoices: Invoice[] = [
         classification: PROD_FOOD_GENERAL,
         quantity: 1,
         price: 18.5,
-        totalPrice: 18.5,      }),
+        totalPrice: 18.5,
+      }),
     ],
     createdAt: getRandomDateInMonth(1),
     lastUpdatedAt: getRandomDateInMonth(1),

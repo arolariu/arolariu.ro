@@ -50,10 +50,11 @@ export function InvoiceTabs(): React.JSX.Element {
             className={styles["tabsContent"]}>
             {invoice.possibleRecipes.length > 0 ? (
               <div className={styles["recipesGrid"]}>
-                {invoice.possibleRecipes.map((recipe) => (
+                {invoice.possibleRecipes.map((recipe, recipeIndex) => (
                   <RecipeCard
-                    key={recipe.name}
+                    key={`${recipe.name}-${recipe.description}-${recipe.totalMinutes}-${recipe.servings}`}
                     recipe={recipe}
+                    recipeIndex={recipeIndex}
                   />
                 ))}
               </div>

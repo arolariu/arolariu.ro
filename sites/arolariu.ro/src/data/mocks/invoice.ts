@@ -33,6 +33,7 @@ import {
   type PaymentType,
   type Product,
   type RecipeSuggestion,
+  type StandardClassification,
 } from "@/types/invoices";
 import {faker} from "@faker-js/faker";
 import {generateRandomProduct} from "./product";
@@ -49,7 +50,7 @@ import {generateRandomProduct} from "./product";
  * - Valid currency with code, name, and symbol
  * - Empty arrays for items and shared users
  * - Non-deleted state (isSoftDeleted: false)
- * - GROCERY category as default
+ * - Null classification by default
  *
  * **Method Chaining:**
  * All `with*()` methods return `this` for fluent API usage.
@@ -66,7 +67,7 @@ import {generateRandomProduct} from "./product";
  * const invoice = new InvoiceBuilder()
  *   .withId("invoice-123")
  *   .withName("Grocery Shopping")
- *   .withCategory(classification.GROCERY)
+ *   .withClassification(groceryClassification)
  *   .build();
  * ```
  *
@@ -85,7 +86,7 @@ import {generateRandomProduct} from "./product";
  * ```typescript
  * // Batch creation
  * const invoices = new InvoiceBuilder()
- *   .withCategory(classification.RESTAURANT)
+ *   .withClassification(restaurantClassification)
  *   .withRandomItems()
  *   .buildMany(10);
  * ```
@@ -112,7 +113,7 @@ export class InvoiceBuilder {
    * - `id`: Random UUIDv4
    * - `name`: Random 3-word sentence
    * - `description`: Random 7-30 word sentence
-   * - `category`: {@link classification.GROCERY}
+   * - `classification`: `null`
    * - `isSoftDeleted`: `false` (active invoice)
    * - `items`: Empty array (use {@link withRandomItems} to populate)
    * - `possibleRecipes`: Empty array (use {@link withRandomRecipes} to populate)
@@ -131,7 +132,7 @@ export class InvoiceBuilder {
    * // Override specific fields
    * const customInvoice = new InvoiceBuilder()
    *   .withId("my-id")
-   *   .withCategory(classification.FAST_FOOD)
+   *   .withClassification(fastFoodClassification)
    *   .build();
    * ```
    *
@@ -436,6 +437,17 @@ export class InvoiceBuilder {
   }
 
   /**
+   * Sets the invoice's standard taxonomy classification.
+   *
+   * @param classification - Canonical classification, or `null` for an unclassified invoice.
+   * @returns This InvoiceBuilder instance for method chaining.
+   */
+  withClassification(classification: StandardClassification | null): this {
+    this.invoice.classification = classification;
+    return this;
+  }
+
+  /**
    * Sets the list of purchased products/line items.
    *
    * @remarks
@@ -721,10 +733,9 @@ export class InvoiceBuilder {
    * @see {@link RecipeDifficulty} for difficulty levels
    * @see {@link withPossibleRecipes} for setting specific recipes
    */
-  withRandomRecipes(count?: number): this {
+  withRandomRecipes(_count?: number): this {
     // Minimal fix: RecipeSuggestion has a completely different shape than the legacy Recipe type.
     // A later task will replace this with proper RecipeSuggestion fixture generation.
-    void count;
     this.invoice.possibleRecipes = [];
     return this;
   }
@@ -783,12 +794,12 @@ export class InvoiceBuilder {
    * ```typescript
    * // Create 5 invoices with same configuration
    * const invoices = new InvoiceBuilder()
-   *   .withCategory(classification.GROCERY)
+   *   .withClassification(groceryClassification)
    *   .withUserIdentifier("test-user")
    *   .buildMany(5);
    *
-   * // All have same category and user
-   * invoices.every(inv => inv.category === classification.GROCERY); // true
+   * // All have the configured classification and user
+   * invoices.every(inv => inv.classification === groceryClassification); // true
    * ```
    *
    * @see {@link build} for single invoice creation
@@ -842,7 +853,7 @@ export function createInvoiceBuilder(): InvoiceBuilder {
  * - 3-10 random product items with realistic data
  * - 0-3 random recipe suggestions
  * - Realistic payment information with random currency
- * - {@link classification.GROCERY} as default category
+ * - Null classification by default
  * - Single JPEG scan with random URL
  *
  * **Use Cases:**
@@ -927,7 +938,7 @@ export function generateRandomInvoices(count: number): Invoice[] {
  * **Fixed Values:**
  * - `id`: "invoice-1"
  * - `name`: "Test Invoice"
- * - `category`: {@link classification.GROCERY}
+ * - `classification`: `null`
  * - `userIdentifier`: "user-123"
  *
  * **Random Values:** Other properties (description, dates, payment info)
@@ -958,11 +969,7 @@ export function generateRandomInvoices(count: number): Invoice[] {
  * @see {@link mockInvoiceList} for pre-built list
  * @see {@link InvoiceBuilder} for customized test data
  */
-export const mockInvoice = new InvoiceBuilder()
-  .withId("invoice-1")
-  .withName("Test Invoice")
-  .withUserIdentifier("user-123")
-  .build();
+export const mockInvoice = new InvoiceBuilder().withId("invoice-1").withName("Test Invoice").withUserIdentifier("user-123").build();
 
 /**
  * Pre-built list of 5 random invoices for quick testing.

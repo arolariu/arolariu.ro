@@ -14,41 +14,44 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class CreateInvoiceRequestDtoTests
 {
-  /// <summary>Verifies the request maps only owner, initial scan, and metadata.</summary>
+  /// <summary>Verifies the request maps the authenticated owner, initial scan, and metadata.</summary>
   [TestMethod]
   public void ToInvoice_ValidMinimalRequest_MapsInitialArtifact()
   {
-    Guid userId = Guid.NewGuid();
+    Guid bodyUserId = Guid.NewGuid();
+    Guid authenticatedUserId = Guid.NewGuid();
     InvoiceScan scan = new(
       ScanType.JPG,
       new Uri("https://example.test/invoices/receipt.jpg"),
       null);
     var request = new CreateInvoiceRequestDto(
-      userId,
+      bodyUserId,
       scan,
       new Dictionary<string, object> { ["source"] = "mobile" });
 
-    Invoice invoice = request.ToInvoice();
+    Invoice invoice = request.ToInvoice(authenticatedUserId);
 
-    Assert.AreEqual(userId, invoice.UserIdentifier);
-    Assert.AreEqual(userId, invoice.CreatedBy);
+    Assert.AreEqual(authenticatedUserId, invoice.UserIdentifier);
+    Assert.AreEqual(authenticatedUserId, invoice.CreatedBy);
+    Assert.AreNotEqual(bodyUserId, invoice.UserIdentifier);
     Assert.AreEqual(1, invoice.Scans.Count);
     Assert.AreEqual(scan, invoice.Scans.Single());
     Assert.AreEqual("mobile", invoice.AdditionalMetadata["source"]);
     Assert.AreEqual(0, invoice.Items.Count);
   }
 
-  /// <summary>Verifies the body-supplied partition identifier is mapped without a DTO guard.</summary>
+  /// <summary>Verifies an empty body owner cannot replace the authenticated partition identifier.</summary>
   [TestMethod]
-  public void ToInvoice_EmptyUserIdentifier_MapsTrustedBodyValue()
+  public void ToInvoice_EmptyBodyUserIdentifier_UsesAuthenticatedOwner()
   {
+    Guid authenticatedUserId = Guid.NewGuid();
     var request = new CreateInvoiceRequestDto(
       Guid.Empty,
       new InvoiceScan(ScanType.JPG, new Uri("https://example.test/invoices/receipt.jpg"), null),
       null);
 
-    Invoice invoice = request.ToInvoice();
+    Invoice invoice = request.ToInvoice(authenticatedUserId);
 
-    Assert.AreEqual(Guid.Empty, invoice.UserIdentifier);
+    Assert.AreEqual(authenticatedUserId, invoice.UserIdentifier);
   }
 }

@@ -18,6 +18,9 @@ import {getClassificationGroup} from "../../_utils/labelUtilities";
 
 const DEFAULT_CURRENCY_CODE = "RON";
 
+/** Stable filter bucket for invoices without a resolved classification. */
+export const UNCLASSIFIED_GROUP = "unclassified";
+
 function buildFrequencyMap<K>(values: Iterable<K>): Map<K, number> {
   const map = new Map<K, number>();
   for (const v of values) {
@@ -54,7 +57,7 @@ export function computeAvailableCurrencies(invoices: ReadonlyArray<Invoice>): Re
  * the stable `"unclassified"` bucket so no invoice is silently lost.
  */
 export function computeAvailableClassificationGroups(invoices: ReadonlyArray<Invoice>): ReadonlyArray<string> {
-  const groups = invoices.map((i) => getClassificationGroup(i.classification ?? null) ?? "unclassified");
+  const groups = invoices.map((i) => getClassificationGroup(i.classification ?? null) ?? UNCLASSIFIED_GROUP);
   const freq = buildFrequencyMap(groups);
   return [...freq.entries()]
     .toSorted((a, b) => {

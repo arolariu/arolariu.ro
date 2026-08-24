@@ -14,4 +14,4 @@
  */
 
 export {ANALYSIS_REFRESH_DELAY_MS, useAnalysisSubmission} from "./useAnalysisSubmission";
-export type {AnalysisSubmissionStatus, UseAnalysisSubmissionOptions, UseAnalysisSubmissionResult} from "./useAnalysisSubmission";
+export type {AnalysisSubmissionStatus} from "./useAnalysisSubmission";

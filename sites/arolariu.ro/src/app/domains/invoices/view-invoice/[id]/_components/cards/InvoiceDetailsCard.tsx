@@ -2,7 +2,7 @@
 
 import {toRONDetailed} from "@/lib/currency";
 import {formatCurrency, formatDate, formatEnum, toSafeDate} from "@/lib/utils.generic";
-import {PaymentType} from "@/types/invoices";
+import {PaymentType, getAllergenEvidenceLevelLabelKey, getAllergenLabelKey} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -25,7 +25,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {useLocale} from "next-intl";
-import {useTranslations} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 import {useCallback, useMemo, useState} from "react";
 import {TbCalendar, TbChevronLeft, TbChevronRight, TbCreditCard, TbFlag3, TbHeart, TbReceipt} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
@@ -117,7 +117,9 @@ export function InvoiceDetailsCard(): React.JSX.Element {
             </div>
             <div className={styles["infoItem"]}>
               <p className={styles["infoLabelPlain"]}>{t((m) => m.cards.invoices.invoiceDetailsCard.labels.category)}</p>
-              <Badge variant='outline'>{invoice.classification?.officialLabel ?? "Unclassified"}</Badge>
+              <Badge variant='outline'>
+                {invoice.classification?.officialLabel ?? t((m) => m.shared.invoices.classification.unclassified)}
+              </Badge>
             </div>
             <div className={styles["infoItem"]}>
               <div className={styles["infoLabel"]}>
@@ -307,9 +309,11 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                               {(item.allergenAssessment?.status === "detected" ? item.allergenAssessment.signals : []).map((signal) => (
                                 <TooltipProvider key={signal.code}>
                                   <Tooltip>
-                                    <TooltipTrigger render={<Badge variant='secondary'>{signal.code}</Badge>} />
+                                    <TooltipTrigger
+                                      render={<Badge variant='secondary'>{t(selectorFromPath(getAllergenLabelKey(signal.code)))}</Badge>}
+                                    />
                                     <TooltipContent>
-                                      <p>{signal.evidenceLevel}</p>
+                                      <p>{t(selectorFromPath(getAllergenEvidenceLevelLabelKey(signal.evidenceLevel)))}</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>

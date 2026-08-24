@@ -4,9 +4,27 @@ import {type Product} from "@/types/invoices";
 import {Alert, AlertDescription, AlertTitle, Badge, Button} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
-import {useCallback, useEffect, useMemo, useState} from "react";
+import {useCallback, useMemo, useState, useSyncExternalStore} from "react";
 import {TbAlertCircle, TbChevronDown, TbX} from "react-icons/tb";
 import styles from "./GuidedEditBanner.module.scss";
+
+const DISMISSAL_STORAGE_KEY = "guidedEditBannerDismissed";
+
+/** Subscribes to dismissal changes made from another browser context. */
+function subscribeToDismissal(onStoreChange: () => void): () => void {
+  globalThis.addEventListener("storage", onStoreChange);
+  return () => globalThis.removeEventListener("storage", onStoreChange);
+}
+
+/** Reads the persisted browser dismissal state. */
+function getDismissalSnapshot(): boolean {
+  return localStorage.getItem(DISMISSAL_STORAGE_KEY) === "true";
+}
+
+/** Provides a hydration-safe server snapshot before browser storage is available. */
+function getServerDismissalSnapshot(): boolean {
+  return false;
+}
 
 type Props = Readonly<{
   /** The invoice items to analyze for completeness */
@@ -31,15 +49,8 @@ type Props = Readonly<{
  */
 export default function GuidedEditBanner({items, onReviewAll}: Props): React.JSX.Element | null {
   const t = useTranslations();
-  const [isDismissed, setIsDismissed] = useState(false);
-
-  // Check localStorage on mount for dismissal state
-  useEffect(() => {
-    const dismissed = localStorage.getItem("guidedEditBannerDismissed");
-    if (dismissed === "true") {
-      setIsDismissed(true);
-    }
-  }, []);
+  const isPersistentlyDismissed = useSyncExternalStore(subscribeToDismissal, getDismissalSnapshot, getServerDismissalSnapshot);
+  const [isDismissedForSession, setIsDismissedForSession] = useState(false);
 
   // Analyze products for issues
   const analysis = useMemo(() => {
@@ -84,12 +95,12 @@ export default function GuidedEditBanner({items, onReviewAll}: Props): React.JSX
 
   // Handle dismiss action
   const handleDismiss = useCallback(() => {
-    setIsDismissed(true);
-    localStorage.setItem("guidedEditBannerDismissed", "true");
+    setIsDismissedForSession(true);
+    localStorage.setItem(DISMISSAL_STORAGE_KEY, "true");
   }, []);
 
   // Don't show banner if dismissed or no issues found
-  if (isDismissed || analysis.totalIssues === 0) {
+  if (isPersistentlyDismissed || isDismissedForSession || analysis.totalIssues === 0) {
     return null;
   }
 

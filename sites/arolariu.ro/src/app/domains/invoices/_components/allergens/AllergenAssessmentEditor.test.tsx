@@ -95,6 +95,131 @@ describe("AllergenAssessmentEditor", () => {
     }
   });
 
+  it("keeps an incomplete evidence row editable and emits it only after both fields are complete", async () => {
+    const onChange = vi.fn<(next: AllergenAssessment) => void>();
+    const onValidityChange = vi.fn<(isValid: boolean) => void>();
+    render(
+      <AllergenAssessmentEditor
+        value={existingAssessment}
+        onChange={onChange}
+        onValidityChange={onValidityChange}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", {name: /allergens\.editor\.signals\.addEvidence/i}));
+
+    const sourceInput = screen.getByPlaceholderText(/allergens\.editor\.signals\.evidenceSource/i);
+    const valueInput = screen.getByPlaceholderText(/allergens\.editor\.signals\.evidenceValue/i);
+    expect(sourceInput).toBeInTheDocument();
+    expect(valueInput).toBeInTheDocument();
+    expect(onChange).not.toHaveBeenCalled();
+    expect(onValidityChange).toHaveBeenLastCalledWith(false);
+
+    await userEvent.type(sourceInput, "productLabel");
+    expect(onChange).not.toHaveBeenCalled();
+    expect(onValidityChange).toHaveBeenLastCalledWith(false);
+
+    await userEvent.type(valueInput, "contains milk");
+    const lastEmission = onChange.mock.calls.at(-1)?.[0];
+    expect(lastEmission).toBeDefined();
+    expect(isAllergenAssessment(lastEmission)).toBe(true);
+    expect(onValidityChange).toHaveBeenLastCalledWith(true);
+    expect(lastEmission?.signals[0]?.evidence[0]).toEqual({
+      source: "productLabel",
+      value: "contains milk",
+    });
+  });
+
+  it("updates allergen code and evidence level through the constrained selectors", async () => {
+    const onChange = vi.fn<(next: AllergenAssessment) => void>();
+    const user = userEvent.setup();
+    render(
+      <AllergenAssessmentEditor
+        value={existingAssessment}
+        onChange={onChange}
+      />,
+    );
+
+    await user.click(screen.getByRole("combobox", {name: /allergens\.editor\.signals\.code/i}));
+    await user.click(screen.getByRole("option", {name: /allergens\.codes\.eggs/i}));
+    expect(onChange.mock.calls.at(-1)?.[0].signals[0]?.code).toBe(AllergenCode.Eggs);
+
+    await user.click(screen.getByRole("combobox", {name: /allergens\.editor\.signals\.evidenceLevel/i}));
+    await user.click(screen.getByRole("option", {name: /allergens\.evidenceLevels\.inferred/i}));
+    expect(onChange.mock.calls.at(-1)?.[0].signals[0]?.evidenceLevel).toBe("inferred");
+  });
+
+  it("changes between both valid empty-assessment statuses", async () => {
+    const onChange = vi.fn<(next: AllergenAssessment) => void>();
+    const user = userEvent.setup();
+    render(
+      <AllergenAssessmentEditor
+        value={{status: AllergenAssessmentStatus.NoSignals, signals: []}}
+        onChange={onChange}
+      />,
+    );
+
+    const statusSelector = screen.getByRole("combobox", {name: /allergens\.editor\.status\.label/i});
+    await user.click(statusSelector);
+    await user.click(screen.getByRole("option", {name: /allergens\.editor\.status\.insufficientData/i}));
+    expect(onChange).toHaveBeenLastCalledWith({
+      status: AllergenAssessmentStatus.InsufficientData,
+      signals: [],
+    });
+
+    await user.click(statusSelector);
+    await user.click(screen.getByRole("option", {name: /allergens\.editor\.status\.noSignals/i}));
+    expect(onChange).toHaveBeenLastCalledWith({
+      status: AllergenAssessmentStatus.NoSignals,
+      signals: [],
+    });
+  });
+
+  it("removes an evidence row without removing its allergen signal", async () => {
+    const onChange = vi.fn<(next: AllergenAssessment) => void>();
+    const existingSignal = existingAssessment.signals[0];
+    if (existingSignal === undefined) throw new Error("Expected the assessment fixture to contain a signal");
+    const assessmentWithEvidence: AllergenAssessment = {
+      ...existingAssessment,
+      signals: [
+        {
+          ...existingSignal,
+          evidence: [{source: "productLabel", value: "contains milk"}],
+        },
+      ],
+    };
+    render(
+      <AllergenAssessmentEditor
+        value={assessmentWithEvidence}
+        onChange={onChange}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", {name: /allergens\.editor\.signals\.removeEvidence/i}));
+
+    expect(onChange.mock.calls.at(-1)?.[0]).toMatchObject({
+      status: AllergenAssessmentStatus.Detected,
+      signals: [{code: AllergenCode.Milk, evidence: []}],
+    });
+  });
+
+  it("keeps detected status when one of multiple signals is removed", async () => {
+    const onChange = vi.fn<(next: AllergenAssessment) => void>();
+    render(
+      <AllergenAssessmentEditor
+        value={existingAssessment}
+        onChange={onChange}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", {name: /allergens\.editor\.signals\.addSignal/i}));
+    const removeButtons = screen.getAllByRole("button", {name: /allergens\.editor\.signals\.removeSignal/i});
+    await userEvent.click(removeButtons[0] as HTMLElement);
+
+    expect(onChange.mock.calls.at(-1)?.[0].status).toBe(AllergenAssessmentStatus.Detected);
+    expect(onChange.mock.calls.at(-1)?.[0].signals).toHaveLength(1);
+  });
+
   // ── 3. Adding first signal sets status to "detected" ───────────────────────
 
   it("sets status to detected when the first signal is added", async () => {

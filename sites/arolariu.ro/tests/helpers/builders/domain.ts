@@ -51,11 +51,7 @@ import type {
   Product,
   RecipeSuggestion,
 } from "../../../src/types/invoices";
-import {
-  InvoiceScanType,
-  PaymentType,
-  RecipeDifficulty,
-} from "../../../src/types/invoices";
+import {InvoiceScanType, PaymentType, RecipeDifficulty} from "../../../src/types/invoices";
 import type {Scan} from "../../../src/types/scans";
 import {ScanStatus, ScanType} from "../../../src/types/scans";
 

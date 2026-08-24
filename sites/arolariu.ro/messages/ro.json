@@ -1248,6 +1248,8 @@
           "title": "Actualizează rețeta"
         },
         "validation": {
+          "nameRequired": "Numele rețetei este obligatoriu",
+          "descriptionRequired": "Descrierea rețetei este obligatorie",
           "stepRequired": "Este necesar cel puțin un pas",
           "servingsPositive": "Numărul de porții trebuie să fie pozitiv",
           "totalTimeConstraint": "Timpul total trebuie să fie cel puțin pregătire + gătire"
@@ -2081,7 +2083,9 @@
           "title": "Verificare și creare",
           "partialError": {
             "patchFailed": "Factura a fost creată dar detaliile nu au putut fi salvate. Apăsați Reîncearcă.",
+            "scansFailed": "Factura a fost creată, dar una sau mai multe scanări nu au putut fi atașate. Reîncercați pentru a finaliza atașarea.",
             "retry": "Reîncearcă salvarea detaliilor",
+            "retryScans": "Reîncearcă atașarea scanărilor",
             "title": "Factură creată parțial"
           }
         },
@@ -2107,11 +2111,13 @@
         "errors": {
           "createFailed": "Crearea facturii a eșuat. Vă rugăm încercați din nou.",
           "noScansSelected": "Niciun scan selectat. Selectați cel puțin un scan.",
-          "patchFailed": "Salvarea detaliilor a eșuat. Vă rugăm reîncercați."
+          "patchFailed": "Salvarea detaliilor a eșuat. Vă rugăm reîncercați.",
+          "scanAttachFailed": "Atașarea tuturor scanărilor selectate a eșuat. Vă rugăm reîncercați."
         },
         "toasts": {
           "created": "Factură creată cu succes.",
-          "patchFailed": "Factura a fost creată dar detaliile nu au putut fi salvate. Reîncercați din pasul de revizuire."
+          "patchFailed": "Factura a fost creată dar detaliile nu au putut fi salvate. Reîncercați din pasul de revizuire.",
+          "scanAttachFailed": "Factura a fost creată, dar nu toate scanările au fost atașate. Reîncercați din pasul de revizuire."
         }
       },
       "filters": {
@@ -2985,6 +2991,9 @@
           "jsonSuccess": "Fișier JSON descărcat cu succes",
           "pdf": {
             "description": "Descarcă document profesional de factură",
+            "labels": {
+              "classification": "Clasificare"
+            },
             "title": "Exportă ca PDF"
           },
           "pdfError": "Eroare la generarea PDF-ului",
@@ -5026,6 +5035,9 @@
       "toggleTheme": "Comută tema"
     },
     "invoices": {
+      "classification": {
+        "unclassified": "Neclasificat"
+      },
       "commandPalette": {
         "actions": {
           "createInvoice": "Crează Factură",
@@ -5232,6 +5244,11 @@
     }
   },
   "allergens": {
+    "evidenceLevels": {
+      "explicit": "Explicită",
+      "inferred": "Dedusă",
+      "precautionary": "De precauție"
+    },
     "editor": {
       "title": "Editati evaluarea alergenilor",
       "signals": {

@@ -83,9 +83,7 @@ describe("computeAllergenFrequency — denominator safety", () => {
       name: "Milk Product",
       allergenAssessment: {
         status: AllergenAssessmentStatus.Detected,
-        signals: [
-          {code: AllergenCode.Milk, evidenceLevel: AllergenEvidenceLevel.Explicit, confidence: 0.9, evidence: []},
-        ],
+        signals: [{code: AllergenCode.Milk, evidenceLevel: AllergenEvidenceLevel.Explicit, confidence: 0.9, evidence: []}],
       },
     });
 

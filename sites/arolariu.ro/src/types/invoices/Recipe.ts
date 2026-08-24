@@ -23,7 +23,7 @@
  */
 
 import {type AllergenCode, isAllergenCode} from "./Allergen";
-import {hasOnlyKeys, isArrayOf, isFiniteNumber, isNonEmptyString, isRecord} from "./guards";
+import {hasOnlyKeys, isArrayOf, isFiniteNumber, isNonEmptyString, isRecord} from "../guards";
 
 // ============================================================
 // Structured Recipe Suggestion Model (current API contract)
@@ -41,7 +41,7 @@ import {hasOnlyKeys, isArrayOf, isFiniteNumber, isNonEmptyString, isRecord} from
  * const level: RecipeDifficulty = RecipeDifficulty.Medium;
  * ```
  */
-export const RecipeDifficulty = {
+const RECIPE_DIFFICULTY = {
   /** Beginner-friendly recipe with simple techniques. */
   Easy: "easy",
   /** Moderate skill required; some cooking techniques. */
@@ -50,8 +50,10 @@ export const RecipeDifficulty = {
   Hard: "hard",
 } as const;
 
+export {RECIPE_DIFFICULTY as RecipeDifficulty};
+
 /** Union of recipe difficulty wire strings. */
-export type RecipeDifficulty = (typeof RecipeDifficulty)[keyof typeof RecipeDifficulty];
+export type RecipeDifficulty = (typeof RECIPE_DIFFICULTY)[keyof typeof RECIPE_DIFFICULTY];
 
 /**
  * A single ingredient used in a {@link RecipeSuggestion}.
@@ -106,7 +108,7 @@ export interface RecipeStep {
 export interface RecipeSuggestion {
   /** Display name of the recipe. Must be non-empty. */
   readonly name: string;
-  /** Short description of the recipe. May be an empty string. */
+  /** Short description of the recipe. Must contain non-whitespace text. */
   readonly description: string;
   /** Number of servings this recipe yields. */
   readonly servings: number;
@@ -131,7 +133,7 @@ export interface RecipeSuggestion {
 }
 
 // Guard helpers (module-private)
-const recipeDifficultyValues: readonly string[] = Object.values(RecipeDifficulty);
+const recipeDifficultyValues: readonly string[] = Object.values(RECIPE_DIFFICULTY);
 const RECIPE_SUGGESTION_KEYS = [
   "name",
   "description",
@@ -148,6 +150,26 @@ const RECIPE_SUGGESTION_KEYS = [
 ] as const;
 
 /**
+ * Determines whether a value is a supported recipe difficulty wire string.
+ *
+ * @param value - The unknown value to test.
+ * @returns `true` when `value` is one of the backend-supported difficulty values.
+ */
+export function isRecipeDifficulty(value: unknown): value is RecipeDifficulty {
+  return typeof value === "string" && recipeDifficultyValues.includes(value);
+}
+
+/**
+ * Determines whether a value satisfies the backend's required recipe-text invariant.
+ *
+ * @param value - The candidate recipe name or description.
+ * @returns `true` for non-empty, non-whitespace text.
+ */
+export function isRecipeText(value: unknown): value is string {
+  return isNonEmptyString(value);
+}
+
+/**
  * Determines whether a value conforms to {@link RecipeIngredient}.
  *
  * @param value - The unknown value to test.
@@ -158,9 +180,9 @@ export function isRecipeIngredient(value: unknown): value is RecipeIngredient {
     return false;
   }
   return (
-    isNonEmptyString(value["name"]) &&
-    isNonEmptyString(value["quantity"]) &&
-    (value["preparation"] === null || typeof value["preparation"] === "string")
+    isNonEmptyString(value["name"])
+    && isNonEmptyString(value["quantity"])
+    && (value["preparation"] === null || typeof value["preparation"] === "string")
   );
 }
 
@@ -175,9 +197,9 @@ export function isRecipeStep(value: unknown): value is RecipeStep {
     return false;
   }
   return (
-    isFiniteNumber(value["sequence"]) &&
-    isNonEmptyString(value["instruction"]) &&
-    (value["notes"] === null || typeof value["notes"] === "string")
+    isFiniteNumber(value["sequence"])
+    && isNonEmptyString(value["instruction"])
+    && (value["notes"] === null || typeof value["notes"] === "string")
   );
 }
 
@@ -197,23 +219,21 @@ export function isRecipeSuggestion(value: unknown): value is RecipeSuggestion {
   if (!isRecord(value) || !hasOnlyKeys(value, RECIPE_SUGGESTION_KEYS)) {
     return false;
   }
-  const rawDifficulty = value["difficulty"];
   const rawSteps = value["steps"];
   return (
-    isNonEmptyString(value["name"]) &&
-    typeof value["description"] === "string" &&
-    isFiniteNumber(value["servings"]) &&
-    isFiniteNumber(value["preparationMinutes"]) &&
-    isFiniteNumber(value["cookingMinutes"]) &&
-    isFiniteNumber(value["totalMinutes"]) &&
-    typeof rawDifficulty === "string" &&
-    recipeDifficultyValues.includes(rawDifficulty) &&
-    isArrayOf(value["purchasedIngredients"], isRecipeIngredient) &&
-    isArrayOf(value["assumedPantryStaples"], isRecipeIngredient) &&
-    isArrayOf(value["missingOptionalIngredients"], isRecipeIngredient) &&
-    Array.isArray(rawSteps) &&
-    rawSteps.length > 0 &&
-    isArrayOf(rawSteps, isRecipeStep) &&
-    isArrayOf(value["allergenWarnings"], isAllergenCode)
+    isRecipeText(value["name"])
+    && isRecipeText(value["description"])
+    && isFiniteNumber(value["servings"])
+    && isFiniteNumber(value["preparationMinutes"])
+    && isFiniteNumber(value["cookingMinutes"])
+    && isFiniteNumber(value["totalMinutes"])
+    && isRecipeDifficulty(value["difficulty"])
+    && isArrayOf(value["purchasedIngredients"], isRecipeIngredient)
+    && isArrayOf(value["assumedPantryStaples"], isRecipeIngredient)
+    && isArrayOf(value["missingOptionalIngredients"], isRecipeIngredient)
+    && Array.isArray(rawSteps)
+    && rawSteps.length > 0
+    && isArrayOf(rawSteps, isRecipeStep)
+    && isArrayOf(value["allergenWarnings"], isAllergenCode)
   );
 }

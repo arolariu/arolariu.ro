@@ -4,7 +4,7 @@
  */
 
 import {describe, expect, it} from "vitest";
-import {isRecipeSuggestion} from "./Recipe";
+import {isRecipeDifficulty, isRecipeSuggestion, isRecipeText} from "./Recipe";
 
 // ---------------------------------------------------------------------------
 // Shared fixtures (no `any` — passed directly to `unknown`-parameter guards)
@@ -32,6 +32,15 @@ describe("isRecipeSuggestion", () => {
     expect(isRecipeSuggestion(validRecipe)).toBe(true);
   });
 
+  describe("isRecipeDifficulty", () => {
+    it("accepts supported values and rejects unknown values", () => {
+      expect(isRecipeDifficulty("easy")).toBe(true);
+      expect(isRecipeDifficulty("medium")).toBe(true);
+      expect(isRecipeDifficulty("hard")).toBe(true);
+      expect(isRecipeDifficulty("trivial")).toBe(false);
+    });
+  });
+
   it("accepts empty ingredient sections and empty allergenWarnings", () => {
     expect(
       isRecipeSuggestion({
@@ -48,8 +57,24 @@ describe("isRecipeSuggestion", () => {
     expect(isRecipeSuggestion({...validRecipe, difficulty: "trivial"})).toBe(false);
   });
 
+  it.each(["", "   "])("rejects a blank recipe name: %j", (name) => {
+    expect(isRecipeSuggestion({...validRecipe, name})).toBe(false);
+  });
+
+  it.each(["", "   "])("rejects a blank recipe description: %j", (description) => {
+    expect(isRecipeSuggestion({...validRecipe, description})).toBe(false);
+  });
+
   it("rejects steps: [] (backend requires >= 1 step)", () => {
     expect(isRecipeSuggestion({...validRecipe, steps: []})).toBe(false);
+  });
+
+  describe("isRecipeText", () => {
+    it("accepts non-whitespace text and rejects blank values", () => {
+      expect(isRecipeText("Dinner")).toBe(true);
+      expect(isRecipeText("   ")).toBe(false);
+      expect(isRecipeText("")).toBe(false);
+    });
   });
 
   it("rejects allergenWarnings: ['gluten'] (not a canonical EU-14 code)", () => {

@@ -57,9 +57,7 @@ const CLEANING_CLASS = makeTestClassification("Cleaning/Hygiene Products");
 
 describe("getClassificationGroupSpending — color cycling", () => {
   it("should assign chart colors cycling over CHART_COLORS", () => {
-    const items = [
-      new ProductBuilder().withClassification(FOOD_CLASS).withTotalPrice(25).build(),
-    ];
+    const items = [new ProductBuilder().withClassification(FOOD_CLASS).withTotalPrice(25).build()];
 
     const result = getClassificationGroupSpending(items);
 

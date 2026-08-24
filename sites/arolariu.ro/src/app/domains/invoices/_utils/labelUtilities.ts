@@ -3,8 +3,7 @@
  * @module app/domains/invoices/_utils/labelUtilities
  */
 
-import {PaymentType} from "@/types/invoices";
-import type {StandardClassification} from "@/types/invoices";
+import {PaymentType, type StandardClassification} from "@/types/invoices";
 
 const PAYMENT_TYPE_LABELS: Readonly<Record<number, string>> = {
   [PaymentType.Unknown]: "Unknown",

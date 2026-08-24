@@ -19,12 +19,22 @@ describe("QueuedAnalysisNotice", () => {
   // ── 1. Renders queued state and refresh control ─────────────────────────────
 
   it("renders the queued state title", () => {
-    render(<QueuedAnalysisNotice messageId="test-msg-123" onRefresh={vi.fn()} />);
+    render(
+      <QueuedAnalysisNotice
+        messageId='test-msg-123'
+        onRefresh={vi.fn()}
+      />,
+    );
     expect(screen.getByText(/queuedAnalysisNotice\.title/i)).toBeInTheDocument();
   });
 
   it("renders a refresh button", () => {
-    render(<QueuedAnalysisNotice messageId="test-msg-123" onRefresh={vi.fn()} />);
+    render(
+      <QueuedAnalysisNotice
+        messageId='test-msg-123'
+        onRefresh={vi.fn()}
+      />,
+    );
     expect(screen.getByRole("button", {name: /refreshButton/i})).toBeInTheDocument();
   });
 
@@ -32,7 +42,12 @@ describe("QueuedAnalysisNotice", () => {
 
   it("calls onRefresh when the refresh button is clicked", async () => {
     const onRefresh = vi.fn();
-    render(<QueuedAnalysisNotice messageId="test-msg-123" onRefresh={onRefresh} />);
+    render(
+      <QueuedAnalysisNotice
+        messageId='test-msg-123'
+        onRefresh={onRefresh}
+      />,
+    );
 
     await userEvent.click(screen.getByRole("button", {name: /refreshButton/i}));
 
@@ -42,21 +57,36 @@ describe("QueuedAnalysisNotice", () => {
   // ── 3. No completion language ───────────────────────────────────────────────
 
   it("renders NO completion language", () => {
-    render(<QueuedAnalysisNotice messageId="test-msg-123" onRefresh={vi.fn()} />);
+    render(
+      <QueuedAnalysisNotice
+        messageId='test-msg-123'
+        onRefresh={vi.fn()}
+      />,
+    );
     expect(screen.queryByText(/complete|finished|done|success/i)).not.toBeInTheDocument();
   });
 
   // ── 4. No progressbar role ──────────────────────────────────────────────────
 
   it("renders no role=progressbar element", () => {
-    render(<QueuedAnalysisNotice messageId="test-msg-123" onRefresh={vi.fn()} />);
+    render(
+      <QueuedAnalysisNotice
+        messageId='test-msg-123'
+        onRefresh={vi.fn()}
+      />,
+    );
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
   });
 
   // ── 5. Renders even with null messageId ────────────────────────────────────
 
   it("renders without error when messageId is null", () => {
-    render(<QueuedAnalysisNotice messageId={null} onRefresh={vi.fn()} />);
+    render(
+      <QueuedAnalysisNotice
+        messageId={null}
+        onRefresh={vi.fn()}
+      />,
+    );
     expect(screen.getByRole("button", {name: /refreshButton/i})).toBeInTheDocument();
   });
 });

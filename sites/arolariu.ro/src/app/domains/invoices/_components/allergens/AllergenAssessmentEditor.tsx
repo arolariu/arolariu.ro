@@ -16,13 +16,23 @@
 
 "use client";
 
-import type {AllergenAssessment, AllergenEvidence, AllergenSignal} from "@/types/invoices/Allergen";
-import {AllergenAssessmentStatus, AllergenCode, AllergenEvidenceLevel, isAllergenAssessment} from "@/types/invoices/Allergen";
+import {
+  AllergenAssessmentStatus,
+  AllergenCode,
+  AllergenEvidenceLevel,
+  getAllergenEvidenceLevelLabelKey,
+  getAllergenLabelKey,
+  isAllergenAssessment,
+  type AllergenAssessment,
+  type AllergenCode as AllergenCodeType,
+  type AllergenEvidence,
+  type AllergenEvidenceLevel as AllergenEvidenceLevelType,
+  type AllergenSignal,
+} from "@/types/invoices/Allergen";
 import {Badge, Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@arolariu/components";
 import {selectorFromPath, useTranslations} from "next-intl-selector";
-import {useCallback, useId, useState} from "react";
+import {useCallback, useId, useRef, useState, type ChangeEvent} from "react";
 import {TbPlus, TbX} from "react-icons/tb";
-import {getAllergenLabelKey} from "./allergenLabels";
 import styles from "./AllergenAssessmentEditor.module.scss";
 
 /** Props for {@link AllergenAssessmentEditor}. */
@@ -31,10 +41,12 @@ type Props = {
   readonly value: AllergenAssessment | null;
   /** Called whenever the editor produces a valid assessment. */
   readonly onChange: (next: AllergenAssessment) => void;
+  /** Reports whether the currently visible draft can be persisted. */
+  readonly onValidityChange?: (isValid: boolean) => void;
 };
 
-const ALLERGEN_CODES = Object.values(AllergenCode) as AllergenCode[];
-const EVIDENCE_LEVELS = Object.values(AllergenEvidenceLevel) as AllergenEvidenceLevel[];
+const ALLERGEN_CODES: readonly AllergenCodeType[] = Object.values(AllergenCode);
+const EVIDENCE_LEVELS: readonly AllergenEvidenceLevelType[] = Object.values(AllergenEvidenceLevel);
 
 /** Default status when there are no signals. */
 const DEFAULT_EMPTY_STATUS = AllergenAssessmentStatus.NoSignals;
@@ -59,6 +71,127 @@ function makeEmptyEvidence(): AllergenEvidence {
   return {source: "", value: ""};
 }
 
+/** Resolves an allergen code emitted by the constrained code selector. */
+function resolveAllergenCode(value: string): AllergenCodeType {
+  const code = ALLERGEN_CODES.find((candidate) => candidate === value);
+  if (code === undefined) throw new Error(`Unsupported allergen code: ${value}`);
+  return code;
+}
+
+/** Resolves an evidence level emitted by the constrained level selector. */
+function resolveEvidenceLevel(value: string): AllergenEvidenceLevelType {
+  const level = EVIDENCE_LEVELS.find((candidate) => candidate === value);
+  if (level === undefined) throw new Error(`Unsupported allergen evidence level: ${value}`);
+  return level;
+}
+
+/** Returns the row identifier at an expected index or surfaces an internal invariant failure. */
+function requireRowId(ids: readonly string[], index: number, rowKind: string): string {
+  const id = ids[index];
+  if (id === undefined) throw new Error(`Missing ${rowKind} row identifier at index ${index}`);
+  return id;
+}
+
+/** Reads a non-negative row index from an element data attribute. */
+function readRowIndex(element: HTMLElement, attribute: "signalIndex" | "evidenceIndex"): number {
+  const rawIndex = element.dataset[attribute];
+  const index = rawIndex === undefined ? Number.NaN : Number.parseInt(rawIndex, 10);
+  if (!Number.isSafeInteger(index) || index < 0) throw new Error(`Invalid ${attribute}: ${rawIndex ?? "missing"}`);
+  return index;
+}
+
+/** Removes one evidence-row identifier while preserving all other signal rows. */
+function removeEvidenceRowId(current: readonly string[][], signalIndex: number, evidenceIndex: number): string[][] {
+  if (current[signalIndex] === undefined) throw new Error(`Missing evidence identifiers for signal index ${signalIndex}`);
+
+  return current.map((ids, index) => (index === signalIndex ? ids.filter((_id, candidateIndex) => candidateIndex !== evidenceIndex) : ids));
+}
+
+type SignalFieldProps = Readonly<{
+  signal: AllergenSignal;
+  signalId: string;
+  signalIndex: number;
+  onChange: (signalIndex: number, updates: Partial<AllergenSignal>) => void;
+}>;
+
+/** Renders the constrained EU-14 allergen code selector for one signal. */
+function AllergenCodeField({signal, signalId, signalIndex, onChange}: SignalFieldProps): React.JSX.Element {
+  const t = useTranslations();
+  const handleValueChange = useCallback(
+    (rawCode: string): void => {
+      onChange(signalIndex, {code: resolveAllergenCode(rawCode)});
+    },
+    [onChange, signalIndex],
+  );
+
+  return (
+    <div className={styles["field"]}>
+      <Label
+        htmlFor={`${signalId}-code`}
+        className={styles["fieldLabel"]}>
+        {t(selectorFromPath("allergens.editor.signals.code"))}
+      </Label>
+      <Select
+        value={signal.code}
+        onValueChange={handleValueChange}>
+        <SelectTrigger
+          id={`${signalId}-code`}
+          className={styles["selectTrigger"]}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {ALLERGEN_CODES.map((code) => (
+            <SelectItem
+              key={code}
+              value={code}>
+              {t(selectorFromPath(getAllergenLabelKey(code)))}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+/** Renders the constrained evidence-level selector for one signal. */
+function EvidenceLevelField({signal, signalId, signalIndex, onChange}: SignalFieldProps): React.JSX.Element {
+  const t = useTranslations();
+  const handleValueChange = useCallback(
+    (rawLevel: string): void => {
+      onChange(signalIndex, {evidenceLevel: resolveEvidenceLevel(rawLevel)});
+    },
+    [onChange, signalIndex],
+  );
+
+  return (
+    <div className={styles["field"]}>
+      <Label
+        htmlFor={`${signalId}-level`}
+        className={styles["fieldLabel"]}>
+        {t(selectorFromPath("allergens.editor.signals.evidenceLevel"))}
+      </Label>
+      <Select
+        value={signal.evidenceLevel}
+        onValueChange={handleValueChange}>
+        <SelectTrigger
+          id={`${signalId}-level`}
+          className={styles["selectTrigger"]}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {EVIDENCE_LEVELS.map((level) => (
+            <SelectItem
+              key={level}
+              value={level}>
+              {t(selectorFromPath(getAllergenEvidenceLevelLabelKey(level)))}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
 /**
  * Constrained editor for a single EU-14 allergen assessment.
  *
@@ -72,73 +205,94 @@ function makeEmptyEvidence(): AllergenEvidence {
  * @param props - {@link Props}
  * @returns The allergen assessment editor.
  */
-export function AllergenAssessmentEditor({value, onChange}: Props): React.JSX.Element {
+export function AllergenAssessmentEditor({value, onChange, onValidityChange}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations();
   const baseId = useId();
 
-  const [working, setWorking] = useState<AllergenAssessment>(
-    value ?? {status: DEFAULT_EMPTY_STATUS, signals: []},
+  const [working, setWorking] = useState<AllergenAssessment>(value ?? {status: DEFAULT_EMPTY_STATUS, signals: []});
+  const nextRowIdRef = useRef(0);
+  const [signalIds, setSignalIds] = useState<string[]>(working.signals.map((_signal, index) => `${baseId}-signal-initial-${index}`));
+  const [evidenceIds, setEvidenceIds] = useState<string[][]>(
+    working.signals.map((signal, signalIndex) =>
+      signal.evidence.map((_evidence, evidenceIndex) => `${baseId}-evidence-initial-${signalIndex}-${evidenceIndex}`),
+    ),
   );
 
-  /** Emit only valid assessments. Guards are belt-and-suspenders. */
-  const emit = useCallback(
+  /** Creates a stable identifier for a newly added editor row. */
+  const createRowId = useCallback(
+    (rowKind: "signal" | "evidence"): string => {
+      nextRowIdRef.current += 1;
+      return `${baseId}-${rowKind}-${nextRowIdRef.current}`;
+    },
+    [baseId],
+  );
+
+  /** Keeps incomplete form rows locally and emits only complete domain values. */
+  const updateWorking = useCallback(
     (next: AllergenAssessment) => {
-      if (isAllergenAssessment(next)) {
-        setWorking(next);
+      setWorking(next);
+      const isValid = isAllergenAssessment(next);
+      onValidityChange?.(isValid);
+      if (isValid) {
         onChange(next);
       }
     },
-    [onChange],
+    [onChange, onValidityChange],
   );
 
   /** Updates the non-detected status (only valid when signals are empty). */
   const handleStatusChange = useCallback(
     (status: string) => {
       if (status === AllergenAssessmentStatus.NoSignals || status === AllergenAssessmentStatus.InsufficientData) {
-        emit({status, signals: []});
+        updateWorking({status, signals: []});
       }
     },
-    [emit],
+    [updateWorking],
   );
 
   /** Adds a new signal with defaults, flipping status to "detected" if first. */
   const handleAddSignal = useCallback(() => {
     const newSignal = makeEmptySignal();
+    const signalId = createRowId("signal");
     const nextSignals = [...working.signals, newSignal];
-    emit({status: AllergenAssessmentStatus.Detected, signals: nextSignals});
-  }, [working, emit]);
+    setSignalIds((current) => [...current, signalId]);
+    setEvidenceIds((current) => [...current, []]);
+    updateWorking({status: AllergenAssessmentStatus.Detected, signals: nextSignals});
+  }, [createRowId, working, updateWorking]);
 
   /** Removes a signal by index. If last signal, reverts status to noSignals. */
   const handleRemoveSignal = useCallback(
     (idx: number) => {
       const nextSignals = working.signals.filter((_, i) => i !== idx);
       const nextStatus = nextSignals.length === 0 ? DEFAULT_EMPTY_STATUS : AllergenAssessmentStatus.Detected;
-      emit({status: nextStatus, signals: nextSignals});
+      setSignalIds((current) => current.filter((_id, index) => index !== idx));
+      setEvidenceIds((current) => current.filter((_ids, index) => index !== idx));
+      updateWorking({status: nextStatus, signals: nextSignals});
     },
-    [working, emit],
+    [working, updateWorking],
   );
 
   /** Updates a specific field of a specific signal. */
   const handleSignalChange = useCallback(
-    <K extends keyof AllergenSignal>(signalIdx: number, field: K, raw: AllergenSignal[K]) => {
-      const value_ = field === "confidence" ? (clampConfidence(raw as number) as AllergenSignal[K]) : raw;
-      const nextSignals = working.signals.map((s, i) =>
-        i === signalIdx ? {...s, [field]: value_} : s,
-      );
-      emit({status: AllergenAssessmentStatus.Detected, signals: nextSignals});
+    (signalIdx: number, updates: Partial<AllergenSignal>) => {
+      const nextSignals = working.signals.map((signal, index) => (index === signalIdx ? {...signal, ...updates} : signal));
+      updateWorking({status: AllergenAssessmentStatus.Detected, signals: nextSignals});
     },
-    [working, emit],
+    [working, updateWorking],
   );
 
   /** Adds an evidence entry to a specific signal. */
   const handleAddEvidence = useCallback(
     (signalIdx: number) => {
-      const nextSignals = working.signals.map((s, i) =>
-        i === signalIdx ? {...s, evidence: [...s.evidence, makeEmptyEvidence()]} : s,
-      );
-      emit({status: AllergenAssessmentStatus.Detected, signals: nextSignals});
+      const evidenceId = createRowId("evidence");
+      const nextSignals = working.signals.map((s, i) => (i === signalIdx ? {...s, evidence: [...s.evidence, makeEmptyEvidence()]} : s));
+      setEvidenceIds((current) => {
+        if (current[signalIdx] === undefined) throw new Error(`Missing evidence identifiers for signal index ${signalIdx}`);
+        return current.map((ids, index) => (index === signalIdx ? [...ids, evidenceId] : ids));
+      });
+      updateWorking({status: AllergenAssessmentStatus.Detected, signals: nextSignals});
     },
-    [working, emit],
+    [createRowId, working, updateWorking],
   );
 
   /** Removes an evidence entry. */
@@ -147,9 +301,10 @@ export function AllergenAssessmentEditor({value, onChange}: Props): React.JSX.El
       const nextSignals = working.signals.map((s, i) =>
         i === signalIdx ? {...s, evidence: s.evidence.filter((_, ei) => ei !== evIdx)} : s,
       );
-      emit({status: AllergenAssessmentStatus.Detected, signals: nextSignals});
+      setEvidenceIds((current) => removeEvidenceRowId(current, signalIdx, evIdx));
+      updateWorking({status: AllergenAssessmentStatus.Detected, signals: nextSignals});
     },
-    [working, emit],
+    [working, updateWorking],
   );
 
   /** Updates a specific field of a specific evidence entry. */
@@ -157,14 +312,55 @@ export function AllergenAssessmentEditor({value, onChange}: Props): React.JSX.El
     (signalIdx: number, evIdx: number, field: keyof AllergenEvidence, value_: string) => {
       const nextSignals = working.signals.map((s, i) => {
         if (i !== signalIdx) return s;
-        const nextEvidence = s.evidence.map((ev, ei) =>
-          ei === evIdx ? {...ev, [field]: value_} : ev,
-        );
+        const nextEvidence = s.evidence.map((ev, ei) => (ei === evIdx ? {...ev, [field]: value_} : ev));
         return {...s, evidence: nextEvidence};
       });
-      emit({status: AllergenAssessmentStatus.Detected, signals: nextSignals});
+      updateWorking({status: AllergenAssessmentStatus.Detected, signals: nextSignals});
     },
-    [working, emit],
+    [working, updateWorking],
+  );
+
+  const handleRemoveSignalClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>): void => {
+      handleRemoveSignal(readRowIndex(event.currentTarget, "signalIndex"));
+    },
+    [handleRemoveSignal],
+  );
+
+  const handleConfidenceChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>): void => {
+      const signalIndex = readRowIndex(event.currentTarget, "signalIndex");
+      const confidence = clampConfidence(Number.parseFloat(event.currentTarget.value) || 0);
+      handleSignalChange(signalIndex, {confidence});
+    },
+    [handleSignalChange],
+  );
+
+  const handleAddEvidenceClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>): void => {
+      handleAddEvidence(readRowIndex(event.currentTarget, "signalIndex"));
+    },
+    [handleAddEvidence],
+  );
+
+  const handleEvidenceInputChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>): void => {
+      const signalIndex = readRowIndex(event.currentTarget, "signalIndex");
+      const evidenceIndex = readRowIndex(event.currentTarget, "evidenceIndex");
+      const field = event.currentTarget.dataset["evidenceField"];
+      if (field !== "source" && field !== "value") throw new Error(`Invalid evidence field: ${field ?? "missing"}`);
+      handleEvidenceChange(signalIndex, evidenceIndex, field, event.currentTarget.value);
+    },
+    [handleEvidenceChange],
+  );
+
+  const handleRemoveEvidenceClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>): void => {
+      const signalIndex = readRowIndex(event.currentTarget, "signalIndex");
+      const evidenceIndex = readRowIndex(event.currentTarget, "evidenceIndex");
+      handleRemoveEvidence(signalIndex, evidenceIndex);
+    },
+    [handleRemoveEvidence],
   );
 
   const hasSignals = working.signals.length > 0;
@@ -188,9 +384,7 @@ export function AllergenAssessmentEditor({value, onChange}: Props): React.JSX.El
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={AllergenAssessmentStatus.NoSignals}>
-                {t(selectorFromPath("allergens.editor.status.noSignals"))}
-              </SelectItem>
+              <SelectItem value={AllergenAssessmentStatus.NoSignals}>{t(selectorFromPath("allergens.editor.status.noSignals"))}</SelectItem>
               <SelectItem value={AllergenAssessmentStatus.InsufficientData}>
                 {t(selectorFromPath("allergens.editor.status.insufficientData"))}
               </SelectItem>
@@ -202,170 +396,158 @@ export function AllergenAssessmentEditor({value, onChange}: Props): React.JSX.El
       {/* Signals list */}
       <div className={styles["signalsSection"]}>
         <div className={styles["signalsHeader"]}>
-          <span className={styles["signalsTitle"]}>
-            {t(selectorFromPath("allergens.editor.signals.title"))}
-          </span>
+          <span className={styles["signalsTitle"]}>{t(selectorFromPath("allergens.editor.signals.title"))}</span>
           <Button
             type='button'
             variant='outline'
             size='sm'
             onClick={handleAddSignal}
             className={styles["addSignalBtn"]}>
-            <TbPlus className={styles["icon"]} aria-hidden='true' />
+            <TbPlus
+              className={styles["icon"]}
+              aria-hidden='true'
+            />
             {t(selectorFromPath("allergens.editor.signals.addSignal"))}
           </Button>
         </div>
 
-        {!hasSignals && (
-          <p className={styles["emptySignals"]}>{t(selectorFromPath("allergens.editor.signals.empty"))}</p>
-        )}
+        {!hasSignals && <p className={styles["emptySignals"]}>{t(selectorFromPath("allergens.editor.signals.empty"))}</p>}
 
-        {working.signals.map((signal, sIdx) => (
-          <div
-            key={sIdx}
-            className={styles["signal"]}
-            aria-label={t(selectorFromPath("allergens.editor.signals.userProvided"))}>
-            <div className={styles["signalTopRow"]}>
-              {/* User-provided badge */}
-              <Badge
-                variant='outline'
-                className={styles["userProvidedBadge"]}>
-                {t(selectorFromPath("allergens.editor.signals.userProvided"))}
-              </Badge>
-              <Button
-                type='button'
-                variant='ghost'
-                size='sm'
-                onClick={() => handleRemoveSignal(sIdx)}
-                aria-label={t(selectorFromPath("allergens.editor.signals.removeSignal"))}
-                className={styles["removeSignalBtn"]}>
-                <TbX className={styles["icon"]} aria-hidden='true' />
-              </Button>
-            </div>
+        {working.signals.map((signal, signalIndex) => {
+          const signalId = requireRowId(signalIds, signalIndex, "signal");
+          const signalEvidenceIds = evidenceIds[signalIndex];
+          if (signalEvidenceIds === undefined) {
+            throw new Error(`Missing evidence identifiers for signal index ${signalIndex}`);
+          }
 
-            <div className={styles["signalFields"]}>
-              {/* Code selector — exactly 14 options, never free text */}
-              <div className={styles["field"]}>
-                <Label
-                  htmlFor={`${baseId}-signal-${sIdx}-code`}
-                  className={styles["fieldLabel"]}>
-                  {t(selectorFromPath("allergens.editor.signals.code"))}
-                </Label>
-                <Select
-                  value={signal.code}
-                  onValueChange={(v) => handleSignalChange(sIdx, "code", v as AllergenCode)}>
-                  <SelectTrigger
-                    id={`${baseId}-signal-${sIdx}-code`}
-                    className={styles["selectTrigger"]}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ALLERGEN_CODES.map((code) => (
-                      <SelectItem
-                        key={code}
-                        value={code}>
-                        {t(selectorFromPath(getAllergenLabelKey(code)))}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Evidence level selector — exactly 3 options */}
-              <div className={styles["field"]}>
-                <Label
-                  htmlFor={`${baseId}-signal-${sIdx}-level`}
-                  className={styles["fieldLabel"]}>
-                  {t(selectorFromPath("allergens.editor.signals.evidenceLevel"))}
-                </Label>
-                <Select
-                  value={signal.evidenceLevel}
-                  onValueChange={(v) => handleSignalChange(sIdx, "evidenceLevel", v as AllergenEvidenceLevel)}>
-                  <SelectTrigger
-                    id={`${baseId}-signal-${sIdx}-level`}
-                    className={styles["selectTrigger"]}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {EVIDENCE_LEVELS.map((level) => (
-                      <SelectItem
-                        key={level}
-                        value={level}>
-                        {level}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Confidence input — clamped to [0, 1] */}
-              <div className={styles["field"]}>
-                <Label
-                  htmlFor={`${baseId}-signal-${sIdx}-confidence`}
-                  className={styles["fieldLabel"]}>
-                  {t(selectorFromPath("allergens.editor.signals.confidence"))}
-                </Label>
-                <Input
-                  id={`${baseId}-signal-${sIdx}-confidence`}
-                  type='number'
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  value={signal.confidence}
-                  onChange={(e) => handleSignalChange(sIdx, "confidence", clampConfidence(parseFloat(e.target.value) || 0))}
-                  className={styles["confidenceInput"]}
-                />
-              </div>
-            </div>
-
-            {/* Evidence entries */}
-            <div className={styles["evidenceSection"]}>
-              <div className={styles["evidenceHeader"]}>
-                <span className={styles["evidenceTitle"]}>
-                  {t(selectorFromPath("allergens.view.signal.evidenceEntries"))}
-                </span>
+          return (
+            <div
+              key={signalId}
+              className={styles["signal"]}
+              aria-label={t(selectorFromPath("allergens.editor.signals.userProvided"))}>
+              <div className={styles["signalTopRow"]}>
+                {/* User-provided badge */}
+                <Badge
+                  variant='outline'
+                  className={styles["userProvidedBadge"]}>
+                  {t(selectorFromPath("allergens.editor.signals.userProvided"))}
+                </Badge>
                 <Button
                   type='button'
                   variant='ghost'
                   size='sm'
-                  onClick={() => handleAddEvidence(sIdx)}
-                  className={styles["addEvidenceBtn"]}>
-                  <TbPlus className={styles["icon"]} aria-hidden='true' />
-                  {t(selectorFromPath("allergens.editor.signals.addEvidence"))}
+                  data-signal-index={signalIndex}
+                  onClick={handleRemoveSignalClick}
+                  aria-label={t(selectorFromPath("allergens.editor.signals.removeSignal"))}
+                  className={styles["removeSignalBtn"]}>
+                  <TbX
+                    className={styles["icon"]}
+                    aria-hidden='true'
+                  />
                 </Button>
               </div>
-              {signal.evidence.map((ev, evIdx) => (
-                <div
-                  key={evIdx}
-                  className={styles["evidenceRow"]}>
+
+              <div className={styles["signalFields"]}>
+                <AllergenCodeField
+                  signal={signal}
+                  signalId={signalId}
+                  signalIndex={signalIndex}
+                  onChange={handleSignalChange}
+                />
+                <EvidenceLevelField
+                  signal={signal}
+                  signalId={signalId}
+                  signalIndex={signalIndex}
+                  onChange={handleSignalChange}
+                />
+
+                {/* Confidence input — clamped to [0, 1] */}
+                <div className={styles["field"]}>
+                  <Label
+                    htmlFor={`${signalId}-confidence`}
+                    className={styles["fieldLabel"]}>
+                    {t(selectorFromPath("allergens.editor.signals.confidence"))}
+                  </Label>
                   <Input
-                    type='text'
-                    placeholder={t(selectorFromPath("allergens.editor.signals.evidenceSource"))}
-                    value={ev.source}
-                    onChange={(e) => handleEvidenceChange(sIdx, evIdx, "source", e.target.value)}
-                    className={styles["evidenceInput"]}
+                    id={`${signalId}-confidence`}
+                    type='number'
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={signal.confidence}
+                    data-signal-index={signalIndex}
+                    onChange={handleConfidenceChange}
+                    className={styles["confidenceInput"]}
                   />
-                  <Input
-                    type='text'
-                    placeholder={t(selectorFromPath("allergens.editor.signals.evidenceValue"))}
-                    value={ev.value}
-                    onChange={(e) => handleEvidenceChange(sIdx, evIdx, "value", e.target.value)}
-                    className={styles["evidenceInput"]}
-                  />
+                </div>
+              </div>
+
+              {/* Evidence entries */}
+              <div className={styles["evidenceSection"]}>
+                <div className={styles["evidenceHeader"]}>
+                  <span className={styles["evidenceTitle"]}>{t(selectorFromPath("allergens.view.signal.evidenceEntries"))}</span>
                   <Button
                     type='button'
                     variant='ghost'
                     size='sm'
-                    onClick={() => handleRemoveEvidence(sIdx, evIdx)}
-                    aria-label={t(selectorFromPath("allergens.editor.signals.removeEvidence"))}
-                    className={styles["removeEvidenceBtn"]}>
-                    <TbX className={styles["icon"]} aria-hidden='true' />
+                    data-signal-index={signalIndex}
+                    onClick={handleAddEvidenceClick}
+                    className={styles["addEvidenceBtn"]}>
+                    <TbPlus
+                      className={styles["icon"]}
+                      aria-hidden='true'
+                    />
+                    {t(selectorFromPath("allergens.editor.signals.addEvidence"))}
                   </Button>
                 </div>
-              ))}
+                {signal.evidence.map((evidence, evidenceIndex) => {
+                  const evidenceId = requireRowId(signalEvidenceIds, evidenceIndex, "evidence");
+
+                  return (
+                    <div
+                      key={evidenceId}
+                      className={styles["evidenceRow"]}>
+                      <Input
+                        type='text'
+                        placeholder={t(selectorFromPath("allergens.editor.signals.evidenceSource"))}
+                        value={evidence.source}
+                        data-signal-index={signalIndex}
+                        data-evidence-index={evidenceIndex}
+                        data-evidence-field='source'
+                        onChange={handleEvidenceInputChange}
+                        className={styles["evidenceInput"]}
+                      />
+                      <Input
+                        type='text'
+                        placeholder={t(selectorFromPath("allergens.editor.signals.evidenceValue"))}
+                        value={evidence.value}
+                        data-signal-index={signalIndex}
+                        data-evidence-index={evidenceIndex}
+                        data-evidence-field='value'
+                        onChange={handleEvidenceInputChange}
+                        className={styles["evidenceInput"]}
+                      />
+                      <Button
+                        type='button'
+                        variant='ghost'
+                        size='sm'
+                        data-signal-index={signalIndex}
+                        data-evidence-index={evidenceIndex}
+                        onClick={handleRemoveEvidenceClick}
+                        aria-label={t(selectorFromPath("allergens.editor.signals.removeEvidence"))}
+                        className={styles["removeEvidenceBtn"]}>
+                        <TbX
+                          className={styles["icon"]}
+                          aria-hidden='true'
+                        />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

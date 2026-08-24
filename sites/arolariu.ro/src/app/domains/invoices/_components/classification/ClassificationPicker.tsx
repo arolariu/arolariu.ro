@@ -10,9 +10,9 @@
  * any in-flight result that was superseded by a newer request.
  *
  * **Stale-response protection** is the primary correctness invariant: a
- * monotonically increasing request counter (`requestIdRef`) is incremented
- * before each fetch; on resolve the result is discarded when the counter has
- * advanced beyond the value captured at dispatch time.
+ * monotonically increasing request generation (`requestGenerationRef`) is
+ * incremented on every query input change. Each delayed request captures that
+ * generation, and its result is discarded if the query has since changed.
  *
  * **Rendering context**: Client Component (`"use client"`) — uses event
  * handlers, local state, and refs.
@@ -21,11 +21,11 @@
 import {useCallback, useEffect, useId, useRef, useState} from "react";
 import {useTranslations} from "next-intl-selector";
 import {searchClassifications} from "@/app/domains/invoices/_actions/analysis/searchClassifications";
-import {normalizeClassificationSearchQuery} from "@/types/invoices";
-import type {
-  ClassificationSearchResult,
-  ClassificationSelection,
-  ClassificationSystem,
+import {
+  normalizeClassificationSearchQuery,
+  type ClassificationSearchResult,
+  type ClassificationSelection,
+  type ClassificationSystem,
 } from "@/types/invoices";
 import styles from "./ClassificationPicker.module.scss";
 
@@ -42,7 +42,7 @@ const DEBOUNCE_MS = 300;
 const MAX_DISPLAY_RESULTS = 50;
 
 /** Props for {@link ClassificationPicker}. */
-export interface ClassificationPickerProps {
+type Props = {
   /** The taxonomy system to search within. */
   readonly system: ClassificationSystem;
   /** Current selection (controlled), or `null` when nothing is selected. */
@@ -61,7 +61,7 @@ export interface ClassificationPickerProps {
   readonly label: string;
   /** When `true`, all interactive controls are disabled. */
   readonly disabled?: boolean;
-}
+};
 
 /**
  * Reusable combobox that lets users search and select a canonical taxonomy code.
@@ -69,21 +69,15 @@ export interface ClassificationPickerProps {
  * @remarks
  * - Debounces input by {@link DEBOUNCE_MS}ms before issuing a search.
  * - Enforces the server-side minimum query length ({@link MIN_QUERY_LENGTH} normalized chars).
- * - Protects against stale responses via a monotonically increasing `requestIdRef`.
+ * - Protects against stale responses via a monotonically increasing request generation.
  * - Supports full keyboard navigation: ArrowDown / ArrowUp / Enter / Escape.
  * - Emits exactly `{system, code}` on selection; clear emits `null`.
  * - Cleans up any pending debounce timer on unmount.
  *
- * @param props - {@link ClassificationPickerProps}
+ * @param props - Component properties.
  * @returns The classification combobox element.
  */
-export default function ClassificationPicker({
-  system,
-  value,
-  onChange,
-  label,
-  disabled = false,
-}: Readonly<ClassificationPickerProps>): React.JSX.Element {
+export default function ClassificationPicker({system, value, onChange, label, disabled = false}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations();
   const listboxId = useId();
   const inputId = `${listboxId}-input`;
@@ -96,10 +90,20 @@ export default function ClassificationPicker({
   /** Pending debounce timer handle. */
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /**
-   * Monotonically increasing request identifier.
-   * Incremented before each fetch; compared on resolve to detect stale responses.
+   * Monotonically increasing query generation.
+   * Incremented on every input change and compared when requests resolve.
    */
-  const requestIdRef = useRef(0);
+  const requestGenerationRef = useRef(0);
+
+  /** Invalidates delayed or in-flight searches and clears the active debounce. */
+  const invalidatePendingSearch = useCallback((): number => {
+    requestGenerationRef.current += 1;
+    if (debounceRef.current !== null) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    return requestGenerationRef.current;
+  }, []);
 
   // Clean up any pending debounce timer when the component unmounts.
   useEffect(() => {
@@ -108,14 +112,36 @@ export default function ClassificationPicker({
     };
   }, []);
 
+  /** Executes a delayed search and applies it only while its query generation is current. */
+  const performSearch = useCallback(
+    async (raw: string, requestGeneration: number): Promise<void> => {
+      const result = await searchClassifications({system, query: raw});
+
+      // Discard whenever the query changed after this request was scheduled.
+      if (requestGeneration !== requestGenerationRef.current) return;
+
+      if (result.success) {
+        const bounded = result.data.slice(0, MAX_DISPLAY_RESULTS);
+        setResults(bounded);
+        setIsOpen(bounded.length > 0);
+      } else {
+        setResults([]);
+        setIsOpen(false);
+      }
+    },
+    [system],
+  );
+
   /** Handles input text changes: debounces and guards minimum query length. */
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = e.target.value;
+      // Invalidate every older request immediately, including when this query
+      // is cleared or becomes too short to schedule a replacement request.
+      const requestGeneration = invalidatePendingSearch();
+
       setQuery(raw);
       setActiveIndex(-1);
-
-      if (debounceRef.current !== null) clearTimeout(debounceRef.current);
 
       if (normalizeClassificationSearchQuery(raw).length < MIN_QUERY_LENGTH) {
         setResults([]);
@@ -124,151 +150,177 @@ export default function ClassificationPicker({
       }
 
       debounceRef.current = setTimeout(() => {
-        // Capture the new request id before the async fetch — this is the stale-response guard.
-        requestIdRef.current += 1;
-        const myId = requestIdRef.current;
-
-        void searchClassifications({system, query: raw}).then((result) => {
-          // Discard if a newer request has been issued while this one was in-flight.
-          if (myId !== requestIdRef.current) return;
-
-          if (result.success) {
-            const bounded = result.data.slice(0, MAX_DISPLAY_RESULTS);
-            setResults(bounded);
-            setIsOpen(bounded.length > 0);
-          } else {
-            setResults([]);
-            setIsOpen(false);
-          }
-        });
+        void performSearch(raw, requestGeneration);
       }, DEBOUNCE_MS);
     },
-    [system],
+    [invalidatePendingSearch, performSearch],
   );
 
   /** Handles keyboard navigation and selection within the combobox. */
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        if (!isOpen && results.length > 0) {
-          setIsOpen(true);
-          setActiveIndex(0);
-          return;
-        }
-        if (isOpen && results.length > 0) {
-          setActiveIndex((prev) => Math.min(prev + 1, results.length - 1));
-        }
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        if (isOpen) {
-          setActiveIndex((prev) => Math.max(prev - 1, 0));
-        }
-      } else if (e.key === "Enter") {
-        if (isOpen && activeIndex >= 0) {
-          const selected = results[activeIndex];
-          if (selected !== undefined) {
-            e.preventDefault();
-            onChange({system: selected.system, code: selected.code});
-            setIsOpen(false);
-            setQuery("");
-            setResults([]);
-            setActiveIndex(-1);
+      switch (e.key) {
+        case "ArrowDown": {
+          e.preventDefault();
+          if (!isOpen && results.length > 0) {
+            setIsOpen(true);
+            setActiveIndex(0);
+            return;
           }
+          if (isOpen && results.length > 0) {
+            setActiveIndex((prev) => Math.min(prev + 1, results.length - 1));
+          }
+          break;
         }
-      } else if (e.key === "Escape") {
-        e.preventDefault();
-        setIsOpen(false);
-        setActiveIndex(-1);
+        case "ArrowUp": {
+          e.preventDefault();
+          if (isOpen) {
+            setActiveIndex((prev) => Math.max(prev - 1, 0));
+          }
+          break;
+        }
+        case "Enter": {
+          if (isOpen && activeIndex >= 0) {
+            const selected = results[activeIndex];
+            if (selected !== undefined) {
+              e.preventDefault();
+              invalidatePendingSearch();
+              onChange({system: selected.system, code: selected.code});
+              setIsOpen(false);
+              setQuery("");
+              setResults([]);
+              setActiveIndex(-1);
+            }
+          }
+          break;
+        }
+        case "Escape": {
+          e.preventDefault();
+          setIsOpen(false);
+          setActiveIndex(-1);
+          break;
+        }
+        default:
+          break;
       }
     },
-    [isOpen, results, activeIndex, onChange],
+    [isOpen, results, activeIndex, invalidatePendingSearch, onChange],
   );
 
-  /** Selects the given result and closes the listbox. */
-  const handleOptionClick = useCallback(
-    (result: ClassificationSearchResult) => {
+  /** Selects a result by code and closes the listbox. */
+  const selectOptionByCode = useCallback(
+    (code: string | undefined): void => {
+      const result = results.find((candidate) => candidate.code === code);
+      if (result === undefined) throw new Error(`Classification option not found: ${code ?? "missing"}`);
+
+      invalidatePendingSearch();
       onChange({system: result.system, code: result.code});
       setIsOpen(false);
       setQuery("");
       setResults([]);
       setActiveIndex(-1);
     },
-    [onChange],
+    [invalidatePendingSearch, onChange, results],
   );
+
+  /** Selects the result identified by a clicked option. */
+  const handleOptionClick = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>): void => {
+      selectOptionByCode(event.currentTarget.dataset["code"]);
+    },
+    [selectOptionByCode],
+  );
+
+  /** Supports direct keyboard activation if an option receives focus. */
+  const handleOptionKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>): void => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        selectOptionByCode(event.currentTarget.dataset["code"]);
+      }
+    },
+    [selectOptionByCode],
+  );
+
+  /** Keeps the combobox focused while an option is clicked. */
+  const handleOptionMouseDown = useCallback((event: React.MouseEvent<HTMLDivElement>): void => {
+    event.preventDefault();
+  }, []);
 
   /** Clears the current value and resets the combobox state. */
   const handleClear = useCallback(() => {
+    invalidatePendingSearch();
     onChange(null);
     setQuery("");
     setResults([]);
     setIsOpen(false);
     setActiveIndex(-1);
-  }, [onChange]);
+  }, [invalidatePendingSearch, onChange]);
 
-  const activeOptionId =
-    isOpen && activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined;
+  const activeOptionId = isOpen && activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined;
 
   return (
     <div className={styles["container"]}>
-      <label htmlFor={inputId} className={styles["label"]}>
+      <label
+        htmlFor={inputId}
+        className={styles["label"]}>
         {label}
       </label>
 
       <div className={styles["inputWrapper"]}>
         <input
           id={inputId}
-          role="combobox"
-          type="text"
+          role='combobox'
+          type='text'
           aria-expanded={isOpen}
           aria-controls={listboxId}
-          aria-autocomplete="list"
+          aria-autocomplete='list'
           aria-activedescendant={activeOptionId}
           aria-disabled={disabled}
           className={styles["input"]}
           value={query}
           placeholder={t((m) => m.dialogs.invoices.classificationPicker.placeholder)}
           disabled={disabled}
-          autoComplete="off"
+          autoComplete='off'
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
         />
         {value !== null && (
           <button
-            type="button"
+            type='button'
             className={styles["clearButton"]}
             aria-label={t((m) => m.dialogs.invoices.classificationPicker.clear)}
             onClick={handleClear}
-            disabled={disabled}
-          >
+            disabled={disabled}>
             ×
           </button>
         )}
       </div>
 
-      {isOpen && (
-        <ul id={listboxId} role="listbox" aria-label={label} className={styles["listbox"]}>
+      {isOpen ? (
+        <div
+          id={listboxId}
+          role='listbox'
+          aria-label={label}
+          className={styles["listbox"]}>
           {results.map((result, index) => (
-            <li
+            <div
               key={result.code}
               id={`${listboxId}-option-${index}`}
-              role="option"
+              role='option'
+              tabIndex={-1}
+              data-code={result.code}
               aria-selected={index === activeIndex}
               className={`${styles["option"] ?? ""} ${index === activeIndex ? (styles["optionActive"] ?? "") : ""}`}
-              onMouseDown={(e) => {
-                // Prevent the input from losing focus before the click fires.
-                e.preventDefault();
-              }}
-              onClick={() => {
-                handleOptionClick(result);
-              }}
-            >
+              onMouseDown={handleOptionMouseDown}
+              onClick={handleOptionClick}
+              onKeyDown={handleOptionKeyDown}>
               <span className={styles["optionLabel"]}>{result.officialLabel}</span>
               <span className={styles["optionCode"]}>{result.code}</span>
-            </li>
+            </div>
           ))}
-        </ul>
-      )}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -20,10 +20,33 @@ import {
   TableRow,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useState} from "react";
 import {TbDisc, TbPlus, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./ItemsDialog.module.scss";
+
+/**
+ * Applies an editable input value to an invoice product.
+ *
+ * @param item - Existing product value.
+ * @param field - Input field submitted by the editable row.
+ * @param value - Raw input value.
+ * @returns The updated product, or the original product for unsupported fields.
+ */
+function updateEditableItem(item: Product, field: string, value: string): Product {
+  switch (field) {
+    case "name":
+      return {...item, name: value};
+    case "quantity":
+      return {...item, quantity: Number.parseFloat(value)};
+    case "quantityUnit":
+      return {...item, quantityUnit: value};
+    case "price":
+      return {...item, price: Number.parseFloat(value)};
+    default:
+      return item;
+  }
+}
 
 /**
  * Dialog for bulk editing invoice line items with add, modify, and delete operations.
@@ -84,10 +107,6 @@ export default function ItemsDialog(): React.JSX.Element {
     items: editableItems,
   });
 
-  useEffect(() => {
-    setEditableItems(items);
-  }, [items]);
-
   const handleSaveChanges = useCallback(() => {
     // TODO: Implement save functionality
     close();
@@ -142,23 +161,7 @@ export default function ItemsDialog(): React.JSX.Element {
             return prev;
           }
 
-          // Use specific property assignments with functional approach
-          const getUpdatedItem = (): Product => {
-            switch (name) {
-              case "name":
-                return {...currentItem, name: value};
-              case "quantity":
-                return {...currentItem, quantity: Number.parseFloat(value)};
-              case "quantityUnit":
-                return {...currentItem, quantityUnit: value};
-              case "price":
-                return {...currentItem, price: Number.parseFloat(value)};
-              default:
-                return currentItem;
-            }
-          };
-
-          const updatedItem = getUpdatedItem();
+          const updatedItem = updateEditableItem(currentItem, name, value);
 
           if (updatedItem === currentItem) {
             // No changes made
@@ -182,13 +185,18 @@ export default function ItemsDialog(): React.JSX.Element {
     setCurrentPage(currentPage + 1);
   }, [currentPage, setCurrentPage]);
 
+  /** Closes the dialog when its controlled open state changes to false. */
+  const handleOpenChange = useCallback(
+    (shouldOpen: boolean) => {
+      if (!shouldOpen) close();
+    },
+    [close],
+  );
+
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
-      onOpenChange={(shouldOpen) => {
-        if (!shouldOpen) close();
-      }}>
+      onOpenChange={handleOpenChange}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t((m) => m.dialogs.invoices.itemsDialog.title)}</DialogTitle>

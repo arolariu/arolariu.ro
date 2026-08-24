@@ -26,14 +26,16 @@
  * request `"custom"` directly — use {@link buildInvoiceAnalysisRequest} or
  * {@link buildMerchantAnalysisRequest} which enforce this constraint.
  */
-export const AnalysisProfile = {
+const ANALYSIS_PROFILE = {
   Fast: "fast",
   Balanced: "balanced",
   Comprehensive: "comprehensive",
 } as const;
 
+export {ANALYSIS_PROFILE as AnalysisProfile};
+
 /** Union of the three requestable analysis profile string values. */
-export type AnalysisProfile = (typeof AnalysisProfile)[keyof typeof AnalysisProfile];
+export type AnalysisProfile = (typeof ANALYSIS_PROFILE)[keyof typeof ANALYSIS_PROFILE];
 
 // ---------------------------------------------------------------------------
 // Capability interfaces
@@ -271,18 +273,9 @@ export function resolveMerchantCapabilities(profile: AnalysisProfile): MerchantA
  * // closed.productClassification === true (pulled in by allergenAssessment)
  * ```
  */
-export function applyInvoiceDependencyClosure(
-  capabilities: InvoiceAnalysisCapabilities,
-): InvoiceAnalysisCapabilities {
-  let {
-    documentExtraction,
-    invoiceSummary,
-    productClassification,
-    allergenAssessment,
-    invoiceClassification,
-    recipeGeneration,
-    maximumRecipes,
-  } = capabilities;
+export function applyInvoiceDependencyClosure(capabilities: InvoiceAnalysisCapabilities): InvoiceAnalysisCapabilities {
+  const {invoiceSummary, invoiceClassification, recipeGeneration} = capabilities;
+  let {documentExtraction, productClassification, allergenAssessment, maximumRecipes} = capabilities;
 
   // recipeGeneration requires productClassification AND allergenAssessment
   if (recipeGeneration) {
@@ -412,9 +405,7 @@ export function buildInvoiceAnalysisRequest(
 
   // Include maximumRecipes only when recipeGeneration is on and differs from preset
   const maxRecipesField: {readonly maximumRecipes?: number} =
-    effective.recipeGeneration && effective.maximumRecipes !== preset.maximumRecipes
-      ? {maximumRecipes: effective.maximumRecipes}
-      : {};
+    effective.recipeGeneration && effective.maximumRecipes !== preset.maximumRecipes ? {maximumRecipes: effective.maximumRecipes} : {};
 
   return {profile, ...diffBooleans, ...maxRecipesField};
 }

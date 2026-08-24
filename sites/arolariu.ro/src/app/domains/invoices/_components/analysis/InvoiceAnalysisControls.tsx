@@ -14,17 +14,18 @@
  */
 
 import {useTranslations} from "next-intl-selector";
-import {useCallback, useState} from "react";
+import {useCallback, useState, type ChangeEvent} from "react";
 import {
   INVOICE_CAPABILITY_KEYS,
   applyInvoiceDependencyClosure,
   resolveInvoiceCapabilities,
+  type AnalysisProfile,
+  type InvoiceAnalysisCapabilities,
 } from "@/types/invoices/Analysis";
-import type {AnalysisProfile, InvoiceAnalysisCapabilities} from "@/types/invoices/Analysis";
 import styles from "./InvoiceAnalysisControls.module.scss";
 
 /** Props for {@link InvoiceAnalysisControls}. */
-interface InvoiceAnalysisControlsProps {
+type Props = {
   /** Currently selected analysis profile. */
   readonly profile: AnalysisProfile;
   /** Current capability set (controlled). */
@@ -43,7 +44,7 @@ interface InvoiceAnalysisControlsProps {
   readonly onChange: (profile: AnalysisProfile, capabilities: InvoiceAnalysisCapabilities) => void;
   /** When `true`, all controls are disabled. */
   readonly disabled?: boolean;
-}
+};
 
 /** Profile values in stable order for rendering. */
 const PROFILES = ["fast", "balanced", "comprehensive"] as const satisfies readonly AnalysisProfile[];
@@ -56,10 +57,21 @@ function countEnabled(value: InvoiceAnalysisCapabilities): number {
 /** Returns `true` when `value` matches the preset for `profile`. */
 function matchesPreset(profile: AnalysisProfile, value: InvoiceAnalysisCapabilities): boolean {
   const preset = resolveInvoiceCapabilities(profile);
-  return (
-    INVOICE_CAPABILITY_KEYS.every((key) => value[key] === preset[key]) &&
-    value.maximumRecipes === preset.maximumRecipes
-  );
+  return INVOICE_CAPABILITY_KEYS.every((key) => value[key] === preset[key]) && value.maximumRecipes === preset.maximumRecipes;
+}
+
+/** Resolves a profile value emitted by one of the rendered radio inputs. */
+function resolveProfile(value: string): AnalysisProfile {
+  const profile = PROFILES.find((candidate) => candidate === value);
+  if (profile === undefined) throw new Error(`Unsupported invoice analysis profile: ${value}`);
+  return profile;
+}
+
+/** Resolves a capability value emitted by one of the rendered checkbox inputs. */
+function resolveCapability(value: string): (typeof INVOICE_CAPABILITY_KEYS)[number] {
+  const capability = INVOICE_CAPABILITY_KEYS.find((candidate) => candidate === value);
+  if (capability === undefined) throw new Error(`Unsupported invoice analysis capability: ${value}`);
+  return capability;
 }
 
 /**
@@ -72,7 +84,7 @@ function matchesPreset(profile: AnalysisProfile, value: InvoiceAnalysisCapabilit
  *   requestable values.
  * - Disables a capability checkbox when unchecking it would leave zero enabled.
  *
- * @param props - {@link InvoiceAnalysisControlsProps}
+ * @param props - Component properties.
  * @returns The capability controls section.
  */
 export default function InvoiceAnalysisControls({
@@ -81,7 +93,7 @@ export default function InvoiceAnalysisControls({
   manualClassificationPresent = false,
   onChange,
   disabled = false,
-}: Readonly<InvoiceAnalysisControlsProps>): React.JSX.Element {
+}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations();
   const [showOverwriteAlert, setShowOverwriteAlert] = useState(false);
 
@@ -90,7 +102,8 @@ export default function InvoiceAnalysisControls({
 
   /** Handles profile radio change — always emits the preset shape. */
   const handleProfileChange = useCallback(
-    (newProfile: AnalysisProfile) => {
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const newProfile = resolveProfile(event.currentTarget.value);
       setShowOverwriteAlert(false);
       onChange(newProfile, resolveInvoiceCapabilities(newProfile));
     },
@@ -99,7 +112,9 @@ export default function InvoiceAnalysisControls({
 
   /** Handles a single boolean capability toggle. */
   const handleCapabilityChange = useCallback(
-    (key: (typeof INVOICE_CAPABILITY_KEYS)[number], checked: boolean) => {
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const key = resolveCapability(event.currentTarget.value);
+      const {checked} = event.currentTarget;
       if (key === "invoiceClassification" && checked && manualClassificationPresent) {
         setShowOverwriteAlert(true);
       } else {
@@ -115,7 +130,7 @@ export default function InvoiceAnalysisControls({
   const handleMaxRecipesChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const num = parseInt(e.target.value, 10);
-      if (!isNaN(num)) {
+      if (!Number.isNaN(num)) {
         const updated = applyInvoiceDependencyClosure({...value, maximumRecipes: num});
         onChange(profile, updated);
       }
@@ -127,50 +142,51 @@ export default function InvoiceAnalysisControls({
     <div className={styles["container"]}>
       {/* ── Profile selection ── */}
       <fieldset className={styles["fieldset"]}>
-        <legend className={styles["legend"]}>
-          {t((m) => m.dialogs.invoices.invoiceAnalysisControls.profilesLabel)}
-        </legend>
+        <legend className={styles["legend"]}>{t((m) => m.dialogs.invoices.invoiceAnalysisControls.profilesLabel)}</legend>
         <div className={styles["radioGroup"]}>
           {PROFILES.map((p) => (
-            <label key={p} htmlFor={`profile-${p}`} className={styles["radioLabel"]}>
+            <label
+              key={p}
+              htmlFor={`profile-${p}`}
+              className={styles["radioLabel"]}>
               <input
-                type="radio"
+                type='radio'
                 id={`profile-${p}`}
-                name="analysisProfile"
+                name='analysisProfile'
                 value={p}
                 checked={profile === p}
                 disabled={disabled}
-                onChange={() => handleProfileChange(p)}
+                onChange={handleProfileChange}
                 className={styles["radio"]}
               />
               {t((m) => m.dialogs.invoices.invoiceAnalysisControls.profiles[p])}
             </label>
           ))}
         </div>
-        {isCustom && (
-          <span className={styles["customBadge"]}>
-            {t((m) => m.dialogs.invoices.invoiceAnalysisControls.customLabel)}
-          </span>
-        )}
+        {isCustom ? (
+          <span className={styles["customBadge"]}>{t((m) => m.dialogs.invoices.invoiceAnalysisControls.customLabel)}</span>
+        ) : null}
       </fieldset>
 
       {/* ── Capability checkboxes ── */}
       <fieldset className={styles["fieldset"]}>
-        <legend className={styles["legend"]}>
-          {t((m) => m.dialogs.invoices.invoiceAnalysisControls.capabilitiesLabel)}
-        </legend>
+        <legend className={styles["legend"]}>{t((m) => m.dialogs.invoices.invoiceAnalysisControls.capabilitiesLabel)}</legend>
         <div className={styles["checkboxGroup"]}>
           {INVOICE_CAPABILITY_KEYS.map((key) => {
             const isEnabled = value[key];
             const isLastEnabled = isEnabled && enabledCount === 1;
             return (
-              <label key={key} htmlFor={`capability-${key}`} className={styles["checkboxLabel"]}>
+              <label
+                key={key}
+                htmlFor={`capability-${key}`}
+                className={styles["checkboxLabel"]}>
                 <input
-                  type="checkbox"
+                  type='checkbox'
                   id={`capability-${key}`}
+                  value={key}
                   checked={isEnabled}
                   disabled={disabled || isLastEnabled}
-                  onChange={(e) => handleCapabilityChange(key, e.target.checked)}
+                  onChange={handleCapabilityChange}
                   className={styles["checkbox"]}
                 />
                 {t((m) => m.dialogs.invoices.invoiceAnalysisControls.capabilities[key])}
@@ -182,12 +198,14 @@ export default function InvoiceAnalysisControls({
 
       {/* ── Maximum recipes ── */}
       <div className={styles["spinbuttonRow"]}>
-        <label htmlFor="max-recipes" className={styles["spinbuttonLabel"]}>
+        <label
+          htmlFor='max-recipes'
+          className={styles["spinbuttonLabel"]}>
           {t((m) => m.dialogs.invoices.invoiceAnalysisControls.maximumRecipesLabel)}
         </label>
         <input
-          type="number"
-          id="max-recipes"
+          type='number'
+          id='max-recipes'
           min={1}
           max={3}
           value={value.maximumRecipes === 0 ? "" : value.maximumRecipes}
@@ -198,11 +216,13 @@ export default function InvoiceAnalysisControls({
       </div>
 
       {/* ── Overwrite alert ── */}
-      {showOverwriteAlert && (
-        <div role="alert" className={styles["overwriteAlert"]}>
+      {showOverwriteAlert ? (
+        <div
+          role='alert'
+          className={styles["overwriteAlert"]}>
           {t((m) => m.dialogs.invoices.invoiceAnalysisControls.classificationOverwriteAlert)}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

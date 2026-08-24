@@ -48,9 +48,9 @@ export function NutritionCard(): React.JSX.Element {
           <p className={styles["emptyText"]}>{t(selectorFromPath("cards.invoices.nutritionCard.allergens.noProducts"))}</p>
         ) : (
           <div className={styles["productList"]}>
-            {items.map((item, idx) => (
+            {items.map((item) => (
               <div
-                key={`${item.name}-${idx}`}
+                key={`${item.productCode}-${item.name}-${item.quantity}-${item.price}`}
                 className={styles["productAllergenRow"]}>
                 <div className={styles["productName"]}>{item.name}</div>
                 <AllergenAssessmentView assessment={item.allergenAssessment ?? null} />

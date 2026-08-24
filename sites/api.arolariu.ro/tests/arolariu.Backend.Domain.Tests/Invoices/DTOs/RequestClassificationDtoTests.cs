@@ -63,7 +63,9 @@ public sealed class RequestClassificationDtoTests
     Assert.AreEqual("01.1", patched.ClassificationCode);
   }
 
-  /// <summary>Verifies invoice mapping leaves whitespace validation to Analysis Orchestration.</summary>
+  /// <summary>
+  /// Verifies invoice mapping preserves a whitespace transport code without creating a classification.
+  /// </summary>
   [TestMethod]
   public void UpdateInvoiceRequestDto_WhitespaceClassificationCode_DoesNotCreateClassification()
   {

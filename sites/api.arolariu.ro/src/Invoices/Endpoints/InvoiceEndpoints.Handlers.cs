@@ -42,11 +42,12 @@ public static partial class InvoiceEndpoints
         .SetLayerContext("Endpoint", nameof(InvoiceEndpoints))
         .SetOperationType("CRUD.Create");
 
-      var invoice = invoiceDto.ToInvoice();
-      activity?.SetInvoiceContext(invoice.id, invoice.UserIdentifier);
+      var userIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      var invoice = invoiceDto.ToInvoice(userIdentifier);
+      activity?.SetInvoiceContext(invoice.id, userIdentifier);
 
       await invoiceManagementService
-        .CreateInvoice(invoice, invoice.UserIdentifier, writeScope.Token)
+        .CreateInvoice(invoice, userIdentifier, writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoice created successfully");
@@ -277,7 +278,7 @@ public static partial class InvoiceEndpoints
       // Preserve the resolved classification when no manual code is supplied. Without this the
       // full-document upsert would drop an analysis-derived classification, including its origin,
       // confidence and evidence, on every unrelated edit such as renaming the invoice.
-      if (invoicePayload.ClassificationCode is null)
+      if (string.IsNullOrWhiteSpace(invoicePayload.ClassificationCode))
       {
         updatedInvoiceEntity.Classification = possibleInvoice.Classification;
       }
@@ -689,7 +690,10 @@ public static partial class InvoiceEndpoints
       }
 
       activity?.RecordSuccess();
-      return TypedResults.Ok(MerchantResponseDto.FromMerchant(possibleMerchant));
+      return TypedResults.Ok(MerchantResponseDto.FromMerchantForCaller(
+        possibleMerchant,
+        potentialUserIdentifier,
+        new HashSet<Guid> { possibleInvoice.id }));
     }
     catch (OperationCanceledException)
     {
@@ -1264,6 +1268,9 @@ public static partial class InvoiceEndpoints
       IEnumerable<Merchant> possibleMerchants = await invoiceManagementService
         .ReadMerchantsVisibleToUser(userIdentifier, cancellationToken)
         .ConfigureAwait(false);
+      IEnumerable<Invoice> callerInvoices = await invoiceManagementService
+        .ReadInvoices(userIdentifier, cancellationToken)
+        .ConfigureAwait(false);
 
       if (parentCompanyId.HasValue)
       {
@@ -1278,7 +1285,18 @@ public static partial class InvoiceEndpoints
       }
 
       // RESTful convention: return 200 with empty array for collection endpoints, not 404
-      var merchantDtos = possibleMerchants?.Select(MerchantResponseDto.FromMerchant) ?? [];
+      var merchantDtos = possibleMerchants?.Select(merchant =>
+      {
+        HashSet<Guid> callerInvoiceIdentifiers = callerInvoices
+          .Where(invoice => invoice.MerchantReference == merchant.id)
+          .Select(invoice => invoice.id)
+          .ToHashSet();
+
+        return MerchantResponseDto.FromMerchantForCaller(
+          merchant,
+          userIdentifier,
+          callerInvoiceIdentifiers);
+      }) ?? [];
       activity?.SetTag("result.count", merchantDtos.Count());
       activity?.RecordSuccess();
       return TypedResults.Ok(merchantDtos);
@@ -1311,7 +1329,7 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("Merchant.Read");
       }
 
-      _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      Guid userIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetMerchantContext(id);
       if (parentCompanyId.HasValue)
       {
@@ -1328,8 +1346,26 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
+      IEnumerable<Invoice> callerInvoices = await invoiceManagementService
+        .ReadInvoices(userIdentifier, cancellationToken)
+        .ConfigureAwait(false);
+      HashSet<Guid> callerInvoiceIdentifiers = callerInvoices
+        .Where(invoice => invoice.MerchantReference == possibleMerchant.id)
+        .Select(invoice => invoice.id)
+        .ToHashSet();
+
+      if (callerInvoiceIdentifiers.Count == 0)
+      {
+        activity?.SetTag("access.granted", false);
+        return TypedResults.NotFound();
+      }
+
+      activity?.SetTag("access.granted", true);
       activity?.RecordSuccess();
-      return TypedResults.Ok(MerchantResponseDto.FromMerchant(possibleMerchant));
+      return TypedResults.Ok(MerchantResponseDto.FromMerchantForCaller(
+        possibleMerchant,
+        userIdentifier,
+        callerInvoiceIdentifiers));
     }
     catch (OperationCanceledException)
     {

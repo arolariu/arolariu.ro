@@ -19,7 +19,7 @@ import {useTranslations} from "next-intl-selector";
 import styles from "./QueuedAnalysisNotice.module.scss";
 
 /** Props for {@link QueuedAnalysisNotice}. */
-interface QueuedAnalysisNoticeProps {
+type Props = {
   /**
    * The queue message identifier returned by the analysis submission.
    * May be `null` when the identifier is not yet available.
@@ -27,7 +27,7 @@ interface QueuedAnalysisNoticeProps {
   readonly messageId: string | null;
   /** Called when the user requests an immediate result refresh. */
   readonly onRefresh: () => void;
-}
+};
 
 /**
  * Renders a queued analysis notice with a refresh action.
@@ -37,40 +37,33 @@ interface QueuedAnalysisNoticeProps {
  * - Does NOT render a progressbar role.
  * - Renders a single `button` for the refresh action.
  *
- * @param props - {@link QueuedAnalysisNoticeProps}
+ * @param props - Component properties.
  * @returns The queued analysis notice.
  */
-export default function QueuedAnalysisNotice({
-  messageId,
-  onRefresh,
-}: Readonly<QueuedAnalysisNoticeProps>): React.JSX.Element {
+export default function QueuedAnalysisNotice({messageId, onRefresh}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations();
 
   return (
     <div className={styles["container"]}>
       <div className={styles["header"]}>
-        <span className={styles["statusDot"]} aria-hidden="true" />
-        <p className={styles["title"]}>
-          {t((m) => m.dialogs.invoices.queuedAnalysisNotice.title)}
-        </p>
+        <span
+          className={styles["statusDot"]}
+          aria-hidden='true'
+        />
+        <p className={styles["title"]}>{t((m) => m.dialogs.invoices.queuedAnalysisNotice.title)}</p>
       </div>
-      <p className={styles["description"]}>
-        {t((m) => m.dialogs.invoices.queuedAnalysisNotice.description)}
-      </p>
+      <p className={styles["description"]}>{t((m) => m.dialogs.invoices.queuedAnalysisNotice.description)}</p>
       {messageId !== null && (
         <p className={styles["messageId"]}>
-          <span className={styles["messageIdLabel"]}>
-            {t((m) => m.dialogs.invoices.queuedAnalysisNotice.messageIdLabel)}
-          </span>
+          <span className={styles["messageIdLabel"]}>{t((m) => m.dialogs.invoices.queuedAnalysisNotice.messageIdLabel)}</span>
           <code className={styles["messageIdValue"]}>{messageId}</code>
         </p>
       )}
       <button
-        type="button"
+        type='button'
         onClick={onRefresh}
         className={styles["refreshButton"]}
-        aria-label={t((m) => m.dialogs.invoices.queuedAnalysisNotice.refreshButton)}
-      >
+        aria-label={t((m) => m.dialogs.invoices.queuedAnalysisNotice.refreshButton)}>
         {t((m) => m.dialogs.invoices.queuedAnalysisNotice.refreshButton)}
       </button>
     </div>

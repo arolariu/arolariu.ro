@@ -31,7 +31,9 @@ const TEST_INVOICE = TestDataBuilder.build("invoice", {items: []});
 
 function Wrapper(): React.JSX.Element {
   return (
-    <InvoiceContextProvider invoice={TEST_INVOICE} merchant={null}>
+    <InvoiceContextProvider
+      invoice={TEST_INVOICE}
+      merchant={null}>
       <AnalysisPanel />
     </InvoiceContextProvider>
   );
@@ -74,7 +76,9 @@ describe("AnalysisPanel", () => {
   it("returns null when invoice already has items", () => {
     const invoiceWithItems = TestDataBuilder.build("invoice");
     render(
-      <InvoiceContextProvider invoice={invoiceWithItems} merchant={null}>
+      <InvoiceContextProvider
+        invoice={invoiceWithItems}
+        merchant={null}>
         <AnalysisPanel />
       </InvoiceContextProvider>,
     );
@@ -85,9 +89,7 @@ describe("AnalysisPanel", () => {
   // ── 3. Error state shown inline ────────────────────────────────────────────────
 
   it("shows an inline error alert when submission fails", async () => {
-    mockAnalyzeInvoice.mockReturnValueOnce(
-      TestDataBuilder.actionFailure({code: "SERVER_ERROR", message: "Backend unavailable"}),
-    );
+    mockAnalyzeInvoice.mockReturnValueOnce(TestDataBuilder.actionFailure({code: "SERVER_ERROR", message: "Backend unavailable"}));
 
     render(<Wrapper />);
     await userEvent.click(screen.getByRole("button", {name: /reanalyze/i}));

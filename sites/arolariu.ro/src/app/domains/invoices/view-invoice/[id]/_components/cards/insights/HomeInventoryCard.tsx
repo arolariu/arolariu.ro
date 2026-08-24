@@ -1,10 +1,11 @@
 "use client";
 
 import {formatCurrency} from "@/lib/utils.generic";
+import {ClassificationSystem, type StandardClassification} from "@/types/invoices";
 import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
 import {useLocale} from "next-intl";
 import {useTranslations} from "next-intl-selector";
-import {TbDroplets, TbHome, TbLeaf, TbPackage, TbSparkles, TbSpray, TbStar, TbToiletPaper} from "react-icons/tb";
+import {TbHome, TbLeaf, TbPackage, TbSpray, TbStar} from "react-icons/tb";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
 import styles from "./HomeInventoryCard.module.scss";
 
@@ -15,6 +16,22 @@ type SupplyItem = {
   daysRemaining: number;
   maxDays: number;
 };
+
+/** GS1 GPC segment for cleaning and hygiene products. */
+const GS1_CLEANING_HYGIENE_SEGMENT_CODE = "47000000";
+
+/**
+ * Determines whether a product has explicit GS1 cleaning/hygiene taxonomy evidence.
+ *
+ * @param classification - The product classification to inspect.
+ * @returns `true` only when the GS1 hierarchy contains the cleaning/hygiene segment.
+ */
+export function isGs1CleaningOrHygieneClassification(classification: StandardClassification | null): boolean {
+  return (
+    classification?.system === ClassificationSystem.Gs1Gpc
+    && classification.hierarchy.some((node) => node.level === "segment" && node.code === GS1_CLEANING_HYGIENE_SEGMENT_CODE)
+  );
+}
 
 /**
  * Get the progress bar color class based on percentage remaining.
@@ -32,124 +49,20 @@ export function HomeInventoryCard(): React.JSX.Element {
   const {items, paymentInformation} = invoice;
   const {currency} = paymentInformation;
 
-  // Get cleaning/household items from invoice (products classified under cleaning or with name hints)
-  const cleaningItems = items.filter((i) => {
-    const nameHint = i.name.toLowerCase();
-    return (
-      nameHint.includes("detergent") ||
-      nameHint.includes("clean") ||
-      nameHint.includes("spray") ||
-      nameHint.includes("soap") ||
-      i.classification?.code?.startsWith("47")
-    );
-  });
-
-  // Estimate supply levels based on typical usage
-  const supplies: SupplyItem[] = [];
-  cleaningItems.forEach((item) => {
-    const name = item.name.toLowerCase();
-    let daysRemaining = 30;
-    let icon = (
-      <TbSpray
-        key='spray-can'
-        className={styles["iconBlue"]}
-      />
-    );
-
-    if (name.includes("detergent") || name.includes("laundry")) {
-      daysRemaining = 45;
-      icon = (
-        <TbDroplets
-          key='droplets'
+  const supplies: SupplyItem[] = items
+    .filter((item) => isGs1CleaningOrHygieneClassification(item.classification))
+    .map((item) => ({
+      id: `cleaning-${item.productCode}`,
+      name: item.name,
+      icon: (
+        <TbSpray
+          key={`spray-${item.productCode}`}
           className={styles["iconBlue"]}
         />
-      );
-      supplies.push({
-        id: `laundry-${item.productCode}`,
-        name: t((m) => m.cards.invoices.homeInventoryCard.supplyNames.laundryDetergent),
-        icon,
-        daysRemaining,
-        maxDays: 60,
-      });
-    } else if (name.includes("dish") || name.includes("soap")) {
-      daysRemaining = 18;
-      icon = (
-        <TbSparkles
-          key='sparkles'
-          className={styles["iconCyan"]}
-        />
-      );
-      supplies.push({
-        id: `dish-${item.productCode}`,
-        name: t((m) => m.cards.invoices.homeInventoryCard.supplyNames.dishSoap),
-        icon,
-        daysRemaining,
-        maxDays: 30,
-      });
-    } else if (name.includes("paper") || name.includes("towel") || name.includes("tissue")) {
-      // daysRemaining stays at default 30
-      icon = (
-        <TbToiletPaper
-          key='toilet'
-          className={styles["iconGray"]}
-        />
-      );
-      supplies.push({
-        id: `paper-${item.productCode}`,
-        name: t((m) => m.cards.invoices.homeInventoryCard.supplyNames.paperProducts),
-        icon,
-        daysRemaining,
-        maxDays: 45,
-      });
-    } else if (name.includes("floor") || name.includes("cleaner")) {
-      daysRemaining = 60;
-      icon = (
-        <TbSpray
-          key='floor-cleaner-spray-can'
-          className={styles["iconGreen"]}
-        />
-      );
-      supplies.push({
-        id: `floor-${item.productCode}`,
-        name: t((m) => m.cards.invoices.homeInventoryCard.supplyNames.floorCleaner),
-        icon,
-        daysRemaining,
-        maxDays: 90,
-      });
-    } else {
-      supplies.push({id: `generic-${item.productCode}`, name: item.name, icon, daysRemaining, maxDays: 45});
-    }
-  });
-
-  // Default supplies if none found
-  if (supplies.length === 0) {
-    supplies.push(
-      {
-        id: "default-laundry",
-        name: t((m) => m.cards.invoices.homeInventoryCard.supplyNames.laundryDetergent),
-        icon: (
-          <TbDroplets
-            key='default-droplets'
-            className={styles["iconBlue"]}
-          />
-        ),
-        daysRemaining: 45,
-        maxDays: 60,
-      },
-      {
-        id: "default-dish",
-        name: t((m) => m.cards.invoices.homeInventoryCard.supplyNames.dishSoap),
-        icon: (
-          <TbSparkles
-            key='default-sparkles'
-            className={styles["iconCyan"]}
-          />
-        ),
-        daysRemaining: 18,
-        maxDays: 30,
-      },
-    );
-  }
+      ),
+      daysRemaining: 30,
+      maxDays: 45,
+    }));
 
   // Eco-friendliness score (mock)
   const ecoScore = 3;
@@ -171,37 +84,40 @@ export function HomeInventoryCard(): React.JSX.Element {
       </CardHeader>
       <CardContent>
         <div className={styles["contentSpaced"]}>
-          {/* Supply Stock Levels */}
-          <div>
-            <h4 className={styles["sectionTitle"]}>{t((m) => m.cards.invoices.homeInventoryCard.stockLevels.title)}</h4>
-            <div className={styles["suppliesList"]}>
-              {supplies.map((supply) => {
-                const pct = (supply.daysRemaining / supply.maxDays) * 100;
-                const color = getSupplyProgressColor(pct, styles);
-                return (
-                  <div
-                    key={supply.id}
-                    className={styles["supplyItem"]}>
-                    <div className={styles["supplyRow"]}>
-                      <div className={styles["supplyName"]}>
-                        {supply.icon}
-                        <span>{supply.name}</span>
+          {supplies.length > 0 ? (
+            <div>
+              <h4 className={styles["sectionTitle"]}>{t((m) => m.cards.invoices.homeInventoryCard.stockLevels.title)}</h4>
+              <div className={styles["suppliesList"]}>
+                {supplies.map((supply) => {
+                  const pct = (supply.daysRemaining / supply.maxDays) * 100;
+                  const color = getSupplyProgressColor(pct, styles);
+                  return (
+                    <div
+                      key={supply.id}
+                      className={styles["supplyItem"]}>
+                      <div className={styles["supplyRow"]}>
+                        <div className={styles["supplyName"]}>
+                          {supply.icon}
+                          <span>{supply.name}</span>
+                        </div>
+                        <span className={styles["supplyDays"]}>
+                          {t((m) => m.cards.invoices.homeInventoryCard.stockLevels.daysRemaining, {
+                            count: String(supply.daysRemaining),
+                          })}
+                        </span>
                       </div>
-                      <span className={styles["supplyDays"]}>
-                        {t((m) => m.cards.invoices.homeInventoryCard.stockLevels.daysRemaining, {count: String(supply.daysRemaining)})}
-                      </span>
+                      <div className={styles["progressTrack"]}>
+                        <div
+                          className={`${styles["progressBar"]} ${color}`}
+                          style={{width: `${pct}%`}}
+                        />
+                      </div>
                     </div>
-                    <div className={styles["progressTrack"]}>
-                      <div
-                        className={`${styles["progressBar"]} ${color}`}
-                        style={{width: `${pct}%`}}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          ) : null}
 
           {/* Eco-Friendliness Score */}
           <div className={styles["ecoSection"]}>

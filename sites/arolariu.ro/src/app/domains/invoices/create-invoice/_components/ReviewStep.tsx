@@ -54,6 +54,32 @@ export default function ReviewStep(): React.JSX.Element {
   const {selectedScans, invoiceDetails, classificationSelection, isCreating, partialOutcome, createInvoiceWithScans} =
     useCreateInvoiceContext();
   const format = useFormatter();
+  let createButtonContent = (
+    <>
+      <TbSparkles />
+      {t((m) => m.forms.invoices.createInvoice.reviewStep.actions.create)}
+    </>
+  );
+
+  if (isCreating) {
+    createButtonContent = (
+      <>
+        <Spinner className={styles["spinner"]} />
+        {t((m) => m.forms.invoices.createInvoice.reviewStep.actions.creating)}
+      </>
+    );
+  } else if (partialOutcome?.status === "partial") {
+    const retryLabel =
+      partialOutcome.failedStep === "scans"
+        ? t((m) => m.forms.invoices.createInvoice.reviewStep.partialError.retryScans)
+        : t((m) => m.forms.invoices.createInvoice.reviewStep.partialError.retry);
+    createButtonContent = (
+      <>
+        <TbRefresh />
+        {retryLabel}
+      </>
+    );
+  }
 
   return (
     <div className={styles["container"]}>
@@ -71,7 +97,9 @@ export default function ReviewStep(): React.JSX.Element {
               <strong>{t((m) => m.forms.invoices.createInvoice.reviewStep.partialError.title)}</strong>
             </div>
             <p className={styles["partialErrorMessage"]}>
-              {t((m) => m.forms.invoices.createInvoice.reviewStep.partialError.patchFailed)}
+              {partialOutcome.failedStep === "scans"
+                ? t((m) => m.forms.invoices.createInvoice.reviewStep.partialError.scansFailed)
+                : t((m) => m.forms.invoices.createInvoice.reviewStep.partialError.patchFailed)}
             </p>
           </CardContent>
         </Card>
@@ -191,22 +219,7 @@ export default function ReviewStep(): React.JSX.Element {
           onClick={createInvoiceWithScans}
           disabled={isCreating}
           className={styles["createButton"]}>
-          {isCreating ? (
-            <>
-              <Spinner className={styles["spinner"]} />
-              {t((m) => m.forms.invoices.createInvoice.reviewStep.actions.creating)}
-            </>
-          ) : partialOutcome?.status === "partial" ? (
-            <>
-              <TbRefresh />
-              {t((m) => m.forms.invoices.createInvoice.reviewStep.partialError.retry)}
-            </>
-          ) : (
-            <>
-              <TbSparkles />
-              {t((m) => m.forms.invoices.createInvoice.reviewStep.actions.create)}
-            </>
-          )}
+          {createButtonContent}
         </Button>
         <p className={styles["createHint"]}>{t((m) => m.forms.invoices.createInvoice.reviewStep.actions.hint)}</p>
       </div>

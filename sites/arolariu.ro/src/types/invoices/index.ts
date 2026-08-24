@@ -41,6 +41,10 @@ export {
   AllergenAssessmentStatus,
   AllergenCode,
   AllergenEvidenceLevel,
+  ALLERGEN_EVIDENCE_LEVEL_LABEL_KEYS,
+  ALLERGEN_LABEL_KEYS,
+  getAllergenEvidenceLevelLabelKey,
+  getAllergenLabelKey,
   isAllergenAssessment,
   isAllergenCode,
   isAllergenEvidence,
@@ -49,9 +53,6 @@ export {
   type AllergenEvidence,
   type AllergenSignal,
 } from "./Allergen";
-
-/** Shared runtime type guards for the invoice transport boundary. */
-export {hasOnlyKeys, isArrayOf, isBoolean, isFiniteNumber, isNonEmptyString, isRecord} from "./guards";
 
 /** Canonical taxonomy classification contracts and runtime guards. */
 export {
@@ -161,9 +162,11 @@ export {
  */
 export {
   RecipeDifficulty,
+  isRecipeDifficulty,
   isRecipeIngredient,
   isRecipeStep,
   isRecipeSuggestion,
+  isRecipeText,
   type RecipeIngredient,
   type RecipeStep,
   type RecipeSuggestion,

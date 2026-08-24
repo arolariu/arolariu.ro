@@ -5,7 +5,7 @@
  * @module app/domains/invoices/_hooks/invoice/useRecipeDelete
  *
  * @remarks
- * Computes the full updated `possibleRecipes` collection after filtering out the named
+ * Computes the full updated `possibleRecipes` collection after removing one indexed
  * recipe, sends it to the server via `patchInvoice`, and only updates the local Zustand
  * store on a successful response. Deleting the last recipe sends an explicit `[]` — never
  * `null` — because `null` means "preserve" in the backend contract.
@@ -23,21 +23,21 @@ type HookOutputType = Readonly<{
   /** Whether a recipe delete operation is in progress. */
   isDeleting: boolean;
   /**
-   * Removes recipes whose `name` equals `recipeName`, persists the full replacement
+   * Removes the recipe at `recipeIndex`, persists the full replacement
    * collection through the server (sends `[]` when removing the last recipe), then
    * updates the local store.
    *
    * @throws When the server action reports failure.
    */
-  removeRecipeCallback: (recipeName: string) => Promise<Invoice>;
+  removeRecipeCallback: (recipeIndex: number) => Promise<Invoice>;
 }>;
 
 /**
  * Manages deleting recipes from the current invoice, persisting via the server contract.
  *
  * @remarks
- * Recipe matching is name-based; every recipe whose `name` exactly equals `recipeName`
- * is removed. Sending an empty array explicitly clears the collection on the server
+ * The array position is the mutation identity because the transport contract does not
+ * expose a recipe identifier and names are not unique. Sending an empty array explicitly clears the collection on the server
  * (`null` would have preserved it). The hook only updates the local invoice store after
  * a successful server response.
  *
@@ -48,7 +48,7 @@ type HookOutputType = Readonly<{
  * ```tsx
  * const {isDeleting, removeRecipeCallback} = useRecipeDelete(invoice);
  * try {
- *   await removeRecipeCallback("Dinner idea");
+ *   await removeRecipeCallback(0);
  * } catch (error) {
  *   // show error toast — local state was NOT mutated
  * }
@@ -59,11 +59,14 @@ export function useRecipeDelete(invoice: Invoice): Readonly<HookOutputType> {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const removeRecipeCallback = useCallback(
-    async (recipeName: string): Promise<Invoice> => {
+    async (recipeIndex: number): Promise<Invoice> => {
       setIsDeleting(true);
       try {
+        if (!Number.isSafeInteger(recipeIndex) || recipeIndex < 0 || recipeIndex >= invoice.possibleRecipes.length) {
+          throw new RangeError(`Recipe index ${String(recipeIndex)} is outside the invoice recipe collection.`);
+        }
         // Filter produces [] when the last recipe is removed — never null.
-        const updatedRecipes = invoice.possibleRecipes.filter((r) => r.name !== recipeName);
+        const updatedRecipes = invoice.possibleRecipes.filter((_, index) => index !== recipeIndex);
         const result = await patchInvoice({
           invoiceId: invoice.id,
           payload: {possibleRecipes: updatedRecipes},

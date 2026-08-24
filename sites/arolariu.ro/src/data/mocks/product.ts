@@ -49,7 +49,7 @@ import {faker} from "@faker-js/faker";
  * // Basic usage
  * const product = new ProductBuilder()
  *   .withName("Organic Bananas")
- *   .withCategory(classification.FOOD)
+ *   .withClassification(foodClassification)
  *   .withPrice(2.99)
  *   .withQuantity(5)
  *   .build();
@@ -277,7 +277,7 @@ export class ProductBuilder {
    * ```typescript
    * const product = new ProductBuilder()
    *   .withName("Apple Juice")
-   *   .withCategory(classification.BEVERAGES)
+   *   .withClassification(beverageClassification)
    *   .build();
    * ```
    */
@@ -298,7 +298,7 @@ export class ProductBuilder {
    * @example
    * ```typescript
    * const products = new ProductBuilder()
-   *   .withCategory(classification.FOOD)
+   *   .withClassification(foodClassification)
    *   .withPrice(5.99)
    *   .buildMany(15); // 15 food products at $5.99 each
    * ```

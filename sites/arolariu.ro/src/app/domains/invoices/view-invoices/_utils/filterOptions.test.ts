@@ -129,11 +129,7 @@ describe("computeAvailableClassificationGroups", () => {
       makeInvoice({classificationGroup: "Housing"}),
       makeInvoice({classificationGroup: "Housing"}),
     ];
-    expect(computeAvailableClassificationGroups(invoices)).toEqual([
-      "Food and non-alcoholic beverages",
-      "Housing",
-      "Transport",
-    ]);
+    expect(computeAvailableClassificationGroups(invoices)).toEqual(["Food and non-alcoholic beverages", "Housing", "Transport"]);
   });
 
   it("breaks ties alphabetically", () => {
@@ -142,11 +138,7 @@ describe("computeAvailableClassificationGroups", () => {
       makeInvoice({classificationGroup: "Housing"}),
       makeInvoice({classificationGroup: "Food and non-alcoholic beverages"}),
     ];
-    expect(computeAvailableClassificationGroups(invoices)).toEqual([
-      "Food and non-alcoholic beverages",
-      "Housing",
-      "Transport",
-    ]);
+    expect(computeAvailableClassificationGroups(invoices)).toEqual(["Food and non-alcoholic beverages", "Housing", "Transport"]);
   });
 });
 

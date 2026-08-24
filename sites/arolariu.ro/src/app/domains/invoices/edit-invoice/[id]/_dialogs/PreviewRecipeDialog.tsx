@@ -1,7 +1,6 @@
 "use client";
 
-import {AllergenCode, RecipeDifficulty, type RecipeSuggestion} from "@/types/invoices";
-import {getAllergenLabelKey} from "../../../_components/allergens/allergenLabels";
+import {RecipeDifficulty, getAllergenLabelKey, type RecipeSuggestion} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -19,6 +18,21 @@ import {TbClock, TbToolsKitchen3, TbUsers} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./PreviewRecipeDialog.module.scss";
 
+type IngredientEntry = Readonly<{
+  ingredient: RecipeSuggestion["purchasedIngredients"][number];
+  key: string;
+}>;
+
+function buildIngredientEntries(ingredients: RecipeSuggestion["purchasedIngredients"]): IngredientEntry[] {
+  const occurrences = new Map<string, number>();
+  return ingredients.map((ingredient) => {
+    const identity = JSON.stringify([ingredient.name, ingredient.quantity, ingredient.preparation]);
+    const occurrence = occurrences.get(identity) ?? 0;
+    occurrences.set(identity, occurrence + 1);
+    return {ingredient, key: `${identity}-${String(occurrence)}`};
+  });
+}
+
 function getDifficultyBadgeVariant(difficulty: RecipeDifficulty): "default" | "secondary" | "outline" {
   if (difficulty === RecipeDifficulty.Easy) return "default";
   if (difficulty === RecipeDifficulty.Medium) return "secondary";
@@ -32,17 +46,19 @@ type IngredientSectionProps = {
 };
 
 function IngredientSection({heading, ingredients, emptyLabel}: Readonly<IngredientSectionProps>): React.JSX.Element {
+  const ingredientEntries = buildIngredientEntries(ingredients);
+
   return (
     <div className={styles["fieldGroup"]}>
       <Label>{heading}</Label>
       {ingredients.length > 0 ? (
         <ul className={styles["ingredientReadList"]}>
-          {ingredients.map((ing, i) => (
+          {ingredientEntries.map(({ingredient, key}) => (
             <li
-              key={`${ing.name}-${i}`}
+              key={key}
               className={styles["readText"]}>
-              <strong>{ing.name}</strong> — {ing.quantity}
-              {ing.preparation ? ` (${ing.preparation})` : null}
+              <strong>{ingredient.name}</strong> — {ingredient.quantity}
+              {ingredient.preparation ? ` (${ingredient.preparation})` : null}
             </li>
           ))}
         </ul>
@@ -88,9 +104,7 @@ export default function PreviewRecipeDialog(): React.JSX.Element {
             {/* Description */}
             <div className={styles["fieldGroup"]}>
               <Label>{t((m) => m.dialogs.invoices.recipeDialog.fields.description)}</Label>
-              <p className={styles["readText"]}>
-                {recipe.description || t((m) => m.dialogs.invoices.recipeDialog.read.noDescription)}
-              </p>
+              <p className={styles["readText"]}>{recipe.description || t((m) => m.dialogs.invoices.recipeDialog.read.noDescription)}</p>
             </div>
 
             {/* Servings + difficulty + times */}
@@ -159,7 +173,7 @@ export default function PreviewRecipeDialog(): React.JSX.Element {
               <Label>{t((m) => m.dialogs.invoices.recipeDialog.fields.steps)}</Label>
               <ol className={styles["stepsList"]}>
                 {[...recipe.steps]
-                  .sort((a, b) => a.sequence - b.sequence)
+                  .toSorted((a, b) => a.sequence - b.sequence)
                   .map((step) => (
                     <li
                       key={step.sequence}
@@ -182,7 +196,7 @@ export default function PreviewRecipeDialog(): React.JSX.Element {
                     <Badge
                       key={code}
                       variant='destructive'>
-                      {t(selectorFromPath(getAllergenLabelKey(code as AllergenCode)))}
+                      {t(selectorFromPath(getAllergenLabelKey(code)))}
                     </Badge>
                   ))}
                 </div>

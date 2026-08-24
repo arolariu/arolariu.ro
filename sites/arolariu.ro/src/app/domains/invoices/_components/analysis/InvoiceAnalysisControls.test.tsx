@@ -29,7 +29,7 @@ describe("InvoiceAnalysisControls", () => {
     const onChange = vi.fn();
     render(
       <InvoiceAnalysisControls
-        profile="fast"
+        profile='fast'
         value={resolveInvoiceCapabilities("fast")}
         onChange={onChange}
       />,
@@ -58,7 +58,7 @@ describe("InvoiceAnalysisControls", () => {
 
     render(
       <InvoiceAnalysisControls
-        profile="fast"
+        profile='fast'
         value={initialValue}
         onChange={onChange}
       />,
@@ -84,7 +84,7 @@ describe("InvoiceAnalysisControls", () => {
 
     render(
       <InvoiceAnalysisControls
-        profile="balanced"
+        profile='balanced'
         value={divergedValue}
         onChange={vi.fn()}
       />,
@@ -104,7 +104,7 @@ describe("InvoiceAnalysisControls", () => {
 
     render(
       <InvoiceAnalysisControls
-        profile="balanced"
+        profile='balanced'
         value={noRecipeValue}
         onChange={vi.fn()}
       />,
@@ -128,7 +128,7 @@ describe("InvoiceAnalysisControls", () => {
 
     render(
       <InvoiceAnalysisControls
-        profile="fast"
+        profile='fast'
         value={lastOneValue}
         onChange={vi.fn()}
       />,
@@ -150,7 +150,7 @@ describe("InvoiceAnalysisControls", () => {
 
     render(
       <InvoiceAnalysisControls
-        profile="fast"
+        profile='fast'
         value={value}
         manualClassificationPresent
         onChange={vi.fn()}
@@ -171,7 +171,7 @@ describe("InvoiceAnalysisControls", () => {
 
     render(
       <InvoiceAnalysisControls
-        profile="fast"
+        profile='fast'
         value={value}
         manualClassificationPresent
         onChange={vi.fn()}

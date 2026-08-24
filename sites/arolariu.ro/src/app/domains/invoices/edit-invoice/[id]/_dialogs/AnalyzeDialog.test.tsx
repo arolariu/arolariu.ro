@@ -36,7 +36,7 @@ function OpenAnalyzeDialog(): React.JSX.Element {
   return (
     <>
       <button
-        type="button"
+        type='button'
         onClick={() => openDialog("EDIT_INVOICE__ANALYSIS", "view", {invoice: TEST_INVOICE})}>
         Open
       </button>
@@ -91,9 +91,7 @@ describe("AnalyzeDialog", () => {
   // ── 2. Error state shown inline — no fabricated success ───────────────────────
 
   it("shows an inline error alert when submission fails", async () => {
-    mockAnalyzeInvoice.mockReturnValueOnce(
-      TestDataBuilder.actionFailure({code: "SERVER_ERROR", message: "Backend unavailable"}),
-    );
+    mockAnalyzeInvoice.mockReturnValueOnce(TestDataBuilder.actionFailure({code: "SERVER_ERROR", message: "Backend unavailable"}));
 
     render(<Wrapper />);
     await userEvent.click(screen.getByRole("button", {name: /open/i}));

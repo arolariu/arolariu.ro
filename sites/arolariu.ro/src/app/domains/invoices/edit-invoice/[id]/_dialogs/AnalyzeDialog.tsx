@@ -15,15 +15,18 @@ import {useDialog} from "@/app/domains/invoices/_contexts/DialogContext";
 import InvoiceAnalysisControls from "../../../_components/analysis/InvoiceAnalysisControls";
 import QueuedAnalysisNotice from "../../../_components/analysis/QueuedAnalysisNotice";
 import {useAnalysisSubmission} from "../../../_hooks/analysis/useAnalysisSubmission";
-import {buildInvoiceAnalysisRequest, resolveInvoiceCapabilities} from "@/types/invoices/Analysis";
-import type {AnalysisProfile, InvoiceAnalysisCapabilities} from "@/types/invoices/Analysis";
+import {
+  buildInvoiceAnalysisRequest,
+  resolveInvoiceCapabilities,
+  type AnalysisProfile,
+  type InvoiceAnalysisCapabilities,
+} from "@/types/invoices/Analysis";
 import {ClassificationOrigin} from "@/types/invoices/Classification";
 import {Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Spinner} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import {TbScanEye} from "react-icons/tb";
 import styles from "./AnalyzeDialog.module.scss";
-
 
 /**
  * Dialog for configuring and submitting an invoice to the analysis pipeline.
@@ -51,13 +54,10 @@ export default function AnalyzeDialog(): React.JSX.Element {
 
   // payload is typed as {invoice: Invoice} only when the dialog is open;
   // at runtime it is null when the dialog is closed — use optional chaining to guard.
-  const invoice = (payload as {invoice: {id: string; classification: {origin: string} | null} | null} | null)
-    ?.invoice ?? null;
+  const invoice = (payload as {invoice: {id: string; classification: {origin: string} | null} | null} | null)?.invoice ?? null;
 
   const [profile, setProfile] = useState<AnalysisProfile>("comprehensive");
-  const [capabilities, setCapabilities] = useState<InvoiceAnalysisCapabilities>(
-    resolveInvoiceCapabilities("comprehensive"),
-  );
+  const [capabilities, setCapabilities] = useState<InvoiceAnalysisCapabilities>(() => resolveInvoiceCapabilities("comprehensive"));
 
   const {status, messageId, errorMessage, submit, refreshNow, reset} = useAnalysisSubmission({
     target: "invoice",
@@ -66,16 +66,12 @@ export default function AnalyzeDialog(): React.JSX.Element {
   });
 
   /** D4: warn when enabling invoiceClassification would overwrite a manual classification. */
-  const manualClassificationPresent =
-    invoice?.classification?.origin === ClassificationOrigin.Manual;
+  const manualClassificationPresent = invoice?.classification?.origin === ClassificationOrigin.Manual;
 
-  const handleChange = useCallback(
-    (newProfile: AnalysisProfile, newCapabilities: InvoiceAnalysisCapabilities): void => {
-      setProfile(newProfile);
-      setCapabilities(newCapabilities);
-    },
-    [],
-  );
+  const handleChange = useCallback((newProfile: AnalysisProfile, newCapabilities: InvoiceAnalysisCapabilities): void => {
+    setProfile(newProfile);
+    setCapabilities(newCapabilities);
+  }, []);
 
   const handleSubmit = useCallback(async (): Promise<void> => {
     await submit(buildInvoiceAnalysisRequest(profile, capabilities));
@@ -86,13 +82,17 @@ export default function AnalyzeDialog(): React.JSX.Element {
     close();
   }, [reset, close]);
 
+  const handleOpenChange = useCallback(
+    (shouldOpen: boolean): void => {
+      if (!shouldOpen) handleClose();
+    },
+    [handleClose],
+  );
+
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
-      onOpenChange={(shouldOpen) => {
-        if (!shouldOpen) handleClose();
-      }}>
+      onOpenChange={handleOpenChange}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle className={styles["dialogTitle"]}>
@@ -106,7 +106,10 @@ export default function AnalyzeDialog(): React.JSX.Element {
         </DialogHeader>
 
         {status === "queued" ? (
-          <QueuedAnalysisNotice messageId={messageId} onRefresh={refreshNow} />
+          <QueuedAnalysisNotice
+            messageId={messageId}
+            onRefresh={refreshNow}
+          />
         ) : (
           <div className={styles["controlsSection"]}>
             <InvoiceAnalysisControls
@@ -120,22 +123,24 @@ export default function AnalyzeDialog(): React.JSX.Element {
         )}
 
         {status === "error" && (
-          <div role="alert" className={styles["errorAlert"]}>
+          <div
+            role='alert'
+            className={styles["errorAlert"]}>
             {errorMessage ?? t((m) => m.dialogs.invoices.analyzeDialog.errors.genericError)}
           </div>
         )}
 
         <DialogFooter className={styles["dialogFooter"]}>
           <Button
-            type="button"
-            variant="outline"
+            type='button'
+            variant='outline'
             onClick={handleClose}
             disabled={status === "submitting"}>
             {t((m) => m.dialogs.invoices.analyzeDialog.buttons.cancel)}
           </Button>
           {status !== "queued" && (
             <Button
-              type="button"
+              type='button'
               onClick={handleSubmit}
               disabled={status === "submitting"}
               className={styles["analyzeButton"]}>

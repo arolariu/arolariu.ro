@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Tests for shared runtime type guards.
+ * @module types/guards.test
+ */
+
 import {describe, expect, it} from "vitest";
 import {hasOnlyKeys, isArrayOf, isBoolean, isFiniteNumber, isNonEmptyString, isRecord} from "./guards";
 

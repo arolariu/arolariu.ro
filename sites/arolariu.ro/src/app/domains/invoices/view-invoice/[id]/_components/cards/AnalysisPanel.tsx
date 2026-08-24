@@ -16,8 +16,12 @@
 import InvoiceAnalysisControls from "../../../../_components/analysis/InvoiceAnalysisControls";
 import QueuedAnalysisNotice from "../../../../_components/analysis/QueuedAnalysisNotice";
 import {useAnalysisSubmission} from "../../../../_hooks/analysis/useAnalysisSubmission";
-import {buildInvoiceAnalysisRequest, resolveInvoiceCapabilities} from "@/types/invoices/Analysis";
-import type {AnalysisProfile, InvoiceAnalysisCapabilities} from "@/types/invoices/Analysis";
+import {
+  buildInvoiceAnalysisRequest,
+  resolveInvoiceCapabilities,
+  type AnalysisProfile,
+  type InvoiceAnalysisCapabilities,
+} from "@/types/invoices/Analysis";
 import {ClassificationOrigin} from "@/types/invoices/Classification";
 import {formatDate} from "@/lib/utils.generic";
 import {Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Spinner} from "@arolariu/components";
@@ -47,9 +51,7 @@ export function AnalysisPanel(): React.JSX.Element | null {
   const {invoice} = useInvoiceContext();
 
   const [profile, setProfile] = useState<AnalysisProfile>("comprehensive");
-  const [capabilities, setCapabilities] = useState<InvoiceAnalysisCapabilities>(
-    resolveInvoiceCapabilities("comprehensive"),
-  );
+  const [capabilities, setCapabilities] = useState<InvoiceAnalysisCapabilities>(() => resolveInvoiceCapabilities("comprehensive"));
 
   const {status, messageId, errorMessage, submit, refreshNow} = useAnalysisSubmission({
     target: "invoice",
@@ -57,16 +59,13 @@ export function AnalysisPanel(): React.JSX.Element | null {
     scheduleRefresh: true,
   });
 
-  const manualClassificationPresent =
-    invoice.classification?.origin === ClassificationOrigin.Manual;
+  const manualClassificationPresent = invoice.classification?.origin === ClassificationOrigin.Manual;
+  const hasLastUpdatedAt = Boolean(invoice.lastUpdatedAt);
 
-  const handleChange = useCallback(
-    (newProfile: AnalysisProfile, newCapabilities: InvoiceAnalysisCapabilities): void => {
-      setProfile(newProfile);
-      setCapabilities(newCapabilities);
-    },
-    [],
-  );
+  const handleChange = useCallback((newProfile: AnalysisProfile, newCapabilities: InvoiceAnalysisCapabilities): void => {
+    setProfile(newProfile);
+    setCapabilities(newCapabilities);
+  }, []);
 
   const handleSubmit = useCallback(async (): Promise<void> => {
     await submit(buildInvoiceAnalysisRequest(profile, capabilities));
@@ -81,9 +80,7 @@ export function AnalysisPanel(): React.JSX.Element | null {
         <div className={styles["headerContent"]}>
           <div className={styles["titleRow"]}>
             <TbSparkles className={styles["sparklesIcon"]} />
-            <CardTitle className={styles["title"]}>
-              {t((m) => m.pages.invoices.viewInvoice.analysisPanel.title)}
-            </CardTitle>
+            <CardTitle className={styles["title"]}>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.title)}</CardTitle>
           </div>
           <CardDescription className={styles["description"]}>
             {t((m) => m.pages.invoices.viewInvoice.analysisPanel.description)}
@@ -93,23 +90,24 @@ export function AnalysisPanel(): React.JSX.Element | null {
 
       <CardContent className={styles["content"]}>
         {status === "queued" ? (
-          <QueuedAnalysisNotice messageId={messageId} onRefresh={refreshNow} />
+          <QueuedAnalysisNotice
+            messageId={messageId}
+            onRefresh={refreshNow}
+          />
         ) : (
           <div className={styles["idleState"]}>
-            {invoice.lastUpdatedAt !== null && invoice.lastUpdatedAt !== undefined ? (
+            {hasLastUpdatedAt ? (
               <div className={styles["lastAnalyzed"]}>
                 <div className={styles["infoRow"]}>
                   <TbClock className={styles["infoIcon"]} />
-                  <span className={styles["infoLabel"]}>
-                    {t((m) => m.pages.invoices.viewInvoice.analysisPanel.labels.lastAnalyzed)}
-                  </span>
+                  <span className={styles["infoLabel"]}>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.labels.lastAnalyzed)}</span>
                 </div>
                 <p className={styles["infoValue"]}>
                   {formatDate(invoice.lastUpdatedAt, {locale, dateStyle: "medium", timeStyle: "short"})}
                 </p>
                 {typeof invoice.numberOfUpdates === "number" && invoice.numberOfUpdates > 0 && (
                   <div className={styles["updatesBadge"]}>
-                    <Badge variant="outline">
+                    <Badge variant='outline'>
                       {t((m) => m.pages.invoices.viewInvoice.analysisPanel.labels.updates, {
                         count: invoice.numberOfUpdates,
                       })}
@@ -128,7 +126,9 @@ export function AnalysisPanel(): React.JSX.Element | null {
             />
 
             {status === "error" && (
-              <div role="alert" className={styles["errorAlert"]}>
+              <div
+                role='alert'
+                className={styles["errorAlert"]}>
                 {errorMessage ?? t((m) => m.dialogs.invoices.analyzeDialog.errors.genericError)}
               </div>
             )}
@@ -138,8 +138,8 @@ export function AnalysisPanel(): React.JSX.Element | null {
                 onClick={handleSubmit}
                 disabled={status === "submitting"}
                 className={styles["primaryButton"]}
-                variant="default"
-                size="default">
+                variant='default'
+                size='default'>
                 {status === "submitting" ? (
                   <>
                     <Spinner className={styles["buttonIcon"]} />
@@ -156,9 +156,7 @@ export function AnalysisPanel(): React.JSX.Element | null {
 
             <div className={styles["tip"]}>
               <TbBolt className={styles["tipIcon"]} />
-              <p className={styles["tipText"]}>
-                {t((m) => m.pages.invoices.viewInvoice.analysisPanel.tip)}
-              </p>
+              <p className={styles["tipText"]}>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.tip)}</p>
             </div>
           </div>
         )}

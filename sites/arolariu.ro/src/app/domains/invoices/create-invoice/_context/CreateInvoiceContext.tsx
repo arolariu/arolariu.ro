@@ -19,14 +19,13 @@
  * 5. Navigate to invoice view
  *
  * **Partial-failure recovery:**
- * If step 2 (PATCH) fails after a successful create, the invoice id is preserved
- * in `pendingInvoiceId`. A retry via `createInvoiceWithScans` detects the pending
- * id and skips the create step entirely — no duplicate invoices.
+ * If PATCH or an additional scan attachment fails after a successful create, the
+ * invoice id and remaining scans are preserved. A retry detects that state, skips
+ * creation, and retries only the work that did not complete.
  */
 
 import {useScansStore} from "@/stores";
-import type {ClassificationSelection} from "@/types/invoices";
-import {ClassificationSystem, PaymentType} from "@/types/invoices";
+import {PaymentType, type ClassificationSelection} from "@/types/invoices";
 import {type CachedScan, ScanMetadataKey, ScanMetadataStatus, ScanStatus} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
@@ -57,6 +56,58 @@ export type CreateInvoiceOutcome =
       readonly failedStep: "patch" | "scans" | "analysis";
       readonly message: string;
     };
+
+type AttachAdditionalScansOutcome =
+  {readonly status: "attached"} | {readonly status: "failed"; readonly failedScanIndex: number; readonly message: string};
+
+/**
+ * Attaches additional scans sequentially and identifies the first unfinished scan.
+ *
+ * @remarks
+ * Sequential attachment is intentional: when a request fails, callers retain the
+ * failed scan and every unattempted scan for an exact retry without duplicating
+ * attachments that already succeeded.
+ *
+ * @param invoiceId - Persisted invoice identifier receiving the scans.
+ * @param scans - Additional scans in attachment order.
+ * @param fallbackMessage - Localized message used for untyped failures.
+ * @returns Whether every scan attached, or the index and message of the first failure.
+ */
+async function attachAdditionalScans(
+  invoiceId: string,
+  scans: readonly CachedScan[],
+  fallbackMessage: string,
+): Promise<AttachAdditionalScansOutcome> {
+  for (const [scanIndex, scan] of scans.entries()) {
+    try {
+      const additionalScanType = scanTypeToInvoiceScanType(scan.scanType);
+      const attachResult = await attachScanToInvoice({
+        invoiceId,
+        payload: {
+          type: additionalScanType,
+          location: scan.blobUrl,
+          additionalMetadata: {},
+        },
+      });
+
+      if (!attachResult.success) {
+        return {
+          status: "failed",
+          failedScanIndex: scanIndex,
+          message: attachResult.error?.message ?? fallbackMessage,
+        };
+      }
+    } catch (attachError: unknown) {
+      return {
+        status: "failed",
+        failedScanIndex: scanIndex,
+        message: attachError instanceof Error ? attachError.message : fallbackMessage,
+      };
+    }
+  }
+
+  return {status: "attached"};
+}
 
 /**
  * Invoice details form data.
@@ -139,6 +190,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
 
   // Partial-failure recovery state
   const [pendingInvoiceId, setPendingInvoiceId] = useState<string | null>(null);
+  const [pendingAdditionalScans, setPendingAdditionalScans] = useState<readonly CachedScan[] | null>(null);
   const [partialOutcome, setPartialOutcome] = useState<CreateInvoiceOutcome | null>(null);
 
   // Invoice details state
@@ -239,7 +291,11 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       // Skip creation when a prior partial-failure preserved an invoice id.
       let invoiceId = pendingInvoiceId;
       if (invoiceId === null) {
-        const {success, data: invoice, error} = await createInvoice({
+        const {
+          success,
+          data: invoice,
+          error,
+        } = await createInvoice({
           initialScan: {
             type: scanType,
             location: firstScan.blobUrl,
@@ -289,26 +345,32 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
 
       // Patch succeeded — clear any previous partial outcome
       setPartialOutcome(null);
+
+      // ── Step 3: Attach additional scans, preserving only unfinished work ──
+      const additionalScans = pendingAdditionalScans ?? selectedScans.slice(1);
+      const attachOutcome = await attachAdditionalScans(
+        invoiceId,
+        additionalScans,
+        t((m) => m.forms.invoices.createInvoice.errors.scanAttachFailed),
+      );
+      if (attachOutcome.status === "failed") {
+        setPendingInvoiceId(invoiceId);
+        setPendingAdditionalScans(additionalScans.slice(attachOutcome.failedScanIndex));
+        setPartialOutcome({
+          status: "partial",
+          invoiceIdentifier: invoiceId,
+          failedStep: "scans",
+          message: attachOutcome.message,
+        });
+        toast.error(t((m) => m.forms.invoices.createInvoice.toasts.scanAttachFailed));
+        return;
+      }
+
+      setPendingAdditionalScans(null);
       setPendingInvoiceId(null);
 
-      // ── Step 3: Mark scans used locally then attach additional scans ──────
-      const scanIds = selectedScans.map((s) => s.id);
+      const scanIds = selectedScans.map((scan) => scan.id);
       markScansAsUsedByInvoice(scanIds, invoiceId);
-
-      // Attach scans 2..N (first is already attached via initialScan)
-      for (const scan of selectedScans.slice(1)) {
-        const additionalScanType = scanTypeToInvoiceScanType(scan.scanType);
-        await attachScanToInvoice({
-          invoiceId,
-          payload: {
-            type: additionalScanType,
-            location: scan.blobUrl,
-            additionalMetadata: {},
-          },
-        }).catch((attachError: unknown) => {
-          console.warn("Non-critical: failed to attach additional scan", attachError);
-        });
-      }
 
       // Persist attachment metadata to blob storage (fire-and-forget)
       for (const scan of selectedScans) {
@@ -349,13 +411,20 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       router.push(`/domains/invoices/view-invoice/${invoiceId}`);
     } catch (error: unknown) {
       console.error("Error creating invoice:", error);
-      toast.error(
-        error instanceof Error ? error.message : t((m) => m.forms.invoices.createInvoice.errors.createFailed),
-      );
+      toast.error(error instanceof Error ? error.message : t((m) => m.forms.invoices.createInvoice.errors.createFailed));
     } finally {
       setIsCreating(false);
     }
-  }, [selectedScans, invoiceDetails, classificationSelection, pendingInvoiceId, markScansAsUsedByInvoice, router, t]);
+  }, [
+    selectedScans,
+    invoiceDetails,
+    classificationSelection,
+    pendingInvoiceId,
+    pendingAdditionalScans,
+    markScansAsUsedByInvoice,
+    router,
+    t,
+  ]);
 
   const contextValue: CreateInvoiceContextValue = useMemo(
     () => ({
@@ -422,4 +491,4 @@ export function useCreateInvoiceContext(): CreateInvoiceContextValue {
 }
 
 // Re-export ClassificationSystem for use in child components without deep imports
-export {ClassificationSystem};
+export {ClassificationSystem} from "@/types/invoices";

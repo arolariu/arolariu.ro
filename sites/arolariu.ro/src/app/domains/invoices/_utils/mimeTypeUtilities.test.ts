@@ -298,8 +298,8 @@ describe("mimeTypeUtilities", () => {
       expect(scanTypeToInvoiceScanType(ScanType.HEIF)).toBe(InvoiceScanType.HEIF);
     });
 
-    it("should throw when mapping ScanType.HEIC to an InvoiceScanType", () => {
-      expect(() => scanTypeToInvoiceScanType(ScanType.HEIC)).toThrow();
+    it("should map unsupported ScanType.HEIC to InvoiceScanType.UNKNOWN", () => {
+      expect(scanTypeToInvoiceScanType(ScanType.HEIC)).toBe(InvoiceScanType.UNKNOWN);
     });
 
     it("should map ScanType.PDF to InvoiceScanType.PDF", () => {
@@ -418,8 +418,8 @@ describe("mimeTypeUtilities", () => {
       expect(ACCEPTED_SCAN_FILE_EXTENSIONS).toContain("heif");
     });
 
-    it("rejects mapping a HEIC blob scan onto an invoice scan type", () => {
-      expect(() => scanTypeToInvoiceScanType(ScanType.HEIC)).toThrow();
+    it("maps a HEIC blob scan to the unknown invoice scan type", () => {
+      expect(scanTypeToInvoiceScanType(ScanType.HEIC)).toBe(InvoiceScanType.UNKNOWN);
     });
 
     it("keeps every invoice scan type within the backend accepted range", () => {

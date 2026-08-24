@@ -12,7 +12,6 @@ import naceArtifactJson from "@/data/taxonomies/nace-2.1.min.json";
 import {
   ClassificationSystem,
   isClassificationSystem,
-  isRecord,
   isTaxonomyArtifact,
   normalizeClassificationSearchQuery,
   type ClassificationSearchResult,
@@ -21,6 +20,7 @@ import {
   type TaxonomyArtifact,
   type TaxonomyArtifactNode,
 } from "@/types/invoices";
+import {isRecord} from "@/types";
 
 /** Maximum taxonomy results returned by one search. */
 export const MAXIMUM_TAXONOMY_SEARCH_RESULTS = 50;
@@ -43,11 +43,7 @@ interface CatalogNode {
 }
 
 const rawArtifacts: readonly unknown[] = [gpcArtifactJson, ecoicopArtifactJson, naceArtifactJson];
-const expectedSystems = [
-  ClassificationSystem.Gs1Gpc,
-  ClassificationSystem.EcoicopV2,
-  ClassificationSystem.Nace21,
-] as const;
+const expectedSystems = [ClassificationSystem.Gs1Gpc, ClassificationSystem.EcoicopV2, ClassificationSystem.Nace21] as const;
 
 function tokenize(value: string): ReadonlySet<string> {
   const normalized = normalizeClassificationSearchQuery(value);
@@ -95,10 +91,7 @@ function resolveInput(input: unknown): Readonly<{
   tokens: ReadonlySet<string>;
   limit: number;
 }> {
-  if (
-    !isRecord(input) ||
-    !Object.keys(input).every((key) => ["system", "query", "limit"].includes(key))
-  ) {
+  if (!isRecord(input) || !Object.keys(input).every((key) => ["system", "query", "limit"].includes(key))) {
     throw new TaxonomySearchValidationError("Taxonomy search input is invalid.");
   }
   const record = input;
@@ -108,7 +101,7 @@ function resolveInput(input: unknown): Readonly<{
   if (query.length < 2) throw new TaxonomySearchValidationError("Taxonomy search query must contain at least two characters.");
   const rawLimit = record["limit"];
   const limit = rawLimit === undefined ? MAXIMUM_TAXONOMY_SEARCH_RESULTS : rawLimit;
-  if (typeof limit !== "number" || !Number.isInteger(limit) || limit < 1 || limit > MAXIMUM_TAXONOMY_SEARCH_RESULTS)
+  if (typeof limit !== "number" || !Number.isSafeInteger(limit) || limit < 1 || limit > MAXIMUM_TAXONOMY_SEARCH_RESULTS)
     throw new TaxonomySearchValidationError("Taxonomy search limit must be an integer between 1 and 50.");
   return {system: record["system"], query, tokens: tokenize(query), limit};
 }
@@ -121,6 +114,13 @@ function overlap(left: ReadonlySet<string>, right: ReadonlySet<string>): number 
 
 const catalog = createCatalog();
 
+function rankCatalogNode(node: CatalogNode, query: string, queryTokens: ReadonlySet<string>): number | null {
+  if (node.code === query) return 0;
+  if (node.label === query) return 1;
+  if (node.code.startsWith(query) || node.label.startsWith(query)) return 2;
+  return overlap(queryTokens, node.tokens) > 0 ? 3 : null;
+}
+
 /** Searches one statically registered taxonomy catalog. */
 export function searchTaxonomyCatalog(input: Readonly<SearchClassificationsInput>): readonly ClassificationSearchResult[] {
   const resolved = resolveInput(input);
@@ -129,20 +129,18 @@ export function searchTaxonomyCatalog(input: Readonly<SearchClassificationsInput
 
   return nodes
     .map((node) => {
-      const exactCode = node.code === resolved.query;
-      const exactLabel = node.label === resolved.query;
-      const prefix = node.code.startsWith(resolved.query) || node.label.startsWith(resolved.query);
       const tokenOverlap = overlap(resolved.tokens, node.tokens);
-      const rank = exactCode ? 0 : exactLabel ? 1 : prefix ? 2 : tokenOverlap > 0 ? 3 : null;
+      const rank = rankCatalogNode(node, resolved.query, resolved.tokens);
       return rank === null ? null : {node, rank, tokenOverlap};
     })
     .filter((candidate): candidate is NonNullable<typeof candidate> => candidate !== null)
-    .toSorted((left, right) =>
-      left.rank - right.rank ||
-      right.tokenOverlap - left.tokenOverlap ||
-      left.node.result.code.localeCompare(right.node.result.code) ||
-      left.node.result.officialLabel.localeCompare(right.node.result.officialLabel) ||
-      left.node.ordinal - right.node.ordinal,
+    .toSorted(
+      (left, right) =>
+        left.rank - right.rank
+        || right.tokenOverlap - left.tokenOverlap
+        || left.node.result.code.localeCompare(right.node.result.code)
+        || left.node.result.officialLabel.localeCompare(right.node.result.officialLabel)
+        || left.node.ordinal - right.node.ordinal,
     )
     .slice(0, resolved.limit)
     .map((candidate) => candidate.node.result);

@@ -246,6 +246,10 @@ Items: ${invoice.items.length}
         <InvoicePDF
           invoice={invoice}
           merchant={merchant}
+          messages={{
+            classification: t((m) => m.pages.invoices.viewInvoice.export.pdf.labels.classification),
+            unclassified: t((m) => m.shared.invoices.classification.unclassified),
+          }}
         />,
       ).toBlob();
 

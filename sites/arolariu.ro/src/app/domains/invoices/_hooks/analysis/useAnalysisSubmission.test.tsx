@@ -61,9 +61,7 @@ describe("useAnalysisSubmission", () => {
 
   describe("initial state", () => {
     it("starts idle with messageId null and errorMessage null", () => {
-      const {result} = renderHook(() =>
-        useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID}),
-      );
+      const {result} = renderHook(() => useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID}));
 
       expect(result.current.status).toBe("idle");
       expect(result.current.messageId).toBeNull();
@@ -77,9 +75,7 @@ describe("useAnalysisSubmission", () => {
     it("transitions to queued with the returned messageId for invoice target", async () => {
       mockAnalyzeInvoice.mockReturnValueOnce(TestDataBuilder.actionSuccess(TEST_MESSAGE_ID));
 
-      const {result} = renderHook(() =>
-        useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID}),
-      );
+      const {result} = renderHook(() => useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID}));
 
       await act(async () => {
         await result.current.submit(invoiceRequest);
@@ -93,9 +89,7 @@ describe("useAnalysisSubmission", () => {
     it("transitions to queued with the returned messageId for merchant target", async () => {
       mockAnalyzeMerchant.mockReturnValueOnce(TestDataBuilder.actionSuccess(TEST_MESSAGE_ID));
 
-      const {result} = renderHook(() =>
-        useAnalysisSubmission({target: "merchant", identifier: TEST_MERCHANT_ID}),
-      );
+      const {result} = renderHook(() => useAnalysisSubmission({target: "merchant", identifier: TEST_MERCHANT_ID}));
 
       await act(async () => {
         await result.current.submit(merchantRequest);
@@ -111,13 +105,9 @@ describe("useAnalysisSubmission", () => {
 
   describe("failed submit", () => {
     it("transitions to error with non-null errorMessage on action failure result", async () => {
-      mockAnalyzeInvoice.mockReturnValueOnce(
-        TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Analysis pipeline error"}),
-      );
+      mockAnalyzeInvoice.mockReturnValueOnce(TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Analysis pipeline error"}));
 
-      const {result} = renderHook(() =>
-        useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID}),
-      );
+      const {result} = renderHook(() => useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID}));
 
       await act(async () => {
         await result.current.submit(invoiceRequest);
@@ -130,9 +120,7 @@ describe("useAnalysisSubmission", () => {
     it("transitions to error with non-null errorMessage on thrown exception", async () => {
       mockAnalyzeInvoice.mockRejectedValueOnce(new Error("Network failure"));
 
-      const {result} = renderHook(() =>
-        useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID}),
-      );
+      const {result} = renderHook(() => useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID}));
 
       await act(async () => {
         await result.current.submit(invoiceRequest);
@@ -149,9 +137,7 @@ describe("useAnalysisSubmission", () => {
     it("does not call router.refresh immediately after reaching queued", async () => {
       mockAnalyzeInvoice.mockReturnValueOnce(TestDataBuilder.actionSuccess(TEST_MESSAGE_ID));
 
-      const {result} = renderHook(() =>
-        useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID, scheduleRefresh: true}),
-      );
+      const {result} = renderHook(() => useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID, scheduleRefresh: true}));
 
       await act(async () => {
         await result.current.submit(invoiceRequest);
@@ -163,9 +149,7 @@ describe("useAnalysisSubmission", () => {
     it("calls router.refresh exactly once after ANALYSIS_REFRESH_DELAY_MS, never again after 120s more", async () => {
       mockAnalyzeInvoice.mockReturnValueOnce(TestDataBuilder.actionSuccess(TEST_MESSAGE_ID));
 
-      const {result} = renderHook(() =>
-        useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID, scheduleRefresh: true}),
-      );
+      const {result} = renderHook(() => useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID, scheduleRefresh: true}));
 
       await act(async () => {
         await result.current.submit(invoiceRequest);
@@ -193,9 +177,7 @@ describe("useAnalysisSubmission", () => {
     it("never calls router.refresh after 60s when scheduleRefresh is false", async () => {
       mockAnalyzeInvoice.mockReturnValueOnce(TestDataBuilder.actionSuccess(TEST_MESSAGE_ID));
 
-      const {result} = renderHook(() =>
-        useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID, scheduleRefresh: false}),
-      );
+      const {result} = renderHook(() => useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID, scheduleRefresh: false}));
 
       await act(async () => {
         await result.current.submit(invoiceRequest);
@@ -209,9 +191,9 @@ describe("useAnalysisSubmission", () => {
     });
   });
 
-  // ── 6. Unmount cancels pending refresh ──────────────────────────────────────
+  // ── 6. Pending refresh cleanup ──────────────────────────────────────────────
 
-  describe("unmount cancels pending refresh", () => {
+  describe("pending refresh cleanup", () => {
     it("does not call router.refresh after unmounting before the timer fires", async () => {
       mockAnalyzeInvoice.mockReturnValueOnce(TestDataBuilder.actionSuccess(TEST_MESSAGE_ID));
 
@@ -231,15 +213,41 @@ describe("useAnalysisSubmission", () => {
 
       expect(mockRouter.refresh).not.toHaveBeenCalled();
     });
+
+    it("cancels the pending refresh when the target changes for the same identifier", async () => {
+      mockAnalyzeInvoice.mockReturnValueOnce(TestDataBuilder.actionSuccess(TEST_MESSAGE_ID));
+
+      type TestProps = Readonly<{target: "invoice" | "merchant"}>;
+      const initialProps: TestProps = {target: "invoice"};
+      const {result, rerender} = renderHook(
+        ({target}: TestProps) =>
+          useAnalysisSubmission({
+            target,
+            identifier: TEST_INVOICE_ID,
+            scheduleRefresh: true,
+          }),
+        {initialProps},
+      );
+
+      await act(async () => {
+        await result.current.submit(invoiceRequest);
+      });
+
+      rerender({target: "merchant"});
+
+      act(() => {
+        vi.advanceTimersByTime(ANALYSIS_REFRESH_DELAY_MS);
+      });
+
+      expect(mockRouter.refresh).not.toHaveBeenCalled();
+    });
   });
 
   // ── 7. refreshNow() ─────────────────────────────────────────────────────────
 
   describe("refreshNow()", () => {
     it("calls router.refresh immediately", () => {
-      const {result} = renderHook(() =>
-        useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID}),
-      );
+      const {result} = renderHook(() => useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID}));
 
       act(() => {
         result.current.refreshNow();
@@ -251,9 +259,7 @@ describe("useAnalysisSubmission", () => {
     it("cancels the pending scheduled refresh so it does not fire a second time", async () => {
       mockAnalyzeInvoice.mockReturnValueOnce(TestDataBuilder.actionSuccess(TEST_MESSAGE_ID));
 
-      const {result} = renderHook(() =>
-        useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID, scheduleRefresh: true}),
-      );
+      const {result} = renderHook(() => useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID, scheduleRefresh: true}));
 
       await act(async () => {
         await result.current.submit(invoiceRequest);
@@ -283,9 +289,7 @@ describe("useAnalysisSubmission", () => {
     it("status is never 'completed' after a successful submit", async () => {
       mockAnalyzeInvoice.mockReturnValueOnce(TestDataBuilder.actionSuccess(TEST_MESSAGE_ID));
 
-      const {result} = renderHook(() =>
-        useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID}),
-      );
+      const {result} = renderHook(() => useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID}));
 
       expect(VALID_STATUSES).toContain(result.current.status);
 
@@ -298,13 +302,9 @@ describe("useAnalysisSubmission", () => {
     });
 
     it("status is never 'completed' after a failed submit", async () => {
-      mockAnalyzeInvoice.mockReturnValueOnce(
-        TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"}),
-      );
+      mockAnalyzeInvoice.mockReturnValueOnce(TestDataBuilder.actionFailure({code: "UNKNOWN_ERROR", message: "Error"}));
 
-      const {result} = renderHook(() =>
-        useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID}),
-      );
+      const {result} = renderHook(() => useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID}));
 
       await act(async () => {
         await result.current.submit(invoiceRequest);

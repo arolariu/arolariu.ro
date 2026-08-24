@@ -72,13 +72,80 @@ const ViewInvoiceExportDialog = dynamic(
   {ssr: false},
 );
 
+type DialogDiscriminator = ReturnType<typeof useDialogs>["currentDialog"]["type"];
+
+function renderEditInvoiceDialog(type: DialogDiscriminator): React.JSX.Element | null {
+  switch (type) {
+    case "EDIT_INVOICE__ANALYSIS":
+      return <AnalyzeDialog />;
+    case "EDIT_INVOICE__ITEMS":
+      return <InvoiceItemsDialog />;
+    case "EDIT_INVOICE__ALLERGENS":
+      return <AllergenDialog />;
+    case "EDIT_INVOICE__FEEDBACK":
+      return <InvoiceFeedbackDialog />;
+    case "EDIT_INVOICE__MERCHANT":
+      return <InvoiceMerchantDialog />;
+    case "EDIT_INVOICE__MERCHANT_INVOICES":
+      return <InvoiceMerchantReceiptsDialog />;
+    case "EDIT_INVOICE__METADATA":
+      return <InvoiceMetadataDialog />;
+    case "EDIT_INVOICE__IMAGE":
+      return <InvoiceImageDialog />;
+    case "EDIT_INVOICE__ADD_SCAN":
+      return <AddScanDialog />;
+    case "EDIT_INVOICE__REMOVE_SCAN":
+      return <RemoveScanDialog />;
+    case "EDIT_INVOICE__RECIPE_ADD":
+      return <AddRecipeDialog />;
+    case "EDIT_INVOICE__RECIPE_UPDATE":
+      return <UpdateRecipeDialog />;
+    case "EDIT_INVOICE__RECIPE_DELETE":
+      return <DeleteRecipeDialog />;
+    case "EDIT_INVOICE__RECIPE_PREVIEW":
+      return <PreviewRecipeDialog />;
+    default:
+      return null;
+  }
+}
+
+function renderOtherDialog(type: DialogDiscriminator): React.JSX.Element | null {
+  switch (type) {
+    case "VIEW_INVOICE__SHARE_ANALYTICS":
+      return <ShareAnalyticsDialog />;
+    case "VIEW_INVOICE__EXPORT":
+      return <ViewInvoiceExportDialog />;
+    case "VIEW_INVOICES__IMPORT":
+      return <InvoicesImportDialog />;
+    case "VIEW_INVOICES__EXPORT":
+      return <InvoicesExportDialog />;
+    case "VIEW_SCANS__CREATE_INVOICE":
+      return <CreateInvoiceDialog />;
+    case "SHARED__INVOICE_DELETE":
+      return <DeleteInvoiceDialog />;
+    case "SHARED__INVOICE_SHARE":
+      return <ShareInvoiceDialog />;
+    case "SHARED__SCAN_DELETE":
+      return <DeleteScanDialog />;
+    case "SHARED__SCAN_PREVIEW":
+      return <PreviewScanDialog />;
+    default:
+      return null;
+  }
+}
+
+function renderDialog(type: DialogDiscriminator): React.JSX.Element | null {
+  const editInvoiceDialog = renderEditInvoiceDialog(type);
+  return editInvoiceDialog ?? renderOtherDialog(type);
+}
+
 /**
  * Renders the active dialog component based on current dialog context state.
  *
  * @remarks
  * **Rendering Context**: Client Component (uses `useDialogs` hook from context).
  *
- * **Dialog Registry Pattern**: Maps 27 dialog type discriminators to their
+ * **Dialog Registry Pattern**: Maps 23 dialog type discriminators to their
  * corresponding lazy-loaded components. Switch expression evaluates `type` from
  * dialog context and returns the appropriate dialog or `null` when no dialog is active.
  *
@@ -97,11 +164,10 @@ const ViewInvoiceExportDialog = dynamic(
  *
  * **Dialog Type Organization**:
  *
- * **edit-invoice/[id] dialogs** (16):
- * - `EDIT_INVOICE__ANALYSIS`: AI-powered invoice analysis with item categorization
+ * **edit-invoice/[id] dialogs** (14):
+ * - `EDIT_INVOICE__ANALYSIS`: AI-powered invoice analysis capability controls
  * - `EDIT_INVOICE__ITEMS`: Invoice line items editor with add/remove/edit
  * - `EDIT_INVOICE__ALLERGENS`: Allergen information for food items
- * - `EDIT_INVOICE__BULK_CATEGORY`: Bulk category assignment for multiple items
  * - `EDIT_INVOICE__FEEDBACK`: User feedback form for invoice accuracy
  * - `EDIT_INVOICE__MERCHANT`: Merchant details editor (name, address, contact)
  * - `EDIT_INVOICE__MERCHANT_INVOICES`: All invoices from same merchant
@@ -113,7 +179,6 @@ const ViewInvoiceExportDialog = dynamic(
  * - `EDIT_INVOICE__RECIPE_UPDATE`: Update a recipe attached to the invoice
  * - `EDIT_INVOICE__RECIPE_DELETE`: Delete a recipe from the invoice
  * - `EDIT_INVOICE__RECIPE_PREVIEW`: Preview recipe details
- * - `EDIT_INVOICE__RECIPE_SHARE`: Share a recipe reference
  *
  * **view-invoice/[id] dialogs** (2):
  * - `VIEW_INVOICE__SHARE_ANALYTICS`: Share invoice analytics charts/insights
@@ -197,63 +262,7 @@ function DialogContainerImpl(): React.JSX.Element | null {
     currentDialog: {type},
   } = useDialogs();
 
-  return useMemo(() => {
-    switch (type) {
-      // edit-invoice/[id] Dialogs
-      case "EDIT_INVOICE__ANALYSIS":
-        return <AnalyzeDialog />;
-      case "EDIT_INVOICE__ITEMS":
-        return <InvoiceItemsDialog />;
-      case "EDIT_INVOICE__ALLERGENS":
-        return <AllergenDialog />;
-      case "EDIT_INVOICE__FEEDBACK":
-        return <InvoiceFeedbackDialog />;
-      case "EDIT_INVOICE__MERCHANT":
-        return <InvoiceMerchantDialog />;
-      case "EDIT_INVOICE__MERCHANT_INVOICES":
-        return <InvoiceMerchantReceiptsDialog />;
-      case "EDIT_INVOICE__METADATA":
-        return <InvoiceMetadataDialog />;
-      case "EDIT_INVOICE__IMAGE":
-        return <InvoiceImageDialog />;
-      case "EDIT_INVOICE__ADD_SCAN":
-        return <AddScanDialog />;
-      case "EDIT_INVOICE__REMOVE_SCAN":
-        return <RemoveScanDialog />;
-      case "EDIT_INVOICE__RECIPE_ADD":
-        return <AddRecipeDialog />;
-      case "EDIT_INVOICE__RECIPE_UPDATE":
-        return <UpdateRecipeDialog />;
-      case "EDIT_INVOICE__RECIPE_DELETE":
-        return <DeleteRecipeDialog />;
-      case "EDIT_INVOICE__RECIPE_PREVIEW":
-        return <PreviewRecipeDialog />;
-      // view-invoice/[id] Dialogs
-      case "VIEW_INVOICE__SHARE_ANALYTICS":
-        return <ShareAnalyticsDialog />;
-      case "VIEW_INVOICE__EXPORT":
-        return <ViewInvoiceExportDialog />;
-      // view-invoices Dialogs
-      case "VIEW_INVOICES__IMPORT":
-        return <InvoicesImportDialog />;
-      case "VIEW_INVOICES__EXPORT":
-        return <InvoicesExportDialog />;
-      // view-scans Dialogs
-      case "VIEW_SCANS__CREATE_INVOICE":
-        return <CreateInvoiceDialog />;
-      // shared dialogs
-      case "SHARED__INVOICE_DELETE":
-        return <DeleteInvoiceDialog />;
-      case "SHARED__INVOICE_SHARE":
-        return <ShareInvoiceDialog />;
-      case "SHARED__SCAN_DELETE":
-        return <DeleteScanDialog />;
-      case "SHARED__SCAN_PREVIEW":
-        return <PreviewScanDialog />;
-      default:
-        return null;
-    }
-  }, [type]);
+  return useMemo(() => renderDialog(type), [type]);
 }
 DialogContainerImpl.displayName = "DialogContainer";
 

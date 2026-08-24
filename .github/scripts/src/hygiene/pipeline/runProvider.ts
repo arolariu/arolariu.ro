@@ -134,7 +134,7 @@ export async function collectChangedFiles(
   readonly files: readonly string[];
 }> {
   try {
-    const result = await exec.getExecOutput("git", ["diff", "--name-only", `${baseRef}...${headRef}`], {
+    const result = await exec.getExecOutput("git", ["diff", "--name-only", "--diff-filter=ACMRTUXB", `${baseRef}...${headRef}`], {
       cwd: workspaceRoot,
       ignoreReturnCode: true,
       silent: true,
