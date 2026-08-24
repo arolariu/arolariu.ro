@@ -208,8 +208,7 @@ public sealed class AnalysisPersistenceSerializationTests
       [new RecipeIngredient("Salt", "1 tsp", null)],
       [],
       [new RecipeStep(1, "Mix everything.", null)],
-      [],
-      Guid.CreateVersion7());
+      []);
 
   #endregion
 }

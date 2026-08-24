@@ -63,7 +63,6 @@ public sealed class RecipeSuggestionCoverageTests
         [],
         [],
         steps ?? [new RecipeStep(1, "Toast bread.", null)],
-        [AllergenCode.CerealsContainingGluten],
-        Guid.Parse("55555555-5555-5555-5555-555555555555"));
+        [AllergenCode.CerealsContainingGluten]);
 }
 

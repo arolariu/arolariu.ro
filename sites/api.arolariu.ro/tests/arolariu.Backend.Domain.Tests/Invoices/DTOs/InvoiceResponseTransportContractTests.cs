@@ -294,7 +294,6 @@ public sealed class InvoiceResponseTransportContractTests
 
   private static Invoice CreateRichInvoice()
   {
-    Guid sourceRunId = Guid.Parse("11111111-1111-7111-8111-111111111111");
     Guid invoiceIdentifier = Guid.Parse("22222222-2222-7222-8222-222222222222");
     Guid userIdentifier = Guid.Parse("33333333-3333-7333-8333-333333333333");
     Guid updaterIdentifier = Guid.Parse("44444444-4444-7444-8444-444444444444");
@@ -330,8 +329,7 @@ public sealed class InvoiceResponseTransportContractTests
       [new RecipeIngredient("Salt", "a pinch", "Optional")],
       [new RecipeIngredient("Butter", "1 tsp", null)],
       [new RecipeStep(1, "Toast the bread.", null)],
-      [AllergenCode.CerealsContainingGluten],
-      sourceRunId);
+      [AllergenCode.CerealsContainingGluten]);
 
     var invoice = new Invoice
     {

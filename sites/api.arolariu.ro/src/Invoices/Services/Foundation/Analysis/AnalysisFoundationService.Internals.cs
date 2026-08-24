@@ -1410,8 +1410,7 @@ public sealed partial class AnalysisFoundationService
         pantryStaples,
         missingOptionalIngredients,
         steps,
-        warnings,
-        sourceRunId),
+        warnings),
       $"Structured recipe '{entry.Name}' was invalid.");
   }
 
